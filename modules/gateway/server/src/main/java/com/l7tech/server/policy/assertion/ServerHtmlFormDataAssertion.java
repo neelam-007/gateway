@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2007-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.http.HttpMethod;
@@ -12,9 +9,7 @@ import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import org.springframework.context.ApplicationContext;
 
 import javax.mail.internet.ContentDisposition;
 import javax.mail.internet.ParseException;
@@ -59,11 +54,9 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
     }
 
     private static final Logger _logger = Logger.getLogger(ServerHtmlFormDataAssertion.class.getName());
-    private final Auditor _auditor;
 
-    public ServerHtmlFormDataAssertion(final HtmlFormDataAssertion assertion, final ApplicationContext springContext) {
+    public ServerHtmlFormDataAssertion(final HtmlFormDataAssertion assertion) {
         super(assertion);
-        _auditor = new Auditor(this, springContext, _logger);
     }
 
     @Override
@@ -74,7 +67,7 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
         // Skips if not HTTP.
         final HttpRequestKnob httpRequestKnob = requestMessage.getKnob(HttpRequestKnob.class);
         if (httpRequestKnob == null) {
-            _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_NOT_HTTP);
+            logAndAudit(AssertionMessages.HTMLFORMDATA_NOT_HTTP);
             return AssertionStatus.NOT_APPLICABLE;
         }
 
@@ -84,7 +77,7 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
         if (httpMethod == HttpMethod.POST) {
             if (!(   outerContentType.matches("application", "x-www-form-urlencoded")
                   || outerContentType.matches("multipart", "form-data"))) {
-                _auditor.logAndAudit(AssertionMessages.HTTP_POST_NOT_FORM_DATA, outerContentType.getMainValue());
+                logAndAudit(AssertionMessages.HTTP_POST_NOT_FORM_DATA, outerContentType.getMainValue());
                 return AssertionStatus.NOT_APPLICABLE;
             }
         }
@@ -95,7 +88,7 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
                 _logger.finer("Verified: HTTP request method (" + httpMethod + ")");
             }
         } else {
-            _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_METHOD_NOT_ALLOWED, httpMethod.name());
+            logAndAudit(AssertionMessages.HTMLFORMDATA_METHOD_NOT_ALLOWED, httpMethod.name());
             return AssertionStatus.FALSIFIED;
         }
 
@@ -127,7 +120,7 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
         // Enforces existence of specified fields:
         for (HtmlFormDataAssertion.FieldSpec required : fieldSpecs.values()) {
             if (required.getMinOccurs() > 0 && !fields.containsKey(required.getName())) {
-                _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_FIELD_NOT_FOUND, required.getName());
+                logAndAudit(AssertionMessages.HTMLFORMDATA_FIELD_NOT_FOUND, required.getName());
                 return AssertionStatus.FALSIFIED;
             }
         }
@@ -146,12 +139,12 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
                         try {
                             Double.valueOf(fieldValue.value);
                         } catch (NumberFormatException e) {
-                            _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_FAIL_DATATYPE, field.name, fieldValue.value, allowedDataType.getWspName());
+                            logAndAudit(AssertionMessages.HTMLFORMDATA_FAIL_DATATYPE, field.name, fieldValue.value, allowedDataType.getWspName());
                             return AssertionStatus.FALSIFIED;
                         }
                     } else if (allowedDataType == HtmlFormDataType.FILE) {
                         if (!fieldValue.isFile) {
-                            _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_FAIL_DATATYPE, field.name, fieldValue.value, allowedDataType.getWspName());
+                            logAndAudit(AssertionMessages.HTMLFORMDATA_FAIL_DATATYPE, field.name, fieldValue.value, allowedDataType.getWspName());
                         }
                     } else {
                         throw new IllegalArgumentException("Internal Error: Missing handler for data type " + allowedDataType);
@@ -163,11 +156,11 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
 
                 // Enforces min. and max. occurrences:
                 if (field.fieldValues.size() < fieldSpec.getMinOccurs()) {
-                    _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_FAIL_MINOCCURS, field.name, Integer.toString(field.fieldValues.size()), Integer.toString(fieldSpec.getMinOccurs()));
+                    logAndAudit(AssertionMessages.HTMLFORMDATA_FAIL_MINOCCURS, field.name, Integer.toString(field.fieldValues.size()), Integer.toString(fieldSpec.getMinOccurs()));
                     return AssertionStatus.FALSIFIED;
                 }
                 if (field.fieldValues.size() > fieldSpec.getMaxOccurs()) {
-                    _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_FAIL_MAXOCCURS, field.name, Integer.toString(field.fieldValues.size()), Integer.toString(fieldSpec.getMaxOccurs()));
+                    logAndAudit(AssertionMessages.HTMLFORMDATA_FAIL_MAXOCCURS, field.name, Integer.toString(field.fieldValues.size()), Integer.toString(fieldSpec.getMaxOccurs()));
                     return AssertionStatus.FALSIFIED;
                 }
                 if (_logger.isLoggable(Level.FINER)) {
@@ -180,11 +173,11 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
                     // No need to check anything.
                 } else {
                     if (field.inUri && allowedLocation != HtmlFormDataLocation.URL) {
-                        _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_LOCATION_NOT_ALLOWED, field.name, HtmlFormDataLocation.URL.toString());
+                        logAndAudit(AssertionMessages.HTMLFORMDATA_LOCATION_NOT_ALLOWED, field.name, HtmlFormDataLocation.URL.toString());
                         return AssertionStatus.FALSIFIED;
                     }
                     if (field.inBody && allowedLocation != HtmlFormDataLocation.BODY) {
-                        _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_LOCATION_NOT_ALLOWED, field.name, HtmlFormDataLocation.BODY.toString());
+                        logAndAudit(AssertionMessages.HTMLFORMDATA_LOCATION_NOT_ALLOWED, field.name, HtmlFormDataLocation.BODY.toString());
                         return AssertionStatus.FALSIFIED;
                     }
                 }
@@ -194,10 +187,10 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
 
             } else {
                 if (assertion.isDisallowOtherFields()) {
-                    _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_UNKNOWN_FIELD_NOT_ALLOWED, field.name);
+                    logAndAudit(AssertionMessages.HTMLFORMDATA_UNKNOWN_FIELD_NOT_ALLOWED, field.name);
                     return AssertionStatus.FALSIFIED;
                 } else {
-                    _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_UNKNOWN_FIELD_ALLOWED, field.name);
+                    logAndAudit(AssertionMessages.HTMLFORMDATA_UNKNOWN_FIELD_ALLOWED, field.name);
                 }
             }
         }

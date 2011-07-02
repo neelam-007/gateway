@@ -2,8 +2,8 @@ package com.l7tech.external.assertions.api3scale.server;
 
 import com.l7tech.external.assertions.api3scale.Api3ScaleAdmin;
 import com.l7tech.external.assertions.api3scale.Api3ScaleAuthorizeAssertion;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
+import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
 import net.threescale.api.ApiFactory;
@@ -17,15 +17,14 @@ import java.util.logging.Logger;
  */
 public class Api3ScaleAdminImpl implements Api3ScaleAdmin{
     private static final Logger logger = Logger.getLogger(Api3ScaleAdminImpl.class.getName());
-    private final Auditor auditor;
+    private final Audit auditor;
 
     public Api3ScaleAdminImpl() {
-        this.auditor =  new LogOnlyAuditor(logger);
+        this.auditor = new LoggingAudit(logger);
     }
 
     @Override
     public String testAuthorize(Api3ScaleAuthorizeAssertion ass, Map<String, Object> contextVars) throws Api3ScaleTestException {
-        Auditor auditor = new LogOnlyAuditor(logger);
         String server = ExpandVariables.process(ass.getServer(), contextVars, auditor, true);
         String providerKey = ExpandVariables.process(ass.getPrivateKey(), contextVars, auditor, true);
         String appId = ExpandVariables.process(ass.getApplicationID(), contextVars, auditor, true);

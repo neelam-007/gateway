@@ -4,38 +4,30 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.ContentTypeAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.Syntax;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
-import org.springframework.beans.factory.BeanFactory;
-import org.springframework.context.ApplicationEventPublisher;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * Server assertion to validate the syntax of a message's content type.
  */
 public class ServerContentTypeAssertion extends AbstractMessageTargetableServerAssertion<ContentTypeAssertion> {
-    private static final Logger logger = Logger.getLogger(ServerContentTypeAssertion.class.getName());
-    private final Audit auditor;
 
     private final Integer fixedMessagePartNum;
     private final ContentTypeHeader fixedContentType;
     private final String[] varsUsed;
 
-    public ServerContentTypeAssertion(final ContentTypeAssertion assertion, BeanFactory beanFactory, ApplicationEventPublisher eventPub) throws PolicyAssertionException {
+    public ServerContentTypeAssertion(final ContentTypeAssertion assertion) throws PolicyAssertionException {
         super(assertion, assertion);
-        this.auditor = new Auditor(this, beanFactory, eventPub, logger);
 
         if (assertion.isChangeContentType() && Syntax.getReferencedNames(assertion.getNewContentTypeValue()).length < 1) {
             fixedContentType = ContentTypeHeader.create(assertion.getNewContentTypeValue());
@@ -57,15 +49,10 @@ public class ServerContentTypeAssertion extends AbstractMessageTargetableServerA
     }
 
     @Override
-    protected Audit getAuditor() {
-        return auditor;
-    }
-
-    @Override
     protected AssertionStatus doCheckRequest(PolicyEnforcementContext context, Message message, String messageDescription, AuthenticationContext authContext)
             throws IOException, PolicyAssertionException
     {
-        final Map<String,?> varMap = context.getVariableMap(varsUsed, auditor);
+        final Map<String,?> varMap = context.getVariableMap(varsUsed, getAudit());
 
         try {
             if (!assertion.isChangeContentType())
@@ -83,7 +70,7 @@ public class ServerContentTypeAssertion extends AbstractMessageTargetableServerA
                 return AssertionStatus.NONE;
             }
         } catch (NoSuchPartException e) {
-            auditor.logAndAudit(AssertionMessages.NO_SUCH_PART, messageDescription, assertion.getMessagePartNum());
+            logAndAudit(AssertionMessages.NO_SUCH_PART, messageDescription, assertion.getMessagePartNum());
             return AssertionStatus.FAILED;
         }
     }
@@ -92,7 +79,7 @@ public class ServerContentTypeAssertion extends AbstractMessageTargetableServerA
         if (fixedContentType != null)
             return fixedContentType;
 
-        return ContentTypeHeader.create(ExpandVariables.process(assertion.getNewContentTypeValue(), varMap, auditor));
+        return ContentTypeHeader.create(ExpandVariables.process(assertion.getNewContentTypeValue(), varMap, getAudit()));
     }
 
     private int getMessagePartNum(Map<String, ?> varMap) throws NoSuchPartException {
@@ -101,7 +88,7 @@ public class ServerContentTypeAssertion extends AbstractMessageTargetableServerA
 
         final String partNumStr = assertion.getMessagePartNum();
         try {
-            return Integer.parseInt(ExpandVariables.process(partNumStr, varMap, auditor));
+            return Integer.parseInt(ExpandVariables.process(partNumStr, varMap, getAudit()));
         } catch (NumberFormatException e) {
             throw new NoSuchPartException();
         }
@@ -120,7 +107,7 @@ public class ServerContentTypeAssertion extends AbstractMessageTargetableServerA
             ctype.validate();
             return AssertionStatus.NONE;
         } catch (IOException e) {
-            auditor.logAndAudit(AssertionMessages.MESSAGE_BAD_CONTENT_TYPE, messageDescription, ExceptionUtils.getMessage(e));
+            logAndAudit(AssertionMessages.MESSAGE_BAD_CONTENT_TYPE, messageDescription, ExceptionUtils.getMessage(e));
             return AssertionStatus.FAILED;
         }
     }

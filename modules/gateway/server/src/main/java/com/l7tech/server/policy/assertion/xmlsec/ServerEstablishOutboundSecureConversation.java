@@ -2,7 +2,6 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.identity.User;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -10,8 +9,6 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.EstablishOutboundSecureConversation;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -24,7 +21,6 @@ import com.l7tech.server.secureconversation.SessionCreationException;
 import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.beans.factory.BeanFactory;
-import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -41,13 +37,11 @@ import java.util.logging.Logger;
  * @author ghuang
  */
 public class ServerEstablishOutboundSecureConversation extends AbstractMessageTargetableServerAssertion<EstablishOutboundSecureConversation> {
-    private static final Logger logger = Logger.getLogger(ServerEstablishOutboundSecureConversation.class.getName());
     private static final String DEFAULT_SESSION_DURATION = "outbound.secureConversation.defaultSessionDuration";
     private static final String SESSION_PRE_EXPIRY_AGE = "outbound.secureConversation.sessionPreExpiryAge";
     private static final long MIN_SESSION_PRE_EXPIRY_AGE = 0L;
     private static final long MAX_SESSION_PRE_EXPIRY_AGE = TimeUnit.HOURS.toMillis( 2L ); // 2 hours
 
-    private final Auditor auditor;
     private final Config config;
     private final String[] variablesUsed;
     private final InboundSecureConversationContextManager inboundSecurityContextManager;
@@ -55,11 +49,7 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
 
     public ServerEstablishOutboundSecureConversation(EstablishOutboundSecureConversation assertion, final BeanFactory factory) {
         super(assertion, assertion);
-
-        auditor = factory instanceof ApplicationContext ?
-            new Auditor(this, (ApplicationContext)factory, logger) :
-            new LogOnlyAuditor(logger);
-        config = validated(factory.getBean("serverConfig", Config.class));
+        config = validated(factory.getBean("serverConfig", Config.class), logger);
         variablesUsed = assertion.getVariablesUsed();
         inboundSecurityContextManager = factory.getBean("inboundSecureConversationContextManager", InboundSecureConversationContextManager.class);
         outboundSecurityContextManager = factory.getBean("outboundSecureConversationContextManager", OutboundSecureConversationContextManager.class);
@@ -69,7 +59,7 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
     protected AssertionStatus doCheckRequest(PolicyEnforcementContext context, Message message, String messageDescription, AuthenticationContext authContext) throws IOException, PolicyAssertionException {
         AuthenticationResult authenticationResult = authContext.getLastAuthenticationResult();
         if (authenticationResult == null) {
-            auditor.logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "The target message does not contain any authentication information.");
+            logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "The target message does not contain any authentication information.");
             return AssertionStatus.AUTH_FAILED;
         }
 
@@ -82,22 +72,22 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
             }
         }
         if (loginCredentials == null) {
-            auditor.logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "Credentials not found for the authenticated user.");
+            logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "Credentials not found for the authenticated user.");
             return AssertionStatus.AUTH_FAILED;
         }
 
         // 2. Get Authenticated User
         final User user = authenticationResult.getUser();
         if (user == null) {
-            auditor.logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "No authenticated user found in the target message.");
+            logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "No authenticated user found in the target message.");
             return AssertionStatus.AUTH_FAILED;
         }
 
         // 3. Get Service URL (Note: no need to check if serviceUrl is null, since the GUI of the assertion dialog has validated Service URL not to be null.)
-        final Map<String,Object> variableMap = context.getVariableMap( variablesUsed, auditor );
+        final Map<String,Object> variableMap = context.getVariableMap( variablesUsed, getAudit() );
         final String serviceUrl = assertion.isAllowInboundMsgUsingSession() ?
                 null :
-                ExpandVariables.process(assertion.getServiceUrl(), variableMap, auditor);
+                ExpandVariables.process(assertion.getServiceUrl(), variableMap, getAudit());
 
         // 4. Get the session identifier and the namespace of WS-Secure Conversation
         Element sessionToken;
@@ -114,7 +104,7 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
             } else if ( tokenVariable instanceof Document ) {
                 sctEl = ((Document) tokenVariable).getDocumentElement();
             } else {
-                auditor.logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "The security context token variable (Name: \"" + tokenVarName + "\") is of an unsupported type.");
+                logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "The security context token variable (Name: \"" + tokenVarName + "\") is of an unsupported type.");
                 return AssertionStatus.FALSIFIED;
             }
             wsscNamespace = getSecureConversationNamespace(sctEl);
@@ -129,13 +119,13 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
             sessionId = DomUtils.getTextValue(identifierEl);
             sessionToken = createDetatchedToken( sctEl );
         } catch (NoSuchVariableException e) {
-            auditor.logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "The security context token variable (Name: \"" + tokenVarName + "\") does not exist.");
+            logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "The security context token variable (Name: \"" + tokenVarName + "\") does not exist.");
             return AssertionStatus.FALSIFIED;
         } catch (MissingRequiredElementException e) {
-            auditor.logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "The security context token does not contain any <Identifier> element.");
+            logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "The security context token does not contain any <Identifier> element.");
             return AssertionStatus.FALSIFIED;
         } catch (TooManyChildElementsException e) {
-            auditor.logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "The security context token has more than one <Identifier> element.");
+            logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "The security context token has more than one <Identifier> element.");
             return AssertionStatus.FALSIFIED;
         }
 
@@ -143,15 +133,15 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
         long creationTime;
         long expirationTime;
         final long now = System.currentTimeMillis();
-        final String creationTimeStr = ExpandVariables.process(assertion.getCreationTime(), variableMap, auditor);
-        final String expirationTimeStr = ExpandVariables.process(assertion.getExpirationTime(), variableMap, auditor);
+        final String creationTimeStr = ExpandVariables.process(assertion.getCreationTime(), variableMap, getAudit());
+        final String expirationTimeStr = ExpandVariables.process(assertion.getExpirationTime(), variableMap, getAudit());
 
         // 5.1 Get the creation time
         if (! isEmptyString(creationTimeStr)) {
             try {
                 creationTime = ISO8601Date.parse(creationTimeStr).getTime();
             } catch (ParseException e) {
-                auditor.logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "The session creation time is invalid.");
+                logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "The session creation time is invalid.");
                 return AssertionStatus.FALSIFIED;
             }
 
@@ -167,7 +157,7 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
             try {
                 expirationTime = ISO8601Date.parse(expirationTimeStr).getTime();
             } catch (ParseException e) {
-                auditor.logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "The session expiration time is invalid.");
+                logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "The session expiration time is invalid.");
                 return AssertionStatus.FALSIFIED;
             }
         }  else {
@@ -194,18 +184,18 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
         }
         // 5.5 Validate the expiration time against the creation time and check if the session has expired
         if (expirationTime - creationTime < 0L ) {
-            auditor.logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "Invalid Session Time: the session expiration time is before the session creation time.");
+            logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "Invalid Session Time: the session expiration time is before the session creation time.");
             return AssertionStatus.FALSIFIED;
         } else if (expirationTime < now) {
-            auditor.logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "The session (ID: " + sessionId + ") has expired.");
+            logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "The session (ID: " + sessionId + ") has expired.");
             return AssertionStatus.FALSIFIED;
         }
 
         // 6. Get the full key, client entropy, or server entropy
-        final String fullKey = ExpandVariables.process(assertion.getFullKey(), variableMap, auditor);
-        final String clientEntropyStr = ExpandVariables.process(assertion.getClientEntropy(), variableMap, auditor);
-        final String serverEntropyStr = ExpandVariables.process(assertion.getServerEntropy(), variableMap, auditor);
-        final String keySizeStr = ExpandVariables.process(assertion.getKeySize(), variableMap, auditor);
+        final String fullKey = ExpandVariables.process(assertion.getFullKey(), variableMap, getAudit());
+        final String clientEntropyStr = ExpandVariables.process(assertion.getClientEntropy(), variableMap, getAudit());
+        final String serverEntropyStr = ExpandVariables.process(assertion.getServerEntropy(), variableMap, getAudit());
+        final String keySizeStr = ExpandVariables.process(assertion.getKeySize(), variableMap, getAudit());
 
         final byte[] sharedSecret = isEmptyString(fullKey)? null : HexUtils.decodeBase64(fullKey);
         final byte[] clientEntropy = isEmptyString(clientEntropyStr)? null : HexUtils.decodeBase64(clientEntropyStr);
@@ -214,7 +204,7 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
         try {
             keySize = keySizeStr.isEmpty() ? 0 : Integer.parseInt( keySizeStr );
         } catch ( NumberFormatException nfe ) {
-            auditor.logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "Invalid key size: " + keySizeStr );
+            logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "Invalid key size: " + keySizeStr );
             return AssertionStatus.FALSIFIED;
         }
 
@@ -251,7 +241,7 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
                 );
             }
         } catch (SessionCreationException e) {
-            auditor.logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, e.getMessage());
+            logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, e.getMessage());
             return AssertionStatus.FALSIFIED;
         }
 
@@ -261,16 +251,11 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
         return AssertionStatus.NONE;
     }
 
-    @Override
-    protected Audit getAuditor() {
-        return auditor;
-    }
-
     private boolean isEmptyString(String str) {
         return str == null || str.trim().isEmpty();
     }
 
-    private static Config validated(final Config config) {
+    private static Config validated(final Config config, final Logger logger) {
         final ValidatedConfig vc = new ValidatedConfig(config, logger);
 
         vc.setMinimumValue(DEFAULT_SESSION_DURATION, EstablishOutboundSecureConversation.MIN_SESSION_DURATION);  // 1 min

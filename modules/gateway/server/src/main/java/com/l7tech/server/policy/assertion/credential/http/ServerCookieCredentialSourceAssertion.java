@@ -1,7 +1,3 @@
-/*
- * Copyright (C) 2005-2008 Layer 7 Technologies Inc.
- */
-
 package com.l7tech.server.policy.assertion.credential.http;
 
 import com.l7tech.common.http.HttpCookie;
@@ -12,30 +8,25 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.credential.ServerCredentialSourceAssertion;
 import com.l7tech.security.token.OpaqueSecurityToken;
-import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * @author mike
  */
 public class ServerCookieCredentialSourceAssertion extends ServerCredentialSourceAssertion<CookieCredentialSourceAssertion> {
-    private static final Logger logger = Logger.getLogger(ServerCookieCredentialSourceAssertion.class.getName());
-    private final Auditor auditor;
     private final String cookieName;
 
-    public ServerCookieCredentialSourceAssertion(CookieCredentialSourceAssertion data, ApplicationContext springContext) {
-        super(data, springContext);
+    public ServerCookieCredentialSourceAssertion(CookieCredentialSourceAssertion data) {
+        super(data);
         this.cookieName = data.getCookieName();
-        this.auditor = new Auditor(this, springContext, logger);
     }
 
+    @Override
     protected LoginCredentials findCredentials(Message request, Map<String, String> authParams) throws IOException, CredentialFinderException {
         HttpRequestKnob hrk = request.getHttpRequestKnob();
         HttpCookie[] cookies = hrk.getCookies();
@@ -43,19 +34,20 @@ public class ServerCookieCredentialSourceAssertion extends ServerCredentialSourc
             if (cookieName.equalsIgnoreCase(cookie.getCookieName())) {
                 final String cookieValue = cookie.getCookieValue();
                 if ( cookieValue != null && cookieValue.length() > 0 ) {
-                    auditor.logAndAudit(AssertionMessages.HTTPCOOKIE_FOUND, cookieName);
+                    logAndAudit(AssertionMessages.HTTPCOOKIE_FOUND, cookieName);
                     return LoginCredentials.makeLoginCredentials(new OpaqueSecurityToken(null, cookieValue.toCharArray()), CookieCredentialSourceAssertion.class);
                 } else {
-                    auditor.logAndAudit(AssertionMessages.HTTPCOOKIE_FOUND_EMPTY, cookieName);
+                    logAndAudit(AssertionMessages.HTTPCOOKIE_FOUND_EMPTY, cookieName);
                     return null;
                 }
             }
         }
 
-        auditor.logAndAudit(AssertionMessages.HTTPCOOKIE_NOT_FOUND, cookieName);
+        logAndAudit(AssertionMessages.HTTPCOOKIE_NOT_FOUND, cookieName);
         return null;
     }
 
+    @Override
     protected AssertionStatus checkCredentials(LoginCredentials pc, Map<String, String> authParams) throws CredentialFinderException {
         if ( pc == null ) return AssertionStatus.AUTH_REQUIRED;
 
@@ -67,6 +59,7 @@ public class ServerCookieCredentialSourceAssertion extends ServerCredentialSourc
         return AssertionStatus.NONE;
     }
 
+    @Override
     protected void challenge(PolicyEnforcementContext context, Map<String, String> authParams) {
         // No challenge required -- request either included the cookie or it didn't; either way,
         // nothing this assertion can do about it.  It's the custom assertion's job to set any required

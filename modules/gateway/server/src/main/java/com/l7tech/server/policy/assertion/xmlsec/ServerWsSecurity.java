@@ -14,7 +14,6 @@ import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.DecoratorException;
 import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.cert.TrustedCertCache;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -40,7 +39,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * Applies collected and pending WSS message decorations; all decorations requirements are removed once they are applied.
@@ -58,7 +56,6 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
 
     public ServerWsSecurity( final WsSecurity assertion, final ApplicationContext context ) {
         super( assertion, assertion );
-        this.auditor = new Auditor(this, context, logger);
         this.trustedCertCache = context.getBean( "trustedCertCache", TrustedCertCache.class );
         this.wssDecorator = context.getBean( "wssDecorator", WssDecorator.class );
     }
@@ -73,11 +70,11 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
                                                final AuthenticationContext authContext ) throws IOException, PolicyAssertionException {
         try {
             if ( !message.isSoap() ) {
-                auditor.logAndAudit(AssertionMessages.WSSECURITY_NON_SOAP);
+                logAndAudit( AssertionMessages.WSSECURITY_NON_SOAP );
                 return AssertionStatus.NOT_APPLICABLE;
             }
         } catch ( SAXException e ) {
-            auditor.logAndAudit(AssertionMessages.WSSECURITY_NON_SOAP);
+            logAndAudit( AssertionMessages.WSSECURITY_NON_SOAP );
             return AssertionStatus.NOT_APPLICABLE;
         }
 
@@ -109,10 +106,10 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
                         // run decoration
                         try {
                             // add signature confirmations
-                            WSSecurityProcessorUtils.addSignatureConfirmations(message, auditor);
+                            WSSecurityProcessorUtils.addSignatureConfirmations(message, getAudit());
                             wssDecorator.decorateMessage(message, decoration);
                         } catch ( DecoratorException de ) {
-                            auditor.logAndAudit(AssertionMessages.WSSECURITY_ERROR, assertion.getTargetName(), ExceptionUtils.getMessage(de));
+                            logAndAudit( AssertionMessages.WSSECURITY_ERROR, assertion.getTargetName(), ExceptionUtils.getMessage( de ) );
                             throw new AssertionStatusException(AssertionStatus.FALSIFIED);
                         }
                     }
@@ -149,11 +146,11 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
 
             return AssertionStatus.NONE;
         } catch (InvalidDocumentFormatException e) {
-            auditor.logAndAudit(AssertionMessages.WSSECURITY_ERROR, new String[]{assertion.getTargetName(), ExceptionUtils.getMessage(e)}, e);
+            logAndAudit( AssertionMessages.WSSECURITY_ERROR, new String[]{ assertion.getTargetName(), ExceptionUtils.getMessage( e ) }, e );
         } catch (GeneralSecurityException e) {
-            auditor.logAndAudit(AssertionMessages.WSSECURITY_ERROR, new String[]{assertion.getTargetName(), ExceptionUtils.getMessage(e)}, e);
+            logAndAudit( AssertionMessages.WSSECURITY_ERROR, new String[]{ assertion.getTargetName(), ExceptionUtils.getMessage( e ) }, e );
         } catch (SAXException e) {
-            auditor.logAndAudit(AssertionMessages.WSSECURITY_ERROR, new String[]{assertion.getTargetName(), ExceptionUtils.getMessage(e)}, e);
+            logAndAudit( AssertionMessages.WSSECURITY_ERROR, new String[]{ assertion.getTargetName(), ExceptionUtils.getMessage( e ) }, e );
         } catch (AssertionStatusException ase) {
             return ase.status;
         }
@@ -161,15 +158,10 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
         return AssertionStatus.FALSIFIED;
     }
 
-    @Override
-    protected Auditor getAuditor() {
-        return auditor;
-    }
+
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger(ServerWsSecurity.class.getName());
-    private final Auditor auditor;
     private final TrustedCertCache trustedCertCache;
     private final WssDecorator wssDecorator;
 
@@ -269,13 +261,13 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
         String description = "";
 
         try {
-            if ( trustedCertificateOid > 0 ) {
+            if ( trustedCertificateOid > 0L ) {
                 description = "id #" + trustedCertificateOid;
                 TrustedCert trustedCertificate = trustedCertCache.findByPrimaryKey( trustedCertificateOid );
                 if ( trustedCertificate != null ) {
                     decoration.setRecipientCertificate( trustedCertificate.getCertificate() );
                 } else {
-                    auditor.logAndAudit(AssertionMessages.WSSECURITY_RECIP_NO_CERT, description);
+                    logAndAudit( AssertionMessages.WSSECURITY_RECIP_NO_CERT, description );
                     throw new AssertionStatusException(AssertionStatus.FALSIFIED);
                 }
             } else if ( trustedCertificateName != null ) {
@@ -295,12 +287,12 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
                 if ( certificate != null || expiredCertificate != null ) {
                     decoration.setRecipientCertificate( certificate!=null ? certificate : expiredCertificate );
                 } else {
-                    auditor.logAndAudit(AssertionMessages.WSSECURITY_RECIP_NO_CERT, description);
+                    logAndAudit( AssertionMessages.WSSECURITY_RECIP_NO_CERT, description );
                     throw new AssertionStatusException(AssertionStatus.FALSIFIED);
                 }
             }
         } catch ( FindException e ) {
-            auditor.logAndAudit(AssertionMessages.WSSECURITY_RECIP_CERT_ERROR, description);
+            logAndAudit( AssertionMessages.WSSECURITY_RECIP_CERT_ERROR, description );
             throw new AssertionStatusException(AssertionStatus.FALSIFIED);
         }
     }
@@ -311,7 +303,7 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
         try {
             expired = trustedCert.isExpiredCert();
         } catch (CertificateException e) {
-            auditor.logAndAudit(AssertionMessages.WSSECURITY_RECIP_CERT_EXP, new String[]{ trustedCert.getName() + " (#"+trustedCert.getOid()+")"}, e);
+            logAndAudit( AssertionMessages.WSSECURITY_RECIP_CERT_EXP, new String[]{ trustedCert.getName() + " (#" + trustedCert.getOid() + ")" }, e );
         }
 
         return expired;
@@ -323,9 +315,9 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
 
         if ( variableText != null ) {
             final String[] variablesUsed = Syntax.getReferencedNames(variableText);
-            final Map<String, Object> vars = context.getVariableMap(variablesUsed, auditor);
+            final Map<String, Object> vars = context.getVariableMap(variablesUsed, getAudit());
             try {
-                expanded = ExpandVariables.process(variableText, vars, auditor, true);
+                expanded = ExpandVariables.process(variableText, vars, getAudit(), true);
             } catch ( IllegalArgumentException iae ) {
                 throw new AssertionStatusException(AssertionStatus.FALSIFIED); // already audited
             }

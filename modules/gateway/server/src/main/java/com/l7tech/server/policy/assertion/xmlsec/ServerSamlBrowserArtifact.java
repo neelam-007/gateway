@@ -10,7 +10,6 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.AuthenticationProperties;
 import com.l7tech.policy.assertion.xmlsec.SamlBrowserArtifact;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.util.Charsets;
@@ -36,7 +35,6 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.*;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Retrieves a SAML assertion from an identity provider website according to the Browser/Artifact profile.
@@ -52,7 +50,6 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
      */
     public ServerSamlBrowserArtifact(SamlBrowserArtifact assertion, ApplicationContext springContext) {
         super(assertion);
-        this.auditor = new Auditor(this, springContext, logger);
         try {
             loginUrl = new URL(assertion.getSsoEndpointUrl());
         } catch (MalformedURLException e) {
@@ -72,8 +69,6 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger(ServerSamlBrowserArtifact.class.getName());
-
     /**
      * Prefix used for any SAML Single Sign On cookies.
      */
@@ -85,7 +80,7 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
     private static final String NEKO_PROP_ELEMS = "http://cyberneko.org/html/properties/names/elems";
     private static final Short NEKO_VALUE_LOWERCASE = 2;
 
-    private final Auditor auditor;
+
     private final URL loginUrl;
 
     private final GenericHttpClient httpClient;
@@ -233,10 +228,10 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
                 }
             }
         } catch (IOException e) {
-            auditor.logAndAudit(AssertionMessages.SAMLBROWSER_LOGINFORM_IOEXCEPTION, null, e);
+            logAndAudit(AssertionMessages.SAMLBROWSER_LOGINFORM_IOEXCEPTION, null, e);
             return AssertionStatus.FAILED;
         } catch(AssertionException ae) {
-            auditor.logAndAudit(ae.getAssertionMessage(), null, ae.getCause());
+            logAndAudit(ae.getAssertionMessage(), null, ae.getCause());
             return ae.getAssertionStatus();
         } finally {
             ResourceUtils.closeQuietly(loginRequest, loginResponse);

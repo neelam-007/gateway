@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.certificateattributes.server;
 
 import com.l7tech.external.assertions.certificateattributes.CertificateAttributesAssertion;
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.identity.UserBean;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.SslAssertion;
@@ -8,7 +9,6 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.security.token.http.HttpClientCertToken;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -32,7 +32,7 @@ public class ServerCertificateAttributesAssertionTest {
         X509Certificate cert = new TestCertificateGenerator().subject("cn=blah, o=foo, dc=deeceeone, dc=deeceetwo, L=vancouver, ST=bc, ou=marketing, C=canada, STREET=123 mystreet").generate();
 
         CertificateAttributesAssertion ass = new CertificateAttributesAssertion();
-        ServerCertificateAttributesAssertion sass = new ServerCertificateAttributesAssertion(ass, null);
+        ServerCertificateAttributesAssertion sass = new ServerCertificateAttributesAssertion(ass);
 
         PolicyEnforcementContext context = pec(cert);
         sass.checkRequest(context);
@@ -60,7 +60,7 @@ public class ServerCertificateAttributesAssertionTest {
         X509Certificate cert = new TestCertificateGenerator().subject("cn=blah, o=foo, dc=deeceeone, dc=deeceetwo, L=vancouver, ST=bc, ou=marketing, C=canada, STREET=123 mystreet").generate();
 
         CertificateAttributesAssertion ass = new CertificateAttributesAssertion();
-        ServerCertificateAttributesAssertion sass = new ServerCertificateAttributesAssertion(ass, null);
+        ServerCertificateAttributesAssertion sass = new ServerCertificateAttributesAssertion(ass);
 
         PolicyEnforcementContext context = pec(cert);
         sass.checkRequest(context);
@@ -78,7 +78,7 @@ public class ServerCertificateAttributesAssertionTest {
     }
 
     private String expand(PolicyEnforcementContext context, String str) {
-        final LogOnlyAuditor audit = new LogOnlyAuditor(logger);
+        final LoggingAudit audit = new LoggingAudit(logger);
         return ExpandVariables.process(str, context.getVariableMap(Syntax.getReferencedNames(str), audit), audit);
     }
 

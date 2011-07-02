@@ -14,7 +14,6 @@ import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.AuthenticationContext;
@@ -50,18 +49,15 @@ import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.Map;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * User: vchan
  */
 public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<SamlpRequestBuilderAssertion> {
-    private static final Logger logger = Logger.getLogger(ServerSamlpRequestBuilderAssertion.class.getName());
-
     private static final String SOAP_1_1_NS = "http://schemas.xmlsoap.org/soap/envelope/";
     private static final String SOAP_1_2_NS = "http://www.w3.org/2003/05/soap-envelope";
 
-    private final Auditor auditor;
+
     private final String[] variablesUsed;
     private final SignerInfo signerInfo;
 
@@ -87,7 +83,6 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
          throws ServerPolicyException
     {
         super(assertion);
-        this.auditor = new Auditor(this, spring, logger);
         this.variablesUsed = assertion.getVariablesUsed();
 
         // get the Server Cert and signer info -- Copied from SamlIssuer
@@ -108,7 +103,7 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
             // initialize stuff
             final BuilderContext bContext = new BuilderContext();
             setSoapVersion(bContext, context.getRequest());
-            bContext.ctxVariables = context.getVariableMap(variablesUsed, auditor);
+            bContext.ctxVariables = context.getVariableMap(variablesUsed, getAudit());
 
             /*
              * 1) Determine where the target message is supposed to go
@@ -117,7 +112,7 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
             try {
                 msg = context.getTargetMessage(assertion);
             } catch (NoSuchVariableException e) {
-                auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, e.getVariable());
+                logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, e.getVariable());
                 throw new SamlpAssertionException(e);
             }
 
@@ -128,7 +123,7 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
             setResolvers(context, bContext);
             JAXBElement<?> samlpRequest = buildRequest(bContext);
             if (samlpRequest == null) {
-//                auditor.logAndAudit(AssertionMessages.SAMLP_BUILDER_FAILED);
+//                logAndAudit(AssertionMessages.SAMLP_BUILDER_FAILED);
                 logger.log(Level.WARNING, "Failed to create SAMLP request.");
                 return AssertionStatus.FAILED;
             }
@@ -139,12 +134,12 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
             setRequestToTarget(context, bContext, msg, samlpRequest);
 
         } catch (SamlpAssertionException samlEx) {
-//            auditor.logAndAudit(AssertionMessages.SAMLP_BUILDER_ERROR, new String[] { ExceptionUtils.getMessage(samlEx) });
+//            logAndAudit(AssertionMessages.SAMLP_BUILDER_ERROR, new String[] { ExceptionUtils.getMessage(samlEx) });
             logger.log(Level.WARNING, "SAMLP builder failed: " + ExceptionUtils.getMessage(samlEx), ExceptionUtils.getDebugException(samlEx));
             return AssertionStatus.FAILED;
         }
 
-//        auditor.logAndAudit(AssertionMessages.SAMLP_BUILDER_COMPLETE, getRequestType());
+//        logAndAudit(AssertionMessages.SAMLP_BUILDER_COMPLETE, getRequestType());
         return AssertionStatus.NONE;
     }
 
@@ -222,7 +217,7 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
             // when subj confirmation is set to holder-of-key, log warning
             // -- but continue since SubjConfirmationData is not mandatory per SAML spec,
             //    expect the backend SAMLP service to fail if the info is required
-//            auditor.logAndAudit(AssertionMessages.SAMLP_BUILDER_HOK_MISSING_CERT);
+//            logAndAudit(AssertionMessages.SAMLP_BUILDER_HOK_MISSING_CERT);
             logger.log(Level.WARNING, "Certificate-based credential source not found for Holder-of-Key subject confirmation");
         }
 
@@ -299,7 +294,7 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
     {
         if (assertion.getSamlVersion() == 2) {
             /* SAML 2.0 generator */
-            AuthnRequestGenerator gen = new AuthnRequestGenerator(bContext.ctxVariables, auditor);
+            AuthnRequestGenerator gen = new AuthnRequestGenerator(bContext.ctxVariables, getAudit());
             gen.setNameResolver(bContext.nameResolver);
             gen.setIssuerNameResolver(bContext.issuerNameResolver);
             gen.setAddressResolver(bContext.addressResolver);
@@ -323,7 +318,7 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
     {
         if (assertion.getSamlVersion() == 2) {
             /* SAML 2.0 generator */
-            AuthzDecisionQueryGenerator gen = new AuthzDecisionQueryGenerator(bContext.ctxVariables, auditor);
+            AuthzDecisionQueryGenerator gen = new AuthzDecisionQueryGenerator(bContext.ctxVariables, getAudit());
             gen.setNameResolver(bContext.nameResolver);
             gen.setIssuerNameResolver(bContext.issuerNameResolver);
             gen.setAddressResolver(bContext.addressResolver);
@@ -338,7 +333,7 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
 
         } else if (assertion.getSamlVersion() == 1) {
             /* SAML 1.1 generator */
-            AuthorizationDecisionQueryGenerator gen = new AuthorizationDecisionQueryGenerator(bContext.ctxVariables, auditor);
+            AuthorizationDecisionQueryGenerator gen = new AuthorizationDecisionQueryGenerator(bContext.ctxVariables, getAudit());
             gen.setNameResolver(bContext.nameResolver);
             gen.setIssuerNameResolver(bContext.issuerNameResolver);
             gen.setAddressResolver(bContext.addressResolver);
@@ -361,7 +356,7 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
         if (assertion.getSamlVersion() == 2) {
             /* SAML 2.0 generator */
             com.l7tech.external.assertions.samlpassertion.server.v2.AttributeQueryGenerator gen =
-                    new com.l7tech.external.assertions.samlpassertion.server.v2.AttributeQueryGenerator(bContext.ctxVariables, auditor);
+                    new com.l7tech.external.assertions.samlpassertion.server.v2.AttributeQueryGenerator(bContext.ctxVariables, getAudit());
             gen.setNameResolver(bContext.nameResolver);
             gen.setIssuerNameResolver(bContext.issuerNameResolver);
             gen.setClientCertResolver(bContext.clientCertResolver);
@@ -373,7 +368,7 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
         } else if (assertion.getSamlVersion() == 1) {
             /* SAML 1.1 generator */
             com.l7tech.external.assertions.samlpassertion.server.v1.AttributeQueryGenerator gen =
-                    new com.l7tech.external.assertions.samlpassertion.server.v1.AttributeQueryGenerator(bContext.ctxVariables, auditor);
+                    new com.l7tech.external.assertions.samlpassertion.server.v1.AttributeQueryGenerator(bContext.ctxVariables, getAudit());
             gen.setNameResolver(bContext.nameResolver);
             gen.setIssuerNameResolver(bContext.issuerNameResolver);
             gen.setClientCertResolver(bContext.clientCertResolver);
@@ -525,8 +520,8 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
             case FROM_USER:
                 User u = ctx.getLastAuthenticatedUser();
                 if (u == null) {
-                    auditor.logAndAudit(AssertionMessages.SAML_ISSUER_AUTH_REQUIRED);
-//                    auditor.logAndAudit(AssertionMessages.SAMLP_BUILDER_AUTH_REQUIRED);
+                    logAndAudit(AssertionMessages.SAML_ISSUER_AUTH_REQUIRED);
+//                    logAndAudit(AssertionMessages.SAMLP_BUILDER_AUTH_REQUIRED);
                     throw new SamlpAssertionException("Missing authenticated user to populate NameIdentifier");
                 }
 
@@ -555,11 +550,11 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
             case SPECIFIED:
                 String val = assertion.getNameIdentifierValue();
                 if (val == null) {
-                    auditor.logAndAudit(AssertionMessages.SAML_ISSUER_MISSING_NIVAL);
-//                    auditor.logAndAudit(AssertionMessages.SAMLP_BUILDER_MISSING_NIVAL);
+                    logAndAudit(AssertionMessages.SAML_ISSUER_MISSING_NIVAL);
+//                    logAndAudit(AssertionMessages.SAMLP_BUILDER_MISSING_NIVAL);
                     nameValue = null;
                 } else {
-                    nameValue = ExpandVariables.process(val, bContext.ctxVariables, auditor);
+                    nameValue = ExpandVariables.process(val, bContext.ctxVariables, getAudit());
                 }
                 nameFormat = assertion.getNameIdentifierFormat();
                 break;

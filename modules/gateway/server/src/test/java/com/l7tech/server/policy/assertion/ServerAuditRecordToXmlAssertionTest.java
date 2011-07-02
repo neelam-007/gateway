@@ -38,7 +38,7 @@ public class ServerAuditRecordToXmlAssertionTest {
 
     @Test
     public void testSimpleConvertAudit() throws Exception {
-        ServerAuditRecordToXmlAssertion sass = new ServerAuditRecordToXmlAssertion(new AuditRecordToXmlAssertion(), null, null);
+        ServerAuditRecordToXmlAssertion sass = new ServerAuditRecordToXmlAssertion(new AuditRecordToXmlAssertion());
         PolicyEnforcementContext context = new AuditSinkPolicyEnforcementContext(makeMessageAuditRecord(false), PolicyEnforcementContextFactory.createPolicyEnforcementContext( null, null ), null);
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
@@ -48,7 +48,7 @@ public class ServerAuditRecordToXmlAssertionTest {
     @BugNumber(9575)
     @Test
     public void testAuditDetailsOrder() throws Exception {
-        ServerAuditRecordToXmlAssertion sass = new ServerAuditRecordToXmlAssertion(new AuditRecordToXmlAssertion(), null, null);
+        ServerAuditRecordToXmlAssertion sass = new ServerAuditRecordToXmlAssertion(new AuditRecordToXmlAssertion());
         PolicyEnforcementContext context = new AuditSinkPolicyEnforcementContext(makeMessageAuditRecord(true), PolicyEnforcementContextFactory.createPolicyEnforcementContext( null, null ), null);
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);

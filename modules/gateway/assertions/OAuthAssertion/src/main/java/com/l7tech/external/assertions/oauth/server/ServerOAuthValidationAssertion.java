@@ -1,6 +1,5 @@
 package com.l7tech.external.assertions.oauth.server;
 
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.external.assertions.oauth.OAuthValidationAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -18,7 +17,6 @@ import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.Collection;
 import java.util.Map;
 import java.security.cert.X509Certificate;
@@ -32,18 +30,12 @@ import java.net.URLDecoder;
  * @see com.l7tech.external.assertions.oauth.OAuthValidationAssertion
  */
 public class ServerOAuthValidationAssertion extends AbstractServerAssertion<OAuthValidationAssertion> {
-    private static final Logger logger = Logger.getLogger(ServerOAuthValidationAssertion.class.getName());
-
-    private final OAuthValidationAssertion assertion;
-    private final Auditor auditor;
     private final String[] variablesUsed;
 
     private final TrustedCertCache trustedCertCache;
 
     public ServerOAuthValidationAssertion(OAuthValidationAssertion assertion, ApplicationContext context) throws PolicyAssertionException {
         super(assertion);
-        this.assertion = assertion;
-        this.auditor = new Auditor(this, context, logger);
         this.variablesUsed = assertion.getVariablesUsed();
         this.trustedCertCache = context.getBean( "trustedCertCache", TrustedCertCache.class );
     }
@@ -52,10 +44,10 @@ public class ServerOAuthValidationAssertion extends AbstractServerAssertion<OAut
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
 
         try {
-            Map<String, Object> vars = context.getVariableMap(this.variablesUsed, auditor);
+            Map<String, Object> vars = context.getVariableMap(this.variablesUsed, getAudit());
 
-            final String tokenSig = ExpandVariables.process(assertion.getOAuthTokenSignature(), vars, auditor, true);
-            final String textBlock = ExpandVariables.process(assertion.getOAuthTokenText(), vars, auditor, true);
+            final String tokenSig = ExpandVariables.process(assertion.getOAuthTokenSignature(), vars, getAudit(), true);
+            final String textBlock = ExpandVariables.process(assertion.getOAuthTokenText(), vars, getAudit(), true);
 
             if (tokenSig == null || tokenSig.length() == 0) {
                 logger.log(Level.WARNING, "OAuth token signature not set");
@@ -144,12 +136,12 @@ public class ServerOAuthValidationAssertion extends AbstractServerAssertion<OAut
                 if ( certificate != null || expiredCertificate != null ) {
                     selectedCert = certificate!=null ? certificate : expiredCertificate;
                 } else {
-                    auditor.logAndAudit(AssertionMessages.WSSECURITY_RECIP_NO_CERT, description);
+                    logAndAudit(AssertionMessages.WSSECURITY_RECIP_NO_CERT, description);
                     throw new AssertionStatusException(AssertionStatus.FALSIFIED);
                 }
             }
         } catch ( FindException e ) {
-            auditor.logAndAudit(AssertionMessages.WSSECURITY_RECIP_CERT_ERROR, description);
+            logAndAudit(AssertionMessages.WSSECURITY_RECIP_CERT_ERROR, description);
             throw new AssertionStatusException(AssertionStatus.FALSIFIED);
         }
 
@@ -168,17 +160,9 @@ public class ServerOAuthValidationAssertion extends AbstractServerAssertion<OAut
         try {
             expired = trustedCert.isExpiredCert();
         } catch (CertificateException e) {
-            auditor.logAndAudit(AssertionMessages.WSSECURITY_RECIP_CERT_EXP, new String[]{ trustedCert.getName() + " (#"+trustedCert.getOid()+")"}, e);
+            logAndAudit(AssertionMessages.WSSECURITY_RECIP_CERT_EXP, new String[]{ trustedCert.getName() + " (#"+trustedCert.getOid()+")"}, e);
         }
 
         return expired;
-    }
-
-    /**
-     * Called reflectively by module class loader when module is unloaded, to ask us to clean up any globals
-     * that would otherwise keep our instances from getting collected.
-     */
-    public static void onModuleUnloaded() {
-        logger.log(Level.FINEST, "ServerOAuthAssertion is preparing itself to be unloaded");
     }
 }

@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Logger;
 
 /**
  * Enforces that a specific element in a request is encrypted.
@@ -21,10 +20,8 @@ import java.util.logging.Logger;
  * Date: July 14, 2004<br/>
  */
 public class ServerRequireWssEncryptedElement extends ServerRequireWssOperation<RequireWssEncryptedElement> {
-    private static final Logger logger = Logger.getLogger(ServerRequireWssEncryptedElement.class.getName());
-
     public ServerRequireWssEncryptedElement(RequireWssEncryptedElement data, ApplicationContext springContext) {
-        super(logger, data, springContext);
+        super(data, springContext);
     }
 
     @Override

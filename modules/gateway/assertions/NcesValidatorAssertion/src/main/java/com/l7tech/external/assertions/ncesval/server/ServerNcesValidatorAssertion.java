@@ -15,7 +15,6 @@ import com.l7tech.security.types.CertificateValidationResult;
 import com.l7tech.security.types.CertificateValidationType;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
@@ -37,7 +36,6 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
-import java.util.logging.Logger;
 
 /**
  * Server side implementation of the NcesValidatorAssertion.
@@ -45,9 +43,6 @@ import java.util.logging.Logger;
  * @see com.l7tech.external.assertions.ncesval.NcesValidatorAssertion
  */
 public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesValidatorAssertion> {
-    private static final Logger logger = Logger.getLogger(ServerNcesValidatorAssertion.class.getName());
-
-    private final Auditor auditor;
     private final CertValidationProcessor certValidationProcessor;
     private final SecurityTokenResolver securityTokenResolver;
     private final TrustedCertServices trustedCertServices;
@@ -56,8 +51,6 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
     public ServerNcesValidatorAssertion( final NcesValidatorAssertion assertion,
                                          final ApplicationContext context ) throws PolicyAssertionException {
         this( assertion,
-              context,
-              null,
               (CertValidationProcessor) context.getBean("certValidationProcessor"),
               (SecurityTokenResolver)context.getBean("securityTokenResolver"),
               (TrustedCertServices)context.getBean("trustedCertServices"),
@@ -65,14 +58,11 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
     }
 
     protected ServerNcesValidatorAssertion( final NcesValidatorAssertion assertion,
-                                            final ApplicationContext context,
-                                            final Auditor auditor,
                                             final CertValidationProcessor certValidationProcessor,
                                             final SecurityTokenResolver securityTokenResolver,
                                             final TrustedCertServices trustedCertServices,
                                             final boolean checkSingleSignature ) throws PolicyAssertionException {
         super(assertion);
-        this.auditor = auditor!=null ? auditor : new Auditor(this, context, logger);        
         this.certValidationProcessor = certValidationProcessor;
         this.securityTokenResolver = securityTokenResolver;
         this.trustedCertServices = trustedCertServices;
@@ -85,18 +75,18 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
         try {
             msg = context.getTargetMessage(assertion);
         } catch (NoSuchVariableException e) {
-            auditor.logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, e.getVariable(), ExceptionUtils.getMessage(e));
+            logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, e.getVariable(), ExceptionUtils.getMessage(e));
             return AssertionStatus.FAILED;
         }
         final String what = assertion.getTargetName();
 
         try {
             if (!msg.isSoap(true)) {
-                auditor.logAndAudit(AssertionMessages.NCESVALID_NOT_SOAP, what);
+                logAndAudit(AssertionMessages.NCESVALID_NOT_SOAP, what);
                 return AssertionStatus.NOT_APPLICABLE;
             }
         } catch (SAXException e) {
-            auditor.logAndAudit(AssertionMessages.NCESVALID_BAD_XML, new String[] { what, ExceptionUtils.getMessage(e) }, e);
+            logAndAudit(AssertionMessages.NCESVALID_BAD_XML, new String[] { what, ExceptionUtils.getMessage(e) }, e);
             return AssertionStatus.BAD_REQUEST;
         }
 
@@ -107,7 +97,7 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
         SigningSecurityToken messageIdSigner = null;
         SigningSecurityToken bodySigner = null;
 
-        final ProcessorResult wssResult = WSSecurityProcessorUtils.getWssResults(msg, what, securityTokenResolver, auditor);
+        final ProcessorResult wssResult = WSSecurityProcessorUtils.getWssResults(msg, what, securityTokenResolver, getAudit());
         if ( wssResult != null ) {
             for (XmlSecurityToken token : wssResult.getXmlSecurityTokens()) {
                 if (token instanceof SamlAssertion) {
@@ -127,13 +117,13 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
                 final Element el = signedElement.asElement();
                 if ( saml != null && saml.asElement().isEqualNode(el) ) {
                     if ( samlSigner != null ) {
-                        auditor.logAndAudit(AssertionMessages.NCESVALID_NO_SAML, what);
+                        logAndAudit(AssertionMessages.NCESVALID_NO_SAML, what);
                         return AssertionStatus.BAD_REQUEST;
                     }
                     samlSigner = sst;
                 } else if ( isWsAddressingMessageID(el) ) {
                     if ( messageIdSigner != null ) {
-                        auditor.logAndAudit(AssertionMessages.NCESVALID_NO_MESSAGEID, what);
+                        logAndAudit(AssertionMessages.NCESVALID_NO_MESSAGEID, what);
                         return AssertionStatus.BAD_REQUEST;
                     }
                     messageIdSigner = sst;
@@ -150,22 +140,22 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
         }
 
         if (assertion.isSamlRequired() && samlSigner == null) {
-            auditor.logAndAudit(AssertionMessages.NCESVALID_NO_SAML, what);
+            logAndAudit(AssertionMessages.NCESVALID_NO_SAML, what);
             return AssertionStatus.BAD_REQUEST;
         }
 
         if (timestampSigner == null) {
-            auditor.logAndAudit(AssertionMessages.NCESVALID_NO_TIMESTAMP, what);
+            logAndAudit(AssertionMessages.NCESVALID_NO_TIMESTAMP, what);
             return AssertionStatus.BAD_REQUEST;
         }
 
         if (messageIdSigner == null) {
-            auditor.logAndAudit(AssertionMessages.NCESVALID_NO_MESSAGEID, what);
+            logAndAudit(AssertionMessages.NCESVALID_NO_MESSAGEID, what);
             return AssertionStatus.BAD_REQUEST;
         }
 
         if (bodySigner == null) {
-            auditor.logAndAudit(AssertionMessages.NCESVALID_BODY_NOT_SIGNED, what);
+            logAndAudit(AssertionMessages.NCESVALID_BODY_NOT_SIGNED, what);
             return AssertionStatus.BAD_REQUEST;
         }
 
@@ -179,21 +169,21 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
         }
 
         if (!ok) {
-            auditor.logAndAudit(AssertionMessages.NCESVALID_DIFF_SIGNATURES, what);
+            logAndAudit(AssertionMessages.NCESVALID_DIFF_SIGNATURES, what);
             return AssertionStatus.BAD_REQUEST;
         }
 
         // Check certificate was used for signing and that it is a certificate trusted by this assertion
         if ( cert == null ) {
-            auditor.logAndAudit(AssertionMessages.NCESVALID_NO_CERTIFICATE, what);
+            logAndAudit(AssertionMessages.NCESVALID_NO_CERTIFICATE, what);
             return AssertionStatus.FALSIFIED;
         } else if ( !(timestampSigner instanceof X509SigningSecurityToken ) ) {
-            auditor.logAndAudit(AssertionMessages.NCESVALID_CERT_NOT_USED, what);
+            logAndAudit(AssertionMessages.NCESVALID_CERT_NOT_USED, what);
             return AssertionStatus.FALSIFIED;
         } else {
             X509Certificate signingCertificate = ((X509SigningSecurityToken)timestampSigner).getMessageSigningCertificate();
             if ( !CertUtils.certsAreEqual( cert, signingCertificate )) {
-                auditor.logAndAudit(AssertionMessages.NCESVALID_CERT_NOT_USED, what);
+                logAndAudit(AssertionMessages.NCESVALID_CERT_NOT_USED, what);
                 return AssertionStatus.FALSIFIED;
             }
 
@@ -264,7 +254,7 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
 
             // Validate and optionally check revocation
             if ( !isTrustedSubject && trustedIssuerCert==null ) {
-                auditor.logAndAudit(AssertionMessages.NCESVALID_CERT_UNTRUSTED, what);
+                logAndAudit(AssertionMessages.NCESVALID_CERT_UNTRUSTED, what);
             } else {
                 try {
                     CertificateValidationResult cvr = certValidationProcessor.check(
@@ -274,16 +264,16 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
                             CertificateValidationType.PATH_VALIDATION,
                             validationType,
                             CertValidationProcessor.Facility.IDENTITY,
-                            auditor);
+                            getAudit());
                     if ( cvr == CertificateValidationResult.OK ) {
                         valid = true;
                     }
                 } catch ( GeneralSecurityException gse ) {
-                    auditor.logAndAudit(AssertionMessages.NCESVALID_CERT_VAL_ERROR, new String[]{what}, gse);
+                    logAndAudit(AssertionMessages.NCESVALID_CERT_VAL_ERROR, new String[]{what}, gse);
                 }
             }
         } catch ( FindException fe ) {
-            auditor.logAndAudit(AssertionMessages.NCESVALID_CERT_VAL_ERROR, new String[]{what}, fe);
+            logAndAudit(AssertionMessages.NCESVALID_CERT_VAL_ERROR, new String[]{what}, fe);
         }
 
         return valid;

@@ -356,7 +356,7 @@ public class ServerNonSoapVerifyElementAssertionTest {
     }
 
     private static ServerNonSoapVerifyElementAssertion sass(NonSoapVerifyElementAssertion ass) throws InvalidXpathException, ParseException {
-        return new ServerNonSoapVerifyElementAssertion(ass, beanFactory, null);
+        return new ServerNonSoapVerifyElementAssertion(ass, beanFactory);
     }
 
     private static PolicyEnforcementContext context(String signedXml) {

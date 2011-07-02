@@ -1,13 +1,13 @@
 package com.l7tech.server.service.resolution;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.ResolutionConfiguration;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.message.HasServiceOid;
-import com.l7tech.server.audit.Auditor;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,7 +29,7 @@ public class ServiceOidResolver extends NameValueServiceResolver<String> {
     private final AtomicBoolean enabled = new AtomicBoolean(true);
     private final AtomicBoolean enableOriginalUrlHeader = new AtomicBoolean(true);
 
-    public ServiceOidResolver( final Auditor.AuditorFactory auditorFactory ) {
+    public ServiceOidResolver( final AuditFactory auditorFactory ) {
         super( auditorFactory );
         List<Pattern> compiled = new ArrayList<Pattern>();
 

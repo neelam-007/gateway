@@ -1,15 +1,12 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.CreateSecurityContextToken;
 import com.l7tech.security.wstrust.WsTrustConfig;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -23,27 +20,19 @@ import com.l7tech.util.HexUtils;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.beans.factory.BeanFactory;
-import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * @author ghuang
  */
 public class ServerCreateSecurityContextToken extends AbstractMessageTargetableServerAssertion<CreateSecurityContextToken> {
-    private static final Logger logger = Logger.getLogger(ServerCreateSecurityContextToken.class.getName());
-
     private final InboundSecureConversationContextManager scContextManager;
-    private final Auditor auditor;
 
     public ServerCreateSecurityContextToken( final CreateSecurityContextToken assertion,
                                              final BeanFactory factory ) {
         super(assertion, assertion);
-        auditor = factory instanceof ApplicationContext?
-                new Auditor(this, (ApplicationContext)factory, logger) :
-                new LogOnlyAuditor(logger);
         scContextManager = factory.getBean("inboundSecureConversationContextManager", InboundSecureConversationContextManager.class);
     }
 
@@ -56,14 +45,14 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
         // Get all related info from the target SOAP message.  RstSoapMessageProcessor checks the syntax and the semantics of the target SOAP message.
         final Map<String, String> rstParameters = RstSoapMessageProcessor.getRstParameters(message, true);
         if (rstParameters.containsKey(RstSoapMessageProcessor.ERROR)) {
-            auditor.logAndAudit(AssertionMessages.STS_INVALID_RST_REQUEST, rstParameters.get(RstSoapMessageProcessor.ERROR));
+            logAndAudit(AssertionMessages.STS_INVALID_RST_REQUEST, rstParameters.get(RstSoapMessageProcessor.ERROR));
             return AssertionStatus.BAD_REQUEST;
         }
 
         // Check if the credentials are provided and proven in the message (request, response, or context variable).
         AuthenticationResult authenticationResult = authContext.getLastAuthenticationResult();
         if (authenticationResult == null) {
-            auditor.logAndAudit(AssertionMessages.STS_AUTHENTICATION_FAILURE, "The target message does not contain any authentication information.");
+            logAndAudit(AssertionMessages.STS_AUTHENTICATION_FAILURE, "The target message does not contain any authentication information.");
             return AssertionStatus.AUTH_FAILED;
         }
 
@@ -75,7 +64,7 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
             }
         }
         if (loginCredentials == null) {
-            auditor.logAndAudit(AssertionMessages.STS_AUTHENTICATION_FAILURE, "Credentials not found for the authenticated user.");
+            logAndAudit(AssertionMessages.STS_AUTHENTICATION_FAILURE, "Credentials not found for the authenticated user.");
             return AssertionStatus.AUTH_FAILED;
         }
 
@@ -135,7 +124,7 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
             );
         } catch ( SessionCreationException e ) {
             //noinspection ThrowableResultOfMethodCallIgnored
-            auditor.logAndAudit( AssertionMessages.STS_TOKEN_ISSUE_ERROR, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+            logAndAudit( AssertionMessages.STS_TOKEN_ISSUE_ERROR, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.FALSIFIED;
         }
 
@@ -155,11 +144,6 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
      */
     private String deriveWscNamespace(String wstNamespace) {
         return WsTrustConfig.deriveWsSecureConversationNamespace( wstNamespace );
-    }
-
-    @Override
-    protected Audit getAuditor() {
-        return auditor;
     }
 
     private String buildSCT( final String wscNS,

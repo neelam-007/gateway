@@ -1,7 +1,7 @@
 package com.l7tech.server.security.cert;
 
 import com.l7tech.common.http.GenericHttpClientFactory;
-import com.l7tech.server.audit.Auditor;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.common.io.WhirlycacheFactory;
@@ -60,7 +60,7 @@ public class OCSPCache {
                                                final X509Certificate certificate,
                                                final X509Certificate issuerCertificate,
                                                final OCSPClient.OCSPCertificateAuthorizer responseAuthorizer,
-                                               final Auditor auditor)
+                                               final Audit auditor)
         throws OCSPClient.OCSPClientException
     {
 

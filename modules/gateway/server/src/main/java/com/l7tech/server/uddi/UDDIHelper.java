@@ -3,12 +3,12 @@ package com.l7tech.server.uddi;
 import com.l7tech.common.io.SingleCertX509KeyManager;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.SsgConnectorActivationListener;
@@ -364,7 +364,7 @@ public class UDDIHelper implements SsgConnectorActivationListener {
                 uddiRegistry.getSubscriptionUrl(),
                 uddiRegistry.getSecurityUrl(),
                 uddiRegistry.getRegistryAccountUserName(),
-                ServerVariables.expandSinglePasswordOnlyVariable(new LogOnlyAuditor(logger), uddiRegistry.getRegistryAccountPassword()),
+                ServerVariables.expandSinglePasswordOnlyVariable(new LoggingAudit(logger), uddiRegistry.getRegistryAccountPassword()),
                 closeSession,
                 buildTLSConfig(uddiRegistry) );
     }

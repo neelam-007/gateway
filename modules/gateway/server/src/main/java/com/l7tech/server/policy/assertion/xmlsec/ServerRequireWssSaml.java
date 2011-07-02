@@ -15,7 +15,6 @@ import com.l7tech.security.token.XmlSecurityToken;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
@@ -26,13 +25,11 @@ import com.l7tech.util.Config;
 import com.l7tech.util.Pair;
 import com.l7tech.util.TimeUnit;
 import org.springframework.beans.factory.BeanFactory;
-import org.springframework.context.ApplicationEventPublisher;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Class <code>ServerRequestWssSaml</code> represents the server
@@ -43,9 +40,7 @@ import java.util.logging.Logger;
 public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMessageTargetableServerAssertion<AT> {
     private static final long CACHE_ID_EXTRA_TIME_MILLIS = 1000L * 60L * 5L; // cache IDs for at least 5 min extra
     private static final long DEFAULT_EXPIRY = 1000L * 60L * 5L; // 5 minutes
-    private final Logger logger = Logger.getLogger(getClass().getName());
     private final SamlAssertionValidate assertionValidate;
-    private final Auditor auditor;
     private final Config config;
     private final SecurityTokenResolver securityTokenResolver;
     private final MessageIdManager messageIdManager;
@@ -56,7 +51,7 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
      *
      * @param sa the saml
      */
-    public ServerRequireWssSaml(AT sa, BeanFactory beanFactory, ApplicationEventPublisher eventPub) {
+    public ServerRequireWssSaml(AT sa, BeanFactory beanFactory) {
         super(sa,sa);
         if (sa == null) {
             throw new IllegalArgumentException();
@@ -64,7 +59,6 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
 
         assertionValidate = new SamlAssertionValidate(sa);
         variablesUsed = sa.getVariablesUsed();
-        auditor = new Auditor(this, beanFactory, eventPub, logger);
         config = beanFactory.getBean("serverConfig", Config.class);
         securityTokenResolver = beanFactory.getBean("securityTokenResolver", SecurityTokenResolver.class);
         messageIdManager = beanFactory.getBean("distributedMessageIdManager", MessageIdManager.class);
@@ -81,7 +75,7 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
     @Override
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         if (!SecurityHeaderAddressableSupport.isLocalRecipient(assertion)) {
-            auditor.logAndAudit(AssertionMessages.REQUESTWSS_NOT_FOR_US);
+            logAndAudit(AssertionMessages.REQUESTWSS_NOT_FOR_US);
             return AssertionStatus.NONE;
         }
 
@@ -96,7 +90,7 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
         try {
             final XmlKnob xmlKnob = message.getXmlKnob();
             if (!message.isSoap()) {
-                auditor.logAndAudit(AssertionMessages.SAML_AUTHN_STMT_REQUEST_NOT_SOAP, messageDesc);
+                logAndAudit(AssertionMessages.SAML_AUTHN_STMT_REQUEST_NOT_SOAP, messageDesc);
                 return AssertionStatus.NOT_APPLICABLE;
             }
 
@@ -104,10 +98,10 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
             if ( isRequest() && !config.getBooleanProperty(ServerConfig.PARAM_WSS_PROCESSOR_LAZY_REQUEST,true) ) {
                 wssResults = message.getSecurityKnob().getProcessorResult();
             } else {
-                wssResults = WSSecurityProcessorUtils.getWssResults(message, messageDesc, securityTokenResolver, auditor);
+                wssResults = WSSecurityProcessorUtils.getWssResults(message, messageDesc, securityTokenResolver, getAudit());
             }
             if (wssResults == null) {
-                auditor.logAndAudit(AssertionMessages.SAML_AUTHN_STMT_NO_TOKENS_PROCESSED, messageDesc);
+                logAndAudit(AssertionMessages.SAML_AUTHN_STMT_NO_TOKENS_PROCESSED, messageDesc);
                 if (isRequest())
                     context.setAuthenticationMissing();
                 return AssertionStatus.AUTH_REQUIRED;
@@ -115,7 +109,7 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
 
             XmlSecurityToken[] tokens = wssResults.getXmlSecurityTokens();
             if (tokens == null) {
-                auditor.logAndAudit(AssertionMessages.SAML_AUTHN_STMT_NO_TOKENS_PROCESSED, messageDesc);
+                logAndAudit(AssertionMessages.SAML_AUTHN_STMT_NO_TOKENS_PROCESSED, messageDesc);
                 if (isRequest())
                     context.setAuthenticationMissing();
                 return AssertionStatus.AUTH_REQUIRED;
@@ -125,7 +119,7 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
                 if (tok instanceof SamlSecurityToken) {
                     SamlSecurityToken samlToken = (SamlSecurityToken) tok;
                     if (samlAssertion != null) {
-                        auditor.logAndAudit(AssertionMessages.SAML_AUTHN_STMT_MULTIPLE_SAML_ASSERTIONS_UNSUPPORTED, messageDesc);
+                        logAndAudit(AssertionMessages.SAML_AUTHN_STMT_MULTIPLE_SAML_ASSERTIONS_UNSUPPORTED, messageDesc);
                         return getBadMessageStatus();
                     }
                     samlAssertion = samlToken;
@@ -142,7 +136,7 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
                 correctVersion = true;
             }
             if (samlAssertion==null || !correctVersion) {
-                auditor.logAndAudit(AssertionMessages.SAML_AUTHN_STMT_NO_ACCEPTABLE_SAML_ASSERTION);
+                logAndAudit(AssertionMessages.SAML_AUTHN_STMT_NO_ACCEPTABLE_SAML_ASSERTION);
                 if (isRequest())
                     context.setAuthenticationMissing();
                 return AssertionStatus.AUTH_REQUIRED;
@@ -154,7 +148,7 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
                     Collections.singleton( message.getTcpKnob().getRemoteAddress() ) :
                     null;
 
-            final Map<String, Object> serverVariables = context.getVariableMap( variablesUsed, auditor );
+            final Map<String, Object> serverVariables = context.getVariableMap( variablesUsed, getAudit() );
             assertionValidate.validate(xmlKnob.getDocumentReadOnly(),
                     credentials,
                     wssResults,
@@ -162,10 +156,10 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
                     collectAttrValues,
                     clientAddresses,
                     serverVariables,
-                    auditor);
+                    getAudit());
             
             if (validateResults.size() > 0) {
-                StringBuffer sb2 = new StringBuffer();
+                StringBuilder sb2 = new StringBuilder();
                 boolean firstPass = true;
                 for (Object validateResult : validateResults) {
                     if (!firstPass) {
@@ -176,7 +170,7 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
                     firstPass = false;
                 }
                 String error = "SAML Assertion Validation Errors:" + sb2.toString();
-                auditor.logAndAudit(AssertionMessages.SAML_STMT_VALIDATE_FAILED, sb2.toString());
+                logAndAudit(AssertionMessages.SAML_STMT_VALIDATE_FAILED, sb2.toString());
                 logger.log(Level.INFO, error);
                 return AssertionStatus.FALSIFIED;
             }
@@ -190,7 +184,7 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
                 // Get the issue instant
                 final Calendar issueInstant = samlAssertion.getIssueInstant();
                 if (issueInstant == null) { // Maybe checking null is redundant, since IssueInstant is a mandatory element in a SAML assertion.
-                    auditor.logAndAudit(AssertionMessages.SAML_STMT_VALIDATE_FAILED, "SAML Assertion Validation Error: The issue instant is not specified.");
+                    logAndAudit(AssertionMessages.SAML_STMT_VALIDATE_FAILED, "SAML Assertion Validation Error: The issue instant is not specified.");
                     return AssertionStatus.FALSIFIED;
                 }
 
@@ -199,7 +193,7 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
 
                 // Check if the issue instant is in the past or not.
                 if (now.before(lowerBound)) {
-                    auditor.logAndAudit(AssertionMessages.SAML_STMT_VALIDATE_FAILED, "SAML Assertion Validation Error: The issue instant is not in the past.");
+                    logAndAudit(AssertionMessages.SAML_STMT_VALIDATE_FAILED, "SAML Assertion Validation Error: The issue instant is not in the past.");
                     return AssertionStatus.FALSIFIED;
                 }
 
@@ -221,7 +215,7 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
 
                 // Check if the SAML token is expired or not.
                 if (now.after(upperBound)) {
-                    auditor.logAndAudit(AssertionMessages.SAML_TOKEN_EXPIRATION_WARNING);
+                    logAndAudit(AssertionMessages.SAML_TOKEN_EXPIRATION_WARNING);
                     return AssertionStatus.FALSIFIED;
                 }
             }
@@ -235,10 +229,10 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
                 try {
                     messageIdManager.assertMessageIdIsUnique(messageId);
                 } catch (MessageIdManager.DuplicateMessageIdException e) {
-                    auditor.logAndAudit(AssertionMessages.SAML_STMT_VALIDATE_FAILED, "Replay of assertion that is for OneTimeUse.");
+                    logAndAudit(AssertionMessages.SAML_STMT_VALIDATE_FAILED, "Replay of assertion that is for OneTimeUse.");
                     return AssertionStatus.FALSIFIED;
                 } catch (MessageIdManager.MessageIdCheckException e) {
-                    auditor.logAndAudit(AssertionMessages.SAML_STMT_VALIDATE_FAILED, new String[]{"Error checking for replay of assertion that is for OneTimeUse"}, e);
+                    logAndAudit(AssertionMessages.SAML_STMT_VALIDATE_FAILED, new String[]{"Error checking for replay of assertion that is for OneTimeUse"}, e);
                     return AssertionStatus.FAILED;
                 }
             }
@@ -283,11 +277,6 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
             final List<String> vals = entry.getValue();
             context.setVariable(name, vals.toArray(new String[entry.getValue().size()]));
         }
-    }
-
-    @Override
-    protected Auditor getAuditor() {
-        return auditor;
     }
 
     /**

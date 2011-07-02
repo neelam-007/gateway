@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.policy.assertion.credential.http;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
@@ -12,27 +9,20 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.credential.ServerCredentialSourceAssertion;
-import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.logging.Logger;
 
 public abstract class ServerHttpCredentialSource<AT extends HttpCredentialSourceAssertion> extends ServerCredentialSourceAssertion<AT> {
-    private static final Logger logger = Logger.getLogger(ServerHttpCredentialSource.class.getName());
 
-    private final Auditor auditor;
-
-    protected ServerHttpCredentialSource(AT data, ApplicationContext springContext) {
-        super(data, springContext);
-        this.auditor = new Auditor(this, springContext, logger);
+    protected ServerHttpCredentialSource(AT data) {
+        super(data);
     }
 
+    @Override
     public AssertionStatus checkCredentials(LoginCredentials pc, Map<String, String> authParams) throws CredentialFinderException {
         if ( pc == null ) return AssertionStatus.AUTH_REQUIRED;
         String requestRealm = pc.getRealm();
@@ -47,9 +37,10 @@ public abstract class ServerHttpCredentialSource<AT extends HttpCredentialSource
         }
     }
 
+    @Override
     protected void challenge(PolicyEnforcementContext context, Map<String, String> authParams) {
         String scheme = scheme();
-        StringBuffer challengeHeader = new StringBuffer( scheme );
+        StringBuilder challengeHeader = new StringBuilder( scheme );
         challengeHeader.append( " " );
         String realm = realm();
         if ( realm != null && realm.length() > 0 ) {
@@ -76,7 +67,7 @@ public abstract class ServerHttpCredentialSource<AT extends HttpCredentialSource
 
         String challenge = challengeHeader.toString();
 
-        auditor.logAndAudit(AssertionMessages.HTTPCREDS_CHALLENGING, challenge);
+        logAndAudit(AssertionMessages.HTTPCREDS_CHALLENGING, challenge);
         HttpResponseKnob httpResponse = context.getResponse().getHttpResponseKnob();
         httpResponse.addChallenge(challenge);
     }
@@ -99,10 +90,11 @@ public abstract class ServerHttpCredentialSource<AT extends HttpCredentialSource
     protected abstract Map<String, String> challengeParams(Message request, Map<String, String> authParams);
     protected abstract String scheme();
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
 
         if (context.getRequest().getKnob(HttpRequestKnob.class) == null) {
-            auditor.logAndAudit(AssertionMessages.HTTP_CS_CANNOT_EXTRACT_CREDENTIALS);
+            logAndAudit(AssertionMessages.HTTP_CS_CANNOT_EXTRACT_CREDENTIALS);
             return AssertionStatus.NOT_APPLICABLE;
         }
         return super.checkRequest(context);

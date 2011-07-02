@@ -38,7 +38,7 @@ public class ServerRequireWssSamlTest {
     @BugNumber(5141)
     public void testContextVariableAttr() throws Exception {
         RequireWssSaml ass = SamlTestUtil.configureToAllowAttributeBearer(new RequireWssSaml());
-        ServerRequireWssSaml sass = new ServerRequireWssSaml<RequireWssSaml>(ass, SamlTestUtil.beanFactory, null);
+        ServerRequireWssSaml sass = new ServerRequireWssSaml<RequireWssSaml>(ass, SamlTestUtil.beanFactory);
 
         PolicyEnforcementContext context = SamlTestUtil.createWssProcessedContext(request);
         System.out.println("Req: " + XmlUtil.nodeToFormattedString(context.getRequest().getXmlKnob().getDocumentReadOnly()));
@@ -59,7 +59,7 @@ public class ServerRequireWssSamlTest {
         ass.setRequireHolderOfKeyWithMessageSignature(false);
         ass.setRequireSenderVouchesWithMessageSignature(false);
         ass.setNoSubjectConfirmation(true);
-        ServerRequireWssSaml sass = new ServerRequireWssSaml<RequireWssSaml>(ass, SamlTestUtil.beanFactory, null);
+        ServerRequireWssSaml sass = new ServerRequireWssSaml<RequireWssSaml>(ass, SamlTestUtil.beanFactory);
 
         Message request = new Message(XmlUtil.stringAsDocument(SamlTestUtil.SOAPENV));
         WssDecoratorImpl dec = new WssDecoratorImpl();

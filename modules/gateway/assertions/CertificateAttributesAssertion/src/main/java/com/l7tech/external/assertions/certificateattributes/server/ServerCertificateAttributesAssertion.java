@@ -8,14 +8,12 @@ import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * Server side implementation of the CertificateAttributesAssertion.
@@ -26,9 +24,7 @@ public class ServerCertificateAttributesAssertion extends AbstractServerAssertio
 
     //- PUBLIC
 
-    @SuppressWarnings({"UnusedDeclaration"})
-    public ServerCertificateAttributesAssertion( final CertificateAttributesAssertion assertion,
-                                                 final ApplicationContext context ) throws PolicyAssertionException {
+    public ServerCertificateAttributesAssertion( final CertificateAttributesAssertion assertion ) throws PolicyAssertionException {
         super(assertion);
     }
 
@@ -66,7 +62,4 @@ public class ServerCertificateAttributesAssertion extends AbstractServerAssertio
         return status;
     }
 
-    //- PRIVATE
-
-    private static final Logger logger = Logger.getLogger(ServerCertificateAttributesAssertion.class.getName());
 }

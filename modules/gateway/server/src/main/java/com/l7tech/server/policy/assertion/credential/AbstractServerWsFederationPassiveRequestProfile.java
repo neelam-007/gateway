@@ -1,7 +1,6 @@
 package com.l7tech.server.policy.assertion.credential;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.http.*;
 import com.l7tech.message.SecurityKnob;
 import com.l7tech.message.XmlKnob;
@@ -30,7 +29,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Base class for WsFederation server assertions.
@@ -46,17 +44,8 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile<AT extends
         super(assertion, samlCacheKey);
 
         this.authCookieSet = new CopyOnWriteArraySet<String>();
-        this.auditor = new Auditor(this, springContext, logger);
-
-        try {
-            trogdor = new WssProcessorImpl();
-
-            securityTokenResolver = (SecurityTokenResolver)springContext.getBean("securityTokenResolver");
-        }
-        catch (Exception e) {
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_SSL_INIT_FAILED, null, e);
-            throw new IllegalStateException("Error during initialization of SSL context", e);
-        }
+        this.trogdor = new WssProcessorImpl();
+        this.securityTokenResolver = (SecurityTokenResolver)springContext.getBean("securityTokenResolver");
     }
 
     /**
@@ -144,7 +133,7 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile<AT extends
                             logger.info("Invalid headers from service, missing redirect location.");
                         } else {
                             if (FederationPassiveClient.isFederationServerUrl(new URL(attemptedUrl, redirectUrl))) {
-                                auditor.logAndAudit(AssertionMessages.WSFEDPASS_UNAUTHORIZED);
+                                logAndAudit(AssertionMessages.WSFEDPASS_UNAUTHORIZED);
                             }
                         }
                     } catch (GenericHttpException e) {
@@ -193,9 +182,6 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile<AT extends
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger(AbstractServerWsFederationPassiveRequestProfile.class.getName());
-
-    private final Auditor auditor;
     private final WssProcessor trogdor;
     private final SecurityTokenResolver securityTokenResolver;
     private final Set<String> authCookieSet;
@@ -253,7 +239,7 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile<AT extends
             }
         }
         catch(ResponseStatusException rse) {
-            auditor.logAndAudit(AssertionMessages.WSFEDPASS_AUTH_FAILED);
+            logAndAudit(AssertionMessages.WSFEDPASS_AUTH_FAILED);
             throw new AuthRequiredException();
         }
         catch(IOException ioe) {
@@ -291,7 +277,7 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile<AT extends
                                 catch(AuthRequiredException are) { // already audited
                                 }
                                 catch(StopAndAuditException saae) {
-                                    auditor.logAndAudit(saae.getAssertionMessage(), null, saae.getCause());
+                                    logAndAudit(saae.getAssertionMessage(), null, saae.getCause());
                                 }
                             }
                         }

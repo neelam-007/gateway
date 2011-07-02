@@ -12,15 +12,12 @@ import com.l7tech.message.Message;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
-import java.util.logging.Logger;
 
 public class ServerHelloWorldAssertion extends ServerRoutingAssertion<HelloWorldAssertion> {
-    protected static final Logger logger = Logger.getLogger(ServerHelloWorldAssertion.class.getName());
-
     private final byte[] greetBytes;
 
     public ServerHelloWorldAssertion(HelloWorldAssertion assertion, ApplicationContext context) {
-        super(assertion, context, logger);
+        super(assertion, context);
         greetBytes = ("<greeting>Hello, " + assertion.getNameToGreet() + "!</greeting>").getBytes();
     }
 

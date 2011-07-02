@@ -1,8 +1,3 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
@@ -20,7 +15,6 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.xml.DomElementCursor;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.xpath.*;
-import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
@@ -29,7 +23,6 @@ import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
 import java.util.Set;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Abstract superclass for server assertions whose operation centers around running a single xpath against
@@ -41,7 +34,6 @@ import java.util.logging.Logger;
  * </ul>
  */
 public abstract class ServerXpathAssertion<AT extends SimpleXpathAssertion> extends ServerXpathBasedAssertion<AT> {
-    private static final Logger logger = Logger.getLogger(ServerXpathAssertion.class.getName());
     private final boolean req; // true = operate on request; false = operate on response
     private final String vfound;
     private final String vcount;
@@ -51,8 +43,8 @@ public abstract class ServerXpathAssertion<AT extends SimpleXpathAssertion> exte
     private final String vmultipleElements;
     private final boolean xpathContainsVariables;
 
-    public ServerXpathAssertion(AT assertion, ApplicationContext springContext, boolean isReq) {
-        super(assertion, springContext);
+    public ServerXpathAssertion(AT assertion, boolean isReq) {
+        super(assertion);
         this.req = isReq;
 
         Set<String> varsUsed = PolicyVariableUtils.getVariablesUsedBySuccessors(assertion);
@@ -65,6 +57,7 @@ public abstract class ServerXpathAssertion<AT extends SimpleXpathAssertion> exte
         xpathContainsVariables = getCompiledXpath() == null || getCompiledXpath().usesVariables();
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException
     {
         // Determines the message object to apply XPath to.
@@ -105,7 +98,7 @@ public abstract class ServerXpathAssertion<AT extends SimpleXpathAssertion> exte
 
         CompiledXpath compiledXpath = getCompiledXpath();
         if (compiledXpath == null) {
-            auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID_MORE_INFO, getXpath());
+            logAndAudit( AssertionMessages.XPATH_PATTERN_INVALID_MORE_INFO, getXpath() );
             //the xpath could not be compiled, so the assertion cannot work ... FAILED
             return AssertionStatus.FAILED;
         }
@@ -121,7 +114,7 @@ public abstract class ServerXpathAssertion<AT extends SimpleXpathAssertion> exte
 
             if( vmultipleElements != null || xpathContainsVariables ) {
                 // Use a cursor backed by DOM so we can have Element results and/or XPath variables
-                auditor.logAndAudit(AssertionMessages.XPATH_NOT_ACCELERATED);
+                logAndAudit( AssertionMessages.XPATH_NOT_ACCELERATED );
                 cursor = new DomElementCursor(message.getXmlKnob().getDocumentReadOnly());
             } else {
                 final XmlKnob xmlKnob = message.getXmlKnob();
@@ -133,7 +126,7 @@ public abstract class ServerXpathAssertion<AT extends SimpleXpathAssertion> exte
             if (logger.isLoggable(Level.FINE))
                 logger.log(Level.FINE, "SAXException during XPath processing: " + ExceptionUtils.getMessage(e), e);
             //can't proceed cause the XML message probably isn't well formed ... FAILED
-            auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_IS, getXpath());
+            logAndAudit( AssertionMessages.XPATH_PATTERN_IS, getXpath() );
             return AssertionStatus.FAILED;
         }
 
@@ -149,9 +142,9 @@ public abstract class ServerXpathAssertion<AT extends SimpleXpathAssertion> exte
                 logger.log(Level.WARNING, "XPath failed: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
         if (xpathResult == null) {
-            auditor.logAndAudit(req ? AssertionMessages.XPATH_PATTERN_NOT_MATCHED_REQUEST_MI
-                                    : AssertionMessages.XPATH_PATTERN_NOT_MATCHED_RESPONSE_MI,
-                    getXpath());
+            logAndAudit( req ? AssertionMessages.XPATH_PATTERN_NOT_MATCHED_REQUEST_MI
+                    : AssertionMessages.XPATH_PATTERN_NOT_MATCHED_RESPONSE_MI,
+                    getXpath() );
 
             //the xpath ran, but nothing was matched ... FALSIFIED
             return AssertionStatus.FALSIFIED;
@@ -161,7 +154,7 @@ public abstract class ServerXpathAssertion<AT extends SimpleXpathAssertion> exte
         switch (resultType) {
             case XpathResult.TYPE_BOOLEAN:
                 if (xpathResult.getBoolean()) {
-                    auditor.logAndAudit(AssertionMessages.XPATH_RESULT_TRUE);
+                    logAndAudit( AssertionMessages.XPATH_RESULT_TRUE );
                     context.setVariable(vresult, SimpleXpathAssertion.TRUE);
                     context.setVariable(vmultipleResults, SimpleXpathAssertion.TRUE);
                     context.setVariable(velement, SimpleXpathAssertion.TRUE);
@@ -170,8 +163,8 @@ public abstract class ServerXpathAssertion<AT extends SimpleXpathAssertion> exte
                     context.setVariable(vfound, SimpleXpathAssertion.TRUE);
                     return AssertionStatus.NONE;
                 }
-                auditor.logAndAudit(AssertionMessages.XPATH_RESULT_FALSE);
-                auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_IS, getXpath());
+                logAndAudit( AssertionMessages.XPATH_RESULT_FALSE );
+                logAndAudit( AssertionMessages.XPATH_PATTERN_IS, getXpath() );
                 context.setVariable(vresult, SimpleXpathAssertion.FALSE);
                 context.setVariable(vmultipleResults, SimpleXpathAssertion.FALSE);
                 context.setVariable(velement, SimpleXpathAssertion.FALSE);
@@ -192,7 +185,7 @@ public abstract class ServerXpathAssertion<AT extends SimpleXpathAssertion> exte
                 context.setVariable(vcount, "1");
                 context.setVariable(vfound, SimpleXpathAssertion.TRUE);
                 // TODO what to log for this?
-                // auditor.logAndAudit(AssertionMessages.XPATH_TEXT_NODE_FOUND);
+                // logAndAudit(AssertionMessages.XPATH_TEXT_NODE_FOUND);
                 return AssertionStatus.NONE;
 
             case XpathResult.TYPE_STRING:
@@ -206,7 +199,7 @@ public abstract class ServerXpathAssertion<AT extends SimpleXpathAssertion> exte
                 context.setVariable(vcount, "1");
                 context.setVariable(vfound, SimpleXpathAssertion.TRUE);
                 // TODO what to log for this?
-                // auditor.logAndAudit(AssertionMessages.XPATH_TEXT_NODE_FOUND);
+                // logAndAudit(AssertionMessages.XPATH_TEXT_NODE_FOUND);
                 return AssertionStatus.NONE;
 
             case XpathResult.TYPE_NODESET:
@@ -214,9 +207,9 @@ public abstract class ServerXpathAssertion<AT extends SimpleXpathAssertion> exte
                 break;
 
             default:
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                        " XPath evaluation produced unknown result type " + resultType);
-                auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_IS, getXpath());
+                logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                        " XPath evaluation produced unknown result type " + resultType );
+                logAndAudit( AssertionMessages.XPATH_PATTERN_IS, getXpath() );
                 return AssertionStatus.FAILED;
         }
 
@@ -225,12 +218,12 @@ public abstract class ServerXpathAssertion<AT extends SimpleXpathAssertion> exte
 
         final int size = ns.size();
         if (size > 1)
-            auditor.logAndAudit(AssertionMessages.XPATH_MULTIPLE_RESULTS, Integer.toString(size));
+            logAndAudit( AssertionMessages.XPATH_MULTIPLE_RESULTS, Integer.toString( size ) );
 
         if (size < 1) {
-            auditor.logAndAudit(req ? AssertionMessages.XPATH_PATTERN_NOT_MATCHED_REQUEST_MI
-                                    : AssertionMessages.XPATH_PATTERN_NOT_MATCHED_RESPONSE_MI,
-                    getXpath());
+            logAndAudit( req ? AssertionMessages.XPATH_PATTERN_NOT_MATCHED_REQUEST_MI
+                    : AssertionMessages.XPATH_PATTERN_NOT_MATCHED_RESPONSE_MI,
+                    getXpath() );
             return AssertionStatus.FALSIFIED;
         }
 
@@ -240,7 +233,7 @@ public abstract class ServerXpathAssertion<AT extends SimpleXpathAssertion> exte
         int nodeType = ns.getType(0);
         switch (nodeType) {
             case Node.ELEMENT_NODE:
-                auditor.logAndAudit(AssertionMessages.XPATH_ELEMENT_FOUND);
+                logAndAudit( AssertionMessages.XPATH_ELEMENT_FOUND );
                 if (vresult != null) context.setVariable(vresult, ns.getNodeValue(0));
                 if (vmultipleResults != null) {
                     if(size > 0) {
@@ -268,7 +261,7 @@ public abstract class ServerXpathAssertion<AT extends SimpleXpathAssertion> exte
                 return AssertionStatus.NONE;
 
             case Node.TEXT_NODE:
-                auditor.logAndAudit(AssertionMessages.XPATH_TEXT_NODE_FOUND);
+                logAndAudit( AssertionMessages.XPATH_TEXT_NODE_FOUND );
                 if (vresult != null || velement != null) {
                     String val = ns.getNodeValue(0);
                     context.setVariable(vresult, val);
@@ -294,7 +287,7 @@ public abstract class ServerXpathAssertion<AT extends SimpleXpathAssertion> exte
                 break;
         }
 
-        auditor.logAndAudit(AssertionMessages.XPATH_OTHER_NODE_FOUND);
+        logAndAudit( AssertionMessages.XPATH_OTHER_NODE_FOUND );
         if (vresult != null || velement != null) {
             String val = ns.getNodeValue(0);
             context.setVariable(vresult, val);
@@ -317,6 +310,6 @@ public abstract class ServerXpathAssertion<AT extends SimpleXpathAssertion> exte
     }
 
     private void auditNotXml() {
-        auditor.logAndAudit(req ? AssertionMessages.XPATH_REQUEST_NOT_XML: AssertionMessages.XPATH_RESPONSE_NOT_XML);
+        logAndAudit( req ? AssertionMessages.XPATH_REQUEST_NOT_XML : AssertionMessages.XPATH_RESPONSE_NOT_XML );
     }
 }

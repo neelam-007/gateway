@@ -10,7 +10,6 @@ import com.l7tech.policy.assertion.xmlsec.AddWssUsernameToken;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.security.token.UsernameTokenImpl;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
@@ -18,12 +17,10 @@ import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.ISO8601Date;
-import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.Date;
-import java.util.logging.Logger;
 
 /**
  * Server assertion for addition of WS-Security UsernameToken
@@ -32,9 +29,8 @@ public class ServerAddWssUsernameToken extends ServerAddWssEncryption<AddWssUser
 
     //- PUBLIC
 
-    public ServerAddWssUsernameToken( final AddWssUsernameToken assertion, final ApplicationContext spring ) {
-        super( assertion, assertion, assertion, assertion, logger );
-        auditor = new Auditor(this, spring, logger);
+    public ServerAddWssUsernameToken( final AddWssUsernameToken assertion ) {
+        super( assertion, assertion, assertion, assertion );
         variableNames = assertion.getVariablesUsed();
     }
 
@@ -118,15 +114,7 @@ public class ServerAddWssUsernameToken extends ServerAddWssEncryption<AddWssUser
         return AssertionStatus.NONE;
     }
 
-    @Override
-    public Auditor getAuditor() {
-        return auditor;
-    }
-
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger(ServerAddWssSecurityToken.class.getName());
-
-    private final Auditor auditor;
     private final String[] variableNames;
 }

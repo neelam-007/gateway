@@ -15,8 +15,6 @@ import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.X509BinarySecurityTokenImpl;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
@@ -24,13 +22,11 @@ import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.beans.factory.BeanFactory;
-import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.cert.X509Certificate;
-import java.util.logging.Logger;
 
 /**
  * This assertion verifies that the message contained an
@@ -49,9 +45,6 @@ public class ServerRequireWssX509Cert extends AbstractMessageTargetableServerAss
 
     public ServerRequireWssX509Cert( final RequireWssX509Cert subject, final BeanFactory springContext ) {
         super(subject, subject);
-        this.auditor = springContext instanceof ApplicationContext
-                ? new Auditor(this, (ApplicationContext) springContext, logger)
-                : new LogOnlyAuditor(logger);
         this.config = springContext.getBean("serverConfig", Config.class);
         this.securityTokenResolver = springContext.getBean("securityTokenResolver", SecurityTokenResolver.class);
     }
@@ -59,7 +52,7 @@ public class ServerRequireWssX509Cert extends AbstractMessageTargetableServerAss
     @Override
     public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
         if (!assertion.getRecipientContext().localRecipient()) {
-            auditor.logAndAudit(AssertionMessages.WSS_X509_FOR_ANOTHER_USER);
+            logAndAudit(AssertionMessages.WSS_X509_FOR_ANOTHER_USER);
             return AssertionStatus.NONE;
         }
 
@@ -76,20 +69,20 @@ public class ServerRequireWssX509Cert extends AbstractMessageTargetableServerAss
         ProcessorResult wssResults;
         try {
             if (!message.isSoap()) {
-                auditor.logAndAudit(AssertionMessages.WSS_X509_NON_SOAP, messageDesc);
+                logAndAudit(AssertionMessages.WSS_X509_NON_SOAP, messageDesc);
                 return getBadMessageStatus();
             }
 
             if ( isRequest() && !config.getBooleanProperty(ServerConfig.PARAM_WSS_PROCESSOR_LAZY_REQUEST,true) ) {
                 wssResults = message.getSecurityKnob().getProcessorResult();
             } else {
-                wssResults = WSSecurityProcessorUtils.getWssResults(message, messageDesc, securityTokenResolver, auditor);
+                wssResults = WSSecurityProcessorUtils.getWssResults(message, messageDesc, securityTokenResolver, getAudit());
             }
         } catch (SAXException e) {
             throw new CausedIOException(e);
         }
         if (wssResults == null) {
-            auditor.logAndAudit(AssertionMessages.WSS_X509_NO_WSS_LEVEL_SECURITY, messageDesc);
+            logAndAudit(AssertionMessages.WSS_X509_NO_WSS_LEVEL_SECURITY, messageDesc);
             if ( isRequest() ) {
                 context.setRequestPolicyViolated();
                 context.setAuthenticationMissing();
@@ -100,7 +93,7 @@ public class ServerRequireWssX509Cert extends AbstractMessageTargetableServerAss
         XmlSecurityToken[] tokens = wssResults.getXmlSecurityTokens();
         if (tokens == null) {
             AssertionStatus result = getBadAuthStatus( context );
-            auditor.logAndAudit(AssertionMessages.WSS_X509_NO_TOKEN, messageDesc, result.getMessage());
+            logAndAudit(AssertionMessages.WSS_X509_NO_TOKEN, messageDesc, result.getMessage());
             return result;
         }
 
@@ -147,18 +140,18 @@ public class ServerRequireWssX509Cert extends AbstractMessageTargetableServerAss
                         if ( processedSignatureElement != null &&
                              processedSignatureElement != x509Tok.getSignedElements()[0].getSignatureElement() &&
                              !assertion.isAllowMultipleSignatures() ) {
-                            auditor.logAndAudit(AssertionMessages.WSS_X509_TOO_MANY_VALID_SIG, messageDesc);
+                            logAndAudit(AssertionMessages.WSS_X509_TOO_MANY_VALID_SIG, messageDesc);
                             return getBadMessageStatus();
                         }
 
                         processedSignatureElement = x509Tok.getSignedElements()[0].getSignatureElement();
                         String certCN = CertUtils.extractFirstCommonNameFromCertificate(signingCertificate);
                         authContext.addCredentials( LoginCredentials.makeLoginCredentials( x509Tok, assertion.getClass() ) );
-                        auditor.logAndAudit(AssertionMessages.WSS_X509_CERT_LOADED, certCN);
+                        logAndAudit(AssertionMessages.WSS_X509_CERT_LOADED, certCN);
                     }
                 } catch (InvalidDocumentFormatException e) {
                     //noinspection ThrowableResultOfMethodCallIgnored
-                    auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
                             new String[] { "Unable to check security tokens: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e) );
                     return getBadMessageStatus();
                 }
@@ -167,25 +160,20 @@ public class ServerRequireWssX509Cert extends AbstractMessageTargetableServerAss
 
         if ( processedSignatureElement == null ) {
             AssertionStatus result = getBadAuthStatus( context );
-            auditor.logAndAudit(AssertionMessages.WSS_X509_NO_PROVEN_CERT, messageDesc, result.getMessage());
+            logAndAudit(AssertionMessages.WSS_X509_NO_PROVEN_CERT, messageDesc, result.getMessage());
             return result;
         }
 
         return AssertionStatus.NONE;
     }
 
-    @Override
-    protected Auditor getAuditor() {
-        return auditor;
-    }
+
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger(ServerRequireWssX509Cert.class.getName());
     private static final boolean strictTokenTypeCheck = SyspropUtil.getBoolean( "com.l7tech.server.policy.assertion.xmlsec.x509StrictTokenTypeCheck", true );
 
-    private final Auditor auditor;
-    private final Config config;    
+    private final Config config;
     private final SecurityTokenResolver securityTokenResolver;
 
     private boolean isX509Token( XmlSecurityToken tok ) {

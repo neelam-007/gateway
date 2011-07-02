@@ -2,7 +2,6 @@ package com.l7tech.server.policy.assertion.credential;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.security.wstrust.WsTrustConfigException;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.http.*;
 import com.l7tech.message.Message;
 import com.l7tech.message.SecurityKnob;
@@ -40,16 +39,13 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.logging.Logger;
 
 /**
  * @author alex
  */
 public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurityTokenAssertion<WsTrustCredentialExchange> {
-    private static final Logger logger = Logger.getLogger(ServerWsTrustCredentialExchange.class.getName());
     private static final String CACHE_SEC_TOKEN_KEY = ServerWsTrustCredentialExchange.class.getName() + ".TOKEN";
 
-    private final Auditor auditor;
     private final SimpleHttpClient httpClient;
     private final URL tokenServiceUrl;
     private final WssProcessor trogdor = new WssProcessorImpl();
@@ -58,7 +54,6 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
     public ServerWsTrustCredentialExchange(WsTrustCredentialExchange assertion, ApplicationContext springContext) {
         super(assertion, CACHE_SEC_TOKEN_KEY);
         this.httpClient = new SimpleHttpClient(springContext.getBean( "anonUrlHttpClientFactory", GenericHttpClientFactory.class ).createHttpClient());
-        this.auditor = new Auditor(this, springContext, logger);
         try {
             if (assertion.getTokenServiceUrl() != null)
                 this.tokenServiceUrl = new URL(assertion.getTokenServiceUrl());
@@ -70,19 +65,14 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
             throw (IllegalArgumentException)new IllegalArgumentException("Unable to parse WS-Trust URL").initCause(e);
         }
 
-        try {
-            securityTokenResolver = (SecurityTokenResolver)springContext.getBean("securityTokenResolver");
-        } catch (Exception e) {
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_SSL_INIT_FAILED, null, e);
-            throw new RuntimeException(e);
-        }
+        securityTokenResolver = (SecurityTokenResolver)springContext.getBean("securityTokenResolver");
     }
 
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         XmlKnob requestXml = context.getRequest().getKnob(XmlKnob.class);
         if (requestXml == null) {
-            auditor.logAndAudit(AssertionMessages.WSTRUST_NON_XML_MESSAGE);
+            logAndAudit(AssertionMessages.WSTRUST_NON_XML_MESSAGE);
             return AssertionStatus.FAILED;
         }
         SecurityKnob requestSec = context.getRequest().getKnob(SecurityKnob.class);
@@ -100,7 +90,7 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
                             originalToken = token;
                             originalTokenElement = token.asElement();
                         } else {
-                            auditor.logAndAudit(AssertionMessages.WSTRUST_MULTI_TOKENS);
+                            logAndAudit(AssertionMessages.WSTRUST_MULTI_TOKENS);
                             return AssertionStatus.FAILED;
                         }
                     }
@@ -122,7 +112,7 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
         }
 
         if (originalToken == null) {
-            auditor.logAndAudit(AssertionMessages.WSTRUST_NO_SUITABLE_CREDENTIALS);
+            logAndAudit(AssertionMessages.WSTRUST_NO_SUITABLE_CREDENTIALS);
             return AssertionStatus.FAILED;
         }
 
@@ -154,7 +144,7 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
                 SimpleHttpClient.SimpleXmlResponse response = httpClient.postXml(params, rstDoc);
                 int status = response.getStatus();
                 if (status != 200) {
-                    auditor.logAndAudit(AssertionMessages.WSTRUST_RSTR_STATUS_NON_200); // TODO use a better message
+                    logAndAudit(AssertionMessages.WSTRUST_RSTR_STATUS_NON_200); // TODO use a better message
                     return AssertionStatus.AUTH_REQUIRED;
                 }
 
@@ -167,7 +157,7 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
 
             Document requestDoc = requestXml.getDocumentWritable(); // Don't actually want the document; just want to invalidate bytes
             if (originalTokenElement == null) {
-                auditor.logAndAudit(AssertionMessages.WSTRUST_ORIGINAL_TOKEN_NOT_XML);
+                logAndAudit(AssertionMessages.WSTRUST_ORIGINAL_TOKEN_NOT_XML);
             } else {
                 Node securityEl = originalTokenElement.getParentNode();
                 securityEl.removeChild(originalTokenElement);
@@ -196,7 +186,7 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
                 setCachedSecurityToken(context.getCache(), ut, getUsernameTokenExpiry(ut));
                 decoReq.setUsernameTokenCredentials(new UsernameTokenImpl(ut.getUsername(), ut.getPassword()));
             } else {
-                auditor.logAndAudit(AssertionMessages.WSTRUST_RSTR_BAD_TYPE);
+                logAndAudit(AssertionMessages.WSTRUST_RSTR_BAD_TYPE);
                 return AssertionStatus.AUTH_REQUIRED;
             }
 
@@ -211,20 +201,20 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
                 secKnob.setProcessorResult(trogdor.undecorateMessage(reqMessage, null, securityTokenResolver));
                 return AssertionStatus.NONE;
             } catch (Exception e) {
-                auditor.logAndAudit(AssertionMessages.WSTRUST_DECORATION_FAILED, null, e);
+                logAndAudit(AssertionMessages.WSTRUST_DECORATION_FAILED, null, e);
                 return AssertionStatus.FAILED;
             }
         } catch (GenericHttpException e) {
-            auditor.logAndAudit(AssertionMessages.WSTRUST_SERVER_HTTP_FAILED, null, e);
+            logAndAudit(AssertionMessages.WSTRUST_SERVER_HTTP_FAILED, null, e);
             return AssertionStatus.FAILED;
         } catch (SAXException e) {
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_ERROR_READING_RESPONSE, null, e);
+            logAndAudit(AssertionMessages.HTTPROUTE_ERROR_READING_RESPONSE, null, e);
             return AssertionStatus.FAILED;
         } catch (InvalidDocumentFormatException e) {
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_ERROR_READING_RESPONSE, null, e);
+            logAndAudit(AssertionMessages.HTTPROUTE_ERROR_READING_RESPONSE, null, e);
             return AssertionStatus.FAILED;
         } catch ( WsTrustConfigException e ) {
-            auditor.logAndAudit(AssertionMessages.WSTRUST_NOT_SUPPORTED, assertion.getWsTrustNamespace());
+            logAndAudit(AssertionMessages.WSTRUST_NOT_SUPPORTED, assertion.getWsTrustNamespace());
             return AssertionStatus.FAILED;
         }
     }

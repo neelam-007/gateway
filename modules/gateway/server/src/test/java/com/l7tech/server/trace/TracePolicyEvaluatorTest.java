@@ -19,6 +19,7 @@ import com.l7tech.server.event.system.Started;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.*;
+import com.l7tech.server.util.MockInjector;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.Charsets;
 import org.junit.BeforeClass;
@@ -89,7 +90,7 @@ public class TracePolicyEvaluatorTest {
         tracePolicy.setGuid("guid" + TRACE_POLICY_OID);
 
         PolicyManager policyManager = new PolicyManagerStub(policyToTrace, tracePolicy);
-        final ServerPolicyFactory spf = new ServerPolicyFactory(new TestLicenseManager());
+        final ServerPolicyFactory spf = new ServerPolicyFactory(new TestLicenseManager(),new MockInjector());
         spf.setApplicationContext(applicationContext);
         policyCache = new PolicyCacheImpl(null, spf);
         policyCache.setPolicyManager(policyManager);

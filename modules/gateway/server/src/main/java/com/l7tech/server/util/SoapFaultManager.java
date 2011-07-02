@@ -2,8 +2,10 @@ package com.l7tech.server.util;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
+import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.gateway.common.audit.Messages;
 import com.l7tech.gateway.common.audit.MessagesUtil;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
@@ -26,8 +28,6 @@ import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.DecoratorException;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.server.audit.AuditContext;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -222,9 +222,7 @@ public class SoapFaultManager implements ApplicationContextAware {
     }
 
     void setBeanFactory( BeanFactory context ) throws BeansException {
-        auditor = context instanceof ApplicationContext ?
-                new Auditor(this, (ApplicationContext)context, logger) :
-                new LogOnlyAuditor(logger);
+        auditor = context.getBean( "auditFactory", AuditFactory.class ).newInstance( this, logger );
         this.context = context;
     }
 
@@ -268,7 +266,7 @@ public class SoapFaultManager implements ApplicationContextAware {
     private final Logger logger = Logger.getLogger(SoapFaultManager.class.getName());
     private long lastParsedFromSettings;
     private SoapFaultLevel fromSettings;
-    private Auditor auditor;
+    private Audit auditor;
     private final AuditContext auditContext;
     private ClusterPropertyManager clusterPropertiesManager;
     private BeanFactory context;

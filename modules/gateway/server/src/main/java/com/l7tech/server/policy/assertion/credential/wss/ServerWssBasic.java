@@ -1,12 +1,7 @@
-/*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- */
-
 package com.l7tech.server.policy.assertion.credential.wss;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.security.token.UsernameToken;
 import com.l7tech.security.token.XmlSecurityToken;
 import com.l7tech.security.xml.processor.ProcessorResult;
@@ -26,7 +21,6 @@ import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.util.logging.Logger;
 
 /**
  * Server assertion for WS-Security UsernameToken authentication.
@@ -39,7 +33,6 @@ public class ServerWssBasic extends AbstractMessageTargetableServerAssertion<Wss
 
     public ServerWssBasic(final WssBasic data, final ApplicationContext springContext) {
         super(data, data);
-        this.auditor = new Auditor(this, springContext, logger);
         this.config = springContext.getBean("serverConfig", Config.class);
         this.securityTokenResolver = (SecurityTokenResolver)springContext.getBean("securityTokenResolver");
     }
@@ -48,7 +41,7 @@ public class ServerWssBasic extends AbstractMessageTargetableServerAssertion<Wss
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException
     {
         if (!assertion.getRecipientContext().localRecipient()) {
-            auditor.logAndAudit(AssertionMessages.WSS_BASIC_FOR_ANOTHER_RECIPIENT);
+            logAndAudit(AssertionMessages.WSS_BASIC_FOR_ANOTHER_RECIPIENT);
             return AssertionStatus.NONE;
         }
 
@@ -65,19 +58,19 @@ public class ServerWssBasic extends AbstractMessageTargetableServerAssertion<Wss
         ProcessorResult wssResults;
         try {
             if (!message.isSoap()) {
-                auditor.logAndAudit(AssertionMessages.WSS_BASIC_NOT_SOAP, messageDescription);
+                logAndAudit(AssertionMessages.WSS_BASIC_NOT_SOAP, messageDescription);
                 return AssertionStatus.NOT_APPLICABLE;
             }
             if ( isRequest() && !config.getBooleanProperty(ServerConfig.PARAM_WSS_PROCESSOR_LAZY_REQUEST,true) ) {
                 wssResults = message.getSecurityKnob().getProcessorResult();
             } else {
-                wssResults = WSSecurityProcessorUtils.getWssResults(message, messageDescription, securityTokenResolver, auditor);
+                wssResults = WSSecurityProcessorUtils.getWssResults(message, messageDescription, securityTokenResolver, getAudit());
             }
         } catch (SAXException e) {
             throw new CausedIOException("Message '"+messageDescription+"' declared as XML but is not well-formed", e);
         }
         if (wssResults == null) {
-            auditor.logAndAudit(AssertionMessages.WSS_BASIC_NO_CREDENTIALS, messageDescription);
+            logAndAudit(AssertionMessages.WSS_BASIC_NO_CREDENTIALS, messageDescription);
             
             if ( isRequest() ) {
                 context.setAuthenticationMissing();
@@ -95,7 +88,7 @@ public class ServerWssBasic extends AbstractMessageTargetableServerAssertion<Wss
                 return AssertionStatus.NONE;
             }
         }
-        auditor.logAndAudit(AssertionMessages.WSS_BASIC_CANNOT_FIND_CREDENTIALS);
+        logAndAudit(AssertionMessages.WSS_BASIC_CANNOT_FIND_CREDENTIALS);
         // we get here because there were no credentials found in the format we want
         // therefore this assertion was violated
         if ( isRequest() ) {
@@ -104,16 +97,10 @@ public class ServerWssBasic extends AbstractMessageTargetableServerAssertion<Wss
         return AssertionStatus.AUTH_REQUIRED;
     }
 
-    @Override
-    protected Auditor getAuditor() {
-        return auditor;
-    }
+
 
     //- PRIVATE
 
-    private final Logger logger = Logger.getLogger(getClass().getName());
-
-    private final Auditor auditor;
     private final Config config;
     private final SecurityTokenResolver securityTokenResolver;
 }

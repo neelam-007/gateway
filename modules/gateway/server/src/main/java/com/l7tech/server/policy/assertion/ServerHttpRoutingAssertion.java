@@ -47,7 +47,6 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 
 /**
@@ -61,8 +60,6 @@ import java.util.zip.GZIPInputStream;
 public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingAssertion<HttpRoutingAssertion> {
     public static final String USER_AGENT = HttpConstants.HEADER_USER_AGENT;
     public static final String HOST = HttpConstants.HEADER_HOST;
-
-    private static final Logger logger = Logger.getLogger(ServerHttpRoutingAssertion.class.getName());
 
     private final ServerConfig serverConfig;
     private final SignerInfo senderVouchesSignerInfo;
@@ -78,7 +75,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     private boolean customURLList;
 
     public ServerHttpRoutingAssertion(HttpRoutingAssertion assertion, ApplicationContext ctx) throws PolicyAssertionException {
-        super(assertion, ctx, logger);
+        super(assertion, ctx);
 
         if ((assertion.getNtlmHost() != null || assertion.isKrbDelegatedAuthentication()) && assertion.getProxyHost() != null) {
             throw new PolicyAssertionException(assertion, "NTLM and Kerberos delegated authentication are not supported when an HTTP proxy is configured");
@@ -144,8 +141,8 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
         } catch (Exception e) {
             //noinspection ThrowableResultOfMethodCallIgnored
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_SSL_INIT_FAILED, null, ExceptionUtils.getDebugException(e));
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Failed to initialize SSL context: " + ExceptionUtils.getMessage(e), null);
+            logAndAudit(AssertionMessages.HTTPROUTE_SSL_INIT_FAILED, null, ExceptionUtils.getDebugException(e));
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Failed to initialize SSL context: " + ExceptionUtils.getMessage(e), null);
             signerInfo = null;
             sslSocketFactory = null;
         }
@@ -156,7 +153,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         try {
             httpClientFactory = makeHttpClientFactory();
         } catch (Exception e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Could not create HTTP client factory." }, e);
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Could not create HTTP client factory." }, e);
             httpClientFactory = new IdentityBindingHttpClientFactory();
         }
         this.httpClientFactory = httpClientFactory;
@@ -177,7 +174,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             try {
                 strat = FailoverStrategyFactory.createFailoverStrategy(stratName, addrs);
             } catch (IllegalArgumentException e) {
-                auditor.logAndAudit(AssertionMessages.HTTPROUTE_BAD_STRATEGY_NAME, new String[] { stratName }, e);
+                logAndAudit(AssertionMessages.HTTPROUTE_BAD_STRATEGY_NAME, new String[] { stratName }, e);
                 strat = new StickyFailoverStrategy<String>(addrs);
             }
             failoverStrategy = AbstractFailoverStrategy.makeSynchronized(strat);
@@ -188,7 +185,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             try {
                 strat = FailoverStrategyFactory.createFailoverStrategy(stratName, assertion.getCustomURLs());
             } catch (IllegalArgumentException e) {
-                auditor.logAndAudit(AssertionMessages.HTTPROUTE_BAD_STRATEGY_NAME, new String[] { stratName }, e);
+                logAndAudit(AssertionMessages.HTTPROUTE_BAD_STRATEGY_NAME, new String[] { stratName }, e);
                 strat = new StickyFailoverStrategy<String>(assertion.getCustomURLs());
             }
             failoverStrategy = AbstractFailoverStrategy.makeSynchronized(strat);
@@ -207,7 +204,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             return applicationContext.getBean("httpRoutingHttpClientFactory", GenericHttpClientFactory.class);
         }
 
-        final String proxyPassword = ServerVariables.expandPasswordOnlyVariable(auditor, assertion.getProxyPassword());
+        final String proxyPassword = ServerVariables.expandPasswordOnlyVariable(getAudit(), assertion.getProxyPassword());
 
         // Use a proxy
         return new GenericHttpClientFactory() {
@@ -253,10 +250,10 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 try {
                     u = getProtectedServiceUrl(service, context);
                 } catch (WSDLException we) {
-                    auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, we);
+                    logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, we);
                     return AssertionStatus.FAILED;
                 } catch (MalformedURLException mue) {
-                    auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Invalid routing URL, " + ExceptionUtils.getMessage( mue )}, mue);
+                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Invalid routing URL, " + ExceptionUtils.getMessage( mue )}, mue);
                     return AssertionStatus.FAILED;
                 }
 
@@ -273,11 +270,11 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                     break;
                 }
                 if (failedService != null)
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_FAILOVER_FROM_TO,
+                    logAndAudit(AssertionMessages.HTTPROUTE_FAILOVER_FROM_TO,
                             failedService, failoverService);
                 URL url;
                 String failoverServiceExpanded = failoverService.indexOf("${") > -1 ?
-                    ExpandVariables.process(failoverService, context.getVariableMap(varNames, auditor), auditor) : failoverService;
+                    ExpandVariables.process(failoverService, context.getVariableMap(varNames, getAudit()), getAudit()) : failoverService;
                 if (customURLList) {
                     url = new URL(failoverServiceExpanded);
                 } else {
@@ -292,7 +289,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 failoverStrategy.reportFailure(failoverService);
             }
 
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_TOO_MANY_ATTEMPTS);
+            logAndAudit(AssertionMessages.HTTPROUTE_TOO_MANY_ATTEMPTS);
             return AssertionStatus.FAILED;
         } finally {
             context.routingFinished();
@@ -320,7 +317,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             if (userAgent == null || userAgent.length() == 0) userAgent = DEFAULT_USER_AGENT;
             routedRequestParams.addExtraHeader(new GenericHttpHeader(USER_AGENT, userAgent));
 
-            StringBuffer hostValue = new StringBuffer(url.getHost());
+            StringBuilder hostValue = new StringBuilder( url.getHost() );
             int port = url.getPort();
             if (port != -1) {
                 hostValue.append(":");
@@ -342,14 +339,14 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             Map<String,Object> vars = null;
             if (login != null && login.length() > 0 && password != null && password.length() > 0) {
                 if (vars == null) {
-                    vars = context.getVariableMap(varNames, auditor);
+                    vars = context.getVariableMap(varNames, getAudit());
                 }
-                login = ExpandVariables.process(login, vars, auditor);
-                password = ExpandVariables.process(password, vars, auditor);
-                if (domain != null) domain = ExpandVariables.process(domain, vars, auditor);
-                if (host != null) host = ExpandVariables.process(host, vars, auditor);
+                login = ExpandVariables.process(login, vars, getAudit());
+                password = ExpandVariables.process(password, vars, getAudit());
+                if (domain != null) domain = ExpandVariables.process(domain, vars, getAudit());
+                if (host != null) host = ExpandVariables.process(host, vars, getAudit());
 
-                auditor.logAndAudit(AssertionMessages.HTTPROUTE_LOGIN_INFO, login);
+                logAndAudit(AssertionMessages.HTTPROUTE_LOGIN_INFO, login);
                 if (domain != null && domain.length() > 0) {
                     if (host == null) {
                         host = ServerConfig.getInstance().getPropertyCached("clusterHost");
@@ -371,9 +368,9 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                     routedRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_AUTHORIZATION, authHeader));
                 }
                 if (passed) {
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_PASSTHROUGH_REQUEST);
+                    logAndAudit(AssertionMessages.HTTPROUTE_PASSTHROUGH_REQUEST);
                 } else {
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_PASSTHROUGH_REQUEST_NC);
+                    logAndAudit(AssertionMessages.HTTPROUTE_PASSTHROUGH_REQUEST_NC);
                 }
             }
 
@@ -393,9 +390,9 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             } else if (assertion.getKrbConfiguredAccount() != null) {
                 // obtain a service ticket using the configured account in the assertion
                 KerberosRoutingClient client = new KerberosRoutingClient();
-                String krbAccount = ExpandVariables.process(assertion.getKrbConfiguredAccount(), vars, auditor);
+                String krbAccount = ExpandVariables.process(assertion.getKrbConfiguredAccount(), vars, getAudit());
                 String krbPass = assertion.getKrbConfiguredPassword();
-                krbPass = krbPass == null ? null : ExpandVariables.process(krbPass, vars, auditor);
+                krbPass = krbPass == null ? null : ExpandVariables.process(krbPass, vars, getAudit());
                 addKerberosServiceTicketToRequestParam(
                         client.getKerberosServiceTicket(url, krbAccount, krbPass),
                         routedRequestParams);
@@ -404,24 +401,24 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             return reallyTryUrl(context, requestMessage, routedRequestParams, url, true, vars);
         } catch (MalformedURLException mfe) {
             thrown = mfe;
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(thrown));
+            logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(thrown));
             logger.log(Level.FINEST, "Problem routing: " + thrown.getMessage(), thrown);
         } catch (IOException ioe) {
             // TODO: Worry about what kinds of exceptions indicate failed routing, and which are "unrecoverable"
             thrown = ioe;
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(thrown));
+            logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(thrown));
             logger.log(Level.FINEST, "Problem routing: " + thrown.getMessage(), thrown);
         } catch (SAXException e) {
             thrown = e;
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(thrown));
+            logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(thrown));
             logger.log(Level.FINEST, "Problem routing: " + thrown.getMessage(), thrown);
         } catch (GeneralSecurityException e) {
             thrown = e;
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(thrown));
+            logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(thrown));
             logger.log(Level.FINEST, "Problem routing: " + thrown.getMessage(), thrown);
         } catch (KerberosException kex) {
             thrown = kex;
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_USING_KERBEROS_ERROR, ExceptionUtils.getMessage(thrown));
+            logAndAudit(AssertionMessages.HTTPROUTE_USING_KERBEROS_ERROR, ExceptionUtils.getMessage(thrown));
             logger.log(Level.FINEST, "Problem routing: " + thrown.getMessage(), thrown);
         } finally {
             if(context.getRoutingStatus()!=RoutingStatus.ROUTED) {
@@ -438,19 +435,19 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             return method;
 
         if (assertion.getRequestMsgSrc() != null) {
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_DEFAULT_METHOD_VAR);
+            logAndAudit(AssertionMessages.HTTPROUTE_DEFAULT_METHOD_VAR);
             return HttpMethod.POST;
         }
 
         if (!context.getRequest().isHttpRequest()) {
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_DEFAULT_METHOD_NON_HTTP);
+            logAndAudit(AssertionMessages.HTTPROUTE_DEFAULT_METHOD_NON_HTTP);
             return HttpMethod.POST;
         }
 
         final HttpRequestKnob httpRequestKnob = context.getRequest().getHttpRequestKnob();
         final HttpMethod requestMethod = httpRequestKnob.getMethod();
         if (requestMethod == null) {
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_UNEXPECTED_METHOD, "null");
+            logAndAudit(AssertionMessages.HTTPROUTE_UNEXPECTED_METHOD, "null");
             return HttpMethod.POST;
         }
         if (requestMethod.isFollowRedirects())
@@ -498,7 +495,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                     context,
                     url.getHost(),
                     assertion.getRequestHeaderRules(),
-                    auditor,
+                    getAudit(),
                     vars,
                     varNames);
 
@@ -537,9 +534,9 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
               if(useHostName!=null){
                 if (vars == null)
-                    vars = context.getVariableMap(varNames, auditor);
+                    vars = context.getVariableMap(varNames, getAudit());
 
-                final String vhostValue = ExpandVariables.process(useHostName, vars, auditor);                  
+                final String vhostValue = ExpandVariables.process(useHostName, vars, getAudit());
                 if (vhostValue != null && vhostValue.length() > 0) {
                     routedRequestParams.setVirtualHost(vhostValue);
                     logger.fine("virtual-host override set: " + vhostValue);
@@ -549,7 +546,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             routedRequest = httpClient.createRequest(method, routedRequestParams);
 
             List<HttpForwardingRuleEnforcer.Param> paramRes = HttpForwardingRuleEnforcer.
-                    handleRequestParameters(context, assertion.getRequestParamRules(), auditor, vars, varNames);
+                    handleRequestParameters(context, assertion.getRequestParamRules(), getAudit(), vars, varNames);
 
 
             if (paramRes != null && paramRes.size() > 0) {
@@ -614,14 +611,14 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
             if (status != HttpConstants.STATUS_OK && retryRequested) {
                 // retry after if requested by a routing result listener
-                auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS_HANDLED, url.getPath(), String.valueOf(status));
+                logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS_HANDLED, url.getPath(), String.valueOf(status));
                 return reallyTryUrl(context, requestMessage, routedRequestParams, url, false, vars);
             }
 
             if (status == HttpConstants.STATUS_OK)
-                auditor.logAndAudit(AssertionMessages.HTTPROUTE_OK);
+                logAndAudit(AssertionMessages.HTTPROUTE_OK);
             else if (assertion.isPassthroughHttpAuthentication() && status == HttpConstants.STATUS_UNAUTHORIZED) {
-                auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_CHALLENGE);
+                logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_CHALLENGE);
             }
 
             // todo: move to abstract routing assertion
@@ -638,7 +635,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
                 HttpForwardingRuleEnforcer.handleResponseHeaders(httpInboundResponseKnob,
                                                                  httpResponseKnob,
-                                                                 auditor,
+                                                                 getAudit(),
                                                                  assertion.getResponseHeaderRules(),
                                                                  routedResponseDestinationIsContextVariable,
                                                                  context,
@@ -657,9 +654,9 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                     }
                 }
                 if (passed) {
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_PASSTHROUGH_RESPONSE);
+                    logAndAudit(AssertionMessages.HTTPROUTE_PASSTHROUGH_RESPONSE);
                 } else if (status != HttpConstants.STATUS_UNAUTHORIZED) {
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_PASSTHROUGH_RESPONSE_NC);
+                    logAndAudit(AssertionMessages.HTTPROUTE_PASSTHROUGH_RESPONSE_NC);
                 }
             }
 
@@ -672,23 +669,23 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
             return AssertionStatus.NONE;
         } catch (MalformedURLException mfe) {
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(mfe));
+            logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(mfe));
             logger.log(Level.FINEST, "Problem routing: " + mfe.getMessage(), mfe);
         } catch (UnknownHostException uhe) {
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_UNKNOWN_HOST, ExceptionUtils.getMessage(uhe));
+            logAndAudit(AssertionMessages.HTTPROUTE_UNKNOWN_HOST, ExceptionUtils.getMessage(uhe));
             return AssertionStatus.FAILED;
         } catch (SocketException se) {
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_SOCKET_EXCEPTION, ExceptionUtils.getMessage(se));
+            logAndAudit(AssertionMessages.HTTPROUTE_SOCKET_EXCEPTION, ExceptionUtils.getMessage(se));
             return AssertionStatus.FAILED;
         } catch (IOException ioe) {
             // TODO: Worry about what kinds of exceptions indicate failed routing, and which are "unrecoverable"
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(ioe));
+            logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(ioe));
             logger.log(Level.FINEST, "Problem routing: " + ioe.getMessage(), ioe);
         } catch (NoSuchPartException e) {
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(e));
+            logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(e));
             logger.log(Level.FINEST, "Problem routing: " + e.getMessage(), e);
         } catch (NoSuchVariableException e) {
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(e));
+            logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(e));
             logger.log(Level.FINEST, "Problem routing: " + e.getMessage(), e);
         } finally {
             if (routedRequest != null || routedResponse != null) {
@@ -774,7 +771,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 destination.initialize(stashManagerFactory.createStashManager(), outerContentType, responseStream);
                 responseOk = false;
             } else if (status >= HttpConstants.STATUS_ERROR_RANGE_START && assertion.isFailOnErrorStatus() && !passthroughSoapFault) {
-                auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_BADSTATUS, Integer.toString(status));
+                logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_BADSTATUS, Integer.toString(status));
                 responseOk = false;
             } else { // response OK
                 if ( outerContentType==null ) outerContentType = getDefaultContentType(false);
@@ -787,10 +784,10 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 }
             }
         } catch(EOFException eofe){
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_BAD_GZIP_STREAM);
+            logAndAudit(AssertionMessages.HTTPROUTE_BAD_GZIP_STREAM);
             responseOk = false;
         } catch (Exception e) {
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_ERROR_READING_RESPONSE, null, e);
+            logAndAudit(AssertionMessages.HTTPROUTE_ERROR_READING_RESPONSE, null, e);
             responseOk = false;
         }
         return responseOk;
@@ -803,7 +800,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         if ( defaultContentType != null ) {
             try {
                 contentTypeHeader = ContentTypeHeader.create(defaultContentType);
-                auditor.logAndAudit( AssertionMessages.HTTPROUTE_RESPONSE_DEFCONTENTTYPE);
+                logAndAudit( AssertionMessages.HTTPROUTE_RESPONSE_DEFCONTENTTYPE);
             } catch ( UncheckedIOException ioe ) {
                 logger.log( Level.WARNING,
                         "Error processing default content type '"+ ExceptionUtils.getMessage( ioe )+"'.",
@@ -820,7 +817,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         if (url == null) {
             String psurl;
             if (urlUsesVariables) {
-               psurl = ExpandVariables.process(assertion.getProtectedServiceUrl(), context.getVariableMap(varNames, auditor), auditor);
+               psurl = ExpandVariables.process(assertion.getProtectedServiceUrl(), context.getVariableMap(varNames, getAudit()), getAudit());
             } else {
                psurl = assertion.getProtectedServiceUrl();
             }

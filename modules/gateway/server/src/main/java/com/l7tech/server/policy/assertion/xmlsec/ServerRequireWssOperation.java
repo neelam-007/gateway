@@ -1,7 +1,3 @@
-/*
- * Copyright (C) 2004-5 Layer 7 Technologies Inc.
- */
-
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
@@ -15,7 +11,6 @@ import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.ProcessorResultUtil;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
@@ -32,26 +27,20 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.util.logging.Logger;
 
 /**
  * Code shared between ServerRequestWssConfidentiality and ServerRequestWssIntegrity.
  */
 public abstract class ServerRequireWssOperation<AT extends XmlSecurityAssertionBase> extends AbstractMessageTargetableServerAssertion<AT> implements ServerAssertion<AT> {
-    protected final Auditor auditor;
 
-    private final Logger logger;
     private final Config config;
     private final SecurityTokenResolver securityTokenResolver;
     private final DomCompiledXpath compiledXpath;
     private final InvalidXpathException compileFailure;
 
-    protected ServerRequireWssOperation( final Logger logger,
-                                         final AT data,
+    protected ServerRequireWssOperation( final AT data,
                                          final ApplicationContext context ) {
         super(data,data);
-        this.logger = logger;
-        this.auditor = new Auditor(this, context, logger);
         this.config = context.getBean("serverConfig", Config.class);
         this.securityTokenResolver = context.getBean("securityTokenResolver",SecurityTokenResolver.class);
         DomCompiledXpath xp;
@@ -78,7 +67,7 @@ public abstract class ServerRequireWssOperation<AT extends XmlSecurityAssertionB
     @Override
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         if (!SecurityHeaderAddressableSupport.isLocalRecipient(assertion)) {
-            auditor.logAndAudit(AssertionMessages.REQUESTWSS_NOT_FOR_US);
+            logAndAudit(AssertionMessages.REQUESTWSS_NOT_FOR_US);
             return AssertionStatus.NONE;
         }
 
@@ -93,7 +82,7 @@ public abstract class ServerRequireWssOperation<AT extends XmlSecurityAssertionB
         ProcessorResult wssResults;
         try {
             if (!message.isSoap()) {
-                auditor.logAndAudit(AssertionMessages.REQUIREWSS_NONSOAP, messageDescription);
+                logAndAudit(AssertionMessages.REQUIREWSS_NONSOAP, messageDescription);
 
                 return getBadMessageStatus();
             }
@@ -101,7 +90,7 @@ public abstract class ServerRequireWssOperation<AT extends XmlSecurityAssertionB
             if ( isRequest() && !config.getBooleanProperty(ServerConfig.PARAM_WSS_PROCESSOR_LAZY_REQUEST,true) ) {
                 wssResults = message.getSecurityKnob().getProcessorResult();
             } else {
-                wssResults = WSSecurityProcessorUtils.getWssResults(message, messageDescription, securityTokenResolver, auditor);
+                wssResults = WSSecurityProcessorUtils.getWssResults(message, messageDescription, securityTokenResolver, getAudit());
             }
         } catch (SAXException e) {
             throw new CausedIOException(e);
@@ -109,7 +98,7 @@ public abstract class ServerRequireWssOperation<AT extends XmlSecurityAssertionB
         /*
         fla bugfix 1914
         if (wssResults == null) {
-            auditor.logAndAudit(AssertionMessages.NO_WSS_LEVEL_SECURITY);
+            logAndAudit(AssertionMessages.NO_WSS_LEVEL_SECURITY);
             context.setRequestPolicyViolated();
             return AssertionStatus.FALSIFIED;
         }
@@ -120,7 +109,7 @@ public abstract class ServerRequireWssOperation<AT extends XmlSecurityAssertionB
         try {
             soapmsg = message.getXmlKnob().getDocumentReadOnly();
         } catch (SAXException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[] {"Cannot get payload document."}, e);
+            logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[] {"Cannot get payload document."}, e);
             return getBadMessageStatus();
         }
 
@@ -212,8 +201,4 @@ public abstract class ServerRequireWssOperation<AT extends XmlSecurityAssertionB
      */
     protected abstract ParsedElement[] getElementsFoundByProcessor(ProcessorResult wssResults);
 
-    @Override
-    public Auditor getAuditor() {
-        return auditor;
-    }
 }

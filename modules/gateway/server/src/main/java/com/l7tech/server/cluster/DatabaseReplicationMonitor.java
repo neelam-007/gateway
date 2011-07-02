@@ -3,8 +3,8 @@ package com.l7tech.server.cluster;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
+import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.gateway.common.audit.SystemMessages;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.system.DatabaseReplicationCheckEvent;
 import com.l7tech.server.util.ManagedTimerTask;
 import com.l7tech.util.Config;
@@ -73,7 +73,7 @@ public class DatabaseReplicationMonitor implements PropertyChangeListener {
                                        final String secondaryDataSourceDescription,
                                        final DataSource secondaryDataSource,
                                        final DataSource poolDataSource,
-                                       final Auditor.AuditorFactory auditFactory,
+                                       final AuditFactory auditFactory,
                                        final ApplicationEventPublisher applicationEventPublisher,
                                        final String nodeId,
                                        final String clusterType,

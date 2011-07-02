@@ -1,8 +1,8 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
@@ -28,7 +28,7 @@ class Saml2SubjectAndConditionValidate {
                                 final Collection<String> clientAddresses,
                                 final Collection<SamlAssertionValidate.Error> validationResults,
                                 final Map<String, Object> serverVariables,
-                                final Auditor auditor) {
+                                final Audit auditor) {
         if (subject == null) {
             validationResults.add(new SamlAssertionValidate.Error("Subject Required", null));
             return; // no point trying to continue validating a null subject
@@ -209,7 +209,7 @@ class Saml2SubjectAndConditionValidate {
                                    final Calendar now,
                                    final Collection<SamlAssertionValidate.Error> validationResults,
                                    final Map<String, Object> serverVariables,
-                                   final Auditor auditor) {
+                                   final Audit auditor) {
         if (!requestWssSaml.isCheckAssertionValidity()) {
             logger.finer("No Assertion Validity requested");
         } else {
@@ -261,7 +261,7 @@ class Saml2SubjectAndConditionValidate {
                                                     final ConditionsType conditionsType,
                                                     final Collection<SamlAssertionValidate.Error> validationResults,
                                                     final Map<String, Object> serverVariables,
-                                                    final Auditor auditor) {
+                                                    final Audit auditor) {
         final String audienceResTest = requestWssSaml.getAudienceRestriction();
         final String audienceRestriction = (audienceResTest == null) ? audienceResTest : ExpandVariables.process(audienceResTest, serverVariables, auditor);
         if (audienceRestriction == null || "".equals(audienceRestriction)) {

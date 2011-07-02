@@ -8,17 +8,13 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import org.apache.commons.lang.StringUtils;
-import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.logging.Logger;
 
 /**
  * Server side implementation of the CsrfProtectionAssertion.
@@ -26,16 +22,9 @@ import java.util.logging.Logger;
  * @see com.l7tech.external.assertions.csrfprotection.CsrfProtectionAssertion
  */
 public class ServerCsrfProtectionAssertion extends AbstractServerAssertion<CsrfProtectionAssertion> {
-    private static final Logger logger = Logger.getLogger(ServerCsrfProtectionAssertion.class.getName());
 
-    private final CsrfProtectionAssertion assertion;
-    private final Auditor auditor;
-
-    public ServerCsrfProtectionAssertion(CsrfProtectionAssertion assertion, ApplicationContext context) throws PolicyAssertionException {
+    public ServerCsrfProtectionAssertion(CsrfProtectionAssertion assertion) throws PolicyAssertionException {
         super(assertion);
-
-        this.assertion = assertion;
-        this.auditor = context != null ? new Auditor(this, context, logger) : new LogOnlyAuditor(logger);
     }
 
     @Override
@@ -44,7 +33,7 @@ public class ServerCsrfProtectionAssertion extends AbstractServerAssertion<CsrfP
         try {
             requestKnob = context.getRequest().getHttpRequestKnob();
         } catch(IllegalStateException e) {
-            auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_REQUEST_NOT_HTTP);
+            logAndAudit(AssertionMessages.CSRF_PROTECTION_REQUEST_NOT_HTTP);
             return AssertionStatus.FALSIFIED;
         }
 
@@ -56,7 +45,7 @@ public class ServerCsrfProtectionAssertion extends AbstractServerAssertion<CsrfP
                 for(HttpCookie cookie : cookies) {
                     if(assertion.getCookieName().equalsIgnoreCase(cookie.getCookieName())) {
                         if(cookieValue != null && !cookieValue.equals(cookie.getCookieValue())) {
-                            auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_MULTIPLE_COOKIE_VALUES);
+                            logAndAudit(AssertionMessages.CSRF_PROTECTION_MULTIPLE_COOKIE_VALUES);
                             return AssertionStatus.FAILED;
                         } else {
                             cookieValue = cookie.getCookieValue();
@@ -65,40 +54,40 @@ public class ServerCsrfProtectionAssertion extends AbstractServerAssertion<CsrfP
                 }
 
                 if(cookieValue == null) {
-                    auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_NO_COOKIE_VALUE);
+                    logAndAudit(AssertionMessages.CSRF_PROTECTION_NO_COOKIE_VALUE);
                     return AssertionStatus.FAILED;
                 }
             } else {
-                auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_NO_COOKIE_VALUE);
+                logAndAudit(AssertionMessages.CSRF_PROTECTION_NO_COOKIE_VALUE);
                 return AssertionStatus.FAILED;
             }
 
             // Try to get the parameter value
             if(assertion.getParameterType() == HttpParameterType.GET && requestKnob.getMethod() != HttpMethod.GET) {
-                auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_WRONG_REQUEST_TYPE, "GET");
+                logAndAudit(AssertionMessages.CSRF_PROTECTION_WRONG_REQUEST_TYPE, "GET");
                 return AssertionStatus.FAILED;
             }
             if(assertion.getParameterType() == HttpParameterType.POST && requestKnob.getMethod() != HttpMethod.POST) {
-                auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_WRONG_REQUEST_TYPE, "POST");
+                logAndAudit(AssertionMessages.CSRF_PROTECTION_WRONG_REQUEST_TYPE, "POST");
                 return AssertionStatus.FAILED;
             }
             if(assertion.getParameterType() == HttpParameterType.GET_AND_POST
                     && (requestKnob.getMethod() != HttpMethod.GET && requestKnob.getMethod() != HttpMethod.POST)) {
-                auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_WRONG_REQUEST_TYPE, "GET or POST");
+                logAndAudit(AssertionMessages.CSRF_PROTECTION_WRONG_REQUEST_TYPE, "GET or POST");
                 return AssertionStatus.FAILED;
             }
             String[] paramValues = requestKnob.getParameterValues(assertion.getParameterName());
             if(paramValues == null || paramValues.length == 0) {
-                auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_NO_PARAMETER);
+                logAndAudit(AssertionMessages.CSRF_PROTECTION_NO_PARAMETER);
                 return AssertionStatus.FAILED;
             } else if(paramValues.length > 1) {
-                auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_MULTIPLE_PARAMETER_VALUES);
+                logAndAudit(AssertionMessages.CSRF_PROTECTION_MULTIPLE_PARAMETER_VALUES);
                 return AssertionStatus.FAILED;
             }
             final String paramValue = paramValues[0];
 
             if(!cookieValue.equals(paramValue)) {
-                auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_COOKIE_PARAMETER_MISMATCH);
+                logAndAudit(AssertionMessages.CSRF_PROTECTION_COOKIE_PARAMETER_MISMATCH);
                 return AssertionStatus.FAILED;
             }
 
@@ -112,11 +101,11 @@ public class ServerCsrfProtectionAssertion extends AbstractServerAssertion<CsrfP
             String referer = null;
             if(!assertion.isAllowMissingOrEmptyReferer() && (values == null || values.length == 0
                     || (values.length == 1 && StringUtils.isEmpty(values[0])))) {
-                auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_MISSING_REFERER);
+                logAndAudit(AssertionMessages.CSRF_PROTECTION_MISSING_REFERER);
                 return AssertionStatus.FAILED;
             } else if(values != null && values.length > 0) {
                 if(values.length > 1) {
-                    auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_MULTIPLE_REFERERS);
+                    logAndAudit(AssertionMessages.CSRF_PROTECTION_MULTIPLE_REFERERS);
                     return AssertionStatus.FAILED;
                 }
 
@@ -130,7 +119,7 @@ public class ServerCsrfProtectionAssertion extends AbstractServerAssertion<CsrfP
                     URL url = new URL(requestKnob.getRequestURL(), referer);
                     domain = url.getHost();
                 } catch(MalformedURLException e) {
-                    auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_INVALID_REFERER, referer);
+                    logAndAudit(AssertionMessages.CSRF_PROTECTION_INVALID_REFERER, referer);
                     return AssertionStatus.FAILED;
                 }
 
@@ -138,7 +127,7 @@ public class ServerCsrfProtectionAssertion extends AbstractServerAssertion<CsrfP
                     String localDomain = requestKnob.getRequestURL().getHost();
 
                     if(!localDomain.equalsIgnoreCase(domain)) {
-                        auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_INVALID_REFERER, referer);
+                        logAndAudit(AssertionMessages.CSRF_PROTECTION_INVALID_REFERER, referer);
                         return AssertionStatus.FAILED;
                     }
                 } else {
@@ -151,7 +140,7 @@ public class ServerCsrfProtectionAssertion extends AbstractServerAssertion<CsrfP
                     }
 
                     if(!valid) {
-                        auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_INVALID_REFERER, referer);
+                        logAndAudit(AssertionMessages.CSRF_PROTECTION_INVALID_REFERER, referer);
                         return AssertionStatus.FAILED;
                     }
                 }

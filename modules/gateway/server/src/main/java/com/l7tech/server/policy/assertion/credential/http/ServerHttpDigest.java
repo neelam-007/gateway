@@ -10,13 +10,10 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.security.token.http.HttpDigestToken;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.policy.assertion.credential.DigestSessions;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.SyspropUtil;
-import org.springframework.context.ApplicationContext;
 
 import javax.mail.internet.HeaderTokenizer;
 import javax.mail.internet.ParseException;
@@ -24,7 +21,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
-import java.util.logging.Logger;
 
 /**
  * Server side implementation of the HttpDigestAssertion.
@@ -36,9 +32,8 @@ public class ServerHttpDigest extends ServerHttpCredentialSource<HttpDigest> {
 
     // - PUBLIC
 
-    public ServerHttpDigest(HttpDigest assertion, ApplicationContext context) throws PolicyAssertionException {
-        super(assertion, context);
-        this.auditor = context != null ? new Auditor(this, context, logger) : new LogOnlyAuditor(logger);
+    public ServerHttpDigest(HttpDigest assertion) throws PolicyAssertionException {
+        super(assertion);
     }
 
     // - PROTECTED
@@ -79,10 +74,10 @@ public class ServerHttpDigest extends ServerHttpCredentialSource<HttpDigest> {
         DigestSessions sessions = DigestSessions.getInstance();
 
         if ( sessions.use( nonce ) ) {
-            auditor.logAndAudit(AssertionMessages.HTTPDIGEST_NONCE_VALID, nonce, userName);
+            logAndAudit(AssertionMessages.HTTPDIGEST_NONCE_VALID, nonce, userName);
             return AssertionStatus.NONE;
         } else {
-            auditor.logAndAudit(AssertionMessages.HTTPDIGEST_NONCE_EXPIRED, nonce, userName);
+            logAndAudit(AssertionMessages.HTTPDIGEST_NONCE_EXPIRED, nonce, userName);
             sessions.invalidate( nonce );
             return AssertionStatus.AUTH_FAILED;
         }
@@ -125,17 +120,17 @@ public class ServerHttpDigest extends ServerHttpCredentialSource<HttpDigest> {
         if ( nonce == null || nonce.length() == 0 ) {
             // New session
             String newNonce = sessions.generate(assertion.getNonceTimeout(), assertion.getMaxNonceCount() );
-            auditor.logAndAudit(AssertionMessages.HTTPDIGEST_NONCE_GENERATED, newNonce);
+            logAndAudit(AssertionMessages.HTTPDIGEST_NONCE_GENERATED, newNonce);
             return myChallengeParams( newNonce );
         } else {
             // Existing digest session
             if ( !sessions.use( nonce ) ) {
                 // Nonce has been invalidated or is expired
                 final String username = requestAuthParams.get(HttpDigest.PARAM_USERNAME);
-                auditor.logAndAudit(AssertionMessages.HTTPDIGEST_NONCE_EXPIRED, nonce, username == null ? "<unknown>" : username);
+                logAndAudit(AssertionMessages.HTTPDIGEST_NONCE_EXPIRED, nonce, username == null ? "<unknown>" : username);
                 sessions.invalidate( nonce );
                 nonce = sessions.generate(assertion.getNonceTimeout(), assertion.getMaxNonceCount() );
-                auditor.logAndAudit(AssertionMessages.HTTPDIGEST_NONCE_GENERATED, nonce);
+                logAndAudit(AssertionMessages.HTTPDIGEST_NONCE_GENERATED, nonce);
             }
             return myChallengeParams( nonce );
         }
@@ -157,7 +152,7 @@ public class ServerHttpDigest extends ServerHttpCredentialSource<HttpDigest> {
         }
 
         if ( !populateAuthParams( authParams, authorization.trim() ) ) {
-            auditor.logAndAudit(AssertionMessages.HTTPCREDS_NA_AUTHN_HEADER);
+            logAndAudit(AssertionMessages.HTTPCREDS_NA_AUTHN_HEADER);
             return null;
         }
 
@@ -195,7 +190,7 @@ public class ServerHttpDigest extends ServerHttpCredentialSource<HttpDigest> {
                         value = value.substring( 1, value.length() - 1 );
                     } else {
                         // Multi-word quoted string
-                        StringBuffer valueBuffer = new StringBuffer( value.substring(1) );
+                        StringBuilder valueBuffer = new StringBuilder( value.substring( 1 ) );
                         value = null;
                         while ( stok.hasMoreTokens() ) {
                             token = stok.nextToken();
@@ -299,11 +294,7 @@ public class ServerHttpDigest extends ServerHttpCredentialSource<HttpDigest> {
 
     // - PRIVATE
 
-    private static final Logger logger = Logger.getLogger(ServerHttpDigest.class.getName());
-
     private static final boolean OLD_PARSER = SyspropUtil.getBoolean( "com.l7tech.server.policy.assertion.credential.http.oldDigestParser", false );
-
-    private final Auditor auditor;
 
     private Map<String,String> myChallengeParams( String nonce ) {
         Map<String,String> params = new HashMap<String,String>();

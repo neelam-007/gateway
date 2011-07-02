@@ -1,7 +1,3 @@
-/**
- * Copyright (C) 2008, Layer 7 Technologies Inc.
- * @author darmstrong
- */
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.http.HttpMethod;
@@ -36,6 +32,7 @@ import java.util.regex.Pattern;
  * Basic test coverage for JSON and code injections apart from HTML.
  *
  * //todo complete test coverage
+ * @author darmstrong
  */
 public class ServerCodeInjectionProtectionAssertionTest {
     private ApplicationContext appContext;
@@ -67,7 +64,7 @@ public class ServerCodeInjectionProtectionAssertionTest {
         assertion.setIncludeRequestBody(true);//required otherwise message body will not be scanned
 
         ServerCodeInjectionProtectionAssertion serverAssertion =
-                new ServerCodeInjectionProtectionAssertion(assertion, appContext);
+                new ServerCodeInjectionProtectionAssertion(assertion);
 
         final PolicyEnforcementContext context = getContext(null, ContentTypeHeader.APPLICATION_JSON);
         context.setVariable(varName, new Message(stashManager, ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(noInvalidCharacters.getBytes())));
@@ -94,7 +91,7 @@ public class ServerCodeInjectionProtectionAssertionTest {
         assertion.setIncludeRequestBody(true);//required otherwise message body will not be scanned
 
         ServerCodeInjectionProtectionAssertion serverAssertion =
-                new ServerCodeInjectionProtectionAssertion(assertion, appContext);
+                new ServerCodeInjectionProtectionAssertion(assertion);
 
         final PolicyEnforcementContext context = getContext(null, ContentTypeHeader.APPLICATION_JSON);
         context.setVariable(varName, new Message(stashManager, ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(invalidCharsInKeyValue.getBytes())));
@@ -121,7 +118,7 @@ public class ServerCodeInjectionProtectionAssertionTest {
         assertion.setIncludeRequestBody(true);//required otherwise message body will not be scanned
 
         ServerCodeInjectionProtectionAssertion serverAssertion =
-                new ServerCodeInjectionProtectionAssertion(assertion, appContext);
+                new ServerCodeInjectionProtectionAssertion(assertion);
 
         final PolicyEnforcementContext context = getContext(null, ContentTypeHeader.APPLICATION_JSON);
         context.setVariable(varName, new Message(stashManager, ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(invalidCharactersInValue.getBytes())));
@@ -150,7 +147,7 @@ public class ServerCodeInjectionProtectionAssertionTest {
         assertion.setIncludeRequestBody(true);//required otherwise message body will not be scanned
 
         ServerCodeInjectionProtectionAssertion serverAssertion =
-                new ServerCodeInjectionProtectionAssertion(assertion, appContext);
+                new ServerCodeInjectionProtectionAssertion(assertion);
 
         final PolicyEnforcementContext context = getContext(invalidCharactersInValue, ContentTypeHeader.APPLICATION_JSON);
 
@@ -167,7 +164,7 @@ public class ServerCodeInjectionProtectionAssertionTest {
         assertion.setIncludeRequestBody(true);
 
         ServerCodeInjectionProtectionAssertion serverAssertion =
-                new ServerCodeInjectionProtectionAssertion(assertion, appContext);
+                new ServerCodeInjectionProtectionAssertion(assertion);
 
         final PolicyEnforcementContext context = getContext("\\", ContentTypeHeader.TEXT_DEFAULT);
 
@@ -184,7 +181,7 @@ public class ServerCodeInjectionProtectionAssertionTest {
         assertion.setIncludeRequestBody(true);
 
         ServerCodeInjectionProtectionAssertion serverAssertion =
-                new ServerCodeInjectionProtectionAssertion(assertion, appContext);
+                new ServerCodeInjectionProtectionAssertion(assertion);
 
         final PolicyEnforcementContext context = getContext("\\", ContentTypeHeader.TEXT_DEFAULT);
 
@@ -201,7 +198,7 @@ public class ServerCodeInjectionProtectionAssertionTest {
         assertion.setIncludeRequestBody(true);
 
         ServerCodeInjectionProtectionAssertion serverAssertion =
-                new ServerCodeInjectionProtectionAssertion(assertion, appContext);
+                new ServerCodeInjectionProtectionAssertion(assertion);
 
         final PolicyEnforcementContext context = getContext(";", ContentTypeHeader.TEXT_DEFAULT);
 
@@ -227,7 +224,7 @@ public class ServerCodeInjectionProtectionAssertionTest {
             assertion.setIncludeRequestBody(true);
 
             ServerCodeInjectionProtectionAssertion serverAssertion =
-                    new ServerCodeInjectionProtectionAssertion(assertion, appContext);
+                    new ServerCodeInjectionProtectionAssertion(assertion);
 
             final Pattern pattern = protectionType.getPattern();
             System.out.println(protectionType.getDescription());

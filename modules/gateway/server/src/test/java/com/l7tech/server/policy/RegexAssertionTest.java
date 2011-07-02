@@ -1,8 +1,3 @@
-/*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
- */
 package com.l7tech.server.policy;
 
 import com.l7tech.common.TestDocuments;
@@ -350,7 +345,7 @@ public class RegexAssertionTest {
     }
 
     private void expect(AssertionStatus expected, Regex regex, PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        ServerRegex sass = new ServerRegex(regex, null);
+        ServerRegex sass = new ServerRegex(regex);
         AssertionStatus result;
         try {
             result = sass.checkRequest(context);

@@ -48,7 +48,7 @@ public class ServerJoinAssertionTest {
 
     @Test
     public void testJoinArray() throws Exception {
-        ServerJoinAssertion sja = new ServerJoinAssertion(assertion, null);
+        ServerJoinAssertion sja = new ServerJoinAssertion(assertion);
         AssertionStatus result = sja.checkRequest(context);
 
         Assert.assertEquals(result, AssertionStatus.NONE);
@@ -66,7 +66,7 @@ public class ServerJoinAssertionTest {
         list.add(b3);
         context.setVariable(inputVariable, list);
 
-        ServerJoinAssertion sja = new ServerJoinAssertion(assertion, null);
+        ServerJoinAssertion sja = new ServerJoinAssertion(assertion);
         AssertionStatus result = sja.checkRequest(context);
 
         Assert.assertEquals(result, AssertionStatus.NONE);
@@ -88,7 +88,7 @@ public class ServerJoinAssertionTest {
         assertion.setInputVariable("input");
         assertion.setOutputVariable("output");
 
-        ServerJoinAssertion serverJoinAssertion = new ServerJoinAssertion(assertion, null);
+        ServerJoinAssertion serverJoinAssertion = new ServerJoinAssertion(assertion);
         final AssertionStatus status = serverJoinAssertion.checkRequest(context);
 
         Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);

@@ -1,13 +1,9 @@
-/*
- * Copyright (C) 2007 Layer 7 Technologies, Inc.
- */
-
 package com.l7tech.server.transport.ftp;
 
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.transport.ftp.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.DefaultKey;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.util.ExceptionUtils;
 
@@ -71,7 +67,7 @@ public class FtpAdminImpl implements FtpAdmin {
         config.setSecurity(!isFtps ? FtpSecurity.FTP_UNSECURED :
                                       isExplicit ? FtpSecurity.FTPS_EXPLICIT : FtpSecurity.FTPS_IMPLICIT);
         try {
-            password = ServerVariables.expandPasswordOnlyVariable(new LogOnlyAuditor(logger), password);
+            password = ServerVariables.expandPasswordOnlyVariable(new LoggingAudit(logger), password);
         } catch (FindException e) {
             final String msg = "Unable to look up secure password reference: " + ExceptionUtils.getMessage(e);
             throw (FtpTestException)new FtpTestException(msg, msg).initCause(e);

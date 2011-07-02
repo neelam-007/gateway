@@ -23,7 +23,6 @@ import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
@@ -45,7 +44,6 @@ import java.security.GeneralSecurityException;
 import java.security.KeyStoreException;
 import java.security.cert.X509Certificate;
 import java.util.*;
-import java.util.logging.Logger;
 
 import static com.l7tech.policy.assertion.SamlIssuerConfiguration.DecorationType.*;
 
@@ -53,9 +51,6 @@ import static com.l7tech.policy.assertion.SamlIssuerConfiguration.DecorationType
  * @author alex
  */
 public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssuerAssertion> {
-    private static final Logger logger = Logger.getLogger(ServerSamlIssuerAssertion.class.getName());
-
-    private final Auditor auditor;
     private final int defaultBeforeOffsetMinutes;
     private final int defaultAfterOffsetMinutes;
     private final SubjectStatement.Confirmation confirmationMethod;
@@ -75,11 +70,8 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
             this.version = ver;
         }
 
-        {
-            auditor = new Auditor(this, spring, logger);
-        }
-        ServerConfig sc = (ServerConfig) spring.getBean("serverConfig");
-        this.decorator = (WssDecorator) spring.getBean("wssDecorator");
+        ServerConfig sc = spring.getBean("serverConfig", ServerConfig.class);
+        this.decorator = spring.getBean("wssDecorator", WssDecorator.class);
 
         this.defaultBeforeOffsetMinutes = sc.getIntProperty("samlBeforeOffsetMinute", 2);
         this.defaultAfterOffsetMinutes = sc.getIntProperty("samlAfterOffsetMinute", 5);
@@ -113,13 +105,13 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
         if (varsUsed.length == 0) {
             vars = Collections.emptyMap();
         } else {
-            vars = context.getVariableMap(varsUsed, auditor);
+            vars = context.getVariableMap(varsUsed, getAudit());
         }
         
         final SamlAssertionGenerator.Options options = new SamlAssertionGenerator.Options();
         final String testAudienceRestriction = assertion.getAudienceRestriction();
         if( testAudienceRestriction != null && !testAudienceRestriction.isEmpty() ) {
-            options.setAudienceRestriction(ExpandVariables.process(testAudienceRestriction, vars, auditor));
+            options.setAudienceRestriction(ExpandVariables.process(testAudienceRestriction, vars, getAudit()));
         }
         if (clientAddress != null) try {
             options.setClientAddress(InetAddress.getByName(clientAddress));
@@ -137,7 +129,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
         options.setNotAfterSeconds(assertionNotAfterSeconds != -1 ? assertionNotAfterSeconds : defaultAfterOffsetMinutes * 60);
 
         String nameQualifier = assertion.getNameQualifier();
-        if (nameQualifier != null) nameQualifier = ExpandVariables.process(nameQualifier, vars, auditor);
+        if (nameQualifier != null) nameQualifier = ExpandVariables.process(nameQualifier, vars, getAudit());
 
         String nameValue;
         final String nameFormat;
@@ -149,7 +141,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
             case FROM_USER:
                 User u = context.getDefaultAuthenticationContext().getLastAuthenticatedUser(); // TODO support some choice of user
                 if (u == null) {
-                    auditor.logAndAudit(AssertionMessages.SAML_ISSUER_AUTH_REQUIRED);
+                    logAndAudit(AssertionMessages.SAML_ISSUER_AUTH_REQUIRED);
                     return AssertionStatus.AUTH_REQUIRED;
                 }
 
@@ -176,10 +168,10 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
             case SPECIFIED:
                 String val = assertion.getNameIdentifierValue();
                 if (val == null) {
-                    auditor.logAndAudit(AssertionMessages.SAML_ISSUER_MISSING_NIVAL);
+                    logAndAudit(AssertionMessages.SAML_ISSUER_MISSING_NIVAL);
                     nameValue = null;
                 } else {
-                    nameValue = ExpandVariables.process(val, vars, auditor);
+                    nameValue = ExpandVariables.process(val, vars, getAudit());
                 }
                 nameFormat = assertion.getNameIdentifierFormat();
                 if (creds == null)
@@ -238,17 +230,17 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
 
             try {
                 if (!msg.isSoap()) {
-                    auditor.logAndAudit(AssertionMessages.SAML_ISSUER_NOT_SOAP);
+                    logAndAudit(AssertionMessages.SAML_ISSUER_NOT_SOAP);
                     return AssertionStatus.NOT_APPLICABLE;
                 }
             } catch (SAXException e) {
-                auditor.logAndAudit(AssertionMessages.SAML_ISSUER_BAD_XML, null, e);
+                logAndAudit(AssertionMessages.SAML_ISSUER_BAD_XML, null, e);
                 return AssertionStatus.BAD_REQUEST;
             }
 
             XmlKnob xk = msg.getKnob(XmlKnob.class);
             if (xk == null) {
-                auditor.logAndAudit(AssertionMessages.SAML_ISSUER_NOT_XML);
+                logAndAudit(AssertionMessages.SAML_ISSUER_NOT_XML);
                 return AssertionStatus.FAILED;
             }
 
@@ -256,7 +248,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
             try {
                 messageDoc = xk.getDocumentWritable();
             } catch (SAXException e) {
-                auditor.logAndAudit(AssertionMessages.SAML_ISSUER_BAD_XML, null, e);
+                logAndAudit(AssertionMessages.SAML_ISSUER_BAD_XML, null, e);
                 return AssertionStatus.BAD_REQUEST;
             }
 
@@ -275,7 +267,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                     try {
                         dr.getElementsToSign().add( SoapUtil.getBodyElement(messageDoc));
                     } catch ( InvalidDocumentFormatException e) {
-                        auditor.logAndAudit(AssertionMessages.SAML_ISSUER_BAD_XML, null, e);
+                        logAndAudit(AssertionMessages.SAML_ISSUER_BAD_XML, null, e);
                         return AssertionStatus.BAD_REQUEST;
                     }
                 }
@@ -283,7 +275,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                 try {
                     decorator.decorateMessage(new Message(messageDoc), dr);
                 } catch (Exception e) {
-                    auditor.logAndAudit(AssertionMessages.SAML_ISSUER_CANT_DECORATE, null, e);
+                    logAndAudit(AssertionMessages.SAML_ISSUER_CANT_DECORATE, null, e);
                     return AssertionStatus.FAILED;
                 }
             }
@@ -291,7 +283,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
             auditDone();
             return AssertionStatus.NONE;
         } catch (GeneralSecurityException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to issue assertion: " + ExceptionUtils.getMessage(e) }, e);
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to issue assertion: " + ExceptionUtils.getMessage(e) }, e);
             return AssertionStatus.FAILED;
         }
     }
@@ -300,7 +292,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
         String value = null;
 
         if ( text != null ) {
-            value = ExpandVariables.process( text, variables, auditor );
+            value = ExpandVariables.process( text, variables, getAudit() );
         }
 
         return value;
@@ -309,11 +301,11 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
 
     private void auditDone() throws PolicyAssertionException {
         if (assertion.getAttributeStatement() != null) {
-            auditor.logAndAudit(AssertionMessages.SAML_ISSUER_ISSUED_ATTR);
+            logAndAudit(AssertionMessages.SAML_ISSUER_ISSUED_ATTR);
         } else if (assertion.getAuthenticationStatement() != null) {
-            auditor.logAndAudit(AssertionMessages.SAML_ISSUER_ISSUED_AUTHN);
+            logAndAudit(AssertionMessages.SAML_ISSUER_ISSUED_AUTHN);
         } else if (assertion.getAuthorizationStatement() != null) {
-            auditor.logAndAudit(AssertionMessages.SAML_ISSUER_ISSUED_AUTHZ);
+            logAndAudit(AssertionMessages.SAML_ISSUER_ISSUED_AUTHZ);
         } else {
             throw new PolicyAssertionException(assertion, "No statement selected");
         }
@@ -325,9 +317,9 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                 creds,
                 confirmationMethod,
                 assertion.getSubjectConfirmationKeyInfoType(),
-                ExpandVariables.process(authz.getResource(), vars, auditor),
-                ExpandVariables.process(authz.getAction(), vars, auditor),
-                ExpandVariables.process(authz.getActionNamespace(), vars, auditor),
+                ExpandVariables.process(authz.getResource(), vars, getAudit()),
+                ExpandVariables.process(authz.getAction(), vars, getAudit()),
+                ExpandVariables.process(authz.getActionNamespace(), vars, getAudit()),
                 assertion.getNameIdentifierType(), overrideNameValue, overrideNameFormat, nameQualifier);
     }
 
@@ -352,16 +344,16 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
     private SubjectStatement makeAttributeStatement(LoginCredentials creds, Integer version, Map<String, Object> vars, String overrideNameValue, String overrideNameFormat, String nameQualifier) throws PolicyAssertionException {
         List<Attribute> outAtts = new ArrayList<Attribute>();
         for (SamlAttributeStatement.Attribute attribute : assertion.getAttributeStatement().getAttributes()) {
-            String name = ExpandVariables.process(attribute.getName(), vars, auditor);
+            String name = ExpandVariables.process(attribute.getName(), vars, getAudit());
             String nameFormatOrNamespace;
             switch(version) {
                 case 1:
-                    nameFormatOrNamespace = ExpandVariables.process(attribute.getNamespace(), vars, auditor);
+                    nameFormatOrNamespace = ExpandVariables.process(attribute.getNamespace(), vars, getAudit());
                     break;
                 case 2:
                     String nf = attribute.getNameFormat();
                     if (nf == null) nf = SamlConstants.ATTRIBUTE_NAME_FORMAT_UNSPECIFIED;
-                    nameFormatOrNamespace = ExpandVariables.process(nf, vars, auditor);
+                    nameFormatOrNamespace = ExpandVariables.process(nf, vars, getAudit());
                     break;
                 default:
                     throw new RuntimeException(); // Can't happen
@@ -369,25 +361,25 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
 
             if (attribute.isRepeatIfMulti()) {
                 // Repeat this attribute once for each value
-                Object obj = ExpandVariables.processSingleVariableAsDisplayableObject(attribute.getValue(), vars, auditor);
+                Object obj = ExpandVariables.processSingleVariableAsDisplayableObject(attribute.getValue(), vars, getAudit());
                 if (obj instanceof Object[]) {
                     Object[] vals = (Object[]) obj;
                     for (Object val : vals) {
                         final String s = val.toString();
                         outAtts.add(new Attribute(name, nameFormatOrNamespace, s));
-                        auditor.logAndAudit(AssertionMessages.SAML_ISSUER_ADDING_ATTR, name, s);
+                        logAndAudit(AssertionMessages.SAML_ISSUER_ADDING_ATTR, name, s);
                     }
                 } else {
                     // ExpandVariables will have already thrown/logged a warning if the variable is bad
                     final String s = obj == null ? "" : obj.toString();
-                    auditor.logAndAudit(AssertionMessages.SAML_ISSUER_ADDING_ATTR, name, s);
+                    logAndAudit(AssertionMessages.SAML_ISSUER_ADDING_ATTR, name, s);
                     outAtts.add(new Attribute(name, nameFormatOrNamespace, s));
                 }
             } else {
                 // If it happens to be multivalued, ExpandVariables.process will join the values with a
                 // delimiter.
-                final String value = ExpandVariables.process(attribute.getValue(), vars, auditor);
-                auditor.logAndAudit(AssertionMessages.SAML_ISSUER_ADDING_ATTR, name, value);
+                final String value = ExpandVariables.process(attribute.getValue(), vars, getAudit());
+                logAndAudit(AssertionMessages.SAML_ISSUER_ADDING_ATTR, name, value);
                 outAtts.add(new Attribute(name, nameFormatOrNamespace, value));
             }
         }

@@ -1,19 +1,17 @@
 package com.l7tech.external.assertions.mtom.server;
 
-import com.l7tech.gateway.common.audit.AuditDetailMessage;
+import com.l7tech.gateway.common.audit.TestAudit;
+import com.l7tech.server.ApplicationContexts;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Logger;
+import java.util.Collections;
 import java.util.HashMap;
 import java.io.ByteArrayInputStream;
+import java.util.Map;
 
 import com.l7tech.external.assertions.mtom.MtomValidateAssertion;
 import com.l7tech.xml.xpath.XpathExpression;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.common.mime.ByteArrayStashManager;
@@ -27,12 +25,10 @@ import com.l7tech.policy.assertion.AssertionStatus;
  */
 public class ServerMtomValidateAssertionTest {
 
-    private static final Logger logger = Logger.getLogger(ServerMtomEncodeAssertionTest.class.getName());
-
     @Test
     public void testValidate() throws Exception {
         final MtomValidateAssertion.ValidationRule rule = new MtomValidateAssertion.ValidationRule();
-        rule.setSize( 1024 );
+        rule.setSize( 1024L );
         rule.setXpathExpression( new XpathExpression( "/s:Envelope/s:Body/tns:echoFile/arg0/data", new HashMap<String,String>(){{
                     put("s","http://schemas.xmlsoap.org/soap/envelope/");
                     put("tns","http://www.layer7tech.com/services/jaxws/echoservice");
@@ -42,10 +38,7 @@ public class ServerMtomValidateAssertionTest {
         mva.setRequireEncoded( true );
         mva.setValidationRules( new MtomValidateAssertion.ValidationRule[]{ rule } );
 
-        final ServerMtomValidateAssertion smva = new ServerMtomValidateAssertion(
-                mva,
-                new LogOnlyAuditor( logger )
-        );
+        final ServerMtomValidateAssertion smva = new ServerMtomValidateAssertion( mva );
 
         final String message =
                 "--uuid:45ac4aae-b978-40c3-b093-18e82e03ce3a\r\n" +
@@ -82,7 +75,7 @@ public class ServerMtomValidateAssertionTest {
     @Test
     public void testDuplicateContentIdentifiers() throws Exception {
        final MtomValidateAssertion.ValidationRule rule = new MtomValidateAssertion.ValidationRule();
-        rule.setSize( 1024 );
+        rule.setSize( 1024L );
         rule.setXpathExpression( new XpathExpression( "/s:Envelope/s:Body/tns:echoFile/arg0/data", new HashMap<String,String>(){{
                     put("s","http://schemas.xmlsoap.org/soap/envelope/");
                     put("tns","http://www.layer7tech.com/services/jaxws/echoservice");
@@ -92,17 +85,8 @@ public class ServerMtomValidateAssertionTest {
         mva.setRequireEncoded( true );
         mva.setValidationRules( new MtomValidateAssertion.ValidationRule[]{ rule } );
 
-        final List<String> auditedMessages = new ArrayList<String>();
-        final ServerMtomValidateAssertion smva = new ServerMtomValidateAssertion(
-                mva,
-                new LogOnlyAuditor( logger ){
-                    @Override
-                    public void logAndAudit( final AuditDetailMessage msg, final String[] params, final Throwable e ) {
-                        auditedMessages.add( MessageFormat.format(msg.getMessage(), params ) );
-                        super.logAndAudit( msg, params, e );
-                    }
-                }
-        );
+        final TestAudit testAudit = new TestAudit();
+        final ServerMtomValidateAssertion smva = ApplicationContexts.inject( new ServerMtomValidateAssertion( mva ), beans( testAudit ) );
 
         final String message =
                 "--uuid:45ac4aae-b978-40c3-b093-18e82e03ce3a\r\n" +
@@ -141,22 +125,20 @@ public class ServerMtomValidateAssertionTest {
             context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( mess, null );
             AssertionStatus status = smva.checkRequest( context );
             assertEquals( "status falsified", AssertionStatus.FALSIFIED, status );
-            boolean sawAudit = false;
-            for ( String auditMessage : auditedMessages ) {
-                if ( auditMessage.contains("MIME part Content-IDs are not unique" )) {
-                    sawAudit = true;
-                }
-            }
-            assertTrue("failed due to content-id duplication", sawAudit);
+            assertTrue("failed due to content-id duplication", testAudit.isAuditPresentContaining("MIME part Content-IDs are not unique"));
         } finally {
             ResourceUtils.closeQuietly( context );
         }
     }
 
-   @Test
+    private Map<String,Object> beans( final TestAudit audit ) {
+        return Collections.<String,Object>singletonMap( "auditFactory", audit.factory() );
+    }
+
+    @Test
     public void testSelectIncludeElement() throws Exception {
        final MtomValidateAssertion.ValidationRule rule = new MtomValidateAssertion.ValidationRule();
-        rule.setSize( 1024 );
+        rule.setSize( 1024L );
         rule.setXpathExpression( new XpathExpression( "/s:Envelope/s:Body/tns:echoFile/arg0/data/*", new HashMap<String,String>(){{
                     put("s","http://schemas.xmlsoap.org/soap/envelope/");
                     put("tns","http://www.layer7tech.com/services/jaxws/echoservice");
@@ -166,17 +148,8 @@ public class ServerMtomValidateAssertionTest {
         mva.setRequireEncoded( true );
         mva.setValidationRules( new MtomValidateAssertion.ValidationRule[]{ rule } );
 
-        final List<String> auditedMessages = new ArrayList<String>();
-        final ServerMtomValidateAssertion smva = new ServerMtomValidateAssertion(
-                mva,
-                new LogOnlyAuditor( logger ){
-                    @Override
-                    public void logAndAudit( final AuditDetailMessage msg, final String[] params, final Throwable e ) {
-                        auditedMessages.add( MessageFormat.format(msg.getMessage(), params ) );
-                        super.logAndAudit( msg, params, e );
-                    }
-                }
-        );
+        final TestAudit testAudit = new TestAudit();
+        final ServerMtomValidateAssertion smva = ApplicationContexts.inject( new ServerMtomValidateAssertion( mva ), beans( testAudit ) );
 
         final String message =
                 "--uuid:45ac4aae-b978-40c3-b093-18e82e03ce3a\r\n" +
@@ -205,13 +178,7 @@ public class ServerMtomValidateAssertionTest {
             context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( mess, null );
             AssertionStatus status = smva.checkRequest( context );
             assertEquals( "status falsified", AssertionStatus.FALSIFIED, status );
-            boolean sawAudit = false;
-            for ( String auditMessage : auditedMessages ) {
-                if ( auditMessage.contains("Element is an XOP Include (the parent element is required)" )) {
-                    sawAudit = true;
-                }
-            }
-            assertTrue("failed due to invalid XPath", sawAudit);
+            assertTrue("failed due to invalid XPath", testAudit.isAuditPresentContaining( "Element is an XOP Include (the parent element is required)" ));
         } finally {
             ResourceUtils.closeQuietly( context );
         }

@@ -5,15 +5,14 @@ import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.server.policy.assertion.ServerAcceleratedOversizedTextAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.util.Injector;
 import com.l7tech.util.ConstructorInvocation;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.xml.TarariLoader;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationEventPublisher;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -31,6 +30,7 @@ public class ServerPolicyFactory implements ApplicationContextAware {
     protected static final Logger logger = Logger.getLogger(ServerPolicyFactory.class.getName());
 
     private final AssertionLicense licenseManager;
+    private final Injector injector;
     private ApplicationContext applicationContext;
     private static ThreadLocal<LinkedList<Boolean>> licenseEnforcement = new ThreadLocal<LinkedList<Boolean>>() {
         @Override
@@ -60,8 +60,10 @@ public class ServerPolicyFactory implements ApplicationContextAware {
         return licenseEnforcement.get().peek();
     }
 
-    public ServerPolicyFactory(AssertionLicense licenseManager) {
+    public ServerPolicyFactory(final AssertionLicense licenseManager,
+                               final Injector injector) {
         this.licenseManager = licenseManager;
+        this.injector = injector;
     }
 
     /**
@@ -125,11 +127,17 @@ public class ServerPolicyFactory implements ApplicationContextAware {
             if (isLicenseEnforcement() && !licenseManager.isAssertionEnabled(genericAssertion))
                 throw new LicenseException("The specified assertion is not supported on this Gateway: " + genericAssertion.getClass());
 
+            final AutowireCapableBeanFactory autowireCapableBeanFactory = applicationContext.getAutowireCapableBeanFactory();
+
             // Prevent Tarari assertions from being loaded on non-Tarari SSGs
             // TODO find an abstraction for this assertion censorship
             if (TarariLoader.getGlobalContext() != null) {
-                if (genericAssertion instanceof OversizedTextAssertion)
-                    return new ServerAcceleratedOversizedTextAssertion((OversizedTextAssertion)genericAssertion, applicationContext);
+                if (genericAssertion instanceof OversizedTextAssertion) {
+                    final ServerAcceleratedOversizedTextAssertion serverAssertion =
+                            new ServerAcceleratedOversizedTextAssertion((OversizedTextAssertion)genericAssertion, applicationContext);
+                    injector.inject( serverAssertion );
+                    return serverAssertion;
+                }
             }
 
             if (genericAssertion instanceof CommentAssertion || !genericAssertion.isEnabled()) return null;
@@ -158,11 +166,8 @@ public class ServerPolicyFactory implements ApplicationContextAware {
                                                     genericAssertion.ownerPolicyOid()));
 
                 Class[][] patterns = new Class[][] {
-                        new Class[] { genericAssertionClass, ApplicationContext.class },
-                        new Class[] { genericAssertionClass, BeanFactory.class },
-                        new Class[] { genericAssertionClass, ApplicationEventPublisher.class },
-                        new Class[] { genericAssertionClass, BeanFactory.class, ApplicationEventPublisher.class },
                         new Class[] { genericAssertionClass },
+                        new Class[] { genericAssertionClass, ApplicationContext.class }, // allows BeanFactory.class, etc
                 };
                 for (Class[] pattern : patterns) {
                     Constructor ctor = ConstructorInvocation.findMatchingConstructor(specificAssertionClass, pattern);
@@ -173,10 +178,7 @@ public class ServerPolicyFactory implements ApplicationContextAware {
                         for (int i = 1; i < params.length; ++i)
                             params[i] = applicationContext;
                         final ServerAssertion serverAssertion = (ServerAssertion) ctor.newInstance(params);
-                        applicationContext.getAutowireCapableBeanFactory().autowireBeanProperties(
-                                serverAssertion,
-                                AutowireCapableBeanFactory.AUTOWIRE_NO,
-                                true );
+                        injector.inject( serverAssertion );
                         return serverAssertion;
                     }
                 }

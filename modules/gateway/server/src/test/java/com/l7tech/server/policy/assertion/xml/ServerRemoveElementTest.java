@@ -41,7 +41,7 @@ public class ServerRemoveElementTest {
         RemoveElement ass = new RemoveElement();
         ass.setElementFromVariable("remel");
 
-        ServerRemoveElement sass = new ServerRemoveElement(ass, null);
+        ServerRemoveElement sass = new ServerRemoveElement(ass);
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
 
@@ -58,7 +58,7 @@ public class ServerRemoveElementTest {
         RemoveElement ass = new RemoveElement();
         ass.setElementFromVariable("remel");
 
-        ServerRemoveElement sass = new ServerRemoveElement(ass, null);
+        ServerRemoveElement sass = new ServerRemoveElement(ass);
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(AssertionStatus.NOT_APPLICABLE, result);
     }
@@ -78,7 +78,7 @@ public class ServerRemoveElementTest {
         RemoveElement ass = new RemoveElement();
         ass.setElementFromVariable("remel");
 
-        ServerRemoveElement sass = new ServerRemoveElement(ass, null);
+        ServerRemoveElement sass = new ServerRemoveElement(ass);
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
 
@@ -99,7 +99,7 @@ public class ServerRemoveElementTest {
         RemoveElement ass = new RemoveElement();
         ass.setElementFromVariable("remel");
 
-        ServerRemoveElement sass = new ServerRemoveElement(ass, null);
+        ServerRemoveElement sass = new ServerRemoveElement(ass);
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
 
@@ -120,7 +120,7 @@ public class ServerRemoveElementTest {
         RemoveElement ass = new RemoveElement();
         ass.setElementFromVariable("remel");
 
-        ServerRemoveElement sass = new ServerRemoveElement(ass, null);
+        ServerRemoveElement sass = new ServerRemoveElement(ass);
         AssertionStatus result = checkRequest(sass, context);
         assertEquals("Should fail when the input variable points at a collection that contains non-Element values", AssertionStatus.FAILED, result);
 
@@ -227,7 +227,7 @@ public class ServerRemoveElementTest {
     }
 
     void runCheck(RemoveElement ass, PolicyEnforcementContext context, AssertionStatus expectedStatus, String expectedMess) throws IOException, PolicyAssertionException, SAXException {
-        ServerRemoveElement sass = new ServerRemoveElement(ass, null);
+        ServerRemoveElement sass = new ServerRemoveElement(ass);
         AssertionStatus result = checkRequest(sass, context);
         assertEquals(expectedStatus, result);
         assertEquals(expectedMess, XmlUtil.nodeToString(context.getRequest().getXmlKnob().getDocumentReadOnly()));

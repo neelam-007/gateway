@@ -1,6 +1,5 @@
 package com.l7tech.server.policy;
 
-import com.l7tech.server.ApplicationContexts;
 import com.l7tech.message.Message;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -60,7 +59,7 @@ public class RequestXpathAssertionTest {
 
     private ServerRequestXpathAssertion getAssertion(XpathExpression expression) {
         RequestXpathAssertion assertion = new RequestXpathAssertion(expression);
-        return new ServerRequestXpathAssertion(assertion, ApplicationContexts.getTestApplicationContext());
+        return new ServerRequestXpathAssertion(assertion);
     }
 
     private String[] passingXpaths =

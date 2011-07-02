@@ -1,7 +1,6 @@
 package com.l7tech.server.policy.assertion.credential.wss;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -11,20 +10,16 @@ import com.l7tech.security.token.UsernameToken;
 import com.l7tech.security.token.UsernameTokenImpl;
 import com.l7tech.security.token.XmlSecurityToken;
 import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
-import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.logging.Logger;
 
 /**
  *
@@ -33,15 +28,14 @@ public class ServerWssDigest extends AbstractMessageTargetableServerAssertion<Ws
 
     //- PUBLIC
 
-    public ServerWssDigest(WssDigest assertion, ApplicationContext context) {
+    public ServerWssDigest(WssDigest assertion) {
         super(assertion, assertion);
-        this.auditor = context == null ? new LogOnlyAuditor(logger) : new Auditor(this, context, logger);
     }
 
     @Override
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         if (!SecurityHeaderAddressableSupport.isLocalRecipient(assertion)) {
-            auditor.logAndAudit(AssertionMessages.REQUESTWSS_NOT_FOR_US);
+            logAndAudit(AssertionMessages.REQUESTWSS_NOT_FOR_US);
             return AssertionStatus.NONE;
         }
 
@@ -57,13 +51,13 @@ public class ServerWssDigest extends AbstractMessageTargetableServerAssertion<Ws
                                               final AuthenticationContext authContext ) throws IOException, PolicyAssertionException {
         try {
             if (!message.isSoap()) {
-                auditor.logAndAudit(AssertionMessages.REQUEST_NOT_SOAP);
+                logAndAudit(AssertionMessages.REQUEST_NOT_SOAP);
                 return AssertionStatus.NOT_APPLICABLE;
             }
 
             ProcessorResult pr = message.getSecurityKnob().getProcessorResult();
             if (pr == null) {
-                auditor.logAndAudit(AssertionMessages.REQUESTWSS_NO_SECURITY);
+                logAndAudit(AssertionMessages.REQUESTWSS_NO_SECURITY);
                 if ( isRequest() ) {
                     context.setAuthenticationMissing();
                     context.setRequestPolicyViolated();
@@ -75,32 +69,23 @@ public class ServerWssDigest extends AbstractMessageTargetableServerAssertion<Ws
             for (UsernameToken utok : utoks) {
                 AssertionStatus ret = checkToken(utok);
                 if (ret == AssertionStatus.NONE) {
-                    auditor.logAndAudit(AssertionMessages.USERDETAIL_INFO, "WSS Digest token validated successfully");
+                    logAndAudit(AssertionMessages.USERDETAIL_INFO, "WSS Digest token validated successfully");
                     return ret;
                 }
             }
 
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "No conforming WSS Digest token was found in request");
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "No conforming WSS Digest token was found in request");
             if ( isRequest() ) {
                 context.setRequestPolicyViolated();
             }
             return AssertionStatus.FALSIFIED;
         } catch (SAXException e) {
-            auditor.logAndAudit(AssertionMessages.REQUEST_BAD_XML);
+            logAndAudit(AssertionMessages.REQUEST_BAD_XML);
             return AssertionStatus.BAD_REQUEST;
         }
     }
 
-    @Override
-    protected Audit getAuditor() {
-        return auditor;
-    }
-
     //- PRIVATE
-
-    private static final Logger logger = Logger.getLogger(ServerWssDigest.class.getName());
-
-    private final Audit auditor;
 
     private AssertionStatus checkToken(UsernameToken utok) {
         if (!utok.isDigest())
@@ -135,12 +120,12 @@ public class ServerWssDigest extends AbstractMessageTargetableServerAssertion<Ws
     }
 
     private AssertionStatus falsifyFine(String msg) {
-        auditor.logAndAudit(AssertionMessages.USERDETAIL_FINE, msg);
+        logAndAudit(AssertionMessages.USERDETAIL_FINE, msg);
         return AssertionStatus.FALSIFIED;
     }
 
     private AssertionStatus falsify(String msg) {
-        auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, msg);
+        logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, msg);
         return AssertionStatus.FALSIFIED;
     }
 

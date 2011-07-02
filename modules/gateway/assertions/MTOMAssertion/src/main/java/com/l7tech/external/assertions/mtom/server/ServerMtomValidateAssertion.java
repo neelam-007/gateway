@@ -3,7 +3,6 @@ package com.l7tech.external.assertions.mtom.server;
 import com.l7tech.external.assertions.mtom.MtomValidateAssertion;
 import static com.l7tech.gateway.common.audit.AssertionMessages.*;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -20,12 +19,10 @@ import com.l7tech.xml.xpath.XpathResultIterator;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.xpath.XpathVariableFinder;
-import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
 import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
-import java.util.logging.Logger;
 
 /**
  *
@@ -34,23 +31,12 @@ public class ServerMtomValidateAssertion extends AbstractMessageTargetableServer
 
     //- PUBLIC
 
-    public ServerMtomValidateAssertion( final MtomValidateAssertion assertion,
-                                        final ApplicationContext context) throws PolicyAssertionException {
+    public ServerMtomValidateAssertion( final MtomValidateAssertion assertion ) throws PolicyAssertionException {
         super( assertion, assertion );
-
-        this.auditor = new Auditor(this, context, logger);
         this.compiledXpaths = compileXpaths( getXpathExpressions(assertion) );
     }
 
     //- PROTECTED
-
-    protected ServerMtomValidateAssertion( final MtomValidateAssertion assertion,
-                                           final Auditor auditor ) {
-        super( assertion, assertion );
-
-        this.auditor = auditor;
-        this.compiledXpaths = compileXpaths( getXpathExpressions(assertion) );
-    }
 
     @Override
     protected AssertionStatus doCheckRequest( final PolicyEnforcementContext context,
@@ -67,10 +53,10 @@ public class ServerMtomValidateAssertion extends AbstractMessageTargetableServer
                 status = AssertionStatus.NONE;
             } catch (XOPUtils.XOPException e) {
                 status = AssertionStatus.FALSIFIED;
-                auditor.logAndAudit( MTOM_VALIDATE_ERROR, ExceptionUtils.getMessage(e) );
+                logAndAudit( MTOM_VALIDATE_ERROR, ExceptionUtils.getMessage(e) );
             } catch (SAXException e) {
                 status = getBadMessageStatus();
-                auditor.logAndAudit(
+                logAndAudit(
                         MTOM_VALIDATE_ERROR,
                         new String[]{"Error parsing message for validation '"+ ExceptionUtils.getMessage(e)+"'"},
                         ExceptionUtils.getDebugException(e) );
@@ -79,14 +65,14 @@ public class ServerMtomValidateAssertion extends AbstractMessageTargetableServer
             if ( status == AssertionStatus.NONE ) {
                 if ( compiledXpaths == null ) {
                     status = AssertionStatus.FAILED;
-                    auditor.logAndAudit( MTOM_VALIDATE_ERROR, "Invalid XPath expression" );
+                    logAndAudit( MTOM_VALIDATE_ERROR, "Invalid XPath expression" );
                 } else {
                     try {
                         final ElementCursor cursor = message.getXmlKnob().getElementCursor();
                         status = processRules( context, message, cursor );
                     } catch (SAXException e) {
                         status = getBadMessageStatus();
-                        auditor.logAndAudit(
+                        logAndAudit(
                                 MTOM_VALIDATE_ERROR,
                                 new String[]{"Error parsing message when matching elements to validate '"+ ExceptionUtils.getMessage(e)+"'"},
                                 ExceptionUtils.getDebugException(e) );
@@ -95,7 +81,7 @@ public class ServerMtomValidateAssertion extends AbstractMessageTargetableServer
             }
         } else if ( assertion.isRequireEncoded() ) {
             status = getBadMessageStatus();
-            auditor.logAndAudit( MTOM_VALIDATE_ERROR, "Message not encoded" );
+            logAndAudit( MTOM_VALIDATE_ERROR, "Message not encoded" );
         } else {
             status = AssertionStatus.NONE;
         }
@@ -103,15 +89,9 @@ public class ServerMtomValidateAssertion extends AbstractMessageTargetableServer
         return status;
     }
 
-    @Override
-    protected Auditor getAuditor() {
-        return auditor;
-    }
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger(ServerMtomValidateAssertion.class.getName());
-    private final Auditor auditor;
     private final CompiledXpath[] compiledXpaths;
 
     private XpathExpression[] getXpathExpressions( final MtomValidateAssertion assertion ) {
@@ -143,7 +123,7 @@ public class ServerMtomValidateAssertion extends AbstractMessageTargetableServer
                 }
             } catch ( InvalidXpathException e ) {
                 xpaths = null;
-                auditor.logAndAudit( MTOM_ENCODE_INVALID_XPATH, xpathExpression.getExpression() );
+                logAndAudit( MTOM_ENCODE_INVALID_XPATH, xpathExpression.getExpression() );
             }
         }
 
@@ -180,7 +160,7 @@ public class ServerMtomValidateAssertion extends AbstractMessageTargetableServer
                                     long size = XOPUtils.getSize( message, elementCursor );
                                     if ( size > rule.getSize() ) {
                                         status = getBadMessageStatus();
-                                        auditor.logAndAudit( MTOM_VALIDATE_ERROR, "Size exceeded" );
+                                        logAndAudit( MTOM_VALIDATE_ERROR, "Size exceeded" );
                                         break outer;
                                     }
                                 }
@@ -188,21 +168,21 @@ public class ServerMtomValidateAssertion extends AbstractMessageTargetableServer
 
                             if ( rule.getCount() != 0 && elementCount > rule.getCount() ) {
                                 status = getBadMessageStatus();
-                                auditor.logAndAudit( MTOM_VALIDATE_ERROR, "Count exceeded" );
+                                logAndAudit( MTOM_VALIDATE_ERROR, "Count exceeded" );
                                 break;
                             }
                         }
                     }
                 } catch (XPathExpressionException e) {
                     status = AssertionStatus.FAILED;
-                    auditor.logAndAudit(
+                    logAndAudit(
                             MTOM_VALIDATE_ERROR,
                             new String[]{"Error matching elements to validate '"+ ExceptionUtils.getMessage(e)+"'"},
                             ExceptionUtils.getDebugException(e) );
                     break;
                 } catch (XOPUtils.XOPException e) {
                     status = AssertionStatus.FALSIFIED;
-                    auditor.logAndAudit( MTOM_VALIDATE_ERROR, "Error checking rules: " + ExceptionUtils.getMessage(e) );
+                    logAndAudit( MTOM_VALIDATE_ERROR, "Error checking rules: " + ExceptionUtils.getMessage(e) );
                 }
             }
         }

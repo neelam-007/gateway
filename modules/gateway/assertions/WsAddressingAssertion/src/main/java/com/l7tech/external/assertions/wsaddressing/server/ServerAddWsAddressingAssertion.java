@@ -1,27 +1,18 @@
-/**
- * Copyright (C) 2008, Layer 7 Technologies Inc.
- * @author darmstrong
- */
 package com.l7tech.external.assertions.wsaddressing.server;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.wsaddressing.AddWsAddressingAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.message.Message;
-import com.l7tech.message.SecurityKnob;
 import com.l7tech.message.SoapKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
-import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -32,14 +23,11 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Map;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableServerAssertion<AddWsAddressingAssertion> {
 
-    public ServerAddWsAddressingAssertion(final AddWsAddressingAssertion assertion,
-                                          final ApplicationContext applicationContext ) throws PolicyAssertionException {
+    public ServerAddWsAddressingAssertion(final AddWsAddressingAssertion assertion ) throws PolicyAssertionException {
         super(assertion, assertion);
-        this.auditor = applicationContext != null ? new Auditor(this, applicationContext, logger) : new LogOnlyAuditor(logger);
         this.variablesUsed = assertion.getVariablesUsed();
         //validate required fields
         if(assertion.getWsaNamespaceUri() == null){
@@ -51,11 +39,6 @@ public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableSer
         }
     }
 
-    @Override
-    protected Audit getAuditor() {
-        return auditor;
-    }
-
     @SuppressWarnings({"UnusedAssignment", "ThrowableResultOfMethodCallIgnored"})
     @Override
     protected AssertionStatus doCheckRequest(final PolicyEnforcementContext context,
@@ -64,7 +47,7 @@ public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableSer
                                              final AuthenticationContext authContext) throws IOException, PolicyAssertionException {
         try {
             if (!message.isSoap()) {
-                auditor.logAndAudit(AssertionMessages.MESSAGE_NOT_SOAP, messageDescription, "Cannot add WS-Addressing headers");
+                logAndAudit(AssertionMessages.MESSAGE_NOT_SOAP, messageDescription, "Cannot add WS-Addressing headers");
                 return AssertionStatus.NOT_APPLICABLE;
             }
         } catch (SAXException e) {
@@ -81,26 +64,26 @@ public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableSer
         } catch (Exception e) {
             String msg = "Cannot get XML document from target message: " + ExceptionUtils.getMessage(e);
             //noinspection ThrowableResultOfMethodCallIgnored
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{msg}, ExceptionUtils.getDebugException(e));
+            logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{msg}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
         }
 
         try {
-            final Map<String, Object> vars = context.getVariableMap(variablesUsed, auditor);
+            final Map<String, Object> vars = context.getVariableMap(variablesUsed, getAudit());
 
             String wsaNs = resolveProperty(assertion.getWsaNamespaceUri(), vars);
 
             if(!ValidationUtils.isValidUri(wsaNs)){
-                auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_NAMESPACE, wsaNs, "Namespace is not a valid URI");
+                logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_NAMESPACE, wsaNs, "Namespace is not a valid URI");
                 return AssertionStatus.FAILED;
             } else if (!new URI(wsaNs).isAbsolute()) {
-                auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_NAMESPACE, wsaNs, "Namespace is not an absolute URI");
+                logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_NAMESPACE, wsaNs, "Namespace is not an absolute URI");
                 return AssertionStatus.FAILED;
             }
 
             String resolvedAction = resolveProperty(assertion.getAction(), vars);
             if(resolvedAction == null){
-                auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_NO_ACTION_SUPPLIED);
+                logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_NO_ACTION_SUPPLIED);
                 return AssertionStatus.FAILED;
             }
 
@@ -174,20 +157,20 @@ public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableSer
                 }
 
                 if(wsdlAction == null || wsdlAction.trim().isEmpty()){
-                    auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_NO_WSDL_ACTION_FOUND);
+                    logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_NO_WSDL_ACTION_FOUND);
                     return AssertionStatus.FAILED;
                 }
                 resolvedAction = wsdlAction;
             } else if (AddWsAddressingAssertion.ACTION_FROM_TARGET_MESSAGE.equals(resolvedAction)){
                 if (soapAction == null || soapAction.trim().isEmpty()) {
-                    auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_NO_SOAP_ACTION);
+                    logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_NO_SOAP_ACTION);
                     return AssertionStatus.FAILED;
                 }
                 resolvedAction = soapAction;
             }
 
             if (!ValidationUtils.isValidUri(resolvedAction)) {
-                auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_WARN, resolvedAction, SoapConstants.WSA_MSG_PROP_ACTION);
+                logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_WARN, resolvedAction, SoapConstants.WSA_MSG_PROP_ACTION);
                 return AssertionStatus.FAILED;
             }
 
@@ -207,7 +190,7 @@ public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableSer
 
             if(msgIdToUse != null){
                 if (!ValidationUtils.isValidUri(msgIdToUse)) {
-                    auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_WARN, msgIdToUse, SoapConstants.WSA_MSG_PROP_MESSAGE_ID);
+                    logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_WARN, msgIdToUse, SoapConstants.WSA_MSG_PROP_MESSAGE_ID);
                     return AssertionStatus.FAILED;
                 }
                 //set message id context variable
@@ -218,7 +201,7 @@ public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableSer
             final String destination = resolveProperty(assertion.getDestination(), vars);
             if(destination != null){
                 if (!ValidationUtils.isValidUri(destination)) {
-                    auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_INFO, destination, SoapConstants.WSA_MSG_PROP_DESTINATION);
+                    logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_INFO, destination, SoapConstants.WSA_MSG_PROP_DESTINATION);
                 } else {
                     addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_DESTINATION, destination, elementNumber++, false);
                 }
@@ -227,7 +210,7 @@ public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableSer
             final String from = resolveProperty(assertion.getSourceEndpoint(), vars);
             if(from != null){
                 if (!ValidationUtils.isValidUri(from)) {
-                    auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_INFO, from, SoapConstants.WSA_MSG_PROP_SOURCE_ENDPOINT);
+                    logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_INFO, from, SoapConstants.WSA_MSG_PROP_SOURCE_ENDPOINT);
                 } else {
                     addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_SOURCE_ENDPOINT, from, elementNumber++, true);
                 }
@@ -236,7 +219,7 @@ public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableSer
             final String replyTo = resolveProperty(assertion.getReplyEndpoint(), vars);
             if(replyTo != null){
                 if (!ValidationUtils.isValidUri(replyTo)) {
-                    auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_INFO, replyTo, SoapConstants.WSA_MSG_PROP_REPLY_TO);
+                    logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_INFO, replyTo, SoapConstants.WSA_MSG_PROP_REPLY_TO);
                 } else {
                     addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_REPLY_TO, replyTo, elementNumber++, true);
                 }
@@ -245,7 +228,7 @@ public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableSer
             final String faultTo = resolveProperty(assertion.getFaultEndpoint(), vars);
             if(faultTo != null){
                 if (!ValidationUtils.isValidUri(faultTo)) {
-                    auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_INFO, faultTo, SoapConstants.WSA_MSG_PROP_FAULT_TO);
+                    logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_INFO, faultTo, SoapConstants.WSA_MSG_PROP_FAULT_TO);
                 } else {
                     addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_FAULT_TO, faultTo, elementNumber++, true);
                 }
@@ -254,7 +237,7 @@ public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableSer
             final String relatesMsgId = resolveProperty(assertion.getRelatesToMessageId(), vars);
             if(relatesMsgId != null){
                 if (!ValidationUtils.isValidUri(relatesMsgId)) {
-                    auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_INFO, relatesMsgId, SoapConstants.WSA_MSG_PROP_RELATES_TO);
+                    logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_INFO, relatesMsgId, SoapConstants.WSA_MSG_PROP_RELATES_TO);
                 } else {
                     final Element relatesToEl =
                             addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_RELATES_TO, relatesMsgId, elementNumber++, false);
@@ -266,7 +249,7 @@ public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableSer
 
         } catch (Exception e) {
             String msg = "Cannot add WS-Addressing element to target message: " + ExceptionUtils.getMessage(e);
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{msg}, ExceptionUtils.getDebugException(e));
+            logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{msg}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.FAILED;
         }
 
@@ -295,7 +278,7 @@ public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableSer
 
         final String value;
         try {
-            value =  ExpandVariables.process(maybeAVariable, vars, auditor);
+            value =  ExpandVariables.process(maybeAVariable, vars, getAudit());
         } catch (Exception e) {
             //we want to catch any exception which the above call can generate. Any exception means the assertion fails.
             throw new InvalidRuntimeValueException("Error getting value: " + ExceptionUtils.getMessage(e),
@@ -348,7 +331,6 @@ public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableSer
     }
 
     // - PRIVATE
-    private final Auditor auditor;
+
     private final String[] variablesUsed;
-    private static final Logger logger = Logger.getLogger(ServerAddWsAddressingAssertion.class.getName());
 }

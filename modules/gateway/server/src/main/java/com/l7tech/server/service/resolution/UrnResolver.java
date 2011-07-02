@@ -1,9 +1,9 @@
 package com.l7tech.server.service.resolution;
 
+import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.gateway.common.transport.ResolutionConfiguration;
 import com.l7tech.message.Message;
 import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.util.Functions;
 import com.l7tech.xml.MessageNotSoapException;
 import com.l7tech.xml.soap.SoapUtil;
@@ -31,7 +31,7 @@ public class UrnResolver extends WsdlOperationServiceResolver<String> {
 
     private final AtomicBoolean enabled = new AtomicBoolean(true);
 
-    public UrnResolver( final Auditor.AuditorFactory auditorFactory ) {
+    public UrnResolver( final AuditFactory auditorFactory ) {
         super( auditorFactory );
     }
 

@@ -3,7 +3,6 @@ package com.l7tech.external.assertions.saml2attributequery.server;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.external.assertions.saml2attributequery.ValidateSignatureAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -22,22 +21,15 @@ import org.w3c.dom.NodeList;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.util.logging.Logger;
 
 /**
  * Created by IntelliJ IDEA.
  * User: njordan
  * Date: 23-Jan-2009
  * Time: 12:24:49 AM
- * To change this template use File | Settings | File Templates.
  */
 public class ServerValidateSignatureAssertion extends AbstractServerAssertion<ValidateSignatureAssertion> {
-    private static final Logger logger = Logger.getLogger(ServerValidateSignatureAssertion.class.getName());
-
     private SecurityTokenResolver securityTokenResolver;
-    private final Auditor auditor;
-
-    //- PUBLIC
 
     @SuppressWarnings({"UnusedDeclaration"})
     public ServerValidateSignatureAssertion( final ValidateSignatureAssertion assertion,
@@ -45,10 +37,10 @@ public class ServerValidateSignatureAssertion extends AbstractServerAssertion<Va
         throws PolicyAssertionException
     {
         super(assertion);
-        securityTokenResolver = (SecurityTokenResolver) context.getBean("securityTokenResolver");
-        auditor = new Auditor(this, context, logger);
+        securityTokenResolver = context.getBean("securityTokenResolver", SecurityTokenResolver.class);
     }
 
+    @Override
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         Saml2WssProcessorImpl securityProcessor = new Saml2WssProcessorImpl(context.getRequest());
         securityProcessor.setSecurityTokenResolver(securityTokenResolver);
@@ -56,7 +48,7 @@ public class ServerValidateSignatureAssertion extends AbstractServerAssertion<Va
         try {
             Object obj = context.getVariable(assertion.getVariableName());
             if(obj == null || !(obj instanceof Element[]) || ((Element[])obj).length < 1) {
-                auditor.logAndAudit(AssertionMessages.SAML2_AQ_REQUEST_DIGSIG_VAR_UNUSABLE );
+                logAndAudit( AssertionMessages.SAML2_AQ_REQUEST_DIGSIG_VAR_UNUSABLE );
                 return AssertionStatus.FALSIFIED;
             }
 
@@ -73,7 +65,7 @@ public class ServerValidateSignatureAssertion extends AbstractServerAssertion<Va
             }
 
             if(signatureElement == null) {
-                auditor.logAndAudit(AssertionMessages.SAML2_AQ_REQUEST_DIGSIG_NO_SIG );
+                logAndAudit( AssertionMessages.SAML2_AQ_REQUEST_DIGSIG_NO_SIG );
                 return AssertionStatus.FALSIFIED;
             }
 
@@ -87,23 +79,23 @@ public class ServerValidateSignatureAssertion extends AbstractServerAssertion<Va
                 }
             }
             if(!signatureFound) {
-                auditor.logAndAudit(AssertionMessages.SAML2_AQ_REQUEST_DIGSIG_NO_SIG );
+                logAndAudit( AssertionMessages.SAML2_AQ_REQUEST_DIGSIG_NO_SIG );
                 return AssertionStatus.FALSIFIED;
             }
 
             return AssertionStatus.NONE;
         } catch(NoSuchVariableException nsve) {
-            auditor.logAndAudit(AssertionMessages.SAML2_AQ_REQUEST_DIGSIG_VAR_UNUSABLE );
+            logAndAudit( AssertionMessages.SAML2_AQ_REQUEST_DIGSIG_VAR_UNUSABLE );
         } catch(SAXException se) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO);
+            logAndAudit( AssertionMessages.EXCEPTION_INFO );
         } catch(ProcessorException pe) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, pe.toString());
+            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, pe.toString() );
         } catch(InvalidDocumentFormatException idfe) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, idfe.toString());
+            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, idfe.toString() );
         } catch(GeneralSecurityException ge) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, ge.toString());
+            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, ge.toString() );
         } catch(BadSecurityContextException bse) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, bse.toString());
+            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, bse.toString() );
         }
 
         return AssertionStatus.FALSIFIED;

@@ -17,7 +17,6 @@ import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.DecoratorException;
 import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
@@ -43,7 +42,6 @@ import java.net.UnknownHostException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStoreException;
 import java.security.UnrecoverableKeyException;
-import java.util.logging.Logger;
 
 /**
  * Server side implementation of the NcesDecoratorAssertion.
@@ -51,9 +49,6 @@ import java.util.logging.Logger;
  * @see com.l7tech.external.assertions.ncesdeco.NcesDecoratorAssertion
  */
 public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDecoratorAssertion> {
-    private static final Logger logger = Logger.getLogger(ServerNcesDecoratorAssertion.class.getName());
-
-    private final Auditor auditor;
     private final EthernetAddress macAddress;
     private final SignerInfo signerInfo;
     private final SamlAssertionGenerator samlAssertionGenerator;
@@ -63,7 +58,6 @@ public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDe
     public ServerNcesDecoratorAssertion(NcesDecoratorAssertion assertion, ApplicationContext spring) throws PolicyAssertionException {
         super(assertion);
 
-        this.auditor = new Auditor(this, spring, logger);
         ClusterInfoManager cim = (ClusterInfoManager) spring.getBean("clusterInfoManager");
         this.macAddress = new EthernetAddress(cim.getSelfNodeInf().getMac());
         try {
@@ -82,24 +76,24 @@ public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDe
         try {
             msg = context.getTargetMessage(assertion);
         } catch (NoSuchVariableException e) {
-            auditor.logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, e.getVariable(), ExceptionUtils.getMessage(e));
+            logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, e.getVariable(), ExceptionUtils.getMessage(e));
             return AssertionStatus.FAILED;
         }
         final String what = assertion.getTargetName();
 
         try {
             if (!msg.isSoap()) {
-                auditor.logAndAudit(AssertionMessages.NCESDECO_NOT_SOAP, what);
+                logAndAudit(AssertionMessages.NCESDECO_NOT_SOAP, what);
                 return AssertionStatus.NOT_APPLICABLE;
             }
         } catch (SAXException e) {
-            auditor.logAndAudit(AssertionMessages.NCESDECO_BAD_XML, new String[]{what, ExceptionUtils.getMessage(e)}, e);
+            logAndAudit(AssertionMessages.NCESDECO_BAD_XML, new String[]{what, ExceptionUtils.getMessage(e)}, e);
             return AssertionStatus.BAD_REQUEST;
         }
 
         final String template = assertion.getSamlAssertionTemplate();
         if (assertion.isSamlIncluded() && (template == null || template.length() == 0) && context.getDefaultAuthenticationContext().getLastCredentials() == null) {
-            auditor.logAndAudit(AssertionMessages.NCESDECO_NO_CREDS);
+            logAndAudit(AssertionMessages.NCESDECO_NO_CREDS);
             if (assertion.getTarget() == TargetMessageType.REQUEST) {
                 // No point setting these flags for creds missing from non-request
                 context.setAuthenticationMissing();
@@ -139,14 +133,14 @@ public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDe
             addMessageId(doc, decoReq);
             addTimestamp(decoReq);
         } catch (InvalidDocumentFormatException e) {
-            auditor.logAndAudit(AssertionMessages.NCESDECO_IDFE, new String[]{what, ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+            logAndAudit(AssertionMessages.NCESDECO_IDFE, new String[]{what, ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.BAD_REQUEST;
         }
 
         try {
             decoReq.setSenderMessageSigningPrivateKey(signerInfo.getPrivate());
         } catch (UnrecoverableKeyException e) {
-            auditor.logAndAudit(AssertionMessages.NCESDECO_WARN_MISC, new String[]{what, ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+            logAndAudit(AssertionMessages.NCESDECO_WARN_MISC, new String[]{what, ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.FAILED;
         }
         decoReq.setSenderMessageSigningCertificate(signerInfo.getCertificateChain()[0]);
@@ -160,16 +154,16 @@ public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDe
             martha.decorateMessage(msg, decoReq);
             return AssertionStatus.NONE;
         } catch (InvalidDocumentFormatException e) {
-            auditor.logAndAudit(AssertionMessages.NCESDECO_IDFE, new String[]{what, ExceptionUtils.getMessage(e)}, e);
+            logAndAudit(AssertionMessages.NCESDECO_IDFE, new String[]{what, ExceptionUtils.getMessage(e)}, e);
             return AssertionStatus.FAILED;
         } catch (GeneralSecurityException e) {
-            auditor.logAndAudit(AssertionMessages.NCESDECO_WARN_MISC, new String[]{what, ExceptionUtils.getMessage(e)}, e);
+            logAndAudit(AssertionMessages.NCESDECO_WARN_MISC, new String[]{what, ExceptionUtils.getMessage(e)}, e);
             return AssertionStatus.FAILED;
         } catch (DecoratorException e) {
-            auditor.logAndAudit(AssertionMessages.NCESDECO_WARN_MISC, new String[]{what, ExceptionUtils.getMessage(e)}, e);
+            logAndAudit(AssertionMessages.NCESDECO_WARN_MISC, new String[]{what, ExceptionUtils.getMessage(e)}, e);
             return AssertionStatus.FAILED;
         } catch (SAXException e) {
-            auditor.logAndAudit(AssertionMessages.NCESDECO_BAD_XML, new String[]{what, ExceptionUtils.getMessage(e)}, e);
+            logAndAudit(AssertionMessages.NCESDECO_BAD_XML, new String[]{what, ExceptionUtils.getMessage(e)}, e);
             return AssertionStatus.FAILED;
         }
     }
@@ -230,7 +224,7 @@ public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDe
         String template = assertion.getSamlAssertionTemplate();
         if (template != null && template.length() > 0) {
             try {
-                samlEl = XmlUtil.parse(new StringReader(ExpandVariables.process(template, context.getVariableMap(varsUsed, auditor), auditor)), false).getDocumentElement();
+                samlEl = XmlUtil.parse(new StringReader(ExpandVariables.process(template, context.getVariableMap(varsUsed, getAudit()), getAudit())), false).getDocumentElement();
                 samlAss = SamlAssertion.newInstance(samlEl);
             } catch (SAXException e) {
                 throw new InvalidDocumentFormatException("Provided SAML Assertion template could not be parsed", e);

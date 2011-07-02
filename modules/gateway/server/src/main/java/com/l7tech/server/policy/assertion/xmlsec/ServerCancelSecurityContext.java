@@ -1,7 +1,6 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.identity.User;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -10,8 +9,6 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.CancelSecurityContext;
 import com.l7tech.security.token.SecurityContextToken;
 import com.l7tech.security.token.SecurityToken;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -23,29 +20,22 @@ import com.l7tech.server.secureconversation.OutboundSecureConversationContextMan
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.server.util.RstSoapMessageProcessor;
 import org.springframework.beans.factory.BeanFactory;
-import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * @author ghuang
  */
 public class ServerCancelSecurityContext extends AbstractMessageTargetableServerAssertion<CancelSecurityContext> {
-    private static final Logger logger = Logger.getLogger(ServerCancelSecurityContext.class.getName());
 
     private final InboundSecureConversationContextManager inboundSecureConversationContextManager;
     private final OutboundSecureConversationContextManager outboundSecureConversationContextManager;
-    private final Auditor auditor;
     private final String[] variablesUsed;
 
     public ServerCancelSecurityContext( final CancelSecurityContext assertion,
                                         final BeanFactory factory ) {
         super(assertion, assertion);
-        auditor = factory instanceof ApplicationContext?
-                new Auditor(this, (ApplicationContext)factory, logger) :
-                new LogOnlyAuditor(logger);
         inboundSecureConversationContextManager = factory.getBean("inboundSecureConversationContextManager", InboundSecureConversationContextManager.class);
         outboundSecureConversationContextManager = factory.getBean("outboundSecureConversationContextManager", OutboundSecureConversationContextManager.class);
         variablesUsed = assertion.getVariablesUsed();
@@ -63,17 +53,12 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
         }
     }
 
-    @Override
-    protected Audit getAuditor() {
-        return auditor;
-    }
-
     private AssertionStatus doCancelInbound( final Message message,
                                              final AuthenticationContext authenticationContext ) {
         // Get all related info from the target SOAP message.  RstSoapMessageProcessor checks the syntax and the semantics of the target SOAP message.
         final Map<String, String> rstParameters = RstSoapMessageProcessor.getRstParameters(message, false);
         if (rstParameters.containsKey(RstSoapMessageProcessor.ERROR)) {
-            auditor.logAndAudit( AssertionMessages.STS_INVALID_RST_REQUEST, rstParameters.get(RstSoapMessageProcessor.ERROR));
+            logAndAudit( AssertionMessages.STS_INVALID_RST_REQUEST, rstParameters.get(RstSoapMessageProcessor.ERROR));
             return AssertionStatus.BAD_REQUEST;
         }
 
@@ -93,7 +78,7 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
 
         if ( !inboundSecureConversationContextManager.cancelSession(targetIdentifier) &&
              assertion.isFailIfNotExist() ) {
-            auditor.logAndAudit(AssertionMessages.STS_EXPIRED_SC_SESSION, "Session not found '"+targetIdentifier+"'");
+            logAndAudit(AssertionMessages.STS_EXPIRED_SC_SESSION, "Session not found '"+targetIdentifier+"'");
             return AssertionStatus.BAD_REQUEST;
         }
 
@@ -102,18 +87,18 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
 
     private AssertionStatus doCancelOutbound( final PolicyEnforcementContext context,
                                               final AuthenticationContext authenticationContext ) {
-        final Map<String,Object> vars = context.getVariableMap( variablesUsed, auditor );
+        final Map<String,Object> vars = context.getVariableMap( variablesUsed, getAudit() );
         final User user = authenticationContext.getLastAuthenticatedUser();
         if ( user == null ) {
-            auditor.logAndAudit(AssertionMessages.STS_AUTHENTICATION_FAILURE, "The target message does not contain an authenticated user.");
+            logAndAudit(AssertionMessages.STS_AUTHENTICATION_FAILURE, "The target message does not contain an authenticated user.");
             return AssertionStatus.FALSIFIED;
         }
 
-        final String serviceUrl = ExpandVariables.process( assertion.getOutboundServiceUrl()==null ? "" : assertion.getOutboundServiceUrl(), vars, auditor );
+        final String serviceUrl = ExpandVariables.process( assertion.getOutboundServiceUrl()==null ? "" : assertion.getOutboundServiceUrl(), vars, getAudit() );
 
         if ( !outboundSecureConversationContextManager.cancelSession( OutboundSecureConversationContextManager.newSessionKey( user, serviceUrl ) ) &&
              assertion.isFailIfNotExist() ) {
-            auditor.logAndAudit(AssertionMessages.STS_EXPIRED_SC_SESSION, "Session not found for user '"+user.getLogin()+"', service URL '"+serviceUrl+"'");
+            logAndAudit(AssertionMessages.STS_EXPIRED_SC_SESSION, "Session not found for user '"+user.getLogin()+"', service URL '"+serviceUrl+"'");
             return AssertionStatus.FALSIFIED;
         }
         
@@ -134,7 +119,7 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
         }
 
         if ( !found ) {
-            auditor.logAndAudit(AssertionMessages.STS_AUTHORIZATION_FAILURE, "User not permitted to cancel token");
+            logAndAudit(AssertionMessages.STS_AUTHORIZATION_FAILURE, "User not permitted to cancel token");
             throw new AssertionStatusException(AssertionStatus.BAD_REQUEST);
         }
     }
@@ -165,7 +150,7 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
         }
 
         if ( !found ) {
-            auditor.logAndAudit(AssertionMessages.STS_AUTHORIZATION_FAILURE, "Required token not present");
+            logAndAudit(AssertionMessages.STS_AUTHORIZATION_FAILURE, "Required token not present");
             throw new AssertionStatusException(AssertionStatus.BAD_REQUEST);
         }
     }

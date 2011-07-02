@@ -65,7 +65,7 @@ public class ServerAddWssSecurityTokenTest {
     public void testUsernameTokenGatheredDefault() throws Exception {
         AddWssSecurityToken ass = new AddWssSecurityToken();
         ass.setTarget(TargetMessageType.REQUEST);
-        ServerAddWssSecurityToken sass = new ServerAddWssSecurityToken(ass, beanFactory, null);
+        ServerAddWssSecurityToken sass = new ServerAddWssSecurityToken(ass, beanFactory);
 
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
@@ -86,7 +86,7 @@ public class ServerAddWssSecurityTokenTest {
         ass.setIncludeCreated(false);
         ass.setIncludeNonce(false);
         ass.setIncludePassword(true);
-        ServerAddWssSecurityToken sass = new ServerAddWssSecurityToken(ass, beanFactory, null);
+        ServerAddWssSecurityToken sass = new ServerAddWssSecurityToken(ass, beanFactory);
 
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
@@ -107,7 +107,7 @@ public class ServerAddWssSecurityTokenTest {
         ass.setUseLastGatheredCredentials(false);
         ass.setUsername(SPECIFIED_USER);
         ass.setPassword(SPECIFIED_PASS);
-        ServerAddWssSecurityToken sass = new ServerAddWssSecurityToken(ass, beanFactory, null);
+        ServerAddWssSecurityToken sass = new ServerAddWssSecurityToken(ass, beanFactory);
 
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
@@ -131,7 +131,7 @@ public class ServerAddWssSecurityTokenTest {
         ass.setIncludeCreated(false);
         ass.setIncludeNonce(false);
         ass.setIncludePassword(true);
-        ServerAddWssSecurityToken sass = new ServerAddWssSecurityToken(ass, beanFactory, null);
+        ServerAddWssSecurityToken sass = new ServerAddWssSecurityToken(ass, beanFactory);
 
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
@@ -153,7 +153,7 @@ public class ServerAddWssSecurityTokenTest {
         ass.setUseLastGatheredCredentials(false);
         ass.setUsername(SPECIFIED_USER);
         ass.setProtectTokens(true);
-        ServerAddWssSecurityToken sass = new ServerAddWssSecurityToken(ass, beanFactory, null);
+        ServerAddWssSecurityToken sass = new ServerAddWssSecurityToken(ass, beanFactory);
 
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
@@ -169,7 +169,7 @@ public class ServerAddWssSecurityTokenTest {
         XpathCredentialSource xcs = new XpathCredentialSource();
         xcs.setXpathExpression(new XpathExpression("\"" + user + "\""));
         xcs.setPasswordExpression(new XpathExpression("\"" + pass + "\""));
-        AssertionStatus result = new ServerXpathCredentialSource(xcs, null).checkRequest(context);
+        AssertionStatus result = new ServerXpathCredentialSource(xcs).checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
     }
 }

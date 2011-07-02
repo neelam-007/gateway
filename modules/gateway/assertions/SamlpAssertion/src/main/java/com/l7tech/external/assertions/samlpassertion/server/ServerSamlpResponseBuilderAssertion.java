@@ -16,8 +16,6 @@ import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.xml.DsigUtil;
 import com.l7tech.security.xml.SignerInfo;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
@@ -52,11 +50,8 @@ import java.security.SignatureException;
 import java.security.UnrecoverableKeyException;
 import java.util.*;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
- * Copyright (C) 2008, Layer 7 Technologies Inc.
- *
  * Build a SAML Protocol Response for SAML Version 1.x or 2.0
  * 
  * @author darmstrong
@@ -67,7 +62,6 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
                                                final ApplicationContext applicationContext ) throws PolicyAssertionException {
         super(assertion);
 
-        this.auditor = applicationContext != null ? new Auditor(this, applicationContext, logger) : new LogOnlyAuditor(logger);
         this.variablesUsed = assertion.getVariablesUsed();
 
         switch (assertion.getSamlVersion()) {
@@ -100,12 +94,12 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
         } catch (Exception e) {
             if (e instanceof VariableNameSyntaxException){
                 //catch any exception: VariableNameSyntaxException and InvalidRuntimeValueException
-                auditor.logAndAudit(AssertionMessages.SAMLP_RESPONSE_BUILDER_GENERIC,
+                logAndAudit(AssertionMessages.SAMLP_RESPONSE_BUILDER_GENERIC,
                         new String[]{"create", "Unknown variable: '" + ExceptionUtils.getMessage(e) + "'"},
                         ExceptionUtils.getDebugException(e));
             } else {
                 //catch any exception: VariableNameSyntaxException and InvalidRuntimeValueException
-                auditor.logAndAudit(AssertionMessages.SAMLP_RESPONSE_BUILDER_GENERIC,
+                logAndAudit(AssertionMessages.SAMLP_RESPONSE_BUILDER_GENERIC,
                         new String[]{"create", ExceptionUtils.getMessage(e)},
                         ExceptionUtils.getDebugException(e));
             }
@@ -131,12 +125,12 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
             marshaller.marshal(response, responseDoc);
 
         } catch (JAXBException e) {
-            auditor.logAndAudit(AssertionMessages.SAMLP_RESPONSE_BUILDER_GENERIC,
+            logAndAudit(AssertionMessages.SAMLP_RESPONSE_BUILDER_GENERIC,
                     new String[]{"create", ExceptionUtils.getMessage(e)},
                     ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
         } catch (InvalidRuntimeValueException e) {
-            auditor.logAndAudit(AssertionMessages.SAMLP_RESPONSE_BUILDER_GENERIC,
+            logAndAudit(AssertionMessages.SAMLP_RESPONSE_BUILDER_GENERIC,
                     new String[]{"create", ExceptionUtils.getMessage(e)},
                     ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
@@ -149,7 +143,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
                 logger.log(Level.FINEST, "Signing Response");
                 signResponse(responseDoc);
             } catch (Exception e) {
-                auditor.logAndAudit(AssertionMessages.SAMLP_RESPONSE_BUILDER_GENERIC,
+                logAndAudit(AssertionMessages.SAMLP_RESPONSE_BUILDER_GENERIC,
                         new String[]{"sign", ExceptionUtils.getMessage(e)},
                         ExceptionUtils.getDebugException(e));
                 return AssertionStatus.SERVER_ERROR;
@@ -161,7 +155,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
             message = context.getOrCreateTargetMessage(assertion, true);
         } catch (NoSuchVariableException e) {
             
-            auditor.logAndAudit( AssertionMessages.VARIABLE_NOTSET,
+            logAndAudit( AssertionMessages.VARIABLE_NOTSET,
                     "Error creating output message " + assertion.getTargetName(), ExceptionUtils.getMessage(e));
             return AssertionStatus.FAILED;
         }
@@ -239,7 +233,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
      */
     private ResponseContext validateAssertionInContext(final PolicyEnforcementContext context) throws InvalidRuntimeValueException{
 
-        final Map<String, Object> vars = context.getVariableMap(variablesUsed, auditor);
+        final Map<String, Object> vars = context.getVariableMap(variablesUsed, getAudit());
 
         final ResponseContext responseContext = new ResponseContext(context.getRequestId().toString());
 
@@ -360,7 +354,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
 
         final String value;
         try {
-            value =  ExpandVariables.process(maybeAVariable, vars, auditor);
+            value =  ExpandVariables.process(maybeAVariable, vars, getAudit());
         } catch (Exception e) {
             //we want to catch any exception which the above call can generate. Any exception means the assertion fails.
             throw new InvalidRuntimeValueException("Error getting value: " + ExceptionUtils.getMessage(e),
@@ -394,7 +388,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
             throw new InvalidRuntimeValueException("Value for field '" + variablesOnly + "' may only reference variables");
         }
 
-        final List<Object> objects = ExpandVariables.processNoFormat(variablesOnly, vars, auditor, true);
+        final List<Object> objects = ExpandVariables.processNoFormat(variablesOnly, vars, getAudit(), true);
 
         final Collection returnCol = new ArrayList();
         for (Object o : objects) {
@@ -712,7 +706,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
 
         final String recipient = responseType.getRecipient();
         if(recipient == null || recipient.trim().isEmpty() || !ValidationUtils.isValidUri(recipient)){
-            auditor.logAndAudit( AssertionMessages.SAMLP_1_1_PROCREQ_PROFILE_VIOLATION,
+            logAndAudit( AssertionMessages.SAMLP_1_1_PROCREQ_PROFILE_VIOLATION,
                     "Response must include the Recipient attribute with a valid value");
             throw new AssertionStatusException(AssertionStatus.FALSIFIED);
         }
@@ -760,14 +754,14 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
 
                     //SubjectConfirmation must be found
                     if(!subjectConfirmationFound){
-                        auditor.logAndAudit( AssertionMessages.SAMLP_1_1_PROCREQ_PROFILE_VIOLATION,
+                        logAndAudit( AssertionMessages.SAMLP_1_1_PROCREQ_PROFILE_VIOLATION,
                                 "Each subject based statement must contain a saml:SubjectConfirmation element");
                         throw new AssertionStatusException(AssertionStatus.FALSIFIED);
                     }
 
                     //this is a Subject based statement. We must have found a bearer method
                     if(!bearerMethodFound){
-                        auditor.logAndAudit( AssertionMessages.SAMLP_1_1_PROCREQ_PROFILE_VIOLATION,
+                        logAndAudit( AssertionMessages.SAMLP_1_1_PROCREQ_PROFILE_VIOLATION,
                                 "Each subject based statement's saml:SubjectConfirmation must contain a ConfirmationMethod method of " + SamlConstants.CONFIRMATION_BEARER);
                         throw new AssertionStatusException(AssertionStatus.FALSIFIED);
                     }
@@ -776,13 +770,13 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
         }
 
         if(!authenticationStatementFound){
-            auditor.logAndAudit( AssertionMessages.SAMLP_1_1_PROCREQ_PROFILE_VIOLATION,
+            logAndAudit( AssertionMessages.SAMLP_1_1_PROCREQ_PROFILE_VIOLATION,
                     "No SSO Assertion found. No authentication statement was found");
             throw new AssertionStatusException(AssertionStatus.FALSIFIED);
         }
 
         if(!ssoAssertionFound){
-            auditor.logAndAudit( AssertionMessages.SAMLP_1_1_PROCREQ_PROFILE_VIOLATION,
+            logAndAudit( AssertionMessages.SAMLP_1_1_PROCREQ_PROFILE_VIOLATION,
                     "No SSO Assertion found. No authentication statment found which contains a Conditions element with NotBefore and NotOnOrAfter");
             throw new AssertionStatusException(AssertionStatus.FALSIFIED);
         }
@@ -798,14 +792,14 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
                 (encryptedAssertions == null || encryptedAssertions.trim().isEmpty());
 
         if(isSuccessResponse && assertionsNotSupplied){
-            auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION,
+            logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION,
                     "Assertion(s) and / or EncryptedAssertion(s) are not configured. One ore more assertions are required when Response represents Success");
             throw new AssertionStatusException(AssertionStatus.FALSIFIED);
         }
 
         if(!isSuccessResponse && !assertionsNotSupplied) {
             //no assertions can be included
-            auditor.logAndAudit(AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION,
+            logAndAudit(AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION,
                     "If Response status does not represent Success then the Assertion(s) and EncryptedAssertion(s) fields cannot include any SAML Assertions");
             throw new AssertionStatusException(AssertionStatus.FALSIFIED);
         }
@@ -856,7 +850,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
                             //each Bearer assertion must contain an AudienceRestriction
                             final ConditionsType type = assertionType.getConditions();
                             if(type == null){
-                                auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION, "Bearer saml:Assertion does not contain any Conditions");
+                                logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION, "Bearer saml:Assertion does not contain any Conditions");
                                 throw new AssertionStatusException(AssertionStatus.FALSIFIED);
                             }
 
@@ -875,7 +869,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
                                 }
                             }
                             if(!audienceFound){
-                                auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION,
+                                logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION,
                                         "Each bearer saml:Assertion must contain an AudienceRestriction with an Audience element");
                                 throw new AssertionStatusException(AssertionStatus.FALSIFIED);
                             }
@@ -886,11 +880,11 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
                 //Ensure Issuer and collect Issuer name
                 final NameIDType issuer = assertionType.getIssuer();
                 if(issuer == null){
-                    auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION, "Assertion does not contain an Issuer");
+                    logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION, "Assertion does not contain an Issuer");
                     throw new AssertionStatusException(AssertionStatus.FALSIFIED);
                 }
                 if ( issuer.getFormat() != null && !SamlConstants.NAMEIDENTIFIER_ENTITY.equals( issuer.getFormat() ) ) {
-                    auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION, "Issuer format must be " + SamlConstants.NAMEIDENTIFIER_ENTITY );
+                    logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION, "Issuer format must be " + SamlConstants.NAMEIDENTIFIER_ENTITY );
                     throw new AssertionStatusException(AssertionStatus.FALSIFIED);
                 }
 
@@ -913,7 +907,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
 
         final NameIDType nameIDType = responseType.getIssuer();
         if (issuerIsRequired && nameIDType == null) {
-            auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION,
+            logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION,
                     "Issuer is required if the samlp:Response is signed or if it contains an encrypted assertion");
             throw new AssertionStatusException(AssertionStatus.FALSIFIED);
         }
@@ -922,13 +916,13 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
             //The following rules can only be validated for sure when no encrypted assertions are included.
 
             if(subjectNames.size() > 1){
-                auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION,
+                logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION,
                         "All saml:Assertion saml:Subject's must represent the same principal");
                 throw new AssertionStatusException(AssertionStatus.FALSIFIED);
             }
 
             if(issuerNames.size() > 1){
-                auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION,
+                logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION,
                         "All saml:Assertion saml:Issuer's must represent the same Issuer");
                 throw new AssertionStatusException(AssertionStatus.FALSIFIED);
             }
@@ -936,20 +930,20 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
             //These 3 rules are in order of granularity - highest to lowest
             //A bearer assertion must be found
             if(!bearerAssertionIsFound){
-                auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION,
+                logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION,
                         "No bearer saml:Assertion found");
                 throw new AssertionStatusException(AssertionStatus.FALSIFIED);
             }
 
             if(!authnStatementFound){
-                auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION,
+                logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION,
                         "No bearer saml:Assertion found which contains an authentication statement");
                 throw new AssertionStatusException(AssertionStatus.FALSIFIED);
             }
 
             //A valid bearer subjectconfirmation assertion is required.
             if(!bearerIsValidated){
-                auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION,
+                logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION,
                         "No bearer saml:Assertion found which satisifies all profile rules: " +
                                 "Requires SubjectConfirmationData with Recipient and NotOnOrAfter attributes, No NotBefore attribute");
                 throw new AssertionStatusException(AssertionStatus.FALSIFIED);
@@ -969,7 +963,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
         return documentReadOnly.getDocumentElement();
     }
 
-    private final Auditor auditor;
+
     private final String[] variablesUsed;
     private final saml.v2.protocol.ObjectFactory v2SamlpFactory;
     private final saml.v1.protocol.ObjectFactory v1SamlpFactory;
@@ -978,6 +972,5 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
 
     //Not static to support test cases
     private final boolean validateSSOProfileDetails = SyspropUtil.getBoolean( "com.l7tech.external.assertions.samlpassertion.validateSSOProfile", true );
-    private static final Logger logger = Logger.getLogger(ServerSamlpResponseBuilderAssertion.class.getName());
 
 }

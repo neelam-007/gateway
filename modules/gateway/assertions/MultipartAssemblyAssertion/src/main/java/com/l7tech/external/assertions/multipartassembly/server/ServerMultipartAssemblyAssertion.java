@@ -12,7 +12,6 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.StashManagerFactory;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.util.Charsets;
@@ -26,7 +25,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.security.SecureRandom;
 import java.util.*;
-import java.util.logging.Logger;
 
 import static com.l7tech.external.assertions.multipartassembly.MultipartAssemblyAssertion.*;
 
@@ -36,20 +34,14 @@ import static com.l7tech.external.assertions.multipartassembly.MultipartAssembly
  * @see com.l7tech.external.assertions.multipartassembly.MultipartAssemblyAssertion
  */
 public class ServerMultipartAssemblyAssertion extends AbstractServerAssertion<MultipartAssemblyAssertion> {
-    private static final Logger logger = Logger.getLogger(ServerMultipartAssemblyAssertion.class.getName());
-
     private static final Random random = new SecureRandom();
     private final StashManagerFactory stashManagerFactory;
-    private final Auditor auditor;
     private final String payloadsVariable;
     private final String contentTypesVariable;
     private final String partIdsVariable;
 
     public ServerMultipartAssemblyAssertion(MultipartAssemblyAssertion assertion, ApplicationContext context) throws PolicyAssertionException {
         super(assertion);
-
-        //noinspection ThisEscapedInObjectConstruction
-        this.auditor = new Auditor(this, context, logger);
         this.stashManagerFactory = context.getBean("stashManagerFactory", StashManagerFactory.class);
         String prefix = assertion.getVariablePrefix();
         payloadsVariable = prefix + SUFFIX_PAYLOADS;
@@ -57,6 +49,7 @@ public class ServerMultipartAssemblyAssertion extends AbstractServerAssertion<Mu
         partIdsVariable = prefix + SUFFIX_PART_IDS;
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         try {
             Message message = assertion.isActOnRequest() ? context.getRequest() : context.getResponse();
@@ -73,7 +66,7 @@ public class ServerMultipartAssemblyAssertion extends AbstractServerAssertion<Mu
 
             final int numContentTypes = contentTypes.size();
             if (numPayloads > numContentTypes) {
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
                                     new String[] { payloadsVariable + " has " + numPayloads + " payloads, but " + contentTypesVariable + " only has " + numContentTypes + " content types" },
                                     null);
                 return AssertionStatus.FAILED;
@@ -81,7 +74,7 @@ public class ServerMultipartAssemblyAssertion extends AbstractServerAssertion<Mu
 
             final int numPartIds = partIds.size();
             if (numPayloads > numPartIds) {
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
                                     new String[] { payloadsVariable + " has " + numPayloads + " payloads, but " + partIdsVariable + " only has " + numPartIds + " part IDs" },
                                     null);
                 return AssertionStatus.FAILED;
@@ -161,6 +154,7 @@ public class ServerMultipartAssemblyAssertion extends AbstractServerAssertion<Mu
         // Hand off our stash manager to the context to close, since it now must survive past this checkRequest method
         final StashManager toClose = sm;
         context.runOnClose(new Runnable() {
+            @Override
             public void run() {
                 if (toClose != null) toClose.close();
             }
@@ -179,10 +173,12 @@ public class ServerMultipartAssemblyAssertion extends AbstractServerAssertion<Mu
             private int nextPart = 0; // the part which is being sent
             private final int numParts = contentTypeHeaders.size();
 
+            @Override
             public boolean hasMoreElements() {
                 return nextPart < numParts;
             }
 
+            @Override
             public InputStream nextElement() {
                 try {
                     return doNextElement();
@@ -270,7 +266,7 @@ public class ServerMultipartAssemblyAssertion extends AbstractServerAssertion<Mu
     }
 
     private void logFailure(Throwable e) {
-        auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+        logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
                             new String[] { "Unable to assemble multipart message: " + ExceptionUtils.getMessage(e) },
                             e);
     }

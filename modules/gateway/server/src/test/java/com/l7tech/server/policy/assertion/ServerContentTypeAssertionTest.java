@@ -134,7 +134,7 @@ public class ServerContentTypeAssertionTest {
     }
 
     private ServerContentTypeAssertion sass() throws PolicyAssertionException {
-        return new ServerContentTypeAssertion(ass, null, null);
+        return new ServerContentTypeAssertion(ass);
     }
 
     private Message multireq() throws IOException {

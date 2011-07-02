@@ -1,10 +1,7 @@
-/*
- * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
- */
-
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.kerberos.KerberosException;
 import com.l7tech.kerberos.KerberosServiceTicket;
 import com.l7tech.message.Message;
@@ -18,21 +15,17 @@ import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.saml.SamlAssertionGenerator;
 import com.l7tech.security.saml.SubjectStatement;
 import com.l7tech.security.token.KerberosSigningSecurityToken;
-import com.l7tech.security.token.SecurityContextToken;
 import com.l7tech.security.token.XmlSecurityToken;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.SecurityActor;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.decorator.WssDecoratorUtils;
 import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.security.xml.processor.SecurityContext;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.PostRoutingEvent;
 import com.l7tech.server.event.PreRoutingEvent;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.AuthenticationContext;
-import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.server.security.kerberos.KerberosRoutingClient;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.util.ExceptionUtils;
@@ -52,7 +45,6 @@ import java.net.URL;
 import java.security.SignatureException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
-import java.util.logging.Logger;
 
 /**
  * Base class for routing assertions.
@@ -60,7 +52,6 @@ import java.util.logging.Logger;
  * @author alex
  */
 public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> extends AbstractServerAssertion<RAT> {
-    private static final Logger sraLogger = Logger.getLogger(ServerRoutingAssertion.class.getName());
 
     //- PROTECTED
 
@@ -71,11 +62,10 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
     /**
      *
      * @param data  assertion bean holding config for this server assertion.  required.
-     * @param applicationContext Spring application context for creating an auditor, or null to log only
-     * @param logger logger to use, or null.
+     * @param applicationContext Spring application context for creating an getAudit(), or null to log only
      */
-    protected ServerRoutingAssertion(RAT data, ApplicationContext applicationContext, Logger logger) {
-        super(data);
+    protected ServerRoutingAssertion(RAT data, ApplicationContext applicationContext) {
+        super(data, applicationContext==null ? null : applicationContext.getBean( "auditFactory", AuditFactory.class ));
         this.applicationContext = applicationContext;
         if (applicationContext == null) {
             this.messageProcessingEventChannel = new EventChannel();
@@ -83,8 +73,6 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
             ApplicationEventPublisher mpchannel = applicationContext.getBean("messageProcessingEventChannel", EventChannel.class);
             this.messageProcessingEventChannel = mpchannel != null ? mpchannel : applicationContext;             
         }
-        this.logger = logger != null ? logger : sraLogger;
-        this.auditor = new Auditor(this, applicationContext, logger);
     }
 
     /**
@@ -153,14 +141,14 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
 
         // At this point we must be doing PROMOTE_OTHER
         if (secHeaderHandlingOption != RoutingAssertion.PROMOTE_OTHER_SECURITY_HEADER) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Unexpected secHeaderHandlingOption: " + secHeaderHandlingOption);
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Unexpected secHeaderHandlingOption: " + secHeaderHandlingOption);
             return;
         }
 
         // Delete the existing...
         final XmlKnob xmlKnob = message.getXmlKnob();
         if (!deleteDefaultSecurityHeader(message, requestSec.getProcessorResult())) {
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_NON_SOAP_WRONG_POLICY);
+            logAndAudit(AssertionMessages.HTTPROUTE_NON_SOAP_WRONG_POLICY);
             throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
         }
 
@@ -175,18 +163,18 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
             secHeaderToPromote = SoapUtil.getSecurityElement(doc, otherToPromote);
         } catch ( InvalidDocumentFormatException e) {
             // Can't happen
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_NON_SOAP_WRONG_POLICY, null, e);
+            logAndAudit(AssertionMessages.HTTPROUTE_NON_SOAP_WRONG_POLICY, null, e);
             throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e);
         }
         if (secHeaderToPromote != null) {
             // do it
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_PROMOTING_ACTOR, otherToPromote);
+            logAndAudit(AssertionMessages.HTTPROUTE_PROMOTING_ACTOR, otherToPromote);
             xmlKnob.getDocumentWritable();
             SoapUtil.nukeActorAttribute(secHeaderToPromote);
         } else {
             // this is not a big deal but might indicate something wrong
             // with the assertion => logging as info
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_NO_SECURITY_HEADER, otherToPromote);
+            logAndAudit(AssertionMessages.HTTPROUTE_NO_SECURITY_HEADER, otherToPromote);
         }
     }
 
@@ -225,7 +213,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
             }
             return true;
         } catch (InvalidDocumentFormatException e) {
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_NON_SOAP_WRONG_FORMAT);
+            logAndAudit(AssertionMessages.HTTPROUTE_NON_SOAP_WRONG_FORMAT);
             throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, "Unable to clean up Security header: " + ExceptionUtils.getMessage(e), e);
         }
     }
@@ -246,7 +234,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
             }
             return true;
         } catch (InvalidDocumentFormatException e) {
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_NON_SOAP_WRONG_FORMAT);
+            logAndAudit(AssertionMessages.HTTPROUTE_NON_SOAP_WRONG_FORMAT);
             throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, "Unable to remove Security header: " + ExceptionUtils.getMessage(e), e);
         }
     }
@@ -274,7 +262,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
     protected void doAttachSamlSenderVouches(Message message, LoginCredentials svInputCredentials, SignerInfo signerInfo)
             throws SAXException, IOException, SignatureException, CertificateException, UnrecoverableKeyException {
         if (svInputCredentials == null) {
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_SAML_SV_NOT_AUTH);
+            logAndAudit(AssertionMessages.HTTPROUTE_SAML_SV_NOT_AUTH);
             return;
         }
 
@@ -288,7 +276,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
                 InetAddress clientAddress = InetAddress.getByName(requestTcp.getRemoteAddress());
                 samlOptions.setClientAddress(clientAddress);
             } catch (UnknownHostException e) {
-                auditor.logAndAudit(AssertionMessages.HTTPROUTE_CANT_RESOLVE_IP, null, e);
+                logAndAudit(AssertionMessages.HTTPROUTE_CANT_RESOLVE_IP, null, e);
             }
         }
         samlOptions.setVersion(assertion.getSamlAssertionVersion());
@@ -382,10 +370,6 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
     }
 
     //- PRIVATE
-
-    // instance
-    private final Logger logger;
-    private final Auditor auditor;
 
     /*
      * Get a system property using the configured min, max and default values.

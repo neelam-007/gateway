@@ -19,7 +19,6 @@ import org.springframework.context.ApplicationContext;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Enforces that a specific element in a message is signed.
@@ -30,11 +29,10 @@ import java.util.logging.Logger;
  * Date: July 14, 2004<br/>
  */
 public class ServerRequireWssSignedElement extends ServerRequireWssOperation<RequireWssSignedElement> {
-    private static final Logger logger = Logger.getLogger(ServerRequireWssSignedElement.class.getName());
     private static final boolean requireCredentialSigningToken = SyspropUtil.getBoolean( "com.l7tech.server.policy.requireSigningTokenCredential", true );
 
     public ServerRequireWssSignedElement(RequireWssSignedElement data, ApplicationContext springContext) {
-        super(logger, data, springContext);
+        super(data, springContext);
     }
 
     @Override
@@ -91,7 +89,7 @@ public class ServerRequireWssSignedElement extends ServerRequireWssOperation<Req
                         requireCredentialSigningToken,
                         relatedRequestMessage,
                         relatedRequestMessage==null ? null : context.getAuthenticationContext( relatedRequestMessage ),
-                        auditor
+                        getAudit()
                     ) &&
                     isAcceptedSignatureDigestAlgorithms(elements);
         }
@@ -150,7 +148,7 @@ public class ServerRequireWssSignedElement extends ServerRequireWssOperation<Req
                                                   final ProcessorResult wssResults,
                                                   final Collection<ParsedElement> signatureConfirmationElementHolder ) {
         Pair<Boolean,Collection<ParsedElement>> signatureConfirmationValidation =
-                WSSecurityProcessorUtils.processSignatureConfirmations(message.getSecurityKnob(), wssResults, auditor);
+                WSSecurityProcessorUtils.processSignatureConfirmations(message.getSecurityKnob(), wssResults, getAudit());
 
         if ( signatureConfirmationElementHolder != null && signatureConfirmationValidation.getValue() != null ) {
             signatureConfirmationElementHolder.addAll(signatureConfirmationValidation.getValue());
@@ -200,7 +198,7 @@ public class ServerRequireWssSignedElement extends ServerRequireWssOperation<Req
         try {
             context.setVariable( prefixVariable(name), value );
         } catch ( VariableNotSettableException vnse ) {
-            auditor.logAndAudit( AssertionMessages.VARIABLE_NOTSET, vnse.getVariable() );
+            logAndAudit( AssertionMessages.VARIABLE_NOTSET, vnse.getVariable() );
         }
     }
 

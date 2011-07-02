@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.mime.NoSuchPartException;
@@ -11,8 +8,6 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.Regex;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.ContextVariableKnob;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
@@ -20,7 +15,6 @@ import com.l7tech.util.Charsets;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
-import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,7 +23,6 @@ import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,18 +30,14 @@ import java.util.regex.Pattern;
  * The Server side Regex Assertion
  */
 public class ServerRegex extends AbstractServerAssertion<Regex> {
-    private final Logger logger = Logger.getLogger(getClass().getName());
-    private final Auditor auditor;
-
     private Pattern regexPattern;
     private Exception compileException;
     private final String[] varNames;
     public static final Charset ENCODING = Charsets.UTF8;
     private final boolean isReplacement;
 
-    public ServerRegex(Regex ass, ApplicationContext springContext) {
+    public ServerRegex(Regex ass) {
         super(ass);
-        auditor = springContext != null ? new Auditor(this, springContext, logger) : new LogOnlyAuditor(logger);
         String regExExpression = ass.getRegex();
         try {
             int flags = Pattern.DOTALL | Pattern.MULTILINE;
@@ -105,7 +94,7 @@ public class ServerRegex extends AbstractServerAssertion<Regex> {
             if (isReplacement) output = makeOutput(part, encoding);
 
         } catch (NoSuchPartException e) {
-            auditor.logAndAudit(AssertionMessages.REGEX_NO_SUCH_PART, Integer.toString(whichPart));
+            logAndAudit(AssertionMessages.REGEX_NO_SUCH_PART, Integer.toString(whichPart));
             throw new AssertionStatusException(e);
         }
 
@@ -151,14 +140,14 @@ public class ServerRegex extends AbstractServerAssertion<Regex> {
         } else {
             try {
                 encoding = Charset.forName(encodingName);
-                auditor.logAndAudit(AssertionMessages.REGEX_ENCODING_OVERRIDE, encodingName);
+                logAndAudit(AssertionMessages.REGEX_ENCODING_OVERRIDE, encodingName);
             } catch (UnsupportedCharsetException e) {
                 encoding = null;
             }
         }
 
         if (encoding == null) {
-            auditor.logAndAudit(AssertionMessages.REGEX_NO_ENCODING, ENCODING.name());
+            logAndAudit(AssertionMessages.REGEX_NO_ENCODING, ENCODING.name());
             encoding = ENCODING;
         }
         return encoding;
@@ -175,7 +164,7 @@ public class ServerRegex extends AbstractServerAssertion<Regex> {
 
             return context.getTargetMessage(assertion, true);
         } catch (NoSuchVariableException e) {
-            auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, e.getVariable());
+            logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, e.getVariable());
             throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
         }
     }
@@ -200,12 +189,12 @@ public class ServerRegex extends AbstractServerAssertion<Regex> {
                     logger.fine("Proceeding : Matched " + assertion.getRegex());
                 return AssertionStatus.NONE;
             } else {
-                auditor.logAndAudit(AssertionMessages.REGEX_NO_MATCH_FAILURE, assertion.getRegex());
+                logAndAudit(AssertionMessages.REGEX_NO_MATCH_FAILURE, assertion.getRegex());
                 return AssertionStatus.FALSIFIED;
             }
         } else { // !proceedIfPatternMatches
             if (matched) {
-                auditor.logAndAudit(AssertionMessages.REGEX_MATCH_FAILURE, assertion.getRegex());
+                logAndAudit(AssertionMessages.REGEX_MATCH_FAILURE, assertion.getRegex());
                 return AssertionStatus.FALSIFIED;
             } else {
                 if (logger.isLoggable(Level.FINE))
@@ -220,7 +209,7 @@ public class ServerRegex extends AbstractServerAssertion<Regex> {
         if (logger.isLoggable(Level.FINE))
             logger.log(Level.FINE, "Replace requested: Match pattern ''{0}'', replace pattern ''{1}''",
                     new Object[] { assertion.getRegex(), replacement });
-        replacement = ExpandVariables.process(replacement, context.getVariableMap(varNames, auditor), auditor);
+        replacement = ExpandVariables.process(replacement, context.getVariableMap(varNames, getAudit()), getAudit());
         String result = matcher.replaceAll(replacement);
         out.setOutput(result);
         return AssertionStatus.NONE;
@@ -229,18 +218,18 @@ public class ServerRegex extends AbstractServerAssertion<Regex> {
     private void checkPattern() throws AssertionStatusException, PolicyAssertionException {
         if (regexPattern == null) {
             if (compileException != null) {
-                auditor.logAndAudit(AssertionMessages.REGEX_PATTERN_INVALID,
+                logAndAudit(AssertionMessages.REGEX_PATTERN_INVALID,
                                     new String[]{assertion.getRegex(),
                                         compileException.getMessage()}, compileException);
             } else {
-                auditor.logAndAudit(AssertionMessages.REGEX_PATTERN_INVALID,
+                logAndAudit(AssertionMessages.REGEX_PATTERN_INVALID,
                                     assertion.getRegex(), "unknown error");
             }
             throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
         }
 
         if (isReplacement && assertion.getReplacement() == null) {
-            auditor.logAndAudit(AssertionMessages.REGEX_NO_REPLACEMENT);
+            logAndAudit(AssertionMessages.REGEX_NO_REPLACEMENT);
             throw new PolicyAssertionException(assertion, AssertionMessages.REGEX_NO_REPLACEMENT.getMessage());
         }
     }

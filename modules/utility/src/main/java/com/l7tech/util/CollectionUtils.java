@@ -44,7 +44,7 @@ public final class CollectionUtils {
      */
     public static <T> void foreach( final Iterable<T> iterable,
                                     final boolean callbackForNull,
-                                    final Functions.UnaryVoid<T> callback) {
+                                    final Functions.UnaryVoid<? super T> callback) {
         for ( final T item : iterable ) {
             if ( callbackForNull || item != null ) {
                 callback.call( item );
@@ -63,7 +63,7 @@ public final class CollectionUtils {
      */
     public static <T,E extends Throwable> void foreach( final Iterable<T> iterable,
                                     final boolean callbackForNull,
-                                    final Functions.UnaryVoidThrows<T,E> callback) throws E {
+                                    final Functions.UnaryVoidThrows<? super T,E> callback) throws E {
         for ( final T item : iterable ) {
             if ( callbackForNull || item != null ) {
                 callback.call( item );

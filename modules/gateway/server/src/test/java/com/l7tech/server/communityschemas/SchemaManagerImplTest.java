@@ -4,8 +4,8 @@ import com.l7tech.common.http.GenericHttpHeaders;
 import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.security.MockGenericHttpClient;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.util.TestingHttpClientFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.MockConfig;
@@ -33,7 +33,7 @@ import java.util.logging.Logger;
 public class SchemaManagerImplTest {
 
     private static final Logger logger = Logger.getLogger( SchemaManagerImplTest.class.getName() );
-    private static final Audit audit = new LogOnlyAuditor( logger );
+    private static final Audit audit = new LoggingAudit( logger );
 
     @Test
     public void testHttpFail() throws Exception {

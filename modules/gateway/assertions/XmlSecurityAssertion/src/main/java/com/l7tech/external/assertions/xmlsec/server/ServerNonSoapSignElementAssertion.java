@@ -15,7 +15,6 @@ import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.InvalidXpathException;
 import org.springframework.beans.factory.BeanFactory;
-import org.springframework.context.ApplicationEventPublisher;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -29,21 +28,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.logging.Logger;
 
 /**
  * Server implementation of signing arbitrary XML elements in a non-SOAP message.
  */
 public class ServerNonSoapSignElementAssertion extends ServerNonSoapSecurityAssertion<NonSoapSignElementAssertion> {
-    private static final Logger logger = Logger.getLogger(ServerNonSoapSignElementAssertion.class.getName());
     private final BeanFactory beanFactory;
 
     private static final Random random = new SecureRandom();
     private final FullQName attrname;
     private final boolean enableImplicitEmptyUriDocRef;
 
-    public ServerNonSoapSignElementAssertion(NonSoapSignElementAssertion assertion, BeanFactory beanFactory, ApplicationEventPublisher eventPub) throws InvalidXpathException, ParseException {
-        super(assertion, logger, beanFactory, eventPub);
+    public ServerNonSoapSignElementAssertion(NonSoapSignElementAssertion assertion, BeanFactory beanFactory) throws InvalidXpathException, ParseException {
+        super(assertion);
         this.beanFactory = beanFactory;
         String attrNameStr = assertion.getCustomIdAttributeQname();
         this.attrname = attrNameStr == null || attrNameStr.length() < 1 ? null : FullQName.valueOf(attrNameStr);

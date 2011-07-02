@@ -4,7 +4,6 @@ import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.Syntax;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
@@ -15,7 +14,6 @@ import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.jdbc.support.rowset.SqlRowSetMetaData;
 
 import java.io.IOException;
-import java.util.logging.Logger;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.sql.SQLException;
@@ -26,10 +24,6 @@ import java.sql.SQLException;
  * @see com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion
  */
 public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryAssertion> {
-    private static final Logger logger = Logger.getLogger(ServerJdbcQueryAssertion.class.getName());
-
-    private final JdbcQueryAssertion assertion;
-    private final Auditor auditor;
     private final String[] variablesUsed;
     private final JdbcQueryingManager jdbcQueryingManager;
 
@@ -37,14 +31,12 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
         super(assertion);
 
         if (context == null) throw new IllegalStateException("Application context cannot be null.");
-        if (assertion == null) throw new IllegalStateException("JDBC Query Assertion cannot be null.");
 
-        this.assertion = assertion;
-        auditor = new Auditor(this, context, logger);
         variablesUsed = assertion.getVariablesUsed();
         jdbcQueryingManager = context.getBean("jdbcQueryingManager", JdbcQueryingManager.class);
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         if (context == null) throw new IllegalStateException("Policy Enforcement Context cannot be null.");
 
@@ -56,12 +48,12 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
 
         // Analyze the result type and perform a corresponding action.
         if (result instanceof String) {
-            auditor.logAndAudit(AssertionMessages.JDBC_QUERYING_FAILURE_ASSERTION_FAILED, (String)result);
+            logAndAudit( AssertionMessages.JDBC_QUERYING_FAILURE_ASSERTION_FAILED, (String) result );
             return AssertionStatus.FAILED;
         } else if (result instanceof Integer) {
             int num = (Integer)result;
             if (num == 0 && assertion.isAssertionFailureEnabled()) {
-                auditor.logAndAudit(AssertionMessages.JDBC_NO_QUERY_RESULT_ASSERTION_FAILED, assertion.getConnectionName());
+                logAndAudit( AssertionMessages.JDBC_NO_QUERY_RESULT_ASSERTION_FAILED, assertion.getConnectionName() );
                 return AssertionStatus.FAILED;
             } else {
                 context.setVariable(getVaraiblePrefix(context) + "." + JdbcQueryAssertion.VARIABLE_COUNT, result);
@@ -71,11 +63,11 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
                 int affectedRows = setContextVariables((SqlRowSet)result, context);
 
                 if (affectedRows == 0 && assertion.isAssertionFailureEnabled()) {
-                    auditor.logAndAudit(AssertionMessages.JDBC_NO_QUERY_RESULT_ASSERTION_FAILED, assertion.getConnectionName());
+                    logAndAudit( AssertionMessages.JDBC_NO_QUERY_RESULT_ASSERTION_FAILED, assertion.getConnectionName() );
                     return AssertionStatus.FAILED;
                 }
             } catch (SQLException e) {
-                auditor.logAndAudit(AssertionMessages.JDBC_QUERYING_FAILURE_ASSERTION_FAILED, e.getMessage());
+                logAndAudit( AssertionMessages.JDBC_QUERYING_FAILURE_ASSERTION_FAILED, e.getMessage() );
                 return AssertionStatus.FAILED;
             }
         } else {
@@ -98,7 +90,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
         final String[] varsWithIndex = Syntax.getReferencedNamesIndexedVarsNotOmitted(query);
         final String[] varsWithoutIndex = assertion.getVariablesUsed();
         for (final String varWithIndex: varsWithIndex) {
-            String value = ExpandVariables.process("${" + varWithIndex + "}", context.getVariableMap(varsWithoutIndex, auditor), auditor);
+            String value = ExpandVariables.process("${" + varWithIndex + "}", context.getVariableMap(varsWithoutIndex, getAudit()), getAudit());
             params.add(value);
         }
 
@@ -153,7 +145,7 @@ public class ServerJdbcQueryAssertion extends AbstractServerAssertion<JdbcQueryA
         if (context == null) throw new IllegalStateException("Policy Enforcement Context cannot be null.");
 
         String prefix = assertion.getVariablePrefix();
-        prefix = ExpandVariables.process(prefix, context.getVariableMap(variablesUsed, auditor), auditor);
+        prefix = ExpandVariables.process(prefix, context.getVariableMap(variablesUsed, getAudit()), getAudit());
 
         if (prefix == null || prefix.trim().isEmpty()) {
             prefix = JdbcQueryAssertion.DEFAULT_VARIABLE_PREFIX;

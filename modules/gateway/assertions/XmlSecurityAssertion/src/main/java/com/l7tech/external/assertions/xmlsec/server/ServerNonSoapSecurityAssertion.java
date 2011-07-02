@@ -10,8 +10,6 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.security.xml.processor.ProcessorException;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
@@ -24,8 +22,6 @@ import com.l7tech.xml.xpath.XpathVariableContext;
 import com.l7tech.xml.xpath.XpathVariableFinderVariableContext;
 import org.jaxen.JaxenException;
 import org.jaxen.dom.DOMXPath;
-import org.springframework.beans.factory.BeanFactory;
-import org.springframework.context.ApplicationEventPublisher;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -36,7 +32,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.logging.Logger;
 
 /**
  * Utility superclass for server implementations of non-SOAP XML encryption/decryption/signature/verification assertions.
@@ -44,7 +39,6 @@ import java.util.logging.Logger;
 public abstract class ServerNonSoapSecurityAssertion<AT extends NonSoapSecurityAssertionBase> extends AbstractServerAssertion<AT>  {
     protected final AssertionStatus ASSERTION_STATUS_BAD_MESSAGE;
 
-    protected final Auditor auditor;
     protected final DOMXPath xpath;
     protected final String verb;
     protected final String unableMessage;
@@ -53,19 +47,14 @@ public abstract class ServerNonSoapSecurityAssertion<AT extends NonSoapSecurityA
      * Create support class for server-side impl of non-SOAP XML security assertion.
      *
      * @param assertion the policy assertion bean.  Required.
-     * @param logger  logger for creating auditor, or null to create one from concrete classname.
-     * @param beanFactory  bean factory for creating auditor, or null to live without it
-     * @param eventPub     event publisher for creating auditor, or null to create an auditor that only logs
      * @throws InvalidXpathException if the XpathExpressioun will not compile
      */
-    public ServerNonSoapSecurityAssertion(AT assertion, Logger logger, BeanFactory beanFactory, ApplicationEventPublisher eventPub) throws InvalidXpathException {
+    public ServerNonSoapSecurityAssertion(AT assertion) throws InvalidXpathException {
         super(assertion);
         String verb = assertion.getVerb();
         if (verb == null) verb = "process";
         this.verb = verb;
         this.unableMessage = "Unable to " + verb + " elements(s): ";
-        if (logger == null) logger = Logger.getLogger(getClass().getName());
-        this.auditor = eventPub != null ? new Auditor(this, beanFactory, eventPub, logger) : new LogOnlyAuditor(logger);
         XpathExpression xpe = assertion.getXpathExpression();
         if (xpe == null || xpe.getExpression() == null)
             throw new InvalidXpathException("XPath expression not set");
@@ -93,33 +82,33 @@ public abstract class ServerNonSoapSecurityAssertion<AT extends NonSoapSecurityA
             return processAffectedElements(context, message, doc, affectedElements);
 
         } catch (NoSuchVariableException e) {
-            auditor.logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, e.getVariable(), ExceptionUtils.getMessage(e));
+            logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, e.getVariable(), ExceptionUtils.getMessage(e));
             return AssertionStatus.SERVER_ERROR;
         } catch (SAXException e) {
-            auditor.logAndAudit(AssertionMessages.XPATH_MESSAGE_NOT_XML, assertion.getTargetName());
+            logAndAudit(AssertionMessages.XPATH_MESSAGE_NOT_XML, assertion.getTargetName());
             return ASSERTION_STATUS_BAD_MESSAGE;
         } catch (JaxenException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to evaluate XPath expression: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to evaluate XPath expression: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
             return AssertionStatus.FAILED;
         } catch (InvalidDocumentFormatException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { unableMessage + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { unableMessage + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
             return ASSERTION_STATUS_BAD_MESSAGE;
         } catch (GeneralSecurityException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { unableMessage + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { unableMessage + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
         } catch (KeyInfoResolvingException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { unableMessage + ExceptionUtils.getMessage(e) }, e);
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { unableMessage + ExceptionUtils.getMessage(e) }, e);
             return AssertionStatus.SERVER_ERROR;
         } catch (StructureException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { unableMessage + ExceptionUtils.getMessage(e) }, e);
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { unableMessage + ExceptionUtils.getMessage(e) }, e);
             return ASSERTION_STATUS_BAD_MESSAGE;
         } catch (ProcessorException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { unableMessage + ExceptionUtils.getMessage(e) }, e);
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { unableMessage + ExceptionUtils.getMessage(e) }, e);
             return AssertionStatus.BAD_REQUEST;
         } catch (AssertionStatusException e) {
             return e.getAssertionStatus();
         } catch (Exception e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { unableMessage + ExceptionUtils.getMessage(e) }, e);
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { unableMessage + ExceptionUtils.getMessage(e) }, e);
             return AssertionStatus.SERVER_ERROR;
         }
     }
@@ -133,7 +122,7 @@ public abstract class ServerNonSoapSecurityAssertion<AT extends NonSoapSecurityA
                 List nodes = xpath.selectNodes(doc);
                 if (nodes == null || nodes.isEmpty()) {
                     final String msg = "XPath evaluation did not match any elements";
-                    auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, msg);
+                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, msg);
                     throw new AssertionStatusException(AssertionStatus.FALSIFIED, msg);
                 }
                 List<Element> affectedElements = new ArrayList<Element>();
@@ -142,7 +131,7 @@ public abstract class ServerNonSoapSecurityAssertion<AT extends NonSoapSecurityA
                         affectedElements.add((Element) node);
                     } else {
                         final String msg = "XPath evaluation produced non-Element result of type " + node.getClass();
-                        auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, msg);
+                        logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, msg);
                         throw new AssertionStatusException(msg);
                     }
                 }

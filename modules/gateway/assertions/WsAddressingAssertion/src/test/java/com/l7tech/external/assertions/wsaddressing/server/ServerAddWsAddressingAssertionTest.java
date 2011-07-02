@@ -1,7 +1,3 @@
-/**
- * Copyright (C) 2008, Layer 7 Technologies Inc.
- * @author darmstrong
- */
 package com.l7tech.external.assertions.wsaddressing.server;
 
 import com.l7tech.common.http.HttpMethod;
@@ -15,7 +11,6 @@ import com.l7tech.message.HttpServletResponseKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.test.BugNumber;
@@ -23,7 +18,6 @@ import com.l7tech.util.SoapConstants;
 import com.l7tech.xml.soap.SoapUtil;
 import org.junit.Assert;
 import org.junit.Test;
-import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
@@ -34,12 +28,14 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.util.Collections;
 
+/**
+ * @author darmstrong
+ */
 public class ServerAddWsAddressingAssertionTest {
 
     @Test
     public void testMessageProperties_NoVariables() throws Exception{
-        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
-
+        
         final AddWsAddressingAssertion assertion = new AddWsAddressingAssertion();
         final String wsaAction = "http://warehouse.acme.com/ws/listProducts";
         assertion.setAction(wsaAction);
@@ -58,7 +54,7 @@ public class ServerAddWsAddressingAssertionTest {
         assertion.setRelatesToMessageId(relatesToMsgsId);
 
         final ServerAddWsAddressingAssertion serverAssertion =
-                new ServerAddWsAddressingAssertion(assertion, appContext);
+                new ServerAddWsAddressingAssertion(assertion);
 
         final PolicyEnforcementContext context = getContext(soapMsg, null);
         final AssertionStatus status = serverAssertion.checkRequest(context);
@@ -138,8 +134,7 @@ public class ServerAddWsAddressingAssertionTest {
     @BugNumber(9268)
     @Test
     public void testNoSoapHeaderPresent() throws Exception{
-        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
-
+        
         final AddWsAddressingAssertion assertion = new AddWsAddressingAssertion();
         assertion.setAction("http://warehouse.acme.com/ws/listProducts");
         assertion.setWsaNamespaceUri(SoapConstants.WSA_NAMESPACE);
@@ -154,7 +149,7 @@ public class ServerAddWsAddressingAssertionTest {
         assertion.setRelatesToMessageId(relatesToMsgsId);
 
         final ServerAddWsAddressingAssertion serverAssertion =
-                new ServerAddWsAddressingAssertion(assertion, appContext);
+                new ServerAddWsAddressingAssertion(assertion);
 
         final PolicyEnforcementContext context = getContext(warehouseResponse, null);
         final AssertionStatus status = serverAssertion.checkRequest(context);
@@ -171,8 +166,7 @@ public class ServerAddWsAddressingAssertionTest {
      */
     @Test
     public void testActionFromTargetMessage() throws Exception{
-        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
-
+        
         final AddWsAddressingAssertion assertion = new AddWsAddressingAssertion();
         assertion.setAction(AddWsAddressingAssertion.ACTION_FROM_TARGET_MESSAGE);
         assertion.setWsaNamespaceUri(SoapConstants.WSA_NAMESPACE);
@@ -187,7 +181,7 @@ public class ServerAddWsAddressingAssertionTest {
         assertion.setRelatesToMessageId(relatesToMsgsId);
 
         final ServerAddWsAddressingAssertion serverAssertion =
-                new ServerAddWsAddressingAssertion(assertion, appContext);
+                new ServerAddWsAddressingAssertion(assertion);
 
         final String soapAction = "http://warehouse.acme.com/ws/listProducts";
         final PolicyEnforcementContext context = getContext(warehouseResponse, soapAction);
@@ -221,8 +215,7 @@ public class ServerAddWsAddressingAssertionTest {
     @BugNumber(9270)
     @Test
     public void testActionFromTargetMessage_NotFound() throws Exception{
-        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
-
+        
         final AddWsAddressingAssertion assertion = new AddWsAddressingAssertion();
         assertion.setAction(AddWsAddressingAssertion.MESSAGE_ID_AUTOMATIC);
         assertion.setWsaNamespaceUri(SoapConstants.WSA_NAMESPACE);
@@ -237,7 +230,7 @@ public class ServerAddWsAddressingAssertionTest {
         assertion.setRelatesToMessageId(relatesToMsgsId);
 
         final ServerAddWsAddressingAssertion serverAssertion =
-                new ServerAddWsAddressingAssertion(assertion, appContext);
+                new ServerAddWsAddressingAssertion(assertion);
 
         final PolicyEnforcementContext context = getContext(warehouseResponse, null);
         final AssertionStatus status = serverAssertion.checkRequest(context);
@@ -249,8 +242,7 @@ public class ServerAddWsAddressingAssertionTest {
     public void testMessageProperties_Variables() throws Exception{
         //run test for each namespace, in case namespace ever introduces a change
         for (String namespace : AddWsAddressingAssertion.WSA_NAMESPACES) {
-            final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
-
+            
             final AddWsAddressingAssertion assertion = new AddWsAddressingAssertion();
             final String actionVar = "action";
             final String namespaceVar = "namespace";
@@ -277,7 +269,7 @@ public class ServerAddWsAddressingAssertionTest {
             assertion.setRelatesToMessageId("${" + relatesMsgIdVar + "}");
 
             final ServerAddWsAddressingAssertion serverAssertion =
-                    new ServerAddWsAddressingAssertion(assertion, appContext);
+                    new ServerAddWsAddressingAssertion(assertion);
 
             final String soapAction = "http://warehouse.acme.com/ws/listProducts";
             final PolicyEnforcementContext context = getContext(soapMsg, soapAction);
@@ -363,8 +355,7 @@ public class ServerAddWsAddressingAssertionTest {
     @BugNumber(9284)
     @Test
     public void testMessageProperties_VariablesDefaultNamespace() throws Exception {
-        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
-
+        
         final AddWsAddressingAssertion assertion = new AddWsAddressingAssertion();
 
         final String action = "http://warehouse.acme.com/ws/listProducts";
@@ -374,7 +365,7 @@ public class ServerAddWsAddressingAssertionTest {
         assertion.setWsaNamespaceUri("${doesnotexist}");
 
         final ServerAddWsAddressingAssertion serverAssertion =
-                new ServerAddWsAddressingAssertion(assertion, appContext);
+                new ServerAddWsAddressingAssertion(assertion);
 
         final PolicyEnforcementContext context = getContext(soapMsg, null);
 
@@ -384,15 +375,14 @@ public class ServerAddWsAddressingAssertionTest {
 
     @Test
     public void testNotSoap() throws Exception{
-        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
-
+        
         final AddWsAddressingAssertion assertion = new AddWsAddressingAssertion();
 
         final String action = "http://warehouse.acme.com/ws/listProducts";
         assertion.setAction(action);
         assertion.setWsaNamespaceUri(SoapConstants.WSA_NAMESPACE_10);
         final ServerAddWsAddressingAssertion serverAssertion =
-                new ServerAddWsAddressingAssertion(assertion, appContext);
+                new ServerAddWsAddressingAssertion(assertion);
 
         final PolicyEnforcementContext context = getContext("<notsoap>nosoaphere</notsoap>", null);
 
@@ -407,15 +397,14 @@ public class ServerAddWsAddressingAssertionTest {
      */
     @Test
     public void testActionExplicitFromWsdl_Input() throws Exception{
-        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
-
+        
         final AddWsAddressingAssertion assertion = new AddWsAddressingAssertion();
 
         assertion.setAction(AddWsAddressingAssertion.ACTION_EXPLICIT_FROM_WSDL_INPUT);
         assertion.setWsaNamespaceUri("http://www.w3.org/2005/08/addressing");
 
         final ServerAddWsAddressingAssertion serverAssertion =
-                new ServerAddWsAddressingAssertion(assertion, appContext);
+                new ServerAddWsAddressingAssertion(assertion);
 
         final PolicyEnforcementContext context = getContext(restaurantMsg, null);
         PublishedService srvc = new PublishedService();
@@ -448,15 +437,14 @@ public class ServerAddWsAddressingAssertionTest {
 
     @Test
     public void testActionExplicitFromWsdl_Input_FallBackOnSoapAction() throws Exception{
-        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
-
+        
         final AddWsAddressingAssertion assertion = new AddWsAddressingAssertion();
 
         assertion.setAction(AddWsAddressingAssertion.ACTION_EXPLICIT_FROM_WSDL_INPUT);
         assertion.setWsaNamespaceUri("http://www.w3.org/2005/08/addressing");
 
         final ServerAddWsAddressingAssertion serverAssertion =
-                new ServerAddWsAddressingAssertion(assertion, appContext);
+                new ServerAddWsAddressingAssertion(assertion);
 
         final PolicyEnforcementContext context = getContext(restaurantMsg, null);
         PublishedService srvc = new PublishedService();
@@ -494,15 +482,14 @@ public class ServerAddWsAddressingAssertionTest {
      */
     @Test
     public void testActionExplicitFromWsdl_FallBackOnSoapAction_NoneFound() throws Exception{
-        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
-
+        
         final AddWsAddressingAssertion assertion = new AddWsAddressingAssertion();
 
         assertion.setAction(AddWsAddressingAssertion.ACTION_EXPLICIT_FROM_WSDL_INPUT);
         assertion.setWsaNamespaceUri("http://www.w3.org/2005/08/addressing");
 
         final ServerAddWsAddressingAssertion serverAssertion =
-                new ServerAddWsAddressingAssertion(assertion, appContext);
+                new ServerAddWsAddressingAssertion(assertion);
 
         final PolicyEnforcementContext context = getContext(restaurantMsg, null);
         PublishedService srvc = new PublishedService();
@@ -522,15 +509,14 @@ public class ServerAddWsAddressingAssertionTest {
      */
     @Test
     public void testActionExplicitFromWsdl_Output() throws Exception{
-        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
-
+        
         final AddWsAddressingAssertion assertion = new AddWsAddressingAssertion();
 
         assertion.setAction(AddWsAddressingAssertion.ACTION_EXPLICIT_FROM_WSDL_OUTPUT);
         assertion.setWsaNamespaceUri("http://www.w3.org/2005/08/addressing");
 
         final ServerAddWsAddressingAssertion serverAssertion =
-                new ServerAddWsAddressingAssertion(assertion, appContext);
+                new ServerAddWsAddressingAssertion(assertion);
 
         final PolicyEnforcementContext context = getContext(restaurantMsg, null);
         PublishedService srvc = new PublishedService();
@@ -569,15 +555,14 @@ public class ServerAddWsAddressingAssertionTest {
      */
     @Test
     public void testActionExplicitFromWsdl_Output_NoFallBackOnSoapAction() throws Exception{
-        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
-
+        
         final AddWsAddressingAssertion assertion = new AddWsAddressingAssertion();
 
         assertion.setAction(AddWsAddressingAssertion.ACTION_EXPLICIT_FROM_WSDL_OUTPUT);
         assertion.setWsaNamespaceUri("http://www.w3.org/2005/08/addressing");
 
         final ServerAddWsAddressingAssertion serverAssertion =
-                new ServerAddWsAddressingAssertion(assertion, appContext);
+                new ServerAddWsAddressingAssertion(assertion);
 
         final PolicyEnforcementContext context = getContext(restaurantMsg, null);
         PublishedService srvc = new PublishedService();
@@ -592,15 +577,14 @@ public class ServerAddWsAddressingAssertionTest {
 
     @Test
     public void testInvalidActionResolved() throws Exception{
-        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
-
+        
         final AddWsAddressingAssertion assertion = new AddWsAddressingAssertion();
 
         assertion.setAction("invalid action");
         assertion.setWsaNamespaceUri("http://www.w3.org/2005/08/addressing");
 
         final ServerAddWsAddressingAssertion serverAssertion =
-                new ServerAddWsAddressingAssertion(assertion, appContext);
+                new ServerAddWsAddressingAssertion(assertion);
 
         final PolicyEnforcementContext context = getContext(restaurantMsg, null);
         final AssertionStatus status = serverAssertion.checkRequest(context);
@@ -609,8 +593,7 @@ public class ServerAddWsAddressingAssertionTest {
 
     @Test
     public void testMessageId_Auto() throws Exception{
-        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
-
+        
         final AddWsAddressingAssertion assertion = new AddWsAddressingAssertion();
 
         assertion.setAction("http://action");
@@ -618,7 +601,7 @@ public class ServerAddWsAddressingAssertionTest {
         assertion.setWsaNamespaceUri("http://www.w3.org/2005/08/addressing");
 
         final ServerAddWsAddressingAssertion serverAssertion =
-                new ServerAddWsAddressingAssertion(assertion, appContext);
+                new ServerAddWsAddressingAssertion(assertion);
 
         final PolicyEnforcementContext context = getContext(restaurantMsg, null);
         final AssertionStatus status = serverAssertion.checkRequest(context);
@@ -629,8 +612,7 @@ public class ServerAddWsAddressingAssertionTest {
 
     @Test
     public void testMessageId_Explicit() throws Exception{
-        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
-
+        
         final AddWsAddressingAssertion assertion = new AddWsAddressingAssertion();
 
         assertion.setAction("http://action");
@@ -639,7 +621,7 @@ public class ServerAddWsAddressingAssertionTest {
         assertion.setWsaNamespaceUri("http://www.w3.org/2005/08/addressing");
 
         final ServerAddWsAddressingAssertion serverAssertion =
-                new ServerAddWsAddressingAssertion(assertion, appContext);
+                new ServerAddWsAddressingAssertion(assertion);
 
         final PolicyEnforcementContext context = getContext(restaurantMsg, null);
         final AssertionStatus status = serverAssertion.checkRequest(context);
@@ -654,15 +636,14 @@ public class ServerAddWsAddressingAssertionTest {
      */
     @Test (expected = NoSuchVariableException.class)
     public void testMessageId_Default_Empty() throws Exception{
-        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
-
+        
         final AddWsAddressingAssertion assertion = new AddWsAddressingAssertion();
 
         assertion.setAction("http://action");
         assertion.setWsaNamespaceUri("http://www.w3.org/2005/08/addressing");
 
         final ServerAddWsAddressingAssertion serverAssertion =
-                new ServerAddWsAddressingAssertion(assertion, appContext);
+                new ServerAddWsAddressingAssertion(assertion);
 
         final PolicyEnforcementContext context = getContext(restaurantMsg, null);
         final AssertionStatus status = serverAssertion.checkRequest(context);
@@ -673,8 +654,7 @@ public class ServerAddWsAddressingAssertionTest {
 
     @Test
     public void testInvalidMsgIdResolved() throws Exception{
-        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
-
+        
         final AddWsAddressingAssertion assertion = new AddWsAddressingAssertion();
 
         assertion.setAction("http://action");
@@ -682,7 +662,7 @@ public class ServerAddWsAddressingAssertionTest {
         assertion.setWsaNamespaceUri("http://www.w3.org/2005/08/addressing");
 
         final ServerAddWsAddressingAssertion serverAssertion =
-                new ServerAddWsAddressingAssertion(assertion, appContext);
+                new ServerAddWsAddressingAssertion(assertion);
 
         final PolicyEnforcementContext context = getContext(restaurantMsg, null);
         final AssertionStatus status = serverAssertion.checkRequest(context);
@@ -696,8 +676,7 @@ public class ServerAddWsAddressingAssertionTest {
      */
     @Test
     public void testInvalidNonRequiredPropertiesAreIgnored() throws Exception{
-        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
-
+        
         final AddWsAddressingAssertion assertion = new AddWsAddressingAssertion();
 
         assertion.setAction("http://action");
@@ -711,7 +690,7 @@ public class ServerAddWsAddressingAssertionTest {
         assertion.setRelatesToMessageId(invalidUri);
         
         final ServerAddWsAddressingAssertion serverAssertion =
-                new ServerAddWsAddressingAssertion(assertion, appContext);
+                new ServerAddWsAddressingAssertion(assertion);
 
         final PolicyEnforcementContext context = getContext(restaurantMsg, null);
         final AssertionStatus status = serverAssertion.checkRequest(context);
@@ -728,15 +707,14 @@ public class ServerAddWsAddressingAssertionTest {
     @BugNumber(9646)
     @Test
     public void testActionExplicitFromWsdl_ExtensionAttributeCorrectlyHandled_Input() throws Exception{
-        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
-
+        
         final AddWsAddressingAssertion assertion = new AddWsAddressingAssertion();
 
         assertion.setAction(AddWsAddressingAssertion.ACTION_EXPLICIT_FROM_WSDL_INPUT);
         assertion.setWsaNamespaceUri("http://www.w3.org/2005/08/addressing");
 
         final ServerAddWsAddressingAssertion serverAssertion =
-                new ServerAddWsAddressingAssertion(assertion, appContext);
+                new ServerAddWsAddressingAssertion(assertion);
 
         final PolicyEnforcementContext context = getContext(fauldLabMsg, null);
         PublishedService srvc = new PublishedService();
@@ -766,15 +744,14 @@ public class ServerAddWsAddressingAssertionTest {
     @BugNumber(9646)
     @Test
     public void testActionExplicitFromWsdl_ExtensionAttributeCorrectlyHandled_Output() throws Exception{
-        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
-
+        
         final AddWsAddressingAssertion assertion = new AddWsAddressingAssertion();
 
         assertion.setAction(AddWsAddressingAssertion.ACTION_EXPLICIT_FROM_WSDL_OUTPUT);
         assertion.setWsaNamespaceUri("http://www.w3.org/2005/08/addressing");
 
         final ServerAddWsAddressingAssertion serverAssertion =
-                new ServerAddWsAddressingAssertion(assertion, appContext);
+                new ServerAddWsAddressingAssertion(assertion);
 
         final PolicyEnforcementContext context = getContext(fauldLabMsg, null);
         PublishedService srvc = new PublishedService();
@@ -802,15 +779,14 @@ public class ServerAddWsAddressingAssertionTest {
      */
     @Test
     public void testActionExplicitFromWsdl_ExtensionAttributeCorrectlyHandled_NonDefaultNamespace() throws Exception{
-        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
-
+        
         final AddWsAddressingAssertion assertion = new AddWsAddressingAssertion();
 
         assertion.setAction(AddWsAddressingAssertion.ACTION_EXPLICIT_FROM_WSDL_INPUT);
         assertion.setWsaNamespaceUri("http://www.w3.org/2005/08/addressing");
 
         final ServerAddWsAddressingAssertion serverAssertion =
-                new ServerAddWsAddressingAssertion(assertion, appContext);
+                new ServerAddWsAddressingAssertion(assertion);
 
         final PolicyEnforcementContext context = getContext(fauldLabMsg, null);
         PublishedService srvc = new PublishedService();

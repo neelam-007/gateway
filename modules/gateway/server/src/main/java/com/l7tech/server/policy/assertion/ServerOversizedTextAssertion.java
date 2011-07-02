@@ -1,8 +1,3 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
@@ -36,8 +31,6 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXResult;
 import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Level;
@@ -169,11 +162,6 @@ public class ServerOversizedTextAssertion extends AbstractMessageTargetableServe
         }
     }
 
-    @Override
-    protected Auditor getAuditor() {
-        return auditor;
-    }
-
     private boolean exceedsAttrLimit(ElementCursor cursor, final long attrLimit, final long attrNameLimit) throws TransformerConfigurationException {
         Source source = new DOMSource(cursor.asDomElement().getOwnerDocument());
         SAXResult result = new SAXResult(new DefaultHandler() {
@@ -300,7 +288,6 @@ public class ServerOversizedTextAssertion extends AbstractMessageTargetableServe
      * @see com.l7tech.util.DomUtils#findAllNamespaces(org.w3c.dom.Element)
      */
     private Pair<Set<String>,Set<String>> findNamespaceDeclarations(Element element, int nsLimit, int prefixLimit) {
-        Map<String,String> entries = new HashMap<String,String>();
         NamedNodeMap foo = element.getAttributes();
 
         Set<String> nsUrlSet = new TreeSet<String>();
@@ -313,8 +300,6 @@ public class ServerOversizedTextAssertion extends AbstractMessageTargetableServe
             String attNsUri = attrNode.getNamespaceURI();
             String attLocalName = attrNode.getLocalName();
             String attValue = attrNode.getValue();
-
-            if (entries.get(attValue) != null) continue;
 
             // Bug 2053: Avoid adding xmlns="" to the map
             if (attValue != null && attValue.trim().length() > 0) {
@@ -338,8 +323,6 @@ public class ServerOversizedTextAssertion extends AbstractMessageTargetableServe
                     String attNsUri = attrNode.getNamespaceURI();
                     String attLocalName = attrNode.getLocalName();
                     String attValue = attrNode.getValue();
-
-                    if (entries.get(attValue) != null) continue;
 
                     // Bug 2053: Avoid adding xmlns="" to the map
                     if (attValue != null && attValue.trim().length() > 0) {

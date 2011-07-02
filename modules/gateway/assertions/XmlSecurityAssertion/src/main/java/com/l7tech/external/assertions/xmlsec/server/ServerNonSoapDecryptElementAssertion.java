@@ -19,7 +19,6 @@ import com.l7tech.util.*;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.beans.factory.BeanFactory;
-import org.springframework.context.ApplicationEventPublisher;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -37,7 +36,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 
 import static com.l7tech.external.assertions.xmlsec.NonSoapDecryptElementAssertion.*;
 
@@ -47,14 +45,12 @@ import static com.l7tech.external.assertions.xmlsec.NonSoapDecryptElementAsserti
  * @see com.l7tech.external.assertions.xmlsec.NonSoapDecryptElementAssertion
  */
 public class ServerNonSoapDecryptElementAssertion extends ServerNonSoapSecurityAssertion<NonSoapDecryptElementAssertion> {
-    private static final Logger logger = Logger.getLogger(ServerNonSoapDecryptElementAssertion.class.getName());
-
     private final SecurityTokenResolver securityTokenResolver;
 
-    public ServerNonSoapDecryptElementAssertion(NonSoapDecryptElementAssertion assertion, BeanFactory beanFactory, ApplicationEventPublisher eventPub)
+    public ServerNonSoapDecryptElementAssertion(NonSoapDecryptElementAssertion assertion, BeanFactory beanFactory)
             throws PolicyAssertionException, InvalidXpathException, IOException, CertificateException
     {
-        super(assertion, logger, beanFactory, eventPub);
+        super(assertion);
         this.securityTokenResolver = beanFactory.getBean("securityTokenResolver", SecurityTokenResolver.class);
     }
 
@@ -208,9 +204,9 @@ public class ServerNonSoapDecryptElementAssertion extends ServerNonSoapSecurityA
                 sawSupportedFormat = true;
 
             } catch (KeyInfoElement.UnsupportedKeyInfoFormatException e) {
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[] { "Unrecognized KeyInfo format: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
+                logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[] { "Unrecognized KeyInfo format: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
             } catch (InvalidDocumentFormatException e) {
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[] { "Unable to parse KeyInfo: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
+                logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[] { "Unable to parse KeyInfo: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
             }
         }
         if (sawSupportedFormat)

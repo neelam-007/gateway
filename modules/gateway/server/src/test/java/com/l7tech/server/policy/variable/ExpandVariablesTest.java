@@ -7,6 +7,7 @@ import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.*;
 import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.audit.MessagesUtil;
 import com.l7tech.identity.UserBean;
 import com.l7tech.identity.ldap.LdapUser;
@@ -19,7 +20,6 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.TestStashManagerFactory;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.ServerRequestXpathAssertion;
@@ -59,7 +59,7 @@ import static org.junit.Assert.*;
  */
 public class ExpandVariablesTest {
     private static final Logger logger = Logger.getLogger(ExpandVariablesTest.class.getName());
-    private static final Audit audit = new LogOnlyAuditor(logger);
+    private static final Audit audit = new LoggingAudit(logger);
     private static final String TINY_BODY = "<blah/>";
     private static final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
     private static final MockConfig mockConfig = new MockConfig(new Properties());
@@ -463,7 +463,7 @@ public class ExpandVariablesTest {
 
         final RequestXpathAssertion ass = new RequestXpathAssertion(new XpathExpression("/s:Envelope/s:Body/ns1:placeOrder/*", nsmap()));
         new AllAssertion(Arrays.asList(ass, new AuditDetailAssertion("${requestXpath.elements}")));
-        final ServerXpathAssertion sxa = new ServerRequestXpathAssertion(ass, spring);
+        final ServerXpathAssertion sxa = new ServerRequestXpathAssertion(ass);
         final AssertionStatus xpathStatus = sxa.checkRequest(context);
         assertEquals(AssertionStatus.NONE, xpathStatus);
 

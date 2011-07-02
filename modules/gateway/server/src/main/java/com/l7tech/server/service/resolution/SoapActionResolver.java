@@ -1,12 +1,12 @@
 package com.l7tech.server.service.resolution;
 
+import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.gateway.common.transport.ResolutionConfiguration;
 import com.l7tech.message.HasSoapAction;
 import com.l7tech.message.Message;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.MimeKnob;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.util.SoapConstants;
 
@@ -24,7 +24,7 @@ public class SoapActionResolver extends WsdlOperationServiceResolver<String> {
 
     private final AtomicBoolean enabled = new AtomicBoolean(true);
 
-    public SoapActionResolver( final Auditor.AuditorFactory auditorFactory ) {
+    public SoapActionResolver( final AuditFactory auditorFactory ) {
         super( auditorFactory );
     }
 

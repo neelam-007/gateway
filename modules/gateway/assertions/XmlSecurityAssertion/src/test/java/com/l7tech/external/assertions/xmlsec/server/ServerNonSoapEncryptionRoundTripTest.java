@@ -60,7 +60,7 @@ public class ServerNonSoapEncryptionRoundTripTest {
         NonSoapDecryptElementAssertion ass = new NonSoapDecryptElementAssertion();
         ass.setXpathExpression(new XpathExpression("//*[local-name() = 'EncryptedData']"));
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
-        AssertionStatus result = new ServerNonSoapDecryptElementAssertion(ass, beanFactory, null).checkRequest(context);
+        AssertionStatus result = new ServerNonSoapDecryptElementAssertion(ass, beanFactory).checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
         final Document doc = request.getXmlKnob().getDocumentReadOnly();
         logger.info("Decrypted XML:\n" + XmlUtil.nodeToString(doc));
@@ -72,7 +72,7 @@ public class ServerNonSoapEncryptionRoundTripTest {
         Message req = ServerNonSoapEncryptElementAssertionTest.makeReq();
         NonSoapEncryptElementAssertion ass = ServerNonSoapEncryptElementAssertionTest.makeAss();
         ass.setRecipientCertificateBase64(recipb64);
-        ServerNonSoapEncryptElementAssertion sass = new ServerNonSoapEncryptElementAssertion(ass, null);
+        ServerNonSoapEncryptElementAssertion sass = new ServerNonSoapEncryptElementAssertion(ass);
         AssertionStatus encryptResult = sass.checkRequest( PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, new Message()) );
         assertEquals(AssertionStatus.NONE, encryptResult);
         return XmlUtil.nodeToString(req.getXmlKnob().getDocumentReadOnly());

@@ -1,7 +1,6 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -9,8 +8,6 @@ import com.l7tech.policy.assertion.xmlsec.ProcessRstrSoapResponse;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.wstrust.RstrInfo;
 import com.l7tech.security.xml.SecurityTokenResolver;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
@@ -22,13 +19,11 @@ import com.l7tech.util.SoapConstants;
 import com.l7tech.util.TooManyChildElementsException;
 import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.beans.factory.BeanFactory;
-import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.xml.namespace.QName;
 import java.io.IOException;
-import java.util.logging.Logger;
 
 /**
  *
@@ -40,9 +35,6 @@ public class ServerProcessRstrSoapResponse extends AbstractMessageTargetableServ
     public ServerProcessRstrSoapResponse( final ProcessRstrSoapResponse assertion,
                                           final BeanFactory factory ) {
         super(assertion, assertion);
-        auditor = factory instanceof ApplicationContext ?
-                new Auditor(this, (ApplicationContext)factory, logger) :
-                new LogOnlyAuditor(logger);
         securityTokenResolver = factory.getBean( "securityTokenResolver", SecurityTokenResolver.class );
     }
 
@@ -56,15 +48,15 @@ public class ServerProcessRstrSoapResponse extends AbstractMessageTargetableServ
         final Element soapBody;
         try {
             if ( !message.isSoap() ) {
-                auditor.logAndAudit( AssertionMessages.RSTR_PROCESSOR_NOT_SOAP, messageDescription );
+                logAndAudit( AssertionMessages.RSTR_PROCESSOR_NOT_SOAP, messageDescription );
                 return AssertionStatus.NOT_APPLICABLE;
             }
             soapBody = SoapUtil.getBodyElement( message.getXmlKnob().getDocumentReadOnly() );
         } catch ( SAXException e ) {
-            auditor.logAndAudit( AssertionMessages.RSTR_PROCESSOR_BAD_XML, messageDescription, ExceptionUtils.getMessage(e));
+            logAndAudit( AssertionMessages.RSTR_PROCESSOR_BAD_XML, messageDescription, ExceptionUtils.getMessage(e));
             return AssertionStatus.FALSIFIED;
         } catch ( InvalidDocumentFormatException e ) {
-            auditor.logAndAudit( AssertionMessages.RSTR_PROCESSOR_NOT_SOAP, messageDescription );
+            logAndAudit( AssertionMessages.RSTR_PROCESSOR_NOT_SOAP, messageDescription );
             return AssertionStatus.NOT_APPLICABLE;
         }
 
@@ -74,15 +66,15 @@ public class ServerProcessRstrSoapResponse extends AbstractMessageTargetableServ
             rstrInfo = RstrInfo.parse( bodyChild, securityTokenResolver );
 
         } catch ( TooManyChildElementsException e ) {
-            auditor.logAndAudit( AssertionMessages.RSTR_PROCESSOR_INVALID, "not an RSTR message" );
+            logAndAudit( AssertionMessages.RSTR_PROCESSOR_INVALID, "not an RSTR message" );
             return AssertionStatus.FALSIFIED;
         } catch ( InvalidDocumentFormatException e ) {
-            auditor.logAndAudit( AssertionMessages.RSTR_PROCESSOR_INVALID, ExceptionUtils.getMessage( e ));
+            logAndAudit( AssertionMessages.RSTR_PROCESSOR_INVALID, ExceptionUtils.getMessage( e ));
             return AssertionStatus.FALSIFIED;
         }
 
         if ( rstrInfo.getToken() == null ) {
-            auditor.logAndAudit( AssertionMessages.RSTR_PROCESSOR_INVALID, "no token in response" );
+            logAndAudit( AssertionMessages.RSTR_PROCESSOR_INVALID, "no token in response" );
             return AssertionStatus.FALSIFIED;
         } else if ( !validToken( rstrInfo.getToken(), assertion.getTokenType() ) ) {
             return AssertionStatus.FALSIFIED;
@@ -98,16 +90,8 @@ public class ServerProcessRstrSoapResponse extends AbstractMessageTargetableServ
         return AssertionStatus.NONE;
     }
 
-    @Override
-    protected Audit getAuditor() {
-        return auditor;
-    }
-
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger( ServerBuildRstSoapRequest.class.getName() );
-
-    private final Auditor auditor;
     private final SecurityTokenResolver securityTokenResolver;
 
     private boolean validToken( final Element tokenElement, final SecurityTokenType expectedTokenType ) {
@@ -116,7 +100,7 @@ public class ServerProcessRstrSoapResponse extends AbstractMessageTargetableServ
         if ( (expectedTokenType == SecurityTokenType.SAML_ASSERTION && !SoapConstants.SAML_NAMESPACE.equals(tokenElement.getNamespaceURI())) ||
              (expectedTokenType == SecurityTokenType.SAML2_ASSERTION && !SoapConstants.SAML_NAMESPACE2.equals(tokenElement.getNamespaceURI())) ||
              (expectedTokenType == SecurityTokenType.WSSC_CONTEXT && !ArrayUtils.contains( SoapConstants.WSSC_NAMESPACE_ARRAY, tokenElement.getNamespaceURI())) ) {
-            auditor.logAndAudit( AssertionMessages.RSTR_PROCESSOR_UNEXPECTED_TOKEN, expectedTokenType.getName(), qName(tokenElement) );
+            logAndAudit( AssertionMessages.RSTR_PROCESSOR_UNEXPECTED_TOKEN, expectedTokenType.getName(), qName(tokenElement) );
         } else {
             valid = true;
         }

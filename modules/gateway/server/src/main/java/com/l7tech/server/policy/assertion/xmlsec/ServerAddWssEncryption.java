@@ -1,7 +1,5 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import com.l7tech.gateway.common.audit.Audit;
-import com.l7tech.gateway.common.audit.AuditHaver;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.IdentityTargetable;
 import com.l7tech.policy.assertion.MessageTargetable;
@@ -10,8 +8,6 @@ import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
-
-import java.util.logging.Logger;
 
 /**
  * Support class for server assertions that perform encryption.
@@ -23,16 +19,9 @@ public abstract class ServerAddWssEncryption<AT extends Assertion> extends Abstr
     public ServerAddWssEncryption( final AT assertion,
                                    final SecurityHeaderAddressable securityHeaderAddressable,
                                    final MessageTargetable messageTargetable,
-                                   final IdentityTargetable identityTargetable,
-                                   final Logger logger ) {
+                                   final IdentityTargetable identityTargetable ) {
         super( assertion, messageTargetable );
-        final AuditHaver auditHaver = new AuditHaver() {
-            @Override
-            public Audit getAuditor() {
-                return ServerAddWssEncryption.this.getAuditor();
-            }
-        };
-        this.addWssEncryptionSupport = new AddWssEncryptionSupport(auditHaver, logger, messageTargetable, securityHeaderAddressable, identityTargetable);
+        this.addWssEncryptionSupport = new AddWssEncryptionSupport(getAuditHaver(), logger, messageTargetable, securityHeaderAddressable, identityTargetable);
     }
 
     //- PROTECTED

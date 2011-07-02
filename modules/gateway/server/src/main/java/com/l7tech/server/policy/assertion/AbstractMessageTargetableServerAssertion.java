@@ -1,7 +1,6 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -41,7 +40,7 @@ public abstract class AbstractMessageTargetableServerAssertion<AT extends Assert
         try {
             message = context.getTargetMessage(messageTargetable);
         } catch (NoSuchVariableException e) {
-            getAuditor().logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, e.getVariable(), ExceptionUtils.getMessage(e));
+            logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, e.getVariable(), ExceptionUtils.getMessage(e));
             return AssertionStatus.FAILED;
         }
 
@@ -87,13 +86,6 @@ public abstract class AbstractMessageTargetableServerAssertion<AT extends Assert
     protected boolean isResponse() {
         return Assertion.isResponse( assertion );
     }
-
-    /**
-     * Get the auditor for this server assertion.
-     *
-     * @return The auditor (must not be null)
-     */
-    protected abstract Audit getAuditor();
 
     /**
      * Get the assertion status for a bad message.

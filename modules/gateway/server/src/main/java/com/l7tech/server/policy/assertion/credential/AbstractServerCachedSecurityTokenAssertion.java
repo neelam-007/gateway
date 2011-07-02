@@ -14,7 +14,6 @@ import com.l7tech.policy.assertion.Assertion;
 
 import java.net.URL;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * <p>Abstract base class for server assertions that cache security tokens.</p>
@@ -150,11 +149,6 @@ public abstract class AbstractServerCachedSecurityTokenAssertion<AT extends Asse
     }
 
     //- PRIVATE
-
-    /**
-     *
-     */
-    private static final Logger logger = Logger.getLogger(AbstractServerCachedSecurityTokenAssertion.class.getName());
 
     /**
      *

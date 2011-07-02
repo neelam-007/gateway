@@ -2,6 +2,7 @@ package com.l7tech.server.jdbc;
 
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.jdbc.InvalidPropertyException;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.objectmodel.FindException;
@@ -9,7 +10,6 @@ import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.LifecycleBean;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.util.Pair;
 import com.l7tech.util.SyspropUtil;
@@ -58,6 +58,7 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
 
         // This timer is created for future use.  Currently its schedule is empty.
         timer.schedule(new TimerTask(){
+            @Override
             public void run() {
                 // TBD: probably there are somethings to update here.
             }
@@ -295,7 +296,7 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
         }
         cpds.setJdbcUrl(connection.getJdbcUrl());
         cpds.setUser(connection.getUserName());
-        cpds.setPassword(ServerVariables.expandSinglePasswordOnlyVariable(new LogOnlyAuditor(logger), connection.getPassword()));
+        cpds.setPassword(ServerVariables.expandSinglePasswordOnlyVariable(new LoggingAudit(logger), connection.getPassword()));
 
         // Set C3P0 basic properties
         cpds.setInitialPoolSize(connection.getMinPoolSize());

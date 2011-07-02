@@ -1,11 +1,9 @@
-/**
- * Copyright (C) 2006-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.policy.variable;
 
 import com.l7tech.gateway.common.RequestId;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.password.SecurePassword;
@@ -21,7 +19,6 @@ import com.l7tech.policy.variable.*;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -971,7 +968,7 @@ public class ServerVariables {
                 object = ExpandVariables.processSingleVariableAsObject(
                         "${"+name+"}",
                         Collections.singletonMap(baseName.toLowerCase(), object),
-                        new LogOnlyAuditor(logger) );
+                        new LoggingAudit(logger) );
             }
             return object;
         }

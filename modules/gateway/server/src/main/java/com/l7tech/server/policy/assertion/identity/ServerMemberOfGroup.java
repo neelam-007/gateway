@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.policy.assertion.identity;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
@@ -16,7 +13,6 @@ import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationContext;
 
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Logger;
 
 public class ServerMemberOfGroup extends ServerIdentityAssertion<MemberOfGroup> {
     public ServerMemberOfGroup(MemberOfGroup data, ApplicationContext applicationContext) {
@@ -68,10 +64,10 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion<MemberOfGroup> 
         try {
             gman = getIdentityProvider().getGroupManager();
         } catch (ObjectNotFoundException e) {
-            auditor.logAndAudit(AssertionMessages.IDENTITY_PROVIDER_NOT_EXIST, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+            logAndAudit( AssertionMessages.IDENTITY_PROVIDER_NOT_EXIST, new String[]{ ExceptionUtils.getMessage( e ) }, ExceptionUtils.getDebugException( e ) );
             return AssertionStatus.UNAUTHORIZED;
         } catch (FindException e) {
-            auditor.logAndAudit(AssertionMessages.IDENTITY_PROVIDER_NOT_FOUND, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+            logAndAudit( AssertionMessages.IDENTITY_PROVIDER_NOT_FOUND, new String[]{ ExceptionUtils.getMessage( e ) }, ExceptionUtils.getDebugException( e ) );
             return AssertionStatus.UNAUTHORIZED;
         }
 
@@ -79,13 +75,13 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion<MemberOfGroup> 
 
             Group targetGroup = getGroup();
             if (targetGroup == null) {
-                auditor.logAndAudit(AssertionMessages.MEMBEROFGROUP_GROUP_NOT_EXIST);
+                logAndAudit( AssertionMessages.MEMBEROFGROUP_GROUP_NOT_EXIST );
                 return AssertionStatus.UNAUTHORIZED;
             }
 
             if (targetGroup instanceof InternalGroup) {
                 if (!((InternalGroup) targetGroup).isEnabled()) {
-                    auditor.logAndAudit(AssertionMessages.MEMBEROFGROUP_GROUP_DISALBED, targetGroup.getName());
+                    logAndAudit( AssertionMessages.MEMBEROFGROUP_GROUP_DISALBED, targetGroup.getName() );
                     return AssertionStatus.UNAUTHORIZED;
                 }
             }
@@ -102,28 +98,27 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion<MemberOfGroup> 
                     }
                 }
                 authResult.setCachedGroupMembership(targetGroup, false);
-                auditor.logAndAudit(AssertionMessages.MEMBEROFGROUP_USER_NOT_MEMBER);
+                logAndAudit( AssertionMessages.MEMBEROFGROUP_USER_NOT_MEMBER );
                 return AssertionStatus.UNAUTHORIZED;
             }
 
             // Cache hit
-            if (wasMember.booleanValue()) {
+            if ( wasMember ) {
                 logger.finest("Reusing cached group membership success");
                 return AssertionStatus.NONE;
             }
-            auditor.logAndAudit(AssertionMessages.MEMBEROFGROUP_USING_CACHED_FAIL);
+            logAndAudit( AssertionMessages.MEMBEROFGROUP_USING_CACHED_FAIL );
             return AssertionStatus.UNAUTHORIZED;
         } catch (ObjectNotFoundException e) {
-            auditor.logAndAudit(AssertionMessages.IDENTITY_PROVIDER_NOT_EXIST);
+            logAndAudit( AssertionMessages.IDENTITY_PROVIDER_NOT_EXIST );
             return AssertionStatus.UNAUTHORIZED;
         } catch (FindException fe) {
-            auditor.logAndAudit(AssertionMessages.MEMBEROFGROUP_GROUP_NOT_EXIST);
+            logAndAudit( AssertionMessages.MEMBEROFGROUP_GROUP_NOT_EXIST );
             return AssertionStatus.UNAUTHORIZED;
         }
     }
 
-    private final Logger logger = Logger.getLogger(getClass().getName());
-    private static final long MAX_CACHED_GROUP_AGE = 1000; // cache for very short time only (1 second)
+    private static final long MAX_CACHED_GROUP_AGE = 1000L; // cache for very short time only (1 second)
     private final AtomicReference<CachedGroup> cachedGroup = new AtomicReference<CachedGroup>();
 
     private boolean isStale(long timestamp) {

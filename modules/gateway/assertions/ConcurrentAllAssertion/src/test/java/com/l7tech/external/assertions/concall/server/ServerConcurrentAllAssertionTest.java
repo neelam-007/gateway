@@ -7,6 +7,7 @@ import com.l7tech.external.assertions.concall.ConcurrentAllAssertion;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.message.Message;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.InvalidPolicyException;
@@ -24,6 +25,7 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.*;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.EventChannel;
+import com.l7tech.server.util.MockInjector;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.IOUtils;
@@ -61,10 +63,10 @@ public class ServerConcurrentAllAssertionTest {
         assertionRegistry.afterPropertiesSet();
         assertionRegistry.registerAssertion(ConcurrentAllAssertion.class);
         assertionRegistry.registerAssertion(DelayedCopyVariableAssertion.class);
-        serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager());
+        serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager(),new MockInjector());
         auditContext = new ConcurrentDetailCollectingAuditContext();
         auditContext.logDetails = true;
-        policyCache = new PolicyCacheImpl(null, new ServerPolicyFactory(new TestLicenseManager())) {
+        policyCache = new PolicyCacheImpl(null, new ServerPolicyFactory(new TestLicenseManager(),new MockInjector())) {
             {
                 PolicyManagerStub policyManager = new PolicyManagerStub( new Policy[0] );
                 setPolicyManager(policyManager);
@@ -101,6 +103,7 @@ public class ServerConcurrentAllAssertionTest {
             put("policyFactory", serverPolicyFactory);
             put("auditContext", auditContext);
             put("policyCache", policyCache);
+            put("auditFactory", LoggingAudit.factory());
         }});
         applicationContext = new GenericApplicationContext(beanFactory);
         serverPolicyFactory.setApplicationContext(applicationContext);

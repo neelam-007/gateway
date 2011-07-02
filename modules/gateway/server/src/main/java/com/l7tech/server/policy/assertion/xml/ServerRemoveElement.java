@@ -7,14 +7,12 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xml.RemoveElement;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.DomUtils;
-import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -23,24 +21,20 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * @author jbufu
  */
 public class ServerRemoveElement extends AbstractMessageTargetableServerAssertion<RemoveElement> {
 
-    private static final Logger logger = Logger.getLogger(ServerRemoveElement.class.getName());
-    private final Auditor auditor;
     private final boolean inserting;
     private final RemoveElement.ElementLocation elementLocation;
     private final String existingElementVariableName;
     private final String newElementVariableName;
     private final String[] varsUsed;
 
-    public ServerRemoveElement( final RemoveElement assertion, final ApplicationContext context ) {
+    public ServerRemoveElement( final RemoveElement assertion ) {
         super(assertion, assertion);
-        this.auditor = new Auditor(this, context, logger);
         this.elementLocation = assertion.getInsertedElementLocation();
         this.inserting = elementLocation != null;
         this.existingElementVariableName = assertion.getElementFromVariable();
@@ -54,13 +48,13 @@ public class ServerRemoveElement extends AbstractMessageTargetableServerAssertio
                                               final String messageDescription,
                                               final AuthenticationContext authContext ) throws IOException, PolicyAssertionException {
         if ( !message.isXml() ) {
-            auditor.logAndAudit(AssertionMessages.REMOVE_ELEMENT_NOT_XML);
+            logAndAudit(AssertionMessages.REMOVE_ELEMENT_NOT_XML);
             return AssertionStatus.NOT_APPLICABLE;
         }
 
         try {
-            final Map<String, Object> vars = context.getVariableMap(varsUsed, auditor);
-            final Object existingElementsObj = ExpandVariables.processSingleVariableAsObject("${" + existingElementVariableName + "}", vars, auditor);
+            final Map<String, Object> vars = context.getVariableMap(varsUsed, getAudit());
+            final Object existingElementsObj = ExpandVariables.processSingleVariableAsObject("${" + existingElementVariableName + "}", vars, getAudit());
             Element[] existingElements = asElementArrayValue(existingElementsObj, existingElementVariableName, false);
 
             if (inserting) {
@@ -78,10 +72,10 @@ public class ServerRemoveElement extends AbstractMessageTargetableServerAssertio
 
             return AssertionStatus.NONE;
         } catch (NoSuchVariableException e) {
-            auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, existingElementVariableName);
+            logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, existingElementVariableName);
             return AssertionStatus.FAILED;
         } catch (SAXException e) {
-            auditor.logAndAudit(AssertionMessages.REMOVE_ELEMENT_NOT_XML);
+            logAndAudit(AssertionMessages.REMOVE_ELEMENT_NOT_XML);
             return AssertionStatus.NOT_APPLICABLE;
         }
     }
@@ -98,7 +92,7 @@ public class ServerRemoveElement extends AbstractMessageTargetableServerAssertio
                 try {
                     elements = collection.toArray(elements);
                 } catch (ArrayStoreException e) {
-                    auditor.logAndAudit(AssertionMessages.VARIABLE_INVALID_VALUE, varNameForErrorLogging, "Element");
+                    logAndAudit(AssertionMessages.VARIABLE_INVALID_VALUE, varNameForErrorLogging, "Element");
                     throw new AssertionStatusException(AssertionStatus.FAILED);
                 }
             }
@@ -108,7 +102,7 @@ public class ServerRemoveElement extends AbstractMessageTargetableServerAssertio
                 Document doc = XmlUtil.stringToDocument(charSequence.toString());
                 elements = new Element[] { doc.getDocumentElement() };
             } catch (SAXException e) {
-                auditor.logAndAudit(AssertionMessages.INSERT_ELEMENT_BAD_FRAGMENT);
+                logAndAudit(AssertionMessages.INSERT_ELEMENT_BAD_FRAGMENT);
                 throw new AssertionStatusException(AssertionStatus.FAILED);
             }
         }
@@ -117,26 +111,26 @@ public class ServerRemoveElement extends AbstractMessageTargetableServerAssertio
 
     private AssertionStatus doInsert(PolicyEnforcementContext context, Map<String, Object> vars, Element[] existingElements) throws NoSuchVariableException {
         if (existingElements.length < 1) {
-            auditor.logAndAudit(AssertionMessages.INSERT_ELEMENT_EXISTING_NOT_FOUND);
+            logAndAudit(AssertionMessages.INSERT_ELEMENT_EXISTING_NOT_FOUND);
             return AssertionStatus.FAILED;
         } else if (existingElements.length > 1 ) {
-            auditor.logAndAudit(AssertionMessages.INSERT_ELEMENT_EXISTING_TOO_MANY);
+            logAndAudit(AssertionMessages.INSERT_ELEMENT_EXISTING_TOO_MANY);
             return AssertionStatus.FAILED;
         }
 
         Element existing = existingElements[0];
         if (existing == null) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Existing element was null");
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Existing element was null");
             return AssertionStatus.SERVER_ERROR;
         }
 
         Document targetDoc = existing.getOwnerDocument();
         if (targetDoc == null) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Existing element did not belong to a document");
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Existing element did not belong to a document");
             return AssertionStatus.SERVER_ERROR;
         }
 
-        final Object newElementsObj = ExpandVariables.processSingleVariableAsObject("${" + newElementVariableName + "}", vars, auditor);
+        final Object newElementsObj = ExpandVariables.processSingleVariableAsObject("${" + newElementVariableName + "}", vars, getAudit());
         Element[] newElements = asElementArrayValue(newElementsObj, newElementVariableName, true);
         for (Element newElement : newElements) {
             insertElement(existing, newElement,  elementLocation);
@@ -149,7 +143,7 @@ public class ServerRemoveElement extends AbstractMessageTargetableServerAssertio
         assert existingElement != null;
 
         if (newElement == null) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "New element was null");
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "New element was null");
             throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
         }
 
@@ -175,7 +169,7 @@ public class ServerRemoveElement extends AbstractMessageTargetableServerAssertio
             case NEXT_SIBLING:
                 Node parentNode = existingElement.getParentNode();
                 if (!(parentNode instanceof Element)) {
-                    auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Unable to insert as sibling of existing element because existing element has no parent element");
+                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Unable to insert as sibling of existing element because existing element has no parent element");
                     throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
                 }
 
@@ -198,8 +192,5 @@ public class ServerRemoveElement extends AbstractMessageTargetableServerAssertio
         }
     }
 
-    @Override
-    protected Auditor getAuditor() {
-        return auditor;
-    }
+
 }

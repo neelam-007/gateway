@@ -2,7 +2,7 @@ package com.l7tech.external.assertions.samlpassertion.server;
 
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.external.assertions.samlpassertion.SamlpRequestBuilderAssertion;
-import com.l7tech.server.audit.Auditor;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.security.saml.SubjectStatement;
 import com.l7tech.security.saml.SamlConstants;
@@ -39,7 +39,7 @@ public abstract class AbstractSamlp2MessageGenerator<SAMLP_MSG extends RequestAb
     private static final Logger logger = Logger.getLogger(AbstractSamlp2MessageGenerator.class.getName());
 
     protected final Map<String, Object> variablesMap;
-    protected final Auditor auditor;
+    protected final Audit auditor;
 
     protected SAMLP_MSG samlpMessage;
     protected SamlpRequestBuilderAssertion assertion;
@@ -56,7 +56,7 @@ public abstract class AbstractSamlp2MessageGenerator<SAMLP_MSG extends RequestAb
 
     private DatatypeFactory xmltypeFactory;
 
-    public AbstractSamlp2MessageGenerator(final Map<String, Object> variablesMap, final Auditor auditor)
+    public AbstractSamlp2MessageGenerator(final Map<String, Object> variablesMap, final Audit auditor)
         throws SamlpAssertionException
     {
         this.variablesMap = variablesMap;
@@ -347,12 +347,12 @@ public abstract class AbstractSamlp2MessageGenerator<SAMLP_MSG extends RequestAb
     }
 
     protected String generateRequestId() {
-        StringBuffer sb = new StringBuffer(SAMLP_V2_REQUEST_ID_PREFIX);
+        StringBuilder sb = new StringBuilder( SAMLP_V2_REQUEST_ID_PREFIX );
         return sb.append(generateHexBytesForId()).toString();
     }
 
     protected String generateAssertionId() {
-        StringBuffer sb = new StringBuffer(SAMLP_V2_REQUEST_ASSN_ID_PREFIX);
+        StringBuilder sb = new StringBuilder( SAMLP_V2_REQUEST_ASSN_ID_PREFIX );
         return sb.append(generateHexBytesForId()).toString();
     }
 

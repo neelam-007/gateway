@@ -1,8 +1,8 @@
 package com.l7tech.server.transport.jms;
 
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.policy.variable.GatewaySecurePasswordReferenceExpander;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.server.transport.jms2.JmsEndpointConfig;
@@ -91,7 +91,7 @@ public class JmsUtil {
         if ( username == null || password == null ) {
             username = connection.getUsername();
             try {
-                password = ServerVariables.expandSinglePasswordOnlyVariable(new LogOnlyAuditor(logger), connection.getPassword());
+                password = ServerVariables.expandSinglePasswordOnlyVariable(new LoggingAudit(logger), connection.getPassword());
             } catch (FindException e) {
                 throw new JmsConfigException("Unable to retrieve JMS connection password: " + ExceptionUtils.getMessage(e), e);
             }
@@ -238,7 +238,7 @@ public class JmsUtil {
         try {
             return connect(
                     endpointCfg.getConnection(),
-                    endpointCfg.getEndpoint().getPasswordAuthentication(new GatewaySecurePasswordReferenceExpander(new LogOnlyAuditor(logger))),
+                    endpointCfg.getEndpoint().getPasswordAuthentication(new GatewaySecurePasswordReferenceExpander(new LoggingAudit(logger))),
                     endpointCfg.getPropertyMapper(),
                     false,
                     endpointCfg.isQueue(),
@@ -257,7 +257,7 @@ public class JmsUtil {
         try {
             return connect(
                     endpointCfg.getConnection(),
-                    endpointCfg.getEndpoint().getPasswordAuthentication(new GatewaySecurePasswordReferenceExpander(new LogOnlyAuditor(logger))),
+                    endpointCfg.getEndpoint().getPasswordAuthentication(new GatewaySecurePasswordReferenceExpander(new LoggingAudit(logger))),
                     endpointCfg.getPropertyMapper(),
                     true,
                     endpointCfg.isQueue(),

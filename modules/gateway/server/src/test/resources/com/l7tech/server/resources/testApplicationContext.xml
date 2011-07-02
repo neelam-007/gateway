@@ -50,16 +50,16 @@
                 <constructor-arg index="1" value="Default"/>
                 <constructor-arg index="2">
                     <list>
-                        <bean class="com.l7tech.server.service.resolution.ServiceOidResolver"><constructor-arg ref="auditorFactory"/></bean>
-                        <bean class="com.l7tech.server.service.resolution.UriResolver"><constructor-arg ref="auditorFactory"/></bean>
-                        <bean class="com.l7tech.server.service.resolution.SoapActionResolver"><constructor-arg ref="auditorFactory"/></bean>
-                        <bean class="com.l7tech.server.service.resolution.UrnResolver"><constructor-arg ref="auditorFactory"/></bean>
+                        <bean class="com.l7tech.server.service.resolution.ServiceOidResolver"><constructor-arg ref="auditFactory"/></bean>
+                        <bean class="com.l7tech.server.service.resolution.UriResolver"><constructor-arg ref="auditFactory"/></bean>
+                        <bean class="com.l7tech.server.service.resolution.SoapActionResolver"><constructor-arg ref="auditFactory"/></bean>
+                        <bean class="com.l7tech.server.service.resolution.UrnResolver"><constructor-arg ref="auditFactory"/></bean>
                     </list>
                 </constructor-arg>
                 <constructor-arg index="3">
                     <list>
                         <bean class="com.l7tech.server.service.resolution.SoapOperationResolver">
-                            <constructor-arg ref="auditorFactory"/>
+                            <constructor-arg ref="auditFactory"/>
                             <constructor-arg ref="serviceDocumentManager"/>
                         </bean>
                     </list>
@@ -86,6 +86,7 @@
     <!-- server side policy factory -->
     <bean id="policyFactory" class="com.l7tech.server.policy.ServerPolicyFactory">
         <constructor-arg ref="licenseManager"/>
+        <constructor-arg ref="injector"/>
     </bean>
 
     <!-- server side trusted cert manager -->
@@ -206,7 +207,7 @@
         <property name="targetBeanName" value="auditContextTarget"/>
     </bean>
 
-    <bean id="auditorFactory" class="com.l7tech.server.audit.Auditor$DefaultAuditorFactory">
+    <bean id="auditFactory" class="com.l7tech.server.audit.Auditor$DefaultAuditorFactory">
         <constructor-arg index="0"><null/></constructor-arg>
         <constructor-arg index="1"><null/></constructor-arg>
     </bean>
@@ -403,5 +404,7 @@
     </bean>
 
     <bean id="storedSecureConversationSessionManager" class="com.l7tech.server.secureconversation.StoredSecureConversationSessionManagerStub"/>
+
+    <bean id="injector" class="com.l7tech.server.util.ApplicationContextInjector"/>
 
 </beans>

@@ -1,7 +1,5 @@
 package com.l7tech.external.assertions.messagecontext.server;
 
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.external.assertions.messagecontext.MessageContextAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -13,11 +11,8 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
 import com.l7tech.message.TcpKnob;
 import com.l7tech.identity.User;
-import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -27,17 +22,10 @@ import java.util.ArrayList;
  * @see com.l7tech.external.assertions.messagecontext.MessageContextAssertion
  */
 public class ServerMessageContextAssertion extends AbstractServerAssertion<MessageContextAssertion> {
-    private static final Logger logger = Logger.getLogger(ServerMessageContextAssertion.class.getName());
-
-    private final MessageContextAssertion assertion;
-    private final Auditor auditor;
     private final String[] variablesUsed;
 
-    public ServerMessageContextAssertion(MessageContextAssertion assertion, ApplicationContext context) throws PolicyAssertionException {
+    public ServerMessageContextAssertion(MessageContextAssertion assertion) throws PolicyAssertionException {
         super(assertion);
-
-        this.assertion = assertion;
-        this.auditor = context != null ? new Auditor(this, context, logger) : new LogOnlyAuditor(logger);
         this.variablesUsed = assertion.getVariablesUsed();
     }
 
@@ -85,14 +73,14 @@ public class ServerMessageContextAssertion extends AbstractServerAssertion<Messa
                 if (newMapping.hasEqualTypeAndKeyExcludingValue(prevMapping)) {
                     foundDuplicates = true;
                     prevMappings.remove(prevMapping);
-                    auditor.logAndAudit(AssertionMessages.MCM_MAPPING_OVERRIDDEN, prevMapping.getKey());
+                    logAndAudit(AssertionMessages.MCM_MAPPING_OVERRIDDEN, prevMapping.getKey());
                     break;
                 }
             }
             if (! foundDuplicates) {
                 if (prevMappings.size() >= 5) {
                     MessageContextMapping droppedMapping = prevMappings.remove(0);
-                    auditor.logAndAudit(AssertionMessages.MCM_TOO_MANY_MAPPINGS, droppedMapping.getKey());
+                    logAndAudit(AssertionMessages.MCM_TOO_MANY_MAPPINGS, droppedMapping.getKey());
                 }
             }
             prevMappings.add(newMapping);
@@ -111,7 +99,7 @@ public class ServerMessageContextAssertion extends AbstractServerAssertion<Messa
             for (int j = i - 1; j >= 0; j--) {
                 if (mappings.get(i).hasEqualTypeAndKeyExcludingValue(mappings.get(j))) {
                     MessageContextMapping overriddenMapping = mappings.remove(j);
-                    auditor.logAndAudit(AssertionMessages.MCM_MAPPING_OVERRIDDEN, overriddenMapping.getKey());
+                    logAndAudit(AssertionMessages.MCM_MAPPING_OVERRIDDEN, overriddenMapping.getKey());
                     i--;
                 }
             }
@@ -138,7 +126,7 @@ public class ServerMessageContextAssertion extends AbstractServerAssertion<Messa
             value = (user != null)? user.getName() : null;
         } else {
             // Check if the varaibles are set.
-            value = ExpandVariables.process(value, context.getVariableMap(variablesUsed, auditor), auditor);
+            value = ExpandVariables.process(value, context.getVariableMap(variablesUsed, getAudit()), getAudit());
         }
 
         // Check if the value is extreme long.
@@ -146,20 +134,10 @@ public class ServerMessageContextAssertion extends AbstractServerAssertion<Messa
             value = value.trim();
             if (value.length() > 255) {
                 value = value.substring(0, 255);
-                auditor.logAndAudit(AssertionMessages.MCM_TOO_LONG_VALUE, checkedMapping.getKey());
+                logAndAudit(AssertionMessages.MCM_TOO_LONG_VALUE, checkedMapping.getKey());
             }
         }
 
         checkedMapping.setValue(value);
-    }
-
-    /*
-     * Called reflectively by module class loader when module is unloaded, to ask us to clean up any globals
-     * that would otherwise keep our instances from getting collected.
-     */
-    public static void onModuleUnloaded() {
-        // This assertion doesn't have anything to do in response to this, but it implements this anyway
-        // since it will be used as an example by future modular assertion authors
-        logger.log(Level.INFO, "ServerMessageContextAssertion is preparing itself to be unloaded");
     }
 }

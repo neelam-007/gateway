@@ -2,8 +2,13 @@ package com.l7tech.server.policy.assertion;
 
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
+import com.l7tech.gateway.common.audit.AuditFactory;
+import com.l7tech.gateway.common.audit.AuditHaver;
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.util.Injector;
+import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,6 +30,22 @@ public abstract class AbstractServerAssertion<AT extends Assertion> implements S
 
     public AbstractServerAssertion( @NotNull final AT assertion ) {
         this.assertion = assertion;
+        this.logger = Logger.getLogger( getClass().getName() );
+    }
+
+    /**
+     * Create a server assertion with the given values.
+     *
+     * <p>Use this constructor if the server assertion subclass audits from its
+     * constructor.</p>
+     *
+     * @param assertion The assertion bean
+     * @param auditFactory The factory to use for Audit creation
+     */
+    public AbstractServerAssertion( @NotNull  final AT assertion,
+                                    @Nullable final AuditFactory auditFactory ) {
+        this.assertion = assertion;
+        this.auditFactory = auditFactory;
         this.logger = Logger.getLogger( getClass().getName() );
     }
 
@@ -62,12 +83,22 @@ public abstract class AbstractServerAssertion<AT extends Assertion> implements S
      */
     @NotNull
     protected final Audit getAudit() {
-        Audit audit = auditReference.get();
-        if ( audit == null ) {
-            audit = auditorFactory.newInstance( this, logger );
-            auditReference.compareAndSet( null, audit );
-        }
-        return audit;
+        return getAudit( true );
+    }
+
+    /**
+     * Get an AuditHaver that gets the Audit for this assertion.
+     *
+     * @return The AuditHaver
+     */
+    @NotNull
+    protected final AuditHaver getAuditHaver() {
+        return new AuditHaver() {
+            @Override
+            public Audit getAuditor() {
+                return getAudit();
+            }
+        };
     }
 
     /**
@@ -94,10 +125,97 @@ public abstract class AbstractServerAssertion<AT extends Assertion> implements S
         getAudit().logAndAudit( msg );
     }
 
+    @Inject
+    protected final void setInjector( final Injector injector ) {
+        if ( this.injector == null ) {
+            this.injector = injector;
+            injectDependencies();
+        }
+    }
+
+    /**
+     * Inject dependencies for the target object.
+     *
+     * <p>This method may only be called during or after the
+     * "injectDependencies" callback.</p>
+     *
+     * @param target The bean to inject
+     */
+    protected final void inject( @NotNull final Object target ) {
+        injector.inject( target );
+    }
+
+    /**
+     * Inject dependencies for the target objects.
+     *
+     * <p>This method may only be called during or after the
+     * "injectDependencies" callback.</p>
+     *
+     * @param targets The beans to inject
+     */
+    protected final void injectAll( @NotNull final Iterable<?> targets ) {
+        CollectionUtils.foreach( targets, false, new Functions.UnaryVoid<Object>() {
+            @Override
+            public void call( final Object target ) {
+                inject( target );
+            }
+        } );
+    }
+
+    /**
+     * Dependency injection callback.
+     *
+     * <p>Use injection callback methods to inject dependencies for children.</p>
+     *
+     * @see #inject
+     * @see #injectAll(Iterable)
+     */
+    protected void injectDependencies() {
+    }
+
     //- PRIVATE
 
     @Inject
-    private Auditor.AuditorFactory auditorFactory;
+    private AuditFactory auditFactory;
+    private Injector injector;
     private final AtomicReference<Audit> auditReference = new AtomicReference<Audit>();
 
+    private Audit getAudit( boolean allowLazy ) {
+        Audit audit = auditReference.get();
+        if ( audit == null ) {
+            if ( auditFactory == null ) {
+                if ( allowLazy ) {
+                    // create a lazy auditor
+                    audit = new Audit() {
+                        @Override
+                        public void logAndAudit( final AuditDetailMessage msg,
+                                                 final String[] params,
+                                                 final Throwable e ) {
+                            getAudit( false ).logAndAudit( msg, params, e );
+                        }
+
+                        @Override
+                        public void logAndAudit( final AuditDetailMessage msg,
+                                                 final String... params ) {
+                            getAudit( false ).logAndAudit( msg, params );
+                        }
+
+                        @Override
+                        public void logAndAudit( final AuditDetailMessage msg ) {
+                            getAudit( false ).logAndAudit( msg );
+                        }
+                    };
+                } else {
+                    // fallback to logging only, this will only
+                    // be used until the factory is available
+                    return new LoggingAudit( logger );
+                }
+            } else {
+                audit = auditFactory.newInstance( this, logger );
+                auditReference.compareAndSet( null, audit );
+            }
+        }
+        return audit;
+
+    }
 }

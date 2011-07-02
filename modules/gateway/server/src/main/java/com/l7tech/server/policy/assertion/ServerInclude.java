@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.gateway.common.LicenseException;
@@ -10,7 +7,6 @@ import com.l7tech.util.ResourceUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.ServerPolicyException;
@@ -19,7 +15,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.beans.BeansException;
 
 import java.io.IOException;
-import java.util.logging.Logger;
 import java.util.logging.Level;
 
 /**
@@ -31,14 +26,10 @@ import java.util.logging.Level;
  * @author alex
  */
 public class ServerInclude extends AbstractServerAssertion<Include> {
-    private static final Logger logger = Logger.getLogger(ServerInclude.class.getName());
-
-    private final Auditor auditor;
     private final ServerPolicyHandle serverPolicy;
 
     public ServerInclude(Include assertion, ApplicationContext spring) throws ServerPolicyException, LicenseException {
         super(assertion);
-        this.auditor = new Auditor(this, spring, logger);
         try {
             PolicyCache policyCache = spring.getBean("policyCache", PolicyCache.class);
             String guid = assertion.getPolicyGuid();
@@ -58,16 +49,16 @@ public class ServerInclude extends AbstractServerAssertion<Include> {
                 return serverPolicy.checkRequest( context );
             } else {
                 String message = "Missing included policy #" + assertion.getPolicyGuid();
-                auditor.logAndAudit(AssertionMessages.INCLUDE_POLICY_INVALID, message);
+                logAndAudit(AssertionMessages.INCLUDE_POLICY_INVALID, message);
                 throw new PolicyAssertionException(assertion, message);
             }
         } catch (IOException e) {
             // Caught here so we can audit it
-            auditor.logAndAudit(AssertionMessages.INCLUDE_POLICY_FAILURE, ExceptionUtils.getMessage(e));
+            logAndAudit(AssertionMessages.INCLUDE_POLICY_FAILURE, ExceptionUtils.getMessage(e));
             throw e;
         } catch (PolicyAssertionException e) {
             // Caught here so we can audit it
-            auditor.logAndAudit(AssertionMessages.INCLUDE_POLICY_FAILURE, ExceptionUtils.getMessage(e));
+            logAndAudit(AssertionMessages.INCLUDE_POLICY_FAILURE, ExceptionUtils.getMessage(e));
             throw e;
         } finally {
             context.popAssertionOrdinal();

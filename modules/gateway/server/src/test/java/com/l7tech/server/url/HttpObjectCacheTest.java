@@ -1,15 +1,10 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.server.url;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.TestTimeSource;
 import com.l7tech.security.MockGenericHttpClient;
@@ -26,7 +21,7 @@ import java.util.logging.Logger;
  */
 public class HttpObjectCacheTest {
     private static Logger log = Logger.getLogger(HttpObjectCacheTest.class.getName());
-    private static Audit audit = new LogOnlyAuditor( log );
+    private static Audit audit = new LoggingAudit( log );
 
     private static final long TEST_POLL_AGE = 500; // in ms
     private static final long TEST_POLL_STALE = -1; // in ms

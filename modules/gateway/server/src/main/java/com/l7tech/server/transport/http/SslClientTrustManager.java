@@ -1,18 +1,12 @@
-/*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.server.transport.http;
 
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.security.cert.KeyUsageActivity;
 import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.security.cert.KeyUsageException;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.security.types.CertificateValidationResult;
 import com.l7tech.security.types.CertificateValidationType;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.security.cert.CertValidationProcessor;
 import com.l7tech.util.ExceptionUtils;
@@ -46,14 +40,17 @@ public class SslClientTrustManager implements X509TrustManager {
         this.facility = facility;
     }
 
+    @Override
     public X509Certificate[] getAcceptedIssuers() {
         return new X509Certificate[0];
     }
 
+    @Override
     public void checkClientTrusted(final X509Certificate[] x509Certificates, final String authType) throws CertificateException {
         throw new UnsupportedOperationException("This trust manager can only be used for outbound SSL connections");
     }
 
+    @Override
     public void checkServerTrusted(final X509Certificate[] certs, final String authType) throws CertificateException {
         boolean isCartel = false;
         try {
@@ -67,7 +64,7 @@ public class SslClientTrustManager implements X509TrustManager {
             // minimum permissable validation is PATH_VALIDATION, since we're
             // not otherwise validating the certificate.
             CertificateValidationResult result =
-                    certValidationProcessor.check(certs, CertificateValidationType.PATH_VALIDATION, null, facility, new LogOnlyAuditor(logger));
+                    certValidationProcessor.check(certs, CertificateValidationType.PATH_VALIDATION, null, facility, new LoggingAudit(logger));
 
             if (certs != null && certs.length > 0)
                 KeyUsageChecker.requireActivity(KeyUsageActivity.sslServerRemote, certs[0]);

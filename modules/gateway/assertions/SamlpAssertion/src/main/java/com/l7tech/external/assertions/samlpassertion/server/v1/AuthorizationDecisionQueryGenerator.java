@@ -3,7 +3,7 @@ package com.l7tech.external.assertions.samlpassertion.server.v1;
 import com.l7tech.external.assertions.samlpassertion.server.AbstractSamlp1MessageGenerator;
 import com.l7tech.external.assertions.samlpassertion.server.JaxbUtil;
 import com.l7tech.external.assertions.samlpassertion.server.SamlpAssertionException;
-import com.l7tech.server.audit.Auditor;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.util.ExceptionUtils;
 import saml.v1.assertion.*;
 import saml.v1.protocol.AuthorizationDecisionQueryType;
@@ -23,16 +23,18 @@ import java.util.logging.Logger;
 public final class AuthorizationDecisionQueryGenerator extends AbstractSamlp1MessageGenerator<AuthorizationDecisionQueryType> {
     private static final Logger logger = Logger.getLogger(AuthorizationDecisionQueryGenerator.class.getName());
 
-    public AuthorizationDecisionQueryGenerator(final Map<String, Object> variablesMap, final Auditor auditor)
+    public AuthorizationDecisionQueryGenerator(final Map<String, Object> variablesMap, final Audit auditor)
         throws SamlpAssertionException
     {
         super(variablesMap, auditor);
     }
 
+    @Override
     protected AuthorizationDecisionQueryType createMessageInstance() {
         return samlpFactory.createAuthorizationDecisionQueryType();
     }
 
+    @Override
     protected void buildSpecificMessageParts() {
 
         // build subject - common for all SAMLP requests
@@ -49,7 +51,7 @@ public final class AuthorizationDecisionQueryGenerator extends AbstractSamlp1Mes
     private List<ActionType> buildActionList() {
         List<ActionType> actions = new ArrayList<ActionType>();
 
-        String ns = null;
+        String ns;
         for (String action : assertion.getAuthorizationStatement().getActions()) {
             ActionType at = samlFactory.createActionType();
             at.setValue(action.substring(0, action.indexOf("||")));

@@ -1,6 +1,5 @@
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.server.ApplicationContexts;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.HttpServletResponseKnob;
@@ -25,7 +24,7 @@ public class ServerSslAssertionTest {
         SslAssertion sa = new SslAssertion();
         sa.setOption(SslAssertion.REQUIRED);
         sa.setRequireClientAuthentication(true);
-        ServerSslAssertion ssa = new ServerSslAssertion(sa, ApplicationContexts.getTestApplicationContext());
+        ServerSslAssertion ssa = new ServerSslAssertion(sa);
         
         MockServletContext servletContext = new MockServletContext();
         MockHttpServletRequest hrequest = new MockHttpServletRequest(servletContext);

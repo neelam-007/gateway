@@ -1,28 +1,16 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.message.Message;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.server.ApplicationContexts;
-import com.l7tech.server.MockServletApi;
-import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import com.l7tech.server.service.ServicesHelper;
-import com.l7tech.util.IOUtils;
+
 import static org.junit.Assert.*;
 import org.junit.Test;
-import org.springframework.context.ApplicationContext;
-
-import javax.wsdl.Input;
-
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 
 import static org.junit.Assert.assertEquals;
 
@@ -79,7 +67,7 @@ public class ServerRequestSizeLimitTest {
         ass.setLimit("1");
         ass.setTarget(TargetMessageType.REQUEST);
         
-        ServerRequestSizeLimit serverAss = new ServerRequestSizeLimit(ass, null);
+        ServerRequestSizeLimit serverAss = new ServerRequestSizeLimit(ass);
         AssertionStatus result;
 
         // small message
@@ -102,7 +90,7 @@ public class ServerRequestSizeLimitTest {
         ass.setTarget(TargetMessageType.OTHER);
         ass.setOtherTargetMessageVariable("var");
 
-        ServerRequestSizeLimit serverAss = new ServerRequestSizeLimit(ass, null);
+        ServerRequestSizeLimit serverAss = new ServerRequestSizeLimit(ass);
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(null,null);
 
         AssertionStatus result;

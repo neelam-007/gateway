@@ -22,7 +22,6 @@ import java.util.Collection;
  * User: njordan
  * Date: 23-Jan-2009
  * Time: 6:53:56 PM
- * To change this template use File | Settings | File Templates.
  */
 public class ServerEncryptSamlAssertionAssertion extends ServerEncryptElementAssertionBase {
     private static final String ENCRYPTED_ASSERTION_PREFIX = SamlConstants.NS_SAML2_PREFIX;
@@ -41,13 +40,14 @@ public class ServerEncryptSamlAssertionAssertion extends ServerEncryptElementAss
         super(assertion, context);
     }
 
+    @Override
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        X509Certificate cert = null;
+        X509Certificate cert;
         String subjectDN = null;
         try {
             Object obj = context.getVariable(EncryptSamlAssertionAssertion.VARIABLE_NAME);
             if(!(obj instanceof String)) {
-                getAuditor().logAndAudit(AssertionMessages.SAML2_AQ_RESPONSE_ENCRYPT_SAML_ASSERTION_VAR_UNUSABLE );
+                logAndAudit( AssertionMessages.SAML2_AQ_RESPONSE_ENCRYPT_SAML_ASSERTION_VAR_UNUSABLE );
                 return AssertionStatus.FAILED;
             }
 
@@ -55,23 +55,23 @@ public class ServerEncryptSamlAssertionAssertion extends ServerEncryptElementAss
             Collection<TrustedCert> certs;
             certs = getTrustedCertManager().findBySubjectDn(subjectDN);
             if(certs == null || certs.size() != 1) {
-                getAuditor().logAndAudit(AssertionMessages.SAML2_AQ_RESPONSE_ENCRYPT_SAML_ASSERTION_CERT_NOT_FOUND, subjectDN);
+                logAndAudit( AssertionMessages.SAML2_AQ_RESPONSE_ENCRYPT_SAML_ASSERTION_CERT_NOT_FOUND, subjectDN );
                 return AssertionStatus.FAILED;
             }
             cert = certs.iterator().next().getCertificate();
         } catch(NoSuchVariableException nsve) {
-            getAuditor().logAndAudit(AssertionMessages.SAML2_AQ_RESPONSE_ENCRYPT_SAML_ASSERTION_VAR_UNUSABLE );
+            logAndAudit( AssertionMessages.SAML2_AQ_RESPONSE_ENCRYPT_SAML_ASSERTION_VAR_UNUSABLE );
             return AssertionStatus.FAILED;
         } catch(FindException fe) {
-            getAuditor().logAndAudit(AssertionMessages.SAML2_AQ_RESPONSE_ENCRYPT_SAML_ASSERTION_CERT_NOT_FOUND, subjectDN);
+            logAndAudit( AssertionMessages.SAML2_AQ_RESPONSE_ENCRYPT_SAML_ASSERTION_CERT_NOT_FOUND, subjectDN );
             return AssertionStatus.FAILED;
         }
         
-        Document doc = null;
+        Document doc;
         try {
             doc = context.getResponse().getXmlKnob().getDocumentWritable();
         } catch(SAXException se) {
-            getAuditor().logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, se.toString());
+            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, se.toString() );
             return AssertionStatus.FAILED;
         }
 

@@ -1,6 +1,7 @@
 package com.l7tech.server.service.resolution;
 
 import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -8,7 +9,6 @@ import com.l7tech.gateway.common.transport.ResolutionConfiguration;
 import com.l7tech.message.Message;
 import com.l7tech.message.SoapKnob;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.transport.ResolutionConfigurationManager;
 import com.l7tech.util.Functions;
@@ -164,7 +164,7 @@ public class ServiceResolutionManager implements ApplicationListener, Initializi
         }
 
         // resolve
-        serviceSet = doResolve( new LogOnlyAuditor(logger), parameters, null, serviceSet, true );
+        serviceSet = doResolve( new LoggingAudit(logger), parameters, null, serviceSet, true );
 
         if ( serviceSet == null || serviceSet.isEmpty()) {
             return Collections.emptySet();
@@ -240,7 +240,7 @@ public class ServiceResolutionManager implements ApplicationListener, Initializi
         }
 
         final Collection<Pair<Map<String,Object>,PublishedService>> conflictingParameterCollection = new ArrayList<Pair<Map<String,Object>,PublishedService>>();
-        final Audit audit = new LogOnlyAuditor( logger );
+        final Audit audit = new LoggingAudit( logger );
         for ( final Map<String,Object> parameters : parameterCollection ) {
 
             // Enable exact matching only for conflicts

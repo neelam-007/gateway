@@ -1,12 +1,12 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.token.*;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.WssTimestamp;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.Pair;
@@ -81,7 +81,7 @@ public class SamlAssertionValidate {
                           final Collection<Pair<String, String[]>> collectAttrValues,
                           final Collection<String> clientAddresses,
                           final Map<String, Object> serverVariables,
-                          final Auditor auditor) {
+                          final Audit auditor) {
         String securityNS = wssResults.getSecurityNS();
         if (null == securityNS) {  // assume no security header was found
             Error result = new Error("No Security Header found", null);
@@ -371,7 +371,7 @@ public class SamlAssertionValidate {
     private void validateConditions(final AssertionType assertionType,
                                     final Collection<Error> validationResults,
                                     final Map<String, Object> serverVariables,
-                                    final Auditor auditor) throws IOException {
+                                    final Audit auditor) throws IOException {
         ConditionsType conditionsType = assertionType.getConditions();
         if (!requestWssSaml.isCheckAssertionValidity()) {
             logger.finer("No Assertion Validity requested");
@@ -473,7 +473,7 @@ public class SamlAssertionValidate {
     private void validateSubjectConfirmation(final SubjectStatementAbstractType subjectStatementAbstractType,
                                              final Collection<Error> validationResults,
                                              final Map<String, Object> serverVariables,
-                                             final Auditor auditor) {
+                                             final Audit auditor) {
         final SubjectType subject = subjectStatementAbstractType.getSubject();
         if (subject == null) {
             validationResults.add(new Error("Subject Statement Required", null));
@@ -578,7 +578,7 @@ public class SamlAssertionValidate {
                                     final Calendar timeNow,
                                     final Collection<Error> validationResults,
                                     final Map<String, Object> serverVariables,
-                                    final Auditor auditor) {
+                                    final Audit auditor) {
 
         Saml2SubjectAndConditionValidate.validateConditions(requestWssSaml,
                 conditionsType,
@@ -596,7 +596,7 @@ public class SamlAssertionValidate {
                                              final Collection<String> clientAddresses,
                                              final Collection<Error> validationResults,
                                              final Map<String, Object> serverVariables,
-                                             final Auditor auditor) {
+                                             final Audit auditor) {
         Saml2SubjectAndConditionValidate.validateSubject(requestWssSaml,
                 subjectType,
                 timeNow,

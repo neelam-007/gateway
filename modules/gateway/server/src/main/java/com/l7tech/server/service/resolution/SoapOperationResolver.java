@@ -1,12 +1,12 @@
 package com.l7tech.server.service.resolution;
 
+import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.message.Message;
 import com.l7tech.message.SoapKnob;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.service.ServiceDocumentManager;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapUtil;
@@ -32,7 +32,7 @@ public class SoapOperationResolver extends NameValueServiceResolver<List<QName>>
     private static final List<List<QName>> EMPTY = Collections.emptyList();
     private final ServiceDocumentManager serviceDocumentManager;
 
-    public SoapOperationResolver( final Auditor.AuditorFactory auditorFactory,
+    public SoapOperationResolver( final AuditFactory auditorFactory,
                                   final ServiceDocumentManager serviceDocumentManager ) {
         super( auditorFactory );
         this.serviceDocumentManager = serviceDocumentManager;

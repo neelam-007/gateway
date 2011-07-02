@@ -19,7 +19,6 @@ import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.StashManagerFactory;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
@@ -48,12 +47,10 @@ import java.util.logging.Logger;
  * Server side implementation of JMS routing assertion.
  */
 public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRoutingAssertion> {
-    private static final Logger logger = Logger.getLogger(ServerJmsRoutingAssertion.class.getName());
     private static final int MAX_OOPSES = 5;
     private static final long RETRY_DELAY = 1000L;
 
     private final ApplicationContext spring;
-    private final Auditor auditor;
     private final ServerConfig serverConfig;
     private final JmsEndpointManager jmsEndpointManager;
     private final JmsConnectionManager jmsConnectionManager;
@@ -70,9 +67,8 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
     private JmsEndpointConfig endpointConfig;
 
     public ServerJmsRoutingAssertion(JmsRoutingAssertion data, ApplicationContext spring) {
-        super(data, spring, logger);
+        super(data, spring);
         this.spring = spring;
-        this.auditor = new Auditor(this, spring, logger);
         this.serverConfig = spring.getBean("serverConfig", ServerConfig.class);
         this.jmsEndpointManager = (JmsEndpointManager)spring.getBean("jmsEndpointManager");
         this.jmsConnectionManager = (JmsConnectionManager)spring.getBean("jmsConnectionManager");
@@ -100,7 +96,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         try {
             requestMessage = context.getTargetMessage(assertion.getRequestTarget());
         } catch (NoSuchVariableException e) {
-            auditor.logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, e.getVariable(), ExceptionUtils.getMessage(e));
+            logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, e.getVariable(), ExceptionUtils.getMessage(e));
             throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
 
         }
@@ -116,7 +112,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
 
             if (assertion.isAttachSamlSenderVouches()) {
                 if (senderVouchesSignerInfo == null) {
-                    auditor.logAndAudit(AssertionMessages.JMS_ROUTING_NO_SAML_SIGNER);
+                    logAndAudit(AssertionMessages.JMS_ROUTING_NO_SAML_SIGNER);
                     return AssertionStatus.FAILED;
                 }
                 doAttachSamlSenderVouches(requestMessage, context.getDefaultAuthenticationContext().getLastCredentials(), senderVouchesSignerInfo);
@@ -162,7 +158,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     }
 
                     if (++oopses < MAX_OOPSES) {
-                        auditor.logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_RETRYING, new String[] {String.valueOf(oopses), String.valueOf(RETRY_DELAY)}, ExceptionUtils.getDebugException(jre));
+                        logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_RETRYING, new String[] {String.valueOf(oopses), String.valueOf(RETRY_DELAY)}, ExceptionUtils.getDebugException(jre));
                         jmsResourceManager.invalidate(cfg);
 
                         try {
@@ -171,7 +167,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                             throw new JMSException("Interrupted during retry delay");
                         }
                     } else {
-                        auditor.logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_NOMORETRIES, String.valueOf(MAX_OOPSES));
+                        logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_NOMORETRIES, String.valueOf(MAX_OOPSES));
                         // Catcher will log/audit the stack trace
                         throw jre.getCause() != null ? jre.getCause() : jre;
                     }
@@ -180,9 +176,9 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
 
                     if (++oopses < MAX_OOPSES) {
                         if (ExceptionUtils.causedBy(e, InvalidDestinationException.class)) {
-                            auditor.logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_RETRYING, new String[] {String.valueOf(oopses), String.valueOf(RETRY_DELAY)}, ExceptionUtils.getDebugException(e));
+                            logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_RETRYING, new String[] {String.valueOf(oopses), String.valueOf(RETRY_DELAY)}, ExceptionUtils.getDebugException(e));
                         } else {
-                            auditor.logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_RETRYING, new String[] {String.valueOf(oopses), String.valueOf(RETRY_DELAY)}, e);
+                            logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_RETRYING, new String[] {String.valueOf(oopses), String.valueOf(RETRY_DELAY)}, e);
                         }
                         jmsResourceManager.invalidate(cfg);
                         outboundDestinationHolder[0] = null;
@@ -194,7 +190,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                             throw new JMSException("Interrupted during send retry");
                         }
                     } else {
-                        auditor.logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_NOMORETRIES, String.valueOf(MAX_OOPSES));
+                        logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_NOMORETRIES, String.valueOf(MAX_OOPSES));
                         // Catcher will log/audit the stack trace
                         throw e;
                     }
@@ -211,9 +207,9 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         inboundDestinationHolder[0] = null;
                     } else {
                         if (oopses >= MAX_OOPSES)
-                            auditor.logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_NOMORETRIES, String.valueOf(MAX_OOPSES));
+                            logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_NOMORETRIES, String.valueOf(MAX_OOPSES));
                         final NamingException auditException = JmsUtil.isCausedByExpectedNamingException( nex ) ? null : nex;
-                        auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Error in outbound JMS request processing: " + JmsUtil.getJNDIErrorMessage( nex )}, auditException );
+                        logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Error in outbound JMS request processing: " + JmsUtil.getJNDIErrorMessage( nex )}, auditException );
                         return AssertionStatus.FAILED;
                     }
                 }
@@ -226,10 +222,10 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             return AssertionStatus.FAILED;
         } catch ( FindException e ) {
             String msg = "Caught FindException";
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{msg}, e);
+            logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{msg}, e);
             return AssertionStatus.FAILED;
         } catch ( JmsConfigException e ) {
-            auditor.logAndAudit(AssertionMessages.JMS_ROUTING_CONFIGURATION_ERROR,
+            logAndAudit(AssertionMessages.JMS_ROUTING_CONFIGURATION_ERROR,
                     new String[]{ExceptionUtils.getMessage(e)}, 
                     ExceptionUtils.getDebugException(e));
             return AssertionStatus.FAILED;
@@ -254,7 +250,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             exceptionMessage = ExceptionUtils.getMessage( throwable ) + "; " + exceptionMessage;    
         }
 
-        auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{ description + ": " + exceptionMessage }, auditException );
+        logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{ description + ": " + exceptionMessage }, auditException );
     }
 
     private final class JmsRoutingCallback implements JmsResourceManager.JmsResourceCallback {
@@ -277,7 +273,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             try {
                 this.requestMessage = context.getTargetMessage(assertion.getRequestTarget());
             } catch (NoSuchVariableException e) {
-                auditor.logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, e.getVariable(), ExceptionUtils.getMessage(e));
+                logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, e.getVariable(), ExceptionUtils.getMessage(e));
                 throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
             }
         }
@@ -338,9 +334,9 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
 
                 boolean processReply = context.isReplyExpected() && jmsInboundDestination != null;
 
-                auditor.logAndAudit(AssertionMessages.JMS_ROUTING_REQUEST_ROUTED);
+                logAndAudit(AssertionMessages.JMS_ROUTING_REQUEST_ROUTED);
 
-                final Map<String,Object> variables = context.getVariableMap( assertion.getVariablesUsed(), auditor );
+                final Map<String,Object> variables = context.getVariableMap( assertion.getVariablesUsed(), getAudit() );
                 MessageProducer jmsProducer = null;
                 try {
                     jmsProducer = JmsUtil.createMessageProducer( jmsSession, jmsOutboundDestination );
@@ -371,7 +367,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                 if ( !processReply ) {
                     context.routingFinished();
                     routingFinished = true;
-                    auditor.logAndAudit(AssertionMessages.JMS_ROUTING_NO_RESPONSE_EXPECTED);
+                    logAndAudit(AssertionMessages.JMS_ROUTING_NO_RESPONSE_EXPECTED);
                     context.setRoutingStatus( RoutingStatus.ROUTED );
                 } else {
                     final String selector = getSelector( jmsOutboundRequest, cfg.getEndpoint() );
@@ -383,7 +379,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     }
                     else  {
                         // try resolving context var
-                        timeoutStr = ExpandVariables.process(timeoutStr,variables,auditor);
+                        timeoutStr = ExpandVariables.process(timeoutStr,variables,getAudit());
                         try {
                             timeout = Integer.parseInt(timeoutStr);
                             if (timeout <= 0){
@@ -400,7 +396,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     try {
                         jmsConsumer = JmsUtil.createMessageConsumer( jmsSession, jmsInboundDestination, selector );
 
-                        auditor.logAndAudit(AssertionMessages.JMS_ROUTING_GETTING_RESPONSE);
+                        logAndAudit(AssertionMessages.JMS_ROUTING_GETTING_RESPONSE);
                         jmsResponse = jmsConsumer.receive( (long)timeout );
 
                         if ( jmsResponse != null && !(jmsInboundDestination instanceof TemporaryQueue))
@@ -413,7 +409,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     context.routingFinished();
                     routingFinished = true;
                     if ( jmsResponse == null ) {
-                        auditor.logAndAudit(AssertionMessages.JMS_ROUTING_NO_RESPONSE, String.valueOf(timeout));
+                        logAndAudit(AssertionMessages.JMS_ROUTING_NO_RESPONSE, String.valueOf(timeout));
                         throw new AssertionStatusException(AssertionStatus.FAILED);
                     }
 
@@ -431,10 +427,10 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         final StashManager stashManager = stashManagerFactory.createStashManager();
                         responseMessage.initialize(stashManager, ContentTypeHeader.XML_DEFAULT, new BytesMessageInputStream(bytesMessage));
                     } else {
-                        auditor.logAndAudit(AssertionMessages.JMS_ROUTING_UNSUPPORTED_RESPONSE_MSG_TYPE, jmsResponse.getClass().getName());
+                        logAndAudit(AssertionMessages.JMS_ROUTING_UNSUPPORTED_RESPONSE_MSG_TYPE, jmsResponse.getClass().getName());
                         throw new AssertionStatusException(AssertionStatus.FAILED);
                     }
-                    auditor.logAndAudit(AssertionMessages.JMS_ROUTING_GOT_RESPONSE);
+                    logAndAudit(AssertionMessages.JMS_ROUTING_GOT_RESPONSE);
 
                     // Copies the response JMS message properties into the response JmsKnob.
                     // Do this before enforcing the propagation rules so that they will
@@ -504,12 +500,12 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             final Integer value;
 
             if ( expressionValue != null ) {
-                final String textValue = ExpandVariables.process( expressionValue, variables, auditor).trim();
+                final String textValue = ExpandVariables.process( expressionValue, variables, getAudit()).trim();
 
                 if ( ValidationUtils.isValidInteger( textValue, false, min, max ) ) {
                     value = Integer.parseInt( textValue );
                 } else {
-                    auditor.logAndAudit(AssertionMessages.JMS_ROUTING_CONFIGURATION_ERROR, description + " invalid: " + textValue);
+                    logAndAudit(AssertionMessages.JMS_ROUTING_CONFIGURATION_ERROR, description + " invalid: " + textValue);
                     throw new AssertionStatusException(AssertionStatus.FAILED);
                 }
             } else {
@@ -527,12 +523,12 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             final Long value;
 
             if ( expressionValue != null ) {
-                final String textValue = ExpandVariables.process( expressionValue, variables, auditor).trim();
+                final String textValue = ExpandVariables.process( expressionValue, variables, getAudit()).trim();
 
                 if ( ValidationUtils.isValidLong( textValue, false, min, max ) ) {
                     value = Long.parseLong( textValue );
                 } else {
-                    auditor.logAndAudit(AssertionMessages.JMS_ROUTING_CONFIGURATION_ERROR, description + " invalid: " + textValue);
+                    logAndAudit(AssertionMessages.JMS_ROUTING_CONFIGURATION_ERROR, description + " invalid: " + textValue);
                     throw new AssertionStatusException(AssertionStatus.FAILED);
                 }
             } else {
@@ -566,7 +562,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
 
         if ( destination instanceof TemporaryQueue ) {
             closed = true;
-            auditor.logAndAudit( AssertionMessages.JMS_ROUTING_DELETE_TEMPORARY_QUEUE );
+            logAndAudit( AssertionMessages.JMS_ROUTING_DELETE_TEMPORARY_QUEUE );
             try {
                 ((TemporaryQueue)destination).delete();
             } catch (JMSException e) {
@@ -585,12 +581,12 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
 
         if (mk == null || !message.isInitialized()) {
             // Uninitialized request
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Request is not initialized; nothing to route");
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Request is not initialized; nothing to route");
             return false;
         }
 
         if ( maxSize > 0L && mk.getContentLength() > maxSize ) {
-            auditor.logAndAudit(AssertionMessages.JMS_ROUTING_REQUEST_TOO_LARGE);
+            logAndAudit(AssertionMessages.JMS_ROUTING_REQUEST_TOO_LARGE);
             valid = false;
         }
 
@@ -619,7 +615,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         try {
             requestMessage = context.getTargetMessage(assertion.getRequestTarget());
         } catch (NoSuchVariableException e) {
-            auditor.logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, e.getVariable(), ExceptionUtils.getMessage(e));
+            logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, e.getVariable(), ExceptionUtils.getMessage(e));
             throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
         }
         final MimeKnob mk = requestMessage.getMimeKnob();
@@ -640,11 +636,11 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         }
 
         if (useTextMode) {
-            auditor.logAndAudit(AssertionMessages.JMS_ROUTING_CREATE_REQUEST_AS_TEXT_MESSAGE);
+            logAndAudit(AssertionMessages.JMS_ROUTING_CREATE_REQUEST_AS_TEXT_MESSAGE);
             // TODO get encoding from mk?
             outboundRequestMsg = jmsSession.createTextMessage(new String(outboundRequestBytes, JmsUtil.DEFAULT_ENCODING));
         } else {
-            auditor.logAndAudit(AssertionMessages.JMS_ROUTING_CREATE_REQUEST_AS_BYTES_MESSAGE);
+            logAndAudit(AssertionMessages.JMS_ROUTING_CREATE_REQUEST_AS_BYTES_MESSAGE);
             BytesMessage bytesMessage = jmsSession.createBytesMessage();
             bytesMessage.writeBytes(outboundRequestBytes);
             outboundRequestMsg = bytesMessage;
@@ -653,14 +649,14 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         final JmsReplyType replyType = outboundRequestEndpoint.getReplyType();
         switch (replyType) {
             case NO_REPLY:
-                auditor.logAndAudit(AssertionMessages.JMS_ROUTING_REQUEST_WITH_NO_REPLY, outboundRequestEndpoint.getDestinationName());
+                logAndAudit(AssertionMessages.JMS_ROUTING_REQUEST_WITH_NO_REPLY, outboundRequestEndpoint.getDestinationName());
                 return outboundRequestMsg;
             case AUTOMATIC:
-                auditor.logAndAudit(AssertionMessages.JMS_ROUTING_REQUEST_WITH_AUTOMATIC, outboundRequestEndpoint.getDestinationName());
+                logAndAudit(AssertionMessages.JMS_ROUTING_REQUEST_WITH_AUTOMATIC, outboundRequestEndpoint.getDestinationName());
                 outboundRequestMsg.setJMSReplyTo(jmsSession.createTemporaryQueue());
                 return outboundRequestMsg;
             case REPLY_TO_OTHER:
-                auditor.logAndAudit(AssertionMessages.JMS_ROUTING_REQUEST_WITH_REPLY_TO_OTHER, outboundRequestEndpoint.getDestinationName(), outboundRequestEndpoint.getReplyToQueueName());
+                logAndAudit(AssertionMessages.JMS_ROUTING_REQUEST_WITH_REPLY_TO_OTHER, outboundRequestEndpoint.getDestinationName(), outboundRequestEndpoint.getReplyToQueueName());
 
                 // set the replyTo queue
                 String replyToQueueName = outboundRequestEndpoint.getReplyToQueueName();
@@ -696,7 +692,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             if (jmsEndpoint.isUseMessageIdForCorrelation()) {
                 final String id = jmsOutboundRequest.getJMSMessageID();
                 if (id == null) {
-                    auditor.logAndAudit(AssertionMessages.JMS_ROUTING_MISSING_MESSAGE_ID);
+                    logAndAudit(AssertionMessages.JMS_ROUTING_MISSING_MESSAGE_ID);
                     throw new AssertionStatusException(AssertionStatus.FAILED);
                 }
                 sb.append(id);
@@ -733,8 +729,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         return jmsEndpoint;
     }
 
-    private JmsConnection getRoutedRequestConnection( final JmsEndpoint endpoint,
-                                                      final Auditor auditor) throws FindException {
+    private JmsConnection getRoutedRequestConnection( final JmsEndpoint endpoint ) throws FindException {
         JmsConnection jmsConn;
         synchronized(jmsInfoSync) {
             jmsConn = routedRequestConnection;
@@ -742,7 +737,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
 
         if ( jmsConn == null ) {
             if ( endpoint == null ) {
-                auditor.logAndAudit(AssertionMessages.JMS_ROUTING_NON_EXISTENT_ENDPOINT,
+                logAndAudit(AssertionMessages.JMS_ROUTING_NON_EXISTENT_ENDPOINT,
                         String.valueOf(assertion.getEndpointOid()) + "/" + assertion.getEndpointName());
             } else {
                 jmsConn = jmsConnectionManager.findByPrimaryKey( endpoint.getConnectionOid() );
@@ -768,7 +763,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         final JmsEndpoint endpoint = getRoutedRequestEndpoint();
         if ( endpoint == null ) throw new FindException( "JmsEndpoint could not be located! It may have been deleted" );
 
-        final JmsConnection conn = getRoutedRequestConnection(endpoint, auditor);
+        final JmsConnection conn = getRoutedRequestConnection(endpoint);
         if ( conn == null ) throw new FindException( "JmsConnection could not be located! It may have been deleted" );
 
         // check for the need to use dynamic routing properties
@@ -792,7 +787,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         try {
             jmsEndpointConfig.validate();
         } catch ( JmsConfigException e ) {
-            auditor.logAndAudit( AssertionMessages.JMS_ROUTING_TEMPLATE_ERROR, "invalid configuration; " + e.getMessage() );
+            logAndAudit( AssertionMessages.JMS_ROUTING_TEMPLATE_ERROR, "invalid configuration; " + e.getMessage() );
             throw new AssertionStatusException( AssertionStatus.FAILED );
         }
     }
@@ -809,7 +804,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                                                                       final JmsDynamicProperties unprocessedProperties ) {
         final JmsDynamicProperties jmsDynamicProperties = new JmsDynamicProperties();
 
-        final Map<String,Object> variables = pec.getVariableMap( assertion.getVariablesUsed(), auditor);
+        final Map<String,Object> variables = pec.getVariableMap( assertion.getVariablesUsed(), getAudit());
         try {
             jmsDynamicProperties.setDestQName( expandVariables( unprocessedProperties.getDestQName(), variables ) );
             jmsDynamicProperties.setReplytoQName( expandVariables( unprocessedProperties.getReplytoQName(), variables ) );
@@ -817,7 +812,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             jmsDynamicProperties.setIcfName( expandVariables( unprocessedProperties.getIcfName(), variables ) );
             jmsDynamicProperties.setQcfName( expandVariables( unprocessedProperties.getQcfName(), variables ) );
         } catch ( IllegalArgumentException iae ) {
-            auditor.logAndAudit( AssertionMessages.JMS_ROUTING_TEMPLATE_ERROR, "variable processing error; " + iae.getMessage() );
+            logAndAudit( AssertionMessages.JMS_ROUTING_TEMPLATE_ERROR, "variable processing error; " + iae.getMessage() );
             throw new AssertionStatusException( AssertionStatus.FAILED );
         }
 
@@ -828,7 +823,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         String expandedValue = value;
 
         if ( expandedValue != null && expandedValue.contains( Syntax.SYNTAX_PREFIX ) ) {
-            expandedValue = ExpandVariables.process(value, variableMap, auditor, true);
+            expandedValue = ExpandVariables.process(value, variableMap, getAudit(), true);
         }
 
         return expandedValue;
@@ -856,7 +851,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                 }
             }
             final String[] variablesUsed = Syntax.getReferencedNames(sb.toString());
-            final Map<String, Object> vars = context.getVariableMap(variablesUsed, auditor);
+            final Map<String, Object> vars = context.getVariableMap(variablesUsed, getAudit());
 
             for (JmsMessagePropertyRule rule : ruleSet.getRules()) {
                 final String name = rule.getName();
@@ -869,7 +864,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     }
                 } else {
                     final String pattern = rule.getCustomPattern();
-                    final String value = ExpandVariables.process(pattern, vars, auditor);
+                    final String value = ExpandVariables.process(pattern, vars, getAudit());
                     dst.put(name, value);
                     if (logger.isLoggable(Level.FINEST)) {
                         logger.finest("Propagating a JMS message property with custom pattern (name=" + name + ", pattern=" + pattern + ", value=" + value + ")");
@@ -883,6 +878,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
      * Invalidation listener for JMS endpoint / connection updates.
      */
     public static final class JmsInvalidator implements ApplicationListener {
+        private static final Logger logger = Logger.getLogger( JmsInvalidator.class.getName() );
         private final ServerJmsRoutingAssertion serverJmsRoutingAssertion;
 
         public JmsInvalidator( final ServerJmsRoutingAssertion serverJmsRoutingAssertion ) {

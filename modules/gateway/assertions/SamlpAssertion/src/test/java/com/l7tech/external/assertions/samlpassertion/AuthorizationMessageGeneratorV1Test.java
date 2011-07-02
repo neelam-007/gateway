@@ -5,8 +5,8 @@ import com.l7tech.external.assertions.samlpassertion.server.InetAddressResolver;
 import com.l7tech.external.assertions.samlpassertion.server.MessageValueResolver;
 import com.l7tech.external.assertions.samlpassertion.server.NameIdentifierResolver;
 import com.l7tech.external.assertions.samlpassertion.server.v1.AuthorizationDecisionQueryGenerator;
+import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.security.saml.SamlConstants;
-import com.l7tech.server.audit.Auditor;
 import saml.v1.protocol.AuthorizationDecisionQueryType;
 import saml.v1.protocol.RequestType;
 
@@ -49,20 +49,22 @@ public class AuthorizationMessageGeneratorV1Test extends SamlpMessageGeneratorTe
         }
     }
 
+    @Override
     protected int getSamlVersion() {
         return 1;
     }
 
+    @Override
     protected AbstractSamlp1MessageGenerator<AuthorizationDecisionQueryType> createMessageGenerator(SamlpRequestBuilderAssertion assertion) {
 
         try {
-            Auditor auditor = new Auditor(this, appCtx, null);
             java.util.Map<String, Object> varMap = new HashMap<String, Object>();
 
-            AuthorizationDecisionQueryGenerator gen = new AuthorizationDecisionQueryGenerator(varMap, auditor);
+            AuthorizationDecisionQueryGenerator gen = new AuthorizationDecisionQueryGenerator(varMap, new TestAudit());
 
             gen.setNameResolver( new NameIdentifierResolver(assertion) {
 
+                @Override
                 protected void parse() {
                     this.nameValue = "somebody@email-exchange.com";
                     this.nameFormat = SamlConstants.NAMEIDENTIFIER_EMAIL;
@@ -70,6 +72,7 @@ public class AuthorizationMessageGeneratorV1Test extends SamlpMessageGeneratorTe
             });
             gen.setIssuerNameResolver( new NameIdentifierResolver(assertion) {
 
+                @Override
                 protected void parse() {
                     this.nameValue = "Bob-the-issuer";
                 }
@@ -81,11 +84,13 @@ public class AuthorizationMessageGeneratorV1Test extends SamlpMessageGeneratorTe
 //                }
 //            });
             gen.setAuthnMethodResolver( new MessageValueResolver<String>(assertion) {
+                @Override
                 protected void parse() {
                     this.value = SamlConstants.AUTHENTICATION_SAML2_TLS_CERT;
                 }
             });
             gen.setAddressResolver( new InetAddressResolver(assertion) {
+                @Override
                 protected void parse() {
                     try {
                         this.address = InetAddress.getByName("127.0.0.1");
@@ -103,6 +108,7 @@ public class AuthorizationMessageGeneratorV1Test extends SamlpMessageGeneratorTe
         return null;
     }
 
+    @Override
     protected void checkCommonRequestElements(RequestType request) {
         // more to come
         // ID

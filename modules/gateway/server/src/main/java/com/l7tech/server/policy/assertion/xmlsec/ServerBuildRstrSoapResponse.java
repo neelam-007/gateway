@@ -3,7 +3,6 @@ package com.l7tech.server.policy.assertion.xmlsec;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
@@ -11,8 +10,6 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.xmlsec.BuildRstrSoapResponse;
 import com.l7tech.security.xml.XencUtil;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
@@ -24,7 +21,6 @@ import com.l7tech.server.util.RstSoapMessageProcessor;
 import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.beans.factory.BeanFactory;
-import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -32,14 +28,11 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
 import java.util.*;
-import java.util.logging.Logger;
 
 /**
  * @author ghuang
  */
 public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServerAssertion<BuildRstrSoapResponse> {
-    private static final Logger logger = Logger.getLogger(ServerBuildRstrSoapResponse.class.getName());
-
     private static final String IS_SCT = "token.info.is.sct";
     private static final String TOKEN_XML = "token.info.token.xml.content";
     private static final String SCT_WSU_ID = "sct.info.wsu.id";
@@ -48,19 +41,15 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
     private static final String SAML_VALUE_TYPE = "saml.info.value.type";
 
     private final InboundSecureConversationContextManager scContextManager;
-    private final Auditor auditor;
     private final String[] variablesUsed;
     private final AddWssEncryptionSupport addWssEncryptionSupport;
 
     public ServerBuildRstrSoapResponse( final BuildRstrSoapResponse assertion,
                                         final BeanFactory factory ) {
         super(assertion, assertion);
-        auditor = factory instanceof ApplicationContext?
-                new Auditor(this, (ApplicationContext)factory, logger) :
-                new LogOnlyAuditor(logger);
         variablesUsed = assertion.getVariablesUsed();
         scContextManager = factory.getBean("inboundSecureConversationContextManager", InboundSecureConversationContextManager.class);
-        addWssEncryptionSupport = new AddWssEncryptionSupport(auditor, logger, new MessageTargetableSupport(TargetMessageType.RESPONSE), assertion, assertion);
+        addWssEncryptionSupport = new AddWssEncryptionSupport(getAuditHaver(), logger, new MessageTargetableSupport(TargetMessageType.RESPONSE), assertion, assertion);
     }
 
     @Override
@@ -80,7 +69,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                 rstParameters.get(RstSoapMessageProcessor.ERROR)
             );
             
-            auditor.logAndAudit(AssertionMessages.STS_INVALID_RST_REQUEST, rstParameters.get(RstSoapMessageProcessor.ERROR));
+            logAndAudit(AssertionMessages.STS_INVALID_RST_REQUEST, rstParameters.get(RstSoapMessageProcessor.ERROR));
             return AssertionStatus.BAD_REQUEST;
         }
 
@@ -168,7 +157,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
         String tokenVariable = assertion.getTokenIssued();
 
         // Get the XML content of the issued token
-        String tokenXml = ExpandVariables.process(tokenVariable, context.getVariableMap(variablesUsed, auditor), auditor);
+        String tokenXml = ExpandVariables.process(tokenVariable, context.getVariableMap(variablesUsed, getAudit()), getAudit());
         tokenInfo.put(TOKEN_XML, tokenXml);
 
         Element root;
@@ -185,7 +174,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                 errorMessage
             );
 
-            auditor.logAndAudit(AssertionMessages.STS_INVALID_SECURITY_TOKEN, errorMessage);
+            logAndAudit(AssertionMessages.STS_INVALID_SECURITY_TOKEN, errorMessage);
             return AssertionStatus.BAD_REQUEST;
         }
 
@@ -210,7 +199,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                     errorMessage
                 );
 
-                auditor.logAndAudit(AssertionMessages.STS_INVALID_SECURITY_TOKEN, errorMessage);
+                logAndAudit(AssertionMessages.STS_INVALID_SECURITY_TOKEN, errorMessage);
                 return AssertionStatus.BAD_REQUEST;
             }
             tokenInfo.put(SCT_WSU_ID, sctWsuId);
@@ -228,7 +217,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                     errorMessage
                 );
 
-                auditor.logAndAudit(AssertionMessages.STS_INVALID_SECURITY_TOKEN, errorMessage);
+                logAndAudit(AssertionMessages.STS_INVALID_SECURITY_TOKEN, errorMessage);
                 return AssertionStatus.BAD_REQUEST;
             } catch (MissingRequiredElementException e) {
                 String errorMessage = "There is no Identifier element in the SecurityContextToken element.";
@@ -240,7 +229,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                     errorMessage
                 );
 
-                auditor.logAndAudit(AssertionMessages.STS_INVALID_SECURITY_TOKEN, errorMessage);
+                logAndAudit(AssertionMessages.STS_INVALID_SECURITY_TOKEN, errorMessage);
                 return AssertionStatus.BAD_REQUEST;
             }
         }
@@ -268,7 +257,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                     errorMessage
                 );
 
-                auditor.logAndAudit(AssertionMessages.STS_INVALID_SECURITY_TOKEN, errorMessage);
+                logAndAudit(AssertionMessages.STS_INVALID_SECURITY_TOKEN, errorMessage);
                 return AssertionStatus.BAD_REQUEST;
             }
         } else { // The token is not recognizable.
@@ -281,7 +270,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                 errorMessage
             );
 
-            auditor.logAndAudit(AssertionMessages.STS_INVALID_SECURITY_TOKEN, errorMessage);
+            logAndAudit(AssertionMessages.STS_INVALID_SECURITY_TOKEN, errorMessage);
             return AssertionStatus.BAD_REQUEST;
         }
 
@@ -349,7 +338,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
             final String address = assertion.getAddressOfEPR();
             if (address != null) {
                 final String addressContent = TextUtils.escapeHtmlSpecialCharacters( // escape those special characters
-                    ExpandVariables.process(address, context.getVariableMap(variablesUsed, auditor), auditor)
+                    ExpandVariables.process(address, context.getVariableMap(variablesUsed, getAudit()), getAudit())
                 );
 
                 if (assertion.isIncludeAppliesTo() && addressContent != null && !addressContent.trim().isEmpty()) {
@@ -446,7 +435,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                     message
                 );
 
-                auditor.logAndAudit(AssertionMessages.STS_EXPIRED_SC_SESSION, message);
+                logAndAudit(AssertionMessages.STS_EXPIRED_SC_SESSION, message);
                 throw new AssertionStatusException(AssertionStatus.FALSIFIED);    
             }
 
@@ -537,7 +526,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                 "Request invalid"
             );
 
-            auditor.logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Response encryption failure"}, e);
+            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Response encryption failure"}, e);
             throw new AssertionStatusException( AssertionStatus.FAILED);
         }
 
@@ -558,7 +547,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                 "Request invalid"
             );
 
-            auditor.logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Response encryption token not found (multiple tokens)"}, e);
+            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Response encryption token not found (multiple tokens)"}, e);
             throw new AssertionStatusException( AssertionStatus.FALSIFIED);
         }
 
@@ -569,11 +558,6 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
     protected boolean isResponse() {
         // Assume we are always building a response message.
         return true;
-    }
-
-    @Override
-    public Audit getAuditor() {
-        return auditor;
     }
 
     // This method is modified from the method "produceBinarySecretXml" in TokenServiceImpl.

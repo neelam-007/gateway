@@ -1,7 +1,7 @@
 package com.l7tech.server.policy.custom;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.server.audit.Auditor;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.policy.assertion.ext.CustomAuditor;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.ext.ServiceInvocation;
@@ -12,30 +12,29 @@ import java.util.logging.Logger;
 
 /**
  * An auditor for Custom Assertions.
- *
- * @author Steve Jones, $Author$
- * @version $Revision$
  */
 public class CustomAuditorImpl implements CustomAuditor {
 
     //- PUBLIC
 
-    public CustomAuditorImpl(Auditor auditor) {
+    public CustomAuditorImpl(Audit auditor) {
         if (auditor == null) throw new IllegalArgumentException("auditor must not be null");
         this.auditor = auditor;
     }
 
+    @Override
     public void auditInfo( CustomAssertion customAssertion, String message) {
         if (customAssertion != null && message != null) {
             auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_INFO,
-                    new String[]{notNull(customAssertion.getName()), message});
+                    notNull(customAssertion.getName()), message );
         }
     }
 
+    @Override
     public void auditWarning(CustomAssertion customAssertion, String message) {
         if (customAssertion != null && message != null) {
             auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN,
-                    new String[]{notNull(customAssertion.getName()), message});
+                    notNull(customAssertion.getName()), message );
         }
     }
 
@@ -47,7 +46,7 @@ public class CustomAuditorImpl implements CustomAuditor {
         try {
             Method method = ServiceInvocation.class.getDeclaredMethod("setCustomAuditor", new Class[]{CustomAuditor.class});
             method.setAccessible(true);
-            method.invoke(si, new Object[]{this});
+            method.invoke(si, this );
         }
         catch(Exception e) {
             logger.log(Level.WARNING, "Error setting auditor for custom assertion.", e);
@@ -58,7 +57,7 @@ public class CustomAuditorImpl implements CustomAuditor {
 
     private static final Logger logger = Logger.getLogger(CustomAuditorImpl.class.getName());
 
-    private final Auditor auditor;
+    private final Audit auditor;
 
     private String notNull(String text) {
         return text == null ? "" : text;

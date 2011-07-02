@@ -21,7 +21,6 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.*;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.soap.SoapUtil;
-import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -33,7 +32,6 @@ import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
-import java.util.logging.Logger;
 
 /**
  * Server side implementation of the XmlSecurityAssertion.
@@ -41,16 +39,14 @@ import java.util.logging.Logger;
  * @see com.l7tech.external.assertions.xmlsec.NonSoapEncryptElementAssertion
  */
 public class ServerNonSoapEncryptElementAssertion extends ServerNonSoapSecurityAssertion<NonSoapEncryptElementAssertion> {
-    private static final Logger logger = Logger.getLogger(ServerNonSoapEncryptElementAssertion.class.getName());
-
     private static final SecureRandom random = new SecureRandom();
 
     private final X509Certificate recipientCert;
 
-    public ServerNonSoapEncryptElementAssertion(NonSoapEncryptElementAssertion assertion, ApplicationContext context)
+    public ServerNonSoapEncryptElementAssertion(NonSoapEncryptElementAssertion assertion)
             throws PolicyAssertionException, InvalidXpathException, IOException, CertificateException
     {
-        super(assertion, logger, context, context);
+        super(assertion);
         this.recipientCert = CertUtils.decodeFromPEM(assertion.getRecipientCertificateBase64(), false);
     }
 

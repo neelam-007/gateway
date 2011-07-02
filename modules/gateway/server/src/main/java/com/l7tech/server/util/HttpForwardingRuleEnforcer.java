@@ -2,10 +2,10 @@ package com.l7tech.server.util;
 
 import com.l7tech.common.http.*;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.HttpPassthroughRule;
 import com.l7tech.policy.assertion.HttpPassthroughRuleSet;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerBridgeRoutingAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
@@ -49,7 +49,7 @@ public class HttpForwardingRuleEnforcer {
                                              final PolicyEnforcementContext context,
                                              final String targetDomain,
                                              final HttpPassthroughRuleSet rules, 
-                                             final Auditor auditor,
+                                             final Audit auditor,
                                              Map<String,Object> vars,
                                              final String[] varNames) throws IOException {
         final HasOutboundHeaders source = headerSource == null ? new HttpOutboundRequestFacet() : headerSource;
@@ -238,7 +238,7 @@ public class HttpForwardingRuleEnforcer {
                                              final GenericHttpRequestParams httpRequestParams,
                                              final PolicyEnforcementContext context,
                                              final HttpPassthroughRuleSet rules,
-                                             final Auditor auditor,
+                                             final Audit auditor,
                                              Map<String,Object> vars,
                                              final String[] varNames ) {
         final HasOutboundHeaders source = headerSource == null ? new HttpOutboundRequestFacet() : headerSource;
@@ -321,7 +321,7 @@ public class HttpForwardingRuleEnforcer {
 
     public static List<Param> handleRequestParameters( final PolicyEnforcementContext context,
                                                        final HttpPassthroughRuleSet rules,
-                                                       final Auditor auditor,
+                                                       final Audit auditor,
                                                        Map<String,Object> vars,
                                                        final String[] varNames ) throws IOException {
         // 1st, make sure we have a HttpServletRequestKnob
@@ -379,7 +379,7 @@ public class HttpForwardingRuleEnforcer {
     }
 
     public static void handleResponseHeaders( final HttpResponseKnob targetForResponseHeaders,
-                                              final Auditor auditor,
+                                              final Audit auditor,
                                               final ServerBridgeRoutingAssertion.HeaderHolder hh,
                                               final HttpPassthroughRuleSet rules,
                                               Map<String,Object> vars,
@@ -443,7 +443,7 @@ public class HttpForwardingRuleEnforcer {
      */
     public static void handleResponseHeaders( final HttpInboundResponseKnob sourceOfResponseHeaders,
                                               final HttpResponseKnob targetForResponseHeaders,
-                                              final Auditor auditor,
+                                              final Audit auditor,
                                               final HttpPassthroughRuleSet rules,
                                               final boolean passThroughSpecialHeaders,
                                               final PolicyEnforcementContext context,
@@ -530,7 +530,7 @@ public class HttpForwardingRuleEnforcer {
         return ArrayUtils.contains( HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITELY_FORWARD, headerName.toLowerCase() );
     }
 
-    private static List<HttpCookie> passableCookies(PolicyEnforcementContext context, String targetDomain, Auditor auditor) {
+    private static List<HttpCookie> passableCookies(PolicyEnforcementContext context, String targetDomain, Audit auditor) {
         List<HttpCookie> output = new ArrayList<HttpCookie>();
         Set<HttpCookie> contextCookies = context.getCookies();
 

@@ -6,7 +6,7 @@ import com.l7tech.common.io.ResourceReference;
 import com.l7tech.common.io.SchemaUtil;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.audit.Audit;
-import com.l7tech.server.audit.LogOnlyAuditor;
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.util.*;
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.tarari.TarariSchemaHandler;
@@ -386,7 +386,7 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
                 try {
                     for ( final SchemaSourceResolver source : schemaSourceResolvers ) {
                         if ( source.getId().equals( schema.getSchemaSourceResolverId() ) ) {
-                            source.refreshSchemaByUri( new LogOnlyAuditor(logger), uri );
+                            source.refreshSchemaByUri( new LoggingAudit(logger), uri );
                         }
                     }
                 } catch ( IOException e ) {

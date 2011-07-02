@@ -2,6 +2,7 @@ package com.l7tech.server.audit;
 
 import com.jscape.inet.ftp.FtpException;
 import com.l7tech.common.io.DigestZipOutputStream;
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.transport.ftp.FtpClientConfig;
 import com.l7tech.objectmodel.FindException;
@@ -316,7 +317,7 @@ public class FtpArchiveReceiver implements ArchiveReceiver, PropertyChangeListen
                         // actual deserialization
                         ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(HexUtils.decodeBase64(serializedConfig)));
                         ftpConfig = (FtpClientConfig) in.readObject();
-                        ftpConfig.setPass(ServerVariables.expandSinglePasswordOnlyVariable(new LogOnlyAuditor(logger), ftpConfig.getPass()));
+                        ftpConfig.setPass(ServerVariables.expandSinglePasswordOnlyVariable(new LoggingAudit(logger), ftpConfig.getPass()));
                     } catch (Exception e) {
                         logger.log(Level.WARNING, "Invalid serialized form retrieved from the database.", e);
                     }

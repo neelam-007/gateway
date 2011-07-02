@@ -1,12 +1,9 @@
-/*
- * Copyright (C) 2009 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.processcontroller.monitoring.notification;
 
+import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.management.api.monitoring.NotificationAttempt;
 import com.l7tech.server.management.config.monitoring.AuthInfo;
 import com.l7tech.server.management.config.monitoring.EmailNotificationRule;
@@ -35,7 +32,7 @@ import java.util.logging.Logger;
 class EmailNotifier extends Notifier<EmailNotificationRule> {
     private static final Logger logger = Logger.getLogger(EmailNotifier.class.getName());
 
-    private final Auditor auditor;
+    private final Audit auditor;
     private final Map<String, String> propertyMap;
     private final InternetAddress[] toAddresses;
     private final InternetAddress[] ccAddresses;
@@ -50,7 +47,7 @@ class EmailNotifier extends Notifier<EmailNotificationRule> {
 
     public EmailNotifier(EmailNotificationRule rule) {
         super(rule);
-        auditor = new LogOnlyAuditor(logger);
+        auditor = new LoggingAudit(logger);
 
         long connectTimeout = SyspropUtil.getLong( "com.l7tech.server.processcontroller.monitoring.ioMailConnectTimeout", 60000);
         long readTimeout = SyspropUtil.getLong( "com.l7tech.server.processcontroller.monitoringioMailReadTimeout", 60000);

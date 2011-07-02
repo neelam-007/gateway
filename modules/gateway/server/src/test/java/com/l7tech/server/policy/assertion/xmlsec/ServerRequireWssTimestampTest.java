@@ -1,6 +1,7 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.TestDocuments;
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -9,7 +10,6 @@ import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -62,7 +62,7 @@ public class ServerRequireWssTimestampTest {
         final SimpleSecurityTokenResolver resolver = new SimpleSecurityTokenResolver();
         final ServerRequireWssX509Cert srwxc = new ServerRequireWssX509Cert(new RequireWssX509Cert(), makeBeanFactory(null, resolver));
 
-        req.getSecurityKnob().setProcessorResult(WSSecurityProcessorUtils.getWssResults(req, "Request", resolver, new LogOnlyAuditor(logger)));
+        req.getSecurityKnob().setProcessorResult(WSSecurityProcessorUtils.getWssResults(req, "Request", resolver, new LoggingAudit(logger)));
         srwxc.checkRequest(context);
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(expected, result);

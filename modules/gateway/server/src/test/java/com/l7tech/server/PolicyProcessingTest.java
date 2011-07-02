@@ -4,8 +4,10 @@ import com.l7tech.common.http.*;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.StashManager;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.audit.AuditRecord;
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.GroupBean;
@@ -24,7 +26,6 @@ import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.AuditContextStubInt;
 import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.TestIdentityProvider;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -544,7 +545,7 @@ public class PolicyProcessingTest {
         processMessage("/httproutecookie", requestMessage1, "10.0.0.1", 0, null, null, extraHeader, new Functions.UnaryVoid<PolicyEnforcementContext>(){
             @Override
             public void call( final PolicyEnforcementContext policyEnforcementContext ) {
-                Auditor logOnlyAuditor = new LogOnlyAuditor(logger);
+                Audit logOnlyAuditor = new LoggingAudit(logger);
                 String variable =  ExpandVariables.process( "${request.http.header.x-test_header}", policyEnforcementContext.getVariableMap( new String[]{"request.http.header.x-test_header"}, logOnlyAuditor) ,logOnlyAuditor);
                 assertEquals( "Http header variable value", "value", variable );
             }
@@ -578,7 +579,7 @@ public class PolicyProcessingTest {
         processMessage("/httproutecookie", requestMessage1, "10.0.0.1", 0, null, null, extraHeader, new Functions.UnaryVoid<PolicyEnforcementContext>(){
             @Override
             public void call( final PolicyEnforcementContext policyEnforcementContext ) {
-                Auditor logOnlyAuditor = new LogOnlyAuditor(logger);
+                Audit logOnlyAuditor = new LoggingAudit(logger);
                 String variable =  ExpandVariables.process( "${request.http.header.x-test_header_bad}", policyEnforcementContext.getVariableMap( new String[]{"request.http.header.x-test_header_bad"}, logOnlyAuditor) ,logOnlyAuditor);
                 assertEquals( "Http header variable value", "value", variable );
             }
@@ -612,7 +613,7 @@ public class PolicyProcessingTest {
         processMessage("/httproutepassheaders", requestMessage1, "10.0.0.1", 0, null, null, extraHeader, new Functions.UnaryVoid<PolicyEnforcementContext>(){
             @Override
             public void call( final PolicyEnforcementContext policyEnforcementContext ) {
-                Auditor logOnlyAuditor = new LogOnlyAuditor(logger);
+                Audit logOnlyAuditor = new LoggingAudit(logger);
                 String variable =  ExpandVariables.process( "${request.http.header.x-test_header}", policyEnforcementContext.getVariableMap( new String[]{"request.http.header.x-test_header"}, logOnlyAuditor) ,logOnlyAuditor);
                 assertEquals( "Http header variable value", "value", variable );
             }
@@ -746,7 +747,7 @@ public class PolicyProcessingTest {
         final Message request = new Message();
         request.initialize(ContentTypeHeader.XML_DEFAULT, message.getBytes());
         request.getSecurityKnob().setProcessorResult(
-            WSSecurityProcessorUtils.getWssResults(request, "multiple signatures test request", new SimpleSecurityTokenResolver(), new LogOnlyAuditor(logger))
+            WSSecurityProcessorUtils.getWssResults(request, "multiple signatures test request", new SimpleSecurityTokenResolver(), new LoggingAudit(logger))
         );
 
         assertEquals("2", getRequestAttribute(request, "request.wss.certificates.count", null));
@@ -783,7 +784,7 @@ public class PolicyProcessingTest {
         if (extraVars != null) {
             vars.put(extraVars.getKey(), extraVars.getValue());
         }
-        Object result = ExpandVariables.processSingleVariableAsDisplayableObject("${" + attributeName + "}", vars, new LogOnlyAuditor(logger));
+        Object result = ExpandVariables.processSingleVariableAsDisplayableObject("${" + attributeName + "}", vars, new LoggingAudit(logger));
         System.out.println("\n-----------------------------------\n" + attributeName + ": " + result);
         return result;
     }

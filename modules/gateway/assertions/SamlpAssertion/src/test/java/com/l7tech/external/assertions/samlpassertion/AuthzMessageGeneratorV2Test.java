@@ -2,8 +2,8 @@ package com.l7tech.external.assertions.samlpassertion;
 
 import com.l7tech.external.assertions.samlpassertion.server.*;
 import com.l7tech.external.assertions.samlpassertion.server.v2.AuthzDecisionQueryGenerator;
+import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.security.saml.SamlConstants;
-import com.l7tech.server.audit.Auditor;
 import saml.v2.protocol.AuthzDecisionQueryType;
 
 import static org.junit.Assert.*;
@@ -43,35 +43,40 @@ public class AuthzMessageGeneratorV2Test extends SamlpMessageGeneratorTestCase<A
         }
     }
 
+    @Override
     protected int getSamlVersion() {
         return 2;
     }
 
+    @Override
     protected AbstractSamlp2MessageGenerator<AuthzDecisionQueryType> createMessageGenerator(SamlpRequestBuilderAssertion assertion) {
 
         try {
-            Auditor auditor = new Auditor(this, appCtx, null);
             java.util.Map<String, Object> varMap = new HashMap<String, Object>();
 
-            AuthzDecisionQueryGenerator gen = new AuthzDecisionQueryGenerator(varMap, auditor);
+            AuthzDecisionQueryGenerator gen = new AuthzDecisionQueryGenerator(varMap, new TestAudit());
 
             gen.setNameResolver( new NameIdentifierResolver(assertion) {
+                @Override
                 protected void parse() {
                     this.nameValue = "somebody@email-exchange.com";
                     this.nameFormat = SamlConstants.NAMEIDENTIFIER_EMAIL;
                 }
             });
             gen.setIssuerNameResolver( new NameIdentifierResolver(assertion) {
+                @Override
                 protected void parse() {
                     this.nameValue = "Bob-the-issuer";
                 }
             });
             gen.setAuthnMethodResolver( new MessageValueResolver<String>(assertion) {
+                @Override
                 protected void parse() {
                     this.value = SamlConstants.AUTHENTICATION_SAML2_TLS_CERT;
                 }
             });
             gen.setAddressResolver( new InetAddressResolver(assertion) {
+                @Override
                 protected void parse() {
                     try{
                         this.address = InetAddress.getByName("192.168.1.144");
@@ -89,6 +94,7 @@ public class AuthzMessageGeneratorV2Test extends SamlpMessageGeneratorTestCase<A
         return null;
     }
 
+    @Override
     protected void checkCommonRequestElements(AuthzDecisionQueryType request) {
         // ID
         assertNotNull(request.getID());

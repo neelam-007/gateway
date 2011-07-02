@@ -1,7 +1,6 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.message.Message;
 import com.l7tech.message.MessageRole;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -12,19 +11,16 @@ import com.l7tech.security.xml.KeyReference;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.WsSecurityVersion;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertionUtils;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.beans.factory.BeanFactory;
-import org.springframework.context.ApplicationEventPublisher;
 
 import java.io.IOException;
 import java.security.KeyStoreException;
 import java.security.UnrecoverableKeyException;
-import java.util.logging.Logger;
 
 import static com.l7tech.security.xml.decorator.DecorationRequirements.WsaHeaderSigningStrategy.ALWAYS_SIGN_WSA_HEADERS;
 import static com.l7tech.security.xml.decorator.DecorationRequirements.WsaHeaderSigningStrategy.NEVER_SIGN_WSA_HEADERS;
@@ -33,15 +29,12 @@ import static com.l7tech.security.xml.decorator.DecorationRequirements.WsaHeader
  * Server side implementation for {@link com.l7tech.policy.assertion.xmlsec.WssConfigurationAssertion}.
  */
 public class ServerWssConfigurationAssertion extends AbstractMessageTargetableServerAssertion<WssConfigurationAssertion> {
-    private static final Logger logger = Logger.getLogger(ServerWssConfigurationAssertion.class.getName());
-    private final Auditor auditor;
     private final KeyInfoInclusionType sigKeyReference;
     private final KeyInfoInclusionType encKeyReference;
     private final SignerInfo signerInfo;
 
-    public ServerWssConfigurationAssertion(final WssConfigurationAssertion assertion, BeanFactory beanFactory, ApplicationEventPublisher eventPub) throws PolicyAssertionException {
+    public ServerWssConfigurationAssertion(final WssConfigurationAssertion assertion, BeanFactory beanFactory) throws PolicyAssertionException {
         super(assertion, assertion);
-        this.auditor = new Auditor(this, beanFactory, eventPub, logger);
 
         SignerInfo signer = null;
         if (beanFactory != null) {
@@ -107,16 +100,11 @@ public class ServerWssConfigurationAssertion extends AbstractMessageTargetableSe
                 dreq.setSenderMessageSigningPrivateKey(signerInfo.getPrivate());
             } catch (UnrecoverableKeyException e) {
                 //noinspection ThrowableResultOfMethodCallIgnored
-                auditor.logAndAudit(AssertionMessages.ASSERTION_MISCONFIGURED, new String[] { "Unable to access configured private key: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
+                logAndAudit(AssertionMessages.ASSERTION_MISCONFIGURED, new String[] { "Unable to access configured private key: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
             }
         }
 
         return AssertionStatus.NONE;
-    }
-
-    @Override
-    protected Audit getAuditor() {
-        return auditor;
     }
 
     private static KeyInfoInclusionType asKeyInfoInclusionType(WssConfigurationAssertion assertion, String keyReferenceName) throws PolicyAssertionException {

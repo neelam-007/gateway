@@ -12,14 +12,12 @@ import com.l7tech.external.assertions.stripparts.StripPartsAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.StashManagerFactory;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.logging.Logger;
 
 /**
  * Server side implementation of the StripPartsAssertion.
@@ -27,19 +25,14 @@ import java.util.logging.Logger;
  * @see com.l7tech.external.assertions.stripparts.StripPartsAssertion
  */
 public class ServerStripPartsAssertion extends AbstractServerAssertion<StripPartsAssertion> {
-    private static final Logger logger = Logger.getLogger(ServerStripPartsAssertion.class.getName());
-
     private final StashManagerFactory stashManagerFactory;
-    private final Auditor auditor;
 
     public ServerStripPartsAssertion(StripPartsAssertion assertion, ApplicationContext context) throws PolicyAssertionException {
         super(assertion);
-
-        //noinspection ThisEscapedInObjectConstruction
-        this.auditor = new Auditor(this, context, logger);
         this.stashManagerFactory = context.getBean("stashManagerFactory", StashManagerFactory.class);
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         StashManager sm = null;
         try {
@@ -56,14 +49,14 @@ public class ServerStripPartsAssertion extends AbstractServerAssertion<StripPart
 
             return AssertionStatus.NONE;
         } catch (IOException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                                new String[] { "Unable to strip parts: " + ExceptionUtils.getMessage(e) },
-                                e);
+            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                    new String[]{ "Unable to strip parts: " + ExceptionUtils.getMessage( e ) },
+                    e );
             return AssertionStatus.FAILED;
         } catch (NoSuchPartException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                                new String[] { "Unable to strip parts: " + ExceptionUtils.getMessage(e) },
-                                e);
+            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                    new String[]{ "Unable to strip parts: " + ExceptionUtils.getMessage( e ) },
+                    e );
             return AssertionStatus.SERVER_ERROR;
         } finally {
             if (sm != null) sm.close();

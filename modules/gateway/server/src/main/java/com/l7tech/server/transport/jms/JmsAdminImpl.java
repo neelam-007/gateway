@@ -1,12 +1,8 @@
-/*
- * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
- */
-
 package com.l7tech.server.transport.jms;
 
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.transport.jms.*;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.policy.variable.GatewaySecurePasswordReferenceExpander;
 import com.l7tech.util.ExceptionUtils;
 
@@ -169,7 +165,7 @@ public class JmsAdminImpl implements JmsAdmin {
 
         try {
             logger.finer("Connecting to connection " + conn);
-            bag = JmsUtil.connect(conn, endpoint.getPasswordAuthentication(new GatewaySecurePasswordReferenceExpander(new LogOnlyAuditor(logger))),
+            bag = JmsUtil.connect(conn, endpoint.getPasswordAuthentication(new GatewaySecurePasswordReferenceExpander(new LoggingAudit(logger))),
                     jmsPropertyMapper, true, endpoint.isQueue(), endpoint.getAcknowledgementType()==JmsAcknowledgementType.ON_COMPLETION, Session.AUTO_ACKNOWLEDGE);
 
             final Context jndiContext = bag.getJndiContext();

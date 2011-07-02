@@ -1,11 +1,11 @@
 package com.l7tech.server.service.resolution;
 
+import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.ResolutionConfiguration;
 import com.l7tech.message.FtpRequestKnob;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.Message;
-import com.l7tech.server.audit.Auditor;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -22,7 +22,7 @@ public class RequirePathResolver extends ServiceResolver<Void> {
 
     //- PUBLIC
 
-    public RequirePathResolver( final Auditor.AuditorFactory auditorFactory ) {
+    public RequirePathResolver( final AuditFactory auditorFactory ) {
         super( auditorFactory );
     }
 

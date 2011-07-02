@@ -18,7 +18,6 @@ import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.AssertionModule;
 import com.l7tech.server.policy.ServerAssertionRegistry;
@@ -146,13 +145,12 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
 
     @SuppressWarnings({"UnusedDeclaration"})
     public static class ServerImpl extends AbstractServerAssertion<WhichModuleAssertion> {
-        private final Auditor auditor;
+
         private final WspReader wspReader;
         private final ServerAssertionRegistry assertionRegistry;
 
         public ServerImpl(WhichModuleAssertion assertion, ApplicationContext context) {
             super(assertion);
-            this.auditor = new Auditor(this, context, logger);
             this.wspReader = context.getBean("wspReader", WspReader.class);
             this.assertionRegistry = context.getBean("assertionRegistry", ServerAssertionRegistry.class);
         }
@@ -184,7 +182,7 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
                 return AssertionStatus.NONE;
 
             } catch (IOException e) {
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[] { ExceptionUtils.getMessage(e) }, e);
+                logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[] { ExceptionUtils.getMessage(e) }, e);
                 return AssertionStatus.SERVER_ERROR;
             }
         }

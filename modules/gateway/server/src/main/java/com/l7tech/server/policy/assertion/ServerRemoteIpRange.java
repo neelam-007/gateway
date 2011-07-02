@@ -3,18 +3,15 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.message.TcpKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RemoteIpRange;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.logging.Logger;
 import java.util.logging.Level;
 
 /**
@@ -29,9 +26,8 @@ public class ServerRemoteIpRange extends AbstractServerAssertion<RemoteIpRange> 
 
     // - PUBLIC
 
-    public ServerRemoteIpRange(RemoteIpRange rule, ApplicationContext context) {
+    public ServerRemoteIpRange(RemoteIpRange rule) {
         super(rule);
-        this.auditor = new Auditor(this, context, logger);
     }
 
     @Override
@@ -39,7 +35,7 @@ public class ServerRemoteIpRange extends AbstractServerAssertion<RemoteIpRange> 
         try {
             RemoteIpRange.validateRange(assertion.getStartIp(), assertion.getNetworkMask());
         } catch (IllegalArgumentException e) {
-            auditor.logAndAudit(AssertionMessages.IP_INVALID_RANGE, e.getMessage());
+            logAndAudit(AssertionMessages.IP_INVALID_RANGE, e.getMessage());
             return AssertionStatus.FAILED;
         }
         
@@ -48,7 +44,7 @@ public class ServerRemoteIpRange extends AbstractServerAssertion<RemoteIpRange> 
         if (assertion.getIpSourceContextVariable() == null) {
             TcpKnob tcp = context.getRequest().getKnob(TcpKnob.class);
             if (tcp == null) {
-                auditor.logAndAudit(AssertionMessages.IP_NOT_TCP);
+                logAndAudit(AssertionMessages.IP_NOT_TCP);
                 return AssertionStatus.BAD_REQUEST;
             }
             remoteAddress = tcp.getRemoteAddress();
@@ -59,7 +55,7 @@ public class ServerRemoteIpRange extends AbstractServerAssertion<RemoteIpRange> 
                 remoteAddress = InetAddressUtil.getHostAndPort(tmp.toString(), null).left;
             } catch (NoSuchVariableException e) {
                 logger.log(Level.WARNING, "Remote ip from context variable unavailable. Possible policy error", ExceptionUtils.getDebugException(e));
-                auditor.logAndAudit(AssertionMessages.IP_ADDRESS_UNAVAILABLE, assertion.getIpSourceContextVariable());
+                logAndAudit(AssertionMessages.IP_ADDRESS_UNAVAILABLE, assertion.getIpSourceContextVariable());
                 return AssertionStatus.SERVER_ERROR;
             }
         }
@@ -70,13 +66,13 @@ public class ServerRemoteIpRange extends AbstractServerAssertion<RemoteIpRange> 
         InetAddress addr = InetAddressUtil.getAddress(remoteAddress);
 
         if (addr == null) {
-            auditor.logAndAudit(AssertionMessages.IP_ADDRESS_INVALID, remoteAddress);
+            logAndAudit(AssertionMessages.IP_ADDRESS_INVALID, remoteAddress);
             return AssertionStatus.FALSIFIED;
         } else if (assertAddress(addr)) {
-            auditor.logAndAudit(AssertionMessages.IP_ACCEPTED, remoteAddress);
+            logAndAudit(AssertionMessages.IP_ACCEPTED, remoteAddress);
             return AssertionStatus.NONE;
         } else {
-            auditor.logAndAudit(AssertionMessages.IP_REJECTED, remoteAddress);
+            logAndAudit(AssertionMessages.IP_REJECTED, remoteAddress);
             return AssertionStatus.FALSIFIED;
         }
     }
@@ -86,9 +82,4 @@ public class ServerRemoteIpRange extends AbstractServerAssertion<RemoteIpRange> 
     boolean assertAddress(InetAddress addressToCheck) {
         return InetAddressUtil.patternMatchesAddress(assertion.getStartIp() + "/" + assertion.getNetworkMask(), addressToCheck) ^ ! assertion.isAllowRange();
     }
-
-    // - PRIVATE
-
-    private final Auditor auditor;
-    private final Logger logger = Logger.getLogger(getClass().getName());
 }

@@ -8,12 +8,9 @@ import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.mime.PartIterator;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
-import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.message.Message;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.external.assertions.sophos.SophosAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -31,7 +28,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Server side implementation of the SophosAssertion.
@@ -39,10 +35,6 @@ import java.util.logging.Logger;
  * @see com.l7tech.external.assertions.sophos.SophosAssertion
  */
 public class ServerSophosAssertion extends AbstractMessageTargetableServerAssertion<SophosAssertion> {
-    private static final Logger logger = Logger.getLogger(ServerSophosAssertion.class.getName());
-
-    private final SophosAssertion assertion;
-    private final Auditor auditor;
     private final ClusterPropertyCache clusterPropertyCache;
     private final String[] variablesUsed;
     /**
@@ -54,17 +46,11 @@ public class ServerSophosAssertion extends AbstractMessageTargetableServerAssert
      public ServerSophosAssertion(SophosAssertion assertion, ApplicationContext context) throws PolicyAssertionException {
         super(assertion, assertion);
 
-        this.assertion = assertion;
-        this.auditor = context != null ? new Auditor(this, context, logger) : new LogOnlyAuditor(logger);
         this.variablesUsed = assertion.getVariablesUsed();
 
         clusterPropertyCache = context.getBean("clusterPropertyCache", ClusterPropertyCache.class);
 
         failoverStrategy = AbstractFailoverStrategy.makeSynchronized(FailoverStrategyFactory.createFailoverStrategy(assertion.getFailoverStrategyName(), assertion.getAddresses()));
-    }
-
-    protected Auditor getAuditor() {
-        return auditor;
     }
 
     private AuditDetailMessage getVirusFoundMessage() {
@@ -120,7 +106,8 @@ public class ServerSophosAssertion extends AbstractMessageTargetableServerAssert
         return new Pair<Integer, Integer>(connectTimeout, readTimeout);
     }
 
-    public AssertionStatus doCheckRequest(PolicyEnforcementContext context,
+    @Override
+    public AssertionStatus doCheckRequest(final PolicyEnforcementContext context,
                                           final Message message,
                                           final String messageDescription,
                                           final AuthenticationContext authContext)
@@ -147,8 +134,8 @@ public class ServerSophosAssertion extends AbstractMessageTargetableServerAssert
                         // do nothing
                     }
                     Pair<Integer, Integer> connectAndReadTimeouts = getClusterProperties();
-                    int connectTimeout = connectAndReadTimeouts.left.intValue();
-                    int readTimeout = connectAndReadTimeouts.right.intValue();
+                    int connectTimeout = connectAndReadTimeouts.left;
+                    int readTimeout = connectAndReadTimeouts.right;
 
                     try {
                         client = new SsspClient(host, port);
@@ -158,12 +145,12 @@ public class ServerSophosAssertion extends AbstractMessageTargetableServerAssert
                     } catch(IOException ioe) {
                         client = null;
                         failoverStrategy.reportFailure(hostPort);
-                        auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Sophos AV connect failed attempt " + i + ": " + ExceptionUtils.getMessage(ioe) }, ExceptionUtils.getDebugException(ioe));
+                        logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{ "Sophos AV connect failed attempt " + i + ": " + ExceptionUtils.getMessage( ioe ) }, ExceptionUtils.getDebugException( ioe ) );
                     }
                 }
 
                 if(client == null) {
-                    auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Failed to connect to a Sophos AV host for virus scanning."});
+                    logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Failed to connect to a Sophos AV host for virus scanning." );
                     return AssertionStatus.FAILED;
                     //throw new IOException("Failed to connect to a Sophos AV host for virus scanning.");
                 }
@@ -193,7 +180,7 @@ public class ServerSophosAssertion extends AbstractMessageTargetableServerAssert
                         virusFoundLocationList.add(result.getVirusLocation());
                         virusFoundDisinfectList.add(result.getDisinfectable());
 
-                        auditor.logAndAudit(getVirusFoundMessage(), new String[] {result.getVirusName(), result.getVirusType(), result.getVirusLocation(), result.getDisinfectable()});
+                        logAndAudit( getVirusFoundMessage(), result.getVirusName(), result.getVirusType(), result.getVirusLocation(), result.getDisinfectable() );
 
                     }
 
@@ -227,8 +214,8 @@ public class ServerSophosAssertion extends AbstractMessageTargetableServerAssert
 
     private String getContextVariable(PolicyEnforcementContext context, String conVar) {
         if(conVar != null && conVar.length() > 0) {
-          Map<String, Object> vars = context.getVariableMap(Syntax.getReferencedNames(conVar), auditor);
-          conVar = ExpandVariables.process(conVar, vars, auditor);
+          Map<String, Object> vars = context.getVariableMap(Syntax.getReferencedNames(conVar), getAudit());
+          conVar = ExpandVariables.process(conVar, vars, getAudit());
         }
         return conVar;
 

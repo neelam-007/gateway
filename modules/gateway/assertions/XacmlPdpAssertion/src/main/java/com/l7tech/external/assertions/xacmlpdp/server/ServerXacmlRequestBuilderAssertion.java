@@ -13,7 +13,6 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
@@ -25,7 +24,6 @@ import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.xpath.*;
 import com.sun.xacml.attr.DateTimeAttribute;
 import org.jaxen.UnresolvableException;
-import org.springframework.context.ApplicationContext;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
@@ -41,25 +39,21 @@ import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAsserti
 import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldType.*;
 
 /**
- * Copyright (C) 2009, Layer 7 Technologies Inc.
- *
  * @author njordan
  * @author darmstrong
  * @author steve
  * @author jbufu
  */
 public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<XacmlRequestBuilderAssertion> {
-    public ServerXacmlRequestBuilderAssertion(XacmlRequestBuilderAssertion ea, ApplicationContext applicationContext) {
+    public ServerXacmlRequestBuilderAssertion(XacmlRequestBuilderAssertion ea) {
         super(ea);
 
         variablesUsed = ea.getVariablesUsed();
-
-        auditor = new Auditor(this, applicationContext, logger);
     }
 
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        final Map<String, Object> vars = context.getVariableMap(variablesUsed, auditor);
+        final Map<String, Object> vars = context.getVariableMap(variablesUsed, getAudit());
 
         final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         final DocumentBuilder builder;
@@ -67,7 +61,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         try {
             builder = factory.newDocumentBuilder();
         } catch(ParserConfigurationException pce) {
-            auditor.logAndAudit(AssertionMessages.XACML_REQUEST_ERROR, ExceptionUtils.getMessage(pce));
+            logAndAudit(AssertionMessages.XACML_REQUEST_ERROR, ExceptionUtils.getMessage(pce));
             return AssertionStatus.FAILED;
         }
 
@@ -117,13 +111,13 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
 
             addEnvironment(context, vars, xacmlRequestDocument, root);
         } catch (DocumentHolderException dhe) {
-            auditor.logAndAudit( AssertionMessages.XACML_REQUEST_ERROR, new String[]{ExceptionUtils.getMessage(dhe)}, dhe);
+            logAndAudit( AssertionMessages.XACML_REQUEST_ERROR, new String[]{ExceptionUtils.getMessage(dhe)}, dhe);
             return AssertionStatus.FAILED;
         } catch (DOMException de) {
-            auditor.logAndAudit( AssertionMessages.XACML_REQUEST_ERROR, ExceptionUtils.getMessage(de));
+            logAndAudit( AssertionMessages.XACML_REQUEST_ERROR, ExceptionUtils.getMessage(de));
             return AssertionStatus.FAILED;
         } catch (RequiredFieldNotFoundException ranfe) {
-            auditor.logAndAudit(AssertionMessages.XACML_NOT_FOUND_OPTION_ON, ranfe.getMessage());
+            logAndAudit(AssertionMessages.XACML_NOT_FOUND_OPTION_ON, ranfe.getMessage());
             return AssertionStatus.FAILED;
         } catch(VariableNameSyntaxException e){
             //if any referenced variable is not found this exception will be thrown as we require strict processing
@@ -150,7 +144,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             }
             message.initialize(xacmlRequestDocument);
         } catch (NoSuchVariableException e) {
-            auditor.logAndAudit( AssertionMessages.XACML_REQUEST_ERROR, "Error creating output message " + assertion.getOutputMessageVariableName());
+            logAndAudit( AssertionMessages.XACML_REQUEST_ERROR, "Error creating output message " + assertion.getOutputMessageVariableName());
             return AssertionStatus.FAILED;
         }
 
@@ -192,13 +186,13 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             resourceElement.appendChild(resourceContentElement);
 
             for (Map.Entry<String, String> entry : resource.getResourceContent().getAttributes().entrySet()) {
-                String name = ExpandVariables.process(entry.getKey(), vars, auditor, true);
-                String value = ExpandVariables.process(entry.getValue(), vars, auditor, true);
+                String name = ExpandVariables.process(entry.getKey(), vars, getAudit(), true);
+                String value = ExpandVariables.process(entry.getValue(), vars, getAudit(), true);
                 safelyAddXmlAttributeToElement(resourceContentElement, name, value);
             }
 
             final AttributeValue attValue = new AttributeValue(
-                    ExpandVariables.processNoFormat(resource.getResourceContent().getContent(), vars, auditor, true));
+                    ExpandVariables.processNoFormat(resource.getResourceContent().getContent(), vars, getAudit(), true));
 
             attValue.addMeToAnElement(resourceContentElement);
         }
@@ -212,7 +206,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
 
         if(subject.getSubjectCategory().length() > 0) {
             subjectElement.setAttribute("SubjectCategory",
-                    ExpandVariables.process(subject.getSubjectCategory(), vars, auditor, true));
+                    ExpandVariables.process(subject.getSubjectCategory(), vars, getAudit(), true));
         }
 
         addAttributes(doc, subjectElement, subject.getAttributes(), vars, context, assertion.getXacmlVersion());
@@ -252,7 +246,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         }
 
         if(smallestCtxVarSize != largestCtxVarSize){
-            auditor.logAndAudit(AssertionMessages.XACML_NOT_ALL_CTX_VARS_USED, Integer.toString(smallestCtxVarSize),
+            logAndAudit(AssertionMessages.XACML_NOT_ALL_CTX_VARS_USED, Integer.toString(smallestCtxVarSize),
                     Integer.toString(largestCtxVarSize));
         }
 
@@ -300,18 +294,18 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                               XacmlAssertionEnums.XacmlVersionType xacmlVersion)
     {
         Element attributeElement = xacmlRequestDocument.createElementNS(assertion.getXacmlVersion().getNamespace(), "Attribute");
-        attributeElement.setAttribute("AttributeId", ExpandVariables.process(attribute.getId(), contextVariables, auditor, true));
-        attributeElement.setAttribute("DataType", ExpandVariables.process(attribute.getDataType(), contextVariables, auditor, true));
+        attributeElement.setAttribute("AttributeId", ExpandVariables.process(attribute.getId(), contextVariables, getAudit(), true));
+        attributeElement.setAttribute("DataType", ExpandVariables.process(attribute.getDataType(), contextVariables, getAudit(), true));
         parent.appendChild(attributeElement);
 
         if(attribute.getIssuer().length() > 0) {
-            attributeElement.setAttribute("Issuer", ExpandVariables.process(attribute.getIssuer(), contextVariables, auditor, true));
+            attributeElement.setAttribute("Issuer", ExpandVariables.process(attribute.getIssuer(), contextVariables, getAudit(), true));
         }
 
         if(assertion.getXacmlVersion() != XacmlAssertionEnums.XacmlVersionType.V2_0) {
             if(attribute.getIssueInstant().length() > 0) {
                 attributeElement.setAttribute("IssueInstant",
-                        ExpandVariables.process(attribute.getIssueInstant(), contextVariables, auditor, true));
+                        ExpandVariables.process(attribute.getIssueInstant(), contextVariables, getAudit(), true));
             }
         }
 
@@ -377,13 +371,13 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                     attributeElement.appendChild(valueElement);
 
                     for(final Map.Entry<String, String> entry : updatedAttributes.entrySet()) {
-                        final String name = ExpandVariables.process(entry.getKey(), contextVariables, auditor, true);
-                        final String attrValue = ExpandVariables.process(entry.getValue(), contextVariables, auditor, true);
+                        final String name = ExpandVariables.process(entry.getKey(), contextVariables, getAudit(), true);
+                        final String attrValue = ExpandVariables.process(entry.getValue(), contextVariables, getAudit(), true);
                         safelyAddXmlAttributeToElement(valueElement, name, attrValue);
                     }
 
                     final AttributeValue attValue = new AttributeValue(
-                            ExpandVariables.processNoFormat(content, contextVariables, auditor, true));
+                            ExpandVariables.processNoFormat(content, contextVariables, getAudit(), true));
 
                     attValue.addMeToAnElement(valueElement);
                 }
@@ -396,13 +390,13 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                 attributeElement.appendChild(valueElement);
 
                 for(final Map.Entry<String, String> entry : attributeValue.getAttributes().entrySet()) {
-                    final String name = ExpandVariables.process(entry.getKey(), contextVariables, auditor, true);
-                    final String value = ExpandVariables.process(entry.getValue(), contextVariables, auditor, true);
+                    final String name = ExpandVariables.process(entry.getKey(), contextVariables, getAudit(), true);
+                    final String value = ExpandVariables.process(entry.getValue(), contextVariables, getAudit(), true);
                     safelyAddXmlAttributeToElement(valueElement, name, value);
                 }
 
                 final AttributeValue attValue = new AttributeValue(
-                        ExpandVariables.processNoFormat(attributeValue.getContent(), contextVariables, auditor, true));
+                        ExpandVariables.processNoFormat(attributeValue.getContent(), contextVariables, getAudit(), true));
 
                 attValue.addMeToAnElement(valueElement);
             }
@@ -426,12 +420,12 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
 
         try {
             if(!ValidationUtils.isProbablyValidXmlName(attributeName)){
-                auditor.logAndAudit(AssertionMessages.XACML_INVALID_XML_ATTRIBUTE, new String[]{attributeName, attributeValue});
+                logAndAudit(AssertionMessages.XACML_INVALID_XML_ATTRIBUTE, attributeName, attributeValue );
                 throw new AssertionStatusException(AssertionStatus.FAILED);
             }
             element.setAttribute(attributeName, attributeValue);
         } catch (DOMException e) {
-            auditor.logAndAudit(AssertionMessages.XACML_INVALID_XML_ATTRIBUTE, new String[]{attributeName, attributeValue}, e);
+            logAndAudit(AssertionMessages.XACML_INVALID_XML_ATTRIBUTE, new String[]{attributeName, attributeValue}, e);
             throw new AssertionStatusException(AssertionStatus.FAILED, e);
         }
     }
@@ -509,10 +503,10 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             if(xpathResultSetIterator == null){
                 Set<String> incorrectNamespacePrefixes = causedByIncorrectNamespaceURI(documentHolder.getDocument(), namespaces);
                 if (incorrectNamespacePrefixes.isEmpty()) {
-                    auditor.logAndAudit(AssertionMessages.XACML_BASE_EXPRESSION_NO_RESULTS, multipleAttributeConfig.getXpathBase());
+                    logAndAudit(AssertionMessages.XACML_BASE_EXPRESSION_NO_RESULTS, multipleAttributeConfig.getXpathBase());
                 } else {
                     for (String  prefix: incorrectNamespacePrefixes) {
-                        auditor.logAndAudit(AssertionMessages.XACML_INCORRECT_NAMESPACE_URI, prefix);
+                        logAndAudit(AssertionMessages.XACML_INCORRECT_NAMESPACE_URI, prefix);
                     }
                 }
             }
@@ -659,9 +653,9 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         if(ctxMoreValues && xpathMoreValues) throw new IllegalStateException("Method is not required while both values are true");
 
         if(ctxMoreValues){
-            auditor.logAndAudit(AssertionMessages.XACML_NOT_ALL_VALUES_USED, "all referenced multi valued context variables", "an xpath result set was");
+            logAndAudit(AssertionMessages.XACML_NOT_ALL_VALUES_USED, "all referenced multi valued context variables", "an xpath result set was");
         }else if (xpathMoreValues){
-            auditor.logAndAudit(AssertionMessages.XACML_NOT_ALL_VALUES_USED, "the xpath result set", "multi valued context variables were");
+            logAndAudit(AssertionMessages.XACML_NOT_ALL_VALUES_USED, "the xpath result set", "multi valued context variables were");
         }
 
     }
@@ -683,14 +677,14 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         if(results.isEmpty()) return null;
 
         if(results.size() != 1){
-            auditor.logAndAudit(
+            logAndAudit(
                     AssertionMessages.XACML_INCORRECT_NUM_RESULTS_FOR_FIELD,
                     Integer.toString(results.size()), fieldDisplayName);
         }
 
         final XpathResultWrapper wrapper = results.get(0);
         if(wrapper.isNodeSet()){
-            auditor.logAndAudit(AssertionMessages.XACML_INCORRECT_TYPE_FOR_FIELD, "NodeSet", fieldDisplayName, elementName);
+            logAndAudit(AssertionMessages.XACML_INCORRECT_TYPE_FOR_FIELD, "NodeSet", fieldDisplayName, elementName);
             return null;
         }
 
@@ -819,7 +813,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             if (isFalsifyPolicyEnabled) {
                 throw new RequiredFieldNotFoundException(fieldName.getDisplayName());
             } else {
-                auditor.logAndAudit(AssertionMessages.XACML_NOT_FOUND_OPTION_OFF, fieldName.getDisplayName(), elementName);
+                logAndAudit(AssertionMessages.XACML_NOT_FOUND_OPTION_OFF, fieldName.getDisplayName(), elementName);
                 return true;
             }
         }
@@ -832,7 +826,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         try {
             DateTimeAttribute.getInstance(issueInstant);
         } catch (Exception e) {
-            auditor.logAndAudit(AssertionMessages.XACML_INVALID_ISSUE_INSTANT, new String[]{issueInstant}, e);
+            logAndAudit(AssertionMessages.XACML_INVALID_ISSUE_INSTANT, new String[]{issueInstant}, e);
             return false;
         }
         return true;
@@ -927,12 +921,12 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                 }
 
                 String value = multiValuedVariable.get(multiVarIndex).toString();
-                return ExpandVariables.process(value, contextVariables, auditor, true);
+                return ExpandVariables.process(value, contextVariables, getAudit(), true);
             } else { // single-value context variable, expand
-                return ExpandVariables.process(configField.getValue(), contextVariables, auditor, true);
+                return ExpandVariables.process(configField.getValue(), contextVariables, getAudit(), true);
             }
         } else { // REGULAR, expand all variables in the field value
-            return ExpandVariables.process(configField.getValue(), contextVariables, auditor, true);
+            return ExpandVariables.process(configField.getValue(), contextVariables, getAudit(), true);
         }
     }
 
@@ -967,20 +961,20 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             if (ExceptionUtils.causedBy(e, UnresolvableException.class) && errorMessage != null && errorMessage.contains("Cannot resolve namespace prefix")) {
                 // This is a case where the given namespace map includes unresolvable namespace prefix.
                 String prefix = errorMessage.substring(errorMessage.indexOf('\''));
-                auditor.logAndAudit(AssertionMessages.XPATH_UNRESOLVABLE_PREFIX, new String[]{prefix}, e);
+                logAndAudit(AssertionMessages.XPATH_UNRESOLVABLE_PREFIX, new String[]{prefix}, e);
                 throw new AssertionStatusException(AssertionStatus.UNRESOLVABLE_NAMESPACE_PREFIX);
             } else {
-                auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID_MORE_INFO, new String[]{xpath}, e);
+                logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID_MORE_INFO, new String[]{xpath}, e);
                 throw new AssertionStatusException(AssertionStatus.INVALID_XPATH);
             }
         } catch (InvalidXpathException e) {
             String errorMessage = ExceptionUtils.getMessage(e);
             if (ExceptionUtils.causedBy(e, UnresolvableException.class) && errorMessage != null && errorMessage.contains("Cannot resolve namespace prefix")) {
                 // This is a case where prefix is invalid in the xpath pattern.
-                auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID_MORE_INFO, new String[]{xpath}, e);
+                logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID_MORE_INFO, new String[]{xpath}, e);
                 throw new AssertionStatusException(AssertionStatus.UNRESOLVABLE_NAMESPACE_PREFIX);
             } else {
-                auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID_MORE_INFO, new String[]{xpath}, e);
+                logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID_MORE_INFO, new String[]{xpath}, e);
                 throw new AssertionStatusException(AssertionStatus.INVALID_XPATH);
             }
         }
@@ -1135,7 +1129,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                     } else if(part instanceof Element){
                         addElementAsAttributeValue(element, (Element)part);
                     } else{
-                        auditor.logAndAudit(AssertionMessages.XACML_UNSUPPORTED_MIXED_CONTENT, part.getClass().getName());
+                        logAndAudit(AssertionMessages.XACML_UNSUPPORTED_MIXED_CONTENT, part.getClass().getName());
                         throw new AssertionStatusException(AssertionStatus.FAILED,
                                 "Unsupported type of mixed content found for AttributeValue");
                     }
@@ -1184,12 +1178,12 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             } catch (IOException e) {
                 final String msg = "Cannot canonicalize Element or convert Element to a string: " +
                         ExceptionUtils.getMessage(e);
-                auditor.logAndAudit(AssertionMessages.XACML_CANNOT_IMPORT_XML_ELEMENT_INTO_REQUEST, new String[]{msg}, ExceptionUtils.getDebugException(e));
+                logAndAudit(AssertionMessages.XACML_CANNOT_IMPORT_XML_ELEMENT_INTO_REQUEST, new String[]{msg}, ExceptionUtils.getDebugException(e));
                 throw new AssertionStatusException(AssertionStatus.FAILED, msg);
             } catch (Exception e) {
                 final String msg = "Cannot convert canonicalized string back into XML: " +
                         ExceptionUtils.getMessage(e);
-                auditor.logAndAudit(AssertionMessages.XACML_CANNOT_IMPORT_XML_ELEMENT_INTO_REQUEST, new String[]{msg}, ExceptionUtils.getDebugException(e));
+                logAndAudit(AssertionMessages.XACML_CANNOT_IMPORT_XML_ELEMENT_INTO_REQUEST, new String[]{msg}, ExceptionUtils.getDebugException(e));
                 throw new AssertionStatusException(AssertionStatus.FAILED, msg);
             }
         }
@@ -1219,14 +1213,14 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                     final Document doc = xmlKnob.getDocumentReadOnly();
                     addElementAsAttributeValue(element, doc.getDocumentElement());
                 } else {
-                    auditor.logAndAudit(AssertionMessages.MESSAGE_VARIABLE_NOT_XML, new String[]{messageName});
+                    logAndAudit(AssertionMessages.MESSAGE_VARIABLE_NOT_XML, messageName );
                     throw new AssertionStatusException(AssertionStatus.FAILED, "Message does not contain xml");
                 }
             } catch (IOException e) {
-                auditor.logAndAudit(AssertionMessages.MESSAGE_VARIABLE_BAD_XML, new String[]{messageName}, e);
+                logAndAudit(AssertionMessages.MESSAGE_VARIABLE_BAD_XML, new String[]{messageName}, e);
                 throw new AssertionStatusException(AssertionStatus.FAILED, e);
             } catch (SAXException e) {
-                auditor.logAndAudit(AssertionMessages.MESSAGE_VARIABLE_BAD_XML, new String[]{messageName}, e);
+                logAndAudit(AssertionMessages.MESSAGE_VARIABLE_BAD_XML, new String[]{messageName}, e);
                 throw new AssertionStatusException(AssertionStatus.FAILED, e);
             }
         }
@@ -1264,7 +1258,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                         valueToAdd = new AttributeValue((Element)varValue);
                     }else{
                         valueToAdd = new AttributeValue(
-                                ExpandVariables.process(varValue.toString(), contextVariables, auditor, true));    
+                                ExpandVariables.process(varValue.toString(), contextVariables, getAudit(), true));
                     }
                     returnList.add(valueToAdd);
                 }
@@ -1273,12 +1267,12 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                 if(varNames.length != 0) {
                     Object contextVarValue = contextVariables.get(varNames[0]);
                     if(contextVarValue == null){
-                        auditor.logAndAudit(CommonMessages.TEMPLATE_UNSUPPORTED_VARIABLE, varNames[0]);
+                        logAndAudit(CommonMessages.TEMPLATE_UNSUPPORTED_VARIABLE, varNames[0]);
                         throw new VariableNameSyntaxException(varNames[0]);
                     }else{
                         returnList.add(contextVarValue instanceof Message ?
                             new AttributeValue((Message)contextVarValue) :
-                            new AttributeValue(ExpandVariables.process(contextVarValue.toString(), contextVariables, auditor, true)));
+                            new AttributeValue(ExpandVariables.process(contextVarValue.toString(), contextVariables, getAudit(), true)));
                     }
                 }
             }
@@ -1310,7 +1304,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             }
 
         } else { // REGULAR, expand all context variables, including multi-valued, into one AttributeValue element
-            returnList.add(new AttributeValue(ExpandVariables.processNoFormat(valueField.getValue(), contextVariables, auditor, true)));
+            returnList.add(new AttributeValue(ExpandVariables.processNoFormat(valueField.getValue(), contextVariables, getAudit(), true)));
         }
 
         return returnList;
@@ -1387,7 +1381,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
 
     private String[] variablesUsed;
     private static final Logger logger = Logger.getLogger(ServerXacmlPdpAssertion.class.getName());
-    private final Auditor auditor;
+
 
     /**
      * Document holder for the input message source.

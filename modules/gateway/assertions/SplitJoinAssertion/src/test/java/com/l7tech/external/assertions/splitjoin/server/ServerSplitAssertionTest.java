@@ -36,7 +36,7 @@ public class ServerSplitAssertionTest {
         b1 = "blah 1 blah blah";
         b2 = "bleeh 1 blee blee";
         b3 = "blih 1 blih blih";
-        joined = TextUtils.join(",", new CharSequence[]{b1, b2, b3}).toString();
+        joined = TextUtils.join(",", b1, b2, b3 ).toString();
         inputVariable = "myinputvar";
         outputVariable = "myoutputvar";
         context.setVariable(inputVariable, joined);
@@ -51,7 +51,7 @@ public class ServerSplitAssertionTest {
 
     @Test
     public void testSplit() throws Exception {
-        ServerSplitAssertion ssa = new ServerSplitAssertion(assertion, null);
+        ServerSplitAssertion ssa = new ServerSplitAssertion(assertion);
         AssertionStatus result = ssa.checkRequest(context);
 
         Assert.assertEquals(result, AssertionStatus.NONE);
@@ -60,7 +60,7 @@ public class ServerSplitAssertionTest {
         List outs = (List) outputObj;
         for (Object outObj : outs)
             Assert.assertTrue(outObj instanceof String);
-        Assert.assertEquals(outs.size(), 3);
+        Assert.assertEquals( (long) outs.size(), 3L );
         Assert.assertEquals(outs.get(0), b1);
         Assert.assertEquals(outs.get(1), b2);
         Assert.assertEquals(outs.get(2), b3);
@@ -71,7 +71,7 @@ public class ServerSplitAssertionTest {
     public void testSplit_NoRegex() throws Exception {
         assertion.setSplitPattern(".");
         assertion.setSplitPatternRegEx(false);
-        ServerSplitAssertion ssa = new ServerSplitAssertion(assertion, null);
+        ServerSplitAssertion ssa = new ServerSplitAssertion(assertion);
         context.setVariable(inputVariable, "one.two.three");
         AssertionStatus result = ssa.checkRequest(context);
 
@@ -81,7 +81,7 @@ public class ServerSplitAssertionTest {
         List outs = (List) outputObj;
         for (Object outObj : outs)
             Assert.assertTrue(outObj instanceof String);
-        Assert.assertEquals(outs.size(), 3);
+        Assert.assertEquals( (long) outs.size(), 3L );
     }
 
     @BugNumber(9286)
@@ -89,7 +89,7 @@ public class ServerSplitAssertionTest {
     public void testSplit_NoRegex_Identity() throws Exception {
         assertion.setSplitPattern(".");
         assertion.setSplitPatternRegEx(false);
-        ServerSplitAssertion ssa = new ServerSplitAssertion(assertion, null);
+        ServerSplitAssertion ssa = new ServerSplitAssertion(assertion);
         context.setVariable(inputVariable, "onetwothree");
         AssertionStatus result = ssa.checkRequest(context);
 
@@ -99,7 +99,7 @@ public class ServerSplitAssertionTest {
         List outs = (List) outputObj;
         for (Object outObj : outs)
             Assert.assertTrue(outObj instanceof String);
-        Assert.assertEquals(outs.size(), 1);
+        Assert.assertEquals( (long) outs.size(), 1L );
         Assert.assertEquals(outs.get(0), "onetwothree");
     }
 
@@ -112,7 +112,7 @@ public class ServerSplitAssertionTest {
         context.setVariable(inputVariable, big);
         assertion.setSplitPattern("\\s+");
 
-        ServerSplitAssertion ssa = new ServerSplitAssertion(assertion, null);
+        ServerSplitAssertion ssa = new ServerSplitAssertion(assertion);
         AssertionStatus result = ssa.checkRequest(context);
 
         Assert.assertEquals(result, AssertionStatus.NONE);
@@ -121,7 +121,7 @@ public class ServerSplitAssertionTest {
         List outs = (List) outputObj;
         for (Object outObj : outs)
             Assert.assertTrue(outObj instanceof String);
-        Assert.assertEquals(outs.size(), 3);
+        Assert.assertEquals( (long) outs.size(), 3L );
         Assert.assertEquals(outs.get(0), w1);
         Assert.assertEquals(outs.get(1), w2);
         Assert.assertEquals(outs.get(2), w3);
@@ -141,7 +141,7 @@ public class ServerSplitAssertionTest {
         assertion.setInputVariable("input");
         assertion.setOutputVariable("output");
 
-        ServerSplitAssertion serverSplitAssertion = new ServerSplitAssertion(assertion, null);
+        ServerSplitAssertion serverSplitAssertion = new ServerSplitAssertion(assertion);
         final AssertionStatus status = serverSplitAssertion.checkRequest(context);
 
         Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
@@ -171,7 +171,7 @@ public class ServerSplitAssertionTest {
         assertion.setOutputVariable("output");
         assertion.setSplitPattern(" ");
 
-        ServerSplitAssertion serverSplitAssertion = new ServerSplitAssertion(assertion, null);
+        ServerSplitAssertion serverSplitAssertion = new ServerSplitAssertion(assertion);
         final AssertionStatus status = serverSplitAssertion.checkRequest(context);
 
         Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
@@ -204,14 +204,14 @@ public class ServerSplitAssertionTest {
         assertion.setOutputVariable("output");
         assertion.setSplitPattern("");
 
-        ServerSplitAssertion serverSplitAssertion = new ServerSplitAssertion(assertion, null);
+        ServerSplitAssertion serverSplitAssertion = new ServerSplitAssertion(assertion);
         final AssertionStatus status = serverSplitAssertion.checkRequest(context);
 
         Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
 
         final Object variable = context.getVariable("output");
         List<String> coll = (List<String>) variable;
-        Assert.assertEquals("Wrong number of elements found", 14, coll.size());
+        Assert.assertEquals("Wrong number of elements found", 14L, (long) coll.size() );
         Assert.assertEquals("First character should be the empty string", "", coll.get(0));
 
         for(int i = 1; i < value.length(); i++){

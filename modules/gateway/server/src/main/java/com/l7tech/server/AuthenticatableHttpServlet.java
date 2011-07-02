@@ -57,7 +57,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.HashSet;
-import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -458,7 +457,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
             return null;
         }
 
-        ServerHttpBasic httpBasic = new ServerHttpBasic(new HttpBasic(), applicationContext);
+        ServerHttpBasic httpBasic = new ServerHttpBasic(new HttpBasic());
         LoginCredentials creds;
         try {
             creds = httpBasic.findCredentials(authorizationHeader);

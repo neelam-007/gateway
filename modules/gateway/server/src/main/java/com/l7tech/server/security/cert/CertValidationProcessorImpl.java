@@ -1,6 +1,7 @@
 package com.l7tech.server.security.cert;
 
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.objectmodel.FindException;
@@ -13,7 +14,6 @@ import static com.l7tech.security.types.CertificateValidationType.CERTIFICATE_ON
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.identity.cert.RevocationCheckPolicyManager;
 import com.l7tech.util.CollectionUtils;
@@ -116,7 +116,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
                                              final CertificateValidationType minValType,
                                              final CertificateValidationType requestedValType,
                                              final Facility facility,
-                                             final Auditor auditor)
+                                             final Audit auditor)
             throws CertificateException, SignatureException
     {
         if (endEntityCertificatePath == null || auditor == null) throw new NullPointerException("a required parameter is missing");
@@ -216,7 +216,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
      */
     private CertificateValidationResult checkCertificateOnly(final X509Certificate endEntityCertificate,
                                                              final String subjectDnForLoggingOnly,
-                                                             final Auditor auditor)
+                                                             final Audit auditor)
             throws SignatureException, CertificateException
     {
         // note that if the cert is invalid we won't actually get here
@@ -407,7 +407,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
         }
     }
 
-    private PKIXBuilderParameters makePKIXBuilderParameters(X509Certificate[] endEntityCertificatePath, boolean checkRevocation, Auditor auditor) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException {
+    private PKIXBuilderParameters makePKIXBuilderParameters(X509Certificate[] endEntityCertificatePath, boolean checkRevocation, Audit auditor) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException {
         X509CertSelector sel;
         lock.readLock().lock();
         try {

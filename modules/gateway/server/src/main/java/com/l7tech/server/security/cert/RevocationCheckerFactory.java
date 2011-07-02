@@ -2,6 +2,7 @@ package com.l7tech.server.security.cert;
 
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.WhirlycacheFactory;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.gateway.common.security.RevocationCheckPolicyItem;
@@ -11,7 +12,6 @@ import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.types.CertificateValidationResult;
 import com.l7tech.security.types.CertificateValidationType;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.whirlycott.cache.Cache;
@@ -341,7 +341,7 @@ public class RevocationCheckerFactory {
         }
 
         @Override
-        public CertificateValidationResult getRevocationStatus(final X509Certificate certificate, X509Certificate issuer, Auditor auditor, CertificateValidationResult onNetworkFailure) {
+        public CertificateValidationResult getRevocationStatus(final X509Certificate certificate, X509Certificate issuer, Audit auditor, CertificateValidationResult onNetworkFailure) {
             CertificateValidationResult result = CertificateValidationResult.REVOKED;
 
             if ( certificate != null ) {
@@ -424,7 +424,7 @@ public class RevocationCheckerFactory {
          * @return The URLs from the certificate.
          * @throws IOException if an error occurs
          */
-        protected abstract String[] getUrlsFromCert(X509Certificate certificate, Auditor auditor) throws IOException;
+        protected abstract String[] getUrlsFromCert(X509Certificate certificate, Audit auditor) throws IOException;
 
         /**
          * Get a descriptive name for this type of revocation checker (e.g. "CRL" or "OCSP") 
@@ -442,7 +442,7 @@ public class RevocationCheckerFactory {
          */
         protected X509Certificate getAuthorizedSigner(final X509Certificate issuer,
                                                       final X509Certificate[] signerCerts,
-                                                      final Auditor auditor,
+                                                      final Audit auditor,
                                                       final Functions.Unary<Boolean,X509Certificate> checker) {
             X509Certificate signer = null;
 
@@ -502,7 +502,7 @@ public class RevocationCheckerFactory {
          * @param auditor The auditor to use
          * @return The url or null on error (in which case a message is audited)
          */
-        protected String getValidUrl(X509Certificate certificate, Auditor auditor) {
+        protected String getValidUrl(X509Certificate certificate, Audit auditor) {
             String staticUrl = getUrl();
             if (staticUrl != null) {
                 auditor.logAndAudit(SystemMessages.CERTVAL_REV_USING_STATIC_URL, what(), staticUrl);
@@ -568,7 +568,7 @@ public class RevocationCheckerFactory {
         }
 
         @Override
-        public CertificateValidationResult getRevocationStatus(X509Certificate certificate, X509Certificate issuerCertificate, Auditor auditor, CertificateValidationResult onNetworkFailure) {
+        public CertificateValidationResult getRevocationStatus(X509Certificate certificate, X509Certificate issuerCertificate, Audit auditor, CertificateValidationResult onNetworkFailure) {
             final String crlUrl = getValidUrl(certificate, auditor);
             if (crlUrl == null) {
                 // {@link getCrlUrl()} already audited the reason
@@ -669,7 +669,7 @@ public class RevocationCheckerFactory {
         }
 
         @Override
-        protected String[] getUrlsFromCert(X509Certificate certificate, Auditor auditor) throws IOException {
+        protected String[] getUrlsFromCert(X509Certificate certificate, Audit auditor) throws IOException {
             return crlCache.getCrlUrlsFromCertificate(certificate, auditor);
         }
     }
@@ -703,7 +703,7 @@ public class RevocationCheckerFactory {
         }
 
         @Override
-        protected String[] getUrlsFromCert(X509Certificate certificate, Auditor auditor) throws IOException {
+        protected String[] getUrlsFromCert(X509Certificate certificate, Audit auditor) throws IOException {
             try {
                 return CertUtils.getAuthorityInformationAccessUris(certificate, OID_AIA_OCSP);
             } catch (CertificateException ce) {
@@ -719,7 +719,7 @@ public class RevocationCheckerFactory {
         @Override
         public CertificateValidationResult getRevocationStatus(final X509Certificate certificate,
                                                                final X509Certificate issuerCertificate,
-                                                               final Auditor auditor,
+                                                               final Audit auditor,
                                                                final CertificateValidationResult onNetworkFailure) {
             CertificateValidationResult result = CertificateValidationResult.REVOKED;
             final String url = getValidUrl(certificate, auditor);
@@ -823,7 +823,7 @@ public class RevocationCheckerFactory {
             super(null, null, null, null);
         }
         @Override
-        public CertificateValidationResult getRevocationStatus( final X509Certificate certificate, final X509Certificate issuer, final Auditor auditor, final CertificateValidationResult onNetworkFailure ) {
+        public CertificateValidationResult getRevocationStatus( final X509Certificate certificate, final X509Certificate issuer, final Audit auditor, final CertificateValidationResult onNetworkFailure ) {
             return CertificateValidationResult.REVOKED;
         }
     }

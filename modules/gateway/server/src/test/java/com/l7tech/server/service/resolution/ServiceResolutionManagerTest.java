@@ -4,13 +4,14 @@ import com.l7tech.common.http.GenericHttpHeader;
 import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.audit.AuditFactory;
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.ResolutionConfiguration;
 import com.l7tech.message.HttpRequestKnobStub;
 import com.l7tech.message.JmsKnobStub;
 import com.l7tech.message.Message;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.service.PersistentServiceDocumentWsdlStrategy;
 import com.l7tech.server.service.ServiceDocumentManagerStub;
 import static org.junit.Assert.*;
@@ -269,12 +270,7 @@ public class ServiceResolutionManagerTest {
 
     @Test
     public void testBuildTargetValuesNoOperations() throws Exception {
-        Auditor.AuditorFactory auditFactory = new Auditor.AuditorFactory(){
-            @Override
-            public Auditor newInstance( final Object source, final Logger logger ) {
-                return new LogOnlyAuditor( logger );
-            }
-        };
+        AuditFactory auditFactory = LoggingAudit.factory();
 
         final ServiceResolver r1 = new SoapActionResolver(auditFactory);
         final ServiceResolver r2 = new UrnResolver(auditFactory);
@@ -311,12 +307,7 @@ public class ServiceResolutionManagerTest {
     public static void init() {
         PersistentServiceDocumentWsdlStrategy.setServiceDocumentManager( new ServiceDocumentManagerStub() );
 
-        Auditor.AuditorFactory auditFactory = new Auditor.AuditorFactory(){
-            @Override
-            public Auditor newInstance( final Object source, final Logger logger ) {
-                return new LogOnlyAuditor( logger );
-            }
-        };
+        AuditFactory auditFactory = LoggingAudit.factory();
 
         resolutionManager = new ServiceResolutionManager(
             new ResolutionConfigurationManagerStub(),
@@ -353,7 +344,7 @@ public class ServiceResolutionManagerTest {
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger( ServiceResolutionManagerTest.class.getName() );
-    private static final Auditor auditor = new LogOnlyAuditor(logger);
+    private static final Audit auditor = new LoggingAudit(logger);
 
     private static Collection<PublishedService> services;
     private static ServiceResolutionManager resolutionManager;

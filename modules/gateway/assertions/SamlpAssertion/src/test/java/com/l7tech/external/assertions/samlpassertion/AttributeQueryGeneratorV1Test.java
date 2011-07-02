@@ -3,8 +3,8 @@ package com.l7tech.external.assertions.samlpassertion;
 import com.l7tech.external.assertions.samlpassertion.server.AbstractSamlp1MessageGenerator;
 import com.l7tech.external.assertions.samlpassertion.server.NameIdentifierResolver;
 import com.l7tech.external.assertions.samlpassertion.server.v1.AttributeQueryGenerator;
+import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.security.saml.SamlConstants;
-import com.l7tech.server.audit.Auditor;
 import saml.v1.assertion.AttributeDesignatorType;
 import saml.v1.protocol.AttributeQueryType;
 import saml.v1.protocol.RequestType;
@@ -138,15 +138,16 @@ public class AttributeQueryGeneratorV1Test extends SamlpMessageGeneratorTestCase
     }
 
 
+    @Override
     protected AbstractSamlp1MessageGenerator<AttributeQueryType> createMessageGenerator(SamlpRequestBuilderAssertion assertion) {
 
         try {
-            Auditor auditor = new Auditor(this, appCtx, null);
             java.util.Map<String, Object> varMap = new HashMap<String, Object>();
 
-            AttributeQueryGenerator gen = new AttributeQueryGenerator(varMap, auditor);
+            AttributeQueryGenerator gen = new AttributeQueryGenerator(varMap, new TestAudit());
             gen.setNameResolver( new NameIdentifierResolver(assertion) {
 
+                @Override
                 protected void parse() {
                     this.nameValue = "somebody@email-exchange.com";
                     this.nameFormat = SamlConstants.NAMEIDENTIFIER_EMAIL;
@@ -154,6 +155,7 @@ public class AttributeQueryGeneratorV1Test extends SamlpMessageGeneratorTestCase
             });
             gen.setIssuerNameResolver( new NameIdentifierResolver(assertion) {
 
+                @Override
                 protected void parse() {
                     this.nameValue = "Bob-the-issuer";
                 }
@@ -167,6 +169,7 @@ public class AttributeQueryGeneratorV1Test extends SamlpMessageGeneratorTestCase
         return null;
     }
 
+    @Override
     protected int getSamlVersion() {
         return 1;
     }
@@ -192,6 +195,7 @@ public class AttributeQueryGeneratorV1Test extends SamlpMessageGeneratorTestCase
         return result;
     }
 
+    @Override
     protected void checkCommonRequestElements(RequestType request) {
         // more to come
         // ID

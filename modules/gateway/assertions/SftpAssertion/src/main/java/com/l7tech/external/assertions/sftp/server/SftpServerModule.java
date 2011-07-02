@@ -1,13 +1,14 @@
 package com.l7tech.external.assertions.sftp.server;
 
 import com.l7tech.gateway.common.LicenseManager;
+import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.*;
 import com.l7tech.server.audit.AuditContextUtils;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.transport.ListenerException;
@@ -87,7 +88,7 @@ public class SftpServerModule extends TransportModule implements ApplicationList
 
     private final Map<Long, Pair<SsgConnector, SshServer>> activeConnectors = new ConcurrentHashMap<Long, Pair<SsgConnector, SshServer>>();
 
-    private Auditor auditor;
+    private final Audit auditor;
 
     public SftpServerModule(ApplicationEventProxy applicationEventProxy,
                             LicenseManager licenseManager,
@@ -99,7 +100,8 @@ public class SftpServerModule extends TransportModule implements ApplicationList
                             MessageProcessor messageProcessor,
                             StashManagerFactory stashManagerFactory,
                             SoapFaultManager soapFaultManager,
-                            EventChannel messageProcessingEventChannel)
+                            EventChannel messageProcessingEventChannel,
+                            AuditFactory auditFactory)
     {
         super("SFTP server module", logger, GatewayFeatureSets.SERVICE_SSH_MESSAGE_INPUT, licenseManager, ssgConnectorManager, trustedCertServices, defaultKey, serverConfig);
         this.applicationEventProxy = applicationEventProxy;
@@ -108,11 +110,12 @@ public class SftpServerModule extends TransportModule implements ApplicationList
         this.messageProcessingEventChannel = messageProcessingEventChannel;
         this.soapFaultManager = soapFaultManager;
         this.stashManagerFactory = stashManagerFactory;
+        this.auditor = auditFactory.newInstance( this, logger );
     }
 
     private static <T> T getBean(BeanFactory beanFactory, String beanName, Class<T> beanClass) {
         T got = beanFactory.getBean(beanName, beanClass);
-        if (got != null && beanClass.isAssignableFrom(got.getClass()))
+        if (got != null)
             return got;
         throw new IllegalStateException("Unable to get bean from application context: " + beanName);
     }
@@ -129,9 +132,11 @@ public class SftpServerModule extends TransportModule implements ApplicationList
         ApplicationEventProxy applicationEventProxy = getBean(appContext, "applicationEventProxy", ApplicationEventProxy.class);
         SoapFaultManager soapFaultManager = getBean(appContext, "soapFaultManager", SoapFaultManager.class);
         EventChannel messageProcessingEventChannel = getBean(appContext, "messageProcessingEventChannel", EventChannel.class);
+        AuditFactory auditFactory = getBean(appContext, "auditFactory", AuditFactory.class);
 
         return new SftpServerModule(applicationEventProxy, licenseManager, ssgConnectorManager, trustedCertServices,
-                defaultKey, serverConfig, gatewayState, messageProcessor, stashManagerFactory, soapFaultManager, messageProcessingEventChannel);
+                defaultKey, serverConfig, gatewayState, messageProcessor, stashManagerFactory, soapFaultManager,
+                messageProcessingEventChannel, auditFactory);
     }
 
     @Override
@@ -216,6 +221,7 @@ public class SftpServerModule extends TransportModule implements ApplicationList
         applicationEventProxy.removeApplicationListener(this);
     }
 
+    @Override
     protected boolean isCurrent( long oid, int version ) {
         boolean current;
 
@@ -316,14 +322,7 @@ public class SftpServerModule extends TransportModule implements ApplicationList
         getAuditor().logAndAudit(SystemMessages.SSH_SERVER_ERROR, new String[]{message}, exception);
     }
 
-    private Auditor getAuditor() {
-        Auditor auditor = this.auditor;
-
-        if (auditor == null) {
-            auditor = new Auditor(this, getApplicationContext(), logger);
-            this.auditor = auditor;
-        }
-
+    private Audit getAuditor() {
         return auditor;
     }
 
@@ -379,6 +378,7 @@ public class SftpServerModule extends TransportModule implements ApplicationList
 
         // customized for Gateway
         sshd.setPasswordAuthenticator(new PasswordAuthenticator() {
+            @Override
             public boolean authenticate(String username, String password, ServerSession session) {
                 // allow all access, defer authentication to Gateway policy assertion
                 return true;
@@ -386,6 +386,7 @@ public class SftpServerModule extends TransportModule implements ApplicationList
         });
 
         sshd.setPublickeyAuthenticator(new PublickeyAuthenticator() {
+            @Override
             public boolean authenticate(String username, PublicKey key, ServerSession session) {
                 //File f = new File("/Users/" + username + "/.ssh/authorized_keys");
                 return true;
@@ -393,18 +394,22 @@ public class SftpServerModule extends TransportModule implements ApplicationList
         });
 
         sshd.setForwardingFilter(new ForwardingFilter() {
+            @Override
             public boolean canForwardAgent(ServerSession session) {
                 return true;
             }
 
+            @Override
             public boolean canForwardX11(ServerSession session) {
                 return true;
             }
 
+            @Override
             public boolean canListen(InetSocketAddress address, ServerSession session) {
                 return true;
             }
 
+            @Override
             public boolean canConnect(InetSocketAddress address, ServerSession session) {
                 return true;
             }

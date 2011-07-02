@@ -1,6 +1,7 @@
 package com.l7tech.server;
 
 import com.l7tech.common.io.DocumentReferenceProcessor;
+import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.protocol.SecureSpanConstants;
@@ -24,7 +25,6 @@ import com.l7tech.policy.assertion.xmlsec.WssVersionAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.policy.wssp.WsspWriter;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.policy.filter.FilterManager;
 import com.l7tech.server.policy.filter.FilteringException;
@@ -109,7 +109,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         clientPolicyFilterManager = appcontext.getBean("policyFilterManager", FilterManager.class);
         wsspFilterManager = appcontext.getBean("wsspolicyFilterManager", FilterManager.class);
         serviceDocumentManager = appcontext.getBean("serviceDocumentManager", ServiceDocumentManager.class);
-        Auditor.AuditorFactory auditorFactory = appcontext.getBean("auditorFactory", Auditor.AuditorFactory.class);
+        AuditFactory auditorFactory = appcontext.getBean("auditFactory", AuditFactory.class);
         PolicyPathBuilderFactory pathBuilderFactory = appcontext.getBean("policyPathBuilderFactory", PolicyPathBuilderFactory.class);
         policyPathBuilder = pathBuilderFactory.makePathBuilder();
 

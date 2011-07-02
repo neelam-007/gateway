@@ -31,7 +31,7 @@ import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
-import com.l7tech.server.audit.LogOnlyAuditor;
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -62,7 +62,7 @@ import static org.junit.Assert.assertNull;
  */
 public class ServerVariablesTest {
     private static final Logger logger = Logger.getLogger(ServerVariablesTest.class.getName());
-    private static final LogOnlyAuditor auditor = new LogOnlyAuditor(logger);
+    private static final LoggingAudit auditor = new LoggingAudit(logger);
     private static final String REQUEST_BODY = "<myrequest/>";
     private static final String RESPONSE_BODY = "<myresponse/>";
     private static final String JSON_MESSAGE = "{\"result\":\"success\"}";
@@ -777,7 +777,7 @@ public class ServerVariablesTest {
 
     @Test
     public void testExpandPasswordOnlyVariable() throws Exception {
-        final Audit audit = new LogOnlyAuditor(logger);
+        final Audit audit = new LoggingAudit(logger);
         ServerVariables.setSecurePasswordManager(null);
         assertEquals("valid secpass reference shall expand to itself if no SecurePasswordManager is available", "${secpass.test1.plaintext}", ServerVariables.expandPasswordOnlyVariable(audit, "${secpass.test1.plaintext}"));
 
@@ -809,7 +809,7 @@ public class ServerVariablesTest {
     
     @Test
     public void testExpandSinglePasswordOnlyVariable() throws Exception {
-        final Audit audit = new LogOnlyAuditor(logger);
+        final Audit audit = new LoggingAudit(logger);
         ServerVariables.setSecurePasswordManager(null);
         assertEquals("valid secpass reference shall expand to itself if no SecurePasswordManager is available", "${secpass.test1.plaintext}", ServerVariables.expandSinglePasswordOnlyVariable(audit, "${secpass.test1.plaintext}"));
 

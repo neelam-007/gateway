@@ -1,13 +1,10 @@
-/*
- * Copyright (C) 2009 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.processcontroller.monitoring.notification;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.jdk.UrlConnectionHttpClient;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
+import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.server.management.api.monitoring.NotificationAttempt;
 import com.l7tech.server.management.config.monitoring.AuthInfo;
 import com.l7tech.server.management.config.monitoring.Header;
@@ -29,7 +26,7 @@ import java.util.logging.Logger;
 class HttpNotifier extends Notifier<HttpNotificationRule> {
     private static final Logger logger = Logger.getLogger(HttpNotifier.class.getName());
 
-    private final Auditor auditor = new LogOnlyAuditor(logger);
+    private final Audit auditor = new LoggingAudit(logger);
     private final GenericHttpClient httpClient;
     private final HttpMethod httpMethod;
     private final ContentTypeHeader contentType;
@@ -55,6 +52,7 @@ class HttpNotifier extends Notifier<HttpNotificationRule> {
         }
     }
 
+    @Override
     public NotificationAttempt.StatusType doNotification(Long timestamp, InOut inOut, Object value, Trigger trigger) throws IOException {
         String bodyText = rule.getRequestBody() == null ? null : ExpandVariables.process(rule.getRequestBody(), getMonitoringVariables(trigger, inOut, value), auditor);
 

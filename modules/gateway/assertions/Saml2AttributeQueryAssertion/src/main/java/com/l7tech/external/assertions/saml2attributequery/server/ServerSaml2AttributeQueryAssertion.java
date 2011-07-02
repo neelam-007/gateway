@@ -13,7 +13,6 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.saml.SamlConstants;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.ldap.LdapIdentityProvider;
@@ -40,13 +39,11 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.soap.SOAPConstants;
 import java.io.IOException;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Server side implementation of the Saml2AttributeQueryAssertion.
@@ -54,12 +51,8 @@ import java.util.logging.Logger;
  * @see com.l7tech.external.assertions.saml2attributequery.Saml2AttributeQueryAssertion
  */
 public class ServerSaml2AttributeQueryAssertion extends AbstractServerAssertion<Saml2AttributeQueryAssertion> {
-    private static final Logger logger = Logger.getLogger(ServerSaml2AttributeQueryAssertion.class.getName());
-
     private final IdentityProviderFactory identityProviderFactory;
     private final ClusterPropertyCache clusterPropertyCache;
-    private final Auditor auditor;
-
     private Saml2AttributeQueryResponseGenerator responseGenerator;
 
     private static HashMap<String, String> NS_PREFIXES;
@@ -77,6 +70,7 @@ public class ServerSaml2AttributeQueryAssertion extends AbstractServerAssertion<
     public static final String SOAP_ENV_PREFIX = "soapenv";
 
     NamespacePrefixMapper NAMESPACE_PREFIX_MAPPER = new NamespacePrefixMapper() {
+        @Override
         public String getPreferredPrefix(String namespaceUri, String suggestion, boolean requirePrefix) {
             if (NS_PREFIXES.containsKey(namespaceUri))
                 return NS_PREFIXES.get(namespaceUri);
@@ -92,11 +86,8 @@ public class ServerSaml2AttributeQueryAssertion extends AbstractServerAssertion<
         throws PolicyAssertionException
     {
         super(assertion);
-        identityProviderFactory = (IdentityProviderFactory) context.getBean("identityProviderFactory", IdentityProviderFactory.class);
-        clusterPropertyCache = (ClusterPropertyCache) context.getBean("clusterPropertyCache", ClusterPropertyCache.class);
-        X509Certificate rootCert = (X509Certificate)context.getBean("sslKeystoreCertificate");
-        X509Certificate[] serverCertChain = new X509Certificate[]{rootCert};
-        auditor = new Auditor(this, context, logger);
+        identityProviderFactory = context.getBean("identityProviderFactory", IdentityProviderFactory.class);
+        clusterPropertyCache = context.getBean("clusterPropertyCache", ClusterPropertyCache.class);
 
         try {
             responseGenerator = new Saml2AttributeQueryResponseGenerator();
@@ -105,6 +96,7 @@ public class ServerSaml2AttributeQueryAssertion extends AbstractServerAssertion<
         }
     }
 
+    @Override
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         AssertionStatus status = AssertionStatus.FALSIFIED;
 
@@ -121,8 +113,8 @@ public class ServerSaml2AttributeQueryAssertion extends AbstractServerAssertion<
 
             String audience = null;
             if(assertion.getAudienceRestriction() != null && assertion.getAudienceRestriction().length() > 0) {
-                Map<String, Object> vars = context.getVariableMap(Syntax.getReferencedNames(assertion.getAudienceRestriction()), auditor);
-                audience = ExpandVariables.process(assertion.getAudienceRestriction(), vars, auditor, true);
+                Map<String, Object> vars = context.getVariableMap(Syntax.getReferencedNames(assertion.getAudienceRestriction()), getAudit());
+                audience = ExpandVariables.process(assertion.getAudienceRestriction(), vars, getAudit(), true);
             }
 
             ClusterProperty property = clusterPropertyCache.getCachedEntityByName(assertion.getMapClusterProperty(), 30000);
@@ -150,13 +142,13 @@ public class ServerSaml2AttributeQueryAssertion extends AbstractServerAssertion<
             }
             root = (Element)children.item(0);
 
-            Saml2AttributeQuery attributeQuery = null;
+            Saml2AttributeQuery attributeQuery;
             try {
                 attributeQuery = new Saml2AttributeQuery(root, map);
             } catch(SamlAttributeNotMappedException sanme) {
                 context.getResponse().initialize(createErrorResponse(Saml2AttributeQuery.getQueryId(root), Saml2AttributeQuery.getQueriedAttributes(root)));
                 context.setRoutingStatus(RoutingStatus.ROUTED);
-                auditor.logAndAudit(AssertionMessages.SAML2_AQ_REQUEST_SAML_ATTR_UNKNOWN );
+                logAndAudit( AssertionMessages.SAML2_AQ_REQUEST_SAML_ATTR_UNKNOWN );
 
                 return status;
             }
@@ -164,7 +156,7 @@ public class ServerSaml2AttributeQueryAssertion extends AbstractServerAssertion<
             if(!verifyAttributePermissions(attributeQuery)) {
                 context.getResponse().initialize(createErrorResponse(Saml2AttributeQuery.getQueryId(root), Saml2AttributeQuery.getQueriedAttributes(root)));
                 context.setRoutingStatus(RoutingStatus.ROUTED);
-                auditor.logAndAudit(AssertionMessages.SAML2_AQ_REQUEST_SAML_ATTR_FORBIDDEN );
+                logAndAudit( AssertionMessages.SAML2_AQ_REQUEST_SAML_ATTR_FORBIDDEN );
             } else {
                 HashMap<String, Object> values = retrieveAttributeValues(attributeQuery, idValue);
                 attributeQuery.filterValues(values);
@@ -186,15 +178,15 @@ public class ServerSaml2AttributeQueryAssertion extends AbstractServerAssertion<
             }
         } catch(SAXException e) {
             status = AssertionStatus.SERVER_ERROR;
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO);
+            logAndAudit( AssertionMessages.EXCEPTION_INFO );
         } catch(FindException e) {
-            auditor.logAndAudit(AssertionMessages.IDENTITY_PROVIDER_NOT_FOUND);
+            logAndAudit( AssertionMessages.IDENTITY_PROVIDER_NOT_FOUND );
             status = AssertionStatus.SERVER_ERROR;
         } catch(NamingException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, e.toString());
+            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, e.toString() );
             status = AssertionStatus.SERVER_ERROR;
         } catch(Exception e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, e.toString());
+            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, e.toString() );
             status = AssertionStatus.SERVER_ERROR;
         }
 
@@ -221,7 +213,7 @@ public class ServerSaml2AttributeQueryAssertion extends AbstractServerAssertion<
         HashMap<String, Object> values;
 
         LdapIdentityProvider ldapProvider = (LdapIdentityProvider)identityProviderFactory.getProvider(assertion.getLdapProviderOid());
-        LdapIdentityProviderConfig providerConfig = (LdapIdentityProviderConfig)ldapProvider.getConfig();
+        LdapIdentityProviderConfig providerConfig = ldapProvider.getConfig();
 
         UserMappingConfig[] mappings = providerConfig.getUserMappings();
         String queryString;

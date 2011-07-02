@@ -1,7 +1,6 @@
 package com.l7tech.external.assertions.saml2attributequery.server;
 
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.security.cert.TrustedCertManager;
@@ -19,7 +18,6 @@ import org.w3c.dom.Node;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.spec.SecretKeySpec;
-import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.security.cert.X509Certificate;
 import java.security.Key;
@@ -29,11 +27,9 @@ import java.security.Key;
  * User: njordan
  * Date: 23-Jan-2009
  * Time: 6:53:56 PM
- * To change this template use File | Settings | File Templates.
  */
 public abstract class ServerEncryptElementAssertionBase extends AbstractServerAssertion<Assertion> {
     private TrustedCertManager trustedCertManager;
-    private final Auditor auditor;
 
     private static final String XML_ENCRYPTION_PREFIX = "xenc";
     private static final String XML_ENCRYPTION_NS = "http://www.w3.org/2001/04/xmlenc#";
@@ -64,18 +60,13 @@ public abstract class ServerEncryptElementAssertionBase extends AbstractServerAs
     {
         super(assertion);
         trustedCertManager = (TrustedCertManager)context.getBean("trustedCertManager");
-        auditor = new Auditor(this, context, logger);
     }
 
     protected TrustedCertManager getTrustedCertManager() {
         return trustedCertManager;
     }
 
-    protected Auditor getAuditor() {
-        return auditor;
-    }
-
-    protected static void encryptElement(Document doc,
+    protected void encryptElement(Document doc,
                                          X509Certificate cert,
                                          String elementToEncrypt,
                                          String namespaceUri,
@@ -221,6 +212,4 @@ public abstract class ServerEncryptElementAssertionBase extends AbstractServerAs
         public Element keyCipherValue;
         public Element cipherValue;
     }
-
-    private static final Logger logger = Logger.getLogger(ServerEncryptElementAssertionBase.class.getName());
 }

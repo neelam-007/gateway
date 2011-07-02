@@ -33,7 +33,7 @@ public class ServerXpathCredentialSourceTest {
         XpathCredentialSource ass = new XpathCredentialSource();
         ass.setXpathExpression(new XpathExpression("/foo/bar"));
         ass.setPasswordExpression(new XpathExpression("/foo/blat"));
-        ServerXpathCredentialSource sass = new ServerXpathCredentialSource(ass, null);
+        ServerXpathCredentialSource sass = new ServerXpathCredentialSource(ass);
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(DOC), new Message());
         AssertionStatus result = sass.checkRequest(context);
         assertEquals("server assertion shall succeed", AssertionStatus.NONE, result);
@@ -54,7 +54,7 @@ public class ServerXpathCredentialSourceTest {
         XpathCredentialSource ass = new XpathCredentialSource();
         ass.setXpathExpression(new XpathExpression("\"blah\""));
         ass.setPasswordExpression(new XpathExpression("/foo/blat"));
-        ServerXpathCredentialSource sass = new ServerXpathCredentialSource(ass, null);
+        ServerXpathCredentialSource sass = new ServerXpathCredentialSource(ass);
 
         Message req = new Message(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new EmptyInputStream());
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, new Message());
@@ -68,7 +68,7 @@ public class ServerXpathCredentialSourceTest {
         XpathCredentialSource ass = new XpathCredentialSource();
         ass.setXpathExpression(new XpathExpression("\"blah\""));
         ass.setPasswordExpression(new XpathExpression("\"bloo\""));
-        ServerXpathCredentialSource sass = new ServerXpathCredentialSource(ass, null);
+        ServerXpathCredentialSource sass = new ServerXpathCredentialSource(ass);
 
         Message req = new Message(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new EmptyInputStream());
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, new Message());
@@ -91,7 +91,7 @@ public class ServerXpathCredentialSourceTest {
         XpathCredentialSource ass = new XpathCredentialSource();
         ass.setXpathExpression(new XpathExpression("\"blah\""));
         ass.setPasswordExpression(new XpathExpression("\"bloo\""));
-        ServerXpathCredentialSource sass = new ServerXpathCredentialSource(ass, null);
+        ServerXpathCredentialSource sass = new ServerXpathCredentialSource(ass);
 
         Message req = new Message(new ByteArrayStashManager(), ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(JSON.getBytes(Charsets.UTF8)));
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, new Message());

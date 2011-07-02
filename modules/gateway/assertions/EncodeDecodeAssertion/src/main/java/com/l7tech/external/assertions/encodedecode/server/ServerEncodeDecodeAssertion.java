@@ -4,6 +4,7 @@ import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
@@ -11,8 +12,6 @@ import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.Syntax;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.external.assertions.encodedecode.EncodeDecodeAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -26,7 +25,6 @@ import com.l7tech.util.HexUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ValidationUtils;
-import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.net.URLDecoder;
@@ -36,7 +34,6 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * Server side implementation of the EncodeDecodeAssertion.
@@ -47,10 +44,8 @@ public class ServerEncodeDecodeAssertion extends AbstractServerAssertion<EncodeD
 
     //- PUBLIC
 
-    public ServerEncodeDecodeAssertion( final EncodeDecodeAssertion assertion,
-                                        final ApplicationContext context ) throws PolicyAssertionException {
+    public ServerEncodeDecodeAssertion( final EncodeDecodeAssertion assertion ) throws PolicyAssertionException {
         super(assertion);
-        this.auditor = context != null ? new Auditor(this, context, logger) : new LogOnlyAuditor(logger);
         Charset encoding;
         try {
             encoding = assertion.getCharacterEncoding()==null ? null : Charset.forName( assertion.getCharacterEncoding() );
@@ -60,13 +55,13 @@ public class ServerEncodeDecodeAssertion extends AbstractServerAssertion<EncodeD
         }
         ContentTypeHeader contentTypeHeader;
         contentTypeHeader = assertion.getTargetContentType()==null ? ContentTypeHeader.XML_DEFAULT : ContentTypeHeader.create(assertion.getTargetContentType());
-        this.encodeDecodeContext = new EncodeDecodeContext( auditor, assertion, encoding, contentTypeHeader );
+        this.encodeDecodeContext = new EncodeDecodeContext( getAudit(), assertion, encoding, contentTypeHeader );
     }
 
     @Override
     public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
-        final Map<String,Object> variables = context.getVariableMap( new String[]{ assertion.getSourceVariableName() }, auditor );
-        final Object source = ExpandVariables.processSingleVariableAsObject( Syntax.SYNTAX_PREFIX + assertion.getSourceVariableName() + Syntax.SYNTAX_SUFFIX, variables, auditor );
+        final Map<String,Object> variables = context.getVariableMap( new String[]{ assertion.getSourceVariableName() }, getAudit() );
+        final Object source = ExpandVariables.processSingleVariableAsObject( Syntax.SYNTAX_PREFIX + assertion.getSourceVariableName() + Syntax.SYNTAX_SUFFIX, variables, getAudit() );
         final Object result = encodeDecode( source );
 
         if ( result instanceof MessagePair ) {
@@ -75,7 +70,7 @@ public class ServerEncodeDecodeAssertion extends AbstractServerAssertion<EncodeD
             try {
                 output = context.getOrCreateTargetMessage( new MessageTargetableSupport( assertion.getTargetVariableName() ), false );
             } catch ( NoSuchVariableException e ) {
-                auditor.logAndAudit( AssertionMessages.ENCODE_DECODE_ERROR, "Unable to create target message." );
+                logAndAudit( AssertionMessages.ENCODE_DECODE_ERROR, "Unable to create target message." );
                 throw new AssertionStatusException( AssertionStatus.FAILED );
             }
             output.initialize( messageData.left, messageData.right );
@@ -88,9 +83,6 @@ public class ServerEncodeDecodeAssertion extends AbstractServerAssertion<EncodeD
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger(ServerEncodeDecodeAssertion.class.getName());
-
-    private final Auditor auditor;
     private final EncodeDecodeContext encodeDecodeContext;
 
     private Object encodeDecode( final Object source ) {
@@ -122,7 +114,7 @@ public class ServerEncodeDecodeAssertion extends AbstractServerAssertion<EncodeD
                 transformer = new UrlDecodingTransformer( encodeDecodeContext );
                 break;
             default:
-                auditor.logAndAudit( AssertionMessages.ENCODE_DECODE_ERROR, "Unknown transform requested '" + transformType + "'" );
+                logAndAudit( AssertionMessages.ENCODE_DECODE_ERROR, "Unknown transform requested '" + transformType + "'" );
                 throw new AssertionStatusException( AssertionStatus.FAILED );
         }
 
@@ -130,12 +122,12 @@ public class ServerEncodeDecodeAssertion extends AbstractServerAssertion<EncodeD
     }
 
     private static class EncodeDecodeContext {
-        private final Auditor auditor;
+        private final Audit auditor;
         private final EncodeDecodeAssertion assertion;
         private final Charset encoding;
         private final ContentTypeHeader targetContentType;
 
-        EncodeDecodeContext( final Auditor auditor,
+        EncodeDecodeContext( final Audit auditor,
                              final EncodeDecodeAssertion assertion,
                              final Charset encoding,
                              final ContentTypeHeader targetContentType ) {

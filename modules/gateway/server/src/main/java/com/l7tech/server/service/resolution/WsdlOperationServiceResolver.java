@@ -1,6 +1,6 @@
 package com.l7tech.server.service.resolution;
 
-import com.l7tech.server.audit.Auditor;
+import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.Message;
@@ -14,7 +14,7 @@ import java.util.*;
  * @author alex
  */
 public abstract class WsdlOperationServiceResolver<T> extends NameValueServiceResolver<T> {
-    protected WsdlOperationServiceResolver( final Auditor.AuditorFactory auditorFactory ) {
+    protected WsdlOperationServiceResolver( final AuditFactory auditorFactory ) {
         super( auditorFactory );
     }
 

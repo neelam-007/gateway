@@ -2,6 +2,7 @@ package com.l7tech.server.identity.fed;
 
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.identity.InvalidIdProviderCfgException;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.identity.fed.FederatedUser;
@@ -11,7 +12,6 @@ import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.token.SamlSecurityToken;
 import com.l7tech.security.types.CertificateValidationResult;
 import com.l7tech.security.types.CertificateValidationType;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.cert.TestTrustedCertManager;
 import com.l7tech.server.identity.cert.TrustedCertServices;
@@ -111,7 +111,7 @@ public class FederatedIdentityProviderTest {
                                                       final CertificateValidationType minimumValidationType,
                                                       final CertificateValidationType requestedValidationType,
                                                       final Facility facility,
-                                                      final Auditor auditor ) throws CertificateException, SignatureException {
+                                                      final Audit auditor ) throws CertificateException, SignatureException {
                 return certificatePath.length>0 && CertUtils.certsAreEqual( certificatePath[0], CertUtils.decodeCert( HexUtils.decodeBase64(SAML_ISSUER_B64))) ?
                         CertificateValidationResult.OK :
                         CertificateValidationResult.CANT_BUILD_PATH;

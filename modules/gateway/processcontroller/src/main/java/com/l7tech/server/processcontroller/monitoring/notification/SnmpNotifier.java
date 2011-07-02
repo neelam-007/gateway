@@ -1,10 +1,7 @@
-/*
- * Copyright (C) 2009 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.processcontroller.monitoring.notification;
 
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
+import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.server.management.api.monitoring.NotificationAttempt;
 import com.l7tech.server.management.config.monitoring.SnmpTrapNotificationRule;
 import com.l7tech.server.management.config.monitoring.Trigger;
@@ -37,7 +34,7 @@ class SnmpNotifier extends Notifier<SnmpTrapNotificationRule> {
 
     public static final int[] OID_BASE = new int[] {1,3,6,1,4,1,17304,7,3};
 
-    private final Auditor auditor;
+    private final Audit auditor;
     private final OID trapOid;
     private final OID messageOid;
     private final DefaultUdpTransportMapping transportMapping;
@@ -78,9 +75,10 @@ class SnmpNotifier extends Notifier<SnmpTrapNotificationRule> {
         text = rule.getText();
         if (text == null)
             throw new IllegalArgumentException("text must be non-null");
-        auditor = new LogOnlyAuditor(logger);
+        auditor = new LoggingAudit(logger);
     }
 
+    @Override
     public NotificationAttempt.StatusType doNotification(Long timestamp, InOut inOut, Object value, Trigger trigger) throws IOException {
         PDU pdu = new PDU();
         pdu.setType(PDU.TRAP);

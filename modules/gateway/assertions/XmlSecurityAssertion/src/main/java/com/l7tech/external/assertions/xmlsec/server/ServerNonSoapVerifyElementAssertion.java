@@ -29,7 +29,6 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jaxen.JaxenException;
 import org.jaxen.dom.DOMXPath;
 import org.springframework.beans.factory.BeanFactory;
-import org.springframework.context.ApplicationEventPublisher;
 import org.w3c.dom.*;
 
 import javax.security.auth.x500.X500Principal;
@@ -42,7 +41,6 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.util.*;
-import java.util.logging.Logger;
 
 import static com.l7tech.external.assertions.xmlsec.NonSoapVerifyElementAssertion.*;
 
@@ -50,8 +48,6 @@ import static com.l7tech.external.assertions.xmlsec.NonSoapVerifyElementAssertio
  * Server side implementation of non-SOAP signature verification.
  */
 public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAssertion<NonSoapVerifyElementAssertion> {
-    private static final Logger logger = Logger.getLogger(ServerNonSoapVerifyElementAssertion.class.getName());
-
     static final String PROP_CERT_PARSE_BC_FALLBACK = "com.l7tech.external.assertions.xmlsec.certParseBcFallback";
     static boolean CERT_PARSE_BC_FALLBACK = SyspropUtil.getBoolean(PROP_CERT_PARSE_BC_FALLBACK, false);
 
@@ -66,8 +62,8 @@ public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAs
     private final TrustedCertCache trustedCertCache;
     private final IdAttributeConfig idAttributeConfig;
 
-    public ServerNonSoapVerifyElementAssertion(NonSoapVerifyElementAssertion assertion, BeanFactory beanFactory, ApplicationEventPublisher eventPub) throws InvalidXpathException, ParseException {
-        super(assertion, logger, beanFactory, eventPub);
+    public ServerNonSoapVerifyElementAssertion(NonSoapVerifyElementAssertion assertion, BeanFactory beanFactory) throws InvalidXpathException, ParseException {
+        super(assertion);
         this.securityTokenResolver = beanFactory.getBean("securityTokenResolver", SecurityTokenResolver.class);
         this.trustedCertCache = beanFactory.getBean( "trustedCertCache", TrustedCertCache.class );
 
@@ -245,7 +241,7 @@ public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAs
                 if ( trustedCertificate != null ) {
                     selectedCert = trustedCertificate.getCertificate();
                 } else {
-                    auditor.logAndAudit(AssertionMessages.WSSECURITY_RECIP_NO_CERT, description);
+                    logAndAudit(AssertionMessages.WSSECURITY_RECIP_NO_CERT, description);
                     throw new AssertionStatusException(AssertionStatus.FALSIFIED);
                 }
             } else if ( certName != null ) {
@@ -265,12 +261,12 @@ public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAs
                 if ( certificate != null || expiredCertificate != null ) {
                     selectedCert = certificate!=null ? certificate : expiredCertificate;
                 } else {
-                    auditor.logAndAudit(AssertionMessages.WSSECURITY_RECIP_NO_CERT, description);
+                    logAndAudit(AssertionMessages.WSSECURITY_RECIP_NO_CERT, description);
                     throw new AssertionStatusException(AssertionStatus.FALSIFIED);
                 }
             }
         } catch ( FindException e ) {
-            auditor.logAndAudit(AssertionMessages.WSSECURITY_RECIP_CERT_ERROR, description);
+            logAndAudit(AssertionMessages.WSSECURITY_RECIP_CERT_ERROR, description);
             throw new AssertionStatusException(AssertionStatus.FALSIFIED);
         }
 
@@ -289,7 +285,7 @@ public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAs
         try {
             expired = trustedCert.isExpiredCert();
         } catch (CertificateException e) {
-            auditor.logAndAudit(AssertionMessages.WSSECURITY_RECIP_CERT_EXP, new String[]{ trustedCert.getName() + " (#"+trustedCert.getOid()+")"}, e);
+            logAndAudit(AssertionMessages.WSSECURITY_RECIP_CERT_EXP, new String[]{ trustedCert.getName() + " (#"+trustedCert.getOid()+")"}, e);
         }
 
         return expired;
@@ -305,13 +301,13 @@ public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAs
             return handleX509Data(x509Data, securityTokenResolver);
 
         } catch (KeyInfoElement.UnsupportedKeyInfoFormatException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[] { "Unrecognized KeyInfo format: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
+            logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[] { "Unrecognized KeyInfo format: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
             return null;
         } catch (InvalidDocumentFormatException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[] { "Unable to parse KeyInfo: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
+            logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[] { "Unable to parse KeyInfo: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
             return null;
         } catch (IOException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[] { "Unable to parse KeyInfo: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
+            logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[] { "Unable to parse KeyInfo: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
             return null;
         }
     }

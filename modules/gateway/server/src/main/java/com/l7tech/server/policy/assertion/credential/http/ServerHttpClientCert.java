@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.policy.assertion.credential.http;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
@@ -11,18 +8,15 @@ import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.credential.ServerCredentialSourceAssertion;
 import com.l7tech.security.token.http.HttpClientCertToken;
-import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * This class functionality heas been replaces with the ServerSslAssertion that
@@ -36,12 +30,9 @@ import java.util.logging.Logger;
  */
 public class ServerHttpClientCert extends ServerCredentialSourceAssertion<HttpClientCert> {
     public static final String PARAM_HTTP_X509CERT = "javax.servlet.request.X509Certificate";
-    private static final Logger logger = Logger.getLogger(ServerHttpClientCert.class.getName());
-    private final Auditor auditor;
 
-    public ServerHttpClientCert(HttpClientCert assertion, ApplicationContext springContext) {
-        super(assertion, springContext);
-        this.auditor = new Auditor(this, springContext, logger);
+    public ServerHttpClientCert(HttpClientCert assertion) {
+        super(assertion);
     }
 
     @Override
@@ -50,14 +41,14 @@ public class ServerHttpClientCert extends ServerCredentialSourceAssertion<HttpCl
     {
         HttpRequestKnob httpReq = request.getKnob(HttpRequestKnob.class);
         if (httpReq == null) {
-            auditor.logAndAudit(AssertionMessages.HTTPCLIENTCERT_NOT_HTTP);
+            logAndAudit(AssertionMessages.HTTPCLIENTCERT_NOT_HTTP);
             return null;
         }
 
         X509Certificate[] certChain = httpReq.getClientCertificate();
 
         if ( certChain == null || certChain.length < 1 ) {
-            auditor.logAndAudit(AssertionMessages.HTTPCLIENTCERT_NO_CERT);
+            logAndAudit(AssertionMessages.HTTPCLIENTCERT_NO_CERT);
             return null;
         }
 
@@ -74,7 +65,7 @@ public class ServerHttpClientCert extends ServerCredentialSourceAssertion<HttpCl
 
         HttpClientCertToken token = new HttpClientCertToken(clientCert);
 
-        auditor.logAndAudit(AssertionMessages.HTTPCLIENTCERT_FOUND, token.getCertCn() == null ? token.getCertDn() : token.getCertCn());
+        logAndAudit(AssertionMessages.HTTPCLIENTCERT_FOUND, token.getCertCn() == null ? token.getCertDn() : token.getCertCn());
 
         // TODO where's the chain?
         return LoginCredentials.makeLoginCredentials( token, SslAssertion.class );

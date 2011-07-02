@@ -1,6 +1,6 @@
 package com.l7tech.server.security.cert;
 
-import com.l7tech.server.audit.Auditor;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.security.types.CertificateValidationResult;
 import com.l7tech.security.cert.CertVerifier;
 import com.l7tech.common.io.CertUtils;
@@ -36,7 +36,7 @@ public class RevocationCheckingPKIXCertPathChecker extends PKIXCertPathChecker {
      * @param params The parameters provide access to {@link java.security.cert.TrustAnchor TrustAnchors}
      * @param auditor
      */
-    public RevocationCheckingPKIXCertPathChecker(final RevocationCheckerFactory factory, final PKIXParameters params, Auditor auditor) {
+    public RevocationCheckingPKIXCertPathChecker(final RevocationCheckerFactory factory, final PKIXParameters params, Audit auditor) {
         this.revocationCheckerFactory = factory;
         this.trustAnchors = params.getTrustAnchors();
         this.auditor = auditor;
@@ -138,7 +138,7 @@ public class RevocationCheckingPKIXCertPathChecker extends PKIXCertPathChecker {
 
     private final RevocationCheckerFactory revocationCheckerFactory;
     private final Set<TrustAnchor> trustAnchors;
-    private final Auditor auditor;
+    private final Audit auditor;
 
     private X509Certificate prevX509Certificate;
 

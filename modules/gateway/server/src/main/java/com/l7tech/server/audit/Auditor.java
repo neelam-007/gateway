@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.audit.*;
@@ -10,13 +7,11 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEventPublisher;
 
-import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-public class Auditor implements Audit, AuditHaver {
+public class Auditor extends LoggingAudit {
     private final ApplicationEventPublisher eventPub;
     private final Object source;
-    private final Logger logger;
     private final AuditLogListener listener;
     private final AuditDetailFilter filter;
     private final AuditLogFormatter formatter;
@@ -27,9 +22,9 @@ public class Auditor implements Audit, AuditHaver {
      * @param logger  logger to which details will be written.
      */
     protected Auditor(Logger logger) {
+        super(logger);
         this.source = null;
         this.eventPub = null;
-        this.logger = logger;
         this.listener = null;
         this.filter = null;
         this.formatter = new AuditLogFormatter();
@@ -85,10 +80,10 @@ public class Auditor implements Audit, AuditHaver {
      * @param logger  logger to which details will be written.
      */
     public Auditor(Object source, AuditLogListener auditLogListener, AuditDetailFilter auditDetailFilter, ApplicationEventPublisher eventPub, Logger logger) {
+        super(logger);
         if(source  == null) throw new IllegalArgumentException("Event source is NULL. Cannot add AuditDetail to the audit record.");
         this.source = source;
         this.eventPub = eventPub;
-        this.logger = logger;
         this.listener = auditLogListener;
         this.filter = auditDetailFilter;
         this.formatter = new AuditLogFormatter();
@@ -102,7 +97,7 @@ public class Auditor implements Audit, AuditHaver {
 
         if (logger == null) return;
 
-        log(msg, params, e);
+        log( msg, params, e );
     }
 
     @Override
@@ -115,45 +110,24 @@ public class Auditor implements Audit, AuditHaver {
         logAndAudit(msg, null, null);
     }
 
-    protected void log(AuditDetailMessage msg, String[] params, Throwable e) {
-        if (logger.isLoggable(msg.getLevel())) {
-            if ( listener != null ) {
-                listener.notifyDetailCreated( logger.getName(), logger.getName(), msg, params, formatter, e );
-            } else {
-                LogRecord record = new LogRecord(msg.getLevel(), formatter.formatDetail(msg));
-                record.setParameters(params);
-                record.setThrown(e);
-                record.setSourceClassName("");
-                record.setSourceMethodName("");
-                record.setLoggerName(logger.getName());
-                logger.log( record );
-            }
+    @Override
+    protected void logDetail( final AuditDetailMessage msg, final String[] params, final Throwable e ) {
+        if ( listener != null ) {
+            listener.notifyDetailCreated( logger.getName(), logger.getName(), msg, params, formatter, e );
+        } else {
+            super.logDetail( msg, params, e );
         }
     }
 
     @Override
-    public Audit getAuditor() {
-        return this;
-    }
-
-    /**
-     * Factory for auditors.
-     */
-    public static interface AuditorFactory {
-        /**
-         * Create an Auditor for the specified source and logger.
-         *
-         * @param source Source object for audit events.  Required.
-         * @param logger Logger to which details will be written.
-         * @return The new Auditor
-         */
-        Auditor newInstance( Object source, Logger logger );
+    protected String formatDetail( final AuditDetailMessage msg ) {
+        return formatter.formatDetail(msg);
     }
 
     /**
      *
      */
-    public static final class DefaultAuditorFactory implements ApplicationContextAware, AuditorFactory {
+    public static final class DefaultAuditorFactory implements ApplicationContextAware, AuditFactory {
 
         //- PUBLIC
 
@@ -171,7 +145,7 @@ public class Auditor implements Audit, AuditHaver {
         //- PACKAGE
 
         DefaultAuditorFactory( final AuditDetailFilter auditDetailFilter,
-                        final AuditLogListener auditLogListener ) {
+                               final AuditLogListener auditLogListener ) {
             this.auditDetailFilter = auditDetailFilter;
             this.auditLogListener = auditLogListener;
         }

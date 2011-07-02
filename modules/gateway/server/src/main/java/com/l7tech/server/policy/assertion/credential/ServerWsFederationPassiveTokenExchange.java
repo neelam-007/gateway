@@ -2,7 +2,6 @@ package com.l7tech.server.policy.assertion.credential;
 
 import com.l7tech.common.http.GenericHttpClientFactory;
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.http.GenericHttpClient;
 import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.message.XmlKnob;
@@ -28,7 +27,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Server implementation of the WS-Federation PRP (http://msdn.microsoft.com/ws/2003/07/ws-passive-profile/).
@@ -44,7 +42,6 @@ public class ServerWsFederationPassiveTokenExchange extends AbstractServerWsFede
                                                    final ApplicationContext springContext ) {
         super(assertion, CACHE_SAML_KEY, springContext);
 
-        this.auditor = new Auditor(this, springContext, logger);
         this.httpClient = springContext.getBean( "anonUrlHttpClientFactory", GenericHttpClientFactory.class ).createHttpClient();
 
         try {
@@ -81,7 +78,7 @@ public class ServerWsFederationPassiveTokenExchange extends AbstractServerWsFede
             result = AssertionStatus.AUTH_REQUIRED;
         }
         catch(StopAndAuditException saae) {
-            auditor.logAndAudit(saae.getAssertionMessage(), null, saae.getCause());
+            logAndAudit(saae.getAssertionMessage(), null, saae.getCause());
         }
 
         return result;
@@ -89,14 +86,11 @@ public class ServerWsFederationPassiveTokenExchange extends AbstractServerWsFede
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger(ServerWsFederationPassiveTokenExchange.class.getName());
-
     /**
      * Key for cached SAML assertion
      */
     private static final String CACHE_SAML_KEY = ServerWsFederationPassiveTokenExchange.class.getName() + ".SAML";
 
-    private final Auditor auditor;
     private final GenericHttpClient httpClient;
     private final URL ipStsUrl;
 
@@ -148,7 +142,7 @@ public class ServerWsFederationPassiveTokenExchange extends AbstractServerWsFede
             }
         }
         catch(ResponseStatusException rse) {
-            auditor.logAndAudit(AssertionMessages.WSFEDPASS_RSTR_STATUS_NON_200); // TODO use a better message
+            logAndAudit(AssertionMessages.WSFEDPASS_RSTR_STATUS_NON_200); // TODO use a better message
             throw new AuthRequiredException();
         }
         catch(InvalidHtmlException ihe) {

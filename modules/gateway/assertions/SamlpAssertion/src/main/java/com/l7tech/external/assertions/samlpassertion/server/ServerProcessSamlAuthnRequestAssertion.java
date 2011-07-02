@@ -9,7 +9,6 @@ import com.l7tech.external.assertions.samlpassertion.ProcessSamlAuthnRequestAsse
 import static com.l7tech.external.assertions.samlpassertion.ProcessSamlAuthnRequestAssertion.*;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.Messages;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.Message;
@@ -26,7 +25,6 @@ import com.l7tech.security.xml.KeyInfoElement;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
@@ -70,7 +68,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Logger;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
@@ -84,16 +81,10 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
     public ServerProcessSamlAuthnRequestAssertion( final ProcessSamlAuthnRequestAssertion assertion,
                                                    final ApplicationContext applicationContext ) throws ServerPolicyException {
         super( assertion, assertion );
-        this.auditor = new Auditor(this, applicationContext, logger);
         this.securityTokenResolver = applicationContext.getBean( "securityTokenResolver", SecurityTokenResolver.class );
     }
 
     //- PROTECTED
-
-    @Override
-    protected Audit getAuditor() {
-        return auditor;
-    }
 
     @Override
     protected AssertionStatus doCheckRequest( final PolicyEnforcementContext context,
@@ -150,8 +141,6 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger(ServerProcessSamlAuthnRequestAssertion.class.getName());
-
     private static final String PARAMETER_SAML_REQUEST = "SAMLRequest";
     private static final String PARAMETER_SAML_ENCODING = "SAMLEncoding";
 
@@ -166,7 +155,6 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
     private static final boolean allowMultipleCertificates = SyspropUtil.getBoolean( "com.l7tech.external.assertions.samlpassertion.allowMultipleCertificates", false );
     private static final boolean validateSSOProfileDetails = SyspropUtil.getBoolean( "com.l7tech.external.assertions.samlpassertion.validateSSOProfile", true );
 
-    private final Auditor auditor;
     private final SecurityTokenResolver securityTokenResolver;
 
     /**
@@ -181,7 +169,7 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
                     authnRequestElement = message.getXmlKnob().getDocumentReadOnly().getDocumentElement();
                 }
             } catch ( SAXException e ) {
-                auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_INVALID_REQUEST,
+                logAndAudit( AssertionMessages.SAMLP_PROCREQ_INVALID_REQUEST,
                         new String[]{"Error parsing request - " + ExceptionUtils.getMessage( e )},
                         ExceptionUtils.getDebugException( e ) );
             }
@@ -190,7 +178,7 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
             if ( hrk != null ) {
                 authnRequestElement = getAuthnRequestForBinding( hrk, assertion.getSamlProtocolBinding() );
             } else {
-                auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_BINDING_ERROR, assertion.getSamlProtocolBinding().toString(), "Message not an HTTP request" );
+                logAndAudit( AssertionMessages.SAMLP_PROCREQ_BINDING_ERROR, assertion.getSamlProtocolBinding().toString(), "Message not an HTTP request" );
             }
         }
 
@@ -215,11 +203,11 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
                             final byte[] samlRequestData = HexUtils.decodeBase64( samlRequest, true );
                             samlRequestIn =  new InflaterInputStream(new ByteArrayInputStream(samlRequestData), new Inflater(true));
                         } else {
-                            auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_BINDING_ERROR, assertion.getSamlProtocolBinding().toString(), "Unsupported encoding '"+encoding+"'" );
+                            logAndAudit( AssertionMessages.SAMLP_PROCREQ_BINDING_ERROR, assertion.getSamlProtocolBinding().toString(), "Unsupported encoding '"+encoding+"'" );
                         }
                         break;
                     default:
-                        auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_BINDING_ERROR, assertion.getSamlProtocolBinding().toString(), "Unknown binding type" );
+                        logAndAudit( AssertionMessages.SAMLP_PROCREQ_BINDING_ERROR, assertion.getSamlProtocolBinding().toString(), "Unknown binding type" );
                         break;
                 }
 
@@ -228,14 +216,14 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
                     authnRequestElement = XmlUtil.parse( samlRequestIn ).getDocumentElement();
                 }
             } catch ( SAXException e ) {
-                auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_BINDING_ERROR,
+                logAndAudit( AssertionMessages.SAMLP_PROCREQ_BINDING_ERROR,
                         new String[]{assertion.getSamlProtocolBinding().toString(), "Error parsing request - " + ExceptionUtils.getMessage( e )},
                         ExceptionUtils.getDebugException( e ) );
             } finally {
                 ResourceUtils.closeQuietly( samlRequestIn );
             }
         } else {
-            auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_BINDING_ERROR, assertion.getSamlProtocolBinding().toString(), PARAMETER_SAML_REQUEST + " parameter is required" );
+            logAndAudit( AssertionMessages.SAMLP_PROCREQ_BINDING_ERROR, assertion.getSamlProtocolBinding().toString(), PARAMETER_SAML_REQUEST + " parameter is required" );
         }
 
         return authnRequestElement;
@@ -261,15 +249,15 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
                      AuthnRequestType.class.isAssignableFrom(((JAXBElement) resultObj).getDeclaredType())) {
                     result = (AuthnRequestType)((JAXBElement) resultObj).getValue();
                 } else {
-                    auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_INVALID_REQUEST, "Unexpected request type" );
+                    logAndAudit( AssertionMessages.SAMLP_PROCREQ_INVALID_REQUEST, "Unexpected request type" );
                 }
             } catch ( JAXBException e ) {
-                auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_INVALID_REQUEST,
+                logAndAudit( AssertionMessages.SAMLP_PROCREQ_INVALID_REQUEST,
                         new String[]{ "Request error - " + ExceptionUtils.getMessage(e) }, 
                         ExceptionUtils.getDebugException( e ) );
             }
         } else {
-            auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_INVALID_REQUEST, "Not an AuthnRequest" );
+            logAndAudit( AssertionMessages.SAMLP_PROCREQ_INVALID_REQUEST, "Not an AuthnRequest" );
         }
 
         return result;
@@ -350,10 +338,10 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
             try {
                 KeyUsageChecker.requireActivity( KeyUsageActivity.verifyXml, signingCert);
             } catch ( KeyUsageException e) {
-                auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_SIGNING_ERROR, ExceptionUtils.getMessage(e) );
+                logAndAudit( AssertionMessages.SAMLP_PROCREQ_SIGNING_ERROR, ExceptionUtils.getMessage(e) );
                 throw new AssertionStatusException( AssertionStatus.FALSIFIED);
             } catch ( CertificateException e) {
-                auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_SIGNING_ERROR,
+                logAndAudit( AssertionMessages.SAMLP_PROCREQ_SIGNING_ERROR,
                         new String[]{ "Certificate processing failed - " + ExceptionUtils.getMessage(e)},
                         e );
                 throw new AssertionStatusException(AssertionStatus.FALSIFIED);
@@ -366,36 +354,36 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
                 for (int i = 0; i < validity.getNumberOfReferences(); i++) {
                     msg.append("\n\tElement ").append(validity.getReferenceURI(i)).append(": ").append(validity.getReferenceMessage(i));
                 }
-                auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_SIGNING_ERROR, msg.toString() );
+                logAndAudit( AssertionMessages.SAMLP_PROCREQ_SIGNING_ERROR, msg.toString() );
                 throw new AssertionStatusException(AssertionStatus.FALSIFIED);
             }
 
             if (!resolvedAuthnRequestId[0]) {
-                auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_SIGNING_ERROR, "Signature does not cover AuthnRequest element" );
+                logAndAudit( AssertionMessages.SAMLP_PROCREQ_SIGNING_ERROR, "Signature does not cover AuthnRequest element" );
                 throw new AssertionStatusException(AssertionStatus.FALSIFIED);
             }
 
             if (!algFactory.isSawEnvelopedTransform()) {
-                auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_SIGNING_ERROR, "Signature must be enveloped" );
+                logAndAudit( AssertionMessages.SAMLP_PROCREQ_SIGNING_ERROR, "Signature must be enveloped" );
                 throw new AssertionStatusException(AssertionStatus.FALSIFIED);
             }
 
             if (validity.getNumberOfReferences() != 1) {
-                auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_SIGNING_ERROR, "Signature covers multiple references" );
+                logAndAudit( AssertionMessages.SAMLP_PROCREQ_SIGNING_ERROR, "Signature covers multiple references" );
                 throw new AssertionStatusException(AssertionStatus.FALSIFIED);
             }
 
             return signingCert;
         } catch ( TooManyChildElementsException e) {
-            auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_SIGNING_ERROR, ExceptionUtils.getMessage(e) );
+            logAndAudit( AssertionMessages.SAMLP_PROCREQ_SIGNING_ERROR, ExceptionUtils.getMessage(e) );
         } catch ( MissingRequiredElementException e ) {
-            auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_SIGNING_ERROR, ExceptionUtils.getMessage(e) );
+            logAndAudit( AssertionMessages.SAMLP_PROCREQ_SIGNING_ERROR, ExceptionUtils.getMessage(e) );
         } catch ( SignatureException e ) {
-            auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_SIGNING_ERROR, ExceptionUtils.getMessage(e) );
+            logAndAudit( AssertionMessages.SAMLP_PROCREQ_SIGNING_ERROR, ExceptionUtils.getMessage(e) );
         } catch ( SAXException e ) { // this will be a KeyInfo processing error
-            auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_SIGNING_ERROR, ExceptionUtils.getMessage(e) );
+            logAndAudit( AssertionMessages.SAMLP_PROCREQ_SIGNING_ERROR, ExceptionUtils.getMessage(e) );
         } catch ( KeyInfoElement.MissingResolverException e ) {
-            auditor.logAndAudit( Messages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{ ExceptionUtils.getMessage(e)}, e );
+            logAndAudit( Messages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{ ExceptionUtils.getMessage(e)}, e );
             throw new AssertionStatusException(AssertionStatus.FAILED);
         }
 
@@ -430,7 +418,7 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
     }
 
     private void failDetails( final String missing ) {
-        auditor.logAndAudit(AssertionMessages.SAMLP_PROCREQ_INVALID_REQUEST, missing + " is required" );
+        logAndAudit(AssertionMessages.SAMLP_PROCREQ_INVALID_REQUEST, missing + " is required" );
         throw new AssertionStatusException( AssertionStatus.FALSIFIED);
     }
 
@@ -443,10 +431,10 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
     private void validateSSOProfileDetails( final AuthnRequestType authnRequest ) {
         final NameIDType issuer = authnRequest.getIssuer();
         if ( issuer == null ) {
-            auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION, "Issuer is required" );
+            logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION, "Issuer is required" );
             throw new AssertionStatusException(AssertionStatus.FALSIFIED);
         } else if ( issuer.getFormat() != null && !SamlConstants.NAMEIDENTIFIER_ENTITY.equals( issuer.getFormat() ) ) {
-            auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION, "Issuer format must be " + SamlConstants.NAMEIDENTIFIER_ENTITY );
+            logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION, "Issuer format must be " + SamlConstants.NAMEIDENTIFIER_ENTITY );
             throw new AssertionStatusException(AssertionStatus.FALSIFIED);
         }
 
@@ -456,7 +444,7 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
             if ( contents != null ) {
                 for ( JAXBElement<?> content : contents ) {
                     if ( SubjectConfirmationType.class.isAssignableFrom( content.getDeclaredType() )) {
-                        auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION, "SubjectConfirmation elements are not permitted" );
+                        logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION, "SubjectConfirmation elements are not permitted" );
                         throw new AssertionStatusException(AssertionStatus.FALSIFIED);
                     }
                 }
@@ -470,7 +458,7 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
         try {
             requestMessage = context.getOrCreateTargetMessage( new MessageTargetableSupport(requestMessageVariableName), false );
         } catch ( NoSuchVariableException e ) {
-            auditor.logAndAudit( Messages.EXCEPTION_WARNING_WITH_MORE_INFO,
+            logAndAudit( Messages.EXCEPTION_WARNING_WITH_MORE_INFO,
                     new String[]{"Unexpected error creating message variable"},
                     e );
             throw new AssertionStatusException( AssertionStatus.FAILED );
@@ -584,7 +572,7 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
                                         JAXBElement element = (JAXBElement) dataContent;
                                         if ( element.getValue() instanceof byte[] ) {
                                             if ( certBase64 != null ) {
-                                                auditor.logAndAudit( AssertionMessages.SAMLP_PROCREQ_SIGNING_ERROR, "Multiple certificates in request" );
+                                                logAndAudit( AssertionMessages.SAMLP_PROCREQ_SIGNING_ERROR, "Multiple certificates in request" );
                                                 throw new AssertionStatusException(AssertionStatus.FALSIFIED);
                                             }
                                             certBase64 = HexUtils.encodeBase64( (byte[]) element.getValue(), true );

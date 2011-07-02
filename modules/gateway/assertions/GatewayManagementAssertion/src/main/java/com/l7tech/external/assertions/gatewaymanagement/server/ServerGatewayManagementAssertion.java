@@ -11,8 +11,6 @@ import com.l7tech.message.MimeKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
@@ -31,7 +29,6 @@ import com.sun.ws.management.soap.SOAP;
 import com.sun.ws.management.transport.ContentType;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanFactory;
-import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.ClassPathResource;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -57,7 +54,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Server side implementation of the GatewayManagementAssertion.
@@ -84,7 +80,7 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
         final String contentTypeText = contentTypeHeader.getFullValue();
         final ContentType contentType = ContentType.createFromHttpContentType(contentTypeText);
         if (contentType == null || !contentType.isAcceptable()) {
-            auditor.logAndAudit( AssertionMessages.GATEWAYMANAGEMENT_ERROR, "Content-Type not supported : " + contentTypeText );
+            logAndAudit( AssertionMessages.GATEWAYMANAGEMENT_ERROR, "Content-Type not supported : " + contentTypeText );
             return AssertionStatus.FALSIFIED;
         }
 
@@ -104,10 +100,6 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
                                                 final BeanFactory context,
                                                 final String assertionContextResource ) throws PolicyAssertionException {
         super(assertion);
-
-        this.auditor = context instanceof ApplicationContext ?
-                new Auditor( this, (ApplicationContext)context, logger ) :
-                new LogOnlyAuditor( logger );
         this.agent = buildAgent();
         this.assertionContext = new XmlBeanFactory(new ClassPathResource(assertionContextResource, ServerGatewayManagementAssertion.class), context);
         this.assertionContext.preInstantiateSingletons();
@@ -115,9 +107,6 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger(ServerGatewayManagementAssertion.class.getName());
-
-    private final Auditor auditor;
     private final XmlBeanFactory assertionContext;
     private final WSManAgent agent;
 
@@ -274,16 +263,16 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
             context.setRoutingStatus( RoutingStatus.ROUTED);
         } catch ( IOException e ) {
             if ( !processingResponse ) throw e;
-            auditor.logAndAudit( AssertionMessages.GATEWAYMANAGEMENT_ERROR, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e) );
+            logAndAudit( AssertionMessages.GATEWAYMANAGEMENT_ERROR, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e) );
             return AssertionStatus.FAILED;
         } catch ( SAXException e ) {
-            auditor.logAndAudit( AssertionMessages.GATEWAYMANAGEMENT_ERROR, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e) );
+            logAndAudit( AssertionMessages.GATEWAYMANAGEMENT_ERROR, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e) );
             return AssertionStatus.FAILED;
         } catch ( SOAPException e ) {
-            auditor.logAndAudit( AssertionMessages.GATEWAYMANAGEMENT_ERROR, new String[]{ExceptionUtils.getMessage(e)}, e );
+            logAndAudit( AssertionMessages.GATEWAYMANAGEMENT_ERROR, new String[]{ExceptionUtils.getMessage(e)}, e );
             return AssertionStatus.FAILED;
         } catch ( JAXBException e ) {
-            auditor.logAndAudit( AssertionMessages.GATEWAYMANAGEMENT_ERROR, new String[]{ExceptionUtils.getMessage(e)}, e );
+            logAndAudit( AssertionMessages.GATEWAYMANAGEMENT_ERROR, new String[]{ExceptionUtils.getMessage(e)}, e );
             return AssertionStatus.FAILED;
         }
 
@@ -325,7 +314,7 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
         if ( endpointReference != null &&
              endpointReference.getAddress() != null &&
              !Addressing.ANONYMOUS_ENDPOINT_URI.equals(endpointReference.getAddress().getValue()) ) {
-            auditor.logAndAudit( AssertionMessages.GATEWAYMANAGEMENT_ERROR, "Unsupported response endpoint address '"+endpointReference.getAddress().getValue()+"'" );
+            logAndAudit( AssertionMessages.GATEWAYMANAGEMENT_ERROR, "Unsupported response endpoint address '"+endpointReference.getAddress().getValue()+"'" );
             throw new AssertionStatusException( AssertionStatus.FALSIFIED );
         }
     }

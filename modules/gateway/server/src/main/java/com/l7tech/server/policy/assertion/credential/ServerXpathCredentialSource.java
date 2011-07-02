@@ -11,7 +11,6 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.UsernamePasswordSecurityToken;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
@@ -25,7 +24,6 @@ import org.jaxen.FunctionContext;
 import org.jaxen.JaxenException;
 import org.jaxen.XPathFunctionContext;
 import org.jaxen.dom.DOMXPath;
-import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -34,23 +32,17 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.logging.Logger;
 
 /**
  * @author alex
  */
 public class ServerXpathCredentialSource extends AbstractServerAssertion<XpathCredentialSource> {
-    private static final Logger logger = Logger.getLogger(ServerXpathCredentialSource.class.getName());
     private static final FunctionContext XPATH_FUNCTIONS = new XPathFunctionContext(false);
-    private final Auditor auditor;
     private final DOMXPath loginXpath, passwordXpath;
     private final boolean requiresTargetDocument;
-    private final XpathCredentialSource assertion;
 
-    public ServerXpathCredentialSource(XpathCredentialSource assertion, ApplicationContext springContext) {
+    public ServerXpathCredentialSource(XpathCredentialSource assertion) {
         super(assertion);
-        this.assertion = assertion;
-        this.auditor = new Auditor(this, springContext, logger);
 
         boolean loginUsesTargetDoc = true;
         XpathExpression loginExpr = null;
@@ -138,7 +130,7 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion<XpathCr
                     assertion.isRemoveLoginElement(),
                     false); // Login can't be empty
         } catch (Exception e) {
-            auditor.logAndAudit(AssertionMessages.XPATHCREDENTIAL_LOGIN_XPATH_FAILED, null, e);
+            logAndAudit(AssertionMessages.XPATHCREDENTIAL_LOGIN_XPATH_FAILED, null, e);
             return AssertionStatus.FAILED;
         }
 
@@ -152,7 +144,7 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion<XpathCr
                     assertion.isRemovePasswordElement(),
                     true); // Return zero-length Password if element present but empty
         } catch (Exception e) {
-            auditor.logAndAudit(AssertionMessages.XPATHCREDENTIAL_PASS_XPATH_FAILED, null, e);
+            logAndAudit(AssertionMessages.XPATHCREDENTIAL_PASS_XPATH_FAILED, null, e);
             return AssertionStatus.FAILED;
         }
 
@@ -195,7 +187,7 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion<XpathCr
 
         if (ret == null) {
             if (requiresTargetDocument) {
-                auditor.logAndAudit(AssertionMessages.XPATHCREDENTIAL_REQUEST_NOT_XML, null, ExceptionUtils.getDebugException(parseException));
+                logAndAudit(AssertionMessages.XPATHCREDENTIAL_REQUEST_NOT_XML, null, ExceptionUtils.getDebugException(parseException));
                 throw new AssertionStatusException(AssertionStatus.FAILED);
             }
 
@@ -217,18 +209,18 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion<XpathCr
         Node foundNode = null;
 
         if (xpath == null) {
-            auditor.logAndAudit(notFoundMsg);
+            logAndAudit(notFoundMsg);
             return null;
         }
 
         List result = xpath.selectNodes(requestDoc);
         if (result == null || result.size() == 0) {
-            auditor.logAndAudit(notFoundMsg);
+            logAndAudit(notFoundMsg);
             return null;
         }
 
         if (result.size() > 1) {
-            auditor.logAndAudit(multiMsg);
+            logAndAudit(multiMsg);
             return null;
         }
 
@@ -248,7 +240,7 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion<XpathCr
                     while (child != null) {
                         if (child.getNodeType() == Node.TEXT_NODE) {
                             if (value != null) {
-                                auditor.logAndAudit(multiMsg);
+                                logAndAudit(multiMsg);
                                 return null;
                             }
                             value = child.getNodeValue();
@@ -269,14 +261,14 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion<XpathCr
 
         if (value != null && removeElement) {
             if (foundNode == null) {
-                auditor.logAndAudit(notElementMsg);
+                logAndAudit(notElementMsg);
             } else {
                 Node parent = foundNode.getParentNode();
                 if (parent.getNodeType() == Node.ELEMENT_NODE) {
                     Element el = (Element)parent;
                     el.getParentNode().removeChild(el);
                 } else {
-                    auditor.logAndAudit(notElementMsg);
+                    logAndAudit(notElementMsg);
                 }
             }
         }

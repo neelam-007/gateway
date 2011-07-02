@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.policy.assertion.identity;
 
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
@@ -30,7 +27,7 @@ public class ServerAuthenticationAssertion extends ServerIdentityAssertion<Authe
 
         // provider must always match
         if (requestProvider != assertion.getIdentityProviderOid()) {
-            auditor.logAndAudit(AssertionMessages.SPECIFICUSER_PROVIDER_MISMATCH,
+            logAndAudit(AssertionMessages.SPECIFICUSER_PROVIDER_MISMATCH,
                     Long.toString(requestProvider), Long.toString(assertion.getIdentityProviderOid()));
             return AssertionStatus.AUTH_FAILED;
         }

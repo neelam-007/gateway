@@ -3,6 +3,7 @@ package com.l7tech.server.util;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.identity.GroupBean;
 import com.l7tech.identity.User;
@@ -18,8 +19,6 @@ import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.processor.*;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.secureconversation.SecureConversationSession;
@@ -279,7 +278,7 @@ public class WSSecurityProcessorUtils {
                                                                    Audit audit)
     {
         if (audit == null)
-            audit = new LogOnlyAuditor(logger);
+            audit = new LoggingAudit(logger);
 
         XmlSecurityToken token = null;
         final List<LoginCredentials> credentials = authenticationContext == null ? null : authenticationContext.getCredentials();
@@ -699,7 +698,7 @@ public class WSSecurityProcessorUtils {
      *
      * @return a Pair with the fail/pass flag, and a collection of elements for which the signature must be checked
      */
-    public static Pair<Boolean, Collection<ParsedElement>> processSignatureConfirmations(SecurityKnob securityKnob, ProcessorResult wssResults, Auditor auditor) {
+    public static Pair<Boolean, Collection<ParsedElement>> processSignatureConfirmations(SecurityKnob securityKnob, ProcessorResult wssResults, Audit auditor) {
         if (! securityKnob.isSignatureConfirmationValidated()) {
             securityKnob.setSignatureConfirmationValidated(true);
             Collection<ParsedElement> elementsToCheck = null;
@@ -721,7 +720,7 @@ public class WSSecurityProcessorUtils {
      *
      * Should be called just before the decorations are applied; no further modifications to the decorations should be done.
      */
-    public static void addSignatureConfirmations(Message message, Auditor auditor) {
+    public static void addSignatureConfirmations(Message message, Audit auditor) {
 
         // get the request signatures
         Message request = message.getRelated(MessageRole.REQUEST);
@@ -847,10 +846,10 @@ public class WSSecurityProcessorUtils {
     private static WssSettings getWssSettings() {
         WssSettings wssSettings = wssSettingsReference.get();
 
-        if ( wssSettings == null || ( wssSettings.created + TimeUnit.SECONDS.toMillis(30) < System.currentTimeMillis()) ) {
+        if ( wssSettings == null || ( wssSettings.created + TimeUnit.SECONDS.toMillis( 30L ) < System.currentTimeMillis()) ) {
             ServerConfig serverConfig = ServerConfig.getInstance();
             wssSettings = new WssSettings(
-                serverConfig.getLongProperty(ServerConfig.PARAM_SIGNED_PART_MAX_BYTES, 0),
+                serverConfig.getLongProperty(ServerConfig.PARAM_SIGNED_PART_MAX_BYTES, 0L ),
                 serverConfig.getBooleanProperty(ServerConfig.PARAM_SOAP_REJECT_MUST_UNDERSTAND, true),
                 serverConfig.getBooleanProperty(ServerConfig.PARAM_WSS_ALLOW_MULTIPLE_TIMESTAMP_SIGNATURES, false),
                 serverConfig.getBooleanProperty(ServerConfig.PARAM_WSS_ALLOW_UNKNOWN_BINARY_SECURITY_TOKENS, false),

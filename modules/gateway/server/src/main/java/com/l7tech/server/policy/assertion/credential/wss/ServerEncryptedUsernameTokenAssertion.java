@@ -1,13 +1,7 @@
-/*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.server.policy.assertion.credential.wss;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.security.token.EncryptedKey;
 import com.l7tech.security.token.SigningSecurityToken;
 import com.l7tech.security.token.UsernameToken;
@@ -32,7 +26,6 @@ import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.util.logging.Logger;
 
 /**
  * Ensures that a UsernameToken was present in the request, was encrypted, and was signed with the same token that
@@ -46,7 +39,6 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractMessageTarget
                                                   final ApplicationContext springContext ) {
         super(data,data);
         this.data = data;
-        this.auditor = new Auditor(this, springContext, logger);
         this.config = springContext.getBean("serverConfig", Config.class);
         this.securityTokenResolver = springContext.getBean("securityTokenResolver", SecurityTokenResolver.class);
     }
@@ -55,7 +47,7 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractMessageTarget
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException
     {
         if (!data.getRecipientContext().localRecipient()) {
-            auditor.logAndAudit(AssertionMessages.WSS_BASIC_FOR_ANOTHER_RECIPIENT);
+            logAndAudit(AssertionMessages.WSS_BASIC_FOR_ANOTHER_RECIPIENT);
             return AssertionStatus.NONE;
         }
 
@@ -72,14 +64,14 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractMessageTarget
         ProcessorResult wssResults;
         try {
             if (!message.isSoap()) {
-                auditor.logAndAudit(AssertionMessages.WSS_BASIC_NOT_SOAP, messageDescription);
+                logAndAudit(AssertionMessages.WSS_BASIC_NOT_SOAP, messageDescription);
                 return AssertionStatus.NOT_APPLICABLE;
             }
             if ( isRequest() && !config.getBooleanProperty(ServerConfig.PARAM_WSS_PROCESSOR_LAZY_REQUEST,true) ) {
                 wssResults = message.getSecurityKnob().getProcessorResult();
                 message.getSecurityKnob().setNeedsSignatureConfirmations(true);
             } else {
-                wssResults = WSSecurityProcessorUtils.getWssResults(message, messageDescription, securityTokenResolver, auditor);
+                wssResults = WSSecurityProcessorUtils.getWssResults(message, messageDescription, securityTokenResolver, getAudit());
                 if (message.getRelated(MessageRole.REQUEST) != null) {
                     message.getRelated(MessageRole.REQUEST).getSecurityKnob().setNeedsSignatureConfirmations(true);
                 }
@@ -88,7 +80,7 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractMessageTarget
             throw new CausedIOException("Request declared as XML but is not well-formed", e);
         }
         if (wssResults == null) {
-            auditor.logAndAudit(AssertionMessages.WSS_BASIC_NO_CREDENTIALS, messageDescription);
+            logAndAudit(AssertionMessages.WSS_BASIC_NO_CREDENTIALS, messageDescription);
             if ( isRequest() ) {
                 context.setAuthenticationMissing();
                 context.setRequestPolicyViolated();
@@ -133,7 +125,7 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractMessageTarget
                 return AssertionStatus.NONE;
             }
         }
-        auditor.logAndAudit(AssertionMessages.WSS_BASIC_CANNOT_FIND_ENC_CREDENTIALS, messageDescription);
+        logAndAudit(AssertionMessages.WSS_BASIC_CANNOT_FIND_ENC_CREDENTIALS, messageDescription);
         // we get here because there were no credentials found in the format we want
         // therefore this assertion was violated
         if ( isRequest() ) {
@@ -142,17 +134,9 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractMessageTarget
         return AssertionStatus.AUTH_REQUIRED;
     }
 
-    @Override
-    protected Auditor getAuditor() {
-        return auditor;
-    }
-
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger(ServerEncryptedUsernameTokenAssertion.class.getName());
-
     private final EncryptedUsernameTokenAssertion data;
-    private final Auditor auditor;
     private final Config config;
     private final SecurityTokenResolver securityTokenResolver;
 

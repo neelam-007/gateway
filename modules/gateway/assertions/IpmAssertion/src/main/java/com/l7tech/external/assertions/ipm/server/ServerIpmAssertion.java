@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.ipm.server;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.message.Message;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -13,8 +14,6 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import org.apache.commons.pool.BasePoolableObjectFactory;
@@ -28,7 +27,6 @@ import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Server side implementation of the IpmAssertion.
@@ -36,7 +34,6 @@ import java.util.logging.Logger;
  * @see com.l7tech.external.assertions.ipm.IpmAssertion
  */
 public class ServerIpmAssertion extends AbstractServerAssertion<IpmAssertion> {
-    private static final Logger logger = Logger.getLogger(ServerIpmAssertion.class.getName());
     private static final int DEFAULT_BUFF_SIZE = 131040;
     private static final int DEFAULT_MAX_BUFFERS = 120;
 
@@ -46,16 +43,14 @@ public class ServerIpmAssertion extends AbstractServerAssertion<IpmAssertion> {
     private static ObjectPool charBufferPool = null;
     private static ObjectPool byteBufferPool = null;
 
-    private final Auditor auditor;
+
     private final String varname;
     private final ThreadLocal<CompiledTemplate> threadLocalCompiledTemplate;
     private final ServerConfig serverConfig;
 
     public ServerIpmAssertion(IpmAssertion assertion, ApplicationContext context) throws PolicyAssertionException {
-        super(assertion);
+        super(assertion, context==null ? null : context.getBean( "auditFactory", AuditFactory.class ));
 
-        //noinspection ThisEscapedInObjectConstruction
-        this.auditor = context != null ? new Auditor(this, context, logger) : new LogOnlyAuditor(logger);
         varname = assertion.getSourceVariableName();
 
         Class<? extends CompiledTemplate> ctClass = null;
@@ -63,7 +58,7 @@ public class ServerIpmAssertion extends AbstractServerAssertion<IpmAssertion> {
             CompiledTemplate ct = new TemplateCompiler(assertion.template()).compile();
             ctClass = ct.getClass();
         } catch (TemplateCompilerException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
                                 new String[] { "Unable to compile template; assertion will always fail: " + ExceptionUtils.getMessage(e) }, e);
         }
 
@@ -74,6 +69,7 @@ public class ServerIpmAssertion extends AbstractServerAssertion<IpmAssertion> {
         } else {
             final Class<? extends CompiledTemplate> ctClass1 = ctClass;
             threadLocalCompiledTemplate = new ThreadLocal<CompiledTemplate>() {
+                @Override
                 protected CompiledTemplate initialValue() {
                     try {
                         return ctClass1.newInstance();
@@ -87,9 +83,10 @@ public class ServerIpmAssertion extends AbstractServerAssertion<IpmAssertion> {
         }
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         if (threadLocalCompiledTemplate == null) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Template compilation failed; assertion fails");
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Template compilation failed; assertion fails");
             return AssertionStatus.SERVER_ERROR;
         }
 
@@ -108,19 +105,19 @@ public class ServerIpmAssertion extends AbstractServerAssertion<IpmAssertion> {
 
             return AssertionStatus.NONE;
         } catch (NoSuchVariableException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Missing variable: " + varname }, e);
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Missing variable: " + varname }, e);
             return AssertionStatus.FAILED;
         } catch (CompiledTemplate.InputBufferEmptyException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "IPM to XML input DATA_BUFF contains fewer characters than required by this template");
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "IPM to XML input DATA_BUFF contains fewer characters than required by this template");
             return AssertionStatus.FAILED;
         } catch (CompiledTemplate.OutputBufferFullException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "IPM to XML output buffer is too small to expand this DATA_BUFF with this template; increase value of ipm.outputBuffer cluster property");
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "IPM to XML output buffer is too small to expand this DATA_BUFF with this template; increase value of ipm.outputBuffer cluster property");
             return AssertionStatus.SERVER_ERROR;
         } catch (OutputBufferException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to obtain character output buffer: " + ExceptionUtils.getMessage(e) }, e); // can't happen
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to obtain character output buffer: " + ExceptionUtils.getMessage(e) }, e); // can't happen
             return AssertionStatus.SERVER_ERROR;
         } catch (NoSuchPartException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to initialize message: " + ExceptionUtils.getMessage(e) }, e);
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to initialize message: " + ExceptionUtils.getMessage(e) }, e);
             return AssertionStatus.FAILED;
         }
     }
@@ -133,6 +130,7 @@ public class ServerIpmAssertion extends AbstractServerAssertion<IpmAssertion> {
         Message targetMessage = assertion.isUseResponse() ? context.getResponse() : context.getRequest();
         final byte[] outputBuffer = getByteOutputBuffer();
         context.runOnClose(new Runnable() {
+            @Override
             public void run() {
                 try {
                     returnByteOutputBuffer(outputBuffer);
@@ -198,10 +196,12 @@ public class ServerIpmAssertion extends AbstractServerAssertion<IpmAssertion> {
                               : serverConfig.getIntPropertyCached(IpmAssertion.PARAM_IPM_MAXBUFFERS, DEFAULT_MAX_BUFFERS, 1L);
 
         charBufferPool = new GenericObjectPool(new BasePoolableObjectFactory() {
+            @Override
             public Object makeObject() throws Exception {
                 return new char[newBuffSize];
             }
 
+            @Override
             public boolean validateObject(Object o) {
                 return o instanceof char[] && ((char[])o).length == newBuffSize;
             }
@@ -213,10 +213,12 @@ public class ServerIpmAssertion extends AbstractServerAssertion<IpmAssertion> {
                               serverConfig.getBooleanPropertyCached(IpmAssertion.PARAM_IPM_SHAREBYTEBUFFERS, false, 1L));
 
         byteBufferPool = new GenericObjectPool(new BasePoolableObjectFactory() {
+            @Override
             public Object makeObject() throws Exception {
                 return new byte[byteSize];
             }
 
+            @Override
             public boolean validateObject(Object o) {
                 return o instanceof byte[] && ((byte[])o).length == byteSize;
             }

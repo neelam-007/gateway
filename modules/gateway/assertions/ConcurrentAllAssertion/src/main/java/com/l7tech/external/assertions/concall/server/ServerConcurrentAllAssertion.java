@@ -6,6 +6,7 @@ import com.l7tech.external.assertions.concall.ConcurrentAllAssertion;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.AuditDetail;
+import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.policy.assertion.*;
@@ -15,7 +16,6 @@ import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.AuditContext;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyCache;
@@ -27,7 +27,6 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
 import org.springframework.beans.factory.BeanFactory;
-import org.springframework.context.ApplicationEventPublisher;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -47,24 +46,22 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
     private static final Object assertionExecutorInitLock = new Object();
     private static volatile ExecutorService assertionExecutor;
 
-    private final Auditor auditor;
     private final List<String[]> varsUsed;
     private final List<String[]> varsSet;
     private final BeanFactory beanFactory;
-    private final ApplicationEventPublisher eventPub;
+    private final AuditFactory auditFactory;
 
-    public ServerConcurrentAllAssertion(ConcurrentAllAssertion assertion, BeanFactory beanFactory, ApplicationEventPublisher eventPub) throws PolicyAssertionException, LicenseException {
+    public ServerConcurrentAllAssertion(ConcurrentAllAssertion assertion, BeanFactory beanFactory) throws PolicyAssertionException, LicenseException {
         super(assertion, beanFactory);
-        this.auditor = new Auditor(this, beanFactory, eventPub, logger);
         this.beanFactory = beanFactory;
-        this.eventPub = eventPub;
+        this.auditFactory = beanFactory.getBean( "auditFactory", AuditFactory.class );
 
         final List<Assertion> kids = getEnabledImmediateChildAssertions(assertion);
         if (kids == null || kids.isEmpty()) {
             this.varsUsed = Collections.emptyList();
             this.varsSet = Collections.emptyList();
         } else {
-            PolicyCache policyCache = beanFactory == null ? null : (PolicyCache)beanFactory.getBean("policyCache");
+            PolicyCache policyCache = beanFactory.getBean("policyCache", PolicyCache.class);
             this.varsUsed = Collections.unmodifiableList(getVariablesUsedByChildren(kids, policyCache));
             this.varsSet = Collections.unmodifiableList(getVariablesSetByChildren(kids, policyCache));
         }
@@ -183,7 +180,7 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
         for (final ServerAssertion kid : kids) {
             final String[] varsUsedByKid = varsUsedIter.next();
 
-            final Map<String, Object> kidVarMap = context.getVariableMap(varsUsedByKid, auditor);
+            final Map<String, Object> kidVarMap = context.getVariableMap(varsUsedByKid, getAudit());
             final PolicyEnforcementContext kidPec = copyContext(context, kidVarMap);
             Future<KidResult> kidResult = assertionExecutor.submit(new Callable<KidResult>() {
                 @Override
@@ -215,7 +212,7 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
                     } catch (AssertionStatusException e) {
                         return e.getAssertionStatus();
                     } catch (Throwable t) {
-                        new Auditor(this, beanFactory, eventPub, logger).logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                        auditFactory.newInstance(this, logger).logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
                                 new String[] { "Unable to run concurrent assertion: " + ExceptionUtils.getMessage(t) }, t);
                         return AssertionStatus.SERVER_ERROR;
                     }
@@ -273,7 +270,7 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
     }
 
     private void mergeContextVariables(String[] varsSetByKid, PolicyEnforcementContext source, PolicyEnforcementContext dest) throws IOException {
-        Map<String, Object> map = source.getVariableMap(varsSetByKid, auditor);
+        Map<String, Object> map = source.getVariableMap(varsSetByKid, getAudit());
         for (Map.Entry<String, Object> entry : map.entrySet()) {
             String name = entry.getKey();
             Object value = entry.getValue();

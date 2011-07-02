@@ -145,7 +145,7 @@ public class ServerNonSoapSignatureRoundTripTest {
         ass.setXpathExpression(new XpathExpression("//*[local-name()='Signature']"));
         ass.setTarget(TargetMessageType.REQUEST);
 
-        ServerNonSoapVerifyElementAssertion sass = new ServerNonSoapVerifyElementAssertion(ass, beanFactory, null);
+        ServerNonSoapVerifyElementAssertion sass = new ServerNonSoapVerifyElementAssertion(ass, beanFactory);
         Message request = new Message(XmlUtil.stringAsDocument(signedXml));
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         AssertionStatus result = sass.checkRequest(context);
@@ -161,7 +161,7 @@ public class ServerNonSoapSignatureRoundTripTest {
         ass.setXpathExpression(new XpathExpression("/foo/bar"));
         ass.setTarget(TargetMessageType.REQUEST);
 
-        ServerNonSoapSignElementAssertion sass = new ServerNonSoapSignElementAssertion(ass, beanFactory, null);
+        ServerNonSoapSignElementAssertion sass = new ServerNonSoapSignElementAssertion(ass, beanFactory);
         Message request = new Message(XmlUtil.stringAsDocument("<foo><bar/></foo>"));
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         AssertionStatus result = sass.checkRequest(context);

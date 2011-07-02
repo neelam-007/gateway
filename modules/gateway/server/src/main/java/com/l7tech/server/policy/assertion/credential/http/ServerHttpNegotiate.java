@@ -14,18 +14,15 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.security.token.http.HttpNegotiateToken;
-import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -37,10 +34,9 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource<HttpNegotiat
 
     //- PUBLIC
 
-    public ServerHttpNegotiate(HttpNegotiate data, ApplicationContext springContext) {
-        super(data, springContext);
-        this.auditor = new Auditor(this, springContext, logger);
-    }
+    public ServerHttpNegotiate(HttpNegotiate data) {
+        super(data);
+   }
 
     @Override
     public AssertionStatus checkRequest( PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
@@ -89,10 +85,8 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource<HttpNegotiat
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger(ServerHttpNegotiate.class.getName());
     private static final String SCHEME = "Negotiate";
     private final ThreadLocal<Pair<Object, LoginCredentials>> connectionCredentials = new ThreadLocal<Pair<Object, LoginCredentials>>(); // stores Object[] = id, LoginCredentials
-    private final Auditor auditor;
 
     @SuppressWarnings({ "RedundantArrayCreation", "ThrowableResultOfMethodCallIgnored" })
     private LoginCredentials findCredentials( final Message request,
@@ -101,23 +95,23 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource<HttpNegotiat
         if ( wwwAuthorize == null || wwwAuthorize.length() == 0 ) {
             LoginCredentials loginCreds = getConnectionCredentials(connectionId);
             if (loginCreds != null) {
-                auditor.logAndAudit(AssertionMessages.HTTPNEGOTIATE_USING_CONN_CREDS);
+                logAndAudit(AssertionMessages.HTTPNEGOTIATE_USING_CONN_CREDS);
             } else {
-                auditor.logAndAudit(AssertionMessages.HTTPCREDS_NO_AUTHN_HEADER);
+                logAndAudit(AssertionMessages.HTTPCREDS_NO_AUTHN_HEADER);
             }
             return loginCreds;
         }
 
         int spos = wwwAuthorize.indexOf(" ");
         if ( spos < 0 ) {
-            auditor.logAndAudit(AssertionMessages.HTTPCREDS_NA_AUTHN_HEADER);
+            logAndAudit(AssertionMessages.HTTPCREDS_NA_AUTHN_HEADER);
             return null;
         }
 
         String scheme = wwwAuthorize.substring( 0, spos );
         String base64 = wwwAuthorize.substring( spos + 1 );
         if ( !scheme().equals(scheme) ) {
-            auditor.logAndAudit(AssertionMessages.HTTPCREDS_NA_AUTHN_HEADER);
+            logAndAudit(AssertionMessages.HTTPCREDS_NA_AUTHN_HEADER);
             return null;
         }
 
@@ -143,7 +137,7 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource<HttpNegotiat
             return loginCreds;
         }
         catch(KerberosException ke) {
-            auditor.logAndAudit(AssertionMessages.HTTPNEGOTIATE_WARNING, new String[]{ke.getMessage()}, ExceptionUtils.getDebugException(ke));
+            logAndAudit(AssertionMessages.HTTPNEGOTIATE_WARNING, new String[]{ke.getMessage()}, ExceptionUtils.getDebugException(ke));
             return null;
         }
     }

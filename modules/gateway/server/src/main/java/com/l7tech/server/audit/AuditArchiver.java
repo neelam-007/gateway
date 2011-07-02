@@ -1,5 +1,7 @@
 package com.l7tech.server.audit;
 
+import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.MessageProcessor;
@@ -42,7 +44,7 @@ public class AuditArchiver implements ApplicationContextAware, PropertyChangeLis
     private final ClusterPropertyManager clusterPropertyManager;
     private final PlatformTransactionManager transactionManager;
     private final AuditRecordManager recordManager;
-    private final Auditor auditor;
+    private final Audit auditor;
 
     private int shutdownThreshold;
     private int startThreshold;
@@ -66,7 +68,7 @@ public class AuditArchiver implements ApplicationContextAware, PropertyChangeLis
                           final PlatformTransactionManager tm,
                           final AuditRecordManager arm,
                           final ArchiveReceiver ar,
-                          final Auditor.AuditorFactory auditorFactory ) throws FindException {
+                          final AuditFactory auditorFactory ) throws FindException {
         if (config == null)
             throw new NullPointerException("ServerConfig parameter must not be null.");
         if (cpm == null)

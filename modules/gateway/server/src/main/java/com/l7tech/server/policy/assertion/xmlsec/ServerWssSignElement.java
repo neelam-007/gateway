@@ -18,7 +18,6 @@ import org.w3c.dom.Document;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.logging.Logger;
 
 /**
  * XML Digital signature on the soap message sent from the ssg server.
@@ -32,12 +31,11 @@ import java.util.logging.Logger;
  * Date: Aug 26, 2003<br/>
  */
 public class ServerWssSignElement extends ServerAddWssSignature<WssSignElement> {
-    private static final Logger logger = Logger.getLogger(ServerWssSignElement.class.getName());
     private final DeferredFailureDomCompiledXpathHolder compiledXpath;
 
     public ServerWssSignElement( final WssSignElement assertion,
                                  final ApplicationContext ctx ) throws IOException {
-        super(assertion, assertion, assertion, ctx, logger, true);
+        super(assertion, assertion, assertion, ctx, true);
         this.compiledXpath = new DeferredFailureDomCompiledXpathHolder(assertion.getXpathExpression());
     }
 
@@ -58,7 +56,7 @@ public class ServerWssSignElement extends ServerAddWssSignature<WssSignElement> 
             selectedElements = compiledXpath.getCompiledXpath().rawSelectElements(soapmsg,
                     new PolicyEnforcementContextXpathVariableFinder(context));
         } catch (JaxenException e) {
-            auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID_MORE_INFO, new String[] { "XPath evaluation error: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e) );
+            logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID_MORE_INFO, new String[] { "XPath evaluation error: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e) );
             throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
         }
 

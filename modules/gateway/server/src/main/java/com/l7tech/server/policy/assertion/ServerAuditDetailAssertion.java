@@ -41,9 +41,10 @@ public class ServerAuditDetailAssertion extends AbstractServerAssertion<AuditDet
         detailMessage = findDetailMessage(Level.parse(subject.getLevel()));
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         String detail = assertion.getDetail();
-        detail = ExpandVariables.process(detail, context.getVariableMap(varsUsed, auditor), auditor);
+        detail = ExpandVariables.process(detail, context.getVariableMap(varsUsed, getAudit()), getAudit());
 
         if (assertion.isLoggingOnly()) {
             LogRecord record = new LogRecord(detailMessage.getLevel(), formatter.formatDetail(detailMessage));

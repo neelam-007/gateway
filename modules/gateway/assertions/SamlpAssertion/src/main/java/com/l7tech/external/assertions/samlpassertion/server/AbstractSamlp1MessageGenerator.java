@@ -2,7 +2,7 @@ package com.l7tech.external.assertions.samlpassertion.server;
 
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.external.assertions.samlpassertion.SamlpRequestBuilderAssertion;
-import com.l7tech.server.audit.Auditor;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.ExceptionUtils;
@@ -47,7 +47,7 @@ public abstract class AbstractSamlp1MessageGenerator<REQ_MSG extends SubjectQuer
     protected static final BigInteger MINOR_VERSION = BigInteger.valueOf(1);
 
     protected final Map<String, Object> variablesMap;
-    protected final Auditor auditor;
+    protected final Audit auditor;
 
     protected REQ_MSG samlpMessage;
     protected SamlpRequestBuilderAssertion assertion;
@@ -65,7 +65,7 @@ public abstract class AbstractSamlp1MessageGenerator<REQ_MSG extends SubjectQuer
     private DatatypeFactory xmltypeFactory;
     private static final Random rand = new SecureRandom();
 
-    public AbstractSamlp1MessageGenerator(final Map<String, Object> variablesMap, final Auditor auditor)
+    public AbstractSamlp1MessageGenerator(final Map<String, Object> variablesMap, final Audit auditor)
         throws SamlpAssertionException
     {
         this.variablesMap = variablesMap;
@@ -84,6 +84,7 @@ public abstract class AbstractSamlp1MessageGenerator<REQ_MSG extends SubjectQuer
         }
     }
 
+    @Override
     public RequestType create(final SamlpRequestBuilderAssertion assertion) {
 
         if (assertion.getSamlVersion() != 1)
@@ -112,6 +113,7 @@ public abstract class AbstractSamlp1MessageGenerator<REQ_MSG extends SubjectQuer
         return finalReq;
     }
 
+    @Override
     public JAXBElement<RequestType> createJAXBElement(RequestType samlpMsg) {
         return samlpFactory.createRequest(samlpMsg);
     }
@@ -300,12 +302,12 @@ public abstract class AbstractSamlp1MessageGenerator<REQ_MSG extends SubjectQuer
     }
 
     protected String generateRequestId() {
-        StringBuffer sb = new StringBuffer(SAMLP_V1_REQUEST_ID_PREFIX);
+        StringBuilder sb = new StringBuilder( SAMLP_V1_REQUEST_ID_PREFIX );
         return sb.append(generateHexBytesForId()).toString();
     }
     
     protected String generateAssertionId() {
-        StringBuffer sb = new StringBuffer(SAMLP_V1_REQUEST_ASSN_ID_PREFIX);
+        StringBuilder sb = new StringBuilder( SAMLP_V1_REQUEST_ASSN_ID_PREFIX );
         return sb.append(generateHexBytesForId()).toString();
     }
 

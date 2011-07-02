@@ -22,6 +22,8 @@ import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.EventChannel;
 import static org.junit.Assert.*;
+
+import com.l7tech.server.util.MockInjector;
 import org.junit.*;
 
 import java.io.IOException;
@@ -136,7 +138,7 @@ public class AuditPolicyEvaluatorTest {
     PolicyManagerStub policyManager = new PolicyManagerStub(new Policy[] { testPolicy });
 
     /** A PolicyCache that always returns the fake policy, with a ServerAssertion instrumented to count its invocations. */
-    PolicyCache policyCache = new PolicyCacheImpl(null, new ServerPolicyFactory(new TestLicenseManager())) {
+    PolicyCache policyCache = new PolicyCacheImpl(null, new ServerPolicyFactory(new TestLicenseManager(),new MockInjector())) {
         {
             setPolicyManager(policyManager);
             setApplicationEventPublisher(new EventChannel());

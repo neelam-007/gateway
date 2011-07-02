@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.message.Message;
@@ -12,16 +9,13 @@ import com.l7tech.server.message.AuthenticationContext;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 
-import java.util.logging.Logger;
-
 /**
  * @author alex
  */
 public class ServerAddWssTimestamp extends ServerAddWssSignature<AddWssTimestamp> {
-    private static final Logger logger = Logger.getLogger(ServerAddWssTimestamp.class.getName());
 
     public ServerAddWssTimestamp(AddWssTimestamp assertion, ApplicationContext spring) {
-        super(assertion, assertion, assertion, spring, logger, false);
+        super(assertion, assertion, assertion, spring, false);
     }
 
     @Override

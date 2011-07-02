@@ -1,9 +1,6 @@
-/**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.security.cert;
 
-import com.l7tech.server.audit.Auditor;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.security.types.CertificateValidationResult;
 import com.l7tech.security.types.CertificateValidationType;
 import com.l7tech.security.cert.TrustedCert;
@@ -44,7 +41,7 @@ public interface CertValidationProcessor {
                                       CertificateValidationType minimumValidationType,
                                       CertificateValidationType requestedValidationType,
                                       Facility facility,
-                                      Auditor auditor)
+                                      Audit auditor)
             throws CertificateException, SignatureException;
 
     /**

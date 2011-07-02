@@ -105,7 +105,7 @@ public class ServerSimpleRawTransportAssertionTest {
         ass.setMaxResponseBytes(10);
         ass.setResponseContentType("text/xml");
 
-        ServerSimpleRawTransportAssertion sass = new ServerSimpleRawTransportAssertion(ass, null, null);
+        ServerSimpleRawTransportAssertion sass = new ServerSimpleRawTransportAssertion(ass, null);
         final StubSocketImpl sockimp = new StubSocketImpl(new ByteArrayInputStream("<response/>".getBytes()), new ByteArrayOutputStream());
         sass.socketFactory = new StubSocketFactory(new StubSocket(sockimp));
         AssertionStatus result = sass.checkRequest(context("<blah/>"));
@@ -119,7 +119,7 @@ public class ServerSimpleRawTransportAssertionTest {
         ass.setTargetPort(2323);
         ass.setResponseContentType("text/xml");
 
-        ServerSimpleRawTransportAssertion sass = new ServerSimpleRawTransportAssertion(ass, null, null);
+        ServerSimpleRawTransportAssertion sass = new ServerSimpleRawTransportAssertion(ass, null);
         
         @SuppressWarnings({"ThrowableInstanceNeverThrown"})
         final StubSocketImpl sockimp = new StubSocketImpl(new IOExceptionThrowingInputStream(new IOException("OUCH")), new NullOutputStream());
@@ -166,7 +166,7 @@ public class ServerSimpleRawTransportAssertionTest {
 
         PolicyEnforcementContext context = context("<blah/>");
         context.setVariable("customContentType", "text/xml; charset=ISO-8859-1"); // intentionally use incorrect/mismatching variable name
-        ServerSimpleRawTransportAssertion sass = new ServerSimpleRawTransportAssertion(ass, null, null);
+        ServerSimpleRawTransportAssertion sass = new ServerSimpleRawTransportAssertion(ass, null);
         sass.socketFactory = new StubSocketFactory(new StubSocket(new StubSocketImpl(new ByteArrayInputStream("<response/>".getBytes()), new ByteArrayOutputStream())));
 
         AssertionStatus result = sass.checkRequest(context);
@@ -215,7 +215,7 @@ public class ServerSimpleRawTransportAssertionTest {
 
         final ByteArrayOutputStream outputCapture = new ByteArrayOutputStream();
 
-        ServerSimpleRawTransportAssertion sass = new ServerSimpleRawTransportAssertion(ass, null, null);
+        ServerSimpleRawTransportAssertion sass = new ServerSimpleRawTransportAssertion(ass, null);
         final StubSocketImpl sockimp1 = new StubSocketImpl(new ByteArrayInputStream(responseStr.getBytes()), outputCapture);
         sass.socketFactory = new StubSocketFactory(new StubSocket(sockimp1));
 
@@ -363,7 +363,7 @@ public class ServerSimpleRawTransportAssertionTest {
 
         final ByteArrayOutputStream outputCapture = new ByteArrayOutputStream();
 
-        ServerSimpleRawTransportAssertion sass = new ServerSimpleRawTransportAssertion(ass, null, null);
+        ServerSimpleRawTransportAssertion sass = new ServerSimpleRawTransportAssertion(ass, null);
         final StubSocketImpl sockimp1 = new StubSocketImpl(new ByteArrayInputStream("<response/>".getBytes()), outputCapture);
         sass.socketFactory = new StubSocketFactory(new StubSocket(sockimp1));
 
@@ -376,7 +376,7 @@ public class ServerSimpleRawTransportAssertionTest {
     }
 
     private static StubSocketImpl simulateRequest(SimpleRawTransportAssertion ass, PolicyEnforcementContext context, ByteArrayOutputStream outputCapture, String responseStr) throws PolicyAssertionException, IOException {
-        ServerSimpleRawTransportAssertion sass = new ServerSimpleRawTransportAssertion(ass, null, null);
+        ServerSimpleRawTransportAssertion sass = new ServerSimpleRawTransportAssertion(ass, null);
         final StubSocketImpl sockimp = new StubSocketImpl(new ByteArrayInputStream(responseStr.getBytes()), outputCapture);
         sass.socketFactory = new StubSocketFactory(new StubSocket(sockimp));
 

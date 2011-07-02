@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.policy.assertion.credential;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
@@ -10,40 +7,31 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.util.ExceptionUtils;
-import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 
 public abstract class ServerCredentialSourceAssertion<A extends Assertion> extends AbstractServerAssertion<A> {
-    private final Auditor auditor;
 
-    protected ServerCredentialSourceAssertion(A data, ApplicationContext springContext) {
+    protected ServerCredentialSourceAssertion(A data) {
         super(data);
         if (!data.isCredentialSource())  {
             throw new IllegalArgumentException("Not a credential source " + data);
         }
-        this.auditor = new Auditor(this, springContext, logger);
     }
 
     /**
      * Server-side processing for all <code>CredentialSourceAssertion</code>s.
-     *
-     * @param context
-     * @throws IOException
-     * @throws PolicyAssertionException
      */
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException
     {
-        final HashMap<String,String> authParams = new HashMap<String,String>();
+        final Map<String, String> authParams = new HashMap<String,String>();
         try {
             AuthenticationContext authContext = context.getDefaultAuthenticationContext();
             LoginCredentials pc = authContext.getLastCredentials();
@@ -59,7 +47,7 @@ public abstract class ServerCredentialSourceAssertion<A extends Assertion> exten
             if ( pc == null ) {
                 context.setAuthenticationMissing();
                 challenge( context, authParams );
-                auditor.logAndAudit(AssertionMessages.HTTPCREDS_AUTH_REQUIRED);
+                logAndAudit( AssertionMessages.HTTPCREDS_AUTH_REQUIRED );
                 return AssertionStatus.AUTH_REQUIRED;
             } else {
                 authContext.addCredentials( pc );
@@ -68,14 +56,14 @@ public abstract class ServerCredentialSourceAssertion<A extends Assertion> exten
         } catch (CredentialFinderException cfe) {
             AssertionStatus status = cfe.getStatus();
             if (status == null) {
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO, null, cfe);
+                logAndAudit( AssertionMessages.EXCEPTION_INFO, null, cfe );
                 throw new PolicyAssertionException(assertion, cfe.getMessage(), cfe);
             } else {
                 challenge( context, authParams );
                 // bug#5230 - do not display the stack trace in the log
                 // Suppress exception trace by omitting exception argument
                 String cfeMessage = ExceptionUtils.getMessage(cfe);
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[] {cfeMessage}, null);
+                logAndAudit( AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[]{ cfeMessage }, null );
 
                 if ( status == AssertionStatus.AUTH_REQUIRED )
                     context.setAuthenticationMissing();
@@ -131,6 +119,4 @@ public abstract class ServerCredentialSourceAssertion<A extends Assertion> exten
      * @param authParams  the authParams containing the challenge data collected by findCredentials().  May not be null.
      */
     protected abstract void challenge( PolicyEnforcementContext context, Map<String, String> authParams );
-
-    final Logger logger = Logger.getLogger(getClass().getName());
 }

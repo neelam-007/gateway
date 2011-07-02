@@ -7,8 +7,6 @@ import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.ldap.LdapIdentityProvider;
 import com.l7tech.server.identity.ldap.LdapUtils;
@@ -24,7 +22,6 @@ import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.TimeUnit;
 import org.apache.commons.collections.map.LRUMap;
 import org.springframework.beans.factory.BeanFactory;
-import org.springframework.context.ApplicationContext;
 
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
@@ -36,7 +33,6 @@ import javax.naming.directory.SearchResult;
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Server side impl of LDAPQueryAssertion
@@ -54,9 +50,6 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
     public ServerLDAPQueryAssertion( final LDAPQueryAssertion assertion,
                                      final BeanFactory context ) {
         super(assertion);
-        auditor = context instanceof ApplicationContext ?
-                new Auditor( this, (ApplicationContext)context, logger ) :
-                new LogOnlyAuditor( logger );
         identityProviderFactory = context.getBean("identityProviderFactory", IdentityProviderFactory.class);
         varsUsed = assertion.getVariablesUsed();
         cachedAttributeValues = Collections.synchronizedMap( assertion.getCacheSize() > 0 ? new LRUMap( assertion.getCacheSize() ) : new HashMap());
@@ -67,17 +60,17 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
     @Override
     public AssertionStatus checkRequest( final PolicyEnforcementContext pec ) throws IOException, PolicyAssertionException {
         // reconstruct filter expression
-        final Map<String,Object> variableMap = pec.getVariableMap(varsUsed, auditor);
+        final Map<String,Object> variableMap = pec.getVariableMap(varsUsed, getAudit());
         final String filterExpression = !assertion.isSearchFilterInjectionProtected() ?
-            ExpandVariables.process(assertion.getSearchFilter(), variableMap, auditor) :
-            ExpandVariables.process(assertion.getSearchFilter(), variableMap, auditor, new Functions.Unary<String,String>(){
+            ExpandVariables.process(assertion.getSearchFilter(), variableMap, getAudit()) :
+            ExpandVariables.process(assertion.getSearchFilter(), variableMap, getAudit(), new Functions.Unary<String,String>(){
                 @Override
                 public String call( final String replacement ) {
                     return LdapUtils.filterEscape( replacement );
                 }
             });
 
-        auditor.logAndAudit( AssertionMessages.LDAP_QUERY_SEARCH_FILTER, filterExpression );
+        logAndAudit( AssertionMessages.LDAP_QUERY_SEARCH_FILTER, filterExpression );
 
         CacheEntry cacheEntry = null;
         if (assertion.isEnableCache()) {
@@ -88,7 +81,7 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
             try {
                 cacheEntry = createNewCacheEntry(filterExpression, assertion.getAttrNames());
             } catch (FindException e) {
-                auditor.logAndAudit( AssertionMessages.LDAP_QUERY_ERROR, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e) );
+                logAndAudit( AssertionMessages.LDAP_QUERY_ERROR, new String[]{ ExceptionUtils.getMessage( e ) }, ExceptionUtils.getDebugException( e ) );
                 return AssertionStatus.SERVER_ERROR;
             }
             
@@ -120,11 +113,9 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger(ServerLDAPQueryAssertion.class.getName());
     private static final long cacheCleanupInterval = SyspropUtil.getLong( "com.l7tech.external.assertions.ldapquery.cacheCleanupInterval", 321123L ); // around every 5 minutes
 
     private final IdentityProviderFactory identityProviderFactory;
-    private final Auditor auditor;
     private final String[] varsUsed;
     // key: resolved search filter value value: cached entry
     private final Map<? super String,? super CacheEntry> cachedAttributeValues;
@@ -172,7 +163,7 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
                 sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
                 sc.setReturningAttributes( attributeNames );
                 if ( maxResults > 0 ) {
-                    sc.setCountLimit( maxResults + 1 );
+                    sc.setCountLimit( (long) (maxResults + 1) );
                 }
                 answer = dirContext.search(LdapUtils.name(identityProvider.getConfig().getSearchBase()), filter, sc);
 
@@ -254,7 +245,7 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
                         }
                     } else {
                         if ( attributeMapping.isFailMultivalued() && simpleAttribute.getSize() > 1 ) {
-                            auditor.logAndAudit( AssertionMessages.LDAP_QUERY_MULTIVALUED_ATTR, attributeName );
+                            logAndAudit( AssertionMessages.LDAP_QUERY_MULTIVALUED_ATTR, attributeName );
                             throw new AssertionStatusException( AssertionStatus.FALSIFIED );
                         }
                         if ( logger.isLoggable( Level.FINE ) ) {
@@ -271,12 +262,12 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
         } );
 
         if ( maxResults > 0 && availableResults > maxResults ) {
-            auditor.logAndAudit( AssertionMessages.LDAP_QUERY_TOO_MANY_RESULTS, filter, Integer.toString(maxResults) );
+            logAndAudit( AssertionMessages.LDAP_QUERY_TOO_MANY_RESULTS, filter, Integer.toString( maxResults ) );
             if ( assertion.isFailIfTooManyResults() ) {
                 throw new AssertionStatusException( AssertionStatus.FALSIFIED );
             }
         } else if ( availableResults == 0 ) {
-            auditor.logAndAudit( AssertionMessages.LDAP_QUERY_NO_RESULTS, filter );
+            logAndAudit( AssertionMessages.LDAP_QUERY_NO_RESULTS, filter );
         }
 
         final Map<String, AttributeValue> cachedAttributes = new HashMap<String,AttributeValue>();

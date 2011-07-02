@@ -1,15 +1,15 @@
 package com.l7tech.external.assertions.mtom.server;
 
-import com.l7tech.gateway.common.audit.AuditDetailMessage;
+import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.policy.assertion.ServerRequestXpathAssertion;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 import org.w3c.dom.Document;
 import com.l7tech.external.assertions.mtom.MtomEncodeAssertion;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -22,20 +22,14 @@ import com.l7tech.util.ResourceUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
 
-import java.text.MessageFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
-import java.util.logging.Logger;
 import java.util.HashMap;
 
 /**
  *
  */
 public class ServerMtomEncodeAssertionTest {
-
-    private static final Logger logger = Logger.getLogger(ServerMtomEncodeAssertionTest.class.getName());
 
     private static final String message = "<S:Envelope xmlns:S=\"http://www.w3.org/2003/05/soap-envelope\">\n" +
                 "    <S:Body>\n" +
@@ -145,7 +139,7 @@ public class ServerMtomEncodeAssertionTest {
 
         new AllAssertion( Arrays.asList(rxa, mea) ); // So variable usage can be discovered
 
-        final ServerRequestXpathAssertion srxa = new ServerRequestXpathAssertion(rxa, null);
+        final ServerRequestXpathAssertion srxa = new ServerRequestXpathAssertion(rxa);
         final ServerMtomEncodeAssertion smea = buildServerAssertion( mea );
         final Document requestDoc = XmlUtil.parse( message );
         PolicyEnforcementContext context = null;
@@ -267,21 +261,15 @@ public class ServerMtomEncodeAssertionTest {
                 }} )
         } );
 
-        final List<String> messages = new ArrayList<String>();
-        final ServerMtomEncodeAssertion smea = buildServerAssertion( mea, messages );
+        final TestAudit testAudit = new TestAudit();
+        final ServerMtomEncodeAssertion smea = buildServerAssertion( mea, testAudit );
         final Document requestDoc = XmlUtil.parse( message );
         PolicyEnforcementContext context = null;
         try {
             context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(requestDoc), null );
             AssertionStatus status = smea.checkRequest( context );
             assertEquals( "status falsified for " + description, AssertionStatus.FALSIFIED, status );
-            boolean sawAudit = false;
-            for ( String auditMessage : messages ) {
-                if ( auditMessage.contains("Invalid Base64 element content (only Base64 characters are permitted, must not contain whitespace)" )) {
-                    sawAudit = true;
-                }
-            }
-            assertTrue("failed due to element whitespace", sawAudit);
+            assertTrue("failed due to element whitespace", testAudit.isAuditPresentContaining( "Invalid Base64 element content (only Base64 characters are permitted, must not contain whitespace)" ));
 
         } finally {
             ResourceUtils.closeQuietly( context );
@@ -292,18 +280,9 @@ public class ServerMtomEncodeAssertionTest {
         return buildServerAssertion( mea, null );
     }
 
-    private ServerMtomEncodeAssertion buildServerAssertion( final MtomEncodeAssertion mea, final List<String> messages ) {
-        return new ServerMtomEncodeAssertion(
+    private ServerMtomEncodeAssertion buildServerAssertion( final MtomEncodeAssertion mea, final TestAudit testAudit ) {
+        final ServerMtomEncodeAssertion serverAssertion = new ServerMtomEncodeAssertion(
                 mea,
-                new LogOnlyAuditor( logger ){
-                    @Override
-                    public void logAndAudit( final AuditDetailMessage msg, final String[] params, final Throwable e ) {
-                        if ( messages != null ) {
-                            messages.add( MessageFormat.format( msg.getMessage(), params ) );
-                        }
-                        super.logAndAudit( msg, params, e );
-                    }
-                },
                 new StashManagerFactory(){
                     @Override
                     public StashManager createStashManager() {
@@ -312,5 +291,9 @@ public class ServerMtomEncodeAssertionTest {
                 }
 
         );
+
+        return testAudit==null ?
+                serverAssertion :
+                ApplicationContexts.inject( serverAssertion, Collections.singletonMap( "auditFactory", testAudit.factory()) );
     }
 }

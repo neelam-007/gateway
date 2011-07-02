@@ -163,7 +163,7 @@ public class ServerEncodeDecodeAssertionTest {
         final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext( null, null );
         pec.setVariable( "source", sourceText );
 
-        final ServerEncodeDecodeAssertion serverEncodeDecodeAssertion = new ServerEncodeDecodeAssertion( assertion, null );
+        final ServerEncodeDecodeAssertion serverEncodeDecodeAssertion = new ServerEncodeDecodeAssertion( assertion );
         final AssertionStatus status = serverEncodeDecodeAssertion.checkRequest( pec );
 
         assertEquals( "Encode status", AssertionStatus.NONE, status );
@@ -173,7 +173,7 @@ public class ServerEncodeDecodeAssertionTest {
         assertion.setSourceVariableName( "output1" );
         assertion.setTargetVariableName( "output2" );
         assertion.setTransformType( decode );
-        final ServerEncodeDecodeAssertion serverEncodeDecodeAssertion2 = new ServerEncodeDecodeAssertion( assertion, null );
+        final ServerEncodeDecodeAssertion serverEncodeDecodeAssertion2 = new ServerEncodeDecodeAssertion( assertion );
         final AssertionStatus status2 = serverEncodeDecodeAssertion2.checkRequest( pec );
 
         assertEquals( "Decode status", AssertionStatus.NONE, status2 );
@@ -207,7 +207,7 @@ public class ServerEncodeDecodeAssertionTest {
         final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext( null, null );
         pec.setVariable( "source", data );
 
-        final ServerEncodeDecodeAssertion serverEncodeDecodeAssertion = new ServerEncodeDecodeAssertion( assertion, null );
+        final ServerEncodeDecodeAssertion serverEncodeDecodeAssertion = new ServerEncodeDecodeAssertion( assertion );
         AssertionStatus status;
         try {
             status = serverEncodeDecodeAssertion.checkRequest( pec );

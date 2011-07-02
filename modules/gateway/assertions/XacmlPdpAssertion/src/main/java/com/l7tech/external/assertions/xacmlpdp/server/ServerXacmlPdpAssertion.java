@@ -19,7 +19,6 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.StashManagerFactory;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
@@ -62,7 +61,6 @@ import java.util.logging.Logger;
 import static com.l7tech.server.util.res.ResourceGetter.*;
 
 /**
- * Copyright (C) 2009, Layer 7 Technologies Inc.
  * User: njordan
  * Date: 13-Mar-2009
  * Time: 11:33:42 PM
@@ -70,7 +68,6 @@ import static com.l7tech.server.util.res.ResourceGetter.*;
 public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAssertion> {
     public ServerXacmlPdpAssertion(XacmlPdpAssertion ea, ApplicationContext applicationContext) throws ServerPolicyException {
         super(ea);
-        auditor = new Auditor(this, applicationContext, logger);
         stashManagerFactory = applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
         envModule = new CurrentEnvModule();
 
@@ -131,7 +128,7 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
                     resourceObjectfactory,
                     null,
                     getCache(applicationContext),
-                    auditor);
+                    getAudit());
         } catch ( ServerPolicyException spe ) {
             ParsingException pe = ExceptionUtils.getCauseIfCausedBy( spe, ParsingException.class );
             if ( pe == null ) {
@@ -178,13 +175,13 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
             {
                 rootElement = XmlUtil.findFirstChildElementByName(rootElement, rootElement.getNamespaceURI(), "Body");
                 if(rootElement == null) {
-                    auditor.logAndAudit(AssertionMessages.XACML_PDP_REQUEST_NOT_ENCAPSULATED);
+                    logAndAudit(AssertionMessages.XACML_PDP_REQUEST_NOT_ENCAPSULATED);
                     return AssertionStatus.FALSIFIED;
                 }
                 //the namespace varies with the version, do not check namespace here, it is checked below
                 rootElement = XmlUtil.findFirstChildElementByName(rootElement, (String) null, "Request");
                 if(rootElement == null) {
-                    auditor.logAndAudit(AssertionMessages.XACML_PDP_REQUEST_NOT_ENCAPSULATED);
+                    logAndAudit(AssertionMessages.XACML_PDP_REQUEST_NOT_ENCAPSULATED);
                     return AssertionStatus.FALSIFIED;
                 }
             }
@@ -192,7 +189,7 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
             //check the namespace on rootElement is valid. The namespace represents the xacml request version
             String nameSpace = rootElement.getNamespaceURI();
             if(!XacmlAssertionEnums.XacmlVersionType.isValidXacmlVersionType(nameSpace)){
-                auditor.logAndAudit(AssertionMessages.XACML_PDP_REQUEST_NAMESPACE_UNKNOWN, nameSpace);
+                logAndAudit(AssertionMessages.XACML_PDP_REQUEST_NAMESPACE_UNKNOWN, nameSpace);
                 return AssertionStatus.FALSIFIED;
             }
             
@@ -273,13 +270,13 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
 
             return status;
         } catch(InvalidRequestException e) {
-            auditor.logAndAudit(AssertionMessages.XACML_PDP_INVALID_REQUEST, new String[] {ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+            logAndAudit(AssertionMessages.XACML_PDP_INVALID_REQUEST, new String[] {ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.FAILED;
         } catch (InvalidPolicyException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
         } catch (NoSuchVariableException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.FAILED;
         }
     }
@@ -292,7 +289,7 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
      * @throws InvalidPolicyException If there is a problem with the XACML policy
      */
     private PolicyFinder getPolicyFinder( final PolicyEnforcementContext context ) throws IOException, InvalidPolicyException {
-        final Map<String,Object> variables = context.getVariableMap(variablesUsed, auditor);
+        final Map<String,Object> variables = context.getVariableMap(variablesUsed, getAudit());
         if (resourceGetter != null) {
             try {
                 return resourceGetter.getResource(null, variables);
@@ -313,7 +310,7 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
         PolicyFinder policyFinder = new PolicyFinder();
         try {
             String policy = ((StaticResourceInfo)assertion.getResourceInfo()).getDocument();
-            String expandedPolicy = ExpandVariables.process(policy, variables, auditor, true);
+            String expandedPolicy = ExpandVariables.process(policy, variables, getAudit(), true);
             ConstantPolicyModule policyModule = new ConstantPolicyModule(expandedPolicy);
             Set<ConstantPolicyModule> policyModules = new HashSet<ConstantPolicyModule>();
             policyModules.add(policyModule);
@@ -381,7 +378,7 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
     private final String[] variablesUsed;
 
     private static final Logger logger = Logger.getLogger(ServerXacmlPdpAssertion.class.getName());
-    private final Auditor auditor;
+
 
     private final StashManagerFactory stashManagerFactory;
     private static HttpObjectCache<PolicyFinder> httpObjectCache = null;

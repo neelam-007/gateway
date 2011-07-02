@@ -1,8 +1,3 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
@@ -45,13 +40,19 @@ public class ServerAcceleratedOversizedTextAssertion extends AbstractMessageTarg
     public ServerAcceleratedOversizedTextAssertion( final OversizedTextAssertion data,
                                                     final ApplicationContext springContext ) throws ServerPolicyException {
         super(data,data);
-        auditor = new Auditor(this, springContext, ServerAcceleratedOversizedTextAssertion.logger);
+        auditor = new Auditor(this, springContext, logger);
         // The delegate will do all the checking except for oversized text and attr nodes, which we can do
         // specially by just scanning the token buffer in one pass.
         delegate = new ServerOversizedTextAssertion(data, springContext, true);
         fallBackDelegate = new ServerOversizedTextAssertion(data, springContext, false);
         this.lengthLimitTestsPresent = assertion.isLimitAttrChars() || assertion.isLimitTextChars() || assertion.isLimitAttrNameChars();
         this.accelTestsPresent = lengthLimitTestsPresent || assertion.isLimitNestingDepth();
+    }
+
+    @Override
+    protected void injectDependencies() {
+        inject( delegate );
+        inject( fallBackDelegate );
     }
 
     private static final int TEXT = 0;
@@ -190,11 +191,6 @@ public class ServerAcceleratedOversizedTextAssertion extends AbstractMessageTarg
             auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID);
             return AssertionStatus.FAILED;
         }
-    }
-
-    @Override
-    protected Auditor getAuditor() {
-        return auditor;
     }
 
     private ChunkState findLongestChunks(RaxDocument doc) {

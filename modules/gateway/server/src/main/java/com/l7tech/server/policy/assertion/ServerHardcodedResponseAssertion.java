@@ -14,7 +14,6 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.StashManagerFactory;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
@@ -27,15 +26,11 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Map;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * The Server side Hardcoded Response.
  */
 public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<HardcodedResponseAssertion> {
-    private static final Logger logger = Logger.getLogger(ServerHardcodedResponseAssertion.class.getName());
-
-    private final Auditor auditor;
     private final StashManagerFactory stashManagerFactory;
 
     private final String message; // message if dynamically processed, else null
@@ -50,7 +45,6 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<Ha
             throws PolicyAssertionException
     {
         super(ass);
-        auditor = new Auditor(this, springContext, logger);
         stashManagerFactory = springContext.getBean("stashManagerFactory", StashManagerFactory.class);
 
         // Cache the the content type if static
@@ -99,7 +93,7 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<Ha
         final Message response = context.getResponse();
         final HttpResponseKnob hrk = getHttpResponseKnob( response );
 
-        final Map<String,Object> variableMap = context.getVariableMap(variablesUsed, auditor);
+        final Map<String,Object> variableMap = context.getVariableMap(variablesUsed, getAudit());
 
         final ContentTypeHeader contentType = getResponseContentType( variableMap );
         final byte[] bytes = getResponseContent( variableMap, contentType );
@@ -120,7 +114,7 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<Ha
         // process early response
         if ( earlyResponse ) {
             if (hrk instanceof HttpServletResponseKnob) {
-                auditor.logAndAudit(AssertionMessages.TEMPLATE_RESPONSE_EARLY);
+                logAndAudit(AssertionMessages.TEMPLATE_RESPONSE_EARLY);
                 final HttpServletResponseKnob hsrk = (HttpServletResponseKnob) hrk;
                 @SuppressWarnings({ "deprecation" })
                 final HttpServletResponse hresponse = hsrk.getHttpServletResponse();
@@ -136,13 +130,13 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<Ha
                     }
                     hresponse.flushBuffer();
                 } catch (NoSuchPartException e) {
-                    auditor.logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                    logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO,
                             new String[] {"Unable to send hardcoded response"},
                             e);
                     return AssertionStatus.FAILED;
                 }
             } else {
-                auditor.logAndAudit(AssertionMessages.TEMPLATE_RESPONSE_NOT_HTTP);
+                logAndAudit(AssertionMessages.TEMPLATE_RESPONSE_NOT_HTTP);
                 return AssertionStatus.FALSIFIED;
             }
         }
@@ -170,11 +164,11 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<Ha
             final String contentTypeStr = ExpandVariables.process(
                     assertion.getResponseContentType(),
                     variableMap,
-                    auditor);
+                    getAudit());
             try {
                 contentType = ContentTypeHeader.parseValue( contentTypeStr );
             } catch ( IOException e ) {
-                auditor.logAndAudit( Messages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                logAndAudit( Messages.EXCEPTION_WARNING_WITH_MORE_INFO,
                         new String[] { "Invalid content type, using text/plain : " + ExceptionUtils.getMessage(e) },
                         ExceptionUtils.getDebugException( e ));
             }
@@ -192,7 +186,7 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<Ha
         final byte[] bytes;
         if ( message != null ) {
             String msg = message;
-            msg = ExpandVariables.process(msg, variableMap, auditor);
+            msg = ExpandVariables.process(msg, variableMap, getAudit());
             bytes = msg.getBytes(contentType.getEncoding());
         } else {
             bytes = this.messageBytesNoVar;

@@ -2,8 +2,8 @@ package com.l7tech.external.assertions.samlpassertion.server.v2;
 
 import com.l7tech.external.assertions.samlpassertion.server.AbstractSamlp2MessageGenerator;
 import com.l7tech.external.assertions.samlpassertion.server.SamlpAssertionException;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.message.Message;
 import com.l7tech.util.ExceptionUtils;
@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 public final class AttributeQueryGenerator extends AbstractSamlp2MessageGenerator<AttributeQueryType> {
     private static final Logger logger = Logger.getLogger(AttributeQueryGenerator.class.getName());
 
-    public AttributeQueryGenerator(final Map<String, Object> variablesMap, final Auditor auditor)
+    public AttributeQueryGenerator(final Map<String, Object> variablesMap, final Audit auditor)
         throws SamlpAssertionException
     {
         super(variablesMap, auditor);

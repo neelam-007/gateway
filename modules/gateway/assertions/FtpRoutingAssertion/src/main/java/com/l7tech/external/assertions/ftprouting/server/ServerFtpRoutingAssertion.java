@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.external.assertions.ftprouting.server;
 
 import com.jscape.inet.ftp.FtpException;
@@ -18,7 +15,6 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.policy.variable.Syntax;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerRoutingAssertion;
 import com.l7tech.server.transport.ftp.FtpClientUtils;
@@ -32,7 +28,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Assertion that routes the request to an FTP server.
@@ -41,15 +36,12 @@ import java.util.logging.Logger;
  * @author rmak
  */
 public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRoutingAssertion> {
-    private static final Logger _logger = Logger.getLogger(ServerFtpRoutingAssertion.class.getName());
-    private final Auditor _auditor;
     private final X509TrustManager _trustManager;
     private final HostnameVerifier _hostnameVerifier;
     private final DefaultKey _keyFinder;
 
     public ServerFtpRoutingAssertion(FtpRoutingAssertion assertion, ApplicationContext applicationContext) {
-        super(assertion, applicationContext, _logger);
-        _auditor = new Auditor(this, applicationContext, _logger);
+        super(assertion, applicationContext);
         _trustManager = applicationContext.getBean("routingTrustManager", X509TrustManager.class);
         _hostnameVerifier = applicationContext.getBean("hostnameVerifier", HostnameVerifier.class);
         _keyFinder = applicationContext.getBean("defaultKey", DefaultKey.class);
@@ -68,7 +60,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         final MimeKnob mimeKnob = request.getKnob(MimeKnob.class);
         if (mimeKnob == null || !request.isInitialized()) {
             // Uninitialized request
-            _auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Request is not initialized; nothing to route");
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Request is not initialized; nothing to route");
             return AssertionStatus.BAD_REQUEST;
         }
 
@@ -76,7 +68,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         try {
             handleProcessedSecurityHeader(request);
         } catch(SAXException se) {
-            _logger.log(Level.INFO, "Error processing security header, request XML invalid ''{0}''", se.getMessage());
+            logger.log(Level.INFO, "Error processing security header, request XML invalid ''{0}''", se.getMessage());
         }
 
         String userName = null;
@@ -88,7 +80,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                 password = new String(credentials.getCredentials());
             }
             if (userName == null) {
-                _auditor.logAndAudit(AssertionMessages.FTP_ROUTING_PASSTHRU_NO_USERNAME);
+                logAndAudit(AssertionMessages.FTP_ROUTING_PASSTHRU_NO_USERNAME);
                 return AssertionStatus.FAILED;
             }
         } else if (assertion.getCredentialsSource() == FtpCredentialsSource.SPECIFIED) {
@@ -124,7 +116,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         } catch (NoSuchPartException e) {
             throw new CausedIOException("Unable to get request body.", e);
         } catch (FtpException e) {
-            _auditor.logAndAudit(AssertionMessages.FTP_ROUTING_FAILED_UPLOAD, getHostName(context, assertion), e.getMessage());
+            logAndAudit(AssertionMessages.FTP_ROUTING_FAILED_UPLOAD, getHostName(context, assertion), e.getMessage());
             return AssertionStatus.FAILED;
         }
     }
@@ -220,7 +212,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
 
     private String expandVariables(PolicyEnforcementContext context, String pattern) {
         final String[] variablesUsed = Syntax.getReferencedNames(pattern);
-        final Map<String, Object> vars = context.getVariableMap(variablesUsed, _auditor);
-        return ExpandVariables.process(pattern, vars, _auditor);
+        final Map<String, Object> vars = context.getVariableMap(variablesUsed, getAudit());
+        return ExpandVariables.process(pattern, vars, getAudit());
     }
 }

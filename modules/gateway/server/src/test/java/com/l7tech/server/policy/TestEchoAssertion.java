@@ -57,7 +57,7 @@ public class TestEchoAssertion extends RoutingAssertion {
 
     public static class ServerTestEcho extends ServerRoutingAssertion<TestEchoAssertion> {
         public ServerTestEcho(TestEchoAssertion data, ApplicationContext applicationContext) {
-            super(data, applicationContext, logger);
+            super(data, applicationContext);
         }
 
         @Override

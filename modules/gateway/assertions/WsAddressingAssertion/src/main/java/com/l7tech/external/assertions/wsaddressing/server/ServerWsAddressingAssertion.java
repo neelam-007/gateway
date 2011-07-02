@@ -2,7 +2,6 @@ package com.l7tech.external.assertions.wsaddressing.server;
 
 import com.l7tech.external.assertions.wsaddressing.WsAddressingAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.message.Message;
 import com.l7tech.message.MessageRole;
@@ -15,7 +14,6 @@ import com.l7tech.security.token.SignedElement;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
@@ -32,7 +30,6 @@ import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Server side implementation of the WsAddressingAssertion.
@@ -49,7 +46,6 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
     public ServerWsAddressingAssertion(final WsAddressingAssertion assertion,
                                        final ApplicationContext context) throws PolicyAssertionException {
         super( assertion );
-        this.auditor = new Auditor(this, context, logger);
         this.config = context.getBean("serverConfig", Config.class);
         this.securityTokenResolver = context.getBean("securityTokenResolver",SecurityTokenResolver.class);
         this.otherNamespaceUri = assertion.getEnableOtherNamespace();
@@ -68,7 +64,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
             messageDescription = assertion.getTargetName();
             msg = context.getTargetMessage(assertion);
         } catch (NoSuchVariableException e) {
-            auditor.logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, e.getVariable(), ExceptionUtils.getMessage(e));
+            logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, e.getVariable(), ExceptionUtils.getMessage(e));
             return AssertionStatus.FAILED;
         }
 
@@ -95,7 +91,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
                         setVariables(addressingProperties, addressingElements, namespace, context);
                     }
 
-                    auditor.logAndAudit(AssertionMessages.WS_ADDRESSING_HEADERS_OK);
+                    logAndAudit(AssertionMessages.WS_ADDRESSING_HEADERS_OK);
                     status = AssertionStatus.NONE;
                     foundAddressing = true;
                     break;
@@ -105,9 +101,9 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
             if ( !foundAddressing ) {
                 if (assertion.getTarget() == TargetMessageType.REQUEST) context.setRequestPolicyViolated();
                 if ( assertion.isRequireSignature() ) {
-                    auditor.logAndAudit(AssertionMessages.WS_ADDRESSING_NO_SIGNED_HEADERS);                    
+                    logAndAudit(AssertionMessages.WS_ADDRESSING_NO_SIGNED_HEADERS);
                 } else {
-                    auditor.logAndAudit(AssertionMessages.WS_ADDRESSING_NO_HEADERS);
+                    logAndAudit(AssertionMessages.WS_ADDRESSING_NO_HEADERS);
                 }
             }
         } catch (AddressingProcessingException ape) {
@@ -124,10 +120,8 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
      *
      */
     ServerWsAddressingAssertion(final WsAddressingAssertion assertion,
-                                final Audit auditor,
-                                final Config config) throws PolicyAssertionException {
+                                final Config config ) throws PolicyAssertionException {
         super(assertion);
-        this.auditor = auditor;
         this.config = config;
         this.securityTokenResolver = null;
         this.otherNamespaceUri = assertion.getEnableOtherNamespace();
@@ -242,7 +236,6 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger(ServerWsAddressingAssertion.class.getName());
     private static final boolean requireCredentialSigningToken = SyspropUtil.getBoolean( "com.l7tech.server.policy.requireSigningTokenCredential", true );
 
     private static final String NS_WS_ADDRESSING_200408 = SoapConstants.WSA_NAMESPACE2;
@@ -258,7 +251,6 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
     private static final String WSA_REPLYTO = "ReplyTo";
     private static final String WSA_TO = "To";
 
-    private final Audit auditor;
     private final Config config;
 
     private final String otherNamespaceUri;
@@ -291,14 +283,14 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
 
         try {
             if (!msg.isSoap()) {
-                auditor.logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP);
+                logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP);
                 throw new AddressingProcessingException("Message is not SOAP", AssertionStatus.NOT_APPLICABLE);
             }
 
             if (assertion.getTarget() == TargetMessageType.REQUEST && !config.getBooleanProperty(ServerConfig.PARAM_WSS_PROCESSOR_LAZY_REQUEST,true) )  {
                 wssResults = msg.getSecurityKnob().getProcessorResult();
             } else {
-                wssResults = WSSecurityProcessorUtils.getWssResults(msg, what, securityTokenResolver, auditor);
+                wssResults = WSSecurityProcessorUtils.getWssResults(msg, what, securityTokenResolver, getAudit());
             }
         } catch (SAXException e) {
             throw new CausedIOException(e);
@@ -309,7 +301,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
         }
 
         if ( wssResults == null ) {
-            auditor.logAndAudit(MessageProcessingMessages.MESSAGE_NO_WSS);
+            logAndAudit(MessageProcessingMessages.MESSAGE_NO_WSS);
             throw new AddressingProcessingException("Message does not contain any WSS security", AssertionStatus.FALSIFIED);
         }
 
@@ -321,7 +313,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
                 requireCredentialSigningToken,
                 relatedRequestMessage,
                 relatedRequestMessage==null ? null : context.getAuthenticationContext( relatedRequestMessage ),
-                auditor );
+                getAudit() );
     }
 
     /**
@@ -330,7 +322,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
     private ElementCursor getElementCursor(final Message msg) throws IOException, AddressingProcessingException {
         try {
             if ( !msg.isSoap() ) {
-                auditor.logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP);
+                logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP);
                 throw new AddressingProcessingException("Message is not SOAP", AssertionStatus.NOT_APPLICABLE);
             }
 
@@ -386,7 +378,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
                 foundHeader = true;
             } 
         } else {
-            auditor.logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP);
+            logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP);
             throw new AddressingProcessingException("Message is not SOAP (envelope not found)", AssertionStatus.FALSIFIED);
         }
 
@@ -428,7 +420,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
     private void auditAddressing( final Map<QName, String> addressingProperties,
                                   final boolean signed ) {
         if ( addressingProperties.isEmpty() ) {
-            auditor.logAndAudit( signed ?
+            logAndAudit( signed ?
                     AssertionMessages.WS_ADDRESSING_HEADERS_SIGNED_NONE :
                     AssertionMessages.WS_ADDRESSING_HEADERS_NONE );
         } else {
@@ -442,7 +434,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
             CollectionUtils.foreach( namespaces, false, new Functions.UnaryVoid<String>(){
                 @Override
                 public void call( final String namespace ) {
-                    auditor.logAndAudit( signed ?
+                    logAndAudit( signed ?
                             AssertionMessages.WS_ADDRESSING_FOUND_SIGNED_HEADERS :
                             AssertionMessages.WS_ADDRESSING_FOUND_HEADERS,
                             namespace );

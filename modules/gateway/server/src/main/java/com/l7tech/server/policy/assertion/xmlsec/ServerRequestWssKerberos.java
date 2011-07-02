@@ -14,7 +14,6 @@ import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.SecurityContextFinder;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.security.kerberos.KerberosSessionContextManager;
@@ -26,7 +25,6 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Server side processing for WS-Security Kerberos Tokens.
@@ -38,7 +36,6 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion<RequestWss
     public ServerRequestWssKerberos(RequestWssKerberos requestWssKerberos, ApplicationContext springContext) {
         super(requestWssKerberos);
         this.requestWssKerberos = requestWssKerberos;
-        this.auditor = new Auditor(this, springContext, logger);
         this.config = springContext.getBean("serverConfig", Config.class);
         this.securityTokenResolver = springContext.getBean("securityTokenResolver", SecurityTokenResolver.class);
         this.securityContextFinder = springContext.getBean("securityContextFinder", SecurityContextFinder.class);
@@ -48,26 +45,26 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion<RequestWss
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         if (!SecurityHeaderAddressableSupport.isLocalRecipient(requestWssKerberos)) {
-            auditor.logAndAudit(AssertionMessages.REQUESTWSS_NOT_FOR_US);
+            logAndAudit( AssertionMessages.REQUESTWSS_NOT_FOR_US );
             return AssertionStatus.NONE;
         }
 
         ProcessorResult wssResults;
         try {
             if (!context.getRequest().isSoap()) {
-                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_KERBEROS_NON_SOAP);
+                logAndAudit( AssertionMessages.REQUEST_WSS_KERBEROS_NON_SOAP );
                 return AssertionStatus.BAD_REQUEST;
             }
             if ( !config.getBooleanProperty(ServerConfig.PARAM_WSS_PROCESSOR_LAZY_REQUEST, true) ) {
                 wssResults = context.getRequest().getSecurityKnob().getProcessorResult();
             } else {
-                wssResults = WSSecurityProcessorUtils.getWssResults(context.getRequest(), "Request", securityTokenResolver, securityContextFinder, auditor, null);
+                wssResults = WSSecurityProcessorUtils.getWssResults(context.getRequest(), "Request", securityTokenResolver, securityContextFinder, getAudit(), null);
             }
         } catch (SAXException e) {
             throw new CausedIOException(e);
         }
         if (wssResults == null) {
-            auditor.logAndAudit(AssertionMessages.REQUESTWSS_NO_SECURITY);
+            logAndAudit( AssertionMessages.REQUESTWSS_NO_SECURITY );
             context.setRequestPolicyViolated();
             context.setAuthenticationMissing();
             return AssertionStatus.FALSIFIED;
@@ -75,7 +72,7 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion<RequestWss
 
         XmlSecurityToken[] tokens = wssResults.getXmlSecurityTokens();
         if (tokens == null) {
-            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_KERBEROS_NO_TOKEN);
+            logAndAudit( AssertionMessages.REQUEST_WSS_KERBEROS_NO_TOKEN );
             context.setAuthenticationMissing();
             return AssertionStatus.AUTH_REQUIRED;
         }
@@ -113,7 +110,7 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion<RequestWss
             context.getAuthenticationContext(context.getRequest()).addCredentials(loginCreds);
             context.setVariable("kerberos.realm", extractRealm(kerberosServiceTicket.getClientPrincipalName()));
 
-            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_KERBEROS_GOT_TICKET, new String[] {kerberosServiceTicket.getClientPrincipalName()});
+            logAndAudit( AssertionMessages.REQUEST_WSS_KERBEROS_GOT_TICKET, kerberosServiceTicket.getClientPrincipalName() );
 
             // stash for later reference
             final String sessionIdentifier = KerberosUtils.getSessionIdentifier(kerberosServiceTicket.getGSSAPReqTicket());
@@ -136,15 +133,13 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion<RequestWss
 
             return AssertionStatus.NONE;
         }
-        auditor.logAndAudit(AssertionMessages.REQUEST_WSS_KERBEROS_NO_TICKET);
+        logAndAudit( AssertionMessages.REQUEST_WSS_KERBEROS_NO_TICKET );
         context.setAuthenticationMissing();
         return AssertionStatus.AUTH_REQUIRED;
     }
 
     //- PRIVATE
 
-    private final Logger logger = Logger.getLogger(getClass().getName());
-    private final Auditor auditor;
     private final Config config;
     private final SecurityTokenResolver securityTokenResolver;
     private final SecurityContextFinder securityContextFinder;

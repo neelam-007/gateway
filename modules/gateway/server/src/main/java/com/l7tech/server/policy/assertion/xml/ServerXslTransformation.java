@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2003-2006 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.policy.assertion.xml;
 
 import com.l7tech.common.http.GenericHttpClientFactory;
@@ -20,8 +17,6 @@ import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
@@ -49,7 +44,6 @@ import com.l7tech.xml.xslt.StylesheetCompiler;
 import com.l7tech.xml.xslt.TransformInput;
 import com.l7tech.xml.xslt.TransformOutput;
 import org.springframework.beans.factory.BeanFactory;
-import org.springframework.context.ApplicationContext;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -77,7 +71,6 @@ import java.util.logging.Logger;
 public class ServerXslTransformation
         extends AbstractServerAssertion<XslTransformation>
 {
-    private static final Logger logger = Logger.getLogger(ServerXslTransformation.class.getName());
     private static final SAXParserFactory piParser = SAXParserFactory.newInstance();
     static {
         piParser.setNamespaceAware(false);
@@ -109,19 +102,13 @@ public class ServerXslTransformation
     /** A cache for remotely loaded stylesheets. */
     private static UrlResolver<CompiledStylesheet> httpObjectCache = null;
 
-    private final Auditor auditor;
     private final ResourceGetter<CompiledStylesheet, ElementCursor> resourceGetter;
     private final boolean allowMessagesWithNoProcessingInstruction;
     private final String[] urlVarsUsed;
 
     public ServerXslTransformation(XslTransformation assertion, BeanFactory beanFactory) throws ServerPolicyException {
         super(assertion);
-        if (assertion == null) throw new IllegalArgumentException("must provide assertion");
 
-        //noinspection ThisEscapedInObjectConstruction
-        this.auditor = beanFactory instanceof ApplicationContext
-                ? new Auditor(this, (ApplicationContext)beanFactory, logger)
-                : new LogOnlyAuditor(logger);
         this.urlVarsUsed = assertion.getVariablesUsed();
 
         // Create ResourceGetter that will produce the XSLT for us, depending on assertion config
@@ -182,7 +169,7 @@ public class ServerXslTransformation
         allowMessagesWithNoProcessingInstruction = muri != null && muri.isAllowMessagesWithoutUrl();
 
         this.resourceGetter = ResourceGetter.createResourceGetter(
-                assertion, ri, resourceObjectfactory, urlFinder, getCache(cacheObjectFactory, beanFactory), auditor);
+                assertion, ri, resourceObjectfactory, urlFinder, getCache(cacheObjectFactory, beanFactory), getAudit());
     }
 
     protected UrlResolver<CompiledStylesheet> getCache( final HttpObjectCache.UserObjectFactory<CompiledStylesheet> cacheObjectFactory,
@@ -194,7 +181,7 @@ public class ServerXslTransformation
             GenericHttpClientFactory clientFactory = (GenericHttpClientFactory)spring.getBean("httpClientFactory");
             if (clientFactory == null) throw new IllegalStateException("No httpClientFactory bean");
 
-            Config config = validated( ServerConfig.getInstance() );
+            Config config = validated( ServerConfig.getInstance(), logger );
             httpObjectCache = new HttpObjectCache<CompiledStylesheet>(
                         "XSL-T",
                         config.getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_ENTRIES, 10000),
@@ -206,7 +193,7 @@ public class ServerXslTransformation
         }
     }
 
-    private static Config validated( final Config config ) {
+    private static Config validated( final Config config, final Logger logger ) {
         final ValidatedConfig vc = new ValidatedConfig( config, logger, new Resolver<String,String>(){
             @Override
             public String resolve( final String key ) {
@@ -236,27 +223,27 @@ public class ServerXslTransformation
 
         switch (isrequest) {
             case REQUEST:
-                auditor.logAndAudit(AssertionMessages.XSLT_REQUEST);
+                logAndAudit(AssertionMessages.XSLT_REQUEST);
                 message = context.getRequest();
                 break;
             case RESPONSE:
-                auditor.logAndAudit(AssertionMessages.XSLT_RESPONSE);
+                logAndAudit(AssertionMessages.XSLT_RESPONSE);
                 message = context.getResponse();
                 break;
             case OTHER:
                 final String mvar = assertion.getOtherTargetMessageVariable();
                 if (mvar == null) throw new PolicyAssertionException(assertion, "Target message variable not set");
                 try {
-                    auditor.logAndAudit(AssertionMessages.XSLT_OTHER, mvar);
+                    logAndAudit(AssertionMessages.XSLT_OTHER, mvar);
                     message = context.getTargetMessage(assertion, true);
                     break;
                 } catch (NoSuchVariableException e) {
-                    auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, new String[]{ e.getVariable() }, e);
+                    logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, new String[]{ e.getVariable() }, e);
                     return AssertionStatus.FAILED;
                 }
             default:
                 // should not get here!
-                auditor.logAndAudit(AssertionMessages.XSLT_CONFIG_ISSUE);
+                logAndAudit(AssertionMessages.XSLT_CONFIG_ISSUE);
                 return AssertionStatus.SERVER_ERROR;
         }
 
@@ -264,7 +251,7 @@ public class ServerXslTransformation
         try {
             return doCheckRequest(message, context, xsltMessages);
         } catch (SAXException e) {
-            auditor.logAndAudit(AssertionMessages.XSLT_MSG_NOT_XML);
+            logAndAudit(AssertionMessages.XSLT_MSG_NOT_XML);
             return AssertionStatus.BAD_REQUEST;
         } finally {
             if ( !xsltMessages.isEmpty() ) {
@@ -294,7 +281,7 @@ public class ServerXslTransformation
                 try {
                     return context.getVariable(varName);
                 } catch (NoSuchVariableException e) {
-                    auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, varName);
+                    logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, varName);
                     return null;
                 }
             }
@@ -309,7 +296,7 @@ public class ServerXslTransformation
                 try {
                     xmlKnob = message.getXmlKnob();
                 } catch (SAXException e) {
-                    auditor.logAndAudit(AssertionMessages.XSLT_MSG_NOT_XML);
+                    logAndAudit(AssertionMessages.XSLT_MSG_NOT_XML);
                     return AssertionStatus.BAD_REQUEST;
                 }
                 transformInput = makeFirstPartTransformInput(xmlKnob, variableGetter);
@@ -325,7 +312,7 @@ public class ServerXslTransformation
                 try {
                     partInfo = message.getMimeKnob().getPart(whichMimePart);
                 } catch (NoSuchPartException e) {
-                    auditor.logAndAudit(AssertionMessages.XSLT_NO_SUCH_PART, Integer.toString(whichMimePart));
+                    logAndAudit(AssertionMessages.XSLT_NO_SUCH_PART, Integer.toString(whichMimePart));
                     return AssertionStatus.BAD_REQUEST;
                 }
 
@@ -340,7 +327,7 @@ public class ServerXslTransformation
 
             // These variables are used ONLY for interpolation into a remote URL; variables used inside
             // the stylesheet itself are fed in via the variableGetter inside TransformInput
-            Map<String,Object> urlVars = context.getVariableMap(urlVarsUsed, auditor);
+            Map<String,Object> urlVars = context.getVariableMap(urlVarsUsed, getAudit());
             return transform(transformInput, transformOutput, urlVars, xsltMessages);
         } finally {
             if (transformInput instanceof Closeable) {
@@ -362,12 +349,12 @@ public class ServerXslTransformation
 
             if (resource == null) {
                 if (allowMessagesWithNoProcessingInstruction) {
-                    auditor.logAndAudit(AssertionMessages.XSLT_NO_PI_OK);
+                    logAndAudit(AssertionMessages.XSLT_NO_PI_OK);
                     return AssertionStatus.NONE;
                 }
 
                 // Can't happen
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Internal server error: null resource");
+                logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Internal server error: null resource");
                 return AssertionStatus.SERVER_ERROR;
             }
 
@@ -375,28 +362,28 @@ public class ServerXslTransformation
             return AssertionStatus.NONE;
 
         } catch (ResourceGetter.InvalidMessageException e) {
-            auditor.logAndAudit(AssertionMessages.XSLT_MSG_NOT_XML);
+            logAndAudit(AssertionMessages.XSLT_MSG_NOT_XML);
             return AssertionStatus.BAD_REQUEST;
         } catch (SAXException e) {
-            auditor.logAndAudit(AssertionMessages.XSLT_MSG_NOT_XML);
+            logAndAudit(AssertionMessages.XSLT_MSG_NOT_XML);
             return AssertionStatus.BAD_REQUEST;
         } catch (ResourceGetter.MalformedResourceUrlException e) {
-            auditor.logAndAudit(AssertionMessages.XSLT_CANT_READ_XSL, e.getUrl(), "URL is invalid");
+            logAndAudit(AssertionMessages.XSLT_CANT_READ_XSL, e.getUrl(), "URL is invalid");
             return AssertionStatus.BAD_REQUEST;
         } catch (ResourceGetter.UrlNotPermittedException e) {
-            auditor.logAndAudit(AssertionMessages.XSLT_BAD_URL, e.getUrl());
+            logAndAudit(AssertionMessages.XSLT_BAD_URL, e.getUrl());
             return AssertionStatus.BAD_REQUEST;
         } catch (ResourceGetter.ResourceIOException e) {
-            auditor.logAndAudit(AssertionMessages.XSLT_CANT_READ_XSL, new String[]{e.getUrl(), ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+            logAndAudit(AssertionMessages.XSLT_CANT_READ_XSL, new String[]{e.getUrl(), ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
         } catch (ResourceGetter.ResourceParseException e) {
-            auditor.logAndAudit(AssertionMessages.XSLT_BAD_EXT_XSL, new String[]{e.getUrl(), ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+            logAndAudit(AssertionMessages.XSLT_BAD_EXT_XSL, new String[]{e.getUrl(), ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
         } catch (GeneralSecurityException e) {
-            auditor.logAndAudit(AssertionMessages.XSLT_CANT_READ_XSL, "HTTPS url: unable to create an SSL context", ExceptionUtils.getMessage(e));
+            logAndAudit(AssertionMessages.XSLT_CANT_READ_XSL, "HTTPS url: unable to create an SSL context", ExceptionUtils.getMessage(e));
             return AssertionStatus.SERVER_ERROR;
         } catch (ResourceGetter.UrlNotFoundException e) {
-            auditor.logAndAudit(AssertionMessages.XSLT_NO_PI);
+            logAndAudit(AssertionMessages.XSLT_NO_PI);
             return AssertionStatus.BAD_REQUEST;
         } catch (TransformerException e) {
             AssertionStatus status = AssertionStatus.SERVER_ERROR;
@@ -406,7 +393,7 @@ public class ServerXslTransformation
                 status = AssertionStatus.FALSIFIED; // Stylesheet directed termination, already audited
             } else {
                 String msg = "Error transforming document: " + ExceptionUtils.getMessage( e );
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, ExceptionUtils.getDebugException(e));
+                logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, ExceptionUtils.getDebugException(e));
                 // bug #6486 - Do not re-throw transform exception as a PolicyAssertionException
             }
             return status;
@@ -418,12 +405,12 @@ public class ServerXslTransformation
             @Override
             public void warning(TransformerException exception) throws TransformerException {
                 xsltMessages.add( ExceptionUtils.getMessage(exception) );
-                auditor.logAndAudit(AssertionMessages.XSLT_TRANS_WARN, exception.getMessageAndLocation());
+                logAndAudit(AssertionMessages.XSLT_TRANS_WARN, exception.getMessageAndLocation());
             }
             @Override
             public void error(TransformerException exception) throws TransformerException {
                 xsltMessages.add( ExceptionUtils.getMessage(exception) );
-                auditor.logAndAudit(AssertionMessages.XSLT_TRANS_ERR, exception.getMessageAndLocation());
+                logAndAudit(AssertionMessages.XSLT_TRANS_ERR, exception.getMessageAndLocation());
             }
             @Override
             public void fatalError(TransformerException exception) throws TransformerException {
@@ -462,7 +449,7 @@ public class ServerXslTransformation
             XpathResultNodeSet pis = pxr.getNodeSet();
             if (pis != null && !pis.isEmpty()) {
                 if (pis.size() != 1) {
-                    auditor.logAndAudit(AssertionMessages.XSLT_MULTIPLE_PIS);
+                    logAndAudit(AssertionMessages.XSLT_MULTIPLE_PIS);
                     throw new InvalidDocumentFormatException();
                 }
                 String val = pis.getNodeValue(0);
@@ -481,7 +468,7 @@ public class ServerXslTransformation
      * @return the value of the href attribute, or null if this wasn't a valid text/xsl reference
      * @throws SAXException if the attribute list was not well formed
      */
-    private static String extractHref(String attrlist) throws SAXException {
+    private String extractHref(String attrlist) throws SAXException {
         try {
             String fakeXml = "<dummy " + attrlist + " />";
             SAXParser parser = piParser.newSAXParser();
@@ -527,7 +514,7 @@ public class ServerXslTransformation
     }
 
     // Builds a TarariMessageContext for the specified PartInfo, if possible, or returns null
-    private static TarariMessageContext makeTarariMessageContext(PartInfo partInfo) throws IOException, SAXException {
+    private TarariMessageContext makeTarariMessageContext(PartInfo partInfo) throws IOException, SAXException {
         TarariMessageContextFactory mcf = TarariLoader.getMessageContextFactory();
         if (mcf == null) return null;
         try {

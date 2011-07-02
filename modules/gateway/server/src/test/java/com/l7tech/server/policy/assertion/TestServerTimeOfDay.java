@@ -1,6 +1,5 @@
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.server.ApplicationContexts;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.TimeOfDay;
@@ -81,7 +80,7 @@ public class TestServerTimeOfDay {
     private void testCondition() throws Exception {
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message(), false);
 
-        boolean result = ((new ServerTimeRange(condition, ApplicationContexts.getTestApplicationContext())).checkRequest(context) == AssertionStatus.NONE);
+        boolean result = ((new ServerTimeRange(condition)).checkRequest(context) == AssertionStatus.NONE);
         if (result) System.out.println("passed");
         else System.out.println("failed");
     }

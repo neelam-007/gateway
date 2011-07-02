@@ -1,9 +1,9 @@
 package com.l7tech.server.transport.email.asynch;
 
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.transport.email.EmailServerType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.LifecycleException;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.event.system.EmailEvent;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.server.transport.email.EmailListenerConfig;
@@ -136,14 +136,14 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
                                                                          emailListenerCfg.getEmailListener().getPort(),
                                                                          null,
                                                                          emailListenerCfg.getEmailListener().getUsername(),
-                                                                         ServerVariables.expandSinglePasswordOnlyVariable(new LogOnlyAuditor(_logger), emailListenerCfg.getEmailListener().getPassword())));
+                                                                         ServerVariables.expandSinglePasswordOnlyVariable(new LoggingAudit(_logger), emailListenerCfg.getEmailListener().getPassword())));
                     } else if(emailListenerCfg.getEmailListener().getServerType() == EmailServerType.IMAP) {
                         messageStore = emailSession.getStore(new URLName(emailListenerCfg.getEmailListener().isUseSsl() ? "imaps" : "imap",
                                                                          emailListenerCfg.getEmailListener().getHost(),
                                                                          emailListenerCfg.getEmailListener().getPort(),
                                                                          null,
                                                                          emailListenerCfg.getEmailListener().getUsername(),
-                                                                         ServerVariables.expandSinglePasswordOnlyVariable(new LogOnlyAuditor(_logger), emailListenerCfg.getEmailListener().getPassword())));
+                                                                         ServerVariables.expandSinglePasswordOnlyVariable(new LoggingAudit(_logger), emailListenerCfg.getEmailListener().getPassword())));
                     }
                 }
 

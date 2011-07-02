@@ -11,7 +11,6 @@ import com.l7tech.policy.CertificateInfo;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.common.TestDocuments;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.security.cert.CertValidationProcessor;
 import com.l7tech.server.security.cert.TestCertValidationProcessor;
 import com.l7tech.server.identity.cert.TrustedCertServices;
@@ -20,7 +19,6 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.message.Message;
 
-import java.util.logging.Logger;
 import java.util.*;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
@@ -29,8 +27,6 @@ import java.security.cert.CertificateException;
  * Test the NcesValidatorAssertion.
  */
 public class ServerNcesValidatorAssertionTest {
-
-    private static final Logger logger = Logger.getLogger( ServerNcesValidatorAssertionTest.class.getName() );
 
     @Test
     public void testUntrustedSigner() throws Exception {
@@ -48,7 +44,7 @@ public class ServerNcesValidatorAssertionTest {
         // Test failure
         {
             ServerNcesValidatorAssertion ncesValidator =
-                    new ServerNcesValidatorAssertion( assertion, null, new LogOnlyAuditor(logger), certValidationProcessor, securityTokenResolver, trustedCertServices, false  );
+                    new ServerNcesValidatorAssertion( assertion, certValidationProcessor, securityTokenResolver, trustedCertServices, false  );
 
             PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(XmlUtil.parse(REQUEST_COMBINED_SIGNATURE)), new Message() );
             AssertionStatus status = ncesValidator.checkRequest( pec );
@@ -72,7 +68,7 @@ public class ServerNcesValidatorAssertionTest {
         // Test failure
         {
             ServerNcesValidatorAssertion ncesValidator =
-                    new ServerNcesValidatorAssertion( assertion, null, new LogOnlyAuditor(logger), certValidationProcessor, securityTokenResolver, trustedCertServices, true  );
+                    new ServerNcesValidatorAssertion( assertion, certValidationProcessor, securityTokenResolver, trustedCertServices, true  );
 
             PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(XmlUtil.parse(REQUEST_COMBINED_SIGNATURE)), new Message() );
             AssertionStatus status = ncesValidator.checkRequest( pec );
@@ -82,7 +78,7 @@ public class ServerNcesValidatorAssertionTest {
         // Test success (single signature check disabled)
         {
             ServerNcesValidatorAssertion ncesValidator =
-                    new ServerNcesValidatorAssertion( assertion, null, new LogOnlyAuditor(logger), certValidationProcessor, securityTokenResolver, trustedCertServices, false  );
+                    new ServerNcesValidatorAssertion( assertion, certValidationProcessor, securityTokenResolver, trustedCertServices, false  );
 
             PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(XmlUtil.parse(REQUEST_COMBINED_SIGNATURE)), new Message() );
             AssertionStatus status = ncesValidator.checkRequest( pec );

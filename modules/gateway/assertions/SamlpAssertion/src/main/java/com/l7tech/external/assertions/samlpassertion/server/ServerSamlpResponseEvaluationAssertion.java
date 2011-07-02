@@ -5,7 +5,6 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
@@ -15,7 +14,6 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.soap.SoapUtil;
-import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
@@ -23,14 +21,11 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * User: vchan
  */
 public class ServerSamlpResponseEvaluationAssertion extends AbstractServerAssertion<SamlpResponseEvaluationAssertion> {
-    private static final Logger logger = Logger.getLogger(ServerSamlpResponseEvaluationAssertion.class.getName());
-
     private static final String STATUSCODE_SAMLP_SUCCESS = SamlConstants.NS_SAMLP + ":" + SamlConstants.STATUS_SUCCESS;
     private static final String STATUSCODE_SAMLP2_SUCCESS = "urn:oasis:names:tc:SAML:2.0:status:" + SamlConstants.STATUS_SUCCESS;
     private static final String AUTHZ_DECISION_PERMIT = "Permit";
@@ -41,7 +36,7 @@ public class ServerSamlpResponseEvaluationAssertion extends AbstractServerAssert
     private static final String VAR_AUTHZ_DECISION = "authz.decision";
     private static final String VAR_ATTRIBUTE = "attribute";
 
-    private final Auditor auditor;
+
     private final String[] variablesUsed;
     private final String variablePrefix;
 
@@ -49,11 +44,9 @@ public class ServerSamlpResponseEvaluationAssertion extends AbstractServerAssert
      * Constructor.
      *
      * @param assertion the SAMLP response assertion
-     * @param spring the ApplicationContext
      */
-    public ServerSamlpResponseEvaluationAssertion(SamlpResponseEvaluationAssertion assertion, ApplicationContext spring) {
+    public ServerSamlpResponseEvaluationAssertion(SamlpResponseEvaluationAssertion assertion) {
         super(assertion);
-        this.auditor = new Auditor(this, spring, logger);
         this.variablesUsed = assertion.getVariablesUsed();
 
         if (assertion.getVariablePrefixOverride() != null)
@@ -70,7 +63,7 @@ public class ServerSamlpResponseEvaluationAssertion extends AbstractServerAssert
 
         try {
             // initialize stuff
-            final Map<String, Object> variablesMap = context.getVariableMap(variablesUsed, auditor);
+            final Map<String, Object> variablesMap = context.getVariableMap(variablesUsed, getAudit());
 
             /*
              * 1) Determine where the target message is supposed to go
@@ -82,7 +75,7 @@ public class ServerSamlpResponseEvaluationAssertion extends AbstractServerAssert
                 // parse the message into the required
 
             } catch (NoSuchVariableException e) {
-                auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, e.getVariable());
+                logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, e.getVariable());
                 throw new SamlpAssertionException(e);
             }
 
@@ -104,16 +97,16 @@ public class ServerSamlpResponseEvaluationAssertion extends AbstractServerAssert
             populateContextVariables(context, responseValues);
 
         } catch (SamlpResponseEvaluationException badResp) {
-//            auditor.logAndAudit(AssertionMessages.SAMLP_EVALUATOR_BAD_RESP, ExceptionUtils.getMessage(badResp));
+//            logAndAudit(AssertionMessages.SAMLP_EVALUATOR_BAD_RESP, ExceptionUtils.getMessage(badResp));
             logger.log(Level.WARNING, "SAMLP response invalidated: " + ExceptionUtils.getMessage(badResp));
             return AssertionStatus.FALSIFIED;
         } catch (SamlpAssertionException samlEx) {
-//            auditor.logAndAudit(AssertionMessages.SAMLP_EVALUATOR_ERROR, new String[0], samlEx);
+//            logAndAudit(AssertionMessages.SAMLP_EVALUATOR_ERROR, new String[0], samlEx);
             logger.log(Level.WARNING, "SAMLP response evaluator: " + ExceptionUtils.getMessage(samlEx));
             return AssertionStatus.FAILED;
         }
 
-//        auditor.logAndAudit(AssertionMessages.SAMLP_EVALUATOR_COMPLETE, getResponseType());
+//        logAndAudit(AssertionMessages.SAMLP_EVALUATOR_COMPLETE, getResponseType());
         return AssertionStatus.NONE;
     }
 
@@ -255,7 +248,7 @@ public class ServerSamlpResponseEvaluationAssertion extends AbstractServerAssert
             if (theAttribs.containsKey(key) && matchAttribute(sas, theAttribs.get(key), variablesMap)) {
                 passCount++;
             } else {
-                StringBuffer sb = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
                 sb.append("[");
                 sb.append((isSamlv1 ? sas.getNamespace() : sas.getNameFormat()));
                 if (!isSamlv1)
@@ -339,14 +332,14 @@ public class ServerSamlpResponseEvaluationAssertion extends AbstractServerAssert
     }
 
     private String createAttributeVarName(String varSuffix) {
-        StringBuffer sb = new StringBuffer(variablePrefix).append(VAR_SEP).append(VAR_ATTRIBUTE).append(VAR_SEP);
+        StringBuilder sb = new StringBuilder( variablePrefix ).append( VAR_SEP ).append( VAR_ATTRIBUTE ).append( VAR_SEP );
         sb.append(varSuffix);
         return sb.toString();
     }
 
     protected String getVariableValue(String var, Map<String,Object> variablesMap) {
         if (var != null)
-            return ExpandVariables.process(var, variablesMap, auditor);
+            return ExpandVariables.process(var, variablesMap, getAudit());
         return null;
     }
 

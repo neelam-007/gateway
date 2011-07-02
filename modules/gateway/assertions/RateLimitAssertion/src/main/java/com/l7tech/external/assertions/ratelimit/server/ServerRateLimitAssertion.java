@@ -10,7 +10,6 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
@@ -44,7 +43,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     private static final BigInteger MILLIS_PER_SECOND_BIG = BigInteger.valueOf(MILLIS_PER_SECOND);
     static final long NANOS_PER_SECOND = MILLIS_PER_SECOND * NANOS_PER_MILLI;
     private static final BigInteger NANOS_PER_SECOND_BIG = BigInteger.valueOf(NANOS_PER_SECOND);
-    private static final long CLUSTER_POLL_INTERVAL = 43 * MILLIS_PER_SECOND; // Check every 43 seconds to see if cluster size has changed
+    private static final long CLUSTER_POLL_INTERVAL = 43L * MILLIS_PER_SECOND; // Check every 43 seconds to see if cluster size has changed
     private static final int DEFAULT_MAX_QUEUED_THREADS = 20;
     private static final int DEFAULT_CLEANER_PERIOD = 13613;
     private static final int DEFAULT_MAX_NAP_TIME = 4703;
@@ -60,16 +59,16 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     private static final AtomicReference<BigInteger> clusterSize = new AtomicReference<BigInteger>();
     private static final Lock clusterCheckLock = new ReentrantLock();
     private static final AtomicInteger curSleepThreads = new AtomicInteger();
-    private static final AtomicLong cleanerPeriod = new AtomicLong(DEFAULT_CLEANER_PERIOD);
-    private static final AtomicLong maxNapTime = new AtomicLong(DEFAULT_MAX_NAP_TIME);
-    private static final AtomicLong maxTotalSleepTime = new AtomicLong(DEFAULT_MAX_TOTAL_SLEEP_TIME);
+    private static final AtomicLong cleanerPeriod = new AtomicLong( (long) DEFAULT_CLEANER_PERIOD );
+    private static final AtomicLong maxNapTime = new AtomicLong( (long) DEFAULT_MAX_NAP_TIME );
+    private static final AtomicLong maxTotalSleepTime = new AtomicLong( (long) DEFAULT_MAX_TOTAL_SLEEP_TIME );
     static boolean useNanos = true;
     static boolean autoFallbackFromNanos = !Boolean.getBoolean("com.l7tech.external.server.ratelimit.forceNanos");
     static TimeSource clock = new TimeSource();
 
     static {
         Background.scheduleRepeated(new TimerTask() {
-            private long lastCheck = 0;
+            private long lastCheck = 0L;
 
             @Override
             public void run() {
@@ -79,15 +78,14 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
                     lastCheck = System.currentTimeMillis();
                 }
             }
-        }, 3659, 3659);
+        }, 3659L, 3659L );
     }
 
     interface BigIntFinder extends Functions.Unary<BigInteger, PolicyEnforcementContext> {}
 
-    private final RateLimitAssertion rla;
     private final ClusterInfoManager clusterInfoManager;
     private final ServerConfig serverConfig;
-    private final Auditor auditor;
+
     private final String[] variablesUsed;
     private final String counterNameRaw;
     private final BigIntFinder windowSizeInSecondsFinder;
@@ -97,21 +95,19 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
 
     public ServerRateLimitAssertion(RateLimitAssertion assertion, ApplicationContext context) throws PolicyAssertionException {
         super(assertion);
-        this.rla = assertion;
-        this.auditor = new Auditor(this, context, logger);
-        this.variablesUsed = rla.getVariablesUsed();
-        this.counterNameRaw = rla.getCounterName();
+        this.variablesUsed = assertion.getVariablesUsed();
+        this.counterNameRaw = assertion.getCounterName();
         this.clusterInfoManager = context.getBean("clusterInfoManager", ClusterInfoManager.class);
-        if (clusterInfoManager == null) throw new PolicyAssertionException(rla, "Missing clusterInfoManager bean");
+        if (clusterInfoManager == null) throw new PolicyAssertionException(assertion, "Missing clusterInfoManager bean");
 
         this.serverConfig = context.getBean("serverConfig", ServerConfig.class);
-        if (serverConfig == null) throw new PolicyAssertionException(rla, "Missing serverConfig bean");
+        if (serverConfig == null) throw new PolicyAssertionException(assertion, "Missing serverConfig bean");
 
-        this.windowSizeInSecondsFinder = makeBigIntFinder(assertion.getWindowSizeInSeconds(), "windowSizeInSeconds", auditor, 1);
-        this.maxConcurrencyFinder = makeBigIntFinder(assertion.getMaxConcurrency(), "maxConcurrency", auditor, 0);
-        this.maxRequestsPerSecondFinder = makeBigIntFinder(assertion.getMaxRequestsPerSecond(), "maxRequestsPerSecond", auditor, 0);
+        this.windowSizeInSecondsFinder = makeBigIntFinder(assertion.getWindowSizeInSeconds(), "windowSizeInSeconds", getAudit(), 1L );
+        this.maxConcurrencyFinder = makeBigIntFinder(assertion.getMaxConcurrency(), "maxConcurrency", getAudit(), 0L );
+        this.maxRequestsPerSecondFinder = makeBigIntFinder(assertion.getMaxRequestsPerSecond(), "maxRequestsPerSecond", getAudit(), 0L );
         final String blackout = assertion.getBlackoutPeriodInSeconds();
-        this.blackoutSecondsFinder = blackout == null ? null : makeBigIntFinder(blackout, "blackoutPeriodInSeconds", auditor, 1);
+        this.blackoutSecondsFinder = blackout == null ? null : makeBigIntFinder(blackout, "blackoutPeriodInSeconds", getAudit(), 1L );
     }
 
     private static class ThreadToken {
@@ -125,7 +121,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
 
             try {
                 int sleepers = curSleepThreads.incrementAndGet();
-                if (sleepers > (long)maxSleepThreads.get())
+                if ( (long) sleepers > (long)maxSleepThreads.get())
                     return false;
 
                 if (logger.isLoggable(SUBINFO_LEVEL))
@@ -148,11 +144,11 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     private static class Counter {
         private final AtomicInteger concurrency = new AtomicInteger();  // total not-yet-closed request threads that have passed through an RLA with this counter
         private final ConcurrentLinkedQueue<ThreadToken> tokenQueue = new ConcurrentLinkedQueue<ThreadToken>();
-        private BigInteger points = BigInteger.valueOf(0);
-        private long lastUsed = 0;
-        private long lastSpentMillis = 0;
+        private BigInteger points = BigInteger.valueOf( 0L );
+        private long lastUsed = 0L;
+        private long lastSpentMillis = 0L;
         private long lastSpentNanos = Long.MIN_VALUE;
-        private final AtomicLong blackoutUntil = new AtomicLong(0);
+        private final AtomicLong blackoutUntil = new AtomicLong( 0L );
 
         // Attempt to spend enough points to send a request.
         // @param now the current time of day
@@ -170,7 +166,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
             long idleMs;
             if (lastSpentMillis > now) {
                 // Millisecond clock changed -- ntp adjustment?  shouldn't happen
-                idleMs = 0;
+                idleMs = 0L;
             } else {
                 idleMs = now - lastSpentMillis;
             }
@@ -248,14 +244,14 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
         public boolean checkBlackedOut(long now) {
             long until = blackoutUntil.get();
 
-            if (until < 1)
+            if (until < 1L )
                 return false; // No blackout in effect
 
             if (now < until)
                 return true; // Currently blacked out
 
             // Blackout just expired
-            blackoutUntil.compareAndSet(until, 0);
+            blackoutUntil.compareAndSet(until, 0L );
             return false;
         }
 
@@ -294,7 +290,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
         final Counter counter = findCounter(counterName);
 
         if (counter.checkBlackedOut(clock.currentTimeMillis())) {
-            auditor.logAndAudit(AssertionMessages.RATELIMIT_BLACKED_OUT);
+            logAndAudit( AssertionMessages.RATELIMIT_BLACKED_OUT );
             return AssertionStatus.SERVICE_UNAVAILABLE;
         }
 
@@ -302,10 +298,10 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
         try {
             maxConcurrency = findMaxConcurrency(context);
         } catch (NoSuchVariableException e) {
-            auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, e.getVariable());
+            logAndAudit( AssertionMessages.NO_SUCH_VARIABLE, e.getVariable() );
             return AssertionStatus.FAILED;
         } catch (NumberFormatException e) {
-            auditor.logAndAudit(AssertionMessages.VARIABLE_INVALID_VALUE, rla.getMaxConcurrency(), "Integer");
+            logAndAudit( AssertionMessages.VARIABLE_INVALID_VALUE, assertion.getMaxConcurrency(), "Integer" );
             return AssertionStatus.FAILED;
         }
 
@@ -320,25 +316,25 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
             });
 
             if (newConcurrency > maxConcurrency) {
-                auditor.logAndAudit(AssertionMessages.RATELIMIT_CONCURRENCY_EXCEEDED, counterName);
+                logAndAudit( AssertionMessages.RATELIMIT_CONCURRENCY_EXCEEDED, counterName );
                 return AssertionStatus.SERVICE_UNAVAILABLE;
             }
         }
 
-        boolean canSleep = rla.isShapeRequests();
+        boolean canSleep = assertion.isShapeRequests();
         final BigInteger pps;
         try {
             pps = findPointsPerSecond(context);
         } catch (NoSuchVariableException e) {
-            auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, e.getVariable());
+            logAndAudit( AssertionMessages.NO_SUCH_VARIABLE, e.getVariable() );
             return AssertionStatus.FAILED;
         } catch (NumberFormatException e) {
-            auditor.logAndAudit(AssertionMessages.VARIABLE_INVALID_VALUE, rla.getMaxRequestsPerSecond(), "Integer");
+            logAndAudit( AssertionMessages.VARIABLE_INVALID_VALUE, assertion.getMaxRequestsPerSecond(), "Integer" );
             return AssertionStatus.FAILED;
         }
 
-        final BigInteger maxPoints = rla.isHardLimit()
-                ? (POINTS_PER_REQUEST.add(POINTS_PER_REQUEST.divide(BigInteger.valueOf(2))))
+        final BigInteger maxPoints = assertion.isHardLimit()
+                ? (POINTS_PER_REQUEST.add(POINTS_PER_REQUEST.divide(BigInteger.valueOf( 2L ))))
                 : pps.multiply(windowSizeInSecondsFinder.call(context));
 
         AssertionStatus ret = !canSleep
@@ -360,7 +356,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
             return AssertionStatus.NONE;
         }
 
-        auditor.logAndAudit(AssertionMessages.RATELIMIT_RATE_EXCEEDED, counterName);
+        logAndAudit( AssertionMessages.RATELIMIT_RATE_EXCEEDED, counterName );
         return AssertionStatus.SERVICE_UNAVAILABLE;
     }
 
@@ -373,10 +369,10 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
         try {
             int result = counter.pushTokenAndWaitUntilFirst(startTime, token);
             if (result == 1) {
-                auditor.logAndAudit(AssertionMessages.RATELIMIT_NODE_CONCURRENCY, counterName);
+                logAndAudit( AssertionMessages.RATELIMIT_NODE_CONCURRENCY, counterName );
                 return AssertionStatus.SERVICE_UNAVAILABLE;
             } else if (result != 0) {
-                auditor.logAndAudit(AssertionMessages.RATELIMIT_SLEPT_TOO_LONG, counterName);
+                logAndAudit( AssertionMessages.RATELIMIT_SLEPT_TOO_LONG, counterName );
                 return AssertionStatus.SERVICE_UNAVAILABLE;
             }
 
@@ -389,7 +385,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
                     return AssertionStatus.NONE;
 
                 if (isOverslept(startTime, now)) {
-                    auditor.logAndAudit(AssertionMessages.RATELIMIT_SLEPT_TOO_LONG, counterName);
+                    logAndAudit( AssertionMessages.RATELIMIT_SLEPT_TOO_LONG, counterName );
                     return AssertionStatus.SERVICE_UNAVAILABLE;
                 }
 
@@ -402,7 +398,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
                 if (sleepTime.compareTo(maxnap) > 0) sleepTime = maxnap; // don't sleep for too long
 
                 if (!sleepIfPossible(curSleepThreads, maxSleepThreads.get(), sleepTime.longValue(), sleepNanosInt)) {
-                    auditor.logAndAudit(AssertionMessages.RATELIMIT_NODE_CONCURRENCY, counterName);
+                    logAndAudit( AssertionMessages.RATELIMIT_NODE_CONCURRENCY, counterName );
                     return AssertionStatus.SERVICE_UNAVAILABLE;
                 }
             }
@@ -458,7 +454,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
             try {
                 if (clusterSize.get() == null) {
                     logger.log(SUBINFO_LEVEL, "Initializing cluster size");
-                    clusterSize.set(BigInteger.valueOf(loadClusterSizeFromDb()));
+                    clusterSize.set(BigInteger.valueOf( (long) loadClusterSizeFromDb() ));
                     lastClusterCheck.set(clock.currentTimeMillis());
                 }
             } finally {
@@ -472,7 +468,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
                     // See if we still need to do it
                     if (clock.currentTimeMillis() - lastClusterCheck.get() > CLUSTER_POLL_INTERVAL) {
                         logger.log(SUBINFO_LEVEL, "Checking current cluster size");
-                        clusterSize.set(BigInteger.valueOf(loadClusterSizeFromDb()));
+                        clusterSize.set(BigInteger.valueOf( (long) loadClusterSizeFromDb() ));
                         lastClusterCheck.set(clock.currentTimeMillis());
                     }
                 } finally {
@@ -488,17 +484,17 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     private int loadClusterSizeFromDb() {
         try {
             maxSleepThreads.set(serverConfig.getIntProperty(RateLimitAssertion.PARAM_MAX_QUEUED_THREADS, DEFAULT_MAX_QUEUED_THREADS));
-            cleanerPeriod.set(serverConfig.getIntProperty(RateLimitAssertion.PARAM_CLEANER_PERIOD, DEFAULT_CLEANER_PERIOD));
-            maxNapTime.set(serverConfig.getIntProperty(RateLimitAssertion.PARAM_MAX_NAP_TIME, DEFAULT_MAX_NAP_TIME));
-            maxTotalSleepTime.set(serverConfig.getIntProperty(RateLimitAssertion.PARAM_MAX_TOTAL_SLEEP_TIME, DEFAULT_MAX_TOTAL_SLEEP_TIME));
+            cleanerPeriod.set( (long) serverConfig.getIntProperty( RateLimitAssertion.PARAM_CLEANER_PERIOD, DEFAULT_CLEANER_PERIOD ) );
+            maxNapTime.set( (long) serverConfig.getIntProperty( RateLimitAssertion.PARAM_MAX_NAP_TIME, DEFAULT_MAX_NAP_TIME ) );
+            maxTotalSleepTime.set( (long) serverConfig.getIntProperty( RateLimitAssertion.PARAM_MAX_TOTAL_SLEEP_TIME, DEFAULT_MAX_TOTAL_SLEEP_TIME ) );
             Collection<ClusterNodeInfo> got = clusterInfoManager.retrieveClusterStatus();
             final int ret = got == null || got.size() < 1 ? 1 : got.size();
             if (logger.isLoggable(SUBINFO_LEVEL)) logger.log(SUBINFO_LEVEL, "Using cluster size: " + ret);
             return ret;
         } catch (FindException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO,
-                                new String[] { "Unable to check cluster status: " + ExceptionUtils.getMessage(e) },
-                                e);
+            logAndAudit( AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO,
+                    new String[]{ "Unable to check cluster status: " + ExceptionUtils.getMessage( e ) },
+                    e );
             return 1;
         }
     }
@@ -513,7 +509,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     }
 
     private String getConterName(PolicyEnforcementContext context) {
-        return ExpandVariables.process(counterNameRaw, context.getVariableMap(variablesUsed, auditor), auditor);
+        return ExpandVariables.process(counterNameRaw, context.getVariableMap(variablesUsed, getAudit()), getAudit());
     }
 
     // Caller should ensure that only one thread at a time ever calls this.
@@ -534,25 +530,25 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
         }
     }
 
-    private static BigIntFinder makeBigIntFinder(final String variableExpression, final String fieldName, final Audit auditor, final long min) {
+    private static BigIntFinder makeBigIntFinder(final String variableExpression, final String fieldName, final Audit audit, final long min) {
         final String[] varsUsed = Syntax.getReferencedNames(variableExpression);
         if (varsUsed.length > 0) {
             // Context variable
             return new BigIntFinder() {
                 @Override
                 public BigInteger call(PolicyEnforcementContext context) {
-                    final String str = ExpandVariables.process(variableExpression, context.getVariableMap(varsUsed, auditor), auditor);
+                    final String str = ExpandVariables.process(variableExpression, context.getVariableMap(varsUsed, audit), audit);
 
                     final long longVal;
                     try {
                         longVal = Long.valueOf(str);
                     } catch (NumberFormatException e) {
-                        auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Variable value for rate limit field " + fieldName + " is not a valid integer");
+                        audit.logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Variable value for rate limit field " + fieldName + " is not a valid integer" );
                         throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
                     }
 
                     if (longVal < min) {
-                        auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Variable value for rate limit field " + fieldName + " is below minimum of " + min);
+                        audit.logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Variable value for rate limit field " + fieldName + " is below minimum of " + min );
                         throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
                     }
 
@@ -569,15 +565,5 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
                 }
             };
         }
-    }
-
-    /**
-     * Called reflectively by module class loader when module is unloaded, to ask us to clean up any globals
-     * that would otherwise keep our instances from getting collected.
-     */
-    public static void onModuleUnloaded() {
-        // This assertion doesn't have anything to do in response to this, but it implements this anyway
-        // since it will be used as an example by future modular assertion authors
-        logger.info("ServerRateLimitAssertion is preparing itself to be unloaded");
     }
 }

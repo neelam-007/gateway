@@ -14,8 +14,6 @@ import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.external.assertions.jsonschema.JSONSchemaAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -49,9 +47,6 @@ public class ServerJSONSchemaAssertion extends AbstractServerAssertion<JSONSchem
 
     public ServerJSONSchemaAssertion(JSONSchemaAssertion assertion, ApplicationContext context) throws PolicyAssertionException {
         super(assertion);
-
-        this.assertion = assertion;
-        this.auditor = context != null ? new Auditor(this, context, logger) : new LogOnlyAuditor(logger);
         this.variablesUsed = assertion.getVariablesUsed();
         pattern = (assertion.getResourceInfo() instanceof MessageUrlResourceInfo)? Pattern.compile(linkHeaderPattern): null;
         this.resourceGetter = getResourceGetter(context);
@@ -97,7 +92,7 @@ public class ServerJSONSchemaAssertion extends AbstractServerAssertion<JSONSchem
                 jsonInstanceNode = jsonFactory.newJsonData(jsonInstance);
             }
         } catch (InvalidJsonException e) {
-            auditor.logAndAudit(AssertionMessages.JSON_INVALID_JSON, messageDesc);
+            logAndAudit(AssertionMessages.JSON_INVALID_JSON, messageDesc);
             context.setVariable(JSONSchemaAssertion.JSON_SCHEMA_FAILURE_VARIABLE, messageDesc+" data is not well-formed JSON.");
             return AssertionStatus.FAILED;
         }
@@ -113,10 +108,10 @@ public class ServerJSONSchemaAssertion extends AbstractServerAssertion<JSONSchem
             if (logger.isLoggable(Level.INFO)) logger.log(Level.INFO, "Unable to retrieve JSON Schema");
 
             if (cantRetrieveException) {
-                auditor.logAndAudit(AssertionMessages.JSON_SCHEMA_VALIDATION_IO_ERROR,
+                logAndAudit(AssertionMessages.JSON_SCHEMA_VALIDATION_IO_ERROR,
                         new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             } else {
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
                         new String[] {ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             }
             context.setVariable(JSONSchemaAssertion.JSON_SCHEMA_FAILURE_VARIABLE, "Cannot retrieve JSON Schema: " + ExceptionUtils.getMessage(e));
@@ -143,12 +138,12 @@ public class ServerJSONSchemaAssertion extends AbstractServerAssertion<JSONSchem
         }
 
         try {
-            auditor.logAndAudit(AssertionMessages.JSON_SCHEMA_VALIDATION_VALIDATING, messageDesc);
+            logAndAudit(AssertionMessages.JSON_SCHEMA_VALIDATION_VALIDATING, messageDesc);
             final List<String> errorList = jsonSchema.validate(jsonInstanceNode);
             if(!errorList.isEmpty()){
                 //validation failed
                 for (String error : errorList) {
-                    auditor.logAndAudit(AssertionMessages.JSON_SCHEMA_VALIDATION_FAILED, error);    
+                    logAndAudit(AssertionMessages.JSON_SCHEMA_VALIDATION_FAILED, error);
                 }
 
                 context.setVariable(JSONSchemaAssertion.JSON_SCHEMA_FAILURE_VARIABLE, errorList.toArray());
@@ -165,7 +160,7 @@ public class ServerJSONSchemaAssertion extends AbstractServerAssertion<JSONSchem
                 }
             }
 
-            auditor.logAndAudit(AssertionMessages.JSON_VALIDATION_SUCCEEDED);
+            logAndAudit(AssertionMessages.JSON_VALIDATION_SUCCEEDED);
             return AssertionStatus.NONE;
         } catch (InvalidJsonException e) {
             logger.log(Level.INFO, "JSON Schema validation failed: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
@@ -177,7 +172,7 @@ public class ServerJSONSchemaAssertion extends AbstractServerAssertion<JSONSchem
     private JSONSchema getJsonSchema(PolicyEnforcementContext context, Message message)
             throws IOException, InvalidPolicyException, ResourceGetter.ResourceIOException, ResourceGetter.ResourceParseException {
         try {
-            return resourceGetter.getResource(message, context.getVariableMap(variablesUsed, auditor));
+            return resourceGetter.getResource(message, context.getVariableMap(variablesUsed, getAudit()));
             //don't catch UrlResourceException as it will stop non caught subclasses from propagating out
         } catch (GeneralSecurityException e) {
             throw new InvalidPolicyException("Error accessing JSON Schema resource '" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
@@ -207,7 +202,7 @@ public class ServerJSONSchemaAssertion extends AbstractServerAssertion<JSONSchem
                 (staticRes) ? getResourceObjectFactory() : null,  //if not a static resource, we don't need to supply this factory
                 (messageRes) ? getJsonMessageUrlFinder() : null, //only needed for message resources
                 (singleUrlRes || messageRes) ? getCache(context) : null, //not needed for static resources
-                auditor);
+                getAudit());
     }
 
     private static synchronized HttpObjectCache<JSONSchema> getCache(BeanFactory spring) {
@@ -373,8 +368,6 @@ public class ServerJSONSchemaAssertion extends AbstractServerAssertion<JSONSchem
         }
     }
 
-    private final JSONSchemaAssertion assertion;
-    private final Auditor auditor;
     private final String[] variablesUsed;
     private static final JSONFactory jsonFactory = JSONFactory.getInstance();
     private ResourceGetter<JSONSchema, Message> resourceGetter;

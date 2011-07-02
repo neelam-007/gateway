@@ -17,6 +17,7 @@ import org.junit.Test;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -41,7 +42,7 @@ public class ServerCsrfProtectionAssertionTest {
         assertion.setParameterType(HttpParameterType.POST);
         assertion.setEnableHttpRefererChecking(false);
 
-        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         Assert.assertEquals(AssertionStatus.FAILED, status);
@@ -66,7 +67,7 @@ public class ServerCsrfProtectionAssertionTest {
         assertion.setParameterType(HttpParameterType.POST);
         assertion.setEnableHttpRefererChecking(false);
 
-        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         Assert.assertEquals(AssertionStatus.FAILED, status);
@@ -93,7 +94,7 @@ public class ServerCsrfProtectionAssertionTest {
         assertion.setParameterType(HttpParameterType.POST);
         assertion.setEnableHttpRefererChecking(false);
 
-        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         Assert.assertEquals(AssertionStatus.FAILED, status);
@@ -120,7 +121,7 @@ public class ServerCsrfProtectionAssertionTest {
         assertion.setParameterType(HttpParameterType.POST);
         assertion.setEnableHttpRefererChecking(false);
 
-        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         Assert.assertEquals(AssertionStatus.FAILED, status);
@@ -147,7 +148,7 @@ public class ServerCsrfProtectionAssertionTest {
         assertion.setParameterType(HttpParameterType.POST);
         assertion.setEnableHttpRefererChecking(false);
 
-        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         Assert.assertEquals(AssertionStatus.FAILED, status);
@@ -174,7 +175,7 @@ public class ServerCsrfProtectionAssertionTest {
         assertion.setParameterType(HttpParameterType.POST);
         assertion.setEnableHttpRefererChecking(false);
 
-        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         Assert.assertEquals(AssertionStatus.FAILED, status);
@@ -206,7 +207,7 @@ public class ServerCsrfProtectionAssertionTest {
         assertion.setParameterType(HttpParameterType.GET_AND_POST);
         assertion.setEnableHttpRefererChecking(false);
 
-        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         Assert.assertEquals(AssertionStatus.FAILED, status);
@@ -234,7 +235,7 @@ public class ServerCsrfProtectionAssertionTest {
         assertion.setParameterType(HttpParameterType.POST);
         assertion.setEnableHttpRefererChecking(false);
 
-        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         Assert.assertEquals(AssertionStatus.NONE, status);
@@ -264,7 +265,7 @@ public class ServerCsrfProtectionAssertionTest {
         assertion.setParameterType(HttpParameterType.POST);
         assertion.setEnableHttpRefererChecking(false);
 
-        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         Assert.assertEquals(AssertionStatus.NONE, status);
@@ -292,7 +293,7 @@ public class ServerCsrfProtectionAssertionTest {
         assertion.setParameterType(HttpParameterType.GET);
         assertion.setEnableHttpRefererChecking(false);
 
-        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         Assert.assertEquals(AssertionStatus.NONE, status);
@@ -321,7 +322,7 @@ public class ServerCsrfProtectionAssertionTest {
         assertion.setParameterType(HttpParameterType.GET_AND_POST);
         assertion.setEnableHttpRefererChecking(false);
 
-        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         Assert.assertEquals(AssertionStatus.NONE, status);
@@ -343,7 +344,7 @@ public class ServerCsrfProtectionAssertionTest {
         assertion.setAllowMissingOrEmptyReferer(false);
         assertion.setOnlyAllowCurrentDomain(true); // not important
 
-        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         Assert.assertEquals(AssertionStatus.FAILED, status);
@@ -364,7 +365,7 @@ public class ServerCsrfProtectionAssertionTest {
         assertion.setAllowMissingOrEmptyReferer(false);
         assertion.setOnlyAllowCurrentDomain(true);
 
-        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         Assert.assertEquals(AssertionStatus.FAILED, status);
@@ -384,11 +385,11 @@ public class ServerCsrfProtectionAssertionTest {
         assertion.setEnableHttpRefererChecking(true);
         assertion.setAllowMissingOrEmptyReferer(false);
         assertion.setOnlyAllowCurrentDomain(false);
-        ArrayList<String> trustedDomains = new ArrayList<String>();
+        List<String> trustedDomains = new ArrayList<String>();
         trustedDomains.add("layer7tech.com");
         assertion.setTrustedDomains(trustedDomains);
 
-        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         Assert.assertEquals(AssertionStatus.FAILED, status);
@@ -409,11 +410,11 @@ public class ServerCsrfProtectionAssertionTest {
         assertion.setEnableHttpRefererChecking(true);
         assertion.setAllowMissingOrEmptyReferer(false);
         assertion.setOnlyAllowCurrentDomain(false);
-        ArrayList<String> trustedDomains = new ArrayList<String>();
+        List<String> trustedDomains = new ArrayList<String>();
         trustedDomains.add("layer7tech.com");
         assertion.setTrustedDomains(trustedDomains);
 
-        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         Assert.assertEquals(AssertionStatus.FAILED, status);
@@ -434,11 +435,11 @@ public class ServerCsrfProtectionAssertionTest {
         assertion.setEnableHttpRefererChecking(true);
         assertion.setAllowMissingOrEmptyReferer(false);
         assertion.setOnlyAllowCurrentDomain(false);
-        ArrayList<String> trustedDomains = new ArrayList<String>();
+        List<String> trustedDomains = new ArrayList<String>();
         trustedDomains.add("layer7tech.com");
         assertion.setTrustedDomains(trustedDomains);
 
-        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         Assert.assertEquals(AssertionStatus.FAILED, status);
@@ -460,7 +461,7 @@ public class ServerCsrfProtectionAssertionTest {
         assertion.setAllowMissingOrEmptyReferer(false);
         assertion.setOnlyAllowCurrentDomain(true);
 
-        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         Assert.assertEquals(AssertionStatus.FAILED, status);
@@ -482,7 +483,7 @@ public class ServerCsrfProtectionAssertionTest {
         assertion.setAllowMissingOrEmptyReferer(false);
         assertion.setOnlyAllowCurrentDomain(true);
 
-        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         Assert.assertEquals(AssertionStatus.NONE, status);
@@ -504,11 +505,11 @@ public class ServerCsrfProtectionAssertionTest {
         assertion.setAllowMissingOrEmptyReferer(false);
 
         assertion.setOnlyAllowCurrentDomain(false);
-        ArrayList<String> trustedDomains = new ArrayList<String>();
+        List<String> trustedDomains = new ArrayList<String>();
         trustedDomains.add("layer7tech.com");
         assertion.setTrustedDomains(trustedDomains);
 
-        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         Assert.assertEquals(AssertionStatus.NONE, status);
@@ -529,7 +530,7 @@ public class ServerCsrfProtectionAssertionTest {
         assertion.setAllowMissingOrEmptyReferer(true);
         assertion.setOnlyAllowCurrentDomain(true);
 
-        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         Assert.assertEquals(status, AssertionStatus.NONE);
@@ -552,11 +553,11 @@ public class ServerCsrfProtectionAssertionTest {
         assertion.setEnableHttpRefererChecking(true);
         assertion.setAllowMissingOrEmptyReferer(true);
         assertion.setOnlyAllowCurrentDomain(false);
-        ArrayList<String> trustedDomains = new ArrayList<String>();
+        List<String> trustedDomains = new ArrayList<String>();
         trustedDomains.add("layer7tech.com");
         assertion.setTrustedDomains(trustedDomains);
 
-        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         Assert.assertEquals(status, AssertionStatus.NONE);
@@ -577,7 +578,7 @@ public class ServerCsrfProtectionAssertionTest {
         assertion.setAllowMissingOrEmptyReferer(true);
         assertion.setOnlyAllowCurrentDomain(true);
 
-        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         Assert.assertEquals(status, AssertionStatus.NONE);
@@ -598,7 +599,7 @@ public class ServerCsrfProtectionAssertionTest {
         assertion.setAllowMissingOrEmptyReferer(true);
         assertion.setOnlyAllowCurrentDomain(true);
 
-        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         Assert.assertEquals(status, AssertionStatus.NONE);
@@ -618,11 +619,11 @@ public class ServerCsrfProtectionAssertionTest {
         assertion.setEnableHttpRefererChecking(true);
         assertion.setAllowMissingOrEmptyReferer(true);
         assertion.setOnlyAllowCurrentDomain(false);
-        ArrayList<String> trustedDomains = new ArrayList<String>();
+        List<String> trustedDomains = new ArrayList<String>();
         trustedDomains.add("www.layer7tech.com");
         assertion.setTrustedDomains(trustedDomains);
 
-        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         Assert.assertEquals(status, AssertionStatus.NONE);
@@ -647,7 +648,7 @@ public class ServerCsrfProtectionAssertionTest {
         assertion.setAllowMissingOrEmptyReferer(true);
         assertion.setOnlyAllowCurrentDomain(true);
 
-        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion);
         AssertionStatus status = serverAssertion.checkRequest(context);
         Assert.assertEquals(status, AssertionStatus.NONE);
 
@@ -683,7 +684,7 @@ public class ServerCsrfProtectionAssertionTest {
         assertion.setParameterType(HttpParameterType.GET_AND_POST);
         assertion.setEnableHttpRefererChecking(true);
 
-        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         Assert.assertEquals(AssertionStatus.NONE, status);
@@ -703,7 +704,7 @@ public class ServerCsrfProtectionAssertionTest {
                                                                     final HttpMethod method,
                                                                     final HashMap<String, String[]> parameters,
                                                                     final String[] headers,
-                                                                    final HashMap<String, Object> contextVariables) {
+                                                                    final Map<String, Object> contextVariables) {
         final HttpRequestKnob requestKnob = new HttpRequestKnobAdapter() {
             @Override
             public HttpCookie[] getCookies() {
@@ -734,7 +735,7 @@ public class ServerCsrfProtectionAssertionTest {
                 for(String header : headers) {
                     Matcher matcher = pattern.matcher(header);
                     if(matcher.matches()) {
-                        values.add(new String(matcher.group(1).trim()));
+                        values.add( matcher.group( 1 ).trim() );
                     }
                 }
 

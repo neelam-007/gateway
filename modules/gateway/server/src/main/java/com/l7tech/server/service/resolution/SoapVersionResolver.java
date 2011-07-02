@@ -1,8 +1,8 @@
 package com.l7tech.server.service.resolution;
 
+import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.Message;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.xml.soap.SoapVersion;
 
 import java.util.Arrays;
@@ -14,7 +14,7 @@ import java.util.List;
  * This resolver is based on the content type of first part of the message, so it needn't use the message contents.
  */
 public class SoapVersionResolver extends NameValueServiceResolver<String> {
-    public SoapVersionResolver(final Auditor.AuditorFactory auditorFactory) {
+    public SoapVersionResolver(final AuditFactory auditorFactory) {
         super(auditorFactory);
     }
 

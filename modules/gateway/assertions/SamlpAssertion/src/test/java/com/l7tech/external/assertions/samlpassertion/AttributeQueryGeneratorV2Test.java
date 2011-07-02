@@ -4,8 +4,8 @@ import com.l7tech.external.assertions.samlpassertion.server.AbstractSamlp2Messag
 import com.l7tech.external.assertions.samlpassertion.server.NameIdentifierResolver;
 import com.l7tech.external.assertions.samlpassertion.server.SamlpRequestConstants;
 import com.l7tech.external.assertions.samlpassertion.server.v2.AttributeQueryGenerator;
+import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.security.saml.SamlConstants;
-import com.l7tech.server.audit.Auditor;
 import saml.v2.assertion.AttributeType;
 import saml.v2.assertion.NameIDType;
 import saml.v2.protocol.AttributeQueryType;
@@ -141,19 +141,21 @@ public class AttributeQueryGeneratorV2Test extends SamlpMessageGeneratorTestCase
         }
     }
 
+    @Override
     protected int getSamlVersion() {
         return 2;
     }
 
+    @Override
     protected AbstractSamlp2MessageGenerator<AttributeQueryType> createMessageGenerator(SamlpRequestBuilderAssertion assertion) {
 
         try {
-            Auditor auditor = new Auditor(this, appCtx, null);
             java.util.Map<String, Object> varMap = new HashMap<String, Object>();
 
-            AttributeQueryGenerator gen = new AttributeQueryGenerator(varMap, auditor);
+            AttributeQueryGenerator gen = new AttributeQueryGenerator(varMap, new TestAudit());
             gen.setNameResolver( new NameIdentifierResolver(assertion) {
 
+                @Override
                 protected void parse() {
                     this.nameValue = "somebody@email-exchange.com";
                     this.nameFormat = SamlConstants.NAMEIDENTIFIER_EMAIL;
@@ -161,6 +163,7 @@ public class AttributeQueryGeneratorV2Test extends SamlpMessageGeneratorTestCase
             });
             gen.setIssuerNameResolver( new NameIdentifierResolver(assertion) {
 
+                @Override
                 protected void parse() {
                     this.nameValue = "Bob-the-issuer";
                 }
@@ -174,6 +177,7 @@ public class AttributeQueryGeneratorV2Test extends SamlpMessageGeneratorTestCase
         return null;
     }
 
+    @Override
     protected void checkCommonRequestElements(AttributeQueryType request) {
         // ID
         assertNotNull(request.getID());

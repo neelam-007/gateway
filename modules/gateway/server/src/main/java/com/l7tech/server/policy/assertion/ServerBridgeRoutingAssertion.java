@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.http.*;
@@ -65,7 +62,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * SSG implementation of a routing assertion that uses the SSB.
@@ -89,7 +85,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
     //- PUBLIC
 
     public ServerBridgeRoutingAssertion(BridgeRoutingAssertion assertion, ApplicationContext ctx) {
-        super(assertion, ctx, logger);
+        super(assertion, ctx);
 
         AssertionRegistry assertionRegistry = applicationContext.getBean("assertionRegistry", AssertionRegistry.class);
         Managers.setAssertionRegistry(assertionRegistry);
@@ -175,9 +171,9 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         Throwable thrown = null;
         URL url = null;
         try { // routing finished try/finally
-            Map<String, Object> vars = context.getVariableMap(varNames, auditor);
+            Map<String, Object> vars = context.getVariableMap(varNames, getAudit());
             if (passwordUsesVariables) {
-                String expandedPass = ExpandVariables.process(assertion.getPassword(), vars, auditor);
+                String expandedPass = ExpandVariables.process(assertion.getPassword(), vars, getAudit());
                 final char[] password = expandedPass.toCharArray();
                 final char[] oldCachedPass;
                 final SsgRuntime ssgRuntime = ssg.getRuntime();
@@ -186,7 +182,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                     if (oldCachedPass == null) {
                         ssgRuntime.setCachedPassword(password);
                     } else if(!Arrays.equals(oldCachedPass, password)) {
-                        auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                        logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
                                 "NOTE: Bridge Routing password has been changed");
                         ssgRuntime.setCachedPassword(password);
                     }
@@ -194,7 +190,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
             }
 
             if (messageProcessor == null || ssg == null) {
-                auditor.logAndAudit(AssertionMessages.BRIDGEROUTE_BAD_CONFIG);
+                logAndAudit(AssertionMessages.BRIDGEROUTE_BAD_CONFIG);
                 return AssertionStatus.FAILED;
             }
 
@@ -206,7 +202,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                 final Message requestMsg = getRequestMessage(context);
 
                 if(!requestMsg.isSoap()) {
-                    auditor.logAndAudit(AssertionMessages.BRIDGEROUTE_REQUEST_NOT_SOAP);
+                    logAndAudit(AssertionMessages.BRIDGEROUTE_REQUEST_NOT_SOAP);
                     return AssertionStatus.FAILED;
                 }
 
@@ -228,13 +224,13 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
 
                     // TODO support SOAP-with-attachments with SSB api
                     if (requestMsg.getMimeKnob().isMultipart())
-                        auditor.logAndAudit(AssertionMessages.BRIDGEROUTE_NO_ATTACHMENTS);
+                        logAndAudit(AssertionMessages.BRIDGEROUTE_NO_ATTACHMENTS);
 
                     final URL origUrl;
                     try {
                         origUrl = new URL(ssg.getServerUrl());
                     } catch (MalformedURLException e) {
-                        auditor.logAndAudit(AssertionMessages.HTTPROUTE_BAD_ORIGINAL_URL);
+                        logAndAudit(AssertionMessages.HTTPROUTE_BAD_ORIGINAL_URL);
                         return AssertionStatus.SERVER_ERROR;
                     }
 
@@ -270,9 +266,9 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                     final HttpResponseKnob hrk = bridgeResponse.getKnob(HttpResponseKnob.class);
                     int status = hrk == null ? HttpConstants.STATUS_SERVER_ERROR : hrk.getStatus();
                     if (status == HttpConstants.STATUS_OK)
-                        auditor.logAndAudit(AssertionMessages.HTTPROUTE_OK);
+                        logAndAudit(AssertionMessages.HTTPROUTE_OK);
                     else
-                        auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS, url.getPath(), String.valueOf(status));
+                        logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS, url.getPath(), String.valueOf(status));
 
                     if ( latencyHolder[0] > -1 ) {
                         context.setVariable(HttpRoutingAssertion.VAR_ROUTING_LATENCY, ""+latencyHolder[0]);                                            
@@ -287,7 +283,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                     inboundResponseKnob.setHeaderSource(hh);
                     HttpResponseKnob httpResponseKnob = bridgeResponse.getKnob(HttpResponseKnob.class);
                     if (httpResponseKnob != null) {
-                        HttpForwardingRuleEnforcer.handleResponseHeaders(httpResponseKnob, auditor, hh,
+                        HttpForwardingRuleEnforcer.handleResponseHeaders(httpResponseKnob, getAudit(), hh,
                                                                          assertion.getResponseHeaderRules(), vars,
                                                                          varNames, context);
 
@@ -302,75 +298,74 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
 
                 } catch (ConfigurationException e) {
                     thrown = e;
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_ACCESS_DENIED, null, e);
+                    logAndAudit(AssertionMessages.HTTPROUTE_ACCESS_DENIED, null, e);
                     return AssertionStatus.SERVER_AUTH_FAILED;
                 } catch (OperationCanceledException e) {
                     thrown = e;
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_ACCESS_DENIED, null, e);
+                    logAndAudit(AssertionMessages.HTTPROUTE_ACCESS_DENIED, null, e);
                     return AssertionStatus.SERVER_AUTH_FAILED;
                 } catch (BadSecurityContextException e) {
                     thrown = e;
-                    auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
+                    logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
                 } catch (InvalidDocumentFormatException e) {
                     thrown = e;
-                    auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
+                    logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
                 } catch (GeneralSecurityException e) {
                     thrown = e;
-                    auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
+                    logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
                 } catch ( HttpChallengeRequiredException e) {
                     thrown = e;
-                    auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e); // can't happen
+                    logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e); // can't happen
                 } catch ( ResponseValidationException e) {
                     thrown = e;
-                    auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
+                    logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
                 } catch ( ClientCertificateException e) {
                     thrown = e;
-                    auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e); // can't happen
+                    logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e); // can't happen
                 } catch (ProcessorException e) {
                     thrown = e;
-                    auditor.logAndAudit(AssertionMessages.BRIDGEROUTE_WSS_PROCESSING_RESP,
+                    logAndAudit(AssertionMessages.BRIDGEROUTE_WSS_PROCESSING_RESP,
                             new String[]{ExceptionUtils.getMessage(e)},
                             e.getCause() != null ? e : null );
                 } catch ( PolicyLockedException e) {
                     thrown = e;
-                    auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING, null, e);
+                    logAndAudit(AssertionMessages.EXCEPTION_WARNING, null, e);
                 } catch (NoSuchVariableException e) {
                     thrown = e;
-                    auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING, null, e);
+                    logAndAudit(AssertionMessages.EXCEPTION_WARNING, null, e);
                 }
             } catch (WSDLException we) {
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, we);
+                logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, we);
             } catch (MalformedURLException mfe) {
                 thrown = mfe;
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, mfe);
+                logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, mfe);
             } catch (IOException ioe) {
                 thrown = ioe;
                 if (ExceptionUtils.causedBy(ioe, SocketTimeoutException.class)) {
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_SOCKET_TIMEOUT);
+                    logAndAudit(AssertionMessages.HTTPROUTE_SOCKET_TIMEOUT);
                 } else if (ExceptionUtils.causedBy(ioe, SSLException.class)) {
                     Exception loggableException = ExceptionUtils.getDebugException(ioe);
                     if(loggableException != null) {
-                        auditor.logAndAudit(AssertionMessages.HTTPROUTE_SSL_INIT_FAILED, null, loggableException);
+                        logAndAudit(AssertionMessages.HTTPROUTE_SSL_INIT_FAILED, null, loggableException);
                     } else {
-                        auditor.logAndAudit(AssertionMessages.HTTPROUTE_SSL_INIT_FAILED);
+                        logAndAudit(AssertionMessages.HTTPROUTE_SSL_INIT_FAILED);
                     }
                 } else {
                     // TODO: Worry about what kinds of exceptions indicate failed routing, and which are "unrecoverable"
-                    auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, ioe);
+                    logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, ioe);
                 }
             } catch (SAXException e) {
                 thrown = e;
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
+                logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
             } catch (NoSuchPartException e) {
                 thrown = e;
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
+                logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
             } catch (GeneralSecurityException e) {
                 thrown = e;
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
+                logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
             } finally {
                 if(url!=null && thrown!=null) context.getRoutingResultListener().failed(url, thrown, context);
             }
-
 
             return AssertionStatus.FAILED;
         }
@@ -380,8 +375,6 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
     }
 
     //- PRIVATE
-
-    private static final Logger logger = Logger.getLogger(ServerBridgeRoutingAssertion.class.getName());
 
     private final SignerInfo signerInfo;
     private final Ssg ssg;
@@ -710,7 +703,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         public GenericHttpRequest createRequest(final HttpMethod method, final GenericHttpRequestParams params)  {
             // enforce http outgoing rules here
             HttpForwardingRuleEnforcer.handleRequestHeaders(oh, params, context, assertion.getRequestHeaderRules(),
-                                                            auditor, null, varNames);
+                                                            getAudit(), null, varNames);
 
             if (assertion.isTaiCredentialChaining()) {
                 doTaiCredentialChaining(context.getDefaultAuthenticationContext(), params, params.getTargetUrl());
@@ -791,7 +784,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
 
                         if(status!=HttpConstants.STATUS_OK && allowRerequest) {
                             if(rrl.reroute(params.getTargetUrl(), status, res.getHeaders(), context)) {
-                                auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS_HANDLED, params.getTargetUrl().getPath(), Integer.toString(status));
+                                logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS_HANDLED, params.getTargetUrl().getPath(), Integer.toString(status));
 
                                 //TODO if we refactor the BRA we should clean this up (params changed by this SimpleHttpClient impl [HACK])
                                 params.replaceExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, HttpCookie.getCookieHeader(context.getCookies())));

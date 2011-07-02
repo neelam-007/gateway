@@ -11,21 +11,17 @@ import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.xml.InvalidXpathException;
-import org.springframework.beans.factory.BeanFactory;
-import org.springframework.context.ApplicationEventPublisher;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.*;
-import java.util.logging.Logger;
 
 /**
  *
  */
 public class ServerNonSoapCheckVerifyResultsAssertion extends ServerNonSoapSecurityAssertion<NonSoapCheckVerifyResultsAssertion> {
-    private static final Logger logger = Logger.getLogger(ServerNonSoapCheckVerifyResultsAssertion.class.getName());
 
     private final boolean allowMultiple;
     private final String elementsVerifiedVarName;
@@ -35,8 +31,8 @@ public class ServerNonSoapCheckVerifyResultsAssertion extends ServerNonSoapSecur
     private final Set<String> permittedSignatureMethodUris;
     private final Set<String> permittedDigestMethodUris;
 
-    public ServerNonSoapCheckVerifyResultsAssertion(NonSoapCheckVerifyResultsAssertion assertion, BeanFactory beanFactory, ApplicationEventPublisher eventPub) throws InvalidXpathException {
-        super(assertion, logger, beanFactory, eventPub);
+    public ServerNonSoapCheckVerifyResultsAssertion(NonSoapCheckVerifyResultsAssertion assertion) throws InvalidXpathException {
+        super(assertion);
         allowMultiple = assertion.isAllowMultipleSigners();
         elementsVerifiedVarName = assertion.prefix(NonSoapVerifyElementAssertion.VAR_ELEMENTS_VERIFIED);
         signatureMethodUrisVarName = assertion.prefix(NonSoapVerifyElementAssertion.VAR_SIGNATURE_METHOD_URIS);
@@ -60,12 +56,12 @@ public class ServerNonSoapCheckVerifyResultsAssertion extends ServerNonSoapSecur
         for (Element element : shouldBeSignedElements) {
             List<Integer> indexes = rowIndexesByVerifiedElement.get(element);
             if (indexes == null || indexes.isEmpty()) {
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Required element was not covered by signature: " + element.getNodeName());
+                logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Required element was not covered by signature: " + element.getNodeName());
                 throw new AssertionStatusException(AssertionStatus.FALSIFIED);
             }
 
             if (!allowMultiple && indexes.size() > 1) {
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Element was covered by more than one signature and multiple signatures are not permitted: " + element.getNodeName());
+                logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Element was covered by more than one signature and multiple signatures are not permitted: " + element.getNodeName());
                 throw new AssertionStatusException(AssertionStatus.FALSIFIED);
             }
 
@@ -92,13 +88,13 @@ public class ServerNonSoapCheckVerifyResultsAssertion extends ServerNonSoapSecur
                 certsSigningThisElement.retainAll(signingCerts);
                 if (certsSigningThisElement.isEmpty()) {
                     // This element has no signing certs in common with the earlier elements.
-                    auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Element has no signing certificates in common with other signed elements: " + element.getNodeName());
+                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Element has no signing certificates in common with other signed elements: " + element.getNodeName());
                     throw new AssertionStatusException(AssertionStatus.FALSIFIED);
                 }
                 signingCerts.retainAll(certsSigningThisElement);
                 if (signingCerts.isEmpty()) {
                     // This element has no signing certs in common with the earlier elements.
-                    auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Other signed elements have no signing certificate in common with element: " + element.getNodeName());
+                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Other signed elements have no signing certificate in common with element: " + element.getNodeName());
                     throw new AssertionStatusException(AssertionStatus.FALSIFIED);
                 }
             }
@@ -108,13 +104,13 @@ public class ServerNonSoapCheckVerifyResultsAssertion extends ServerNonSoapSecur
 
         if (signingCerts.isEmpty()) {
             // Can't happen
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "No signing certificates were found");
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "No signing certificates were found");
             throw new AssertionStatusException(AssertionStatus.FALSIFIED);
         }
 
         if (!allowMultiple && signingCerts.size() > 1) {
             // Can't happen
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "More than one signing certificate was found and multiple signatures are not permitted");
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "More than one signing certificate was found and multiple signatures are not permitted");
             throw new AssertionStatusException(AssertionStatus.FALSIFIED);
         }
 
@@ -132,7 +128,7 @@ public class ServerNonSoapCheckVerifyResultsAssertion extends ServerNonSoapSecur
         checkIndexAndNotNull(values, idx, digestOrSignature, element);
 
         if (!permitted.contains(values[idx])) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
                     "Element was not signed using a permitted " + digestOrSignature + ": " + element.getNodeName());
             throw new AssertionStatusException(AssertionStatus.FALSIFIED);
         }
@@ -142,13 +138,13 @@ public class ServerNonSoapCheckVerifyResultsAssertion extends ServerNonSoapSecur
         assert idx >= 0;
 
         if (idx >= values.length) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
                     "Invalid signature results: not enough " + digestOrSignature + " results for element " + element.getNodeName() + " (index " + idx + ")");
             throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
         }
 
         if (values[idx] == null) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
                     "Invalid signature results: " + digestOrSignature + " result is null for element " + element.getNodeName() + " (index " + idx + ")");
             throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
         }

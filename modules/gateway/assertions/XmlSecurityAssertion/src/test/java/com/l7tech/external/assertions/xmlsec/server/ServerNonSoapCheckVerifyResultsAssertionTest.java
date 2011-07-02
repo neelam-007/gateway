@@ -143,7 +143,7 @@ public class ServerNonSoapCheckVerifyResultsAssertionTest {
     }
 
     void expectResult(AssertionStatus expectedResult, X509Certificate... expectedCredentials) throws Exception {
-        ServerNonSoapCheckVerifyResultsAssertion sass = new ServerNonSoapCheckVerifyResultsAssertion(ass, null, null);
+        ServerNonSoapCheckVerifyResultsAssertion sass = new ServerNonSoapCheckVerifyResultsAssertion(ass);
         AssertionStatus result = sass.checkRequest(pec);
         assertEquals(expectedResult, result);
 

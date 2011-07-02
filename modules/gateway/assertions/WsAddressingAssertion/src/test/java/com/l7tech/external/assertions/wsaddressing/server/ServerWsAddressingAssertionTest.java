@@ -14,7 +14,7 @@ import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.token.SignedElement;
 import com.l7tech.security.token.SigningSecurityToken;
 import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.server.audit.LogOnlyAuditor;
+import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
@@ -30,7 +30,6 @@ import org.w3c.dom.Node;
 
 import javax.xml.namespace.QName;
 import java.util.*;
-import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -40,7 +39,6 @@ import static org.junit.Assert.assertTrue;
  */
 public class ServerWsAddressingAssertionTest {
 
-    private static final Logger logger = Logger.getLogger(ServerWsAddressingAssertionTest.class.getName());
     private static final String ADDRESSING_NAMESPACE = "http://www.w3.org/2005/08/addressing";
     private static final String ADDRESSING_NAMESPACE_200408 = "http://schemas.xmlsoap.org/ws/2004/08/addressing";
 
@@ -57,7 +55,7 @@ public class ServerWsAddressingAssertionTest {
     public void testWsAddressingSigned() throws Exception {
         // init
         WsAddressingAssertion wsaa = new WsAddressingAssertion();
-        ServerWsAddressingAssertion swsaa = new ServerWsAddressingAssertion(wsaa, new LogOnlyAuditor(logger), new MockConfig(new Properties()));
+        ServerWsAddressingAssertion swsaa = new ServerWsAddressingAssertion(wsaa, new MockConfig(new Properties()));
 
         // build test signed elements
         Document testDoc = XmlUtil.stringToDocument(MESSAGE);
@@ -120,7 +118,7 @@ public class ServerWsAddressingAssertionTest {
     public void testWsAddressing() throws Exception {
         // init
         WsAddressingAssertion wsaa = new WsAddressingAssertion();
-        ServerWsAddressingAssertion swsaa = new ServerWsAddressingAssertion(wsaa, new LogOnlyAuditor(logger), new MockConfig(new Properties()));
+        ServerWsAddressingAssertion swsaa = new ServerWsAddressingAssertion(wsaa, new MockConfig(new Properties()));
 
         // build test signed elements
         Document testDoc = XmlUtil.stringToDocument(MESSAGE);
@@ -148,7 +146,7 @@ public class ServerWsAddressingAssertionTest {
         // init
         WsAddressingAssertion wsaa = new WsAddressingAssertion();
         wsaa.setVariablePrefix("PreFix");
-        ServerWsAddressingAssertion swsaa = new ServerWsAddressingAssertion(wsaa, new LogOnlyAuditor(logger), new MockConfig(new Properties()));
+        ServerWsAddressingAssertion swsaa = new ServerWsAddressingAssertion(wsaa, new MockConfig(new Properties()));
 
         // build test data
         Map<QName,String> properties = new HashMap<QName,String>();
@@ -188,7 +186,7 @@ public class ServerWsAddressingAssertionTest {
         // init
         WsAddressingAssertion wsaa = new WsAddressingAssertion();
         wsaa.setVariablePrefix("PreFix");
-        ServerWsAddressingAssertion swsaa = new ServerWsAddressingAssertion(wsaa, new LogOnlyAuditor(logger), new MockConfig(new Properties()));
+        ServerWsAddressingAssertion swsaa = new ServerWsAddressingAssertion(wsaa, new MockConfig(new Properties()));
 
         // build test data
         Map<QName,String> properties = new HashMap<QName,String>();
@@ -238,7 +236,7 @@ public class ServerWsAddressingAssertionTest {
     }
 
     private void doTestNonSoap( final WsAddressingAssertion wsaa ) throws Exception {
-        final ServerWsAddressingAssertion swsaa = new ServerWsAddressingAssertion(wsaa, new LogOnlyAuditor(logger), new MockConfig(new Properties()));
+        final ServerWsAddressingAssertion swsaa = new ServerWsAddressingAssertion(wsaa, new MockConfig(new Properties()));
         final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(), new Message() );
         final AssertionStatus status = swsaa.checkRequest( context );
         assertEquals( "Status", AssertionStatus.NOT_APPLICABLE, status );
@@ -249,7 +247,7 @@ public class ServerWsAddressingAssertionTest {
     public void testWsaFrom() throws Exception {
         // init
         WsAddressingAssertion wsaa = new WsAddressingAssertion();
-        ServerWsAddressingAssertion swsaa = new ServerWsAddressingAssertion(wsaa, new LogOnlyAuditor(logger), new MockConfig(new Properties()));
+        ServerWsAddressingAssertion swsaa = new ServerWsAddressingAssertion(wsaa, new MockConfig(new Properties()));
 
         // build test signed elements
         Document testDoc = XmlUtil.stringToDocument(BUG8318_MESSAGE);
@@ -274,7 +272,7 @@ public class ServerWsAddressingAssertionTest {
         wsaa.setEnableWsAddressing10( false );
         wsaa.setEnableWsAddressing200408( false );
         wsaa.setEnableOtherNamespace( OTHER_NAMESPACE );
-        ServerWsAddressingAssertion swsaa = new ServerWsAddressingAssertion(wsaa, new LogOnlyAuditor(logger), new MockConfig(new Properties()));
+        ServerWsAddressingAssertion swsaa = new ServerWsAddressingAssertion(wsaa, new MockConfig(new Properties()));
 
         // build test signed elements
         Document testDoc = XmlUtil.stringToDocument(MESSAGE.replace( "http://schemas.xmlsoap.org/ws/2004/08/addressing", OTHER_NAMESPACE ));
@@ -315,7 +313,8 @@ public class ServerWsAddressingAssertionTest {
         final WsAddressingAssertion wsaa = new WsAddressingAssertion();
         wsaa.setRequireSignature( signed );
         wsaa.setEnableOtherNamespace( "http://schemas.xmlsoap.org/ws/2004/03/addressing" );
-        final ServerWsAddressingAssertion swsaa = new ServerWsAddressingAssertion(wsaa, testAudit, new MockConfig(new Properties()));
+        final ServerWsAddressingAssertion swsaa = new ServerWsAddressingAssertion(wsaa, new MockConfig(new Properties()));
+        ApplicationContexts.inject( swsaa, Collections.singletonMap( "auditFactory", testAudit.factory() ) );
         final Message requestMessage = new Message(request);
         final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( requestMessage, new Message() );
         if ( wsaa.isRequireSignature() ) {

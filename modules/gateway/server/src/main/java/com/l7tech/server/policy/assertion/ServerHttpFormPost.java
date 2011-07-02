@@ -11,13 +11,11 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpFormPost;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.StashManagerFactory;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.context.ApplicationContext;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.logging.Logger;
 
 /**
  * Extracts fields from an HTML form submission and constructs MIME parts in the current
@@ -26,19 +24,15 @@ import java.util.logging.Logger;
  * <b>NOTE</b>: This assertion destroys the current request and replaces it
  * with new content!
  */
-public class ServerHttpFormPost extends AbstractServerAssertion implements ServerAssertion {
-    private static Logger logger = Logger.getLogger(ServerHttpFormPost.class.getName());
-    private final Auditor auditor;
+public class ServerHttpFormPost extends AbstractServerAssertion<HttpFormPost> implements ServerAssertion<HttpFormPost> {
     private final StashManagerFactory stashManagerFactory;
-    private final HttpFormPost assertion;
 
     public ServerHttpFormPost(HttpFormPost assertion, ApplicationContext springContext) {
         super(assertion);
-        this.auditor = new Auditor(this, springContext, logger);
-        this.assertion = assertion;
         this.stashManagerFactory = springContext.getBean("stashManagerFactory", StashManagerFactory.class);
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         Message request = context.getRequest();
         MimeKnob reqMime = request.getMimeKnob();
@@ -46,14 +40,14 @@ public class ServerHttpFormPost extends AbstractServerAssertion implements Serve
         HttpRequestKnob reqHttp = request.getKnob(HttpRequestKnob.class);
 
         if (reqHttp == null) {
-            auditor.logAndAudit(AssertionMessages.HTTPFORM_NON_HTTP);
+            logAndAudit( AssertionMessages.HTTPFORM_NON_HTTP );
             return AssertionStatus.NOT_APPLICABLE;
         } else if (HttpMethod.POST == reqHttp.getMethod() && ctype.isApplication() && HttpFormPost.X_WWW_FORM_URLENCODED.equals(ctype.getSubtype())) {
             logger.fine("Received POST form");
         } else if (HttpMethod.GET == reqHttp.getMethod() && reqHttp.getQueryString() != null && reqHttp.getQueryString().length() > 0) {
             logger.fine("Received GET form");
         } else {
-            auditor.logAndAudit(AssertionMessages.HTTPFORM_WRONG_TYPE, "Content-Type was " + ctype.getFullValue());
+            logAndAudit( AssertionMessages.HTTPFORM_WRONG_TYPE, "Content-Type was " + ctype.getFullValue() );
             return AssertionStatus.NOT_APPLICABLE;
         }
 
@@ -67,17 +61,17 @@ public class ServerHttpFormPost extends AbstractServerAssertion implements Serve
             String[] partValues = reqHttp.getParameterValues(partFieldname);
 
             if (partValues == null) {
-                auditor.logAndAudit(AssertionMessages.HTTPFORM_NO_SUCH_FIELD, partFieldname);
+                logAndAudit( AssertionMessages.HTTPFORM_NO_SUCH_FIELD, partFieldname );
                 return AssertionStatus.FAILED;
             } else if (partValues.length > 1) {
-                auditor.logAndAudit(AssertionMessages.HTTPFORM_MULTIVALUE, partFieldname);
+                logAndAudit( AssertionMessages.HTTPFORM_MULTIVALUE, partFieldname );
                 continue;
             }
 
             String partValue = partValues[0];
             if (partValue.length() >= 512 * 1024) {
                 // TODO do we care about bytes vs. chars?
-                auditor.logAndAudit(AssertionMessages.HTTPFORM_TOO_BIG, partFieldname);
+                logAndAudit( AssertionMessages.HTTPFORM_TOO_BIG, partFieldname );
                 return AssertionStatus.FAILED;
             }
 

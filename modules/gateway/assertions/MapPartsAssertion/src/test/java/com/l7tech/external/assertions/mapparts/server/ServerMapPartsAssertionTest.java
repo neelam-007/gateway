@@ -5,30 +5,23 @@ import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.external.assertions.mapparts.MapPartsAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.server.ServerConfigStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-import org.springframework.context.ApplicationContext;
 
 import java.io.ByteArrayInputStream;
 import java.util.Arrays;
-import java.util.logging.Logger;
 
 /**
  * Test the MapPartsAssertion.
  */
 public class ServerMapPartsAssertionTest {
 
-    private static final Logger log = Logger.getLogger(ServerMapPartsAssertionTest.class.getName());
-    private static ApplicationContext applicationContext;
-    private static ServerConfigStub serverConfig;
-
     @Test
     public void testMapParts() throws Exception {
-        ServerMapPartsAssertion sass = new ServerMapPartsAssertion(new MapPartsAssertion(), null);
+        ServerMapPartsAssertion sass = new ServerMapPartsAssertion(new MapPartsAssertion());
 
         Message request = new Message(new ByteArrayStashManager(),
                                       ContentTypeHeader.parseValue(MESS2_CONTENT_TYPE),

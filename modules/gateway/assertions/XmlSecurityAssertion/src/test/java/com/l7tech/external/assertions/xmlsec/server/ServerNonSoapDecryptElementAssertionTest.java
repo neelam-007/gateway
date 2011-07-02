@@ -40,7 +40,7 @@ public class ServerNonSoapDecryptElementAssertionTest {
         ass.setXpathExpression(new XpathExpression("//*[local-name() = 'EncryptedData']"));
         Message request = new Message(XmlUtil.stringAsDocument(TEST_ENCRYPTED));
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
-        AssertionStatus result = new ServerNonSoapDecryptElementAssertion(ass, beanFactory, null).checkRequest(context);
+        AssertionStatus result = new ServerNonSoapDecryptElementAssertion(ass, beanFactory).checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
         final Document doc = request.getXmlKnob().getDocumentReadOnly();
         logger.info("Decrypted XML:\n" + XmlUtil.nodeToString(doc));
@@ -57,7 +57,7 @@ public class ServerNonSoapDecryptElementAssertionTest {
         ass.setXpathExpression(new XpathExpression("//*[local-name() = 'EncryptedData']"));
         Message request = new Message(XmlUtil.stringAsDocument(TEST_ENCRYPTED_FOR_SOMEONE_ELSE));
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
-        AssertionStatus result = new ServerNonSoapDecryptElementAssertion(ass, beanFactory, null).checkRequest(context);
+        AssertionStatus result = new ServerNonSoapDecryptElementAssertion(ass, beanFactory).checkRequest(context);
         assertEquals(AssertionStatus.BAD_REQUEST, result);
         final Document doc = request.getXmlKnob().getDocumentReadOnly();
         logger.info("After decryption attempt:\n" + XmlUtil.nodeToString(doc));
@@ -73,7 +73,7 @@ public class ServerNonSoapDecryptElementAssertionTest {
         ass.setXpathExpression(new XpathExpression("//*[local-name() = 'EncryptedData']"));
         Message request = new Message(XmlUtil.stringAsDocument(TEST_ENCRYPTED_FOR_DATA));
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
-        AssertionStatus result = new ServerNonSoapDecryptElementAssertion(ass, beanFactory, null).checkRequest(context);
+        AssertionStatus result = new ServerNonSoapDecryptElementAssertion(ass, beanFactory).checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
         final Document doc = request.getXmlKnob().getDocumentReadOnly();
         logger.info("Decrypted XML:\n" + XmlUtil.nodeToString(doc));

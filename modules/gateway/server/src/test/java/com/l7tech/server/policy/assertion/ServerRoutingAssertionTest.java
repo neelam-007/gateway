@@ -347,7 +347,7 @@ public class ServerRoutingAssertionTest {
 
     private static class TestServerRoutingAssertion extends ServerRoutingAssertion<HttpRoutingAssertion> {
         public TestServerRoutingAssertion() {
-            super(new HttpRoutingAssertion(), null, null);
+            super(new HttpRoutingAssertion(), null);
         }
 
         @Override

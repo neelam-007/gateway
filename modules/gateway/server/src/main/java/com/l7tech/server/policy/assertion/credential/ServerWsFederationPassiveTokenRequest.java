@@ -2,7 +2,6 @@ package com.l7tech.server.policy.assertion.credential;
 
 import com.l7tech.common.http.GenericHttpClientFactory;
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.http.GenericHttpClient;
 import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.message.XmlKnob;
@@ -32,7 +31,6 @@ import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Server implementation of the WS-Federation PRP (http://msdn.microsoft.com/ws/2003/07/ws-passive-profile/).
@@ -46,7 +44,6 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFeder
      */
     public ServerWsFederationPassiveTokenRequest(WsFederationPassiveTokenRequest assertion, ApplicationContext springContext) {
         super(assertion, CACHE_SAML_KEY, springContext);
-        this.auditor = new Auditor(this, springContext, logger);
         this.httpClient = springContext.getBean( "anonUrlHttpClientFactory", GenericHttpClientFactory.class ).createHttpClient();
 
         try {
@@ -81,7 +78,7 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFeder
             result = AssertionStatus.AUTH_REQUIRED;
         }
         catch(StopAndAuditException saae) {
-            auditor.logAndAudit(saae.getAssertionMessage(), null, saae.getCause());
+            logAndAudit(saae.getAssertionMessage(), null, saae.getCause());
         }
 
         return result;
@@ -89,14 +86,11 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFeder
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger(ServerWsFederationPassiveTokenRequest.class.getName());
-
     /**
      * Key for cached SAML assertion
      */
     private static final String CACHE_SAML_KEY = ServerWsFederationPassiveTokenRequest.class.getName() + ".SAML";
 
-    private final Auditor auditor;
     private final GenericHttpClient httpClient;
     private final URL ipStsUrl;
 
@@ -179,7 +173,7 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFeder
             }
         }
         catch(ResponseStatusException rse) {
-            auditor.logAndAudit(AssertionMessages.WSFEDPASS_RSTR_STATUS_NON_200); // TODO use a better message
+            logAndAudit(AssertionMessages.WSFEDPASS_RSTR_STATUS_NON_200); // TODO use a better message
             throw new AuthRequiredException();
         }
         catch(InvalidHtmlException ihe) {
@@ -209,7 +203,7 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFeder
         try {
             Document requestDoc = requestXml.getDocumentWritable(); // Don't actually want the document; just want to invalidate bytes
             if (!tokenFromRequest) {
-                auditor.logAndAudit(AssertionMessages.WSFEDPASS_ORIGINAL_TOKEN_NOT_XML);
+                logAndAudit(AssertionMessages.WSFEDPASS_ORIGINAL_TOKEN_NOT_XML);
             } else {
                 //NOTE: the token is in the requestDoc Document
                 Element tokenElement = existingToken.asElement();

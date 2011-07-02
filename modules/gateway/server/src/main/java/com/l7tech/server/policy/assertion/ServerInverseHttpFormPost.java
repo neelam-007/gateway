@@ -11,7 +11,6 @@ import com.l7tech.policy.assertion.HttpFormPost;
 import com.l7tech.policy.assertion.InverseHttpFormPost;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.StashManagerFactory;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.Charsets;
@@ -23,7 +22,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
-import java.util.logging.Logger;
 
 /**
  * Extracts MIE parts out of the current request and formats them as an HTML form submission.
@@ -31,15 +29,12 @@ import java.util.logging.Logger;
  * <b>NOTE</b>: This assertion destroys the current request and replaces it with new content!
  */
 public class ServerInverseHttpFormPost extends AbstractServerAssertion<InverseHttpFormPost> {
-    private static Logger logger = Logger.getLogger(ServerInverseHttpFormPost.class.getName());
-    private final Auditor auditor;
     private final StashManagerFactory stashManagerFactory;
     private static final Charset ENCODING = Charsets.UTF8;
     private final ContentTypeHeader contentType;
 
     public ServerInverseHttpFormPost(InverseHttpFormPost assertion, ApplicationContext springContext) {
         super(assertion);
-        this.auditor = new Auditor(this, springContext, logger);
         this.stashManagerFactory = springContext.getBean("stashManagerFactory", StashManagerFactory.class);
         try {
             this.contentType = ContentTypeHeader.parseValue("application/" + HttpFormPost.X_WWW_FORM_URLENCODED);
@@ -48,6 +43,7 @@ public class ServerInverseHttpFormPost extends AbstractServerAssertion<InverseHt
         }
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         Message request = context.getRequest();
         MimeKnob reqMime = request.getMimeKnob();
@@ -67,7 +63,7 @@ public class ServerInverseHttpFormPost extends AbstractServerAssertion<InverseHt
                     baos.write(URLEncoder.encode(new String(partBytes, ctype.getEncoding()), ENCODING.name()).getBytes(ENCODING));
                     if (i < assertion.getFieldNames().length - 1) baos.write("&".getBytes());
                 } catch (NoSuchPartException e) {
-                    auditor.logAndAudit(AssertionMessages.INVERSE_HTTPFORM_NO_SUCH_PART, Integer.toString(i));
+                    logAndAudit( AssertionMessages.INVERSE_HTTPFORM_NO_SUCH_PART, Integer.toString( i ) );
                     return AssertionStatus.FAILED;
                 }
             }

@@ -24,14 +24,14 @@ public class ServerRemoteDomainIdentityInjectionTest {
 
     @Test
     public void testNonHttpRequest() throws Exception {
-        ServerRemoteDomainIdentityInjection sass = new ServerRemoteDomainIdentityInjection(new RemoteDomainIdentityInjection(), null);
+        ServerRemoteDomainIdentityInjection sass = new ServerRemoteDomainIdentityInjection(new RemoteDomainIdentityInjection());
         AssertionStatus result = sass.checkRequest( PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message()) );
         assertEquals(AssertionStatus.NOT_APPLICABLE, result);
     }
 
     @Test
     public void testMissingDomainIdStatusHeader() throws Exception {
-        ServerRemoteDomainIdentityInjection sass = new ServerRemoteDomainIdentityInjection(new RemoteDomainIdentityInjection(), null);
+        ServerRemoteDomainIdentityInjection sass = new ServerRemoteDomainIdentityInjection(new RemoteDomainIdentityInjection());
         Message request = new Message();
         request.attachHttpRequestKnob(new HttpRequestKnobAdapter());
 
@@ -42,7 +42,7 @@ public class ServerRemoteDomainIdentityInjectionTest {
     
     @Test
     public void testCorruptDomainIdStatusHeader() throws Exception {
-        ServerRemoteDomainIdentityInjection sass = new ServerRemoteDomainIdentityInjection(new RemoteDomainIdentityInjection(), null);
+        ServerRemoteDomainIdentityInjection sass = new ServerRemoteDomainIdentityInjection(new RemoteDomainIdentityInjection());
         Message request = new Message();
         List<HttpHeader> headers = new ArrayList<HttpHeader>();
         headers.add(new GenericHttpHeader(SecureSpanConstants.HttpHeaders.HEADER_DOMAINIDSTATUS, "lakjhsfaolkjsdh asldkjfhasldfha sdflaskdjfhas;asgh asgkjahgfalkjhg"));
@@ -55,7 +55,7 @@ public class ServerRemoteDomainIdentityInjectionTest {
     
     @Test
     public void testBasicUseCase() throws Exception {
-        ServerRemoteDomainIdentityInjection sass = new ServerRemoteDomainIdentityInjection(new RemoteDomainIdentityInjection(), null);
+        ServerRemoteDomainIdentityInjection sass = new ServerRemoteDomainIdentityInjection(new RemoteDomainIdentityInjection());
         Message request = new Message();
         request.attachHttpRequestKnob(new HttpRequestKnobStub(DomainIdInjectorTest.injectSampleHeaders().getExtraHeaders()));
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
@@ -70,7 +70,7 @@ public class ServerRemoteDomainIdentityInjectionTest {
 
     @Test
     public void testUnicodeValues() throws Exception {
-        ServerRemoteDomainIdentityInjection sass = new ServerRemoteDomainIdentityInjection(new RemoteDomainIdentityInjection(), null);
+        ServerRemoteDomainIdentityInjection sass = new ServerRemoteDomainIdentityInjection(new RemoteDomainIdentityInjection());
         Message request = new Message();
         request.attachHttpRequestKnob(new HttpRequestKnobStub(DomainIdInjectorTest.injectUnicodeHeaders().getExtraHeaders()));
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());

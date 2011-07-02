@@ -6,16 +6,12 @@ import com.l7tech.gateway.common.audit.CommonMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.util.ExceptionUtils;
-import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -25,17 +21,12 @@ import java.util.regex.PatternSyntaxException;
  * @see com.l7tech.external.assertions.splitjoin.SplitAssertion
  */
 public class ServerSplitAssertion extends AbstractServerAssertion<SplitAssertion> {
-    private static final Logger logger = Logger.getLogger(ServerSplitAssertion.class.getName());
-
-    private final Auditor auditor;
     private final Pattern pattern;
     private final String literalSplitPattern;
 
-    public ServerSplitAssertion(SplitAssertion assertion, ApplicationContext context) throws PolicyAssertionException {
+    public ServerSplitAssertion(SplitAssertion assertion) throws PolicyAssertionException {
         super(assertion);
 
-        //noinspection ThisEscapedInObjectConstruction
-        this.auditor = context == null ? new LogOnlyAuditor(logger) : new Auditor(this, context, logger);
         try {
             if(assertion.isSplitPatternRegEx()){
                 pattern = Pattern.compile(assertion.getSplitPattern());
@@ -54,7 +45,7 @@ public class ServerSplitAssertion extends AbstractServerAssertion<SplitAssertion
         try {
             Object value = context.getVariable(assertion.getInputVariable());
             if (!(value instanceof String)){
-                auditor.logAndAudit(CommonMessages.TEMPLATE_SUSPICIOUS_TOSTRING, new String[]{assertion.getInputVariable(), value.getClass().getName()} );
+                logAndAudit( CommonMessages.TEMPLATE_SUSPICIOUS_TOSTRING, assertion.getInputVariable(), value.getClass().getName() );
                 return AssertionStatus.FAILED;
             }
 
@@ -68,7 +59,7 @@ public class ServerSplitAssertion extends AbstractServerAssertion<SplitAssertion
             context.setVariable(assertion.getOutputVariable(), Arrays.asList(output));
             return AssertionStatus.NONE;
         } catch (NoSuchVariableException e) {
-            auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE_WARNING, e.getVariable());
+            logAndAudit( AssertionMessages.NO_SUCH_VARIABLE_WARNING, e.getVariable() );
             return AssertionStatus.SERVER_ERROR;
         }
     }

@@ -9,7 +9,6 @@ import com.l7tech.security.xml.ElementEncryptionConfig;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.KeyReference;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.util.xml.PolicyEnforcementContextXpathVariableFinder;
@@ -17,14 +16,12 @@ import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.xml.xpath.DeferredFailureDomCompiledXpathHolder;
 import org.jaxen.JaxenException;
-import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.logging.Logger;
 
 /**
  * XML encryption on the soap response sent from the ssg server to the requestor (probably proxy).
@@ -39,14 +36,10 @@ import java.util.logging.Logger;
  * Date: Aug 26, 2003<br/>
  */
 public class ServerWssEncryptElement extends ServerAddWssEncryption<WssEncryptElement> {
-
-    private static final Logger logger = Logger.getLogger(ServerWssEncryptElement.class.getName());
-    private final Auditor auditor;
     private final DeferredFailureDomCompiledXpathHolder compiledXpath;
 
-    public ServerWssEncryptElement( final WssEncryptElement data, final ApplicationContext ctx) throws IOException {
-        super(data, data, data, data, logger);
-        this.auditor = new Auditor(this, ctx, logger);
+    public ServerWssEncryptElement( final WssEncryptElement data ) throws IOException {
+        super(data, data, data, data);
         this.compiledXpath = new DeferredFailureDomCompiledXpathHolder(assertion.getXpathExpression());
     }
 
@@ -60,12 +53,12 @@ public class ServerWssEncryptElement extends ServerAddWssEncryption<WssEncryptEl
         try {
             encryptionContext = buildEncryptionContext( context );
         } catch ( AddWssEncryptionSupport.MultipleTokensException mte ) {
-            auditor.logAndAudit(AssertionMessages.WSS_ENCRYPT_MORE_THAN_ONE_TOKEN);
+            logAndAudit(AssertionMessages.WSS_ENCRYPT_MORE_THAN_ONE_TOKEN);
             return AssertionStatus.BAD_REQUEST;
         }
 
         if ( !encryptionContext.hasEncryptionKey() ) {
-            auditor.logAndAudit(AssertionMessages.WSS_ENCRYPT_NO_CERT_OR_SC_TOKEN);
+            logAndAudit(AssertionMessages.WSS_ENCRYPT_NO_CERT_OR_SC_TOKEN);
         }
 
         return addDecorationRequirements(
@@ -95,7 +88,7 @@ public class ServerWssEncryptElement extends ServerAddWssEncryption<WssEncryptEl
     {
         try {
             if (!message.isSoap()) {
-                auditor.logAndAudit(AssertionMessages.WSS_ENCRYPT_MESSAGE_NOT_SOAP, messageDescription);
+                logAndAudit(AssertionMessages.WSS_ENCRYPT_MESSAGE_NOT_SOAP, messageDescription);
                 return AssertionStatus.NOT_APPLICABLE;
             }
         } catch (SAXException e) {
@@ -112,12 +105,12 @@ public class ServerWssEncryptElement extends ServerAddWssEncryption<WssEncryptEl
                 selectedElements = compiledXpath.getCompiledXpath().rawSelectElements(soapmsg,
                         new PolicyEnforcementContextXpathVariableFinder(context));
             } catch (JaxenException e) {
-                auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID_MORE_INFO, new String[] { "XPath evaluation error: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e) );
+                logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID_MORE_INFO, new String[] { "XPath evaluation error: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e) );
                 return AssertionStatus.SERVER_ERROR;
             }
 
             if (selectedElements == null || selectedElements.size() < 1) {
-                auditor.logAndAudit(AssertionMessages.WSS_ENCRYPT_MESSAGE_NOT_ENCRYPTED, messageDescription);
+                logAndAudit(AssertionMessages.WSS_ENCRYPT_MESSAGE_NOT_ENCRYPTED, messageDescription);
                 return AssertionStatus.FALSIFIED;
             }
             DecorationRequirements wssReq = message.getSecurityKnob().getAlternateDecorationRequirements(encryptionContext.getRecipientContext());
@@ -138,17 +131,12 @@ public class ServerWssEncryptElement extends ServerAddWssEncryption<WssEncryptEl
             }
             applyDecorationRequirements( context, wssReq, encryptionContext );
 
-            auditor.logAndAudit(AssertionMessages.WSS_ENCRYPT_MESSAGE_ENCRYPTED, messageDescription, String.valueOf(selectedElements.size()));
+            logAndAudit(AssertionMessages.WSS_ENCRYPT_MESSAGE_ENCRYPTED, messageDescription, String.valueOf(selectedElements.size()));
             return AssertionStatus.NONE;
         } catch (SAXException e) {
             String msg = "cannot get an xml document from the response to encrypt";
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[] {msg}, e);
+            logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[] {msg}, e);
             return AssertionStatus.SERVER_ERROR;
         }
-    }
-
-    @Override
-    protected Auditor getAuditor() {
-        return auditor;
     }
 }

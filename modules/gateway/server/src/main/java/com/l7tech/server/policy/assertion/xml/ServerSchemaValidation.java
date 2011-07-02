@@ -11,7 +11,6 @@ import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.communityschemas.SchemaHandle;
 import com.l7tech.server.communityschemas.SchemaManager;
 import com.l7tech.server.communityschemas.SchemaValidationErrorHandler;
@@ -33,7 +32,6 @@ import java.net.MalformedURLException;
 import java.security.GeneralSecurityException;
 import java.util.*;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Validates the soap body's contents of a soap request or soap response against
@@ -47,9 +45,6 @@ import java.util.logging.Logger;
 public class ServerSchemaValidation
         extends AbstractServerAssertion<SchemaValidation>
 {
-    private static final Logger logger = Logger.getLogger(ServerSchemaValidation.class.getName());
-
-    private final Auditor auditor;
     private final ResourceGetter<String, ElementCursor> resourceGetter;
     private final String registeredGlobalSchemaUrl;
     private final SchemaManager schemaManager;
@@ -58,7 +53,6 @@ public class ServerSchemaValidation
 
     public ServerSchemaValidation(SchemaValidation data, ApplicationContext springContext) throws ServerPolicyException {
         super(data);
-        this.auditor = new Auditor(this, springContext, logger);
         this.schemaManager = (SchemaManager)springContext.getBean("schemaManager");
         this.varsUsed = data.getVariablesUsed();
 
@@ -119,7 +113,7 @@ public class ServerSchemaValidation
         };
 
         this.resourceGetter = ResourceGetter.createResourceGetter(
-                assertion, resourceInfo, rof, null, urlResolver, auditor); 
+                assertion, resourceInfo, rof, null, urlResolver, getAudit());
     }
 
     /**
@@ -148,17 +142,17 @@ public class ServerSchemaValidation
                 msg = context.getTargetMessage(assertion, true);
                 targetDescription = assertion.getTargetName();
             } catch (NoSuchVariableException e) {
-                auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, assertion.getOtherTargetMessageVariable());
+                logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, assertion.getOtherTargetMessageVariable());
                 return AssertionStatus.FAILED;
             }
         }
 
         if (!msg.isXml()) {
-            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_NOT_XML, targetDescription);
+            logAndAudit(AssertionMessages.SCHEMA_VALIDATION_NOT_XML, targetDescription);
             return AssertionStatus.NOT_APPLICABLE;
         }
 
-        auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_VALIDATING, targetDescription);
+        logAndAudit(AssertionMessages.SCHEMA_VALIDATION_VALIDATING, targetDescription);
         AssertionStatus status = validateMessage(msg, context);
         if (status == AssertionStatus.BAD_REQUEST) {
             switch (target) {
@@ -194,24 +188,24 @@ public class ServerSchemaValidation
 
             if ( globalSchemaUri != null) {
                 try {
-                    ps = schemaManager.getSchemaByUri( auditor, globalSchemaUri );
+                    ps = schemaManager.getSchemaByUri( getAudit(), globalSchemaUri );
                 } catch (MalformedURLException e) {
-                    auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_GLOBALREF_BROKEN, globalSchemaUri );
+                    logAndAudit(AssertionMessages.SCHEMA_VALIDATION_GLOBALREF_BROKEN, globalSchemaUri );
                     return AssertionStatus.SERVER_ERROR;
                 } catch (IOException e) {
-                    auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_IO_ERROR, new String[] { "schema name: " + globalSchemaUri + ": " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
+                    logAndAudit(AssertionMessages.SCHEMA_VALIDATION_IO_ERROR, new String[] { "schema name: " + globalSchemaUri + ": " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
                     return AssertionStatus.SERVER_ERROR;
                 }
             } else {
-                final Map<String,Object> vars = context.getVariableMap(varsUsed, auditor);
+                final Map<String,Object> vars = context.getVariableMap(varsUsed, getAudit());
                 String schemaUrl = null;
                 try {
                     //fyi xmlKnob.getElementCursor() is in support of MessageUrlResourceGetter's which are not currently supported by this assertion. See constructor.
                     //xmlKnob.getElementCursor() is not needed, but will be used if support for MessageUrlResourceInfo's are allowed in this server assertion.
                     schemaUrl = resourceGetter.getResource(xmlKnob.getElementCursor(), vars);
-                    ps = schemaManager.getSchemaByUri( auditor, schemaUrl );
+                    ps = schemaManager.getSchemaByUri( getAudit(), schemaUrl );
                 } catch (IOException e) {
-                    auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_IO_ERROR, new String[] { "schema URL: " + schemaUrl + ": " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
+                    logAndAudit(AssertionMessages.SCHEMA_VALIDATION_IO_ERROR, new String[] { "schema URL: " + schemaUrl + ": " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
                     return AssertionStatus.SERVER_ERROR;
                 }
             }
@@ -231,7 +225,7 @@ public class ServerSchemaValidation
                     List<String> messes = new ArrayList<String>();
                     for (Object error : errors) {
                         String mess = error.toString();
-                        auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, mess);
+                        logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, mess);
                         messes.add(mess);
                     }
                     context.setVariable(SchemaValidation.SCHEMA_FAILURE_VARIABLE, messes.toArray());
@@ -243,7 +237,7 @@ public class ServerSchemaValidation
             }
 
 
-            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_SUCCEEDED);
+            logAndAudit(AssertionMessages.SCHEMA_VALIDATION_SUCCEEDED);
             return AssertionStatus.NONE;
 
         } catch (ResourceGetter.InvalidMessageException e) {
@@ -280,7 +274,7 @@ public class ServerSchemaValidation
 
     private void schemaValidationFailed(PolicyEnforcementContext context, String msg, Throwable t) {
         logger.log(Level.INFO, "validation failed: " + msg);
-        auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, new String[] {msg}, t);
+        logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, new String[] {msg}, t);
         context.setVariable(SchemaValidation.SCHEMA_FAILURE_VARIABLE, msg);
     }
 

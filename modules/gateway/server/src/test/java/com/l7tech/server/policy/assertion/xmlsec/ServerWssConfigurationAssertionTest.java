@@ -43,7 +43,7 @@ public class ServerWssConfigurationAssertionTest {
     @Test
     public void testSimpleConfig() throws Exception {
         WssConfigurationAssertion ass = new WssConfigurationAssertion();
-        ServerWssConfigurationAssertion sass = new ServerWssConfigurationAssertion(ass, beanFactory, null);
+        ServerWssConfigurationAssertion sass = new ServerWssConfigurationAssertion(ass, beanFactory);
         final PolicyEnforcementContext context = context(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT));
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
@@ -82,7 +82,7 @@ public class ServerWssConfigurationAssertionTest {
         ass.setEncryptionKeyReference(KeyReference.SKI.getName());
         ass.setWssVersion(WsSecurityVersion.WSS11);
 
-        ServerWssConfigurationAssertion sass = new ServerWssConfigurationAssertion(ass, beanFactory, null);
+        ServerWssConfigurationAssertion sass = new ServerWssConfigurationAssertion(ass, beanFactory);
         final PolicyEnforcementContext context = context(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT));
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);

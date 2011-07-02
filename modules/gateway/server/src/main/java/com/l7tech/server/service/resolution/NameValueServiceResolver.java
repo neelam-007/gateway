@@ -1,8 +1,8 @@
 package com.l7tech.server.service.resolution;
 
+import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.message.Message;
 import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.server.audit.Auditor;
 
 import java.util.*;
 import java.util.concurrent.locks.Lock;
@@ -14,7 +14,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
 
-    public NameValueServiceResolver( final Auditor.AuditorFactory auditorFactory ) {
+    public NameValueServiceResolver( final AuditFactory auditorFactory ) {
         super( auditorFactory );
     }
 

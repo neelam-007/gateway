@@ -10,17 +10,14 @@ import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.server.StashManagerFactory;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.beans.factory.BeanFactory;
-import org.springframework.context.ApplicationEventPublisher;
 
 import javax.net.SocketFactory;
 import java.io.IOException;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * TODO Server side implementation of the SftpAssertion.
@@ -28,29 +25,26 @@ import java.util.logging.Logger;
  * @see com.l7tech.external.assertions.sftp.SftpAssertion
  */
 public class ServerSftpAssertion extends AbstractServerAssertion<SftpAssertion> {
-    private static final Logger logger = Logger.getLogger(ServerSftpAssertion.class.getName());
-
-    private final Auditor auditor;
     private final StashManagerFactory stashManagerFactory;
     private final String[] referencedVariables;
     SocketFactory socketFactory = SocketFactory.getDefault();
 
-    public ServerSftpAssertion(SftpAssertion assertion, BeanFactory beanFactory, ApplicationEventPublisher eventPub)
+    public ServerSftpAssertion(SftpAssertion assertion, BeanFactory beanFactory)
             throws PolicyAssertionException, IOException
     {
         super(assertion);
-        this.auditor = new Auditor(this, beanFactory, eventPub, logger);
         this.stashManagerFactory = beanFactory == null ? new ByteArrayStashManagerFactory() : beanFactory.getBean("stashManagerFactory", StashManagerFactory.class);
         this.referencedVariables = assertion.getVariablesUsed();
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
 
         try {
             Message request = assertion.getRequestTarget() == null ? null : context.getTargetMessage(assertion.getRequestTarget(), true);
             Message response = assertion.getResponseTarget() == null ? null : context.getOrCreateTargetMessage(assertion.getResponseTarget(), false);
 
-            Map<String,?> vars = context.getVariableMap(referencedVariables, auditor);
+            Map<String,?> vars = context.getVariableMap(referencedVariables, getAudit());
 
             context.setRoutingStatus(RoutingStatus.ATTEMPTED);
             transmitOverSftp(context, request, response, vars);
@@ -59,18 +53,18 @@ public class ServerSftpAssertion extends AbstractServerAssertion<SftpAssertion> 
             return AssertionStatus.NONE;
 
         } catch (NoSuchVariableException e) {
-            auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, e.getVariable());
+            logAndAudit( AssertionMessages.NO_SUCH_VARIABLE, e.getVariable() );
             return AssertionStatus.SERVER_ERROR;
         } catch (IOException e) {
             //noinspection ThrowableResultOfMethodCallIgnored
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "SFTP route failed: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
+            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{ "SFTP route failed: " + ExceptionUtils.getMessage( e ) }, ExceptionUtils.getDebugException( e ) );
             return AssertionStatus.FAILED;
         } catch (NoSuchPartException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "SFTP route failed: " + ExceptionUtils.getMessage(e) }, e);
+            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{ "SFTP route failed: " + ExceptionUtils.getMessage( e ) }, e );
             return AssertionStatus.FAILED;
         } catch (VariableNameSyntaxException e) {
             //noinspection ThrowableResultOfMethodCallIgnored
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "SFTP route failed: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
+            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{ "SFTP route failed: " + ExceptionUtils.getMessage( e ) }, ExceptionUtils.getDebugException( e ) );
             return AssertionStatus.SERVER_ERROR;
         }
     }

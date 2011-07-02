@@ -8,6 +8,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.AuditDetail;
+import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -715,6 +716,7 @@ public class SoapFaultManagerTest {
         sfm.setBeanFactory( new SimpleSingletonBeanFactory( new HashMap<String,Object>(){{
             put( "ssgKeyStoreManager", new SsgKeyStoreManagerStub(new SsgKeyFinderStub( Arrays.asList(getAliceKey()))) );
             put( "defaultKey", new TestDefaultKey( getBobKey() ) );
+            put( "auditFactory", LoggingAudit.factory() );
         }} ) );
 
         return sfm;

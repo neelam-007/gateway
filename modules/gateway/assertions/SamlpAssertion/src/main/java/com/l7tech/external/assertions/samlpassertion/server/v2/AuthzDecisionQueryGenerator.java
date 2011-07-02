@@ -3,7 +3,7 @@ package com.l7tech.external.assertions.samlpassertion.server.v2;
 import com.l7tech.external.assertions.samlpassertion.server.AbstractSamlp2MessageGenerator;
 import com.l7tech.external.assertions.samlpassertion.server.JaxbUtil;
 import com.l7tech.external.assertions.samlpassertion.server.SamlpAssertionException;
-import com.l7tech.server.audit.Auditor;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.util.ExceptionUtils;
 import saml.v2.assertion.*;
 import saml.v2.protocol.AuthzDecisionQueryType;
@@ -23,20 +23,23 @@ import java.util.logging.Logger;
 public final class AuthzDecisionQueryGenerator extends AbstractSamlp2MessageGenerator<AuthzDecisionQueryType> {
     private static final Logger logger = Logger.getLogger(AuthzDecisionQueryGenerator.class.getName());
 
-    public AuthzDecisionQueryGenerator(final Map<String, Object> variablesMap, final Auditor auditor)
+    public AuthzDecisionQueryGenerator(final Map<String, Object> variablesMap, final Audit auditor)
         throws SamlpAssertionException
     {
         super(variablesMap, auditor);
     }
 
+    @Override
     public JAXBElement<AuthzDecisionQueryType> createJAXBElement(AuthzDecisionQueryType samlpMsg) {
         return samlpFactory.createAuthzDecisionQuery(samlpMsg);
     }
 
+    @Override
     protected AuthzDecisionQueryType createMessageInstance() {
         return samlpFactory.createAuthzDecisionQueryType();
     }
 
+    @Override
     protected void buildSpecificMessageParts() {
 
         // build subject - common for all SAMLP requests
@@ -54,7 +57,7 @@ public final class AuthzDecisionQueryGenerator extends AbstractSamlp2MessageGene
     private List<ActionType> buildActionList() {
         List<ActionType> actions = new ArrayList<ActionType>();
 
-        String ns = null;
+        String ns;
         for (String action : assertion.getAuthorizationStatement().getActions()) {
             ActionType at = samlFactory.createActionType();
             at.setValue(action.substring(0, action.indexOf("||")));

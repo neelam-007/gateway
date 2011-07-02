@@ -759,6 +759,7 @@
     <!-- server side policy factory -->
     <bean id="policyFactory" class="com.l7tech.server.policy.ServerPolicyFactory">
         <constructor-arg ref="licenseManager"/>
+        <constructor-arg ref="injector"/>
     </bean>
 
     <bean id="resolutionConfigurationManager" class="com.l7tech.server.transport.ResolutionConfigurationManagerImpl"
@@ -770,33 +771,33 @@
         <constructor-arg index="2">
             <list>
                 <bean class="com.l7tech.server.service.resolution.RequirePathResolver">
-                    <constructor-arg ref="auditorFactory"/>
+                    <constructor-arg ref="auditFactory"/>
                 </bean>
                 <!-- This must be first -->
                 <bean class="com.l7tech.server.service.resolution.ServiceOidResolver">
-                    <constructor-arg ref="auditorFactory"/>
+                    <constructor-arg ref="auditFactory"/>
                 </bean>
                 <bean class="com.l7tech.server.service.resolution.UriResolver">
-                    <constructor-arg ref="auditorFactory"/>
+                    <constructor-arg ref="auditFactory"/>
                 </bean>
                 <bean class="com.l7tech.server.service.resolution.CaseInsensitiveUriResolver">
-                    <constructor-arg ref="auditorFactory"/>
+                    <constructor-arg ref="auditFactory"/>
                 </bean>
                 <bean class="com.l7tech.server.service.resolution.SoapActionResolver">
-                    <constructor-arg ref="auditorFactory"/>
+                    <constructor-arg ref="auditFactory"/>
                 </bean>
                 <bean class="com.l7tech.server.service.resolution.UrnResolver">
-                    <constructor-arg ref="auditorFactory"/>
+                    <constructor-arg ref="auditFactory"/>
                 </bean>
             </list>
         </constructor-arg>
         <constructor-arg index="3">
             <list>
                 <bean class="com.l7tech.server.service.resolution.SoapVersionResolver">
-                    <constructor-arg ref="auditorFactory"/>
+                    <constructor-arg ref="auditFactory"/>
                 </bean>
                 <bean class="com.l7tech.server.service.resolution.SoapOperationResolver">
-                    <constructor-arg ref="auditorFactory"/>
+                    <constructor-arg ref="auditFactory"/>
                     <constructor-arg ref="serviceDocumentManager"/>
                 </bean>
             </list>
@@ -1207,7 +1208,7 @@
         <constructor-arg index="2" ref="transactionManager"/>
         <constructor-arg index="3" ref="auditRecordManager"/>
         <constructor-arg index="4" ref="auditArchiveReceiver"/>
-        <constructor-arg index="5" ref="auditorFactory"/>
+        <constructor-arg index="5" ref="auditFactory"/>
     </bean>
 
     <bean id="auditArchiveReceiver" class="com.l7tech.server.audit.FtpArchiveReceiver">
@@ -1521,7 +1522,7 @@
         <constructor-arg index="4" value="#{hibernateProperties['l7.database.failover.description']}"/>
         <constructor-arg index="5" ref="secondaryDbDataSource"/>
         <constructor-arg index="6" ref="lazyDataSource"/>
-        <constructor-arg index="7" ref="auditorFactory"/>
+        <constructor-arg index="7" ref="auditFactory"/>
         <constructor-arg index="8" ref="applicationEventPublisher"/>
         <constructor-arg index="9" ref="clusterNodeId"/>
         <constructor-arg index="10" value="#{hibernateProperties['node.db.clusterType']}"/>
@@ -1865,7 +1866,7 @@
         <constructor-arg ref="serverConfig"/>
     </bean>
 
-    <bean id="auditorFactory" class="com.l7tech.server.audit.Auditor$DefaultAuditorFactory">
+    <bean id="auditFactory" class="com.l7tech.server.audit.Auditor$DefaultAuditorFactory">
         <constructor-arg index="0" ref="auditDetailFilter"/>
         <constructor-arg index="1" ref="auditLogListener"/>
     </bean>
@@ -2263,6 +2264,8 @@
             </bean>
         </constructor-arg>
     </bean>
+
+    <bean id="injector" class="com.l7tech.server.util.ApplicationContextInjector"/>
 
     <!-- export beans to JMX -->
     <context:mbean-export/>

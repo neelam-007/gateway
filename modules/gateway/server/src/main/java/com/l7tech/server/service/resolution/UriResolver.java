@@ -1,13 +1,13 @@
 package com.l7tech.server.service.resolution;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.ResolutionConfiguration;
 import com.l7tech.message.FtpRequestKnob;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.Message;
-import com.l7tech.server.audit.Auditor;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -46,11 +46,11 @@ import java.util.regex.Pattern;
  */
 public class UriResolver extends ServiceResolver<String> {
 
-    public UriResolver( final Auditor.AuditorFactory auditorFactory ) {
+    public UriResolver( final AuditFactory auditorFactory ) {
         this( auditorFactory, true );
     }
 
-    protected UriResolver( final Auditor.AuditorFactory auditorFactory,
+    protected UriResolver( final AuditFactory auditorFactory,
                            final boolean caseSensitive ) {
         super( auditorFactory );
         this.caseSensitive = caseSensitive;

@@ -1,8 +1,6 @@
-/*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- */
 package com.l7tech.server;
 
+import com.l7tech.server.util.Injector;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor;
@@ -62,20 +60,29 @@ public class ApplicationContexts {
      *
      * @param bean The object to inject.
      * @param beans The injectable dependencies
+     * @param <B> The bean type
      * @param <T> Any type, typically Object
      */
-    public static <T> void inject( final Object bean,
-                                   final Map<String,T> beans ) {
+    public static <B,T> B inject( final B bean,
+                                  final Map<String,T> beans ) {
         final DefaultListableBeanFactory factory = new DefaultListableBeanFactory();
         final AutowiredAnnotationBeanPostProcessor autowiredAnnotationBeanPostProcessor = new AutowiredAnnotationBeanPostProcessor();
         autowiredAnnotationBeanPostProcessor.setBeanFactory( factory );
         factory.addBeanPostProcessor( autowiredAnnotationBeanPostProcessor );
+        final Injector injector = new Injector() {
+            @Override
+            public void inject( final Object target ) {
+                factory.autowireBeanProperties( bean, AutowireCapableBeanFactory.AUTOWIRE_NO, true );
+            }
+        };
+        factory.registerSingleton( "injector", injector );
         CollectionUtils.foreach( beans.entrySet(), false, new Functions.UnaryVoid<Map.Entry<String,T>>(){
             @Override
             public void call( final Map.Entry<String, T> nameAndBean ) {
                 factory.registerSingleton( nameAndBean.getKey(), nameAndBean.getValue() );
             }
         } );
-        factory.autowireBeanProperties( bean, AutowireCapableBeanFactory.AUTOWIRE_NO, true );
+        injector.inject( bean );
+        return bean;
     }
 }

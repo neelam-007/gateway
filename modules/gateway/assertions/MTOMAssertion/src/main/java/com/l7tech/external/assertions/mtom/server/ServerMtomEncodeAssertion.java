@@ -1,6 +1,5 @@
 package com.l7tech.external.assertions.mtom.server;
 
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.external.assertions.mtom.MtomEncodeAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -28,7 +27,6 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.xml.xpath.XPathExpressionException;
-import java.util.logging.Logger;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.io.IOException;
@@ -45,8 +43,6 @@ public class ServerMtomEncodeAssertion extends AbstractMessageTargetableServerAs
     public ServerMtomEncodeAssertion( final MtomEncodeAssertion assertion,
                                       final ApplicationContext context ) throws PolicyAssertionException {
         super( assertion, assertion );
-
-        this.auditor = new Auditor(this, context, logger);
         this.stashManagerFactory = context.getBean( "stashManagerFactory", StashManagerFactory.class );
         this.compiledXpaths = compileXpaths( assertion.getXpathExpressions() );
     }
@@ -54,11 +50,8 @@ public class ServerMtomEncodeAssertion extends AbstractMessageTargetableServerAs
     //- PROTECTED
 
     protected ServerMtomEncodeAssertion( final MtomEncodeAssertion assertion,
-                                         final Auditor auditor,
                                          final StashManagerFactory stashManagerFactory ){
         super( assertion, assertion );
-
-        this.auditor = auditor;
         this.stashManagerFactory = stashManagerFactory;
         this.compiledXpaths = compileXpaths( assertion.getXpathExpressions() );
     }
@@ -92,32 +85,32 @@ public class ServerMtomEncodeAssertion extends AbstractMessageTargetableServerAs
                             }
                         } else if ( assertion.isFailIfNotFound() ) {
                             status = AssertionStatus.FALSIFIED;
-                            auditor.logAndAudit( MTOM_ENCODE_XPATH_FAILED );
+                            logAndAudit( MTOM_ENCODE_XPATH_FAILED );
                             break;
                         }
                     }
                 } catch (SAXException e) {
                     status = getBadMessageStatus();
-                    auditor.logAndAudit(
+                    logAndAudit(
                             MTOM_ENCODE_ERROR,
                             new String[]{"Error parsing message when matching elements to encode '"+ ExceptionUtils.getMessage(e)+"'"},
                             ExceptionUtils.getDebugException(e) );
                 } catch (XPathExpressionException e) {
                     status = AssertionStatus.FAILED;
-                    auditor.logAndAudit(
+                    logAndAudit(
                             MTOM_ENCODE_ERROR,
                             new String[]{"Error matching elements to encode '"+ ExceptionUtils.getMessage(e)+"'"},
                             ExceptionUtils.getDebugException(e) );
                 }
             } else {
                 status = AssertionStatus.FAILED;
-                auditor.logAndAudit( MTOM_ENCODE_ERROR, "Invalid XPath expression" );
+                logAndAudit( MTOM_ENCODE_ERROR, "Invalid XPath expression" );
             }
 
             if ( status == AssertionStatus.UNDEFINED ) {
                 if ( !assertion.isAlwaysEncode() && elements.isEmpty() ) {
                     // even if not encoding, we may  still need to copy the source message to ouput message
-                    auditor.logAndAudit( MTOM_ENCODE_NONE );
+                    logAndAudit( MTOM_ENCODE_NONE );
                 }
 
                 Message outputMessage = null;
@@ -128,9 +121,9 @@ public class ServerMtomEncodeAssertion extends AbstractMessageTargetableServerAs
                         outputMessage = context.getOrCreateTargetMessage( assertion.getOutputTarget(), false );
                     } catch (NoSuchVariableException nsve) {
                         status = AssertionStatus.FAILED;
-                        auditor.logAndAudit( MTOM_ENCODE_ERROR, ExceptionUtils.getMessage(nsve));
+                        logAndAudit( MTOM_ENCODE_ERROR, ExceptionUtils.getMessage(nsve));
                     } catch (VariableNotSettableException vnse) {
-                        auditor.logAndAudit( MTOM_ENCODE_ERROR, ExceptionUtils.getMessage(vnse));
+                        logAndAudit( MTOM_ENCODE_ERROR, ExceptionUtils.getMessage(vnse));
                         status = AssertionStatus.FAILED;
                     }
                 }
@@ -147,7 +140,7 @@ public class ServerMtomEncodeAssertion extends AbstractMessageTargetableServerAs
 
                         status = AssertionStatus.NONE;
                     } catch ( Exception e) {
-                        auditor.logAndAudit(
+                        logAndAudit(
                                 MTOM_ENCODE_ERROR,
                                 new String[]{"Error encoding XOP '"+ ExceptionUtils.getMessage(e)+"'"},
                                 e instanceof XOPUtils.XOPException ? e.getCause() : e );
@@ -157,22 +150,16 @@ public class ServerMtomEncodeAssertion extends AbstractMessageTargetableServerAs
                 }
             }
         } else {
-            auditor.logAndAudit( MTOM_ENCODE_ERROR, "Message not xml" );
+            logAndAudit( MTOM_ENCODE_ERROR, "Message not xml" );
             status = AssertionStatus.NOT_APPLICABLE;
         }
 
         return status;
     }
 
-    @Override
-    protected Auditor getAuditor() {
-        return auditor;
-    }
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger(ServerMtomEncodeAssertion.class.getName());
-    private final Auditor auditor;
     private final StashManagerFactory stashManagerFactory;
     private final CompiledXpath[] compiledXpaths;
 
@@ -189,7 +176,7 @@ public class ServerMtomEncodeAssertion extends AbstractMessageTargetableServerAs
                 }
             } catch ( InvalidXpathException e ) {
                 xpaths = null;
-                auditor.logAndAudit( MTOM_ENCODE_INVALID_XPATH, xpathExpression.getExpression() );
+                logAndAudit( MTOM_ENCODE_INVALID_XPATH, xpathExpression.getExpression() );
             }
         } else {
             xpaths = new CompiledXpath[0];

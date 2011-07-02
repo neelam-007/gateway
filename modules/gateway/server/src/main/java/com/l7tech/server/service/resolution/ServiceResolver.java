@@ -1,7 +1,8 @@
 package com.l7tech.server.service.resolution;
 
+import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.gateway.common.transport.ResolutionConfiguration;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.message.Message;
 import com.l7tech.gateway.common.service.PublishedService;
 
@@ -24,14 +25,14 @@ import java.util.logging.Logger;
  */
 public abstract class ServiceResolver<T> {
     protected final Logger logger = Logger.getLogger(getClass().getName()); // Not static so we get the real classname
-    protected final Auditor auditor;
+    protected final Audit auditor;
 
     protected static final String SUFFIX_VALUE = ".value";
 
     protected final String PROP_BASE = getClass().getName();
     protected final String PROP_VALUE = PROP_BASE + SUFFIX_VALUE;
 
-    public ServiceResolver( final Auditor.AuditorFactory auditorFactory ) {
+    public ServiceResolver( final AuditFactory auditorFactory ) {
         auditor = auditorFactory.newInstance( this, logger );
     }
 

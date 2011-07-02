@@ -17,7 +17,6 @@ import com.l7tech.security.xml.processor.BadSecurityContextException;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.SecurityContextFinder;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
@@ -39,7 +38,6 @@ import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.util.logging.Logger;
 
 /**
  * The SSG-side processing of the SecureConversation assertion.
@@ -51,7 +49,7 @@ import java.util.logging.Logger;
  * Date: Aug 4, 2004<br/>
  */
 public class ServerSecureConversation extends AbstractServerAssertion<SecureConversation> {
-    private final Auditor auditor;
+
     private final Config config;
     private final SecurityTokenResolver securityTokenResolver;
     private final SecurityContextFinder securityContextFinder;
@@ -59,8 +57,6 @@ public class ServerSecureConversation extends AbstractServerAssertion<SecureConv
 
     public ServerSecureConversation(SecureConversation assertion, ApplicationContext springContext) {
         super(assertion);
-        // nothing to remember from the passed assertion
-        this.auditor = new Auditor(this, springContext, logger);
         this.config = springContext.getBean("serverConfig", Config.class);
         this.securityTokenResolver = springContext.getBean("securityTokenResolver", SecurityTokenResolver.class);
         this.securityContextFinder = springContext.getBean("securityContextFinder", SecurityContextFinder.class);
@@ -79,7 +75,7 @@ public class ServerSecureConversation extends AbstractServerAssertion<SecureConv
     @Override
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         if (!SecurityHeaderAddressableSupport.isLocalRecipient(assertion)) {
-            auditor.logAndAudit(AssertionMessages.REQUESTWSS_NOT_FOR_US);
+            logAndAudit(AssertionMessages.REQUESTWSS_NOT_FOR_US);
             return AssertionStatus.NONE;
         }
 
@@ -87,13 +83,13 @@ public class ServerSecureConversation extends AbstractServerAssertion<SecureConv
 
         try {
             if (!context.getRequest().isSoap()) {
-                auditor.logAndAudit(AssertionMessages.SC_REQUEST_NOT_SOAP);
+                logAndAudit(AssertionMessages.SC_REQUEST_NOT_SOAP);
                 return AssertionStatus.NOT_APPLICABLE;
             }
             if ( !config.getBooleanProperty(ServerConfig.PARAM_WSS_PROCESSOR_LAZY_REQUEST, true) ) {
                 wssResults = context.getRequest().getSecurityKnob().getProcessorResult();
             } else {
-                wssResults = WSSecurityProcessorUtils.getWssResults(context.getRequest(), "Request", securityTokenResolver, securityContextFinder, auditor, new Functions.Unary<Boolean,Throwable>(){
+                wssResults = WSSecurityProcessorUtils.getWssResults(context.getRequest(), "Request", securityTokenResolver, securityContextFinder, getAudit(), new Functions.Unary<Boolean,Throwable>(){
                     @Override
                     public Boolean call( final Throwable throwable ) {
                         if ( BadSecurityContextException.class.isInstance(throwable) ) {
@@ -109,7 +105,7 @@ public class ServerSecureConversation extends AbstractServerAssertion<SecureConv
         }
 
         if (wssResults == null) {
-            auditor.logAndAudit(AssertionMessages.REQUESTWSS_NO_SECURITY);
+            logAndAudit(AssertionMessages.REQUESTWSS_NO_SECURITY);
             context.setAuthenticationMissing();
             context.setRequestPolicyViolated();
             return AssertionStatus.FALSIFIED;
@@ -120,7 +116,7 @@ public class ServerSecureConversation extends AbstractServerAssertion<SecureConv
             if (token instanceof SecurityContextToken) {
                 SecurityContextToken secConTok = (SecurityContextToken) token;
                 if (!secConTok.isPossessionProved()) {
-                    auditor.logAndAudit(AssertionMessages.SC_NO_PROOF_OF_POSSESSION);
+                    logAndAudit(AssertionMessages.SC_NO_PROOF_OF_POSSESSION);
                     continue;
                 }
                 String contextId = secConTok.getContextIdentifier();
@@ -134,18 +130,18 @@ public class ServerSecureConversation extends AbstractServerAssertion<SecureConv
                 LoginCredentials loginCreds = LoginCredentials.makeLoginCredentials(session.getCredentialSecurityToken(), false, SecureConversation.class, secConTok);
                 authContext.addCredentials(loginCreds);
                 context.addDeferredAssertion(this, deferredSecureConversationResponseDecoration(session));
-                auditor.logAndAudit(AssertionMessages.SC_SESSION_FOR_USER, authenticatedUser.getLogin());
+                logAndAudit(AssertionMessages.SC_SESSION_FOR_USER, authenticatedUser.getLogin());
 
                 final String messageId;
                 try {
                     messageId = SoapUtil.getL7aMessageId(context.getRequest().getXmlKnob().getDocumentReadOnly());
                     context.setSavedRequestL7aMessageId(messageId == null ? "" : messageId);
                 } catch (InvalidDocumentFormatException e) {
-                    auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, "Invalid request SOAP:" + ExceptionUtils.getMessage(e));
+                    logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, "Invalid request SOAP:" + ExceptionUtils.getMessage(e));
                     return AssertionStatus.BAD_REQUEST;
                 } catch (SAXException e) {
                     // Almost certainly can't happen
-                    auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, "Invalid request XML:" + ExceptionUtils.getMessage(e));
+                    logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, "Invalid request XML:" + ExceptionUtils.getMessage(e));
                     return AssertionStatus.BAD_REQUEST;
                 }
 
@@ -155,7 +151,7 @@ public class ServerSecureConversation extends AbstractServerAssertion<SecureConv
                 return AssertionStatus.NONE;
             }
         }
-        auditor.logAndAudit(AssertionMessages.SC_REQUEST_NOT_REFER_TO_SC_TOKEN);
+        logAndAudit(AssertionMessages.SC_REQUEST_NOT_REFER_TO_SC_TOKEN);
         context.setAuthenticationMissing();
         context.setRequestPolicyViolated();
         return AssertionStatus.AUTH_REQUIRED;
@@ -163,7 +159,7 @@ public class ServerSecureConversation extends AbstractServerAssertion<SecureConv
 
     private void handleInvalidSecurityContext( final PolicyEnforcementContext context,
                                                final String namespace ) {
-        auditor.logAndAudit( AssertionMessages.SC_TOKEN_INVALID);
+        logAndAudit( AssertionMessages.SC_TOKEN_INVALID);
         context.setRequestPolicyViolated();
         // here, we must override the soapfault detail in order to send the fault required by the spec
         SoapFaultLevel cfault = new SoapFaultLevel();
@@ -185,12 +181,12 @@ public class ServerSecureConversation extends AbstractServerAssertion<SecureConv
 
                 try {
                     if (!context.getResponse().isSoap()) {
-                        auditor.logAndAudit(AssertionMessages.SC_UNABLE_TO_ATTACH_SC_TOKEN);
+                        logAndAudit(AssertionMessages.SC_UNABLE_TO_ATTACH_SC_TOKEN);
                         return AssertionStatus.NOT_APPLICABLE;
                     }
                     wssReq = context.getResponse().getSecurityKnob().getOrMakeDecorationRequirements();
                 } catch (SAXException e) {
-                    auditor.logAndAudit(AssertionMessages.SC_UNABLE_TO_ATTACH_SC_TOKEN);
+                    logAndAudit(AssertionMessages.SC_UNABLE_TO_ATTACH_SC_TOKEN);
                     throw new CausedIOException(e);
                 }
                 wssReq.setSignTimestamp(true);
@@ -199,6 +195,4 @@ public class ServerSecureConversation extends AbstractServerAssertion<SecureConv
             }
         };
     }
-
-    private final Logger logger = Logger.getLogger(getClass().getName());
 }

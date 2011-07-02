@@ -9,13 +9,8 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.external.assertions.ftpcredential.FtpCredentialAssertion;
 import com.l7tech.common.TestDocuments;
 
-import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
-
-import junit.extensions.TestSetup;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import java.net.PasswordAuthentication;
 
@@ -23,16 +18,6 @@ import java.net.PasswordAuthentication;
  * Test the ServerFtpCredentialAssertion.
  */
 public class ServerFtpCredentialAssertionTest {
-
-    private static ApplicationContext applicationContext;
-
-
-    @BeforeClass
-    public static void setUp() throws Exception {
-        applicationContext = new ClassPathXmlApplicationContext(new String[]{
-                "com/l7tech/external/assertions/ftpcredential/server/ftpCredentialAssertionTestApplicationContext.xml"
-        });
-    }
 
     private PolicyEnforcementContext makeContext(boolean addFtpKnob, final boolean withCreds) throws Exception {
         // create messages
@@ -114,7 +99,7 @@ public class ServerFtpCredentialAssertionTest {
     }
 
     private ServerAssertion makePolicy(FtpCredentialAssertion fca) throws Exception {
-        return new ServerFtpCredentialAssertion(fca, applicationContext);
+        return new ServerFtpCredentialAssertion(fca);
     }
 
     @Test

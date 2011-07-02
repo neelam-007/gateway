@@ -4,11 +4,9 @@ import com.l7tech.gateway.common.cluster.ClusterProperty;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-import java.util.logging.Logger;
 import java.util.Properties;
 import java.io.ByteArrayInputStream;
 
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -28,7 +26,6 @@ import com.l7tech.policy.assertion.MessageTargetableSupport;
  */
 public class ServerMtomDecodeAssertionTest {
 
-    private static final Logger logger = Logger.getLogger(ServerMtomEncodeAssertionTest.class.getName());
     private static final String message =
                 "--uuid:45ac4aae-b978-40c3-b093-18e82e03ce3a\r\n" +
                 "Content-Id: <rootpart*45ac4aae-b978-40c3-b093-18e82e03ce3a@example.jaxws.sun.com>\r\n" +
@@ -253,7 +250,6 @@ public class ServerMtomDecodeAssertionTest {
     private ServerMtomDecodeAssertion buildServerAssertion( final MtomDecodeAssertion mda ) {
         return new ServerMtomDecodeAssertion(
                 mda,
-                new LogOnlyAuditor( logger ),
                 new StashManagerFactory(){
                     @Override
                     public StashManager createStashManager() {

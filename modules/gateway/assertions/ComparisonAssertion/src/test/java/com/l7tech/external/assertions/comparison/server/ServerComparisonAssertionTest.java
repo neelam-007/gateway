@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.external.assertions.comparison.server;
 
 import com.l7tech.external.assertions.comparison.*;
@@ -8,9 +5,6 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
-import com.l7tech.server.ApplicationContexts;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
@@ -26,10 +20,8 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * @author alex
@@ -202,7 +194,7 @@ public class ServerComparisonAssertionTest {
     public void testMultivaluedComparisonForSingleValued() throws Exception {
         for ( boolean negated : new boolean[]{ false, true } ) {
             AssertionStatus NN = negated ? AssertionStatus.FALSIFIED : AssertionStatus.NONE;
-            AssertionStatus NF = negated ? AssertionStatus.NONE : AssertionStatus.FALSIFIED;;
+            AssertionStatus NF = negated ? AssertionStatus.NONE : AssertionStatus.FALSIFIED;
 
             doTestMultivaluedComparisonForSingleValued( negated, NN, MultivaluedComparison.ALL, new EmptyPredicate( false, negated ), new Object[]{ "", "", "" } );
             doTestMultivaluedComparisonForSingleValued( negated, NF, MultivaluedComparison.ALL, new EmptyPredicate( false, negated ), new Object[]{ "", "", "a" } );
@@ -263,7 +255,7 @@ public class ServerComparisonAssertionTest {
     public void testMultivaluedComparisonForBinaryPredicate() throws Exception {
         for ( boolean negated : new boolean[]{ false, true } ) {
             AssertionStatus NN = negated ? AssertionStatus.FALSIFIED : AssertionStatus.NONE;
-            AssertionStatus NF = negated ? AssertionStatus.NONE : AssertionStatus.FALSIFIED;;
+            AssertionStatus NF = negated ? AssertionStatus.NONE : AssertionStatus.FALSIFIED;
 
             doTestMultivaluedComparisonForBinaryPredicate( negated, NN, MultivaluedComparison.ALL, ComparisonOperator.GT, "-1" );
             doTestMultivaluedComparisonForBinaryPredicate( negated, NN, MultivaluedComparison.ALL, ComparisonOperator.GE, "0" );
@@ -343,12 +335,6 @@ public class ServerComparisonAssertionTest {
     private AssertionStatus doit( final PolicyEnforcementContext context,
                                   final ServerComparisonAssertion serverComparisonAssertion )
             throws IOException, PolicyAssertionException {
-        ApplicationContexts.inject( serverComparisonAssertion, Collections.singletonMap( "auditFactory", new Auditor.AuditorFactory(){
-            @Override
-            public Auditor newInstance( final Object source, final Logger logger ) {
-                return new LogOnlyAuditor( logger );
-            }
-        } ) );
         try {
             return serverComparisonAssertion.checkRequest(context);
         } catch ( AssertionStatusException e ) {

@@ -61,7 +61,7 @@ public class ServerNonSoapSignElementAssertionTest {
         ass.setDetachedSignatureVariableName("sig");
         ass.setXpathExpression(new XpathExpression("/foo/bar/*"));
         Message request = makeRequest(null);
-        ServerNonSoapSignElementAssertion sass = new ServerNonSoapSignElementAssertion(ass, beanFactory, null);
+        ServerNonSoapSignElementAssertion sass = new ServerNonSoapSignElementAssertion(ass, beanFactory);
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
@@ -81,7 +81,7 @@ public class ServerNonSoapSignElementAssertionTest {
         ass.setXpathExpression(new XpathExpression("/*"));
         ass.setCustomIdAttributeQname("");
         Message request = makeRequest(null);
-        ServerNonSoapSignElementAssertion sass = new ServerNonSoapSignElementAssertion(ass, beanFactory, null);
+        ServerNonSoapSignElementAssertion sass = new ServerNonSoapSignElementAssertion(ass, beanFactory);
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
@@ -222,7 +222,7 @@ public class ServerNonSoapSignElementAssertionTest {
 
     // Returns the ds:Signature element, embedded within the signed Document
     private static Element applySignature(NonSoapSignElementAssertion ass, Message request) throws InvalidXpathException, ParseException, IOException, PolicyAssertionException, SAXException {
-        ServerNonSoapSignElementAssertion sass = new ServerNonSoapSignElementAssertion(ass, beanFactory, null);
+        ServerNonSoapSignElementAssertion sass = new ServerNonSoapSignElementAssertion(ass, beanFactory);
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);

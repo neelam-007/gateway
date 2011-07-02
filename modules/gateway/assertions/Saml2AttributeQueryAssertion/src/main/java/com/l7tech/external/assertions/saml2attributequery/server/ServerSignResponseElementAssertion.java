@@ -10,7 +10,6 @@ import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.KeyReference;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.SignerInfo;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.util.xml.PolicyEnforcementContextXpathVariableFinder;
@@ -20,7 +19,6 @@ import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.xpath.XpathResult;
 import com.l7tech.xml.xpath.XpathResultIterator;
-import org.bouncycastle.jce.X509Principal;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -30,7 +28,6 @@ import java.io.IOException;
 import java.security.SignatureException;
 import java.security.UnrecoverableKeyException;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Created by IntelliJ IDEA.
@@ -40,12 +37,7 @@ import java.util.logging.Logger;
  */
 @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
 public class ServerSignResponseElementAssertion extends AbstractServerAssertion<SignResponseElementAssertion> {
-    private static final Logger logger = Logger.getLogger(ServerSignResponseElementAssertion.class.getName());
-
     private SecurityTokenResolver securityTokenResolver;
-    private final Auditor auditor;
-
-    //- PUBLIC
 
     @SuppressWarnings({"UnusedDeclaration"})
     public ServerSignResponseElementAssertion( final SignResponseElementAssertion assertion,
@@ -53,10 +45,10 @@ public class ServerSignResponseElementAssertion extends AbstractServerAssertion<
         throws PolicyAssertionException
     {
         super(assertion);
-        securityTokenResolver = (SecurityTokenResolver)context.getBean("securityTokenResolver");
-        auditor = new Auditor(this, context, logger);
+        securityTokenResolver = context.getBean("securityTokenResolver", SecurityTokenResolver.class);
     }
 
+    @Override
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         try {
             Document doc;
@@ -65,12 +57,12 @@ public class ServerSignResponseElementAssertion extends AbstractServerAssertion<
             } else if(assertion.getInputMessageSource() == SignResponseElementAssertion.RESPONSE_MESSAGE) {
                 doc = context.getResponse().getXmlKnob().getDocumentWritable();
             } else if(assertion.getInputMessageSource() == SignResponseElementAssertion.MESSAGE_VARIABLE) {
-                Object obj = (Object)context.getVariable(assertion.getInputMessageVariableName());
+                Object obj = context.getVariable(assertion.getInputMessageVariableName());
                 if(obj == null) {
-                    auditor.logAndAudit(AssertionMessages.MCM_VARIABLE_NOT_FOUND, assertion.getInputMessageVariableName());
+                    logAndAudit( AssertionMessages.MCM_VARIABLE_NOT_FOUND, assertion.getInputMessageVariableName() );
                     return AssertionStatus.FAILED;
                 } else if(!(obj instanceof Message)) {
-                    auditor.logAndAudit(AssertionMessages.SAML2_AQ_REQUEST_DIGSIG_VAR_UNUSABLE );
+                    logAndAudit( AssertionMessages.SAML2_AQ_REQUEST_DIGSIG_VAR_UNUSABLE );
                     return AssertionStatus.FAILED;
                 }
                 doc = ((Message)obj).getXmlKnob().getDocumentWritable();
@@ -93,7 +85,7 @@ public class ServerSignResponseElementAssertion extends AbstractServerAssertion<
             SignerInfo si = securityTokenResolver.lookupPrivateKeyByKeyName(certificateDN);
 
             if(si == null) {
-                auditor.logAndAudit(AssertionMessages.SAML2_AQ_RESPONSE_ENCRYPT_SAML_ASSERTION_PK_NOT_FOUND, certificateDN);
+                logAndAudit( AssertionMessages.SAML2_AQ_RESPONSE_ENCRYPT_SAML_ASSERTION_PK_NOT_FOUND, certificateDN );
                 return AssertionStatus.FAILED;
             }
 
@@ -107,34 +99,29 @@ public class ServerSignResponseElementAssertion extends AbstractServerAssertion<
                 RequestSigner.signSamlpRequest(doc, ec.asDomElement(), si.getPrivate(), si.getCertificateChain(), keyInfoInclusionType);
             }
         } catch(SAXException se) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { ExceptionUtils.getMessage(se) }, ExceptionUtils.getDebugException(se));
+            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{ ExceptionUtils.getMessage( se ) }, ExceptionUtils.getDebugException( se ) );
             return AssertionStatus.FAILED;
         } catch(SignatureException se) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { ExceptionUtils.getMessage(se) }, ExceptionUtils.getDebugException(se));
+            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{ ExceptionUtils.getMessage( se ) }, ExceptionUtils.getDebugException( se ) );
             return AssertionStatus.FAILED;
         } catch(InvalidXpathException ixe) {
             if (logger.isLoggable(Level.FINEST))
                 logger.log(Level.FINEST, "Invalid xpath: " + ExceptionUtils.getMessage(ixe), ixe);
-            auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID);
+            logAndAudit( AssertionMessages.XPATH_PATTERN_INVALID );
             return AssertionStatus.FAILED;
         } catch(XPathExpressionException xee) {
             if (logger.isLoggable(Level.FINEST))
                 logger.log(Level.FINEST, "XPath expresion error: " + ExceptionUtils.getMessage(xee), xee);
-            auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID);
+            logAndAudit( AssertionMessages.XPATH_PATTERN_INVALID );
             return AssertionStatus.FAILED;
         } catch(NoSuchVariableException nsve) {
-            auditor.logAndAudit(AssertionMessages.VARIABLE_IS_NULL, assertion.getPrivateKeyDnVariable());
+            logAndAudit( AssertionMessages.VARIABLE_IS_NULL, assertion.getPrivateKeyDnVariable() );
         } catch (UnrecoverableKeyException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
+            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{ ExceptionUtils.getMessage( e ) }, ExceptionUtils.getDebugException( e ) );
             return AssertionStatus.FAILED;
         }
 
 
         return AssertionStatus.NONE;
-    }
-
-    private static String reverseDN(String dn) {
-        X509Principal p = new X509Principal(true, dn);
-        return p.getName();
     }
 }

@@ -1,7 +1,6 @@
 package com.l7tech.external.assertions.mtom.server;
 
 import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.external.assertions.mtom.MtomDecodeAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -24,7 +23,6 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.util.logging.Logger;
 
 /**
  * Server side implementation of the MtomDecodeAssertion.
@@ -38,8 +36,6 @@ public class ServerMtomDecodeAssertion extends AbstractMessageTargetableServerAs
     public ServerMtomDecodeAssertion( final MtomDecodeAssertion assertion,
                                       final ApplicationContext context) throws PolicyAssertionException {
         super( assertion, assertion );
-
-        this.auditor = new Auditor(this, context, logger);
         this.stashManagerFactory = context.getBean( "stashManagerFactory", StashManagerFactory.class );
         this.config = context.getBean( "serverConfig", Config.class );
     }
@@ -47,12 +43,9 @@ public class ServerMtomDecodeAssertion extends AbstractMessageTargetableServerAs
     //- PROTECTED
 
     protected ServerMtomDecodeAssertion( final MtomDecodeAssertion assertion,
-                                         final Auditor auditor,
                                          final StashManagerFactory stashManagerFactory,
                                          final Config config ){
         super( assertion, assertion );
-
-        this.auditor = auditor;
         this.stashManagerFactory = stashManagerFactory;
         this.config = config;
     }
@@ -77,7 +70,7 @@ public class ServerMtomDecodeAssertion extends AbstractMessageTargetableServerAs
                 status = reconstitute( context, message );
             }
         } else if ( assertion.isRequireEncoded() ) {
-            auditor.logAndAudit( MTOM_DECODE_ERROR, "Message not encoded" );
+            logAndAudit( MTOM_DECODE_ERROR, "Message not encoded" );
             status = getBadMessageStatus();
         } else {
             status = AssertionStatus.NONE;
@@ -86,18 +79,12 @@ public class ServerMtomDecodeAssertion extends AbstractMessageTargetableServerAs
         return status;
     }
 
-    @Override
-    protected Auditor getAuditor() {
-        return auditor;
-    }
+
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger(ServerMtomDecodeAssertion.class.getName());
-
     private static final int DEFAULT_ATTACHMENT_MAX = 1024 * 1024;
 
-    private final Auditor auditor;
     private final Config config;
     private final StashManagerFactory stashManagerFactory;
 
@@ -113,10 +100,10 @@ public class ServerMtomDecodeAssertion extends AbstractMessageTargetableServerAs
                 outputMessage = context.getOrCreateTargetMessage( assertion.getOutputTarget(), false );
             } catch (NoSuchVariableException nsve) {
                 status = AssertionStatus.FAILED;
-                auditor.logAndAudit( MTOM_ENCODE_ERROR, ExceptionUtils.getMessage(nsve));
+                logAndAudit( MTOM_ENCODE_ERROR, ExceptionUtils.getMessage(nsve));
             } catch (VariableNotSettableException vnse) {
                 status = AssertionStatus.FAILED;
-                auditor.logAndAudit( MTOM_ENCODE_ERROR, ExceptionUtils.getMessage(vnse));
+                logAndAudit( MTOM_ENCODE_ERROR, ExceptionUtils.getMessage(vnse));
             }
         }
 
@@ -127,7 +114,7 @@ public class ServerMtomDecodeAssertion extends AbstractMessageTargetableServerAs
                 status = AssertionStatus.NONE;
             } catch ( Exception e) {
                 status = AssertionStatus.FALSIFIED;
-                auditor.logAndAudit(
+                logAndAudit(
                         MTOM_DECODE_ERROR,
                         new String[]{"Error decoding XOP '"+ ExceptionUtils.getMessage(e)+"'"},
                         e instanceof XOPUtils.XOPException ? e.getCause() : e );
@@ -155,13 +142,13 @@ public class ServerMtomDecodeAssertion extends AbstractMessageTargetableServerAs
                 status = AssertionStatus.NONE;
             }
         } catch (InvalidDocumentFormatException e) {
-            auditor.logAndAudit( MTOM_DECODE_ERROR, "Invalid SOAP message: " + ExceptionUtils.getMessage(e));
+            logAndAudit( MTOM_DECODE_ERROR, "Invalid SOAP message: " + ExceptionUtils.getMessage(e));
             status = getBadMessageStatus();
         } catch (SAXException e) {
-            auditor.logAndAudit( MTOM_DECODE_ERROR, "Error parsing message: " + ExceptionUtils.getMessage(e));
+            logAndAudit( MTOM_DECODE_ERROR, "Error parsing message: " + ExceptionUtils.getMessage(e));
             status = getBadMessageStatus();
         } catch (NoSuchPartException e) {
-            auditor.logAndAudit( MTOM_DECODE_ERROR, "Error accessing message: " + ExceptionUtils.getMessage(e));
+            logAndAudit( MTOM_DECODE_ERROR, "Error accessing message: " + ExceptionUtils.getMessage(e));
             status = AssertionStatus.FAILED; // error due to destructive read of first part
         }
 

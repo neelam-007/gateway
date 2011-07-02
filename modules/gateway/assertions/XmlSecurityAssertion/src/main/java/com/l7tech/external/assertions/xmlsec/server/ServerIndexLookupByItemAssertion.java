@@ -7,14 +7,11 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
-import org.springframework.beans.factory.BeanFactory;
-import org.springframework.context.ApplicationEventPublisher;
 import org.w3c.dom.Element;
 
 import java.io.IOException;
@@ -23,24 +20,19 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  *
  */
 public class ServerIndexLookupByItemAssertion extends AbstractServerAssertion<IndexLookupByItemAssertion> {
-    private static final Logger logger = Logger.getLogger(ServerIndexLookupByItemAssertion.class.getName());
-
-    private final Auditor auditor;
     private final String multivaluedVariableName;
     private final String valueToSearchForVariableName;
     private final String outputVariableName;
     private final String[] varsUsed;
     private final boolean allowMulti;
 
-    public ServerIndexLookupByItemAssertion(IndexLookupByItemAssertion assertion, BeanFactory beanFactory, ApplicationEventPublisher eventPub) throws PolicyAssertionException {
+    public ServerIndexLookupByItemAssertion(IndexLookupByItemAssertion assertion) throws PolicyAssertionException {
         super(assertion);
-        this.auditor = new Auditor(this, beanFactory, eventPub, logger);
         this.multivaluedVariableName = assertion.getMultivaluedVariableName();
         this.valueToSearchForVariableName = "${" + assertion.getValueToSearchForVariableName() + "}";
         this.outputVariableName = assertion.getOutputVariableName();
@@ -80,10 +72,10 @@ public class ServerIndexLookupByItemAssertion extends AbstractServerAssertion<In
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         try {
             Object multi = context.getVariable(multivaluedVariableName);
-            Map<String, Object> variableMap = context.getVariableMap(varsUsed, auditor);
-            Object valueToMatch = ExpandVariables.processSingleVariableAsObject(valueToSearchForVariableName, variableMap, auditor, true);
+            Map<String, Object> variableMap = context.getVariableMap(varsUsed, getAudit());
+            Object valueToMatch = ExpandVariables.processSingleVariableAsObject(valueToSearchForVariableName, variableMap, getAudit(), true);
             if (valueToMatch == null) {
-                auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, multivaluedVariableName);
+                logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, multivaluedVariableName);
                 return AssertionStatus.SERVER_ERROR;
             }
 
@@ -109,7 +101,7 @@ public class ServerIndexLookupByItemAssertion extends AbstractServerAssertion<In
                 }
 
             } else {
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Not a multi-valued context variable: " + multivaluedVariableName);
+                logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Not a multi-valued context variable: " + multivaluedVariableName);
                 return AssertionStatus.SERVER_ERROR;
             }
 
@@ -118,17 +110,17 @@ public class ServerIndexLookupByItemAssertion extends AbstractServerAssertion<In
             }
 
             if (!allowMulti && matchingIndexes.size() > 1) {
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, "More than one value was matched");
+                logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, "More than one value was matched");
                 return AssertionStatus.FAILED;
             }
 
             context.setVariable(outputVariableName, allowMulti ? matchingIndexes.toArray(new Integer[matchingIndexes.size()]) : matchingIndexes.get(0));
             return AssertionStatus.NONE;
         } catch (VariableNameSyntaxException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Bad variable syntax: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Bad variable syntax: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
         } catch (NoSuchVariableException e) {
-            auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, e.getVariable());
+            logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, e.getVariable());
             return AssertionStatus.SERVER_ERROR;
         }
     }
@@ -137,7 +129,7 @@ public class ServerIndexLookupByItemAssertion extends AbstractServerAssertion<In
         final Matcher matcher;
         if (valueToMatch == null) {
             // We will disallow this for the time being, even though it may be meaningful, as it would seem to be error prone
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Value to match is null");
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Value to match is null");
             throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, "Value to match is null");
         } else if (valueToMatch instanceof Element) {
             matcher = EXACT_MATCHER;

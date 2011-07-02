@@ -1,14 +1,7 @@
-/**
- * Copyright (C) 2008, Layer 7 Technologies Inc.
- * User: darmstrong
- * Date: Jun 15, 2009
- * Time: 12:24:09 PM
- */
 package com.l7tech.external.assertions.xacmlpdp.server;
 
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.assertion.ServerXpathAssertion;
 import com.l7tech.server.policy.assertion.ServerRequestXpathAssertion;
@@ -42,6 +35,11 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
 
+/**
+ * User: darmstrong
+ * Date: Jun 15, 2009
+ * Time: 12:24:09 PM
+ */
 public class ServerXacmlRequestBuilderAssertionTest {
 
     /**
@@ -67,8 +65,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(attribute));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
@@ -109,8 +106,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(attribute));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
@@ -150,8 +147,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(attribute));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
@@ -187,8 +184,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         resource.setResourceContent(resourceContent);
         assertion.setResources(Arrays.asList(resource));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
@@ -233,8 +230,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(attribute));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
@@ -282,8 +279,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(attribute));
         assertion.setSubjects(Arrays.asList(subject));
         
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
@@ -336,8 +333,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(attribute));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
@@ -390,8 +387,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(attribute));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         server.checkRequest(context);
     }
 
@@ -432,8 +429,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(attribute));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
@@ -490,8 +487,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         resource.setResourceContent(resourceContent);
         assertion.setResources(Arrays.asList(resource));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
@@ -519,8 +516,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
 
         // Case 1: set the falsify-policy checkbox as checked.  This is the default setting.
         multipleConfig.setFalsifyPolicyEnabled(true);
@@ -585,8 +582,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
@@ -634,8 +631,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
@@ -679,8 +676,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
@@ -724,8 +721,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
@@ -768,8 +765,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
@@ -815,8 +812,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
@@ -861,8 +858,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
@@ -913,8 +910,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
@@ -967,8 +964,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
@@ -1026,8 +1023,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
@@ -1088,8 +1085,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
@@ -1142,8 +1139,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         server.checkRequest(context);
     }
 
@@ -1164,7 +1161,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
         final RequestXpathAssertion ass = new RequestXpathAssertion(new XpathExpression("/soapenv:Envelope/soapenv:Body/play:addPlayer/play:player/play:offensiveStats/*", getNameSpaces()));
         //needed to make the results of the xpath assertion available to the context!!!
         new AllAssertion(Arrays.asList(ass, new AuditDetailAssertion("${requestXpath.elements}")));
-        final ServerXpathAssertion sxa = new ServerRequestXpathAssertion(ass, ApplicationContexts.getTestApplicationContext());
+        final ServerXpathAssertion sxa = new ServerRequestXpathAssertion(ass);
         final AssertionStatus xpathStatus = sxa.checkRequest(context);
         Assert.assertEquals(AssertionStatus.NONE, xpathStatus);
 
@@ -1200,8 +1197,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
 
         assertion.setResources(Arrays.asList(resource));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
 
         AssertionStatus status = server.checkRequest(context);
 
@@ -1252,8 +1249,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
@@ -1308,8 +1305,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
@@ -1356,8 +1353,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         try {
             server.checkRequest(context);
             Assert.fail("Not supposed to reach this point.");
@@ -1399,8 +1396,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         try {
             server.checkRequest(context);
             Assert.fail("Not supposed to reach this point.");
@@ -1442,8 +1439,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.FAILED, status);
     }
@@ -1487,8 +1484,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
@@ -1536,8 +1533,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.FAILED, status);
@@ -1580,8 +1577,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.FAILED, status);
@@ -1625,8 +1622,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
@@ -1674,8 +1671,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
@@ -1728,8 +1725,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         server.checkRequest(context);
     }
     /**
@@ -1761,8 +1758,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
@@ -1811,8 +1808,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
@@ -1868,8 +1865,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
@@ -1924,8 +1921,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
@@ -1977,8 +1974,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
@@ -2029,8 +2026,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
@@ -2082,8 +2079,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus result = server.checkRequest(context);
         Assert.assertEquals("Unexpected result from checkRequest", AssertionStatus.FAILED, result);
     }
@@ -2124,8 +2121,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
@@ -2172,8 +2169,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
 
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.NONE, status);
@@ -2220,8 +2217,8 @@ public class ServerXacmlRequestBuilderAssertionTest {
         subject.setAttributes(Arrays.<XacmlRequestBuilderAssertion.AttributeTreeNodeTag>asList(multipleConfig));
         assertion.setSubjects(Arrays.asList(subject));
 
-        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(
-                assertion, ApplicationContexts.getTestApplicationContext());
+        ServerXacmlRequestBuilderAssertion server = new ServerXacmlRequestBuilderAssertion(assertion);
+
         AssertionStatus status = server.checkRequest(context);
         Assert.assertEquals("checkRequest returned invalid AssertionStatus",  AssertionStatus.FAILED, status);
     }
