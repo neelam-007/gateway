@@ -17,7 +17,6 @@ import java.util.List;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Sep 17, 2004<br/>
- * $Id$<br/>
  */
 public class WsdlSchemaAnalizer {
     public WsdlSchemaAnalizer(Document wsdl) {
@@ -163,7 +162,9 @@ public class WsdlSchemaAnalizer {
                     if (attrnode.getName().startsWith("xmlns:")) {
                         for (int ii = 0; ii < output.getLength(); ii++) {
                             Element schemael = (Element)output.item(ii);
-                            schemael.setAttributeNS(DomUtils.XMLNS_NS, attrnode.getName(), attrnode.getValue());
+                            if ( !schemael.hasAttributeNS( DomUtils.XMLNS_NS, attrnode.getLocalName() ) ) {
+                                schemael.setAttributeNS(DomUtils.XMLNS_NS, attrnode.getName(), attrnode.getValue());
+                            }
                         }
                     }
                 }
