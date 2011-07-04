@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.api3scale.console;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.ResolveContextVariablesPanel;
 import com.l7tech.console.panels.TargetVariablePanel;
@@ -14,6 +15,7 @@ import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
+import org.w3c.dom.Document;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -21,9 +23,15 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.StringWriter;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Logger;
@@ -150,9 +158,15 @@ public class Api3ScaleAuthorizePropertiesDialog extends AssertionPropertiesOkCan
 
     private void doTest() {
         final Api3ScaleAuthorizeAssertion ass = new Api3ScaleAuthorizeAssertion();
-        ass.setApplicationID(applicationIdTextField.getText());
-        ass.setPrivateKey(privateKeyTextField.getText());
-        ass.setApplicationKey(applicationKeyTextField.getText());
+        try{
+            getData(ass);
+        } catch(ValidationException e){
+            DialogDisplayer.showMessageDialog(testButton,
+                getPropertyValue("test.message.fail")+'\n'+e.getMessage(),
+                getPropertyValue("test.title"),
+                JOptionPane.INFORMATION_MESSAGE, null);
+            return;
+        }
         Map<String, Object> contextVars = null;
         if(ass.getVariablesUsed().length > 0){
             ResolveContextVariablesPanel dlg = new ResolveContextVariablesPanel(this,ass.getVariablesUsed());
@@ -166,8 +180,21 @@ public class Api3ScaleAuthorizePropertiesDialog extends AssertionPropertiesOkCan
         try {
             Api3ScaleAdmin admin = Registry.getDefault().getExtensionInterface(Api3ScaleAdmin.class, null);
             String strResponse = admin.testAuthorize(ass,contextVars);
+            Document node = XmlUtil.stringToDocument(strResponse);
+
+            DOMSource domSource = new DOMSource(node);
+            StringWriter writer = new StringWriter();
+            StreamResult result = new StreamResult(writer);
+            TransformerFactory tf = TransformerFactory.newInstance();
+            Transformer transformer = tf.newTransformer();
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+            transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+            transformer.transform(domSource, result);
+            String formattedStr = writer.toString();
+
             DialogDisplayer.showMessageDialog(testButton,
-                getPropertyValue("test.message.success")+'\n'+strResponse,
+                getPropertyValue("test.message.success")+'\n'+formattedStr,
                 getPropertyValue("test.title"),
                 JOptionPane.INFORMATION_MESSAGE, null);
         } catch (Exception e) {                                //Api3ScaleAdmin.Api3ScaleTestException

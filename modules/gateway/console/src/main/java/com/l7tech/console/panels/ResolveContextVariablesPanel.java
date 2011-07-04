@@ -64,7 +64,7 @@ public class ResolveContextVariablesPanel extends JDialog {
             public void valueChanged(ListSelectionEvent e) {
                 int row = table.getSelectedRow();
                 if(currentSelection >= 0){
-                    values[currentSelection] = textPane.getText();
+                    values[currentSelection] = textPane.getText().trim();
                 }
                 if(row <0)
                     textPane.setEnabled(false);
@@ -138,7 +138,7 @@ public class ResolveContextVariablesPanel extends JDialog {
     public Map<String, Object> getValues(){
         Map<String, Object> values = new HashMap<String, Object>();
         for(int rowIndex = 0; rowIndex < table.getRowCount(); ++rowIndex){
-            values.put((String)table.getValueAt(rowIndex,1),this.values[rowIndex]);
+            values.put(this.varsUsed[rowIndex],this.values[rowIndex]);
         }
         return values;
     }
@@ -182,5 +182,4 @@ public class ResolveContextVariablesPanel extends JDialog {
             }
         }
     }
-
 }

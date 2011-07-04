@@ -50,8 +50,8 @@ public class ServerApi3ScaleAuthorizeAssertion extends AbstractServerAssertion<A
         final AuthorizeResponse response;
         try {            
             Api3ScaleHttpSender sender  = new Api3ScaleHttpSender();
-            Api2 api2 = ApiFactory.createV2Api(server, appId, providerKey,sender); // url, appid  privatekey, httpsender
-            response = api2.authorize(appKey,null); // app key, referrer
+            Api2 api2 = ApiFactory.createV2Api(server, appId, providerKey,sender);
+            response = api2.authorize(appKey,null);
             strResponse = sender.getHttpResponseString();
         }
         catch(ApiException e){

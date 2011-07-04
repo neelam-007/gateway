@@ -11,6 +11,7 @@ import net.threescale.api.v2.*;
 
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.logging.XMLFormatter;
 
 /**
  * User: wlui
@@ -34,10 +35,11 @@ public class Api3ScaleAdminImpl implements Api3ScaleAdmin{
         Api3ScaleHttpSender sender  = new Api3ScaleHttpSender();
         Api2 api2 = ApiFactory.createV2Api(server, appId, providerKey, sender);
         try {
-            api2.authorize(appKey, null); // app key, referrer
+            api2.authorize(appKey, null);
         } catch (ApiException e) {
-            throw new Api3ScaleTestException( e.getMessage(), ExceptionUtils.getDebugException(e));
+            throw new Api3ScaleTestException( e.getErrorMessage(), ExceptionUtils.getDebugException(e));
         }
         return sender.getHttpResponseString();
+
     }
 }
