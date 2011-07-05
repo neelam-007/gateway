@@ -1,4 +1,4 @@
-Summary: Layer 7 Enterprise Service Manager, Copyright Layer 7 Technologies 2009-2010
+Summary: Layer 7 Enterprise Service Manager, Copyright Layer 7 Technologies 2009-2011
 Name: ssem
 Version: 0.0
 Release: 0
