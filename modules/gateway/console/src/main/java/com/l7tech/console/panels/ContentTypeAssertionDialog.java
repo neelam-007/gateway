@@ -83,8 +83,8 @@ public class ContentTypeAssertionDialog extends AssertionPropertiesOkCancelSuppo
 
         try {
             int part = Integer.parseInt(s);
-            if (part < 0)
-                throw new ValidationException("Message part number must be nonnegative if it doesn't use variables");
+            if (part < 1)
+                throw new ValidationException("Message part number must be positive if it doesn't use variables");
             return String.valueOf(part);
         } catch (NumberFormatException e) {
             throw new ValidationException("Message part must be a valid number if it doesn't use variables");

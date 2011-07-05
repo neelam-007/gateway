@@ -37,7 +37,10 @@ public class ServerContentTypeAssertion extends AbstractMessageTargetableServerA
 
         if (assertion.isMessagePart() && Syntax.getReferencedNames(assertion.getMessagePartNum()).length < 1) {
             try {
-                fixedMessagePartNum = Integer.parseInt(assertion.getMessagePartNum());
+                int partNum = Integer.parseInt(assertion.getMessagePartNum());
+                if (partNum > 0)
+                    partNum--;
+                fixedMessagePartNum = partNum;
             } catch (NumberFormatException e) {
                 throw new PolicyAssertionException(assertion, "Invalid message part number");
             }
@@ -88,7 +91,10 @@ public class ServerContentTypeAssertion extends AbstractMessageTargetableServerA
 
         final String partNumStr = assertion.getMessagePartNum();
         try {
-            return Integer.parseInt(ExpandVariables.process(partNumStr, varMap, getAudit()));
+            int num = Integer.parseInt(ExpandVariables.process(partNumStr, varMap, getAudit()));
+            if (num > 0)
+                num--;
+            return num;
         } catch (NumberFormatException e) {
             throw new NoSuchPartException();
         }

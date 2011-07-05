@@ -8,6 +8,7 @@ import com.l7tech.policy.assertion.ContentTypeAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.Charsets;
 import org.junit.Test;
 
@@ -27,6 +28,25 @@ public class ServerContentTypeAssertionTest {
     @Test
     public void testValidateSuccess() throws Exception {
         context(req(ContentTypeHeader.XML_DEFAULT.getFullValue()));
+        AssertionStatus result = sass().checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+    }
+
+    @Test
+    public void testValidateSuccessPartNum() throws Exception {
+        context(req(ContentTypeHeader.XML_DEFAULT.getFullValue()));
+        ass.setMessagePart(true);
+        ass.setMessagePartNum("1");
+        AssertionStatus result = sass().checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+    }
+
+    @Test
+    @BugNumber(10733)
+    public void testValidateSuccessPartNumBackwardCompat() throws Exception {
+        context(req(ContentTypeHeader.XML_DEFAULT.getFullValue()));
+        ass.setMessagePart(true);
+        ass.setMessagePartNum("0");
         AssertionStatus result = sass().checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
     }
@@ -60,7 +80,7 @@ public class ServerContentTypeAssertionTest {
     public void testMultipartValidateSuccess() throws Exception {
         context(multireq());
         ass.setMessagePart(true);
-        ass.setMessagePartNum("1");
+        ass.setMessagePartNum("2");
         AssertionStatus result = sass().checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
     }
@@ -69,7 +89,7 @@ public class ServerContentTypeAssertionTest {
     public void testMultipartValidateFailure() throws Exception {
         context(multireq());
         ass.setMessagePart(true);
-        ass.setMessagePartNum("1");
+        ass.setMessagePartNum("2");
         request.getMimeKnob().getPart(1).setContentType(ContentTypeHeader.create("blah /wrong"));
         assertEquals(AssertionStatus.FAILED, sass().checkRequest(context));
     }
@@ -77,7 +97,7 @@ public class ServerContentTypeAssertionTest {
     @Test
     public void testMultipartValidateFailureVar() throws Exception {
         context(multireq());
-        context.setVariable("partNum", "1");
+        context.setVariable("partNum", "2");
         ass.setMessagePart(true);
         ass.setMessagePartNum("${partNum}");
         request.getMimeKnob().getPart(1).setContentType(ContentTypeHeader.create("blah /wrong"));
@@ -106,7 +126,7 @@ public class ServerContentTypeAssertionTest {
     public void testMultipartChangeTypeFixed() throws Exception {
         context(multireq());
         ass.setMessagePart(true);
-        ass.setMessagePartNum("1");
+        ass.setMessagePartNum("2");
         ass.setChangeContentType(true);
         ass.setNewContentTypeValue("application/x-changed");
         assertEquals(AssertionStatus.NONE, sass().checkRequest(context));
@@ -117,7 +137,7 @@ public class ServerContentTypeAssertionTest {
     public void testMultipartChangeTypeVariable() throws Exception {
         context(multireq());
         ass.setMessagePart(true);
-        ass.setMessagePartNum("1");
+        ass.setMessagePartNum("2");
         ass.setChangeContentType(true);
         ass.setNewContentTypeValue("${ctype}");
         context.setVariable("ctype", "application/x-changed");
