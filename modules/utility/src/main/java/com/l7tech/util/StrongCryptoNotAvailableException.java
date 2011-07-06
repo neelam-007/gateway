@@ -1,4 +1,4 @@
-package com.l7tech.security.prov;
+package com.l7tech.util;
 
 /**
  * Utility exception that can be used to report that an operation cannot proceed because strong cryptography

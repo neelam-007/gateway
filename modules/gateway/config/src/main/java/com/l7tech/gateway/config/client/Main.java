@@ -14,6 +14,7 @@ import com.l7tech.config.client.ConfigurationException;
 import com.l7tech.config.client.ConfigurationFactory;
 import com.l7tech.config.client.ConfigurationClient;
 import com.l7tech.config.client.InvalidConfigurationStateException;
+import com.l7tech.util.JceUtil;
 import com.l7tech.util.JdkLoggerConfigurator;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ExceptionUtils;
@@ -25,6 +26,7 @@ import java.io.Console;
 import java.io.IOException;
 import java.io.File;
 import java.io.PrintWriter;
+import java.security.GeneralSecurityException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Iterator;
@@ -53,7 +55,14 @@ public class Main {
         int successCode = 0;
         System.setProperty("org.apache.cxf.nofastinfoset", "true");
         JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties", false, true);
-        
+
+        if ( !isStrongCryptoEnabledInJvm() ) {
+            String message = "The Java virtual machine does not have strong cryptography enabled.  The unlimited strength juristiction JCE policy files may need to be installed.";
+            logger.warning( message );
+            System.out.println( message );
+            System.exit( 1 );
+        }
+
         String typeName = "appliance";
         if ( args.length > 1 ) {
             typeName = args[1];
@@ -132,6 +141,7 @@ public class Main {
     private static final String pcUrl = "https://" + InetAddressUtil.getLocalHostUrlAddress() + ":8765/services/nodeManagementApi";
     private static final String PROP_NODE_PROPS = "com.l7tech.server.config.nodePropsPath";
     private static final String DEFAULT_NODE_PROPS = "../node/default/etc/conf/node.properties";
+    private static final boolean PERFORM_CRYPTO_CHECK = SyspropUtil.getBoolean( "com.l7tech.gateway.config.checkStrongCryptography", true);
 
     private static int doGatewayControl( String command ) {
         NodeManagementApiFactory nodeManagementApiFactory = new NodeManagementApiFactory( pcUrl );
@@ -184,14 +194,14 @@ public class Main {
         System.out.print("Stop requested, waiting for shutdown ");
 
         for ( int i=0; i< 5; i++ ) {
-            Thread.sleep( 1000 );
+            Thread.sleep( 1000L );
             System.out.print(".");
         }
 
         boolean handled = false;
         loop:
                 for ( int i=0; i< 25; i++ ) {
-            Thread.sleep( 1000 );
+            Thread.sleep( 1000L );
             System.out.print(".");
 
                     Collection<NodeManagementApi.NodeHeader> config = nma.listNodes();
@@ -245,6 +255,18 @@ public class Main {
             final PrintWriter writer = console.writer();
             writer.write( "\u001b[2J\u001b[H" );
             writer.flush();
+        }
+    }
+
+    private static boolean isStrongCryptoEnabledInJvm() {
+        try {
+            return !PERFORM_CRYPTO_CHECK || JceUtil.isStrongCryptoEnabledInJvm();
+        } catch ( GeneralSecurityException e ) {
+            logger.log(
+                    Level.WARNING,
+                    "Error determining if strong cryptography is enabled: " + ExceptionUtils.getMessage( e ),
+                    ExceptionUtils.getDebugException( e ) );
+            return true;
         }
     }
 

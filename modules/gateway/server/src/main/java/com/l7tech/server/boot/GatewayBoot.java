@@ -2,8 +2,8 @@ package com.l7tech.server.boot;
 
 import com.l7tech.gateway.common.Component;
 import com.l7tech.security.prov.JceProvider;
-import com.l7tech.security.prov.JceUtil;
-import com.l7tech.security.prov.StrongCryptoNotAvailableException;
+import com.l7tech.util.JceUtil;
+import com.l7tech.util.StrongCryptoNotAvailableException;
 import com.l7tech.server.BootProcess;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;

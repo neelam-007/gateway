@@ -1,13 +1,9 @@
-/*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.security.prov;
 
 import com.l7tech.security.cert.BouncyCastleCertUtils;
 import com.l7tech.security.prov.bc.BouncyCastleRsaSignerEngine;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.JceUtil;
 import com.l7tech.util.SyspropUtil;
 
 import javax.crypto.Cipher;
@@ -254,7 +250,7 @@ public abstract class JceProvider {
             return tryGenerateEcKeyPair(curveName, random);
         } catch (InvalidAlgorithmParameterException e) {
             // Try synonyms, if any
-            Set<String> syns = JceUtil.getCurveNameSynonyms(curveName, false);
+            Set<String> syns = JceUtil.getCurveNameSynonyms( curveName, false );
             for (String syn : syns) {
                 try {
                     return tryGenerateEcKeyPair(syn, random);
