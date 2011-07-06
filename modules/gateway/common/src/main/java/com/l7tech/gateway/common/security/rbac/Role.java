@@ -82,6 +82,7 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
         this.tag = tag;
     }
 
+    @Override
     public void setName(String name) {
         name = TextUtils.truncStringMiddle(name, 128);
         super.setName(name);
@@ -183,11 +184,12 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
         return _name;
     }
 
+    @Override
     public int compareTo(Role that) {
         if (this.equals(that))
             return 0;
         
-        return this.getName().compareTo(that.getName());
+        return String.CASE_INSENSITIVE_ORDER.compare( this.getName(), that.getName() );
     }
 
     @Column(name="description", length=255)
