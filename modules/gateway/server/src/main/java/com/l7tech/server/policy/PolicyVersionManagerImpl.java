@@ -86,7 +86,7 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
         final PolicyVersion last = findLatestRevisionForPolicy( policyOid );
         if ( last!=null ) {
             if ( last.getXml()!=null && last.getXml().equals( newPolicy.getXml() ) ) {
-                if ( !last.isActive() ) {
+                if ( activated && !last.isActive() ) {
                     last.setActive( true );
                     update( last );
                     deactivateVersions(policyOid, last.getOid());
