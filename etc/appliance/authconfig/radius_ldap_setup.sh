@@ -686,40 +686,4 @@ fi
 
 
 
-# the authconfig way:
-
-1. To enable LDAP only:
-authconfig --enableshadow --enablemd5 --ldapserver=10.7.48.40 --ldapbasedn=dc=example,dc=com --updateall
-
-* the user home dir must be created manually
-
-
-2. To enable LDAP with TLS (LDAPS)
-authconfig --enableshadow --enablemd5 --ldapserver=10.7.48.40 --ldapbasedn=dc=example,dc=com --updateall???
-
-
-
-?. To revert back to local authentication
-
-
-
-
-# --enableldap          enable LDAP for user information by default
-# --enableldapauth      enable LDAP for authentication by default
-# --ldapserver=<server> default LDAP server
-# --ldapbasedn=<dn>     default LDAP base DN
-# --enableldaptls, --enableldapssl               enable use of TLS with LDAP
-# --ldaploadcacert=<URL>                        load CA certificate from the URL
-# --enablelocauthorize  local authorization is sufficient for local users
-# --enablepamaccess     check access.conf during account authorization
-# --disablesysnetauth   authenticate system accounts by local files only
-# --enablesysnetauth    authenticate system accounts by network services 
-# --enablemkhomedir     create home directories for users on their first login
-
-
-# --test                do not update the configuration files, only print new settings
-# --probe               probe network for defaults and print them
-# --updateall           update all configuration files
-
-
 
