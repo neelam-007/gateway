@@ -22,6 +22,7 @@ import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
@@ -29,7 +30,9 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.Option;
 import com.l7tech.wsdl.Wsdl;
+import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
 
 import javax.swing.*;
@@ -60,9 +63,23 @@ public class CreateServiceWsdlAction extends SecureAction {
     static final Logger log = Logger.getLogger(CreateServiceWsdlAction.class.getName());
     private WsdlDependenciesResolver wsdlDepsResolver;
     private Set<WsdlComposer.WsdlHolder> importedWsdls;
+    @NotNull private final Option<Folder> folder;
+    @NotNull private final Option<AbstractTreeNode> abstractTreeNode;
 
     public CreateServiceWsdlAction() {
+        this( Option.<Folder>none(), Option.<AbstractTreeNode>none() );
+    }
+
+    public CreateServiceWsdlAction( @NotNull final Folder folder,
+                                    @NotNull final AbstractTreeNode abstractTreeNode) {
+        this( Option.some( folder ), Option.some( abstractTreeNode ) );
+    }
+
+    public CreateServiceWsdlAction( @NotNull final Option<Folder> folder,
+                                    @NotNull final Option<AbstractTreeNode> abstractTreeNode ) {
         super(new AttemptedCreate(SERVICE), UI_WSDL_CREATE_WIZARD);
+        this.folder = folder;
+        this.abstractTreeNode = abstractTreeNode;
     }
 
     /**
@@ -139,7 +156,7 @@ public class CreateServiceWsdlAction extends SecureAction {
             boolean isEdit = false;
             if (existingService == null) {
                 service = new PublishedService();
-                service.setFolder(TopComponents.getInstance().getRootNode().getFolder());
+                service.setFolder(folder.orSome(TopComponents.getInstance().getRootNode().getFolder()));
             } else {
                 service = existingService;
                 isEdit = true;
@@ -239,12 +256,14 @@ public class CreateServiceWsdlAction extends SecureAction {
                     ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
                     if (tree != null) {
                         AbstractTreeNode root = TopComponents.getInstance().getServicesFolderNode();
+                        AbstractTreeNode parent = abstractTreeNode.orSome( root );
+
                         //Remove any filter before insert
                         TopComponents.getInstance().clearFilter();
 
                         DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                         AbstractTreeNode sn = TreeNodeFactory.asTreeNode(eh, null);
-                        model.insertNodeInto(sn, root, root.getInsertPosition(sn, RootNode.getComparator()));
+                        model.insertNodeInto(sn, parent, parent.getInsertPosition(sn, RootNode.getComparator()));
                         RootNode rootNode = (RootNode) model.getRoot();
                         rootNode.addEntity(eh.getOid(), sn);
 

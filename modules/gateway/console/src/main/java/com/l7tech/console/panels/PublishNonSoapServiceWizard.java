@@ -11,12 +11,15 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.util.Option;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
@@ -72,7 +75,7 @@ public class PublishNonSoapServiceWizard extends Wizard {
                 policy.addChild(new HttpRoutingAssertion(panel1.getDownstreamURL()));
             ByteArrayOutputStream bo = new ByteArrayOutputStream();
             WspWriter.writePolicy(policy, bo);
-            service.setFolder(TopComponents.getInstance().getRootNode().getFolder());
+            service.setFolder(folder.orSome(TopComponents.getInstance().getRootNode().getFolder()));
             service.setPolicy(new Policy(PolicyType.PRIVATE_SERVICE, null, bo.toString(), false));
             service.setSoap(false);
             service.setWssProcessingEnabled(false);
@@ -152,6 +155,16 @@ public class PublishNonSoapServiceWizard extends Wizard {
         listenerList.remove(EntityListener.class, listener);
     }
 
+    /**
+     * Set the Folder for the service.
+     *
+     * @param folder The folder to use (required)
+     */
+    public void setFolder( @NotNull final Folder folder ) {
+        this.folder = Option.some( folder );
+    }
+
     private IdentityProviderWizardPanel panel2; // may be null if no authentication enabled by current license
     private NonSoapServicePanel panel1;
+    private Option<Folder> folder = Option.none();
 }

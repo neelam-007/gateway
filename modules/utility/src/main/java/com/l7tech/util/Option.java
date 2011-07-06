@@ -20,6 +20,7 @@ public class Option<T> {
      * @param <T> The optional type
      * @return The option
      */
+    @NotNull
     public static <T> Option<T> optional( @Nullable final T value ) {
         return new Option<T>( value );
     }
@@ -31,6 +32,7 @@ public class Option<T> {
      * @param <T> The optional type
      * @return The option
      */
+    @NotNull
     public static <T> Option<T> some( @NotNull final T value ) {
         return new Option<T>( value );
     }
@@ -41,6 +43,7 @@ public class Option<T> {
      * @param <T> The optional type
      * @return The option
      */
+    @NotNull
     public static <T> Option<T> none() {
         return new Option<T>( null );
     }
@@ -55,11 +58,25 @@ public class Option<T> {
     }
 
     /**
+     * The value of this option if present, or the other value
+     *
+     * <p>Get the value of this option if there is one, else return the given
+     * other value.</p>
+     *
+     * @return The option or alternative
+     */
+    @NotNull
+    public T orSome( @NotNull final T other ) {
+        return value != null ? value : other;
+    }
+
+    /**
      * Get the value of this option.
      *
      * @return The value
      * @throws IllegalStateException if there is no value
      */
+    @NotNull
     public T some() {
         if ( value == null ) throw new IllegalStateException( "Value is null" );
         return value;
@@ -83,6 +100,7 @@ public class Option<T> {
      * @param <O> The other type
      * @return An either that contains this value if present, else the given value.
      */
+    @NotNull
     public <O> Either<O,T> toEither( @NotNull O other ) {
         return isSome() ?
                 Either.<O,T>right( some( ) ) :
@@ -94,6 +112,7 @@ public class Option<T> {
      *
      * @return The empty or single valued list.
      */
+    @NotNull
     public List<T> toList() {
         return isSome() ?
                 Collections.singletonList( some() ) :

@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2007-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.console.action;
 
 import com.l7tech.console.panels.PolicyPropertiesPanel;
@@ -19,6 +16,7 @@ import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
@@ -28,6 +26,8 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.util.Option;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -40,8 +40,23 @@ import java.util.logging.Level;
  * SSM action to create a new {@link Policy}.
  */
 public class CreatePolicyAction extends SecureAction {
+    @NotNull private final Option<Folder> folder;
+    @NotNull private final Option<AbstractTreeNode> abstractTreeNode;
+
     public CreatePolicyAction() {
+        this( Option.<Folder>none(), Option.<AbstractTreeNode>none() );
+    }
+
+    public CreatePolicyAction( @NotNull final Folder folder,
+                               @NotNull final AbstractTreeNode abstractTreeNode ) {
+        this( Option.some( folder ), Option.<AbstractTreeNode>some( abstractTreeNode ) );
+    }
+
+    public CreatePolicyAction( @NotNull final Option<Folder> folder,
+                               @NotNull final Option<AbstractTreeNode> abstractTreeNode ) {
         super(new AttemptedCreate(EntityType.POLICY), Include.class);
+        this.folder = folder;
+        this.abstractTreeNode = abstractTreeNode;
     }
 
     @Override
@@ -79,7 +94,7 @@ public class CreatePolicyAction extends SecureAction {
                 AbstractTreeNode root = TopComponents.getInstance().getPoliciesFolderNode();
 
                 final Policy dlgPolicy = dlg.getValue();
-                long oid = -1;
+                long oid = -1L;
                 try {
                     //if the editor didn't already create some policy content, create a default here
                     if (!(dlgPolicy.getType() == PolicyType.INTERNAL)) {
@@ -93,7 +108,7 @@ public class CreatePolicyAction extends SecureAction {
                                 new AllAssertion(Arrays.<Assertion>asList(new AuditDetailAssertion("Internal Policy: " + dlgPolicy.getName()))));
                         dlgPolicy.setXml( xml );
                     }
-                    dlgPolicy.setFolder(((RootNode)root).getFolder());
+                    dlgPolicy.setFolder(folder.orSome( ((RootNode) root).getFolder() ));
                     oid = Registry.getDefault().getPolicyAdmin().savePolicy(dlgPolicy);
                 } catch ( DuplicateObjectException doe) {
                     String message = "Unable to save the policy '" + dlgPolicy.getName() + "'.\n";
@@ -128,7 +143,7 @@ public class CreatePolicyAction extends SecureAction {
                     throw new RuntimeException("Policy saved, but couldn't be retrieved", e);
                 }
 
-                if ( oid > 0 ) {
+                if ( oid > 0L ) {
                     final JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
                     if (tree == null) {
                         log.log(Level.WARNING, "Policy tree unreachable.");
@@ -136,13 +151,14 @@ public class CreatePolicyAction extends SecureAction {
                     }
 
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                    AbstractTreeNode parent = abstractTreeNode.orSome( root );
 
                     //Remove any filter before insert
                     TopComponents.getInstance().clearFilter();
 
                     PolicyHeader ph = new PolicyHeader(savedPolicy);
                     final AbstractTreeNode sn = TreeNodeFactory.asTreeNode(ph, null);
-                    model.insertNodeInto(sn, root, root.getInsertPosition(sn, RootNode.getComparator()));
+                    model.insertNodeInto(sn, parent, parent.getInsertPosition(sn, RootNode.getComparator()));
                     RootNode rootNode = (RootNode) model.getRoot();
                     rootNode.addEntity(ph.getOid(), sn);
 

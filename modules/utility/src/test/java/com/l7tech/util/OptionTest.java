@@ -59,4 +59,10 @@ public class OptionTest {
         assertEquals( "List 3", Collections.<String>emptyList(), Option.<String>none().toList() );
         assertEquals( "List 4", Collections.<String>emptyList(), Option.<String>optional( null ).toList() );
     }
+
+    @Test
+    public void testOrSome() {
+        assertEquals( "Or some 1", "value1", Option.some( "value1" ).orSome( "value2" ) );
+        assertEquals( "Or some 2", "value2", Option.<String>none().orSome( "value2" ) );
+    }
 }

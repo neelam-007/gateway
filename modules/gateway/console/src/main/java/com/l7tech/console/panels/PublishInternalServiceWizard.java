@@ -13,7 +13,10 @@ import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.service.ServiceTemplate;
 import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.util.Functions;
+import com.l7tech.util.Option;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
@@ -32,6 +35,7 @@ public class PublishInternalServiceWizard extends Wizard<PublishInternalServiceW
     private static final Logger logger = Logger.getLogger(PublishInternalServiceWizard.class.getName());
 
     private EventListenerList localListenerList = new EventListenerList();
+    private Option<Folder> folder = Option.none();
 
     public static PublishInternalServiceWizard getInstance (Frame parent) {
         return new PublishInternalServiceWizard(parent, getSteps());
@@ -72,7 +76,7 @@ public class PublishInternalServiceWizard extends Wizard<PublishInternalServiceW
 
         if (service == null) {
             service = new PublishedService();
-            service.setFolder(TopComponents.getInstance().getRootNode().getFolder());
+            service.setFolder(folder.orSome(TopComponents.getInstance().getRootNode().getFolder()));
 
             service.setName(toSave.getName());
             service.getPolicy().setXml(toSave.getDefaultPolicyXml());
@@ -128,6 +132,15 @@ public class PublishInternalServiceWizard extends Wizard<PublishInternalServiceW
      */
     public void removeEntityListener(EntityListener listener) {
         localListenerList.remove(EntityListener.class, listener);
+    }
+
+    /**
+     * Set the folder to use for the service.
+     *
+     * @param folder The folder to use
+     */
+    public void setFolder( @NotNull final Folder folder ) {
+        this.folder = Option.some( folder );
     }
 
     /**

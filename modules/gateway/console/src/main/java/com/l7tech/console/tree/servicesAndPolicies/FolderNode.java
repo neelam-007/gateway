@@ -17,8 +17,7 @@ import java.util.ArrayList;
  * The class represents a node element in the TreeModel.
  * It represents the folder with services.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.1
+ * @author Emil Marceta
  */
 public class FolderNode extends AbstractTreeNode implements FolderNodeBase {
     private final FolderHeader folderHeader;
@@ -44,6 +43,11 @@ public class FolderNode extends AbstractTreeNode implements FolderNodeBase {
         folder.setVersion(folderHeader.getVersion());
 
         allActions = new Action[]{
+            new PublishServiceAction(folder, this),
+            new CreateServiceWsdlAction(folder, this),
+            new PublishNonSoapServiceAction(folder, this),
+            new PublishInternalServiceAction(folder, this),
+            new CreatePolicyAction(folder, this),
             new EditFolderAction(folder, folderHeader, this, folderAdmin),
             new CreateFolderAction(folder, this, folderAdmin),
             new DeleteFolderAction(folderHeader.getOid(), this, folderAdmin),

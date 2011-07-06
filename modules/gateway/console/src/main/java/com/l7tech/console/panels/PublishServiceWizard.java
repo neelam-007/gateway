@@ -13,6 +13,7 @@ import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
@@ -22,8 +23,10 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.Option;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.uddi.WsdlPortInfo;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
@@ -109,6 +112,15 @@ public class PublishServiceWizard extends Wizard {
             this.wsdlPortInfo = wsdlPortInfo;
         }
 
+        @NotNull
+        public Option<Folder> getFolder() {
+            return folder;
+        }
+
+        public void setFolder( @NotNull final Option<Folder> folder ) {
+            this.folder = folder;
+        }
+
         public boolean isServiceControlRequired() {
             return  wsdlPortInfo != null &&
                     ResourceUtils.isSameResource(wsdlPortInfo.getWsdlUrl(),service.getWsdlUrl()) &&
@@ -128,6 +140,7 @@ public class PublishServiceWizard extends Wizard {
          * If the service was created from UDDI, then this will be non null;
          */
         private WsdlPortInfo wsdlPortInfo;
+        private Option<Folder> folder = Option.none();
     }
 
     private ServiceAndAssertion saBundle = new ServiceAndAssertion();
@@ -206,7 +219,7 @@ public class PublishServiceWizard extends Wizard {
                 ByteArrayOutputStream bo = new ByteArrayOutputStream();
                 WspWriter.writePolicy(new TrueAssertion(), bo); // means no policy
             }
-            saBundle.service.setFolder(TopComponents.getInstance().getRootNode().getFolder());
+            saBundle.service.setFolder(saBundle.getFolder().orSome(TopComponents.getInstance().getRootNode().getFolder()));
 
             final WsdlPortInfo wsdlPortInfo = saBundle.getWsdlPortInfo();
             final PublishedService newService = saBundle.getService();
@@ -318,6 +331,15 @@ public class PublishServiceWizard extends Wizard {
         } catch ( Exception e ) {
             errorCallback.call(e);
         }
+    }
+
+    /**
+     * Set the folder to use for the service.
+     *
+     * @param folder The folder to use (required)
+     */
+    public void setFolder( @NotNull final Folder folder ) {
+        saBundle.setFolder( Option.some(folder) );
     }
 
     /**
