@@ -91,14 +91,28 @@ public class CompositeAssertionMapping implements TypeMapping {
     @Override
     public Element freeze(WspWriter wspWriter, TypedReference object, Element container) {
         Element element;
-        element = DomUtils.createAndAppendElementNS(container, externalName, WspConstants.WSP_POLICY_NS, "wsp");
-        element.setAttributeNS(WspConstants.WSP_POLICY_NS, "wsp:Usage", "Required");
+        element = DomUtils.createAndAppendElementNS(container, externalName, getNsUri(), getNsPrefix());
+        element.setAttributeNS(getNsUri(), getNsPrefix() + "Usage", "Required");
 
         // Add an assertion-disable attribute into the composite-assertion element.
         boolean enabled = ((Assertion)object.target).isEnabled();
-        if (!enabled) element.setAttributeNS(WspConstants.WSP_POLICY_NS, WspConstants.WSP_ATTRIBUTE_ENABLED, "" + enabled);
+        if (!enabled) element.setAttributeNS(getNsUri(), WspConstants.WSP_ATTRIBUTE_ENABLED, "" + enabled);
         populateElement(wspWriter, element, object);
         return element;
+    }
+
+    /**
+     * @return the namespace prefix to use for serialized elements created by this type mapping, ie "l7p31:".
+     *         Includes the trailing colon if any.  Never null, but may be empty if the elements should be
+     *         created in the default namespace.
+     */
+    protected String getNsPrefix() {
+        return "wsp:";
+    }
+
+    /** @return the namespace URI to use for serialized elements created by this type mapping, ie WspConstants.L7_POLICY_NS_31. */
+    protected String getNsUri() {
+        return WspConstants.WSP_POLICY_NS;
     }
 
     @Override

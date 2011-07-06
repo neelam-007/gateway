@@ -10,7 +10,6 @@ import com.l7tech.util.ConstructorInvocation;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.xml.TarariLoader;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
@@ -126,8 +125,6 @@ public class ServerPolicyFactory implements ApplicationContextAware {
         try {
             if (isLicenseEnforcement() && !licenseManager.isAssertionEnabled(genericAssertion))
                 throw new LicenseException("The specified assertion is not supported on this Gateway: " + genericAssertion.getClass());
-
-            final AutowireCapableBeanFactory autowireCapableBeanFactory = applicationContext.getAutowireCapableBeanFactory();
 
             // Prevent Tarari assertions from being loaded on non-Tarari SSGs
             // TODO find an abstraction for this assertion censorship

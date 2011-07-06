@@ -8,6 +8,7 @@ package com.l7tech.server;
 import com.l7tech.gateway.common.License;
 import com.l7tech.policy.AllAssertions;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.composite.ForEachLoopAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.transport.PreemptiveCompression;
@@ -33,6 +34,7 @@ import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xml.RemoveElement;
 import com.l7tech.policy.assertion.xmlsec.*;
+import org.jetbrains.annotations.Nullable;
 
 import javax.servlet.http.HttpServlet;
 import java.text.MessageFormat;
@@ -131,7 +133,8 @@ public class GatewayFeatureSets {
         fsr("set:policy:branching", "Support for branching policies",
             ass(AllAssertion.class),
             ass(ExactlyOneAssertion.class),
-            ass(OneOrMoreAssertion.class));
+            ass(OneOrMoreAssertion.class),
+            ass(ForEachLoopAssertion.class));
 
         GatewayFeatureSet wssc =
         fsr("set:wssc", "WS-SecureConversation support",
@@ -856,7 +859,7 @@ public class GatewayFeatureSets {
     }
 
     /** Create and register a new non-leaf GatewayFeatureSet. */
-    private static GatewayFeatureSet fsr(String name, String desc, String note, GatewayFeatureSet... deps) throws IllegalArgumentException {
+    private static GatewayFeatureSet fsr(String name, String desc, @Nullable String note, GatewayFeatureSet... deps) throws IllegalArgumentException {
         if (!name.startsWith("set:")) throw new IllegalArgumentException("Non-leaf feature set name must start with \"set:\": " + name);
         GatewayFeatureSet newset = new GatewayFeatureSet(name, desc, note, deps);
         GatewayFeatureSet old = sets.put(name, newset);
@@ -944,7 +947,7 @@ public class GatewayFeatureSets {
     }
 
     /** Create (and register, if new) a new miscellaneous GatewayFeatureSet with the specified name and description. */
-    private static GatewayFeatureSet misc(String name, String desc, String note) {
+    private static GatewayFeatureSet misc(String name, String desc, @Nullable String note) {
         GatewayFeatureSet got = sets.get(name);
         if (got != null) {
             if (!desc.equals(got.desc))

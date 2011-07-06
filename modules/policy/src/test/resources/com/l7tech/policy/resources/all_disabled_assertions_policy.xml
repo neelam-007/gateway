@@ -28,6 +28,10 @@
         <wsp:OneOrMore L7p:Enabled="false" wsp:Usage="Required">
             <L7p:FalseAssertion/>
         </wsp:OneOrMore>
+        <L7p:ForEachLoop L7p:Enabled="false" L7p:Usage="Required"
+            loopVariable="" variablePrefix="">
+            <L7p:FalseAssertion/>
+        </L7p:ForEachLoop>
         <L7p:FalseAssertion>
             <L7p:Enabled booleanValue="false"/>
         </L7p:FalseAssertion>

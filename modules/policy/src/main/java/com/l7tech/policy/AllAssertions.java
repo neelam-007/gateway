@@ -8,6 +8,7 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
+import com.l7tech.policy.assertion.composite.ForEachLoopAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
@@ -55,6 +56,7 @@ public class AllAssertions {
         new AllAssertion(Collections.<Assertion>singletonList(new FalseAssertion())),
         new ExactlyOneAssertion(Collections.<Assertion>singletonList(new FalseAssertion())),
         new OneOrMoreAssertion(Collections.<Assertion>singletonList(new FalseAssertion())),
+        new ForEachLoopAssertion(Collections.<Assertion>singletonList(new FalseAssertion())),
         new SslAssertion(),
         new HttpRoutingAssertion(),
         new BridgeRoutingAssertion(),
@@ -128,6 +130,7 @@ public class AllAssertions {
         new AllAssertion(Collections.<Assertion>singletonList(new FalseAssertion())),    // Empty composites are not valid
         new ExactlyOneAssertion(Collections.<Assertion>singletonList(new FalseAssertion())), // Empty composites are not valid
         new OneOrMoreAssertion(Collections.<Assertion>singletonList(new FalseAssertion())), // Empty composites are not valid
+        new ForEachLoopAssertion(Collections.<Assertion>singletonList(new FalseAssertion())), // Empty composites are not valid
         new FalseAssertion(),
         new SslAssertion(),
         new HttpRoutingAssertion(),
