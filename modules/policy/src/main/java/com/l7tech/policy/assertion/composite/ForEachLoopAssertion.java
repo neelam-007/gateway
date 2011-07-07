@@ -29,6 +29,12 @@ public class ForEachLoopAssertion extends CompositeAssertion implements UsesVari
         super( children );
     }
 
+    public ForEachLoopAssertion(String loopVariableName, String variablePrefix, List<? extends Assertion> children ) {
+        super( children );
+        setLoopVariableName(loopVariableName);
+        setVariablePrefix(variablePrefix);
+    }
+
     public String getLoopVariableName() {
         return loopVariableName;
     }
@@ -60,7 +66,7 @@ public class ForEachLoopAssertion extends CompositeAssertion implements UsesVari
 
     public VariableMetadata[] getVariablesSet() {
         return variablePrefix == null ? new VariableMetadata[0] : new VariableMetadata[] {
-                new VariableMetadata(variablePrefix + ".value", false, false, null, true),
+                new VariableMetadata(variablePrefix + ".current", false, false, null, true),
                 new VariableMetadata(variablePrefix + ".iterations", false, false, null, true),
                 new VariableMetadata(variablePrefix + ".exceededlimit", false, false, null, true),
         };

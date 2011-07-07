@@ -3,6 +3,7 @@ package com.l7tech.policy.variable;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SetVariableAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.composite.ForEachLoopAssertion;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -20,6 +21,8 @@ import static org.junit.Assert.assertTrue;
 public class PolicyVariableUtilsTest {
     private Assertion root;
     private Assertion before;
+    private Assertion foreach;
+    private Assertion iterating;
     private Assertion middle;
     private Assertion afterAll;
 
@@ -30,6 +33,9 @@ public class PolicyVariableUtilsTest {
             new SetVariableAssertion("foo", "fooval"),
             new AllAssertion(Arrays.asList(
                 before = new SetVariableAssertion("blah", "blahval ${foo}")
+            )),
+            foreach = new ForEachLoopAssertion("blah", "i", Arrays.asList(
+                iterating = new SetVariableAssertion("accum", "${accum}${i.current}")
             )),
             middle = new SetVariableAssertion("asdf", "asdfval ${blah}"),
             afterAll = new AllAssertion(Arrays.asList(
@@ -42,6 +48,19 @@ public class PolicyVariableUtilsTest {
     public void testGetVariablesSetByPredecessors() throws Exception {
         Map<String, VariableMetadata> varsSet = PolicyVariableUtils.getVariablesSetByPredecessors(middle);
         assertTrue(varsSet.containsKey("blah"));
+        assertTrue(varsSet.containsKey("accum"));
+        assertTrue(varsSet.containsKey("i.current"));
+        assertFalse(varsSet.containsKey("asdf"));
+        assertFalse(varsSet.containsKey("qwer"));
+        assertFalse(varsSet.containsKey("neverset"));
+    }
+
+    @Test
+    public void testGetVariablesSetByPredecessors_foreach() throws Exception {
+        Map<String, VariableMetadata> varsSet = PolicyVariableUtils.getVariablesSetByPredecessors(iterating);
+        assertTrue(varsSet.containsKey("blah"));
+        assertFalse(varsSet.containsKey("accum"));
+        assertTrue(varsSet.containsKey("i.current"));
         assertFalse(varsSet.containsKey("asdf"));
         assertFalse(varsSet.containsKey("qwer"));
         assertFalse(varsSet.containsKey("neverset"));
@@ -52,6 +71,17 @@ public class PolicyVariableUtilsTest {
         Map<String, VariableMetadata> varsSet = PolicyVariableUtils.getVariablesSetByPredecessorsAndSelf(middle);
         assertTrue(varsSet.containsKey("blah"));
         assertTrue(varsSet.containsKey("asdf"));
+        assertFalse(varsSet.containsKey("qwer"));
+        assertFalse(varsSet.containsKey("neverset"));
+    }
+
+    @Test
+    public void testGetVariablesSetByPredecessorsAndSelf_foreach() throws Exception {
+        Map<String, VariableMetadata> varsSet = PolicyVariableUtils.getVariablesSetByPredecessorsAndSelf(foreach);
+        assertTrue(varsSet.containsKey("blah"));
+        assertFalse(varsSet.containsKey("accum"));
+        assertTrue(varsSet.containsKey("i.current"));
+        assertFalse(varsSet.containsKey("asdf"));
         assertFalse(varsSet.containsKey("qwer"));
         assertFalse(varsSet.containsKey("neverset"));
     }
