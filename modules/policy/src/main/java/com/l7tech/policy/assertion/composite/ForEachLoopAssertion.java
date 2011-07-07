@@ -62,7 +62,6 @@ public class ForEachLoopAssertion extends CompositeAssertion implements UsesVari
         return variablePrefix == null ? new VariableMetadata[0] : new VariableMetadata[] {
                 new VariableMetadata(variablePrefix + ".value", false, false, null, true),
                 new VariableMetadata(variablePrefix + ".iterations", false, false, null, true),
-                new VariableMetadata(variablePrefix + ".failures", false, false, null, true),
                 new VariableMetadata(variablePrefix + ".exceededlimit", false, false, null, true),
         };
     }

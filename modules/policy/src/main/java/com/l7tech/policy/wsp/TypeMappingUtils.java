@@ -326,7 +326,10 @@ public class TypeMappingUtils {
             if (typeName == null || typeName.length() < 1) typeName = attr.getNodeName();
             if (typeName == null || typeName.length() < 1) throw new RuntimeException("Policy contains an attribute with no LocalName or NodeName"); // can't happen
             if ("xmlns".equals(typeName)) continue; // Ignore namespace decls
-            if (foundTypeName != null) throw new InvalidPolicyStreamException("Policy contains an element '" + source.getNodeName() + "' with more than one non-xmlns attribute");
+            if (foundTypeName != null) {
+                // Cannot be a named reference if it has more than one non-xmlns attribute; treat as anonymous reference.
+                return source.getLocalName();
+            }
             foundTypeName = typeName;
         }
         return foundTypeName;

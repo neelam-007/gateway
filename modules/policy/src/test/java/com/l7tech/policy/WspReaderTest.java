@@ -5,6 +5,7 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
+import com.l7tech.policy.assertion.composite.ForEachLoopAssertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
@@ -12,27 +13,24 @@ import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
-import static com.l7tech.policy.wsp.WspReader.OMIT_DISABLED;
-import static com.l7tech.policy.wsp.WspReader.INCLUDE_DISABLED;
-import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.wsdl.BindingInfo;
 import com.l7tech.wsdl.BindingOperationInfo;
 import com.l7tech.xml.xpath.XpathExpression;
-import static org.junit.Assert.*;
-import org.junit.*;
+import org.junit.Test;
 import org.w3c.dom.Document;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.policy.wsp.WspReader.INCLUDE_DISABLED;
+import static com.l7tech.policy.wsp.WspReader.OMIT_DISABLED;
+import static org.junit.Assert.*;
 
 /**
  * Test policy deserializer.
@@ -884,6 +882,18 @@ public class WspReaderTest {
         final CommentAssertion commentAssertion = (CommentAssertion)all.getChildren().iterator().next();
         assertNotNull( "Comment", commentAssertion.getAssertionComment() );
         assertEquals( "Comment text", "This is not valid for XML -> \u0006", commentAssertion.getAssertionComment().getAssertionComment( Assertion.Comment.RIGHT_COMMENT ) );
+    }
+
+    //@Ignore("Uses obsolete type mapping")
+    @Test
+    public void testForEachRoundTrip() throws Exception {
+        final ForEachLoopAssertion ass = new ForEachLoopAssertion(Arrays.asList(new FalseAssertion()));
+        ass.setIterationLimit(3);
+        ass.setLoopVariableName("things");
+        ass.setVariablePrefix("i");
+        Assertion got = WspReader.getDefault().parsePermissively(WspWriter.getPolicyXml(ass), WspReader.Visibility.omitDisabled);
+        assertTrue(got instanceof ForEachLoopAssertion);
+        assertEquals("things", ((ForEachLoopAssertion)got).getLoopVariableName());
     }
 
     private static final String BUG_3456_POLICY = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +

@@ -30,7 +30,6 @@ public class ServerForEachLoopAssertion extends ServerCompositeAssertion<ForEach
     private final int iterationLimit;
     private final String iterationsVar;
     private final String hitLimitVar;
-    private final String failuresVar;
 
     public ServerForEachLoopAssertion(ForEachLoopAssertion assertion, BeanFactory beanFactory) throws PolicyAssertionException, LicenseException {
         super(assertion, beanFactory);
@@ -40,7 +39,6 @@ public class ServerForEachLoopAssertion extends ServerCompositeAssertion<ForEach
 
         this.currentValueVar = prefix + ".current";
         this.iterationsVar = prefix + ".iterations";
-        this.failuresVar = prefix + ".failures";
         this.hitLimitVar = prefix + ".exceededlimit";
     }
 
@@ -68,17 +66,18 @@ public class ServerForEachLoopAssertion extends ServerCompositeAssertion<ForEach
         final Iterator iterator = makeIterator(values);
 
         int iterations = 0;
-        int failures = 0;
         boolean hitLimit = false;
+        boolean failed = false;
         context.setVariable(hitLimitVar, hitLimit);
         while (iterator.hasNext()) {
             Object next = iterator.next();
             context.setVariable(currentValueVar, next);
             context.setVariable(iterationsVar, iterations);
-            context.setVariable(failuresVar, failures);
             AssertionStatus status = executeChildren(context);
-            if (!AssertionStatus.NONE.equals(status))
-                failures++;
+            if (!AssertionStatus.NONE.equals(status)) {
+                failed = true;
+                break;
+            }
             iterations++;
             if (iterationLimit > 0 && iterations >= iterationLimit) {
                 hitLimit = true;
@@ -87,9 +86,8 @@ public class ServerForEachLoopAssertion extends ServerCompositeAssertion<ForEach
         }
 
         context.setVariable(iterationsVar, iterations);
-        context.setVariable(failuresVar, failures);
         context.setVariable(hitLimitVar, hitLimit);
-        return failures > 0 ? AssertionStatus.FAILED : AssertionStatus.NONE;
+        return failed ? AssertionStatus.FAILED : AssertionStatus.NONE;
     }
 
     private Object findValues(PolicyEnforcementContext context) {

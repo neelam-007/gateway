@@ -31,7 +31,7 @@ import static org.junit.Assert.fail;
 /**
  * Unit tests for ForEachLoopAssertion.
  */
-public class ForEachLoopAssertionTest {
+public class ServerForEachLoopAssertionTest {
     Document doc1 = XmlUtil.stringAsDocument("<doc1/>");
     Document doc2 = XmlUtil.stringAsDocument("<doc2/>");
     Document doc3 = XmlUtil.stringAsDocument("<doc3/>");
@@ -40,7 +40,7 @@ public class ForEachLoopAssertionTest {
     Object[] messagesArray = { new Message(doc1), new Message(doc2), new Message(doc3) };
     Object[] emptyArray = {};
 
-    SetVariableAssertion setvar = new SetVariableAssertion("accum", "${accum},${i.iterations}-${i.failures}-${i.current}");
+    SetVariableAssertion setvar = new SetVariableAssertion("accum", "${accum},${i.iterations}-${i.current}");
     SetVariableAssertion setvarMainpart = new SetVariableAssertion("accum", "${accum},${i.current.mainpart}");
     ForEachLoopAssertion ass = new ForEachLoopAssertion(Arrays.asList(setvar));
     ApplicationContext applicationContext;
@@ -65,10 +65,9 @@ public class ForEachLoopAssertionTest {
         ass.setLoopVariableName("stringsArray");
         ass.setVariablePrefix("i");
         checkRequest();
-        assertEquals(",0-0-foo,1-0-bar,2-0-baz", context.getVariable("accum"));
+        assertEquals(",0-foo,1-bar,2-baz", context.getVariable("accum"));
         assertEquals("baz", context.getVariable("i.current"));
         assertEquals(3, context.getVariable("i.iterations"));
-        assertEquals(0, context.getVariable("i.failures"));
         assertEquals(false, context.getVariable("i.exceededlimit"));
     }
 
@@ -78,10 +77,9 @@ public class ForEachLoopAssertionTest {
         ass.setVariablePrefix("i");
         ass.setIterationLimit(2);
         checkRequest();
-        assertEquals(",0-0-foo,1-0-bar", context.getVariable("accum"));
+        assertEquals(",0-foo,1-bar", context.getVariable("accum"));
         assertEquals("bar", context.getVariable("i.current"));
         assertEquals(2, context.getVariable("i.iterations"));
-        assertEquals(0, context.getVariable("i.failures"));
         assertEquals(true, context.getVariable("i.exceededlimit"));
     }
 
@@ -102,7 +100,6 @@ public class ForEachLoopAssertionTest {
         assertNoSuchVariable("accum");
         assertNoSuchVariable("i.current");
         assertEquals(0, context.getVariable("i.iterations"));
-        assertEquals(0, context.getVariable("i.failures"));
         assertEquals(false, context.getVariable("i.exceededlimit"));
     }
 
@@ -111,10 +108,9 @@ public class ForEachLoopAssertionTest {
         ass.setLoopVariableName("singletonList");
         ass.setVariablePrefix("i");
         checkRequest();
-        assertEquals(",0-0-blah", context.getVariable("accum"));
+        assertEquals(",0-blah", context.getVariable("accum"));
         assertEquals("blah", context.getVariable("i.current"));
         assertEquals(1, context.getVariable("i.iterations"));
-        assertEquals(0, context.getVariable("i.failures"));
         assertEquals(false, context.getVariable("i.exceededlimit"));
     }
 
@@ -123,10 +119,9 @@ public class ForEachLoopAssertionTest {
         ass.setLoopVariableName("someString");
         ass.setVariablePrefix("i");
         checkRequest();
-        assertEquals(",0-0-contentsOfSomeString", context.getVariable("accum"));
+        assertEquals(",0-contentsOfSomeString", context.getVariable("accum"));
         assertEquals("contentsOfSomeString", context.getVariable("i.current"));
         assertEquals(1, context.getVariable("i.iterations"));
-        assertEquals(0, context.getVariable("i.failures"));
         assertEquals(false, context.getVariable("i.exceededlimit"));
     }
 
@@ -137,9 +132,8 @@ public class ForEachLoopAssertionTest {
         ass.setVariablePrefix("x");
         checkRequest(AssertionStatus.FAILED);
         assertNoSuchVariable("accum");
-        assertEquals("baz", context.getVariable("x.current"));
-        assertEquals(3, context.getVariable("x.iterations"));
-        assertEquals(3, context.getVariable("x.failures"));
+        assertEquals("foo", context.getVariable("x.current"));
+        assertEquals(0, context.getVariable("x.iterations"));
         assertEquals(false, context.getVariable("x.exceededlimit"));
     }
 
@@ -151,7 +145,6 @@ public class ForEachLoopAssertionTest {
         assertNoSuchVariable("accum");
         assertNoSuchVariable("i.current");
         assertNoSuchVariable("i.iterations");
-        assertNoSuchVariable("i.failures");
         assertNoSuchVariable("i.exceededlimit");
     }
 
