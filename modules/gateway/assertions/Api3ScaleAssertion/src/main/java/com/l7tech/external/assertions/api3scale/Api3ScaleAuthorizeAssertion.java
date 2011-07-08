@@ -10,6 +10,7 @@ import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.Functions;
+import org.springframework.context.ApplicationContext;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -190,9 +191,9 @@ public class Api3ScaleAuthorizeAssertion extends Assertion implements SetsVariab
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
 
-        meta.put(AssertionMetadata.EXTENSION_INTERFACES_FACTORY, new Functions.Nullary<Collection<ExtensionInterfaceBinding>>() {
+        meta.put(AssertionMetadata.EXTENSION_INTERFACES_FACTORY, new Functions.Unary< Collection<ExtensionInterfaceBinding>, ApplicationContext>() {
             @Override
-            public Collection<ExtensionInterfaceBinding> call() {
+            public Collection<ExtensionInterfaceBinding> call(ApplicationContext appContext) {
                 ExtensionInterfaceBinding binding = new ExtensionInterfaceBinding(Api3ScaleAdmin.class, null, new Api3ScaleAdminImpl());
                 return Collections.singletonList(binding);
             }

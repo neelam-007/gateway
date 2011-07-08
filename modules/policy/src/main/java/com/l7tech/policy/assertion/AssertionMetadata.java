@@ -567,12 +567,16 @@ public interface AssertionMetadata {
     String CLUSTER_PROPERTIES = "clusterProperties";
 
     /**
-     * Functions.Nullary< Collection< ExtensionInterfaceBinding > >.  Gateway-only.  Factory method that constructs
+     * Functions.Nullary< Collection< ExtensionInterfaceBinding > > or else
+     * Functions.Unary< Collection< ExtensionInterfaceBinding >, ApplicationContext >.  Gateway-only.
+     * Factory method that constructs
      * a list of implementation objects of admin extension interfaces this assertion wishes to expose via the
      * Gateway's remote admin interface.
      * <p/>
      * If a value for this property is provided, it will be invoked exactly once when this assertion prototype
-     * is registered on the Gateway.  Any returned bindings will be registered with the Gateway's extensionInterfaceManager.
+     * is registered on the Gateway.  If it is a Nullary it will be invoked with no arguments; if it is a Unary
+     * it will be passed the Gateway's ApplicationContext.
+     * Any returned bindings will be registered with the Gateway's extensionInterfaceManager.
      * <p/>
      * If an interface is annotated with both @Administrative and @Secured, then method
      * calls will be passed through the RBAC enforcemetn interceptor.

@@ -136,9 +136,9 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
     }
 
     private void registerExtensionInterfaces(AssertionMetadata meta) {
-        Functions.Nullary< Collection<ExtensionInterfaceBinding> > factory = meta.get(AssertionMetadata.EXTENSION_INTERFACES_FACTORY);
+        Functions.Unary< Collection<ExtensionInterfaceBinding>, ApplicationContext > factory = meta.get(AssertionMetadata.EXTENSION_INTERFACES_FACTORY);
         if (factory != null) {
-            Collection<ExtensionInterfaceBinding> bindings = factory.call();
+            Collection<ExtensionInterfaceBinding> bindings = factory.call(getApplicationContext());
             if (bindings != null) {
                 for (ExtensionInterfaceBinding<?> binding : bindings) {
                     try {

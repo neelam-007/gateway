@@ -83,9 +83,9 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, getClass().getName() + "$PropDialog");
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, getClass().getName() + "$Validator");
         meta.put(AssertionMetadata.GLOBAL_ACTION_CLASSNAMES, new String[] { getClass().getName() + "$CustomAction" });
-        meta.put(AssertionMetadata.EXTENSION_INTERFACES_FACTORY, new Functions.Nullary<Collection<ExtensionInterfaceBinding>>() {
+        meta.put(AssertionMetadata.EXTENSION_INTERFACES_FACTORY, new Functions.Unary< Collection<ExtensionInterfaceBinding>, ApplicationContext >() {
             @Override
-            public Collection<ExtensionInterfaceBinding> call() {
+            public Collection<ExtensionInterfaceBinding> call(ApplicationContext appContext) {
                 ExtensionInterfaceBinding binding = new ExtensionInterfaceBinding<DemoExtensionInterface>(DemoExtensionInterface.class, null, new DemoExtensionInterface() {
                     @Override
                     public DemoReturnVal demoHello(DemoArgument arg) {
