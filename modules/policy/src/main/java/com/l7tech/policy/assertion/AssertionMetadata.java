@@ -567,7 +567,6 @@ public interface AssertionMetadata {
     String CLUSTER_PROPERTIES = "clusterProperties";
 
     /**
-     * Functions.Nullary< Collection< ExtensionInterfaceBinding > > or else
      * Functions.Unary< Collection< ExtensionInterfaceBinding >, ApplicationContext >.  Gateway-only.
      * Factory method that constructs
      * a list of implementation objects of admin extension interfaces this assertion wishes to expose via the
