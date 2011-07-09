@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PrivateKeyExportContext xmlns="http://ns.l7tech.com/2010/04/gateway-management" id="1" version="5" extendedAttribute="extension">
+    <Alias other:extendedAttribute="extension" xmlns:other="urn:othernamespace">alias</Alias>
+    <Password other:extendedAttribute="extension" xmlns:other="urn:othernamespace">password</Password>
+    <Properties extendedAttribute="extension">
+        <Property key="propertiesAreNotCurrentUsed" extendedAttribute="extension">
+            <BooleanValue other:extendedAttribute="extension" xmlns:other="urn:othernamespace">true</BooleanValue>
+        </Property>
+    </Properties>
+</PrivateKeyExportContext>

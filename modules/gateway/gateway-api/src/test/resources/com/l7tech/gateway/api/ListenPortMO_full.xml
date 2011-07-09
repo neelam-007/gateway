@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListenPort xmlns="http://ns.l7tech.com/2010/04/gateway-management" version="4" id="20774913" extendedAttribute="extension">
+    <Name other:extendedAttribute="extension" xmlns:other="urn:othernamespace">My Listen Port</Name>
+    <Enabled other:extendedAttribute="extension" xmlns:other="urn:othernamespace">true</Enabled>
+    <Protocol other:extendedAttribute="extension" xmlns:other="urn:othernamespace">http</Protocol>
+    <Interface other:extendedAttribute="extension" xmlns:other="urn:othernamespace">127.0.0.1</Interface>
+    <Port other:extendedAttribute="extension" xmlns:other="urn:othernamespace">8080</Port>
+    <EnabledFeatures other:extendedAttribute="extension" xmlns:other="urn:othernamespace">
+        <StringValue>Feature1</StringValue>
+        <StringValue>Feature2</StringValue>
+    </EnabledFeatures>
+    <TargetServiceReference resourceUri="http://ns.l7tech.com/2010/04/gateway-management/services" id="9223372036854775807"  other:extendedAttribute="extension" xmlns:other="urn:othernamespace"/>
+    <TlsSettings extendedAttribute="value" other:extendedAttribute="extension" xmlns:other="urn:othernamespace">
+        <!-- TODO [steve] fix attributes for client authentication (JAX-B bug?)-->
+        <!--<ClientAuthentication other:extendedAttribute="extension" xmlns:other="urn:othernamespace">Required</ClientAuthentication>-->
+        <ClientAuthentication>Required</ClientAuthentication>
+        <PrivateKeyReference resourceUri="http://ns.l7tech.com/2010/04/gateway-management/privateKeys" id="-1:ssl" other:extendedAttribute="extension" xmlns:other="urn:othernamespace"/>
+        <EnabledVersions other:extendedAttribute="extension" xmlns:other="urn:othernamespace"  extendedAttribute="extension">
+            <StringValue other:extendedAttribute="extension" xmlns:other="urn:othernamespace">TLSv1</StringValue>
+            <StringValue other:extendedAttribute="extension" xmlns:other="urn:othernamespace">TLSv1.1</StringValue>
+            <StringValue other:extendedAttribute="extension" xmlns:other="urn:othernamespace">TLSv1.2</StringValue>
+        </EnabledVersions>
+        <EnabledCipherSuites other:extendedAttribute="extension" xmlns:other="urn:othernamespace">
+            <StringValue other:extendedAttribute="extension" xmlns:other="urn:othernamespace">TLS_RSA_WITH_AES_256_CBC_SHA</StringValue>
+        </EnabledCipherSuites>
+    </TlsSettings>
+    <Properties extendedAttribute="extension">
+        <Property key="propertiesAreNotCurrentUsed" extendedAttribute="extension">
+            <BooleanValue other:extendedAttribute="extension" xmlns:other="urn:othernamespace">true</BooleanValue>
+        </Property>
+    </Properties>
+</ListenPort>

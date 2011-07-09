@@ -1,18 +1,13 @@
 package com.l7tech.gateway.api;
 
-import com.l7tech.gateway.api.impl.Extension;
+import com.l7tech.gateway.api.impl.ElementExtensionSupport;
+
 import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
 
-import javax.xml.bind.annotation.XmlAnyAttribute;
-import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
-import javax.xml.namespace.QName;
 import java.math.BigInteger;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Holder for encoded {@link java.security.cert.X509Certificate X509Certificate} data.
@@ -27,7 +22,7 @@ import java.util.Map;
  */
 @XmlRootElement(name="CertificateData")
 @XmlType(name="CertificateDataType",propOrder={"issuerNameValue","serialNumberValue","subjectNameValue","encodedValue","extension","extensions"})
-public class CertificateData {
+public class CertificateData extends ElementExtensionSupport {
 
     //- PUBLIC
 
@@ -36,7 +31,6 @@ public class CertificateData {
      *
      * @return The issuer name or null if not set.
      */
-    @XmlTransient
     public String getIssuerName() {
         return get(issuerName);
     }
@@ -55,7 +49,6 @@ public class CertificateData {
      *
      * @return The serial number or null if not set.
      */
-    @XmlTransient
     public BigInteger getSerialNumber() {
         return get(serialNumber);
     }
@@ -74,7 +67,6 @@ public class CertificateData {
      *
      * @return The subject name or null if not set
      */
-    @XmlTransient
     public String getSubjectName() {
         return get(subjectName);
     }
@@ -93,7 +85,6 @@ public class CertificateData {
      *
      * @return The encoded certificate or null if not set
      */
-    @XmlTransient
     public byte[] getEncoded() {
         return get(encoded);
     }
@@ -145,33 +136,6 @@ public class CertificateData {
         this.encoded = encoded;
     }
 
-    @XmlAnyAttribute
-    protected Map<QName, Object> getAttributeExtensions() {
-        return attributeExtensions;
-    }
-
-    protected void setAttributeExtensions( final Map<QName, Object> attributeExtensions ) {
-        this.attributeExtensions = attributeExtensions;
-    }
-
-    @XmlElement(name="Extension")
-    protected Extension getExtension() {
-        return extension;
-    }
-
-    protected void setExtension( final Extension extension ) {
-        this.extension = extension;
-    }
-
-    @XmlAnyElement(lax=true)
-    protected List<Object> getExtensions() {
-        return extensions;
-    }
-
-    protected void setExtensions( final List<Object> extensions ) {
-        this.extensions = extensions;
-    }
-
     //- PACKAGE
 
     CertificateData() {        
@@ -183,8 +147,5 @@ public class CertificateData {
     private AttributeExtensibleBigInteger serialNumber;
     private AttributeExtensibleString subjectName;
     private AttributeExtensibleByteArray encoded;
-    private Extension extension;
-    private List<Object> extensions;
-    private Map<QName,Object> attributeExtensions;
 
 }

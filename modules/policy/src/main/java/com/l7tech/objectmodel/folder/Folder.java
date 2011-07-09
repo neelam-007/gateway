@@ -4,6 +4,8 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
 
 
@@ -23,6 +25,13 @@ public class Folder extends NamedEntityImp implements HasFolder {
     @Deprecated // For Serialization and persistence only
     public Folder() { }
 
+    @Size(min=1,max=128)
+    @Override
+    public String getName() {
+        return super.getName();
+    }
+
+    @NotNull
     @Override
     @Migration(mapName = NONE, mapValue = NONE)
     public Folder getFolder() {

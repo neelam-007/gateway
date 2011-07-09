@@ -12,6 +12,10 @@ import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 import java.lang.reflect.InvocationTargetException;
@@ -222,7 +226,6 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     }
 
     public SsgConnector(long oid, String name, int port, String scheme, boolean secure, String endpoints, int clientAuth, Long keystoreOid, String keyAlias) {
-        super();
         setOid(oid);
         setName(name);
         this.port = port;
@@ -232,6 +235,13 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
         this.clientAuth = clientAuth;
         this.keystoreOid = keystoreOid;
         this.keyAlias = keyAlias;
+    }
+
+    @Size(min=1, max=128)
+    @Transient
+    @Override
+    public String getName() {
+        return super.getName();
     }
 
     @Column(name="enabled")
@@ -249,6 +259,8 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      *
      * @return a TCP port from 1-65535.
      */
+    @Min(1025) //This is the minimum permitted in the UI
+    @Max(65535)
     @Column(name="port")
     public int getPort() {
         return port;
@@ -269,6 +281,8 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      *
      * @return a scheme; current one of "http" or "https".
      */
+    @NotNull
+    @Size(min=1, max=128)
     @Column(name="scheme", length=128, nullable=false)
     public String getScheme() {
         return scheme;
@@ -315,6 +329,8 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
                {@link #CLIENT_AUTH_ALWAYS}, or {@link #CLIENT_AUTH_OPTIONAL}.
      */
     @Column(name="client_auth")
+    @Min(0)
+    @Max(2)
     public int getClientAuth() {
         return clientAuth;
     }
@@ -373,6 +389,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      * @return the private key alias, or null if one is not configured.
      */
     @Column(name="key_alias", length=255)
+    @Size(min = 1, max=255)
     public String getKeyAlias() {
         return keyAlias;
     }

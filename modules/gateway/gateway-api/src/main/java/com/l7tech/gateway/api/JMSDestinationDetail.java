@@ -1,18 +1,13 @@
 package com.l7tech.gateway.api;
 
-import com.l7tech.gateway.api.impl.Extension;
+import com.l7tech.gateway.api.impl.ElementExtensionSupport;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
 import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
 
-import javax.xml.bind.annotation.XmlAnyAttribute;
-import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-import javax.xml.namespace.QName;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -21,7 +16,7 @@ import java.util.Map;
  * @see ManagedObjectFactory#createJMSDestinationDetails()
  */
 @XmlType(name="JMSDestinationDetailType", propOrder={"nameValue", "destinationNameValue", "inboundValue", "enabledValue", "templateValue", "properties", "extension", "extensions"})
-public class JMSDestinationDetail {
+public class JMSDestinationDetail extends ElementExtensionSupport {
 
     //- PUBLIC
 
@@ -78,7 +73,6 @@ public class JMSDestinationDetail {
      *
      * @return The name (may be null)
      */
-    @XmlTransient
     public String getName() {
         return get(name);
     }
@@ -100,7 +94,6 @@ public class JMSDestinationDetail {
      *
      * @return the name or null
      */
-    @XmlTransient
     public String getDestinationName() {
         return get(destinationName);
     }
@@ -122,7 +115,6 @@ public class JMSDestinationDetail {
      *
      * @return True if the destination is inbound
      */
-    @XmlTransient
     public boolean isInbound() {
         return get(inbound, false);
     }
@@ -144,7 +136,6 @@ public class JMSDestinationDetail {
      *
      * @return True if enabled.
      */
-    @XmlTransient
     public boolean isEnabled() {
         return get(enabled,false);
     }
@@ -163,7 +154,6 @@ public class JMSDestinationDetail {
      *
      * @return True if this is a template (may be null)
      */
-    @XmlTransient
     public Boolean isTemplate() {
         return get(template);
     }
@@ -244,33 +234,6 @@ public class JMSDestinationDetail {
         this.template = template;
     }
 
-    @XmlAnyAttribute
-    protected Map<QName, Object> getAttributeExtensions() {
-        return attributeExtensions;
-    }
-
-    protected void setAttributeExtensions( final Map<QName, Object> attributeExtensions ) {
-        this.attributeExtensions = attributeExtensions;
-    }
-
-    @XmlElement(name="Extension")
-    protected Extension getExtension() {
-        return extension;
-    }
-
-    protected void setExtension( final Extension extension ) {
-        this.extension = extension;
-    }
-
-    @XmlAnyElement(lax=true)
-    protected List<Object> getExtensions() {
-        return extensions;
-    }
-
-    protected void setExtensions( final List<Object> extensions ) {
-        this.extensions = extensions;
-    }
-
     //- PACKAGE
 
     JMSDestinationDetail() {
@@ -286,7 +249,4 @@ public class JMSDestinationDetail {
     private AttributeExtensibleBoolean enabled = new AttributeExtensibleBoolean(false);
     private AttributeExtensibleBoolean template;
     private Map<String,Object> properties;
-    private Extension extension;
-    private List<Object> extensions;
-    private Map<QName,Object> attributeExtensions;
 }

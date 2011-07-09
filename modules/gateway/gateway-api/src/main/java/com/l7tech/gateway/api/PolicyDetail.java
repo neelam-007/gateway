@@ -1,20 +1,17 @@
 package com.l7tech.gateway.api;
 
 import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
-import com.l7tech.gateway.api.impl.Extension;
+
+import com.l7tech.gateway.api.impl.AttributeExtensiblePolicyType;
+import com.l7tech.gateway.api.impl.ElementExtensionSupport;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
 
-import javax.xml.bind.annotation.XmlAnyAttribute;
-import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlEnum;
 import javax.xml.bind.annotation.XmlEnumValue;
-import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-import javax.xml.namespace.QName;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -34,7 +31,7 @@ import java.util.Map;
  * @see ManagedObjectFactory#createPolicyDetail()
  */
 @XmlType(name="PolicyDetailType", propOrder={"nameValue","policyTypeValue","properties","extension","extensions"})
-public class PolicyDetail {
+public class PolicyDetail extends ElementExtensionSupport {
 
     //- PUBLIC
 
@@ -122,7 +119,6 @@ public class PolicyDetail {
      *
      * @return The name for the policy or null
      */
-    @XmlTransient
     public String getName() {
         return get(name);
     }
@@ -141,7 +137,6 @@ public class PolicyDetail {
      *
      * @return The policy type or null.
      */
-    @XmlTransient
     public PolicyType getPolicyType() {
         return get(policyType);
     }
@@ -152,7 +147,7 @@ public class PolicyDetail {
      * @param policyType The policy type to use.
      */
     public void setPolicyType( final PolicyType policyType ) {
-        this.policyType = set(this.policyType, policyType);
+        this.policyType = setNonNull( this.policyType==null ? new AttributeExtensiblePolicyType() : this.policyType, policyType);
     }
 
     /**
@@ -217,33 +212,6 @@ public class PolicyDetail {
         this.policyType = policyType;
     }
 
-    @XmlAnyAttribute
-    protected Map<QName, Object> getAttributeExtensions() {
-        return attributeExtensions;
-    }
-
-    protected void setAttributeExtensions( final Map<QName, Object> attributeExtensions ) {
-        this.attributeExtensions = attributeExtensions;
-    }
-
-    @XmlElement(name="Extension")
-    protected Extension getExtension() {
-        return extension;
-    }
-
-    protected void setExtension( final Extension extension ) {
-        this.extension = extension;
-    }
-
-    @XmlAnyElement(lax=true)
-    protected List<Object> getExtensions() {
-        return extensions;
-    }
-
-    protected void setExtensions( final List<Object> extensions ) {
-        this.extensions = extensions;
-    }
-
     //- PACKAGE
 
     PolicyDetail() {
@@ -258,7 +226,4 @@ public class PolicyDetail {
     private AttributeExtensibleString name;
     private AttributeExtensiblePolicyType policyType;
     private Map<String,Object> properties;
-    private Map<QName,Object> attributeExtensions;
-    private Extension extension;
-    private List<Object> extensions;
 }

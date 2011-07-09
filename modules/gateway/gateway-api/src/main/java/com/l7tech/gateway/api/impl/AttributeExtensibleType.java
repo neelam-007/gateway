@@ -1,13 +1,16 @@
 package com.l7tech.gateway.api.impl;
 
-import com.l7tech.gateway.api.PolicyDetail;
+import com.l7tech.util.Functions;
 
 import javax.xml.bind.annotation.XmlAnyAttribute;
+import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.XmlValue;
 import javax.xml.namespace.QName;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -127,9 +130,22 @@ public class AttributeExtensibleType {
      * @param value The value to set (may be null)
      * @return The currentAttribute or a new attribute if currentAttribute was null (null if value is null)
      */
-    public static AttributeExtensiblePolicyType set( final AttributeExtensiblePolicyType currentAttribute,
-                                                     final PolicyDetail.PolicyType value ) {
-        return doSet( currentAttribute==null ? new AttributeExtensiblePolicyType() : currentAttribute, value );
+    public static AttributeExtensibleStringList set( final AttributeExtensibleStringList currentAttribute,
+                                                     final List<AttributeExtensibleString> value ) {
+        return doSet( currentAttribute==null ? new AttributeExtensibleStringList() : currentAttribute, value );
+    }
+
+    /**
+     * Set the value of the given attribute, create a new attribute if necessary.
+     *
+     * @param currentAttribute The target attribute (may be null)
+     * @param value The value to set (may be null)
+     * @return The currentAttribute or a new attribute if currentAttribute was null (null if value is null)
+     */
+    public static <T, AE extends AttributeExtensible<T>> AE set( final AE currentAttribute,
+                                                                 final T value,
+                                                                 final Functions.Nullary<AE> builder ) {
+        return doSet( currentAttribute==null ? builder.call() : currentAttribute, value );
     }
 
     /**
@@ -143,6 +159,44 @@ public class AttributeExtensibleType {
                                                                         final T value ) {
         return doSet( currentAttribute, value );
     }
+
+    /**
+     * Unwrap a list of attributes.
+     *
+     * @param values the values to unwrap
+     * @param <T> The value type
+     * @param <AE> The attribute extensible type.
+     * @return The unwrapped values
+     */
+    public static <T, AE extends AttributeExtensible<T>> List<T> unwrap( final List<AE> values ) {
+        return Functions.map( values, new Functions.Unary<T,AE>(){
+            @Override
+            public T call( final AE ae ) {
+                return ae.getValue();
+            }
+        } );
+    }
+
+    public static <T, AE extends AttributeExtensible<T>> List<AE> wrap( final List<T> values,
+                                                                        final Functions.Nullary<AE> builder ) {
+        List<AE> wrapped = null;
+        if ( values != null ) {
+            wrapped = new ArrayList<AE>();
+            for ( final T value : values ) {
+                final AE wrapper = builder.call();
+                wrapper.setValue( value );
+                wrapped.add( wrapper );
+            }
+        }
+        return wrapped;
+    }
+
+    public static final Functions.Nullary<AttributeExtensibleString> AttributeExtensibleStringBuilder = new Functions.Nullary<AttributeExtensibleString>(){
+        @Override
+        public AttributeExtensibleString call() {
+            return new AttributeExtensibleString();
+        }
+    };
 
     /**
      * Base class for attribute extensible properties.
@@ -298,20 +352,20 @@ public class AttributeExtensibleType {
     }
 
     /**
-     * AttributeExtensible extension for PolicyType properties.
+     * AttributeExtensible extension for StringList properties.
      */
-    @XmlType(name="PolicyTypePropertyType")
-    public static class AttributeExtensiblePolicyType extends AttributeExtensible<PolicyDetail.PolicyType> {
-        private PolicyDetail.PolicyType value;
+    @XmlType(name="StringListPropertyType")
+    public static class AttributeExtensibleStringList extends AttributeExtensible<List<AttributeExtensibleString>> {
+        private List<AttributeExtensibleString> value;
 
         @Override
-        @XmlValue
-        public PolicyDetail.PolicyType getValue() {
+        @XmlElement(name="StringValue")
+        public List<AttributeExtensibleString> getValue() {
             return value;
         }
 
         @Override
-        public void setValue( final PolicyDetail.PolicyType value ) {
+        public void setValue( final List<AttributeExtensibleString> value ) {
             this.value = value;
         }
     }

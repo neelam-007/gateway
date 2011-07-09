@@ -1,17 +1,11 @@
 package com.l7tech.gateway.api;
 
-import com.l7tech.gateway.api.impl.Extension;
+import com.l7tech.gateway.api.impl.ElementExtensionSupport;
 
-import javax.xml.bind.annotation.XmlAnyAttribute;
-import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlEnum;
 import javax.xml.bind.annotation.XmlEnumValue;
 import javax.xml.bind.annotation.XmlType;
-import javax.xml.namespace.QName;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Policy reference instructions are used to resolve policy dependency
@@ -20,7 +14,7 @@ import java.util.Map;
  * @see ManagedObjectFactory#createPolicyReferenceInstruction()
  */
 @XmlType(name="PolicyReferenceInstructionType", propOrder={"extension","extensions"})
-public class PolicyReferenceInstruction {
+public class PolicyReferenceInstruction extends ElementExtensionSupport {
 
     //- PUBLIC
 
@@ -150,35 +144,6 @@ public class PolicyReferenceInstruction {
         @XmlEnumValue("Rename") RENAME
     }
 
-    //- PROTECTED
-
-    @XmlAnyAttribute
-    protected Map<QName, Object> getAttributeExtensions() {
-        return attributeExtensions;
-    }
-
-    protected void setAttributeExtensions( final Map<QName, Object> attributeExtensions ) {
-        this.attributeExtensions = attributeExtensions;
-    }
-
-    @XmlElement(name="Extension")
-    protected Extension getExtension() {
-        return extension;
-    }
-
-    protected void setExtension( final Extension extension ) {
-        this.extension = extension;
-    }
-
-    @XmlAnyElement(lax=true)
-    protected List<Object> getExtensions() {
-        return extensions;
-    }
-
-    protected void setExtensions( final List<Object> extensions ) {
-        this.extensions = extensions;
-    }
-
     //- PACKAGE
 
     PolicyReferenceInstruction() {
@@ -191,8 +156,4 @@ public class PolicyReferenceInstruction {
     private String referenceId;
     private String mappedReferenceId;
     private String mappedName;
-    private Extension extension;
-    private List<Object> extensions;
-    private Map<QName,Object> attributeExtensions;
-
 }

@@ -21,12 +21,13 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.*;
+import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.text.ParseException;
 import java.util.*;
@@ -120,7 +121,7 @@ public class SsgConnectorManagerImpl
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("enabled", Boolean.TRUE);
         map.put("scheme", scheme);
-        List<SsgConnector> list = findMatching(Arrays.asList(map));
+        List<SsgConnector> list = findMatching(Collections.singletonList( map ));
         SsgConnector found = null;
         for (SsgConnector c : list) {
             if (c.offersEndpoint(endpoint) && scheme.equals(c.getScheme())) {
@@ -197,6 +198,7 @@ public class SsgConnectorManagerImpl
         return match.getHostAddress();
     }
 
+    @Transactional(propagation=SUPPORTS)
     @Override
     public void registerTransportProtocol(TransportDescriptor transportDescriptor, TransportModule transportModule) {
         String scheme = transportDescriptor.getScheme();
@@ -208,12 +210,14 @@ public class SsgConnectorManagerImpl
         }
     }
 
+    @Transactional(propagation=SUPPORTS)
     @Override
     public TransportModule unregisterTransportProtocol(String protocolName) {
         Pair<TransportDescriptor, TransportModule> prev = modularTransportsByScheme.remove(protocolName);
         return prev != null ? prev.right : null;
     }
 
+    @Transactional(propagation=SUPPORTS)
     @Override
     public TransportDescriptor[] getTransportProtocols() {
         List<TransportDescriptor> ret = new ArrayList<TransportDescriptor>();
@@ -224,6 +228,7 @@ public class SsgConnectorManagerImpl
         return ret.toArray(new TransportDescriptor[ret.size()]);
     }
 
+    @Transactional(propagation=SUPPORTS)
     @Override
     public PortRanges getReservedPorts() {
         Collection<PortRange> ret = new ArrayList<PortRange>();

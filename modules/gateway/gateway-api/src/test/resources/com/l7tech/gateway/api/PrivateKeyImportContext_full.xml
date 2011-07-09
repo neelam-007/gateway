@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PrivateKeyImportContext xmlns="http://ns.l7tech.com/2010/04/gateway-management" version="4" id="20774913" extendedAttribute="extension" other:extendedAttribute="extension" xmlns:other="urn:othernamespace">
+    <Pkcs12Data other:extendedAttribute="extension" xmlns:other="urn:othernamespace">FEED</Pkcs12Data>
+    <Alias other:extendedAttribute="extension" xmlns:other="urn:othernamespace">alias</Alias>
+    <Password other:extendedAttribute="extension" xmlns:other="urn:othernamespace">password</Password>
+    <Properties extendedAttribute="extension">
+        <Property key="propertiesAreNotCurrentUsed" extendedAttribute="extension">
+            <BooleanValue other:extendedAttribute="extension" xmlns:other="urn:othernamespace">true</BooleanValue>
+        </Property>
+    </Properties>
+</PrivateKeyImportContext>

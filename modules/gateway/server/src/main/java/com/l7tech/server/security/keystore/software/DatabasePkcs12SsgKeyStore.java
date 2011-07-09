@@ -25,7 +25,7 @@ import java.util.logging.Logger;
  */
 public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
     protected static final Logger logger = Logger.getLogger(DatabasePkcs12SsgKeyStore.class.getName());
-    private static final long refreshTime = 5 * 1000;
+    private static final long refreshTime = (long) (5 * 1000);
     private static final String DB_FORMAT = "sdb.pkcs12";
 
     private final long id;
@@ -35,7 +35,7 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
 
     private KeyStore cachedKeystore = null;
     private int keystoreVersion = -1;
-    private long lastLoaded = 0;
+    private long lastLoaded = 0L;
 
     /**
      * Create an SsgKeyStore that uses a PKCS#12 file in a KeystoreFile in the database as its backing store.
@@ -57,22 +57,27 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
             throw new IllegalArgumentException("ClusterPropertyManager and KeystoreFileManager must be provided");
     }
 
+    @Override
     public String getId() {
         return String.valueOf(id);
     }
 
+    @Override
     public long getOid() {
         return id;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public SsgKeyStoreType getType() {
         return SsgKeyStoreType.PKCS12_SOFTWARE;
     }
 
+    @Override
     protected synchronized KeyStore keyStore() throws KeyStoreException {
         if (cachedKeystore == null || System.currentTimeMillis() - lastLoaded > refreshTime) {
             try {
@@ -92,14 +97,17 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
         return cachedKeystore;
     }
 
+    @Override
     protected String getFormat() {
         return DB_FORMAT;
     }
 
+    @Override
     protected Logger getLogger() {
         return logger;
     }
 
+    @Override
     protected char[] getEntryPassword() {
         return password;
     }
@@ -144,8 +152,10 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
         }
     }
 
+    @Override
     protected <OUT> Future<OUT> mutateKeystore(final Runnable transactionCallback, final Callable<OUT> mutator) throws KeyStoreException {
         return submitMutation(AdminInfo.find(false).wrapCallable(new Callable<OUT>() {
+            @Override
             public OUT call() throws Exception {
                 final Object[] out = new Object[] { null };
                 try {
@@ -170,6 +180,10 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
                         cachedKeystore = bytesToKeyStore(updated.getDatabytes());
                     }
                 } catch (UpdateException e) {
+                    // use existing KeyStoreException (if any)
+                    if ( ExceptionUtils.causedBy( e, KeyStoreException.class )) {
+                        throw ExceptionUtils.getCauseIfCausedBy( e, KeyStoreException.class );
+                    }
                     throw new KeyStoreException(e);
                 }
                 //noinspection unchecked

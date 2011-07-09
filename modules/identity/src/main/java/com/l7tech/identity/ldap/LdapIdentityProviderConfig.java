@@ -3,6 +3,7 @@ package com.l7tech.identity.ldap;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 
+import javax.xml.bind.annotation.XmlEnumValue;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
@@ -522,7 +523,12 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
         setProperty(GROUP_MEMBERSHIP_CASE_INSENSITIVE, caseInsensitive);
     }
 
-    public enum UserCertificateUseType { NONE, INDEX, INDEX_CUSTOM, SEARCH }
+    public enum UserCertificateUseType {
+        @XmlEnumValue("None") NONE,
+        @XmlEnumValue("Index") INDEX,
+        @XmlEnumValue("Custom Index") INDEX_CUSTOM,
+        @XmlEnumValue("Search") SEARCH
+    }
 
     public static final String URL = "ldapurl";
     public static final String SEARCH_BASE = "ldapsearchbase";

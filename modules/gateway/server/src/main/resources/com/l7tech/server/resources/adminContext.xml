@@ -272,6 +272,7 @@
                 </bean>
             </list>
         </constructor-arg>
+        <constructor-arg index="6" ref="ldapTemplateManager"/>
         <property name="identityProviderConfigManager" ref="identityProviderConfigManager"/>
         <property name="clientCertManager" ref="clientCertManager"/>
         <property name="identityProviderFactory" ref="identityProviderFactory"/>

@@ -11,6 +11,7 @@ import javax.security.auth.Subject;
 import java.rmi.server.ServerNotActiveException;
 import java.security.AccessController;
 import java.security.Principal;
+import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -108,12 +109,16 @@ public class AdminInfo {
         return new Callable<OUT>() {
             @Override
             public OUT call() throws Exception {
-                return Subject.doAs(subject, new PrivilegedExceptionAction<OUT>() {
-                    @Override
-                    public OUT run() throws Exception{
-                        return toWrap.call();
-                    }
-                });
+                try {
+                    return Subject.doAs(subject, new PrivilegedExceptionAction<OUT>() {
+                        @Override
+                        public OUT run() throws Exception{
+                            return toWrap.call();
+                        }
+                    });
+                } catch ( final PrivilegedActionException e ) {
+                    throw e.getException();  // unwrap cause  
+                }
             }
         };
     }

@@ -2,13 +2,13 @@ package com.l7tech.gateway.api;
 
 import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
 import com.l7tech.gateway.api.impl.AccessorSupport;
-import com.l7tech.gateway.api.impl.Extension;
+import com.l7tech.gateway.api.impl.ElementExtensionSupport;
+import com.l7tech.gateway.api.impl.ManagedObjectReference;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
 
 import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.List;
@@ -19,6 +19,8 @@ import java.util.Map;
  *
  * <p>The following properties are used:
  * <ul>
+ *   <li><code>revocationCheckingEnabled</code>: When true revocation checking
+ *       is performed for the certificate.</li>
  *   <li><code>trustAnchor</code>: When true the certificate is a trust anchor
  *       (terminates a certificate path)</li>
  *   <li><code>trustedAsSamlAttestingEntity</code>: When true the certificate
@@ -32,17 +34,18 @@ import java.util.Map;
  *   <li><code>trustedForSsl</code>: When true the certificate is directly
  *       trusted as a server certificate.</li>
  *   <li><code>verifyHostname</code>: Should SSL/TLS server host names be
- *       verified for this certificate.</li>
+ *       verified for this certificate (true if not specified)</li>
  * </ul>
+ * Properties default to false unless otherwise noted.
  * </p>
  *
- * <p>The Accessor for trusted certificates is read only. Trusted certificates
+ * <p>The Accessor for trusted certificates supports read and write. Trusted certificates
  * can be accessed by identifier only.</p>
  *
  * @see ManagedObjectFactory#createTrustedCertificate()
  */
 @XmlRootElement(name="TrustedCertificate")
-@XmlType(name="TrustedCertificateType", propOrder={"nameValue","certificateData","properties","extension","extensions"})
+@XmlType(name="TrustedCertificateType", propOrder={"nameValue","certificateData","properties","trustedCertificateExtension","extensions"})
 @AccessorSupport.AccessibleResource(name ="trustedCertificates")
 public class TrustedCertificateMO extends AccessibleObject {
     
@@ -53,7 +56,6 @@ public class TrustedCertificateMO extends AccessibleObject {
      *
      * @return The name or null.
      */
-    @XmlTransient
     public String getName() {
         return get(name);
     }
@@ -84,6 +86,28 @@ public class TrustedCertificateMO extends AccessibleObject {
      */
     public void setCertificateData( final CertificateData certificateData ) {
         this.certificateData = certificateData;
+    }
+
+    /**
+     * Get the identifier of the revocation checking policy (optional)
+     *
+     * @return The identifier for the policy or null
+     */
+    public String getRevocationCheckingPolicyId() {
+        return trustedCertificateExtension.revocationCheckingPolicyReference == null ?
+                null :
+                trustedCertificateExtension.revocationCheckingPolicyReference.getId();
+    }
+
+    /**
+     * Set the identifier for the revocation checking policy or null for none
+     *
+     * @param id The policy identifier.
+     */
+    public void setRevocationCheckingPolicyId( final String id ) {
+        trustedCertificateExtension.revocationCheckingPolicyReference = id==null ?
+                null :
+                new ManagedObjectReference( RevocationCheckingPolicyMO.class, id );
     }
 
     /**
@@ -118,14 +142,14 @@ public class TrustedCertificateMO extends AccessibleObject {
     }
 
     @XmlElement(name="Extension")
-    @Override
-    protected Extension getExtension() {
-        return super.getExtension();
+    protected TrustedCertificateExtension getTrustedCertificateExtension() {
+        return trustedCertificateExtension;
     }
 
-    @Override
-    protected void setExtension( final Extension extension ) {
-        super.setExtension( extension );
+    protected void setTrustedCertificateExtension( final TrustedCertificateExtension trustedCertificateExtension ) {
+        this.trustedCertificateExtension = trustedCertificateExtension==null ?
+                new TrustedCertificateExtension() :
+                trustedCertificateExtension;
     }
 
     @XmlAnyElement(lax=true)
@@ -134,9 +158,18 @@ public class TrustedCertificateMO extends AccessibleObject {
         return super.getExtensions();
     }
 
-    @Override
-    protected void setExtensions( final List<Object> extensions ) {
-        super.setExtensions( extensions );
+    @XmlType(name="TrustedCertificateExtensionType", propOrder={"revocationCheckingPolicyReference", "extension", "extensions"})
+    protected static class TrustedCertificateExtension extends ElementExtensionSupport {
+        private ManagedObjectReference revocationCheckingPolicyReference;
+
+        @XmlElement(name="RevocationCheckingPolicyReference")
+        protected ManagedObjectReference getRevocationCheckingPolicyReference() {
+            return revocationCheckingPolicyReference;
+        }
+
+        protected void setRevocationCheckingPolicyReference( final ManagedObjectReference revocationCheckingPolicyReference ) {
+            this.revocationCheckingPolicyReference = revocationCheckingPolicyReference;
+        }
     }
 
     //- PACKAGE
@@ -149,4 +182,5 @@ public class TrustedCertificateMO extends AccessibleObject {
     private AttributeExtensibleString name;
     private CertificateData certificateData;
     private Map<String,Object> properties;
+    private TrustedCertificateExtension trustedCertificateExtension = new TrustedCertificateExtension();
 }

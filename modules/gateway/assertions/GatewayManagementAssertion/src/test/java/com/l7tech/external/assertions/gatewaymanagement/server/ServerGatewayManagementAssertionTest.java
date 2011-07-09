@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.service.ServiceTemplate;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
@@ -43,6 +44,7 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyManagerStub;
 import com.l7tech.server.security.keystore.SsgKeyFinderStub;
 import com.l7tech.server.security.keystore.SsgKeyStoreManagerStub;
+import com.l7tech.server.security.password.SecurePasswordManagerStub;
 import com.l7tech.server.security.rbac.FolderManagerStub;
 import com.l7tech.server.security.rbac.RbacServicesStub;
 import com.l7tech.server.service.ServiceDocumentManagerStub;
@@ -288,11 +290,56 @@ public class ServerGatewayManagementAssertionTest {
     }
 
     @Test
+    public void testCreateCertificate() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/trustedCertificates";
+        String payload =
+                "<TrustedCertificate xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                "    <Name>OASIS Interop Test Root</Name>\n" +
+                "    <CertificateData>\n" +
+                "        <Encoded>\n" +
+                "MIIDizCCAnOgAwIBAgIQWaCxRe3INcSU8VNJ4/HerDANBgkqhkiG9w0BAQUFADAy\n" +
+                "MQ4wDAYDVQQKDAVPQVNJUzEgMB4GA1UEAwwXT0FTSVMgSW50ZXJvcCBUZXN0IFJv\n" +
+                "b3QwHhcNMDUwMzE5MDAwMDAwWhcNMTkwMzE5MjM1OTU5WjAwMQ4wDAYDVQQKDAVP\n" +
+                "QVNJUzEeMBwGA1UEAwwVT0FTSVMgSW50ZXJvcCBUZXN0IENBMIIBIjANBgkqhkiG\n" +
+                "9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmR2GR3IduCfoZfvmwYpepKNZN6iaDcm4Jmqq\n" +
+                "C3nN5NiuQ4ROq2YCRhG90QW8puhsO6XaRiRO6WQQpwdtm/tgseDAAdw0bMPWrnja\n" +
+                "FhgFlaEB0eK5fu9UiCPGkwurWNc8EQlk2r71uCwOx6BYGFsnSnBEfj64zoVri2ol\n" +
+                "ksXc2aos6urhujP6zvixsCxfo8Jq2v1yLUZpDaiTp2GfyDMSZKROcBz4FnEIN7yK\n" +
+                "ZDMYpHSx2SmcwmQnjeeAx1EH876+PpycsbJwStt3lIYchk5vWqJSZzN7PElEgzLW\n" +
+                "v8QeWZ0Zb8wteQyWrG5wN2FCTcqF3W29FBeZig6u5Y3mibwDYQIDAQABo4GeMIGb\n" +
+                "MBIGA1UdEwEB/wQIMAYBAf8CAQAwNQYDVR0fBC4wLDAqoiiGJmh0dHA6Ly9pbnRl\n" +
+                "cm9wLmJidGVzdC5uZXQvY3JsL3Jvb3QuY3JsMA4GA1UdDwEB/wQEAwIBBjAdBgNV\n" +
+                "HQ4EFgQUwJ0o/MHrNaEd1qqqoBwaTcJJDw8wHwYDVR0jBBgwFoAU3/6RlcdWSCY9\n" +
+                "wNw5PcYJ90z6SOIwDQYJKoZIhvcNAQEFBQADggEBADvsOGOmhnxjwW2+2c17/W7o\n" +
+                "4BolmqqlVFppFyEB4pUd+kqJ3XFiyVxweVwGdJfpUQLKP/KBzpqo4D11ttMaE2io\n" +
+                "at0RUGylAl9PG/yalOH/vMgFq4XkhokoHPPD1tUbiuY8+pD+5jXR0NNj25yv7iSu\n" +
+                "tZ7xA7bcMx+RQpDO9Mzhlk03SZt5FjsLrimLiEOtkTkBt8Gw1wCu253+Bt5JHboB\n" +
+                "hgEa9hTmdQ3hYqO/q54Gymmd/NsNCxZDbUxVqu/XzBxZer6AQ4domv5fc9efCOk0\n" +
+                "k06aMmYjKXEYI5i9OqutWu442ZXJV6lnWKZ1akFi/sA4DNnYPrz825+hzOeesBI=</Encoded>\n" +
+                "    </CertificateData>\n" +
+                "    <Properties>\n" +
+                "        <Property key=\"trustAnchor\">\n" +
+                "            <BooleanValue>true</BooleanValue>\n" +
+                "        </Property>\n" +
+                "    </Properties>\n" +
+                "</TrustedCertificate>";
+        String expectedId = "3";
+        doCreate( resourceUri, payload, expectedId );
+    }
+
+    @Test
     public void testCreateClusterProperty() throws Exception {
         String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/clusterProperties";
         String payload = "<n1:ClusterProperty xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\"><n1:Name>test</n1:Name><n1:Value>value</n1:Value></n1:ClusterProperty>";
         String expectedId = "4";
         doCreate( resourceUri, payload, expectedId );
+    }
+
+    @Test
+    public void testCreateFolder() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/folders";
+        String payload = "<n1:Folder xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\" folderId=\"1\"><n1:Name>test</n1:Name></n1:Folder>";
+        doCreate( resourceUri, payload, "2" );
     }
 
     @Test
@@ -307,6 +354,77 @@ public class ServerGatewayManagementAssertionTest {
                 "</Resource></ResourceSet></Resources></Service>";
         String expectedId = "3";
         doCreate( resourceUri, payload, expectedId );
+    }
+
+    @Test
+    public void testCreateFederatedIdentityProvider() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/identityProviders";
+        String payload = "<IdentityProvider xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\" version=\"33\" id=\"147226624\" extendedAttribute=\"extension\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
+                "    <Name other:extendedAttribute=\"extension\" xmlns:other=\"urn:othernamespace\">QAAD4</Name>\n" +
+                "    <IdentityProviderType other:extendedAttribute=\"extension\" xmlns:other=\"urn:othernamespace\">Federated</IdentityProviderType>\n" +
+                "    <Properties extendedAttribute=\"extension\">\n" +
+                "        <Property key=\"propertiesAreNotCurrentUsed\" extendedAttribute=\"extension\">\n" +
+                "            <BooleanValue>true</BooleanValue>\n" +
+                "        </Property>\n" +
+                "    </Properties>\n" +
+                "    <Extension other:extendedAttribute=\"extension\" xmlns:other=\"urn:othernamespace\">\n" +
+                "        <FederatedIdentityProviderDetail other:extendedAttribute=\"extension\" xmlns:other=\"urn:othernamespace\">\n" +
+                "            <CertificateReferences other:extendedAttribute=\"extension\" xmlns:other=\"urn:othernamespace\">\n" +
+                "                <Reference resourceUri=\"http://ns.l7tech.com/2010/04/gateway-management/privateKeys\" id=\"1\" other:extendedAttribute=\"extension\" xmlns:other=\"urn:othernamespace\"/>\n" +
+                "            </CertificateReferences>\n" +
+                "        </FederatedIdentityProviderDetail>\n" +
+                "    </Extension>\n" +
+                "</IdentityProvider>";
+        String[] expectedIds = new String[]{"1","2"};
+        doCreate( resourceUri, payload, expectedIds );
+    }
+
+    @Test
+    public void testCreateLDAPIdentityProvider() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/identityProviders";
+        String payload = "<IdentityProvider xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\" version=\"33\" id=\"147226624\" extendedAttribute=\"extension\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
+                "    <Name other:extendedAttribute=\"extension\" xmlns:other=\"urn:othernamespace\">LDAP1</Name>\n" +
+                "    <IdentityProviderType other:extendedAttribute=\"extension\" xmlns:other=\"urn:othernamespace\">LDAP</IdentityProviderType>\n" +
+                "    <Properties extendedAttribute=\"extension\">\n" +
+                "        <Property key=\"userCertificateUsage\" extendedAttribute=\"extension\">\n" +
+                "            <StringValue>Index</StringValue>\n" +
+                "        </Property>\n" +
+                "    </Properties>\n" +
+                "    <Extension other:extendedAttribute=\"extension\" xmlns:other=\"urn:othernamespace\">\n" +
+                "        <LdapIdentityProviderDetail other:extendedAttribute=\"extension\" xmlns:other=\"urn:othernamespace\">\n" +
+                "            <SourceType>MicrosoftActiveDirectory</SourceType>\n" +
+                "            <ServerUrls><StringValue>ldap://10.7.2.1</StringValue></ServerUrls>\n" +
+                "            <SearchBase>cn=something</SearchBase>\n" +
+                "            <BindDn>browse</BindDn>\n" +
+                "            <BindPassword>password</BindPassword>\n" +
+                "        </LdapIdentityProviderDetail>\n" +
+                "    </Extension>\n" +
+                "</IdentityProvider>";
+        String[] expectedIds = new String[]{"1","2"};
+        doCreate( resourceUri, payload, expectedIds );
+    }
+
+    @Test
+    public void testCreateJDBCConnection() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/jdbcConnections";
+        String payload =
+                "<JDBCConnection xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                "    <Name>Another Test Connection</Name>\n" +
+                "    <Enabled>true</Enabled>\n" +
+                "    <Extension>\n" +
+                "        <DriverClass>com.mysql.jdbc.Driver</DriverClass>\n" +
+                "        <JdbcUrl>jdbc:mysql://localhost:3306/ssg</JdbcUrl>\n" +
+                "        <ConnectionProperties>\n" +
+                "            <Property key=\"user\">\n" +
+                "                <StringValue>username</StringValue>\n" +
+                "            </Property>\n" +
+                "            <Property key=\"password\">\n" +
+                "                <StringValue>password</StringValue>\n" +
+                "            </Property>\n" +
+                "        </ConnectionProperties>\n" +
+                "    </Extension>\n" +
+                "</JDBCConnection>";
+        doCreate( resourceUri, payload, "2", "3", "4" );
     }
 
     @Test
@@ -487,6 +605,34 @@ public class ServerGatewayManagementAssertionTest {
         doCreate( resourceUri, payload, "4", "5" );
     }
 
+    public void testCreateStoredPassword() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/storedPasswords";
+        String payload =
+                "<StoredPassword xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                "    <Name>Stored Password</Name>\n" +
+                "    <Password>password</Password>\n" +
+                "</StoredPassword>";
+        doCreate( resourceUri, payload, "2" );
+    }
+
+    @Test
+    public void testPutCertificate() throws Exception {
+        String message =
+                "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/trustedCertificates</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">2</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body><TrustedCertificate xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\" id=\"2\" version=\"0\">\n" +
+                "    <Name>Bob (updated)</Name>\n" +
+                "    <CertificateData>\n" +
+                "        <Encoded>MIIDCjCCAfKgAwIBAgIQYDju2/6sm77InYfTq65x+DANBgkqhkiG9w0BAQUFADAwMQ4wDAYDVQQKDAVPQVNJUzEeMBwGA1UEAwwVT0FTSVMgSW50ZXJvcCBUZXN0IENBMB4XDTA1MDMxOTAwMDAwMFoXDTE4MDMxOTIzNTk1OVowQDEOMAwGA1UECgwFT0FTSVMxIDAeBgNVBAsMF09BU0lTIEludGVyb3AgVGVzdCBDZXJ0MQwwCgYDVQQDDANCb2IwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAMCquMva4lFDrv3fXQnKK8CkSU7HvVZ0USyJtlL/yhmHH/FQXHyYY+fTcSyWYItWJYiTZ99PAbD+6EKBGbdfuJNUJCGaTWc5ZDUISqM/SGtacYe/PD/4+g3swNPzTUQAIBLRY1pkr2cm3s5Ch/f+mYVNBR41HnBeIxybw25kkoM7AgMBAAGjgZMwgZAwCQYDVR0TBAIwADAzBgNVHR8ELDAqMCiiJoYkaHR0cDovL2ludGVyb3AuYmJ0ZXN0Lm5ldC9jcmwvY2EuY3JsMA4GA1UdDwEB/wQEAwIEsDAdBgNVHQ4EFgQUXeg55vRyK3ZhAEhEf+YT0z986L0wHwYDVR0jBBgwFoAUwJ0o/MHrNaEd1qqqoBwaTcJJDw8wDQYJKoZIhvcNAQEFBQADggEBAIiVGv2lGLhRvmMAHSlY7rKLVkv+zEUtSyg08FBT8z/RepUbtUQShcIqwWsemDU8JVtsucQLc+g6GCQXgkCkMiC8qhcLAt3BXzFmLxuCEAQeeFe8IATr4wACmEQE37TEqAuWEIanPYIplbxYgwP0OBWBSjcRpKRAxjEzuwObYjbll6vKdFHYIweWhhWPrefquFp7TefTkF4D3rcctTfWJ76I5NrEVld+7PBnnJNpdDEuGsoaiJrwTW3Ixm40RXvG3fYS4hIAPeTCUk3RkYfUkqlaaLQnUrF2hZSgiBNLPe8gGkYORccRIlZCGQDEpcWl1Uf9OHw6fC+3hkqolFd5CVI=</Encoded>\n" +
+                "    </CertificateData>\n" +
+                "</TrustedCertificate></s:Body></s:Envelope>";
+        final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Put", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element trustedCertificate = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "TrustedCertificate");
+        final Element name = XmlUtil.findExactlyOneChildElementByName(trustedCertificate, NS_GATEWAY_MANAGEMENT, "Name");
+
+        assertEquals("Trusted certificate name", "Bob (updated)", XmlUtil.getTextValue(name));
+    }
+
     @Test
     public void testPutClusterProperty() throws Exception {
         String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/clusterProperties</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body> <n1:ClusterProperty id=\"1\" version=\"0\"><n1:Name>test</n1:Name><n1:Value>value2</n1:Value></n1:ClusterProperty>  </s:Body></s:Envelope>";
@@ -498,6 +644,66 @@ public class ServerGatewayManagementAssertionTest {
         final Element value = XmlUtil.findExactlyOneChildElementByName(clusterProperty, NS_GATEWAY_MANAGEMENT, "Value");
 
         assertEquals("Property value", "value2", XmlUtil.getTextValue(value));
+    }
+
+    @Test
+    public void testPutFolder() throws Exception {
+        String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/folders</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body> <n1:Folder xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\" folderId=\"-5002\" id=\"1\" version=\"0\"><n1:Name>Test Folder (updated)</n1:Name></n1:Folder> </s:Body></s:Envelope>";
+
+        final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Put", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element folder = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "Folder");
+        final Element name = XmlUtil.findExactlyOneChildElementByName(folder, NS_GATEWAY_MANAGEMENT, "Name");
+
+        assertEquals("Name", "Test Folder (updated)", XmlUtil.getTextValue(name));
+    }
+
+    @Test
+    public void testPutJdbcConnection() throws Exception {
+        String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/jdbcConnections</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>" +
+              "<l7:JDBCConnection id=\"1\" version=\"0\">\n" +
+              "    <l7:Name>A Test Connection (updated)</l7:Name>\n" +
+              "    <l7:Enabled>false</l7:Enabled>\n" +
+              "    <l7:Properties>\n" +
+              "        <l7:Property key=\"maximumPoolSize\">\n" +
+              "            <l7:IntegerValue>16</l7:IntegerValue>\n" +
+              "        </l7:Property>\n" +
+              "        <l7:Property key=\"minimumPoolSize\">\n" +
+              "            <l7:IntegerValue>4</l7:IntegerValue>\n" +
+              "        </l7:Property>\n" +
+              "    </l7:Properties>\n" +
+              "    <l7:Extension>\n" +
+              "        <l7:DriverClass>com.mysql.jdbc.Driver</l7:DriverClass>\n" +
+              "        <l7:JdbcUrl>jdbc:mysql://localhost:3306/ssg</l7:JdbcUrl>\n" +
+              "        <l7:ConnectionProperties>\n" +
+              "            <l7:Property key=\"user\">\n" +
+              "                <l7:StringValue>username</l7:StringValue>\n" +
+              "            </l7:Property>\n" +
+              "            <l7:Property key=\"password\">\n" +
+              "                <l7:StringValue>password</l7:StringValue>\n" +
+              "            </l7:Property>\n" +
+              "        </l7:ConnectionProperties>\n" +
+              "    </l7:Extension>\n" +
+              "</l7:JDBCConnection>" +
+              "</s:Body></s:Envelope>";
+
+        final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Put", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element jdbcConnection = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "JDBCConnection");
+        final Element jdbcConnectionName = XmlUtil.findExactlyOneChildElementByName(jdbcConnection, NS_GATEWAY_MANAGEMENT, "Name");
+        final Element jdbcConnectionEnabled = XmlUtil.findExactlyOneChildElementByName(jdbcConnection, NS_GATEWAY_MANAGEMENT, "Enabled");
+        final Element jdbcConnectionExtension = XmlUtil.findExactlyOneChildElementByName(jdbcConnection, NS_GATEWAY_MANAGEMENT, "Extension");
+        final Element jdbcConnectionExtensionDriverClass = XmlUtil.findExactlyOneChildElementByName(jdbcConnectionExtension, NS_GATEWAY_MANAGEMENT, "DriverClass");
+        final Element jdbcConnectionExtensionJdbcUrl = XmlUtil.findExactlyOneChildElementByName(jdbcConnectionExtension, NS_GATEWAY_MANAGEMENT, "JdbcUrl");
+
+        assertEquals("JDBC connection id", "1", jdbcConnection.getAttribute( "id" ));
+        assertEquals("JDBC connection version", "0", jdbcConnection.getAttribute( "version" ));
+        assertEquals("JDBC connection name", "A Test Connection (updated)", XmlUtil.getTextValue(jdbcConnectionName));
+        assertEquals("JDBC connection enabled", "false", XmlUtil.getTextValue(jdbcConnectionEnabled));
+        assertEquals("JDBC connection extension driver class", "com.mysql.jdbc.Driver", XmlUtil.getTextValue(jdbcConnectionExtensionDriverClass));
+        assertEquals("JDBC connection extension jdbc url", "jdbc:mysql://localhost:3306/ssg", XmlUtil.getTextValue(jdbcConnectionExtensionJdbcUrl));
     }
 
     @Test
@@ -593,6 +799,34 @@ public class ServerGatewayManagementAssertionTest {
     }
 
     @Test
+    public void testPutPrivateKey() throws Exception {
+        String message =
+                "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/privateKeys</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">-1:bob</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>\n" +
+                "<PrivateKey xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\" keystoreId=\"-1\" alias=\"bob\" id=\"-1:bob\">\n" +
+                        "    <CertificateChain>\n" +
+                        "        <CertificateData>\n" +
+                        "            <Encoded>MIIDDDCCAfSgAwIBAgIQM6YEf7FVYx/tZyEXgVComTANBgkqhkiG9w0BAQUFADAwMQ4wDAYDVQQKDAVPQVNJUzEeMBwGA1UEAwwVT0FTSVMgSW50ZXJvcCBUZXN0IENBMB4XDTA1MDMxOTAwMDAwMFoXDTE4MDMxOTIzNTk1OVowQjEOMAwGA1UECgwFT0FTSVMxIDAeBgNVBAsMF09BU0lTIEludGVyb3AgVGVzdCBDZXJ0MQ4wDAYDVQQDDAVBbGljZTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAoqi99By1VYo0aHrkKCNT4DkIgPL/SgahbeKdGhrbu3K2XG7arfD9tqIBIKMfrX4Gp90NJa85AV1yiNsEyvq+mUnMpNcKnLXLOjkTmMCqDYbbkehJlXPnaWLzve+mW0pJdPxtf3rbD4PS/cBQIvtpjmrDAU8VsZKT8DN5Kyz+EZsCAwEAAaOBkzCBkDAJBgNVHRMEAjAAMDMGA1UdHwQsMCowKKImhiRodHRwOi8vaW50ZXJvcC5iYnRlc3QubmV0L2NybC9jYS5jcmwwDgYDVR0PAQH/BAQDAgSwMB0GA1UdDgQWBBQK4l0TUHZ1QV3V2QtlLNDm+PoxiDAfBgNVHSMEGDAWgBTAnSj8wes1oR3WqqqgHBpNwkkPDzANBgkqhkiG9w0BAQUFAAOCAQEABTqpOpvW+6yrLXyUlP2xJbEkohXHI5OWwKWleOb9hlkhWntUalfcFOJAgUyH30TTpHldzx1+vK2LPzhoUFKYHE1IyQvokBN2JjFO64BQukCKnZhldLRPxGhfkTdxQgdf5rCK/wh3xVsZCNTfuMNmlAM6lOAg8QduDah3WFZpEA0s2nwQaCNQTNMjJC8tav1CBr6+E5FAmwPXP7pJxn9Fw9OXRyqbRA4v2y7YpbGkG2GI9UvOHw6SGvf4FRSthMMO35YbpikGsLix3vAsXWWi4rwfVOYzQK0OFPNi9RMCUdSH06m9uLWckiCxjos0FQODZE9l4ATGy9s9hNVwryOJTw==</Encoded>\n" +
+                        "        </CertificateData>\n" +
+                        "        <CertificateData>\n" +
+                        "            <Encoded>MIIDizCCAnOgAwIBAgIQWaCxRe3INcSU8VNJ4/HerDANBgkqhkiG9w0BAQUFADAyMQ4wDAYDVQQKDAVPQVNJUzEgMB4GA1UEAwwXT0FTSVMgSW50ZXJvcCBUZXN0IFJvb3QwHhcNMDUwMzE5MDAwMDAwWhcNMTkwMzE5MjM1OTU5WjAwMQ4wDAYDVQQKDAVPQVNJUzEeMBwGA1UEAwwVT0FTSVMgSW50ZXJvcCBUZXN0IENBMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmR2GR3IduCfoZfvmwYpepKNZN6iaDcm4JmqqC3nN5NiuQ4ROq2YCRhG90QW8puhsO6XaRiRO6WQQpwdtm/tgseDAAdw0bMPWrnjaFhgFlaEB0eK5fu9UiCPGkwurWNc8EQlk2r71uCwOx6BYGFsnSnBEfj64zoVri2olksXc2aos6urhujP6zvixsCxfo8Jq2v1yLUZpDaiTp2GfyDMSZKROcBz4FnEIN7yKZDMYpHSx2SmcwmQnjeeAx1EH876+PpycsbJwStt3lIYchk5vWqJSZzN7PElEgzLWv8QeWZ0Zb8wteQyWrG5wN2FCTcqF3W29FBeZig6u5Y3mibwDYQIDAQABo4GeMIGbMBIGA1UdEwEB/wQIMAYBAf8CAQAwNQYDVR0fBC4wLDAqoiiGJmh0dHA6Ly9pbnRlcm9wLmJidGVzdC5uZXQvY3JsL3Jvb3QuY3JsMA4GA1UdDwEB/wQEAwIBBjAdBgNVHQ4EFgQUwJ0o/MHrNaEd1qqqoBwaTcJJDw8wHwYDVR0jBBgwFoAU3/6RlcdWSCY9wNw5PcYJ90z6SOIwDQYJKoZIhvcNAQEFBQADggEBADvsOGOmhnxjwW2+2c17/W7o4BolmqqlVFppFyEB4pUd+kqJ3XFiyVxweVwGdJfpUQLKP/KBzpqo4D11ttMaE2ioat0RUGylAl9PG/yalOH/vMgFq4XkhokoHPPD1tUbiuY8+pD+5jXR0NNj25yv7iSutZ7xA7bcMx+RQpDO9Mzhlk03SZt5FjsLrimLiEOtkTkBt8Gw1wCu253+Bt5JHboBhgEa9hTmdQ3hYqO/q54Gymmd/NsNCxZDbUxVqu/XzBxZer6AQ4domv5fc9efCOk0k06aMmYjKXEYI5i9OqutWu442ZXJV6lnWKZ1akFi/sA4DNnYPrz825+hzOeesBI=</Encoded>\n" +
+                        "        </CertificateData>\n" +
+                        "    </CertificateChain>\n" +
+                        "</PrivateKey>\n" +
+                "</s:Body></s:Envelope>";
+
+        final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Put", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element privateKey = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "PrivateKey");
+        final Element certificateChain = XmlUtil.findExactlyOneChildElementByName(privateKey, NS_GATEWAY_MANAGEMENT, "CertificateChain");
+        final Element certificateData = XmlUtil.findFirstChildElementByName(certificateChain, NS_GATEWAY_MANAGEMENT, "CertificateData");
+        final Element subjectName = XmlUtil.findFirstChildElementByName(certificateData, NS_GATEWAY_MANAGEMENT, "SubjectName");
+
+        assertEquals("PrivateKey id", "0:bob", privateKey.getAttribute( "id" ));
+        assertEquals("PrivateKey cert chain [0] subject", "CN=Alice,OU=OASIS Interop Test Cert,O=OASIS", XmlUtil.getTextValue( subjectName ));
+    }
+
+    @Test
     public void testPutResourceDocument() throws Exception {
         String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/resources</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>" +
                 "    <l7:ResourceDocument id=\"1\" version=\"0\">\n" +
@@ -677,6 +911,36 @@ public class ServerGatewayManagementAssertionTest {
         assertEquals("Service detail version", "1", serviceDetail.getAttribute( "version" ));
         assertEquals("Service detail name", "Test Service 2", XmlUtil.getTextValue(serviceDetailName));
         assertEquals("Service soapVersion", "1.2", getPropertyValue(properties, "soapVersion"));
+    }
+
+    @Test
+    public void testPutStoredPassword() throws Exception {
+        String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/storedPasswords</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002101</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>" +
+                "<StoredPassword version=\"0\" id=\"1\">\n" +
+                "    <Name>test updated</Name>\n" +
+                "    <Properties>\n" +
+                "        <Property key=\"usageFromVariable\">\n" +
+                "            <BooleanValue>true</BooleanValue>\n" +
+                "        </Property>\n" +
+                "        <Property key=\"description\">\n" +
+                "            <StringValue>description updated</StringValue>\n" +
+                "        </Property>\n" +
+                "    </Properties>\n" +
+                "</StoredPassword>" +
+                "</s:Body></s:Envelope>";
+
+        final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Put", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element storedPassword = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "StoredPassword");
+        final Element name = XmlUtil.findExactlyOneChildElementByName(storedPassword, NS_GATEWAY_MANAGEMENT, "Name");
+        final Element properties = XmlUtil.findExactlyOneChildElementByName(storedPassword, NS_GATEWAY_MANAGEMENT, "Properties");
+
+        assertEquals("Stored password id", "1", storedPassword.getAttribute( "id" ));
+        assertEquals("Stored password version", "0", storedPassword.getAttribute( "version" ));
+        assertEquals("Stored password name", "test updated", XmlUtil.getTextValue(name));
+        assertEquals("Stored password description", "description updated", getPropertyValue(properties, "description"));
+        assertEquals("Stored password usageFromVariable", "true", getPropertyValue(properties, "usageFromVariable"));
     }
 
     @Test
@@ -1204,7 +1468,7 @@ public class ServerGatewayManagementAssertionTest {
             final List<Element> validationMessageElements = XmlUtil.findChildElementsByName( validationMessages, NS_GATEWAY_MANAGEMENT, "ValidationMessage" );
 
             assertEquals("Validation status", "Error", XmlUtil.getTextValue(validationStatus));
-            assertEquals("Validation messages size", 3, validationMessageElements.size());
+            assertEquals("Validation messages size", 3L, (long) validationMessageElements.size() );
         }
     }
 
@@ -1398,6 +1662,7 @@ public class ServerGatewayManagementAssertionTest {
         "http://ns.l7tech.com/2010/04/gateway-management/privateKeys",
         "http://ns.l7tech.com/2010/04/gateway-management/resources",
         "http://ns.l7tech.com/2010/04/gateway-management/services",
+        "http://ns.l7tech.com/2010/04/gateway-management/storedPasswords",
         "http://ns.l7tech.com/2010/04/gateway-management/trustedCertificates"
     };
 
@@ -1412,39 +1677,40 @@ public class ServerGatewayManagementAssertionTest {
     @SuppressWarnings({"serial"})
     private static void init() throws Exception {
         new AssertionRegistry(); // causes type mappings to be installed for assertions
-        Folder rootFolder = folder(-5002, null, "Root Node");
+        Folder rootFolder = folder( -5002L, null, "Root Node");
         beanFactory.addBean( "trustedCertManager", new TestTrustedCertManager(
-                cert(1, "Alice", TestDocuments.getWssInteropAliceCert()),
-                cert(2, "Bob", TestDocuments.getWssInteropBobCert()) ) );
+                cert( 1L, "Alice", TestDocuments.getWssInteropAliceCert()),
+                cert( 2L, "Bob", TestDocuments.getWssInteropBobCert()) ) );
         beanFactory.addBean( "clusterPropertyManager", new MockClusterPropertyManager(
-                prop(1, "testProp1", "testValue1"),
-                prop(2, "testProp2", "testValue2"),
-                prop(3, "testProp3", "testValue3")));
+                prop( 1L, "testProp1", "testValue1"),
+                prop( 2L, "testProp2", "testValue2"),
+                prop( 3L, "testProp3", "testValue3")));
         beanFactory.addBean( "resourceEntryManager", new ResourceEntryManagerStub(
-                resource(1,"books.xsd", ResourceType.XML_SCHEMA, "urn:books", "<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><xs:element name=\"book\" type=\"xs:string\"/></xs:schema>", null),
-                resource(2,"books_refd.xsd", ResourceType.XML_SCHEMA, "urn:booksr", "<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><xs:element name=\"book\" type=\"xs:string\"/></xs:schema>", "The booksr schema."),
-                resource(3,"books.dtd", ResourceType.DTD, "books", "<!ELEMENT book ANY>", "The books DTD.")) );
+                resource( 1L,"books.xsd", ResourceType.XML_SCHEMA, "urn:books", "<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><xs:element name=\"book\" type=\"xs:string\"/></xs:schema>", null),
+                resource( 2L,"books_refd.xsd", ResourceType.XML_SCHEMA, "urn:booksr", "<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><xs:element name=\"book\" type=\"xs:string\"/></xs:schema>", "The booksr schema."),
+                resource( 3L,"books.dtd", ResourceType.DTD, "books", "<!ELEMENT book ANY>", "The books DTD.")) );
         beanFactory.addBean( "folderManager", new FolderManagerStub(
                 rootFolder,
-                folder(1, rootFolder, "Test Folder") ) );
+                folder( 1L, rootFolder, "Test Folder") ) );
         beanFactory.addBean( "identityProviderConfigManager", new TestIdentityProviderConfigManager(
-                provider(-2, IdentityProviderType.INTERNAL, "Internal Identity Provider") ) );
+                provider( -2L, IdentityProviderType.INTERNAL, "Internal Identity Provider") ) );
         beanFactory.addBean( "jmsConnectionManager",  new JmsConnectionManagerStub(
-                jmsConnection(1, "Test Endpoint", "com.context.Classname", "qcf", "ldap://jndi") ));
+                jmsConnection( 1L, "Test Endpoint", "com.context.Classname", "qcf", "ldap://jndi") ));
         beanFactory.addBean( "jmsEndpointManager",  new JmsEndpointManagerStub(
-                jmsEndpoint(1, 1, "Test Endpoint") ));
+                jmsEndpoint( 1L, 1L, "Test Endpoint") ));
         beanFactory.addBean( "jdbcConnectionManager", new JdbcConnectionManagerStub(
-                connection(1, "Test Connection") ) );
+                connection( 1L, "A Test Connection"),
+                connection( 2L, "Test Connection") ) );
         beanFactory.addBean( "policyManager",  new PolicyManagerStub(
-                policy(1, PolicyType.INCLUDE_FRAGMENT, "Test Policy", true, "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"><wsp:All wsp:Usage=\"Required\"><L7p:AuditAssertion/></wsp:All></wsp:Policy>") ));
+                policy( 1L, PolicyType.INCLUDE_FRAGMENT, "Test Policy", true, "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"><wsp:All wsp:Usage=\"Required\"><L7p:AuditAssertion/></wsp:All></wsp:Policy>") ));
         beanFactory.addBean( "ssgKeyStoreManager", new SsgKeyStoreManagerStub( new SsgKeyFinderStub( Arrays.asList(
-                key( 0, "bob", TestDocuments.getWssInteropBobCert(), TestDocuments.getWssInteropBobKey()) ) )) );
+                key( 0L, "bob", TestDocuments.getWssInteropBobCert(), TestDocuments.getWssInteropBobKey()) ) )) );
         beanFactory.addBean( "rbacServices", new RbacServicesStub() );
         beanFactory.addBean( "securityFilter", new RbacServicesStub() );
         beanFactory.addBean( "serviceDocumentManager", new ServiceDocumentManagerStub() );
         beanFactory.addBean( "serviceManager", new MockServiceManager(
-                service(1, "Test Service 1", false, false, null, null),
-                service(2, "Test Service 2", false, true, "http://localhost:8080/test.wsdl", WSDL) ));
+                service( 1L, "Test Service 1", false, false, null, null),
+                service( 2L, "Test Service 2", false, true, "http://localhost:8080/test.wsdl", WSDL) ));
         beanFactory.addBean( "policyValidator", policyValidator );
         beanFactory.addBean( "serviceWsdlUpdateChecker", new ServiceWsdlUpdateChecker(null, null){
             @Override
@@ -1452,6 +1718,9 @@ public class ServerGatewayManagementAssertionTest {
                 return true;
             }
         } );
+        beanFactory.addBean( "securePasswordManager", new SecurePasswordManagerStub(
+                securePassword( 1L, "test", "password", true )
+        ) );
     }
 
     private static TrustedCert cert( final long oid, final String name, final X509Certificate x509Certificate ) {
@@ -1459,6 +1728,7 @@ public class ServerGatewayManagementAssertionTest {
         cert.setOid( oid );
         cert.setName( name );
         cert.setCertificate( x509Certificate );
+        cert.setRevocationCheckPolicyType( TrustedCert.PolicyUsageType.USE_DEFAULT );
         return cert;
     }
 
@@ -1552,11 +1822,21 @@ public class ServerGatewayManagementAssertionTest {
         return service;
     }
 
+    private static SecurePassword securePassword( final long oid, final String name, final String password, final boolean fromVariable ) {
+        final SecurePassword securePassword = new SecurePassword();
+        securePassword.setOid( oid );
+        securePassword.setName( name );
+        securePassword.setEncodedPassword( password );
+        securePassword.setUsageFromVariable( fromVariable );
+        securePassword.setLastUpdate( System.currentTimeMillis() );
+        return securePassword;
+    }
+
     private void doCreate( final String resourceUri,
                            final String payload,
                            final String... expectedIds ) throws Exception {
 
-        final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Create</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">{0}</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:a711f948-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo></s:Header><s:Body>{1}</s:Body></s:Envelope>";
+        final String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Create</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">{0}</wsman:ResourceURI><wsman:OperationTimeout>PT600.000S</wsman:OperationTimeout><wsa:MessageID s:mustUnderstand=\"true\">uuid:a711f948-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo></s:Header><s:Body>{1}</s:Body></s:Envelope>";
 
         final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Create", MessageFormat.format( message, resourceUri, payload ));
 

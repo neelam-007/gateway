@@ -1,13 +1,11 @@
 package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.AccessorSupport;
-import com.l7tech.gateway.api.impl.Extension;
+import com.l7tech.gateway.api.impl.ElementExtendableAccessibleObject;
 
-import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
-import java.util.List;
 
 /**
  * The JMSDestinationMO managed object represents a JMS Queue.
@@ -20,7 +18,7 @@ import java.util.List;
 @XmlRootElement(name="JMSDestination")
 @XmlType(name="JMSDestinationType", propOrder={"jmsDestinationDetail","jmsConnection","extension","extensions"})
 @AccessorSupport.AccessibleResource(name ="jmsDestinations")
-public class JMSDestinationMO extends AccessibleObject {
+public class JMSDestinationMO extends ElementExtendableAccessibleObject {
 
     //- PUBLIC
 
@@ -78,30 +76,6 @@ public class JMSDestinationMO extends AccessibleObject {
      */
     public void setJmsConnection( final JMSConnection jmsConnection ) {
         this.jmsConnection = jmsConnection;
-    }
-
-    //- PROTECTED
-
-    @XmlElement(name="Extension")
-    @Override
-    protected Extension getExtension() {
-        return super.getExtension();
-    }
-
-    @Override
-    protected void setExtension( final Extension extension ) {
-        super.setExtension( extension );
-    }
-
-    @XmlAnyElement(lax=true)
-    @Override
-    protected List<Object> getExtensions() {
-        return super.getExtensions();
-    }
-
-    @Override
-    protected void setExtensions( final List<Object> extensions ) {
-        super.setExtensions( extensions );
     }
 
     //- PACKAGE

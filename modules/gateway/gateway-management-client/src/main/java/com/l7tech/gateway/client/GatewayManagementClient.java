@@ -260,6 +260,10 @@ public class GatewayManagementClient {
             command = new ImportCommand();
         } else if ( "validate".equals(commandName) ) {
             command = new ValidateCommand();
+        } else if ( "import-key".equals(commandName) ) {
+            command = new ImportKeyCommand();
+        } else if ( "export-key".equals(commandName) ) {
+            command = new ExportKeyCommand();
         }
 
         return command;
@@ -441,6 +445,7 @@ public class GatewayManagementClient {
         }
 
         public final void run() throws CommandException {
+            checkArgs();
             Client client = null;
             try {
                 client = buildClient();
@@ -451,6 +456,16 @@ public class GatewayManagementClient {
         }
 
         //- PROTECTED
+
+        protected Command() {
+            this( false, false );
+        }
+
+        protected Command( final boolean requireFileInput,
+                           final boolean requireFileOutput ) {
+            this.requireFileInput = requireFileInput;
+            this.requireFileOutput = requireFileOutput;
+        }
 
         protected abstract void doRun( Client client ) throws CommandException;
 
@@ -489,6 +504,17 @@ public class GatewayManagementClient {
             return (PolicyAccessor<AT>) accessor;
         }
 
+        protected <AT extends AccessibleObject> PrivateKeyMOAccessor getPrivateKeyAccessor( final Client client,
+                                                                                            final Class<AT> objectType ) throws CommandException {
+            final Accessor<AT> accessor = client.getAccessor( objectType );
+
+            if ( !(accessor instanceof PrivateKeyMOAccessor) ) {
+                throw new CommandException("Command not applicable for type '"+arguments.type+"'");
+            }
+
+            return (PrivateKeyMOAccessor) accessor;
+        }
+
         protected final Map<String,Object> getSelectors() throws CommandException {
             final Map<String,Object> selectors = new HashMap<String,Object>();
 
@@ -524,6 +550,13 @@ public class GatewayManagementClient {
 
         protected final List<String> getExtraArguments() {
             return extraArguments;
+        }
+
+        protected final String getArg( final String option, final List<String> arguments, final int index ) throws CommandException {
+            if ( index >= arguments.size() ) {
+                throw new CommandException("Invalid options: '-"+option+"' option missing parameters.");
+            }
+            return arguments.get( index );
         }
 
         protected final boolean hasInput() {
@@ -567,6 +600,28 @@ public class GatewayManagementClient {
             return getArgValue( inText, inFile, null, "input" );
         }
 
+        protected final byte[] readInputAsBytes() throws CommandException {
+            final File inFile = arguments.inFile;
+
+            checkInput(true);
+            try {
+                InputStream in = null;
+                try {
+                    in = new FileInputStream( inFile );
+                    byte[] data = new byte[ (int) inFile.length() ];
+                    if ( in.read( data ) != data.length ) {
+                        throw new IOException( "File read failed." );
+                    }
+                    return data;
+                } finally {
+                    ResourceUtils.closeQuietly( in );
+                }
+            } catch ( IOException ioe ) {
+                handleIOError( "input", ioe );
+                return null; // does not occur
+            }
+        }
+
         protected final void writeOutput( final ManagedObject mo ) throws CommandException {
             writeOutput( new Functions.UnaryThrows<Void, OutputStream, CommandException>(){
                 @Override
@@ -583,6 +638,8 @@ public class GatewayManagementClient {
 
         protected final void writeOutput( final Functions.UnaryThrows<Void, OutputStream, CommandException> callback ) throws CommandException {
             final File outFile = arguments.outFile;
+
+            checkOutput();
 
             if ( callback != null ) {
                 OutputStream out = null;
@@ -624,10 +681,17 @@ public class GatewayManagementClient {
 
         //- PRIVATE
 
+        private final boolean requireFileInput;
+        private final boolean requireFileOutput;
         private OutputStream defaultOut;
         private String url;
         private Arguments arguments;
         private List<String> extraArguments;
+
+        private void checkArgs() throws CommandException {
+            if ( requireFileInput ) checkInput( true );
+            if ( requireFileOutput ) checkOutput();
+        }
 
         private Client buildClient() throws CommandException {
             return buildClient(
@@ -691,15 +755,35 @@ public class GatewayManagementClient {
         }
 
         private void checkInput() throws CommandException {
+            checkInput( false );
+        }
+
+        private void checkInput( final boolean requireFileInput ) throws CommandException {
             final String inText = arguments.in;
             final File inFile = arguments.inFile;
 
-            if ( inText != null && inFile != null ) {
-                throw new CommandException("Invalid options: only one of 'in' or 'inFile' should be used.");
-            } else if ( inText == null && inFile == null ) {
-                throw new CommandException("Invalid options: either 'in' or 'inFile' is required.");
+            if ( requireFileInput ) {
+                if ( inFile == null ) {
+                    throw new CommandException("Invalid options: 'inFile' is required.");
+                }
+            } else {
+                if ( inText != null && inFile != null ) {
+                    throw new CommandException("Invalid options: only one of 'in' or 'inFile' should be used.");
+                } else if ( inText == null && inFile == null ) {
+                    throw new CommandException("Invalid options: either 'in' or 'inFile' is required.");
+                }
             }
         }
+
+        private void checkOutput() throws CommandException {
+            if ( requireFileOutput ) {
+                final File outFile = arguments.outFile;
+
+                if ( outFile == null ) {
+                    throw new CommandException( "Invalid options: 'outFile' is required." );
+                }
+            }
+        }        
 
         private String getArgValue( final String argText,
                                     final File argFile,
@@ -883,6 +967,7 @@ public class GatewayManagementClient {
     }
 
     private static final class ImportCommand extends Command {
+        @SuppressWarnings({ "AssignmentToForLoopParameter" })
         @Override
         protected void doRun( final Client client )  throws CommandException {
             final PolicyAccessor<?> policyAccessor = getPolicyAccessor( client, getAccessibleObjectType() );
@@ -956,10 +1041,7 @@ public class GatewayManagementClient {
         }
 
         private String getArg( final List<String> arguments, final int index ) throws CommandException {
-            if ( index >= arguments.size() ) {
-                throw new CommandException("Invalid options: '-import' option missing parameters.");
-            }
-            return arguments.get( index );
+            return getArg( "import", arguments, index );
         }
     }
 
@@ -977,6 +1059,84 @@ public class GatewayManagementClient {
                 final PolicyValidationResult result = hasInput() ?
                         accessor.validatePolicy( cast(readInput(), accessor.getType()), null ) :
                         accessor.validatePolicy( getId() );
+                writeOutput( result );
+            } catch ( Accessor.AccessorException ioe ) {
+                throw new CommandException( "Accessor error", ioe );
+            }
+        }
+    }
+
+    //TODO [steve] help for options (import and export key)
+    private static final class ExportKeyCommand extends Command {
+        private ExportKeyCommand() {
+            super( false, true );
+        }
+
+        @SuppressWarnings({ "AssignmentToForLoopParameter" })
+        @Override
+        protected void doRun( final Client client ) throws CommandException {
+            final PrivateKeyMOAccessor accessor = getPrivateKeyAccessor( client, getAccessibleObjectType() );
+
+            // Get extra args
+            String alias = null;
+            String password = null;
+            final List<String> instructionArguments = getExtraArguments();
+            for ( int i=0; i<instructionArguments.size(); i++ ) {
+                final String exportOption = instructionArguments.get(i);
+
+                if ( "-key-alias".equals(exportOption) ) {
+                    alias = getArg( "key-alias", instructionArguments, ++i );
+                } else if ( "-key-password".equals(exportOption) ) {
+                    password = getArg( "key-password", instructionArguments, ++i );
+                } else {
+                    throw new CommandException("Invalid options: Unknown option '"+exportOption+"'.");
+                }
+            }
+
+            try {
+                final byte[] keystoreBytes = accessor.exportKey( getId(), alias, password );
+                writeOutput( new Functions.UnaryThrows<Void, OutputStream, CommandException>(){
+                    @Override
+                    public Void call( final OutputStream out ) throws CommandException {
+                        try {
+                            out.write( keystoreBytes );
+                        } catch ( IOException ioe ) {
+                            handleIOError( "output", ioe );
+                        }
+                        return null;
+                    }
+                } );
+            } catch ( Accessor.AccessorException ioe ) {
+                    throw new CommandException( "Accessor error", ioe );
+            }
+        }
+    }
+
+    private static final class ImportKeyCommand extends Command {
+        @SuppressWarnings({ "AssignmentToForLoopParameter" })
+        @Override
+        protected void doRun( final Client client ) throws CommandException {
+            final PrivateKeyMOAccessor accessor = getPrivateKeyAccessor( client, getAccessibleObjectType() );
+
+            // Get extra args
+            String alias = null;
+            String password = null;
+            final List<String> instructionArguments = getExtraArguments();
+            for ( int i=0; i<instructionArguments.size(); i++ ) {
+                final String exportOption = instructionArguments.get(i);
+
+                if ( "-key-alias".equals(exportOption) ) {
+                    alias = getArg( "key-alias", instructionArguments, ++i );
+                } else if ( "-key-password".equals(exportOption) ) {
+                    password = getArg( "key-password", instructionArguments, ++i );
+                } else {
+                    throw new CommandException("Invalid options: Unknown option '"+exportOption+"'.");
+                }
+            }
+
+            try {
+                final byte[] keystoreBytes = readInputAsBytes();
+                final PrivateKeyMO result = accessor.importKey( getId(), alias, password, keystoreBytes );
                 writeOutput( result );
             } catch ( Accessor.AccessorException ioe ) {
                 throw new CommandException( "Accessor error", ioe );

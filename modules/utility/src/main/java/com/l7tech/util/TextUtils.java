@@ -1,9 +1,6 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.util;
+
+import com.l7tech.util.Functions.Unary;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -31,7 +28,7 @@ public class TextUtils {
     public static String pad(String str, int width) {
         assert width >= 0;
         if (str == null) str = "";
-        StringBuffer sb = new StringBuffer(str);
+        StringBuilder sb = new StringBuilder( str );
         for (int i = str.length(); i < width; ++i)
             sb.append(' ');
         return sb.toString();
@@ -52,7 +49,7 @@ public class TextUtils {
     /** Insert carriage returns into the given string before every columns characters, preferring to insert them before new words begin. */
     public static String wrapString(String in, int maxcol, int maxlines, String wrapSequence) {
         if (in == null) return "null";
-        StringBuffer out = new StringBuffer();
+        StringBuilder out = new StringBuilder();
         StringTokenizer tok = new StringTokenizer(in);
         int col = 0;
         int line = 0;
@@ -112,7 +109,7 @@ public class TextUtils {
     public static String breakOnMultipleLines(String input, int maxlinelength, String breakCharacters) {
         input = input.trim();
         if (input.length() <= maxlinelength) return input;
-        StringBuffer output = new StringBuffer();
+        StringBuilder output = new StringBuilder();
         int pos = 0;
         while ((input.length() - pos) > maxlinelength) {
             int tmp = input.indexOf(' ', pos);
@@ -678,4 +675,37 @@ public class TextUtils {
             }
         }
     }
+
+    /**
+     * First class trim.
+     *
+     * @return A trim function.
+     */
+    public static Unary<String,CharSequence> trim() {
+        return FUNC_TRIM;
+    }
+
+    /**
+     * Function that maps empty strings to null.
+     *
+     * @return The empty-as-null function
+     */
+    public static Unary<String,CharSequence> emptyAsNull() {
+        return FUNC_EMPTY_AS_NULL;
+    }
+
+    private static final Unary<String,CharSequence> FUNC_TRIM = new Unary<String,CharSequence>() {
+            @Override
+            public String call( final CharSequence charSequence ) {
+                return charSequence.toString().trim();
+            }
+        };
+
+    private static final Unary<String,CharSequence> FUNC_EMPTY_AS_NULL = new Unary<String,CharSequence>() {
+            @Override
+            public String call( final CharSequence charSequence ) {
+                final String text = charSequence.toString();
+                return text.isEmpty() ? null : text;
+            }
+        };
 }

@@ -1,10 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<IdentityProvider xmlns="http://ns.l7tech.com/2010/04/gateway-management" version="33" id="147226624" extendedAttribute="extension">
+<IdentityProvider xmlns="http://ns.l7tech.com/2010/04/gateway-management" version="33" id="147226624" extendedAttribute="extension" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <Name other:extendedAttribute="extension" xmlns:other="urn:othernamespace">QAAD4</Name>
-    <IdentityProviderType other:extendedAttribute="extension" xmlns:other="urn:othernamespace">LDAP</IdentityProviderType>
+    <IdentityProviderType other:extendedAttribute="extension" xmlns:other="urn:othernamespace">Federated</IdentityProviderType>
     <Properties extendedAttribute="extension">
         <Property key="propertiesAreNotCurrentUsed" extendedAttribute="extension">
             <BooleanValue>true</BooleanValue>
         </Property>
     </Properties>
+    <Extension other:extendedAttribute="extension" xmlns:other="urn:othernamespace">
+        <FederatedIdentityProviderDetail other:extendedAttribute="extension" xmlns:other="urn:othernamespace">
+            <CertificateReferences resourceUri="http://ns.l7tech.com/2010/04/gateway-management/trustedCertificates" other:extendedAttribute="extension" xmlns:other="urn:othernamespace">
+                <Reference id="1" other:extendedAttribute="extension" xmlns:other="urn:othernamespace"/>
+            </CertificateReferences>
+        </FederatedIdentityProviderDetail>
+    </Extension>
 </IdentityProvider>

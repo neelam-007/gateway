@@ -1,14 +1,13 @@
 package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.AccessorSupport;
-import com.l7tech.gateway.api.impl.Extension;
+import com.l7tech.gateway.api.impl.ElementExtensionSupport;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
 import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
 
 import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.List;
@@ -17,13 +16,17 @@ import java.util.Map;
 /**
  * The JDBCConnectionMO managed object represents a JDBC connection.
  *
+ * TODO [steve] document properties
+ *             .put( "minimumPoolSize", 3 )
+            .put( "maximumPoolSize", 15 )
+ *
  * <p>The Accessor for JDBC connections is read only. JDBC connections can be
  * accessed by name or identifier.</p>
  *
  * @see ManagedObjectFactory#createJDBCConnection()
  */
 @XmlRootElement(name="JDBCConnection")
-@XmlType(name="JDBCConnectionType", propOrder={"nameValue","enabledValue","properties","extension","extensions"})
+@XmlType(name="JDBCConnectionType", propOrder={"nameValue","enabledValue","properties","jdbcExtension","extensions"})
 @AccessorSupport.AccessibleResource(name ="jdbcConnections")
 public class JDBCConnectionMO extends AccessibleObject {
 
@@ -34,7 +37,6 @@ public class JDBCConnectionMO extends AccessibleObject {
      *
      * @return The name (may be null)
      */
-    @XmlTransient
     public String getName() {
         return get(name);
     }
@@ -53,7 +55,6 @@ public class JDBCConnectionMO extends AccessibleObject {
      *
      * @return True if enabled.
      */
-    @XmlTransient
     public boolean isEnabled() {
         return get(enabled,false);
     }
@@ -65,6 +66,30 @@ public class JDBCConnectionMO extends AccessibleObject {
      */
     public void setEnabled( final boolean enabled ) {
         this.enabled = set(this.enabled,enabled);
+    }
+
+    public String getDriverClass() {
+        return get(this.jdbcExtension.driverClass);
+    }
+
+    public void setDriverClass( final String driverClass ) {
+        this.jdbcExtension.driverClass = set(this.jdbcExtension.driverClass,driverClass);
+    }
+
+    public String getJdbcUrl() {
+        return get(this.jdbcExtension.jdbcUrl);
+    }
+
+    public void setJdbcUrl( final String jdbcUrl ) {
+        this.jdbcExtension.jdbcUrl = set(this.jdbcExtension.jdbcUrl,jdbcUrl);
+    }
+
+    public Map<String, Object> getConnectionProperties() {
+        return jdbcExtension.connectionProperties;
+    }
+
+    public void setConnectionProperties( final Map<String, Object> properties ) {
+        this.jdbcExtension.connectionProperties = properties;
     }
 
     /**
@@ -107,15 +132,13 @@ public class JDBCConnectionMO extends AccessibleObject {
         this.enabled = value;
     }
 
-    @XmlElement(name="Extension")
-    @Override
-    protected Extension getExtension() {
-        return super.getExtension();
+    @XmlElement(name="Extension", required=true)
+    protected JdbcExtension getJdbcExtension() {
+        return this.jdbcExtension;
     }
 
-    @Override
-    protected void setExtension( final Extension extension ) {
-        super.setExtension( extension );
+    protected void setJdbcExtension( final JdbcExtension extension ) {
+        this.jdbcExtension = extension;
     }
     
     @XmlAnyElement(lax=true)
@@ -124,9 +147,39 @@ public class JDBCConnectionMO extends AccessibleObject {
         return super.getExtensions();
     }
 
-    @Override
-    protected void setExtensions( final List<Object> extensions ) {
-        super.setExtensions( extensions );
+    @XmlType(name="JdbcExtensionType", propOrder={"driverClass","jdbcUrl","connectionProperties","extension", "extensions"})
+    protected static class JdbcExtension extends ElementExtensionSupport {
+        private AttributeExtensibleString driverClass;
+        private AttributeExtensibleString jdbcUrl;
+        private Map<String,Object> connectionProperties;
+
+        @XmlElement(name="DriverClass", required=true)
+        protected AttributeExtensibleString getDriverClass() {
+            return driverClass;
+        }
+
+        protected void setDriverClass( final AttributeExtensibleString driverClass ) {
+            this.driverClass = driverClass;
+        }
+
+        @XmlElement(name="JdbcUrl", required=true)
+        protected AttributeExtensibleString getJdbcUrl() {
+            return jdbcUrl;
+        }
+
+        protected void setJdbcUrl( final AttributeExtensibleString jdbcUrl ) {
+            this.jdbcUrl = jdbcUrl;
+        }
+
+        @XmlElement(name="ConnectionProperties")
+        @XmlJavaTypeAdapter( PropertiesMapType.PropertiesMapTypeAdapter.class)
+        public Map<String, Object> getConnectionProperties() {
+            return connectionProperties;
+        }
+
+        public void setConnectionProperties( final Map<String, Object> connectionProperties ) {
+            this.connectionProperties = connectionProperties;
+        }
     }
 
     //- PACKAGE
@@ -139,4 +192,5 @@ public class JDBCConnectionMO extends AccessibleObject {
     private AttributeExtensibleString name;
     private AttributeExtensibleBoolean enabled = new AttributeExtensibleBoolean(false);
     private Map<String,Object> properties;
+    private JdbcExtension jdbcExtension = new JdbcExtension();
 }

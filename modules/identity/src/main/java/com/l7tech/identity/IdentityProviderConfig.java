@@ -7,6 +7,7 @@ import com.l7tech.util.*;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
+import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.beans.ExceptionListener;
 import java.io.ByteArrayInputStream;
@@ -40,12 +41,10 @@ import java.util.logging.Logger;
 public class IdentityProviderConfig extends NamedEntityImp {
 
     public IdentityProviderConfig(IdentityProviderType type) {
-        super();
         this.type = type;
     }
 
     public IdentityProviderConfig() {
-        super();
         // only default value which makes sense for now.
         type = IdentityProviderType.LDAP;
     }
@@ -53,6 +52,13 @@ public class IdentityProviderConfig extends NamedEntityImp {
     public IdentityProviderConfig(IdentityProviderConfig other) {
         super(other);
         this.type = other.type;
+    }
+
+    @Size(min=1,max=128)
+    @Override
+    @Transient
+    public String getName() {
+        return super.getName();
     }
 
     /**

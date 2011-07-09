@@ -268,12 +268,13 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         if (connection == null)
             throw new IllegalStateException("A JDBC connection must be initialized first before additional properties are loaded.");
         else
-            additionalPropMap = connection.getAddtionalProperties();
+            additionalPropMap = connection.getAdditionalProperties();
         
         additionalPropertyTableModel = new AdditionalPropertyTableModel();
         additionalPropertiesTable.setModel(additionalPropertyTableModel);
         additionalPropertiesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         additionalPropertiesTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
             public void valueChanged(ListSelectionEvent e) {
                 enableOrDisableTableButtons();
             }
@@ -408,7 +409,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         }
 
         // Check if there exists a duplicate with C3P0 Pool Configuration.
-         if ("minPoolSize".compareToIgnoreCase(newPropName) == 0) {
+        if ("minPoolSize".compareToIgnoreCase(newPropName) == 0) {
             return MessageFormat.format(resources.getString("warning.c3p0.pool.prop.configured"), resources.getString("property.minPoolSize"));
         } else if ("maxPoolSize".compareToIgnoreCase(newPropName) == 0) {
             return MessageFormat.format(resources.getString("warning.c3p0.pool.prop.configured"), resources.getString("property.maxPoolSize"));

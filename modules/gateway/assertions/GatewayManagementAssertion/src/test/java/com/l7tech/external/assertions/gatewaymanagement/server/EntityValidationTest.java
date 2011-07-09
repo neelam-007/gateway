@@ -1,21 +1,33 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
+import com.l7tech.common.TestDocuments;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceType;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.gateway.common.transport.jms.JmsProviderType;
 import com.l7tech.gateway.common.transport.jms.JmsReplyType;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.util.BeanUtils;
+import com.l7tech.util.ExceptionUtils;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
 import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
 import javax.validation.Validator;
+import java.beans.PropertyDescriptor;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
@@ -37,28 +49,12 @@ public class EntityValidationTest {
         ClusterProperty clusterProperty = new ClusterProperty("name", "value");
         valid( clusterProperty, "basic cluster property" );
 
-        // Test name not null
-        clusterProperty.setName( null );
-        invalid( clusterProperty, "null name" );
+        // Test name
+        checkNull( clusterProperty, "name", false );
+        checkSize( clusterProperty, "name", 1, 128 );
 
-        // Test name length
-        clusterProperty.setName( "" );
-        invalid( clusterProperty, "empty name" );
-
-        clusterProperty.setName( "a" );
-        valid( clusterProperty, "short name" );
-
-        clusterProperty.setName( string(128, 'a') );
-        valid( clusterProperty, "longest name" );
-
-        clusterProperty.setName( string(129, 'a') );
-        invalid( clusterProperty, "long name" );
-
-        clusterProperty.setName( "name" );
-
-        // Test value not null
-        clusterProperty.setValue( null );
-        invalid( clusterProperty, "null value" );
+        // Test value
+        checkNull( clusterProperty, "value", false );
 
         clusterProperty.setValue( "" );
         valid( clusterProperty, "empty value" );
@@ -72,89 +68,37 @@ public class EntityValidationTest {
         valid( jmsEndpoint, "basic JMS endpoint" );
 
         // Test name
-        jmsEndpoint.setName( null );
-        invalid( jmsEndpoint, "null name" );
-
-        jmsEndpoint.setName( "" );
-        invalid( jmsEndpoint, "empty name" );
-
-        jmsEndpoint.setName( string(128, 'a') );
-        valid( jmsEndpoint, "longest name" );
-
-        jmsEndpoint.setName( string(129, 'a') );
-        invalid( jmsEndpoint, "long name" );
-
-        jmsEndpoint.setName( "name" );
+        checkNull( jmsEndpoint, "name", false );
+        checkSize( jmsEndpoint, "name", 1, 128 );
 
         // Test destination name
-        jmsEndpoint.setDestinationName( null );
-        invalid( jmsEndpoint, "null destination name" );
-
-        jmsEndpoint.setDestinationName( "" );
-        invalid( jmsEndpoint, "empty destination name" );
+        checkNull( jmsEndpoint, "destinationName", false );
+        checkSize( jmsEndpoint, "destinationName", 1, 128 );
 
         jmsEndpoint.setDestinationName( "     " );
         invalid( jmsEndpoint, "all spaces destination name" );
 
-        jmsEndpoint.setDestinationName( string(128, 'a') );
-        valid( jmsEndpoint, "longest destination name" );
-
-        jmsEndpoint.setDestinationName( string(129, 'a') );
-        invalid( jmsEndpoint, "long destination name" );
-
         jmsEndpoint.setDestinationName( "name" );
 
         // Test username
-        jmsEndpoint.setUsername( "" );
-        valid( jmsEndpoint, "empty username" );
-
-        jmsEndpoint.setUsername( string(255, 'a') );
-        valid( jmsEndpoint, "longest username" );
-
-        jmsEndpoint.setUsername( string(256, 'a') );
-        invalid( jmsEndpoint, "long username" );
-
-        jmsEndpoint.setUsername( null );
+        checkSize( jmsEndpoint, "username", 0, 255 );
 
         // Test password
-        jmsEndpoint.setPassword( "" );
-        valid( jmsEndpoint, "empty password" );
-
-        jmsEndpoint.setPassword( string(255, 'a') );
-        valid( jmsEndpoint, "longest password" );
-
-        jmsEndpoint.setPassword( string(256, 'a') );
-        invalid( jmsEndpoint, "long password" );
-
-        jmsEndpoint.setPassword( null );
+        checkSize( jmsEndpoint, "password", 0, 255 );
 
         // Test reply to queue name
+        checkSize( jmsEndpoint, "replyToQueueName", 1, 128 );
+
         jmsEndpoint.setReplyToQueueName( "     " );
         invalid( jmsEndpoint, "all spaces reply to queue name" );
-
-        jmsEndpoint.setReplyToQueueName( "" );
-        invalid( jmsEndpoint, "empty reply to queue name" );
-
-        jmsEndpoint.setReplyToQueueName( string(128, 'a') );
-        valid( jmsEndpoint, "longest reply to queue name" );
-
-        jmsEndpoint.setReplyToQueueName( string(129, 'a') );
-        invalid( jmsEndpoint, "long reply to queue name" );
 
         jmsEndpoint.setReplyToQueueName( null );
 
         // Test failure queue name
+        checkSize( jmsEndpoint, "failureDestinationName", 1, 128 );
+
         jmsEndpoint.setFailureDestinationName( "     " );
         invalid( jmsEndpoint, "all spaces failure queue name" );
-
-        jmsEndpoint.setFailureDestinationName( "" );
-        invalid( jmsEndpoint, "empty failure queue name" );
-
-        jmsEndpoint.setFailureDestinationName( string(128, 'a') );
-        valid( jmsEndpoint, "longest failure queue name" );
-
-        jmsEndpoint.setFailureDestinationName( string(129, 'a') );
-        invalid( jmsEndpoint, "long failure queue name" );
 
         jmsEndpoint.setFailureDestinationName( null );
 
@@ -180,19 +124,8 @@ public class EntityValidationTest {
         valid( jmsConnection, "basic JMS connection" );
 
         // Test name
-        jmsConnection.setName( null );
-        invalid( jmsConnection, "null name" );
-
-        jmsConnection.setName( "" );
-        invalid( jmsConnection, "empty name" );
-
-        jmsConnection.setName( string(128, 'a') );
-        valid( jmsConnection, "longest name" );
-
-        jmsConnection.setName( string(129, 'a') );
-        invalid( jmsConnection, "long name" );
-
-        jmsConnection.setName( "name" );
+        checkNull( jmsConnection, "name", false );
+        checkSize( jmsConnection, "name", 1, 128 );
 
         // Test provider type
         jmsConnection.setProviderType( JmsProviderType.Tibco );
@@ -201,103 +134,27 @@ public class EntityValidationTest {
         jmsConnection.setProviderType( null );
 
         // Test JNDI url
-        jmsConnection.setJndiUrl( null );
-        invalid( jmsConnection, "null jndiUrl" );
-
-        jmsConnection.setJndiUrl( "" );
-        invalid( jmsConnection, "empty jndiUrl" );
-
-        jmsConnection.setJndiUrl( string(255, 'a') );
-        valid( jmsConnection, "longest jndiUrl" );
-
-        jmsConnection.setJndiUrl( string(256, 'a') );
-        invalid( jmsConnection, "long jndiUrl" );
-
-        jmsConnection.setJndiUrl( "ldap://host" );
+        checkNull( jmsConnection, "jndiUrl", false );
+        checkSize( jmsConnection, "jndiUrl", 1, 255 );
 
         // Test initial context factory
-        jmsConnection.setInitialContextFactoryClassname( null );
-        invalid( jmsConnection, "null initial context classname" );
-
-        jmsConnection.setInitialContextFactoryClassname( "" );
-        invalid( jmsConnection, "empty initial context classname" );
-
-        jmsConnection.setInitialContextFactoryClassname( string(255, 'a') );
-        valid( jmsConnection, "longest initial context classname" );
-
-        jmsConnection.setInitialContextFactoryClassname( string(256, 'a') );
-        invalid( jmsConnection, "long initial context classname" );
-
-        jmsConnection.setInitialContextFactoryClassname(  "some.Class" );
+        checkNull( jmsConnection, "initialContextFactoryClassname", false );
+        checkSize( jmsConnection, "initialContextFactoryClassname", 1, 255 );
 
         // Test username
-        jmsConnection.setUsername( "" );
-        valid( jmsConnection, "empty username" );
-
-        jmsConnection.setUsername( string(255, 'a') );
-        valid( jmsConnection, "longest username" );
-
-        jmsConnection.setUsername( string(256, 'a') );
-        invalid( jmsConnection, "long username" );
-
-        jmsConnection.setUsername( null );
+        checkSize( jmsConnection, "username", 0, 255 );
 
         // Test password
-        jmsConnection.setPassword( "" );
-        valid( jmsConnection, "empty password" );
-
-        jmsConnection.setPassword( string(255, 'a') );
-        valid( jmsConnection, "longest password" );
-
-        jmsConnection.setPassword( string(256, 'a') );
-        invalid( jmsConnection, "long password" );
-
-        jmsConnection.setPassword( null );
+        checkSize( jmsConnection, "password", 0, 255 );
 
         // Test destination factory url
-        jmsConnection.setDestinationFactoryUrl( "" );
-        invalid( jmsConnection, "empty destination factory url" );
-
-        jmsConnection.setDestinationFactoryUrl( "a" );
-        valid( jmsConnection, "shortest destination factory url" );
-
-        jmsConnection.setDestinationFactoryUrl( string(255, 'a') );
-        valid( jmsConnection, "longest destination factory url" );
-
-        jmsConnection.setDestinationFactoryUrl( string(256, 'a') );
-        invalid( jmsConnection, "long destination factory url" );
-
-        jmsConnection.setDestinationFactoryUrl( null );
+        checkSize( jmsConnection, "destinationFactoryUrl", 1, 255 );
 
         // Test queue factory url
-        jmsConnection.setQueueFactoryUrl( "" );
-        invalid( jmsConnection, "empty queue factory url" );
-
-        jmsConnection.setQueueFactoryUrl( "a" );
-        valid( jmsConnection, "shortest queue factory url" );
-
-        jmsConnection.setQueueFactoryUrl( string(255, 'a') );
-        valid( jmsConnection, "longest queue factory url" );
-
-        jmsConnection.setQueueFactoryUrl( string(256, 'a') );
-        invalid( jmsConnection, "long queue factory url" );
-
-        jmsConnection.setQueueFactoryUrl( null );
+        checkSize( jmsConnection, "queueFactoryUrl", 1, 255 );
 
         // Test topic factory url
-        jmsConnection.setTopicFactoryUrl( "" );
-        invalid( jmsConnection, "empty topic factory url" );
-
-        jmsConnection.setTopicFactoryUrl( "a" );
-        valid( jmsConnection, "shortest topic factory url" );
-
-        jmsConnection.setTopicFactoryUrl( string(255, 'a') );
-        valid( jmsConnection, "longest topic factory url" );
-
-        jmsConnection.setTopicFactoryUrl( string(256, 'a') );
-        invalid( jmsConnection, "long topic factory url" );
-
-        jmsConnection.setTopicFactoryUrl( null );
+        checkSize( jmsConnection, "topicFactoryUrl", 1, 255 );
 
         // Test template
         jmsConnection.setTemplate( true );
@@ -320,40 +177,13 @@ public class EntityValidationTest {
         Policy policy = getPolicy();
         valid( policy, "basic policy" );
 
-        // Test null name
-        policy.setName( null );
-        invalid( policy, "null name" );
+        // Test name
+        checkNull( policy, "name", false );
+        checkSize( policy, "name", 1, 255 );
 
-        // Test name length
-        policy.setName( "" );
-        invalid( policy, "empty name" );
-
-        policy.setName( "a" );
-        valid( policy, "short name" );
-
-        policy.setName( string(255,'a') );
-        valid( policy, "longest name" );
-
-        policy.setName( string(256,'a') );
-        invalid( policy, "long name" );
-
-        policy.setName( "Policy" );
-
-        // Test GUID null
-        policy.setGuid( null );
-        invalid( policy, "null guid" );
-
-        // Test GUID size
-        policy.setGuid( "" );
-        invalid( policy, "empty guid" );
-
-        policy.setGuid( "1" );
-        invalid( policy, "short guid" );
-        
-        policy.setGuid( string(37,'a') );
-        invalid( policy, "long guid" );
-
-        policy.setGuid( UUID.randomUUID().toString() );
+        // Test GUID
+        checkNull( policy, "guid", false );
+        checkSize( policy, "guid", 36, 36 );
 
         // Test policy type null
         policy.setType( null );
@@ -389,28 +219,10 @@ public class EntityValidationTest {
         PublishedService service = getService();
         valid( service, "basic service" );
 
-        // Test null name
-        service.setName( null );
-        invalid( service, "null name" );
-
         // Test name
-        service.setName( "" );
-        invalid( service, "empty name" );
+        checkNull( service, "name", false );
+        checkSize( service, "name", 1, 255 );
 
-        service.setName( "a" );
-        valid( service, "short name" );
-
-        service.setName( string(256,'a') );
-        invalid( service, "service name 256" );
-
-        service.setName( string(255,'a') );
-        valid( service, "service name 255" );
-
-        service.setName( string(256,'a') );
-        invalid( service, "service name 256" );
-
-        service.setName( "Test Name" );
-        
         // Test WSDL url 255 chars
         service.setWsdlUrl( "http://GW/" + string(245,'a') );
         service.setWsdlXml( "" );
@@ -510,53 +322,175 @@ public class EntityValidationTest {
         resourceEntry.setContent( "<schema/>" );
         valid( resourceEntry, "basic resource entry" );        
 
-        //Test uri not null
-        resourceEntry.setUri( null );
-        invalid( resourceEntry, "null uri" );
-        resourceEntry.setUri( "http://someurl" );
-
-        // Test uri length
-        resourceEntry.setUri( "" );
-        invalid( resourceEntry, "empty uri" );
-
-        resourceEntry.setUri( "a" );
-        valid( resourceEntry, "short uri" );
-
-        resourceEntry.setUri( string(4096, 'a') );
-        valid( resourceEntry, "longest uri" );
-
-        resourceEntry.setUri( string(4097, 'a') );
-        invalid( resourceEntry, "long uri" );
-
-        resourceEntry.setUri( "http://someurl" );
+        //Test uri
+        checkNull( resourceEntry, "uri", false );
+        checkSize( resourceEntry, "uri", 1, 4096 );
 
         // Test description
-        resourceEntry.setDescription( "" );
-        valid( resourceEntry, "empty description" );
+        checkSize( resourceEntry, "description", 0, 255 );
 
-        resourceEntry.setDescription( string(255, 'a') );
-        valid( resourceEntry, "longest description" );
+        // Test keys
+        checkSize( resourceEntry, "resourceKey1", 0, 4096 );
+        checkSize( resourceEntry, "resourceKey2", 0, 4096 );
+        checkSize( resourceEntry, "resourceKey3", 0, 4096 );
 
-        resourceEntry.setDescription( string(256, 'a') );
-        invalid( resourceEntry, "long description" );
+        // Test content not null
+        checkNull( resourceEntry, "content", false );
+    }
 
-        resourceEntry.setDescription( null );
+    @Test
+    public void testTrustedCert() throws Exception {
+        final TrustedCert trustedCert = new TrustedCert();
+        trustedCert.setName( "Alice" );
+        trustedCert.setCertificate( TestDocuments.getWssInteropAliceCert() );
+        trustedCert.setRevocationCheckPolicyType( TrustedCert.PolicyUsageType.USE_DEFAULT );
+        valid( trustedCert, "basic trusted certificate" );
 
-        // Test tns
-        resourceEntry.setResourceKey1( "" );
-        valid( resourceEntry, "empty tns" );
+        // test name
+        checkNull( trustedCert, "name", false );
+        checkSize( trustedCert, "name", 1, 128 );
 
-        resourceEntry.setResourceKey1( string(4096,'a') );
-        valid( resourceEntry, "longest tns" );
+        // test subject DN
+        checkNull( trustedCert, "subjectDn", true );
+        checkSize( trustedCert, "subjectDn", 0, 500 );
 
-        resourceEntry.setResourceKey1( string(4097,'a') );
-        invalid( resourceEntry, "long tns" );
+        // test cert b64
+        checkNull( trustedCert, "certBase64", false );
 
-        resourceEntry.setResourceKey1( null );
+        // test revocation check type
+        checkNull( trustedCert, "revocationCheckPolicyType", false );
 
-        // Test schema not null
-        resourceEntry.setContent( null );
-        invalid( resourceEntry, "null content" );
+        // test thumbprint
+        checkNull( trustedCert, "thumbprintSha1", true );
+        checkSize( trustedCert, "thumbprintSha1", 0, 64 );
+
+        // test ski
+        checkNull( trustedCert, "ski", true );
+        checkSize( trustedCert, "ski", 0, 64 );
+
+        // test issuer DN
+        checkNull( trustedCert, "issuerDn", true );
+        checkSize( trustedCert, "issuerDn", 0, 500 );
+
+        // test serial
+        checkNull( trustedCert, "serial", true );
+    }
+
+    @Test
+    public void testPrivateKey() throws Exception {
+        final SsgKeyEntry entry = new SsgKeyEntry( 1L, "alias", new X509Certificate[]{ TestDocuments.getWssInteropAliceCert() }, null );
+        valid( entry, "basic private key" );
+
+        // test certificate chain
+        checkNull( entry, "certificateChain", false );
+
+        entry.setCertificateChain( new X509Certificate[0] );
+        invalid( entry, "empty certificate chain" );
+
+        entry.setCertificateChain( new X509Certificate[]{ TestDocuments.getWssInteropAliceCert() } );
+    }
+
+    @Test
+    public void testJdbcConnection() {
+        final JdbcConnection jdbcConnection = new JdbcConnection();
+        jdbcConnection.setName( "Test" );
+        jdbcConnection.setDriverClass( "Test" );
+        jdbcConnection.setJdbcUrl( "jdbc://mysql//ssg" );
+        jdbcConnection.setUserName( "username" );
+        jdbcConnection.setPassword( "password" );
+        valid( jdbcConnection, "basic JDBC connection" );
+        
+        // test name
+        checkNull( jdbcConnection, "name", false );
+        checkSize( jdbcConnection, "name", 1, 128 );
+
+        // test url
+        checkNull( jdbcConnection, "driverClass", false );
+        checkSize( jdbcConnection, "driverClass", 1, 256 );
+
+        // test driver class
+        checkNull( jdbcConnection, "jdbcUrl", false );
+        checkSize( jdbcConnection, "jdbcUrl", 1, 4096 );
+
+        // test username
+        checkNull( jdbcConnection, "userName", false );
+        checkSize( jdbcConnection, "userName", 0, 128 );
+
+        // test password
+        checkNull( jdbcConnection, "password", false );
+        checkSize( jdbcConnection, "password", 0, 64 );
+    }
+
+    @Test
+    public void testFolder() {
+        final Folder rootFolder = new Folder( "Root Folder", null );
+        final Folder folder = new Folder( "Test", rootFolder );
+        valid( folder, "basic Folder" );
+
+        // test name
+        checkNull( folder, "name", false );
+        checkSize( folder, "name", 1, 128 );
+
+        // test folder
+        checkNull( folder, "folder", false );
+    }
+
+    @Test
+    public void testIdentityProviderConfig() {
+        final IdentityProviderConfig config = new IdentityProviderConfig();
+        config.setName( "Test" );
+        valid( config, "basic Identity Provider Config" );
+
+        // test name
+        checkNull( config, "name", false );
+        checkSize( config, "name", 1, 128 );
+    }
+
+    @Test
+    public void testSsgConnector() {
+        final SsgConnector ssgConnector = new SsgConnector();
+        ssgConnector.setName( "test" );
+        ssgConnector.setScheme( "http" );
+        ssgConnector.setPort( 8080 );
+        valid( ssgConnector, "basic connector" );
+
+        // test name
+        checkNull( ssgConnector, "name", false );
+        checkSize( ssgConnector, "name", 1, 128 );
+
+        // test port
+        checkRange( ssgConnector, "port", 1025, 65535 );
+
+        // test name
+        checkNull( ssgConnector, "scheme", false );
+        checkSize( ssgConnector, "scheme", 1, 128 );
+
+        // test client authentication
+        checkRange( ssgConnector, "clientAuth", 0, 2 );
+
+        // test key alias
+        checkNull( ssgConnector, "keyAlias", true );
+        checkSize( ssgConnector, "keyAlias", 1, 255 );
+    }
+
+    @Test
+    public void testSecurePassword() {
+        final SecurePassword securePassword = new SecurePassword();
+        securePassword.setName( "test" );
+        securePassword.setEncodedPassword( "PASS" );
+        valid( securePassword, "basic secure password" );
+
+        // test name
+        checkNull( securePassword, "name", false );
+        checkSize( securePassword, "name", 1, 128 );
+
+        // test description
+        checkNull( securePassword, "description", true );
+        checkSize( securePassword, "description", 0, 256 );
+
+        // test encoded password
+        checkNull( securePassword, "encodedPassword", false );
+        checkSize( securePassword, "encodedPassword", 0, 256 );
     }
 
     //- PRIVATE
@@ -580,6 +514,113 @@ public class EntityValidationTest {
         char[] chars = new char[count];
         Arrays.fill( chars, character );
         return new String( chars );
+    }
+
+    private void checkNull( final Object entity,
+                            final String field,
+                            final boolean permitted ) {
+        final Object originalValue = get( entity, field );
+        set( entity, field, null );
+        if ( permitted ) {
+            valid( entity, "null " + field );
+        } else {
+            invalid( entity, "null " + field );
+        }
+        set( entity, field, originalValue );
+    }
+
+    private void checkSize( final Object entity,
+                            final String field,
+                            final int minSize,
+                            final int maxSize ) {
+        final Object originalValue = get( entity, field );
+        set( entity, field,  "" );
+        if ( minSize <= 0 ) {
+            valid( entity, "empty " + field );
+        } else {
+            invalid( entity, "empty " + field );
+        }
+
+        if ( minSize > 1 ) {
+            set( entity, field,  string(minSize-1, 'a') );
+            invalid( entity, "short " + field );
+        }
+
+        set( entity, field,  string(minSize, 'a') );
+        valid( entity, "shortest " + field );
+
+        set( entity, field,  string(maxSize, 'a') );
+        valid( entity, "longest " + field );
+
+        set( entity, field,  string(maxSize+1, 'a') );
+        invalid( entity, "long " + field );
+
+        set( entity, field, originalValue );
+    }
+
+    private void checkRange( final Object entity,
+                             final String field,
+                             final int minValue,
+                             final int maxValue ) {
+        final Object originalValue = get( entity, field );
+        set( entity, field,  0 );
+        if ( minValue <= 0 ) {
+            valid( entity, "zero " + field );
+        } else {
+            invalid( entity, "zero " + field );
+        }
+
+        if ( minValue > Integer.MIN_VALUE ) {
+            set( entity, field,  minValue - 1 );
+            invalid( entity, "low " + field );
+        }
+
+        set( entity, field,  minValue );
+        valid( entity, "lowest " + field );
+
+        set( entity, field, maxValue );
+        valid( entity, "highest " + field );
+
+        if ( minValue < Integer.MAX_VALUE ) {
+            set( entity, field,  maxValue+1 );
+            invalid( entity, "high " + field );
+        }
+
+        set( entity, field, originalValue );
+    }
+
+    private Object get( final Object entity,
+                        final String field ) {
+        try {
+            return prop(entity,field).getReadMethod().invoke( entity );
+        } catch ( Exception e ) {
+            throw ExceptionUtils.wrap(e);
+        }
+    }
+
+    private void set( final Object entity,
+                      final String field,
+                      final Object value ) {
+        try {
+            prop(entity,field).getWriteMethod().invoke( entity, value );
+        } catch ( Exception e ) {
+            throw ExceptionUtils.wrap(e);
+        }
+    }
+
+    private PropertyDescriptor prop( final Object entity,
+                                     final String field ) {
+        PropertyDescriptor pd = null;
+        for ( final PropertyDescriptor current : BeanUtils.getProperties( entity.getClass() ) ) {
+            if ( current.getName().equals( field ) ) {
+                pd = current;
+                break;
+            }
+        }
+
+        if ( pd == null ) fail( "Property '"+field+"', not found for bean with type '"+entity.getClass()+"'." );
+
+        return pd;
     }
 
     private Policy getPolicy() {

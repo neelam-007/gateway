@@ -6,6 +6,7 @@ JDBCConnectionMO
 JMSConnection
 JMSDestinationDetail
 JMSDestinationMO
+ListenPortMO
 PolicyDetail
 PolicyExportResult
 PolicyImportResult
@@ -13,10 +14,15 @@ PolicyMO
 PolicyReferenceInstruction
 PolicyValidationContext
 PolicyValidationResult
+PrivateKeyExportContext
+PrivateKeyExportResult
+PrivateKeyImportContext
 PrivateKeyMO
 Resource
 ResourceDocumentMO
 ResourceSet
+RevocationCheckingPolicyMO
 ServiceDetail
 ServiceMO
+StoredPasswordMO
 TrustedCertificateMO

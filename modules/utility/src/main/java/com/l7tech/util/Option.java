@@ -94,6 +94,25 @@ public class Option<T> {
     }
 
     /**
+     * Map the given function across this optional value.
+     *
+     * @param mapper The mapping function
+     * @param <O> The result type
+     * @return The optional value, none if this option is none or the mapping function returns null.
+     */
+    public <O> Option<O> map( @NotNull Functions.Unary<O,? super T> mapper ) {
+        final Option<O> mapped;
+
+        if ( isSome() ) {
+            mapped = Option.optional( mapper.call( some() ) );
+        } else {
+            mapped = Option.none();
+        }
+
+        return mapped;
+    }
+
+    /**
      * Convert this option to an either.
      *
      * @param other The value to use if this option has no value
@@ -121,7 +140,7 @@ public class Option<T> {
 
     //- PRIVATE
 
-    private T value;
+    private final T value;
 
     public Option( final T value ) {
         this.value = value;

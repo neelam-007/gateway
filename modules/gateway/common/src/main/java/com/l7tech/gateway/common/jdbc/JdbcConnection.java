@@ -10,6 +10,8 @@ import com.l7tech.util.ResourceUtils;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.io.ByteArrayInputStream;
 import java.util.Map;
@@ -48,7 +50,16 @@ public class JdbcConnection extends NamedEntityImp implements Comparable {
         enabled = true;
     }
 
-    @Column(name="driver_class")
+    @Size(min=1,max=128)
+    @Override
+    @Transient
+    public String getName() {
+        return super.getName();
+    }
+
+    @NotNull
+    @Size(min=1,max=256)
+    @Column(name="driver_class",nullable=false)
     public String getDriverClass() {
         return driverClass;
     }
@@ -57,7 +68,9 @@ public class JdbcConnection extends NamedEntityImp implements Comparable {
         this.driverClass = driverClass;
     }
 
-    @Column(name="jdbc_url")
+    @NotNull
+    @Size(min=1,max=4096)
+    @Column(name="jdbc_url",nullable=false)
     public String getJdbcUrl() {
         return jdbcUrl;
     }
@@ -66,7 +79,9 @@ public class JdbcConnection extends NamedEntityImp implements Comparable {
         this.jdbcUrl = jdbcUrl;
     }
 
-    @Column(name="user_name")
+    @NotNull
+    @Size(max=128)
+    @Column(name="user_name",nullable=false)
     public String getUserName() {
         return userName;
     }
@@ -75,7 +90,9 @@ public class JdbcConnection extends NamedEntityImp implements Comparable {
         this.userName = userName;
     }
 
-    @Column(name="password")
+    @NotNull
+    @Size(max=64)
+    @Column(name="password",nullable=false)
     @WspSensitive
     public String getPassword() {
         return password;
@@ -170,21 +187,7 @@ public class JdbcConnection extends NamedEntityImp implements Comparable {
     }
 
     @Transient
-    public Object getAdditionalPropertyValue(String propName) {
-        return additionalProps.get(propName);
-    }
-
-    public void setAdditionalProperty(String name, Object value) {
-        if ( value == null ) {
-            additionalProps.remove( name );
-        } else {
-            additionalProps.put(name, value);
-        }
-        additionalPropsXml = null;
-    }
-
-    @Transient
-    public Map<String, Object> getAddtionalProperties() {
+    public Map<String, Object> getAdditionalProperties() {
         return additionalProps;
     }
 

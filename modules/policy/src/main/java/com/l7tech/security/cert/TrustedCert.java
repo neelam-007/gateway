@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.security.cert;
 
 import com.l7tech.objectmodel.NamedEntity;
@@ -8,6 +5,8 @@ import com.l7tech.util.Functions;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -23,7 +22,6 @@ import java.util.Set;
  *
  * @author alex
  */
-
 @XmlRootElement
 @Entity
 @Proxy(lazy=false)
@@ -36,9 +34,10 @@ public class TrustedCert extends X509Entity implements NamedEntity, Cloneable {
         this.trustedFor.clear();
         this.trustedFor.addAll(cert.trustedFor);
         this.verifyHostname = cert.verifyHostname;
+        this.trustAnchor = cert.trustAnchor;
+        this.revocationCheckPolicyType = cert.revocationCheckPolicyType;
+        this.revocationCheckPolicyOid = cert.revocationCheckPolicyOid;
     }
-
-    public static final String CERT_FACTORY_ALGORITHM = "X.509";
 
     public static enum PolicyUsageType {
         /** Do not do revocation checking for this cert */
@@ -93,6 +92,9 @@ public class TrustedCert extends X509Entity implements NamedEntity, Cloneable {
         }
     }
 
+    @Override
+    @NotNull
+    @Size(min=1,max=128)
     @Column(name="name", nullable=false, length=128)
     public String getName() {
         return name;
@@ -135,6 +137,7 @@ public class TrustedCert extends X509Entity implements NamedEntity, Cloneable {
      * @return  Object  - The instance of the cloned object
      * @throws CloneNotSupportedException  If the object cannot be cloned.
      */
+    @Override
     public Object clone() throws CloneNotSupportedException {
         return super.clone();
     }
@@ -263,6 +266,7 @@ public class TrustedCert extends X509Entity implements NamedEntity, Cloneable {
         this.trustAnchor = trustAnchor;
     }
 
+    @NotNull
     @Column(name="revocation_type",nullable=false,length=128)
     @Enumerated(EnumType.STRING)
     public PolicyUsageType getRevocationCheckPolicyType() {

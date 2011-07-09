@@ -1,5 +1,7 @@
 package com.l7tech.util;
 
+import static com.l7tech.util.TextUtils.emptyAsNull;
+import static com.l7tech.util.TextUtils.trim;
 import static org.junit.Assert.*;
 import org.junit.Test;
 
@@ -64,5 +66,12 @@ public class OptionTest {
     public void testOrSome() {
         assertEquals( "Or some 1", "value1", Option.some( "value1" ).orSome( "value2" ) );
         assertEquals( "Or some 2", "value2", Option.<String>none().orSome( "value2" ) );
+    }
+
+    @Test
+    public void testMap() {
+        assertEquals( "Map 1", "value1", Option.some( "value1   " ).map( trim() ).some() );
+        assertFalse( "Map 2", Option.some( "" ).map( emptyAsNull() ).isSome() );
+        assertFalse( "Map 3", Option.<String>none().map( emptyAsNull() ).isSome() );
     }
 }

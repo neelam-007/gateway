@@ -36,6 +36,21 @@ public class TestResourceFactory implements ResourceFactory<Object> {
     }
 
     @Override
+    public boolean isCreateSupported() {
+        return !isReadOnly();
+    }
+
+    @Override
+    public boolean isDeleteSupported() {
+        return !isReadOnly();
+    }
+
+    @Override
+    public boolean isUpdateSupported() {
+        return !isReadOnly();
+    }
+
+    @Override
     public Set<String> getSelectors() {
         return Collections.singleton( "id" );
     }

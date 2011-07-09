@@ -1,0 +1,113 @@
+package com.l7tech.gateway.api;
+
+import com.l7tech.gateway.api.impl.AccessorSupport;
+import com.l7tech.gateway.api.impl.AttributeExtensibleType;
+import com.l7tech.gateway.api.impl.ElementExtendableAccessibleObject;
+import com.l7tech.gateway.api.impl.PropertiesMapType;
+
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import java.util.Map;
+
+import static com.l7tech.gateway.api.impl.AttributeExtensibleType.get;
+import static com.l7tech.gateway.api.impl.AttributeExtensibleType.set;
+
+/**
+ * TODO [steve] javadoc (incl properties) and add to client docs
+ */
+@XmlRootElement(name="StoredPassword")
+@XmlType(name="StoredPasswordType", propOrder={"nameValue","passwordValue","properties","extension","extensions"})
+@AccessorSupport.AccessibleResource(name ="storedPasswords")
+public class StoredPasswordMO extends ElementExtendableAccessibleObject {
+
+    //- PUBLIC
+
+    /**
+     * The name for the stored password (case insensitive, required)
+     *
+     * @return The name (may be null)
+     */
+    public String getName() {
+        return get(name);
+    }
+
+    /**
+     * Set the name for the stored password.
+     *
+     * @param name The name to use.
+     */
+    public void setName( final String name ) {
+        this.name = set(this.name,name);
+    }
+
+    /**
+     * Get the password for the stored password.
+     *
+     * @return The password (may be null)
+     */
+    public String getPassword() {
+        return get( password );
+    }
+
+    /**
+     * Set the password for the stored password.
+     *
+     * @param password The value to use.
+     */
+    public void setPassword( final String password ) {
+        this.password = set(this.password, password );
+    }
+
+    /**
+     * Get the properties for this stored password.
+     *
+     * @return The properties (may be null)
+     */
+    @XmlElement(name="Properties")
+    @XmlJavaTypeAdapter(PropertiesMapType.PropertiesMapTypeAdapter.class)
+    public Map<String, Object> getProperties() {
+        return properties;
+    }
+
+    /**
+     * Set the properties for this stored password.
+     *
+     * @param properties The properties to use
+     */
+    public void setProperties( final Map<String, Object> properties ) {
+        this.properties = properties;
+    }
+
+    //- PROTECTED
+
+    @XmlElement(name="Name", required=true)
+    protected AttributeExtensibleType.AttributeExtensibleString getNameValue() {
+        return name;
+    }
+
+    protected void setNameValue( final AttributeExtensibleType.AttributeExtensibleString name ) {
+        this.name = name;
+    }
+
+    @XmlElement(name="Password")
+    protected AttributeExtensibleType.AttributeExtensibleString getPasswordValue() {
+        return password;
+    }
+
+    protected void setPasswordValue( final AttributeExtensibleType.AttributeExtensibleString value ) {
+        this.password = value;
+    }
+
+    //- PACKAGE
+
+    StoredPasswordMO() {
+    }
+
+    //- PRIVATE
+
+    private AttributeExtensibleType.AttributeExtensibleString name;
+    private AttributeExtensibleType.AttributeExtensibleString password;
+    private Map<String,Object> properties;
+}

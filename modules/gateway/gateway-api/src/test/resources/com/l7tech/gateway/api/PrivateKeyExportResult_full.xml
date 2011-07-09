@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PrivateKeyExportResult version="4" id="20774913" xmlns="http://ns.l7tech.com/2010/04/gateway-management"  other:extendedAttribute="extension" xmlns:other="urn:othernamespace">
+    <Pkcs12Data other:extendedAttribute="extension" xmlns:other="urn:othernamespace">FEED</Pkcs12Data>
+    <Properties extendedAttribute="extension">
+        <Property key="propertiesAreNotCurrentUsed" extendedAttribute="extension">
+            <BooleanValue other:extendedAttribute="extension" xmlns:other="urn:othernamespace">true</BooleanValue>
+        </Property>
+    </Properties>
+</PrivateKeyExportResult>

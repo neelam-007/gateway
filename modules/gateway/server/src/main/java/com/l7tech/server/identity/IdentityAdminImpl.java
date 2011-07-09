@@ -83,7 +83,8 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
                              final PasswordEnforcerManager passwordEnforcerManager,
                              final DefaultKey defaultKey,
                              final PasswordHasher passwordHasher,
-                             final Collection<Pair<AccountMinimums, IdentityProviderPasswordPolicy>> policyMinimums) {
+                             final Collection<Pair<AccountMinimums, IdentityProviderPasswordPolicy>> policyMinimums,
+                             final LdapConfigTemplateManager ldapTemplateManager ) {
         if (roleManager == null) throw new IllegalArgumentException("roleManager is required");
 
         this.roleManager = roleManager;
@@ -92,6 +93,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         this.passwordEnforcerManager = passwordEnforcerManager;
         this.passwordHasher = passwordHasher;
         this.policyMinimums = policyMinimums;
+        this.ldapTemplateManager = ldapTemplateManager;
     }
 
     @Override
@@ -835,8 +837,8 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         return provider.getGroupManager();
     }
 
-    private IdentityProviderConfigManager identityProviderConfigManager = null;
-    private IdentityProviderFactory identityProviderFactory = null;
+    private IdentityProviderConfigManager identityProviderConfigManager;
+    private IdentityProviderFactory identityProviderFactory;
+    private LdapConfigTemplateManager ldapTemplateManager;
     private final Logger logger = Logger.getLogger(getClass().getName());
-    private final LdapConfigTemplateManager ldapTemplateManager = new LdapConfigTemplateManager();
 }

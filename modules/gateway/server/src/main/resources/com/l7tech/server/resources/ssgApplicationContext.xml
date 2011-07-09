@@ -2267,6 +2267,8 @@
 
     <bean id="injector" class="com.l7tech.server.util.ApplicationContextInjector"/>
 
+    <bean id="ldapTemplateManager" class="com.l7tech.server.identity.ldap.LdapConfigTemplateManager"/>
+
     <!-- export beans to JMX -->
     <context:mbean-export/>
 

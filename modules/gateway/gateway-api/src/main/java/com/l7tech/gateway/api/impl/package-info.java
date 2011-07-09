@@ -3,7 +3,7 @@
         elementFormDefault = XmlNsForm.QUALIFIED,
         xmlns = { @XmlNs(prefix = "l7", namespaceURI="http://ns.l7tech.com/2010/04/gateway-management") }
 )
-@XmlAccessorType(value=XmlAccessType.PROPERTY)
+@XmlAccessorType(value=XmlAccessType.NONE)
 package com.l7tech.gateway.api.impl;
 
 import javax.xml.bind.annotation.XmlAccessType;

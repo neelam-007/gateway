@@ -30,4 +30,7 @@
             <BooleanValue>false</BooleanValue>
         </Property>
     </Properties>
+    <Extension>
+        <RevocationCheckingPolicyReference id="1" resourceUri="http://ns.l7tech.com/2010/04/gateway-management/revocationCheckingPolicies"/>
+    </Extension>
 </TrustedCertificate>

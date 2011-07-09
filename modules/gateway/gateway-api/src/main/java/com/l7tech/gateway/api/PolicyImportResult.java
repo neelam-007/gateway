@@ -2,7 +2,7 @@ package com.l7tech.gateway.api;
 
 import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
 
-import com.l7tech.gateway.api.impl.Extension;
+import com.l7tech.gateway.api.impl.ElementExtendableManagedObject;
 import com.l7tech.gateway.api.impl.PolicyImportContext;
 import com.l7tech.util.Functions;
 
@@ -15,7 +15,6 @@ import javax.xml.bind.annotation.XmlEnum;
 import javax.xml.bind.annotation.XmlEnumValue;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlSeeAlso;
-import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.namespace.QName;
 import java.util.List;
@@ -27,7 +26,7 @@ import java.util.Map;
 @XmlRootElement(name="PolicyImportResult")
 @XmlType(name="PolicyImportResultType", propOrder={"warningsValue", "importedPolicyReferences", "extension", "extensions"})
 @XmlSeeAlso( PolicyImportContext.class)
-public class PolicyImportResult extends ManagedObject {
+public class PolicyImportResult extends ElementExtendableManagedObject {
 
     //- PUBLIC
 
@@ -36,7 +35,6 @@ public class PolicyImportResult extends ManagedObject {
      *
      * @return The warnings or null.
      */
-    @XmlTransient
     public List<String> getWarnings() {
         return warnings==null ? null : Functions.map( warnings, new Functions.Unary<String,AttributeExtensibleString>(){
             @Override
@@ -242,28 +240,6 @@ public class PolicyImportResult extends ManagedObject {
 
     protected void setWarningsValue( final List<AttributeExtensibleString> warnings ) {
         this.warnings = warnings;
-    }
-
-    @XmlElement(name="Extension")
-    @Override
-    protected Extension getExtension() {
-        return super.getExtension();
-    }
-
-    @Override
-    protected void setExtension( final Extension extension ) {
-        super.setExtension( extension );
-    }
-
-    @XmlAnyElement(lax=true)
-    @Override
-    protected List<Object> getExtensions() {
-        return super.getExtensions();
-    }
-
-    @Override
-    protected void setExtensions( final List<Object> extensions ) {
-        super.setExtensions( extensions );
     }
 
     //- PACKAGE

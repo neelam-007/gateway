@@ -1,15 +1,13 @@
 package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.AccessorSupport;
-import com.l7tech.gateway.api.impl.Extension;
+import com.l7tech.gateway.api.impl.ElementExtendableAccessibleObject;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
 
-import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -36,7 +34,7 @@ import java.util.Map;
 @XmlRootElement(name="ResourceDocument")
 @XmlType(name="ResourceDocumentType", propOrder={"resource", "properties", "extension", "extensions"})
 @AccessorSupport.AccessibleResource(name ="resources")
-public class ResourceDocumentMO extends AccessibleObject {
+public class ResourceDocumentMO extends ElementExtendableAccessibleObject {
 
     //- PUBLIC
 
@@ -77,30 +75,6 @@ public class ResourceDocumentMO extends AccessibleObject {
      */
     public void setProperties( final Map<String, Object> properties ) {
         this.properties = properties;
-    }
-
-    //- PROTECTED
-
-    @XmlElement(name="Extension")
-    @Override
-    protected Extension getExtension() {
-        return super.getExtension();
-    }
-
-    @Override
-    protected void setExtension( final Extension extension ) {
-        super.setExtension( extension );
-    }
-
-    @XmlAnyElement(lax=true)
-    @Override
-    protected List<Object> getExtensions() {
-        return super.getExtensions();
-    }
-
-    @Override
-    protected void setExtensions( final List<Object> extensions ) {
-        super.setExtensions( extensions );
     }
 
     //- PACKAGE

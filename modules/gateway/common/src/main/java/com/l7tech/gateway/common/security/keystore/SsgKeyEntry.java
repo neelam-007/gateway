@@ -4,6 +4,8 @@ import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.util.Functions;
 
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.io.Serializable;
 import java.security.PrivateKey;
 import java.security.UnrecoverableKeyException;
@@ -184,6 +186,13 @@ public class SsgKeyEntry extends SignerInfo implements NamedEntity, Serializable
      */
     public void setRestrictedAccess() {
         this.restrictedAccess = true;
+    }
+
+    @Override
+    @NotNull
+    @Size(min=1)
+    public X509Certificate[] getCertificateChain() {
+        return super.getCertificateChain();
     }
 
     /** @param certificateChain the new certificate chain.  Must contain at least one certificate. */

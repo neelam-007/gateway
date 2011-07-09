@@ -4,6 +4,8 @@ import com.l7tech.gateway.api.impl.PolicyImportContext;
 import com.l7tech.gateway.api.impl.ValidationUtils;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.ClassUtils;
+import static com.l7tech.util.CollectionUtils.list;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.IOUtils;
@@ -11,7 +13,9 @@ import com.l7tech.util.ResourceUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
+import javax.xml.XMLConstants;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
@@ -21,6 +25,8 @@ import javax.xml.bind.annotation.XmlType;
 import javax.xml.transform.Source;
 import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -41,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,17 +71,17 @@ public class ManagedObjectTest {
     @Test
     public void testCertificateDataSerialization() throws Exception {
         final CertificateData certificateData = ManagedObjectFactory.createCertificateData();
-        final byte[] bytes = new byte[]{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1};
+        final byte[] bytes = new byte[]{ (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 1 };
         certificateData.setEncoded( bytes );
         certificateData.setIssuerName("cn=Test Issuer");
-        certificateData.setSerialNumber( BigInteger.valueOf( 123456789 ) );
+        certificateData.setSerialNumber( BigInteger.valueOf( 123456789L ) );
         certificateData.setSubjectName("cn=Test Subject");
 
         final CertificateData roundTripped = roundTrip( certificateData );
 
         assertArrayEquals("encoded", bytes, roundTripped.getEncoded());
         assertEquals("issuer name", "cn=Test Issuer", roundTripped.getIssuerName());
-        assertEquals("serial number", BigInteger.valueOf( 123456789 ), roundTripped.getSerialNumber());
+        assertEquals("serial number", BigInteger.valueOf( 123456789L ), roundTripped.getSerialNumber());
         assertEquals("subject name", "cn=Test Subject", roundTripped.getSubjectName());
     }
 
@@ -113,21 +120,56 @@ public class ManagedObjectTest {
     }
 
     @Test
-    public void testIdentityProviderSerialization() throws Exception {
+    public void testIdentityProviderSerializationFederated() throws Exception {
         final IdentityProviderMO identityProvider = ManagedObjectFactory.createIdentityProvider();
         identityProvider.setId( "identifier" );
         identityProvider.setVersion( -555 );
         identityProvider.setName( "my provider" );
         identityProvider.setIdentityProviderType( IdentityProviderMO.IdentityProviderType.LDAP );
         identityProvider.setProperties( Collections.<String,Object>singletonMap( "prop", 123 ) );
+        final IdentityProviderMO.FederatedIdentityProviderDetail federatedDetails = identityProvider.getFederatedIdentityProviderDetail();
+        federatedDetails.setCertificateReferences( Arrays.asList( "1", "2", "3" ) );
 
         final IdentityProviderMO roundTripped = roundTrip( identityProvider );
         assertEquals("id", "identifier", roundTripped.getId());
         assertEquals("version", Integer.valueOf(-555), roundTripped.getVersion());
         assertEquals("name", "my provider", roundTripped.getName());
         assertEquals("type", IdentityProviderMO.IdentityProviderType.LDAP, roundTripped.getIdentityProviderType());
-        System.out.println(roundTripped.getProperties().get( "prop" ).getClass());
         assertEquals("properties", Collections.<String,Object>singletonMap( "prop", 123 ), roundTripped.getProperties());
+
+        assertNotNull( "federated details", roundTripped.getFederatedIdentityProviderDetail() );
+        assertEquals( "federated certificate references", Arrays.asList( "1", "2", "3" ), roundTripped.getFederatedIdentityProviderDetail().getCertificateReferences() );
+    }
+
+    @Test
+    public void testIdentityProviderSerializationLdap() throws Exception {
+        final IdentityProviderMO identityProvider = ManagedObjectFactory.createIdentityProvider();
+        identityProvider.setId( "identifier" );
+        identityProvider.setVersion( -555 );
+        identityProvider.setName( "my provider" );
+        identityProvider.setIdentityProviderType( IdentityProviderMO.IdentityProviderType.LDAP );
+        identityProvider.setProperties( Collections.<String,Object>singletonMap( "prop", 123 ) );
+        final IdentityProviderMO.LdapIdentityProviderDetail ldapDetails = identityProvider.getLdapIdentityProviderDetail();
+        ldapDetails.setSourceType( "Active Directory" );
+        ldapDetails.setServerUrls( Arrays.asList( "ldap://host1", "ldap://host2" ) );
+        ldapDetails.setSearchBase( "ou=Base" );
+        ldapDetails.setBindDn( "browse" );
+        ldapDetails.setUseSslClientAuthentication( false );
+        ldapDetails.setSpecifiedAttributes(  Arrays.asList( "attrib1", "attrib2" ) );
+
+        final IdentityProviderMO roundTripped = roundTrip( identityProvider );
+        assertEquals("id", "identifier", roundTripped.getId());
+        assertEquals("version", Integer.valueOf(-555), roundTripped.getVersion());
+        assertEquals("name", "my provider", roundTripped.getName());
+        assertEquals("type", IdentityProviderMO.IdentityProviderType.LDAP, roundTripped.getIdentityProviderType());
+        assertEquals("properties", Collections.<String,Object>singletonMap( "prop", 123 ), roundTripped.getProperties());
+
+        assertNotNull( "ldap details", roundTripped.getLdapIdentityProviderDetail() );
+        assertEquals( "ldap source type", "Active Directory", roundTripped.getLdapIdentityProviderDetail().getSourceType() );
+        assertEquals( "ldap server urls", Arrays.asList( "ldap://host1", "ldap://host2" ), roundTripped.getLdapIdentityProviderDetail().getServerUrls() );
+        assertEquals( "ldap search base", "ou=Base", roundTripped.getLdapIdentityProviderDetail().getSearchBase() );
+        assertEquals( "ldap bind dn", "browse", roundTripped.getLdapIdentityProviderDetail().getBindDn() );
+        assertEquals( "ldap ssl client auth", false, roundTripped.getLdapIdentityProviderDetail().isUseSslClientClientAuthentication() );
     }
 
     @Test
@@ -138,6 +180,9 @@ public class ManagedObjectTest {
         jdbcConnection.setEnabled( false );
         jdbcConnection.setName( "my provider" );
         jdbcConnection.setProperties( Collections.<String,Object>singletonMap( "prop", 0L ) );
+        jdbcConnection.setDriverClass( "Test.cass" );
+        jdbcConnection.setJdbcUrl( "jdbc://mysql/ssg" );
+        jdbcConnection.setConnectionProperties( Collections.<String,Object>singletonMap( "prop2", "asdf" ) );
 
         final JDBCConnectionMO roundTripped = roundTrip( jdbcConnection );
         assertEquals("id", "identifier", roundTripped.getId());
@@ -145,6 +190,9 @@ public class ManagedObjectTest {
         assertEquals("enabled", false, roundTripped.isEnabled());
         assertEquals("name", "my provider", roundTripped.getName());
         assertEquals("properties", Collections.<String,Object>singletonMap( "prop", 0L ), roundTripped.getProperties());
+        assertEquals("driverClass", "Test.cass", roundTripped.getDriverClass());
+        assertEquals("jdbcUrl", "jdbc://mysql/ssg", roundTripped.getJdbcUrl());
+        assertEquals("connectionProperties", Collections.<String,Object>singletonMap( "prop2", "asdf" ), roundTripped.getConnectionProperties());
     }
 
     @Test
@@ -188,6 +236,46 @@ public class ManagedObjectTest {
         assertEquals("details context properties",Collections.<String,Object>singletonMap( "p2", "v2" ), roundTripped.getJmsConnection().getContextPropertiesTemplate());
         assertEquals("details properties",Collections.<String,Object>singletonMap( "p3", "v3" ), roundTripped.getJmsConnection().getProperties());
 
+    }
+
+    @Test
+    public void testListenPortSerialization() throws Exception {
+        final ListenPortMO listenPortMO = ManagedObjectFactory.createListenPort();
+        listenPortMO.setId( "3" );
+        listenPortMO.setVersion( 22 );
+        listenPortMO.setName( "Test" );
+        listenPortMO.setEnabled( true );
+        listenPortMO.setProtocol( "http" );
+        listenPortMO.setInterface( "127.0.0.1" );
+        listenPortMO.setPort( 8080 );
+        listenPortMO.setEnabledFeatures( list( "Feature1", "Feature2" ) );
+        listenPortMO.setTargetServiceId( Long.toString(Long.MAX_VALUE) );
+        listenPortMO.setProperties( Collections.<String,Object>singletonMap( "a", "b" ) );
+
+        final ListenPortMO.TlsSettings tlsSettings = ManagedObjectFactory.createTlsSettings();
+        tlsSettings.setClientAuthentication( ListenPortMO.TlsSettings.ClientAuthentication.REQUIRED );
+        tlsSettings.setPrivateKeyId( "-1:ssl" );
+        tlsSettings.setEnabledVersions( Arrays.asList( "TLSv1", "TLSv1.1", "TLSv1.2" ) );
+        tlsSettings.setEnabledCipherSuites( Arrays.asList( "TLS_RSA_WITH_AES_256_CBC_SHA" ) );
+        listenPortMO.setTlsSettings( tlsSettings );
+
+        final ListenPortMO roundTripped = roundTrip( listenPortMO );
+        assertEquals("id", "3", roundTripped.getId());
+        assertEquals("version", Integer.valueOf( 22 ), roundTripped.getVersion());
+        assertEquals("name", "Test", roundTripped.getName());
+        assertEquals("enabled", true, roundTripped.isEnabled());
+        assertEquals("protocol", "http", roundTripped.getProtocol());
+        assertEquals("interface", "127.0.0.1", roundTripped.getInterface());
+        assertEquals("port", 8080L, (long) roundTripped.getPort() );
+        assertEquals("enabled features", list("Feature1", "Feature2"), roundTripped.getEnabledFeatures() );
+        assertEquals("target service id", Long.toString(Long.MAX_VALUE), roundTripped.getTargetServiceId());
+        assertEquals("properties", Collections.<String,Object>singletonMap( "a", "b" ), roundTripped.getProperties());
+        assertNotNull( "tls settings", roundTripped.getTlsSettings() );
+
+        assertEquals( "tls client auth", ListenPortMO.TlsSettings.ClientAuthentication.REQUIRED, roundTripped.getTlsSettings().getClientAuthentication() );
+        assertEquals( "tls private key id", "-1:ssl", roundTripped.getTlsSettings().getPrivateKeyId()  );
+        assertEquals( "tls enabled versions", Arrays.asList( "TLSv1", "TLSv1.1", "TLSv1.2" ), roundTripped.getTlsSettings().getEnabledVersions()  );
+        assertEquals( "tls enabled cipher suites", Arrays.asList( "TLS_RSA_WITH_AES_256_CBC_SHA" ), roundTripped.getTlsSettings().getEnabledCipherSuites()  );
     }
 
     @Test
@@ -239,11 +327,11 @@ public class ManagedObjectTest {
         assertEquals("details policy type", PolicyDetail.PolicyType.INCLUDE, roundTripped.getPolicyDetail().getPolicyType());
         assertEquals("details properties", Collections.<String,Object>singletonMap( "", "value" ), roundTripped.getPolicyDetail().getProperties());
 
-        assertEquals( "resource sets size", 1, roundTripped.getResourceSets().size() );
+        assertEquals( "resource sets size", 1L, (long) roundTripped.getResourceSets().size() );
         assertEquals( "resource set[0] tag", "policy", roundTripped.getResourceSets().get( 0 ).getTag() );
         assertNull( "resource set[0] root url", roundTripped.getResourceSets().get( 0 ).getRootUrl() );
         assertNotNull( "resource set[0] resources", roundTripped.getResourceSets().get( 0 ).getResources() );
-        assertEquals( "resource set[0] resources size", 1, roundTripped.getResourceSets().get( 0 ).getResources().size() );
+        assertEquals( "resource set[0] resources size", 1L, (long) roundTripped.getResourceSets().get( 0 ).getResources().size() );
         assertEquals( "resource set[0] resources[0] type", "policy", roundTripped.getResourceSets().get( 0 ).getResources().get( 0 ).getType() );
         assertEquals( "resource set[0] resources[0] content", policyXml, roundTripped.getResourceSets().get( 0 ).getResources().get( 0 ).getContent() );
         assertNull( "resource set[0] resources[0] id", roundTripped.getResourceSets().get( 0 ).getResources().get( 0 ).getId() );
@@ -266,7 +354,7 @@ public class ManagedObjectTest {
         assertEquals("alias", "alias", roundTripped.getAlias());
         assertEquals("keystore id", "1234", roundTripped.getKeystoreId());
         assertNotNull("certificate chain", roundTripped.getCertificateChain());
-        assertEquals("certificate chain length", 1, roundTripped.getCertificateChain().size());
+        assertEquals("certificate chain length", 1L, (long) roundTripped.getCertificateChain().size() );
         assertArrayEquals("certificate chain[0] encoded", HexUtils.decodeBase64( CERT_BOB_PEM, true ), roundTripped.getCertificateChain().get( 0 ).getEncoded());
         assertEquals("properties", Collections.<String,Object>singletonMap( "prop", false ), roundTripped.getProperties());
     }
@@ -295,6 +383,21 @@ public class ManagedObjectTest {
         assertEquals("resource type", "xmlschema", roundTripped.getResource().getType());
         assertEquals("resource sourceUrl", "http://www.example.org/example.xsd", roundTripped.getResource().getSourceUrl());
         assertEquals("resource content", "<?xml version=\"1.0\"?><!-- \n -->\n<xs:schema targetNamespace=\"http://www.example.org/example.xsd\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" elementFormDefault=\"qualified\" blockDefault=\"#all\"/>", roundTripped.getResource().getContent());
+    }
+
+    @Test
+    public void testRevocationCheckingPolicyTest() throws Exception {
+        final RevocationCheckingPolicyMO policy = ManagedObjectFactory.createRevocationCheckingPolicy();
+        policy.setId( "4" );
+        policy.setVersion( 5 );
+        policy.setName( "Policy" );
+        policy.setProperties( Collections.<String,Object>singletonMap( "prop", "value" ) );
+
+        final RevocationCheckingPolicyMO roundTripped = roundTrip( policy );
+        assertEquals("id", "4", roundTripped.getId());
+        assertEquals("version", (Integer)5, roundTripped.getVersion());
+        assertEquals( "name", "Policy", policy.getName() );
+        assertEquals("properties", Collections.<String,Object>singletonMap( "prop", "value" ), roundTripped.getProperties());
     }
 
     @Test
@@ -347,7 +450,7 @@ public class ManagedObjectTest {
         assertEquals("detail enabled", true, roundTripped.getServiceDetail().getEnabled());
         assertEquals("detail name", "TestService", roundTripped.getServiceDetail().getName());
         assertNotNull("detail service mapping", roundTripped.getServiceDetail().getServiceMappings());
-        assertEquals("detail service mapping size", 2, roundTripped.getServiceDetail().getServiceMappings().size());
+        assertEquals("detail service mapping size", 2L, (long) roundTripped.getServiceDetail().getServiceMappings().size() );
 
         assertEquals("detail service mapping[0] url pattern", "/test", ((ServiceDetail.HttpMapping)roundTripped.getServiceDetail().getServiceMappings().get(0)).getUrlPattern());
         assertEquals("detail service mapping[0] url verbs", Arrays.asList("POST"), ((ServiceDetail.HttpMapping)roundTripped.getServiceDetail().getServiceMappings().get(0)).getVerbs());
@@ -358,15 +461,32 @@ public class ManagedObjectTest {
             put("soap", Boolean.FALSE);
         }}, roundTripped.getServiceDetail().getProperties());
 
-        assertEquals( "resource sets size", 1, roundTripped.getResourceSets().size() );
+        assertEquals( "resource sets size", 1L, (long) roundTripped.getResourceSets().size() );
         assertEquals( "resource set[0] tag", "policy", roundTripped.getResourceSets().get( 0 ).getTag() );
         assertNull( "resource set[0] root url", roundTripped.getResourceSets().get( 0 ).getRootUrl() );
         assertNotNull( "resource set[0] resources", roundTripped.getResourceSets().get( 0 ).getResources() );
-        assertEquals( "resource set[0] resources size", 1, roundTripped.getResourceSets().get( 0 ).getResources().size() );
+        assertEquals( "resource set[0] resources size", 1L, (long) roundTripped.getResourceSets().get( 0 ).getResources().size() );
         assertEquals( "resource set[0] resources[0] type", "policy", roundTripped.getResourceSets().get( 0 ).getResources().get( 0 ).getType() );
         assertEquals( "resource set[0] resources[0] content", policyXml, roundTripped.getResourceSets().get( 0 ).getResources().get( 0 ).getContent() );
         assertNull( "resource set[0] resources[0] id", roundTripped.getResourceSets().get( 0 ).getResources().get( 0 ).getId() );
         assertNull( "resource set[0] resources[0] source url", roundTripped.getResourceSets().get( 0 ).getResources().get( 0 ).getSourceUrl() );
+    }
+
+    @Test
+    public void testStorePasswordSerialization() throws Exception {
+        final StoredPasswordMO storedPassword = ManagedObjectFactory.createStoredPassword();
+        final Date updated = new Date();
+        storedPassword.setId( "0" );
+        storedPassword.setVersion( Integer.MAX_VALUE );
+        storedPassword.setName( "test" );
+        storedPassword.setPassword( "password" );
+        storedPassword.setProperties( Collections.<String, Object>singletonMap( "lastUpdated", updated) );
+
+        final StoredPasswordMO roundTripped = roundTrip( storedPassword );
+        assertEquals("id", "0", roundTripped.getId());
+        assertEquals("version", (Integer)Integer.MAX_VALUE, roundTripped.getVersion());
+        assertEquals("name", "test", roundTripped.getName());
+        assertEquals("properties", Collections.<String,Object>singletonMap( "lastUpdated", updated ), roundTripped.getProperties());
     }
 
     @Test
@@ -376,6 +496,7 @@ public class ManagedObjectTest {
         trustedCertificate.setVersion( Integer.MIN_VALUE );
         trustedCertificate.setName( "Cert" );
         trustedCertificate.setCertificateData( ManagedObjectFactory.createCertificateData( cert(CERT_BOB_PEM) ) );
+        trustedCertificate.setRevocationCheckingPolicyId( "3" );
         trustedCertificate.setProperties( Collections.<String,Object>singletonMap( "prop", null ) );
 
         final TrustedCertificateMO roundTripped = roundTrip( trustedCertificate );
@@ -384,6 +505,7 @@ public class ManagedObjectTest {
         assertEquals("name", "Cert", roundTripped.getName());
         assertEquals("properties", Collections.<String,Object>singletonMap( "prop", null ), roundTripped.getProperties());
         assertNotNull("certificate data", roundTripped.getCertificateData());
+        assertEquals("revocationCheckingPolicyId", "3", roundTripped.getRevocationCheckingPolicyId());
 
         assertEquals("certificate issuer name", "CN=OASIS Interop Test CA,O=OASIS", roundTripped.getCertificateData().getIssuerName());
         assertEquals("certificate serial number", new BigInteger( "127901500862700997089151460209364726264" ), roundTripped.getCertificateData().getSerialNumber());
@@ -480,7 +602,7 @@ public class ManagedObjectTest {
         assertEquals("resource type", "policyexport", roundTripped.getResource().getType());
         assertEquals("resource content", policyExport, roundTripped.getResource().getContent());
         assertNotNull("instructions", roundTripped.getPolicyReferenceInstructions());
-        assertEquals("instructions", 2, roundTripped.getPolicyReferenceInstructions().size());
+        assertEquals("instructions", 2L, (long) roundTripped.getPolicyReferenceInstructions().size() );
         assertNotNull("instructions[0]", roundTripped.getPolicyReferenceInstructions().get( 0 ));
         assertEquals("instructions[0] reference id", "1", roundTripped.getPolicyReferenceInstructions().get( 0 ).getReferenceId());
         assertEquals("instructions[0] reference type", "com.l7tech.console.policy.exporter.IdProviderReference", roundTripped.getPolicyReferenceInstructions().get( 0 ).getReferenceType());
@@ -519,7 +641,7 @@ public class ManagedObjectTest {
         assertEquals("version", (Integer)20, roundTripped.getVersion());
         assertEquals("warnings", Arrays.asList( "Unable to do X", "Error with Y" ), roundTripped.getWarnings());
         assertNotNull("references", roundTripped.getImportedPolicyReferences());
-        assertEquals("references", 2, roundTripped.getImportedPolicyReferences().size());
+        assertEquals("references", 2L, (long) roundTripped.getImportedPolicyReferences().size() );
         assertNotNull("references[0]", roundTripped.getImportedPolicyReferences().get( 0 ));
         assertEquals("references[0] id", "1", roundTripped.getImportedPolicyReferences().get( 0 ).getId());
         assertEquals("references[0] reference id", "123", roundTripped.getImportedPolicyReferences().get( 0 ).getReferenceId());
@@ -564,11 +686,11 @@ public class ManagedObjectTest {
         assertEquals("version", (Integer)3331, roundTripped.getVersion());
         assertEquals("properties", Collections.<String,Object>singletonMap( "soap", true ), roundTripped.getProperties());
         assertEquals("policy type", PolicyDetail.PolicyType.INCLUDE, roundTripped.getPolicyType());
-        assertEquals( "resource sets size", 1, roundTripped.getResourceSets().size() );
+        assertEquals( "resource sets size", 1L, (long) roundTripped.getResourceSets().size() );
         assertEquals( "resource set[0] tag", "policy", roundTripped.getResourceSets().get( 0 ).getTag() );
         assertNull( "resource set[0] root url", roundTripped.getResourceSets().get( 0 ).getRootUrl() );
         assertNotNull( "resource set[0] resources", roundTripped.getResourceSets().get( 0 ).getResources() );
-        assertEquals( "resource set[0] resources size", 1, roundTripped.getResourceSets().get( 0 ).getResources().size() );
+        assertEquals( "resource set[0] resources size", 1L, (long) roundTripped.getResourceSets().get( 0 ).getResources().size() );
         assertEquals( "resource set[0] resources[0] type", "policy", roundTripped.getResourceSets().get( 0 ).getResources().get( 0 ).getType() );
         assertEquals( "resource set[0] resources[0] content", policyXml, roundTripped.getResourceSets().get( 0 ).getResources().get( 0 ).getContent() );
         assertNull( "resource set[0] resources[0] id", roundTripped.getResourceSets().get( 0 ).getResources().get( 0 ).getId() );
@@ -612,23 +734,23 @@ public class ManagedObjectTest {
         assertEquals("version", (Integer)0, roundTripped.getVersion());
         assertEquals("status", PolicyValidationResult.ValidationStatus.WARNING , roundTripped.getStatus());
         assertNotNull("messages", policyValidationResult.getPolicyValidationMessages());
-        assertEquals("messages size", 2, policyValidationResult.getPolicyValidationMessages().size());
+        assertEquals("messages size", 2L, (long) policyValidationResult.getPolicyValidationMessages().size() );
         assertEquals("messages[0] message", "Something wrong", policyValidationResult.getPolicyValidationMessages().get( 0 ).getMessage());
-        assertEquals("messages[0] ordinal", 7, policyValidationResult.getPolicyValidationMessages().get( 0 ).getAssertionOrdinal());
+        assertEquals("messages[0] ordinal", 7L, (long) policyValidationResult.getPolicyValidationMessages().get( 0 ).getAssertionOrdinal() );
         assertEquals("messages[0] level", "Warning", policyValidationResult.getPolicyValidationMessages().get( 0 ).getLevel());
         assertNotNull("messages[0] details", policyValidationResult.getPolicyValidationMessages().get( 0 ).getAssertionDetails());
-        assertEquals("messages[0] details size", 1, policyValidationResult.getPolicyValidationMessages().get( 0 ).getAssertionDetails().size());
+        assertEquals("messages[0] details size", 1L, (long) policyValidationResult.getPolicyValidationMessages().get( 0 ).getAssertionDetails().size() );
         assertEquals("messages[0] details[0] description", "Some assertion", policyValidationResult.getPolicyValidationMessages().get( 0 ).getAssertionDetails().get( 0 ).getDescription());
-        assertEquals("messages[0] details[0] position", 3, policyValidationResult.getPolicyValidationMessages().get( 0 ).getAssertionDetails().get( 0 ).getPosition());
+        assertEquals("messages[0] details[0] position", 3L, (long) policyValidationResult.getPolicyValidationMessages().get( 0 ).getAssertionDetails().get( 0 ).getPosition() );
         assertEquals("messages[1] message", "Something else wrong", policyValidationResult.getPolicyValidationMessages().get( 1 ).getMessage());
-        assertEquals("messages[1] ordinal", 9, policyValidationResult.getPolicyValidationMessages().get( 1 ).getAssertionOrdinal());
+        assertEquals("messages[1] ordinal", 9L, (long) policyValidationResult.getPolicyValidationMessages().get( 1 ).getAssertionOrdinal() );
         assertEquals("messages[1] level", "Warning", policyValidationResult.getPolicyValidationMessages().get( 1 ).getLevel());
         assertNotNull("messages[1] details", policyValidationResult.getPolicyValidationMessages().get( 1 ).getAssertionDetails());
-        assertEquals("messages[1] details size", 2, policyValidationResult.getPolicyValidationMessages().get( 1 ).getAssertionDetails().size());
+        assertEquals("messages[1] details size", 2L, (long) policyValidationResult.getPolicyValidationMessages().get( 1 ).getAssertionDetails().size() );
         assertEquals("messages[1] details[0] description", "Some other assertion", policyValidationResult.getPolicyValidationMessages().get( 1 ).getAssertionDetails().get( 0 ).getDescription());
-        assertEquals("messages[1] details[0] position", 4, policyValidationResult.getPolicyValidationMessages().get( 1 ).getAssertionDetails().get( 0 ).getPosition());
+        assertEquals("messages[1] details[0] position", 4L, (long) policyValidationResult.getPolicyValidationMessages().get( 1 ).getAssertionDetails().get( 0 ).getPosition() );
         assertEquals("messages[1] details[1] description", "An assertion", policyValidationResult.getPolicyValidationMessages().get( 1 ).getAssertionDetails().get( 1 ).getDescription());
-        assertEquals("messages[1] details[1] position", 0, policyValidationResult.getPolicyValidationMessages().get( 1 ).getAssertionDetails().get( 1 ).getPosition());
+        assertEquals("messages[1] details[1] position", 0L, (long) policyValidationResult.getPolicyValidationMessages().get( 1 ).getAssertionDetails().get( 1 ).getPosition() );
     }
 
     @Test
@@ -643,17 +765,17 @@ public class ManagedObjectTest {
         final TrustedCertificateMO trustedCertificate = ManagedObjectFactory.createTrustedCertificate();
         trustedCertificate.setName( "Name" );
         trustedCertificate.setCertificateData( ManagedObjectFactory.createCertificateData() );
-        trustedCertificate.getCertificateData().setEncoded( new byte[]{0} );
+        trustedCertificate.getCertificateData().setEncoded( new byte[]{ (byte) 0 } );
         trustedCertificate.setProperties( properties );
         
         final TrustedCertificateMO roundTripped = roundTrip( trustedCertificate, new Functions.UnaryVoid<Document>(){
             @Override
             public void call( final Document document ) {
-                assertEquals("String values", 1, document.getElementsByTagNameNS( MANAGEMENT_NS, "StringValue" ).getLength());
-                assertEquals("Boolean values", 1, document.getElementsByTagNameNS( MANAGEMENT_NS, "BooleanValue" ).getLength());
-                assertEquals("Integer values", 1, document.getElementsByTagNameNS( MANAGEMENT_NS, "IntegerValue" ).getLength());
-                assertEquals("Long values", 1, document.getElementsByTagNameNS( MANAGEMENT_NS, "LongValue" ).getLength());
-                assertEquals("Object values", 1, document.getElementsByTagNameNS( MANAGEMENT_NS, "Value" ).getLength());
+                assertEquals("String values", 1L, (long) document.getElementsByTagNameNS( MANAGEMENT_NS, "StringValue" ).getLength() );
+                assertEquals("Boolean values", 1L, (long) document.getElementsByTagNameNS( MANAGEMENT_NS, "BooleanValue" ).getLength() );
+                assertEquals("Integer values", 1L, (long) document.getElementsByTagNameNS( MANAGEMENT_NS, "IntegerValue" ).getLength() );
+                assertEquals("Long values", 1L, (long) document.getElementsByTagNameNS( MANAGEMENT_NS, "LongValue" ).getLength() );
+                assertEquals("Object values", 1L, (long) document.getElementsByTagNameNS( MANAGEMENT_NS, "Value" ).getLength() );
             }
         } );
         final Map<String,Object> rtp = roundTripped.getProperties();
@@ -770,23 +892,39 @@ public class ManagedObjectTest {
 
     private static final String MANAGEMENT_NS = "http://ns.l7tech.com/2010/04/gateway-management";
 
-    private static final Collection<Class<? extends ManagedObject>> MANAGED_OBJECTS = Collections.unmodifiableCollection( Arrays.asList(
-        ClusterPropertyMO.class,
-        FolderMO.class,
-        IdentityProviderMO.class,
-        JDBCConnectionMO.class,
-        JMSDestinationMO.class,
-        PolicyExportResult.class,
-        PolicyImportContext.class,
-        PolicyImportResult.class,
-        PolicyMO.class,
-        PolicyValidationContext.class,
-        PolicyValidationResult.class,
-        PrivateKeyMO.class,
-        ResourceDocumentMO.class,
-        ServiceMO.class,
-        TrustedCertificateMO.class
-    ));
+    // Managed objects added in rev 2 of the API, these won't work with a rev 1 schema
+    private static final Collection<Class<? extends ManagedObject>> MANAGED_OBJECTS_2 = list(
+            ListenPortMO.class,
+            PrivateKeyExportContext.class,
+            PrivateKeyExportResult.class,
+            PrivateKeyImportContext.class,
+            RevocationCheckingPolicyMO.class,
+            StoredPasswordMO.class
+    );
+
+    private static final Collection<Class<? extends ManagedObject>> MANAGED_OBJECTS = list(
+            ClusterPropertyMO.class,
+            FolderMO.class,
+            IdentityProviderMO.class,
+            JDBCConnectionMO.class,
+            JMSDestinationMO.class,
+            ListenPortMO.class,
+            PolicyExportResult.class,
+            PolicyImportContext.class,
+            PolicyImportResult.class,
+            PolicyMO.class,
+            PolicyValidationContext.class,
+            PolicyValidationResult.class,
+            PrivateKeyExportContext.class,
+            PrivateKeyExportResult.class,
+            PrivateKeyImportContext.class,
+            PrivateKeyMO.class,
+            ResourceDocumentMO.class,
+            RevocationCheckingPolicyMO.class,
+            ServiceMO.class,
+            StoredPasswordMO.class,
+            TrustedCertificateMO.class
+    );
 
     private static final String CERT_BOB_PEM =
                 "MIIDCjCCAfKgAwIBAgIQYDju2/6sm77InYfTq65x+DANBgkqhkiG9w0BAQUFADAw\n" +
@@ -808,7 +946,7 @@ public class ManagedObjectTest {
                 "OHw6fC+3hkqolFd5CVI=";
 
     private JAXBContext context;
-    private boolean debug = true;
+    private boolean debug = false;
 
     private Collection<Class<?>> getJAXBTypes() throws Exception {
         final Collection<Class<?>> typeClasses = new ArrayList<Class<?>>();
@@ -826,14 +964,36 @@ public class ManagedObjectTest {
     }
 
     private void testUnmarshal( final String suffix ) throws Exception {
-        final Unmarshaller unmarshaller = context.createUnmarshaller();
-        unmarshaller.setSchema( ValidationUtils.getSchema() );
+        testUnmarshal( suffix, getSchema( "gateway-management-5.3.xsd" ), MANAGED_OBJECTS_2 );
+        testUnmarshal( suffix, ValidationUtils.getSchema() );
+    }
 
-        for ( Class<?> managedObjectClass : MANAGED_OBJECTS ) {
+    private void testUnmarshal( final String suffix,
+                                final Schema schema ) throws Exception {
+        testUnmarshal( suffix, schema, Collections.<Class<? extends ManagedObject>>emptyList() );
+    }
+
+    private void testUnmarshal( final String suffix,
+                                final Schema schema,
+                                final Collection<Class<? extends ManagedObject>> skip ) throws Exception {
+        final Unmarshaller unmarshaller = context.createUnmarshaller();
+        unmarshaller.setSchema( schema );
+
+        for ( Class<? extends ManagedObject> managedObjectClass : MANAGED_OBJECTS ) {
+            if ( skip.contains( managedObjectClass ) ) continue;
             final String resourceName = ClassUtils.getClassName(managedObjectClass) + "_" + suffix + ".xml";
             System.out.println( "Processing resource '" + resourceName + "'" );
             ManagedObject mo = (ManagedObject) unmarshaller.unmarshal( ManagedObjectTest.class.getResource( resourceName ));
             assertEquals( "Expected object type", managedObjectClass, mo.getClass() );
+        }
+    }
+
+    private Schema getSchema( final String name ) {
+        final SchemaFactory schemaFactory = SchemaFactory.newInstance( XMLConstants.W3C_XML_SCHEMA_NS_URI );
+        try {
+            return schemaFactory.newSchema( new Source[]{ new StreamSource( this.getClass().getResourceAsStream( name ) ) } );
+        } catch ( SAXException e ) {
+            throw ExceptionUtils.wrap( e );
         }
     }
 

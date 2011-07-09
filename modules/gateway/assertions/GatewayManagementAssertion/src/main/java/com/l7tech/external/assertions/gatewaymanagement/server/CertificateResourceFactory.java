@@ -1,5 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.gateway.api.CertificateData;
 import com.l7tech.gateway.api.TrustedCertificateMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.objectmodel.EntityHeader;
@@ -7,7 +9,14 @@ import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Option;
 import org.springframework.transaction.PlatformTransactionManager;
+
+import java.io.ByteArrayInputStream;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 
 /**
  * 
@@ -21,7 +30,7 @@ public class CertificateResourceFactory extends EntityManagerResourceFactory<Tru
                                        final SecurityFilter securityFilter,
                                        final PlatformTransactionManager transactionManager,
                                        final TrustedCertManager trustedCertManager ) {
-        super( true, false, services, securityFilter, transactionManager, trustedCertManager );
+        super( false, false, services, securityFilter, transactionManager, trustedCertManager );
     }
 
     //- PROTECTED
@@ -40,9 +49,80 @@ public class CertificateResourceFactory extends EntityManagerResourceFactory<Tru
         } else {
             certificate.setCertificateData( ManagedObjectFactory.createCertificateData( trustedCert.getCertBase64() ) );
         }
+        certificate.setRevocationCheckingPolicyId( trustedCert.getRevocationCheckPolicyOid()==null ?
+                null :
+                Long.toString(trustedCert.getRevocationCheckPolicyOid()) );
         certificate.setProperties( getProperties( trustedCert, TrustedCert.class ) );
+        certificate.getProperties().put(
+                "revocationCheckingEnabled",
+                trustedCert.getRevocationCheckPolicyType()!=TrustedCert.PolicyUsageType.NONE);
 
         return certificate;
     }
 
+    @Override
+    protected TrustedCert fromResource( final Object resource ) throws InvalidResourceException {
+        if ( !(resource instanceof TrustedCertificateMO) )
+            throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected certificate");
+
+        final TrustedCertificateMO certificateResource = (TrustedCertificateMO) resource;
+
+        final X509Certificate x509Certificate = getCertificate( certificateResource );
+
+        final TrustedCert certificateEntity = new TrustedCert();
+        certificateEntity.setName( asName(certificateResource.getName()) );
+        certificateEntity.setCertificate( x509Certificate );
+        final boolean revocationCheckingEnabled = getProperty( certificateResource.getProperties(), "revocationCheckingEnabled", Option.some( Boolean.TRUE ), Boolean.class ).some();
+        if ( revocationCheckingEnabled ) {
+            if ( certificateResource.getRevocationCheckingPolicyId() != null ) {
+                certificateEntity.setRevocationCheckPolicyType( TrustedCert.PolicyUsageType.SPECIFIED );
+                certificateEntity.setRevocationCheckPolicyOid( toInternalId( certificateResource.getRevocationCheckingPolicyId(), "Revocation Checking Policy Identifier" ) );
+            } else {
+                certificateEntity.setRevocationCheckPolicyType( TrustedCert.PolicyUsageType.USE_DEFAULT );
+            }
+        } else {
+            certificateEntity.setRevocationCheckPolicyType( TrustedCert.PolicyUsageType.NONE );
+        }
+        setProperties( certificateEntity, certificateResource.getProperties(), TrustedCert.class );
+
+        return certificateEntity;
+    }
+
+    @Override
+    protected void updateEntity( final TrustedCert oldEntity, final TrustedCert newEntity ) throws InvalidResourceException {
+        oldEntity.setName( newEntity.getName() );
+        oldEntity.setCertificate( newEntity.getCertificate()  );
+        oldEntity.setTrustAnchor( newEntity.isTrustAnchor() );
+        oldEntity.setVerifyHostname( newEntity.isVerifyHostname() );
+        for ( final TrustedCert.TrustedFor trustedFor : TrustedCert.TrustedFor.values() ) {
+            oldEntity.setTrustedFor( trustedFor, newEntity.isTrustedFor(trustedFor) );
+        }
+        oldEntity.setRevocationCheckPolicyType( newEntity.getRevocationCheckPolicyType() );
+        oldEntity.setRevocationCheckPolicyOid( newEntity.getRevocationCheckPolicyOid() );
+    }
+
+    //- PRIVATE
+
+    private X509Certificate getCertificate( final TrustedCertificateMO certificateResource ) throws InvalidResourceException {
+        final X509Certificate x509Certificate;
+        try {
+            final Certificate certificate = CertUtils.getFactory().generateCertificate(
+                    new ByteArrayInputStream( getEncoded(certificateResource.getCertificateData()) ) );
+
+            if ( !(certificate instanceof X509Certificate) )
+                throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "unexpected encoded certificate type");
+
+            x509Certificate = (X509Certificate) certificate;
+        } catch ( CertificateException e ) {
+            throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "encoded certificate error: " + ExceptionUtils.getMessage(e));
+        }
+        return x509Certificate;
+    }
+
+    private byte[] getEncoded( final CertificateData certificateData ) throws InvalidResourceException {
+        if ( certificateData == null || certificateData.getEncoded().length == 0 ) {
+            throw new InvalidResourceException(InvalidResourceException.ExceptionType.MISSING_VALUES, "encoded certificate data");
+        }
+        return certificateData.getEncoded();
+    }
 }

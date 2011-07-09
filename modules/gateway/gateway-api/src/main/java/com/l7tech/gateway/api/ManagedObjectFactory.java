@@ -289,6 +289,33 @@ public class ManagedObjectFactory {
     }
 
     /**
+     * Create a new PrivateKeyExportContext instance.
+     *
+     * @return The new instance.
+     */
+    public static PrivateKeyExportContext createPrivateKeyExportContext() {
+        return new PrivateKeyExportContext();
+    }
+
+    /**
+     * Create a new PrivateKeyExportResult instance.
+     *
+     * @return The new instance.
+     */
+    public static PrivateKeyExportResult createPrivateKeyExportResult() {
+        return new PrivateKeyExportResult();
+    }
+
+    /**
+     * Create a new PrivateKeyImportContext instance.
+     *
+     * @return The new instance.
+     */
+    public static PrivateKeyImportContext createPrivateKeyImportContext() {
+        return new PrivateKeyImportContext();
+    }
+
+    /**
      * Create a new Resource instance.
      *
      * @return The new instance.
@@ -313,6 +340,42 @@ public class ManagedObjectFactory {
      */
     public static ResourceDocumentMO createResourceDocument() {
         return new ResourceDocumentMO();
+    }
+
+    /**
+     * Create a new RevocationCheckingPolicyMO instance.
+     *
+     * @return The new instance.
+     */
+    public static RevocationCheckingPolicyMO createRevocationCheckingPolicy() {
+        return new RevocationCheckingPolicyMO();
+    }
+
+    /**
+     * Create a new ListenPortMO instance.
+     *
+     * @return The new instance.
+     */
+    public static ListenPortMO createListenPort() {
+        return new ListenPortMO();
+    }
+
+    /**
+     * Create a new TlsSettings instance for an ListenPortMO.
+     *
+     * @return The new instance.
+     */
+    public static ListenPortMO.TlsSettings createTlsSettings() {
+        return new ListenPortMO.TlsSettings();
+    }
+
+    /**
+     * Create a new StoredPasswordMO instance.
+     *
+     * @return The new instance.
+     */
+    public static StoredPasswordMO createStoredPassword() {
+        return new StoredPasswordMO();
     }
 
     /**

@@ -162,7 +162,7 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
         final ResourceFactory<?> factory = opContext.getResourceFactory();
         setOperationInfo( context, "Update", null );
 
-        if ( factory.isReadOnly() ) {
+        if ( !factory.isUpdateSupported() ) {
             throw new ActionNotSupportedFault(Transfer.PUT_ACTION_URI);
         }
 
@@ -201,7 +201,7 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
         final ResourceFactory<?> factory = opContext.getResourceFactory();
         setOperationInfo( context, "Delete", null );
 
-        if ( factory.isReadOnly() ) {
+        if ( !factory.isDeleteSupported() ) {
             throw new ActionNotSupportedFault(Transfer.DELETE_ACTION_URI);
         }
 
@@ -227,7 +227,7 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
         final ResourceFactory<?> factory = opContext.getResourceFactory();
         setOperationInfo( context, "Create", null );
 
-        if ( factory.isReadOnly() ) {
+        if ( !factory.isCreateSupported() ) {
             throw new ActionNotSupportedFault(Transfer.CREATE_ACTION_URI);
         }
 
@@ -488,7 +488,7 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
                 sourceObj = target.getOwnerDocument().createTextNode( (String) sourceObj );
             }
             final Node source = (Node) sourceObj;
-            if ( source.getNodeType() != target.getNodeType() ) {
+            if ( (int) source.getNodeType() != (int) target.getNodeType() ) {
                 throw new ResourceFactory.InvalidResourceException(ResourceFactory.InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "fragment type mismatch");
             }
             parent.replaceChild( parent.getOwnerDocument().importNode(source, true), target );

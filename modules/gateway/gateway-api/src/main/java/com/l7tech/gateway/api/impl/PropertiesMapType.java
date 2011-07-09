@@ -70,7 +70,6 @@ public class PropertiesMapType {
             this.key = key;
         }
 
-        @XmlTransient
         public Object getValue() {
             return propertyValue == null ? null : propertyValue.getValue();
         }
@@ -84,7 +83,8 @@ public class PropertiesMapType {
             @XmlElementRef(type=StringValue.class),
             @XmlElementRef(type=BooleanValue.class),
             @XmlElementRef(type=IntegerValue.class),
-            @XmlElementRef(type=LongValue.class)
+            @XmlElementRef(type=LongValue.class),
+            @XmlElementRef(type=DateValue.class)
         })
         public PropertyValue getPropertyValue() {
             return propertyValue;
@@ -151,7 +151,6 @@ public class PropertiesMapType {
         private List<Object> extensions;
 
         public ObjectValue() {
-            super();
         }
 
         public ObjectValue( final T value ) {
@@ -172,7 +171,6 @@ public class PropertiesMapType {
     @XmlType(name="StringValueType")
     public static class StringValue extends PropertyValue<String>{
         public StringValue() {
-            super();
         }
 
         public StringValue( final String value ) {
@@ -195,7 +193,6 @@ public class PropertiesMapType {
     @XmlType(name="BooleanValueType")
     public static class BooleanValue extends PropertyValue<Boolean>{
         public BooleanValue() {
-            super();
         }
 
         public BooleanValue( final Boolean value ) {
@@ -218,7 +215,6 @@ public class PropertiesMapType {
     @XmlType(name="IntegerValueType")
     public static class IntegerValue extends PropertyValue<Integer>{
         public IntegerValue() {
-            super();
         }
 
         public IntegerValue( final Integer value ) {
@@ -241,7 +237,6 @@ public class PropertiesMapType {
     @XmlType(name="LongValueType")
     public static class LongValue extends PropertyValue<Long>{
         public LongValue() {
-            super();
         }
 
         public LongValue( final Long value ) {
@@ -257,6 +252,28 @@ public class PropertiesMapType {
         @Override
         public void setValue( final Long value ) {
             super.setValue( value );    
+        }
+    }
+
+    @XmlRootElement(name="DateValue")
+    @XmlType(name="DateValueType")
+    public static class DateValue extends PropertyValue<Date>{
+        public DateValue() {
+        }
+
+        public DateValue( final Date value ) {
+            super( value );
+        }
+
+        @XmlValue
+        @Override
+        public Date getValue() {
+            return super.getValue();
+        }
+
+        @Override
+        public void setValue( final Date value ) {
+            super.setValue( value );
         }
     }
 
@@ -298,7 +315,7 @@ public class PropertiesMapType {
     private List<Object> extensions;
     private Map<QName,Object> attributeExtensions;
 
-    @SuppressWarnings({ "unchecked" })
+    @SuppressWarnings({ "unchecked", "RedundantCast" })
     private static <T> PropertyValue<T> newPropertyValue( final T value ) {
         PropertyValue<T> propertyValue;
 
@@ -310,6 +327,8 @@ public class PropertiesMapType {
             propertyValue = (PropertyValue<T>)new IntegerValue( (Integer) value );
         } else if ( value instanceof Long ) {
             propertyValue = (PropertyValue<T>)new LongValue( (Long) value );
+        } else if ( value instanceof Date ) {
+            propertyValue = (PropertyValue<T>)new DateValue( (Date) value );
         } else {
             propertyValue = new ObjectValue<T>( value );
         }

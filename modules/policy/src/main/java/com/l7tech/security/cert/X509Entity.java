@@ -10,6 +10,8 @@ import javax.persistence.Column;
 import javax.persistence.Lob;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Transient;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
@@ -120,6 +122,7 @@ public abstract class X509Entity extends PersistentEntityImp {
     /**
      * @return the SHA-1 thumbprint of the certificate (base64-encoded), or null if there is no cert.
      */
+    @Size(max=64)
     @Column(name="thumbprint_sha1",length=64)
     public String getThumbprintSha1() {
         return thumbprintSha1;
@@ -129,6 +132,7 @@ public abstract class X509Entity extends PersistentEntityImp {
      * @return the SKI of the certificate (base64-encoded), or null either if there is no cert,
      * or the cert has no SKI
      */
+    @Size(max=64)
     @Column(name="ski",length=64)
     public String getSki() {
         return ski;
@@ -159,7 +163,8 @@ public abstract class X509Entity extends PersistentEntityImp {
      *
      * @return the subjectDn from the cert, or null.
      */
-    @Column(name="subject_dn", length=255)
+    @Size(max=500)
+    @Column(name="subject_dn", length=500)
     public String getSubjectDn() {
         return subjectDn;
     }
@@ -176,6 +181,7 @@ public abstract class X509Entity extends PersistentEntityImp {
      * Gets the Base64 DER-encoded certificate
      * @return the Base64 DER-encoded certificate
      */
+    @NotNull
     @Column(name="cert_base64", length=Integer.MAX_VALUE)
     @Lob
     public String getCertBase64() {
@@ -187,7 +193,8 @@ public abstract class X509Entity extends PersistentEntityImp {
      *
      * @return The issuer DN or null
      */
-    @Column(name="issuer_dn")
+    @Size(max=500)
+    @Column(name="issuer_dn",length=500)
     public String getIssuerDn() {
         return issuerDn;
     }

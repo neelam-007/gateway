@@ -1,10 +1,9 @@
 package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.AccessorSupport;
-import com.l7tech.gateway.api.impl.Extension;
+import com.l7tech.gateway.api.impl.ElementExtendableAccessibleObject;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
 
-import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
@@ -24,15 +23,15 @@ import java.util.Map;
  * </ul>
  * </p>
  *
- * <p>The Accessor for private keys is read only. Private keys can be accessed
+ * <p>The Accessor for private keys supports read and write. Private keys can be accessed
  * by identifier only.</p>
  *
  * @see ManagedObjectFactory#createPrivateKey()
  */
 @XmlRootElement(name="PrivateKey")
 @XmlType(name="PrivateKeyType",propOrder={"certificateChain","properties","extension","extensions"})
-@AccessorSupport.AccessibleResource(name ="privateKeys")
-public class PrivateKeyMO extends AccessibleObject {
+@AccessorSupport.AccessibleResource(name ="privateKeys",accessorClassname="com.l7tech.gateway.api.impl.PrivateKeyMOAccessorImpl")
+public class PrivateKeyMO extends ElementExtendableAccessibleObject {
 
     //- PUBLIC
 
@@ -112,30 +111,6 @@ public class PrivateKeyMO extends AccessibleObject {
      */
     public void setProperties( final Map<String, Object> properties ) {
         this.properties = properties;
-    }
-
-    //- PROTECTED
-
-    @XmlElement(name="Extension")
-    @Override
-    protected Extension getExtension() {
-        return super.getExtension();
-    }
-
-    @Override
-    protected void setExtension( final Extension extension ) {
-        super.setExtension( extension );
-    }
-
-    @XmlAnyElement(lax=true)
-    @Override
-    protected List<Object> getExtensions() {
-        return super.getExtensions();
-    }
-
-    @Override
-    protected void setExtensions( final List<Object> extensions ) {
-        super.setExtensions( extensions );
     }
 
     //- PACKAGE

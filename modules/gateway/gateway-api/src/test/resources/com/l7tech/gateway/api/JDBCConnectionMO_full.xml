@@ -3,8 +3,26 @@
     <Name other:extendedAttribute="extension" xmlns:other="urn:othernamespace">My JDBC Connection</Name>
     <Enabled other:extendedAttribute="extension" xmlns:other="urn:othernamespace">true</Enabled>
     <Properties>
-        <Property key="propertiesAreNotCurrentUsed">
-            <BooleanValue>true</BooleanValue>
+        <Property key="minimumPoolSize">
+            <IntegerValue>1</IntegerValue>
+        </Property>
+        <Property key="maximumPoolSize">
+            <IntegerValue>10</IntegerValue>
         </Property>
     </Properties>
+    <Extension>
+        <DriverClass other:extendedAttribute="extension" xmlns:other="urn:othernamespace">true</DriverClass>
+        <JdbcUrl other:extendedAttribute="extension" xmlns:other="urn:othernamespace">true</JdbcUrl>
+        <ConnectionProperties>
+            <Property key="user">
+                <StringValue>username</StringValue>
+            </Property>
+            <Property key="password">
+                <StringValue>password</StringValue>
+            </Property>
+            <Property key="anyConnectionPropertyHere">
+                <StringValue>true</StringValue>
+            </Property>
+        </ConnectionProperties>
+    </Extension>
 </JDBCConnection>

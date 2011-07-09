@@ -1,10 +1,8 @@
 package com.l7tech.gateway.api.impl;
 
-import com.l7tech.gateway.api.ManagedObject;
 import com.l7tech.gateway.api.PolicyReferenceInstruction;
 import com.l7tech.gateway.api.Resource;
 
-import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -18,7 +16,7 @@ import java.util.Map;
  */
 @XmlRootElement(name="PolicyImportContext")
 @XmlType(name="PolicyImportContextType", propOrder={"properties", "resource", "policyReferenceInstructions", "extension", "extensions"})
-public class PolicyImportContext extends ManagedObject {
+public class PolicyImportContext extends ElementExtendableManagedObject {
 
     //- PUBLIC
 
@@ -49,30 +47,6 @@ public class PolicyImportContext extends ManagedObject {
 
     public void setPolicyReferenceInstructions( final List<PolicyReferenceInstruction> policyReferenceInstructions ) {
         this.policyReferenceInstructions = policyReferenceInstructions;
-    }
-
-    //- PROTECTED
-
-    @XmlElement(name="Extension")
-    @Override
-    protected Extension getExtension() {
-        return super.getExtension();
-    }
-
-    @Override
-    protected void setExtension( final Extension extension ) {
-        super.setExtension( extension );
-    }
-
-    @XmlAnyElement(lax=true)
-    @Override
-    protected List<Object> getExtensions() {
-        return super.getExtensions();
-    }
-
-    @Override
-    protected void setExtensions( final List<Object> extensions ) {
-        super.setExtensions( extensions );
     }
 
     //- PRIVATE

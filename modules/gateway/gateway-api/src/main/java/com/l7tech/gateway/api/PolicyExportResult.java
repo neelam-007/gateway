@@ -1,12 +1,10 @@
 package com.l7tech.gateway.api;
 
-import com.l7tech.gateway.api.impl.Extension;
+import com.l7tech.gateway.api.impl.ElementExtendableManagedObject;
 
-import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
-import java.util.List;
 
 /**
  * Policy export result.
@@ -15,7 +13,7 @@ import java.util.List;
  */
 @XmlRootElement(name="PolicyExportResult")
 @XmlType(name="PolicyExportResultType", propOrder={"resource","extension","extensions"})
-public class PolicyExportResult extends ManagedObject {
+public class PolicyExportResult extends ElementExtendableManagedObject {
 
     //- PUBLIC
 
@@ -39,30 +37,6 @@ public class PolicyExportResult extends ManagedObject {
      */
     public void setResource( final Resource resource ) {
         this.resource = resource;
-    }
-
-    //- PROTECTED
-
-    @XmlElement(name="Extension")
-    @Override
-    protected Extension getExtension() {
-        return super.getExtension();
-    }
-
-    @Override
-    protected void setExtension( final Extension extension ) {
-        super.setExtension( extension );
-    }
-    
-    @XmlAnyElement(lax=true)
-    @Override
-    protected List<Object> getExtensions() {
-        return super.getExtensions();
-    }
-
-    @Override
-    protected void setExtensions( final List<Object> extensions ) {
-        super.setExtensions( extensions );
     }
 
     //- PACKAGE

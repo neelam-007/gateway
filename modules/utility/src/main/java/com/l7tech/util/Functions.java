@@ -227,7 +227,24 @@ public final class Functions {
      * @param transformation a transformation to apply to each input item to produce the corresponding output item
      * @return a collection of output items
      */
-    public static <I,O> List<O> map(Iterable<I> in, Unary<O,I> transformation) {
+    public static <I,O> List<O> map(Iterable<I> in, Unary<O,? super I> transformation) {
+        List<O> ret = new ArrayList<O>();
+        for (I i : in)
+            ret.add(transformation.call(i));
+        return ret;
+    }
+
+    /**
+     * Transforms a collection of items by applying a map function to each input item
+     * to obtain a corresponding output item.
+     *
+     * @param in a collection of input items
+     * @param transformation a transformation to apply to each input item to produce the corresponding output item
+     * @return a collection of output items
+     * @throws E if the transform function throws E
+     */
+    public static <I,O,E extends Throwable> List<O> map( final Iterable<I> in,
+                                                         final UnaryThrows<O,? super I,E> transformation ) throws E {
         List<O> ret = new ArrayList<O>();
         for (I i : in)
             ret.add(transformation.call(i));
@@ -242,10 +259,13 @@ public final class Functions {
      * @param transformation a transformation to apply to each input item to produce the corresponding output item
      * @return an iterator of output items
      */
-    public static <I,O> Iterator<O> map(final Iterator<I> in, final Unary<O,I> transformation) {
+    public static <I,O> Iterator<O> map(final Iterator<I> in, final Unary<O,? super I> transformation) {
         return new Iterator<O>(){
+            @Override
             public boolean hasNext() { return in.hasNext(); }
+            @Override
             public O next() { return transformation.call(in.next()); }
+            @Override
             public void remove() { in.remove(); }
         };
     }
@@ -312,6 +332,7 @@ public final class Functions {
      */
     public static <I> List<I> grepNotNull(Iterable<I> in) {
         return grep(new ArrayList<I>(), in, new Unary<Boolean, I>() {
+            @Override
             public Boolean call(I i) {
                 return i != null;
             }
@@ -326,6 +347,7 @@ public final class Functions {
      */
     public static <T> Unary<Boolean,T> negate(final Unary<Boolean,T> predicate) {
         return new Unary<Boolean, T>() {
+            @Override
             public Boolean call(T t) {
                 return !predicate.call(t);
             }
@@ -387,6 +409,7 @@ public final class Functions {
      */
     public static <OUT,IN> Unary<OUT,IN> getterTransform(final Method getter) {
         return new Unary<OUT,IN>() {
+            @Override
             public OUT call(IN in) {
                 try {
                     //noinspection unchecked

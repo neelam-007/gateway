@@ -15,6 +15,8 @@ import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.transport.jms.JmsConnectionManager;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
+import com.l7tech.util.Option;
+import static com.l7tech.util.TextUtils.trim;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.Arrays;
@@ -238,11 +240,11 @@ public class JMSDestinationResourceFactory extends EntityManagerResourceFactory<
     private boolean isQueue( final Map<String,Object> properties ) throws InvalidResourceException {
         boolean queue = true;
 
-        if ( properties != null && properties.get("type") instanceof String ) {
-            final String type = ((String) properties.get("type")).trim();
-            if ( JMSDestinationDetail.TYPE_QUEUE.equals( type ) ) {
+        final Option<String> type = getProperty( properties, "type", Option.<String>none(), String.class).map( trim() );
+        if ( type.isSome() ) {
+            if ( JMSDestinationDetail.TYPE_QUEUE.equals( type.some() ) ) {
                 queue = true;
-            } else if ( JMSDestinationDetail.TYPE_TOPIC.equals( type ) ) {
+            } else if ( JMSDestinationDetail.TYPE_TOPIC.equals( type.some() ) ) {
                 queue = false;
             } else {
                 throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "Invalid type '"+type+"'" );

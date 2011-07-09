@@ -1,16 +1,12 @@
 package com.l7tech.gateway.api;
 
-import com.l7tech.gateway.api.impl.Extension;
+import com.l7tech.gateway.api.impl.ElementExtensionSupport;
 
-import javax.xml.bind.annotation.XmlAnyAttribute;
-import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
-import javax.xml.namespace.QName;
 import java.util.List;
-import java.util.Map;
 
 /**
  * ResourceSet represents a set of {@code Resource}s.
@@ -19,7 +15,7 @@ import java.util.Map;
  */
 @XmlRootElement(name="ResourceSet")
 @XmlType(name="ResourceSetType", propOrder={"resources","extension","extensions"})
-public class ResourceSet {
+public class ResourceSet extends ElementExtensionSupport {
 
     //- PUBLIC
 
@@ -85,35 +81,6 @@ public class ResourceSet {
         this.resources = resources;
     }
 
-    //- PROTECTED
-
-    @XmlAnyAttribute
-    protected Map<QName, Object> getAttributeExtensions() {
-        return attributeExtensions;
-    }
-
-    protected void setAttributeExtensions( final Map<QName, Object> attributeExtensions ) {
-        this.attributeExtensions = attributeExtensions;
-    }
-
-    @XmlElement(name="Extension")
-    protected Extension getExtension() {
-        return extension;
-    }
-
-    protected void setExtension( final Extension extension ) {
-        this.extension = extension;
-    }
-
-    @XmlAnyElement(lax=true)
-    protected List<Object> getExtensions() {
-        return extensions;
-    }
-
-    protected void setExtensions( final List<Object> extensions ) {
-        this.extensions = extensions;
-    }
-
     //- PACKAGE
 
     ResourceSet() {
@@ -124,7 +91,4 @@ public class ResourceSet {
     private String tag;
     private String rootUrl;
     private List<Resource> resources;
-    private Map<QName,Object> attributeExtensions;
-    private Extension extension;
-    private List<Object> extensions;
 }

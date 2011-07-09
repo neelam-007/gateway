@@ -1,17 +1,17 @@
 package com.l7tech.gateway.api;
 
 import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
-import com.l7tech.gateway.api.impl.Extension;
+
+import com.l7tech.gateway.api.impl.ElementExtendableManagedObject;
+import com.l7tech.gateway.api.impl.ElementExtensionSupport;
 
 import javax.xml.bind.annotation.XmlAnyAttribute;
-import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlEnum;
 import javax.xml.bind.annotation.XmlEnumValue;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.XmlValue;
 import javax.xml.namespace.QName;
@@ -23,7 +23,7 @@ import java.util.Map;
  */
 @XmlRootElement(name="PolicyValidationResult")
 @XmlType(name="PolicyValidationResultType", propOrder={"statusValue", "policyValidationMessages", "extension", "extensions"})
-public class PolicyValidationResult extends ManagedObject {
+public class PolicyValidationResult extends ElementExtendableManagedObject {
 
     //- PUBLIC
 
@@ -32,7 +32,6 @@ public class PolicyValidationResult extends ManagedObject {
      *
      * @return The validation status or null
      */
-    @XmlTransient
     public ValidationStatus getStatus() {
         return get(status);
     }
@@ -95,14 +94,11 @@ public class PolicyValidationResult extends ManagedObject {
      * identify the policy assertion to which the message relates.</p>
      */
     @XmlType(name="PolicyValidationMessageType", propOrder={"assertionDetails", "messageValue", "extension", "extensions"})
-    public static class PolicyValidationMessage {
+    public static class PolicyValidationMessage extends ElementExtensionSupport {
         private String level;
         private int assertionOrdinal;
         private List<AssertionDetail> assertionDetails;
         private AttributeExtensibleString message;
-        private Extension extension;
-        private List<Object> extensions;
-        private Map<QName,Object> attributeExtensions;
 
         PolicyValidationMessage() {
         }
@@ -170,7 +166,6 @@ public class PolicyValidationResult extends ManagedObject {
          *
          * @return The message or null.
          */
-        @XmlTransient
         public String getMessage() {
             return get(message);
         }
@@ -207,15 +202,6 @@ public class PolicyValidationResult extends ManagedObject {
             return result;
         }
 
-        @XmlAnyAttribute
-        protected Map<QName, Object> getAttributeExtensions() {
-            return attributeExtensions;
-        }
-
-        protected void setAttributeExtensions( final Map<QName, Object> attributeExtensions ) {
-            this.attributeExtensions = attributeExtensions;
-        }
-
         @XmlElement(name="Message", required=true)
         protected AttributeExtensibleString getMessageValue() {
             return message;
@@ -223,23 +209,6 @@ public class PolicyValidationResult extends ManagedObject {
 
         protected void setMessageValue( final AttributeExtensibleString message ) {
             this.message = message;
-        }
-        @XmlElement(name="Extension")
-        protected Extension getExtension() {
-            return extension;
-        }
-
-        protected void setExtension( final Extension extension ) {
-            this.extension = extension;
-        }
-
-        @XmlAnyElement(lax=true)
-        protected List<Object> getExtensions() {
-            return extensions;
-        }
-
-        protected void setExtensions( final List<Object> extensions ) {
-            this.extensions = extensions;
         }
     }
 
@@ -315,28 +284,6 @@ public class PolicyValidationResult extends ManagedObject {
 
     protected void setStatusValue( final AttributeExtensibleValidationStatus status ) {
         this.status = status;
-    }
-
-    @XmlElement(name="Extension")
-    @Override
-    protected Extension getExtension() {
-        return super.getExtension();
-    }
-
-    @Override
-    protected void setExtension( final Extension extension ) {
-        super.setExtension( extension );
-    }
-
-    @XmlAnyElement(lax=true)
-    @Override
-    protected List<Object> getExtensions() {
-        return super.getExtensions();
-    }
-
-    @Override
-    protected void setExtensions( final List<Object> extensions ) {
-        super.setExtensions( extensions );
     }
 
     @XmlType(name="ValidationStatusPropertyType")

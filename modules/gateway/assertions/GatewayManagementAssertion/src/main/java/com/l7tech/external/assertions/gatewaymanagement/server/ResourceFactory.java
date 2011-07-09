@@ -34,6 +34,27 @@ public interface ResourceFactory<R> {
     boolean isReadOnly();
 
     /**
+     * Is resource creation supported?
+     *
+     * @return true if resource creation is supported.
+     */
+    boolean isCreateSupported();
+
+    /**
+     * Are resource updates supported?
+     *
+     * @return true if resource updates are supported.
+     */
+    boolean isUpdateSupported();
+
+    /**
+     * Is resource deletion supported?
+     *
+     * @return true if resource deletion is supported.
+     */
+    boolean isDeleteSupported();
+
+    /**
      * Get the selector keys for this resource.
      *
      * <p>This is the full set of resource selectors for this resource factory,

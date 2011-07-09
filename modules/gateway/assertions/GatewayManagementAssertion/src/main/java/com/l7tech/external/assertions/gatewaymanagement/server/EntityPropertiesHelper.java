@@ -1,21 +1,30 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
+import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.resources.ResourceEntry;
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
+import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.CollectionUtils.MapBuilder;
+import com.l7tech.util.Option;
 
 import javax.validation.groups.Default;
+import javax.xml.bind.annotation.XmlEnumValue;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * 
@@ -56,16 +65,32 @@ class EntityPropertiesHelper {
         return properties;
     }
 
-    public String getEnumText( final Enum value ) {
-        return value.name();
+    public static String getEnumText( final Enum value ) {
+        return getEnumAnnotationValue(value).orSome( value.name() );
     }
 
-    public <E extends Enum<E>> E getEnumValue( final Class<E> enumType, final String value ) {
-        try {
-            return Enum.valueOf( enumType, value );
-        } catch ( IllegalArgumentException e ) {
-            throw new ResourceFactory.ResourceAccessException("Invalid value '"+value+"', expected one of " + EnumSet.allOf( enumType ));
+    public static <E extends Enum<E>> E getEnumValue( final Class<E> enumType, final String value ) throws ResourceFactory.InvalidResourceException {
+        E enumValue = null;
+
+        final Set<String> xmlValues = new TreeSet<String>( String.CASE_INSENSITIVE_ORDER );
+        for ( final E currentEnum : EnumSet.allOf( enumType ) ) {
+            final Option<String> enumText = getEnumAnnotationValue( currentEnum );
+            xmlValues.add( enumText.orSome( currentEnum.name() ) );
+            if ( enumText.isSome() && enumText.some().equals( value ) ) {
+                enumValue = currentEnum;
+                break;
+            }
         }
+
+        if ( enumValue == null ) {
+            try {
+                return Enum.valueOf( enumType, value );
+            } catch ( IllegalArgumentException e ) {
+                throw new ResourceFactory.InvalidResourceException( ResourceFactory.InvalidResourceException.ExceptionType.INVALID_VALUES, "Invalid value '"+value+"', expected one of " + xmlValues);
+            }
+        }
+
+        return enumValue;
     }
 
     public Class[] getValidationGroups( final Object bean ) {
@@ -98,7 +123,45 @@ class EntityPropertiesHelper {
 
     //- PRIVATE
 
+    private static Option<String> getEnumAnnotationValue( final Enum value ) {
+        Option<String> textValue;
+        try {
+            final XmlEnumValue valueAnnotation =
+                    value.getDeclaringClass().getField( value.name() ).getAnnotation( XmlEnumValue.class );
+            if ( valueAnnotation != null ) {
+                textValue = Option.some( valueAnnotation.value() );
+            } else {
+                textValue = Option.none();
+            }
+        } catch ( NoSuchFieldException e ) {
+            textValue = Option.none();
+        }
+        return textValue;
+    }
+
     private static final Map<Class<? extends Entity>,Map<String,String>> PROPERTY_MAP = MapBuilder.<Class<? extends Entity>,Map<String,String>>builder()
+        .put( FederatedIdentityProviderConfig.class, MapBuilder.<String,String>builder()
+            .put( "samlSupported", "enableCredentialType.saml" )
+            .put( "x509Supported", "enableCredentialType.x509" )
+            .unmodifiableMap() )
+        .put( LdapIdentityProviderConfig.class, MapBuilder.<String,String>builder()
+            .put( "adminEnabled", null )
+            .put( "groupCacheMaxAge", "groupCacheMaximumAge" )
+            .put( "groupCacheSize", null )
+            .put( "groupMaxNesting", "groupMaximumNesting" )
+            .put( "groupMembershipCaseInsensitive", null )
+            .put( "userCertificateIndexSearchFilter", null )
+            .put( "userCertificateIssuerSerialSearchFilter", null )
+            .put( "userCertificateSKISearchFilter", null )
+            .put( "userCertificateUseType", "userCertificateUsage" )
+            .unmodifiableMap() )
+        .put( IdentityProviderConfig.class, MapBuilder.<String,String>builder()
+            .put( "adminEnabled", null )
+            .unmodifiableMap() )
+        .put( JdbcConnection.class, MapBuilder.<String,String>builder()
+            .put( "minPoolSize", "minimumPoolSize" )
+            .put( "maxPoolSize", "maximumPoolSize" )
+            .unmodifiableMap() )
         .put( JmsConnection.class, MapBuilder.<String,String>builder()
             .put( "initialContextFactoryClassname", "jndi.initialContextFactoryClassname" )
             .put( "jndiUrl", "jndi.providerUrl" )
@@ -132,6 +195,11 @@ class EntityPropertiesHelper {
         .put( ResourceEntry.class, MapBuilder.<String,String>builder()
             .put( "description", null )
             .unmodifiableMap() )
+        .put( SecurePassword.class, MapBuilder.<String, String>builder()
+            .put( "description", null )
+            .put( "lastUpdateAsDate", "lastUpdated" )
+            .put( "usageFromVariable", null )
+            .unmodifiableMap() )
         .put( TrustedCert.class, MapBuilder.<String,String>builder()
             .put( "trustAnchor", null )
             .put( "trustedAsSamlAttestingEntity", null )
@@ -144,6 +212,25 @@ class EntityPropertiesHelper {
         .unmodifiableMap();
 
     private static final Map<Class<? extends Entity>,Map<String,Object>> DEFAULTS_PROPERTY_MAP = MapBuilder.<Class<? extends Entity>,Map<String,Object>>builder()
+        .put( FederatedIdentityProviderConfig.class, MapBuilder.<String,Object>builder()
+            .put( "samlSupported", false )
+            .put( "x509Supported", false )
+            .unmodifiableMap() )
+        .put( LdapIdentityProviderConfig.class, MapBuilder.<String,Object>builder()
+            .put( "adminEnabled", false )
+            .put( "groupCacheMaxAge", 60000L )
+            .put( "groupCacheSize", 100 )
+            .put( "groupMaxNesting", 0 )
+            .put( "groupMembershipCaseInsensitive", false )
+            .unmodifiableMap() )
+        .put( IdentityProviderConfig.class, MapBuilder.<String,Object>builder()
+            .put( "adminEnabled", false )
+            .unmodifiableMap() )
+        .put( JdbcConnection.class, MapBuilder.<String,Object>builder()
+            .put( "minPoolSize", 3 )
+            .put( "maxPoolSize", 15 )
+            .unmodifiableMap()
+        )
         .put( JmsEndpoint.class, MapBuilder.<String,Object>builder()
             .put( "replyType", "AUTOMATIC" )
             .put( "useMessageIdForCorrelation", false )
@@ -162,6 +249,20 @@ class EntityPropertiesHelper {
             .put( "wssProcessingEnabled", true )
             .unmodifiableMap()
         )
+        .put( SecurePassword.class, MapBuilder.<String,Object>builder()
+            .put( "usageFromVariable", false )
+            .unmodifiableMap()
+        )
+        .put( TrustedCert.class, MapBuilder.<String,Object>builder()
+            .put( "trustAnchor", false )
+            .put( "trustedAsSamlAttestingEntity", false )
+            .put( "trustedAsSamlIssuer", false )
+            .put( "trustedForSigningClientCerts", false )
+            .put( "trustedForSigningServerCerts", false )
+            .put( "trustedForSsl", false )
+            .put( "verifyHostname", true )
+            .unmodifiableMap()
+        )
         .unmodifiableMap();
 
     private static final Map<Class<? extends Entity>,Collection<String>> WRITE_ONLY_PROPERTIES = MapBuilder.<Class<? extends Entity>,Collection<String>>builder()
@@ -174,6 +275,65 @@ class EntityPropertiesHelper {
         .unmodifiableMap();
 
     private static final Map<Class<? extends Entity>,Collection<String>> IGNORE_PROPERTIES = MapBuilder.<Class<? extends Entity>,Collection<String>>builder()
+        .put( FederatedIdentityProviderConfig.class, Collections.unmodifiableCollection( Arrays.asList(
+            "adminEnabled",
+            "certificateValidationType",
+            "description",
+            "id",
+            "importedGroupMembership",
+            "importedGroups",
+            "importedUsers",
+            "name",
+            "oid",
+            "serializedProps",
+            "trustedCertOids",
+            "typeVal",
+            "version"
+        ) ) )
+        .put( LdapIdentityProviderConfig.class, Collections.unmodifiableCollection( Arrays.asList(
+            "bindDN",
+            "bindPasswd",
+            "certificateValidationType",
+            "clientAuthEnabled",
+            "description",
+            "groupCacheMaxAgeUnit",
+            "groupMappings",
+            "id",
+            "keyAlias",
+            "keystoreId",
+            "ldapUrl",
+            "name",
+            "oid",
+            "returningAttributes",
+            "searchBase",
+            "serializedProps",
+            "templateName",
+            "typeVal",
+            "userMappings",
+            "version"
+        ) ) )
+        .put( IdentityProviderConfig.class, Collections.unmodifiableCollection( Arrays.asList(
+            "certificateValidationType",
+            "description",
+            "id",
+            "name",
+            "oid",
+            "serializedProps",
+            "typeVal",
+            "version"
+        ) ) )
+        .put( JdbcConnection.class, Collections.unmodifiableCollection( Arrays.asList(
+            "driverClass",
+            "enabled",
+            "id",
+            "jdbcUrl",
+            "name",
+            "oid",
+            "password",
+            "serializedProps",
+            "userName",            
+            "version"
+        ) ) )
         .put( JmsConnection.class, Collections.unmodifiableCollection( Arrays.asList(
             "version",
             "id",
@@ -235,6 +395,14 @@ class EntityPropertiesHelper {
             "type",
             "uri",
             "uriHash",
+            "version"
+        )))
+        .put( SecurePassword.class, Collections.unmodifiableCollection( Arrays.asList(
+            "encodedPassword",
+            "id",
+            "lastUpdate",
+            "name",
+            "oid",
             "version"
         )))
         .put( TrustedCert.class, Collections.unmodifiableCollection( Arrays.asList(

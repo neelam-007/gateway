@@ -1,20 +1,15 @@
 package com.l7tech.gateway.api;
 
-import com.l7tech.gateway.api.impl.Extension;
+import com.l7tech.gateway.api.impl.ExtensionSupport;
 
-import javax.xml.bind.annotation.XmlAnyAttribute;
 import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
-import javax.xml.namespace.QName;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Abstract base class for all managed objects.
  */
 @XmlType(name="ManagedObjectType")
-public abstract class ManagedObject {
+public abstract class ManagedObject extends ExtensionSupport {
 
     //- PUBLIC
 
@@ -64,40 +59,8 @@ public abstract class ManagedObject {
         this.version = version;
     }
 
-    //- PROTECTED
-
-    @XmlAnyAttribute
-    protected Map<QName, Object> getAttributeExtensions() {
-        return attributeExtensions;
-    }
-
-    protected void setAttributeExtensions( final Map<QName, Object> attributeExtensions ) {
-        this.attributeExtensions = attributeExtensions;
-    }
-
-    @XmlTransient
-    protected Extension getExtension() {
-        return extension;
-    }
-
-    protected void setExtension( final Extension extension ) {
-        this.extension = extension;
-    }
-
-    @XmlTransient
-    protected List<Object> getExtensions() {
-        return extensions;
-    }
-
-    protected void setExtensions( final List<Object> extensions ) {
-        this.extensions = extensions;
-    }
-
     //- PRIVATE
 
     private String id;
     private Integer version;
-    private Extension extension;
-    private List<Object> extensions;
-    private Map<QName,Object> attributeExtensions;
 }

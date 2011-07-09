@@ -1,21 +1,26 @@
 package com.l7tech.server.security.keystore;
 
 import com.l7tech.common.io.CertGenParams;
+import com.l7tech.common.io.KeyGenParams;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.security.prov.CertificateRequest;
+import com.l7tech.util.NotFuture;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.KeyStoreException;
 import java.security.SignatureException;
+import java.security.cert.X509Certificate;
 import java.util.*;
+import java.util.concurrent.Future;
 
 /**
  *
  */
-public class SsgKeyFinderStub implements SsgKeyFinder {
+public class SsgKeyFinderStub implements SsgKeyStore {
     private final Map<String, SsgKeyEntry> entries;
 
     public SsgKeyFinderStub() {
@@ -44,7 +49,7 @@ public class SsgKeyFinderStub implements SsgKeyFinder {
 
     @Override
     public boolean isMutable() {
-        return false;
+        return true;
     }
 
     @Override
@@ -54,7 +59,7 @@ public class SsgKeyFinderStub implements SsgKeyFinder {
 
     @Override
     public SsgKeyStore getKeyStore() {
-        return null;
+        return this;
     }
 
     @Override
@@ -84,5 +89,29 @@ public class SsgKeyFinderStub implements SsgKeyFinder {
     @Override
     public String getId() {
         return "stub";
+    }
+
+    @Override
+    public Future<Boolean> deletePrivateKeyEntry( final Runnable transactionCallback, final String keyAlias ) throws KeyStoreException {
+        return new NotFuture<Boolean>(false);
+    }
+
+    @Override
+    public Future<X509Certificate> generateKeyPair( final Runnable transactionCallback, final String alias, final KeyGenParams keyGenParams, final CertGenParams certGenParams ) throws GeneralSecurityException {
+        throw new GeneralSecurityException("not implemented");
+    }
+
+    @Override
+    public Future<Boolean> replaceCertificateChain( final Runnable transactionCallback, final String alias, final X509Certificate[] chain ) throws InvalidKeyException, KeyStoreException {
+        SsgKeyEntry entry = entries.get(alias);
+        if (entry == null)
+            throw new InvalidKeyException("alias not found");
+        entry.setCertificateChain( chain );
+        return new NotFuture<Boolean>(true);
+    }
+
+    @Override
+    public Future<Boolean> storePrivateKeyEntry( final Runnable transactionCallback, final SsgKeyEntry entry, final boolean overwriteExisting ) throws KeyStoreException {
+        throw new KeyStoreException("not implemented");
     }
 }

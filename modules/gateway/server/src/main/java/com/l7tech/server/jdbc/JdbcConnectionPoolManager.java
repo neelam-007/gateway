@@ -309,7 +309,7 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
 
         // Set additional properties
         Properties props = new Properties();
-        Map<String, Object> additionalProps = connection.getAddtionalProperties();
+        Map<String, Object> additionalProps = connection.getAdditionalProperties();
         for (String propName: additionalProps.keySet()) {
             String propValue = (String) additionalProps.get(propName);
             // Reset maxIdleTime and acquireIncrement if they are overridden in the additional properties.

@@ -7,6 +7,8 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.persistence.Transient;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.util.Date;
 
 /**
@@ -33,7 +35,15 @@ public class SecurePassword extends NamedEntityImp {
         this(name, new Date().getTime());
     }
 
+    @Size(min=1,max=128)
+    @Transient
+    @Override
+    public String getName() {
+        return super.getName();
+    }
+
     @Column(name = "description", length = 256, nullable = true)
+    @Size(max=256)
     public String getDescription() {
         return description;
     }
@@ -52,6 +62,8 @@ public class SecurePassword extends NamedEntityImp {
     }
 
     @Column(name = "encoded_password", length = 256, nullable = false)
+    @NotNull
+    @Size(max=256)
     public String getEncodedPassword() {
         return encodedPassword;
     }
@@ -62,7 +74,7 @@ public class SecurePassword extends NamedEntityImp {
 
     @Column(name = "last_update")
     public long getLastUpdate() {
-        return lastUpdate == null ? 0 : lastUpdate.getTime();
+        return lastUpdate == null ? 0L : lastUpdate.getTime();
     }
 
     public void setLastUpdate(long lastUpdate) {
@@ -73,6 +85,10 @@ public class SecurePassword extends NamedEntityImp {
     @Transient
     public Date getLastUpdateAsDate() {
         return lastUpdate;
+    }
+
+    public void setLastUpdateAsDate( final Date lastUpdate ) {
+        this.lastUpdate = lastUpdate==null ? null : new Date( lastUpdate.getTime() );
     }
 
     @Override

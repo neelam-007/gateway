@@ -99,7 +99,7 @@ public class IdProviderReference extends ExternalReference {
     public String getRefId() {
         String id = null;
 
-        if ( providerId > 0 ) {
+        if ( providerId > 0L ) {
             id = Long.toString( providerId );   
         }
 
@@ -205,7 +205,7 @@ public class IdProviderReference extends ExternalReference {
                     // try to do a smart comparison match for LDAP
                     Map localPropsMap = deserializeIDPProps(localProps);
                     Map otherPropsMap = deserializeIDPProps(getIdProviderConfProps());
-                    if (getIdProviderTypeVal() == IdentityProviderType.LDAP.toVal()) {
+                    if (getIdProviderTypeVal() == IdentityProviderType.LDAP.toVal() && !otherPropsMap.isEmpty()) {
                         // use LdapIdentityProviderConfig.URL and LdapIdentityProviderConfig.SEARCH_BASE
                         String val1 = (String)localPropsMap.get(LdapIdentityProviderConfig.SEARCH_BASE);
                         String val2 = (String)otherPropsMap.get(LdapIdentityProviderConfig.SEARCH_BASE);

@@ -1,7 +1,8 @@
 package com.l7tech.gateway.api;
 
 import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
-import com.l7tech.gateway.api.impl.Extension;
+
+import com.l7tech.gateway.api.impl.ElementExtensionSupport;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
 import com.l7tech.util.Functions;
 
@@ -32,7 +33,7 @@ import java.util.Map;
  */
 @XmlType(name="ServiceDetailType", propOrder={"nameValue","enabledValue","serviceMappings","properties","extension","extensions"})
 @XmlSeeAlso({ServiceDetail.HttpMapping.class, ServiceDetail.SoapMapping.class})
-public class ServiceDetail {
+public class ServiceDetail extends ElementExtensionSupport {
 
     //- PUBLIC
 
@@ -101,7 +102,6 @@ public class ServiceDetail {
      *
      * @return The service name.
      */
-    @XmlTransient
     public String getName() {
         return get(name);
     }
@@ -120,7 +120,6 @@ public class ServiceDetail {
      *
      * @return True if the service is enabled.
      */
-    @XmlTransient
     public boolean getEnabled() {
         return get(enabled, false);
     }
@@ -213,7 +212,6 @@ public class ServiceDetail {
          *
          * @return The pattern or null.
          */
-        @XmlTransient
         public String getUrlPattern() {
             return get(urlPattern);
         }
@@ -240,7 +238,6 @@ public class ServiceDetail {
          *
          * @return The permitted verbs or null.
          */
-        @XmlTransient
         public List<String> getVerbs() {
             return verbs==null ? null : Functions.map( verbs, new Functions.Unary<String,AttributeExtensibleString>(){
                 @Override
@@ -325,7 +322,6 @@ public class ServiceDetail {
          *
          * @return True for lax resolution.
          */
-        @XmlTransient
         public boolean isLax() {
             return get(lax, false);
         }
@@ -387,33 +383,6 @@ public class ServiceDetail {
         this.enabled = value;
     }
 
-    @XmlAnyAttribute
-    protected Map<QName, Object> getAttributeExtensions() {
-        return attributeExtensions;
-    }
-
-    protected void setAttributeExtensions( final Map<QName, Object> attributeExtensions ) {
-        this.attributeExtensions = attributeExtensions;
-    }
-
-    @XmlElement(name="Extension")
-    protected Extension getExtension() {
-        return extension;
-    }
-
-    protected void setExtension( final Extension extension ) {
-        this.extension = extension;
-    }
-
-    @XmlAnyElement(lax=true)
-    protected List<Object> getExtensions() {
-        return extensions;
-    }
-
-    protected void setExtensions( final List<Object> extensions ) {
-        this.extensions = extensions;
-    }
-
     //- PACKAGE
 
     ServiceDetail(){
@@ -428,8 +397,4 @@ public class ServiceDetail {
     private AttributeExtensibleBoolean enabled = new AttributeExtensibleBoolean(false);
     private List<? extends ServiceMapping> serviceMappings;
     private Map<String,Object> properties;
-    private Map<QName,Object> attributeExtensions;
-    private Extension extension;
-    private List<Object> extensions;
-    
 }

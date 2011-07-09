@@ -29,6 +29,8 @@ import com.l7tech.server.service.ServiceDocumentResolver;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.uddi.ServiceWsdlUpdateChecker;
 import com.l7tech.util.Functions;
+import com.l7tech.util.Option;
+import com.l7tech.util.TextUtils;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapVersion;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -212,7 +214,7 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
         service.setLaxResolution( isLaxResolution( getServiceMapping(serviceDetail.getServiceMappings(), ServiceDetail.SoapMapping.class) ) );
         service.getPolicy().setXml( policyHelper.validatePolicySyntax(policyResource.getContent()) );
         setProperties( service, serviceDetail.getProperties(), PublishedService.class );
-        setSoapVersion( service, serviceDetail.getProperties()==null ? null : serviceDetail.getProperties().get( "soapVersion" ) );
+        setSoapVersion( service, getProperty(serviceDetail.getProperties(), "soapVersion", Option.<String>none(), String.class) );
         addWsdl( service, serviceDocuments, wsdlResources );
         service.parseWsdlStrategy( new ServiceDocumentWsdlStrategy(serviceDocuments) );
 
@@ -272,7 +274,7 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
         final Policy policy = service.getPolicy();
 
         final Folder root = new Folder("Root Node", null);
-        root.setOid( -5002 );
+        root.setOid( -5002L );
         service.setFolder( root );
         service.setInternal( false );
 
@@ -294,7 +296,7 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
         final Collection<ServiceDocument> serviceDocuments = serviceEntityBag.getServiceDocuments();
 
         for ( final ServiceDocument serviceDocument : serviceDocuments ) {
-            serviceDocument.setOid(-1);
+            serviceDocument.setOid( -1L );
             serviceDocument.setServiceId(identifier);
             serviceDocumentManager.save( serviceDocument );
         }
@@ -312,7 +314,7 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
             }
 
             for ( final ServiceDocument serviceDocument : serviceEntityBag.getServiceDocuments() ) {
-                serviceDocument.setOid(-1);
+                serviceDocument.setOid( -1L );
                 serviceDocument.setServiceId( serviceOid );
                 serviceDocumentManager.save( serviceDocument );
             }
@@ -396,7 +398,7 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
         resourceSet.setResources( Collections.singletonList(resource) );
         resource.setType( ResourceHelper.POLICY_TYPE );
         resource.setContent( policy.getXml() );
-        if ( policy.getVersion() != Policy.DEFAULT_OID ) {
+        if ( (long) policy.getVersion() != Policy.DEFAULT_OID ) {
             resource.setVersion( policy.getVersion() );
         }
         return resourceSet;
@@ -585,9 +587,9 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
     }
 
     private void setSoapVersion( final PublishedService service,
-                                 final Object soapVersionObject ) throws InvalidResourceException {
+                                 final Option<String> soapVersionText ) throws InvalidResourceException {
         if ( service.isSoap() ) {
-            final SoapVersion soapVersion = soapVersionFromString( soapVersionObject==null ? null : soapVersionObject.toString().trim() );
+            final SoapVersion soapVersion = soapVersionFromString( soapVersionText.map( TextUtils.trim() ) );
             if ( soapVersion != null ) {
                 service.setSoapVersion( soapVersion );
             }
@@ -602,16 +604,16 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
         return soapVersionText;
     }
 
-    private SoapVersion soapVersionFromString( final String soapVersionText ) throws InvalidResourceException {
+    private SoapVersion soapVersionFromString( final Option<String> soapVersionText ) throws InvalidResourceException {
         SoapVersion soapVersion = null;
 
-        if ( soapVersionText != null ) {
-            if ( UNKNOWN_SOAP_VERSION.equals( soapVersionText ) ) {
+        if ( soapVersionText.isSome() ) {
+            if ( UNKNOWN_SOAP_VERSION.equals( soapVersionText.some() ) ) {
                 soapVersion = SoapVersion.UNKNOWN;
             } else {
                 for ( final SoapVersion candidateVersion : SoapVersion.values() ) {
                     if ( !candidateVersion.getVersionNumber().isEmpty() &&
-                         candidateVersion.getVersionNumber().equals( soapVersionText ) ) {
+                         candidateVersion.getVersionNumber().equals( soapVersionText.some() ) ) {
                         soapVersion = candidateVersion;
                         break;
                     }

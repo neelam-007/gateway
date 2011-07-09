@@ -1,14 +1,14 @@
 package com.l7tech.gateway.api;
 
 import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
-import com.l7tech.gateway.api.impl.Extension;
+
+import com.l7tech.gateway.api.impl.AttributeExtensiblePolicyType;
+import com.l7tech.gateway.api.impl.ElementExtendableManagedObject;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
 
-import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.List;
@@ -24,7 +24,7 @@ import java.util.Map;
  */
 @XmlRootElement(name="PolicyValidationContext")
 @XmlType(name="PolicyValidationContextType", propOrder={"policyTypeValue", "properties", "resourceSets", "extension", "extensions"})
-public class PolicyValidationContext extends ManagedObject {
+public class PolicyValidationContext extends ElementExtendableManagedObject {
 
     //- PUBLIC
 
@@ -35,7 +35,6 @@ public class PolicyValidationContext extends ManagedObject {
      *
      * @return The type or null.
      */
-    @XmlTransient
     public PolicyDetail.PolicyType getPolicyType() {
         return get(policyType);
     }
@@ -46,7 +45,7 @@ public class PolicyValidationContext extends ManagedObject {
      * @param policyType The type to use.
      */
     public void setPolicyType( final PolicyDetail.PolicyType policyType ) {
-        this.policyType = set(this.policyType,policyType);
+        this.policyType = setNonNull( this.policyType==null ? new AttributeExtensiblePolicyType() : this.policyType, policyType);
     }
 
     /**
@@ -103,28 +102,6 @@ public class PolicyValidationContext extends ManagedObject {
 
     protected void setPolicyTypeValue( final AttributeExtensiblePolicyType policyType ) {
         this.policyType = policyType;
-    }
-
-    @XmlElement(name="Extension")
-    @Override
-    protected Extension getExtension() {
-        return super.getExtension();
-    }
-
-    @Override
-    protected void setExtension( final Extension extension ) {
-        super.setExtension( extension );
-    }
-    
-    @XmlAnyElement(lax=true)
-    @Override
-    protected List<Object> getExtensions() {
-        return super.getExtensions();
-    }
-
-    @Override
-    protected void setExtensions( final List<Object> extensions ) {
-        super.setExtensions( extensions );
     }
 
     //- PACKAGE

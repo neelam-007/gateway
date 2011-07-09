@@ -1,17 +1,14 @@
 package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.AccessorSupport;
-import com.l7tech.gateway.api.impl.Extension;
+import com.l7tech.gateway.api.impl.ElementExtendableAccessibleObject;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
 import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
 
-import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -25,7 +22,7 @@ import java.util.Map;
 @XmlRootElement(name="ClusterProperty")
 @XmlType(name="ClusterPropertyType", propOrder={"nameValue", "valueValue", "properties", "extension", "extensions"})
 @AccessorSupport.AccessibleResource(name ="clusterProperties")
-public class ClusterPropertyMO extends AccessibleObject {
+public class ClusterPropertyMO extends ElementExtendableAccessibleObject {
 
     //- PUBLIC
 
@@ -34,7 +31,6 @@ public class ClusterPropertyMO extends AccessibleObject {
      *
      * @return The name (may be null)
      */
-    @XmlTransient
     public String getName() {
         return get(name);
     }
@@ -53,7 +49,6 @@ public class ClusterPropertyMO extends AccessibleObject {
      *
      * @return The value (may be null)
      */
-    @XmlTransient
     public String getValue() {
         return get(value);
     }
@@ -105,28 +100,6 @@ public class ClusterPropertyMO extends AccessibleObject {
 
     protected void setValueValue( final AttributeExtensibleString value ) {
         this.value = value;
-    }
-
-    @XmlElement(name="Extension")
-    @Override
-    protected Extension getExtension() {
-        return super.getExtension();
-    }
-
-    @Override
-    protected void setExtension( final Extension extension ) {
-        super.setExtension( extension );
-    }
-
-    @XmlAnyElement(lax=true)
-    @Override
-    protected List<Object> getExtensions() {
-        return super.getExtensions();
-    }
-
-    @Override
-    protected void setExtensions( final List<Object> extensions ) {
-        super.setExtensions( extensions );
     }
 
     //- PACKAGE

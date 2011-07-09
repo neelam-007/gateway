@@ -1,9 +1,8 @@
 package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.AccessorSupport;
-import com.l7tech.gateway.api.impl.Extension;
+import com.l7tech.gateway.api.impl.ElementExtendableAccessibleObject;
 
-import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
@@ -22,7 +21,7 @@ import java.util.List;
 @XmlRootElement(name="Policy")
 @XmlType(name="PolicyType", propOrder={"policyDetail", "resourceSets", "extension", "extensions"})
 @AccessorSupport.AccessibleResource(name ="policies", accessorClassname="com.l7tech.gateway.api.impl.PolicyMOAccessorImpl")
-public class PolicyMO extends AccessibleObject {
+public class PolicyMO extends ElementExtendableAccessibleObject {
 
     //- PUBLIC
 
@@ -103,30 +102,6 @@ public class PolicyMO extends AccessibleObject {
      */
     public void setResourceSets( final List<ResourceSet> resourceSets ) {
         this.resourceSets = resourceSets;
-    }
-
-    //- PROTECTED
-
-    @XmlElement(name="Extension")
-    @Override
-    protected Extension getExtension() {
-        return super.getExtension();
-    }
-
-    @Override
-    protected void setExtension( final Extension extension ) {
-        super.setExtension( extension );
-    }
-
-    @XmlAnyElement(lax=true)
-    @Override
-    protected List<Object> getExtensions() {
-        return super.getExtensions();
-    }
-
-    @Override
-    protected void setExtensions( final List<Object> extensions ) {
-        super.setExtensions( extensions );
     }
 
     //- PACKAGE

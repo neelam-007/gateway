@@ -1,18 +1,15 @@
 package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.AccessorSupport;
-import com.l7tech.gateway.api.impl.Extension;
+import com.l7tech.gateway.api.impl.ElementExtendableAccessibleObject;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
 import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
 
-import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -29,7 +26,7 @@ import java.util.Map;
 @XmlRootElement(name="Folder")
 @XmlType(name="FolderType", propOrder={"nameValue", "properties", "extension", "extensions"})
 @AccessorSupport.AccessibleResource(name ="folders")
-public class FolderMO extends AccessibleObject {
+public class FolderMO extends ElementExtendableAccessibleObject {
 
     //- PUBLIC
 
@@ -40,7 +37,6 @@ public class FolderMO extends AccessibleObject {
      *
      * @return The name of the folder (may be null)
      */
-    @XmlTransient
     public String getName() {
         return get(name);
     }
@@ -104,28 +100,6 @@ public class FolderMO extends AccessibleObject {
 
     protected void setNameValue( final AttributeExtensibleString name ) {
         this.name = name;
-    }
-
-    @XmlElement(name="Extension")
-    @Override
-    protected Extension getExtension() {
-        return super.getExtension();
-    }
-
-    @Override
-    protected void setExtension( final Extension extension ) {
-        super.setExtension( extension );
-    }
-
-    @XmlAnyElement(lax=true)
-    @Override
-    protected List<Object> getExtensions() {
-        return super.getExtensions();
-    }
-
-    @Override
-    protected void setExtensions( final List<Object> extensions ) {
-        super.setExtensions( extensions );
     }
 
     //- PACKAGE
