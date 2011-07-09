@@ -1,8 +1,11 @@
 package com.l7tech.util;
 
-import static com.l7tech.util.TextUtils.emptyAsNull;
+import com.l7tech.util.Functions.Unary;
+import static com.l7tech.util.TextUtils.isEmpty;
+import static com.l7tech.util.TextUtils.isNotEmpty;
 import static com.l7tech.util.TextUtils.trim;
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -70,8 +73,22 @@ public class OptionTest {
 
     @Test
     public void testMap() {
+        final Unary<String,String> nullr = new Unary<String,String>(){
+            @Override
+            public String call( final String s ) {
+                return null;
+            }
+        };
         assertEquals( "Map 1", "value1", Option.some( "value1   " ).map( trim() ).some() );
-        assertFalse( "Map 2", Option.some( "" ).map( emptyAsNull() ).isSome() );
-        assertFalse( "Map 3", Option.<String>none().map( emptyAsNull() ).isSome() );
+        assertFalse( "Map 2", Option.some( "" ).map( nullr ).isSome() );
+        assertFalse( "Map 3", Option.<String>none().map( nullr ).isSome() );
+    }
+
+    @Test
+    public void testFilter() {
+        assertEquals( "Filter 1", "value1", Option.some( "value1" ).filter( isNotEmpty() ).some() );
+        assertEquals( "Filter 2", "", Option.some( "" ).filter( isEmpty() ).some() );
+        assertFalse( "Filter 3", Option.some( "" ).filter( isNotEmpty() ).isSome() );
+        assertFalse( "Filter 4", Option.<String>none().filter( isEmpty() ).isSome() );
     }
 }

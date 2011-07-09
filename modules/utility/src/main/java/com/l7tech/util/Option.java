@@ -94,6 +94,24 @@ public class Option<T> {
     }
 
     /**
+     * Filter the optional value with the given function.
+     *
+     * @param filter The filter function
+     * @return The optional value, none if this optoin is none or the filter returns false.
+     */
+    public Option<T> filter( @NotNull Functions.Unary<Boolean,? super T> filter ) {
+        final Option<T> filtered;
+
+        if ( isSome() && filter.call( some() ) ) {
+            filtered = this;
+        } else {
+            filtered = Option.none();
+        }
+
+        return filtered;
+    }
+
+    /**
      * Map the given function across this optional value.
      *
      * @param mapper The mapping function

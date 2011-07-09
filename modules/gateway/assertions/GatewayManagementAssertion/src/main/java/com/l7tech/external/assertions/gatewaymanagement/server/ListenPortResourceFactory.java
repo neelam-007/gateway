@@ -5,17 +5,22 @@ import static com.l7tech.gateway.api.ListenPortMO.*;
 import static com.l7tech.gateway.api.ListenPortMO.TlsSettings.*;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.gateway.common.transport.SsgConnector.Endpoint;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.transport.SsgConnectorManager;
 import static com.l7tech.util.CollectionUtils.foreach;
-import com.l7tech.util.Functions;
+import com.l7tech.util.Functions.Unary;
+import com.l7tech.util.Functions.UnaryVoid;
+import com.l7tech.util.Functions.UnaryVoidThrows;
+import static com.l7tech.util.Functions.grepFirst;
 import com.l7tech.util.Option;
+import static com.l7tech.util.Option.optional;
 import com.l7tech.util.Pair;
 import com.l7tech.util.SyspropUtil;
-import static com.l7tech.util.TextUtils.emptyAsNull;
+import static com.l7tech.util.TextUtils.isNotEmpty;
 import static com.l7tech.util.TextUtils.join;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -57,7 +62,7 @@ public class ListenPortResourceFactory extends EntityManagerResourceFactory<List
         listenPort.setProtocol( entity.getScheme() );
         listenPort.setInterface( entity.getProperty( SsgConnector.PROP_BIND_ADDRESS ) );
         listenPort.setPort( entity.getPort() );
-        listenPort.setEnabledFeatures( buildEnabledFeatures(Option.optional(entity.getEndpoints())) );
+        listenPort.setEnabledFeatures( buildEnabledFeatures( optional( entity.getEndpoints() )) );
         listenPort.setTargetServiceId( entity.getProperty( SsgConnector.PROP_HARDWIRED_SERVICE_ID ) );
         listenPort.setTlsSettings( buildTlsSettings(entity) );
         listenPort.setProperties( buildProperties(entity) );
@@ -88,8 +93,8 @@ public class ListenPortResourceFactory extends EntityManagerResourceFactory<List
             }
         }
 
-        putProperty( connector, SsgConnector.PROP_BIND_ADDRESS, Option.optional(listenPort.getInterface()) );
-        putProperty( connector, SsgConnector.PROP_HARDWIRED_SERVICE_ID, Option.optional( listenPort.getTargetServiceId() ) );
+        putProperty( connector, SsgConnector.PROP_BIND_ADDRESS, optional( listenPort.getInterface() ) );
+        putProperty( connector, SsgConnector.PROP_HARDWIRED_SERVICE_ID, optional( listenPort.getTargetServiceId() ) );
         setTlsProperties( listenPort, connector );
 
         return connector;
@@ -103,7 +108,7 @@ public class ListenPortResourceFactory extends EntityManagerResourceFactory<List
         oldEntity.setScheme( newEntity.getScheme() );
         oldEntity.setSecure( newEntity.isSecure() );
         oldEntity.setPort( newEntity.getPort() );
-        //oldEntity.setEndpoints( newEntity.getEndpoints() );
+        oldEntity.setEndpoints( newEntity.getEndpoints() );
         oldEntity.setClientAuth( newEntity.getClientAuth() );
         oldEntity.setKeystoreOid( newEntity.getKeystoreOid() );
         oldEntity.setKeyAlias( newEntity.getKeyAlias() );
@@ -130,7 +135,7 @@ public class ListenPortResourceFactory extends EntityManagerResourceFactory<List
     private List<String> buildEnabledFeatures( final Option<String> endpoints ) {
         final List<String> features = new ArrayList<String>();
 
-        foreach( SsgConnector.Endpoint.parseCommaList( endpoints.orSome( "" ) ), false, new Functions.UnaryVoid<SsgConnector.Endpoint>() {
+        foreach( SsgConnector.Endpoint.parseCommaList( endpoints.orSome( "" ) ), false, new UnaryVoid<Endpoint>() {
             @Override
             public void call( final SsgConnector.Endpoint endpoint ) {
                 features.add( EntityPropertiesHelper.getEnumText( endpoint ) );
@@ -143,7 +148,7 @@ public class ListenPortResourceFactory extends EntityManagerResourceFactory<List
     private String buildEndpointsValue( final List<String> enabledFeatures ) throws InvalidResourceException {
         final Set<SsgConnector.Endpoint> endpoints = new LinkedHashSet<SsgConnector.Endpoint>();
 
-        foreach( enabledFeatures, false, new Functions.UnaryVoidThrows<String, InvalidResourceException>() {
+        foreach( enabledFeatures, false, new UnaryVoidThrows<String, InvalidResourceException>() {
             @Override
             public void call( final String enabledFeature ) throws InvalidResourceException {
                 endpoints.add( EntityPropertiesHelper.getEnumValue( SsgConnector.Endpoint.class, enabledFeature ) );
@@ -183,9 +188,9 @@ public class ListenPortResourceFactory extends EntityManagerResourceFactory<List
                                    final SsgConnector connector ) throws InvalidResourceException {
         if ( isSecureProtocol( listenPort.getProtocol() ) ) {
             connector.setSecure( true );
-            final Option<TlsSettings> tlsSettings = Option.optional(listenPort.getTlsSettings());
+            final Option<TlsSettings> tlsSettings = optional( listenPort.getTlsSettings() );
             if ( tlsSettings.isSome() ) {
-                final Option<String> externalKeyIdentifier = Option.optional(tlsSettings.some().getPrivateKeyId());
+                final Option<String> externalKeyIdentifier = optional( tlsSettings.some().getPrivateKeyId() );
                 if ( externalKeyIdentifier.isSome() ) {
                     final Pair<Long,String> keyIdentifier = PrivateKeyResourceFactory.toInternalId( externalKeyIdentifier.some(), PrivateKeyResourceFactory.INVALIDRESOURCE_THROWER );
                     connector.setKeystoreOid( keyIdentifier.left );
@@ -249,7 +254,7 @@ public class ListenPortResourceFactory extends EntityManagerResourceFactory<List
     }
 
     private Option<String> ifNotEmpty( final String value ) {
-        return Option.optional( value ).map( emptyAsNull() );
+        return optional( value ).filter( isNotEmpty() );
     }
 
     private boolean isSecureProtocol( final String protocol ) {
@@ -257,14 +262,14 @@ public class ListenPortResourceFactory extends EntityManagerResourceFactory<List
 
         if ( protocol != null ) {
             final TransportDescriptor transportDescriptor =
-                    Functions.grepFirst(
+                    grepFirst(
                             Arrays.asList( ssgConnectorManager.getTransportProtocols() ),
-                            new Functions.Unary<Boolean,TransportDescriptor>() {
-                @Override
-                public Boolean call( final TransportDescriptor transportDescriptor ) {
-                    return protocol.equals( transportDescriptor.getScheme() );
-                }
-            } );
+                            new Unary<Boolean, TransportDescriptor>() {
+                                @Override
+                                public Boolean call( final TransportDescriptor transportDescriptor ) {
+                                    return protocol.equals( transportDescriptor.getScheme() );
+                                }
+                            } );
 
             secure = transportDescriptor != null && transportDescriptor.isUsesTls();
         }

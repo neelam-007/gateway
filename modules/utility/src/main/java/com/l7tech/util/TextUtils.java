@@ -1,6 +1,7 @@
 package com.l7tech.util;
 
 import com.l7tech.util.Functions.Unary;
+import static com.l7tech.util.Functions.negate;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -686,12 +687,21 @@ public class TextUtils {
     }
 
     /**
-     * Function that maps empty strings to null.
+     * First class isEmpty
      *
-     * @return The empty-as-null function
+     * @return An isEmpty function
      */
-    public static Unary<String,CharSequence> emptyAsNull() {
-        return FUNC_EMPTY_AS_NULL;
+    public static Unary<Boolean,CharSequence> isEmpty() {
+        return FUNC_IS_EMPTY;
+    }
+
+    /**
+     * Function that tests if a character sequence is not empty.
+     *
+     * @return An inverted isEmpty function
+     */
+    public static Unary<Boolean,CharSequence> isNotEmpty() {
+        return FUNC_IS_NOT_EMPTY;
     }
 
     private static final Unary<String,CharSequence> FUNC_TRIM = new Unary<String,CharSequence>() {
@@ -701,11 +711,13 @@ public class TextUtils {
             }
         };
 
-    private static final Unary<String,CharSequence> FUNC_EMPTY_AS_NULL = new Unary<String,CharSequence>() {
+    private static final Unary<Boolean,CharSequence> FUNC_IS_EMPTY = new Unary<Boolean,CharSequence>() {
             @Override
-            public String call( final CharSequence charSequence ) {
+            public Boolean call( final CharSequence charSequence ) {
                 final String text = charSequence.toString();
-                return text.isEmpty() ? null : text;
+                return text.isEmpty();
             }
         };
+
+    private static final Unary<Boolean,CharSequence> FUNC_IS_NOT_EMPTY = negate( FUNC_IS_EMPTY );
 }
