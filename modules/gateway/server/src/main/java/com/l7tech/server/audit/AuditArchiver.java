@@ -125,9 +125,9 @@ public class AuditArchiver implements ApplicationContextAware, PropertyChangeLis
         //todo add validation of thresholds
         logger.info("Reloading configuration.");
 
-        shutdownThreshold = config.getIntProperty(PARAM_AUDIT_ARCHIVER_SHUTDOWN_THRESHOLD, 90);
-        startThreshold = config.getIntProperty(PARAM_AUDIT_ARCHIVER_START_THRESHOLD, 75);
-        stopThreshold = config.getIntProperty(PARAM_AUDIT_ARCHIVER_STOP_THRESHOLD, 50);
+        shutdownThreshold = getThreshold(PARAM_AUDIT_ARCHIVER_SHUTDOWN_THRESHOLD, 90);
+        startThreshold = getThreshold(PARAM_AUDIT_ARCHIVER_START_THRESHOLD, 75);
+        stopThreshold = getThreshold(PARAM_AUDIT_ARCHIVER_STOP_THRESHOLD, 50);
         batchSize = config.getIntProperty( PARAM_AUDIT_ARCHIVER_BATCH_SIZE, 100 );
 
         long newStaleTimeout = config.getLongProperty(PARAM_AUDIT_ARCHIVER_STALE_TIMEOUT, 120L);
@@ -375,5 +375,29 @@ public class AuditArchiver implements ApplicationContextAware, PropertyChangeLis
         public void run() {
             trigger();
         }
+    }
+
+    /**
+     * Retrieve the configured threshold value from the given <tt>thresholdKey</tt>.  If the returned value
+     * is does not exist or not between 0 and 100 (inclusive) the <tt>defaultValue</tt> will be returned.
+     *
+     * @param thresholdKey the property name to retrieve the threshold value.
+     * @param defaultValue the default value to return if the <tt>thresholdKey</tt> is not found or it's not between 0 and 100 (inclusive).
+     * @return the threshold value.
+     * @throws IllegalArgumentException if either paramters are invalid.
+     */
+    private int getThreshold(final String thresholdKey, final int defaultValue) {
+        if (null == thresholdKey || thresholdKey.trim().isEmpty()) {
+            throw new IllegalArgumentException("thresholdKey is required");
+        }
+        if (defaultValue < 0 || defaultValue > 100){
+            throw new IllegalArgumentException("default value must be between 0 and 100 (inclusive)");
+        }
+        int thresholdValue = config.getIntProperty(thresholdKey, defaultValue);
+        if(thresholdValue < 0 || thresholdValue > 100){
+            logger.warning(String.format("the specified value for %s (%d) must be between 0 and 100 (inclusive) defaulting to %d", thresholdKey, thresholdValue, defaultValue));
+            thresholdValue = defaultValue;
+        }
+        return thresholdValue;
     }
 }
