@@ -290,6 +290,10 @@ public class SshServerModule extends TransportModule implements ApplicationListe
             }
             sshd.setPort(connector.getPort());
 
+            // TODO configurable max connections per user
+            // sshd.getProperties().put(SshServer.MAX_CONCURRENT_SESSIONS, "10");
+            // 2011/0708 TL Apache SSHD does not appear to currently support configurable max total connections nor configurable connection timeout
+
             auditStart("connector OID " + connector.getOid() + ", on port " + connector.getPort());
             sshd.start();
             activeConnectors.put(connector.getOid(), new Pair<SsgConnector, SshServer>(connector, sshd));
@@ -396,7 +400,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
                 logger.log(Level.INFO, "Username:" + username + " key:" + key.toString());
                 // TODO
                 //File f = new File("/Users/" + username + "/.ssh/authorized_keys");
-                return true;
+                return false;
             }
         });
 

@@ -222,14 +222,14 @@ public class ServerVariables {
                 return frk == null ? null : String.valueOf(frk.isSecure());
             }
         }),
-        new Variable("request.sftp.path", new Getter() {
+        new Variable("request.ssh.path", new Getter() {
             @Override
             public Object get(String name, PolicyEnforcementContext context) {
                 FtpRequestKnob frk = context.getRequest().getKnob(FtpRequestKnob.class);
                 return frk == null ? null : frk.getPath();
             }
         }),
-        new Variable("request.sftp.file", new Getter() {
+        new Variable("request.ssh.file", new Getter() {
             @Override
             public Object get(String name, PolicyEnforcementContext context) {
                 FtpRequestKnob frk = context.getRequest().getKnob(FtpRequestKnob.class);

@@ -238,6 +238,8 @@ public class MessageProcessingScpCommand implements Command, Runnable, SessionAw
                         case 'D':
                             isDir = true;
                         case 'C':
+                            line = ((char) c) + readLine();
+                            break;
                         case 'E':
                             line = ((char) c) + readLine();
                             break;

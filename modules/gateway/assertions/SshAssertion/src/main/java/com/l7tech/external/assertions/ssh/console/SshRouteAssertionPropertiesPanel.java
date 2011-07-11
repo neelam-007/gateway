@@ -60,6 +60,12 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
     private JTabbedPane tabbedPane1;
     private JCheckBox validateServerSHostCheckBox;
     private JButton manageHostKeyButton;
+    private JRadioButton SCPRadioButton;
+    private JRadioButton SFTPRadioButton;
+    private JRadioButton uploadToRadioButton;
+    private JRadioButton downloadFromRadioButton;
+    private JRadioButton passThroughCredentialsInRadioButton;
+    private JRadioButton specifyUserCredentialsRadioButton;
 
     private SshRouteAssertion assertion;
     private InputValidator validators;
