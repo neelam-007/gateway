@@ -28,6 +28,10 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
     protected volatile Reference<Policy> policy;
     private static Map<String, Reference<Image>> aliasDecoratedImages = new ConcurrentHashMap<String, Reference<Image>>();
 
+    private static final String OVERLAY_ALIAS = MainWindow.RESOURCE_PATH + "/alias16.png";
+
+    private static final String OVERLAY_DISABLED = MainWindow.RESOURCE_PATH + "/RedCrossSign16.gif";
+
     public PolicyEntityNode(PolicyHeader e) {
         this(e, null);
     }
@@ -122,7 +126,16 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
     public Image getIcon() {
         Image image = super.getIcon();
         if ( getEntityHeader().isAlias() ) {
-            image = getAliasDecoratedImage( iconResource(false), image );
+            image = getAliasDecoratedImage(OVERLAY_ALIAS, iconResource(false), image );
+        }
+        else {
+            try {
+                if(!getPolicy().isVersionActive()){
+                    image = getAliasDecoratedImage(OVERLAY_DISABLED, iconResource(false), image );
+                }
+            } catch (FindException e) {
+                //supress
+            }
         }
         return image;
     }
@@ -155,7 +168,7 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
         return getName();
     }
 
-    private static Image getAliasDecoratedImage(final String bgPath, final Image bgImage) {
+    private static Image getAliasDecoratedImage(final String overlaySrc, final String bgPath, final Image bgImage) {
         Reference<Image> ref = aliasDecoratedImages.get(bgPath);
         if (ref != null) {
             Image ret = ref.get();
@@ -163,17 +176,18 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
                 return ret;
         }
 
-        Image ret = addAliasOverlay(bgImage);
+        Image ret = addOverlay(overlaySrc, bgImage);
         aliasDecoratedImages.put(bgPath, new SoftReference<Image>(ret));
         return ret;
     }
 
-    private static Image addAliasOverlay(final Image bgImage) {
+    private static Image addOverlay(final String overlaySrc, final Image bgImage) {
+        if(null == overlaySrc || overlaySrc.trim().isEmpty()) return bgImage;
         final Image ret = new BufferedImage(18, 18, BufferedImage.TYPE_INT_ARGB);
-        final Image aliasImage = ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/alias16.png", PolicyEntityNode.class.getClassLoader() ,java.awt.Transparency.TRANSLUCENT);
+        final Image overlayImage = ImageCache.getInstance().getIcon(overlaySrc, PolicyEntityNode.class.getClassLoader() ,java.awt.Transparency.TRANSLUCENT);
         final Graphics g = ret.getGraphics();
         g.drawImage( bgImage, 0, 0, null );
-        g.drawImage( aliasImage, 0, 0, null );
+        g.drawImage( overlayImage, 0, 0, null );
         return ret;
     }
 

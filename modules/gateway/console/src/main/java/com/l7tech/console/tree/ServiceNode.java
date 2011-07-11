@@ -252,10 +252,18 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
     @Override
     protected String iconResource(boolean open) {
         ServiceHeader header = getEntityHeader();
-        if (header == null) {
+
+        boolean isActive = false;
+        try {
+            isActive = getPolicy().isVersionActive();
+        } catch (FindException e) {
+            //suppress
+        }
+
+        if (header == null || !isActive) {
             return "com/l7tech/console/resources/services_disabled16.png";
         }
-        else if (header.isDisabled()) {
+        else if (!isActive || header.isDisabled()) {
             if (!header.isSoap()) {
                 if(header.isAlias()){
                     return "com/l7tech/console/resources/xmlObject_disabled16Alias.png";                    
