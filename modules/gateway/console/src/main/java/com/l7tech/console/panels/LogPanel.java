@@ -578,9 +578,32 @@ public class LogPanel extends JPanel {
             }
         });
 
+        getClearButton().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                clearSearchParameters();
+            }
+        });
+
         applyPreferences();
 
         setCautionIndicatorPanelState();
+    }
+
+    private void clearSearchParameters() {
+        controlPanel.serviceTextField.setText("");
+        controlPanel.messageTextField.setText("");
+        controlPanel.requestIdTextField.setText("");
+        controlPanel.userIdOrDnTextField.setText("");
+        controlPanel.threadIdTextField.setText("");
+        controlPanel.userNameTextField.setText("");
+        controlPanel.nodeTextField.setText("");
+        controlPanel.levelComboBox.setSelectedItem(LogLevelOption.ALL);
+        controlPanel.auditTypeComboBox.setSelectedItem(AuditType.ALL);
+
+        controlPanel.entityIdTextField.setText("");
+        controlPanel.auditCodeTextField.setText("");
+        controlPanel.entityTypeComboBox.setSelectedItem(EntityType.ANY.getName());
     }
 
     /**
@@ -2055,6 +2078,9 @@ public class LogPanel extends JPanel {
         return controlPanel.searchButton;
     }
 
+    public JButton getClearButton(){
+        return controlPanel.clearButton;
+    }
 
     /**
      * Return lastUpdateTimeLabel property value
@@ -2842,5 +2868,6 @@ public class LogPanel extends JPanel {
         private JPanel cautionIndicatorPanel;
         private JLabel cautionTextField;
         private JCheckBox validateSignaturesCheckBox;
+        private JButton clearButton;
     }
 }
