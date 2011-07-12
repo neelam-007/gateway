@@ -10,6 +10,7 @@ import com.l7tech.server.cluster.ClusterLock;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.system.AuditArchiverEvent;
 import com.l7tech.util.Config;
+import com.l7tech.util.ValidatedConfig;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -39,7 +40,7 @@ import java.util.logging.Logger;
 public class AuditArchiver implements ApplicationContextAware, PropertyChangeListener {
 
     private static final Logger logger = Logger.getLogger(AuditArchiver.class.getName());
-
+    private final ValidatedConfig validatedConfig;
     private final Config config;
     private final ClusterPropertyManager clusterPropertyManager;
     private final PlatformTransactionManager transactionManager;
@@ -89,6 +90,7 @@ public class AuditArchiver implements ApplicationContextAware, PropertyChangeLis
         lock = getNewLock();
 
         timer = new Timer(true);
+        validatedConfig = getValidatedConfig(config, logger);
     }
 
     private Lock getNewLock() {
@@ -125,9 +127,10 @@ public class AuditArchiver implements ApplicationContextAware, PropertyChangeLis
         //todo add validation of thresholds
         logger.info("Reloading configuration.");
 
-        shutdownThreshold = getThreshold(PARAM_AUDIT_ARCHIVER_SHUTDOWN_THRESHOLD, 90);
-        startThreshold = getThreshold(PARAM_AUDIT_ARCHIVER_START_THRESHOLD, 75);
-        stopThreshold = getThreshold(PARAM_AUDIT_ARCHIVER_STOP_THRESHOLD, 50);
+        shutdownThreshold = validatedConfig.getIntProperty(PARAM_AUDIT_ARCHIVER_SHUTDOWN_THRESHOLD, 90);
+        startThreshold = validatedConfig.getIntProperty(PARAM_AUDIT_ARCHIVER_START_THRESHOLD, 75);
+        stopThreshold = validatedConfig.getIntProperty(PARAM_AUDIT_ARCHIVER_STOP_THRESHOLD, 50);
+
         batchSize = config.getIntProperty( PARAM_AUDIT_ARCHIVER_BATCH_SIZE, 100 );
 
         long newStaleTimeout = config.getLongProperty(PARAM_AUDIT_ARCHIVER_STALE_TIMEOUT, 120L);
@@ -377,27 +380,17 @@ public class AuditArchiver implements ApplicationContextAware, PropertyChangeLis
         }
     }
 
-    /**
-     * Retrieve the configured threshold value from the given <tt>thresholdKey</tt>.  If the returned value
-     * is does not exist or not between 0 and 100 (inclusive) the <tt>defaultValue</tt> will be returned.
-     *
-     * @param thresholdKey the property name to retrieve the threshold value.
-     * @param defaultValue the default value to return if the <tt>thresholdKey</tt> is not found or it's not between 0 and 100 (inclusive).
-     * @return the threshold value.
-     * @throws IllegalArgumentException if either paramters are invalid.
-     */
-    private int getThreshold(final String thresholdKey, final int defaultValue) {
-        if (null == thresholdKey || thresholdKey.trim().isEmpty()) {
-            throw new IllegalArgumentException("thresholdKey is required");
-        }
-        if (defaultValue < 0 || defaultValue > 100){
-            throw new IllegalArgumentException("default value must be between 0 and 100 (inclusive)");
-        }
-        int thresholdValue = config.getIntProperty(thresholdKey, defaultValue);
-        if(thresholdValue < 0 || thresholdValue > 100){
-            logger.warning(String.format("the specified value for %s (%d) must be between 0 and 100 (inclusive) defaulting to %d", thresholdKey, thresholdValue, defaultValue));
-            thresholdValue = defaultValue;
-        }
-        return thresholdValue;
+    private ValidatedConfig getValidatedConfig(final Config config, final Logger logger){
+        final ValidatedConfig vc = new ValidatedConfig(config, logger);
+
+        vc.setMinimumValue(PARAM_AUDIT_ARCHIVER_SHUTDOWN_THRESHOLD, 0);
+        vc.setMinimumValue(PARAM_AUDIT_ARCHIVER_START_THRESHOLD, 0);
+        vc.setMinimumValue(PARAM_AUDIT_ARCHIVER_STOP_THRESHOLD, 0);
+
+        vc.setMaximumValue(PARAM_AUDIT_ARCHIVER_SHUTDOWN_THRESHOLD, 100);
+        vc.setMaximumValue(PARAM_AUDIT_ARCHIVER_START_THRESHOLD, 100);
+        vc.setMaximumValue(PARAM_AUDIT_ARCHIVER_STOP_THRESHOLD, 100);
+
+        return vc;
     }
 }
