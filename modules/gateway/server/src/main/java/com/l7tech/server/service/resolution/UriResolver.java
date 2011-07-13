@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.transport.ResolutionConfiguration;
 import com.l7tech.message.FtpRequestKnob;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.Message;
+import com.l7tech.message.SshKnob;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -285,8 +286,14 @@ public class UriResolver extends ServiceResolver<String> {
         HttpRequestKnob httpReqKnob = request.getKnob(HttpRequestKnob.class);
         if (httpReqKnob == null) {
             FtpRequestKnob ftpReqKnob = request.getKnob(FtpRequestKnob.class);
-            if (ftpReqKnob == null) throw new ServiceResolutionException("Unable to access HTTP or FTP path.");
-            String uri = ftpReqKnob.getRequestUri();
+            String uri = "";
+            if (ftpReqKnob != null) {
+                uri = ftpReqKnob.getRequestUri();
+            } else {
+                SshKnob sshKnob = request.getKnob(SshKnob.class);
+                if (sshKnob == null) throw new ServiceResolutionException("Unable to access HTTP, FTP or SSH path.");
+                uri = sshKnob.getRequestUri();
+            }
             if (uri.startsWith(SecureSpanConstants.SSG_RESERVEDURI_PREFIX)) uri = "";
             auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_REAL_URI, uri);
             return uri;
@@ -328,7 +335,8 @@ public class UriResolver extends ServiceResolver<String> {
     }
 
     public static boolean canResolveByURI( final Message request ) {
-        return (request.getKnob(HttpRequestKnob.class) != null) || (request.getKnob(FtpRequestKnob.class) != null);
+        return (request.getKnob(HttpRequestKnob.class) != null) || (request.getKnob(FtpRequestKnob.class) != null)
+                || (request.getKnob(SshKnob.class) != null);
     }
 
     public static class URIResolutionParam {

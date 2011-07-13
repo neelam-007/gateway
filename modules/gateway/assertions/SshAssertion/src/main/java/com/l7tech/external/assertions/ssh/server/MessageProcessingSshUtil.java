@@ -1,11 +1,11 @@
 package com.l7tech.external.assertions.ssh.server;
 
-import com.l7tech.message.FtpRequestKnob;
-import com.l7tech.util.InetAddressUtil;
+import com.l7tech.message.SshKnob;
 import com.l7tech.util.Pair;
 
 import java.net.PasswordAuthentication;
 import java.net.SocketAddress;
+import java.security.PublicKey;
 
 /**
  * Utility methods for SSH support.
@@ -13,11 +13,12 @@ import java.net.SocketAddress;
 public class MessageProcessingSshUtil {
 
     /*
-     * SCP and SFTP uses a similar format to FtpKnob.  Create an FtpKnob.
+     * Create an SshKnob for SCP and SFTP.
      */
-    public static FtpRequestKnob buildFtpKnob(final String protocol, final SocketAddress localSocketAddress,
+    public static SshKnob buildSshKnob(final String protocol, final SocketAddress localSocketAddress,
                                               final SocketAddress remoteSocketAddress, final String file, final String path,
-                                              final boolean secure, final boolean unique, final MessageProcessingPasswordAuthenticator user) {
+                                              final boolean secure, final boolean unique, final MessageProcessingPasswordAuthenticator user,
+                                              final MessageProcessingPublicKeyAuthenticator userPublicKey) {
 
         // SocketAddress requires us to parse for host and port (e.g. /127.0.0.1:22)
         Pair<String,String> localHostPortPair = MessageProcessingSshUtil.getHostAndPort(localSocketAddress.toString());
@@ -28,7 +29,7 @@ public class MessageProcessingSshUtil {
         final String remoteHostFinal = remoteHostPortPair.getKey();
         final int remotePortFinal = Integer.parseInt(remoteHostPortPair.getValue());
 
-        return new FtpRequestKnob(){
+        return new SshKnob(){
             @Override
             public String getLocalAddress() {
                 return localHostFinal;
@@ -70,35 +71,18 @@ public class MessageProcessingSshUtil {
                 return path;
             }
             @Override
-            public String getRequestUrl() {
-
-                StringBuffer urlBuffer = new StringBuffer();
-
-                urlBuffer.append(protocol);
-                urlBuffer.append("://");
-                urlBuffer.append(InetAddressUtil.getHostForUrl(localHostFinal));
-                urlBuffer.append(":");
-                urlBuffer.append(localPortFinal);
-                urlBuffer.append(path);
-                if (!path.endsWith("/"))
-                    urlBuffer.append("/");
-                urlBuffer.append(file);
-
-                return urlBuffer.toString();
-            }
-            @Override
-            public boolean isSecure() {
-                return secure;
-            }
-            @Override
-            public boolean isUnique() {
-                return unique;
-            }
-            @Override
-            public PasswordAuthentication getCredentials() {
+            public PasswordAuthentication getPasswordAuthentication() {
                 if (user != null) {
                     return new PasswordAuthentication(user.getUserName(),
                         user.getPassword() !=null ? user.getPassword().toCharArray() : null);
+                } else {
+                    return null;
+                }
+            }
+            @Override
+            public PublicKey getPublicKey() {
+                if (userPublicKey != null) {
+                    return userPublicKey.getPublicKey();
                 } else {
                     return null;
                 }

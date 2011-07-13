@@ -225,15 +225,15 @@ public class ServerVariables {
         new Variable("request.ssh.path", new Getter() {
             @Override
             public Object get(String name, PolicyEnforcementContext context) {
-                FtpRequestKnob frk = context.getRequest().getKnob(FtpRequestKnob.class);
-                return frk == null ? null : frk.getPath();
+                SshKnob sk = context.getRequest().getKnob(SshKnob.class);
+                return sk == null ? null : sk.getPath();
             }
         }),
         new Variable("request.ssh.file", new Getter() {
             @Override
             public Object get(String name, PolicyEnforcementContext context) {
-                FtpRequestKnob frk = context.getRequest().getKnob(FtpRequestKnob.class);
-                return frk == null ? null : frk.getFile();
+                SshKnob sk = context.getRequest().getKnob(SshKnob.class);
+                return sk == null ? null : sk.getFile();
             }
         }),
         new Variable("request.elapsedTime", new Getter() {

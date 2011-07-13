@@ -37,7 +37,6 @@ import org.apache.sshd.common.util.OsUtils;
 import org.apache.sshd.common.util.SecurityUtils;
 import org.apache.sshd.server.Command;
 import org.apache.sshd.server.ForwardingFilter;
-import org.apache.sshd.server.PublickeyAuthenticator;
 import org.apache.sshd.server.channel.ChannelDirectTcpip;
 import org.apache.sshd.server.channel.ChannelSession;
 import org.apache.sshd.server.kex.DHG1;
@@ -54,7 +53,6 @@ import org.springframework.context.ApplicationListener;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.InvalidKeyException;
-import java.security.PublicKey;
 import java.security.Security;
 import java.util.*;
 import java.util.concurrent.*;
@@ -247,14 +245,14 @@ public class SshServerModule extends TransportModule implements ApplicationListe
         connector = connector.getReadOnlyCopy();
         final String scheme = connector.getScheme();
         if (SCHEME_SSH.equalsIgnoreCase(scheme)) {
-            addSftpConnector(connector);
+            addSshConnector(connector);
         } else {
             // Can't happen
             logger.log(Level.WARNING, "ignoring connector with unrecognized scheme " + scheme);
         }
     }
 
-    private void addSftpConnector(SsgConnector connector) throws ListenerException {
+    private void addSshConnector(SsgConnector connector) throws ListenerException {
         if (!isLicensed())
             return;
 
@@ -278,21 +276,23 @@ public class SshServerModule extends TransportModule implements ApplicationListe
             SshServer sshd = setUpSshServer();
 
             MessageProcessingPasswordAuthenticator user = (MessageProcessingPasswordAuthenticator) sshd.getPasswordAuthenticator();
+            MessageProcessingPublicKeyAuthenticator userPublicKey = (MessageProcessingPublicKeyAuthenticator) sshd.getPublickeyAuthenticator();
+
             final boolean enableScp = Boolean.parseBoolean(connector.getProperty(SshRouteAssertion.LISTEN_PROP_ENABLE_SCP));
             if (enableScp) {
                 sshd.setCommandFactory(new MessageProcessingScpCommand.Factory(
-                        connector, messageProcessor, stashManagerFactory, soapFaultManager, messageProcessingEventChannel, user));
+                        connector, messageProcessor, stashManagerFactory, soapFaultManager, messageProcessingEventChannel, user, userPublicKey));
             }
             final boolean enableSftp = Boolean.parseBoolean(connector.getProperty(SshRouteAssertion.LISTEN_PROP_ENABLE_SFTP));
             if (enableSftp) {
                 sshd.setSubsystemFactories(Arrays.<NamedFactory<Command>>asList(new MessageProcessingSftpSubsystem.Factory(
-                        connector, messageProcessor, stashManagerFactory, soapFaultManager, messageProcessingEventChannel, user)));
+                        connector, messageProcessor, stashManagerFactory, soapFaultManager, messageProcessingEventChannel, user, userPublicKey)));
             }
             sshd.setPort(connector.getPort());
 
-            // TODO configurable max connections per user
-            // sshd.getProperties().put(SshServer.MAX_CONCURRENT_SESSIONS, "10");
-            // 2011/0708 TL Apache SSHD does not appear to currently support configurable max total connections nor configurable connection timeout
+            // configure maximum concurrent open session count per user
+            sshd.getProperties().put(SshServer.MAX_CONCURRENT_SESSIONS, connector.getProperty(SshRouteAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER));
+            // 2011/07/08 TL: Apache SSHD does not appear to currently support configurable max total connections nor configurable connection timeout
 
             auditStart("connector OID " + connector.getOid() + ", on port " + connector.getPort());
             sshd.start();
@@ -394,15 +394,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
 
         // customized for Gateway
         sshd.setPasswordAuthenticator(new MessageProcessingPasswordAuthenticator());
-        sshd.setPublickeyAuthenticator(new PublickeyAuthenticator() {
-            @Override
-            public boolean authenticate(String username, PublicKey key, ServerSession session) {
-                logger.log(Level.INFO, "Username:" + username + " key:" + key.toString());
-                // TODO
-                //File f = new File("/Users/" + username + "/.ssh/authorized_keys");
-                return false;
-            }
-        });
+        sshd.setPublickeyAuthenticator(new MessageProcessingPublicKeyAuthenticator());
 
         sshd.setForwardingFilter(new ForwardingFilter() {
             @Override

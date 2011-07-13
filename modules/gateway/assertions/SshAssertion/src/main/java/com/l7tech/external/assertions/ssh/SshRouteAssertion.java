@@ -24,8 +24,10 @@ import static com.l7tech.policy.assertion.AssertionMetadata.WSP_TYPE_MAPPING_INS
  *  Route outbound SCP & SFTP to external SSH server.
  */
 public class SshRouteAssertion extends RoutingAssertion implements UsesVariables, SetsVariables {
+
     public static final String LISTEN_PROP_ENABLE_SCP = "l7.ssh.enableScp";
     public static final String LISTEN_PROP_ENABLE_SFTP = "l7.ssh.enableSftp";
+    public static final String LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER = "l7.ssh.maxConcurrentSessionsPerUser";
 
     /** Timeout (in milliseconds) when opening SSH Connection. */
     public static final int DEFAULT_TIMEOUT = 10000;

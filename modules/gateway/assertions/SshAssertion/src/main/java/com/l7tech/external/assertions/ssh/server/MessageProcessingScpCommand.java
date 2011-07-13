@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.message.HasServiceOid;
 import com.l7tech.message.HasServiceOidImpl;
 import com.l7tech.message.Message;
+import com.l7tech.message.SshKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.StashManagerFactory;
@@ -46,14 +47,17 @@ public class MessageProcessingScpCommand implements Command, Runnable, SessionAw
         private SoapFaultManager soapFaultManager;
         private static StashManagerFactory stashManagerFactory;
         private static MessageProcessingPasswordAuthenticator user;
+        private static MessageProcessingPublicKeyAuthenticator userPublicKey;
 
-        public Factory(SsgConnector c, MessageProcessor mp, StashManagerFactory smf, SoapFaultManager sfm, EventChannel mpec, MessageProcessingPasswordAuthenticator u) {
+        public Factory(SsgConnector c, MessageProcessor mp, StashManagerFactory smf, SoapFaultManager sfm, EventChannel mpec,
+                       MessageProcessingPasswordAuthenticator u, MessageProcessingPublicKeyAuthenticator upk) {
             connector = c;
             messageProcessor = mp;
             messageProcessingEventChannel = mpec;
             soapFaultManager = sfm;
             stashManagerFactory = smf;
             user = u;
+            userPublicKey = upk;
         }
 
         /**
@@ -68,7 +72,7 @@ public class MessageProcessingScpCommand implements Command, Runnable, SessionAw
         public Command createCommand(String command) {
             try {
                 return new MessageProcessingScpCommand(splitCommandString(command), connector, messageProcessor,
-                        stashManagerFactory, soapFaultManager, messageProcessingEventChannel, user);
+                        stashManagerFactory, soapFaultManager, messageProcessingEventChannel, user, userPublicKey);
             } catch (IllegalArgumentException iae) {
                 if (delegate != null) {
                     return delegate.createCommand(command);
@@ -137,15 +141,18 @@ public class MessageProcessingScpCommand implements Command, Runnable, SessionAw
     private SoapFaultManager soapFaultManager;
     private StashManagerFactory stashManagerFactory;
     private MessageProcessingPasswordAuthenticator user;
+    private MessageProcessingPublicKeyAuthenticator userPublicKey;
 
     public MessageProcessingScpCommand(String[] args, SsgConnector c, MessageProcessor mp, StashManagerFactory smf,
-                                       SoapFaultManager sfm, EventChannel mpec, MessageProcessingPasswordAuthenticator u) {
+                                       SoapFaultManager sfm, EventChannel mpec, MessageProcessingPasswordAuthenticator u,
+                                       MessageProcessingPublicKeyAuthenticator upk) {
         connector = c;
         messageProcessor = mp;
         messageProcessingEventChannel = mpec;
         soapFaultManager = sfm;
         stashManagerFactory = smf;
         user = u;
+        userPublicKey = upk;
 
         name = Arrays.asList(args).toString();
         if (logger.isLoggable(Level.FINER)) {
@@ -447,8 +454,8 @@ public class MessageProcessingScpCommand implements Command, Runnable, SessionAw
         ContentTypeHeader ctype = ctypeStr == null ? ContentTypeHeader.XML_DEFAULT : ContentTypeHeader.create(ctypeStr);
 
         request.initialize(stashManagerFactory.createStashManager(), ctype, getDataInputStream(inputStream, path, length));
-        request.attachFtpKnob(MessageProcessingSshUtil.buildFtpKnob("scp", session.getIoSession().getLocalAddress(),
-                session.getIoSession().getRemoteAddress(), file, path, true, true, user));
+        request.attachKnob(SshKnob.class, MessageProcessingSshUtil.buildSshKnob("scp", session.getIoSession().getLocalAddress(),
+                session.getIoSession().getRemoteAddress(), file, path, true, true, user, userPublicKey));
 
         long hardwiredServiceOid = connector.getLongProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, -1);
         if (hardwiredServiceOid != -1) {

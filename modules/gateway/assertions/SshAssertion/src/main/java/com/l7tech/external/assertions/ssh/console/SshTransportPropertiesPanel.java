@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.ssh.console;
 
 import com.l7tech.console.panels.CustomTransportPropertiesPanel;
 import com.l7tech.external.assertions.ssh.SshRouteAssertion;
+import com.l7tech.util.SyspropUtil;
 
 import javax.swing.*;
 import java.awt.*;
@@ -15,6 +16,7 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
     private JPanel mainPanel;
     private JCheckBox scpCheckBox;
     private JCheckBox sftpCheckBox;
+    private JTextField maxConcurrentSessionsPerUserField;
 
     public SshTransportPropertiesPanel() {
         setLayout(new BorderLayout());
@@ -28,10 +30,21 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
         return Boolean.parseBoolean(val);
     }
 
+    private String getStringProp(Map<String, String> map, String key, String dflt) {
+        String val = map.get(key);
+        if (val == null)
+            return dflt;
+        return val;
+    }
+
     @Override
     public void setData(Map<String, String> props) {
-        scpCheckBox.setSelected(getBooleanProp(props, SshRouteAssertion.LISTEN_PROP_ENABLE_SCP, true));
-        sftpCheckBox.setSelected(getBooleanProp(props, SshRouteAssertion.LISTEN_PROP_ENABLE_SFTP, true));
+        scpCheckBox.setSelected(getBooleanProp(props, SshRouteAssertion.LISTEN_PROP_ENABLE_SCP,
+                SyspropUtil.getBoolean("com.l7tech.external.assertions.ssh.defaultEnableScp", true)));
+        sftpCheckBox.setSelected(getBooleanProp(props, SshRouteAssertion.LISTEN_PROP_ENABLE_SFTP,
+                SyspropUtil.getBoolean("com.l7tech.external.assertions.ssh.defaultEnableSftp", true)));
+        maxConcurrentSessionsPerUserField.setText(getStringProp(props, SshRouteAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER,
+                SyspropUtil.getString("com.l7tech.external.assertions.ssh.defaultMaxConcurrentSessionsPerUser", "10")));
     }
 
     @Override
@@ -39,6 +52,7 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
         Map<String, String> data = new HashMap<String, String>();
         data.put(SshRouteAssertion.LISTEN_PROP_ENABLE_SCP, String.valueOf(scpCheckBox.isSelected()));
         data.put(SshRouteAssertion.LISTEN_PROP_ENABLE_SFTP, String.valueOf(sftpCheckBox.isSelected()));
+        data.put(SshRouteAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER, maxConcurrentSessionsPerUserField.getText());
         return data;
     }
 
@@ -52,6 +66,7 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
         return new String[] {
             SshRouteAssertion.LISTEN_PROP_ENABLE_SCP,
             SshRouteAssertion.LISTEN_PROP_ENABLE_SFTP,
+            SshRouteAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER,
         };
     }
 }

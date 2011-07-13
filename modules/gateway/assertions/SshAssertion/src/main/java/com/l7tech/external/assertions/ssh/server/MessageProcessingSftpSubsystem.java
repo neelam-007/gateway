@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.message.HasServiceOid;
 import com.l7tech.message.HasServiceOidImpl;
 import com.l7tech.message.Message;
+import com.l7tech.message.SshKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.StashManagerFactory;
@@ -550,22 +551,26 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
     public static class Factory implements NamedFactory<Command> {
         private static SsgConnector connector;
         private static MessageProcessor messageProcessor;
-        private EventChannel messageProcessingEventChannel;
-        private SoapFaultManager soapFaultManager;
+        private static EventChannel messageProcessingEventChannel;
+        private static SoapFaultManager soapFaultManager;
         private static StashManagerFactory stashManagerFactory;
         private static MessageProcessingPasswordAuthenticator user;
+        private static MessageProcessingPublicKeyAuthenticator userPublicKey;
 
-        public Factory(SsgConnector c, MessageProcessor mp, StashManagerFactory smf, SoapFaultManager sfm, EventChannel mpec, MessageProcessingPasswordAuthenticator u) {
+        public Factory(SsgConnector c, MessageProcessor mp, StashManagerFactory smf, SoapFaultManager sfm,
+                       EventChannel mpec, MessageProcessingPasswordAuthenticator u, MessageProcessingPublicKeyAuthenticator upk) {
             connector = c;
             messageProcessor = mp;
             messageProcessingEventChannel = mpec;
             soapFaultManager = sfm;
             stashManagerFactory = smf;
             user = u;
+            userPublicKey = upk;
         }
 
         public Command create() {
-            return new MessageProcessingSftpSubsystem(connector, messageProcessor, stashManagerFactory, soapFaultManager, messageProcessingEventChannel, user);
+            return new MessageProcessingSftpSubsystem(connector, messageProcessor, stashManagerFactory, soapFaultManager,
+                    messageProcessingEventChannel, user, userPublicKey);
         }
 
         public String getName() {
@@ -579,15 +584,18 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
     private SoapFaultManager soapFaultManager;
     private StashManagerFactory stashManagerFactory;
     private MessageProcessingPasswordAuthenticator user;
+    private MessageProcessingPublicKeyAuthenticator userPublicKey;
 
     public MessageProcessingSftpSubsystem(SsgConnector c, MessageProcessor mp, StashManagerFactory smf,
-                                          SoapFaultManager sfm, EventChannel mpec, MessageProcessingPasswordAuthenticator u) {
+                                          SoapFaultManager sfm, EventChannel mpec, MessageProcessingPasswordAuthenticator u,
+                                          MessageProcessingPublicKeyAuthenticator upk) {
         connector = c;
         messageProcessor = mp;
         messageProcessingEventChannel = mpec;
         soapFaultManager = sfm;
         stashManagerFactory = smf;
         user = u;
+        userPublicKey = upk;
     }
 
     public void run() {
@@ -863,8 +871,8 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
         ContentTypeHeader ctype = ctypeStr == null ? ContentTypeHeader.XML_DEFAULT : ContentTypeHeader.create(ctypeStr);
 
         request.initialize(stashManagerFactory.createStashManager(), ctype, getDataInputStream(data, path, (int) offset));
-        request.attachFtpKnob(MessageProcessingSshUtil.buildFtpKnob("sftp", session.getIoSession().getLocalAddress(),
-                session.getIoSession().getRemoteAddress(), file, path, true, true, user));
+        request.attachKnob(SshKnob.class, MessageProcessingSshUtil.buildSshKnob("sftp", session.getIoSession().getLocalAddress(),
+                session.getIoSession().getRemoteAddress(), file, path, true, true, user, userPublicKey));
 
         long hardwiredServiceOid = connector.getLongProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, -1);
         if (hardwiredServiceOid != -1) {
