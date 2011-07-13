@@ -3517,7 +3517,16 @@ public class MainWindow extends JFrame implements SheetHolder {
                 /* invoked on authentication success */
                 @Override
                 public void onAuthSuccess(final String id, final boolean usedCertificate) {
-                    connectionID = id;
+                    final boolean isApplet = isApplet();
+                    if(isApplet){
+                        User user = Registry.getDefault().getSecurityProvider().getUser();
+                        if(null != user){
+                            connectionID = user.getName();
+                        }
+                    }
+                    else{
+                        connectionID = id;
+                    }
                     String statusMessage = connectionID;
                     connectionContext = "";
 
@@ -3526,13 +3535,13 @@ public class MainWindow extends JFrame implements SheetHolder {
                     auditSigningCert = null;
 
                     /* init rmi cl */
-                    if (!isApplet())
+                    if (!isApplet)
                         RMIClassLoader.getDefaultProviderInstance();
 
                     /* set the preferences */
                     try {
                         SsmPreferences prefs = preferences;
-                        connectionContext = " @ " + prefs.getString(SsmPreferences.SERVICE_URL);
+                        connectionContext = " @ " + getServiceUrl();
                         /**
                          * At anytime, save the last login id.
                          * Note: showing the login id at the logon dialog is dependent on if the property, SAVE_LAST_LOGIN_ID

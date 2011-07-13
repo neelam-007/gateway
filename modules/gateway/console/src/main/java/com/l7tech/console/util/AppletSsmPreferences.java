@@ -73,10 +73,10 @@ public class AppletSsmPreferences extends AbstractSsmPreferences {
         // Takes no action for applet
     }
 
-    @Override
+/*    @Override
     public boolean isStatusBarBarVisible() {
         return false; // no status bar on applet
-    }
+    }*/
 
     public void setContext( final AppletContext context, final URL url ) {
         this.strategy = buildStrategy( context, url );
