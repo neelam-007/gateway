@@ -542,16 +542,6 @@ public class Saml2WssProcessorImpl {
                         logger.warning("The KeyInfo referred to a SKI, but no SecurityTokenResolver is available");
                     } else {
                         X509Certificate foundCert = securityTokenResolver.lookupBySki(value);
-                        /*
-                        this extra check may be useful if the resolver does not include the client cert
-                        if (foundCert == null) {
-                            if (cntx.senderCertificate != null) {
-                                String senderSki = CertUtils.getSki(cntx.senderCertificate);
-                                if (senderSki.equals(value)) {
-                                    foundCert = cntx.senderCertificate;
-                                }
-                            }
-                        }*/
 
                         if (foundCert == null) {
                             logger.info("The KeyInfo referred to a SKI (" + value + "), but we were unable to locate a matching cert");

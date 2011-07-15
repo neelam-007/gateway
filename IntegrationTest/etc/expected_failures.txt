@@ -1,2 +1,0 @@
-Testcase: com.l7tech.test.ftp.FTPTest.testFtpsInHTTPOut
-TC6.4.4.7 FTP Variables test

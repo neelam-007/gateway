@@ -48,10 +48,6 @@ public class TestingSyslogManager extends SyslogManager {
         this.testingHost = newIndex;
     }
 
-//    public Object getTestStats() {
-//        return null;
-//    }
-
     @Override
     public void close() {
         for (Syslog msyslog : syslogList) {

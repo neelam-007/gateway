@@ -31,32 +31,6 @@ public class JmsConnectionManagerImpl
         return EnumSet.allOf(JmsProviderType.class);
     }
 
-/*
-    public void update(final JmsConnection conn) throws VersionException, UpdateException {
-        _logger.info("Updating JmsConnection " + conn);
-
-        JmsConnection original;
-        // check for original connection
-        try {
-            original = findByPrimaryKey(conn.getOid());
-        } catch (FindException e) {
-            throw new UpdateException("could not get original connection", e);
-        }
-
-        // check version
-        if (original.getVersion() != conn.getVersion()) {
-            logger.severe("db connection has version: " + original.getVersion() + ". requestor connection has version: "
-              + conn.getVersion());
-            throw new VersionException("the connection you are trying to update is no longer valid.");
-        }
-
-        // update
-        original.copyFrom(conn);
-        getHibernateTemplate().update(original);
-        logger.info("Updated JmsConnection #" + conn.getOid());
-    }
-*/
-
     @Override
     public void delete( long oid ) throws DeleteException, FindException {
         findAndDelete( oid );

@@ -95,14 +95,6 @@ public abstract class ServerRequireWssOperation<AT extends XmlSecurityAssertionB
         } catch (SAXException e) {
             throw new CausedIOException(e);
         }
-        /*
-        fla bugfix 1914
-        if (wssResults == null) {
-            logAndAudit(AssertionMessages.NO_WSS_LEVEL_SECURITY);
-            context.setRequestPolicyViolated();
-            return AssertionStatus.FALSIFIED;
-        }
-        */
 
         // get the document
         Document soapmsg;

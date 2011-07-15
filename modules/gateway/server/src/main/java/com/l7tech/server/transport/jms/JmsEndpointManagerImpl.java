@@ -89,32 +89,6 @@ public class JmsEndpointManagerImpl
         return doFindHeaders( offset, windowSize, jmsFilters, false ); // conjunction
     }
 
-/*
-    public void update(final JmsEndpoint endpoint) throws VersionException, UpdateException {
-        _logger.info("Updating JmsEndpoint" + endpoint);
-
-        JmsEndpoint original;
-        // check for original endpoint
-        try {
-            original = findByPrimaryKey(endpoint.getOid());
-        } catch (FindException e) {
-            throw new UpdateException("could not get original endpoint", e);
-        }
-
-        // check version
-        if (original.getVersion() != endpoint.getVersion()) {
-            logger.severe("db endpoint has version: " + original.getVersion() + ". requestor endpoint has version: "
-              + endpoint.getVersion());
-            throw new VersionException("the endpoint you are trying to update is no longer valid.");
-        }
-
-        // update
-        original.copyFrom(endpoint);
-        getHibernateTemplate().update(original);
-        logger.info("Updated JmsEndpoint #" + endpoint.getOid());
-    }
-*/
-
     protected UniqueType getUniqueType() {
         return UniqueType.NONE;
     }

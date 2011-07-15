@@ -82,8 +82,7 @@ public final class RootNode extends FolderNode {
 
         @Override
         public int compare(TreeNode o1, TreeNode o2) {
-           if (o1 instanceof AbstractTreeNode && o2 instanceof AbstractTreeNode) {
-            //if (o1 instanceof Comparable && o2 instanceof Comparable) {
+            if (o1 instanceof AbstractTreeNode && o2 instanceof AbstractTreeNode) {
                 if(o1 instanceof FolderNode && !(o2 instanceof FolderNode)) {
                     return -1;
                 } else if(!(o1 instanceof FolderNode) && o2 instanceof FolderNode) {

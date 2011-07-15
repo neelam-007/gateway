@@ -90,29 +90,6 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
         if (user == null) throw new IllegalArgumentException("can't call this with null");
         logger.finest("recordNewUserCert for " + getName(user));
 
-        /*
-        We dont check that anymore. instead, we ensure that we use the subject of authenticated users
-        instead of the subject of received csr's when creating certs
-        // check that the cert's subject matches the user's login
-        try {
-            X500Name x500name = new X500Name(((X509Certificate)(cert)).getSubjectX500Principal().getName());
-            String login = user.getLogin();
-            if (login == null || login.length() == 0) {
-                logger.log(Level.INFO, "User " + user.getName() + " has no login. Will save cert anyway.");
-            } else if (!x500name.getCommonName().equals(login)) {
-                String msg = "login value \'" + login + "\' does not match the cert subject \'" +
-                             x500name.getCommonName() + "\'.";
-                logger.log(Level.SEVERE, msg);
-                throw new UpdateException(msg);
-
-            } else {
-                logger.finest("Cert's subject matches authenticated user's login (" + user.getLogin() + ")");
-            }
-        } catch (IOException e) {
-            throw new UpdateException("could not verify the cert subject", e);
-        }
-        */
-
         // check if operation is permitted
         CertEntryRow userData;
         try {

@@ -67,16 +67,6 @@ public abstract class HttpRuleTableHandler {
                 updateeditState();
             }
         });
-        /*table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-            public void valueChanged(ListSelectionEvent e) {
-                int[] selectedrows = table.getSelectedRows();
-                if (selectedrows != null && selectedrows.length > 0) {
-                    removeButton.setEnabled(true);
-                } else {
-                    removeButton.setEnabled(false);
-                }
-            }
-        });*/
 
         addButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent actionEvent) {

@@ -1,8 +1,3 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.console.util;
 
 import com.l7tech.common.http.HttpConstants;
@@ -72,11 +67,6 @@ public class AppletSsmPreferences extends AbstractSsmPreferences {
     public void importSsgCert(X509Certificate cert, String hostname) throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException {
         // Takes no action for applet
     }
-
-/*    @Override
-    public boolean isStatusBarBarVisible() {
-        return false; // no status bar on applet
-    }*/
 
     public void setContext( final AppletContext context, final URL url ) {
         this.strategy = buildStrategy( context, url );

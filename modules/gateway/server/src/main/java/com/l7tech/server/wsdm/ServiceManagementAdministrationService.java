@@ -184,52 +184,6 @@ public class ServiceManagementAdministrationService implements ApplicationListen
         return XmlUtil.stringToDocument(output);
     }
 
-    /*
-    private Document respondToGetResourceProperty(GetResourceProperty method, URL incomingURL) throws FaultableException {
-        String output;
-        if (method.getPropertyRequested() == ResourceProperty.TOPIC) {
-            output = method.respondToTopicPropertyRequest();
-        } else if (method.getPropertyRequested() == ResourceProperty.MANAGEABILITY_CAPABILITY) {
-            output = method.responseToManageabilityCapability();
-        } else {
-            throw new FaultableException("This property cannot be queried that way");
-        }
-        return XmlUtil.stringAsDocument(output);
-    }
-
-    private Document respondToGetManageabilityReferences(GetManageabilityReferences method,
-                                                         URL incomingURL) throws FaultableException {
-        String outgoingReourceId = method.getResourceIdRequested();
-        if (outgoingReourceId == null || outgoingReourceId.length() < 1) {
-            // look for pattern for service id in the incoming URL
-            String oid = getOIDFromURL(incomingURL);
-            if (oid == null || oid.length() < 1) {
-                throw new FaultableException("ResourceId unspecified");
-            }
-            outgoingReourceId = incomingURL.getProtocol() + ":" + "//" + incomingURL.getHost() + ":" + incomingURL.getPort() + "/serviceoid=" + oid;
-
-        }
-        String serviceid = determineServiceFromUrl(outgoingReourceId);
-        String metricsServiceAddress = incomingURL.getProtocol() + ":" + "//" + incomingURL.getHost() + ":" + incomingURL.getPort() + "/ssg/wsdm/QoSMetrics?serviceoid=" + serviceid;
-        //http://ssg.acme.com:8080/ssg/wsdm/QoSMetrics?serviceoid=1234567
-        String output = method.generateResponseDocument(metricsServiceAddress, outgoingReourceId);
-        return XmlUtil.stringAsDocument(output);
-    }
-
-    private String getOIDFromURL(URL in) {
-        String url = in.toString();
-        return determineServiceFromUrl(url);
-    }
-
-    private String determineServiceFromUrl(String url) {
-        Matcher matcher = oidPattern.matcher(url);
-        if (matcher.find() && matcher.groupCount() == 1) {
-            return matcher.group(1);
-        }
-
-        return null;
-    }*/
-
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
         if (!(event instanceof EntityInvalidationEvent)) return;

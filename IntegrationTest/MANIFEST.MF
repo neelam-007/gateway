@@ -1,3 +1,0 @@
-Manifest-Version: 1.0
-Class-Path: /ssg/configwizard/ConfigWizard.jar
-Main-Class: com.l7tech.configwizard.automator.AutoConfigDriver

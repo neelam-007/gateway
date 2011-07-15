@@ -873,14 +873,6 @@ public class JmsQueuePropertiesDialog extends JDialog {
             ep.setDisabled(disableListeningTheQueueCheckBox.isSelected());
         }
 
-        // Preserve old OID, if we have one
-/*
-        if (endpoint != null) {
-            ep.setOid(endpoint.getOid());
-            ep.setVersion( endpoint.getVersion() );
-        }
-*/
-
         return ep;
     }
 

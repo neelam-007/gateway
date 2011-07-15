@@ -94,8 +94,6 @@ public class HexUtils {
         return HexUtils.hexDump(bytes);
     }
 
-    //private HexUtils() {}
-
     private static final char[] hexadecimal = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
     private static final char[] hexadecimal_upper = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 

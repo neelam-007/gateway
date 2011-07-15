@@ -693,16 +693,6 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
             super("Syslog host and port:", "host", initialValue);
         }
 
-//        @Override
-//        protected String getSemanticError(String model) {
-//
-//            StringTokenizer stok = new StringTokenizer(model, ":");
-//            if (stok.countTokens() == 2) {
-//            }
-//
-//            return null;
-//        }
-
         @Override
         protected String getSyntaxError(String model) {
             if (model == null || model.length() == 0) return null;

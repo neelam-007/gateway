@@ -392,12 +392,6 @@ public class PatchBuilder {
             }
         },
 
-/*
-        EXPECTED_FILE("-expected-file", "<existing_file_absolute_path> <expected_md5>", false, "Verifies that ...") {
-
-        },
-*/
-
         PATCH_FILENAME("-patchfile", "<patch_file_name>", false, "The filename for the generated patch. Defaults to <patch_identifier>.L7P") {
             @Override
             public BuilderConfig parseArgs(List<String> args, BuilderConfig config) {

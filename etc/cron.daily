@@ -1,3 +1,0 @@
-#!/bin/sh
-
-/usr/bin/find /ssg/var/attachments -mtime +0 -type f -print0 | /usr/bin/xargs -0 /bin/rm -f

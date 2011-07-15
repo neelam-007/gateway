@@ -210,21 +210,6 @@ public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken
     public void focusFirstComponent() {
     }
 
-
-//    @Override
-//    public void setPolicyPosition( final PolicyPositionAware.PolicyPosition policyPosition ) {
-//        this.policyPosition = policyPosition;
-//    }
-//
-//    @Override
-//    public PolicyPosition getPolicyPosition() {
-//        return this.policyPosition;
-//    }
-//
-//    protected Assertion getPreviousAssertion() {
-//        return policyPosition==null ? null : policyPosition.getPreviousAssertion();
-//    }
-
     public void setModel(AddWssSecurityToken model, Assertion prevAssertion){
         this.assertion = model;
         final SecurityTokenType tokenType = assertion.getTokenType();

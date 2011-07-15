@@ -967,28 +967,7 @@ public class XmlUtil extends DomUtils {
         if (schemaSrc == null) {
             throw new BadSchemaException("no xml");
         }
-        /* can't do this as it ends up chocking on unresolved imports which is beyond the scope here
-        // 1. pass through the javax.xml.validation.SchemaFactory
-        SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-        if (resolver != null) {
-            factory.setResourceResolver(resolver);
-        }
-        try {
-            factory.newSchema(new StreamSource(new ByteArrayInputStream(schemaSrc.getBytes())));
-        } catch (Exception e) {
-            throw new BadSchemaException(e);
-        }
-        */
-        /* Replacing with non-xmlbeans version, this is slower but acceptable (means manager does not need XML Beans jar).
-        // 2. pass through SchemaDocument
-        SchemaDocument sdoc;
-        try {
-            sdoc = SchemaDocument.Factory.parse(new StringReader(schemaSrc));
-        } catch (Exception e) {
-            throw new BadSchemaException(e);
-        }
-        return sdoc.getSchema().getTargetNamespace();
-        */
+
         try {
             final DocumentBuilderFactory dbfAllowingDoctype =
                 configureDocumentBuilderFactory( DocumentBuilderFactory.newInstance(), false );

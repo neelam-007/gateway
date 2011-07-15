@@ -62,23 +62,6 @@ public class SampleMessageManagerImp
         }
     }
 
-/*
-    public void update(SampleMessage sm) throws UpdateException {
-        try {
-            SampleMessage original = findByPrimaryKey(sm.getOid());
-            if (original == null) throw new UpdateException("Can't find SampleMessage #" + sm.getOid() + ": it was probably deleted by another transaction");
-
-            if (original.getVersion() != sm.getVersion())
-                throw new StaleUpdateException("SampleMessage #" + sm.getOid() + " was modified by another transaction");
-
-            original.copyFrom(sm);
-            getHibernateTemplate().update(original);
-        } catch (Exception e) {
-            throw new UpdateException("Couldn't update SampleMessage", e);
-        }
-    }
-*/
-
     @Override
     protected UniqueType getUniqueType() {
         return UniqueType.NONE;

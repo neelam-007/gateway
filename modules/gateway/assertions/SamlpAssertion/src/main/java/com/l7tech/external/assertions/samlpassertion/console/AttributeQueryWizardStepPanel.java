@@ -283,17 +283,6 @@ public class AttributeQueryWizardStepPanel extends SamlpWizardStepPanel {
         }
     }
 
-    // don't need this anymore for samlp
-//    /**
-//     * Test whether the step is finished and it is safe to advance to the next one.
-//     * The resource must be specified
-//     *
-//     * @return true if the panel is valid, false otherwis
-//     */
-//    public boolean canAdvance() {
-//        return attributesTableModel.getRowCount() > 0;
-//    }
-
     /**
      * Null safe toString
      * @param object the object that needs to be stringified

@@ -72,14 +72,6 @@ public class AuthorizationStatementWizardStepPanel extends SamlpWizardStepPanel 
         initialize();
     }
 
-//    public AuthorizationStatementWizardStepPanel(WizardStepPanel next, boolean showTitleLabel, JDialog parent) {
-//        this(next, showTitleLabel, false, parent);
-//    }
-//
-//    public AuthorizationStatementWizardStepPanel(WizardStepPanel next) {
-//        this(next, true, false);
-//    }
-
     /**
      * Provides the wizard with the current data--either
      * the default data or already-modified settings. This is a
