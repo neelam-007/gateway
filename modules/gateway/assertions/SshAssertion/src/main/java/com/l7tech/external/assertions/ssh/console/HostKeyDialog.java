@@ -16,17 +16,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
-import java.text.MessageFormat;
 import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Created by IntelliJ IDEA.
- * User: njordan
- * Date: 06/05/11
- * Time: 1:24 PM
- * To change this template use File | Settings | File Templates.
+ * Dialog to enter host key.
  */
 public class HostKeyDialog extends JDialog {
     private JPanel mainPanel;
@@ -36,7 +31,12 @@ public class HostKeyDialog extends JDialog {
     private JButton cancelButton;
 
     private boolean confirmed = false;
-    private static final ResourceBundle resources = ResourceBundle.getBundle( SshRouteAssertionPropertiesPanel.class.getName() );
+    private static final ResourceBundle resources = ResourceBundle.getBundle( HostKeyDialog.class.getName() );
+
+    public HostKeyDialog(Window owner, String hostKey) {
+        super(owner, "SSH Server Host Key", Dialog.ModalityType.APPLICATION_MODAL);
+        initComponents(hostKey);
+    }
 
     public HostKeyDialog(Frame owner, String hostKey) {
         super(owner, "SSH Server Host Key", true);
@@ -73,11 +73,12 @@ public class HostKeyDialog extends JDialog {
         okButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                 Pair<Boolean, String> publicIsValid = isPublicKeyValid();
-                 if(!publicIsValid.left.booleanValue()){
-                     JOptionPane.showMessageDialog(HostKeyDialog.this, MessageFormat.format(getResourceString("publicKeyError"), publicIsValid.right));
+                // for now we won't validate the host key format
+                 /*Pair<Boolean, String> hostKeyFormatIsValid = isValidHostKeyFormat();
+                 if(!hostKeyFormatIsValid.left.booleanValue()){
+                     JOptionPane.showMessageDialog(HostKeyDialog.this, MessageFormat.format(getResourceString("sshHostKeyFormatError"), hostKeyFormatIsValid.right));
                      return;
-                 }
+                 }*/
 
                 confirmed = true;
                 dispose();
@@ -135,7 +136,7 @@ public class HostKeyDialog extends JDialog {
      * @return Return a PAIR <true, empty string> iff the serverkey is valid
      * otherwise Return a PAIR <false, error message> iff the serverkey is invalid.
      */
-    private Pair<Boolean, String> isPublicKeyValid() {
+    private Pair<Boolean, String> isValidHostKeyFormat() {
         boolean isValid = false;
         String errorText = " ";
         if (hostKeyField == null || hostKeyField.getText().equalsIgnoreCase("")){

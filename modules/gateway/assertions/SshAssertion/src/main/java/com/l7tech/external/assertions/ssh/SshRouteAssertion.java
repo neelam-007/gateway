@@ -27,6 +27,7 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
 
     public static final String LISTEN_PROP_ENABLE_SCP = "l7.ssh.enableScp";
     public static final String LISTEN_PROP_ENABLE_SFTP = "l7.ssh.enableSftp";
+    public static final String LISTEN_PROP_HOST_PRIVATE_KEY = "l7.ssh.hostPrivateKey";
     public static final String LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER = "l7.ssh.maxConcurrentSessionsPerUser";
 
     /** Timeout (in milliseconds) when opening SSH Connection. */

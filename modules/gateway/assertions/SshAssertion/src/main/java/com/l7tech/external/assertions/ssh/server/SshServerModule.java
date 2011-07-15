@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.ssh.server;
 
 import com.l7tech.external.assertions.ssh.SshRouteAssertion;
+import com.l7tech.external.assertions.ssh.keyprovider.PemSshHostKeyProvider;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.AuditFactory;
@@ -40,8 +41,6 @@ import org.apache.sshd.server.ForwardingFilter;
 import org.apache.sshd.server.channel.ChannelDirectTcpip;
 import org.apache.sshd.server.channel.ChannelSession;
 import org.apache.sshd.server.kex.DHG1;
-import org.apache.sshd.server.keyprovider.PEMGeneratorHostKeyProvider;
-import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.apache.sshd.server.session.ServerSession;
 import org.apache.sshd.server.shell.ProcessShellFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -294,6 +293,14 @@ public class SshServerModule extends TransportModule implements ApplicationListe
             sshd.getProperties().put(SshServer.MAX_CONCURRENT_SESSIONS, connector.getProperty(SshRouteAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER));
             // 2011/07/08 TL: Apache SSHD does not appear to currently support configurable max total connections nor configurable connection timeout
 
+            String hostPrivateKey = connector.getProperty(SshRouteAssertion.LISTEN_PROP_HOST_PRIVATE_KEY);
+            String algorithm = PemSshHostKeyProvider.getPemAlgorithm(hostPrivateKey);
+            if (algorithm != null) {
+                sshd.setKeyPairProvider(new PemSshHostKeyProvider(hostPrivateKey, algorithm));
+            } else {
+                sshd.setKeyPairProvider(new PemSshHostKeyProvider(hostPrivateKey));
+            }
+
             auditStart("connector OID " + connector.getOid() + ", on port " + connector.getPort());
             sshd.start();
             activeConnectors.put(connector.getOid(), new Pair<SsgConnector, SshServer>(connector, sshd));
@@ -378,12 +385,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
                 new SignatureDSA.Factory(),
                 new SignatureRSA.Factory()));
         sshd.setFileSystemFactory(new VirtualFileSystemFactory());   // customized for Gateway
-        
-        if (SecurityUtils.isBouncyCastleRegistered()) {
-            sshd.setKeyPairProvider(new PEMGeneratorHostKeyProvider("key.pem"));
-        } else {
-            sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider("key.ser"));
-        }        
+
         if (OsUtils.isUNIX()) {
             sshd.setShellFactory(new ProcessShellFactory(new String[] { "/bin/sh", "-i", "-l" },
                     EnumSet.of(ProcessShellFactory.TtyOptions.ONlCr)));
