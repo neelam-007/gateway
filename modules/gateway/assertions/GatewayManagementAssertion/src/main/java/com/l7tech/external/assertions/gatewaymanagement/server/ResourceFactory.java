@@ -237,4 +237,13 @@ public interface ResourceFactory<R> {
             super(cause);
         }
     }    
+
+    /**
+     * Runtime exception for a duplicate resource error
+     */
+    static class DuplicateResourceAccessException extends RuntimeException {
+        public DuplicateResourceAccessException( final String message ) {
+            super( message );
+        }
+    }
 }

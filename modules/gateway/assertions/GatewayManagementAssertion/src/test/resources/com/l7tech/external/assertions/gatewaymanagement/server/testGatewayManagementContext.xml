@@ -71,6 +71,9 @@
                         <bean class="com.l7tech.server.identity.ldap.LdapConfigTemplateManager"/>
                     </constructor-arg>
                 </bean>
+                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.InterfaceTagResourceFactory" parent="entityResourceFactoryParent">
+                    <constructor-arg index="3" ref="clusterPropertyManager"/>
+                </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.JDBCConnectionResourceFactory" parent="entityResourceFactoryParent">
                     <constructor-arg index="3" ref="jdbcConnectionManager"/>
                 </bean>

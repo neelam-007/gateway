@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.DuplicateResourceAccessException;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.objectmodel.DuplicateObjectException;
@@ -566,6 +567,9 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
             logger.warning( ExceptionUtils.getMessage(e) + ", for user '"+userId+"'.");
             setOperationInfo( context, null, "Access denied" );
             throw new AccessDeniedFault();
+        } else if ( e instanceof DuplicateResourceAccessException ) {
+            setOperationInfo( context, null, ExceptionUtils.getMessage( e ) );
+            throw new AlreadyExistsFault(SOAP.createFaultDetail(ExceptionUtils.getMessage( e ), null, null, null));
         } else if ( e instanceof ResourceFactory.ResourceAccessException ) {
             if ( ExceptionUtils.causedBy( e, DuplicateObjectException.class ) ) {
                 final DuplicateObjectException cause = ExceptionUtils.getCauseIfCausedBy( e, DuplicateObjectException.class );

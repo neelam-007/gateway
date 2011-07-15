@@ -2,6 +2,7 @@ CertificateData
 ClusterPropertyMO
 FolderMO
 IdentityProviderMO
+InterfaceTagMO
 JDBCConnectionMO
 JMSConnection
 JMSDestinationDetail

@@ -13,6 +13,10 @@ import com.l7tech.objectmodel.RoleAwareEntityManager;
 import com.l7tech.objectmodel.StaleUpdateException;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
+import com.l7tech.util.Functions;
+import com.l7tech.util.Option;
+import static com.l7tech.util.Option.optional;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.ArrayList;
@@ -103,13 +107,7 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
             public R execute() throws ObjectModelException, ResourceNotFoundException {
                 EntityBag<E> entityBag = selectEntityBag(selectorMap);
                 checkPermitted( OperationType.READ, null, entityBag.getEntity() );
-                R resource = asResource( entityBag );
-                if ( resource instanceof ManagedObject ) {
-                    ManagedObject managedResource = (ManagedObject) resource;
-                    managedResource.setId( entityBag.getEntity().getId() );
-                    managedResource.setVersion( entityBag.getEntity().getVersion() );
-                }
-                return resource;
+                return identify( asResource( entityBag ), entityBag.getEntity() );
             }
         }, true, ResourceNotFoundException.class );
     }
@@ -279,6 +277,36 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
     }
 
     /**
+     * Set identity information on the given resource if it is a ManagedObject.
+     *
+     * @param resource The resource to process
+     * @param entity The entity whose identity should be used
+     * @return The (possibly updated) resource
+     */
+    protected final R identify( final R resource, final E entity ) {
+        return identify( resource, entity.getId(), entity.getVersion() );
+    }
+
+    /**
+     * Set identity information on the given resource if it is a ManagedObject.
+     *
+     * @param resource The resource to process
+     * @param identifier The identifier to use
+     * @param version The version to use
+     * @return The (possibly updated) resource
+     */
+    protected final R identify( final R resource,
+                                final String identifier,
+                                final int version ) {
+        if ( resource instanceof ManagedObject ) {
+            ManagedObject managedResource = (ManagedObject) resource;
+            managedResource.setId( identifier );
+            managedResource.setVersion( version );
+        }
+        return resource;
+    }
+
+    /**
      * Override to filter access to the entity headers.
      *
      * @param headers The headers to filter.
@@ -299,6 +327,24 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
     }
 
     /**
+     * Extract a selector from the given map.
+     *
+     * @param selectorMap The selector map.
+     * @param selector The selector key.
+     * @return The selector value
+     * @throws InvalidResourceSelectors If the selector is not present or is null.
+     */
+    @NotNull
+    protected final String getRequiredSelector( @NotNull final Map<String, String> selectorMap,
+                                                @NotNull final String selector ) throws InvalidResourceSelectors {
+        final Option<String> selectorValue = optional( selectorMap.get( selector ) );
+        if ( !selectorValue.isSome() ) {
+            throw new InvalidResourceSelectors();
+        }
+        return selectorValue.some();
+    }
+
+    /**
      * Select an entity using the provided selector map.
      *
      * <p>The combination of all selectors must match the entity.</p>
@@ -307,6 +353,7 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
      * @return The entity (never null)
      * @throws ResourceNotFoundException If the selectors do not identify an entity.
      */
+    @NotNull
     protected final E selectEntity( final Map<String, String> selectorMap ) throws ResourceNotFoundException {
         E entity = null;
         final String id = selectorMap.get( IDENTITY_SELECTOR );
@@ -644,6 +691,10 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
         this.readOnly = readOnly;
         this.allowNameSelection = allowNameSelection;
         this.manager = manager;
+    }
+
+    final <R> R doWithManager( final Functions.UnaryThrows<R,EntityManager<E,EH>,ObjectModelException> callback ) throws ObjectModelException {
+        return callback.call( manager );
     }
 
     //- PRIVATE

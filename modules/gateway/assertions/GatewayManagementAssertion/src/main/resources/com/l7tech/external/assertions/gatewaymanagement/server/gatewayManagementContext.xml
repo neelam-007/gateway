@@ -93,6 +93,9 @@
                     <constructor-arg index="3" ref="identityProviderConfigManager"/>
                     <constructor-arg index="4" ref="ldapTemplateManager"/>
                 </bean>
+                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.InterfaceTagResourceFactory" parent="resourceFactoryParent">
+                    <constructor-arg index="3" ref="clusterPropertyManager"/>
+                </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.JMSDestinationResourceFactory" parent="resourceFactoryParent">
                     <constructor-arg index="3" ref="jmsEndpointManager"/>
                     <constructor-arg index="4" ref="jmsConnectionManager"/>

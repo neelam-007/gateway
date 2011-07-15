@@ -173,6 +173,21 @@ public class ManagedObjectTest {
     }
 
     @Test
+    public void testInterfaceTagSerialization() throws Exception {
+        final InterfaceTagMO interfaceTag = ManagedObjectFactory.createInterfaceTag();
+        interfaceTag.setId( "localhost" );
+        interfaceTag.setVersion( 34 );
+        interfaceTag.setAddressPatterns( list( "1", "2", "3") );
+        interfaceTag.setProperties( Collections.<String,Object>singletonMap( "prop", 123 ) );
+
+        final InterfaceTagMO roundTripped = roundTrip( interfaceTag );
+        assertEquals("id", "localhost", roundTripped.getId());
+        assertEquals("version", Integer.valueOf(34), roundTripped.getVersion());
+        assertEquals("address patterns", list( "1", "2", "3"), roundTripped.getAddressPatterns());
+        assertEquals("properties", Collections.<String,Object>singletonMap( "prop", 123 ), roundTripped.getProperties());
+    }
+
+    @Test
     public void testJDBCConnectionSerialization() throws Exception {
         final JDBCConnectionMO jdbcConnection = ManagedObjectFactory.createJDBCConnection();
         jdbcConnection.setId( "identifier" );
@@ -894,6 +909,7 @@ public class ManagedObjectTest {
 
     // Managed objects added in rev 2 of the API, these won't work with a rev 1 schema
     private static final Collection<Class<? extends ManagedObject>> MANAGED_OBJECTS_2 = list(
+            InterfaceTagMO.class,
             ListenPortMO.class,
             PrivateKeyExportContext.class,
             PrivateKeyExportResult.class,
@@ -906,6 +922,7 @@ public class ManagedObjectTest {
             ClusterPropertyMO.class,
             FolderMO.class,
             IdentityProviderMO.class,
+            InterfaceTagMO.class,
             JDBCConnectionMO.class,
             JMSDestinationMO.class,
             ListenPortMO.class,

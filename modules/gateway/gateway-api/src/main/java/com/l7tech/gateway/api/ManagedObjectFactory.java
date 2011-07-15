@@ -370,6 +370,15 @@ public class ManagedObjectFactory {
     }
 
     /**
+     * Create a new InterfaceTagMO instance.
+     *
+     * @return The new instance.
+     */
+    public static InterfaceTagMO createInterfaceTag() {
+        return new InterfaceTagMO();
+    }
+
+    /**
      * Create a new StoredPasswordMO instance.
      *
      * @return The new instance.

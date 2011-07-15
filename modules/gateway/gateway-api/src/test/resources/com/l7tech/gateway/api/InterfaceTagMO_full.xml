@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<InterfaceTag id="localhost" version="4" xmlns="http://ns.l7tech.com/2010/04/gateway-management">
+    <AddressPatterns other:extendedAttribute="extension" xmlns:other="urn:othernamespace">
+        <StringValue other:extendedAttribute="extension" xmlns:other="urn:othernamespace">1</StringValue>
+        <StringValue other:extendedAttribute="extension" xmlns:other="urn:othernamespace">2</StringValue>
+    </AddressPatterns>
+    <Properties extendedAttribute="extension">
+        <Property key="propertiesAreNotCurrentUsed" extendedAttribute="extension">
+            <BooleanValue>true</BooleanValue>
+        </Property>
+    </Properties>
+</InterfaceTag>
