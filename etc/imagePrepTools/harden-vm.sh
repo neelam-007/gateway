@@ -25,7 +25,6 @@ rm -f /opt/SecureSpan/Gateway/node/default/var/logs/*.log
 /etc/init.d/rsyslog stop
 rm -f /var/log/bash_commands.log
 
-
 echo "Zeroing disk space..."
 # Zero out space only on hardware image, no VMWare
 MB_TO_ZERO=$(df -B 1M / | tail -1 | awk '{print $4}')
@@ -43,8 +42,8 @@ rm -f /etc/resolv.conf.*
 echo "" > /etc/resolv.conf
 echo "" > /etc/security/opasswd
 
-sed -i -e '/HWADDR/d' /etc/sysconfig/network-scripts/ifcfg-eth0
-sed -i -e '/HWADDR/d' /etc/sysconfig/network-scripts/ifcfg-eth1
+[ -e "/etc/sysconfig/network-scripts/ifcfg-eth0" ] && sed -i -e '/HWADDR/d' /etc/sysconfig/network-scripts/ifcfg-eth0
+[ -e "/etc/sysconfig/network-scripts/ifcfg-eth1" ] && sed -i -e '/HWADDR/d' /etc/sysconfig/network-scripts/ifcfg-eth1
 
 # Remove ssh keys so they are generated on first start
 echo "Removing ssh keys..."
