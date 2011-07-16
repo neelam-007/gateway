@@ -51,7 +51,7 @@ echo "Removing ssh keys..."
 rm -f /etc/ssh/ssh_host_*
 
 # below only applies if run interactively
-echo "Done, now run:"
+echo "the hardening of this vm is now complete. Now run:"
 echo ""
 echo "export HISTSIZE=0"
 echo "rm -f /root/.bash_history"
@@ -59,4 +59,3 @@ echo "/usr/bin/vmware-config-tools.pl -d"
 echo "rm $0"
 echo "poweroff -d"
 echo ""
-echo "And enjoy your shiny new VM"
