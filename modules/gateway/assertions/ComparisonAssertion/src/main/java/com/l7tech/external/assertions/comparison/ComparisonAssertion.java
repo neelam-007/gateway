@@ -11,8 +11,10 @@ import com.l7tech.policy.wsp.*;
 import com.l7tech.util.ComparisonOperator;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.ResourceBundle;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
@@ -43,15 +45,15 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        StringBuilder sb = new StringBuilder(leftValue == null ? "" : leftValue);
-        for (Predicate predicate : predicates) {
-            if (predicate instanceof BinaryPredicate) {
+        final List<String> values = new ArrayList<String>();
+        values.add( leftValue );
+        for ( final Predicate predicate : predicates) {
+            if ( predicate instanceof BinaryPredicate ) {
                 BinaryPredicate bp = (BinaryPredicate) predicate;
-                String rv = bp.getRightValue();
-                if (rv != null) sb.append(rv);
+                values.add( bp.getRightValue() );
             }
         }
-        return Syntax.getReferencedNames(sb.toString());
+        return Syntax.getReferencedNames( values.toArray( new String[values.size()] ) );
     }
 
     public ComparisonAssertion() {

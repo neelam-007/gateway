@@ -16,7 +16,6 @@ import com.l7tech.policy.wsp.WspSensitive;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
@@ -212,105 +211,18 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        String[] hostReferencedNames;
-        String[] toRefNames;
-        String[] bccRefNames;
-        String[] ccRefNames;
-        String[] subjectRefNames;
-        String[] fromRefNames;
-        String[] userRefNames;
-        String[] pwdRefNames;
-        String[] portRefNames;
-        ArrayList<String> list = new ArrayList<String>();
-
-
-        //Variables originally were only used in the message string.
-        //Now let's check all the fields for variables.
-        //the vars are: message, host, to, from, cc, bcc, subject, port, username, pwd
-        //(also going to keep track of what fields have context vars to speed processing hopefully later)
-        //First get the message ones:
-        //(note that the original code did not check for null in .messageString() so I left it as is
-        String[] messageReferencedNames = Syntax.getReferencedNames(this.messageString());
-        if(messageReferencedNames!=null){
-            list.addAll(Arrays.asList(messageReferencedNames));
-        }
-
-        //Now get: port
-        if (this.smtpPort != null){
-            portRefNames = Syntax.getReferencedNames(this.smtpPort);
-            if(portRefNames!=null){
-                list.addAll(Arrays.asList(portRefNames));
-            }
-        }
-
-
-        //Now get: host
-        if (this.smtpHost != null){
-            hostReferencedNames = Syntax.getReferencedNames(this.smtpHost);
-            if(hostReferencedNames!=null){
-                list.addAll(Arrays.asList(hostReferencedNames));
-            }
-        }
-
-        //now get: to
-        if (this.targetEmailAddress != null){
-            toRefNames = Syntax.getReferencedNames(this.targetEmailAddress);
-            if(toRefNames!=null){
-                list.addAll(Arrays.asList(toRefNames));
-            }
-            
-        }
-        //now get bcc
-        if (this.targetBCCEmailAddress != null){
-            bccRefNames = Syntax.getReferencedNames(this.targetBCCEmailAddress);
-            if(bccRefNames!=null){
-                list.addAll(Arrays.asList(bccRefNames));
-            }
-        }
-        //now get cc
-        if (this.targetCCEmailAddress != null){
-            ccRefNames = Syntax.getReferencedNames(this.targetCCEmailAddress);
-            if(ccRefNames!=null){
-                list.addAll(Arrays.asList(ccRefNames));
-            }
-        }
-        //now get the subject context vars
-        if (this.subject != null){
-            subjectRefNames = Syntax.getReferencedNames(this.subject);
-            if(subjectRefNames!=null){
-                list.addAll(Arrays.asList(subjectRefNames));
-            }
-        }
-        //now get the from email vars
-        if (this.sourceEmailAddress != null){
-            fromRefNames = Syntax.getReferencedNames(this.sourceEmailAddress);
-            if(fromRefNames!=null){
-                list.addAll(Arrays.asList(fromRefNames));
-            }
-        }
-
-        if (this.authUsername != null){
-            userRefNames = Syntax.getReferencedNames(this.authUsername);
-            if(userRefNames!=null){
-                list.addAll(Arrays.asList(userRefNames));
-            }
-        }
-
-        if (contextVarPassword && this.authPassword != null){
-            pwdRefNames = Syntax.getReferencedNames(this.authPassword);
-            if(pwdRefNames!=null){
-                list.addAll(Arrays.asList(pwdRefNames));
-            }
-        }
-
-
-        //(chances are there won't be context vars in all of those fields but\
-        //we will check them all anyway
-
-        //amalgamate all the arrays to a single return.
-        String endList [] = (String []) list.toArray (new String [list.size ()]);
-
-        return endList;
+        return Syntax.getReferencedNames(
+                messageString(),
+                smtpPort,
+                smtpHost,
+                targetEmailAddress,
+                targetBCCEmailAddress,
+                targetCCEmailAddress,
+                subject,
+                sourceEmailAddress,
+                authUsername,
+                contextVarPassword ? authPassword : null
+        );
     }
 
     private final static String baseName = "Send Email Alert";

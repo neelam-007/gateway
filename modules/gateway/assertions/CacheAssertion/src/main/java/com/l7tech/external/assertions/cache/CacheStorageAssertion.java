@@ -7,11 +7,8 @@ import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.Syntax;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import com.l7tech.util.ArrayUtils;
 
 /**
  * 
@@ -33,11 +30,7 @@ public class CacheStorageAssertion extends MessageTargetableAssertion implements
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
-        List<String> ret = new ArrayList<String>();
-        if (cacheId != null) ret.addAll(Arrays.asList(Syntax.getReferencedNames(cacheId)));
-        if (cacheEntryKey != null) ret.addAll(Arrays.asList(Syntax.getReferencedNames(cacheEntryKey)));
-        ret.addAll(Arrays.asList(super.getVariablesUsed()));
-        return ret.toArray(new String[ret.size()]);
+        return ArrayUtils.concat( super.getVariablesUsed(), Syntax.getReferencedNames( cacheId, cacheEntryKey ) );
     }
 
     /** @return the name of the cache in which to store the item.  May contain variables that need interpolation. */

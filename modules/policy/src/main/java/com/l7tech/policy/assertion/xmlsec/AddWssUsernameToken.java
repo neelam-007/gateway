@@ -127,10 +127,7 @@ public class AddWssUsernameToken extends MessageTargetableAssertion implements S
     public String[] getVariablesUsed() {
         List<String> vars = new ArrayList<String>( Arrays.asList(super.getVariablesUsed()));
 
-        StringBuilder allRefs = new StringBuilder();
-        if ( username != null ) allRefs.append( username );
-        if ( password != null ) allRefs.append( password );
-        String[] referencedVariables = Syntax.getReferencedNames( allRefs.toString() );
+        String[] referencedVariables = Syntax.getReferencedNames( username, password );
         vars.addAll( Arrays.asList(referencedVariables));
 
         return vars.toArray(new String[vars.size()]);

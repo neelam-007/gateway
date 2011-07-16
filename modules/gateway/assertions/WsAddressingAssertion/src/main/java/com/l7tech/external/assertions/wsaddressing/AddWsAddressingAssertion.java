@@ -1,7 +1,3 @@
-/**
- * Copyright (C) 2008, Layer 7 Technologies Inc.
- * @author darmstrong
- */
 package com.l7tech.external.assertions.wsaddressing;
 
 import com.l7tech.objectmodel.migration.Migration;
@@ -12,6 +8,7 @@ import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.SoapConstants;
 
 import java.util.*;
@@ -158,24 +155,16 @@ public class AddWsAddressingAssertion extends MessageTargetableAssertion {
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
-
-        final StringBuilder sb = new StringBuilder();
-
-        sb.append(getWsaNamespaceUri());
-        sb.append(getAction());
-        sb.append(getMessageId());
-        sb.append(getDestination());
-        sb.append(getSourceEndpoint());
-        sb.append(getReplyEndpoint());
-        sb.append(getFaultEndpoint());
-        sb.append(getRelatesToMessageId());
-
-        final String[] strings = Syntax.getReferencedNames(sb.toString());
-        List<String> allVars = new ArrayList<String>();
-        allVars.addAll(Arrays.asList(strings));
-        allVars.addAll(Arrays.asList(super.getVariablesUsed()));
-
-        return allVars.toArray(new String[allVars.size()]);
+        final String[] variables = Syntax.getReferencedNames(
+                getWsaNamespaceUri(),
+                getAction(),
+                getMessageId(),
+                getDestination(),
+                getSourceEndpoint(),
+                getReplyEndpoint(),
+                getFaultEndpoint(),
+                getRelatesToMessageId());
+        return ArrayUtils.concat( super.getVariablesUsed(), variables );
     }
 
     @Override

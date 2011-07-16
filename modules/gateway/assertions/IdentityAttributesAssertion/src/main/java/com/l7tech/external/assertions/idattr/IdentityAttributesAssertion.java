@@ -8,7 +8,6 @@ import com.l7tech.policy.wsp.*;
 import com.l7tech.objectmodel.UsersOrGroups;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -17,18 +16,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class IdentityAttributesAssertion extends Assertion implements UsesVariables, SetsVariables, UsesEntities {
+public class IdentityAttributesAssertion extends Assertion implements SetsVariables, UsesEntities {
     private String variablePrefix;
     private long identityProviderOid;
     private IdentityMapping[] lookupAttributes;
 
     public static final String DEFAULT_VAR_PREFIX = "authenticatedUser";
-
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
-    @Override
-    public String[] getVariablesUsed() {
-        return new String[0];
-    }
 
     public String getVariablePrefix() {
         return variablePrefix;
@@ -49,7 +42,7 @@ public class IdentityAttributesAssertion extends Assertion implements UsesVariab
     @Migration(mapName = MigrationMappingSelection.REQUIRED, resolver = PropertyResolver.Type.ASSERTION)
     @Override
     public EntityHeader[] getEntitiesUsed() {
-        if(identityProviderOid > 0) {
+        if(identityProviderOid > 0L) {
             return new EntityHeader[] {new EntityHeader(identityProviderOid, EntityType.ID_PROVIDER_CONFIG, null, null)};
         } else {
             return new EntityHeader[0];
@@ -84,7 +77,7 @@ public class IdentityAttributesAssertion extends Assertion implements UsesVariab
             final AttributeConfig ac = im.getAttributeConfig();
             metas.add(new VariableMetadata(vp + "." + ac.getVariableName(), false, im.isMultivalued(), null, false, ac.getType()));
         }
-        return metas.toArray(new VariableMetadata[0]);
+        return metas.toArray( new VariableMetadata[metas.size()] );
     }
 
     //

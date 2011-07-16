@@ -7,6 +7,7 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.TimeUnit;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
@@ -203,6 +204,6 @@ public class BuildRstrSoapResponse extends MessageTargetableAssertion implements
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames((tokenIssued == null? "" : tokenIssued) + (addressOfEPR == null? "" : addressOfEPR));
+        return ArrayUtils.concat( super.getVariablesUsed(), Syntax.getReferencedNames(tokenIssued, addressOfEPR ) );
     }
 }

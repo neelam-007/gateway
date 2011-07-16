@@ -1,5 +1,9 @@
 package com.l7tech.external.assertions.oauth;
 
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
@@ -78,12 +82,10 @@ public class OAuthValidationAssertion extends Assertion implements UsesVariables
         return new VariableMetadata[] { new VariableMetadata(VARIABLE_TOKEN_SIGNATURE_VALID, false, false, null, true, DataType.STRING) };
     }
 
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
-        StringBuffer sb = new StringBuffer();
-        sb.append(getOAuthTokenSignature());
-        sb.append(" ").append(getOAuthTokenText());
-        return Syntax.getReferencedNames(sb.toString());
+        return Syntax.getReferencedNames( getOAuthTokenSignature(), getOAuthTokenText() );
     }
 
     //

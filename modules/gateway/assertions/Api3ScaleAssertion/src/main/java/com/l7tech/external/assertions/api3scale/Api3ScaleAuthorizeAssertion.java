@@ -100,50 +100,11 @@ public class Api3ScaleAuthorizeAssertion extends Assertion implements SetsVariab
     public String[] getVariablesUsed() {
         List<String> ret = new ArrayList<String>();
 
-        String[] serverRefNames;
-        if (this.server != null){
-            serverRefNames = Syntax.getReferencedNames(this.server);
-            if(serverRefNames!=null){
-                ret.addAll(Arrays.asList(serverRefNames));
-            }
-        }
+        ret.addAll( Arrays.asList( Syntax.getReferencedNames( server, privateKey, applicationKey, applicationID ) ) );
 
-        String[] privateKeyRefNames;
-        if (this.privateKey != null){
-            privateKeyRefNames = Syntax.getReferencedNames(this.privateKey);
-            if(privateKeyRefNames!=null){
-                ret.addAll(Arrays.asList(privateKeyRefNames));
-            }
-        }
-
-        String[] applicationKeyRefNames;
-        if (this.applicationKey != null){
-            applicationKeyRefNames = Syntax.getReferencedNames(this.applicationKey);
-            if(applicationKeyRefNames!=null){
-                ret.addAll(Arrays.asList(applicationKeyRefNames));
-            }
-        }
-
-        String[] applicationIDRefNames;
-        if (this.applicationID != null){
-            applicationIDRefNames = Syntax.getReferencedNames(this.applicationID);
-            if(applicationIDRefNames!=null){
-                ret.addAll(Arrays.asList(applicationIDRefNames));
-            }
-        }
-
-        if (this.usage != null){
-            for(String key: usage.keySet()){
-                String[] keyRefNames;
-                keyRefNames = Syntax.getReferencedNames(key);
-                if(keyRefNames!=null){
-                    ret.addAll(Arrays.asList(keyRefNames));
-                }
-                String[] valueRefNames;
-                valueRefNames = Syntax.getReferencedNames(usage.get(key));
-                if(valueRefNames!=null){
-                    ret.addAll(Arrays.asList(valueRefNames));
-                }
+        if ( this.usage != null ){
+            for( final Map.Entry<String,String> entry : usage.entrySet() ){
+                ret.addAll( Arrays.asList( Syntax.getReferencedNames( entry.getKey(), entry.getValue() ) ));
             }
         }
 
@@ -155,6 +116,7 @@ public class Api3ScaleAuthorizeAssertion extends Assertion implements SetsVariab
     //
     private static final String META_INITIALIZED = Api3ScaleAuthorizeAssertion.class.getName() + ".metadataInitialized";
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
@@ -194,8 +156,11 @@ public class Api3ScaleAuthorizeAssertion extends Assertion implements SetsVariab
         meta.put(AssertionMetadata.EXTENSION_INTERFACES_FACTORY, new Functions.Unary< Collection<ExtensionInterfaceBinding>, ApplicationContext>() {
             @Override
             public Collection<ExtensionInterfaceBinding> call(ApplicationContext appContext) {
-                ExtensionInterfaceBinding binding = new ExtensionInterfaceBinding(Api3ScaleAdmin.class, null, new Api3ScaleAdminImpl());
-                return Collections.singletonList(binding);
+                final ExtensionInterfaceBinding<Api3ScaleAdmin> binding = new ExtensionInterfaceBinding<Api3ScaleAdmin>(
+                        Api3ScaleAdmin.class,
+                        null,
+                        new Api3ScaleAdminImpl());
+                return Collections.<ExtensionInterfaceBinding>singletonList(binding);
             }
         });
 

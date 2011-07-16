@@ -16,7 +16,6 @@ import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.WspSensitive;
-import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -459,31 +458,28 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        StringBuffer tmp = new StringBuffer();
-        if (!StringUtils.isEmpty(login)) tmp.append(login);
-        if (!StringUtils.isEmpty(password)) tmp.append(password);
-        if (!StringUtils.isEmpty(protectedServiceUrl)) tmp.append(protectedServiceUrl);
-        if (!StringUtils.isEmpty(ntlmHost)) tmp.append(ntlmHost);
-        if (!StringUtils.isEmpty(realm)) tmp.append(realm);
-        if (!StringUtils.isEmpty(krbConfiguredAccount)) tmp.append(krbConfiguredAccount);
-        if (!StringUtils.isEmpty(krbConfiguredPassword)) tmp.append(krbConfiguredPassword);
-        if (!StringUtils.isEmpty(proxyPassword)) tmp.append(proxyPassword);
-        if (customURLs != null) tmp.append(Arrays.toString(customURLs));
-        if (customIpAddresses != null) tmp.append(Arrays.toString(customIpAddresses));
-
-        if (requestMsgSrc != null) tmp.append(Syntax.SYNTAX_PREFIX).append(requestMsgSrc).append(Syntax.SYNTAX_SUFFIX);
+        final List<String> expressions = new ArrayList<String>();
+        expressions.add(login);
+        expressions.add(password);
+        expressions.add(protectedServiceUrl);
+        expressions.add(ntlmHost);
+        expressions.add(realm);
+        expressions.add(krbConfiguredAccount);
+        expressions.add(krbConfiguredPassword);
+        expressions.add(proxyPassword);
+        if (customURLs != null) expressions.addAll( Arrays.asList( customURLs ) );
+        if (customIpAddresses != null) expressions.addAll( Arrays.asList( customIpAddresses ) );
+        expressions.add(Syntax.getVariableExpression(requestMsgSrc));
 
         HttpPassthroughRuleSet[] ruleset = {responseHeaderRules, requestHeaderRules, requestParamRules};
         for( HttpPassthroughRuleSet rules : ruleset ) {
             if( !rules.isForwardAll() ) {
                 for( HttpPassthroughRule rule : rules.getRules() ) {
-                    if( !StringUtils.isEmpty( rule.getCustomizeValue() ) ) {
-                        tmp.append( rule.getCustomizeValue() );
-                    }
+                    expressions.add( rule.getCustomizeValue() );
                 }
             }
         }
-        return Syntax.getReferencedNames(tmp.toString());
+        return Syntax.getReferencedNames( expressions.toArray( new String[ expressions.size() ] ) );
     }
 
     @Override
@@ -646,7 +642,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         @Override
         public String getAssertionName( final HttpRoutingAssertion assertion, final boolean decorate) {
             if(!decorate) return baseName;
-            StringBuffer assertionName = new StringBuffer("Route via HTTP");
+            StringBuilder assertionName = new StringBuilder( "Route via HTTP" );
             String url = assertion.getProtectedServiceUrl();
             if(url != null){
                 if(url.startsWith("https")) assertionName.append("S");

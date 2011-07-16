@@ -1,7 +1,12 @@
 package com.l7tech.external.assertions.xmlsec;
 
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.util.ArrayUtils;
 import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.xml.xpath.XpathExpression;
 
@@ -26,12 +31,10 @@ public abstract class NonSoapSecurityAssertionBase extends XpathBasedAssertion i
         return verb == null ? "process" : String.valueOf(verb);
     }
 
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
-        List<String> variables = new ArrayList<String>();
-        variables.addAll( Arrays.asList( super.getVariablesUsed() ) );
-        variables.addAll( Arrays.asList( messageTargetableSupport.getVariablesUsed() ) );
-        return variables.toArray( new String[variables.size()] );
+        return ArrayUtils.concat( super.getVariablesUsed(), messageTargetableSupport.getVariablesUsed() );
     }
 
     @Override

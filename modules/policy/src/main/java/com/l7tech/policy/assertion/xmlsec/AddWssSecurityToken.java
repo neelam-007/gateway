@@ -148,10 +148,12 @@ public class AddWssSecurityToken extends MessageTargetableAssertion implements W
         privatekeyableSupport.setUsesDefaultKeyStore(usesDefaultKeyStore);
     }
 
+    @Override
     public IdentityTarget getIdentityTarget() {
         return identityTarget;
     }
 
+    @Override
     public void setIdentityTarget(IdentityTarget identityTarget) {
         this.identityTarget = identityTarget;
     }
@@ -258,10 +260,7 @@ public class AddWssSecurityToken extends MessageTargetableAssertion implements W
     public String[] getVariablesUsed() {
         List<String> vars = new ArrayList<String>( Arrays.asList(super.getVariablesUsed()));
 
-        StringBuilder allRefs = new StringBuilder();
-        if ( username != null ) allRefs.append( username );
-        if ( password != null ) allRefs.append( password );
-        String[] referencedVariables = Syntax.getReferencedNames( allRefs.toString() );
+        String[] referencedVariables = Syntax.getReferencedNames( username, password );
         vars.addAll( Arrays.asList(referencedVariables));
         if (wsscSessionVariable != null && wsscSessionVariable.length() > 0)
             vars.add(wsscSessionVariable);

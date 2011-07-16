@@ -1,14 +1,10 @@
 package com.l7tech.external.assertions.esm;
 
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.policy.validator.AssertionValidator;
 import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.wsdl.Wsdl;
@@ -17,23 +13,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * 
  */
 @SuppressWarnings({ "serial" })
-public class EsmMetricsAssertion extends Assertion implements UsesVariables {
+public class EsmMetricsAssertion extends Assertion {
     protected static final Logger logger = Logger.getLogger(EsmMetricsAssertion.class.getName());
     private static final String QOSMW	= "http://metadata.dod.mil/mdr/ns/netops/esm/qosmw";
-
-
-    @Override
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
-    public String[] getVariablesUsed() {
-        return new String[0]; //Syntax.getReferencedNames(...);
-    }
 
     //
     // Metadata

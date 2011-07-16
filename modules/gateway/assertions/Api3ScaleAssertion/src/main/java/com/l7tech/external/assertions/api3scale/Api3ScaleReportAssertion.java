@@ -1,9 +1,11 @@
 package com.l7tech.external.assertions.api3scale;
 
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.Syntax;
-import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.policy.wsp.*;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -51,46 +53,16 @@ public class Api3ScaleReportAssertion extends Assertion implements UsesVariables
         return server;
     }
 
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
         List<String> ret = new ArrayList<String>();
 
-        String[] privateKeyRefNames;
-        if (this.privateKey != null){
-            privateKeyRefNames = Syntax.getReferencedNames(this.privateKey);
-            if(privateKeyRefNames!=null){
-                ret.addAll(Arrays.asList(privateKeyRefNames));
-            }
-        }
+        ret.addAll( Arrays.asList( Syntax.getReferencedNames( privateKey, server, applicationId ) ) );
 
-        String[] serverRefNames;
-        if (this.server != null){
-            serverRefNames = Syntax.getReferencedNames(this.server);
-            if(serverRefNames!=null){
-                ret.addAll(Arrays.asList(serverRefNames));
-            }
-        }
-
-        String[] applicationIdRefNames;
-        if (this.applicationId != null){
-            applicationIdRefNames = Syntax.getReferencedNames(this.applicationId);
-            if(applicationIdRefNames!=null){
-                ret.addAll(Arrays.asList(applicationIdRefNames));
-            }
-        }
-
-        if (this.transactionUsages != null){
-            for(String key: transactionUsages.keySet()){
-                String[] keyRefNames;
-                keyRefNames = Syntax.getReferencedNames(key);
-                if(keyRefNames!=null){
-                    ret.addAll(Arrays.asList(keyRefNames));
-                }
-                String[] valueRefNames;
-                valueRefNames = Syntax.getReferencedNames(transactionUsages.get(key));
-                if(valueRefNames!=null){
-                    ret.addAll(Arrays.asList(valueRefNames));
-                }
+        if ( this.transactionUsages != null ){
+            for( final Map.Entry<String,String> entry : transactionUsages.entrySet() ){
+                ret.addAll( Arrays.asList( Syntax.getReferencedNames( entry.getKey(), entry.getValue() ) ) );
             }
         }
 
@@ -102,6 +74,7 @@ public class Api3ScaleReportAssertion extends Assertion implements UsesVariables
     //
     private static final String META_INITIALIZED = Api3ScaleReportAssertion.class.getName() + ".metadataInitialized";
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))

@@ -1,19 +1,11 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.policy.assertion;
 
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.ValidationUtils;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
@@ -22,8 +14,8 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  * Assertion for limiting request size.
  */
 public class RequestSizeLimit extends MessageTargetableAssertion implements UsesVariables {
-    public static final long MIN_SIZE_LIMIT = 1;
-    public static final long MAX_SIZE_LIMIT =  Long.MAX_VALUE / 1024;
+    public static final long MIN_SIZE_LIMIT = 1L;
+    public static final long MAX_SIZE_LIMIT =  Long.MAX_VALUE / 1024L;
 
     private String limit = "128"; // kbytes
     private boolean entireMessage = true;
@@ -52,7 +44,7 @@ public class RequestSizeLimit extends MessageTargetableAssertion implements Uses
      * @param limit the (request) size limit in bytes
      */
     public void setLimit(long limit) {
-        setLimit(String.valueOf(limit/1024));
+        setLimit(String.valueOf(limit/1024L));
     }
 
     /**
@@ -74,12 +66,7 @@ public class RequestSizeLimit extends MessageTargetableAssertion implements Uses
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
-        List<String> vars = new ArrayList<String>();
-        if (limit != null)
-            vars.addAll(Arrays.asList( Syntax.getReferencedNames( limit )));
-        vars.addAll(Arrays.asList(super.getVariablesUsed()));
-
-        return vars.toArray(new String[vars.size()]);
+        return ArrayUtils.concat( super.getVariablesUsed(), Syntax.getReferencedNames( new String[]{ limit } ) ); // allows null limit
 
     }
 

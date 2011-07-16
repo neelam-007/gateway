@@ -192,7 +192,7 @@ public class Regex extends MessageTargetableAssertion implements UsesVariables, 
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         if (replacement == null)
-            return new String[0];
+            return super.getVariablesUsed();
 
         return ArrayUtils.concat(super.getVariablesUsed(), Syntax.getReferencedNames(replacement));
     }

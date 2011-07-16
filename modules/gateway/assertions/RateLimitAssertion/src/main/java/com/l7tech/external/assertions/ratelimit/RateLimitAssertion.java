@@ -37,7 +37,7 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(getCounterName() + " " + getMaxRequestsPerSecond() + " " + getMaxConcurrency() + " " + getWindowSizeInSeconds() + " " + getBlackoutPeriodInSeconds());
+        return Syntax.getReferencedNames(getCounterName(), getMaxRequestsPerSecond(), getMaxConcurrency(), getWindowSizeInSeconds(), getBlackoutPeriodInSeconds());
     }
 
     /**
@@ -258,6 +258,7 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
     };
 
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))

@@ -40,7 +40,7 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
     private boolean requireHolderOfKeyWithMessageSignature = false;
     private MessageTargetableSupport messageTargetableSupport = new MessageTargetableSupport(false);
     private boolean checkAssertionValidity = true;
-    private long maxExpiry = 0;
+    private long maxExpiry = 0L;
     private TimeUnit timeUnit = TimeUnit.MINUTES;
 
     public RequireWssSaml() {
@@ -256,15 +256,7 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
     public String[] getVariablesUsed() {
         final Set<String> variables = new HashSet<String>();
         variables.addAll(Arrays.asList(messageTargetableSupport.getVariablesUsed()));
-        if ( subjectConfirmationDataRecipient!=null ) {
-            variables.addAll(Arrays.asList(Syntax.getReferencedNames(subjectConfirmationDataRecipient)));
-        }
-        if( nameQualifier != null) {
-            variables.addAll(Arrays.asList(Syntax.getReferencedNames(nameQualifier)));
-        }
-        if( audienceRestriction != null) {
-            variables.addAll(Arrays.asList(Syntax.getReferencedNames(audienceRestriction)));
-        }
+        variables.addAll(Arrays.asList(Syntax.getReferencedNames( subjectConfirmationDataRecipient, nameQualifier, audienceRestriction )));
         return variables.toArray( new String[variables.size()] );
     }
 

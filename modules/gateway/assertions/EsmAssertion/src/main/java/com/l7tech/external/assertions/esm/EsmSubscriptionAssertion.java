@@ -18,22 +18,15 @@ import com.l7tech.wsdl.Wsdl;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /** User: megery */
 @SuppressWarnings({ "serial" })
-public class EsmSubscriptionAssertion extends Assertion implements UsesVariables, UsesEntities, PolicyReference {
+public class EsmSubscriptionAssertion extends Assertion implements UsesEntities, PolicyReference {
     protected static final Logger logger = Logger.getLogger(EsmSubscriptionAssertion.class.getName());
     private String notificationPolicyGuid;
     private transient Policy notificationPolicy;    
     private static final String ESMSM = "http://metadata.dod.mil/mdr/ns/netops/esm/esmsm";
-
-    @Override
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
-    public String[] getVariablesUsed() {
-        return new String[0]; //Syntax.getReferencedNames(...);
-    }
 
     //
     // Metadata

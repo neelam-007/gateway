@@ -2,6 +2,7 @@ package com.l7tech.policy.variable;
 
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
+import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Element;
 
 import java.io.IOException;
@@ -100,6 +101,7 @@ public abstract class Syntax {
      * @return all the (distinct) variable names which are contained within our variable reference syntax of ${...} in String s
      * @throws VariableNameSyntaxException If an error occurs
      */
+    @NotNull
     public static String[] getReferencedNames( final String... values ) {
         final Set<String> variables = new LinkedHashSet<String>();
 
@@ -118,13 +120,12 @@ public abstract class Syntax {
      * <p/>
      * There is no special behaviour for variables referenced which use selectors
      *
-     * @param s String to find out what variables are referenced using our syntax of ${}. Must not be null.
+     * @param s String to find out what variables are referenced using our syntax of ${}. May be null.
      * @return all the variable names which are contained within our variable reference syntax of ${...} in String s.  May be empty but never null.
-     * @throws IllegalArgumentException if the given string is null
      * @throws VariableNameSyntaxException If an error occurs
      */
     public static String[] getReferencedNames(final String s) {
-        if (s == null) throw new IllegalArgumentException();
+        if (s == null) return new String[0];
         return getReferencedNames( s, true );
     }
 
@@ -135,7 +136,7 @@ public abstract class Syntax {
      * <p/>
      * There is no special behaviour for variables referenced which use selectors
      *
-     * @param s String to find out what variables are referenced using our syntax of ${}. Must not be null.
+     * @param s String to find out what variables are referenced using our syntax of ${}. May be null.
      * @param strict when strict processing is enabled runtime exceptions will be thrown on error.
      * @return all the variable names which are contained within our variable reference syntax of ${...} in String s
      * @throws VariableNameSyntaxException If strict and an error occurs
@@ -228,7 +229,7 @@ public abstract class Syntax {
      * @throws VariableNameSyntaxException
      */
     private static String[] getReferencedNamesWithIndexedVars(String s, boolean omitted) throws VariableNameSyntaxException {
-        if (s == null) throw new IllegalArgumentException();
+        if (s == null) return new String[0];
 
         List<String> vars = new ArrayList<String>();
         Matcher matcher = regexPattern.matcher(s);

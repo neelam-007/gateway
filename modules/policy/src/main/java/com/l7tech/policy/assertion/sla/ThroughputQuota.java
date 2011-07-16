@@ -208,7 +208,7 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(counterName + " " + getQuota());
+        return Syntax.getReferencedNames(counterName, getQuota());
     }
 
     @Override
@@ -241,7 +241,7 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
         public String getAssertionName( final ThroughputQuota assertion, final boolean decorate) {
             if(!decorate) return baseName;
 
-            final StringBuffer buffer = new StringBuffer(baseName);
+            final StringBuilder buffer = new StringBuilder( baseName );
             if (assertion.getCounterStrategy() == ThroughputQuota.DECREMENT) {
                 buffer.append(": Decrement counter ").append(assertion.getCounterName());
             } else {
@@ -273,7 +273,7 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
     public static String validateQuota(String quota) {
         String error = null;
         final String[] varsUsed = Syntax.getReferencedNames(quota);
-        if (varsUsed.length == 0 && !ValidationUtils.isValidLong(quota, false, 1, MAX_THROUGHPUT_QUOTA)) {
+        if (varsUsed.length == 0 && !ValidationUtils.isValidInteger(quota, false, 1, MAX_THROUGHPUT_QUOTA)) {
             error = "Throughput quota must be an integer between 1 and " + MAX_THROUGHPUT_QUOTA;
         }
         return error;

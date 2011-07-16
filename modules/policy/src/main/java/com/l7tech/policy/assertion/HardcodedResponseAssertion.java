@@ -55,9 +55,10 @@ public class HardcodedResponseAssertion extends RoutingAssertion implements Uses
         setBase64ResponseBody(HexUtils.encodeBase64(HexUtils.encodeUtf8(responseBody), true));
     }
 
+    @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(responseBodyString() + responseContentType);
+        return Syntax.getReferencedNames(responseBodyString(), responseContentType);
     }
 
     public String getBase64ResponseBody() {

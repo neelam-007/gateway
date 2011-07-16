@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
- */
 package com.l7tech.policy.assertion;
 
 /**
@@ -19,9 +16,9 @@ public interface UsesVariables {
      * <p/>
      * If an assertion requires a variable to already exist, but modifies it in-place, it should delcare it
      * in both SetsVariables and {@link UsesVariables}.
-
+     *
      * @return an array of variable names used by the assertion at runtime. these variable names are not
-     * boxed in ${name} pattern (must return variable names only)
+     * boxed in ${name} pattern (must return variable names only, must not return null)
      */
     String[] getVariablesUsed();
 }
