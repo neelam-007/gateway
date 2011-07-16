@@ -9,10 +9,12 @@ import com.l7tech.server.util.JaasUtils;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.EntityFinder;
+import com.l7tech.util.ExceptionUtils;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.text.MessageFormat;
 
@@ -90,7 +92,7 @@ public class RbacAdminImpl implements RbacAdmin {
             try {
                 theRole.setCachedSpecificEntity(entityFinder.find(entityType.getEntityClass(), entityOid));
             } catch (FindException e) {
-                logger.warning(MessageFormat.format("Couldn''t find {0} (# {1}) to attach to ''{2}'' Role", entityType.name(), entityOid, theRole.getName()));
+                logger.log( Level.WARNING, MessageFormat.format( "Couldn''t find {0} (# {1}) to attach to ''{2}'' Role", entityType.name(), entityOid, theRole.getName() ), ExceptionUtils.getDebugException( e ) );
             }
         }
         return theRole;

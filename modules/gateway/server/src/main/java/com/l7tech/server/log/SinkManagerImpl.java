@@ -455,9 +455,9 @@ public class SinkManagerImpl
         ObjectOutputStream out = null;
         try {
             out = new ObjectOutputStream(new FileOutputStream( logConfig ));
-            out.writeObject(fileSinks);            
+            out.writeObject(fileSinks);
         } catch ( IOException ioe ) {
-            logger.warning("Error storing log configuration '"+ ExceptionUtils.getMessage(ioe) +"'.");        
+            logger.log( Level.WARNING, "Error storing log configuration '" + ExceptionUtils.getMessage( ioe ) + "'.", ExceptionUtils.getDebugException( ioe ) );
         } finally {
             ResourceUtils.closeQuietly(out);
         }

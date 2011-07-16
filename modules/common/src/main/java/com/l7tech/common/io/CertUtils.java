@@ -1082,7 +1082,7 @@ public class CertUtils {
             if (ocspUrls.length > 0)
                 l.add(new Pair<String, String>(CERT_PROP_OCSP, sb.toString()));
         } catch (CertificateException e) {
-            logger.warning("Cannot get the OCSP information from the certificate: " + ExceptionUtils.getMessage(e));
+            logger.log( Level.WARNING, "Cannot get the OCSP information from the certificate: " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
         }
 
 
@@ -1099,7 +1099,7 @@ public class CertUtils {
                 l.add(new Pair<String, String>(CERT_PROP_CRL_DISTRIBUTION_POINTS, sb.toString()));
 
         } catch (IOException e) {
-            logger.warning("Cannot get the CRL information from the certificate: " + ExceptionUtils.getMessage(e));
+            logger.log( Level.WARNING, "Cannot get the CRL information from the certificate: " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
         }
 
         return l;

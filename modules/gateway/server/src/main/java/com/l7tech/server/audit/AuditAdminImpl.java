@@ -228,9 +228,8 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
         ClusterProperty result = null;
         try {
             result = clusterPropertyManager.findByUniqueName(ServerConfig.PARAM_AUDIT_ARCHIVER_FTP_DESTINATION);
-        }
-        catch (FindException fe) {
-            logger.warning("Error getting cluster property: " + fe.getMessage());
+        } catch ( FindException fe ) {
+            logger.log( Level.WARNING, "Error getting cluster property: " + fe.getMessage(), ExceptionUtils.getDebugException( fe ) );
         }
 
         return result != null ? result : new ClusterProperty(ServerConfig.PARAM_AUDIT_ARCHIVER_FTP_DESTINATION, null);
@@ -318,12 +317,10 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
                 value = property.getValue();
                 date = new Date(Long.parseLong(value));
             }
-        }
-        catch (FindException fe) {
-            logger.warning("Error getting cluster property '"+CLUSTER_PROP_LAST_AUDITACK_TIME+"' message is '"+fe.getMessage()+"'.");            
-        }
-        catch (NumberFormatException nfe) {
-            logger.warning("Error getting cluster property '"+CLUSTER_PROP_LAST_AUDITACK_TIME+"' invalid long value '"+value+"'.");            
+        } catch ( FindException fe ) {
+            logger.log( Level.WARNING, "Error getting cluster property '" + CLUSTER_PROP_LAST_AUDITACK_TIME + "' message is '" + fe.getMessage() + "'.", ExceptionUtils.getDebugException( fe ) );
+        } catch (NumberFormatException nfe) {
+            logger.log( Level.WARNING, "Error getting cluster property '" + CLUSTER_PROP_LAST_AUDITACK_TIME + "' invalid long value '"+value+"'.", ExceptionUtils.getDebugException( nfe ));
         }
 
         return date;
@@ -343,15 +340,12 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
                 property.setValue(value);
                 clusterPropertyManager.update(property);
             }
-        }
-        catch (FindException fe) {
-            logger.warning("Error getting cluster property '"+CLUSTER_PROP_LAST_AUDITACK_TIME+"' message is '"+fe.getMessage()+"'.");
-        }
-        catch (SaveException se) {
-            logger.log(Level.WARNING ,"Error saving cluster property '"+CLUSTER_PROP_LAST_AUDITACK_TIME+"'.", se);
-        }
-        catch(UpdateException ue) {
-            logger.log(Level.WARNING ,"Error updating cluster property '"+CLUSTER_PROP_LAST_AUDITACK_TIME+"'.", ue);            
+        } catch ( FindException fe ) {
+            logger.log( Level.WARNING, "Error getting cluster property '" + CLUSTER_PROP_LAST_AUDITACK_TIME + "' message is '" + fe.getMessage() + "'.", ExceptionUtils.getDebugException( fe ) );
+        } catch (SaveException se) {
+            logger.log( Level.WARNING, "Error saving cluster property '" + CLUSTER_PROP_LAST_AUDITACK_TIME + "'.", se);
+        } catch(UpdateException ue) {
+            logger.log( Level.WARNING, "Error updating cluster property '" + CLUSTER_PROP_LAST_AUDITACK_TIME + "'.", ue);
         }
 
         return date;

@@ -1221,7 +1221,7 @@ public class LdapIdentityProviderImpl
                     try {
                         groupName = valuesWereLookingFor.get(0).toString();
                     } catch (NamingException e) {
-                        logger.warning("cannot extract name from this group");
+                        logger.log( Level.WARNING, "cannot extract name from this group", ExceptionUtils.getDebugException( e ) );
                     }
                 }
                 if (groupName == null) groupName = dn;

@@ -197,7 +197,7 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
                     }
                 }
             } catch (FindException e) {
-                logger.warning("Failed to fetch list of published service. Metric bins generation will not start until requests arrive. Cause: " + e.getMessage());
+                logger.log( Level.WARNING, "Failed to fetch list of published service. Metric bins generation will not start until requests arrive. Cause: " + e.getMessage(), ExceptionUtils.getDebugException( e ) );
             }
 
             //

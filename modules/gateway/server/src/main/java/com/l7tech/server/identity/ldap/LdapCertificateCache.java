@@ -183,7 +183,7 @@ class LdapCertificateCache implements Lifecycle {
                 IdentityProviderConfig config = configManager.findByPrimaryKey(this.config.getOid());
                 return config == null || config.getVersion()!=this.config.getVersion();
             } catch (FindException e) {
-                logger.warning("Error checking identity configuration for " + config);
+                logger.log( Level.WARNING, "Error checking identity configuration for " + config, ExceptionUtils.getDebugException( e ) );
             }
         }
         return false; // don't assume it was removed if there are errors getting to it
