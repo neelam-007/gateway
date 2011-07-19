@@ -5,13 +5,18 @@
  */
 package com.l7tech.policy.assertion;
 
-import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.Syntax;
-import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.util.ArrayUtils;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableMetadata;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Arrays;
+import java.util.Set;
+import java.util.TreeSet;
+
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
@@ -22,6 +27,10 @@ public class Regex extends MessageTargetableAssertion implements UsesVariables, 
     private String replacement;
     private boolean caseInsensitive;
     private boolean replace;
+    private boolean findAll = false;
+    private int replaceRepeatCount = 0;
+    private boolean includeEntireExpressionCapture = true;
+    private boolean patternContainsVariables = false;
     /**
      * Which MIME part to do the replacement in. Use null to indicate the first (SOAP)
      * part or any other Integer (zero-based) for a specific MIME part.
@@ -29,7 +38,7 @@ public class Regex extends MessageTargetableAssertion implements UsesVariables, 
     private int mimePart = 0;
     private boolean proceedIfPatternMatches = true;
     private String encoding;
-    private String regexName;
+    private @Nullable String regexName;
     private String captureVar = null;
     private boolean autoTarget = true;
 
@@ -91,11 +100,72 @@ public class Regex extends MessageTargetableAssertion implements UsesVariables, 
 
     /**
      * Set the boolean tooggle that enables replace
-     * @param replace
+     * @param replace true to do search and replace.  False to just do search.
      */
     public void setReplace(boolean replace) {
         this.replace = replace;
         setTargetModifiedByGateway(replace);
+    }
+
+    public int getReplaceRepeatCount() {
+        return replaceRepeatCount;
+    }
+
+    /**
+     * Set to a value higher than zero to repeatedly re-apply a search and replace regex until it either fails
+     * to match or until we have applied it the specified number of times.  Any values captured by capture
+     * groups will be appended to the output variable each time the regex is repeated.
+     *
+     * @param replaceRepeatCount number of times to repeat a search and replace regex.  Ignored unless replace is true.
+     */
+    public void setReplaceRepeatCount(int replaceRepeatCount) {
+        this.replaceRepeatCount = replaceRepeatCount;
+    }
+
+    public boolean isIncludeEntireExpressionCapture() {
+        return includeEntireExpressionCapture;
+    }
+
+    /**
+     * Set whether the zeroth capture group result, matching the entire section of the target variable matched by
+     * the regex, is included in the output.  If true (default), then a zeroth value of the output will always
+     * be present that acts as though the entire expression were surrounded by parens.  If false, only
+     * capture groups explicitly written into the regex will produce output values.
+     *
+     * @param includeEntireExpressionCapture true to include entire matched substring as zeroth output value.  False to include only explicitly captured substrings as output values.
+     */
+    public void setIncludeEntireExpressionCapture(boolean includeEntireExpressionCapture) {
+        this.includeEntireExpressionCapture = includeEntireExpressionCapture;
+    }
+
+    public boolean isFindAll() {
+        return findAll;
+    }
+
+    /**
+     * Set whether to keep searching to the end of the target string, even after a successful match, to collect additional
+     * capture group values.
+     *
+     * @param findAll if true, the assertion will scan the entire input for matches, even after a successful match.
+     *                if false, the assertion will stop after the first successful match.
+     */
+    public void setFindAll(boolean findAll) {
+        this.findAll = findAll;
+    }
+
+    public boolean isPatternContainsVariables() {
+        return patternContainsVariables;
+    }
+
+    /**
+     * If true, ExpandVariables will be called on the pattern before it is compiled for each request.
+     * If false, the pattern will be compiled only once, when the server assertion is constructed,
+     * and will not support variable expansion.
+     *
+     * @param patternContainsVariables true to expand context variables in the regex pattern
+     */
+    public void setPatternContainsVariables(boolean patternContainsVariables) {
+        this.patternContainsVariables = patternContainsVariables;
     }
 
     /**
@@ -112,7 +182,7 @@ public class Regex extends MessageTargetableAssertion implements UsesVariables, 
     /**
      * Set whether the proceed if pattern matches.
      *
-     * @param proceedIfPatternMatches
+     * @param proceedIfPatternMatches true if assertion should succeed if match succeeds; false if assertion should fail if match succeeds
      */
     public void setProceedIfPatternMatches(boolean proceedIfPatternMatches) {
         this.proceedIfPatternMatches = proceedIfPatternMatches;
@@ -128,7 +198,7 @@ public class Regex extends MessageTargetableAssertion implements UsesVariables, 
 
     /**
      * Set the mime part index of the message that this regex will match against
-     * @param mimePart
+     * @param mimePart message part index (0=main part, 1=first attachment, 2=second attachment, etc)
      */
     public void setMimePart(int mimePart) {
         this.mimePart = mimePart;
@@ -157,6 +227,7 @@ public class Regex extends MessageTargetableAssertion implements UsesVariables, 
      *
      * @return the name or null if none is set
      */
+    @Nullable
     public String getRegexName() {
         return regexName;
     }
@@ -166,7 +237,7 @@ public class Regex extends MessageTargetableAssertion implements UsesVariables, 
      *
      * @param regexName the name or null for none
      */
-    public void setRegexName(String regexName) {
+    public void setRegexName(@Nullable String regexName) {
         this.regexName = regexName;
     }
 
@@ -191,10 +262,13 @@ public class Regex extends MessageTargetableAssertion implements UsesVariables, 
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        if (replacement == null)
-            return super.getVariablesUsed();
-
-        return ArrayUtils.concat(super.getVariablesUsed(), Syntax.getReferencedNames(replacement));
+        Set<String> varsUsed = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        varsUsed.addAll(Arrays.asList(super.getVariablesUsed()));
+        if (replacement != null)
+            varsUsed.addAll(Arrays.asList(Syntax.getReferencedNames(replacement)));
+        if (patternContainsVariables && regex != null)
+            varsUsed.addAll(Arrays.asList(Syntax.getReferencedNames(regex)));
+        return varsUsed.toArray(new String[varsUsed.size()]);
     }
 
     @Override

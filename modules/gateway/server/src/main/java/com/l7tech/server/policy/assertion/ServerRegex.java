@@ -11,10 +11,7 @@ import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.ContextVariableKnob;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.Pair;
-import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.*;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,31 +22,53 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * The Server side Regex Assertion
  */
 public class ServerRegex extends AbstractServerAssertion<Regex> {
-    private Pattern regexPattern;
     private Exception compileException;
+    private final Either<Pattern, String> regexPatternOrTemplate;
     private final String[] varNames;
-    public static final Charset ENCODING = Charsets.UTF8;
     private final boolean isReplacement;
+    private final int replaceRepeatCount;
+    private final boolean includeEntireExpressionCapture;
+    private final boolean findAll;
+    private final String captureVar;
+    private final boolean caseInsensitive;
 
     public ServerRegex(Regex ass) {
         super(ass);
         String regExExpression = ass.getRegex();
-        try {
-            int flags = Pattern.DOTALL | Pattern.MULTILINE;
-            if (assertion.isCaseInsensitive()) {
-                flags |= Pattern.CASE_INSENSITIVE;
-            }
-            regexPattern = Pattern.compile(regExExpression, flags);
-        } catch (Exception e) {
-            compileException = e;
-        }
+        caseInsensitive = assertion.isCaseInsensitive();
         isReplacement = assertion.isReplace();
         varNames = ass.getVariablesUsed();
+        replaceRepeatCount = Math.abs(ass.getReplaceRepeatCount());
+        includeEntireExpressionCapture = ass.isIncludeEntireExpressionCapture();
+        captureVar = assertion.getCaptureVar();
+        findAll = assertion.isFindAll();
+
+        Either<Pattern, String> pattern;
+        try {
+            if (assertion.isPatternContainsVariables()) {
+                pattern = Either.right(regExExpression);
+            } else {
+                pattern = Either.left(Pattern.compile(regExExpression, patternFlags()));
+            }
+        } catch (Exception e) {
+            compileException = e;
+            pattern = null;
+        }
+        this.regexPatternOrTemplate = pattern;
+    }
+
+    private int patternFlags() {
+        int flags = Pattern.DOTALL | Pattern.MULTILINE;
+        if (caseInsensitive) {
+            flags |= Pattern.CASE_INSENSITIVE;
+        }
+        return flags;
     }
 
     private static interface RegexInput {
@@ -63,15 +82,11 @@ public class ServerRegex extends AbstractServerAssertion<Regex> {
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException
     {
-        checkPattern();
-
         Pair<RegexInput, RegexOutput> inputAndOutput = getInputAndOutput(context);
-
-        Matcher matcher = regexPattern.matcher(inputAndOutput.left.getInput());
-
+        final Pattern pattern = getPattern(context);
         return isReplacement
-                ? doReplace(context, matcher, inputAndOutput.right)
-                : doMatch(context, matcher);
+                ? doReplace(context, pattern, inputAndOutput.left, inputAndOutput.right)
+                : doMatch(context, pattern.matcher(inputAndOutput.left.getInput()));
     }
 
     private Pair<RegexInput, RegexOutput> getInputAndOutput(PolicyEnforcementContext context) throws IOException {
@@ -147,8 +162,8 @@ public class ServerRegex extends AbstractServerAssertion<Regex> {
         }
 
         if (encoding == null) {
-            logAndAudit(AssertionMessages.REGEX_NO_ENCODING, ENCODING.name());
-            encoding = ENCODING;
+            logAndAudit(AssertionMessages.REGEX_NO_ENCODING, Charsets.UTF8.name());
+            encoding = Charsets.UTF8;
         }
         return encoding;
     }
@@ -172,14 +187,22 @@ public class ServerRegex extends AbstractServerAssertion<Regex> {
     private AssertionStatus doMatch(PolicyEnforcementContext context, Matcher matcher) {
         final boolean matched = matcher.find();
 
-        final String captureVar = assertion.getCaptureVar();
         if (matched && captureVar != null) {
             List<String> captured = new ArrayList<String>();
-            captured.add(matcher.group(0));
-            int groupCount = matcher.groupCount();
-            for (int i = 1; i <= groupCount; ++i) { // note 1-based
-                captured.add(matcher.group(i));
+            collectMatchGroups(captured, matcher);
+
+            if (findAll) {
+                boolean found;
+                StringBuffer sb = new StringBuffer();
+                for (;;) {
+                    found = matcher.find();
+                    if (!found)
+                        break;
+                    collectMatchGroups(captured, matcher);
+                }
+                matcher.appendTail(sb);
             }
+
             context.setVariable(captureVar, captured.toArray(new String[captured.size()]));
         }
 
@@ -204,19 +227,81 @@ public class ServerRegex extends AbstractServerAssertion<Regex> {
         }
     }
 
-    private AssertionStatus doReplace(PolicyEnforcementContext context, Matcher matcher, RegexOutput out) throws IOException {
+    private void collectMatchGroups(List<String> captured, Matcher matcher) {
+        if (includeEntireExpressionCapture)
+            captured.add(matcher.group(0));
+        for (int i = 1; i <= matcher.groupCount(); ++i)
+            if (matcher.group(i) != null)
+                captured.add(matcher.group(i));
+    }
+
+    private AssertionStatus doReplace(PolicyEnforcementContext context, Pattern pattern, RegexInput input, RegexOutput out) throws IOException {
         String replacement = assertion.getReplacement();
         if (logger.isLoggable(Level.FINE))
             logger.log(Level.FINE, "Replace requested: Match pattern ''{0}'', replace pattern ''{1}''",
                     new Object[] { assertion.getRegex(), replacement });
         replacement = ExpandVariables.process(replacement, context.getVariableMap(varNames, getAudit()), getAudit());
-        String result = matcher.replaceAll(replacement);
-        out.setOutput(result);
+
+        List<String> captured = new ArrayList<String>();
+        final CharSequence origIn = input.getInput();
+        CharSequence in = origIn;
+        Matcher matcher;
+        for (int iteration = 0; iteration <= replaceRepeatCount; ++iteration) {
+            matcher = pattern.matcher(in);
+
+            boolean found = matcher.find();
+            if (found) {
+                if (captureVar != null)
+                    collectMatchGroups(captured, matcher);
+
+                StringBuffer sb = new StringBuffer();
+                for (;;) {
+                    matcher.appendReplacement(sb, replacement);
+                    found = matcher.find();
+                    if (!found)
+                        break;
+                    if (captureVar != null)
+                        collectMatchGroups(captured, matcher);
+                }
+                matcher.appendTail(sb);
+                in = sb.toString();
+            } else {
+                // No match, stop re-applying
+                break;
+            }
+        }
+
+        if (in != origIn)
+            out.setOutput(in);
+        if (captureVar != null)
+            context.setVariable(captureVar, captured.toArray(new String[captured.size()]));
+
         return AssertionStatus.NONE;
     }
 
+    private Pattern getPattern(PolicyEnforcementContext context) throws PolicyAssertionException {
+        checkPattern();
+        if (regexPatternOrTemplate.isLeft()) {
+            return regexPatternOrTemplate.left();
+        } else {
+            String patstr = ExpandVariables.process(regexPatternOrTemplate.right(), context.getVariableMap(varNames, getAudit()), getAudit(), new Functions.Unary<String, String>() {
+                @Override
+                public String call(String s) {
+                    return Pattern.quote(s);
+                }
+            });
+            try {
+                return Pattern.compile(patstr);
+            } catch (PatternSyntaxException e) {
+                //noinspection ThrowableResultOfMethodCallIgnored
+                logAndAudit(AssertionMessages.REGEX_PATTERN_INVALID, new String[] { patstr, ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
+                throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e);
+            }
+        }
+    }
+
     private void checkPattern() throws AssertionStatusException, PolicyAssertionException {
-        if (regexPattern == null) {
+        if (regexPatternOrTemplate == null) {
             if (compileException != null) {
                 logAndAudit(AssertionMessages.REGEX_PATTERN_INVALID,
                                     new String[]{assertion.getRegex(),

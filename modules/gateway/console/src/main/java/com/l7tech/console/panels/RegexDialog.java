@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.event.BeanEditSupport;
+import com.l7tech.gui.NumberField;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.SquigglyTextArea;
@@ -58,6 +59,10 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
     private JLabel characterEncodingLabel;
     private TargetMessagePanel targetMessagePanel;
     private JPanel captureVariablePrefixPanel;
+    private JCheckBox includeMatchedSubstringInCheckBox;
+    private JCheckBox repeatReplacementCheckBox;
+    private JTextField repeatCountField;
+    private JCheckBox stopAfterSuccessfulMatchCheckBox;
     private TargetVariablePanel captureVariablePrefix;
     private final boolean postRouting;
     private final boolean readOnly;
@@ -83,10 +88,13 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
 
         matchAndReplaceRadioButton.setToolTipText("If the pattern matches, replace the match with the replacement expression, then proceed to process the message");
 
+        repeatCountField.setDocument(new NumberField());
+
         final ItemListener radioButtonListener = new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
                 updateReplaceState();
+                updateEnabledState();
                 doTest();
             }
         };
@@ -108,6 +116,7 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
         matchAndReplaceRadioButton.addItemListener(radioButtonListener);
         proceedIfNoMatchRadioButton.addItemListener(radioButtonListener);
         captureVariablePrefix.addChangeListener(buttonStateUpdateListener);
+        repeatReplacementCheckBox.addChangeListener(buttonStateUpdateListener);
 
         cancelButton.addActionListener(new ActionListener() {
             @Override
@@ -215,9 +224,11 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
         Utilities.attachDefaultContextMenu(replaceTextArea);
         Utilities.attachDefaultContextMenu(testInputTextArea);
         Utilities.attachDefaultContextMenu(testResultTextPane);
+        Utilities.attachDefaultContextMenu(repeatCountField);
 
         Utilities.enableGrayOnDisabled(replaceTextArea);
         Utilities.enableGrayOnDisabled(encodingField);
+        Utilities.enableGrayOnDisabled(repeatCountField);
 
         Utilities.deuglifySplitPane(splitPaneTop);
         Utilities.deuglifySplitPane(splitPaneTest);
@@ -230,6 +241,10 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
     }
 
     private void updateEnabledState() {
+        repeatReplacementCheckBox.setEnabled(matchAndReplaceRadioButton.isSelected());
+        repeatCountField.setEnabled(repeatReplacementCheckBox.isEnabled() && repeatReplacementCheckBox.isSelected());
+        stopAfterSuccessfulMatchCheckBox.setEnabled(proceedIfMatchRadioButton.isSelected() || proceedIfNoMatchRadioButton.isSelected());
+
         okButton.setEnabled( !readOnly && pattern != null && targetMessagePanel.isValidTarget() && captureVariablePrefix.isEntryValid());
     }
 
@@ -238,7 +253,9 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
     }
 
     private void viewToModel() {
-        regexAssertion.setRegex(regexTextArea.getText());
+        final String patternText = regexTextArea.getText();
+        regexAssertion.setRegex(patternText);
+        regexAssertion.setPatternContainsVariables(Syntax.getReferencedNames(patternText, false).length > 0);
         regexAssertion.setReplacement(replaceTextArea.getText());
         if (nameTextField.getText().trim().length() > 0)
             regexAssertion.setRegexName(nameTextField.getText().trim());
@@ -261,6 +278,16 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
 
         regexAssertion.setAutoTarget(false);
         targetMessagePanel.updateModel(regexAssertion);
+
+        if (repeatReplacementCheckBox.isSelected()) {
+            regexAssertion.setReplaceRepeatCount(Integer.parseInt(repeatCountField.getText()));
+        } else {
+            regexAssertion.setReplaceRepeatCount(0);
+        }
+
+        regexAssertion.setIncludeEntireExpressionCapture(includeMatchedSubstringInCheckBox.isSelected());
+
+        regexAssertion.setFindAll(!stopAfterSuccessfulMatchCheckBox.isSelected());
     }
 
 
@@ -311,6 +338,19 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
             regexAssertion.setTarget(postRouting ? TargetMessageType.RESPONSE : TargetMessageType.REQUEST);
 
         targetMessagePanel.setModel(regexAssertion,getPreviousAssertion());
+
+        includeMatchedSubstringInCheckBox.setSelected(regexAssertion.isIncludeEntireExpressionCapture());
+        stopAfterSuccessfulMatchCheckBox.setSelected(!regexAssertion.isFindAll());
+        int repeatCount = regexAssertion.getReplaceRepeatCount();
+        if (repeatCount > 0) {
+            repeatReplacementCheckBox.setSelected(true);
+            repeatCountField.setText(String.valueOf(repeatCount));
+        } else {
+            repeatReplacementCheckBox.setSelected(false);
+            repeatCountField.setText("5");
+        }
+
+        updateEnabledState();
     }
 
     @Override
@@ -403,7 +443,10 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
                 if (caseInsensitivecheckBox.isSelected()) {
                     flags |= Pattern.CASE_INSENSITIVE;
                 }
-                pattern = Pattern.compile(regexTextArea.getText(), flags);
+                String text = regexTextArea.getText();
+                if (Syntax.getReferencedNames(text, false).length > 0)
+                    text = Pattern.quote(Syntax.regexPattern.matcher(text).replaceAll("\\${$1}"));
+                pattern = Pattern.compile(text, flags);
                 regexTextArea.setToolTipText("OK");
             } catch (PatternSyntaxException e1) {
                 regexTextArea.setToolTipText(e1.getDescription() + " index: " + e1.getIndex());

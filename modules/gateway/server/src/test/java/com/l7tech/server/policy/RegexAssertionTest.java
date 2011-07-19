@@ -599,4 +599,118 @@ public class RegexAssertionTest {
             // Ok
         }
     }
+
+    @Test
+    public void testPatternContextVariables() throws Exception {
+        final Regex regex = regex("${pat}");
+        regex.setPatternContainsVariables(true);
+        final PolicyEnforcementContext context = context(PHRASE_FOO, PHRASE_ORLY);
+        context.setVariable("pat", "mumble");
+        expect(AssertionStatus.NONE, regex, context);
+    }
+
+    @Test
+    public void testPatternLooksLikeContextVariablesButIsnt() throws Exception {
+        final Regex regex = regex("${1}");
+        regex.setPatternContainsVariables(false); // not actually context variable, just a pattern
+        final PolicyEnforcementContext context = context(PHRASE_FOO, PHRASE_ORLY);
+        context.setVariable("pat", "mumble");
+        expect(AssertionStatus.NONE, regex, context);
+    }
+
+    @Test
+    public void testFindAll() throws Exception {
+        final Regex regex = regex("f([^,]+)");
+        regex.setCaptureVar("v");
+        regex.setFindAll(true);
+        PolicyEnforcementContext context = context("fig,fog,gog,cog,frog,dog,bog,fantastic", PHRASE_ORLY);
+        expect(AssertionStatus.NONE, regex, context);
+
+        final Object vvo = context.getVariable("v");
+        assertNotNull(vvo);
+        assertTrue(vvo instanceof String[]);
+        final String[] vv = (String[]) vvo;
+        assertEquals(8, vv.length);
+        assertTrue(Arrays.equals(vv, new String[]{"fig", "ig", "fog", "og", "frog", "rog", "fantastic", "antastic"}));
+    }
+
+    @Test
+    public void testFindAll_noInfiniteLoop() throws Exception {
+        final Regex regex = regex("");
+        regex.setCaptureVar("v");
+        regex.setFindAll(true);
+        PolicyEnforcementContext context = context("asdfasdf", PHRASE_ORLY);
+        expect(AssertionStatus.NONE, regex, context);
+
+        final Object vvo = context.getVariable("v");
+        assertNotNull(vvo);
+        assertTrue(vvo instanceof String[]);
+        final String[] vv = (String[]) vvo;
+        assertEquals(9, vv.length);
+        assertTrue(Arrays.equals(vv, new String[]{"", "", "", "", "", "", "", "", ""}));
+    }
+
+    @Test
+    public void testFindAll_omitEntireExpressionCapture() throws Exception {
+        final Regex regex = regex("(f[^,]+)");
+        regex.setCaptureVar("v");
+        regex.setFindAll(true);
+        regex.setIncludeEntireExpressionCapture(false);
+        PolicyEnforcementContext context = context("fig,fog,gog,cog,frog,dog,bog,fantastic", PHRASE_ORLY);
+        expect(AssertionStatus.NONE, regex, context);
+
+        final Object vvo = context.getVariable("v");
+        assertNotNull(vvo);
+        assertTrue(vvo instanceof String[]);
+        final String[] vv = (String[]) vvo;
+        assertEquals(4, vv.length);
+        assertTrue(Arrays.equals(vv, new String[]{"fig", "fog", "frog", "fantastic"}));
+    }
+
+    @Test
+    public void testRepeatedReplace() throws Exception {
+        final Regex regex = regex("(?:^\\s*|,\\s*|&\\s*)(CN=[^,]+)");
+        regex.setCaseInsensitive(true);
+        regex.setReplace(true);
+        regex.setIncludeEntireExpressionCapture(false);
+        regex.setReplaceRepeatCount(1000);
+        regex.setReplacement("");
+        regex.setCaptureVar("v");
+
+        PolicyEnforcementContext context = context("CN=TSP_Admins,OU=Groepen,DC=kadaster,DC=fto&CN=AP_MIJNKADASTER_BEHEER,OU=Groepen,DC=kadaster,DC=fto", PHRASE_ORLY);
+        expect(AssertionStatus.NONE, regex, context);
+
+        final Object vvo = context.getVariable("v");
+        assertNotNull(vvo);
+        assertTrue(vvo instanceof String[]);
+        final String[] vv = (String[]) vvo;
+
+        assertEquals(",OU=Groepen,DC=kadaster,DC=fto,OU=Groepen,DC=kadaster,DC=fto", toString(context.getRequest()));
+        assertEquals(2, vv.length);
+        assertEquals("CN=TSP_Admins", vv[0]);
+        assertEquals("CN=AP_MIJNKADASTER_BEHEER", vv[1]);
+    }
+
+    @Test
+    public void testRepeatedReplace_withLimit() throws Exception {
+        final Regex regex = regex("(?:^\\s*|,\\s*|&\\s*)(CN=[^,]+),?");
+        regex.setCaseInsensitive(true);
+        regex.setReplace(true);
+        regex.setIncludeEntireExpressionCapture(false);
+        regex.setReplaceRepeatCount(3);
+        regex.setReplacement("CN=");
+        regex.setCaptureVar("v");
+
+        PolicyEnforcementContext context = context("CN=TSP_Admins,OU=Groepen,DC=kadaster,DC=fto&CN=AP_MIJNKADASTER_BEHEER,OU=Groepen,DC=kadaster,DC=fto", PHRASE_ORLY);
+        expect(AssertionStatus.NONE, regex, context);
+
+        final Object vvo = context.getVariable("v");
+        assertNotNull(vvo);
+        assertTrue(vvo instanceof String[]);
+        final String[] vv = (String[]) vvo;
+
+        assertEquals("CN=DC=kadaster,DC=fto", toString(context.getRequest()));
+        assertEquals(5, vv.length);
+        assertTrue(Arrays.equals(vv, new String[]{"CN=TSP_Admins", "CN=AP_MIJNKADASTER_BEHEER", "CN=OU=Groepen", "CN=DC=kadaster", "CN=DC=ftoCN=OU=Groepen"}));
+    }
 }
