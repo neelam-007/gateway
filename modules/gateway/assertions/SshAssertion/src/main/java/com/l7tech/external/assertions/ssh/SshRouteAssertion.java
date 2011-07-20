@@ -25,6 +25,8 @@ import static com.l7tech.policy.assertion.AssertionMetadata.WSP_TYPE_MAPPING_INS
  */
 public class SshRouteAssertion extends RoutingAssertion implements UsesVariables, SetsVariables {
 
+    public static final String LISTEN_PROP_AUTHORIZED_USER_PUBLIC_KEY_LIST = "l7.ssh.authorizedUserPublicKeyList";
+    public static final String LISTEN_PROP_AUTHORIZED_USER_PASSWORD_LIST = "l7.ssh.authorizedUserPasswordList";
     public static final String LISTEN_PROP_ENABLE_SCP = "l7.ssh.enableScp";
     public static final String LISTEN_PROP_ENABLE_SFTP = "l7.ssh.enableSftp";
     public static final String LISTEN_PROP_HOST_PRIVATE_KEY = "l7.ssh.hostPrivateKey";

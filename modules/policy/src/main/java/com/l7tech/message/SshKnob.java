@@ -9,6 +9,28 @@ import java.security.PublicKey;
 public interface SshKnob extends TcpKnob {
 
     /**
+     * This class is a data holder that is used by SshKnob.
+     * It is simply a repository for a user name and a public key.
+     */
+    public class PublicKeyAuthentication {
+        private String userName;
+        private PublicKey publicKey;
+
+        public PublicKeyAuthentication(String userName, PublicKey publicKey) {
+            this.userName = userName;
+            this.publicKey = publicKey;
+        }
+
+        public String getUserName() {
+            return userName;
+        }
+
+        public PublicKey getPublicKey() {
+            return publicKey;
+        }
+    }
+
+    /**
      * The path of the file being uploaded/downloaded.
      *
      * @return the file path
@@ -39,9 +61,9 @@ public interface SshKnob extends TcpKnob {
     PasswordAuthentication getPasswordAuthentication();
 
     /**
-     * Get the user public key for the session.
+     * Get the user name and public key for the session.
      *
-     * @return The public key or null if anonymous
+     * @return The user name and public key
      */
-    PublicKey getPublicKey();
+    PublicKeyAuthentication getPublicKeyAuthentication();
 }

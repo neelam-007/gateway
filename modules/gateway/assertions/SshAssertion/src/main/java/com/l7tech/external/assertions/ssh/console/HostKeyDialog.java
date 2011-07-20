@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.ssh.console;
 
 import com.l7tech.console.SsmApplication;
+import com.l7tech.external.assertions.ssh.keyprovider.PemSshKeyUtil;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
@@ -56,7 +57,7 @@ public class HostKeyDialog extends JDialog {
         hostKeyField.getDocument().addDocumentListener(new RunOnChangeListener() {
             @Override
             public void run() {
-                if(hostKeyField.getText().trim().length() > 0) {
+                if(hostKeyField.getText().trim().length() > 0 && PemSshKeyUtil.getPemAlgorithm(hostKeyField.getText().trim()) != null) {
                     okButton.setEnabled(true);
                 } else {
                     okButton.setEnabled(false);

@@ -25,7 +25,9 @@ import com.l7tech.util.Pair;
 import org.apache.sshd.SshServer;
 import org.apache.sshd.common.*;
 import org.apache.sshd.common.cipher.*;
+import org.apache.sshd.common.compression.CompressionDelayedZlib;
 import org.apache.sshd.common.compression.CompressionNone;
+import org.apache.sshd.common.compression.CompressionZlib;
 import org.apache.sshd.common.mac.HMACMD5;
 import org.apache.sshd.common.mac.HMACMD596;
 import org.apache.sshd.common.mac.HMACSHA1;
@@ -65,6 +67,7 @@ import java.util.logging.Logger;
 public class SshServerModule extends TransportModule implements ApplicationListener {
     private static final Logger logger = Logger.getLogger(SshServerModule.class.getName());
     private static final String SCHEME_SSH = "SSH2";
+    private static final String SPLIT_DELIMITER = "<split>";
 
     private static final Set<String> SUPPORTED_SCHEMES = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
     static {
@@ -274,9 +277,21 @@ public class SshServerModule extends TransportModule implements ApplicationListe
         try {
             SshServer sshd = setUpSshServer();
 
-            MessageProcessingPasswordAuthenticator user = (MessageProcessingPasswordAuthenticator) sshd.getPasswordAuthenticator();
-            MessageProcessingPublicKeyAuthenticator userPublicKey = (MessageProcessingPublicKeyAuthenticator) sshd.getPublickeyAuthenticator();
+            // undocumented support for authorized lists, Apache SSHD will callback and set user and public key
+            MessageProcessingPasswordAuthenticator user = new MessageProcessingPasswordAuthenticator();
+            String authorizedUserPasswordList = connector.getProperty(SshRouteAssertion.LISTEN_PROP_AUTHORIZED_USER_PASSWORD_LIST);
+            if (authorizedUserPasswordList != null) {
+                user.setAuthorizedUserPasswordKeys(authorizedUserPasswordList.split(SPLIT_DELIMITER));
+            }
+            sshd.setPasswordAuthenticator(user);
+            MessageProcessingPublicKeyAuthenticator userPublicKey = new MessageProcessingPublicKeyAuthenticator();
+            String authorizedUserPublicKeyList = connector.getProperty(SshRouteAssertion.LISTEN_PROP_AUTHORIZED_USER_PUBLIC_KEY_LIST);
+            if (authorizedUserPublicKeyList != null) {
+                userPublicKey.setAuthorizedUserPublicKeys(authorizedUserPublicKeyList.split(SPLIT_DELIMITER));
+            }
+            sshd.setPublickeyAuthenticator(userPublicKey);
 
+            // enable SCP, SFTP
             final boolean enableScp = Boolean.parseBoolean(connector.getProperty(SshRouteAssertion.LISTEN_PROP_ENABLE_SCP));
             if (enableScp) {
                 sshd.setCommandFactory(new MessageProcessingScpCommand.Factory(
@@ -289,17 +304,13 @@ public class SshServerModule extends TransportModule implements ApplicationListe
             }
             sshd.setPort(connector.getPort());
 
+            // set server host private key
+            String hostPrivateKey = connector.getProperty(SshRouteAssertion.LISTEN_PROP_HOST_PRIVATE_KEY);
+            sshd.setKeyPairProvider(new PemSshHostKeyProvider(hostPrivateKey));
+
             // configure maximum concurrent open session count per user
             sshd.getProperties().put(SshServer.MAX_CONCURRENT_SESSIONS, connector.getProperty(SshRouteAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER));
             // 2011/07/08 TL: Apache SSHD does not appear to currently support configurable max total connections nor configurable connection timeout
-
-            String hostPrivateKey = connector.getProperty(SshRouteAssertion.LISTEN_PROP_HOST_PRIVATE_KEY);
-            String algorithm = PemSshHostKeyProvider.getPemAlgorithm(hostPrivateKey);
-            if (algorithm != null) {
-                sshd.setKeyPairProvider(new PemSshHostKeyProvider(hostPrivateKey, algorithm));
-            } else {
-                sshd.setKeyPairProvider(new PemSshHostKeyProvider(hostPrivateKey));
-            }
 
             auditStart("connector OID " + connector.getOid() + ", on port " + connector.getPort());
             sshd.start();
@@ -366,11 +377,10 @@ public class SshServerModule extends TransportModule implements ApplicationListe
         sshd.setRandomFactory(new SingletonRandomFactory(new JceRandom.Factory()));
         setUpSshCiphers(sshd);
 
-        // Compression is not enabled by default
-        // sshd.setCompressionFactories(Arrays.<NamedFactory<Compression>>asList(
-        //         new CompressionNone.Factory(),
-        //         new CompressionZlib.Factory(),
-        //         new CompressionDelayedZlib.Factory()));
+        sshd.setCompressionFactories(Arrays.<NamedFactory<Compression>>asList(
+                new CompressionNone.Factory(),
+                new CompressionZlib.Factory(),
+                new CompressionDelayedZlib.Factory()));
         sshd.setCompressionFactories(Arrays.<NamedFactory<Compression>>asList(
                 new CompressionNone.Factory()));
         sshd.setMacFactories(Arrays.<NamedFactory<Mac>>asList(
@@ -393,10 +403,6 @@ public class SshServerModule extends TransportModule implements ApplicationListe
             sshd.setShellFactory(new ProcessShellFactory(new String[] { "cmd.exe "},
                     EnumSet.of(ProcessShellFactory.TtyOptions.Echo, ProcessShellFactory.TtyOptions.ICrNl, ProcessShellFactory.TtyOptions.ONlCr)));
         }
-
-        // customized for Gateway
-        sshd.setPasswordAuthenticator(new MessageProcessingPasswordAuthenticator());
-        sshd.setPublickeyAuthenticator(new MessageProcessingPublicKeyAuthenticator());
 
         sshd.setForwardingFilter(new ForwardingFilter() {
             @Override

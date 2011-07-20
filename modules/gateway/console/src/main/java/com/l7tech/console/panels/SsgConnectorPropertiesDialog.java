@@ -411,6 +411,24 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                 return "An enabled listener must have at least one endpoint enabled.";
             }
         });
+        for (final Component customPropertiesPanelComponent : otherSettingsPanel.getComponents()) {
+            inputValidator.addRule(new InputValidator.ComponentValidationRule(customPropertiesPanelComponent) {
+                @Override
+                public String getValidationError() {
+                    TransportDescriptor selectedProtocol = getSelectedProtocol();
+                    if (selectedProtocol != null) {
+                        String selectedCustomPanelName = selectedProtocol.getCustomPropertiesPanelClassname();
+                        if (selectedCustomPanelName != null) {
+                            String customPanelName = customPropertiesPanelComponent.getClass().getName();
+                            if (selectedCustomPanelName.equals(customPanelName)) {
+                                return ((CustomTransportPropertiesPanel) customPropertiesPanelComponent).getValidationError();
+                            }
+                        }
+                    }
+                    return null;
+                }
+            });
+        }
         inputValidator.addRule(new InputValidator.ComponentValidationRule(serviceNameComboBox) {
             @Override
             public String getValidationError() {

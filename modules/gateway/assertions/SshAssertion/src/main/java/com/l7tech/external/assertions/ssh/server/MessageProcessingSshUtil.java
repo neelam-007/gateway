@@ -5,7 +5,6 @@ import com.l7tech.util.Pair;
 
 import java.net.PasswordAuthentication;
 import java.net.SocketAddress;
-import java.security.PublicKey;
 
 /**
  * Utility methods for SSH support.
@@ -80,9 +79,9 @@ public class MessageProcessingSshUtil {
                 }
             }
             @Override
-            public PublicKey getPublicKey() {
+            public PublicKeyAuthentication getPublicKeyAuthentication() {
                 if (userPublicKey != null) {
-                    return userPublicKey.getPublicKey();
+                    return new PublicKeyAuthentication(userPublicKey.getUserName(), userPublicKey.getPublicKey());
                 } else {
                     return null;
                 }

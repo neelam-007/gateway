@@ -2,7 +2,7 @@ package com.l7tech.external.assertions.ssh.console;
 
 import com.l7tech.console.panels.CustomTransportPropertiesPanel;
 import com.l7tech.external.assertions.ssh.SshRouteAssertion;
-import com.l7tech.external.assertions.ssh.keyprovider.PemSshHostKeyProvider;
+import com.l7tech.external.assertions.ssh.keyprovider.PemSshKeyUtil;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.SyspropUtil;
@@ -59,7 +59,12 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
 
         hostPrivateKey = props.get(SshRouteAssertion.LISTEN_PROP_HOST_PRIVATE_KEY);
         if (!StringUtils.isEmpty(hostPrivateKey)) {
-            hostPrivateKeyTypeField.setText(PemSshHostKeyProvider.PEM + " " + PemSshHostKeyProvider.getPemAlgorithm(hostPrivateKey));
+            String determinedAlgorithm = PemSshKeyUtil.getPemAlgorithm(hostPrivateKey);
+            if (determinedAlgorithm != null) {
+                hostPrivateKeyTypeField.setText(PemSshKeyUtil.PEM + " " + determinedAlgorithm);
+            } else {
+                hostPrivateKeyTypeField.setText("Unknown type");
+            }
         }
     }
 
@@ -75,7 +80,11 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
 
     @Override
     public String getValidationError() {
-        return null;
+        if (StringUtils.isEmpty(hostPrivateKey)) {
+            return "The Host private key field must not be empty.";
+        } else {
+            return null;
+        }
     }
 
     @Override
@@ -92,15 +101,18 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
         setHostPrivateKeyButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                final HostKeyDialog dialog = new HostKeyDialog(SwingUtilities.getWindowAncestor(SshTransportPropertiesPanel.this), hostPrivateKey);
+                final HostKeyDialog dialog = new HostKeyDialog(SwingUtilities.getWindowAncestor(SshTransportPropertiesPanel.this), null);
                 Utilities.centerOnScreen(dialog);
                 DialogDisplayer.display(dialog, new Runnable() {
                     @Override
                     public void run() {
                         if (dialog.isConfirmed()) {
                             hostPrivateKey = dialog.getHostKey();
-                            if (!StringUtils.isEmpty(hostPrivateKey)) {
-                                hostPrivateKeyTypeField.setText(PemSshHostKeyProvider.PEM + " " + PemSshHostKeyProvider.getPemAlgorithm(hostPrivateKey));
+                            String determinedAlgorithm = PemSshKeyUtil.getPemAlgorithm(hostPrivateKey);
+                            if (determinedAlgorithm != null) {
+                                hostPrivateKeyTypeField.setText(PemSshKeyUtil.PEM + " " + determinedAlgorithm);
+                            } else {
+                                hostPrivateKeyTypeField.setText("Unknown type");
                             }
                         }
                     }

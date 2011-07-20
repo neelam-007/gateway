@@ -1,7 +1,6 @@
 package com.l7tech.external.assertions.ssh.keyprovider;
 
 import org.apache.sshd.common.keyprovider.AbstractKeyPairProvider;
-import org.apache.sshd.common.keyprovider.FileKeyPairProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,7 +12,7 @@ import java.security.KeyPair;
  */
 public abstract class AbstractSshHostKeyProvider extends AbstractKeyPairProvider {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FileKeyPairProvider.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractSshHostKeyProvider.class);
 
     private String privateKey;
     private String algorithm = "DSA";
