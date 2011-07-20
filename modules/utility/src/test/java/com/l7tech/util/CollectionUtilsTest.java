@@ -10,10 +10,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -126,6 +128,25 @@ public class CollectionUtilsTest {
                 Arrays.asList( "3", "4", "5", "6" ) ) );
 
         assertEquals( "listList", expectedResultList, listList );
+    }
+
+    @Test
+    public void testSet() {
+        final Set<String> set1 = set( "1", "2" );
+        final Set<String> set2 = set();
+        final Set<String> set3 = set( "3", "4", "5", "6" );
+
+        assertEquals( "set1", new HashSet<String>( Arrays.asList( "1", "2" ) ), set1 );
+        assertEquals( "set2", Collections.<String>emptySet(), set2 );
+        assertEquals( "set3", new HashSet<String>( Arrays.asList( "3", "4", "5", "6" ) ), set3 );
+
+        final Set<Set<String>> listList = set( set1, set2, set3 );
+        final Set<Set<String>> expectedResultSet = new HashSet<Set<String>>( Arrays.asList(
+                new HashSet<String>( Arrays.asList( "1", "2") ),
+                Collections.<String>emptySet(),
+                new HashSet<String>( Arrays.asList( "3", "4", "5", "6" ) ) ) );
+
+        assertEquals( "setSet", expectedResultSet, listList );
     }
 
     @Test

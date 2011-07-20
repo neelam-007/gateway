@@ -1,5 +1,9 @@
 package com.l7tech.util;
 
+import com.l7tech.util.Functions.Binary;
+import com.l7tech.util.Functions.Nullary;
+import com.l7tech.util.Functions.Unary;
+import com.l7tech.util.Functions.UnaryVoid;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -63,11 +67,26 @@ public class Option<T> {
      * <p>Get the value of this option if there is one, else return the given
      * other value.</p>
      *
+     * @param other The other value
      * @return The option or alternative
      */
     @NotNull
     public T orSome( @NotNull final T other ) {
         return value != null ? value : other;
+    }
+
+    /**
+     * The value of this option if present, or the other value
+     *
+     * <p>Get the value of this option if there is one, else return value from
+     * evaluation of the other function.</p>
+     *
+     * @param other A function returning the other value
+     * @return The option or alternative
+     */
+    @NotNull
+    public T orSome( @NotNull final Nullary<T> other ) {
+        return value != null ? value : other.call();
     }
 
     /**
@@ -80,6 +99,26 @@ public class Option<T> {
     public T some() {
         if ( value == null ) throw new IllegalStateException( "Value is null" );
         return value;
+    }
+
+    /**
+     * This option if some, else the other option.
+     *
+     * @param other The alternative option.
+     * @return This option or the given alternative.
+     */
+    public Option<T> orElse( @NotNull Option<T> other ) {
+        return value != null ? this : other;
+    }
+
+    /**
+     * This option if some, else the other option.
+     *
+     * @param other A function returning the alternative option.
+     * @return This option or the given alternative.
+     */
+    public Option<T> orElse( @NotNull Nullary<Option<T>> other ) {
+        return value != null ? this : other.call();
     }
 
     /**
@@ -96,13 +135,13 @@ public class Option<T> {
     /**
      * Filter the optional value with the given function.
      *
-     * @param filter The filter function
-     * @return The optional value, none if this optoin is none or the filter returns false.
+     * @param predicate The filtering predicate
+     * @return The optional value, none if this option is none or the filter returns false.
      */
-    public Option<T> filter( @NotNull Functions.Unary<Boolean,? super T> filter ) {
+    public Option<T> filter( @NotNull Unary<Boolean,? super T> predicate ) {
         final Option<T> filtered;
 
-        if ( isSome() && filter.call( some() ) ) {
+        if ( isSome() && predicate.call( some() ) ) {
             filtered = this;
         } else {
             filtered = Option.none();
@@ -112,13 +151,24 @@ public class Option<T> {
     }
 
     /**
+     * Evaluate the given effect if this option has a value.
+     *
+     * @param effect The effect to evaluate.
+     */
+    public void foreach( @NotNull UnaryVoid<? super T> effect ) {
+        if ( isSome() ) {
+            effect.call( some() );
+        }
+    }
+
+    /**
      * Map the given function across this optional value.
      *
      * @param mapper The mapping function
      * @param <O> The result type
      * @return The optional value, none if this option is none or the mapping function returns null.
      */
-    public <O> Option<O> map( @NotNull Functions.Unary<O,? super T> mapper ) {
+    public <O> Option<O> map( @NotNull Unary<O,? super T> mapper ) {
         final Option<O> mapped;
 
         if ( isSome() ) {
@@ -128,6 +178,23 @@ public class Option<T> {
         }
 
         return mapped;
+    }
+
+    /**
+     * First class map function for options.
+     *
+     * @param <O1> The type parameter of the first option
+     * @param <O2> The type parameter of the second option
+     * @return The mapping function.
+     */
+    public static <O1,O2> Binary<Option<O1>,Option<O2>,Unary<O1,? super O2>> map() {
+        return new Binary<Option<O1>,Option<O2>,Functions.Unary<O1,? super O2>>(){
+            @Override
+            public Option<O1> call( final Option<O2> option,
+                                   final Unary<O1, ? super O2> mapper ) {
+                return option.map( mapper );
+            }
+        };
     }
 
     /**

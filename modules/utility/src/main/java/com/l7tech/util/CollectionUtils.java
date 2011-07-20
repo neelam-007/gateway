@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,18 @@ public final class CollectionUtils {
     //TODO [jdk7] @SafeVarargs
     public static <T> List<T> list( T... items ) {
         return Collections.unmodifiableList( Arrays.asList( items ) );
+    }
+
+    /**
+     * Create an unmodifiable set with the given contents.
+     *
+     * @param items The items for the set (must not be null)
+     * @param <T> The type of the set
+     * @return The read-only set
+     */
+    //TODO [jdk7] @SafeVarargs
+    public static <T> Set<T> set( T... items ) {
+        return Collections.unmodifiableSet( new HashSet<T>( Arrays.asList( items ) ) );
     }
 
     /**

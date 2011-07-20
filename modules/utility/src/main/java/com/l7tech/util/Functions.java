@@ -146,8 +146,67 @@ public final class Functions {
     /**
      * Partially apply the given function.
      *
+     * @param unary The unary function
+     * @param param1 The first parameter
+     * @param <R> The return type
+     * @param <P1> The first parameter type
+     * @return the nullary function
+     */
+    public static <R,P1> Nullary<R> partial( final Unary<R,P1> unary,
+                                             final P1 param1 ) {
+        return new Nullary<R>() {
+            @Override
+            public R call() {
+                return unary.call( param1 );
+            }
+        };
+    }
+
+    /**
+     * Partially apply the given function.
+     *
+     * @param unary The unary function
+     * @param param1 The first parameter
+     * @param <R> The return type
+     * @param <P1> The first parameter type
+     * @param <T> The exception type
+     * @return the nullary function
+     */
+    public static <R,P1,T extends Throwable> NullaryThrows<R,T> partial( final UnaryThrows<R,P1,T> unary,
+                                                                         final P1 param1 ) throws T {
+        return new NullaryThrows<R,T>() {
+            @Override
+            public R call() throws T {
+                return unary.call( param1 );
+            }
+        };
+    }
+
+    /**
+     * Partially apply the given function.
+     *
+     * @param unary The unary function
+     * @param param1 The first parameter
+     * @param <P1> The first parameter type
+     * @param <T> The exception type
+     * @return the nullary function
+     */
+    public static <P1,T extends Throwable> NullaryVoidThrows<T> partial( final UnaryVoidThrows<P1,T> unary,
+                                                                         final P1 param1 ) throws T {
+        return new NullaryVoidThrows<T>() {
+            @Override
+            public void call() throws T {
+                unary.call( param1 );
+            }
+        };
+    }
+
+    /**
+     * Partially apply the given function.
+     *
      * @param binary The binary function.
      * @param param1 The first parameter
+     * @param <R> The return type
      * @param <P1> The first parameter type
      * @param <P2> The second parameter type
      * @return the unary function.
@@ -215,6 +274,86 @@ public final class Functions {
             @Override
             public void call( final P2 param2 ) throws T {
                 binary.call( param1,  param2);
+            }
+        };
+    }
+
+    /**
+     * Partially apply the given function.
+     *
+     * @param binary The binary function.
+     * @param param1 The first parameter
+     * @param param2 The second parameter
+     * @param <R> The return type
+     * @param <P1> The first parameter type
+     * @param <P2> The second parameter type
+     * @return the unary function.
+     */
+    public static <R, P1,P2> Nullary<R> partial( final Binary<R,P1,P2> binary,
+                                                 final P1 param1,
+                                                 final P2 param2 ) {
+        return new Nullary<R>() {
+            @Override
+            public R call() {
+                return binary.call( param1,  param2);
+            }
+        };
+    }
+
+    /**
+     * Partially apply the given function.
+     *
+     * @param binary The binary function.
+     * @param param1 The first parameter
+     * @param param2 The second parameter
+     * @param <P1> The first parameter type
+     * @param <P2> The second parameter type
+     * @return the unary function.
+     */
+    public static <R,P1,P2,T extends Throwable> NullaryThrows<R,T> partial( final BinaryThrows<R,P1,P2,T> binary,
+                                                                            final P1 param1,
+                                                                            final P2 param2 ) {
+        return new NullaryThrows<R,T>() {
+            @Override
+            public R call() throws T {
+                return binary.call( param1,  param2 );
+            }
+        };
+    }
+
+    /**
+     * Partially apply the given function.
+     *
+     * @param binary The binary function.
+     * @param param1 The first parameter
+     * @param param2 The second parameter
+     * @param <P1> The first parameter type
+     * @param <P2> The second parameter type
+     * @return the unary function.
+     */
+    public static <P1,P2,T extends Throwable> NullaryVoidThrows<T> partial( final BinaryVoidThrows<P1,P2,T> binary,
+                                                                            final P1 param1,
+                                                                            final P2 param2 ) {
+        return new NullaryVoidThrows<T>() {
+            @Override
+            public void call() throws T {
+                binary.call( param1,  param2);
+            }
+        };
+    }
+
+    /**
+     * Return a function that returns the given value.
+     *
+     * @param value The value to return.
+     * @param <R> The value.
+     * @return A function returning the value.
+     */
+    public static <R> Nullary<R> nullary( final R value ) {
+        return new Nullary<R>() {
+            @Override
+            public R call() {
+                return value;
             }
         };
     }

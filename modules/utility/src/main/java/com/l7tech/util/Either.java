@@ -1,6 +1,13 @@
 package com.l7tech.util;
 
+import static com.l7tech.util.CollectionUtils.foreach;
+import com.l7tech.util.Functions.BinaryVoid;
+import static com.l7tech.util.Functions.partial;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Utility class for a disjoint unions.
@@ -126,6 +133,44 @@ public class Either<A,B> implements Serializable {
         return result;
     }
 
+    /**
+     * Get the left values from the given list of eithers.
+     *
+     * @param eithers The list of eithers
+     * @param <L> The left type
+     * @param <R> The right type
+     * @return The list of left values
+     */
+    @NotNull
+    public static <L,R> List<L> lefts( @NotNull final List<Either<L,R>> eithers ) {
+        return toList( eithers, new BinaryVoid<List<L>,Either<L, R>>() {
+            @Override
+            public void call( final List<L> list,
+                              final Either<L, R> either ) {
+                if ( either.isLeft() ) list.add( either.left() );
+            }
+        } );
+    }
+
+    /**
+     * Get the right values from the given list of eithers.
+     *
+     * @param eithers The list of eithers
+     * @param <L> The left type
+     * @param <R> The right type
+     * @return The list of right values
+     */
+    @NotNull
+    public static <L,R> List<R> rights( @NotNull final List<Either<L,R>> eithers ) {
+        return toList( eithers, new BinaryVoid<List<R>,Either<L, R>>() {
+            @Override
+            public void call( final List<R> list,
+                              final Either<L, R> either ) {
+                if ( either.isRight() ) list.add( either.right() );
+            }
+        } );
+    }
+
     //- PRIVATE
 
     private final A a;
@@ -135,4 +180,12 @@ public class Either<A,B> implements Serializable {
         this.a = a;
         this.b = b;
     }
+
+    private static <L,R,T> List<T> toList( final List<Either<L,R>> eithers,
+                                           final BinaryVoid<List<T>,Either<L, R>> builder ) {
+        final List<T> list = new ArrayList<T>();
+        foreach( eithers, false, partial(builder,list));
+        return list;
+    }
+
 }

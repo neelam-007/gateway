@@ -69,6 +69,8 @@ public class FunctionsTest {
             }
         };
         assertEquals( "Binary pair", result, partial( pairer, "one" ).call( "two" ) );
+        assertEquals( "Binary pair 2", result, partial( pairer, "one", "two" ).call() );
+        assertEquals( "Unary pair", result, partial( partial( pairer, "one" ), "two" ).call() );
 
         final BinaryThrows<Pair<String,String>,String,String,Exception> pairerThrows = new BinaryThrows<Pair<String,String>,String,String,Exception>() {
             @Override
@@ -77,6 +79,8 @@ public class FunctionsTest {
             }
         };
         assertEquals( "BinaryThrows pair", result, partial( pairerThrows, "one" ).call( "two" ) );
+        assertEquals( "BinaryThrows pair 2", result, partial( pairerThrows, "one", "two" ).call() );
+        assertEquals( "UnaryThrows pair", result, partial( partial( pairerThrows, "one" ), "two" ).call() );
 
         final Pair[] holder1 = new Pair[1];
         final BinaryVoid<String,String> pairerVoid = new BinaryVoid<String,String>() {
@@ -97,6 +101,14 @@ public class FunctionsTest {
         };
         partial( pairerVoidThrows, "one" ).call( "two" );
         assertEquals( "BinaryVoidThrows pair", result, holder2[0] );
+
+        holder2[0] = null;
+        partial( pairerVoidThrows, "one", "two" ).call();
+        assertEquals( "BinaryVoidThrows pair 2", result, holder2[0] );
+
+        holder2[0] = null;
+        partial( partial( pairerVoidThrows, "one" ), "two" ).call();
+        assertEquals( "UnaryVoidThrows pair", result, holder2[0] );
     }
 
     @Test
