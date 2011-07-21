@@ -416,7 +416,7 @@ public interface ClusterStatusAdmin {
      * @throws NoSuchMethodException if the invocation refers to a method that does not exist on the server's version of the specified extension interface.
      */
     @Transactional(propagation=Propagation.SUPPORTS)
-    Either<Object,Throwable> invokeExtensionMethod(String interfaceClassname, String targetObjectId, String methodName, Class[] parameterTypes, Object[] arguments)
+    Either<Throwable,Object> invokeExtensionMethod(String interfaceClassname, String targetObjectId, String methodName, Class[] parameterTypes, Object[] arguments)
             throws ClassNotFoundException, NoSuchMethodException;
 
     /**

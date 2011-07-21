@@ -123,7 +123,7 @@ public class ExtensionInterfaceManager implements ApplicationListener {
     }
 
     @NotNull
-    public Either<Object, Throwable> invokeExtensionMethod(@NotNull String interfaceClassname, @Nullable String targetObjectId, @NotNull String methodName, @NotNull Class[] parameterTypes, @NotNull Object[] arguments)
+    public Either<Throwable,Object> invokeExtensionMethod(@NotNull String interfaceClassname, @Nullable String targetObjectId, @NotNull String methodName, @NotNull Class[] parameterTypes, @NotNull Object[] arguments)
             throws ClassNotFoundException, NoSuchMethodException
     {
         try {
@@ -147,13 +147,13 @@ public class ExtensionInterfaceManager implements ApplicationListener {
                 MethodInvocation invocation = new ReflectiveMethodInvocation(null, implHolder.getWrappedImpl(), method, arguments, interfaceClass, interceptors) {};
 
                 Object ret = invocation.proceed();
-                return Either.left(ret);
+                return Either.right(ret);
             } catch (IllegalAccessException e) {
                 throw (NoSuchMethodException)new NoSuchMethodException("Method " + methodName + " not accessible: " + ExceptionUtils.getMessage(e)).initCause(e);
             } catch (InvocationTargetException e) {
-                return Either.right(e.getTargetException());
+                return Either.left(e.getTargetException());
             } catch (Throwable t) {
-                return Either.right(t);
+                return Either.left(t);
             }
         } finally {
             lock.readLock().unlock();

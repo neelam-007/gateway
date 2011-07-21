@@ -109,11 +109,11 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
                                                 final boolean throwOnGroupDisabled ) throws FindException {
         final Set<IdentityHeader> groupHeaders = groupProvider.getGroups(user, skipAccountValidation);
 
-        final Either<Collection<Role>,String> result =
-                getHibernateTemplate().execute(new ReadOnlyHibernateCallback<Either<Collection<Role>,String>>() {
+        final Either<String,Collection<Role>> result =
+                getHibernateTemplate().execute(new ReadOnlyHibernateCallback<Either<String,Collection<Role>>>() {
             @SuppressWarnings({ "unchecked" })
             @Override
-            public Either<Collection<Role>,String> doInHibernateReadOnly( final Session session ) throws HibernateException, SQLException {
+            public Either<String,Collection<Role>> doInHibernateReadOnly( final Session session ) throws HibernateException, SQLException {
                 //Get the User's directly assigned Role's
                 final Set<Role> roles = new HashSet<Role>();
                 final Criteria userAssignmentQuery = session.createCriteria(RoleAssignment.class);
@@ -132,7 +132,7 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
                         groupIds.add( groupHeader.getStrId() );
                     }
                 }
-                if(groupIds.size() == 0) return Either.<Collection<Role>,String>left( roles );
+                if(groupIds.size() == 0) return Either.<String,Collection<Role>>right( roles );
 
                 final Set<String> disabledGroupsWithRoles = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
                 final Criteria groupQuery = session.createCriteria(RoleAssignment.class);
@@ -157,22 +157,22 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
                 }
 
                 if ( throwOnGroupDisabled && roles.isEmpty() && !disabledGroupsWithRoles.isEmpty() ) {
-                    return Either.right( "No permissions due to disabled groups " + disabledGroupsWithRoles );
+                    return Either.left( "No permissions due to disabled groups " + disabledGroupsWithRoles );
                 } else {
-                    return Either.<Collection<Role>,String>left( roles );
+                    return Either.right( (Collection<Role>)roles );
                 }
             }
         });
 
-        return result.either( new Functions.UnaryThrows<Collection<Role>,Collection<Role>,FindException>(){
-            @Override
-            public Collection<Role> call( final Collection<Role> roles ) throws FindException {
-                return roles;
-            }
-        }, new Functions.UnaryThrows<Collection<Role>,String,FindException>(){
+        return result.either( new Functions.UnaryThrows<Collection<Role>,String,FindException>(){
             @Override
             public Collection<Role> call( final String message ) throws FindException {
                 throw new DisabledGroupRolesException( message );
+            }
+        }, new Functions.UnaryThrows<Collection<Role>,Collection<Role>,FindException>(){
+            @Override
+            public Collection<Role> call( final Collection<Role> roles ) throws FindException {
+                return roles;
             }
         } );
     }

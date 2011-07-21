@@ -11,6 +11,9 @@ import java.util.List;
 
 /**
  * Utility class for a disjoint unions.
+ *
+ * <p>If one of the values is for "success" then this should be the right value
+ * with the "failure" value being the left value.</p>
  */
 public class Either<A,B> implements Serializable {
 

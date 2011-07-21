@@ -363,7 +363,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
     }
 
     @Override
-    public Either<Object, Throwable> invokeExtensionMethod(String interfaceClassname, String targetObjectId, String methodName, Class[] parameterTypes, Object[] arguments)
+    public Either<Throwable,Object> invokeExtensionMethod(String interfaceClassname, String targetObjectId, String methodName, Class[] parameterTypes, Object[] arguments)
             throws ClassNotFoundException, NoSuchMethodException
     {
         return extensionInterfaceManager.invokeExtensionMethod(interfaceClassname, targetObjectId, methodName, parameterTypes, arguments);

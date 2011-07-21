@@ -34,8 +34,8 @@ public class ExtensionInterfaceManagerTest {
     @Test
     public void testInvocation() throws Exception {
         manager.registerInterface(TestFace.class, null, new TestImpl());
-        Either<Object, Throwable> result = manager.invokeExtensionMethod(TestFace.class.getName(), null, "echo", new Class[]{String.class}, new Object[]{"whatToEcho"});
-        assertEquals("Echo: whatToEcho", result.left());
+        Either<Throwable,Object> result = manager.invokeExtensionMethod(TestFace.class.getName(), null, "echo", new Class[]{String.class}, new Object[]{"whatToEcho"});
+        assertEquals("Echo: whatToEcho", result.right());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -66,13 +66,13 @@ public class ExtensionInterfaceManagerTest {
             }
         });
 
-        Either<Object, Throwable> result;
+        Either<Throwable,Object> result;
 
         result = manager.invokeExtensionMethod(TestFace.class.getName(), "a", "echo", new Class[]{String.class}, new Object[]{"whatToEcho"});
-        assertEquals("(From a)Echo: whatToEcho", result.left());
+        assertEquals("(From a)Echo: whatToEcho", result.right());
 
         result = manager.invokeExtensionMethod(TestFace.class.getName(), "b", "echo", new Class[]{String.class}, new Object[]{"whatToEcho"});
-        assertEquals("(From b)Echo: whatToEcho", result.left());
+        assertEquals("(From b)Echo: whatToEcho", result.right());
     }
 
     @Test

@@ -354,9 +354,9 @@ public final class RegistryImpl extends Registry
         return (T)Proxy.newProxyInstance(interfaceClass.getClassLoader(), new Class[] { interfaceClass }, new InvocationHandler() {
             @Override
             public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                Either<Object, Throwable> result = getClusterStatusAdmin().invokeExtensionMethod(interfaceClass.getName(), instanceIdentifier, method.getName(), method.getParameterTypes(), args);
-                if (result.isRight())
-                    throw result.right();
+                Either<Throwable,Object> result = getClusterStatusAdmin().invokeExtensionMethod(interfaceClass.getName(), instanceIdentifier, method.getName(), method.getParameterTypes(), args);
+                if (result.isLeft())
+                    throw result.left();
                 return result.left();
             }
         });

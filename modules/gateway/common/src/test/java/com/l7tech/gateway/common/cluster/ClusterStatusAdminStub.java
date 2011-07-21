@@ -233,7 +233,7 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
     }
 
     @Override
-    public Either<Object, Throwable> invokeExtensionMethod(String interfaceClassname, String targetObjectId, String methodName, Class[] parameterTypes, Object[] arguments) throws ClassNotFoundException, NoSuchMethodException {
+    public Either<Throwable,Object> invokeExtensionMethod(String interfaceClassname, String targetObjectId, String methodName, Class[] parameterTypes, Object[] arguments) throws ClassNotFoundException, NoSuchMethodException {
         throw new ClassNotFoundException("Not implemented in stub");
     }
 
