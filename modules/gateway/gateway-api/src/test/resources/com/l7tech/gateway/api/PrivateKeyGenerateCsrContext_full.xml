@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PrivateKeyGenerateCsrContext xmlns="http://ns.l7tech.com/2010/04/gateway-management">
+    <Dn other:extendedAttribute="extension" xmlns:other="urn:othernamespace">CN=foo,OU=bar,DC=example,DC=com</Dn>
+    <Properties extendedAttribute="extension">
+        <Property key="propertiesAreNotCurrentUsed" extendedAttribute="extension">
+            <BooleanValue other:extendedAttribute="extension" xmlns:other="urn:othernamespace">true</BooleanValue>
+        </Property>
+    </Properties>
+</PrivateKeyGenerateCsrContext>

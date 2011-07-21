@@ -8,7 +8,11 @@ import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
-import com.l7tech.util.Functions;
+import com.l7tech.util.Functions.Unary;
+import com.l7tech.util.Functions.UnaryThrows;
+import static com.l7tech.util.Functions.grep;
+import static com.l7tech.util.Functions.map;
+import static com.l7tech.util.Functions.partial;
 import com.l7tech.util.Option;
 import static com.l7tech.util.Option.optional;
 import org.jetbrains.annotations.NotNull;
@@ -52,9 +56,9 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
                 try {
                     final ClusterProperty property = getClusterPropertyForRead();
                     final Collection<RI> internalValues = parseProperty( property );
-                    return Functions.map(internalValues, new Functions.Unary<Map<String, String>, RI>() {
+                    return map( internalValues, new Unary<Map<String, String>, RI>() {
                         @Override
-                        public Map<String, String> call(final RI ri) {
+                        public Map<String, String> call( final RI ri ) {
                             return Collections.singletonMap( IDENTITY_SELECTOR, getIdentifier( ri ) );
                         }
                     } );
@@ -81,18 +85,19 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
     @Override
     public final R putResource( final Map<String, String> selectorMap,
                                 final Object resource ) throws ResourceNotFoundException, InvalidResourceException {
-        return transactional(new TransactionalCallback<R, Exception>() {
+        transactional(new TransactionalCallback<Void, Exception>() {
             @Override
-            public R execute() throws ObjectModelException, InvalidResourceException, ResourceNotFoundException {
+            public Void execute() throws ObjectModelException, InvalidResourceException, ResourceNotFoundException {
                 final RI internalValue = internalFromResource(resource);
                 final ClusterProperty property = getClusterPropertyForUpdate();
                 final Collection<RI> internalValues = parseProperty( property );
                 final Collection<RI> updatedInternalValues = putInternal(internalValue, internalValues);
                 saveOrUpdateClusterProperty(property, formatProperty(updatedInternalValues));
-
-                return internalAsResource(selectInternal(getIdentifier(internalValue), updatedInternalValues).some());
+                return null;
             }
         }, false, ResourceNotFoundException.class, InvalidResourceException.class);
+
+        return getResource( selectorMap ); // re-select to get updated version#
     }
 
     @Override
@@ -100,13 +105,13 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
         return transactional( new TransactionalCallback<String,ResourceNotFoundException>(){
             @Override
             public String execute() throws ObjectModelException, ResourceNotFoundException {
-                final String identifier = getRequiredSelector( selectorMap, IDENTITY_SELECTOR );
-                final ClusterProperty property = getClusterPropertyForUpdate( false, identifier );
+                final ClusterProperty property = getClusterPropertyForUpdate( false, selectorMap.toString() );
                 final Collection<RI> internalValues = parseProperty( property );
-                final Collection<RI> updatedInternalValues = deleteInternal( identifier, internalValues );
+                final Option<RI> internalValue = selectInternal( selectorMap, internalValues );
+                final Collection<RI> updatedInternalValues = deleteInternal( selectorMap, internalValue, internalValues );
                 saveOrUpdateClusterProperty(property, formatProperty(updatedInternalValues));
 
-                return identifier;
+                return getIdentifier( internalValue.some() );
             }
         }, false, ResourceNotFoundException.class );
     }
@@ -131,7 +136,7 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
      */
     Collection<RI> parseProperty( final ClusterProperty property ) {
         final Option<String> value = optional( property.getValue() );
-        return value.map(new Functions.Unary<Collection<RI>, String>() {
+        return value.map(new Unary<Collection<RI>, String>() {
             @Override
             public Collection<RI> call( final String propertyValue ) {
                 return parseProperty( propertyValue );
@@ -158,6 +163,16 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
     abstract String formatProperty( @NotNull final Collection<RI> internalValues );
 
     /**
+     * Get the external selectors for the given internal value.
+     *
+     * @param internalValue The internal value
+     * @return The selectors
+     */
+    Map<String,String> getSelectors( @NotNull RI internalValue ) {
+        return Collections.singletonMap( IDENTITY_SELECTOR, getIdentifier(internalValue) );
+    }
+
+    /**
      * Get the external identifier for the given internal value.
      *
      * @param internalValue The internal value
@@ -167,15 +182,60 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
     abstract String getIdentifier( @NotNull RI internalValue );
 
     /**
+     * Select an internal representation using the given selectors.
+     *
+     * @param selectorMap The selectors to use
+     * @param internalValues The values to select from
+     * @return The optional internal representation
+     * @throws InvalidResourceSelectors if a selector is used that is not supported
+     */
+    Option<RI> selectInternal( @NotNull final Map<String,String> selectorMap,
+                               @NotNull final Collection<RI> internalValues ) throws InvalidResourceSelectors {
+        final Option<String> identifier = optional( selectorMap.get( IDENTITY_SELECTOR ) );
+        final Option<String> name = optional( selectorMap.get( NAME_SELECTOR ) );
+
+        final Option<RI> internal = identifier.map( new Unary<RI, String>() {
+            @Override
+            public RI call( final String identifier ) {
+                return selectInternal( identifier, internalValues ).toNull();
+            }
+        } );
+
+        try {
+            return internal.orElse( partial( Option.<RI,String>map(), name, new Unary<RI, String>() {
+                @Override
+                public RI call( final String name ) {
+                    return selectInternalByName( name, internalValues ).toNull();
+                }
+            } ) );
+        } catch ( NameSelectionNotSupported e ) {
+            throw new InvalidResourceSelectors();
+        }
+    }
+
+    /**
      * Select an internal representation from the given collection.
      *
-     * @param identifier The identifier for the
+     * @param identifier The identifier for the internal value
      * @param internalValues The values to select from
      * @return The optional internal representation
      */
     @NotNull
     abstract Option<RI> selectInternal( @NotNull final String identifier,
                                         @NotNull final Collection<RI> internalValues );
+
+    /**
+     * Select an internal representation from the given collection by name.
+     *
+     * @param name The name for the internal value
+     * @param internalValues The values to select from
+     * @return The optional internal representation
+     */
+    @NotNull
+    Option<RI> selectInternalByName( @NotNull final String name,
+                                     @NotNull final Collection<RI> internalValues ) {
+        throw new NameSelectionNotSupported();
+    }
 
     /**
      * Create a new internal value and add to the given existing values.
@@ -188,11 +248,16 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
     @NotNull
     Collection<RI> createInternal( @NotNull final RI internalValue,
                                    @NotNull final Collection<RI> internalValues ) {
-        final String identifier = getIdentifier( internalValue );
-        final Option<RI> internal = selectInternal( identifier, internalValues );
+        final Map<String,String> selectorMap = getSelectors( internalValue );
+        final Option<RI> internal;
+        try {
+            internal = selectInternal( selectorMap, internalValues );
+        } catch ( InvalidResourceSelectors invalidResourceSelectors ) {
+            throw new ResourceAccessException( invalidResourceSelectors );
+        }
 
         if ( internal.isSome() ) {
-            throw new DuplicateResourceAccessException("Resource already exists: " + identifier);
+            throw new DuplicateResourceAccessException("Resource already exists: " + selectorMap);
         }
 
         final List<RI> updated = new ArrayList<RI>();
@@ -234,25 +299,25 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
                                   @NotNull final RI newInternal );
 
     /**
-     * Delete the internal value with the given identifier from the given values.
+     * Delete the given internal value from the given values.
      *
-     * @param identifier The identifier of the internal value to remove
+     * @param selectorMap The selectors for the internal value to remove
+     * @param internalValue The internal value to remove
      * @param internalValues The existing internal values
      * @return The updated value collection
      * @throws ResourceNotFoundException If the internal value is not found
      */
-    Collection<RI> deleteInternal( final String identifier,
+    Collection<RI> deleteInternal( final Map<String,String> selectorMap,
+                                   final Option<RI> internalValue,
                                    final Collection<RI> internalValues ) throws ResourceNotFoundException {
-        final Option<RI> internal = selectInternal( identifier, internalValues );
-
-        if ( !internal.isSome() ) {
-            throw new ResourceNotFoundException( "Resource not found: " + identifier );
+        if ( !internalValue.isSome() ) {
+            throw new ResourceNotFoundException( "Resource not found: " + selectorMap );
         }
 
-        return Functions.grep( internalValues, new Functions.Unary<Boolean,RI>(){
+        return grep( internalValues, new Unary<Boolean, RI>() {
             @Override
-            public Boolean call(final RI ri) {
-                return ri != internal.some();
+            public Boolean call( final RI ri ) {
+                return ri != internalValue.some();
             }
         } );
     }
@@ -285,12 +350,11 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
     private Option<R> asResource( final Map<String, String> selectorMap,
                                   final ClusterProperty clusterProperty ) throws ResourceNotFoundException {
         final Collection<RI> internalValues = parseProperty( clusterProperty );
-        final String identifier = getRequiredSelector( selectorMap, IDENTITY_SELECTOR );
-        final Option<RI> internalValue = selectInternal(identifier, internalValues);
-        return internalValue.map( new Functions.Unary<R, RI>() {
+        final Option<RI> internalValue = selectInternal(selectorMap, internalValues);
+        return internalValue.map( new Unary<R, RI>() {
             @Override
             public R call(final RI internalValue) {
-                return identify( internalAsResource(internalValue), identifier, clusterProperty.getVersion() );
+                return identify( internalAsResource(internalValue), getIdentifier(internalValue), clusterProperty.getVersion() );
             }
         });
     }
@@ -332,7 +396,7 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
      * Get the cluster property for create/update if permitted.
      */
     private ClusterProperty getClusterPropertyForUpdate( final boolean create,
-                                                         final String identifier ) throws ResourceNotFoundException {
+                                                         final String description ) throws ResourceNotFoundException {
         ClusterProperty property;
         try {
             property = selectEntity(Collections.singletonMap(NAME_SELECTOR, propertyName));
@@ -340,7 +404,7 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
             if ( create ) {
                 property = new  ClusterProperty( propertyName, null );
             } else {
-                throw new ResourceNotFoundException( "Resource not found " + identifier );
+                throw new ResourceNotFoundException( "Resource not found " + description );
             }
         }
 
@@ -365,7 +429,7 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
             throw new ResourceAccessException( "Updated cluster property value is invalid", e);
         }
 
-        final long id = doWithManager(new Functions.UnaryThrows<Long, EntityManager<ClusterProperty, EntityHeader>, ObjectModelException>() {
+        final long id = doWithManager(new UnaryThrows<Long, EntityManager<ClusterProperty, EntityHeader>, ObjectModelException>() {
             @Override
             public Long call(final EntityManager<ClusterProperty, EntityHeader> manager) throws ObjectModelException {
                 if ( property.getOid() == PersistentEntity.DEFAULT_OID ) {
@@ -380,4 +444,6 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
         EntityContext.setEntityInfo(getType(), Long.toString(id));
     }
 
+    private static final class NameSelectionNotSupported extends RuntimeException {
+    }
 }

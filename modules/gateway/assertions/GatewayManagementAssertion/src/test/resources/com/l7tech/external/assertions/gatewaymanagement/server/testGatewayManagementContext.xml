@@ -49,6 +49,10 @@
         <constructor-arg index="2"><bean class="com.l7tech.server.PlatformTransactionManagerStub"/></constructor-arg>
     </bean>
 
+    <bean id="folderResourceFactory" class="com.l7tech.external.assertions.gatewaymanagement.server.FolderResourceFactory" parent="entityResourceFactoryParent">
+        <constructor-arg index="3" ref="folderManager"/>
+    </bean>
+
     <bean id="resourceFactoryRegistry" class="com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactoryRegistry">
         <constructor-arg index="0">
             <list>
@@ -62,9 +66,7 @@
                     <constructor-arg index="3" ref="resourceEntryManager"/>
                     <constructor-arg index="4"><null/></constructor-arg>
                 </bean>
-                <bean class="com.l7tech.external.assertions.gatewaymanagement.server.FolderResourceFactory" parent="entityResourceFactoryParent">
-                    <constructor-arg index="3" ref="folderManager"/>
-                </bean>
+                <ref local="folderResourceFactory"/>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.IdentityProviderResourceFactory" parent="entityResourceFactoryParent">
                     <constructor-arg index="3" ref="identityProviderConfigManager"/>
                     <constructor-arg index="4">
@@ -84,11 +86,15 @@
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.PolicyResourceFactory" parent="entityResourceFactoryParent">
                     <constructor-arg index="3" ref="policyManager"/>
                     <constructor-arg index="4" ref="policyHelper"/>
+                    <constructor-arg index="5" ref="folderResourceFactory"/>
                 </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.PrivateKeyResourceFactory" parent="entityResourceFactoryParent">
-                    <constructor-arg index="3" ref="ssgKeyStoreManager"/>
-                    <constructor-arg index="4"><null/></constructor-arg>
-                    <constructor-arg index="5"><null/></constructor-arg>
+                    <constructor-arg index="3" ref="serverConfig"/>
+                    <constructor-arg index="4" ref="ssgKeyStoreManager"/>
+                    <constructor-arg index="5" ref="clusterPropertyCache"/>
+                    <constructor-arg index="6" ref="clusterPropertyManager"/>
+                    <constructor-arg index="7"><null/></constructor-arg>
+                    <constructor-arg index="8"><null/></constructor-arg>
                 </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.ServiceResourceFactory" parent="entityResourceFactoryParent">
                     <constructor-arg index="3" ref="serviceManager"/>
@@ -96,6 +102,7 @@
                     <constructor-arg index="5"><null/></constructor-arg>
                     <constructor-arg index="6" ref="serviceWsdlUpdateChecker"/>
                     <constructor-arg index="7" ref="policyHelper"/>
+                    <constructor-arg index="8" ref="folderResourceFactory"/>
                 </bean>
                 <bean class="com.l7tech.external.assertions.gatewaymanagement.server.SecurePasswordResourceFactory" parent="entityResourceFactoryParent">
                     <constructor-arg index="3" ref="securePasswordManager"/>

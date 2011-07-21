@@ -1,6 +1,6 @@
 package com.l7tech.server.service;
 
-import com.l7tech.gateway.common.AsyncAdminMethodsImpl;
+import com.l7tech.server.admin.AsyncAdminMethodsImpl;
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.gateway.common.service.*;
 import com.l7tech.gateway.common.transport.ResolutionConfiguration;

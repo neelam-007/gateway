@@ -1,6 +1,7 @@
 package com.l7tech.util;
 
 import com.l7tech.util.Functions.Unary;
+import com.l7tech.util.Functions.UnaryThrows;
 import com.l7tech.util.Functions.UnaryVoid;
 import static com.l7tech.util.Functions.nullary;
 import static com.l7tech.util.Option.none;
@@ -9,7 +10,6 @@ import static com.l7tech.util.TextUtils.isEmpty;
 import static com.l7tech.util.TextUtils.isNotEmpty;
 import static com.l7tech.util.TextUtils.trim;
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertFalse;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -102,6 +102,32 @@ public class OptionTest {
         assertEquals( "Map function 1", "value1", Option.<String, String>map().call( some( "value1   " ), trim() ).some() );
         assertFalse( "Map function 2", Option.<String, String>map().call( some( "" ), nullr ).isSome() );
         assertFalse( "Map function 3", Option.<String, String>map().call( Option.<String>none(), nullr ).isSome() );
+    }
+
+    @Test
+    public void testExists() {
+        assertTrue( "Exists 1", some( "value" ).exists( isNotEmpty() ) );
+        assertTrue( "Exists 2", some( "" ).exists( isEmpty() ) );
+        assertFalse( "Exists 3", some( "" ).exists( isNotEmpty() ) );
+        assertFalse( "Exists 4", Option.<String>none().exists( isEmpty() ) );
+
+        assertTrue( "Exists throws 1", some( "value" ).exists( new UnaryThrows<Boolean,String,IllegalArgumentException>(){
+            @Override
+            public Boolean call( final String s ) throws IllegalArgumentException {
+                return true;
+            }
+        } ) );
+        try {
+            some( "value" ).exists( new UnaryThrows<Boolean,String,IllegalArgumentException>(){
+                @Override
+                public Boolean call( final String s ) throws IllegalArgumentException {
+                    throw new IllegalArgumentException("expected");
+                }
+            } );
+            fail("Expected exception from exists");
+        } catch ( IllegalArgumentException e ) {
+            assertEquals( "expected exception message", "expected", e.getMessage() );
+        }
     }
 
     @Test

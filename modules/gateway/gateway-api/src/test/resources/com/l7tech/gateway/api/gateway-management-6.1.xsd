@@ -435,6 +435,7 @@
     <xs:restriction base="xs:string">
       <xs:enumeration value="Include"/>
       <xs:enumeration value="Internal"/>
+      <xs:enumeration value="Global"/>
     </xs:restriction>
   </xs:simpleType>
             

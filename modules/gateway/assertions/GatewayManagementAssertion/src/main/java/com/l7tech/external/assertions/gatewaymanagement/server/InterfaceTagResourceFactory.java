@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Option;
 import org.jetbrains.annotations.NotNull;
@@ -53,7 +54,7 @@ public class InterfaceTagResourceFactory extends ClusterPropertyBackedResourceFa
     @NotNull
     @Override
     String getIdentifier( @NotNull final InterfaceTag internalValue ) {
-        return internalValue.getName();
+        return nameAsIdentifier( internalValue.getName() );
     }
 
     @NotNull
@@ -63,15 +64,23 @@ public class InterfaceTagResourceFactory extends ClusterPropertyBackedResourceFa
         return optional(Functions.grepFirst(internalValues, new Functions.Unary<Boolean, InterfaceTag>() {
             @Override
             public Boolean call(final InterfaceTag interfaceTag) {
-                return identifier.equals(interfaceTag.getName());
+                return identifier.equals(getIdentifier( interfaceTag ));
             }
         }));
     }
 
     @NotNull
     @Override
+    Option<InterfaceTag> selectInternalByName( @NotNull final String name,
+                                               @NotNull final Collection<InterfaceTag> internalValues ) {
+        return selectInternal( nameAsIdentifier( name ), internalValues );
+    }
+
+    @NotNull
+    @Override
     InterfaceTagMO internalAsResource( @NotNull final InterfaceTag interfaceTag ) {
         final InterfaceTagMO resource = ManagedObjectFactory.createInterfaceTag();
+        resource.setName( interfaceTag.getName() );
         resource.setAddressPatterns( new ArrayList<String>(interfaceTag.getIpPatterns()) );
         return resource;
     }
@@ -84,7 +93,7 @@ public class InterfaceTagResourceFactory extends ClusterPropertyBackedResourceFa
 
         final InterfaceTagMO interfaceTagMO = (InterfaceTagMO) resource;
 
-        final String name = interfaceTagMO.getId();
+        final String name = interfaceTagMO.getName();
         final Set<String> ipPatterns = new LinkedHashSet<String>(interfaceTagMO.getAddressPatterns());
 
         if ( !InterfaceTag.isValidName(name) ) {
@@ -107,6 +116,16 @@ public class InterfaceTagResourceFactory extends ClusterPropertyBackedResourceFa
     void updateInternal( @NotNull final InterfaceTag oldInternal,
                          @NotNull final InterfaceTag newInternal ) {
         oldInternal.setIpPatterns( newInternal.getIpPatterns() );
+    }
+
+    //- PRIVATE
+
+    /**
+     * We generate an identifier from the unique name, this should allow
+     * for interface tags to be stored as separate entities in the future.
+     */
+    private String nameAsIdentifier( final String name ) {
+        return UUID.nameUUIDFromBytes( name.getBytes( Charsets.UTF8 ) ).toString();
     }
 
 }

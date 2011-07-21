@@ -7,7 +7,6 @@ import com.l7tech.gateway.api.PolicyExportResult;
 import com.l7tech.gateway.api.PolicyImportResult;
 import com.l7tech.gateway.api.PolicyMO;
 import com.l7tech.gateway.api.PolicyReferenceInstruction;
-import com.l7tech.gateway.api.PolicyValidationContext;
 import com.l7tech.gateway.api.PolicyValidationResult;
 import com.l7tech.gateway.api.ResourceSet;
 import com.l7tech.gateway.api.ServiceMO;
@@ -110,7 +109,7 @@ class PolicyAccessorImpl<AO extends AccessibleObject> extends AccessorImpl<AO> i
 
         return doValidatePolicy( 
                 Collections.singletonMap(ID_SELECTOR, identifier),
-                ManagedObjectFactory.createPolicyValidationContext() );
+                new PolicyValidationContext() );
     }
 
     /**
@@ -121,7 +120,7 @@ class PolicyAccessorImpl<AO extends AccessibleObject> extends AccessorImpl<AO> i
                                                   final List<ResourceSet> resourceSets ) throws AccessorException {
         require( "managedObject", managedObject );
 
-        final PolicyValidationContext context = ManagedObjectFactory.createPolicyValidationContext();
+        final PolicyValidationContext context = new PolicyValidationContext();
         if ( managedObject instanceof PolicyMO ) {
             PolicyMO policy = (PolicyMO) managedObject;
             require( "policyDetail", policy.getPolicyDetail() );

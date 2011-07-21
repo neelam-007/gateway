@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PrivateKeyCreationContext id="2:alias" version="15" xmlns="http://ns.l7tech.com/2010/04/gateway-management" other:extendedAttribute="extension" xmlns:other="urn:othernamespace">
+    <Dn other:extendedAttribute="extension" xmlns:other="urn:othernamespace">CN=Alias</Dn>
+    <Properties other:extendedAttribute="extension" xmlns:other="urn:othernamespace">
+        <Property key="caCapable" other:extendedAttribute="extension" xmlns:other="urn:othernamespace">
+            <BooleanValue other:extendedAttribute="extension" xmlns:other="urn:othernamespace">false</BooleanValue>
+        </Property>
+        <Property key="daysUntilExpiry">
+            <IntegerValue>365</IntegerValue>
+        </Property>
+        <Property key="rsaKeySize">
+            <IntegerValue>2048</IntegerValue>
+        </Property>
+        <Property key="signatureHashAlgorithm">
+            <StringValue>SHA-256</StringValue>
+        </Property>
+    </Properties>
+</PrivateKeyCreationContext>

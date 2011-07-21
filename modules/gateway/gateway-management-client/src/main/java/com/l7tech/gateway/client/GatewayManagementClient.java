@@ -260,9 +260,15 @@ public class GatewayManagementClient {
             command = new ImportCommand();
         } else if ( "validate".equals(commandName) ) {
             command = new ValidateCommand();
-        } else if ( "import-key".equals(commandName) ) {
+        } else if ( "keypurposes".equals(commandName) ) {
+            command = new SetKeySpecialPurposesCommand();
+        } else if ( "generatecsr".equals(commandName) ) {
+            command = new GenerateCsrCommand();
+        } else if ( "createkey".equals(commandName) ) {
+            command = new CreateKeyCommand();
+        } else if ( "importkey".equals(commandName) ) {
             command = new ImportKeyCommand();
-        } else if ( "export-key".equals(commandName) ) {
+        } else if ( "exportkey".equals(commandName) ) {
             command = new ExportKeyCommand();
         }
 
@@ -623,25 +629,29 @@ public class GatewayManagementClient {
         }
 
         protected final void writeOutput( final ManagedObject mo ) throws CommandException {
-            writeOutput( new Functions.UnaryThrows<Void, OutputStream, CommandException>(){
+            writeOutput( new OutputWriter(){
                 @Override
-                public Void call( final OutputStream out ) throws CommandException {
-                    try {
-                        ManagedObjectFactory.write( mo, out );
-                    } catch ( IOException ioe ) {
-                        handleIOError( "output", ioe );
-                    }
-                    return null;
+                public void write( final OutputStream out ) throws IOException, CommandException {
+                    ManagedObjectFactory.write( mo, out );
                 }
             } );
         }
 
-        protected final void writeOutput( final Functions.UnaryThrows<Void, OutputStream, CommandException> callback ) throws CommandException {
+        protected final void writeOutput( final byte[] data ) throws CommandException {
+            writeOutput( new OutputWriter(){
+                @Override
+                public void write( final OutputStream out ) throws IOException, CommandException {
+                    out.write( data );
+                }
+            } );
+        }
+
+        protected final void writeOutput( final OutputWriter outputWriter ) throws CommandException {
             final File outFile = arguments.outFile;
 
             checkOutput();
 
-            if ( callback != null ) {
+            if ( outputWriter != null ) {
                 OutputStream out = null;
                 try {
                     if ( outFile != null ) {
@@ -657,7 +667,7 @@ public class GatewayManagementClient {
                             }
                         };
                     }
-                    callback.call( out );
+                    outputWriter.write( out );
                 } catch ( IOException ioe ) {
                     handleIOError( "output", ioe );
                 } finally {
@@ -677,6 +687,10 @@ public class GatewayManagementClient {
 
         protected final void handleIOError( final String description, final IOException ioe ) throws CommandException {
             throw new CommandException( "Error processing "+description+" '"+ExceptionUtils.getMessage( ioe )+"'." );
+        }
+
+        protected interface OutputWriter {
+            void write( OutputStream out ) throws IOException, CommandException;
         }
 
         //- PRIVATE
@@ -822,32 +836,27 @@ public class GatewayManagementClient {
 
             try {
                 final Iterator<? extends ManagedObject> iterator = accessor.enumerate();
-                writeOutput( new Functions.UnaryThrows<Void, OutputStream, CommandException>(){
+                writeOutput( new OutputWriter(){
                     @Override
-                    public Void call( final OutputStream out ) throws CommandException {
-                        try {
-                            final StreamResult outResult = new StreamResult( out );
-                            boolean first = true;
-                            while ( iterator.hasNext() ) {
-                                ManagedObject mo;
-                                try {
-                                    mo = iterator.next();
-                                } catch ( RuntimeException re ) {
-                                    endOutput( out, first, true );
-                                    throw re;
-                                }
-                                if ( first ) {
-                                    writeBytes( out, XML_DECL );
-                                    writeBytes( out, ENUM_START );
-                                    first = false;
-                                }
-                                MarshallingUtils.marshal( mo, outResult, true );
+                    public void write( final OutputStream out ) throws IOException, CommandException {
+                        final StreamResult outResult = new StreamResult( out );
+                        boolean first = true;
+                        while ( iterator.hasNext() ) {
+                            ManagedObject mo;
+                            try {
+                                mo = iterator.next();
+                            } catch ( RuntimeException re ) {
+                                endOutput( out, first, true );
+                                throw re;
                             }
-                            endOutput( out, first, false );
-                        } catch ( IOException ioe ) {
-                            handleIOError( "output", ioe );
+                            if ( first ) {
+                                writeBytes( out, XML_DECL );
+                                writeBytes( out, ENUM_START );
+                                first = false;
+                            }
+                            MarshallingUtils.marshal( mo, outResult, true );
                         }
-                        return null;
+                        endOutput( out, first, false );
                     }
                 } );
             } catch ( Accessor.AccessorException e ) {
@@ -949,15 +958,10 @@ public class GatewayManagementClient {
 
             try {
                 final String policy = accessor.exportPolicy( getId() );
-                writeOutput( new Functions.UnaryThrows<Void, OutputStream, CommandException>(){
+                writeOutput( new OutputWriter(){
                     @Override
-                    public Void call( final OutputStream out ) throws CommandException {
-                        try {
-                            out.write( policy.getBytes( getEncoding(policy) ) );
-                        } catch ( IOException ioe ) {
-                            handleIOError( "output", ioe );
-                        }
-                        return null;
+                    public void write( final OutputStream out ) throws IOException, CommandException {
+                        out.write( policy.getBytes( getEncoding(policy) ) );
                     }
                 } );
             } catch ( Accessor.AccessorException ioe ) {
@@ -1067,6 +1071,83 @@ public class GatewayManagementClient {
     }
 
     //TODO [steve] help for options (import and export key)
+    private static final class SetKeySpecialPurposesCommand extends Command {
+        @SuppressWarnings({ "AssignmentToForLoopParameter" })
+        @Override
+        protected void doRun( final Client client ) throws CommandException {
+            final PrivateKeyMOAccessor accessor = getPrivateKeyAccessor( client, getAccessibleObjectType() );
+
+            // Get extra args
+            final Set<String> specialPurposes = new HashSet<String>();
+            final List<String> instructionArguments = getExtraArguments();
+            for ( int i=0; i<instructionArguments.size(); i++ ) {
+                final String option = instructionArguments.get(i);
+
+                if ( "-keyPurpose".equals(option) ) {
+                    specialPurposes.add( getArg( "keyPurpose", instructionArguments, ++i ) );
+                } else {
+                    throw new CommandException("Invalid options: Unknown option '"+option+"'.");
+                }
+            }
+
+            try {
+                final PrivateKeyMO result = accessor.setSpecialPurposes( getId(), specialPurposes );
+                writeOutput( result );
+            } catch ( Accessor.AccessorException ioe ) {
+                throw new CommandException( "Accessor error", ioe );
+            }
+        }
+    }
+
+    private static final class GenerateCsrCommand extends Command {
+        private GenerateCsrCommand() {
+            super( false, true );
+        }
+
+        @SuppressWarnings({ "AssignmentToForLoopParameter" })
+        @Override
+        protected void doRun( final Client client ) throws CommandException {
+            final PrivateKeyMOAccessor accessor = getPrivateKeyAccessor( client, getAccessibleObjectType() );
+
+            // Get extra args
+            String dn = null;
+            final List<String> instructionArguments = getExtraArguments();
+            for ( int i=0; i<instructionArguments.size(); i++ ) {
+                final String option = instructionArguments.get(i);
+
+                if ( "-csrDn".equals(option) ) {
+                    dn = getArg( "csrDn", instructionArguments, ++i );
+                } else {
+                    throw new CommandException("Invalid options: Unknown option '"+option+"'.");
+                }
+            }
+
+            try {
+                final byte[] csrBytes = accessor.generateCsr( getId(), dn );
+                writeOutput( csrBytes );
+            } catch ( Accessor.AccessorException ioe ) {
+                throw new CommandException( "Accessor error", ioe );
+            }
+        }
+    }
+
+    private static final class CreateKeyCommand extends Command {
+        @SuppressWarnings({ "AssignmentToForLoopParameter" })
+        @Override
+        protected void doRun( final Client client ) throws CommandException {
+            final PrivateKeyMOAccessor accessor = getPrivateKeyAccessor( client, getAccessibleObjectType() );
+
+            final PrivateKeyCreationContext context = cast(readInput(), PrivateKeyCreationContext.class);
+            context.setId( getId() );
+            try {
+                final PrivateKeyMO result = accessor.createKey( context );
+                writeOutput( result );
+            } catch ( Accessor.AccessorException ioe ) {
+                throw new CommandException( "Accessor error", ioe );
+            }
+        }
+    }
+
     private static final class ExportKeyCommand extends Command {
         private ExportKeyCommand() {
             super( false, true );
@@ -1082,30 +1163,20 @@ public class GatewayManagementClient {
             String password = null;
             final List<String> instructionArguments = getExtraArguments();
             for ( int i=0; i<instructionArguments.size(); i++ ) {
-                final String exportOption = instructionArguments.get(i);
+                final String option = instructionArguments.get(i);
 
-                if ( "-key-alias".equals(exportOption) ) {
-                    alias = getArg( "key-alias", instructionArguments, ++i );
-                } else if ( "-key-password".equals(exportOption) ) {
-                    password = getArg( "key-password", instructionArguments, ++i );
+                if ( "-keyAlias".equals(option) ) {
+                    alias = getArg( "keyAlias", instructionArguments, ++i );
+                } else if ( "-keyPassword".equals(option) ) {
+                    password = getArg( "keyPassword", instructionArguments, ++i );
                 } else {
-                    throw new CommandException("Invalid options: Unknown option '"+exportOption+"'.");
+                    throw new CommandException("Invalid options: Unknown option '"+option+"'.");
                 }
             }
 
             try {
                 final byte[] keystoreBytes = accessor.exportKey( getId(), alias, password );
-                writeOutput( new Functions.UnaryThrows<Void, OutputStream, CommandException>(){
-                    @Override
-                    public Void call( final OutputStream out ) throws CommandException {
-                        try {
-                            out.write( keystoreBytes );
-                        } catch ( IOException ioe ) {
-                            handleIOError( "output", ioe );
-                        }
-                        return null;
-                    }
-                } );
+                writeOutput( keystoreBytes );
             } catch ( Accessor.AccessorException ioe ) {
                     throw new CommandException( "Accessor error", ioe );
             }
@@ -1123,14 +1194,14 @@ public class GatewayManagementClient {
             String password = null;
             final List<String> instructionArguments = getExtraArguments();
             for ( int i=0; i<instructionArguments.size(); i++ ) {
-                final String exportOption = instructionArguments.get(i);
+                final String option = instructionArguments.get(i);
 
-                if ( "-key-alias".equals(exportOption) ) {
-                    alias = getArg( "key-alias", instructionArguments, ++i );
-                } else if ( "-key-password".equals(exportOption) ) {
-                    password = getArg( "key-password", instructionArguments, ++i );
+                if ( "-keyAlias".equals(option) ) {
+                    alias = getArg( "keyAlias", instructionArguments, ++i );
+                } else if ( "-keyPassword".equals(option) ) {
+                    password = getArg( "keyPassword", instructionArguments, ++i );
                 } else {
-                    throw new CommandException("Invalid options: Unknown option '"+exportOption+"'.");
+                    throw new CommandException("Invalid options: Unknown option '"+option+"'.");
                 }
             }
 

@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.io.KeyGenParams;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
@@ -56,7 +57,7 @@ public class  NewPrivateKeyDialog extends JDialog {
             this.curveName = null;
         }
 
-        public KeyType(String curveName, String label) {
+        private KeyType(String curveName, String label) {
             this.size = 0;
             this.label = label;
             this.hsmSec = 30;
@@ -75,13 +76,11 @@ public class  NewPrivateKeyDialog extends JDialog {
 
     private static class SigHash {
         private final String label;
-        private final String rsaSigAlg;
-        private final String eccSigAlg;
+        private final String algorithm;
 
-        private SigHash(String label, String rsaSigAlg, String eccSigAlg) {
+        private SigHash(String label, String algorithm) {
             this.label = label;
-            this.rsaSigAlg = rsaSigAlg;
-            this.eccSigAlg = eccSigAlg;
+            this.algorithm = algorithm;
         }
 
         @Override
@@ -91,9 +90,7 @@ public class  NewPrivateKeyDialog extends JDialog {
     }
 
     private static SigHash sighash(String label, String alg) {
-        return new SigHash(label,
-                alg == null ? null : alg + "withRSA",
-                alg == null ? null : alg + "withECDSA");
+        return new SigHash(label, alg);
     }
 
     private final KeystoreFileEntityHeader keystoreInfo;
@@ -368,7 +365,9 @@ public class  NewPrivateKeyDialog extends JDialog {
 
     private String getSigAlg(boolean useEcc) {
         SigHash hash = getSelectedSigHash();
-        return useEcc ? hash.eccSigAlg : hash.rsaSigAlg;
+        return KeyGenParams.getSignatureAlgorithm(
+                useEcc ? KeyGenParams.ALGORITHM_EC : KeyGenParams.ALGORITHM_RSA,
+                hash.algorithm );
     }
 
     private SigHash getSelectedSigHash() {

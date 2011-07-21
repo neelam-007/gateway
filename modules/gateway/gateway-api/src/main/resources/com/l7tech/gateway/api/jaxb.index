@@ -13,11 +13,8 @@ PolicyExportResult
 PolicyImportResult
 PolicyMO
 PolicyReferenceInstruction
-PolicyValidationContext
 PolicyValidationResult
-PrivateKeyExportContext
-PrivateKeyExportResult
-PrivateKeyImportContext
+PrivateKeyCreationContext
 PrivateKeyMO
 Resource
 ResourceDocumentMO

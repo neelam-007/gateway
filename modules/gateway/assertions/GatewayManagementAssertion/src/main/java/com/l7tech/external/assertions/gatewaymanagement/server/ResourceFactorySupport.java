@@ -14,7 +14,11 @@ import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.BeanUtils;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions.UnaryThrows;
 import com.l7tech.util.Option;
+import static com.l7tech.util.Option.none;
+import static com.l7tech.util.Option.optional;
+import static com.l7tech.util.Option.some;
 import com.l7tech.util.SyspropUtil;
 import static com.l7tech.util.TextUtils.trim;
 import org.jetbrains.annotations.NotNull;
@@ -259,7 +263,7 @@ abstract class ResourceFactorySupport<R> implements ResourceFactory<R> {
                                                  @NotNull  final String propertyName,
                                                  @NotNull  final Option<PT> defaultValue,
                                                  @NotNull  final Class<PT> propertyClass ) throws InvalidResourceException {
-        Option<PT> value = defaultValue;
+        final Option<PT> value;
 
         if ( properties != null ) {
             final Object valueObject = properties.get( propertyName );
@@ -269,11 +273,15 @@ abstract class ResourceFactorySupport<R> implements ResourceFactory<R> {
                             InvalidResourceException.ExceptionType.INVALID_VALUES,
                             "Invalid value for property " + propertyName );
                 }
-                value = Option.some( propertyClass.cast( valueObject ) );
+                value = some( propertyClass.cast( valueObject ) );
+            } else {
+                value = none();
             }
+        } else {
+            value = none();
         }
 
-        return value;
+        return value.orElse( defaultValue );
     }
 
     /**
@@ -295,7 +303,7 @@ abstract class ResourceFactorySupport<R> implements ResourceFactory<R> {
     protected final String getFolderId( final HasFolder hasFolder ) {
         String id = null;
 
-        if ( hasFolder.getFolder() != null && hasFolder.getFolder().getOid() != -5002L ) {
+        if ( hasFolder.getFolder() != null ) {
             id = hasFolder.getFolder().getId();
         }
 
@@ -307,31 +315,34 @@ abstract class ResourceFactorySupport<R> implements ResourceFactory<R> {
                                          final Entity entity ) {
         if (entity == null) return;
 
-        final User user = JaasUtils.getCurrentUser();
         final EntityType entityType = EntityType.findTypeByEntity(entity.getClass());
-        try {
-            if ( user==null || !rbacServices.isPermittedForEntity( user, entity, operationType, otherOperationName ) ) {
-                if ( otherOperationName != null ) {
-                    throw new PermissionDeniedException( operationType, entity, otherOperationName );
-                } else {
-                    throw new PermissionDeniedException( operationType, entityType );
-                }
+
+        doPermissionCheck( operationType, entity, entityType, otherOperationName, new UnaryThrows<Boolean, User, FindException>() {
+            @Override
+            public Boolean call( final User user ) throws FindException {
+                return rbacServices.isPermittedForEntity( user, entity, operationType, otherOperationName );
             }
-        } catch ( FindException fe ) {
-            throw (PermissionDeniedException) new PermissionDeniedException( operationType, entityType, "Error in permission check.").initCause(fe);
-        }
+        } );
     }
 
     protected final void checkPermittedForSomeEntity( final OperationType operationType,
                                                       final EntityType entityType ) {
-        final User user = JaasUtils.getCurrentUser();
-        try {
-            if ( user==null || !rbacServices.isPermittedForSomeEntityOfType( user, operationType, entityType ) ) {
-                throw new PermissionDeniedException( operationType, entityType );
+        doPermissionCheck( operationType, null, entityType, null, new UnaryThrows<Boolean, User, FindException>() {
+            @Override
+            public Boolean call( final User user ) throws FindException {
+                return rbacServices.isPermittedForSomeEntityOfType( user, operationType, entityType );
             }
-        } catch ( FindException fe ) {
-            throw (PermissionDeniedException) new PermissionDeniedException( operationType, entityType, "Error in permission check.").initCause(fe);
-        }
+        } );
+    }
+
+    protected final void checkPermittedForAnyEntity( final OperationType operationType,
+                                                     final EntityType entityType ) {
+        doPermissionCheck( operationType, null, entityType, null, new UnaryThrows<Boolean, User, FindException>() {
+            @Override
+            public Boolean call( final User user ) throws FindException {
+                return rbacServices.isPermittedForAnyEntityOfType( user, operationType, entityType );
+            }
+        } );
     }
 
     /**
@@ -415,6 +426,25 @@ abstract class ResourceFactorySupport<R> implements ResourceFactory<R> {
     private final PlatformTransactionManager transactionManager;
     private final EntityPropertiesHelper propertiesHelper = new EntityPropertiesHelper();
     private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
+
+    private void doPermissionCheck( final OperationType operationType,
+                                    final Entity entity,
+                                    final EntityType entityType,
+                                    final String otherOperationName,
+                                    final UnaryThrows<Boolean,User,FindException> permission ) {
+        final Option<User> user = optional( JaasUtils.getCurrentUser() );
+        try {
+            if ( !user.exists( permission ) ) {
+                if ( otherOperationName != null ) {
+                    throw new PermissionDeniedException( operationType, entity, otherOperationName );
+                } else {
+                    throw new PermissionDeniedException( operationType, entityType );
+                }
+            }
+        } catch ( FindException fe ) {
+            throw (PermissionDeniedException) new PermissionDeniedException( operationType, entityType, "Error in permission check.").initCause(fe);
+        }
+    }
 
     @SuppressWarnings({"serial"})
     private static class TransactionalException extends RuntimeException {

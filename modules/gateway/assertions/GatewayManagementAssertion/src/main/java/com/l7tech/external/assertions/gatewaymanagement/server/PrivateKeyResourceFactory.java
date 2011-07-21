@@ -1,72 +1,89 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.io.AliasNotFoundException;
+import com.l7tech.common.io.CertGenParams;
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.KeyGenParams;
+import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.InvalidResourceException.ExceptionType;
 import com.l7tech.gateway.api.CertificateData;
 import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.PrivateKeyExportContext;
-import com.l7tech.gateway.api.PrivateKeyExportResult;
-import com.l7tech.gateway.api.PrivateKeyImportContext;
+import com.l7tech.gateway.api.PrivateKeyCreationContext;
+import com.l7tech.gateway.api.impl.PrivateKeyExportContext;
+import com.l7tech.gateway.api.impl.PrivateKeyExportResult;
+import com.l7tech.gateway.api.impl.PrivateKeyGenerateCsrContext;
+import com.l7tech.gateway.api.impl.PrivateKeyGenerateCsrResult;
+import com.l7tech.gateway.api.impl.PrivateKeyImportContext;
 import com.l7tech.gateway.api.PrivateKeyMO;
+import com.l7tech.gateway.api.impl.PrivateKeySpecialPurposeContext;
+import com.l7tech.gateway.api.impl.ValidationUtils;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.security.MultipleAliasesException;
+import com.l7tech.gateway.common.security.SpecialKeyType;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.keystore.SsgKeyHeader;
 import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
-import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.security.prov.CertificateRequest;
 import com.l7tech.server.DefaultKey;
-import com.l7tech.server.event.AdminInfo;
-import com.l7tech.server.event.EntityChangeSet;
-import com.l7tech.server.event.admin.Created;
-import com.l7tech.server.event.admin.Deleted;
-import com.l7tech.server.event.admin.KeyExportedEvent;
-import com.l7tech.server.event.admin.Updated;
+import com.l7tech.server.admin.PrivateKeyAdminHelper;
+import com.l7tech.server.cluster.ClusterPropertyCache;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
-import com.l7tech.server.transport.http.HttpTransportModule;
-import com.l7tech.util.PoolByteArrayOutputStream;
-import com.l7tech.util.CallableRunnable;
+import static com.l7tech.util.CollectionUtils.foreach;
+import com.l7tech.util.Config;
+import com.l7tech.util.Either;
+import static com.l7tech.util.Either.left;
+import static com.l7tech.util.Either.lefts;
+import static com.l7tech.util.Either.right;
+import static com.l7tech.util.Either.rights;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.Functions.Nullary;
+import com.l7tech.util.Functions.Unary;
+import com.l7tech.util.Functions.UnaryVoid;
+import com.l7tech.util.Functions.UnaryVoidThrows;
+import static com.l7tech.util.Functions.map;
+import com.l7tech.util.Option;
+import static com.l7tech.util.Option.optional;
+import static com.l7tech.util.Option.some;
 import com.l7tech.util.Pair;
 import com.l7tech.util.SyspropUtil;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.springframework.context.ApplicationEvent;
+import static com.l7tech.util.TextUtils.join;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import javax.servlet.http.HttpServletRequest;
+import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.security.Key;
-import java.security.KeyStore;
+import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
+import java.security.SignatureException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -77,31 +94,26 @@ import java.util.logging.Logger;
  * You cannot use the typical Create/Put methods to create and update private
  * keys, you have to use the custom create or import methods and once created
  * you can only replace the certificate chain.</p>
- *
- * TODO [steve] implement key generation methods?
- * TODO [steve] refactor common parts of this factory and TrustedCertAdminImpl
  */
 @ResourceFactory.ResourceType(type=PrivateKeyMO.class)
 public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKeyMO> {
 
     //- PUBLIC
 
-    /**
-     * Provider for parsing PKCS#12 on import.  Values:
-     *   "default" to use the system current most-preferred implementation of KeyStore.PKCS12;  "BC" to use
-     *   Bouncy Castle's implementation (note that Bouncy Castle need not be registered as a Security provider
-     *   for this to work); or else the name of any registered Security provider that offers KeyStore.PKCS12.
-     */
-    public static final String PROP_PKCS12_PARSING_PROVIDER = "com.l7tech.keyStore.pkcs12.parsing.provider";
-
     public PrivateKeyResourceFactory( final RbacServices rbacServices,
                                       final SecurityFilter securityFilter,
                                       final PlatformTransactionManager transactionManager,
+                                      final Config config,
                                       final SsgKeyStoreManager ssgKeyStoreManager,
+                                      final ClusterPropertyCache clusterPropertyCache,
+                                      final ClusterPropertyManager clusterPropertyManager,
                                       final DefaultKey defaultKey,
                                       final ApplicationEventPublisher applicationEventPublisher ) {
         super( rbacServices, securityFilter, transactionManager );
+        this.config = config;
         this.ssgKeyStoreManager = ssgKeyStoreManager;
+        this.clusterPropertyCache = clusterPropertyCache;
+        this.clusterPropertyManager = clusterPropertyManager;
         this.defaultKey = defaultKey;
         this.applicationEventPublisher = applicationEventPublisher;
     }
@@ -146,7 +158,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
         return transactional( new TransactionalCallback<Collection<Map<String, String>>, ObjectModelException>(){
             @Override
             public Collection<Map<String, String>> execute() throws ObjectModelException {
-                return Functions.map( getEntityHeaders(), new Functions.Unary<Map<String,String>,SsgKeyHeader>(){
+                return Functions.map( getEntityHeaders(), new Functions.Unary<Map<String, String>, SsgKeyHeader>() {
                     @Override
                     public Map<String, String> call( final SsgKeyHeader header ) {
                         return Collections.singletonMap( IDENTITY_SELECTOR, header.getStrId() );
@@ -164,30 +176,27 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
 
         final PrivateKeyMO privateKeyResource = (PrivateKeyMO) resource;
 
-        return transactional( new TransactionalCallback<PrivateKeyMO, ResourceFactoryException>(){
+        return transactional( new TransactionalCallback<PrivateKeyMO, ResourceFactoryException>() {
             @Override
             public PrivateKeyMO execute() throws ObjectModelException, ResourceFactoryException {
-                final Pair<Long,String> keyId = getKeyId( selectorMap );
+                final Pair<Long, String> keyId = getKeyId( selectorMap );
                 final SsgKeyEntry ssgKeyEntry = getSsgKeyEntry( keyId );
 
                 checkPermitted( OperationType.UPDATE, null, ssgKeyEntry );
 
                 final List<CertificateData> certificateChain = privateKeyResource.getCertificateChain();
                 if ( certificateChain == null || certificateChain.isEmpty() )
-                    throw new InvalidResourceException(InvalidResourceException.ExceptionType.MISSING_VALUES, "certificate chain");
+                    throw new InvalidResourceException( InvalidResourceException.ExceptionType.MISSING_VALUES, "certificate chain" );
 
                 final X509Certificate[] certificates = toCertificateArray( certificateChain );
-
-                final SsgKeyStore keystore = getSsgKeyStore( ssgKeyEntry.getKeystoreId() );
                 try {
-                    final Future<Boolean> future =
-                            keystore.replaceCertificateChain(auditAfterUpdate(keyId, "certificateChain", "replaced"), keyId.right, certificates);
-                    future.get();
-                } catch ( final ExecutionException e ) {
-                    final Throwable t = e.getCause()!=null ? e.getCause() : e;
-                    throw new UpdateException("Error setting new cert: " + ExceptionUtils.getMessage(t), t);
-                } catch ( final Exception e) {
-                    throw new UpdateException("Error setting new cert: " + ExceptionUtils.getMessage(e), e);
+                    final PrivateKeyAdminHelper helper = getPrivateKeyAdminHelper();
+                    helper.doUpdateCertificateChain(
+                            ssgKeyEntry.getKeystoreId(),
+                            ssgKeyEntry.getAlias(),
+                            certificates );
+                } catch ( final Exception e ) {
+                    throw new UpdateException( "Error setting new cert: " + ExceptionUtils.getMessage( e ), e );
                 }
 
                 return buildPrivateKeyResource( getSsgKeyEntry( keyId ) );
@@ -197,29 +206,166 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
 
     @Override
     public String deleteResource( final Map<String, String> selectorMap ) throws ResourceNotFoundException {
-        return transactional( new TransactionalCallback<String,ResourceNotFoundException>(){
+        return transactional( new TransactionalCallback<String, ResourceNotFoundException>() {
             @SuppressWarnings({ "unchecked" })
             @Override
             public String execute() throws ObjectModelException, ResourceNotFoundException {
-                final Pair<Long,String> keyId = getKeyId( selectorMap );
+                final Pair<Long, String> keyId = getKeyId( selectorMap );
                 final SsgKeyEntry ssgKeyEntry = getSsgKeyEntry( keyId );
 
                 checkPermitted( OperationType.DELETE, null, ssgKeyEntry );
 
                 final SsgKeyStore keystore = getSsgKeyStore( ssgKeyEntry.getKeystoreId() );
                 try {
-                    if ( isKeyActive(keystore, ssgKeyEntry.getAlias() ) )
-                        throw new ResourceFactory.ResourceAccessException("Policy is invalid.");
+                    final PrivateKeyAdminHelper helper = getPrivateKeyAdminHelper();
+                    if ( helper.isKeyActive( keystore, ssgKeyEntry.getAlias() ) )
+                        throw new ResourceFactory.ResourceAccessException( "Policy is invalid." );
 
-                    Future<Boolean> result = keystore.deletePrivateKeyEntry(auditAfterDelete(keystore, ssgKeyEntry.getAlias()), ssgKeyEntry.getAlias());
-                    result.get();
-                } catch (Exception e) {
-                    throw new DeleteException("Error deleting key: " + ExceptionUtils.getMessage(e), e);
+                    helper.doDeletePrivateKeyEntry( keystore, ssgKeyEntry.getAlias() );
+                } catch ( KeyStoreException e ) {
+                    throw new DeleteException( "Error deleting key: " + ExceptionUtils.getMessage( e ), e );
                 }
 
                 return toExternalId( keyId.left, keyId.right );
             }
-        }, false, ResourceNotFoundException.class);
+        }, false, ResourceNotFoundException.class );
+    }
+
+    @ResourceMethod(name="SetSpecialPurposes", resource=true, selectors=true)
+    public PrivateKeyMO setSpecialPurposes( final Map<String,String> selectorMap,
+                                            final PrivateKeySpecialPurposeContext resource ) throws ResourceNotFoundException, InvalidResourceException {
+        transactional( new TransactionalCallback<Void,ResourceFactoryException>(){
+            @Override
+            public Void execute() throws ObjectModelException, ResourceFactoryException {
+                final SsgKeyEntry entry = getSsgKeyEntry( getKeyId( selectorMap ) );
+                checkPermitted( OperationType.READ, null, entry );
+
+                final List<String> specialPurposes = resource.getSpecialPurposes();
+                final List<Either<String,SpecialKeyType>> processedPurposes = map( specialPurposes, new Unary<Either<String,SpecialKeyType>,String>(){
+                    @Override
+                    public Either<String,SpecialKeyType> call( final String specialPurpose ) {
+                        try {
+                            return right( EntityPropertiesHelper.getEnumValue( SpecialKeyType.class, specialPurpose ) );
+                        } catch ( InvalidResourceException e ) {
+                            return left( specialPurpose );
+                        }
+                    }
+                } );
+                final List<String> invalidSpecialPurposes = lefts( processedPurposes );
+                if ( !invalidSpecialPurposes.isEmpty() ) {
+                    throw new InvalidResourceException( ExceptionType.INVALID_VALUES, "Invalid special purpose(s): " + invalidSpecialPurposes );
+                }
+                foreach( rights( processedPurposes ), false, new UnaryVoidThrows<SpecialKeyType,ObjectModelException>(){
+                    @Override
+                    public void call( final SpecialKeyType specialKeyType ) throws ObjectModelException {
+                        final String clusterPropertyName =
+                                PrivateKeyAdminHelper.getClusterPropertyForSpecialKeyType( specialKeyType );
+                        final Option<ClusterProperty> propertyOption = optional( clusterPropertyManager.findByUniqueName( clusterPropertyName ) );
+                        final ClusterProperty property = propertyOption.orSome( new Nullary<ClusterProperty>(){
+                            @Override
+                            public ClusterProperty call() {
+                                return new ClusterProperty( clusterPropertyName, null );
+                            }
+                        } );
+                        saveOrUpdateClusterProperty( property, toClusterPropertyValue( entry.getKeystoreId(), entry.getAlias() ) );
+                    }
+                } );
+
+                return null;
+            }
+        }, false, InvalidResourceException.class, ResourceNotFoundException.class );
+
+        return getResource( selectorMap ); // get in new transaction to see updates
+    }
+
+    @ResourceMethod(name="GenerateCSR", resource=true, selectors=true)
+    public PrivateKeyGenerateCsrResult generateCSR( final Map<String,String> selectorMap,
+                                                    final PrivateKeyGenerateCsrContext resource ) throws ResourceNotFoundException, InvalidResourceException {
+        return transactional( new TransactionalCallback<PrivateKeyGenerateCsrResult, ResourceFactoryException>() {
+            @Override
+            public PrivateKeyGenerateCsrResult execute() throws ObjectModelException, ResourceFactoryException {
+                final SsgKeyEntry entry = getSsgKeyEntry( getKeyId( selectorMap ) );
+                checkPermitted( OperationType.READ, null, entry );
+
+                final byte[] csrData;
+                final String dn = optional( resource.getDn() ).orSome( entry.getSubjectDN() );
+                final X500Principal principal = new X500Principal( dn );
+                try {
+                    final SsgKeyStore ssgKeyStore = getSsgKeyStore( entry.getKeystoreId() );
+                    final Map<String, Object> properties = resource.getProperties();
+                    final Option<String> signatureHashAlgorithm = getProperty( properties, PrivateKeyGenerateCsrContext.PROP_SIGNATURE_HASH, Option.<String>none(), String.class );
+
+                    final CertificateRequest res = ssgKeyStore.makeCertificateSigningRequest(
+                            entry.getAlias(),
+                            new CertGenParams(
+                                    principal,
+                                    config.getIntProperty( "pkix.csr.defaultExpiryAge", DEFAULT_CSR_EXPIRY_DAYS ),
+                                    false,
+                                    signatureHashAlgorithm.map( getSignatureAlgorithmMapper( entry.getPrivateKey().getAlgorithm() ) ).toNull() ) );
+                    csrData = res.getEncoded();
+                } catch ( SignatureException e ) {
+                    throw new ResourceAccessException( ExceptionUtils.getMessage( e ), e );
+                } catch ( KeyStoreException e ) {
+                    throw new ResourceAccessException( ExceptionUtils.getMessage( e ), e );
+                } catch ( InvalidKeyException e ) {
+                    throw new ResourceAccessException( ExceptionUtils.getMessage( e ), e );
+                } catch ( UnrecoverableKeyException e ) {
+                    throw new ResourceAccessException( ExceptionUtils.getMessage( e ), e );
+                }
+
+                final PrivateKeyGenerateCsrResult result = new PrivateKeyGenerateCsrResult();
+                result.setCsrData( csrData );
+                return result;
+            }
+        }, true, InvalidResourceException.class, ResourceNotFoundException.class );
+    }
+
+    @ResourceMethod(name="CreateKey", resource=true, selectors=true)
+    public PrivateKeyMO createPrivateKey( final Map<String,String> selectorMap,
+                                          final PrivateKeyCreationContext resource ) throws InvalidResourceException {
+        return transactional( new TransactionalCallback<PrivateKeyMO,ResourceFactoryException>(){
+            @Override
+            public PrivateKeyMO execute() throws ObjectModelException, ResourceFactoryException {
+                final Pair<Long,String> keyId = getKeyId( selectorMap );
+                checkPermitted( OperationType.CREATE, null, null );
+
+                final long keystoreId = keyId.left;
+                final String alias = keyId.right;
+
+                final PrivateKeyAdminHelper helper = getPrivateKeyAdminHelper();
+                final Map<String,Object> properties = resource.getProperties();
+                final String dn = resource.getDn();
+                final Option<String> curveName = getProperty( properties, PrivateKeyCreationContext.PROP_ELLIPTIC_CURVE_NAME, Option.<String>none(), String.class );
+                final int keybits = getProperty( properties, PrivateKeyCreationContext.PROP_RSA_KEY_SIZE, some( DEFAULT_RSA_KEY_SIZE ), Integer.class).some();
+                final int expiryDays = getProperty( properties, PrivateKeyCreationContext.PROP_DAYS_UNTIL_EXPIRY, some( DEFAULT_CERTIFICATE_EXPIRY_DAYS ), Integer.class ).some();
+                final boolean makeCaCert = getProperty( properties, PrivateKeyCreationContext.PROP_CA_CAPABLE, some( false ), Boolean.class).some();
+                final Option<String> signatureHashAlgorithm = getProperty( properties, PrivateKeyCreationContext.PROP_SIGNATURE_HASH, Option.<String>none(), String.class );
+
+                try {
+                    final KeyGenParams keyGenParams = curveName.isSome() ?
+                            new KeyGenParams(curveName.some()) :
+                            new KeyGenParams(keybits);
+
+                    helper.doGenerateKeyPair(
+                            keystoreId,
+                            alias,
+                            new X500Principal(dn, ValidationUtils.getOidKeywordMap()),
+                            keyGenParams,
+                            expiryDays,
+                            makeCaCert,
+                            signatureHashAlgorithm.map( getSignatureAlgorithmMapper( keyGenParams.getAlgorithm() ) ).toNull())
+                            .get();
+                } catch ( GeneralSecurityException e ) {
+                    throw new ResourceAccessException( ExceptionUtils.getMessage(e), e );
+                } catch ( InterruptedException e ) {
+                    throw new ResourceAccessException( ExceptionUtils.getMessage(e), e );
+                } catch ( ExecutionException e ) {
+                    throw new ResourceAccessException( ExceptionUtils.getMessage(e), e );
+                }
+
+                return buildPrivateKeyResource( getSsgKeyEntry( keyId ) );
+            }
+        }, false, InvalidResourceException.class );
     }
 
     @ResourceMethod(name="ImportKey", resource=true, selectors=true)
@@ -231,49 +377,19 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                 final Pair<Long,String> keyId = getKeyId( selectorMap );
                 checkPermitted( OperationType.CREATE, null, null );
 
+                final long keystoreId = keyId.left;
                 final String alias = keyId.right;
                 final byte[] pkcs12bytes = resource.getPkcs12Data();
                 final char[] pkcs12pass = resource.getPassword().toCharArray();
                 String pkcs12alias = resource.getAlias();
 
                 try {
-                    KeyStore inks = createKeyStoreForParsingPkcs12();
-                    inks.load(new ByteArrayInputStream(pkcs12bytes), pkcs12pass);
-
-                    if (pkcs12alias == null) {
-                        List<String> aliases = new ArrayList<String>(Collections.list(inks.aliases()));
-                        if (aliases.isEmpty())
-                            throw new AliasNotFoundException("PKCS#12 file contains no private key entries");
-                        if (aliases.size() > 1) {
-                            // Retain private keys and filter out those certificates.
-                            for ( Iterator<String> itr = aliases.iterator(); itr.hasNext();) {
-                                if (! inks.isKeyEntry(itr.next())) {
-                                    itr.remove();
-                                }
-                            }
-                            throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "Multiple aliases - " + aliases );
-                        }
-                        pkcs12alias = aliases.iterator().next();
-                    }
-
-                    Certificate[] chain = inks.getCertificateChain(pkcs12alias);
-                    Key key = inks.getKey(pkcs12alias, pkcs12pass);
-                    if (chain == null || key == null)
-                        throw new AliasNotFoundException("alias not found in PKCS#12 file: " + pkcs12alias);
-
-                    X509Certificate[] x509chain = CertUtils.asX509CertificateArray(chain);
-                    if (!(key instanceof PrivateKey))
-                        throw new KeyStoreException("Key entry is not a PrivateKey: " + key.getClass());
-
-                    SsgKeyStore keystore = getSsgKeyStore(keyId.left);
-                    SsgKeyEntry entry = new SsgKeyEntry(keystore.getOid(), alias, x509chain, (PrivateKey)key);
-                    Future<Boolean> future = keystore.storePrivateKeyEntry(auditAfterCreate(keystore, alias, "imported"), entry, false);
-                    if (!future.get())
-                        throw new KeyStoreException("Import operation returned false"); // can't happen
-
-                    return buildPrivateKeyResource( keystore.getCertificateChain(alias) );
+                    final PrivateKeyAdminHelper helper = getPrivateKeyAdminHelper();
+                    return buildPrivateKeyResource( helper.doImportKeyFromPkcs12(keystoreId, alias, pkcs12bytes, pkcs12pass, pkcs12alias) );
                 } catch ( AliasNotFoundException e ) {
                     throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "Aliases not found : " + pkcs12alias );
+                } catch ( MultipleAliasesException e ) {
+                    throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "Alias must be specified : " + Arrays.asList( e.getAliases() ) );
                 } catch ( IOException e ) {
                     throw new ResourceAccessException( ExceptionUtils.getMessage(e), e );
                 } catch ( CertificateException e ) {
@@ -302,41 +418,26 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
             @Override
             public PrivateKeyExportResult execute() throws ObjectModelException, ResourceFactoryException {
                 final SsgKeyEntry entry = getSsgKeyEntry( getKeyId( selectorMap ) );
-                checkPermitted( OperationType.DELETE, null, entry ); //TODO [steve] permission for export?
+                checkPermitted( OperationType.DELETE, null, entry );
 
-                if ( !entry.isPrivateKeyAvailable() )
-                    throw new ResourceNotFoundException("Private Key cannot be exported.");
+                final char[] exportPassword = resource.getPassword().toCharArray();
+                final String exportAlias = resource.getAlias()==null ? entry.getAlias() : resource.getAlias();
 
                 final byte[] data;
-                final PoolByteArrayOutputStream outputStream = new PoolByteArrayOutputStream();
                 try {
-                    final PrivateKey privateKey = entry.getPrivateKey();
-                    final Certificate[] certChain = entry.getCertificateChain();
-
-                    final char[] exportPassword = resource.getPassword().toCharArray();
-                    final String exportAlias = resource.getAlias()==null ? entry.getAlias() : resource.getAlias();
-
-                    final KeyStore keystore = KeyStore.getInstance("PKCS12", new BouncyCastleProvider());
-                    keystore.load(null, exportPassword);
-                    keystore.setKeyEntry(exportAlias, privateKey, exportPassword, certChain);
-                    keystore.store(outputStream, exportPassword);
-                    data = outputStream.toByteArray();
-                    applicationEventPublisher.publishEvent(new KeyExportedEvent(this, entry.getKeystoreId(), entry.getAlias(), getSubjectDN(entry)));
-                } catch ( IOException e) {
-                    throw new ResourceAccessException( ExceptionUtils.getMessage(e), e );
-                } catch ( NoSuchAlgorithmException e ) {
-                    throw new ResourceAccessException( ExceptionUtils.getMessage(e), e );
-                } catch ( CertificateException e ) {
-                    throw new ResourceAccessException( ExceptionUtils.getMessage(e), e );
+                    final PrivateKeyAdminHelper helper = getPrivateKeyAdminHelper();
+                    data = helper.doExportKeyAsPkcs12(
+                            entry.getKeystoreId(),
+                            entry.getAlias(),
+                            exportAlias,
+                            exportPassword );
                 } catch ( UnrecoverableKeyException e ) {
-                    throw new ResourceAccessException( ExceptionUtils.getMessage(e), e );
+                    throw new ResourceNotFoundException("Private Key cannot be exported.");
                 } catch ( KeyStoreException e ) {
                     throw new ResourceAccessException( ExceptionUtils.getMessage(e), e );
-                } finally {
-                    outputStream.close();
                 }
 
-                final PrivateKeyExportResult result = ManagedObjectFactory.createPrivateKeyExportResult();
+                final PrivateKeyExportResult result = new PrivateKeyExportResult();
                 result.setPkcs12Data( data );
                 return result;
             }
@@ -397,10 +498,20 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
     private static final Logger logger = Logger.getLogger( PrivateKeyResourceFactory.class.getName() );
 
     private static final String IDENTITY_SELECTOR = "id";
+    private static final int DEFAULT_CERTIFICATE_EXPIRY_DAYS = SyspropUtil.getInteger( "com.l7tech.external.assertions.gatewaymanagement.defaultCertificateExpiryDays", 365 * 5 );
+    private static final int DEFAULT_CSR_EXPIRY_DAYS = SyspropUtil.getInteger( "com.l7tech.external.assertions.gatewaymanagement.defaultCsrExpiryDays", 365 * 2);
+    private static final int DEFAULT_RSA_KEY_SIZE = SyspropUtil.getInteger( "com.l7tech.external.assertions.gatewaymanagement.defaultRsaKeySize", 2048 );
 
+    private final Config config;
     private final SsgKeyStoreManager ssgKeyStoreManager;
+    private final ClusterPropertyCache clusterPropertyCache;
+    private final ClusterPropertyManager clusterPropertyManager;
     private final DefaultKey defaultKey;
     private final ApplicationEventPublisher applicationEventPublisher;
+
+    private PrivateKeyAdminHelper getPrivateKeyAdminHelper() {
+        return new PrivateKeyAdminHelper( defaultKey, ssgKeyStoreManager, applicationEventPublisher );
+    }
 
     private Pair<Long,String> getKeyId( final Map<String,String> selectorMap ) throws InvalidResourceSelectors {
         return toInternalId( selectorMap.get( IDENTITY_SELECTOR ), SELECTOR_THROWER );
@@ -522,94 +633,72 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
         return data;
     }
 
+    private Unary<String,String> getSignatureAlgorithmMapper( final String keyAlgorithm ) {
+        return new Unary<String, String>(){
+            @Override
+            public String call( final String hashAlgorithm ) {
+                return KeyGenParams.getSignatureAlgorithm( keyAlgorithm, hashAlgorithm );
+            }
+        };
+    }
+
+    private String toClusterPropertyValue( final long keystoreId,
+                                           final String alias ) {
+        // currently this is the same as the external identifier format
+        return toExternalId( keystoreId, alias );
+    }
+
+    /**
+     * Persist the cluster property with the given value with permission enforcement.
+     */
+    private void saveOrUpdateClusterProperty( final ClusterProperty property,
+                                              final String updatedValue ) throws ObjectModelException {
+        property.setValue( updatedValue );
+
+        try {
+            validate(property);
+        } catch (InvalidResourceException e) {
+            throw new ResourceAccessException( "Updated cluster property value is invalid", e);
+        }
+
+        if ( property.getOid() == PersistentEntity.DEFAULT_OID ) {
+            checkPermitted( OperationType.CREATE, null, property );
+            clusterPropertyManager.save(property);
+        } else {
+            checkPermitted( OperationType.UPDATE, null, property );
+            clusterPropertyManager.update(property);
+            property.getOid();
+        }
+    }
+
     private Map<String, Object> buildProperties( final SsgKeyEntry ssgKeyEntry ) {
-        Map<String,Object> properties = new HashMap<String,Object>();
+        final Map<String,Object> properties = new HashMap<String,Object>();
         try {
             properties.put( "keyAlgorithm", ssgKeyEntry.getPrivateKey().getAlgorithm() );
         } catch ( UnrecoverableKeyException e ) {
             logger.log( Level.WARNING, "Error accessing private key '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e) );           
         }
+
+        final List<SpecialKeyType> types = new ArrayList<SpecialKeyType>();
+        for ( final SpecialKeyType keyType : SpecialKeyType.values() ) {
+            final String propertyName = PrivateKeyAdminHelper.getClusterPropertyForSpecialKeyType( keyType );
+            final Option<ClusterProperty> clusterProperty = optional( clusterPropertyCache.getCachedEntityByName( propertyName ) );
+            final String externalId = toClusterPropertyValue( ssgKeyEntry.getKeystoreId(), ssgKeyEntry.getAlias() );
+            clusterProperty.foreach( new UnaryVoid<ClusterProperty>() {
+                @Override
+                public void call( final ClusterProperty clusterProperty ) {
+                    if( externalId.equalsIgnoreCase( clusterProperty.getValue() ) ) {
+                        types.add( keyType );
+                    }
+                }
+            } );
+        }
+
+        if ( !types.isEmpty() ) {
+            properties.put( "specialPurposes", join( ",", Functions.<SpecialKeyType, String>map( types, EntityPropertiesHelper.getEnumText() ) ).toString() );
+        }
+
         return properties;
     }
-
-    private boolean isKeyActive(SsgKeyFinder store, String keyAlias) throws KeyStoreException {
-        HttpServletRequest req = RemoteUtils.getHttpServletRequest();
-        if (null == req)
-            return false;
-        SsgConnector connector = HttpTransportModule.getConnector(req);
-        if (null == connector)
-            return false;
-        if (connector.getKeyAlias() != null && !keyAlias.equalsIgnoreCase(connector.getKeyAlias()))
-            return false;
-        Long portStoreOid = connector.getKeystoreOid();
-        if (portStoreOid != null && portStoreOid != store.getOid())
-            return false;
-
-        final SsgKeyEntry entry;
-        try {
-            entry = store.getCertificateChain(keyAlias);
-        } catch (ObjectNotFoundException e) {
-            return false;
-        }
-
-        try {
-            SsgKeyEntry portEntry = findKeyEntry(connector.getKeyAlias(), portStoreOid != null ? portStoreOid : -1L );
-            return CertUtils.certsAreEqual(portEntry.getCertificate(), entry.getCertificate());
-        } catch (FindException e) {
-            return false;
-        }
-    }
-
-    private SsgKeyEntry findKeyEntry(String keyAlias, long preferredKeystoreOid) throws FindException, KeyStoreException {
-        try {
-            return keyAlias == null ? defaultKey.getSslInfo() : ssgKeyStoreManager.lookupKeyByKeyAlias(keyAlias, preferredKeystoreOid);
-        } catch ( IOException e) {
-            // No default SSL key
-            return null;
-        } catch (ObjectNotFoundException e) {
-            return null;
-        }
-    }
-
-    private String getSubjectDN(SsgKeyEntry entry) {
-        X509Certificate cert = entry.getCertificate();
-        if (cert == null) return null;
-        return cert.getSubjectDN().getName();
-    }
-
-    private KeyStore createKeyStoreForParsingPkcs12() throws KeyStoreException, NoSuchProviderException {
-        String p = SyspropUtil.getString(PROP_PKCS12_PARSING_PROVIDER, "BC");
-        if (null == p || p.length() < 1 || p.equalsIgnoreCase("default"))
-            return KeyStore.getInstance("PKCS12");
-        if ("BC".equalsIgnoreCase(p))
-            return KeyStore.getInstance("PKCS12", new BouncyCastleProvider());
-        return KeyStore.getInstance("PKCS12", p);
-    }
-
-    private Runnable auditAfterCreate(SsgKeyStore keystore, String alias, String note) {
-        return publisher(new Created<SsgKeyEntry>(SsgKeyEntry.createDummyEntityForAuditing(keystore.getOid(), alias), note));
-    }
-
-    private Runnable auditAfterUpdate( final Pair<Long,String> keyId,
-                                       final String property,
-                                       final String note ) {
-        EntityChangeSet changeset = new EntityChangeSet(new String[] {property}, new Object[] {new Object()}, new Object[] {new Object()});
-        return publisher(new Updated<SsgKeyEntry>(SsgKeyEntry.createDummyEntityForAuditing(keyId.left, keyId.right), changeset, note));
-    }
-
-    private Runnable auditAfterDelete(SsgKeyStore keystore, String alias) {
-        return publisher(new Deleted<SsgKeyEntry>(SsgKeyEntry.createDummyEntityForAuditing(keystore.getOid(), alias)));
-    }
-
-    private Runnable publisher(final ApplicationEvent event) {
-        return new CallableRunnable<Object>( AdminInfo.find(true).wrapCallable(new Callable<Object>() {
-            @Override
-            public Object call() throws Exception {
-                if ( applicationEventPublisher != null ) applicationEventPublisher.publishEvent(event);
-                return null;
-            }
-        }));
-    }
-
 
 }

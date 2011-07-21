@@ -34,6 +34,8 @@ import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.server.EntityManagerStub;
 import com.l7tech.server.MockClusterPropertyManager;
+import com.l7tech.server.cluster.ClusterPropertyCache;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.globalresources.ResourceEntryManagerStub;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.TestIdentityProviderConfigManager;
@@ -56,6 +58,7 @@ import com.l7tech.server.uddi.ServiceWsdlUpdateChecker;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.MockConfig;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.mock.web.MockServletContext;
@@ -76,6 +79,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
 import java.util.UUID;
 import javax.xml.soap.SOAPConstants;
 
@@ -238,7 +242,7 @@ public class ServerGatewayManagementAssertionTest {
                 "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Get</a:Action> \n" +
                 "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/interfaceTags</w:ResourceURI> \n" +
                 "    <w:SelectorSet>\n" +
-                "      <w:Selector Name=\"id\">localhost</w:Selector> \n" +
+                "      <w:Selector Name=\"name\">localhost</w:Selector> \n" +
                 "    </w:SelectorSet>\n" +
                 "    <w:OperationTimeout>PT60.000S</w:OperationTimeout> \n" +
                 "  </s:Header>\n" +
@@ -248,11 +252,13 @@ public class ServerGatewayManagementAssertionTest {
         final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Get", message );
 
         final Element soapBody = SoapUtil.getBodyElement(result);
-        final Element interfaceTag = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "InterfaceTag");
+        final Element interfaceTag = XmlUtil.findExactlyOneChildElementByName( soapBody, NS_GATEWAY_MANAGEMENT, "InterfaceTag" );
+        final Element name = XmlUtil.findExactlyOneChildElementByName(interfaceTag, NS_GATEWAY_MANAGEMENT, "Name");
         final Element addressPatterns = XmlUtil.findExactlyOneChildElementByName(interfaceTag, NS_GATEWAY_MANAGEMENT, "AddressPatterns");
         final Element stringValue = XmlUtil.findExactlyOneChildElementByName(addressPatterns, NS_GATEWAY_MANAGEMENT, "StringValue");
 
-        assertEquals("Interface tag id", "localhost", interfaceTag.getAttribute("id"));
+        assertEquals("Interface tag id", "421aa90e-079f-3326-b649-4f812ad13e79", interfaceTag.getAttribute("id"));
+        assertEquals("Interface tag name", "localhost", XmlUtil.getTextValue( name ));
         assertEquals("Interface tag ip pattern", "127.0.0.1", XmlUtil.getTextValue(stringValue));
     }
 
@@ -365,7 +371,7 @@ public class ServerGatewayManagementAssertionTest {
     public void testCreateClusterProperty() throws Exception {
         String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/clusterProperties";
         String payload = "<n1:ClusterProperty xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\"><n1:Name>test</n1:Name><n1:Value>value</n1:Value></n1:ClusterProperty>";
-        String expectedId = "5";
+        String expectedId = "6";
         doCreate( resourceUri, payload, expectedId );
     }
 
@@ -379,7 +385,7 @@ public class ServerGatewayManagementAssertionTest {
     @Test
     public void testCreateService() throws Exception {
         String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/services";
-        String payload = "<Service xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\"><ServiceDetail><Name>Warehouse Service</Name><Enabled>true</Enabled><ServiceMappings><HttpMapping><UrlPattern>/waremulti</UrlPattern><Verbs><Verb>POST</Verb></Verbs></HttpMapping></ServiceMappings><Properties><Property key=\"soap\"><BooleanValue>false</BooleanValue></Property></Properties></ServiceDetail><Resources><ResourceSet tag=\"policy\"><Resource type=\"policy\">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n" +
+        String payload = "<Service xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\"><ServiceDetail folderId=\"1\"><Name>Warehouse Service</Name><Enabled>true</Enabled><ServiceMappings><HttpMapping><UrlPattern>/waremulti</UrlPattern><Verbs><Verb>POST</Verb></Verbs></HttpMapping></ServiceMappings><Properties><Property key=\"soap\"><BooleanValue>false</BooleanValue></Property></Properties></ServiceDetail><Resources><ResourceSet tag=\"policy\"><Resource type=\"policy\">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n" +
                 "&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;\n" +
                 "    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;\n" +
                 "        &lt;L7p:EchoRoutingAssertion/&gt;\n" +
@@ -442,14 +448,15 @@ public class ServerGatewayManagementAssertionTest {
     public void testCreateInterfaceTag() throws Exception {
         String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/interfaceTags";
         String payload =
-                "<InterfaceTag id=\"test\" xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                "<InterfaceTag xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                "    <Name>test</Name>\n" +
                 "    <AddressPatterns>\n" +
-                "    <StringValue>192.168</StringValue>\n" +
-                "    <StringValue>10.0.0.0/8</StringValue>\n" +
-                "    <StringValue>127</StringValue>\n" +
+                "        <StringValue>192.168</StringValue>\n" +
+                "        <StringValue>10.0.0.0/8</StringValue>\n" +
+                "        <StringValue>127</StringValue>\n" +
                 "    </AddressPatterns>\n" +
                 "</InterfaceTag>";
-        doCreate( resourceUri, payload, "test" );
+        doCreate( resourceUri, payload, "098f6bcd-4621-3373-8ade-4e832627b4f6" );
     }
 
     @Test
@@ -612,7 +619,7 @@ public class ServerGatewayManagementAssertionTest {
     @Test
     public void testCreatePolicy() throws Exception {
         String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/policies";
-        String payload = "<Policy xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\"><PolicyDetail><Name>Policy Name</Name><PolicyType>Include</PolicyType><Properties><Property key=\"soap\"><BooleanValue>true</BooleanValue></Property></Properties></PolicyDetail><Resources><ResourceSet tag=\"policy\"><Resource type=\"policy\">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n" +
+        String payload = "<Policy xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\"><PolicyDetail folderId=\"1\"><Name>Policy Name</Name><PolicyType>Include</PolicyType><Properties><Property key=\"soap\"><BooleanValue>true</BooleanValue></Property></Properties></PolicyDetail><Resources><ResourceSet tag=\"policy\"><Resource type=\"policy\">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n" +
                 "&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;\n" +
                 "    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;\n" +
                 "        &lt;L7p:CommentAssertion&gt;\n" +
@@ -705,6 +712,25 @@ public class ServerGatewayManagementAssertionTest {
         final Element name = XmlUtil.findExactlyOneChildElementByName(folder, NS_GATEWAY_MANAGEMENT, "Name");
 
         assertEquals("Name", "Test Folder (updated)", XmlUtil.getTextValue(name));
+    }
+
+    @Test
+    public void testPutInterfaceTag() throws Exception {
+        String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/interfaceTags</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"name\">localhost</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body> <l7:InterfaceTag xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\" id=\"421aa90e-079f-3326-b649-4f812ad13e79\" version=\"0\"><l7:Name>localhost</l7:Name><l7:AddressPatterns><l7:StringValue>127.0.0.1</l7:StringValue><l7:StringValue>127.0.0.2</l7:StringValue></l7:AddressPatterns></l7:InterfaceTag> </s:Body></s:Envelope>";
+
+        final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Put", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element interfaceTag = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "InterfaceTag");
+        final Element name = XmlUtil.findExactlyOneChildElementByName(interfaceTag, NS_GATEWAY_MANAGEMENT, "Name");
+        final Element addressPatterns = XmlUtil.findExactlyOneChildElementByName(interfaceTag, NS_GATEWAY_MANAGEMENT, "AddressPatterns");
+        final List<Element> stringValues = XmlUtil.findChildElementsByName( addressPatterns, NS_GATEWAY_MANAGEMENT, "StringValue" );
+
+        assertEquals("Interface tag id", "421aa90e-079f-3326-b649-4f812ad13e79", interfaceTag.getAttribute( "id" ));
+        assertEquals("Interface tag name", "localhost", XmlUtil.getTextValue(name));
+        assertEquals( "Interface tag two patterns", 2L, (long)stringValues.size() );
+        assertEquals("Interface tag ip pattern 1", "127.0.0.1", XmlUtil.getTextValue(stringValues.get( 0 )));
+        assertEquals("Interface tag ip pattern 2", "127.0.0.2", XmlUtil.getTextValue(stringValues.get( 1 )));
     }
 
     @Test
@@ -1719,15 +1745,19 @@ public class ServerGatewayManagementAssertionTest {
     @SuppressWarnings({"serial"})
     public static void init() throws Exception {
         new AssertionRegistry(); // causes type mappings to be installed for assertions
-        Folder rootFolder = folder( -5002L, null, "Root Node");
-        beanFactory.addBean( "trustedCertManager", new TestTrustedCertManager(
-                cert( 1L, "Alice", TestDocuments.getWssInteropAliceCert()),
-                cert( 2L, "Bob", TestDocuments.getWssInteropBobCert()) ) );
-        beanFactory.addBean( "clusterPropertyManager", new MockClusterPropertyManager(
+        final Folder rootFolder = folder( -5002L, null, "Root Node");
+        final ClusterPropertyManager clusterPropertyManager = new MockClusterPropertyManager(
                 prop( 1L, "testProp1", "testValue1"),
                 prop( 2L, "testProp2", "testValue2"),
                 prop( 3L, "testProp3", "testValue3"),
-                prop( 4L, "interfaceTags", "localhost(127.0.0.1)")));
+                prop( 4L, "interfaceTags", "localhost(127.0.0.1)"),
+                prop( 5L, "keyStore.defaultSsl.alias", "0:bob" ) );
+        beanFactory.addBean( "serverConfig", new MockConfig( new Properties() ) );
+        beanFactory.addBean( "trustedCertManager", new TestTrustedCertManager(
+                cert( 1L, "Alice", TestDocuments.getWssInteropAliceCert()),
+                cert( 2L, "Bob", TestDocuments.getWssInteropBobCert()) ) );
+        beanFactory.addBean( "clusterPropertyCache", new ClusterPropertyCache(){{ setClusterPropertyManager( clusterPropertyManager ); }});
+        beanFactory.addBean( "clusterPropertyManager", clusterPropertyManager);
         beanFactory.addBean( "resourceEntryManager", new ResourceEntryManagerStub(
                 resource( 1L,"books.xsd", ResourceType.XML_SCHEMA, "urn:books", "<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><xs:element name=\"book\" type=\"xs:string\"/></xs:schema>", null),
                 resource( 2L,"books_refd.xsd", ResourceType.XML_SCHEMA, "urn:booksr", "<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><xs:element name=\"book\" type=\"xs:string\"/></xs:schema>", "The booksr schema."),
@@ -1893,7 +1923,7 @@ public class ServerGatewayManagementAssertionTest {
         final Element selectorSet = XmlUtil.findExactlyOneChildElementByName(refParameters, NS_WS_MANAGEMENT, "SelectorSet");
         final Element selector = XmlUtil.findExactlyOneChildElementByName(selectorSet, NS_WS_MANAGEMENT, "Selector");
 
-        assertTrue("Identifier in " + Arrays.asList( expectedIds ), ArrayUtils.containsIgnoreCase( expectedIds, XmlUtil.getTextValue(selector)));
+        assertTrue("Identifier in " + Arrays.asList( expectedIds ) + ": "+ XmlUtil.getTextValue(selector), ArrayUtils.containsIgnoreCase( expectedIds, XmlUtil.getTextValue(selector)));
     }
 
     private void doCreateFail( final String resourceUri,

@@ -8,6 +8,9 @@ import java.io.Serializable;
  * Used for requests sent from the SSM since JCE spec classes are not serializable.
  */
 public class KeyGenParams implements Serializable {
+    public static final String ALGORITHM_RSA = "RSA";
+    public static final String ALGORITHM_EC = "EC";
+
     // Key generation
     private String algorithm;
     private int keySize;
@@ -25,7 +28,7 @@ public class KeyGenParams implements Serializable {
      * @param rsaKeyBits size of the RSA key in bits, ie 2048.
      */
     public KeyGenParams(int rsaKeyBits) {
-        this.algorithm = "RSA";
+        this.algorithm = ALGORITHM_RSA;
         this.keySize = rsaKeyBits;
     }
 
@@ -35,7 +38,7 @@ public class KeyGenParams implements Serializable {
      * @param eccCurveName the named curve to use, ie "secp384r1".
      */
     public KeyGenParams(String eccCurveName) {
-        this.algorithm = "EC";
+        this.algorithm = ALGORITHM_EC;
         this.namedParam = eccCurveName;
     }
 
@@ -83,5 +86,27 @@ public class KeyGenParams implements Serializable {
      */
     public void setNamedParam(String namedParam) {
         this.namedParam = namedParam;
+    }
+
+    /**
+     * Get the signature algorithm to use for the given key algorithm and hash.
+     *
+     * @param keyAlgorithm The key algorithm (e.g. RSA)
+     * @param hashAlgorithm The hash algorithm
+     * @return The algorithm or null if the key type is unknown or the hashAlgorithm was null
+     */
+    public static String getSignatureAlgorithm( final String keyAlgorithm,
+                                                final String hashAlgorithm ) {
+        String signatureAlgorithm = null;
+
+        if ( hashAlgorithm != null ) {
+            if ( ALGORITHM_RSA.equals( keyAlgorithm ) ) {
+                signatureAlgorithm = hashAlgorithm + "withRSA";
+            } else if ( ALGORITHM_EC.equals( keyAlgorithm ) ) {
+                signatureAlgorithm = hashAlgorithm + "withECDSA";
+            }
+        }
+
+        return signatureAlgorithm;
     }
 }

@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PrivateKeyCreationContext xmlns="http://ns.l7tech.com/2010/04/gateway-management">
+    <Dn>CN=Alias</Dn>
+</PrivateKeyCreationContext>

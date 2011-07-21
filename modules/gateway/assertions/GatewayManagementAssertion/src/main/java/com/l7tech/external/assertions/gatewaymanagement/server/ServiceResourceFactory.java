@@ -1,10 +1,11 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.http.HttpMethod;
+import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.InvalidResourceException.ExceptionType;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.PolicyExportResult;
 import com.l7tech.gateway.api.PolicyImportResult;
-import com.l7tech.gateway.api.PolicyValidationContext;
+import com.l7tech.gateway.api.impl.PolicyValidationContext;
 import com.l7tech.gateway.api.PolicyValidationResult;
 import com.l7tech.gateway.api.Resource;
 import com.l7tech.gateway.api.ResourceSet;
@@ -30,6 +31,7 @@ import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.uddi.ServiceWsdlUpdateChecker;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Option;
+import static com.l7tech.util.Option.optional;
 import com.l7tech.util.TextUtils;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapVersion;
@@ -66,13 +68,15 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
                                    final ServiceDocumentManager serviceDocumentManager,
                                    final ServiceDocumentResolver serviceDocumentResolver,
                                    final ServiceWsdlUpdateChecker uddiServiceWsdlUpdateChecker,
-                                   final PolicyHelper policyHelper ) {
+                                   final PolicyHelper policyHelper,
+                                   final FolderResourceFactory folderResourceFactory ) {
         super( false, false, services, securityFilter, transactionManager, serviceManager );
         this.serviceManager = serviceManager;
         this.serviceDocumentManager = serviceDocumentManager;
         this.serviceDocumentResolver = serviceDocumentResolver;
         this.uddiServiceWsdlUpdateChecker = uddiServiceWsdlUpdateChecker;
         this.policyHelper = policyHelper;
+        this.folderResourceFactory = folderResourceFactory;
     }
 
     @ResourceMethod(name="ImportPolicy", selectors=true, resource=true)
@@ -187,6 +191,12 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
 
         final ServiceMO serviceMO = (ServiceMO) resource;
         final ServiceDetail serviceDetail = serviceMO.getServiceDetail();
+        if ( serviceDetail == null ) {
+            throw new InvalidResourceException(InvalidResourceException.ExceptionType.MISSING_VALUES, "missing details");
+        }
+        final Option<Folder> folder = folderResourceFactory.getFolder( optional( serviceDetail.getFolderId() ) );
+        if ( !folder.isSome() )
+            throw new InvalidResourceException( ExceptionType.INVALID_VALUES, "Folder not found");
         final Map<String,ResourceSet> resourceSetMap = resourceHelper.getResourceSetMap( serviceMO.getResourceSets() );
         final Resource policyResource = resourceHelper.getResource( resourceSetMap, ResourceHelper.POLICY_TAG, ResourceHelper.POLICY_TYPE, true, null );
         final Collection<Resource> wsdlResources = resourceHelper.getResources( resourceSetMap, ResourceHelper.WSDL_TAG, false, new Functions.UnaryThrows<String,String, IOException>(){
@@ -200,15 +210,13 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
                 return resource;
             }
         } );
-        if ( serviceDetail == null ) {
-            throw new InvalidResourceException(InvalidResourceException.ExceptionType.MISSING_VALUES, "missing details");
-        }
-                                                                        
+
         final PublishedService service = new PublishedService();
         final Collection<ServiceDocument> serviceDocuments = new ArrayList<ServiceDocument>();
 
         service.setName( asName(serviceDetail.getName()) );
         service.setDisabled( !serviceDetail.getEnabled() );
+        service.setFolder( folder.some() );
         service.setRoutingUri( getRoutingUri( getServiceMapping(serviceDetail.getServiceMappings(), ServiceDetail.HttpMapping.class) ) );
         service.setHttpMethods( getHttpMethods( getServiceMapping(serviceDetail.getServiceMappings(), ServiceDetail.HttpMapping.class) ) );
         service.setLaxResolution( isLaxResolution( getServiceMapping(serviceDetail.getServiceMappings(), ServiceDetail.SoapMapping.class) ) );
@@ -235,6 +243,7 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
         final ServiceEntityBag newServiceEntityBag = cast( newEntityBag, ServiceEntityBag.class );
         final PublishedService newPublishedService = newServiceEntityBag.getPublishedService();
 
+        oldPublishedService.setFolder( folderResourceFactory.checkMovePermitted( oldPublishedService.getFolder(), newPublishedService.getFolder() ) );
         oldPublishedService.setName( newPublishedService.getName() );
         oldPublishedService.setDisabled( newPublishedService.isDisabled() );
         oldPublishedService.setRoutingUri( newPublishedService.getRoutingUri() );
@@ -273,9 +282,6 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
         final PublishedService service = serviceEntityBag.getPublishedService();
         final Policy policy = service.getPolicy();
 
-        final Folder root = new Folder("Root Node", null);
-        root.setOid( -5002L );
-        service.setFolder( root );
         service.setInternal( false );
 
         if( policy != null ) {
@@ -367,6 +373,7 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
     private final ServiceDocumentResolver serviceDocumentResolver;
     private final ServiceWsdlUpdateChecker uddiServiceWsdlUpdateChecker;
     private final PolicyHelper policyHelper;
+    private final FolderResourceFactory folderResourceFactory;
     private final ResourceHelper resourceHelper = new ResourceHelper();
 
     private List<ServiceDetail.ServiceMapping> buildServiceMappings( final PublishedService publishedService ) {

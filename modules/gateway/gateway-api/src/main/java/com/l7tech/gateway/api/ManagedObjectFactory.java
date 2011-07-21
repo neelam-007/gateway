@@ -1,6 +1,7 @@
 package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.MarshallingUtils;
+import com.l7tech.gateway.api.impl.ValidationUtils;
 import com.l7tech.util.HexUtils;
 import org.w3c.dom.Document;
 
@@ -15,9 +16,6 @@ import java.io.OutputStream;
 import java.io.StringReader;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Factory for managed objects.
@@ -123,7 +121,7 @@ public class ManagedObjectFactory {
     public static CertificateData createCertificateData( final X509Certificate certificate ) throws FactoryException {
         CertificateData data = createCertificateData();
         if ( certificate != null ) {
-            data.setIssuerName( certificate.getIssuerX500Principal().getName( X500Principal.RFC2253, DN_OID_MAP ) );
+            data.setIssuerName( certificate.getIssuerX500Principal().getName( X500Principal.RFC2253, ValidationUtils.getOidKeywordMap() ) );
             data.setSerialNumber( certificate.getSerialNumber() );
             data.setSubjectName( certificate.getSubjectX500Principal().getName() );
             try {
@@ -244,15 +242,6 @@ public class ManagedObjectFactory {
     }
 
     /**
-     * Create a new PolicyValidationContext instance.
-     *
-     * @return The new instance.
-     */
-    public static PolicyValidationContext createPolicyValidationContext() {
-        return new PolicyValidationContext();
-    }
-
-    /**
      * Create a new PolicyValidationResult instance.
      *
      * @return The new instance.
@@ -289,30 +278,12 @@ public class ManagedObjectFactory {
     }
 
     /**
-     * Create a new PrivateKeyExportContext instance.
+     * Create a new PrivateKeyCreationContext instance.
      *
      * @return The new instance.
      */
-    public static PrivateKeyExportContext createPrivateKeyExportContext() {
-        return new PrivateKeyExportContext();
-    }
-
-    /**
-     * Create a new PrivateKeyExportResult instance.
-     *
-     * @return The new instance.
-     */
-    public static PrivateKeyExportResult createPrivateKeyExportResult() {
-        return new PrivateKeyExportResult();
-    }
-
-    /**
-     * Create a new PrivateKeyImportContext instance.
-     *
-     * @return The new instance.
-     */
-    public static PrivateKeyImportContext createPrivateKeyImportContext() {
-        return new PrivateKeyImportContext();
+    public static PrivateKeyCreationContext createPrivateKeyCreationContext() {
+        return new PrivateKeyCreationContext();
     }
 
     /**
@@ -471,18 +442,5 @@ public class ManagedObjectFactory {
             super( cause );
         }
     }
-
-    //- PRIVATE
-
-    private static final Map<String,String> DN_OID_MAP = Collections.unmodifiableMap( new HashMap<String,String>(){{
-        put( "1.2.840.113549.1.9.1", "EMAILADDRESS" );
-        put( "2.5.4.4", "SURNAME" );
-        put( "2.5.4.5", "SERIALNUMBER" );
-        put( "2.5.4.12", "T" );
-        put( "2.5.4.42", "GIVENNAME" );
-        put( "2.5.4.43", "INITIALS" );
-        put( "2.5.4.44", "GENERATION" );
-        put( "2.5.4.46", "DNQ" );
-    }} );
 
 }

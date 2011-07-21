@@ -3,6 +3,7 @@ package com.l7tech.util;
 import com.l7tech.util.Functions.Binary;
 import com.l7tech.util.Functions.Nullary;
 import com.l7tech.util.Functions.Unary;
+import com.l7tech.util.Functions.UnaryThrows;
 import com.l7tech.util.Functions.UnaryVoid;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -130,6 +131,28 @@ public class Option<T> {
      */
     public T toNull() {
         return value;
+    }
+
+    /**
+     * Evaluate the given predicate on this options value.
+     *
+     * @param predicate The predicate to evaluate
+     * @return True if a value exists and the predicate returns true.
+     */
+    public boolean exists( @NotNull Unary<Boolean,? super T> predicate ) {
+        return isSome() && predicate.call( some() );
+    }
+
+    /**
+     * Evaluate the given predicate on this options value.
+     *
+     * @param predicate The predicate to evaluate
+     * @param <E> The exception type
+     * @return True if a value exists and the predicate returns true.
+     * @throws E if the predicate throws E
+     */
+    public <E extends Throwable> boolean exists( @NotNull UnaryThrows<Boolean,? super T, E> predicate ) throws E {
+        return isSome() && predicate.call( some() );
     }
 
     /**

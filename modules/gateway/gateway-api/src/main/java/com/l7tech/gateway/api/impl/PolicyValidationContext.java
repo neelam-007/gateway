@@ -1,10 +1,8 @@
-package com.l7tech.gateway.api;
+package com.l7tech.gateway.api.impl;
 
+import com.l7tech.gateway.api.PolicyDetail.PolicyType;
+import com.l7tech.gateway.api.ResourceSet;
 import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
-
-import com.l7tech.gateway.api.impl.AttributeExtensiblePolicyType;
-import com.l7tech.gateway.api.impl.ElementExtendableManagedObject;
-import com.l7tech.gateway.api.impl.PropertiesMapType;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
@@ -35,7 +33,7 @@ public class PolicyValidationContext extends ElementExtendableManagedObject {
      *
      * @return The type or null.
      */
-    public PolicyDetail.PolicyType getPolicyType() {
+    public PolicyType getPolicyType() {
         return get(policyType);
     }
 
@@ -44,7 +42,7 @@ public class PolicyValidationContext extends ElementExtendableManagedObject {
      *
      * @param policyType The type to use.
      */
-    public void setPolicyType( final PolicyDetail.PolicyType policyType ) {
+    public void setPolicyType( final PolicyType policyType ) {
         this.policyType = setNonNull( this.policyType==null ? new AttributeExtensiblePolicyType() : this.policyType, policyType);
     }
 
@@ -102,11 +100,6 @@ public class PolicyValidationContext extends ElementExtendableManagedObject {
 
     protected void setPolicyTypeValue( final AttributeExtensiblePolicyType policyType ) {
         this.policyType = policyType;
-    }
-
-    //- PACKAGE
-
-    PolicyValidationContext() {
     }
 
     //- PRIVATE

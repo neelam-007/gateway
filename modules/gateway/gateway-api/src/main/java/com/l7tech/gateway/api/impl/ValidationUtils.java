@@ -1,6 +1,7 @@
 package com.l7tech.gateway.api.impl;
 
 import com.l7tech.gateway.api.ManagementRuntimeException;
+import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.ResourceUtils;
 import org.xml.sax.SAXException;
 
@@ -90,10 +91,30 @@ public class ValidationUtils {
         return schema;
     }
 
+    /**
+     * Get a keyword map suitable for use with the X500Principal class.
+     *
+     * @return The map of OIDs to keywords.
+     */
+    public static Map<String,String> getOidKeywordMap() {
+        return OID_KEYWORD_MAP;
+    }
+
     //- PRIVATE
 
     private static Schema schema;
     private static Map<String,String> schemaSources;
+
+    private static final Map<String,String> OID_KEYWORD_MAP = CollectionUtils.<String,String>mapBuilder()
+        .put( "1.2.840.113549.1.9.1", "EMAILADDRESS" )
+        .put( "2.5.4.4", "SURNAME" )
+        .put( "2.5.4.5", "SERIALNUMBER" )
+        .put( "2.5.4.12", "T" )
+        .put( "2.5.4.42", "GIVENNAME" )
+        .put( "2.5.4.43", "INITIALS" )
+        .put( "2.5.4.44", "GENERATION" )
+        .put( "2.5.4.46", "DNQ" )
+        .map();
 
     private static String transform( final String schema ) {
         InputStream schemaIn = null;

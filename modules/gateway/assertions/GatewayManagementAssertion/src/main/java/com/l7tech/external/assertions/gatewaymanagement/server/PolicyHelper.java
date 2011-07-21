@@ -6,7 +6,7 @@ import com.l7tech.gateway.api.PolicyDetail;
 import com.l7tech.gateway.api.PolicyExportResult;
 import com.l7tech.gateway.api.PolicyImportResult;
 import com.l7tech.gateway.api.PolicyReferenceInstruction;
-import com.l7tech.gateway.api.PolicyValidationContext;
+import com.l7tech.gateway.api.impl.PolicyValidationContext;
 import com.l7tech.gateway.api.PolicyValidationResult;
 import com.l7tech.gateway.api.Resource;
 import com.l7tech.gateway.api.ResourceSet;
@@ -68,6 +68,7 @@ import com.l7tech.server.transport.jms.JmsConnectionManager;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.ExceptionUtils;
+import static com.l7tech.util.Option.optional;
 import com.l7tech.util.Pair;
 import com.l7tech.util.Triple;
 import com.l7tech.wsdl.Wsdl;
@@ -235,7 +236,7 @@ public class PolicyHelper {
      */
     public PolicyValidationResult validatePolicy( final PolicyValidationContext validationContext,
                                                   final PolicyResolver resolver ) throws ResourceFactory.InvalidResourceException, ResourceFactory.ResourceNotFoundException {
-        final PolicyValidationContext policyValidationContext = validationContext != null ? validationContext : ManagedObjectFactory.createPolicyValidationContext();
+        final PolicyValidationContext policyValidationContext = optional( validationContext ).orSome( new PolicyValidationContext() );
 
         // Get request values
         PolicyType policyType = getPolicyType( policyValidationContext.getPolicyType() );

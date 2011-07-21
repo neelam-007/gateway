@@ -2486,12 +2486,12 @@
                 author="false"
                 use="true"
                 public="true"
-                windowtitle="Layer 7 Technologies - Gateway Management API"
-                bottom="&lt;font size=&quot;-1&quot;&gt;&lt;i&gt;Copyright &amp;copy; 2010, &lt;a href=&quot;http://www.layer7tech.com/&quot; target=_top&gt;Layer 7 Technologies&lt;/a&gt;.&lt;/i&gt;&lt;/font&gt;">
+                windowtitle="Layer 7 Technologies - Gateway Management API v1.1"
+                bottom="&lt;font size=&quot;-1&quot;&gt;&lt;i&gt;Copyright &amp;copy; 2011, &lt;a href=&quot;http://www.layer7tech.com/&quot; target=_top&gt;Layer 7 Technologies&lt;/a&gt;.&lt;/i&gt;&lt;/font&gt;">
 
             <!--links to j2se & j2ee javadocs provided so they can be linked to from within the layer7-api javadoc -->
-            <link href="http://java.sun.com/javase/6/docs/api/"/>
-            <link href="http://java.sun.com/javaee/6/docs/api/"/>
+            <link href="http://download.oracle.com/javase/6/docs/api/"/>
+            <link href="http://download.oracle.com/javaee/6/api/"/>
 
             <fileset dir="modules/gateway/gateway-api/src/main/java">
                 <include name="com/l7tech/gateway/api/*.java"/>

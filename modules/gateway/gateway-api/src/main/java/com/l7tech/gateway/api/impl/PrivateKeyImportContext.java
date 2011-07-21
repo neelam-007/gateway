@@ -1,9 +1,6 @@
-package com.l7tech.gateway.api;
+package com.l7tech.gateway.api.impl;
 
 import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
-
-import com.l7tech.gateway.api.impl.ElementExtendableManagedObject;
-import com.l7tech.gateway.api.impl.PropertiesMapType;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -127,11 +124,6 @@ public class PrivateKeyImportContext extends ElementExtendableManagedObject {
     protected void setPkcs12DataValue( final AttributeExtensibleByteArray pkcs12Data ) {
         this.pkcs12Data = pkcs12Data;
     }
-
-    //- PACKAGE
-
-    PrivateKeyImportContext() {
-    }    
 
     //- PRIVATE
 

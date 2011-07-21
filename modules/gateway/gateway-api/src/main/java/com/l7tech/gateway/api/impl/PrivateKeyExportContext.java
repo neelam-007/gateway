@@ -1,9 +1,6 @@
-package com.l7tech.gateway.api;
+package com.l7tech.gateway.api.impl;
 
 import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
-
-import com.l7tech.gateway.api.impl.ElementExtendableManagedObject;
-import com.l7tech.gateway.api.impl.PropertiesMapType;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -98,11 +95,6 @@ public class PrivateKeyExportContext extends ElementExtendableManagedObject {
 
     protected void setPasswordValue( final AttributeExtensibleString password ) {
         this.password = password;
-    }
-
-    //- PACKAGE
-
-    PrivateKeyExportContext() {
     }
 
     //- PRIVATE

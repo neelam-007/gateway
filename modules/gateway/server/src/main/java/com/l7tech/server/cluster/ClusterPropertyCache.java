@@ -151,6 +151,20 @@ public class ClusterPropertyCache implements ApplicationListener {
     /**
      *
      */
+    public ClusterProperty getCachedEntityByName(final String name) {
+        ClusterProperty clusterProperty = null;
+
+        Map<String,ClusterProperty> cache = clusterPropertyCacheRef.get();
+        if (cache != null)
+            clusterProperty = cache.get(name);
+
+        return clusterProperty;
+    }
+
+    /**
+     * @deprecated Use {@link #getCachedEntityByName(String)}
+     */
+    @Deprecated
     @SuppressWarnings({"UnusedDeclaration"})
     public ClusterProperty getCachedEntityByName(final String name, final int maxAge) {
         ClusterProperty clusterProperty = null;
@@ -169,7 +183,7 @@ public class ClusterPropertyCache implements ApplicationListener {
     public String getPropertyValue( final String name ) {
         String value = null;
 
-        ClusterProperty clusterProperty = getCachedEntityByName( name, 10000 );
+        ClusterProperty clusterProperty = getCachedEntityByName( name );
         if ( clusterProperty != null ) {
             value = clusterProperty.getValue();
         }

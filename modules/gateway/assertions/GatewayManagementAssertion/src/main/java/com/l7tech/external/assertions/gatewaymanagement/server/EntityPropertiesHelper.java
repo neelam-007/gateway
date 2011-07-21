@@ -14,6 +14,7 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.CollectionUtils.MapBuilder;
+import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Option;
 
 import javax.validation.groups.Default;
@@ -67,6 +68,15 @@ class EntityPropertiesHelper {
 
     public static String getEnumText( final Enum value ) {
         return getEnumAnnotationValue(value).orSome( value.name() );
+    }
+
+    public static Unary<String,Enum> getEnumText() {
+        return new Unary<String, Enum>() {
+            @Override
+            public String call( final Enum value ) {
+                return getEnumAnnotationValue(value).orSome( value.name() );
+            }
+        };
     }
 
     public static <E extends Enum<E>> E getEnumValue( final Class<E> enumType, final String value ) throws ResourceFactory.InvalidResourceException {

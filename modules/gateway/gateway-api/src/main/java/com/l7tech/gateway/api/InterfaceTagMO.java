@@ -2,6 +2,7 @@ package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.AccessorSupport;
 import com.l7tech.gateway.api.impl.AttributeExtensibleType;
+import static com.l7tech.gateway.api.impl.AttributeExtensibleType.set;
 import com.l7tech.gateway.api.impl.ElementExtendableAccessibleObject;
 import com.l7tech.gateway.api.impl.PropertiesMapType;
 
@@ -14,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 
 import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
-import static com.l7tech.gateway.api.impl.AttributeExtensibleType.AttributeExtensibleStringBuilder;
 
 /**
  * The InterfaceTagMO managed object represents an interface tag.
@@ -24,11 +24,31 @@ import static com.l7tech.gateway.api.impl.AttributeExtensibleType.AttributeExten
  * @see ManagedObjectFactory#createInterfaceTag()
  */
 @XmlRootElement(name="InterfaceTag")
-@XmlType(name="InterfaceTagType", propOrder={"addressPatternValues", "properties", "extension", "extensions"})
+@XmlType(name="InterfaceTagType", propOrder={"nameValue", "addressPatternValues", "properties", "extension", "extensions"})
 @AccessorSupport.AccessibleResource(name ="interfaceTags")
 public class InterfaceTagMO extends ElementExtendableAccessibleObject {
 
     //- PUBLIC
+
+    /**
+     * Get the name for the interface tag (case sensitive, required)
+     *
+     * <p>Interface tag names must be unique.</p>
+     *
+     * @return The name of the interface tag (may be null)
+     */
+    public String getName() {
+        return get(name);
+    }
+
+    /**
+     * Set the name for the interface tag.
+     *
+     * @param name The name to use.
+     */
+    public void setName( final String name ) {
+        this.name = set(this.name,name);
+    }
 
     /**
      * Get the address patterns for this interface tag.
@@ -78,6 +98,15 @@ public class InterfaceTagMO extends ElementExtendableAccessibleObject {
 
     //- PROTECTED
 
+    @XmlElement(name="Name", required=true)
+    protected AttributeExtensibleString getNameValue() {
+        return name;
+    }
+
+    protected void setNameValue( final AttributeExtensibleString name ) {
+        this.name = name;
+    }
+
     @XmlElement(name="AddressPatterns", required=true)
     protected AttributeExtensibleType.AttributeExtensibleStringList getAddressPatternValues() {
         return addressPatterns;
@@ -94,6 +123,7 @@ public class InterfaceTagMO extends ElementExtendableAccessibleObject {
 
     //- PRIVATE
 
+    private AttributeExtensibleString name;
     private AttributeExtensibleType.AttributeExtensibleStringList addressPatterns;
     private Map<String,Object> properties;
 

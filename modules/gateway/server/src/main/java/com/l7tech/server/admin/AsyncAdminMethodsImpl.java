@@ -1,5 +1,6 @@
-package com.l7tech.gateway.common;
+package com.l7tech.server.admin;
 
+import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
@@ -32,7 +33,7 @@ public class AsyncAdminMethodsImpl implements AsyncAdminMethods, Closeable {
         private Throwable resultThrowable;
         private long timeCompleted;
 
-        public JobEntry(JobId id, Future<OUT> future) {
+        private JobEntry(JobId id, Future<OUT> future) {
             this.id = id;
             this.future = future;
         }
@@ -58,8 +59,9 @@ public class AsyncAdminMethodsImpl implements AsyncAdminMethods, Closeable {
      */
     public AsyncAdminMethodsImpl(int staleJobSeconds) {
         if (staleJobSeconds < 30) throw new IllegalArgumentException("staleJobSeconds must be at least 30");
-        this.staleJobMillis = staleJobSeconds * 1000L;
+        this.staleJobMillis = (long) staleJobSeconds * 1000L;
         cleanupTask = new TimerTask() {
+            @Override
             public void run() {
                 synchronized (AsyncAdminMethodsImpl.this) {
                     long now = System.currentTimeMillis();
@@ -79,7 +81,7 @@ public class AsyncAdminMethodsImpl implements AsyncAdminMethods, Closeable {
                 }
             }
         };
-        Background.scheduleRepeated(cleanupTask, 6521, 7919);
+        Background.scheduleRepeated(cleanupTask, 6521L, 7919L );
     }
 
     /**
@@ -99,6 +101,7 @@ public class AsyncAdminMethodsImpl implements AsyncAdminMethods, Closeable {
         return jobId;
     }
 
+    @Override
     public synchronized <OUT extends Serializable> String getJobStatus(JobId<OUT> jobId) {
         mustNotBeClosed();
         JobEntry entry = jobs.get(jobId);
@@ -146,6 +149,7 @@ public class AsyncAdminMethodsImpl implements AsyncAdminMethods, Closeable {
         //else it either completed or was cancelled, either way it has moved out of the waiting or 'running with no cancel' attempt states
     }
 
+    @Override
     public synchronized <OUT extends Serializable> JobResult<OUT> getJobResult(JobId<OUT> jobId)
             throws UnknownJobException, JobStillActiveException {
         mustNotBeClosed();
@@ -190,6 +194,7 @@ public class AsyncAdminMethodsImpl implements AsyncAdminMethods, Closeable {
      * In particular, this cancels the cleanup timer task.
      * This instance may not be used once close() has been called.
      */
+    @Override
     public synchronized void close() {
         if (jobs == null)
             return;

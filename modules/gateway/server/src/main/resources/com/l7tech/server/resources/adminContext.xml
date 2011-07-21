@@ -393,7 +393,7 @@
     </bean>
 
     <!-- trusted cert admin servant -->
-    <bean id="trustedCertAdmin" class="com.l7tech.server.TrustedCertAdminImpl">
+    <bean id="trustedCertAdmin" class="com.l7tech.server.admin.TrustedCertAdminImpl">
         <constructor-arg ref="trustedCertManager"/>
         <constructor-arg ref="revocationCheckPolicyManager"/>
         <constructor-arg ref="defaultKey"/>

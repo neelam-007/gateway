@@ -111,7 +111,7 @@ public class MarshallingUtils {
         JAXBContext context = MarshallingUtils.context;
 
         if ( context == null ) {
-            context = JAXBContext.newInstance("com.l7tech.gateway.api");
+            context = JAXBContext.newInstance("com.l7tech.gateway.api:com.l7tech.gateway.api.impl");
 
             if ( USE_STATIC_CONTEXT ) {
                 MarshallingUtils.context = context;

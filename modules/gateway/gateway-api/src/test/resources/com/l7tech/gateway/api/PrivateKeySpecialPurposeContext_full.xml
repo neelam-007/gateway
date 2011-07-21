@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PrivateKeySpecialPurposeContext xmlns="http://ns.l7tech.com/2010/04/gateway-management">
+    <SpecialPurposes extendedAttribute="extension" other:extendedAttribute="extension" xmlns:other="urn:othernamespace">
+        <StringValue>1</StringValue>
+        <StringValue other:extendedAttribute="extension" xmlns:other="urn:othernamespace">2</StringValue>
+        <StringValue>3</StringValue>
+    </SpecialPurposes>
+    <Properties extendedAttribute="extension">
+        <Property key="propertiesAreNotCurrentUsed" extendedAttribute="extension">
+            <BooleanValue other:extendedAttribute="extension" xmlns:other="urn:othernamespace">true</BooleanValue>
+        </Property>
+    </Properties>
+</PrivateKeySpecialPurposeContext>

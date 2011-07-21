@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.api.ListenPortMO;
 import static com.l7tech.gateway.api.ListenPortMO.*;
 import static com.l7tech.gateway.api.ListenPortMO.TlsSettings.*;
@@ -11,25 +12,31 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.transport.SsgConnectorManager;
+import com.l7tech.util.CollectionUtils;
 import static com.l7tech.util.CollectionUtils.foreach;
+import static com.l7tech.util.CollectionUtils.set;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Functions.UnaryVoid;
 import com.l7tech.util.Functions.UnaryVoidThrows;
 import static com.l7tech.util.Functions.grepFirst;
 import com.l7tech.util.Option;
+import static com.l7tech.util.Option.none;
 import static com.l7tech.util.Option.optional;
+import static com.l7tech.util.Option.some;
 import com.l7tech.util.Pair;
 import com.l7tech.util.SyspropUtil;
 import static com.l7tech.util.TextUtils.isNotEmpty;
 import static com.l7tech.util.TextUtils.join;
+import com.l7tech.util.ValidationUtils;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -80,7 +87,7 @@ public class ListenPortResourceFactory extends EntityManagerResourceFactory<List
         final SsgConnector connector = new SsgConnector();
         connector.setName( asName( listenPort.getName() ) );
         connector.setEnabled( listenPort.isEnabled() );
-        connector.setScheme( listenPort.getProtocol() ); //TODO [steve] validation for scheme values?
+        connector.setScheme( listenPort.getProtocol() );
         connector.setPort( listenPort.getPort() );
         connector.setEndpoints( buildEndpointsValue(listenPort.getEnabledFeatures()) );
 
@@ -89,6 +96,7 @@ public class ListenPortResourceFactory extends EntityManagerResourceFactory<List
         if ( properties != null ) {
             for ( Map.Entry<String,Object> entry : properties.entrySet() ) {
                 if ( !(entry.getValue() instanceof String) ) continue;
+                validateProperty( entry.getKey(), (String) entry.getValue() );
                 connector.putProperty( entry.getKey(), (String) entry.getValue() );
             }
         }
@@ -122,13 +130,57 @@ public class ListenPortResourceFactory extends EntityManagerResourceFactory<List
 
     //- PRIVATE
 
-    private static final Set<String> IGNORE_PROPERTIES = Collections.unmodifiableSet( new HashSet<String>( Arrays.asList(
-        SsgConnector.PROP_BIND_ADDRESS,
-        SsgConnector.PROP_HARDWIRED_SERVICE_ID,
-        SsgConnector.PROP_TLS_PROTOCOLS,
-        SsgConnector.PROP_TLS_CIPHERLIST
-    ) ) );
+    private static final Set<String> IGNORE_PROPERTIES = set(
+            SsgConnector.PROP_BIND_ADDRESS,
+            SsgConnector.PROP_HARDWIRED_SERVICE_ID,
+            SsgConnector.PROP_TLS_PROTOCOLS,
+            SsgConnector.PROP_TLS_CIPHERLIST
+    );
     private static final List<String> DEFAULT_TLS_VERSIONS = Collections.unmodifiableList( split( SyspropUtil.getString( "com.l7tech.external.assertions.gatewaymanagement.listenPortDefaultTlsVersions", "TLSv1" ) ) );
+
+    private static final Unary<Option<String>,String> BOOLEAN_VALIDATOR =  new Unary<Option<String>,String>(){
+        @Override
+        public Option<String> call( final String text ) {
+            return "true".equals( text ) || "false".equals( text ) ? Option.<String>none() : some( "true/false expected" );
+        }
+    };
+    private static final Unary<Option<String>,String> CONTENT_TYPE_VALIDATOR = new Unary<Option<String>,String>(){
+        @Override
+        public Option<String> call( final String text ) {
+            try {
+                ContentTypeHeader.parseValue( text );
+                return none();
+            } catch ( final IOException e ) {
+                return some( "Invalid content type, " + ExceptionUtils.getMessage( e ) );
+            }
+        }
+    };
+    private static final Unary<Option<String>,String> POSITIVE_INTEGER_VALIDATOR = new Unary<Option<String>,String>(){
+        @Override
+        public Option<String> call( final String text ) {
+            return ValidationUtils.isValidInteger( text, false, 0, Integer.MAX_VALUE ) ? Option.<String>none() : some( "positive integer expected" );
+        }
+    };
+    private static final Unary<Option<String>,String> POSITIVE_LONG_VALIDATOR = new Unary<Option<String>,String>(){
+        @Override
+        public Option<String> call( final String text ) {
+            return ValidationUtils.isValidLong( text, false, 0L, Long.MAX_VALUE ) ? Option.<String>none() : some( "positive long integer expected" );
+        }
+    };
+
+    private static final Map<String,Unary<Option<String>,String>> PROPERTY_VALIDATORS = CollectionUtils.<String,Unary<Option<String>,String>>mapBuilder()
+            .put( "noSSLv2Hello", BOOLEAN_VALIDATOR )
+            .put( "overrideContentType", CONTENT_TYPE_VALIDATOR )
+            .put( "l7.raw.backlog", POSITIVE_INTEGER_VALIDATOR )
+            .put( "l7.raw.readTimeout", POSITIVE_INTEGER_VALIDATOR )
+            .put( "l7.raw.requestSizeLimit", POSITIVE_LONG_VALIDATOR )
+            .put( "l7.raw.writeTimeout", POSITIVE_INTEGER_VALIDATOR )
+            .put( "portRangeCount", POSITIVE_INTEGER_VALIDATOR )
+            .put( "portRangeStart", POSITIVE_INTEGER_VALIDATOR )
+            .put( "requestSizeLimit", POSITIVE_LONG_VALIDATOR )
+            .put( "sessionCacheSize", POSITIVE_INTEGER_VALIDATOR )
+            .put( "sessionCacheTimeout", POSITIVE_INTEGER_VALIDATOR )
+            .put( "threadPoolSize", POSITIVE_INTEGER_VALIDATOR ).map();
 
     private final SsgConnectorManager ssgConnectorManager;
 
@@ -221,25 +273,6 @@ public class ListenPortResourceFactory extends EntityManagerResourceFactory<List
         for ( final String name : entity.getPropertyNames() ) {
             if ( IGNORE_PROPERTIES.contains( name ) ) continue;
             properties.put( name, entity.getProperty( name ) );
-            // TODO [steve] type conversion for non String properties
-// Might want to map these names / types
-//allowUnsafeLegacyRenegotiation
-//noSSLv2Hello
-//overrideContentType text/xml; charset=utf-8
-//overrideProtocols
-//keepAliveTimeout 120000
-//l7.raw.backlog
-//l7.raw.readTimeout 2000
-//l7.raw.requestSizeLimit
-//l7.raw.writeTimeout
-//portRangeCount 10
-//portRangeStart 2223
-//protocol
-//protocolProvider
-//requestSizeLimit 1000000
-//sessionCacheSize
-//sessionCacheTimeout
-//threadPoolSize 10
         }
 
         return properties;
@@ -275,6 +308,18 @@ public class ListenPortResourceFactory extends EntityManagerResourceFactory<List
         }
 
         return secure;
+    }
+
+    private void validateProperty( final String name,
+                                   final String value ) throws InvalidResourceException {
+        final Unary<Option<String>,String> validator = PROPERTY_VALIDATORS.get( name );
+
+        if ( validator != null ) {
+            Option<String> message = validator.call( value );
+            if ( message.isSome() ) {
+                throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "Invalid value for property '"+name+"': " + message );
+            }
+        }
     }
 
     private static List<String> split( final String commaSeparatedList ) {

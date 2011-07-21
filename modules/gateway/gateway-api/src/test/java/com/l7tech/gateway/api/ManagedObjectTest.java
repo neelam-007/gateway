@@ -1,6 +1,13 @@
 package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.PolicyImportContext;
+import com.l7tech.gateway.api.impl.PolicyValidationContext;
+import com.l7tech.gateway.api.impl.PrivateKeyExportContext;
+import com.l7tech.gateway.api.impl.PrivateKeyExportResult;
+import com.l7tech.gateway.api.impl.PrivateKeyGenerateCsrContext;
+import com.l7tech.gateway.api.impl.PrivateKeyGenerateCsrResult;
+import com.l7tech.gateway.api.impl.PrivateKeyImportContext;
+import com.l7tech.gateway.api.impl.PrivateKeySpecialPurposeContext;
 import com.l7tech.gateway.api.impl.ValidationUtils;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.ClassUtils;
@@ -10,6 +17,7 @@ import com.l7tech.util.Functions;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
+import static org.junit.Assert.assertArrayEquals;
 import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -65,7 +73,7 @@ public class ManagedObjectTest {
 
     @Before
     public void init() throws Exception {
-        context = JAXBContext.newInstance("com.l7tech.gateway.api");
+        context = JAXBContext.newInstance("com.l7tech.gateway.api:com.l7tech.gateway.api.impl");
     }
 
     @Test
@@ -175,14 +183,16 @@ public class ManagedObjectTest {
     @Test
     public void testInterfaceTagSerialization() throws Exception {
         final InterfaceTagMO interfaceTag = ManagedObjectFactory.createInterfaceTag();
-        interfaceTag.setId( "localhost" );
+        interfaceTag.setId( "1234567890" );
         interfaceTag.setVersion( 34 );
+        interfaceTag.setName( "localhost" );
         interfaceTag.setAddressPatterns( list( "1", "2", "3") );
         interfaceTag.setProperties( Collections.<String,Object>singletonMap( "prop", 123 ) );
 
         final InterfaceTagMO roundTripped = roundTrip( interfaceTag );
-        assertEquals("id", "localhost", roundTripped.getId());
+        assertEquals("id", "1234567890", roundTripped.getId());
         assertEquals("version", Integer.valueOf(34), roundTripped.getVersion());
+        assertEquals("name", "localhost", roundTripped.getName());
         assertEquals("address patterns", list( "1", "2", "3"), roundTripped.getAddressPatterns());
         assertEquals("properties", Collections.<String,Object>singletonMap( "prop", 123 ), roundTripped.getProperties());
     }
@@ -375,6 +385,119 @@ public class ManagedObjectTest {
     }
 
     @Test
+    public void testPrivateKeyCreationContextSerialization() throws Exception {
+        final PrivateKeyCreationContext privateKeyCreationContext = ManagedObjectFactory.createPrivateKeyCreationContext();
+        privateKeyCreationContext.setId( "1234" );
+        privateKeyCreationContext.setVersion( 13 );
+        privateKeyCreationContext.setDn( "CN=name" );
+        privateKeyCreationContext.setProperties( Collections.<String,Object>singletonMap( "prop", false ) );
+
+        final PrivateKeyCreationContext roundTripped = roundTrip( privateKeyCreationContext );
+        assertEquals("id", "1234", roundTripped.getId());
+        assertEquals("version", Integer.valueOf(13), roundTripped.getVersion());
+        assertEquals("dn", "CN=name", roundTripped.getDn());
+        assertEquals("properties", Collections.<String,Object>singletonMap( "prop", false ), roundTripped.getProperties());
+    }
+
+    @Test
+    public void testPrivateKeyExportContextSerialization() throws Exception {
+        final PrivateKeyExportContext privateKeyExportContext = new PrivateKeyExportContext();
+        privateKeyExportContext.setId( "1234" );
+        privateKeyExportContext.setVersion( 13 );
+        privateKeyExportContext.setAlias( "alias" );
+        privateKeyExportContext.setPassword( "password" );
+        privateKeyExportContext.setProperties( Collections.<String,Object>singletonMap( "prop", false ) );
+
+        final PrivateKeyExportContext roundTripped = roundTrip( privateKeyExportContext );
+        assertEquals("id", "1234", roundTripped.getId());
+        assertEquals("version", Integer.valueOf(13), roundTripped.getVersion());
+        assertEquals("alias", "alias", roundTripped.getAlias());
+        assertEquals("password", "password", roundTripped.getPassword());
+        assertEquals("properties", Collections.<String,Object>singletonMap( "prop", false ), roundTripped.getProperties());
+    }
+
+    @Test
+    public void testPrivateKeyExportResultSerialization() throws Exception {
+        final PrivateKeyExportResult privateKeyExportResult = new PrivateKeyExportResult();
+        privateKeyExportResult.setId( "1234" );
+        privateKeyExportResult.setVersion( 13 );
+        privateKeyExportResult.setPkcs12Data( new byte[]{ (byte) 0, (byte) 1, (byte) 0, (byte) 1 } );
+        privateKeyExportResult.setProperties( Collections.<String,Object>singletonMap( "prop", false ) );
+
+        final PrivateKeyExportResult roundTripped = roundTrip( privateKeyExportResult );
+        assertEquals("id", "1234", roundTripped.getId());
+        assertEquals("version", Integer.valueOf(13), roundTripped.getVersion());
+        assertNotNull( "pkcs12Data", roundTripped.getPkcs12Data() );
+        assertArrayEquals( "pkcs12Data", new byte[]{ (byte) 0, (byte) 1, (byte) 0, (byte) 1 }, roundTripped.getPkcs12Data() );
+        assertEquals("properties", Collections.<String,Object>singletonMap( "prop", false ), roundTripped.getProperties());
+    }
+
+    @Test
+    public void testPrivateKeyGenerateCsrContextSerialization() throws Exception {
+        final PrivateKeyGenerateCsrContext privateKeyGenerateCsrContext = new PrivateKeyGenerateCsrContext();
+        privateKeyGenerateCsrContext.setId( "1234" );
+        privateKeyGenerateCsrContext.setVersion( 13 );
+        privateKeyGenerateCsrContext.setDn( "cn=test" );
+        privateKeyGenerateCsrContext.setProperties( Collections.<String,Object>singletonMap( "prop", false ) );
+
+        final PrivateKeyGenerateCsrContext roundTripped = roundTrip( privateKeyGenerateCsrContext );
+        assertEquals("id", "1234", roundTripped.getId());
+        assertEquals( "version", Integer.valueOf( 13 ), roundTripped.getVersion() );
+        assertEquals( "dn", "cn=test", roundTripped.getDn() );
+        assertEquals("properties", Collections.<String,Object>singletonMap( "prop", false ), roundTripped.getProperties());
+    }
+
+    @Test
+    public void testPrivateKeyGenerateCsrResultSerialization() throws Exception {
+        final PrivateKeyGenerateCsrResult privateKeyGenerateCsrResult = new PrivateKeyGenerateCsrResult();
+        privateKeyGenerateCsrResult.setId( "1234" );
+        privateKeyGenerateCsrResult.setVersion( 13 );
+        privateKeyGenerateCsrResult.setCsrData( new byte[]{ (byte) 0, (byte) 1, (byte) 0, (byte) 1 } );
+        privateKeyGenerateCsrResult.setProperties( Collections.<String,Object>singletonMap( "prop", false ) );
+
+        final PrivateKeyGenerateCsrResult roundTripped = roundTrip( privateKeyGenerateCsrResult );
+        assertEquals("id", "1234", roundTripped.getId());
+        assertEquals( "version", Integer.valueOf( 13 ), roundTripped.getVersion() );
+        assertNotNull( "csrData", roundTripped.getCsrData() );
+        assertArrayEquals( "csrData", new byte[]{ (byte) 0, (byte) 1, (byte) 0, (byte) 1 }, roundTripped.getCsrData() );
+        assertEquals("properties", Collections.<String,Object>singletonMap( "prop", false ), roundTripped.getProperties());
+    }
+
+    @Test
+    public void testPrivateKeyImportContextSerialization() throws Exception {
+        final PrivateKeyImportContext privateKeyImportContext = new PrivateKeyImportContext();
+        privateKeyImportContext.setId( "1234" );
+        privateKeyImportContext.setVersion( 13 );
+        privateKeyImportContext.setAlias( "alias" );
+        privateKeyImportContext.setPassword( "password" );
+        privateKeyImportContext.setPkcs12Data( new byte[]{ (byte) 0, (byte) 1, (byte) 0, (byte) 1 } );
+        privateKeyImportContext.setProperties( Collections.<String,Object>singletonMap( "prop", false ) );
+
+        final PrivateKeyImportContext roundTripped = roundTrip( privateKeyImportContext );
+        assertEquals("id", "1234", roundTripped.getId());
+        assertEquals("version", Integer.valueOf(13), roundTripped.getVersion());
+        assertEquals("alias", "alias", roundTripped.getAlias());
+        assertEquals("password", "password", roundTripped.getPassword());
+        assertNotNull( "pkcs12Data", roundTripped.getPkcs12Data() );
+        assertArrayEquals( "pkcs12Data", new byte[]{ (byte) 0, (byte) 1, (byte) 0, (byte) 1 }, roundTripped.getPkcs12Data() );
+        assertEquals("properties", Collections.<String,Object>singletonMap( "prop", false ), roundTripped.getProperties());
+    }
+    @Test
+    public void testPrivateKeySpecialPurposeRequestSerialization() throws Exception {
+        final PrivateKeySpecialPurposeContext privateKeySpecialPurposeRequest = new PrivateKeySpecialPurposeContext();
+        privateKeySpecialPurposeRequest.setId( "1234" );
+        privateKeySpecialPurposeRequest.setVersion( 13 );
+        privateKeySpecialPurposeRequest.setSpecialPurposes( list( "1", "2", "3" ) );
+        privateKeySpecialPurposeRequest.setProperties( Collections.<String, Object>singletonMap( "prop", false ) );
+
+        final PrivateKeySpecialPurposeContext roundTripped = roundTrip( privateKeySpecialPurposeRequest );
+        assertEquals( "id", "1234", roundTripped.getId() );
+        assertEquals("version", Integer.valueOf(13), roundTripped.getVersion());
+        assertEquals( "specialPurposes", list( "1", "2", "3" ), roundTripped.getSpecialPurposes() );
+        assertEquals("properties", Collections.<String,Object>singletonMap( "prop", false ), roundTripped.getProperties());
+    }
+
+    @Test
     public void testResourceDocumentSerialization() throws Exception {
         final Resource resource = ManagedObjectFactory.createResource();
         resource.setId( "r1" );
@@ -401,7 +524,7 @@ public class ManagedObjectTest {
     }
 
     @Test
-    public void testRevocationCheckingPolicyTest() throws Exception {
+    public void testRevocationCheckingPolicySerialization() throws Exception {
         final RevocationCheckingPolicyMO policy = ManagedObjectFactory.createRevocationCheckingPolicy();
         policy.setId( "4" );
         policy.setVersion( 5 );
@@ -689,7 +812,7 @@ public class ManagedObjectTest {
         resourceSet.setTag( "policy" );
         resourceSet.setResources( Arrays.asList( policyResource ) );
 
-        final PolicyValidationContext policyValidationContext = ManagedObjectFactory.createPolicyValidationContext();
+        final PolicyValidationContext policyValidationContext = new PolicyValidationContext();
         policyValidationContext.setId( "123" );
         policyValidationContext.setVersion( 3331 );
         policyValidationContext.setProperties( Collections.<String,Object>singletonMap( "soap", true ) );
@@ -903,6 +1026,11 @@ public class ManagedObjectTest {
         }
     }
 
+    @Test
+    public void testTestMetadata() {
+        assertTrue( "All v2 managed objects must be in the main list", MANAGED_OBJECTS.containsAll( MANAGED_OBJECTS_2 ) );
+    }
+
     //- PRIVATE
 
     private static final String MANAGEMENT_NS = "http://ns.l7tech.com/2010/04/gateway-management";
@@ -911,9 +1039,13 @@ public class ManagedObjectTest {
     private static final Collection<Class<? extends ManagedObject>> MANAGED_OBJECTS_2 = list(
             InterfaceTagMO.class,
             ListenPortMO.class,
+            PrivateKeyCreationContext.class,
             PrivateKeyExportContext.class,
             PrivateKeyExportResult.class,
+            PrivateKeyGenerateCsrContext.class,
+            PrivateKeyGenerateCsrResult.class,
             PrivateKeyImportContext.class,
+            PrivateKeySpecialPurposeContext.class,
             RevocationCheckingPolicyMO.class,
             StoredPasswordMO.class
     );
@@ -932,9 +1064,13 @@ public class ManagedObjectTest {
             PolicyMO.class,
             PolicyValidationContext.class,
             PolicyValidationResult.class,
+            PrivateKeyCreationContext.class,
             PrivateKeyExportContext.class,
             PrivateKeyExportResult.class,
+            PrivateKeyGenerateCsrContext.class,
+            PrivateKeyGenerateCsrResult.class,
             PrivateKeyImportContext.class,
+            PrivateKeySpecialPurposeContext.class,
             PrivateKeyMO.class,
             ResourceDocumentMO.class,
             RevocationCheckingPolicyMO.class,
@@ -981,7 +1117,7 @@ public class ManagedObjectTest {
     }
 
     private void testUnmarshal( final String suffix ) throws Exception {
-        testUnmarshal( suffix, getSchema( "gateway-management-5.3.xsd" ), MANAGED_OBJECTS_2 );
+        testUnmarshal( suffix, getSchema( "gateway-management-6.1.xsd" ), MANAGED_OBJECTS_2 );
         testUnmarshal( suffix, ValidationUtils.getSchema() );
     }
 
@@ -1000,7 +1136,9 @@ public class ManagedObjectTest {
             if ( skip.contains( managedObjectClass ) ) continue;
             final String resourceName = ClassUtils.getClassName(managedObjectClass) + "_" + suffix + ".xml";
             System.out.println( "Processing resource '" + resourceName + "'" );
-            ManagedObject mo = (ManagedObject) unmarshaller.unmarshal( ManagedObjectTest.class.getResource( resourceName ));
+            final URL resource = ManagedObjectTest.class.getResource( resourceName );
+            assertNotNull( "Missing test resource: " + resourceName, resource );
+            ManagedObject mo = (ManagedObject) unmarshaller.unmarshal( resource );
             assertEquals( "Expected object type", managedObjectClass, mo.getClass() );
         }
     }

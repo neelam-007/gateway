@@ -1,11 +1,12 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
+import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.InvalidResourceException.ExceptionType;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.PolicyDetail;
 import com.l7tech.gateway.api.PolicyExportResult;
 import com.l7tech.gateway.api.PolicyImportResult;
 import com.l7tech.gateway.api.PolicyMO;
-import com.l7tech.gateway.api.PolicyValidationContext;
+import com.l7tech.gateway.api.impl.PolicyValidationContext;
 import com.l7tech.gateway.api.PolicyValidationResult;
 import com.l7tech.gateway.api.Resource;
 import com.l7tech.gateway.api.ResourceSet;
@@ -13,12 +14,15 @@ import com.l7tech.gateway.api.impl.PolicyImportContext;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
+import com.l7tech.util.Option;
+import static com.l7tech.util.Option.optional;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapVersion;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -42,10 +46,12 @@ public class PolicyResourceFactory extends EntityManagerResourceFactory<PolicyMO
                                   final SecurityFilter securityFilter,
                                   final PlatformTransactionManager transactionManager,
                                   final PolicyManager policyManager,
-                                  final PolicyHelper policyHelper ) {
+                                  final PolicyHelper policyHelper,
+                                  final FolderResourceFactory folderResourceFactory ) {
         super( false, true, services, securityFilter, transactionManager, policyManager );
         this.policyManager = policyManager;
         this.policyHelper = policyHelper;
+        this.folderResourceFactory = folderResourceFactory;
     }
 
     @ResourceMethod(name="ImportPolicy", selectors=true, resource=true)
@@ -171,6 +177,9 @@ public class PolicyResourceFactory extends EntityManagerResourceFactory<PolicyMO
         if ( resourceSetMap.size() > 1 ) {
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "unexpected resource sets " + resourceSetMap.keySet().remove( ResourceHelper.POLICY_TAG ));
         }
+        final Option<Folder> folder = folderResourceFactory.getFolder( optional( policyDetail.getFolderId() ) );
+        if ( !folder.isSome() )
+            throw new InvalidResourceException( ExceptionType.INVALID_VALUES, "Folder not found");
 
         final String policyName = asName(policyDetail.getName());
         final PolicyType policyType;
@@ -189,6 +198,7 @@ public class PolicyResourceFactory extends EntityManagerResourceFactory<PolicyMO
         }
         final String policyXml = policyHelper.validatePolicySyntax(policyResource.getContent()); 
         final Policy policy = new Policy( policyType, policyName, policyXml, false );
+        policy.setFolder( folder.some() );
         setProperties( policy, policyDetail.getProperties(), Policy.class );
 
         return policy;
@@ -202,6 +212,7 @@ public class PolicyResourceFactory extends EntityManagerResourceFactory<PolicyMO
 
     @Override
     protected void updateEntity( final Policy oldEntity, final Policy newEntity ) throws InvalidResourceException {
+        oldEntity.setFolder( folderResourceFactory.checkMovePermitted( oldEntity.getFolder(), newEntity.getFolder() ) );
         oldEntity.setType( newEntity.getType() );
         oldEntity.setName( newEntity.getName() );
         oldEntity.setSoap( newEntity.isSoap() );
@@ -245,6 +256,7 @@ public class PolicyResourceFactory extends EntityManagerResourceFactory<PolicyMO
 
     private final PolicyManager policyManager;
     private final PolicyHelper policyHelper;
+    private final FolderResourceFactory folderResourceFactory;
     private final ResourceHelper resourceHelper = new ResourceHelper();
 
 }
