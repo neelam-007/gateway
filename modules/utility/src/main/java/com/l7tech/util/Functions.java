@@ -494,6 +494,25 @@ public final class Functions {
     }
 
     /**
+     * Memoize the given nullary.
+     *
+     * <p>This will memoize nulls. For single threaded use only.</p>
+     *
+     * @param nullary The function to memoize.
+     * @param <R> The return type
+     * @return A memoized version of the nullary
+     */
+    public static <R> Nullary<R> memoize( final Nullary<R> nullary ) {
+        return new Nullary<R>(){
+            private Nullary<R> memo;
+            @Override
+            public R call() {
+                return (memo != null ? memo : (memo = nullary( nullary.call() ))).call();
+            }
+        };
+    }
+
+    /**
      * Reduce a collection of items to a single summary item using the specified reduction function and initial
      * value.
      *

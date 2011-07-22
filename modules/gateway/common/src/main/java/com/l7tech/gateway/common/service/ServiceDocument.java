@@ -21,6 +21,28 @@ public class ServiceDocument extends PersistentEntityImp {
 
     //- PUBLIC
 
+    public ServiceDocument() {
+    }
+
+    /**
+     * Copy constructor
+     *
+     * @param serviceDocument The service document to copy
+     * @param copyIdentity True to copy the identity and version
+     */
+    public ServiceDocument( final ServiceDocument serviceDocument,
+                            final boolean copyIdentity ) {
+        if ( copyIdentity ) {
+            setOid( serviceDocument.getOid() );
+            setVersion( serviceDocument.getVersion() );
+        }
+        setServiceId( serviceDocument.getServiceId() );
+        setUri( serviceDocument.getUri() );
+        setType( serviceDocument.getType() );
+        setContentType( serviceDocument.getContentType() );
+        setContents( serviceDocument.getContents() );
+    }
+
     /**
      * Get the identifier for the service that is the owner of this document.
      *

@@ -180,4 +180,42 @@ public class FunctionsTest {
         List<String> trimmed = map(spacy, Functions.<String,String>getterTransform(String.class.getMethod("trim")));
         assertEquals("must be trimmed back to normal", LANGS, trimmed);
     }
+
+    @Test
+    public void testMemoize() {
+        final Nullary<Long> counter = new Nullary<Long>(){
+            private long count = 0L;
+            @Override
+            public Long call() {
+                return count++;
+            }
+        };
+        final Nullary<Long> counterM = memoize( counter );
+
+        assertEquals( "Counter 0", 0L, (long)counter.call() );
+        assertEquals( "Counter 1", 1L, (long)counter.call() );
+        assertEquals( "Memo Counter 2", 2L, (long)counterM.call() );
+        assertEquals( "Memo Counter 2a", 2L, (long)counterM.call() );
+        assertEquals( "Memo Counter 2b", 2L, (long)counterM.call() );
+        assertEquals( "Counter 3", 3L, (long)counter.call() );
+
+        final Nullary<String> nullThenText = new Nullary<String>(){
+            private boolean firstCall = true;
+            @Override
+            public String call() {
+                if ( firstCall ) {
+                    firstCall = false;
+                    return null;
+                } else {
+                    return "";
+                }
+            }
+        };
+        final Nullary<String> nullThenTextM = memoize( nullThenText );
+
+        assertNull( "Null memo 1", nullThenTextM.call() );
+        assertNull( "Null memo 2", nullThenTextM.call() );
+        assertNull( "Null memo 3", nullThenTextM.call() );
+        assertNotNull( "Not null text", nullThenText.call() );
+    }
 }

@@ -111,7 +111,7 @@
                     <xsl:comment> Resource Operations </xsl:comment>
                 </xsl:if>
                 <xsl:apply-templates mode="portTypes" select="resourceFactory/resourceMethod">
-                    <xsl:sort select="name"/>
+                    <xsl:sort select="concat(../name,name)"/>
                 </xsl:apply-templates>
                 <xsl:comment>  WS-Enumeration Operations </xsl:comment>
                 <operation name="EnumerateOp">
@@ -209,7 +209,7 @@
                     <xsl:comment> Resource Operations </xsl:comment>
                 </xsl:if>
                 <xsl:apply-templates mode="bindings" select="resourceFactory/resourceMethod">
-                    <xsl:sort select="name"/>
+                    <xsl:sort select="concat(../name,name)"/>
                 </xsl:apply-templates>
                 <xsl:comment> WS-Enumeration Operations </xsl:comment>
                 <operation name="EnumerateOp">

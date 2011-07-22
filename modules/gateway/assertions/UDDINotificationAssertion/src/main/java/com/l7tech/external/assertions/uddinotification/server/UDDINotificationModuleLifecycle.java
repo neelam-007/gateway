@@ -1,40 +1,30 @@
 package com.l7tech.external.assertions.uddinotification.server;
 
-import com.l7tech.common.io.DocumentReferenceProcessor;
 import com.l7tech.server.service.ServiceTemplateManager;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.event.system.LicenseEvent;
 import com.l7tech.gateway.common.service.ServiceTemplate;
-import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.service.ServiceType;
 import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
+import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy.ServiceDocumentResources;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.IOUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.external.assertions.uddinotification.UDDINotificationAssertion;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.wsdl.ResourceTrackingWSDLLocator;
-import com.l7tech.wsdl.WsdlEntityResolver;
 
+import java.net.URISyntaxException;
 import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.util.Map;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ApplicationEvent;
-import org.xml.sax.EntityResolver;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
 /**
  * Module initialization for the UDDINotificationAssertion module.
@@ -145,30 +135,25 @@ public class UDDINotificationModuleLifecycle implements ApplicationListener {
         ServiceTemplate template = null;
         
         try {
-            String url = FAKE_URL_PREFIX + "uddi_subr_v3_service.wsdl";
+            final String policyContents = getDefaultPolicyXml();
+            final ServiceDocumentResources resources = ServiceDocumentWsdlStrategy.loadResources(
+                    UDDINotificationModuleLifecycle.class.getPackage().getName().replace( '.', '/' ) + "/serviceTemplate/",
+                    FAKE_URL_PREFIX,
+                    "uddi_subr_v3_service.wsdl",
+                    UDDINotificationModuleLifecycle.class.getClassLoader() );
 
-            final WsdlEntityResolver entityResolver = new WsdlEntityResolver( true );
-            final DocumentReferenceProcessor processor = new DocumentReferenceProcessor();
-            final Map<String,String> contents = processor.processDocument( url, new DocumentReferenceProcessor.ResourceResolver(){
-                @Override
-                public String resolve(final String resourceUrl) throws IOException {
-                    String resource = resourceUrl;
-                    if ( resource.startsWith(FAKE_URL_PREFIX) ) {
-                        resource = resourceUrl.substring(FAKE_URL_PREFIX.length());
-                    }
-                    String content = loadMyResource( resource, entityResolver );
-                    return ResourceTrackingWSDLLocator.processResource(resourceUrl, content, entityResolver.failOnMissing(), false, true);
-                }
-            } );
-
-            final Collection<ResourceTrackingWSDLLocator.WSDLResource> sourceDocs =
-                    ResourceTrackingWSDLLocator.toWSDLResources(url, contents, false, false, false);
-
-            final List<ServiceDocument> svcDocs = ServiceDocumentWsdlStrategy.fromWsdlResources( sourceDocs );
-
-            String policyContents = getDefaultPolicyXml();
-            template = new ServiceTemplate("UDDI Notification Service", "/uddi/notification", contents.get(url), url, policyContents, svcDocs, ServiceType.OTHER_INTERNAL_SERVICE, null);
+            template = new ServiceTemplate(
+                    "UDDI Notification Service",
+                    "/uddi/notification",
+                    resources.getContent(),
+                    resources.getUri(),
+                    policyContents,
+                    resources.getDependencies(),
+                    ServiceType.OTHER_INTERNAL_SERVICE,
+                    null);
         } catch (IOException e) {
+            logger.log(Level.WARNING, "Can't load WSDL and/or Policy XML; service template will not be available", e);
+        } catch ( URISyntaxException e ) {
             logger.log(Level.WARNING, "Can't load WSDL and/or Policy XML; service template will not be available", e);
         }
 
@@ -187,38 +172,6 @@ public class UDDINotificationModuleLifecycle implements ApplicationListener {
 
         logger.info("Unregistering the '" + svcTemplate.getName() + "' service with the gateway (Routing URI = " + svcTemplate.getDefaultUriPrefix() + ")");
         serviceTemplateManager.unregister(svcTemplate);
-    }
-
-    private String loadMyResource( final String resource, final EntityResolver resolver ) throws IOException {
-        byte[] bytes = null;
-
-        InputSource in = null;
-        try {
-            in = resolver.resolveEntity( null, resource );
-            if ( in != null ) {
-                bytes = IOUtils.slurpStream( in.getByteStream() );
-            }
-        } catch ( SAXException e) {
-            throw new IOException("Cannot load resource '"+resource+"'.", e);
-        } finally {
-            if ( in != null ) {
-                ResourceUtils.closeQuietly( in.getByteStream() );
-            }
-        }
-
-        if ( bytes == null ) {
-            String resourcePath = resource;
-            int dirIndex = resource.lastIndexOf( '/' );
-            if ( dirIndex > 0 ) {
-                resourcePath = resource.substring( dirIndex+1 );
-            }
-
-            logger.fine("Loading wsdl resource '" + resource + "' as '" + resourcePath +"'.");
-
-            bytes = IOUtils.slurpUrl(getClass().getResource("serviceTemplate/" + resourcePath));
-        }
-
-        return HexUtils.decodeUtf8(bytes);
     }
 
     private String getDefaultPolicyXml() throws IOException {

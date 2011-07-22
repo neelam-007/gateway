@@ -42,6 +42,13 @@ CREATE TABLE wssc_session (
 ALTER IGNORE TABLE policy_version ADD UNIQUE KEY i_policy_ordinal (policy_oid, ordinal);
 
 --
+-- Register upgrade task for Gateway Management internal service WSDL upgrades
+--
+INSERT INTO cluster_properties
+    (objectid, version, propkey, propvalue)
+    values (-600200, 0, "upgrade.task.600200", "com.l7tech.server.upgrade.Upgrade61to62UpdateGatewayManagementWsdl");
+
+--
 --
 -- Reenable FK at very end of script
 --
