@@ -11,6 +11,7 @@ import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.ImageCache;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.SquigglyTextField;
@@ -41,6 +42,7 @@ import static com.l7tech.gateway.common.transport.SsgConnector.*;
 public class SsgConnectorPropertiesDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(SsgConnectorPropertiesDialog.class.getName());
     private static final boolean ENABLE_FTPS_TLS12 = SyspropUtil.getBoolean("com.l7tech.console.connector.allowFtpsTls12");
+    private static final String CLUSTER_PROP_PARAM_SNMP_QUERY_SERVICE = "builtinService.snmpQuery.enabled";
     private static final String DIALOG_TITLE = "Listen Port Properties";
     private static final int TAB_SSL = 1;
     private static final int TAB_HTTP = 2;
@@ -70,6 +72,9 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
     private static final String CPROP_WASENABLED = SsgConnectorPropertiesDialog.class.getName() + ".wasEnabled";
 
+    private static final Icon collapseIcon = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/CollapseAll.gif"));
+    private static final Icon expandIcon = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/ExpandAll.gif"));
+
     private JPanel contentPane;
     private JButton okButton;
     private JButton cancelButton;
@@ -87,7 +92,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private JButton defaultCipherListButton;
     private JTextField portRangeStartField;
     private JTextField portRangeCountField;
-    private javax.swing.JCheckBox enabledCheckBox;
+    private JCheckBox enabledCheckBox;
     private JTabbedPane tabbedPane;
     private JCheckBox cbEnableMessageInput;
     private JCheckBox cbEnableBuiltinServices;
@@ -112,6 +117,14 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private JCheckBox overrideContentTypeCheckBox;
     private JCheckBox hardwiredServiceCheckBox;
     private ServiceComboBox serviceNameComboBox;
+    private JButton collapseOrExpandButton;
+    private JCheckBox policyDiscoveryCheckBox;
+    private JCheckBox stsCheckBox;
+    private JCheckBox csrHandlerCheckBox;
+    private JCheckBox passwordChangeCheckBox;
+    private JCheckBox wsdlProxyCheckBox;
+    private JCheckBox snmpQueryCheckBox;
+    private JPanel builtinServicesPanel;
 
     private SsgConnector connector;
     private boolean confirmed = false;
@@ -121,7 +134,6 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private List<String> toBeRemovedProperties = new ArrayList<String>();
     private boolean isCluster = false;
     private JCheckBox[] savedStateCheckBoxes = {
-            cbEnableBuiltinServices,
             cbEnableMessageInput,
             cbEnableSsmApplet,
             cbEnableSsmRemote,
@@ -134,6 +146,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             overrideContentTypeCheckBox,
             hardwiredServiceCheckBox,
     };
+    private Map<Endpoint, JCheckBox> builtinServicesMap;
 
     private Map<String, TransportDescriptor> transportsByScheme = new TreeMap<String, TransportDescriptor>(String.CASE_INSENSITIVE_ORDER);
     private Map<String, CustomTransportPropertiesPanel> customGuisByScheme = new TreeMap<String, CustomTransportPropertiesPanel>(String.CASE_INSENSITIVE_ORDER);
@@ -207,6 +220,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             @Override
             public void itemStateChanged(ItemEvent e) {
                 enableOrDisableComponents();
+                enableOrDisableBuiltinServiceEndpoints(); // Do not merge this method into enableOrDisableComponents(), since it will be toggled only when the protocol is changed.
             }
         });
 
@@ -313,6 +327,73 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             }
         });
 
+        collapseOrExpandButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Icon icon = collapseOrExpandButton.getIcon();
+                if (collapseIcon.equals(icon)) {
+                    collapseOrExpandButton.setIcon(expandIcon);
+                    builtinServicesPanel.setVisible(false);
+                } else {
+                    collapseOrExpandButton.setIcon(collapseIcon);
+                    builtinServicesPanel.setVisible(true);
+                }
+                SsgConnectorPropertiesDialog.this.pack();
+            }
+        });
+
+        cbEnableBuiltinServices.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                final boolean allBuiltinServicesChecked = cbEnableBuiltinServices.isSelected();
+
+                if (allBuiltinServicesChecked) {
+                    builtinServicesPanel.setVisible(true);
+                    collapseOrExpandButton.setIcon(collapseIcon);
+                    SsgConnectorPropertiesDialog.this.pack();
+                }
+
+                policyDiscoveryCheckBox.setSelected(allBuiltinServicesChecked);
+                stsCheckBox.setSelected(allBuiltinServicesChecked);
+                if (httpsEnabled()) { // If the protocol is HTTPS
+                    csrHandlerCheckBox.setSelected(allBuiltinServicesChecked);
+                    passwordChangeCheckBox.setSelected(allBuiltinServicesChecked);
+                }
+                wsdlProxyCheckBox.setSelected(allBuiltinServicesChecked);
+                if (snmpQueryServicePropertyEnabled()) snmpQueryCheckBox.setSelected(allBuiltinServicesChecked);
+
+                saveAllBuiltinServiceCheckboxStates();
+                pack();
+            }
+        });
+
+        final ActionListener cleanCheckboxListener = new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                final boolean isHttps = httpsEnabled();
+
+                // If one of individual built-in services is not selected, then de-select the "Built-in services" checkbox.
+                if (!policyDiscoveryCheckBox.isSelected() || !stsCheckBox.isSelected() ||
+                    (isHttps && !csrHandlerCheckBox.isSelected()) ||
+                    (isHttps && !passwordChangeCheckBox.isSelected()) ||
+                    !wsdlProxyCheckBox.isSelected() ||
+                    (snmpQueryServicePropertyEnabled() && !snmpQueryCheckBox.isSelected())) {
+
+                    // Deselect the "Built-in services" checkbox
+                    cbEnableBuiltinServices.setSelected(false);
+                }
+
+                saveAllBuiltinServiceCheckboxStates();
+                pack();
+            }
+        };
+        policyDiscoveryCheckBox.addActionListener(cleanCheckboxListener);
+        stsCheckBox.addActionListener(cleanCheckboxListener);
+        csrHandlerCheckBox.addActionListener(cleanCheckboxListener);
+        passwordChangeCheckBox.addActionListener(cleanCheckboxListener);
+        wsdlProxyCheckBox.addActionListener(cleanCheckboxListener);
+        snmpQueryCheckBox.addActionListener(cleanCheckboxListener);
+
         ActionListener enableOrDisableServiceDropdownsActionListener = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -398,6 +479,12 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                 boolean disabled = !enabledCheckBox.isSelected();
                 if (disabled ||
                     cbEnableBuiltinServices.isSelected() ||
+                    policyDiscoveryCheckBox.isSelected() ||
+                    stsCheckBox.isSelected() ||
+                    (httpsEnabled() && csrHandlerCheckBox.isSelected()) ||
+                    (httpsEnabled() && passwordChangeCheckBox.isSelected()) ||
+                    wsdlProxyCheckBox.isSelected() ||
+                    (snmpQueryServicePropertyEnabled() && snmpQueryCheckBox.isSelected()) ||
                     cbEnableMessageInput.isSelected() ||
                     cbEnableSsmApplet.isSelected() ||
                     cbEnableSsmRemote.isSelected() ||
@@ -446,7 +533,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                     if (ctype != null && ctype.isXml())
                         return null;
 
-                    msg = "A " + td + " port must be directly associated with a valid published service unless the content type is XML."; 
+                    msg = "A " + td + " port must be directly associated with a valid published service unless the content type is XML.";
                 }
 
                 if (hardwiredServiceCheckBox.isSelected() && serviceNameComboBox.getSelectedItem() != null)
@@ -667,7 +754,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         tabbedPane.setEnabledAt(TAB_SSL, isSsl);
         tabbedPane.setEnabledAt(TAB_HTTP, isHttp || isPool);
-        
+
         usePrivateThreadPoolCheckBox.setEnabled(isHttp || isPool);
         threadPoolSizeSpinner.setEnabled(usePrivateThreadPoolCheckBox.isEnabled() && usePrivateThreadPoolCheckBox.isSelected());
         threadPoolSizeLabel.setEnabled( threadPoolSizeSpinner.isEnabled() );
@@ -745,7 +832,6 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         Set<Endpoint> endpoints = proto == null ? Collections.<Endpoint>emptySet() : proto.getSupportedEndpoints();
         disableOrRestoreEndpointCheckBox(endpoints, SsgConnector.Endpoint.MESSAGE_INPUT, cbEnableMessageInput);
         disableOrRestoreEndpointCheckBox(endpoints, SsgConnector.Endpoint.PC_NODE_API, cbEnablePCAPI);
-        disableOrRestoreEndpointCheckBox(endpoints, SsgConnector.Endpoint.OTHER_SERVLETS, cbEnableBuiltinServices);
         disableOrRestoreEndpointCheckBox(endpoints, SsgConnector.Endpoint.ADMIN_REMOTE_ESM, cbEnableEsmRemote);
         disableOrRestoreEndpointCheckBox(endpoints, SsgConnector.Endpoint.ADMIN_REMOTE_SSM, cbEnableSsmRemote);
         disableOrRestoreEndpointCheckBox(endpoints, SsgConnector.Endpoint.ADMIN_APPLET, cbEnableSsmApplet);
@@ -841,9 +927,28 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         if (cbEnableEsmRemote.isSelected()) endpoints.add(Endpoint.ADMIN_REMOTE_ESM.name());
         if (cbEnableSsmRemote.isSelected()) endpoints.add(Endpoint.ADMIN_REMOTE_SSM.name());
         if (cbEnableSsmApplet.isSelected()) endpoints.add(Endpoint.ADMIN_APPLET.name());
-        if (cbEnableBuiltinServices.isSelected()) endpoints.add(Endpoint.OTHER_SERVLETS.name());
         if (cbEnableNode.isSelected()) endpoints.add(Endpoint.NODE_COMMUNICATION.name());
         if (cbEnablePCAPI.isSelected()) endpoints.add(Endpoint.PC_NODE_API.name());
+
+        // The only case to save all built-in services as OTHER_SERVLETS is when th protocol is HTTPS and all six individual built-in services are selected.
+        // Otherwise, go thru each checkbox and set the endpoint if the checkbox is selected.
+        if (httpsEnabled() && snmpQueryServicePropertyEnabled() &&
+            policyDiscoveryCheckBox.isSelected() &&
+            stsCheckBox.isSelected() &&
+            csrHandlerCheckBox.isSelected() &&
+            passwordChangeCheckBox.isSelected() &&
+            wsdlProxyCheckBox.isSelected() &&
+            snmpQueryCheckBox.isSelected()) {
+
+            endpoints.add(SsgConnector.Endpoint.OTHER_SERVLETS.name());
+        } else {
+            if (policyDiscoveryCheckBox.isSelected()) endpoints.add(Endpoint.POLICYDISCO.name());
+            if (stsCheckBox.isSelected()) endpoints.add(Endpoint.STS.name());
+            if (httpsEnabled() && csrHandlerCheckBox.isSelected()) endpoints.add(Endpoint.CSRHANDLER.name());
+            if (httpsEnabled() && passwordChangeCheckBox.isSelected()) endpoints.add(Endpoint.PASSWD.name());
+            if (wsdlProxyCheckBox.isSelected()) endpoints.add(Endpoint.WSDLPROXY.name());
+            if (snmpQueryServicePropertyEnabled() && snmpQueryCheckBox.isSelected()) endpoints.add(Endpoint.SNMPQUERY.name());
+        }
 
         return TextUtils.join(",", endpoints.toArray(new String[endpoints.size()])).toString();
     }
@@ -862,9 +967,15 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         boolean esmRemote = false;
         boolean ssmRemote = false;
         boolean ssmApplet = false;
-        boolean builtin = false;
         boolean node = false;
         boolean pcapi = false;
+        boolean builtin = false;
+        boolean policyDisco = false;
+        boolean sts = false;
+        boolean csrHandler = false;
+        boolean passwordChange = false;
+        boolean wsdlProxy = false;
+        boolean snmpQuery = false;
 
         // Currently the GUI has fewer checkboxes than there are endpoint types, with multiple endpoints bundled inside
         // a single "built-in services" checkbox, so we'll try to behave sensibly if the endpoint
@@ -882,8 +993,14 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                     case ADMIN_REMOTE_SSM:  ssmRemote = true;   break;
                     case ADMIN_APPLET:      ssmApplet = true;   break;
                     case NODE_COMMUNICATION: node     = true;   break;
-                    case PC_NODE_API:       pcapi     = true;   break;            
-                    default:                builtin   = true;   break;
+                    case PC_NODE_API:       pcapi     = true;   break;
+                    case OTHER_SERVLETS: builtin   = true;   break;
+                    case POLICYDISCO: policyDisco = true; break;
+                    case STS: sts = true; break;
+                    case CSRHANDLER: csrHandler = true; break;
+                    case PASSWD: passwordChange = true; break;
+                    case WSDLPROXY: wsdlProxy = true; break;
+                    case SNMPQUERY: snmpQuery = true; break;
                 }
             } catch (IllegalArgumentException iae) {
                 logger.fine("Ignoring unrecognized endpoint name: " + name);
@@ -898,9 +1015,166 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         cbEnableNode.setSelected(node);
         cbEnablePCAPI.setSelected(pcapi);
 
+        // For all individual built-in services
+        policyDiscoveryCheckBox.setSelected(policyDisco);
+        stsCheckBox.setSelected(sts);
+        csrHandlerCheckBox.setSelected(csrHandler);
+        passwordChangeCheckBox.setSelected(passwordChange);
+        wsdlProxyCheckBox.setSelected(wsdlProxy);
+        snmpQueryCheckBox.setSelected(snmpQuery);
+
+        setupBuiltinServiceCheckboxes();
+
         // For listen ports last saved pre-Pandora, have GUI reflect what the actual system behavior will be (Bug #8802)
         if (cbEnableSsmApplet.isSelected())
             cbEnableSsmRemote.setSelected(true);
+    }
+
+    /**
+     * Set up built-in service checkboxes such as visible, enabled, disabled, or selected.
+     */
+    private void setupBuiltinServiceCheckboxes() {
+        final boolean httpEnabled = httpEnabled();   // HTTP or HTTPS
+        final boolean httpsEnabled = httpsEnabled(); // HTTPS
+        final boolean snmpPropEnabled = snmpQueryServicePropertyEnabled();
+
+        // If the protocol is not HTTPS, then disable both CSR Handler service and Password changing service.
+        csrHandlerCheckBox.setEnabled(httpsEnabled);
+        passwordChangeCheckBox.setEnabled(httpsEnabled);
+        if (! httpsEnabled) {
+            csrHandlerCheckBox.setSelected(false);
+            passwordChangeCheckBox.setSelected(false);
+        }
+
+        // If the SNMP Query Service cluster property is set as disabled, then make the checkbox of SNMP query service be invisible.
+        // If the protocol is HTTP or HTTPS and the cluster property is set as true., set the SNMP query service checkbox as visible and enabled.
+        snmpQueryCheckBox.setVisible(httpEnabled &&snmpPropEnabled);
+        snmpQueryCheckBox.setEnabled(httpEnabled && snmpPropEnabled);
+        if (!httpEnabled || !snmpPropEnabled) snmpQueryCheckBox.setSelected(false);
+
+        // If one of individual built-in services is enabled, then the "Built-in services" checkbox should be enabled..
+        if (policyDiscoveryCheckBox.isEnabled() ||
+            stsCheckBox.isEnabled() ||
+            (httpsEnabled && csrHandlerCheckBox.isEnabled()) ||
+            (httpsEnabled && passwordChangeCheckBox.isEnabled()) ||
+            wsdlProxyCheckBox.isEnabled() ||
+            (snmpPropEnabled && snmpQueryCheckBox.isEnabled())) {
+
+            cbEnableBuiltinServices.setEnabled(true);
+            collapseOrExpandButton.setEnabled(true);
+        } else {
+            // If all built-in service checkboxes (including the parent one) are disabled, then disable the collapse/expand button.
+            collapseOrExpandButton.setEnabled(false);
+        }
+
+        // If all individual built-in services are not selected, then collapse the built-in service list
+        if (!policyDiscoveryCheckBox.isSelected() &&
+            !stsCheckBox.isSelected() &&
+            (!httpsEnabled || !csrHandlerCheckBox.isSelected()) &&
+            (!httpsEnabled || !passwordChangeCheckBox.isSelected()) &&
+            !wsdlProxyCheckBox.isSelected() &&
+            (!snmpPropEnabled || !snmpQueryCheckBox.isSelected())) {
+
+            builtinServicesPanel.setVisible(false);
+            collapseOrExpandButton.setIcon(expandIcon);
+        } else {
+            builtinServicesPanel.setVisible(true);
+            collapseOrExpandButton.setIcon(collapseIcon);
+        }
+
+        // If the "Built-in services" checkbox is checked, then all individual built-in service checkboxes should be checked.
+        if (cbEnableBuiltinServices.isEnabled() && cbEnableBuiltinServices.isSelected()) {
+            policyDiscoveryCheckBox.setSelected(true);
+            stsCheckBox.setSelected(true);
+            if (httpsEnabled) {
+                csrHandlerCheckBox.setEnabled(true);
+                csrHandlerCheckBox.setSelected(true);
+
+                passwordChangeCheckBox.setEnabled(true);
+                passwordChangeCheckBox.setSelected(true);
+            }
+            wsdlProxyCheckBox.setSelected(true);
+            if (snmpPropEnabled) {
+                snmpQueryCheckBox.setVisible(true);
+                snmpQueryCheckBox.setEnabled(true);
+                snmpQueryCheckBox.setSelected(true);
+            }
+
+            collapseOrExpandButton.setEnabled(true);
+        }
+
+        saveAllBuiltinServiceCheckboxStates();
+        pack();
+    }
+
+    private void saveAllBuiltinServiceCheckboxStates() {
+        for (JCheckBox checkBox: getBuiltinServicesMap().values()) {
+            saveCheckBoxState(checkBox);
+        }
+    }
+
+    /**
+     * Enable or disable the checkboxs of built-iin services.
+     * Note:  do not merge this method into enableOrDisableComponents(), since this method will be toggled only when the protocol is changed.
+     */
+    private void enableOrDisableBuiltinServiceEndpoints() {
+        final TransportDescriptor protocol = getSelectedProtocol();
+        Set<Endpoint> endpoints = protocol == null ? Collections.<Endpoint>emptySet() : protocol.getSupportedEndpoints();
+
+        for (Endpoint endpoint: getBuiltinServicesMap().keySet()) {
+            final JCheckBox checkBox = getBuiltinServicesMap().get(endpoint);
+            if (endpoints.contains(endpoint)) {
+                checkBox.setEnabled(true);
+
+                final Boolean wasSelected = (Boolean)checkBox.getClientProperty(CPROP_WASENABLED);
+                if (wasSelected != null) checkBox.setSelected(wasSelected);
+            } else {
+                checkBox.setEnabled(false);
+                checkBox.setSelected(false);
+            }
+        }
+
+        setupBuiltinServiceCheckboxes();
+    }
+
+    private Map<Endpoint, JCheckBox> getBuiltinServicesMap() {
+        if (builtinServicesMap == null) {
+            builtinServicesMap = new HashMap<Endpoint, JCheckBox>();
+            builtinServicesMap.put(Endpoint.OTHER_SERVLETS, cbEnableBuiltinServices);
+            builtinServicesMap.put(Endpoint.POLICYDISCO, policyDiscoveryCheckBox);
+            builtinServicesMap.put(Endpoint.STS, stsCheckBox);
+            builtinServicesMap.put(Endpoint.CSRHANDLER, csrHandlerCheckBox);
+            builtinServicesMap.put(Endpoint.PASSWD, passwordChangeCheckBox);
+            builtinServicesMap.put(Endpoint.WSDLPROXY, wsdlProxyCheckBox);
+            builtinServicesMap.put(Endpoint.SNMPQUERY, snmpQueryCheckBox);
+        }
+        return builtinServicesMap;
+    }
+
+    private boolean httpEnabled() {
+        final TransportDescriptor protocol = getSelectedProtocol();
+        return isHttpProto(protocol);
+    }
+
+    private boolean httpsEnabled() {
+        final TransportDescriptor protocol = getSelectedProtocol();
+        return isHttpProto(protocol) && isSslProto(protocol);
+    }
+
+    private boolean snmpQueryServicePropertyEnabled() {
+        boolean prop_snmp_enabled = false;
+
+        Registry registry = Registry.getDefault();
+        if (registry.isAdminContextPresent()) {
+            try {
+                ClusterProperty prop = registry.getClusterStatusAdmin().findPropertyByName(CLUSTER_PROP_PARAM_SNMP_QUERY_SERVICE);
+                prop_snmp_enabled = prop == null? false: Boolean.parseBoolean(prop.getValue());
+            } catch (FindException fe) {
+                logger.warning("Cannot find the cluster property, '" + CLUSTER_PROP_PARAM_SNMP_QUERY_SERVICE + "'.");
+            }
+        }
+
+        return prop_snmp_enabled;
     }
 
     /**
@@ -1036,7 +1310,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         // HTTP-specific properties
         if ( usePrivateThreadPoolCheckBox.isEnabled() && usePrivateThreadPoolCheckBox.isSelected()  ) {
-            connector.putProperty(SsgConnector.PROP_THREAD_POOL_SIZE, threadPoolSizeSpinner.getValue().toString() );              
+            connector.putProperty(SsgConnector.PROP_THREAD_POOL_SIZE, threadPoolSizeSpinner.getValue().toString() );
         } else {
             connector.removeProperty(SsgConnector.PROP_THREAD_POOL_SIZE);
         }
@@ -1079,7 +1353,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             PublishedService ps = serviceNameComboBox.getSelectedPublishedService();
             if (ps != null)
                 connector.putProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, String.valueOf(ps.getOid()));
-        }        
+        }
 
         connector.removeProperty(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE);
         if (overrideContentTypeCheckBox.isSelected()) {

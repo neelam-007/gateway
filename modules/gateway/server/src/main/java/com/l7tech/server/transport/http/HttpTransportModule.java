@@ -57,6 +57,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.gateway.common.transport.SsgConnector.Endpoint.*;
+
 /**
  * Bean that owns the Tomcat servlet container and all the HTTP/HTTPS connectors.
  * <p/>
@@ -777,7 +779,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         http.setHttpBased(true);
         http.setSupportsHardwiredServiceResolution(true);
         http.setSupportsSpecifiedContentType(true);
-        http.setSupportedEndpoints(EnumSet.of(SsgConnector.Endpoint.MESSAGE_INPUT, SsgConnector.Endpoint.OTHER_SERVLETS, SsgConnector.Endpoint.NODE_COMMUNICATION));
+        http.setSupportedEndpoints(EnumSet.of(MESSAGE_INPUT, POLICYDISCO, STS, WSDLPROXY, SNMPQUERY, NODE_COMMUNICATION)); // Other two built-in endpoints (CSRHANDLER and PASSWD) are not available for HTTP protocol.
         ssgConnectorManager.registerTransportProtocol(http, this);
 
         final TransportDescriptor https = new TransportDescriptor("HTTPS", true);
