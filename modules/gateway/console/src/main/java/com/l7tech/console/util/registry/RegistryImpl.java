@@ -357,7 +357,7 @@ public final class RegistryImpl extends Registry
                 Either<Throwable,Object> result = getClusterStatusAdmin().invokeExtensionMethod(interfaceClass.getName(), instanceIdentifier, method.getName(), method.getParameterTypes(), args);
                 if (result.isLeft())
                     throw result.left();
-                return result.left();
+                return result.right();
             }
         });
     }
