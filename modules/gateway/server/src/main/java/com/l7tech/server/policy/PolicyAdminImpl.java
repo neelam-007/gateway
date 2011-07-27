@@ -11,6 +11,7 @@ import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.identity.User;
+import com.l7tech.message.Message;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.Assertion;
@@ -554,6 +555,11 @@ public class PolicyAdminImpl implements PolicyAdmin {
 
     public void setServerConfig(ServerConfig serverConfig) {
         this.serverConfig = serverConfig;
+    }
+
+    @Override
+    public long getXmlMaxBytes(){
+        return Message.getMaxBytes();
     }
 
     @Override

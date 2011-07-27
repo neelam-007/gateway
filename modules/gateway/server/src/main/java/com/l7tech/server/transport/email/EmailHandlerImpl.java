@@ -127,7 +127,7 @@ public class EmailHandlerImpl implements EmailHandler {
             }
 
             com.l7tech.message.Message request = new com.l7tech.message.Message();
-            request.initialize(stashManagerFactory.createStashManager(), ctype, requestStream );
+            request.initialize(stashManagerFactory.createStashManager(), ctype, requestStream,emailListenerCfg.getMaxMessageSize());
             request.attachEmailKnob(new EmailKnob() {
                 @Override
                 public Map<String, Object> getEmailMsgPropMap() {

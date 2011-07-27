@@ -765,10 +765,18 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 outerContentType = getDefaultContentType(false);
             }
 
+            long maxBytes = 0;
+            if (assertion.getResponseSize() <0){
+                maxBytes = com.l7tech.message.Message.getMaxBytes();
+            }
+            else{
+                maxBytes = assertion.getResponseSize();
+            }
+
             // Handle missing content type error
             if (assertion.isPassthroughHttpAuthentication() && status == HttpConstants.STATUS_UNAUTHORIZED) {
                 if ( outerContentType==null ) outerContentType = getDefaultContentType(true);
-                destination.initialize(stashManagerFactory.createStashManager(), outerContentType, responseStream);
+                destination.initialize(stashManagerFactory.createStashManager(), outerContentType, responseStream, maxBytes);
                 responseOk = false;
             } else if (status >= HttpConstants.STATUS_ERROR_RANGE_START && assertion.isFailOnErrorStatus() && !passthroughSoapFault) {
                 logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_BADSTATUS, Integer.toString(status));
@@ -780,7 +788,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                     destination.initialize(outerContentType, new byte[0]);
                 } else {
                     StashManager stashManager = stashManagerFactory.createStashManager();
-                    destination.initialize(stashManager, outerContentType, responseStream);
+                    destination.initialize(stashManager, outerContentType, responseStream,maxBytes);
                 }
             }
         } catch(EOFException eofe){

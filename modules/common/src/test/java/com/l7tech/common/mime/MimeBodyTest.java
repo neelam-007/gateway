@@ -30,14 +30,11 @@ import static org.junit.Assert.*;
 public class MimeBodyTest {
     private static Logger log = Logger.getLogger(MimeBodyTest.class.getName());
 
-    @Before
-    public void beforeTest() {
-        MimeBody.setFirstPartMaxBytes(0);
-    }
+    private static long FIRST_PART_MAX_BYTE = 0;
 
     @Test
     public void testEmptySinglePartMessage() throws Exception {
-        MimeBody mm = new MimeBody(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new EmptyInputStream());
+        MimeBody mm = new MimeBody(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new EmptyInputStream(),FIRST_PART_MAX_BYTE);
         assertEquals(-1, mm.getFirstPart().getContentLength()); // size of part not yet known
         long len = mm.getEntireMessageBodyLength(); // force entire body to be read
         assertEquals(0, len);
@@ -46,7 +43,7 @@ public class MimeBodyTest {
 
     @Test
     public void testSimple() throws Exception {
-        MimeBody mm = makeMessage(MESS, MESS_CONTENT_TYPE);
+        MimeBody mm = makeMessage(MESS, MESS_CONTENT_TYPE,FIRST_PART_MAX_BYTE);
 
         PartInfo rubyPart = mm.getPart(1);
         InputStream rubyStream = rubyPart.getInputStream(true);
@@ -82,7 +79,7 @@ public class MimeBodyTest {
 
     @Test
     public void testReadWriteIdentityEncoded() throws Exception {
-        MimeBody mm = makeMessage(MESS, MESS_CONTENT_TYPE);
+        MimeBody mm = makeMessage(MESS, MESS_CONTENT_TYPE,FIRST_PART_MAX_BYTE);
 
         // read parts
         PartInfo rubyPart = mm.getPart(1);
@@ -111,7 +108,7 @@ public class MimeBodyTest {
 
     @Test
     public void testReadWriteContentTransferEncoded() throws Exception {
-        MimeBody mm = makeMessage(MESS_ENC, MESS_CONTENT_TYPE);
+        MimeBody mm = makeMessage(MESS_ENC, MESS_CONTENT_TYPE,FIRST_PART_MAX_BYTE);
 
         // read parts
         PartInfo rubyPart = mm.getPart(1);
@@ -141,7 +138,7 @@ public class MimeBodyTest {
 
     @Test
     public void testSimpleWithNoPreamble() throws Exception {
-        MimeBody mm = makeMessage(MESS2, MESS2_CONTENT_TYPE);
+        MimeBody mm = makeMessage(MESS2, MESS2_CONTENT_TYPE,FIRST_PART_MAX_BYTE);
 
         PartInfo rubyPart = mm.getPart(1);
         InputStream rubyStream = rubyPart.getInputStream(true);
@@ -173,17 +170,17 @@ public class MimeBodyTest {
         }
     }
 
-    private MimeBody makeMessage(String message, String contentTypeValue) throws IOException, NoSuchPartException {
+    private MimeBody makeMessage(String message, String contentTypeValue, long maxSize) throws IOException, NoSuchPartException {
         InputStream mess = new ByteArrayInputStream(message.getBytes());
         ContentTypeHeader mr = ContentTypeHeader.parseValue(contentTypeValue);
         StashManager sm = new ByteArrayStashManager();
-        return new MimeBody(sm, mr, mess);
+        return new MimeBody(sm, mr, mess,maxSize);
     }
 
     @Test
     public void testSinglePart() throws Exception {
         final String body = "<foo/>";
-        MimeBody mm = makeMessage(body, "text/xml");
+        MimeBody mm = makeMessage(body, "text/xml",FIRST_PART_MAX_BYTE);
         PartInfo p = mm.getPart(0);
         InputStream in = p.getInputStream(true);
         final byte[] bodyStream = IOUtils.slurpStream(in);
@@ -193,7 +190,7 @@ public class MimeBodyTest {
 
     @Test
     public void testStreamAllWithNoPreamble() throws Exception {
-        MimeBody mm = makeMessage(MESS2, MESS2_CONTENT_TYPE);
+        MimeBody mm = makeMessage(MESS2, MESS2_CONTENT_TYPE,FIRST_PART_MAX_BYTE);
 
         InputStream bodyStream = mm.getEntireMessageBodyAsInputStream(true);
         byte[] body = IOUtils.slurpStream(bodyStream);
@@ -205,7 +202,7 @@ public class MimeBodyTest {
 
     @Test
     public void testStreamAllWithPreamble() throws Exception {
-        MimeBody mm = makeMessage(MESS, MESS_CONTENT_TYPE);
+        MimeBody mm = makeMessage(MESS, MESS_CONTENT_TYPE,FIRST_PART_MAX_BYTE);
 
         InputStream bodyStream = mm.getEntireMessageBodyAsInputStream(true);
         byte[] body = IOUtils.slurpStream(bodyStream);
@@ -224,7 +221,7 @@ public class MimeBodyTest {
 
     @Test
     public void testStreamAllConsumedRubyPart() throws Exception {
-        MimeBody mm = makeMessage(MESS2, MESS2_CONTENT_TYPE);
+        MimeBody mm = makeMessage(MESS2, MESS2_CONTENT_TYPE,FIRST_PART_MAX_BYTE);
 
         // Destroy body of ruby part
         IOUtils.slurpStream(mm.getPart(1).getInputStream(true));
@@ -239,7 +236,7 @@ public class MimeBodyTest {
 
     @Test
     public void testStreamAllWithAllStashed() throws Exception {
-        MimeBody mm = makeMessage(MESS, MESS_CONTENT_TYPE);
+        MimeBody mm = makeMessage(MESS, MESS_CONTENT_TYPE,FIRST_PART_MAX_BYTE);
 
         mm.getPart(1).getInputStream(false);
 
@@ -258,7 +255,7 @@ public class MimeBodyTest {
 
     @Test
     public void testStreamAllWithFirstPartStashed() throws Exception {
-        MimeBody mm = makeMessage(MESS, MESS_CONTENT_TYPE);
+        MimeBody mm = makeMessage(MESS, MESS_CONTENT_TYPE,FIRST_PART_MAX_BYTE);
 
         mm.getPart(0).getInputStream(false);
 
@@ -273,7 +270,7 @@ public class MimeBodyTest {
 
     @Test
     public void testLookupsByCid() throws Exception {
-        MimeBody mm = makeMessage(MESS, MESS_CONTENT_TYPE);
+        MimeBody mm = makeMessage(MESS, MESS_CONTENT_TYPE,FIRST_PART_MAX_BYTE);
 
         PartInfo rubyPart = mm.getPartByContentId(MESS_RUBYCID);
         InputStream rubyStream = rubyPart.getInputStream(true);
@@ -310,7 +307,7 @@ public class MimeBodyTest {
     @Test
     public void testByteArrayCtorNullByteArray() {
         try {
-            new MimeBody(null, ContentTypeHeader.XML_DEFAULT);
+            new MimeBody(null, ContentTypeHeader.XML_DEFAULT,FIRST_PART_MAX_BYTE);
             fail("Did not get a fast-failure exception passing null byte array to MimeBody(byte[], ctype)");
         } catch (NullPointerException e) {
             // This is acceptable
@@ -325,7 +322,7 @@ public class MimeBodyTest {
 
     @Test
     public void testIterator() throws Exception {
-        MimeBody mm = makeMessage(MESS, MESS_CONTENT_TYPE);
+        MimeBody mm = makeMessage(MESS, MESS_CONTENT_TYPE,FIRST_PART_MAX_BYTE);
 
         List parts = new ArrayList();
         for (PartIterator i = mm.iterator(); i.hasNext(); ) {
@@ -349,7 +346,7 @@ public class MimeBodyTest {
         MimeBody mm = new MimeBody(new ByteArrayStashManager(),
                                                    ContentTypeHeader.parseValue("multipart/mixed; boundary=\"" +
                                                                                 new String(stfu.getBoundary()) + "\""),
-                                                   mess);
+                                                   mess,FIRST_PART_MAX_BYTE);
 
         List parts = new ArrayList();
         for (PartIterator i = mm.iterator(); i.hasNext(); ) {
@@ -381,7 +378,7 @@ public class MimeBodyTest {
         MimeBody mm = new MimeBody(new ByteArrayStashManager(),
                                                    ContentTypeHeader.parseValue("multipart/mixed; boundary=\"" +
                                                                                 new String(stfu.getBoundary()) + "\""),
-                                                   mess);
+                                                   mess,FIRST_PART_MAX_BYTE);
 
         List parts = new ArrayList();
         for (PartIterator i = mm.iterator(); i.hasNext(); ) {
@@ -398,7 +395,7 @@ public class MimeBodyTest {
         final String mess = "--blah\r\nContent-Length: 10\r\n\r\n\r\n--blah\r\n\r\n--blah--";
         try {
             // Test fail on getActualContentLength
-            MimeBody mm = new MimeBody(mess.getBytes(), ct);
+            MimeBody mm = new MimeBody(mess.getBytes(), ct,FIRST_PART_MAX_BYTE);
             long len = mm.getPart(0).getActualContentLength();
             fail("Failed to throw expected exception on Content-Length: header that lies (got len=" + len + ")");
         } catch (IOException e) {
@@ -409,7 +406,7 @@ public class MimeBodyTest {
         try {
             // Test fail during iteration
             int num = 0;
-            MimeBody mm = new MimeBody(mess.getBytes(), ct);
+            MimeBody mm = new MimeBody(mess.getBytes(), ct,FIRST_PART_MAX_BYTE);
             for (PartIterator i = mm.iterator(); i.hasNext(); ) {
                 PartInfo partInfo = i.next();
                 partInfo.getInputStream(false).close();
@@ -425,7 +422,7 @@ public class MimeBodyTest {
     @Test
     public void testFailureToStartAtPartZero() throws Exception {
         try {
-            makeMessage(MESS3, MESS3_CONTENT_TYPE);
+            makeMessage(MESS3, MESS3_CONTENT_TYPE,FIRST_PART_MAX_BYTE);
             fail("Failed to detect multipart content type start parameter that points somewhere other than the first part");
         } catch (IOException e) {
             // Ok
@@ -434,12 +431,12 @@ public class MimeBodyTest {
 
     @Test
     public void testBug2180() throws Exception {
-        makeMessage(BUG_2180, MESS_BUG_2180_CTYPE);
+        makeMessage(BUG_2180, MESS_BUG_2180_CTYPE,FIRST_PART_MAX_BYTE);
     }
 
     @Test
     public void testStreamValidatedParts() throws Exception {
-        MimeBody mm = makeMessage(MESS2, MESS2_CONTENT_TYPE);
+        MimeBody mm = makeMessage(MESS2, MESS2_CONTENT_TYPE,FIRST_PART_MAX_BYTE);
         mm.setEntireMessageBodyAsInputStreamIsValidatedOnly();
         mm.readAndStashEntireMessage();
         assertTrue(mm.getNumPartsKnown()!=1); // Not a valid test if the message only has one part to start with
@@ -448,7 +445,7 @@ public class MimeBodyTest {
         byte[] output = IOUtils.slurpStream(mm.getEntireMessageBodyAsInputStream(false));
 
         // Check only one part
-        MimeBody rebuilt = new MimeBody(output, ContentTypeHeader.parseValue(MESS2_CONTENT_TYPE));
+        MimeBody rebuilt = new MimeBody(output, ContentTypeHeader.parseValue(MESS2_CONTENT_TYPE),FIRST_PART_MAX_BYTE);
         rebuilt.readAndStashEntireMessage();
 
         assertEquals(1,rebuilt.getNumPartsKnown());
@@ -465,7 +462,7 @@ public class MimeBodyTest {
                     stashManager,
                     ContentTypeHeader.parseValue("multipart/mixed; boundary=\"" +
                             new String(stfu.getBoundary()) + "\""),
-                    in);
+                    in,FIRST_PART_MAX_BYTE);
 
             byte[] firstPart = IOUtils.slurpStream(mm.getPart(0).getInputStream(false));
             assertEquals(firstPart.length, 50000);
@@ -486,7 +483,7 @@ public class MimeBodyTest {
     @Test
     public void testIOExceptionDuringInitialStash_checkingLength() throws Exception {
         @SuppressWarnings({"ThrowableInstanceNeverThrown"})
-        MimeBody m = new MimeBody(new ByteArrayStashManager(), ContentTypeHeader.TEXT_DEFAULT, new IOExceptionThrowingInputStream(new IOException("Problem?")));
+        MimeBody m = new MimeBody(new ByteArrayStashManager(), ContentTypeHeader.TEXT_DEFAULT, new IOExceptionThrowingInputStream(new IOException("Problem?")),FIRST_PART_MAX_BYTE);
 
         try {
             m.getEntireMessageBodyLength();
@@ -507,7 +504,7 @@ public class MimeBodyTest {
     @Test
     public void testIOExceptionDuringInitialStash_reading() throws Exception {
         @SuppressWarnings({"ThrowableInstanceNeverThrown"})
-        MimeBody m = new MimeBody(new ByteArrayStashManager(), ContentTypeHeader.TEXT_DEFAULT, new IOExceptionThrowingInputStream(new IOException("Problem?")));
+        MimeBody m = new MimeBody(new ByteArrayStashManager(), ContentTypeHeader.TEXT_DEFAULT, new IOExceptionThrowingInputStream(new IOException("Problem?")),FIRST_PART_MAX_BYTE);
 
         InputStream s = null;
         try {
@@ -573,8 +570,7 @@ public class MimeBodyTest {
         MimeBody m = null;
         InputStream s = null;
         try {
-            MimeBody.setFirstPartMaxBytes(limit);
-            m = makeMessage(body, ctype);
+            m = makeMessage(body, ctype,limit);
             IOUtils.copyStream(s = m.getPart(0).getInputStream(true), new NullOutputStream());
             if (expectSizeFailure)
                 fail(msg);
@@ -600,7 +596,7 @@ public class MimeBodyTest {
     public void testContentLengthHeadersAdded() throws Exception {
         final String body = BUG_10464_MESS;
         final String ctype = BUG_10464_CTYPE;
-        MimeBody mb = new MimeBody(body.getBytes(Charsets.UTF8), ContentTypeHeader.create(ctype));
+        MimeBody mb = new MimeBody(body.getBytes(Charsets.UTF8), ContentTypeHeader.create(ctype), FIRST_PART_MAX_BYTE);
         byte[] bytes = IOUtils.slurpStream(mb.getEntireMessageBodyAsInputStream(false));
         String result = new String(bytes, Charsets.UTF8);
         assertFalse("To avoid breaking signatures, Content-Length headers shall not be added to parts that did not originally have them",

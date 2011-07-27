@@ -104,6 +104,12 @@ public interface AuditRecordManager extends EntityManager<AuditRecord, AuditReco
     public int deleteRangeByOid(final long start, final long end) throws SQLException;
 
     /**
+     * Get the audit message size limit
+     * @return the size limit
+     */
+    long getMessageLimitSize();
+
+    /**
      * Get the max table space size in bytes for the current database.
      *
      * @return  Max table space size in bytes, or -1 if not defined

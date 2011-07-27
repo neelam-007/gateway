@@ -118,6 +118,11 @@ public class InvalidatingPolicyAdmin implements PolicyAdmin {
         return delegate.getDefaultPolicyXml(type, internalTag);
     }
 
+    @Override
+    public long getXmlMaxBytes(){
+        return delegate.getXmlMaxBytes();
+    }
+
     //- PRIVATE
 
     private final PolicyAdmin delegate;

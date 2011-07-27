@@ -9,8 +9,10 @@ import com.l7tech.console.table.HttpHeaderRuleTableHandler;
 import com.l7tech.console.table.HttpParamRuleTableHandler;
 import com.l7tech.console.table.HttpRuleTableHandler;
 import com.l7tech.console.util.CipherSuiteGuiUtil;
+import com.l7tech.console.util.Registry;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.IpListPanel;
 import com.l7tech.gui.widgets.TextListCellRenderer;
@@ -146,6 +148,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private JCheckBox useKeepalivesCheckBox;
     private JButton cipherSuitesButton;
     private JComboBox tlsVersionComboBox;
+    private ByteLimitPanel byteLimitPanel;
 
     private final AbstractButton[] secHdrButtons = { wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, wssPromoteRadio };
 
@@ -394,7 +397,16 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 okButton.setEnabled(resMsgDestVariableTextField.isEntryValid());
             }
         });
-        validateResMsgDest();
+
+        byteLimitPanel.addChangeListener(new RunOnChangeListener(){
+            @Override
+            protected void run(){
+                validateResMsgDest();
+            }
+        });
+        byteLimitPanel.setValue(Registry.getDefault().getPolicyAdmin().getXmlMaxBytes());
+        byteLimitPanel.setLabelText("Set maximum response size:");
+
         final String resMsgDest = assertion.getResponseMsgDest();
         resMsgDestVariableTextField.setAssertion(assertion,getPreviousAssertion());
         if (resMsgDest == null) {
@@ -403,6 +415,11 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             resMsgDestVariableTextField.setVariable(resMsgDest);
             resMsgDestVariableRadioButton.doClick();
         }
+        if(assertion.getResponseSize()>=0){
+            byteLimitPanel.setSelected(true);
+            byteLimitPanel.setValue(assertion.getResponseSize());
+        }
+        validateResMsgDest();
 
         Set<HttpMethod> methods = EnumSet.allOf(HttpMethod.class);
         methods.removeAll(Arrays.asList(HttpMethod.OTHER)); // Omit methods not supports by Commons HTTP client
@@ -749,6 +766,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         } else if (resMsgDestVariableRadioButton.isSelected()) {
             assertion.setResponseMsgDest(resMsgDestVariableTextField.getVariable());
         }
+        assertion.setResponseSize(byteLimitPanel.isSelected()?  byteLimitPanel.getValue() :-1 );
 
         assertion.getResponseHeaderRules().setRules(responseHttpRulesTableHandler.getData());
         assertion.getResponseHeaderRules().setForwardAll(resHeadersAll.isSelected());
@@ -971,6 +989,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private void validateResMsgDest() {
         resMsgDestVariableTextField.setEnabled(resMsgDestVariableRadioButton.isSelected());          
         boolean ok =  resMsgDestDefaultRadioButton.isSelected() || resMsgDestVariableTextField.isEntryValid();
+        ok = ok && byteLimitPanel.validateFields()== null;
         okButton.setEnabled(ok);
         refreshDialog();
     }

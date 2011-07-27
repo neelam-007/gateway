@@ -125,6 +125,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private JCheckBox wsdlProxyCheckBox;
     private JCheckBox snmpQueryCheckBox;
     private JPanel builtinServicesPanel;
+    private ByteLimitPanel requestByteLimitPanel;
 
     private SsgConnector connector;
     private boolean confirmed = false;
@@ -416,6 +417,9 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         }
         contentTypeComboBox.setModel(contentTypeComboBoxModel);
 
+        requestByteLimitPanel.setValue(Registry.getDefault().getTransportAdmin().getXmlMaxBytes());
+        requestByteLimitPanel.setLabelText("Set maximum request size:");
+
         threadPoolSizeSpinner.setModel( new SpinnerNumberModel( DEFAULT_POOL_SIZE, 1, 10000, 1 ) );
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(threadPoolSizeSpinner, "Thread Pool Size"));
 
@@ -557,6 +561,13 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             }
         });
 
+        inputValidator.addRule(new InputValidator.ValidationRule(){
+            @Override
+            public String getValidationError() {
+                return requestByteLimitPanel.validateFields();
+            }
+        });
+
         Utilities.enableGrayOnDisabled(contentTypeComboBox);
         Utilities.enableGrayOnDisabled(serviceNameComboBox);
         Utilities.setEscKeyStrokeDisposes(this);
@@ -574,6 +585,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         CustomTransportPropertiesPanel panel = customGuisByScheme.get(scheme);
         if (panel != null)
             return panel;
+
+        pack();
 
         String owningAssertionClassname = descriptor.getModularAssertionClassname();
         ClassLoader panelLoader = owningAssertionClassname == null ? Thread.currentThread().getContextClassLoader()
@@ -1243,6 +1256,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         propNames.remove(SsgConnector.PROP_THREAD_POOL_SIZE);
         propNames.remove(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE);
         propNames.remove(SsgConnector.PROP_HARDWIRED_SERVICE_ID);
+        propNames.remove(SsgConnector.PROP_REQUEST_SIZE_LIMIT);
 
         // Also hide properties reserved for use by custom GUI panels
         // TODO should only really hide them when the corresponding transport protocol is selected
@@ -1278,6 +1292,12 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                 varHolder.put(var, connector.getProperty(var));
             }
             customPanel.setData(varHolder);
+        }
+
+        String requestLimit = connector.getProperty(SsgConnector.PROP_REQUEST_SIZE_LIMIT);
+        requestByteLimitPanel.setSelected(requestLimit != null);
+        if(requestLimit != null) {
+            requestByteLimitPanel.setValue(Long.valueOf(requestLimit));
         }
 
         saveCheckBoxState(savedStateCheckBoxes);
@@ -1388,6 +1408,12 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         List<Pair<String,String>> props = (List<Pair<String,String>>)Collections.list(propertyListModel.elements());
         for (Pair<String, String> prop : props)
             connector.putProperty(prop.left, prop.right);
+
+        if(requestByteLimitPanel.isSelected()){
+            connector.putProperty(SsgConnector.PROP_REQUEST_SIZE_LIMIT, Long.toString(requestByteLimitPanel.getValue()));
+        }else {
+            connector.removeProperty(SsgConnector.PROP_REQUEST_SIZE_LIMIT);
+        }
     }
 
     @Override

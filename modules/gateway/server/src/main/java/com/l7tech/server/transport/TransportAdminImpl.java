@@ -1,6 +1,7 @@
 package com.l7tech.server.transport;
 
 import com.l7tech.gateway.common.transport.ResolutionConfiguration;
+import com.l7tech.message.Message;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.PortRanges;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
@@ -190,5 +191,10 @@ public class TransportAdminImpl implements TransportAdmin {
             }
         }
         return oid;
+    }
+
+    @Override
+    public long getXmlMaxBytes(){
+        return Message.getMaxBytes();
     }
 }

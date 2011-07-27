@@ -77,6 +77,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
     protected int maxRetries = -1;
     protected String requestMsgSrc;
     protected String responseMsgDest;
+    protected long responseSize = -1;
     protected HttpPassthroughRuleSet responseHeaderRules = new HttpPassthroughRuleSet(false,
                                                             new HttpPassthroughRule[]{
                                                              new HttpPassthroughRule("Set-Cookie", false, null)});
@@ -280,6 +281,14 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
      */
     public void setResponseMsgDest(String variableName) {
         responseMsgDest = variableName;
+    }
+
+    public long getResponseSize(){
+        return responseSize;
+    }
+
+    public void setResponseSize(long responseSize){
+        this.responseSize = responseSize;
     }
 
     @Override

@@ -258,7 +258,11 @@
                                 <value>customerMapping.addToGatewayAuditEvents</value>
                             </list>
                         </entry>
-
+                         <entry key="auditRecordManager">
+                            <list>
+                                <value>audit.messageSizeLimit</value>
+                            </list>
+                        </entry>
                         <entry key="ssgConnectorManager">
                             <list>
                                 <value>interfaceTags</value>

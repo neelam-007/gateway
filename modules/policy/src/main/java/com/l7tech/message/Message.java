@@ -3,10 +3,7 @@ package com.l7tech.message;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.EmptyInputStream;
-import com.l7tech.common.mime.ByteArrayStashManager;
-import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.common.mime.StashManager;
+import com.l7tech.common.mime.*;
 import com.l7tech.util.CausedIllegalStateException;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.MessageNotSoapException;
@@ -55,6 +52,9 @@ public final class Message implements Closeable {
     private JsonKnob jsonKnob;
     private boolean initialized;
 
+    static public long getMaxBytes(){
+        return MimeBody.getFirstPartMaxBytes();
+    }
     /**
      * Create a Message with no facets.
      */
@@ -87,7 +87,10 @@ public final class Message implements Closeable {
      * @param doc the Document to use.  Must not be null.
      */
     public Message(Document doc) {
-        initialize(doc);
+        initialize(doc,Message.getMaxBytes());
+    }
+    public Message(Document doc, long maxBytes) {
+        initialize(doc, maxBytes);
     }
 
     /**
@@ -115,12 +118,21 @@ public final class Message implements Closeable {
                             final InputStream body )
             throws IOException
     {
+        initialize(sm, outerContentType,body,Message.getMaxBytes());
+    }
+
+    public void initialize( final StashManager sm,
+                            final ContentTypeHeader outerContentType,
+                            final InputStream body,
+                            final long firstPartMaxBytes)
+            throws IOException
+    {
         HttpRequestKnob reqKnob = getKnob(HttpRequestKnob.class);
         HttpResponseKnob respKnob = getKnob(HttpResponseKnob.class);
         if (rootFacet != null) rootFacet.close(); // This will close the reqKnob and respKnob as well, but they don't do anything when closed
         rootFacet = null; // null it first just in case MimeFacet c'tor throws
         invalidateCachedKnobs();
-        rootFacet = new MimeFacet(this, sm, outerContentType, body);
+        rootFacet = new MimeFacet(this, sm, outerContentType, body,firstPartMaxBytes);
         if (reqKnob != null) rootFacet = new HttpRequestFacet(this, rootFacet, reqKnob);
         if (respKnob != null) rootFacet = new HttpResponseFacet(this, rootFacet, respKnob);
         invalidateCachedKnobs();
@@ -138,7 +150,12 @@ public final class Message implements Closeable {
      */
     public void initialize(Document body)
     {
-        initialize( body, ContentTypeHeader.XML_DEFAULT );
+        initialize( body, ContentTypeHeader.XML_DEFAULT, Message.getMaxBytes());
+    }
+
+    public void initialize(Document body, long maxBytes)
+    {
+        initialize( body, ContentTypeHeader.XML_DEFAULT, maxBytes );
     }
 
     /**
@@ -153,12 +170,16 @@ public final class Message implements Closeable {
      */
     public void initialize(Document body, ContentTypeHeader contentTypeHeader)
     {
+        initialize(body, contentTypeHeader, Message.getMaxBytes());
+    }
+    public void initialize(Document body, ContentTypeHeader contentTypeHeader, long firstPartMaxBytes)
+    {
         try {
             HttpRequestKnob reqKnob = getKnob(HttpRequestKnob.class);
             HttpResponseKnob respKnob = getKnob(HttpResponseKnob.class);
             if (rootFacet != null) rootFacet.close(); // This will close the reqKnob and respKnob as well, but they don't do anything when closed
             rootFacet = null;
-            rootFacet = new MimeFacet(this, new ByteArrayStashManager(), contentTypeHeader, new EmptyInputStream());
+            rootFacet = new MimeFacet(this, new ByteArrayStashManager(), contentTypeHeader, new EmptyInputStream(),firstPartMaxBytes);
             rootFacet = new XmlFacet(this, rootFacet);
             invalidateCachedKnobs();
             if (reqKnob != null) attachHttpRequestKnob(reqKnob);
@@ -181,12 +202,16 @@ public final class Message implements Closeable {
      * @throws IOException if contentType is multipart, but the body does not contain the boundary or contains no parts
      */
     public void initialize(ContentTypeHeader contentType, byte[] bodyBytes) throws IOException {
+        initialize(contentType,bodyBytes, Message.getMaxBytes());
+    }
+
+    public void initialize(ContentTypeHeader contentType, byte[] bodyBytes, long firstPartMaxBytes) throws IOException {
         try {
             HttpRequestKnob reqKnob = getKnob(HttpRequestKnob.class);
             HttpResponseKnob respKnob = getKnob(HttpResponseKnob.class);
             if (rootFacet != null) rootFacet.close(); // This will close the reqKnob and respKnob as well, but they don't do anything when closed
             rootFacet = null;
-            rootFacet = new MimeFacet(this, new ByteArrayStashManager(), contentType, new ByteArrayInputStream(bodyBytes));
+            rootFacet = new MimeFacet(this, new ByteArrayStashManager(), contentType, new ByteArrayInputStream(bodyBytes),firstPartMaxBytes);
             invalidateCachedKnobs();
             if (reqKnob != null) attachHttpRequestKnob(reqKnob);
             if (respKnob != null) attachHttpResponseKnob(respKnob);

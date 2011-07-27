@@ -83,7 +83,8 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
      */
     public MimeBody(StashManager stashManager,
                              ContentTypeHeader outerContentType,
-                             InputStream mainInputStream)
+                             InputStream mainInputStream,
+                             long firstPartMaxBytes)
             throws IOException
     {
         boolean itworked = false;
@@ -93,7 +94,6 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
 
             this.outerContentType = outerContentType;
             this.stashManager = stashManager;
-            long firstPartMaxBytes = MimeBody.firstPartMaxBytes.get();
 
             if (outerContentType.isMultipart()) {
                 // Multipart message.  Prepare the first part for reading.
@@ -173,10 +173,11 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
      * @throws NoSuchPartException if this message is multpart/related but does not have any parts
      * @throws IOException if the mainInputStream cannot be read, or a multipart message is not in valid MIME format
      */
-    public MimeBody(byte[] bytes, ContentTypeHeader outerContentType) throws IOException, NoSuchPartException {
+    public MimeBody(byte[] bytes, ContentTypeHeader outerContentType, long firstPartMaxBytes) throws IOException, NoSuchPartException {
         this(new ByteArrayStashManager(),
              outerContentType,
-             new ByteArrayInputStream(bytes));
+             new ByteArrayInputStream(bytes),
+            firstPartMaxBytes);
     }
 
     /**
@@ -184,6 +185,10 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
     */
     public static void setFirstPartMaxBytes(long firstPartMaxBytes) {
         MimeBody.firstPartMaxBytes.set(firstPartMaxBytes);
+    }
+
+    public static long getFirstPartMaxBytes(){
+        return MimeBody.firstPartMaxBytes.get();
     }
 
 
@@ -1203,7 +1208,7 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
 
         private void setSizeLimitNonFlagging(long newLimit) throws IOException {
             if (!isLimitCustomized())
-                super.setSizeLimit(newLimit);
+                setSizeLimit(newLimit);
         }
 
         private void clearLimitNonFlagging() throws IOException {

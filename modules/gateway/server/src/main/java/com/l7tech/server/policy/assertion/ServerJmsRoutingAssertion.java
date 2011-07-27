@@ -420,12 +420,20 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
 
                     }
+
+                    long maxBytes = 0;
+                    if (assertion.getResponseSize() <0){
+                        maxBytes = com.l7tech.message.Message.getMaxBytes();
+                    }
+                    else{
+                        maxBytes = assertion.getResponseSize();
+                    }
                     if ( jmsResponse instanceof TextMessage ) {
-                        responseMessage.initialize(XmlUtil.stringToDocument( ((TextMessage)jmsResponse).getText() ));
+                        responseMessage.initialize(XmlUtil.stringToDocument( ((TextMessage)jmsResponse).getText() ),maxBytes);
                     } else if ( jmsResponse instanceof BytesMessage ) {
                         BytesMessage bytesMessage = (BytesMessage)jmsResponse;
                         final StashManager stashManager = stashManagerFactory.createStashManager();
-                        responseMessage.initialize(stashManager, ContentTypeHeader.XML_DEFAULT, new BytesMessageInputStream(bytesMessage));
+                        responseMessage.initialize(stashManager, ContentTypeHeader.XML_DEFAULT, new BytesMessageInputStream(bytesMessage),maxBytes);
                     } else {
                         logAndAudit(AssertionMessages.JMS_ROUTING_UNSUPPORTED_RESPONSE_MSG_TYPE, jmsResponse.getClass().getName());
                         throw new AssertionStatusException(AssertionStatus.FAILED);

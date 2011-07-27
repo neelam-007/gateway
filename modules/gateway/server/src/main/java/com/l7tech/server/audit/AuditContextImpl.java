@@ -363,6 +363,21 @@ public class AuditContextImpl implements AuditContext {
             }
         }
 
+        //check audit message size
+        if( rec instanceof MessageSummaryAuditRecord){
+            if(auditRecordManager.getMessageLimitSize() > 0 ){
+                MessageSummaryAuditRecord messageSummaryAuditRecord = (MessageSummaryAuditRecord)rec;
+                if(messageSummaryAuditRecord.getRequestXml()!=null  &&
+                        messageSummaryAuditRecord.getRequestXml().length() > auditRecordManager.getMessageLimitSize()){
+                    messageSummaryAuditRecord.setRequestXml(MESSAGE_TOO_LARGE);
+                }
+                if(messageSummaryAuditRecord.getResponseXml()!=null &&
+                        messageSummaryAuditRecord.getResponseXml().length() > auditRecordManager.getMessageLimitSize()){
+                    messageSummaryAuditRecord.setResponseXml(MESSAGE_TOO_LARGE);
+                }
+            }
+        }
+
         if (isSignAudits()) {
             signRecord(rec);
         } else {
@@ -609,6 +624,7 @@ public class AuditContextImpl implements AuditContext {
     private Level highestLevelYetSeen = Level.ALL;
     private volatile int ordinal = 0;
 
+    static final String MESSAGE_TOO_LARGE = "Message not audited, message size exceeds limit";
 
     /**
      * The source might be null, but HashMap allows the null key, so all the details

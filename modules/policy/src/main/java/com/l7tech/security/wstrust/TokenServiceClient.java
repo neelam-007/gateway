@@ -542,7 +542,7 @@ public class TokenServiceClient {
         final ProcessorResult result;
         try {
             WssProcessor wssProcessor = new WssProcessorImpl();
-            result = wssProcessor.undecorateMessage(new Message(response),
+            result = wssProcessor.undecorateMessage(new Message(response,Message.getMaxBytes()),
                     null,
                                                     new SimpleSecurityTokenResolver(clientCertificate, clientPrivateKey));
         } catch (BadSecurityContextException e) {

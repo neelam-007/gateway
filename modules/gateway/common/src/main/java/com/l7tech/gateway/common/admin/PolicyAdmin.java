@@ -268,4 +268,7 @@ public interface PolicyAdmin extends AliasAdmin<PolicyAlias> {
     @Secured(stereotype=SAVE_OR_UPDATE)
     @Transactional(readOnly = true)
     String getDefaultPolicyXml(PolicyType type, String internalTag);
+
+    @Transactional(readOnly=true)
+    long getXmlMaxBytes();
 }

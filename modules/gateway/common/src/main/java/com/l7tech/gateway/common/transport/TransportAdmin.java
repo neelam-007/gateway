@@ -151,4 +151,7 @@ public interface TransportAdmin {
     @Secured(stereotype=SAVE_OR_UPDATE,types=RESOLUTION_CONFIGURATION)
     long saveResolutionConfiguration( ResolutionConfiguration configuration ) throws SaveException;
 
+    @Transactional(readOnly=true)
+    long getXmlMaxBytes();
+
 }

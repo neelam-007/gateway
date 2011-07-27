@@ -281,7 +281,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
                                                          "RequestSecurityToken");
             }
             // put response document back into context
-            context.getResponse().initialize(response);
+            context.getResponse().initialize(response,Message.getMaxBytes());
             return status;
         }
         catch(GeneralSecurityException gse) {
@@ -540,7 +540,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         try {
             req.setSenderMessageSigningCertificate(signer.getCertificate());
             req.setSenderMessageSigningPrivateKey(signer.getPrivateKey());
-            wssDecorator.decorateMessage(new Message(response), req);
+            wssDecorator.decorateMessage(new Message(response, Message.getMaxBytes()), req);
         } catch (InvalidDocumentFormatException e) {
             throw new TokenServiceException(e);
         } catch (GeneralSecurityException e) {

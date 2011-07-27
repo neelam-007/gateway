@@ -306,7 +306,7 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
      */
     private void parseMultipartMixed(final Field field, final InputStream is, final ContentTypeHeader outerContentType) throws IOException {
         try {
-            final MimeBody mimeBody = new MimeBody(new ByteArrayStashManager(), outerContentType, is);
+            final MimeBody mimeBody = new MimeBody(new ByteArrayStashManager(), outerContentType, is,0);
             final PartIterator itor = mimeBody.iterator();
             for (int subpartPosition = 0; itor.hasNext(); ++ subpartPosition) {
                 PartInfo subpartInfo;

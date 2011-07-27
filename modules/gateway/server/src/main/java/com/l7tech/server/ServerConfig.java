@@ -187,7 +187,6 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_PRINCIPAL_SESSION_CACHE_MAX_PRINCIPAL_GROUPS = "principalSessionCacheMaxPrincipalGroups";
     
     public static final String PARAM_JMS_LISTENER_THREAD_LIMIT = "jmsListenerThreadLimit";
-    public static final String PARAM_JMS_MESSAGE_MAX_BYTES = "ioJmsMessageMaxBytes";
     public static final String PARAM_JMS_RESPONSE_TIMEOUT = "ioJmsResponseTimeout";
 
     public static final String PARAM_PROCESS_CONTROLLER_PRESENT = "processControllerPresent";
@@ -349,6 +348,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_AUDIT_EXPORT_GROUP_CONCAT_MAX_LEN = "audit.export.group_concat_max_len";
 
     public static final String PARAM_GATEWAY_3SCALE_REPORTING_SERVER = "gateway.3scale.reportingServer";
+    public static final String PARAM_AUDIT_MESSAGE_LIMIT_SIZE = "audit.messageSizeLimit";
     
     private static final String SUFFIX_JNDI = ".jndi";
     private static final String SUFFIX_SYSPROP = ".systemProperty";

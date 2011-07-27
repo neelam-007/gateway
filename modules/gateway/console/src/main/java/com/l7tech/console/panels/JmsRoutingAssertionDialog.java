@@ -10,6 +10,7 @@ import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.gateway.common.transport.jms.JmsReplyType;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.JmsDynamicProperties;
@@ -171,6 +172,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private JLabel requestTimeToLiveLabel;
     private JTextField requestTimeToLiveTextField;
     private JLabel requestTimeToLiveMillisLabel;
+    private ByteLimitPanel responseByteLimitPanel;
 
     private AbstractButton[] secHdrButtons = {wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, null };
 
@@ -333,6 +335,15 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 validateResMsgDest();
             }
         });
+
+        responseByteLimitPanel.addChangeListener(new RunOnChangeListener(){
+            @Override
+            protected void run(){
+                validateResMsgDest();
+            }
+        });
+        responseByteLimitPanel.setLabelText("Set maximum response size:");
+
         validateResMsgDest();
 
         authSamlRadio.addChangeListener(new ChangeListener(){
@@ -443,6 +454,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 } else {
                     assertion.setResponseTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
                 }
+                assertion.setResponseSize(responseByteLimitPanel.isSelected()? responseByteLimitPanel.getValue():-1 );
 
                 String responseTimeoutOverride = jmsResponseTimeout.getText();
                 if (responseTimeoutOverride != null && ! responseTimeoutOverride.isEmpty()) {
@@ -535,6 +547,11 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             responseTargetVariable.setVariable("");
         }
         responseTargetVariable.setAssertion(assertion,getPreviousAssertion());
+
+        responseByteLimitPanel.setSelected(assertion.getResponseSize()>=0);
+        if(assertion.getResponseSize()>=0){
+            responseByteLimitPanel.setValue(assertion.getResponseSize());
+        }
     }
 
     private boolean isReplyToQueue( final JmsEndpoint jmsEndpoint ) {
@@ -702,7 +719,8 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
      * @return <code>true</code> if response messge destination is valid, <code>false</code> if invalid
      */
     private boolean validateResMsgDest() {
-        boolean ok = defaultResponseRadioButton.isSelected() || responseTargetVariable.isEntryValid();
+        boolean ok = (defaultResponseRadioButton.isSelected() || responseTargetVariable.isEntryValid());
+        ok = ok && responseByteLimitPanel.validateFields()==null;
         refreshDialog();
         return ok;
     }

@@ -291,6 +291,11 @@ public class RegistryStub extends Registry {
             public long saveResolutionConfiguration( final ResolutionConfiguration configuration ) {
                 return 0;
             }
+
+            @Override
+            public long getXmlMaxBytes(){
+                return 0;
+            }
         };
     }
 

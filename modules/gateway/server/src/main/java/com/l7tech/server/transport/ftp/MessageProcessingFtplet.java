@@ -51,7 +51,8 @@ class MessageProcessingFtplet extends DefaultFtplet {
                              final StashManagerFactory stashManagerFactory,
                              final EventChannel messageProcessingEventChannel,
                              final ContentTypeHeader overriddenContentType,
-                             final long hardwiredServiceOid) {
+                             final long hardwiredServiceOid,
+                             final long maxRequestSize) {
         this.ftpServerManager = ftpServerManager;
         this.messageProcessor = messageProcessor;
         this.soapFaultManager = soapFaultManager;
@@ -59,6 +60,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
         this.messageProcessingEventChannel = messageProcessingEventChannel;
         this.overriddenContentType = overriddenContentType;
         this.hardwiredServiceOid = hardwiredServiceOid;
+        this.maxRequestSize = maxRequestSize;
     }
 
     /**
@@ -124,6 +126,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
     private final EventChannel messageProcessingEventChannel;
     private final ContentTypeHeader overriddenContentType;
     private final long hardwiredServiceOid;
+    private final long maxRequestSize;
 
     /*
      * Process a file upload 
@@ -245,11 +248,13 @@ class MessageProcessingFtplet extends DefaultFtplet {
         if (logger.isLoggable(Level.FINE))
             logger.log(Level.FINE, "Processing STOR for path ''{0}'' and file ''{1}''.", new String[]{path, file});
 
+        long maxSize = maxRequestSize == -1 ? Message.getMaxBytes() :maxRequestSize;
+
         // Create request message
         Message request;
         ContentTypeHeader ctype = overriddenContentType != null ? overriddenContentType : ContentTypeHeader.XML_DEFAULT;
         Message requestMessage = new Message();
-        requestMessage.initialize(stashManagerFactory.createStashManager(), ctype, getDataInputStream(dataConnection, buildUri(path, file)));
+        requestMessage.initialize(stashManagerFactory.createStashManager(), ctype, getDataInputStream(dataConnection, buildUri(path, file)),maxSize);
         requestMessage.attachFtpKnob(buildFtpKnob(
                     ftpSession.getServerAddress(),
                     ftpSession.getServerPort(),

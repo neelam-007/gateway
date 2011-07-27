@@ -117,6 +117,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private JCheckBox showQueuePasswordCheckBox;
     private JLabel jndiPasswordWarningLabel;
     private JLabel queuePasswordWarningLabel;
+    private ByteLimitPanel byteLimitPanel;
 
 
     private JmsConnection connection = null;
@@ -869,7 +870,9 @@ public class JmsQueuePropertiesDialog extends JDialog {
         }
 
         // Save if the destination is disabled or not
+        // save request limit size
         if (inboundRadioButton.isSelected()) {
+            ep.setRequestMaxSize(byteLimitPanel.isSelected()? byteLimitPanel.getValue():-1);
             ep.setDisabled(disableListeningTheQueueCheckBox.isSelected());
         }
 
@@ -1015,6 +1018,10 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
         useQueueForFailedCheckBox.setSelected(false);
         failureQueueNameTextField.setText("");
+
+        byteLimitPanel.setLabelText("Set request size:");
+        byteLimitPanel.setValue(Registry.getDefault().getPolicyAdmin().getXmlMaxBytes());
+
         if (endpoint != null) {
             if ( endpoint.isTemplate() ) {
                 isTemplateQueue.setSelected(true); // template if either endpoint or connection are templates
@@ -1054,6 +1061,11 @@ public class JmsQueuePropertiesDialog extends JDialog {
                     inboundMessageIdRadioButton.setSelected(true);
                 else
                     inboundCorrelationIdRadioButton.setSelected(true);
+                if(endpoint.getRequestMaxSize()>=0)
+                {
+                    byteLimitPanel.setSelected(true);
+                }
+                byteLimitPanel.setValue(endpoint.getRequestMaxSize());
             } else {
                 outboundReplyAutomaticRadioButton.setSelected(endpoint.getReplyType() == JmsReplyType.AUTOMATIC);
                 outboundReplyNoneRadioButton.setSelected(endpoint.getReplyType() == JmsReplyType.NO_REPLY);
@@ -1158,6 +1170,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
         if (specifyContentTypeCheckBox.isSelected() &&
             specifyContentTypeFromHeader.isSelected() &&
             getContentTypeFromProperty.getText().trim().length() == 0)
+            return false;
+        if (byteLimitPanel.validateFields()!=null)
             return false;
 
         return true;

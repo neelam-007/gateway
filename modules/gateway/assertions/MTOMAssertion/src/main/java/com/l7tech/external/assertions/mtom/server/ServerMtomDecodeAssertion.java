@@ -108,9 +108,9 @@ public class ServerMtomDecodeAssertion extends AbstractMessageTargetableServerAs
         }
 
         if ( outputMessage != null ) {
-            int attachmentMaxSize = config.getIntProperty( "ioXmlPartMaxBytes", DEFAULT_ATTACHMENT_MAX );
+            int attachmentMaxSize = Message.getMaxBytes()> Integer.MAX_VALUE ? DEFAULT_ATTACHMENT_MAX : (int)Message.getMaxBytes();
             try {
-                XOPUtils.reconstitute( message, outputMessage, assertion.isRemovePackaging(), attachmentMaxSize, stashManagerFactory );
+                XOPUtils.reconstitute( message, outputMessage, assertion.isRemovePackaging(), attachmentMaxSize , stashManagerFactory );
                 status = AssertionStatus.NONE;
             } catch ( Exception e) {
                 status = AssertionStatus.FALSIFIED;

@@ -66,6 +66,11 @@ public class AuditRecordManagerStub extends EntityManagerStub<AuditRecord,AuditR
     }
 
     @Override
+    public long getMessageLimitSize() {
+        return 0;
+    }
+
+    @Override
     public int deleteRangeByOid(long start, long end) {
         throw new UnsupportedOperationException();
     }

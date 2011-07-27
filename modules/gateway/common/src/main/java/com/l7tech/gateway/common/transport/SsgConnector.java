@@ -100,6 +100,9 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     /** If specified, incoming messages should be assumed to use the specified content type. */
     public static final String PROP_OVERRIDE_CONTENT_TYPE = "overrideContentType";
 
+    /**If specified, the request xml size limit is overridden */
+    public static final String PROP_REQUEST_SIZE_LIMIT = "requestSizeLimit";
+
     /** Recognized endpoint names. */
     public static enum Endpoint {
         /** Message processor. */

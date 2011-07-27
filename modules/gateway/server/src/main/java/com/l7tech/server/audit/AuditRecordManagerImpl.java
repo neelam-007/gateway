@@ -25,6 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -45,7 +47,7 @@ import java.util.logging.Logger;
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class AuditRecordManagerImpl
         extends HibernateEntityManager<AuditRecord, AuditRecordHeader>
-        implements AuditRecordManager, ApplicationContextAware
+        implements AuditRecordManager, ApplicationContextAware, PropertyChangeListener
 {
     private static final String SQL_GET_MIN_OID = "SELECT MIN(objectid) FROM audit_main WHERE objectid > ?";
     private static final String SQL_INNODB_DATA = "SHOW VARIABLES LIKE 'innodb_data_file_path'";
@@ -436,6 +438,11 @@ public class AuditRecordManagerImpl
     }
 
     @Override
+    public long getMessageLimitSize() {
+        return messageLimitSize;
+    }
+
+    @Override
     public Class<AuditRecord> getImpClass() {
         return AuditRecord.class;
     }
@@ -458,6 +465,10 @@ public class AuditRecordManagerImpl
 
         validatedConfig.setMinimumValue(ServerConfig.PARAM_AUDIT_SEARCH_MAX_MESSAGE_SIZE, 1024); // 1KB
         validatedConfig.setMaximumValue(ServerConfig.PARAM_AUDIT_SEARCH_MAX_MESSAGE_SIZE, 20971520); // 20MB
+
+        validatedConfig.setMinimumValue(ServerConfig.PARAM_AUDIT_MESSAGE_LIMIT_SIZE, 0);
+        validatedConfig.setMaximumValue(ServerConfig.PARAM_AUDIT_MESSAGE_LIMIT_SIZE, Long.MAX_VALUE);
+        this.messageLimitSize = this.validatedConfig.getLongProperty(ServerConfig.PARAM_AUDIT_MESSAGE_LIMIT_SIZE, 1048576);  // 10MB
     }
 
     @Override
@@ -500,6 +511,15 @@ public class AuditRecordManagerImpl
     private static final Logger logger = Logger.getLogger(AuditRecordManagerImpl.class.getName());
     private ServerConfig serverConfig;
     private ApplicationContext applicationContext;
+    private long messageLimitSize;
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        String propertyName = evt.getPropertyName();
+        if (propertyName != null && propertyName.equals(ServerConfig.PARAM_AUDIT_MESSAGE_LIMIT_SIZE)) {
+            this.messageLimitSize = this.validatedConfig.getLongProperty(ServerConfig.PARAM_AUDIT_MESSAGE_LIMIT_SIZE, 1048576);
+        }
+    }
 
     private static class AuditRecordHolder {
         private SystemAuditRecord auditRecord = null;
