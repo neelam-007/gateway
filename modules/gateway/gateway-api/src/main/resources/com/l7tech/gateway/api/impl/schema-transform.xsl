@@ -45,7 +45,8 @@
                                        @name = 'ValidationStatusPropertyType' or
                                        @name = 'IdentityProviderTypePropertyType' or
                                        @name = 'PolicyTypePropertyType' or
-                                       @name = 'JMSProviderTypePropertyType']">
+                                       @name = 'JMSProviderTypePropertyType' or
+                                       @name = 'ClientAuthenticationPropertyType']">
         <xs:complexType name="{@name}">
             <xs:simpleContent>
                 <xs:extension base="{xs:restriction/@base}">

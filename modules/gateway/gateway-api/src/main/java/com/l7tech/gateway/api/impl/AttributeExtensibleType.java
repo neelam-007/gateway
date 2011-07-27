@@ -140,6 +140,9 @@ public class AttributeExtensibleType {
      *
      * @param currentAttribute The target attribute (may be null)
      * @param value The value to set (may be null)
+     * @param builder the builder for the AE type
+     * @param <T> The value type
+     * @param <AE> The type of the attribute extensible T
      * @return The currentAttribute or a new attribute if currentAttribute was null (null if value is null)
      */
     public static <T, AE extends AttributeExtensible<T>> AE set( final AE currentAttribute,

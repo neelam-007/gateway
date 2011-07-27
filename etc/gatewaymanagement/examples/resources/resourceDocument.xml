@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ResourceDocument xmlns="http://ns.l7tech.com/2010/04/gateway-management" version="0" id="-5">
+    <Resource type="xmlschema" sourceUrl="http://www.w3.org/2001/xml.xsd">&lt;?xml version='1.0'?&gt;
+&lt;xs:schema targetNamespace=&quot;http://www.w3.org/XML/1998/namespace&quot; xmlns:xs=&quot;http://www.w3.org/2001/XMLSchema&quot; xml:lang=&quot;en&quot;&gt;
+
+ &lt;xs:annotation&gt;
+  &lt;xs:documentation&gt;
+   See http://www.w3.org/XML/1998/namespace.html and
+   http://www.w3.org/TR/REC-xml for information about this namespace.
+
+    This schema document describes the XML namespace, in a form
+    suitable for import by other schema documents.
+
+    Note that local names in this namespace are intended to be defined
+    only by the World Wide Web Consortium or its subgroups.  The
+    following names are currently defined in this namespace and should
+    not be used with conflicting semantics by any Working Group,
+    specification, or document instance:
+
+    base (as an attribute name): denotes an attribute whose value
+         provides a URI to be used as the base for interpreting any
+         relative URIs in the scope of the element on which it
+         appears; its value is inherited.  This name is reserved
+         by virtue of its definition in the XML Base specification.
+
+    id   (as an attribute name): denotes an attribute whose value
+         should be interpreted as if declared to be of type ID.
+         This name is reserved by virtue of its definition in the
+         xml:id specification.
+
+    lang (as an attribute name): denotes an attribute whose value
+         is a language code for the natural language of the content of
+         any element; its value is inherited.  This name is reserved
+         by virtue of its definition in the XML specification.
+
+    space (as an attribute name): denotes an attribute whose
+         value is a keyword indicating what whitespace processing
+         discipline is intended for the content of the element; its
+         value is inherited.  This name is reserved by virtue of its
+         definition in the XML specification.
+
+    Father (in any context at all): denotes Jon Bosak, the chair of
+         the original XML Working Group.  This name is reserved by
+         the following decision of the W3C XML Plenary and
+         XML Coordination groups:
+
+             In appreciation for his vision, leadership and dedication
+             the W3C XML Plenary on this 10th day of February, 2000
+             reserves for Jon Bosak in perpetuity the XML name
+             xml:Father
+  &lt;/xs:documentation&gt;
+ &lt;/xs:annotation&gt;
+
+ &lt;xs:annotation&gt;
+  &lt;xs:documentation&gt;This schema defines attributes and an attribute group
+        suitable for use by
+        schemas wishing to allow xml:base, xml:lang, xml:space or xml:id
+        attributes on elements they define.
+
+        To enable this, such a schema must import this schema
+        for the XML namespace, e.g. as follows:
+        &amp;lt;schema . . .&gt;
+         . . .
+         &amp;lt;import namespace=&quot;http://www.w3.org/XML/1998/namespace&quot;
+                    schemaLocation=&quot;http://www.w3.org/2001/xml.xsd&quot;/&gt;
+
+        Subsequently, qualified reference to any of the attributes
+        or the group defined below will have the desired effect, e.g.
+
+        &amp;lt;type . . .&gt;
+         . . .
+         &amp;lt;attributeGroup ref=&quot;xml:specialAttrs&quot;/&gt;
+
+         will define a type which will schema-validate an instance
+         element with any of those attributes&lt;/xs:documentation&gt;
+ &lt;/xs:annotation&gt;
+
+ &lt;xs:annotation&gt;
+  &lt;xs:documentation&gt;In keeping with the XML Schema WG's standard versioning
+   policy, this schema document will persist at
+   http://www.w3.org/2007/08/xml.xsd.
+   At the date of issue it can also be found at
+   http://www.w3.org/2001/xml.xsd.
+   The schema document at that URI may however change in the future,
+   in order to remain compatible with the latest version of XML Schema
+   itself, or with the XML namespace itself.  In other words, if the XML
+   Schema or XML namespaces change, the version of this document at
+   http://www.w3.org/2001/xml.xsd will change
+   accordingly; the version at
+   http://www.w3.org/2007/08/xml.xsd will not change.
+  &lt;/xs:documentation&gt;
+ &lt;/xs:annotation&gt;
+
+ &lt;xs:attribute name=&quot;lang&quot;&gt;
+  &lt;xs:annotation&gt;
+   &lt;xs:documentation&gt;Attempting to install the relevant ISO 2- and 3-letter
+         codes as the enumerated possible values is probably never
+         going to be a realistic possibility.  See
+         RFC 3066 at http://www.ietf.org/rfc/rfc3066.txt and the IANA registry
+         at http://www.iana.org/assignments/lang-tag-apps.htm for
+         further information.
+
+         The union allows for the 'un-declaration' of xml:lang with
+         the empty string.&lt;/xs:documentation&gt;
+  &lt;/xs:annotation&gt;
+  &lt;xs:simpleType&gt;
+   &lt;xs:union memberTypes=&quot;xs:language&quot;&gt;
+    &lt;xs:simpleType&gt;
+     &lt;xs:restriction base=&quot;xs:string&quot;&gt;
+      &lt;xs:enumeration value=&quot;&quot;/&gt;
+     &lt;/xs:restriction&gt;
+    &lt;/xs:simpleType&gt;
+   &lt;/xs:union&gt;
+  &lt;/xs:simpleType&gt;
+ &lt;/xs:attribute&gt;
+
+ &lt;xs:attribute name=&quot;space&quot;&gt;
+  &lt;xs:simpleType&gt;
+   &lt;xs:restriction base=&quot;xs:NCName&quot;&gt;
+    &lt;xs:enumeration value=&quot;default&quot;/&gt;
+    &lt;xs:enumeration value=&quot;preserve&quot;/&gt;
+   &lt;/xs:restriction&gt;
+  &lt;/xs:simpleType&gt;
+ &lt;/xs:attribute&gt;
+
+ &lt;xs:attribute name=&quot;base&quot; type=&quot;xs:anyURI&quot;&gt;
+  &lt;xs:annotation&gt;
+   &lt;xs:documentation&gt;See http://www.w3.org/TR/xmlbase/ for
+                     information about this attribute.&lt;/xs:documentation&gt;
+  &lt;/xs:annotation&gt;
+ &lt;/xs:attribute&gt;
+
+ &lt;xs:attribute name=&quot;id&quot; type=&quot;xs:ID&quot;&gt;
+  &lt;xs:annotation&gt;
+   &lt;xs:documentation&gt;See http://www.w3.org/TR/xml-id/ for
+                     information about this attribute.&lt;/xs:documentation&gt;
+  &lt;/xs:annotation&gt;
+ &lt;/xs:attribute&gt;
+
+ &lt;xs:attributeGroup name=&quot;specialAttrs&quot;&gt;
+  &lt;xs:attribute ref=&quot;xml:base&quot;/&gt;
+  &lt;xs:attribute ref=&quot;xml:lang&quot;/&gt;
+  &lt;xs:attribute ref=&quot;xml:space&quot;/&gt;
+  &lt;xs:attribute ref=&quot;xml:id&quot;/&gt;
+ &lt;/xs:attributeGroup&gt;
+
+&lt;/xs:schema&gt;</Resource>
+    <Properties>
+        <Property key="targetNamespace">
+            <StringValue>http://www.w3.org/XML/1998/namespace</StringValue>
+        </Property>
+    </Properties>
+</ResourceDocument>

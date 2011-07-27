@@ -2635,6 +2635,11 @@
     -->
     <target name="zip.api.gatewaymanagement" depends="package.management.api">
         <mkdir dir="${build.dir}/GatewayManagementAPI-${build.version}/docs/api"/>
+        <mkdir dir="${build.dir}/GatewayManagementAPI-${build.version}/docs/schema"/>
+        <mkdir dir="${build.dir}/GatewayManagementAPI-${build.version}/examples/api/"/>
+        <mkdir dir="${build.dir}/GatewayManagementAPI-${build.version}/examples/client/"/>
+        <mkdir dir="${build.dir}/GatewayManagementAPI-${build.version}/examples/ws/"/>
+        <mkdir dir="${build.dir}/GatewayManagementAPI-${build.version}/examples/resources/"/>
 
         <copy todir="${build.dir}/GatewayManagementAPI-${build.version}/">
             <fileset dir="${build.dir}/layer7-gateway-api"/>
@@ -2642,6 +2647,26 @@
 
         <copy todir="${build.dir}/GatewayManagementAPI-${build.version}/docs/api">
           <fileset dir="${build.dir}/docs/layer7-gateway-api"/>
+        </copy>
+
+        <copy todir="${build.dir}/GatewayManagementAPI-${build.version}/docs/schema">
+          <fileset dir="${src.root}/modules/gateway/gateway-api/build/etc/schema" includes="*.xsd"/>
+        </copy>
+
+        <copy todir="${build.dir}/GatewayManagementAPI-${build.version}/examples/api">
+          <fileset dir="${src.root}/modules/gateway/gateway-api/src/test/java" includes="com/l7tech/gateway/api/examples/*.java"/>
+        </copy>
+
+        <copy todir="${build.dir}/GatewayManagementAPI-${build.version}/examples/client">
+          <fileset dir="${src.root}/etc/gatewaymanagement/examples/client"/>
+        </copy>
+
+        <copy todir="${build.dir}/GatewayManagementAPI-${build.version}/examples/ws">
+          <fileset dir="${src.root}/etc/gatewaymanagement/examples/ws" includes="*.xml"/>
+        </copy>
+
+        <copy todir="${build.dir}/GatewayManagementAPI-${build.version}/examples/resources">
+          <fileset dir="${src.root}/etc/gatewaymanagement/examples/resources" includes="*.xml"/>
         </copy>
 
         <zip destfile="${build.dir}/GatewayManagement_dev_kit-${build.version}.zip">

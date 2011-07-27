@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope"
+    xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing"
+    xmlns:wse="http://schemas.xmlsoap.org/ws/2004/08/eventing"
+    xmlns:wsen="http://schemas.xmlsoap.org/ws/2004/09/enumeration"
+    xmlns:wsman="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd"
+    xmlns:wxf="http://schemas.xmlsoap.org/ws/2004/09/transfer" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <env:Header>
+        <wsa:Action env:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/09/enumeration/Pull</wsa:Action>
+        <wsa:ReplyTo>
+            <wsa:Address env:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address>
+        </wsa:ReplyTo>
+        <wsa:MessageID env:mustUnderstand="true">uuid:4caaceae-f859-47c7-aabd-7d0eb5b92d19</wsa:MessageID>
+        <wsa:To env:mustUnderstand="true">https://localhost:8443/wsman</wsa:To>
+        <wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/services</wsman:ResourceURI>
+        <wsman:OperationTimeout>PT5M0.000S</wsman:OperationTimeout>
+    </env:Header>
+    <env:Body>
+        <wsen:Pull>
+            <wsen:EnumerationContext>4fd8dd83-6bbc-4e26-a776-2c11b3bfffa4</wsen:EnumerationContext>
+            <wsen:MaxTime>PT5M0.000S</wsen:MaxTime>
+            <wsen:MaxElements>10</wsen:MaxElements>
+        </wsen:Pull>
+    </env:Body>
+</env:Envelope>

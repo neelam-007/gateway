@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope"
+    xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing"
+    xmlns:wse="http://schemas.xmlsoap.org/ws/2004/08/eventing"
+    xmlns:wsen="http://schemas.xmlsoap.org/ws/2004/09/enumeration"
+    xmlns:wsman="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd"
+    xmlns:wxf="http://schemas.xmlsoap.org/ws/2004/09/transfer" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <env:Header>
+        <wsa:Action env:mustUnderstand="true">http://ns.l7tech.com/2010/04/gateway-management/privateKeys/ExportKey</wsa:Action>
+        <wsa:ReplyTo>
+            <wsa:Address env:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address>
+        </wsa:ReplyTo>
+        <wsa:MessageID env:mustUnderstand="true">uuid:4148268f-1758-43a1-ada5-4e09f2d60ca2</wsa:MessageID>
+        <wsa:To env:mustUnderstand="true">https://localhost:8443/wsman</wsa:To>
+        <wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/privateKeys</wsman:ResourceURI>
+        <wsman:OperationTimeout>PT5M0.000S</wsman:OperationTimeout>
+        <wsman:SelectorSet>
+            <wsman:Selector Name="id">2:ssl</wsman:Selector>
+        </wsman:SelectorSet>
+    </env:Header>
+    <env:Body>
+        <PrivateKeyExportContext xmlns="http://ns.l7tech.com/2010/04/gateway-management">
+            <Alias>alias</Alias>
+            <Password>password</Password>
+        </PrivateKeyExportContext>
+    </env:Body>
+</env:Envelope>

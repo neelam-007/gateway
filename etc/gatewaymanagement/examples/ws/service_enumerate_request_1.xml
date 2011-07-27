@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope"
+    xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing"
+    xmlns:wse="http://schemas.xmlsoap.org/ws/2004/08/eventing"
+    xmlns:wsen="http://schemas.xmlsoap.org/ws/2004/09/enumeration"
+    xmlns:wsman="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd"
+    xmlns:wxf="http://schemas.xmlsoap.org/ws/2004/09/transfer" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <env:Header>
+        <wsa:Action env:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/09/enumeration/Enumerate</wsa:Action>
+        <wsa:ReplyTo>
+            <wsa:Address env:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address>
+        </wsa:ReplyTo>
+        <wsa:MessageID env:mustUnderstand="true">uuid:fabbf0ab-6a64-41af-a268-4a788a8e0871</wsa:MessageID>
+        <wsa:To env:mustUnderstand="true">https://localhost:8443/wsman</wsa:To>
+        <wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/services</wsman:ResourceURI>
+        <wsman:RequestTotalItemsCountEstimate/>
+    </env:Header>
+    <env:Body>
+        <wsen:Enumerate/>
+    </env:Body>
+</env:Envelope>

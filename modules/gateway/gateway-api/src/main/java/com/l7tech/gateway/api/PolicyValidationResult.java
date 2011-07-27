@@ -262,9 +262,6 @@ public class PolicyValidationResult extends ElementExtendableManagedObject {
             this.description = description;
         }
 
-        /**
-         * 
-         */
         @XmlAnyAttribute
         protected Map<QName, Object> getAttributeExtensions() {
             return attributeExtensions;

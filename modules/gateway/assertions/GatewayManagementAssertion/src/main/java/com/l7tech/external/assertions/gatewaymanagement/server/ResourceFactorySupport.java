@@ -133,9 +133,9 @@ abstract class ResourceFactorySupport<R> implements ResourceFactory<R> {
      * @return The map of property names to values (not null)
      * @throws ResourceAccessException if the type of a property is not supported or an unknown property is found.
      */
-    protected final <B extends PersistentEntity> Map<String,Object> getProperties( final Map<String,Object> initialProperties,
-                                                                                   final B bean,
-                                                                                   final Class<B> beanClass ) {
+    protected final <B extends PersistentEntity> Map<String,Object> getProperties( @Nullable final Map<String,Object> initialProperties,
+                                                                                   @NotNull  final B bean,
+                                                                                   @NotNull  final Class<B> beanClass ) {
         final Map<String,Object> propertyMap = new HashMap<String,Object>();
 
         if ( initialProperties != null ) {
@@ -310,9 +310,9 @@ abstract class ResourceFactorySupport<R> implements ResourceFactory<R> {
         return id;
     }
 
-    protected final void checkPermitted( final OperationType operationType,
-                                         final String otherOperationName,
-                                         final Entity entity ) {
+    protected final void checkPermitted( @NotNull  final OperationType operationType,
+                                         @Nullable final String otherOperationName,
+                                         @Nullable final Entity entity ) {
         if (entity == null) return;
 
         final EntityType entityType = EntityType.findTypeByEntity(entity.getClass());
@@ -325,8 +325,8 @@ abstract class ResourceFactorySupport<R> implements ResourceFactory<R> {
         } );
     }
 
-    protected final void checkPermittedForSomeEntity( final OperationType operationType,
-                                                      final EntityType entityType ) {
+    protected final void checkPermittedForSomeEntity( @NotNull final OperationType operationType,
+                                                      @NotNull final EntityType entityType ) {
         doPermissionCheck( operationType, null, entityType, null, new UnaryThrows<Boolean, User, FindException>() {
             @Override
             public Boolean call( final User user ) throws FindException {
@@ -335,8 +335,8 @@ abstract class ResourceFactorySupport<R> implements ResourceFactory<R> {
         } );
     }
 
-    protected final void checkPermittedForAnyEntity( final OperationType operationType,
-                                                     final EntityType entityType ) {
+    protected final void checkPermittedForAnyEntity( @NotNull final OperationType operationType,
+                                                     @NotNull final EntityType entityType ) {
         doPermissionCheck( operationType, null, entityType, null, new UnaryThrows<Boolean, User, FindException>() {
             @Override
             public Boolean call( final User user ) throws FindException {
@@ -351,7 +351,7 @@ abstract class ResourceFactorySupport<R> implements ResourceFactory<R> {
     final protected <ET> Collection<ET> accessFilter( final Collection<ET> entities,
                                                       final EntityType entityType,
                                                       final OperationType operationType,
-                                                      final String otherOperationName ) throws FindException {
+                                                      @Nullable final String otherOperationName ) throws FindException {
         final Collection<ET> filteredEntities;
         final User user = JaasUtils.getCurrentUser();
 
@@ -427,15 +427,15 @@ abstract class ResourceFactorySupport<R> implements ResourceFactory<R> {
     private final EntityPropertiesHelper propertiesHelper = new EntityPropertiesHelper();
     private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 
-    private void doPermissionCheck( final OperationType operationType,
-                                    final Entity entity,
-                                    final EntityType entityType,
-                                    final String otherOperationName,
-                                    final UnaryThrows<Boolean,User,FindException> permission ) {
+    private void doPermissionCheck( @NotNull  final OperationType operationType,
+                                    @Nullable final Entity entity,
+                                    @NotNull  final EntityType entityType,
+                                    @Nullable final String otherOperationName,
+                                    @NotNull  final UnaryThrows<Boolean,User,FindException> permission ) {
         final Option<User> user = optional( JaasUtils.getCurrentUser() );
         try {
             if ( !user.exists( permission ) ) {
-                if ( otherOperationName != null ) {
+                if ( otherOperationName != null && entity != null ) {
                     throw new PermissionDeniedException( operationType, entity, otherOperationName );
                 } else {
                     throw new PermissionDeniedException( operationType, entityType );

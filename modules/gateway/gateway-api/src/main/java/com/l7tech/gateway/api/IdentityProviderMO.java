@@ -9,7 +9,6 @@ import com.l7tech.gateway.api.impl.PropertiesMapType;
 import com.l7tech.util.Functions;
 
 import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
-import static com.l7tech.gateway.api.impl.AttributeExtensibleType.set;
 
 import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlElement;
@@ -29,10 +28,52 @@ import java.util.Map;
 /**
  * The IdentityProviderMO managed object represents an identity provider.
  *
- * TODO [steve] document properties and extension + javadoc
+ * <p>The Accessor for identity providers supports read and write. Identity
+ * providers can be accessed by name or identifier.</p>
  *
- * <p>The Accessor for identity providers is read only. Identity providers can
- * be accessed by name or identifier.</p>
+ * <p>The following properties are used:
+ * <ul>
+ *   <li><code>adminEnabled</code>: True to enable administrative users from
+ *   the provider (boolean, default false)</li>
+ *   <li><code>certificateValidation</code>: Optional certificate validation
+ *   type for the provider, one of <code>Validate</code>, <code>Validate
+ *   Certificate Path</code>, <code>Revocation Checking</code> (string)</li>
+ * </ul>
+ * </p>
+ *
+ * <p>The following properties are used for Federated identity providers:
+ * <ul>
+ *   <li><code>enableCredentialType.saml</code>: Flag to enabled SAML
+ *   credentials (boolean, default false)</li>
+ *   <li><code>enableCredentialType.x509</code>: Flag to enable X.509
+ *   credentials (boolean, default false)</li>
+ * </ul>
+ * </p>
+ *
+ * <p>The following properties are used for LDAP identity providers:
+ * <ul>
+ *   <li><code>groupCacheMaximumAge</code>: Maximum cache age in milliseconds
+ *   (integer, default 60000)</li>
+ *   <li><code>groupCacheSize</code>: Maximum cache size (integer, default 100)
+ *   </li>
+ *   <li><code>groupMaximumNesting</code>: Maximum group nesting, 0 for
+ *   unlimited (integer, default 0)</li>
+ *   <li><code>groupMembershipCaseInsensitive</code>: (boolean, default false)
+ *   </li>
+ *   <li><code>userCertificateIndexSearchFilter</code>: Optional custom index
+ *   search filter, used when <code>userCertificateUsage</code> is
+ *   <code>Custom</code> (string)</li>
+ *   <li><code>userCertificateIssuerSerialSearchFilter</code>: Optional search
+ *   filter for certificate lookup, used when <code>userCertificateUsage</code>
+ *   is <code>Search</code> (string)</li>
+ *   <li><code>userCertificateSKISearchFilter</code>: Optional search filter
+ *   for certificate lookup, used when <code>userCertificateUsage</code> is
+ *   <code>Search</code> (string)</li>
+ *   <li><code>userCertificateUsage</code>: Certificate use type, one of
+ *   <code>None</code>, <code>Index</code>, <code>Custom</code>,
+ *   <code>Search</code> (string)</li>
+ * </ul>
+ * </p>
  *
  * @see ManagedObjectFactory#createIdentityProvider()
  */
@@ -42,10 +83,6 @@ import java.util.Map;
 public class IdentityProviderMO extends AccessibleObject {
 
     //- PUBLIC
-
-    public static final String CERTIFICATE_VALIDATE = "Validate";
-    public static final String CERTIFICATE_VALIDATE_PATH = "Validate Certificate Path";
-    public static final String CERTIFICATE_REVOCATION = "Revocation Checking";    
 
     /**
      * Get the name for the identity provider (case insensitive)
@@ -105,10 +142,22 @@ public class IdentityProviderMO extends AccessibleObject {
         this.properties = properties;
     }
 
+    /**
+     * Get the details for an LDAP identity provider.
+     *
+     * @return The details or null
+     * @see #getIdentityProviderType
+     */
     public LdapIdentityProviderDetail getLdapIdentityProviderDetail() {
         return getIdentityProviderOptions( LdapIdentityProviderDetail.class );
     }
 
+    /**
+     * Get the details for a Federated identity provider.
+     *
+     * @return The details or null
+     * @see #getIdentityProviderType
+     */
     public FederatedIdentityProviderDetail getFederatedIdentityProviderDetail() {
         return getIdentityProviderOptions( FederatedIdentityProviderDetail.class );
     }
@@ -118,8 +167,8 @@ public class IdentityProviderMO extends AccessibleObject {
      */
     @XmlEnum(String.class)
     @XmlType(name="IdentityProviderTypeType")
-    public enum IdentityProviderType { 
-        /**
+    public enum IdentityProviderType {
+       /**
          * Gateway internal identity provider.
          */
         @XmlEnumValue("Internal") INTERNAL,
@@ -135,10 +184,18 @@ public class IdentityProviderMO extends AccessibleObject {
         @XmlEnumValue("Federated") FEDERATED
     }
 
+    /**
+     * Details for a Federated identity provider.
+     */
     @XmlType(name="FederatedIdentityProviderDetailType", propOrder={"certificateReferencesValue"})
     public static class FederatedIdentityProviderDetail extends IdentityProviderDetail {
         private AttributeExtensibleReferenceList certificateReferences;
 
+        /**
+         * Get the list of trusted certificate identifiers.
+         *
+         * @return The list of identifiers (never null)
+         */
         public List<String> getCertificateReferences() {
             return Functions.map( Arrays.asList(get(certificateReferences,new ManagedObjectReference[0])), new Functions.Unary<String,ManagedObjectReference>() {
                 @Override
@@ -148,6 +205,11 @@ public class IdentityProviderMO extends AccessibleObject {
             } );
         }
 
+        /**
+         * Set the list of trusted certificate identifiers.
+         *
+         * @param references The certificate identifiers
+         */
         public void setCertificateReferences( final List<String> references ) {
             if ( references != null && !references.isEmpty() ) {
                 if ( certificateReferences == null ) {
@@ -169,8 +231,25 @@ public class IdentityProviderMO extends AccessibleObject {
         protected void setCertificateReferencesValue( final AttributeExtensibleReferenceList certificateReferences ) {
             this.certificateReferences = certificateReferences;
         }
+
+        protected FederatedIdentityProviderDetail() {
+        }
     }
 
+    /**
+     * Details for an LDAP identity provider.
+     *
+     * <p>When creating an LDAP identity provider the user and group mappings
+     * do not have to be specified. If the source type is set then this is used
+     * to initialize the mappings. Permitted source types are:</p>
+     *
+     * <ul>
+     *   <li><code>GenericLDAP</code></li>
+     *   <li><code>MicrosoftActiveDirectory</code></li>
+     *   <li><code>Oracle</code></li>
+     *   <li><code>TivoliLDAP</code></li>
+     * </ul>
+     */
     @XmlType(name="LdapIdentityProviderDetailType", propOrder={"sourceTypeValue", "serverUrlValues", "useSslClientAuthenticationValue", "sslKeyReferenceValue", "searchBaseValue", "bindDnValue", "bindPasswordValue", "userMappingValues", "groupMappingValues", "specifiedAttributeValues"})
     public static class LdapIdentityProviderDetail extends IdentityProviderDetail {
         private AttributeExtensibleString sourceType;
@@ -187,34 +266,74 @@ public class IdentityProviderMO extends AccessibleObject {
 
         private AttributeExtensibleStringList specifiedAttributes;
 
+        /**
+         * Get the source type for the provider.
+         *
+         * @return The source type or null
+         */
         public String getSourceType(){
             return get( sourceType );
         }
 
+        /**
+         * Set the source type for the provider.
+         *
+         * @param sourceType The source type to use
+         */
         public void setSourceType( final String sourceType ) {
             this.sourceType = set(this.sourceType,sourceType);
         }
 
+        /**
+         * Get the LDAP server URLs.
+         *
+         * @return The list of LDAP servers (never null)
+         */
         public List<String> getServerUrls() {
             return unwrap(get( serverUrls, new ArrayList<AttributeExtensibleString>() ));
         }
 
+        /**
+         * Set the LDAP server URLs.
+         *
+         * @param serverUrls The list of LDAP servers to use
+         */
         public void setServerUrls( final List<String> serverUrls ) {
             this.serverUrls = set( this.serverUrls, wrap(serverUrls,AttributeExtensibleStringBuilder) );
         }
 
+        /**
+         * SSL/TLS client authentication flag.
+         *
+         * @return True if client authentication should be used
+         */
         public boolean isUseSslClientClientAuthentication() {
             return get( useSslClientAuthentication, Boolean.FALSE );
         }
 
-        public void setUseSslClientAuthentication(boolean useSslClientAuthentication) {
+        /**
+         * Set SSL/TLS client authentication flag.
+         *
+          * @param useSslClientAuthentication True to use client authentication
+         */
+        public void setUseSslClientAuthentication( final boolean useSslClientAuthentication ) {
             this.useSslClientAuthentication = set(this.useSslClientAuthentication,useSslClientAuthentication);
         }
 
+        /**
+         * Get the TLS/SSL client key identifier.
+         *
+         * @return The key identifier or null
+         */
         public String getSslKeyId() {
             return sslKeyReference==null ? null : sslKeyReference.getId();
         }
 
+        /**
+         * Set the TLS/SSL client key identifier.
+         *
+         * @param keyId The key identifier to use
+         */
         public void setSslKeyId( final String keyId ) {
             if ( keyId != null ) {
                 if ( sslKeyReference==null ) {
@@ -227,60 +346,133 @@ public class IdentityProviderMO extends AccessibleObject {
             }
         }
 
+        /**
+         * Get the search base for the LDAP (required)
+         *
+         * @return The search base or null
+         */
         public String getSearchBase() {
             return get( searchBase );
         }
 
-        public void setSearchBase( String searchBase ) {
+        /**
+         * Set the search base for the LDAP (required)
+         *
+         * @param searchBase The search base to use
+         */
+        public void setSearchBase( final String searchBase ) {
             this.searchBase = set(this.searchBase,searchBase);
         }
 
+        /**
+         * Get the bind "DN" for the LDAP (required)
+         *
+         * @return The bind DN or null
+         */
         public String getBindDn() {
             return get( bindDn );
         }
 
-        public void setBindDn( String bindDn ) {
+        /**
+         * Set the bind "DN" for the LDAP (required)
+         *
+         * @param bindDn The bind DN or null
+         */
+        public void setBindDn( final String bindDn ) {
             this.bindDn = set(this.bindDn,bindDn);
         }
 
+        /**
+         * Get the bind password for the LDAP.
+         *
+         * @return The bind password or null
+         */
         public String getBindPassword() {
             return get( bindPassword );
         }
 
+        /**
+         * Set the bind password for the LDAP.
+         *
+         * @param bindPassword The bind password to use
+         */
         public void setBindPassword( String bindPassword ) {
             this.bindPassword = set(this.bindPassword,bindPassword);
         }
 
+        /**
+         * Flag for user mapping presence.
+         *
+         * @return True if this LDAP has user mapping configuration
+         */
         public boolean hasUserMappings() {
             return userMappings!=null && userMappings.value != null;
         }
 
+        /**
+         * Get the user mappings for this LDAP.
+         *
+         * @return The user mappings (never null)
+         */
         public List<LdapIdentityProviderMapping> getUserMappings() {
             return get( userMappings, new ArrayList<LdapIdentityProviderMapping>() );
         }
 
+        /**
+         * Set the user mappings for this LDAP.
+         *
+         * @param userMappings The mappings to use
+         */
         public void setUserMappings( final List<LdapIdentityProviderMapping> userMappings ) {
             this.userMappings = set(this.userMappings,userMappings,AttributeExtensibleLdapIdentityProviderMappingList.Builder);
         }
 
+        /**
+         * Flag for user mapping presence.
+         *
+         * @return True if this LDAP has group mapping configuration
+         */
         public boolean hasGroupMappings() {
             return groupMappings!=null && groupMappings.value != null;
         }
 
+        /**
+         * Get the group mappings for this LDAP.
+         *
+         * @return The group mappings (never null)
+         */
         public List<LdapIdentityProviderMapping> getGroupMappings() {
             return get( groupMappings, new ArrayList<LdapIdentityProviderMapping>() );
         }
 
+        /**
+         * Set the group mappings for this LDAP.
+         *
+         * @param groupMappings The group mappings to use
+         */
         public void setGroupMappings( final List<LdapIdentityProviderMapping> groupMappings ) {
             this.groupMappings = set(this.groupMappings,groupMappings,AttributeExtensibleLdapIdentityProviderMappingList.Builder);
         }
 
+        /**
+         * Get the list of specified attributes for this LDAP.
+         *
+         * @return The list of specified attributes (never null)
+         */
         public List<String> getSpecifiedAttributes() {
             return unwrap(get( specifiedAttributes, new ArrayList<AttributeExtensibleString>() ));
         }
 
+        /**
+         * Set the list of specified attributes for this LDAP.
+         *
+         * @param specifiedAttributes The specified attributes to use
+         */
         public void setSpecifiedAttributes( List<String> specifiedAttributes ) {
             this.specifiedAttributes = set( this.specifiedAttributes, wrap(specifiedAttributes,AttributeExtensibleStringBuilder) );
+        }
+
+        protected LdapIdentityProviderDetail() {
         }
 
         @XmlElement(name="SourceType")
@@ -376,6 +568,8 @@ public class IdentityProviderMO extends AccessibleObject {
 
     /**
      * Represents a user or group mapping
+     *
+     * @see ManagedObjectFactory#createLdapIdentityProviderMapping()
      */
     @XmlType(name="LdapIdentityProviderMappingType", propOrder={"objectClassValue","mappings","properties","extension","extensions"})
     public static class LdapIdentityProviderMapping extends ElementExtensionSupport {
@@ -383,16 +577,26 @@ public class IdentityProviderMO extends AccessibleObject {
         private Map<String,Object> mappings;
         private Map<String,Object> properties;
 
+        /**
+         * Get the LDAP objectclass for the mapping (required)
+         *
+         * @return The objectclass or null
+         */
         public String getObjectClass() {
             return get( objectClass );
         }
 
+        /**
+         * Set the LDAP objectclass for the mapping (required)
+         *
+         * @param objectClass The objectclass to use
+         */
         public void setObjectClass( final String objectClass ) {
             this.objectClass = set(this.objectClass,objectClass);
         }
 
         /**
-         * Get the properties for the mapping.
+         * Get the mappings (required)
          *
          * @return The properties (may be null)
          */
@@ -403,14 +607,13 @@ public class IdentityProviderMO extends AccessibleObject {
         }
 
         /**
-         * Set the properties for the mapping.
+         * Set the mappings (required)
          *
          * @param mappings The mappings to use.
          */
         public void setMappings( final Map<String, Object> mappings ) {
             this.mappings = mappings;
         }
-
 
         /**
          * Get the properties for the mapping.
@@ -440,34 +643,10 @@ public class IdentityProviderMO extends AccessibleObject {
         protected void setObjectClassValue( final AttributeExtensibleString objectClass ) {
             this.objectClass = objectClass;
         }
+
+        LdapIdentityProviderMapping() {
+        }
     }
-
-    /**
-     * AttributeExtensible extension for LdapIdentityProviderMapping[] properties.
-     */
-    @XmlType(name="LdapIdentityProviderMappingListPropertyType", propOrder={"value"})
-    public static class AttributeExtensibleLdapIdentityProviderMappingList  extends AttributeExtensibleType.AttributeExtensible<List<LdapIdentityProviderMapping>> {
-        private List<LdapIdentityProviderMapping> value;
-
-        @Override
-        @XmlElement(name="Mapping")
-        public List<LdapIdentityProviderMapping> getValue() {
-            return value;
-        }
-
-        @Override
-        public void setValue( final List<LdapIdentityProviderMapping> value ) {
-            this.value = value;
-        }
-
-        private static final Functions.Nullary<AttributeExtensibleLdapIdentityProviderMappingList> Builder =
-                new Functions.Nullary<AttributeExtensibleLdapIdentityProviderMappingList>(){
-            @Override
-            public AttributeExtensibleLdapIdentityProviderMappingList call() {
-                return new AttributeExtensibleLdapIdentityProviderMappingList();
-            }
-        };
-    }    
 
     //- PROTECTED
 
@@ -541,6 +720,36 @@ public class IdentityProviderMO extends AccessibleObject {
     @XmlType(name="IdentityProviderDetailType", propOrder={"extension", "extensions"})
     @XmlSeeAlso({FederatedIdentityProviderDetail.class, LdapIdentityProviderDetail.class})
     protected abstract static class IdentityProviderDetail extends ElementExtensionSupport {
+    }
+
+    /**
+     * AttributeExtensible extension for LdapIdentityProviderMapping[] properties.
+     */
+    @XmlType(name="LdapIdentityProviderMappingListPropertyType", propOrder={"value"})
+    protected static class AttributeExtensibleLdapIdentityProviderMappingList  extends AttributeExtensibleType.AttributeExtensible<List<LdapIdentityProviderMapping>> {
+        private List<LdapIdentityProviderMapping> value;
+
+        @Override
+        @XmlElement(name="Mapping")
+        public List<LdapIdentityProviderMapping> getValue() {
+            return value;
+        }
+
+        @Override
+        public void setValue( final List<LdapIdentityProviderMapping> value ) {
+            this.value = value;
+        }
+
+        protected AttributeExtensibleLdapIdentityProviderMappingList() {
+        }
+
+        private static final Functions.Nullary<AttributeExtensibleLdapIdentityProviderMappingList> Builder =
+                new Functions.Nullary<AttributeExtensibleLdapIdentityProviderMappingList>(){
+            @Override
+            public AttributeExtensibleLdapIdentityProviderMappingList call() {
+                return new AttributeExtensibleLdapIdentityProviderMappingList();
+            }
+        };
     }
 
     //- PACKAGE

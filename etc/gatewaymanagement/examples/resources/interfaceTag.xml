@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<InterfaceTag xmlns="http://ns.l7tech.com/2010/04/gateway-management" version="13" id="f5ddaf0c-a792-3578-b408-c909429f68f2">
+    <Name>Example</Name>
+    <AddressPatterns>
+        <StringValue>192.168.122.0/24</StringValue>
+    </AddressPatterns>
+</InterfaceTag>

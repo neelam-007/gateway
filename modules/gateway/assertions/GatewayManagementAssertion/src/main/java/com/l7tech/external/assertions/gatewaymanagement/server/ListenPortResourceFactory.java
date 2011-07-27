@@ -169,12 +169,12 @@ public class ListenPortResourceFactory extends EntityManagerResourceFactory<List
     };
 
     private static final Map<String,Unary<Option<String>,String>> PROPERTY_VALIDATORS = CollectionUtils.<String,Unary<Option<String>,String>>mapBuilder()
-            .put( "noSSLv2Hello", BOOLEAN_VALIDATOR )
-            .put( "overrideContentType", CONTENT_TYPE_VALIDATOR )
             .put( "l7.raw.backlog", POSITIVE_INTEGER_VALIDATOR )
             .put( "l7.raw.readTimeout", POSITIVE_INTEGER_VALIDATOR )
             .put( "l7.raw.requestSizeLimit", POSITIVE_LONG_VALIDATOR )
             .put( "l7.raw.writeTimeout", POSITIVE_INTEGER_VALIDATOR )
+            .put( "noSSLv2Hello", BOOLEAN_VALIDATOR )
+            .put( "overrideContentType", CONTENT_TYPE_VALIDATOR )
             .put( "portRangeCount", POSITIVE_INTEGER_VALIDATOR )
             .put( "portRangeStart", POSITIVE_INTEGER_VALIDATOR )
             .put( "requestSizeLimit", POSITIVE_LONG_VALIDATOR )
@@ -275,7 +275,7 @@ public class ListenPortResourceFactory extends EntityManagerResourceFactory<List
             properties.put( name, entity.getProperty( name ) );
         }
 
-        return properties;
+        return properties.isEmpty() ? null : properties;
     }
 
     private void putProperty( final SsgConnector connector,

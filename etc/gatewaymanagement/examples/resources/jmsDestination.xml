@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<JMSDestination xmlns="http://ns.l7tech.com/2010/04/gateway-management" version="0" id="4947968">
+    <JMSDestinationDetail version="0" id="4947968">
+        <Name>Example</Name>
+        <DestinationName>queue</DestinationName>
+        <Inbound>false</Inbound>
+        <Enabled>true</Enabled>
+        <Template>false</Template>
+        <Properties>
+            <Property key="replyType">
+                <StringValue>AUTOMATIC</StringValue>
+            </Property>
+            <Property key="outbound.MessageType">
+                <StringValue>AUTOMATIC</StringValue>
+            </Property>
+            <Property key="useRequestCorrelationId">
+                <BooleanValue>false</BooleanValue>
+            </Property>
+            <Property key="type">
+                <StringValue>Queue</StringValue>
+            </Property>
+        </Properties>
+    </JMSDestinationDetail>
+    <JMSConnection version="0" id="4915200">
+        <Template>false</Template>
+        <Properties>
+            <Property key="jndi.initialContextFactoryClassname">
+                <StringValue>com.tibco.tibjms.naming.TibjmsInitialContextFactory</StringValue>
+            </Property>
+            <Property key="jndi.providerUrl">
+                <StringValue>tibjmsnaming://tibco.layer7tech.com:7222</StringValue>
+            </Property>
+            <Property key="queue.connectionFactoryName">
+                <StringValue>QueueConnectionFactory</StringValue>
+            </Property>
+        </Properties>
+        <ContextPropertiesTemplate>
+            <Property key="com.l7tech.server.jms.prop.hardwired.service.bool">
+                <StringValue>false</StringValue>
+            </Property>
+        </ContextPropertiesTemplate>
+    </JMSConnection>
+</JMSDestination>

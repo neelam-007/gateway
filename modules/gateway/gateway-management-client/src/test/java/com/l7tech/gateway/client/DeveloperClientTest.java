@@ -23,56 +23,56 @@ public class DeveloperClientTest {
     public void testEnumerateEverything() throws Exception {
         final Collection<String> types = Arrays.asList( "clusterProperty", "folder", "jdbcConnection", "jmsDestination", "identityProvider", "policy", "privateKey", "resourceDocument", "service", "trustedCertificate" );
         for ( String type : types ) {
-            GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ gateway, "enumerate", "-type", type, "-username", username, "-password", password }, System.out, System.out );
+            GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ gateway, "enumerate", "-type", type, "-username", username, "-password", password }, System.in, System.out, System.out );
             gmc.run();
         }
     }
 
     @Test
     public void testEnumerate() throws Exception {
-        GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ gateway, "enumerate", "-type", "clusterProperty", "-username", username, "-password", password }, System.out, System.out );
+        GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ gateway, "enumerate", "-type", "clusterProperty", "-username", username, "-password", password }, System.in, System.out, System.out );
         gmc.run();
     }
 
     @Test
     public void testGet() throws Exception {
-        GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ gateway, "get", "-type", "service", "-id", serviceId, "-username", username, "-password", password }, System.out, System.out );
+        GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ gateway, "get", "-type", "service", "-id", serviceId, "-username", username, "-password", password }, System.in, System.out, System.out );
         gmc.run();
     }
 
     @Test
     public void testPut() throws Exception {
-        GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ gateway, "put", "-type", "service", "-username", username, "-password", password, "-inFile", inputFile }, System.out, System.out );
+        GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ gateway, "put", "-type", "service", "-username", username, "-password", password, "-inFile", inputFile }, System.in, System.out, System.out );
         gmc.run();
     }
 
     @Test
     public void testCreate() throws Exception {
-        GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ gateway, "create", "-type", "clusterProperty", "-username", username, "-password", password, "-inFile", "/tmp/cpin.xml" }, System.out, System.out );
+        GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ gateway, "create", "-type", "clusterProperty", "-username", username, "-password", password, "-inFile", "/tmp/cpin.xml" }, System.in, System.out, System.out );
         gmc.run();
     }
 
     @Test
     public void testDelete() throws Exception {
-        GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ gateway, "delete", "-type", "clusterProperty", "-id", clusterPropertyId, "-username", username, "-password", password }, System.out, System.out );
+        GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ gateway, "delete", "-type", "clusterProperty", "-id", clusterPropertyId, "-username", username, "-password", password }, System.in, System.out, System.out );
         gmc.run();
     }
 
     @Test
     public void testValidatePolicy() throws Exception {
-        GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ gateway, "validate", "-type", "service", "-id", serviceId, "-username", username, "-password", password }, System.out, System.out );
+        GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ gateway, "validate", "-type", "service", "-id", serviceId, "-username", username, "-password", password }, System.in, System.out, System.out );
         gmc.run();
     }
 
     @Test
     public void testImportPolicy() throws Exception {
-        GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ gateway, "import", "-type", "service", "-id", serviceId, "-username", username, "-password", password, "-inFile", inputFile, "-import", "replace", "IdProviderReference", "491520", "147226624"}, System.out, System.out );
+        GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ gateway, "import", "-type", "service", "-id", serviceId, "-username", username, "-password", password, "-inFile", inputFile, "-import", "replace", "IdProviderReference", "491520", "147226624"}, System.in, System.out, System.out );
         gmc.run();
     }
 
     @Test
     public void testExportPolicy() throws Exception {
-        GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ gateway, "export", "-type", "service", "-id", serviceId, "-username", username, "-password", password }, System.out, System.out );
+        GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ gateway, "export", "-type", "service", "-id", serviceId, "-username", username, "-password", password }, System.in, System.out, System.out );
         gmc.run();
     }
 }

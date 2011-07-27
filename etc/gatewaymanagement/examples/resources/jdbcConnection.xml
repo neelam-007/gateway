@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<JDBCConnection xmlns="http://ns.l7tech.com/2010/04/gateway-management" version="1" id="227442688">
+    <Name>Example</Name>
+    <Enabled>true</Enabled>
+    <Properties>
+        <Property key="maximumPoolSize">
+            <IntegerValue>15</IntegerValue>
+        </Property>
+        <Property key="minimumPoolSize">
+            <IntegerValue>3</IntegerValue>
+        </Property>
+    </Properties>
+    <Extension>
+        <DriverClass>com.mysql.jdbc.Driver</DriverClass>
+        <JdbcUrl>jdbc:mysql://localhost:3306</JdbcUrl>
+        <ConnectionProperties>
+            <Property key="user">
+                <StringValue>username</StringValue>
+            </Property>
+        </ConnectionProperties>
+    </Extension>
+</JDBCConnection>

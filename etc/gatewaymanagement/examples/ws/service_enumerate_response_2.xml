@@ -1,0 +1,2999 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope"
+    xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management"
+    xmlns:mdo="http://schemas.wiseman.dev.java.net/metadata/messagetypes"
+    xmlns:mex="http://schemas.xmlsoap.org/ws/2004/09/mex"
+    xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing"
+    xmlns:wse="http://schemas.xmlsoap.org/ws/2004/08/eventing"
+    xmlns:wsen="http://schemas.xmlsoap.org/ws/2004/09/enumeration"
+    xmlns:wsman="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd"
+    xmlns:wsmeta="http://schemas.dmtf.org/wbem/wsman/1/wsman/version1.0.0.a/default-addressing-model.xsd"
+    xmlns:wxf="http://schemas.xmlsoap.org/ws/2004/09/transfer" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <env:Header>
+        <wsa:Action env:mustUnderstand="true" xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">http://schemas.xmlsoap.org/ws/2004/09/enumeration/PullResponse</wsa:Action>
+        <wsa:MessageID env:mustUnderstand="true">uuid:8d7a7fac-7986-4a07-966e-3df038984786</wsa:MessageID>
+        <wsa:RelatesTo>uuid:4caaceae-f859-47c7-aabd-7d0eb5b92d19</wsa:RelatesTo>
+        <wsa:To env:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>
+    </env:Header>
+    <env:Body>
+        <wsen:PullResponse>
+            <wsen:Items>
+                <l7:Service id="253165568" version="2">
+                    <l7:ServiceDetail folderId="-5002" id="253165568" version="2">
+                        <l7:Name>My Gateway Management Service</l7:Name>
+                        <l7:Enabled>true</l7:Enabled>
+                        <l7:ServiceMappings>
+                            <l7:HttpMapping>
+                                <l7:UrlPattern>/mywsman</l7:UrlPattern>
+                                <l7:Verbs>
+                                    <l7:Verb>POST</l7:Verb>
+                                </l7:Verbs>
+                            </l7:HttpMapping>
+                            <l7:SoapMapping>
+                                <l7:Lax>false</l7:Lax>
+                            </l7:SoapMapping>
+                        </l7:ServiceMappings>
+                        <l7:Properties>
+                            <l7:Property key="policyRevision">
+                                <l7:LongValue>1</l7:LongValue>
+                            </l7:Property>
+                            <l7:Property key="wssProcessingEnabled">
+                                <l7:BooleanValue>true</l7:BooleanValue>
+                            </l7:Property>
+                            <l7:Property key="soapVersion">
+                                <l7:StringValue>1.2</l7:StringValue>
+                            </l7:Property>
+                            <l7:Property key="soap">
+                                <l7:BooleanValue>true</l7:BooleanValue>
+                            </l7:Property>
+                            <l7:Property key="internal">
+                                <l7:BooleanValue>false</l7:BooleanValue>
+                            </l7:Property>
+                        </l7:Properties>
+                    </l7:ServiceDetail>
+                    <l7:Resources>
+                        <l7:ResourceSet tag="policy">
+                            <l7:Resource type="policy" version="0">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+    &lt;wsp:All wsp:Usage="Required"&gt;
+        &lt;L7p:SslAssertion/&gt;
+        &lt;L7p:HttpBasic/&gt;
+        &lt;L7p:Authentication&gt;
+            &lt;L7p:IdentityProviderOid longValue="-2"/&gt;
+        &lt;/L7p:Authentication&gt;
+        &lt;L7p:GatewayManagement/&gt;
+    &lt;/wsp:All&gt;
+&lt;/wsp:Policy&gt;</l7:Resource>
+                        </l7:ResourceSet>
+                        <l7:ResourceSet
+                            rootUrl="http://localhost:8080/wsman?wsdl" tag="wsdl">
+                            <l7:Resource
+                                sourceUrl="http://localhost:8080/wsman?wsdl" type="wsdl">&lt;definitions targetNamespace="http://ns.l7tech.com/2010/04/gateway-management" tns:targetNamespace="http://ns.l7tech.com/2010/04/gateway-management" xmlns="http://schemas.xmlsoap.org/wsdl/" xmlns:tns="http://ns.l7tech.com/2010/04/gateway-management" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:wse="http://schemas.xmlsoap.org/ws/2004/08/eventing" xmlns:wsen="http://schemas.xmlsoap.org/ws/2004/09/enumeration" xmlns:wsman="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd" xmlns:wsoap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:wxf="http://schemas.xmlsoap.org/ws/2004/09/transfer" xmlns:xs="http://www.w3.org/2001/XMLSchema"&gt;
+  &lt;!-- Imports --&gt;
+  &lt;import location="http://localhost:8080/ssg/wsdl/transfer.wsdl?serviceoid=5308416&amp;amp;servdocoid=251625479" namespace="http://schemas.xmlsoap.org/ws/2004/09/transfer"/&gt;
+  &lt;import location="http://localhost:8080/ssg/wsdl/enumeration.wsdl?serviceoid=5308416&amp;amp;servdocoid=251625472" namespace="http://schemas.xmlsoap.org/ws/2004/09/enumeration"/&gt;
+  &lt;import location="http://localhost:8080/ssg/wsdl/eventing.wsdl?serviceoid=5308416&amp;amp;servdocoid=251625480" namespace="http://schemas.xmlsoap.org/ws/2004/08/eventing"/&gt;
+  &lt;types&gt;
+    &lt;xs:schema blockDefault="#all" elementFormDefault="qualified"&gt;
+      &lt;xs:import namespace="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd" schemaLocation="http://localhost:8080/ssg/wsdl/wsman.xsd?serviceoid=5308416&amp;amp;servdocoid=251625478"/&gt;
+    &lt;/xs:schema&gt;
+    &lt;xs:schema blockDefault="#all" elementFormDefault="qualified"&gt;
+      &lt;xs:import namespace="http://ns.l7tech.com/2010/04/gateway-management" schemaLocation="http://localhost:8080/ssg/wsdl/gateway-management.xsd?serviceoid=5308416&amp;amp;servdocoid=251625474"/&gt;
+    &lt;/xs:schema&gt;
+  &lt;/types&gt;
+  &lt;!-- WS-Management Messages --&gt;
+  &lt;message name="ResourceURIMessage"&gt;
+    &lt;part element="wsman:ResourceURI" name="ResourceURIPart"/&gt;
+  &lt;/message&gt;
+  &lt;message name="SelectorSetMessage"&gt;
+    &lt;part element="wsman:SelectorSet" name="SelectorSetPart"/&gt;
+  &lt;/message&gt;
+  &lt;message name="OptionSetMessage"&gt;
+    &lt;part element="wsman:OptionSet" name="OptionSetPart"/&gt;
+  &lt;/message&gt;
+  &lt;message name="OperationTimeoutMessage"&gt;
+    &lt;part element="wsman:OperationTimeout" name="OperationTimeoutPart"/&gt;
+  &lt;/message&gt;
+  &lt;message name="RequestTotalItemsCountEstimateMessage"&gt;
+    &lt;part element="wsman:RequestTotalItemsCountEstimate" name="RequestTotalItemsCountEstimatePart"/&gt;
+  &lt;/message&gt;
+  &lt;message name="TotalItemsCountEstimateMessage"&gt;
+    &lt;part element="wsman:TotalItemsCountEstimate" name="TotalItemsCountEstimatePart"/&gt;
+  &lt;/message&gt;
+  &lt;message name="FragmentTransferMessage"&gt;
+    &lt;part element="wsman:FragmentTransfer" name="FragmentTransferPart"/&gt;
+  &lt;/message&gt;
+  &lt;!-- Resource Messages --&gt;
+  &lt;message name="ClusterPropertyMessage"&gt;
+    &lt;part element="tns:ClusterProperty" name="ClusterPropertyPart"/&gt;
+  &lt;/message&gt;
+  &lt;message name="IdentityProviderMessage"&gt;
+    &lt;part element="tns:IdentityProvider" name="IdentityProviderPart"/&gt;
+  &lt;/message&gt;
+  &lt;message name="InterfaceTagMessage"&gt;
+    &lt;part element="tns:InterfaceTag" name="InterfaceTagPart"/&gt;
+  &lt;/message&gt;
+  &lt;message name="JDBCConnectionMessage"&gt;
+    &lt;part element="tns:JDBCConnection" name="JDBCConnectionPart"/&gt;
+  &lt;/message&gt;
+  &lt;message name="JMSDestinationMessage"&gt;
+    &lt;part element="tns:JMSDestination" name="JMSDestinationPart"/&gt;
+  &lt;/message&gt;
+  &lt;message name="ListenPortMessage"&gt;
+    &lt;part element="tns:ListenPort" name="ListenPortPart"/&gt;
+  &lt;/message&gt;
+  &lt;message name="PolicyMessage"&gt;
+    &lt;part element="tns:Policy" name="PolicyPart"/&gt;
+  &lt;/message&gt;
+  &lt;message name="PolicyExportResultMessage"&gt;
+    &lt;part element="tns:PolicyExportResult" name="PolicyExportResultPart"/&gt;
+  &lt;/message&gt;
+  &lt;message name="PolicyImportContextMessage"&gt;
+    &lt;part element="tns:PolicyImportContext" name="PolicyImportContextPart"/&gt;
+  &lt;/message&gt;
+  &lt;message name="PolicyImportResultMessage"&gt;
+    &lt;part element="tns:PolicyImportResult" name="PolicyImportResultPart"/&gt;
+  &lt;/message&gt;
+  &lt;message name="PolicyValidationContextMessage"&gt;
+    &lt;part element="tns:PolicyValidationContext" name="PolicyValidationContextPart"/&gt;
+  &lt;/message&gt;
+  &lt;message name="PolicyValidationResultMessage"&gt;
+    &lt;part element="tns:PolicyValidationResult" name="PolicyValidationResultPart"/&gt;
+  &lt;/message&gt;
+  &lt;message name="PrivateKeyMessage"&gt;
+    &lt;part element="tns:PrivateKey" name="PrivateKeyPart"/&gt;
+  &lt;/message&gt;
+  &lt;message name="PrivateKeyCreationContextMessage"&gt;
+    &lt;part element="tns:PrivateKeyCreationContext" name="PrivateKeyCreationContextPart"/&gt;
+  &lt;/message&gt;
+  &lt;message name="PrivateKeyExportContextMessage"&gt;
+    &lt;part element="tns:PrivateKeyExportContext" name="PrivateKeyExportContextPart"/&gt;
+  &lt;/message&gt;
+  &lt;message name="PrivateKeyExportResultMessage"&gt;
+    &lt;part element="tns:PrivateKeyExportResult" name="PrivateKeyExportResultPart"/&gt;
+  &lt;/message&gt;
+  &lt;message name="PrivateKeyGenerateCsrContextMessage"&gt;
+    &lt;part element="tns:PrivateKeyGenerateCsrContext" name="PrivateKeyGenerateCsrContextPart"/&gt;
+  &lt;/message&gt;
+  &lt;message name="PrivateKeyGenerateCsrResultMessage"&gt;
+    &lt;part element="tns:PrivateKeyGenerateCsrResult" name="PrivateKeyGenerateCsrResultPart"/&gt;
+  &lt;/message&gt;
+  &lt;message name="PrivateKeyImportContextMessage"&gt;
+    &lt;part element="tns:PrivateKeyImportContext" name="PrivateKeyImportContextPart"/&gt;
+  &lt;/message&gt;
+  &lt;message name="PrivateKeySpecialPurposeContextMessage"&gt;
+    &lt;part element="tns:PrivateKeySpecialPurposeContext" name="PrivateKeySpecialPurposeContextPart"/&gt;
+  &lt;/message&gt;
+  &lt;message name="ResourceDocumentMessage"&gt;
+    &lt;part element="tns:ResourceDocument" name="ResourceDocumentPart"/&gt;
+  &lt;/message&gt;
+  &lt;message name="RevocationCheckingPolicyMessage"&gt;
+    &lt;part element="tns:RevocationCheckingPolicy" name="RevocationCheckingPolicyPart"/&gt;
+  &lt;/message&gt;
+  &lt;message name="ServiceMessage"&gt;
+    &lt;part element="tns:Service" name="ServicePart"/&gt;
+  &lt;/message&gt;
+  &lt;message name="StoredPasswordMessage"&gt;
+    &lt;part element="tns:StoredPassword" name="StoredPasswordPart"/&gt;
+  &lt;/message&gt;
+  &lt;message name="TrustedCertificateMessage"&gt;
+    &lt;part element="tns:TrustedCertificate" name="TrustedCertificatePart"/&gt;
+  &lt;/message&gt;
+  &lt;!-- PortTypes --&gt;
+  &lt;portType name="GatewayManagementPortType"&gt;
+    &lt;!--  WS-Transfer Operations --&gt;
+    &lt;operation name="Create"&gt;
+      &lt;input message="wxf:AnyXmlMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/transfer/Create"/&gt;
+      &lt;output message="wxf:CreateResponseMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/transfer/CreateResponse"/&gt;
+    &lt;/operation&gt;
+    &lt;operation name="Get"&gt;
+      &lt;input message="wxf:EmptyMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/transfer/Get"/&gt;
+      &lt;output message="wxf:AnyXmlMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/transfer/GetResponse"/&gt;
+    &lt;/operation&gt;
+    &lt;operation name="Put"&gt;
+      &lt;input message="wxf:AnyXmlMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/transfer/Put"/&gt;
+      &lt;output message="wxf:OptionalXmlMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/transfer/PutResponse"/&gt;
+    &lt;/operation&gt;
+    &lt;operation name="Delete"&gt;
+      &lt;input message="wxf:EmptyMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/transfer/Delete"/&gt;
+      &lt;output message="wxf:EmptyMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/transfer/DeleteResponse"/&gt;
+    &lt;/operation&gt;
+    &lt;!-- Resource Operations --&gt;
+    &lt;operation name="privateKeysCreateKey"&gt;
+      &lt;input message="tns:PrivateKeyCreationContextMessage" wsa:Action="http://ns.l7tech.com/2010/04/gateway-management/privateKeys/CreateKey"/&gt;
+      &lt;output message="tns:PrivateKeyMessage" wsa:Action="http://ns.l7tech.com/2010/04/gateway-management/privateKeys/CreateKeyResponse"/&gt;
+    &lt;/operation&gt;
+    &lt;operation name="privateKeysExportKey"&gt;
+      &lt;input message="tns:PrivateKeyExportContextMessage" wsa:Action="http://ns.l7tech.com/2010/04/gateway-management/privateKeys/ExportKey"/&gt;
+      &lt;output message="tns:PrivateKeyExportResultMessage" wsa:Action="http://ns.l7tech.com/2010/04/gateway-management/privateKeys/ExportKeyResponse"/&gt;
+    &lt;/operation&gt;
+    &lt;operation name="policiesExportPolicy"&gt;
+      &lt;input message="wxf:EmptyMessage" wsa:Action="http://ns.l7tech.com/2010/04/gateway-management/policies/ExportPolicy"/&gt;
+      &lt;output message="tns:PolicyExportResultMessage" wsa:Action="http://ns.l7tech.com/2010/04/gateway-management/policies/ExportPolicyResponse"/&gt;
+    &lt;/operation&gt;
+    &lt;operation name="servicesExportPolicy"&gt;
+      &lt;input message="wxf:EmptyMessage" wsa:Action="http://ns.l7tech.com/2010/04/gateway-management/services/ExportPolicy"/&gt;
+      &lt;output message="tns:PolicyExportResultMessage" wsa:Action="http://ns.l7tech.com/2010/04/gateway-management/services/ExportPolicyResponse"/&gt;
+    &lt;/operation&gt;
+    &lt;operation name="privateKeysGenerateCSR"&gt;
+      &lt;input message="tns:PrivateKeyGenerateCsrContextMessage" wsa:Action="http://ns.l7tech.com/2010/04/gateway-management/privateKeys/GenerateCSR"/&gt;
+      &lt;output message="tns:PrivateKeyGenerateCsrResultMessage" wsa:Action="http://ns.l7tech.com/2010/04/gateway-management/privateKeys/GenerateCSRResponse"/&gt;
+    &lt;/operation&gt;
+    &lt;operation name="privateKeysImportKey"&gt;
+      &lt;input message="tns:PrivateKeyImportContextMessage" wsa:Action="http://ns.l7tech.com/2010/04/gateway-management/privateKeys/ImportKey"/&gt;
+      &lt;output message="tns:PrivateKeyMessage" wsa:Action="http://ns.l7tech.com/2010/04/gateway-management/privateKeys/ImportKeyResponse"/&gt;
+    &lt;/operation&gt;
+    &lt;operation name="policiesImportPolicy"&gt;
+      &lt;input message="tns:PolicyImportContextMessage" wsa:Action="http://ns.l7tech.com/2010/04/gateway-management/policies/ImportPolicy"/&gt;
+      &lt;output message="tns:PolicyImportResultMessage" wsa:Action="http://ns.l7tech.com/2010/04/gateway-management/policies/ImportPolicyResponse"/&gt;
+    &lt;/operation&gt;
+    &lt;operation name="servicesImportPolicy"&gt;
+      &lt;input message="tns:PolicyImportContextMessage" wsa:Action="http://ns.l7tech.com/2010/04/gateway-management/services/ImportPolicy"/&gt;
+      &lt;output message="tns:PolicyImportResultMessage" wsa:Action="http://ns.l7tech.com/2010/04/gateway-management/services/ImportPolicyResponse"/&gt;
+    &lt;/operation&gt;
+    &lt;operation name="privateKeysSetSpecialPurposes"&gt;
+      &lt;input message="tns:PrivateKeySpecialPurposeContextMessage" wsa:Action="http://ns.l7tech.com/2010/04/gateway-management/privateKeys/SetSpecialPurposes"/&gt;
+      &lt;output message="tns:PrivateKeyMessage" wsa:Action="http://ns.l7tech.com/2010/04/gateway-management/privateKeys/SetSpecialPurposesResponse"/&gt;
+    &lt;/operation&gt;
+    &lt;operation name="policiesValidatePolicy"&gt;
+      &lt;input message="tns:PolicyValidationContextMessage" wsa:Action="http://ns.l7tech.com/2010/04/gateway-management/policies/ValidatePolicy"/&gt;
+      &lt;output message="tns:PolicyValidationResultMessage" wsa:Action="http://ns.l7tech.com/2010/04/gateway-management/policies/ValidatePolicyResponse"/&gt;
+    &lt;/operation&gt;
+    &lt;operation name="servicesValidatePolicy"&gt;
+      &lt;input message="tns:PolicyValidationContextMessage" wsa:Action="http://ns.l7tech.com/2010/04/gateway-management/services/ValidatePolicy"/&gt;
+      &lt;output message="tns:PolicyValidationResultMessage" wsa:Action="http://ns.l7tech.com/2010/04/gateway-management/services/ValidatePolicyResponse"/&gt;
+    &lt;/operation&gt;
+    &lt;!--  WS-Enumeration Operations --&gt;
+    &lt;operation name="EnumerateOp"&gt;
+      &lt;input message="wsen:EnumerateMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/Enumerate"/&gt;
+      &lt;output message="wsen:EnumerateResponseMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/EnumerateResponse"/&gt;
+    &lt;/operation&gt;
+    &lt;operation name="PullOp"&gt;
+      &lt;input message="wsen:PullMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/Pull"/&gt;
+      &lt;output message="wsen:PullResponseMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/PullResponse"/&gt;
+    &lt;/operation&gt;
+    &lt;operation name="RenewOp"&gt;
+      &lt;input message="wsen:RenewMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/Renew"/&gt;
+      &lt;output message="wsen:RenewResponseMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/RenewResponse"/&gt;
+    &lt;/operation&gt;
+    &lt;operation name="GetStatusOp"&gt;
+      &lt;input message="wsen:GetStatusMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/GetStatus"/&gt;
+      &lt;output message="wsen:GetStatusResponseMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/GetStatusResponse"/&gt;
+    &lt;/operation&gt;
+    &lt;operation name="ReleaseOp"&gt;
+      &lt;input message="wsen:ReleaseMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/Release"/&gt;
+      &lt;output message="wsen:ReleaseResponseMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/ReleaseResponse"/&gt;
+    &lt;/operation&gt;
+  &lt;/portType&gt;
+  &lt;!-- Bindings --&gt;
+  &lt;binding name="GatewayManagementBinding" type="tns:GatewayManagementPortType"&gt;
+    &lt;wsoap12:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/&gt;
+    &lt;!--  WS-Transfer Operations --&gt;
+    &lt;operation name="Get"&gt;
+      &lt;wsoap12:operation soapAction="http://schemas.xmlsoap.org/ws/2004/09/transfer/Get"/&gt;
+      &lt;input&gt;
+        &lt;wsoap12:header message="tns:ResourceURIMessage" part="ResourceURIPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:SelectorSetMessage" part="SelectorSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OptionSetMessage" part="OptionSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OperationTimeoutMessage" part="OperationTimeoutPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:FragmentTransferMessage" part="FragmentTransferPart" use="literal"/&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/input&gt;
+      &lt;output&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/output&gt;
+    &lt;/operation&gt;
+    &lt;operation name="Put"&gt;
+      &lt;wsoap12:operation soapAction="http://schemas.xmlsoap.org/ws/2004/09/transfer/Put"/&gt;
+      &lt;input&gt;
+        &lt;wsoap12:header message="tns:ResourceURIMessage" part="ResourceURIPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:SelectorSetMessage" part="SelectorSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OptionSetMessage" part="OptionSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OperationTimeoutMessage" part="OperationTimeoutPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:FragmentTransferMessage" part="FragmentTransferPart" use="literal"/&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/input&gt;
+      &lt;output&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/output&gt;
+    &lt;/operation&gt;
+    &lt;operation name="Delete"&gt;
+      &lt;wsoap12:operation soapAction="http://schemas.xmlsoap.org/ws/2004/09/transfer/Delete"/&gt;
+      &lt;input&gt;
+        &lt;wsoap12:header message="tns:ResourceURIMessage" part="ResourceURIPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:SelectorSetMessage" part="SelectorSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OptionSetMessage" part="OptionSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OperationTimeoutMessage" part="OperationTimeoutPart" use="literal"/&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/input&gt;
+      &lt;output&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/output&gt;
+    &lt;/operation&gt;
+    &lt;operation name="Create"&gt;
+      &lt;wsoap12:operation soapAction="http://schemas.xmlsoap.org/ws/2004/09/transfer/Create"/&gt;
+      &lt;input&gt;
+        &lt;wsoap12:header message="tns:ResourceURIMessage" part="ResourceURIPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:SelectorSetMessage" part="SelectorSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OptionSetMessage" part="OptionSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OperationTimeoutMessage" part="OperationTimeoutPart" use="literal"/&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/input&gt;
+      &lt;output&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/output&gt;
+    &lt;/operation&gt;
+    &lt;!-- Resource Operations --&gt;
+    &lt;operation name="privateKeysCreateKey"&gt;
+      &lt;wsoap12:operation soapAction="http://ns.l7tech.com/2010/04/gateway-management/privateKeys/CreateKey"/&gt;
+      &lt;input&gt;
+        &lt;wsoap12:header message="tns:ResourceURIMessage" part="ResourceURIPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:SelectorSetMessage" part="SelectorSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OptionSetMessage" part="OptionSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OperationTimeoutMessage" part="OperationTimeoutPart" use="literal"/&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/input&gt;
+      &lt;output&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/output&gt;
+    &lt;/operation&gt;
+    &lt;operation name="privateKeysExportKey"&gt;
+      &lt;wsoap12:operation soapAction="http://ns.l7tech.com/2010/04/gateway-management/privateKeys/ExportKey"/&gt;
+      &lt;input&gt;
+        &lt;wsoap12:header message="tns:ResourceURIMessage" part="ResourceURIPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:SelectorSetMessage" part="SelectorSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OptionSetMessage" part="OptionSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OperationTimeoutMessage" part="OperationTimeoutPart" use="literal"/&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/input&gt;
+      &lt;output&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/output&gt;
+    &lt;/operation&gt;
+    &lt;operation name="policiesExportPolicy"&gt;
+      &lt;wsoap12:operation soapAction="http://ns.l7tech.com/2010/04/gateway-management/policies/ExportPolicy"/&gt;
+      &lt;input&gt;
+        &lt;wsoap12:header message="tns:ResourceURIMessage" part="ResourceURIPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:SelectorSetMessage" part="SelectorSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OptionSetMessage" part="OptionSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OperationTimeoutMessage" part="OperationTimeoutPart" use="literal"/&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/input&gt;
+      &lt;output&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/output&gt;
+    &lt;/operation&gt;
+    &lt;operation name="servicesExportPolicy"&gt;
+      &lt;wsoap12:operation soapAction="http://ns.l7tech.com/2010/04/gateway-management/services/ExportPolicy"/&gt;
+      &lt;input&gt;
+        &lt;wsoap12:header message="tns:ResourceURIMessage" part="ResourceURIPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:SelectorSetMessage" part="SelectorSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OptionSetMessage" part="OptionSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OperationTimeoutMessage" part="OperationTimeoutPart" use="literal"/&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/input&gt;
+      &lt;output&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/output&gt;
+    &lt;/operation&gt;
+    &lt;operation name="privateKeysGenerateCSR"&gt;
+      &lt;wsoap12:operation soapAction="http://ns.l7tech.com/2010/04/gateway-management/privateKeys/GenerateCSR"/&gt;
+      &lt;input&gt;
+        &lt;wsoap12:header message="tns:ResourceURIMessage" part="ResourceURIPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:SelectorSetMessage" part="SelectorSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OptionSetMessage" part="OptionSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OperationTimeoutMessage" part="OperationTimeoutPart" use="literal"/&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/input&gt;
+      &lt;output&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/output&gt;
+    &lt;/operation&gt;
+    &lt;operation name="privateKeysImportKey"&gt;
+      &lt;wsoap12:operation soapAction="http://ns.l7tech.com/2010/04/gateway-management/privateKeys/ImportKey"/&gt;
+      &lt;input&gt;
+        &lt;wsoap12:header message="tns:ResourceURIMessage" part="ResourceURIPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:SelectorSetMessage" part="SelectorSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OptionSetMessage" part="OptionSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OperationTimeoutMessage" part="OperationTimeoutPart" use="literal"/&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/input&gt;
+      &lt;output&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/output&gt;
+    &lt;/operation&gt;
+    &lt;operation name="policiesImportPolicy"&gt;
+      &lt;wsoap12:operation soapAction="http://ns.l7tech.com/2010/04/gateway-management/policies/ImportPolicy"/&gt;
+      &lt;input&gt;
+        &lt;wsoap12:header message="tns:ResourceURIMessage" part="ResourceURIPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:SelectorSetMessage" part="SelectorSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OptionSetMessage" part="OptionSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OperationTimeoutMessage" part="OperationTimeoutPart" use="literal"/&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/input&gt;
+      &lt;output&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/output&gt;
+    &lt;/operation&gt;
+    &lt;operation name="servicesImportPolicy"&gt;
+      &lt;wsoap12:operation soapAction="http://ns.l7tech.com/2010/04/gateway-management/services/ImportPolicy"/&gt;
+      &lt;input&gt;
+        &lt;wsoap12:header message="tns:ResourceURIMessage" part="ResourceURIPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:SelectorSetMessage" part="SelectorSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OptionSetMessage" part="OptionSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OperationTimeoutMessage" part="OperationTimeoutPart" use="literal"/&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/input&gt;
+      &lt;output&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/output&gt;
+    &lt;/operation&gt;
+    &lt;operation name="privateKeysSetSpecialPurposes"&gt;
+      &lt;wsoap12:operation soapAction="http://ns.l7tech.com/2010/04/gateway-management/privateKeys/SetSpecialPurposes"/&gt;
+      &lt;input&gt;
+        &lt;wsoap12:header message="tns:ResourceURIMessage" part="ResourceURIPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:SelectorSetMessage" part="SelectorSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OptionSetMessage" part="OptionSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OperationTimeoutMessage" part="OperationTimeoutPart" use="literal"/&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/input&gt;
+      &lt;output&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/output&gt;
+    &lt;/operation&gt;
+    &lt;operation name="policiesValidatePolicy"&gt;
+      &lt;wsoap12:operation soapAction="http://ns.l7tech.com/2010/04/gateway-management/policies/ValidatePolicy"/&gt;
+      &lt;input&gt;
+        &lt;wsoap12:header message="tns:ResourceURIMessage" part="ResourceURIPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:SelectorSetMessage" part="SelectorSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OptionSetMessage" part="OptionSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OperationTimeoutMessage" part="OperationTimeoutPart" use="literal"/&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/input&gt;
+      &lt;output&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/output&gt;
+    &lt;/operation&gt;
+    &lt;operation name="servicesValidatePolicy"&gt;
+      &lt;wsoap12:operation soapAction="http://ns.l7tech.com/2010/04/gateway-management/services/ValidatePolicy"/&gt;
+      &lt;input&gt;
+        &lt;wsoap12:header message="tns:ResourceURIMessage" part="ResourceURIPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:SelectorSetMessage" part="SelectorSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OptionSetMessage" part="OptionSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OperationTimeoutMessage" part="OperationTimeoutPart" use="literal"/&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/input&gt;
+      &lt;output&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/output&gt;
+    &lt;/operation&gt;
+    &lt;!-- WS-Enumeration Operations --&gt;
+    &lt;operation name="EnumerateOp"&gt;
+      &lt;wsoap12:operation soapAction="http://schemas.xmlsoap.org/ws/2004/09/enumeration/Enumerate"/&gt;
+      &lt;input&gt;
+        &lt;wsoap12:header message="tns:ResourceURIMessage" part="ResourceURIPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:SelectorSetMessage" part="SelectorSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OptionSetMessage" part="OptionSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OperationTimeoutMessage" part="OperationTimeoutPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:RequestTotalItemsCountEstimateMessage" part="RequestTotalItemsCountEstimatePart" use="literal"/&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/input&gt;
+      &lt;output&gt;
+        &lt;wsoap12:header message="tns:TotalItemsCountEstimateMessage" part="TotalItemsCountEstimatePart" use="literal"/&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/output&gt;
+    &lt;/operation&gt;
+    &lt;operation name="PullOp"&gt;
+      &lt;wsoap12:operation soapAction="http://schemas.xmlsoap.org/ws/2004/09/enumeration/Pull"/&gt;
+      &lt;input&gt;
+        &lt;wsoap12:header message="tns:ResourceURIMessage" part="ResourceURIPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:SelectorSetMessage" part="SelectorSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OptionSetMessage" part="OptionSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OperationTimeoutMessage" part="OperationTimeoutPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:RequestTotalItemsCountEstimateMessage" part="RequestTotalItemsCountEstimatePart" use="literal"/&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/input&gt;
+      &lt;output&gt;
+        &lt;wsoap12:header message="tns:TotalItemsCountEstimateMessage" part="TotalItemsCountEstimatePart" use="literal"/&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/output&gt;
+    &lt;/operation&gt;
+    &lt;operation name="RenewOp"&gt;
+      &lt;wsoap12:operation soapAction="http://schemas.xmlsoap.org/ws/2004/09/enumeration/Renew"/&gt;
+      &lt;input&gt;
+        &lt;wsoap12:header message="tns:ResourceURIMessage" part="ResourceURIPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:SelectorSetMessage" part="SelectorSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OptionSetMessage" part="OptionSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OperationTimeoutMessage" part="OperationTimeoutPart" use="literal"/&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/input&gt;
+      &lt;output&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/output&gt;
+    &lt;/operation&gt;
+    &lt;operation name="GetStatusOp"&gt;
+      &lt;wsoap12:operation soapAction="http://schemas.xmlsoap.org/ws/2004/09/enumeration/GetStatus"/&gt;
+      &lt;input&gt;
+        &lt;wsoap12:header message="tns:ResourceURIMessage" part="ResourceURIPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:SelectorSetMessage" part="SelectorSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OptionSetMessage" part="OptionSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OperationTimeoutMessage" part="OperationTimeoutPart" use="literal"/&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/input&gt;
+      &lt;output&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/output&gt;
+    &lt;/operation&gt;
+    &lt;operation name="ReleaseOp"&gt;
+      &lt;wsoap12:operation soapAction="http://schemas.xmlsoap.org/ws/2004/09/enumeration/Release"/&gt;
+      &lt;input&gt;
+        &lt;wsoap12:header message="tns:ResourceURIMessage" part="ResourceURIPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:SelectorSetMessage" part="SelectorSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OptionSetMessage" part="OptionSetPart" use="literal"/&gt;
+        &lt;wsoap12:header message="tns:OperationTimeoutMessage" part="OperationTimeoutPart" use="literal"/&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/input&gt;
+      &lt;output&gt;
+        &lt;wsoap12:body use="literal"/&gt;
+      &lt;/output&gt;
+    &lt;/operation&gt;
+  &lt;/binding&gt;
+  &lt;!-- Services --&gt;
+  &lt;service name="GatewayManagementService"&gt;
+    &lt;!--
+                   Service for management of the following resources:
+                   
+                        http://ns.l7tech.com/2010/04/gateway-management/clusterProperties
+                        http://ns.l7tech.com/2010/04/gateway-management/identityProviders
+                        http://ns.l7tech.com/2010/04/gateway-management/interfaceTags
+                        http://ns.l7tech.com/2010/04/gateway-management/jdbcConnections
+                        http://ns.l7tech.com/2010/04/gateway-management/jmsDestinations
+                        http://ns.l7tech.com/2010/04/gateway-management/listenPorts
+                        http://ns.l7tech.com/2010/04/gateway-management/policies
+                        http://ns.l7tech.com/2010/04/gateway-management/privateKeys
+                        http://ns.l7tech.com/2010/04/gateway-management/resources
+                        http://ns.l7tech.com/2010/04/gateway-management/revocationCheckingPolicies
+                        http://ns.l7tech.com/2010/04/gateway-management/services
+                        http://ns.l7tech.com/2010/04/gateway-management/storedPasswords
+                        http://ns.l7tech.com/2010/04/gateway-management/trustedCertificates
+    --&gt;
+    &lt;port binding="tns:GatewayManagementBinding" name="GatewayManagementPort"&gt;
+      &lt;wsoap12:address location="http://localhost:8080/wsman"/&gt;
+    &lt;/port&gt;
+  &lt;/service&gt;
+&lt;/definitions&gt;</l7:Resource>
+                            <l7:Resource
+                                sourceUrl="http://localhost:8080/ssg/wsdl/transfer.xsd?serviceoid=5308416&amp;servdocoid=251625476" type="xmlschema">&lt;xs:schema blockDefault="#all" elementFormDefault="qualified" targetNamespace="http://schemas.xmlsoap.org/ws/2004/09/transfer" xmlns:tns="http://schemas.xmlsoap.org/ws/2004/09/transfer" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:xs="http://www.w3.org/2001/XMLSchema"&gt;
+
+  &lt;xs:import namespace="http://schemas.xmlsoap.org/ws/2004/08/addressing" schemaLocation="http://localhost:8080/ssg/wsdl/addressing.xsd?serviceoid=5308416&amp;amp;servdocoid=251625481"/&gt;
+
+  &lt;xs:complexType name="AnyXmlType"&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:any namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:sequence&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:complexType name="AnyXmlOptionalType"&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:any minOccurs="0" namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:sequence&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:complexType name="CreateResponseType"&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:element ref="tns:ResourceCreated"/&gt;
+      &lt;xs:any minOccurs="0" namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:sequence&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name="ResourceCreated" type="wsa:EndpointReferenceType"/&gt;
+
+&lt;/xs:schema&gt;</l7:Resource>
+                            <l7:Resource
+                                sourceUrl="http://localhost:8080/ssg/wsdl/eventing.xsd?serviceoid=5308416&amp;servdocoid=251625473" type="xmlschema">&lt;!-- 
+(c) 2004 BEA Systems Inc., International Business Machines Corporation, Microsoft Corporation, Inc, Sun Microsystems, Inc, and TIBCO Software Inc. All rights reserved.
+
+BEA Systems Inc., International Business Machines Corporation, Microsoft Corporation, Inc, Sun Microsystems, Inc, and TIBCO Software Inc (collectively, the "Authors") hereby grant you permission to copy and display the WS-Eventing Specification (the "Specification", which includes WSDL and schema documents), in any medium without fee or royalty, provided that you include the following on ALL copies of the Specification, that you make:
+
+1.	A link or URL to the WS-Eventing Specification at one of the Authors' websites 
+2.	The copyright notice as shown in the WS-Eventing Specification. 
+
+BEA, IBM, Microsoft, Sun, and TIBCO (collectively, the "Authors") each agree to grant you a license, under royalty-free and otherwise reasonable, non-discriminatory terms and conditions, to their respective essential patent claims that they deem necessary to implement the Specification. 
+
+THE SPECIFICATION IS PROVIDED "AS IS," AND THE AUTHORS MAKE NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, OR TITLE; THAT THE CONTENTS OF THE SPECIFICATION ARE SUITABLE FOR ANY PURPOSE; NOR THAT THE IMPLEMENTATION OF SUCH CONTENTS WILL NOT INFRINGE ANY THIRD PARTY PATENTS, COPYRIGHTS, TRADEMARKS OR OTHER RIGHTS. 
+
+THE AUTHORS WILL NOT BE LIABLE FOR ANY DIRECT, INDIRECT, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF OR RELATING TO ANY USE OR DISTRIBUTION OF THE SPECIFICATION. 
+
+The name and trademarks of the Authors may NOT be used in any manner, including advertising or publicity pertaining to the Specification or its contents without specific, written prior permission. Title to copyright in the Specification will at all times remain with the Authors. 
+
+No other rights are granted by implication, estoppel or otherwise.
+--&gt;&lt;xs:schema blockDefault="#all" elementFormDefault="qualified" targetNamespace="http://schemas.xmlsoap.org/ws/2004/08/eventing" xmlns:tns="http://schemas.xmlsoap.org/ws/2004/08/eventing" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:xs="http://www.w3.org/2001/XMLSchema"&gt;
+  
+  &lt;xs:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="http://localhost:8080/ssg/wsdl/xml.xsd?serviceoid=5308416&amp;amp;servdocoid=251625475"/&gt;
+
+  &lt;xs:import namespace="http://schemas.xmlsoap.org/ws/2004/08/addressing" schemaLocation="http://localhost:8080/ssg/wsdl/addressing.xsd?serviceoid=5308416&amp;amp;servdocoid=251625481"/&gt;
+
+  &lt;!-- Types and global elements --&gt;
+  &lt;xs:complexType mixed="true" name="DeliveryType"&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##any" processContents="lax"/&gt;
+    &lt;/xs:sequence&gt;
+    &lt;xs:attribute name="Mode" type="xs:anyURI" use="optional"/&gt;
+    &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name="NotifyTo" type="wsa:EndpointReferenceType"/&gt;
+
+  &lt;xs:simpleType name="NonNegativeDurationType"&gt;
+    &lt;xs:restriction base="xs:duration"&gt;
+      &lt;xs:minInclusive value="P0Y0M0DT0H0M0S"/&gt;
+    &lt;/xs:restriction&gt;
+  &lt;/xs:simpleType&gt;
+
+  &lt;xs:simpleType name="ExpirationType"&gt;
+      &lt;xs:union memberTypes="xs:dateTime tns:NonNegativeDurationType"/&gt;
+  &lt;/xs:simpleType&gt;
+
+  &lt;xs:complexType mixed="true" name="FilterType"&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:sequence&gt;
+    &lt;xs:attribute name="Dialect" type="xs:anyURI" use="optional"/&gt;
+    &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:complexType name="LanguageSpecificStringType"&gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base="xs:string"&gt;
+        &lt;xs:attribute ref="xml:lang"/&gt;
+        &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;!-- Subscribe request --&gt;
+  &lt;xs:element name="Subscribe"&gt;
+    &lt;xs:complexType&gt;
+      &lt;xs:sequence&gt;
+        &lt;xs:element minOccurs="0" name="EndTo" type="wsa:EndpointReferenceType"/&gt;
+        &lt;xs:element name="Delivery" type="tns:DeliveryType"/&gt;
+        &lt;xs:element minOccurs="0" name="Expires" type="tns:ExpirationType"/&gt;
+        &lt;xs:element minOccurs="0" name="Filter" type="tns:FilterType"/&gt;
+        &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+      &lt;/xs:sequence&gt;
+      &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:complexType&gt;
+  &lt;/xs:element&gt;
+
+  &lt;xs:element name="Identifier" type="xs:anyURI"/&gt;
+ 
+  &lt;!-- Subscribe response --&gt;
+  &lt;xs:element name="SubscribeResponse"&gt;
+    &lt;xs:complexType&gt;
+      &lt;xs:sequence&gt;
+	  &lt;xs:element name="SubscriptionManager" type="wsa:EndpointReferenceType"/&gt;
+        &lt;xs:element name="Expires" type="tns:ExpirationType"/&gt;
+        &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+      &lt;/xs:sequence&gt;
+      &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:complexType&gt;
+  &lt;/xs:element&gt;
+
+  &lt;!-- Used in a fault if there's an unsupported dialect --&gt;
+  &lt;xs:element name="SupportedDialect" type="xs:anyURI"/&gt;
+
+  &lt;!-- Used in a fault if there's an unsupported delivery mode --&gt;
+  &lt;xs:element name="SupportedDeliveryMode" type="xs:anyURI"/&gt;
+
+  &lt;!-- Renew request --&gt;
+  &lt;xs:element name="Renew"&gt;
+    &lt;xs:complexType&gt;
+      &lt;xs:sequence&gt;
+        &lt;xs:element minOccurs="0" name="Expires" type="tns:ExpirationType"/&gt;
+        &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+      &lt;/xs:sequence&gt;
+      &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:complexType&gt;
+  &lt;/xs:element&gt;
+
+  &lt;!-- Renew response --&gt;
+  &lt;xs:element name="RenewResponse"&gt;
+    &lt;xs:complexType&gt;
+      &lt;xs:sequence&gt;
+        &lt;xs:element minOccurs="0" name="Expires" type="tns:ExpirationType"/&gt;
+        &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+      &lt;/xs:sequence&gt;
+      &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:complexType&gt;
+  &lt;/xs:element&gt;
+
+  &lt;!-- GetStatus request --&gt;
+  &lt;xs:element name="GetStatus"&gt;
+    &lt;xs:complexType&gt;
+      &lt;xs:sequence&gt;
+        &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+      &lt;/xs:sequence&gt;
+      &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:complexType&gt;
+  &lt;/xs:element&gt;
+
+  &lt;!-- GetStatus response --&gt;
+  &lt;xs:element name="GetStatusResponse"&gt;
+    &lt;xs:complexType&gt;
+      &lt;xs:sequence&gt;
+        &lt;xs:element minOccurs="0" name="Expires" type="tns:ExpirationType"/&gt;
+        &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+      &lt;/xs:sequence&gt;
+      &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:complexType&gt;
+  &lt;/xs:element&gt;
+
+  &lt;!-- Unsubscribe request --&gt;
+  &lt;xs:element name="Unsubscribe"&gt;
+    &lt;xs:complexType&gt;
+      &lt;xs:sequence&gt;
+        &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+      &lt;/xs:sequence&gt;
+      &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:complexType&gt;
+  &lt;/xs:element&gt;
+
+  &lt;!-- count(/s:Envelope/s:Body/*) = 0 for Unsubscribe response --&gt;
+
+  &lt;!-- SubscriptionEnd message --&gt;
+  &lt;xs:element name="SubscriptionEnd"&gt;
+    &lt;xs:complexType&gt;
+      &lt;xs:sequence&gt;
+        &lt;xs:element name="SubscriptionManager" type="wsa:EndpointReferenceType"/&gt;
+        &lt;xs:element name="Status" type="tns:OpenSubscriptionEndCodeType"/&gt;
+        &lt;xs:element maxOccurs="unbounded" minOccurs="0" name="Reason" type="tns:LanguageSpecificStringType"/&gt;
+        &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+      &lt;/xs:sequence&gt;
+      &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:complexType&gt;
+  &lt;/xs:element&gt;
+
+  &lt;xs:simpleType name="SubscriptionEndCodeType"&gt;
+    &lt;xs:restriction base="xs:anyURI"&gt;
+      &lt;xs:enumeration value="http://schemas.xmlsoap.org/ws/2004/08/eventing/DeliveryFailure"/&gt;
+      &lt;xs:enumeration value="http://schemas.xmlsoap.org/ws/2004/08/eventing/SourceShuttingDown"/&gt;
+      &lt;xs:enumeration value="http://schemas.xmlsoap.org/ws/2004/08/eventing/SourceCancelling"/&gt;
+    &lt;/xs:restriction&gt;
+  &lt;/xs:simpleType&gt;
+
+  &lt;xs:simpleType name="OpenSubscriptionEndCodeType"&gt;
+    &lt;xs:union memberTypes="tns:SubscriptionEndCodeType xs:anyURI"/&gt;
+  &lt;/xs:simpleType&gt;
+
+  &lt;xs:attribute name="EventSource" type="xs:boolean"/&gt;
+
+&lt;/xs:schema&gt;</l7:Resource>
+                            <l7:Resource
+                                sourceUrl="http://localhost:8080/ssg/wsdl/eventing.wsdl?serviceoid=5308416&amp;servdocoid=251625480" type="wsdl">&lt;!-- 
+(c) 2004 BEA Systems Inc., International Business Machines Corporation, Microsoft Corporation, Inc, Sun Microsytems, Inc, and TIBCO Software Inc. All rights reserved.
+
+BEA Systems Inc., International Business Machines Corporation, Microsoft Corporation, Inc, Sun Microsystems, Inc, and TIBCO Software Inc (collectively, the "Authors") hereby grant you permission to copy and display the WS-Eventing Specification (the "Specification", which includes WSDL and schema documents), in any medium without fee or royalty, provided that you include the following on ALL copies of the Specification, that you make:
+
+1.	A link or URL to the WS-Eventing Specification at one of the Authors' websites 
+2.	The copyright notice as shown in the WS-Eventing Specification. 
+
+BEA, IBM, Microsoft, Sun, and TIBCO (collectively, the "Authors") each agree to grant you a license, under royalty-free and otherwise reasonable, non-discriminatory terms and conditions, to their respective essential patent claims that they deem necessary to implement the Specification. 
+
+THE SPECIFICATION IS PROVIDED "AS IS," AND THE AUTHORS MAKE NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, OR TITLE; THAT THE CONTENTS OF THE SPECIFICATION ARE SUITABLE FOR ANY PURPOSE; NOR THAT THE IMPLEMENTATION OF SUCH CONTENTS WILL NOT INFRINGE ANY THIRD PARTY PATENTS, COPYRIGHTS, TRADEMARKS OR OTHER RIGHTS. 
+
+THE AUTHORS WILL NOT BE LIABLE FOR ANY DIRECT, INDIRECT, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF OR RELATING TO ANY USE OR DISTRIBUTION OF THE SPECIFICATION. 
+
+The name and trademarks of the Authors may NOT be used in any manner, including advertising or publicity pertaining to the Specification or its contents without specific, written prior permission. Title to copyright in the Specification will at all times remain with the Authors. 
+
+No other rights are granted by implication, estoppel or otherwise.
+--&gt;&lt;wsdl:definitions targetNamespace="http://schemas.xmlsoap.org/ws/2004/08/eventing" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:wse="http://schemas.xmlsoap.org/ws/2004/08/eventing" xmlns:xs="http://www.w3.org/2001/XMLSchema"&gt;
+
+  &lt;wsdl:types&gt;
+    &lt;xs:schema targetNamespace="http://schemas.xmlsoap.org/ws/2004/08/eventing"&gt;
+      &lt;xs:include schemaLocation="http://localhost:8080/ssg/wsdl/eventing.xsd?serviceoid=5308416&amp;amp;servdocoid=251625473"/&gt;
+    &lt;/xs:schema&gt;
+  &lt;/wsdl:types&gt;
+
+  &lt;wsdl:message name="SubscribeMsg"&gt;
+    &lt;wsdl:part element="wse:Subscribe" name="body"/&gt;
+  &lt;/wsdl:message&gt;
+  &lt;wsdl:message name="SubscribeResponseMsg"&gt;
+    &lt;wsdl:part element="wse:SubscribeResponse" name="body"/&gt;
+  &lt;/wsdl:message&gt;
+
+  &lt;wsdl:message name="RenewMsg"&gt;
+    &lt;wsdl:part element="wse:Renew" name="body"/&gt;
+  &lt;/wsdl:message&gt;
+  &lt;wsdl:message name="RenewResponseMsg"&gt;
+    &lt;wsdl:part element="wse:RenewResponse" name="body"/&gt;
+  &lt;/wsdl:message&gt;
+
+  &lt;wsdl:message name="GetStatusMsg"&gt;
+    &lt;wsdl:part element="wse:GetStatus" name="body"/&gt;
+  &lt;/wsdl:message&gt;
+  &lt;wsdl:message name="GetStatusResponseMsg"&gt;
+    &lt;wsdl:part element="wse:GetStatusResponse" name="body"/&gt;
+  &lt;/wsdl:message&gt;
+
+  &lt;wsdl:message name="UnsubscribeMsg"&gt;
+    &lt;wsdl:part element="wse:Unsubscribe" name="body"/&gt;
+  &lt;/wsdl:message&gt;
+  &lt;wsdl:message name="UnsubscribeResponseMsg"/&gt;
+
+  &lt;wsdl:message name="SubscriptionEnd"&gt;
+    &lt;wsdl:part element="wse:SubscriptionEnd" name="body"/&gt;
+  &lt;/wsdl:message&gt;
+
+  &lt;wsdl:portType name="EventSource"&gt;
+    &lt;wsdl:operation name="SubscribeOp"&gt;
+      &lt;wsdl:input message="wse:SubscribeMsg"/&gt;
+      &lt;wsdl:output message="wse:SubscribeResponseMsg"/&gt;
+    &lt;/wsdl:operation&gt;
+    &lt;wsdl:operation name="SubscriptionEnd"&gt;
+      &lt;wsdl:output message="wse:SubscriptionEnd"/&gt;
+    &lt;/wsdl:operation&gt;
+  &lt;/wsdl:portType&gt;
+
+  &lt;wsdl:portType name="SubscriptionManager"&gt;
+    &lt;wsdl:operation name="RenewOp"&gt;
+      &lt;wsdl:input message="wse:RenewMsg"/&gt;
+      &lt;wsdl:output message="wse:RenewResponseMsg"/&gt;
+    &lt;/wsdl:operation&gt;
+    &lt;wsdl:operation name="GetStatusOp"&gt;
+      &lt;wsdl:input message="wse:GetStatusMsg"/&gt;
+      &lt;wsdl:output message="wse:GetStatusResponseMsg"/&gt;
+    &lt;/wsdl:operation&gt;
+    &lt;wsdl:operation name="UnsubscribeOp"&gt;
+      &lt;wsdl:input message="wse:UnsubscribeMsg"/&gt;
+      &lt;wsdl:output message="wse:UnsubscribeResponseMsg"/&gt;
+    &lt;/wsdl:operation&gt;
+  &lt;/wsdl:portType&gt;
+&lt;/wsdl:definitions&gt;</l7:Resource>
+                            <l7:Resource
+                                sourceUrl="http://localhost:8080/ssg/wsdl/gateway-management.xsd?serviceoid=5308416&amp;servdocoid=251625474" type="xmlschema">&lt;xs:schema elementFormDefault="qualified" targetNamespace="http://ns.l7tech.com/2010/04/gateway-management" version="1.0" xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management" xmlns:tns="http://ns.l7tech.com/2010/04/gateway-management" xmlns:xs="http://www.w3.org/2001/XMLSchema"&gt;
+            
+  &lt;xs:element name="BooleanValue" type="tns:BooleanValueType"/&gt;
+            
+  &lt;xs:element name="CertificateData" type="tns:CertificateDataType"/&gt;
+            
+  &lt;xs:element name="ClusterProperty" type="tns:ClusterPropertyType"/&gt;
+            
+  &lt;xs:element name="DateValue" type="tns:DateValueType"/&gt;
+            
+  &lt;xs:element name="Folder" type="tns:FolderType"/&gt;
+            
+  &lt;xs:element name="HttpMapping" type="tns:HttpServiceMappingType"/&gt;
+            
+  &lt;xs:element name="IdentityProvider" type="tns:IdentityProviderType"/&gt;
+            
+  &lt;xs:element name="IntegerValue" type="tns:IntegerValueType"/&gt;
+            
+  &lt;xs:element name="InterfaceTag" type="tns:InterfaceTagType"/&gt;
+            
+  &lt;xs:element name="JDBCConnection" type="tns:JDBCConnectionType"/&gt;
+            
+  &lt;xs:element name="JMSDestination" type="tns:JMSDestinationType"/&gt;
+            
+  &lt;xs:element name="ListenPort" type="tns:ListenPortType"/&gt;
+            
+  &lt;xs:element name="LongValue" type="tns:LongValueType"/&gt;
+            
+  &lt;xs:element name="Policy" type="tns:PolicyType"/&gt;
+            
+  &lt;xs:element name="PolicyExportResult" type="tns:PolicyExportResultType"/&gt;
+            
+  &lt;xs:element name="PolicyImportContext" type="tns:PolicyImportContextType"/&gt;
+            
+  &lt;xs:element name="PolicyImportResult" type="tns:PolicyImportResultType"/&gt;
+            
+  &lt;xs:element name="PolicyValidationContext" type="tns:PolicyValidationContextType"/&gt;
+            
+  &lt;xs:element name="PolicyValidationResult" type="tns:PolicyValidationResultType"/&gt;
+            
+  &lt;xs:element name="PrivateKey" type="tns:PrivateKeyType"/&gt;
+            
+  &lt;xs:element name="PrivateKeyCreationContext" type="tns:PrivateKeyCreationContextType"/&gt;
+            
+  &lt;xs:element name="PrivateKeyExportContext" type="tns:PrivateKeyExportContextType"/&gt;
+            
+  &lt;xs:element name="PrivateKeyExportResult" type="tns:PrivateKeyExportResultType"/&gt;
+            
+  &lt;xs:element name="PrivateKeyGenerateCsrContext" type="tns:PrivateKeyGenerateCsrContextType"/&gt;
+            
+  &lt;xs:element name="PrivateKeyGenerateCsrResult" type="tns:PrivateKeyGenerateCsrResultType"/&gt;
+            
+  &lt;xs:element name="PrivateKeyImportContext" type="tns:PrivateKeyImportContextType"/&gt;
+            
+  &lt;xs:element name="PrivateKeySpecialPurposeContext" type="tns:PrivateKeySpecialPurposeContextType"/&gt;
+            
+  &lt;xs:element name="ResourceDocument" type="tns:ResourceDocumentType"/&gt;
+            
+  &lt;xs:element name="ResourceSet" type="tns:ResourceSetType"/&gt;
+            
+  &lt;xs:element name="RevocationCheckingPolicy" type="tns:RevocationCheckingPolicyType"/&gt;
+            
+  &lt;xs:element name="Service" type="tns:ServiceType"/&gt;
+            
+  &lt;xs:element name="SoapMapping" type="tns:SoapServiceMappingType"/&gt;
+            
+  &lt;xs:element name="StoredPassword" type="tns:StoredPasswordType"/&gt;
+            
+  &lt;xs:element name="StringValue" type="tns:StringValueType"/&gt;
+            
+  &lt;xs:element name="TrustedCertificate" type="tns:TrustedCertificateType"/&gt;
+            
+  &lt;xs:element name="Value" type="tns:ValueType"/&gt;
+            
+  &lt;xs:complexType name="AssertionDetailType"&gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base="xs:string"&gt;
+        &lt;xs:attribute name="position" type="xs:int" use="required"/&gt;
+        &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="BigIntegerPropertyType"&gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base="xs:integer"&gt;
+        &lt;xs:anyAttribute namespace="##other" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="BinaryPropertyType"&gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base="xs:base64Binary"&gt;
+        &lt;xs:anyAttribute namespace="##other" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="BooleanPropertyType"&gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base="xs:boolean"&gt;
+        &lt;xs:anyAttribute namespace="##other" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="BooleanValueType"&gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base="xs:boolean"&gt;
+        &lt;xs:anyAttribute namespace="##other" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="CertificateDataType"&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:element minOccurs="0" name="IssuerName" type="tns:StringPropertyType"/&gt;
+      &lt;xs:element minOccurs="0" name="SerialNumber" type="tns:BigIntegerPropertyType"/&gt;
+      &lt;xs:element minOccurs="0" name="SubjectName" type="tns:StringPropertyType"/&gt;
+      &lt;xs:element name="Encoded" type="tns:BinaryPropertyType"/&gt;
+      &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+      &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:sequence&gt;
+    &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:simpleType name="ClientAuthenticationPropertyType"&gt;
+    &lt;xs:restriction base="tns:ClientAuthenticationType"/&gt;
+  &lt;/xs:simpleType&gt;
+            
+  &lt;xs:simpleType name="ClientAuthenticationType"&gt;
+    &lt;xs:restriction base="xs:string"&gt;
+      &lt;xs:enumeration value="None"/&gt;
+      &lt;xs:enumeration value="Optional"/&gt;
+      &lt;xs:enumeration value="Required"/&gt;
+    &lt;/xs:restriction&gt;
+  &lt;/xs:simpleType&gt;
+            
+  &lt;xs:complexType name="ClusterPropertyType"&gt;
+    &lt;xs:complexContent&gt;
+      &lt;xs:extension base="tns:ManagedObjectType"&gt;
+        &lt;xs:sequence&gt;
+          &lt;xs:element name="Name" type="tns:StringPropertyType"/&gt;
+          &lt;xs:element name="Value" type="tns:StringPropertyType"/&gt;
+          &lt;xs:element minOccurs="0" name="Properties" type="tns:PropertiesMapType"/&gt;
+          &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+          &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:simpleType name="DateValueType"&gt;
+    &lt;xs:restriction base="xs:dateTime"/&gt;
+  &lt;/xs:simpleType&gt;
+            
+  &lt;xs:complexType name="ExtensionType"&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:any maxOccurs="unbounded" minOccurs="1" namespace="##targetNamespace" processContents="lax"/&gt;
+    &lt;/xs:sequence&gt;
+    &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="FederatedIdentityProviderDetailType"&gt;
+    &lt;xs:complexContent&gt;
+      &lt;xs:extension base="tns:IdentityProviderDetailType"&gt;
+        &lt;xs:sequence&gt;
+          &lt;xs:element minOccurs="0" name="CertificateReferences" type="tns:ReferenceListPropertyType"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="FolderType"&gt;
+    &lt;xs:complexContent&gt;
+      &lt;xs:extension base="tns:ManagedObjectType"&gt;
+        &lt;xs:sequence&gt;
+          &lt;xs:element name="Name" type="tns:StringPropertyType"/&gt;
+          &lt;xs:element minOccurs="0" name="Properties" type="tns:PropertiesMapType"/&gt;
+          &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+          &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:attribute name="folderId" type="xs:string"/&gt;
+        &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="HttpServiceMappingType"&gt;
+    &lt;xs:complexContent&gt;
+      &lt;xs:extension base="tns:ServiceMappingType"&gt;
+        &lt;xs:sequence&gt;
+          &lt;xs:element minOccurs="0" name="UrlPattern" type="tns:StringPropertyType"/&gt;
+          &lt;xs:element minOccurs="0" name="Verbs"&gt;
+            &lt;xs:complexType&gt;
+              &lt;xs:sequence&gt;
+                &lt;xs:element maxOccurs="unbounded" name="Verb" type="tns:StringPropertyType"/&gt;
+              &lt;/xs:sequence&gt;
+            &lt;/xs:complexType&gt;
+          &lt;/xs:element&gt;
+          &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType abstract="true" name="IdentityProviderDetailType"&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+      &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:sequence&gt;
+    &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="IdentityProviderExtensionType"&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:choice minOccurs="0"&gt;
+        &lt;xs:element name="FederatedIdentityProviderDetail" type="tns:FederatedIdentityProviderDetailType"/&gt;
+        &lt;xs:element name="LdapIdentityProviderDetail" type="tns:LdapIdentityProviderDetailType"/&gt;
+      &lt;/xs:choice&gt;
+      &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+      &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:sequence&gt;
+    &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="IdentityProviderType"&gt;
+    &lt;xs:complexContent&gt;
+      &lt;xs:extension base="tns:ManagedObjectType"&gt;
+        &lt;xs:sequence&gt;
+          &lt;xs:element name="Name" type="tns:StringPropertyType"/&gt;
+          &lt;xs:element name="IdentityProviderType" type="tns:IdentityProviderTypePropertyType"/&gt;
+          &lt;xs:element minOccurs="0" name="Properties" type="tns:PropertiesMapType"/&gt;
+          &lt;xs:element minOccurs="0" name="Extension" type="tns:IdentityProviderExtensionType"/&gt;
+          &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="IdentityProviderTypePropertyType"&gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base="tns:IdentityProviderTypeType"&gt;
+        &lt;xs:anyAttribute namespace="##other" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:simpleType name="IdentityProviderTypeType"&gt;
+    &lt;xs:restriction base="xs:string"&gt;
+      &lt;xs:enumeration value="Internal"/&gt;
+      &lt;xs:enumeration value="LDAP"/&gt;
+      &lt;xs:enumeration value="Federated"/&gt;
+    &lt;/xs:restriction&gt;
+  &lt;/xs:simpleType&gt;
+            
+  &lt;xs:complexType name="ImportedPolicyReferenceType"&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:sequence&gt;
+    &lt;xs:attribute name="guid" type="xs:string"/&gt;
+    &lt;xs:attribute name="id" type="xs:string" use="required"/&gt;
+    &lt;xs:attribute name="referenceId" type="xs:string" use="required"/&gt;
+    &lt;xs:attribute name="referenceType" type="xs:string" use="required"/&gt;
+    &lt;xs:attribute name="type" type="tns:ImportedPolicyReferenceTypeType" use="required"/&gt;
+    &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:simpleType name="ImportedPolicyReferenceTypeType"&gt;
+    &lt;xs:restriction base="xs:string"&gt;
+      &lt;xs:enumeration value="Created"/&gt;
+      &lt;xs:enumeration value="Mapped"/&gt;
+    &lt;/xs:restriction&gt;
+  &lt;/xs:simpleType&gt;
+            
+  &lt;xs:complexType name="IntegerPropertyType"&gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base="xs:int"&gt;
+        &lt;xs:anyAttribute namespace="##other" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="IntegerValueType"&gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base="xs:int"&gt;
+        &lt;xs:anyAttribute namespace="##other" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="InterfaceTagType"&gt;
+    &lt;xs:complexContent&gt;
+      &lt;xs:extension base="tns:ManagedObjectType"&gt;
+        &lt;xs:sequence&gt;
+          &lt;xs:element name="Name" type="tns:StringPropertyType"/&gt;
+          &lt;xs:element name="AddressPatterns" type="tns:StringListPropertyType"/&gt;
+          &lt;xs:element minOccurs="0" name="Properties" type="tns:PropertiesMapType"/&gt;
+          &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+          &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="JDBCConnectionType"&gt;
+    &lt;xs:complexContent&gt;
+      &lt;xs:extension base="tns:ManagedObjectType"&gt;
+        &lt;xs:sequence&gt;
+          &lt;xs:element name="Name" type="tns:StringPropertyType"/&gt;
+          &lt;xs:element name="Enabled" type="tns:BooleanPropertyType"/&gt;
+          &lt;xs:element minOccurs="0" name="Properties" type="tns:PropertiesMapType"/&gt;
+          &lt;xs:element name="Extension" type="tns:JdbcExtensionType"/&gt;
+          &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="JdbcExtensionType"&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:element name="DriverClass" type="tns:StringPropertyType"/&gt;
+      &lt;xs:element name="JdbcUrl" type="tns:StringPropertyType"/&gt;
+      &lt;xs:element minOccurs="0" name="ConnectionProperties" type="tns:PropertiesMapType"/&gt;
+      &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+      &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:sequence&gt;
+    &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="JMSConnectionType"&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:element minOccurs="0" name="ProviderType" type="tns:JMSProviderTypePropertyType"/&gt;
+      &lt;xs:element minOccurs="0" name="Template" type="tns:BooleanPropertyType"/&gt;
+      &lt;xs:element minOccurs="0" name="Properties" type="tns:PropertiesMapType"/&gt;
+      &lt;xs:element minOccurs="0" name="ContextPropertiesTemplate" type="tns:PropertiesMapType"/&gt;
+      &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+      &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:sequence&gt;
+    &lt;xs:attribute name="id" type="xs:string"/&gt;
+    &lt;xs:attribute name="version" type="xs:int"/&gt;
+    &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="JMSDestinationDetailType"&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:element name="Name" type="tns:StringPropertyType"/&gt;
+      &lt;xs:element minOccurs="0" name="DestinationName" type="tns:StringPropertyType"/&gt;
+      &lt;xs:element name="Inbound" type="tns:BooleanPropertyType"/&gt;
+      &lt;xs:element name="Enabled" type="tns:BooleanPropertyType"/&gt;
+      &lt;xs:element minOccurs="0" name="Template" type="tns:BooleanPropertyType"/&gt;
+      &lt;xs:element minOccurs="0" name="Properties" type="tns:PropertiesMapType"/&gt;
+      &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+      &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:sequence&gt;
+    &lt;xs:attribute name="id" type="xs:string"/&gt;
+    &lt;xs:attribute name="version" type="xs:int"/&gt;
+    &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="JMSDestinationType"&gt;
+    &lt;xs:complexContent&gt;
+      &lt;xs:extension base="tns:ManagedObjectType"&gt;
+        &lt;xs:sequence&gt;
+          &lt;xs:element name="JMSDestinationDetail" type="tns:JMSDestinationDetailType"/&gt;
+          &lt;xs:element minOccurs="0" name="JMSConnection" type="tns:JMSConnectionType"/&gt;
+          &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+          &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="JMSProviderTypePropertyType"&gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base="tns:JMSProviderTypeType"&gt;
+        &lt;xs:anyAttribute namespace="##other" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:simpleType name="JMSProviderTypeType"&gt;
+    &lt;xs:restriction base="xs:string"&gt;
+      &lt;xs:enumeration value="TIBCO EMS"/&gt;
+      &lt;xs:enumeration value="WebSphere MQ over LDAP"/&gt;
+      &lt;xs:enumeration value="FioranoMQ"/&gt;
+    &lt;/xs:restriction&gt;
+  &lt;/xs:simpleType&gt;
+            
+  &lt;xs:complexType name="LdapIdentityProviderDetailType"&gt;
+    &lt;xs:complexContent&gt;
+      &lt;xs:extension base="tns:IdentityProviderDetailType"&gt;
+        &lt;xs:sequence&gt;
+          &lt;xs:element minOccurs="0" name="SourceType" type="tns:StringPropertyType"/&gt;
+          &lt;xs:element name="ServerUrls" type="tns:StringListPropertyType"/&gt;
+          &lt;xs:element minOccurs="0" name="UseSslClientAuthentication" type="tns:BooleanPropertyType"/&gt;
+          &lt;xs:element minOccurs="0" name="SslKeyReference" type="tns:ReferenceType"/&gt;
+          &lt;xs:element name="SearchBase" type="tns:StringPropertyType"/&gt;
+          &lt;xs:element name="BindDn" type="tns:StringPropertyType"/&gt;
+          &lt;xs:element minOccurs="0" name="BindPassword" type="tns:StringPropertyType"/&gt;
+          &lt;xs:element minOccurs="0" name="UserMappings" type="tns:LdapIdentityProviderMappingListPropertyType"/&gt;
+          &lt;xs:element minOccurs="0" name="GroupMappings" type="tns:LdapIdentityProviderMappingListPropertyType"/&gt;
+          &lt;xs:element minOccurs="0" name="SpecifiedAttributes" type="tns:StringListPropertyType"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="LdapIdentityProviderMappingListPropertyType"&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:element maxOccurs="unbounded" minOccurs="0" name="Mapping" type="tns:LdapIdentityProviderMappingType"/&gt;
+    &lt;/xs:sequence&gt;
+    &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="LdapIdentityProviderMappingType"&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:element name="ObjectClass" type="tns:StringPropertyType"/&gt;
+      &lt;xs:element name="Mappings" type="tns:PropertiesMapType"/&gt;
+      &lt;xs:element minOccurs="0" name="Properties" type="tns:PropertiesMapType"/&gt;
+      &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+      &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:sequence&gt;
+    &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="ListenPortType"&gt;
+    &lt;xs:complexContent&gt;
+      &lt;xs:extension base="tns:ManagedObjectType"&gt;
+        &lt;xs:sequence&gt;
+          &lt;xs:element name="Name" type="tns:StringPropertyType"/&gt;
+          &lt;xs:element name="Enabled" type="tns:BooleanPropertyType"/&gt;
+          &lt;xs:element name="Protocol" type="tns:StringPropertyType"/&gt;
+          &lt;xs:element minOccurs="0" name="Interface" type="tns:StringPropertyType"/&gt;
+          &lt;xs:element name="Port" type="tns:IntegerPropertyType"/&gt;
+          &lt;xs:element name="EnabledFeatures" type="tns:StringListPropertyType"/&gt;
+          &lt;xs:element minOccurs="0" name="TargetServiceReference" type="tns:ReferenceType"/&gt;
+          &lt;xs:element minOccurs="0" name="TlsSettings" type="tns:TlsSettingsType"/&gt;
+          &lt;xs:element minOccurs="0" name="Properties" type="tns:PropertiesMapType"/&gt;
+          &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+          &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="LongValueType"&gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base="xs:long"&gt;
+        &lt;xs:anyAttribute namespace="##other" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType abstract="true" name="ManagedObjectType"&gt;
+    &lt;xs:sequence/&gt;
+    &lt;xs:attribute name="id" type="xs:string"/&gt;
+    &lt;xs:attribute name="version" type="xs:int"/&gt;
+    &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="PolicyDetailType"&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:element name="Name" type="tns:StringPropertyType"/&gt;
+      &lt;xs:element name="PolicyType" type="tns:PolicyTypePropertyType"/&gt;
+      &lt;xs:element minOccurs="0" name="Properties" type="tns:PropertiesMapType"/&gt;
+      &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+      &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:sequence&gt;
+    &lt;xs:attribute name="folderId" type="xs:string"/&gt;
+    &lt;xs:attribute name="guid" type="xs:string"/&gt;
+    &lt;xs:attribute name="id" type="xs:string"/&gt;
+    &lt;xs:attribute name="version" type="xs:int"/&gt;
+    &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="PolicyExportResultType"&gt;
+    &lt;xs:complexContent&gt;
+      &lt;xs:extension base="tns:ManagedObjectType"&gt;
+        &lt;xs:sequence&gt;
+          &lt;xs:element name="Resource" type="tns:ResourceType"/&gt;
+          &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+          &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="PolicyImportContextType"&gt;
+    &lt;xs:complexContent&gt;
+      &lt;xs:extension base="tns:ManagedObjectType"&gt;
+        &lt;xs:sequence&gt;
+          &lt;xs:element minOccurs="0" name="Properties" type="tns:PropertiesMapType"/&gt;
+          &lt;xs:element name="Resource" type="tns:ResourceType"/&gt;
+          &lt;xs:element minOccurs="0" name="PolicyReferenceInstructions"&gt;
+            &lt;xs:complexType&gt;
+              &lt;xs:sequence&gt;
+                &lt;xs:element maxOccurs="unbounded" name="PolicyReferenceInstruction" type="tns:PolicyReferenceInstructionType"/&gt;
+              &lt;/xs:sequence&gt;
+            &lt;/xs:complexType&gt;
+          &lt;/xs:element&gt;
+          &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+          &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="PolicyImportResultType"&gt;
+    &lt;xs:complexContent&gt;
+      &lt;xs:extension base="tns:ManagedObjectType"&gt;
+        &lt;xs:sequence&gt;
+          &lt;xs:element minOccurs="0" name="Warnings"&gt;
+            &lt;xs:complexType&gt;
+              &lt;xs:sequence&gt;
+                &lt;xs:element maxOccurs="unbounded" name="Warning" type="tns:StringPropertyType"/&gt;
+              &lt;/xs:sequence&gt;
+            &lt;/xs:complexType&gt;
+          &lt;/xs:element&gt;
+          &lt;xs:element minOccurs="0" name="ImportedPolicyReferences"&gt;
+            &lt;xs:complexType&gt;
+              &lt;xs:sequence&gt;
+                &lt;xs:element maxOccurs="unbounded" name="ImportedPolicyReference" type="tns:ImportedPolicyReferenceType"/&gt;
+              &lt;/xs:sequence&gt;
+            &lt;/xs:complexType&gt;
+          &lt;/xs:element&gt;
+          &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+          &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="PolicyReferenceInstructionType"&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+      &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:sequence&gt;
+    &lt;xs:attribute name="mappedName" type="xs:string"/&gt;
+    &lt;xs:attribute name="mappedReferenceId" type="xs:string"/&gt;
+    &lt;xs:attribute name="type" type="tns:PolicyReferenceInstructionTypeType" use="required"/&gt;
+    &lt;xs:attribute name="referenceId" type="xs:string" use="required"/&gt;
+    &lt;xs:attribute name="referenceType" type="xs:string" use="required"/&gt;
+    &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:simpleType name="PolicyReferenceInstructionTypeType"&gt;
+    &lt;xs:restriction base="xs:string"&gt;
+      &lt;xs:enumeration value="Delete"/&gt;
+      &lt;xs:enumeration value="Ignore"/&gt;
+      &lt;xs:enumeration value="Map"/&gt;
+      &lt;xs:enumeration value="Rename"/&gt;
+    &lt;/xs:restriction&gt;
+  &lt;/xs:simpleType&gt;
+            
+  &lt;xs:complexType name="PolicyType"&gt;
+    &lt;xs:complexContent&gt;
+      &lt;xs:extension base="tns:ManagedObjectType"&gt;
+        &lt;xs:sequence&gt;
+          &lt;xs:element name="PolicyDetail" type="tns:PolicyDetailType"/&gt;
+          &lt;xs:element name="Resources"&gt;
+            &lt;xs:complexType&gt;
+              &lt;xs:sequence&gt;
+                &lt;xs:element maxOccurs="unbounded" ref="tns:ResourceSet"/&gt;
+              &lt;/xs:sequence&gt;
+            &lt;/xs:complexType&gt;
+          &lt;/xs:element&gt;
+          &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+          &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:attribute name="guid" type="xs:string"/&gt;
+        &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="PolicyTypePropertyType"&gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base="tns:PolicyTypeType"&gt;
+        &lt;xs:anyAttribute namespace="##other" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:simpleType name="PolicyTypeType"&gt;
+    &lt;xs:restriction base="xs:string"&gt;
+      &lt;xs:enumeration value="Include"/&gt;
+      &lt;xs:enumeration value="Internal"/&gt;
+      &lt;xs:enumeration value="Global"/&gt;
+    &lt;/xs:restriction&gt;
+  &lt;/xs:simpleType&gt;
+            
+  &lt;xs:complexType name="PolicyValidationContextType"&gt;
+    &lt;xs:complexContent&gt;
+      &lt;xs:extension base="tns:ManagedObjectType"&gt;
+        &lt;xs:sequence&gt;
+          &lt;xs:element minOccurs="0" name="PolicyType" type="tns:PolicyTypePropertyType"/&gt;
+          &lt;xs:element minOccurs="0" name="Properties" type="tns:PropertiesMapType"/&gt;
+          &lt;xs:element minOccurs="0" name="Resources"&gt;
+            &lt;xs:complexType&gt;
+              &lt;xs:sequence&gt;
+                &lt;xs:element maxOccurs="unbounded" ref="tns:ResourceSet"/&gt;
+              &lt;/xs:sequence&gt;
+            &lt;/xs:complexType&gt;
+          &lt;/xs:element&gt;
+          &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+          &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="PolicyValidationMessageType"&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:element name="AssertionPath"&gt;
+        &lt;xs:complexType&gt;
+          &lt;xs:sequence&gt;
+            &lt;xs:element maxOccurs="unbounded" name="Assertion" type="tns:AssertionDetailType"/&gt;
+          &lt;/xs:sequence&gt;
+        &lt;/xs:complexType&gt;
+      &lt;/xs:element&gt;
+      &lt;xs:element name="Message" type="tns:StringPropertyType"/&gt;
+      &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+      &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:sequence&gt;
+    &lt;xs:attribute name="assertionOrdinal" type="xs:int" use="required"/&gt;
+    &lt;xs:attribute name="level" type="xs:string" use="required"/&gt;
+    &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="PolicyValidationResultType"&gt;
+    &lt;xs:complexContent&gt;
+      &lt;xs:extension base="tns:ManagedObjectType"&gt;
+        &lt;xs:sequence&gt;
+          &lt;xs:element name="ValidationStatus" type="tns:ValidationStatusPropertyType"/&gt;
+          &lt;xs:element minOccurs="0" name="ValidationMessages"&gt;
+            &lt;xs:complexType&gt;
+              &lt;xs:sequence&gt;
+                &lt;xs:element maxOccurs="unbounded" name="ValidationMessage" type="tns:PolicyValidationMessageType"/&gt;
+              &lt;/xs:sequence&gt;
+            &lt;/xs:complexType&gt;
+          &lt;/xs:element&gt;
+          &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+          &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="PrivateKeyCreationContextType"&gt;
+    &lt;xs:complexContent&gt;
+      &lt;xs:extension base="tns:ManagedObjectType"&gt;
+        &lt;xs:sequence&gt;
+          &lt;xs:element name="Dn" type="tns:StringPropertyType"/&gt;
+          &lt;xs:element minOccurs="0" name="Properties" type="tns:PropertiesMapType"/&gt;
+          &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+          &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="PrivateKeyExportContextType"&gt;
+    &lt;xs:complexContent&gt;
+      &lt;xs:extension base="tns:ManagedObjectType"&gt;
+        &lt;xs:sequence&gt;
+          &lt;xs:element minOccurs="0" name="Alias" type="tns:StringPropertyType"/&gt;
+          &lt;xs:element name="Password" type="tns:StringPropertyType"/&gt;
+          &lt;xs:element minOccurs="0" name="Properties" type="tns:PropertiesMapType"/&gt;
+          &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+          &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="PrivateKeyExportResultType"&gt;
+    &lt;xs:complexContent&gt;
+      &lt;xs:extension base="tns:ManagedObjectType"&gt;
+        &lt;xs:sequence&gt;
+          &lt;xs:element name="Pkcs12Data" type="tns:BinaryPropertyType"/&gt;
+          &lt;xs:element minOccurs="0" name="Properties" type="tns:PropertiesMapType"/&gt;
+          &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+          &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="PrivateKeyGenerateCsrContextType"&gt;
+    &lt;xs:complexContent&gt;
+      &lt;xs:extension base="tns:ManagedObjectType"&gt;
+        &lt;xs:sequence&gt;
+          &lt;xs:element minOccurs="0" name="Dn" type="tns:StringPropertyType"/&gt;
+          &lt;xs:element minOccurs="0" name="Properties" type="tns:PropertiesMapType"/&gt;
+          &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+          &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="PrivateKeyGenerateCsrResultType"&gt;
+    &lt;xs:complexContent&gt;
+      &lt;xs:extension base="tns:ManagedObjectType"&gt;
+        &lt;xs:sequence&gt;
+          &lt;xs:element name="CsrData" type="tns:BinaryPropertyType"/&gt;
+          &lt;xs:element minOccurs="0" name="Properties" type="tns:PropertiesMapType"/&gt;
+          &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+          &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="PrivateKeyImportContextType"&gt;
+    &lt;xs:complexContent&gt;
+      &lt;xs:extension base="tns:ManagedObjectType"&gt;
+        &lt;xs:sequence&gt;
+          &lt;xs:element name="Pkcs12Data" type="tns:BinaryPropertyType"/&gt;
+          &lt;xs:element minOccurs="0" name="Alias" type="tns:StringPropertyType"/&gt;
+          &lt;xs:element name="Password" type="tns:StringPropertyType"/&gt;
+          &lt;xs:element minOccurs="0" name="Properties" type="tns:PropertiesMapType"/&gt;
+          &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+          &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="PrivateKeySpecialPurposeContextType"&gt;
+    &lt;xs:complexContent&gt;
+      &lt;xs:extension base="tns:ManagedObjectType"&gt;
+        &lt;xs:sequence&gt;
+          &lt;xs:element name="SpecialPurposes" type="tns:StringListPropertyType"/&gt;
+          &lt;xs:element minOccurs="0" name="Properties" type="tns:PropertiesMapType"/&gt;
+          &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+          &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="PrivateKeyType"&gt;
+    &lt;xs:complexContent&gt;
+      &lt;xs:extension base="tns:ManagedObjectType"&gt;
+        &lt;xs:sequence&gt;
+          &lt;xs:element name="CertificateChain"&gt;
+            &lt;xs:complexType&gt;
+              &lt;xs:sequence&gt;
+                &lt;xs:element maxOccurs="unbounded" ref="tns:CertificateData"/&gt;
+              &lt;/xs:sequence&gt;
+            &lt;/xs:complexType&gt;
+          &lt;/xs:element&gt;
+          &lt;xs:element minOccurs="0" name="Properties" type="tns:PropertiesMapType"/&gt;
+          &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+          &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:attribute name="alias" type="xs:string" use="required"/&gt;
+        &lt;xs:attribute name="keystoreId" type="xs:string"/&gt;
+        &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="PropertiesMapEntryType"&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:choice&gt;
+        &lt;xs:element ref="tns:Value"/&gt;
+        &lt;xs:element ref="tns:StringValue"/&gt;
+        &lt;xs:element ref="tns:BooleanValue"/&gt;
+        &lt;xs:element ref="tns:IntegerValue"/&gt;
+        &lt;xs:element ref="tns:LongValue"/&gt;
+        &lt;xs:element ref="tns:DateValue"/&gt;
+      &lt;/xs:choice&gt;
+      &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:sequence&gt;
+    &lt;xs:attribute name="key" type="xs:string"/&gt;
+    &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="PropertiesMapType"&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:element maxOccurs="unbounded" minOccurs="0" name="Property" type="tns:PropertiesMapEntryType"/&gt;
+      &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:sequence&gt;
+    &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="ReferenceListPropertyType"&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:element maxOccurs="unbounded" minOccurs="0" name="Reference" type="tns:ReferenceType"/&gt;
+    &lt;/xs:sequence&gt;
+    &lt;xs:attribute name="resourceUri" type="xs:string"/&gt;
+    &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="ReferenceType"&gt;
+    &lt;xs:sequence/&gt;
+    &lt;xs:attribute name="id" type="xs:string" use="required"/&gt;
+    &lt;xs:attribute name="resourceUri" type="xs:string"/&gt;
+    &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="ResourceDocumentType"&gt;
+    &lt;xs:complexContent&gt;
+      &lt;xs:extension base="tns:ManagedObjectType"&gt;
+        &lt;xs:sequence&gt;
+          &lt;xs:element minOccurs="0" name="Resource" type="tns:ResourceType"/&gt;
+          &lt;xs:element minOccurs="0" name="Properties" type="tns:PropertiesMapType"/&gt;
+          &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+          &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="ResourceSetType"&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:element maxOccurs="unbounded" minOccurs="0" name="Resource" type="tns:ResourceType"/&gt;
+      &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+      &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:sequence&gt;
+    &lt;xs:attribute name="rootUrl" type="xs:string"/&gt;
+    &lt;xs:attribute name="tag" type="xs:string" use="required"/&gt;
+    &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="ResourceType"&gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base="xs:string"&gt;
+        &lt;xs:attribute name="id" type="xs:ID"/&gt;
+        &lt;xs:attribute name="sourceUrl" type="xs:string"/&gt;
+        &lt;xs:attribute name="type" type="xs:string" use="required"/&gt;
+        &lt;xs:attribute name="version" type="xs:int"/&gt;
+        &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="RevocationCheckingPolicyType"&gt;
+    &lt;xs:complexContent&gt;
+      &lt;xs:extension base="tns:ManagedObjectType"&gt;
+        &lt;xs:sequence&gt;
+          &lt;xs:element name="Name" type="tns:StringPropertyType"/&gt;
+          &lt;xs:element minOccurs="0" name="Properties" type="tns:PropertiesMapType"/&gt;
+          &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+          &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="ServiceDetailType"&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:element name="Name" type="tns:StringPropertyType"/&gt;
+      &lt;xs:element name="Enabled" type="tns:BooleanPropertyType"/&gt;
+      &lt;xs:element minOccurs="0" name="ServiceMappings"&gt;
+        &lt;xs:complexType&gt;
+          &lt;xs:sequence&gt;
+            &lt;xs:choice maxOccurs="unbounded" minOccurs="0"&gt;
+              &lt;xs:element ref="tns:HttpMapping"/&gt;
+              &lt;xs:element ref="tns:SoapMapping"/&gt;
+            &lt;/xs:choice&gt;
+          &lt;/xs:sequence&gt;
+        &lt;/xs:complexType&gt;
+      &lt;/xs:element&gt;
+      &lt;xs:element minOccurs="0" name="Properties" type="tns:PropertiesMapType"/&gt;
+      &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+      &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:sequence&gt;
+    &lt;xs:attribute name="folderId" type="xs:string"/&gt;
+    &lt;xs:attribute name="id" type="xs:string"/&gt;
+    &lt;xs:attribute name="version" type="xs:int"/&gt;
+    &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType abstract="true" name="ServiceMappingType"&gt;
+    &lt;xs:sequence/&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="ServiceType"&gt;
+    &lt;xs:complexContent&gt;
+      &lt;xs:extension base="tns:ManagedObjectType"&gt;
+        &lt;xs:sequence&gt;
+          &lt;xs:element name="ServiceDetail" type="tns:ServiceDetailType"/&gt;
+          &lt;xs:element name="Resources"&gt;
+            &lt;xs:complexType&gt;
+              &lt;xs:sequence&gt;
+                &lt;xs:element maxOccurs="unbounded" ref="tns:ResourceSet"/&gt;
+              &lt;/xs:sequence&gt;
+            &lt;/xs:complexType&gt;
+          &lt;/xs:element&gt;
+          &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+          &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="SoapServiceMappingType"&gt;
+    &lt;xs:complexContent&gt;
+      &lt;xs:extension base="tns:ServiceMappingType"&gt;
+        &lt;xs:sequence&gt;
+          &lt;xs:element name="Lax" type="tns:BooleanPropertyType"/&gt;
+          &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="StoredPasswordType"&gt;
+    &lt;xs:complexContent&gt;
+      &lt;xs:extension base="tns:ManagedObjectType"&gt;
+        &lt;xs:sequence&gt;
+          &lt;xs:element name="Name" type="tns:StringPropertyType"/&gt;
+          &lt;xs:element minOccurs="0" name="Password" type="tns:StringPropertyType"/&gt;
+          &lt;xs:element minOccurs="0" name="Properties" type="tns:PropertiesMapType"/&gt;
+          &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+          &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="StringListPropertyType"&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:element maxOccurs="unbounded" minOccurs="0" name="StringValue" type="tns:StringPropertyType"/&gt;
+    &lt;/xs:sequence&gt;
+    &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="StringPropertyType"&gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base="xs:string"&gt;
+        &lt;xs:anyAttribute namespace="##other" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="StringValueType"&gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base="xs:string"&gt;
+        &lt;xs:anyAttribute namespace="##other" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType final="extension restriction" name="TlsSettingsType"&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:element minOccurs="0" name="ClientAuthentication" type="tns:ClientAuthenticationPropertyType"/&gt;
+      &lt;xs:element minOccurs="0" name="PrivateKeyReference" type="tns:ReferenceType"/&gt;
+      &lt;xs:element name="EnabledVersions" type="tns:StringListPropertyType"/&gt;
+      &lt;xs:element name="EnabledCipherSuites" type="tns:StringListPropertyType"/&gt;
+      &lt;xs:element minOccurs="0" name="Properties" type="tns:PropertiesMapType"/&gt;
+      &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+      &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:sequence&gt;
+    &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="TrustedCertificateExtensionType"&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:element minOccurs="0" name="RevocationCheckingPolicyReference" type="tns:ReferenceType"/&gt;
+      &lt;xs:element minOccurs="0" name="Extension" type="tns:ExtensionType"/&gt;
+      &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:sequence&gt;
+    &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="TrustedCertificateType"&gt;
+    &lt;xs:complexContent&gt;
+      &lt;xs:extension base="tns:ManagedObjectType"&gt;
+        &lt;xs:sequence&gt;
+          &lt;xs:element name="Name" type="tns:StringPropertyType"/&gt;
+          &lt;xs:element ref="tns:CertificateData"/&gt;
+          &lt;xs:element minOccurs="0" name="Properties" type="tns:PropertiesMapType"/&gt;
+          &lt;xs:element minOccurs="0" name="Extension" type="tns:TrustedCertificateExtensionType"/&gt;
+          &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:complexType name="ValidationStatusPropertyType"&gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base="tns:ValidationStatusType"&gt;
+        &lt;xs:anyAttribute namespace="##other" processContents="skip"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+            
+  &lt;xs:simpleType name="ValidationStatusType"&gt;
+    &lt;xs:restriction base="xs:string"&gt;
+      &lt;xs:enumeration value="OK"/&gt;
+      &lt;xs:enumeration value="Warning"/&gt;
+      &lt;xs:enumeration value="Error"/&gt;
+    &lt;/xs:restriction&gt;
+  &lt;/xs:simpleType&gt;
+            
+  &lt;xs:complexType name="ValueType"&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:element minOccurs="0" name="Item" nillable="true" type="xs:anyType"/&gt;
+      &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:sequence&gt;
+    &lt;xs:anyAttribute namespace="##any" processContents="skip"/&gt;
+  &lt;/xs:complexType&gt;
+&lt;/xs:schema&gt;</l7:Resource>
+                            <l7:Resource
+                                sourceUrl="http://localhost:8080/ssg/wsdl/enumeration.wsdl?serviceoid=5308416&amp;servdocoid=251625472" type="wsdl">&lt;!-- 
+(c) 2004 BEA Systems Inc., Computer Associates, Microsoft Corporation, Inc., Sonic Software, and Systinet Corporation. All rights reserved.
+
+Permission to copy and display the WS-Enumeration (the "Specification", which includes WSDL and schema documents), in any medium without fee or royalty is hereby granted, provided that you include the following on ALL copies of the Specification that you make:
+
+1.	A link or URL to the Specification at one of the Co-Developers' websites.
+2.	The copyright notice as shown in the Specification.
+
+BEA Systems, Computer Associates, Microsoft, Sonic Software, and Systinet (collectively, the "Co-Developers") each agree to grant you a license, under royalty-free and otherwise reasonable, non-discriminatory terms and conditions, to their respective essential patent claims that they deem necessary to implement the Specification.
+
+THE SPECIFICATION IS PROVIDED "AS IS," AND THE CO-DEVELOPERS MAKE NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, OR TITLE; THAT THE CONTENTS OF THE SPECIFICATION ARE SUITABLE FOR ANY PURPOSE; NOR THAT THE IMPLEMENTATION OF SUCH CONTENTS WILL NOT INFRINGE ANY THIRD PARTY PATENTS, COPYRIGHTS, TRADEMARKS OR OTHER RIGHTS.
+
+THE CO-DEVELOPERS WILL NOT BE LIABLE FOR ANY DIRECT, INDIRECT, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF OR RELATING TO ANY USE OR DISTRIBUTION OF THE SPECIFICATIONS.
+
+The name and trademarks of the Co-Developers may NOT be used in any manner, including advertising or publicity pertaining to the Specifications or their contents without specific, written prior permission. Title to copyright in the Specifications will at all times remain with the Co-Developers.
+No other rights are granted by implication, estoppel or otherwise.
+--&gt;&lt;wsdl:definitions targetNamespace="http://schemas.xmlsoap.org/ws/2004/09/enumeration" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:wsen="http://schemas.xmlsoap.org/ws/2004/09/enumeration" xmlns:xs="http://www.w3.org/2001/XMLSchema"&gt;
+
+  &lt;wsdl:types&gt;
+    &lt;xs:schema&gt;
+      &lt;xs:import namespace="http://schemas.xmlsoap.org/ws/2004/09/enumeration" schemaLocation="http://localhost:8080/ssg/wsdl/enumeration.xsd?serviceoid=5308416&amp;amp;servdocoid=251625477"/&gt;
+    &lt;/xs:schema&gt;
+  &lt;/wsdl:types&gt;
+
+  &lt;wsdl:message name="EnumerateMessage"&gt;
+    &lt;wsdl:part element="wsen:Enumerate" name="Body"/&gt;
+  &lt;/wsdl:message&gt;
+  &lt;wsdl:message name="EnumerateResponseMessage"&gt;
+    &lt;wsdl:part element="wsen:EnumerateResponse" name="Body"/&gt;
+  &lt;/wsdl:message&gt;
+  &lt;wsdl:message name="PullMessage"&gt;
+    &lt;wsdl:part element="wsen:Pull" name="Body"/&gt;
+  &lt;/wsdl:message&gt;
+  &lt;wsdl:message name="PullResponseMessage"&gt;
+    &lt;wsdl:part element="wsen:PullResponse" name="Body"/&gt;
+  &lt;/wsdl:message&gt;
+  &lt;wsdl:message name="RenewMessage"&gt;
+    &lt;wsdl:part element="wsen:Renew" name="Body"/&gt;
+  &lt;/wsdl:message&gt;
+  &lt;wsdl:message name="RenewResponseMessage"&gt;
+    &lt;wsdl:part element="wsen:RenewResponse" name="Body"/&gt;
+  &lt;/wsdl:message&gt;
+  &lt;wsdl:message name="GetStatusMessage"&gt;
+    &lt;wsdl:part element="wsen:GetStatus" name="Body"/&gt;
+  &lt;/wsdl:message&gt;
+  &lt;wsdl:message name="GetStatusResponseMessage"&gt;
+    &lt;wsdl:part element="wsen:GetStatusResponse" name="Body"/&gt;
+  &lt;/wsdl:message&gt;
+  &lt;wsdl:message name="ReleaseMessage"&gt;
+    &lt;wsdl:part element="wsen:Release" name="Body"/&gt;
+  &lt;/wsdl:message&gt;
+  &lt;wsdl:message name="ReleaseResponseMessage"/&gt;
+  &lt;wsdl:message name="EnumerationEndMessage"&gt;
+    &lt;wsdl:part element="wsen:EnumerationEnd" name="Body"/&gt;
+  &lt;/wsdl:message&gt;
+
+  &lt;wsdl:portType name="DataSource"&gt;
+    &lt;wsdl:operation name="EnumerateOp"&gt;
+      &lt;wsdl:input message="wsen:EnumerateMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/Enumerate"/&gt;
+      &lt;wsdl:output message="wsen:EnumerateResponseMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/EnumerateResponse"/&gt;
+    &lt;/wsdl:operation&gt;
+    &lt;wsdl:operation name="PullOp"&gt;
+      &lt;wsdl:input message="wsen:PullMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/Pull"/&gt;
+      &lt;wsdl:output message="wsen:PullResponseMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/PullResponse"/&gt;
+    &lt;/wsdl:operation&gt;
+    &lt;wsdl:operation name="RenewOp"&gt;
+      &lt;wsdl:input message="wsen:RenewMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/Renew"/&gt;
+      &lt;wsdl:output message="wsen:RenewResponseMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/RenewResponse"/&gt;
+    &lt;/wsdl:operation&gt;
+    &lt;wsdl:operation name="GetStatusOp"&gt;
+      &lt;wsdl:input message="wsen:GetStatusMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/GetStatus"/&gt;
+      &lt;wsdl:output message="wsen:GetStatusResponseMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/GetStatusResponse"/&gt;
+    &lt;/wsdl:operation&gt;
+    &lt;wsdl:operation name="ReleaseOp"&gt;
+      &lt;wsdl:input message="wsen:ReleaseMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/Release"/&gt;
+      &lt;wsdl:output message="wsen:ReleaseResponseMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/ReleaseResponse"/&gt;
+    &lt;/wsdl:operation&gt;
+    &lt;wsdl:operation name="EnumerationEndOp"&gt;
+      &lt;wsdl:output message="wsen:EnumerationEndMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/EnumerationEnd"/&gt;
+    &lt;/wsdl:operation&gt;
+  &lt;/wsdl:portType&gt;
+&lt;/wsdl:definitions&gt;</l7:Resource>
+                            <l7:Resource
+                                sourceUrl="http://localhost:8080/ssg/wsdl/addressing.xsd?serviceoid=5308416&amp;servdocoid=251625481" type="xmlschema">&lt;!--
+Copyright © 2002-2004 BEA Systems Inc., International Business Machines Corporation,
+Microsoft Corporation, Inc, SAP AG, and Sun Microsystems, Inc.. All rights reserved.
+
+Permission to copy, display, perform, modify and distribute the WS-Addressing Specification,
+and to authorize others to do the foregoing, in any medium without fee or royalty is hereby
+granted for the purpose of developing and evaluating the WS-Addressing Specification.
+
+BEA, IBM, Microsoft, SAP AG, and Sun Microsystems (collectively, the "Authors") each agree
+to grant a license to third parties, under royalty-free  and otherwise reasonable,
+non-discriminatory terms and conditions, to their respective essential patent claims that
+they deem necessary to implement the WS-Addressing Specification.
+
+DISCLAIMERS:
+
+THE WS-Addressing Specification IS PROVIDED "AS IS", AND THE AUTHORS MAKE NO REPRESENTATIONS
+OR WARRANTIES, EXPRESS OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, OR TITLE; THAT THE
+CONTENTS OF THE WS-Addressing Specification IS SUITABLE FOR ANY PURPOSE; NOR THAT THE
+IMPLEMENTATION OF SUCH CONTENTS WILL NOT INFRINGE ANY THIRD PARTY PATENTS, COPYRIGHTS,
+TRADEMARKS OR OTHER RIGHTS.
+
+THE AUTHORS WILL NOT BE LIABLE FOR ANY DIRECT, INDIRECT, SPECIAL, INCIDENTAL OR CONSEQUENTIAL
+DAMAGES ARISING OUT OF ANY USE OF THE WS-Addressing Specification OR THE PERFORMANCE OR
+IMPLEMENTATION OF THE CONTENTS THEREOF.
+
+You may remove these disclaimers from your modified versions of the WS-Addressing
+Specification provided that you effectively disclaim all warranties and liabilities on behalf
+of all copyright holders in the copies of any such modified versions you distribute.
+
+The name and trademarks of the Authors may NOT be used in any manner, including advertising
+or publicity pertaining to the WS-Addressing Specification or its contents without specific,
+written prior permission. Title to copyright in the WS-Addressing Specification will at all
+times remain with the Authors.
+
+No other rights are granted by implication, estoppel or otherwise.
+
+--&gt;&lt;xs:schema blockDefault="#all" elementFormDefault="qualified" targetNamespace="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:xs="http://www.w3.org/2001/XMLSchema"&gt;
+  &lt;!-- //////////////////// WS-Addressing //////////////////// --&gt;
+  &lt;!-- Endpoint reference --&gt;
+  &lt;xs:element name="EndpointReference" type="wsa:EndpointReferenceType"/&gt;
+  &lt;xs:complexType name="EndpointReferenceType"&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:element name="Address" type="wsa:AttributedURI"/&gt;
+      &lt;xs:element minOccurs="0" name="ReferenceProperties" type="wsa:ReferencePropertiesType"/&gt;
+      &lt;xs:element minOccurs="0" name="ReferenceParameters" type="wsa:ReferenceParametersType"/&gt;
+      &lt;xs:element minOccurs="0" name="PortType" type="wsa:AttributedQName"/&gt;
+      &lt;xs:element minOccurs="0" name="ServiceName" type="wsa:ServiceNameType"/&gt;
+      &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"&gt;
+        &lt;xs:annotation&gt;
+          &lt;xs:documentation&gt;
+					 If "Policy" elements from namespace "http://schemas.xmlsoap.org/ws/2002/12/policy#policy" are used, they must appear first (before any extensibility elements).
+					&lt;/xs:documentation&gt;
+        &lt;/xs:annotation&gt;
+      &lt;/xs:any&gt;
+    &lt;/xs:sequence&gt;
+    &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+  &lt;/xs:complexType&gt;
+  &lt;xs:complexType name="ReferencePropertiesType"&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:any maxOccurs="unbounded" minOccurs="0" processContents="lax"/&gt;
+    &lt;/xs:sequence&gt;
+  &lt;/xs:complexType&gt;
+  &lt;xs:complexType name="ReferenceParametersType"&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:any maxOccurs="unbounded" minOccurs="0" processContents="lax"/&gt;
+    &lt;/xs:sequence&gt;
+  &lt;/xs:complexType&gt;
+  &lt;xs:complexType name="ServiceNameType"&gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base="xs:QName"&gt;
+        &lt;xs:attribute name="PortName" type="xs:NCName"/&gt;
+        &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+  &lt;!-- Message information header blocks --&gt;
+  &lt;xs:element name="MessageID" type="wsa:AttributedURI"/&gt;
+  &lt;xs:element name="RelatesTo" type="wsa:Relationship"/&gt;
+  &lt;xs:element name="To" type="wsa:AttributedURI"/&gt;
+  &lt;xs:element name="Action" type="wsa:AttributedURI"/&gt;
+  &lt;xs:element name="From" type="wsa:EndpointReferenceType"/&gt;
+  &lt;xs:element name="ReplyTo" type="wsa:EndpointReferenceType"/&gt;
+  &lt;xs:element name="FaultTo" type="wsa:EndpointReferenceType"/&gt;
+  &lt;xs:complexType name="Relationship"&gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base="xs:anyURI"&gt;
+        &lt;xs:attribute name="RelationshipType" type="xs:QName" use="optional"/&gt;
+        &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+  &lt;xs:simpleType name="RelationshipTypeValues"&gt;
+    &lt;xs:restriction base="xs:QName"&gt;
+      &lt;xs:enumeration value="wsa:Reply"/&gt;
+    &lt;/xs:restriction&gt;
+  &lt;/xs:simpleType&gt;
+  &lt;!--
+    June 19, 2007: The ReplyAfter element is deprecated. The name of this element does not match the
+    name (RetryAfter) used in the specification (http://www.w3.org/Submission/2004/SUBM-ws-addressing-20040810/).
+  --&gt;
+  &lt;xs:element name="ReplyAfter" type="wsa:ReplyAfterType"/&gt;
+  &lt;xs:complexType name="ReplyAfterType"&gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base="xs:nonNegativeInteger"&gt;
+        &lt;xs:anyAttribute namespace="##other"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+  &lt;!--
+    June 19, 2007: The RetryAfter element has been added to be consistent with the specification
+    (http://www.w3.org/Submission/2004/SUBM-ws-addressing-20040810/).
+  --&gt;
+  &lt;xs:element name="RetryAfter" type="wsa:RetryAfterType"/&gt;
+  &lt;xs:complexType name="RetryAfterType"&gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base="xs:nonNegativeInteger"&gt;
+        &lt;xs:anyAttribute namespace="##other"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+  &lt;xs:simpleType name="FaultSubcodeValues"&gt;
+    &lt;xs:restriction base="xs:QName"&gt;
+      &lt;xs:enumeration value="wsa:InvalidMessageInformationHeader"/&gt;
+      &lt;xs:enumeration value="wsa:MessageInformationHeaderRequired"/&gt;
+      &lt;xs:enumeration value="wsa:DestinationUnreachable"/&gt;
+      &lt;xs:enumeration value="wsa:ActionNotSupported"/&gt;
+      &lt;xs:enumeration value="wsa:EndpointUnavailable"/&gt;
+    &lt;/xs:restriction&gt;
+  &lt;/xs:simpleType&gt;
+  &lt;xs:attribute name="Action" type="xs:anyURI"/&gt;
+  &lt;!-- Common declarations and definitions --&gt;
+  &lt;xs:complexType name="AttributedQName"&gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base="xs:QName"&gt;
+        &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+  &lt;xs:complexType name="AttributedURI"&gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base="xs:anyURI"&gt;
+        &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+&lt;/xs:schema&gt;</l7:Resource>
+                            <l7:Resource
+                                sourceUrl="http://localhost:8080/ssg/wsdl/enumeration.xsd?serviceoid=5308416&amp;servdocoid=251625477" type="xmlschema">&lt;!-- 
+(c) 2004 BEA Systems Inc., Computer Associates, Microsoft Corporation, Inc., Sonic Software, and Systinet Corporation. All rights reserved.
+
+Permission to copy and display the WS-Enumeration (the "Specification", which includes WSDL and schema documents), in any medium without fee or royalty is hereby granted, provided that you include the following on ALL copies of the Specification that you make:
+
+1.	A link or URL to the Specification at one of the Co-Developers' websites.
+2.	The copyright notice as shown in the Specification.
+
+BEA Systems, Computer Associates, Microsoft, Sonic Software, and Systinet (collectively, the "Co-Developers") each agree to grant you a license, under royalty-free and otherwise reasonable, non-discriminatory terms and conditions, to their respective essential patent claims that they deem necessary to implement the Specification.
+
+THE SPECIFICATION IS PROVIDED "AS IS," AND THE CO-DEVELOPERS MAKE NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, OR TITLE; THAT THE CONTENTS OF THE SPECIFICATION ARE SUITABLE FOR ANY PURPOSE; NOR THAT THE IMPLEMENTATION OF SUCH CONTENTS WILL NOT INFRINGE ANY THIRD PARTY PATENTS, COPYRIGHTS, TRADEMARKS OR OTHER RIGHTS.
+
+THE CO-DEVELOPERS WILL NOT BE LIABLE FOR ANY DIRECT, INDIRECT, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF OR RELATING TO ANY USE OR DISTRIBUTION OF THE SPECIFICATIONS.
+
+The name and trademarks of the Co-Developers may NOT be used in any manner, including advertising or publicity pertaining to the Specifications or their contents without specific, written prior permission. Title to copyright in the Specifications will at all times remain with the Co-Developers.
+No other rights are granted by implication, estoppel or otherwise.
+--&gt;&lt;xs:schema blockDefault="#all" elementFormDefault="qualified" targetNamespace="http://schemas.xmlsoap.org/ws/2004/09/enumeration" xmlns:tns="http://schemas.xmlsoap.org/ws/2004/09/enumeration" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:xs="http://www.w3.org/2001/XMLSchema"&gt;
+
+	&lt;xs:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="http://localhost:8080/ssg/wsdl/xml.xsd?serviceoid=5308416&amp;amp;servdocoid=251625475"/&gt;
+	&lt;xs:import namespace="http://schemas.xmlsoap.org/ws/2004/08/addressing" schemaLocation="http://localhost:8080/ssg/wsdl/addressing.xsd?serviceoid=5308416&amp;amp;servdocoid=251625481"/&gt;
+
+	&lt;!-- Types and global elements --&gt;
+	&lt;xs:complexType mixed="true" name="FilterType"&gt;
+		&lt;xs:sequence&gt;
+			&lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+		&lt;/xs:sequence&gt;
+		&lt;xs:attribute name="Dialect" type="xs:anyURI"/&gt;
+		&lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+	&lt;/xs:complexType&gt;
+	
+	&lt;xs:simpleType name="PositiveDurationType"&gt;
+		&lt;xs:restriction base="xs:duration"&gt;
+			&lt;xs:minExclusive value="P0Y0M0DT0H0M0S"/&gt;
+		&lt;/xs:restriction&gt;
+	&lt;/xs:simpleType&gt;
+
+	&lt;xs:simpleType name="NonNegativeDurationType"&gt;
+		&lt;xs:restriction base="xs:duration"&gt;
+			&lt;xs:minInclusive value="P0Y0M0DT0H0M0S"/&gt;
+		&lt;/xs:restriction&gt;
+	&lt;/xs:simpleType&gt;
+
+	&lt;xs:simpleType name="ExpirationType"&gt;
+		&lt;xs:union memberTypes="xs:dateTime tns:NonNegativeDurationType"/&gt;
+	&lt;/xs:simpleType&gt;
+
+	&lt;xs:complexType name="EnumerationContextType"&gt;
+		&lt;xs:complexContent mixed="true"&gt;
+			&lt;xs:restriction base="xs:anyType"&gt;
+				&lt;xs:sequence&gt;
+					&lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+				&lt;/xs:sequence&gt;
+				&lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+			&lt;/xs:restriction&gt;
+		&lt;/xs:complexContent&gt;
+	&lt;/xs:complexType&gt;
+	
+	&lt;xs:complexType name="ItemListType"&gt;
+		&lt;xs:sequence maxOccurs="unbounded"&gt;
+			&lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+		&lt;/xs:sequence&gt;
+	&lt;/xs:complexType&gt;
+
+	&lt;xs:complexType name="LanguageSpecificStringType"&gt;
+		&lt;xs:simpleContent&gt;
+			&lt;xs:extension base="xs:string"&gt;
+				&lt;xs:attribute ref="xml:lang"/&gt;
+				&lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+			&lt;/xs:extension&gt;
+		&lt;/xs:simpleContent&gt;
+	&lt;/xs:complexType&gt;
+
+	&lt;!-- Enumerate request --&gt;
+	&lt;xs:element name="Enumerate"&gt;
+		&lt;xs:complexType&gt;
+			&lt;xs:sequence&gt;
+				&lt;xs:element minOccurs="0" name="EndTo" type="wsa:EndpointReferenceType"/&gt;
+				&lt;xs:element minOccurs="0" name="Expires" type="tns:ExpirationType"/&gt;
+				&lt;xs:element minOccurs="0" name="Filter" type="tns:FilterType"/&gt;
+				&lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+			&lt;/xs:sequence&gt;
+			&lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+		&lt;/xs:complexType&gt;
+	&lt;/xs:element&gt;
+	
+	&lt;!-- Used for a fault response --&gt;
+	&lt;xs:element name="SupportedDialect" type="xs:anyURI"/&gt;
+	
+	&lt;!-- Enumerate response --&gt;
+	&lt;xs:element name="EnumerateResponse"&gt;
+		&lt;xs:complexType&gt;
+			&lt;xs:sequence&gt;
+				&lt;xs:element minOccurs="0" name="Expires" type="tns:ExpirationType"/&gt;
+				&lt;xs:element name="EnumerationContext" type="tns:EnumerationContextType"/&gt;
+				&lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+			&lt;/xs:sequence&gt;
+			&lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+		&lt;/xs:complexType&gt;
+	&lt;/xs:element&gt;
+	
+	&lt;!-- Pull request --&gt;
+	&lt;xs:element name="Pull"&gt;
+		&lt;xs:complexType&gt;
+			&lt;xs:sequence&gt;
+				&lt;xs:element name="EnumerationContext" type="tns:EnumerationContextType"/&gt;
+				&lt;xs:element minOccurs="0" name="MaxTime" type="tns:PositiveDurationType"/&gt;
+				&lt;xs:element minOccurs="0" name="MaxElements" type="xs:positiveInteger"/&gt;
+				&lt;xs:element minOccurs="0" name="MaxCharacters" type="xs:positiveInteger"/&gt;
+				&lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+			&lt;/xs:sequence&gt;
+			&lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+		&lt;/xs:complexType&gt;
+	&lt;/xs:element&gt;
+	
+	&lt;!-- Pull response --&gt;
+	&lt;xs:element name="PullResponse"&gt;
+		&lt;xs:complexType&gt;
+			&lt;xs:sequence&gt;
+				&lt;xs:element minOccurs="0" name="EnumerationContext" type="tns:EnumerationContextType"/&gt;
+				&lt;xs:element minOccurs="0" name="Items" type="tns:ItemListType"/&gt;
+				&lt;xs:element minOccurs="0" name="EndOfSequence"/&gt;
+			&lt;/xs:sequence&gt;
+			&lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+		&lt;/xs:complexType&gt;
+	&lt;/xs:element&gt;
+	
+	&lt;!-- Renew request --&gt;
+	&lt;xs:element name="Renew"&gt;
+		&lt;xs:complexType&gt;
+			&lt;xs:sequence&gt;
+				&lt;xs:element name="EnumerationContext" type="tns:EnumerationContextType"/&gt;
+				&lt;xs:element minOccurs="0" name="Expires" type="tns:ExpirationType"/&gt;
+				&lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+			&lt;/xs:sequence&gt;
+			&lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+		&lt;/xs:complexType&gt;
+	&lt;/xs:element&gt;
+
+	&lt;!-- Renew response --&gt;
+	&lt;xs:element name="RenewResponse"&gt;
+		&lt;xs:complexType&gt;
+			&lt;xs:sequence&gt;
+				&lt;xs:element minOccurs="0" name="Expires" type="tns:ExpirationType"/&gt;
+				&lt;xs:element minOccurs="0" name="EnumerationContext" type="tns:EnumerationContextType"/&gt;
+				&lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+			&lt;/xs:sequence&gt;
+			&lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+		&lt;/xs:complexType&gt;
+	&lt;/xs:element&gt;
+
+	&lt;!-- GetStatus request --&gt;
+	&lt;xs:element name="GetStatus"&gt;
+		&lt;xs:complexType&gt;
+			&lt;xs:sequence&gt;
+				&lt;xs:element name="EnumerationContext" type="tns:EnumerationContextType"/&gt;
+				&lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+			&lt;/xs:sequence&gt;
+			&lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+		&lt;/xs:complexType&gt;
+	&lt;/xs:element&gt;
+
+	&lt;!-- GetStatus response --&gt;
+	&lt;xs:element name="GetStatusResponse"&gt;
+		&lt;xs:complexType&gt;
+			&lt;xs:sequence&gt;
+				&lt;xs:element minOccurs="0" name="Expires" type="tns:ExpirationType"/&gt;
+				&lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+			&lt;/xs:sequence&gt;
+			&lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+		&lt;/xs:complexType&gt;
+	&lt;/xs:element&gt;
+
+	&lt;!-- Release request --&gt;
+	&lt;xs:element name="Release"&gt;
+		&lt;xs:complexType&gt;
+			&lt;xs:sequence&gt;
+				&lt;xs:element name="EnumerationContext" type="tns:EnumerationContextType"/&gt;
+			&lt;/xs:sequence&gt;
+			&lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+		&lt;/xs:complexType&gt;
+	&lt;/xs:element&gt;
+	
+	&lt;!-- Release response has an empty body --&gt;
+	
+	&lt;!-- EnumerationEnd message --&gt;
+	&lt;xs:element name="EnumerationEnd"&gt;
+		&lt;xs:complexType&gt;
+		&lt;xs:sequence&gt;
+			&lt;xs:element name="EnumerationContext" type="tns:EnumerationContextType"/&gt;
+			&lt;xs:element name="Code" type="tns:OpenEnumerationEndCodeType"/&gt;
+			&lt;xs:element maxOccurs="unbounded" minOccurs="0" name="Reason" type="tns:LanguageSpecificStringType"/&gt;
+			&lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+		&lt;/xs:sequence&gt;
+		&lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+		&lt;/xs:complexType&gt;
+	&lt;/xs:element&gt;
+
+	&lt;xs:simpleType name="EnumerationEndCodeType"&gt;
+		&lt;xs:restriction base="xs:anyURI"&gt;
+		&lt;xs:enumeration value="http://schemas.xmlsoap.org/ws/2004/09/enumeration/SourceShuttingDown"/&gt;
+		&lt;xs:enumeration value="http://schemas.xmlsoap.org/ws/2004/09/enumeration/SourceCancelling"/&gt;
+		&lt;/xs:restriction&gt;
+	&lt;/xs:simpleType&gt;
+
+	&lt;xs:simpleType name="OpenEnumerationEndCodeType"&gt;
+		&lt;xs:union memberTypes="tns:EnumerationEndCodeType xs:anyURI"/&gt;
+	&lt;/xs:simpleType&gt;
+&lt;/xs:schema&gt;</l7:Resource>
+                            <l7:Resource
+                                sourceUrl="http://localhost:8080/ssg/wsdl/wsman.xsd?serviceoid=5308416&amp;servdocoid=251625478" type="xmlschema">&lt;!--
+Notice
+DSP8015
+Document: WS-Management protocol XML Schema
+Version: 1.0.0
+Status: Final
+Date: 01/20/2008
+Author: Bryan Murray, et al.
+Description: XML Schema for WS-Management protocol
+
+Copyright © 2008 Distributed Management Task Force, Inc. (DMTF). All rights reserved. DMTF is a not-for-profit association of industry members dedicated to promoting enterprise and systems management and interoperability. Members and non-members may reproduce DMTF specifications and documents for uses consistent with this purpose, provided that correct attribution is given. As DMTF specifications may be revised from time to time, the particular version and release date should always be noted. Implementation of certain elements of this standard or proposed standard may be subject to third party patent rights, including provisional patent rights (herein "patent rights"). DMTF makes no representations to users of the standard as to the existence of such rights, and is not responsible to recognize, disclose, or identify any or all such third party patent right, owners or claimants, nor for any incomplete or inaccurate identification or disclosure of such rights, owners or claimants. DMTF shall have no liability to any party, in any manner or circumstance, under any legal theory whatsoever, for failure to recognize, disclose, or identify any such third party patent rights, or for such party’s reliance on the standard or incorporation thereof in its product, protocols or testing procedures. DMTF shall have no liability to any party implementing such standard, whether such implementation is foreseeable or not, nor to any patent owner or claimant, and shall have no liability or responsibility for costs or losses incurred if a standard is withdrawn or modified after publication, and shall be indemnified and held harmless by any party implementing the standard from any and all claims of infringement by a patent owner for such implementations. For information about patents held by third-parties which have notified the DMTF that, in their opinion, such patent may relate to or impact implementations of DMTF standards, visit http://www.dmtf.org/about/policies/disclosures.php.
+
+Change Requests:
+	None
+--&gt;&lt;xs:schema elementFormDefault="qualified" targetNamespace="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd" version="1.0.0e" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:wsman="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd" xmlns:xs="http://www.w3.org/2001/XMLSchema"&gt;
+
+  &lt;xs:import namespace="http://schemas.xmlsoap.org/ws/2004/08/addressing" schemaLocation="http://localhost:8080/ssg/wsdl/addressing.xsd?serviceoid=5308416&amp;amp;servdocoid=251625481"/&gt;
+  &lt;xs:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="http://localhost:8080/ssg/wsdl/xml.xsd?serviceoid=5308416&amp;amp;servdocoid=251625475"/&gt;
+
+  &lt;xs:complexType name="attributableURI"&gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base="xs:anyURI"&gt;
+        &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name="ResourceURI" type="wsman:attributableURI"/&gt;
+
+  &lt;xs:complexType name="SelectorType"&gt;
+    &lt;xs:annotation&gt;
+      &lt;xs:documentation&gt;
+        Instances of this type can be only simple types or EPRs, not arbitrary mixed data.
+      &lt;/xs:documentation&gt;
+
+    &lt;/xs:annotation&gt;
+    &lt;xs:complexContent mixed="true"&gt;
+      &lt;xs:restriction base="xs:anyType"&gt;
+        &lt;xs:sequence&gt;
+          &lt;xs:element minOccurs="0" ref="wsa:EndpointReference"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:attribute name="Name" type="xs:NCName" use="required"/&gt;
+        &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+      &lt;/xs:restriction&gt;
+
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+  &lt;xs:element name="Selector" type="wsman:SelectorType"/&gt;
+
+  &lt;xs:complexType name="SelectorSetType"&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:element maxOccurs="unbounded" minOccurs="1" ref="wsman:Selector"/&gt;
+    &lt;/xs:sequence&gt;
+    &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name="SelectorSet" type="wsman:SelectorSetType"&gt;
+    &lt;xs:unique name="oneSelectorPerName"&gt;
+      &lt;xs:selector xpath="./Selector"/&gt;
+      &lt;xs:field xpath="@Name"/&gt;
+    &lt;/xs:unique&gt;
+  &lt;/xs:element&gt;
+
+  &lt;xs:complexType name="attributableDuration"&gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base="xs:duration"&gt;
+        &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name="OperationTimeout" type="wsman:attributableDuration"/&gt;
+
+  &lt;xs:complexType name="attributablePositiveInteger"&gt;
+
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base="xs:positiveInteger"&gt;
+        &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:simpleType name="PolicyType"&gt;
+    &lt;xs:restriction base="xs:token"&gt;
+
+      &lt;xs:enumeration value="CancelSubscription"/&gt;
+      &lt;xs:enumeration value="Skip"/&gt;
+      &lt;xs:enumeration value="Notify"/&gt;
+    &lt;/xs:restriction&gt;
+  &lt;/xs:simpleType&gt;
+
+  &lt;xs:complexType name="MaxEnvelopeSizeType"&gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base="wsman:attributablePositiveInteger"&gt;
+
+        &lt;xs:attribute default="Notify" name="Policy" type="wsman:PolicyType"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+  &lt;xs:element name="MaxEnvelopeSize" type="wsman:MaxEnvelopeSizeType"/&gt;
+
+  &lt;xs:element name="Locale"&gt;
+    &lt;xs:complexType&gt;
+      &lt;xs:attribute ref="xml:lang" use="required"/&gt;
+
+      &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:complexType&gt;
+  &lt;/xs:element&gt;
+
+  &lt;xs:complexType name="OptionType"&gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base="xs:string"&gt;
+        &lt;xs:attribute name="Name" type="xs:NCName" use="required"/&gt;
+        &lt;xs:attribute default="false" name="MustComply" type="xs:boolean"/&gt;
+
+        &lt;xs:attribute name="Type" type="xs:QName"/&gt;
+        &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+  &lt;xs:element name="Option" type="wsman:OptionType"/&gt;
+
+  &lt;xs:element name="OptionSet"&gt;
+    &lt;xs:complexType&gt;
+
+      &lt;xs:sequence&gt;
+        &lt;xs:element maxOccurs="unbounded" minOccurs="0" ref="wsman:Option"/&gt;
+      &lt;/xs:sequence&gt;
+      &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:complexType&gt;
+  &lt;/xs:element&gt;
+
+  &lt;xs:complexType name="attributableEmpty"&gt;
+    &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name="RequestEPR" type="wsman:attributableEmpty"/&gt;
+  &lt;xs:element name="EPRInvalid" type="wsman:attributableEmpty"/&gt;
+  &lt;xs:element name="EPRUnknown" type="wsman:attributableEmpty"/&gt;
+
+  &lt;xs:complexType name="RequestedEPRType"&gt;
+    &lt;xs:choice&gt;
+      &lt;xs:element ref="wsa:EndpointReference"/&gt;
+      &lt;xs:element ref="wsman:EPRInvalid"/&gt;
+
+      &lt;xs:element ref="wsman:EPRUnknown"/&gt;
+    &lt;/xs:choice&gt;
+    &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+  &lt;/xs:complexType&gt;
+  &lt;xs:element name="RequestedEPR" type="wsman:RequestedEPRType"/&gt;
+
+  &lt;xs:complexType name="mixedDataType"&gt;
+    &lt;xs:complexContent mixed="true"&gt;
+      &lt;xs:restriction base="xs:anyType"&gt;
+
+        &lt;xs:sequence&gt;
+          &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="skip"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+      &lt;/xs:restriction&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:complexType name="fragmentMixedDataType"&gt;
+
+    &lt;xs:complexContent mixed="true"&gt;
+      &lt;xs:extension base="wsman:mixedDataType"&gt;
+        &lt;xs:attribute default="http://www.w3.org/TR/1999/REC-xpath-19991116" name="Dialect" type="xs:anyURI"/&gt;
+        &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name="FragmentTransfer" type="wsman:fragmentMixedDataType"/&gt;
+  &lt;xs:element name="XmlFragment" type="wsman:mixedDataType"/&gt;
+
+  &lt;xs:complexType name="attributableNonNegativeInteger"&gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base="xs:nonNegativeInteger"&gt;
+        &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name="TotalItemsCountEstimate" nillable="true" type="wsman:attributableNonNegativeInteger"/&gt;
+
+  &lt;xs:element name="RequestTotalItemsCountEstimate" type="wsman:attributableEmpty"/&gt;
+
+  &lt;xs:element name="OptimizeEnumeration" type="wsman:attributableEmpty"/&gt;
+  &lt;xs:element name="MaxElements" type="wsman:attributablePositiveInteger"/&gt;
+
+  &lt;xs:simpleType name="EnumerationModeType"&gt;
+    &lt;xs:restriction base="xs:token"&gt;
+      &lt;xs:enumeration value="EnumerateEPR"/&gt;
+      &lt;xs:enumeration value="EnumerateObjectAndEPR"/&gt;
+    &lt;/xs:restriction&gt;
+
+  &lt;/xs:simpleType&gt;
+  &lt;xs:element name="EnumerationMode" type="wsman:EnumerationModeType"/&gt;
+
+  &lt;xs:complexType mixed="true" name="mixedDataFilterType"&gt;
+    &lt;xs:complexContent mixed="true"&gt;
+      &lt;xs:restriction base="xs:anyType"&gt;
+        &lt;xs:sequence&gt;
+          &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##any" processContents="skip"/&gt;
+        &lt;/xs:sequence&gt;
+
+        &lt;xs:anyAttribute namespace="##any" processContents="lax"/&gt;
+      &lt;/xs:restriction&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:complexType mixed="true" name="filterMixedDataType"&gt;
+    &lt;xs:complexContent mixed="true"&gt;
+      &lt;xs:extension base="wsman:mixedDataFilterType"&gt;
+        &lt;xs:attribute default="http://www.w3.org/TR/1999/REC-xpath-19991116" name="Dialect" type="xs:anyURI"/&gt;
+
+        &lt;xs:anyAttribute namespace="##any" processContents="lax"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name="Filter" type="wsman:filterMixedDataType"/&gt;
+
+  &lt;xs:complexType name="ObjectAndEPRType"&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:any namespace="##any" processContents="lax"/&gt;
+
+      &lt;xs:element ref="wsa:EndpointReference"/&gt;
+    &lt;/xs:sequence&gt;
+  &lt;/xs:complexType&gt;
+  &lt;xs:element name="Item" type="wsman:ObjectAndEPRType"/&gt;
+
+  &lt;xs:complexType name="anyListType"&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:sequence&gt;
+
+    &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name="Items" type="wsman:anyListType"/&gt;
+  &lt;xs:element name="EndOfSequence" type="wsman:attributableEmpty"/&gt;
+
+  &lt;xs:complexType name="attributableLanguage"&gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base="xs:language"&gt;
+        &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name="ContentEncoding" type="wsman:attributableLanguage"/&gt;
+
+  &lt;xs:complexType name="ConnectionRetryType"&gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base="wsman:attributableDuration"&gt;
+        &lt;xs:attribute name="Total" type="xs:unsignedLong"/&gt;
+
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+  &lt;xs:element name="ConnectionRetry" type="wsman:ConnectionRetryType"/&gt;
+
+  &lt;xs:element name="Heartbeats" type="wsman:attributableDuration"/&gt;
+  &lt;xs:element name="SendBookmarks" type="wsman:attributableEmpty"/&gt;
+
+  &lt;xs:complexType name="attributableAny"&gt;
+    &lt;xs:sequence&gt;
+
+      &lt;xs:any maxOccurs="unbounded" minOccurs="0" namespace="##other" processContents="lax"/&gt;
+    &lt;/xs:sequence&gt;
+    &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:element name="Bookmark" type="wsman:mixedDataType"/&gt;
+  &lt;xs:element name="MaxTime" type="wsman:attributableDuration"/&gt;
+
+  &lt;xs:complexType name="EventType"&gt;
+    &lt;xs:complexContent&gt;
+
+      &lt;xs:extension base="wsman:attributableAny"&gt;
+        &lt;xs:attribute name="Action" type="xs:anyURI" use="required"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+  &lt;xs:element name="Event" type="wsman:EventType"/&gt;
+
+  &lt;xs:complexType name="EventsType"&gt;
+    &lt;xs:sequence&gt;
+
+      &lt;xs:element maxOccurs="unbounded" minOccurs="1" ref="wsman:Event"/&gt;
+    &lt;/xs:sequence&gt;
+    &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+  &lt;/xs:complexType&gt;
+  &lt;xs:element name="Events" type="wsman:EventsType"/&gt;
+
+  &lt;xs:element name="AckRequested" type="wsman:attributableEmpty"/&gt;
+
+  &lt;xs:complexType name="attributableInt"&gt;
+    &lt;xs:simpleContent&gt;
+
+      &lt;xs:extension base="xs:int"&gt;
+        &lt;xs:anyAttribute namespace="##other" processContents="lax"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+
+  &lt;xs:complexType name="DroppedEventsType"&gt;
+    &lt;xs:simpleContent&gt;
+      &lt;xs:extension base="wsman:attributableInt"&gt;
+
+        &lt;xs:attribute name="Action" type="xs:anyURI" use="required"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:simpleContent&gt;
+  &lt;/xs:complexType&gt;
+  &lt;xs:element name="DroppedEvents" type="wsman:DroppedEventsType"/&gt;
+
+  &lt;xs:simpleType name="restrictedProfileType"&gt;
+    &lt;xs:restriction base="xs:anyURI"&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/secprofile/http/basic"/&gt;
+
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/secprofile/http/digest"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/secprofile/https/basic"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/secprofile/https/digest"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/secprofile/https/mutual"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/secprofile/https/mutual/basic"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/secprofile/https/mutual/digest"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/secprofile/https/spnego-kerberos"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/secprofile/https/mutual/spnego-kerberos"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/secprofile/http/spnego-kerberos"/&gt;
+
+    &lt;/xs:restriction&gt;
+  &lt;/xs:simpleType&gt;
+
+  &lt;xs:simpleType name="ProfileType"&gt;
+    &lt;xs:union memberTypes="wsman:restrictedProfileType xs:anyURI"/&gt;
+  &lt;/xs:simpleType&gt;
+
+  &lt;xs:complexType name="AuthType"&gt;
+    &lt;xs:complexContent&gt;
+      &lt;xs:extension base="wsman:attributableEmpty"&gt;
+
+        &lt;xs:attribute name="Profile" type="wsman:ProfileType" use="required"/&gt;
+      &lt;/xs:extension&gt;
+    &lt;/xs:complexContent&gt;
+  &lt;/xs:complexType&gt;
+  &lt;xs:element name="Auth" type="wsman:AuthType"/&gt;
+
+  &lt;xs:simpleType name="ThumbprintType"&gt;
+      &lt;xs:restriction base="xs:string"&gt;
+          &lt;xs:pattern value="[0-9a-fA-F]{40}"/&gt;
+
+      &lt;/xs:restriction&gt;
+  &lt;/xs:simpleType&gt;
+  &lt;xs:element name="CertificateThumbprint" type="wsman:ThumbprintType"/&gt;
+
+
+  &lt;xs:simpleType name="restrictedFaultDetailType"&gt;
+    &lt;xs:restriction base="xs:anyURI"&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/ActionMismatch"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/Ack"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/AddressingMode"/&gt;
+
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/AsynchronousRequest"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/Bookmarks"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/CharacterSet"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/DeliveryRetries"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/DuplicateSelectors"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/EncodingType"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/EnumerationMode"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/ExpirationTime"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/Expired"/&gt;
+
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/FilteringRequired"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/FormatMismatch"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/FragmentLevelAccess"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/Heartbeats"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/InsecureAddress"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/InsufficientSelectors"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/Invalid"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/InvalidName"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/InvalidFragment"/&gt;
+
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/InvalidNamespace"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/InvalidResourceURI"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/InvalidValue"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/InvalidValues"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/Locale"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/MaxElements"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/MaxEnvelopePolicy"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/MaxEnvelopeSize"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/MaxTime"/&gt;
+
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/MinimumEnvelopeLimit"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/MissingValues"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/NotSupported"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/OperationTimeout"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/OptionLimit"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/ResourceOffline"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/SelectorLimit"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/ServiceEnvelopeLimit"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/TypeMismatch"/&gt;
+
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/UnexpectedSelectors"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/UnreportableSuccess"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/UnsupportedCharacter"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/UnusableAddress"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/URILimitExceeded"/&gt;
+      &lt;xs:enumeration value="http://schemas.dmtf.org/wbem/wsman/1/wsman/faultDetail/Whitespace"/&gt;
+    &lt;/xs:restriction&gt;
+  &lt;/xs:simpleType&gt;
+
+  &lt;xs:simpleType name="FaultDetailType"&gt;
+    &lt;xs:union memberTypes="wsman:restrictedFaultDetailType xs:anyURI"/&gt;
+  &lt;/xs:simpleType&gt;
+
+  &lt;xs:element name="FaultDetail" type="wsman:FaultDetailType"/&gt;
+  &lt;xs:element name="FragmentDialect" type="wsman:attributableURI"/&gt;
+  &lt;xs:element name="SupportedSelectorName" type="xs:NCName"/&gt;
+
+  &lt;!-- Master Fault Table subcode QNames --&gt;
+  &lt;xs:element name="AccessDenied"&gt;&lt;xs:complexType/&gt;&lt;/xs:element&gt;
+
+  &lt;xs:element name="AlreadyExists"&gt;&lt;xs:complexType/&gt;&lt;/xs:element&gt;
+  &lt;xs:element name="CannotProcessFilter"&gt;&lt;xs:complexType/&gt;&lt;/xs:element&gt;
+  &lt;xs:element name="Concurrency"&gt;&lt;xs:complexType/&gt;&lt;/xs:element&gt;
+  &lt;xs:element name="DeliveryRefused"&gt;&lt;xs:complexType/&gt;&lt;/xs:element&gt;
+  &lt;xs:element name="EncodingLimit"&gt;&lt;xs:complexType/&gt;&lt;/xs:element&gt;
+  &lt;xs:element name="EventDeliverToUnusable"&gt;&lt;xs:complexType/&gt;&lt;/xs:element&gt;
+  &lt;xs:element name="FragmentDialectNotSupported"&gt;&lt;xs:complexType/&gt;&lt;/xs:element&gt;
+  &lt;xs:element name="InternalError"&gt;&lt;xs:complexType/&gt;&lt;/xs:element&gt;
+  &lt;xs:element name="InvalidBookmark"&gt;&lt;xs:complexType/&gt;&lt;/xs:element&gt;
+
+  &lt;xs:element name="InvalidOptions"&gt;&lt;xs:complexType/&gt;&lt;/xs:element&gt;
+  &lt;xs:element name="InvalidParameter"&gt;&lt;xs:complexType/&gt;&lt;/xs:element&gt;
+  &lt;xs:element name="InvalidSelectors"&gt;&lt;xs:complexType/&gt;&lt;/xs:element&gt;
+  &lt;xs:element name="NoAck"&gt;&lt;xs:complexType/&gt;&lt;/xs:element&gt;
+  &lt;xs:element name="QuotaLimit"&gt;&lt;xs:complexType/&gt;&lt;/xs:element&gt;
+  &lt;xs:element name="SchemaValidationError"&gt;&lt;xs:complexType/&gt;&lt;/xs:element&gt;
+  &lt;xs:element name="TimedOut"&gt;&lt;xs:complexType/&gt;&lt;/xs:element&gt;
+  &lt;xs:element name="UnsupportedFeature"&gt;&lt;xs:complexType/&gt;&lt;/xs:element&gt;
+
+&lt;/xs:schema&gt;</l7:Resource>
+                            <l7:Resource
+                                sourceUrl="http://localhost:8080/ssg/wsdl/xml.xsd?serviceoid=5308416&amp;servdocoid=251625475" type="xmlschema">&lt;xs:schema targetNamespace="http://www.w3.org/XML/1998/namespace" xml:lang="en" xmlns:xs="http://www.w3.org/2001/XMLSchema"&gt;
+
+ &lt;xs:annotation&gt;
+  &lt;xs:documentation&gt;
+   See http://www.w3.org/XML/1998/namespace.html and
+   http://www.w3.org/TR/REC-xml for information about this namespace.
+
+    This schema document describes the XML namespace, in a form
+    suitable for import by other schema documents.
+
+    Note that local names in this namespace are intended to be defined
+    only by the World Wide Web Consortium or its subgroups.  The
+    following names are currently defined in this namespace and should
+    not be used with conflicting semantics by any Working Group,
+    specification, or document instance:
+
+    base (as an attribute name): denotes an attribute whose value
+         provides a URI to be used as the base for interpreting any
+         relative URIs in the scope of the element on which it
+         appears; its value is inherited.  This name is reserved
+         by virtue of its definition in the XML Base specification.
+
+    id   (as an attribute name): denotes an attribute whose value
+         should be interpreted as if declared to be of type ID.
+         This name is reserved by virtue of its definition in the
+         xml:id specification.
+
+    lang (as an attribute name): denotes an attribute whose value
+         is a language code for the natural language of the content of
+         any element; its value is inherited.  This name is reserved
+         by virtue of its definition in the XML specification.
+
+    space (as an attribute name): denotes an attribute whose
+         value is a keyword indicating what whitespace processing
+         discipline is intended for the content of the element; its
+         value is inherited.  This name is reserved by virtue of its
+         definition in the XML specification.
+
+    Father (in any context at all): denotes Jon Bosak, the chair of
+         the original XML Working Group.  This name is reserved by
+         the following decision of the W3C XML Plenary and
+         XML Coordination groups:
+
+             In appreciation for his vision, leadership and dedication
+             the W3C XML Plenary on this 10th day of February, 2000
+             reserves for Jon Bosak in perpetuity the XML name
+             xml:Father
+  &lt;/xs:documentation&gt;
+ &lt;/xs:annotation&gt;
+
+ &lt;xs:annotation&gt;
+  &lt;xs:documentation&gt;This schema defines attributes and an attribute group
+        suitable for use by
+        schemas wishing to allow xml:base, xml:lang, xml:space or xml:id
+        attributes on elements they define.
+
+        To enable this, such a schema must import this schema
+        for the XML namespace, e.g. as follows:
+        &amp;lt;schema . . .&amp;gt;
+         . . .
+         &amp;lt;import namespace="http://www.w3.org/XML/1998/namespace"
+                    schemaLocation="http://www.w3.org/2001/xml.xsd"/&amp;gt;
+
+        Subsequently, qualified reference to any of the attributes
+        or the group defined below will have the desired effect, e.g.
+
+        &amp;lt;type . . .&amp;gt;
+         . . .
+         &amp;lt;attributeGroup ref="xml:specialAttrs"/&amp;gt;
+ 
+         will define a type which will schema-validate an instance
+         element with any of those attributes&lt;/xs:documentation&gt;
+ &lt;/xs:annotation&gt;
+
+ &lt;xs:annotation&gt;
+  &lt;xs:documentation&gt;In keeping with the XML Schema WG's standard versioning
+   policy, this schema document will persist at
+   http://www.w3.org/2007/08/xml.xsd.
+   At the date of issue it can also be found at
+   http://www.w3.org/2001/xml.xsd.
+   The schema document at that URI may however change in the future,
+   in order to remain compatible with the latest version of XML Schema
+   itself, or with the XML namespace itself.  In other words, if the XML
+   Schema or XML namespaces change, the version of this document at
+   http://www.w3.org/2001/xml.xsd will change
+   accordingly; the version at
+   http://www.w3.org/2007/08/xml.xsd will not change.
+  &lt;/xs:documentation&gt;
+ &lt;/xs:annotation&gt;
+
+ &lt;xs:attribute name="lang"&gt;
+  &lt;xs:annotation&gt;
+   &lt;xs:documentation&gt;Attempting to install the relevant ISO 2- and 3-letter
+         codes as the enumerated possible values is probably never
+         going to be a realistic possibility.  See
+         RFC 3066 at http://www.ietf.org/rfc/rfc3066.txt and the IANA registry
+         at http://www.iana.org/assignments/lang-tag-apps.htm for
+         further information.
+
+         The union allows for the 'un-declaration' of xml:lang with
+         the empty string.&lt;/xs:documentation&gt;
+  &lt;/xs:annotation&gt;
+  &lt;xs:simpleType&gt;
+   &lt;xs:union memberTypes="xs:language"&gt;
+    &lt;xs:simpleType&gt;
+     &lt;xs:restriction base="xs:string"&gt;
+      &lt;xs:enumeration value=""/&gt;
+     &lt;/xs:restriction&gt;
+    &lt;/xs:simpleType&gt;
+   &lt;/xs:union&gt;
+  &lt;/xs:simpleType&gt;
+ &lt;/xs:attribute&gt;
+
+ &lt;xs:attribute name="space"&gt;
+  &lt;xs:simpleType&gt;
+   &lt;xs:restriction base="xs:NCName"&gt;
+    &lt;xs:enumeration value="default"/&gt;
+    &lt;xs:enumeration value="preserve"/&gt;
+   &lt;/xs:restriction&gt;
+  &lt;/xs:simpleType&gt;
+ &lt;/xs:attribute&gt;
+
+ &lt;xs:attribute name="base" type="xs:anyURI"&gt;
+  &lt;xs:annotation&gt;
+   &lt;xs:documentation&gt;See http://www.w3.org/TR/xmlbase/ for
+                     information about this attribute.&lt;/xs:documentation&gt;
+  &lt;/xs:annotation&gt;
+ &lt;/xs:attribute&gt;
+
+ &lt;xs:attribute name="id" type="xs:ID"&gt;
+  &lt;xs:annotation&gt;
+   &lt;xs:documentation&gt;See http://www.w3.org/TR/xml-id/ for
+                     information about this attribute.&lt;/xs:documentation&gt;
+  &lt;/xs:annotation&gt;
+ &lt;/xs:attribute&gt;
+
+ &lt;xs:attributeGroup name="specialAttrs"&gt;
+  &lt;xs:attribute ref="xml:base"/&gt;
+  &lt;xs:attribute ref="xml:lang"/&gt;
+  &lt;xs:attribute ref="xml:space"/&gt;
+  &lt;xs:attribute ref="xml:id"/&gt;
+ &lt;/xs:attributeGroup&gt;
+
+&lt;/xs:schema&gt;</l7:Resource>
+                            <l7:Resource
+                                sourceUrl="http://localhost:8080/ssg/wsdl/transfer.wsdl?serviceoid=5308416&amp;servdocoid=251625479" type="wsdl">&lt;!--
+(c) 2006 BEA Systems Inc., Computer Associates, Microsoft Corporation, Inc., Sonic Software, and Systinet Corporation. All rights reserved.
+
+Permission to copy and display the WS-Transfer specification (the "Specification", which includes WSDL and schema documents), in any medium without fee or royalty is hereby granted, provided that you include the following on ALL copies of the Specification that you make:
+
+1.	A link or URL to the Specification at one of the Co-Developers' websites.
+2.	The copyright notice as shown in the Specification.
+
+BEA Systems, Computer Associates, Microsoft, Sonic Software, and Systinet (collectively, the "Co-Developers") each agree to grant you a license, under royalty-free and otherwise reasonable, non-discriminatory terms and conditions, to their respective essential patent claims that they deem necessary to implement the Specification.
+
+THE SPECIFICATION IS PROVIDED "AS IS," AND THE CO-DEVELOPERS MAKE NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, OR TITLE; THAT THE CONTENTS OF THE SPECIFICATION ARE SUITABLE FOR ANY PURPOSE; NOR THAT THE IMPLEMENTATION OF SUCH CONTENTS WILL NOT INFRINGE ANY THIRD PARTY PATENTS, COPYRIGHTS, TRADEMARKS OR OTHER RIGHTS.
+
+THE CO-DEVELOPERS WILL NOT BE LIABLE FOR ANY DIRECT, INDIRECT, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF OR RELATING TO ANY USE OR DISTRIBUTION OF THE SPECIFICATIONS.
+
+The name and trademarks of the Co-Developers may NOT be used in any manner, including advertising or publicity pertaining to the Specifications or their contents without specific, written prior permission. Title to copyright in the Specifications will at all times remain with the Co-Developers.
+
+No other rights are granted by implication, estoppel or otherwise.
+--&gt;&lt;wsdl:definitions targetNamespace="http://schemas.xmlsoap.org/ws/2004/09/transfer" xmlns:tns="http://schemas.xmlsoap.org/ws/2004/09/transfer" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xs="http://www.w3.org/2001/XMLSchema"&gt;
+ 
+  &lt;wsdl:types&gt;
+    &lt;xs:schema&gt;
+      &lt;xs:import namespace="http://schemas.xmlsoap.org/ws/2004/09/transfer" schemaLocation="http://localhost:8080/ssg/wsdl/transfer.xsd?serviceoid=5308416&amp;amp;servdocoid=251625476"/&gt;
+    &lt;/xs:schema&gt;
+  &lt;/wsdl:types&gt;
+ 
+  &lt;wsdl:message name="EmptyMessage"/&gt;
+  &lt;wsdl:message name="AnyXmlMessage"&gt;
+    &lt;wsdl:part name="Body" type="tns:AnyXmlType"/&gt;
+  &lt;/wsdl:message&gt;
+  &lt;wsdl:message name="OptionalXmlMessage"&gt;
+    &lt;wsdl:part name="Body" type="tns:AnyXmlOptionalType"/&gt;
+  &lt;/wsdl:message&gt;
+  &lt;wsdl:message name="CreateResponseMessage"&gt;
+    &lt;wsdl:part name="Body" type="tns:CreateResponseType"/&gt;
+  &lt;/wsdl:message&gt;
+ 
+  &lt;wsdl:portType name="Resource"&gt;
+    &lt;wsdl:documentation&gt;
+      This port type defines a resource that may be read, 
+      written, and deleted.
+    &lt;/wsdl:documentation&gt;
+    &lt;wsdl:operation name="Get"&gt;
+      &lt;wsdl:input message="tns:OptionalXmlMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/transfer/Get"/&gt;
+      &lt;wsdl:output message="tns:AnyXmlMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/transfer/GetResponse"/&gt;
+    &lt;/wsdl:operation&gt;
+    &lt;wsdl:operation name="Put"&gt;
+      &lt;wsdl:input message="tns:AnyXmlMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/transfer/Put"/&gt;
+      &lt;wsdl:output message="tns:OptionalXmlMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/transfer/PutResponse"/&gt;
+    &lt;/wsdl:operation&gt;
+    &lt;wsdl:operation name="Delete"&gt;
+      &lt;wsdl:input message="tns:EmptyMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/transfer/Delete"/&gt;
+      &lt;wsdl:output message="tns:OptionalXmlMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/transfer/DeleteResponse"/&gt;
+    &lt;/wsdl:operation&gt;
+  &lt;/wsdl:portType&gt;
+ 
+  &lt;wsdl:portType name="ResourceFactory"&gt;
+    &lt;wsdl:documentation&gt;
+      This port type defines a Web service that can create new 
+      resources.
+    &lt;/wsdl:documentation&gt;
+    &lt;wsdl:operation name="Create"&gt;
+      &lt;wsdl:input message="tns:AnyXmlMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/transfer/Create"/&gt;
+      &lt;wsdl:output message="tns:CreateResponseMessage" wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/transfer/CreateResponse"/&gt;
+    &lt;/wsdl:operation&gt;
+  &lt;/wsdl:portType&gt;
+&lt;/wsdl:definitions&gt;</l7:Resource>
+                        </l7:ResourceSet>
+                    </l7:Resources>
+                </l7:Service>
+            </wsen:Items>
+            <wsen:EndOfSequence
+                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string"/>
+        </wsen:PullResponse>
+    </env:Body>
+</env:Envelope>

@@ -16,6 +16,7 @@ import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import javax.xml.bind.annotation.XmlEnumValue;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 import java.lang.reflect.InvocationTargetException;
@@ -102,51 +103,66 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     /** Recognized endpoint names. */
     public static enum Endpoint {
         /** Message processor. */
+        @XmlEnumValue( "Published service message input" )
         MESSAGE_INPUT,
 
         /** Connections from standalone SSM. */
+        @XmlEnumValue( "Policy Manager access" )
         ADMIN_REMOTE_SSM,
 
         /** Connections from Enterprise Service Manager or clients of ESM specific services. */
+        @XmlEnumValue( "Enterprise Manager access" )
         ADMIN_REMOTE_ESM,
 
         /** Connections from standalone SSM or the ESM. */
+        @XmlEnumValue( "Administrative access" )
         ADMIN_REMOTE(ADMIN_REMOTE_SSM, ADMIN_REMOTE_ESM),
 
         /** Administration services offered over HTTP(S), i.e. the admin applet and backup services. */
+        @XmlEnumValue( "Browser-based administration" )
         ADMIN_APPLET,
 
         /** Certificate and policy discovery. */
+        @XmlEnumValue( "Policy download service" )
         POLICYDISCO,
 
         /** The WS-Trust security token service. */
+        @XmlEnumValue( "WS-Trust security token service" )
         STS,
 
         /** The built-in CA service. */
+        @XmlEnumValue( "Certificate signing service" )
         CSRHANDLER,
 
         /** The Bridge password change service. */
+        @XmlEnumValue( "Password changing service" )
         PASSWD,
 
         /** The WSDL proxy service. */
+        @XmlEnumValue( "WSDL download service" )
         WSDLPROXY,
 
         /** The HTTP-based SNMP query service. */
+        @XmlEnumValue( "SNMP Query service" )
         SNMPQUERY,
 
         /** Agent web service for HP SOA Manager. */
+        @XmlEnumValue( "HP SOA Manager agent service" )
         HPSOAM,
 
         /**
          * All built-in servlets other than the first three.  This includes POLICYDISCO, STS, PASSWD etc.
          * This does NOT include the PingServlet since the PingServlet has its own access rules.
          */
+        @XmlEnumValue( "Built-in services" )
         OTHER_SERVLETS(POLICYDISCO, STS, CSRHANDLER, PASSWD, WSDLPROXY, SNMPQUERY, HPSOAM),
 
         /** Process Controller Service Node API*/
+        @XmlEnumValue( "Node Control" )
         PC_NODE_API,
 
         /** Node to Node Remoting  */
+        @XmlEnumValue( "Inter-Node Communication" )
         NODE_COMMUNICATION;
 
         private Endpoint[] enabledKids;

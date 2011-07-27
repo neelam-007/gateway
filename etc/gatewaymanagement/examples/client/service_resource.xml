@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Example resource for creating a new service
+-->
+<Service xmlns="http://ns.l7tech.com/2010/04/gateway-management">
+    <ServiceDetail>
+        <Name>My Gateway Management Service</Name>
+        <Enabled>true</Enabled>
+        <ServiceMappings>
+            <HttpMapping>
+                <UrlPattern>/mywsman</UrlPattern>
+                <Verbs>
+                    <Verb>POST</Verb>
+                </Verbs>
+            </HttpMapping>
+            <SoapMapping>
+                <Lax>false</Lax>
+            </SoapMapping>
+        </ServiceMappings>
+        <Properties>
+            <Property key="soapVersion">
+                <StringValue>1.2</StringValue>
+            </Property>
+            <Property key="soap">
+                <BooleanValue>true</BooleanValue>
+            </Property>
+        </Properties>
+    </ServiceDetail>
+    <Resources>
+        <ResourceSet rootUrl="http://localhost:8080/wsman?wsdl" tag="wsdl"/>
+        <ResourceSet tag="policy">
+            <Resource type="policy">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+                &lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy"
+                xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+                &lt;wsp:All wsp:Usage="Required"&gt;
+                &lt;L7p:SslAssertion/&gt;
+                &lt;L7p:HttpBasic/&gt;
+                &lt;L7p:Authentication&gt;
+                &lt;L7p:IdentityProviderOid longValue="-2"/&gt;
+                &lt;/L7p:Authentication&gt;
+                &lt;L7p:GatewayManagement/&gt;
+                &lt;/wsp:All&gt;
+                &lt;/wsp:Policy&gt;</Resource>
+        </ResourceSet>
+    </Resources>
+</Service>

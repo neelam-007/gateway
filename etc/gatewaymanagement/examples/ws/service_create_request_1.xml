@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope"
+    xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing"
+    xmlns:wse="http://schemas.xmlsoap.org/ws/2004/08/eventing"
+    xmlns:wsen="http://schemas.xmlsoap.org/ws/2004/09/enumeration"
+    xmlns:wsman="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd"
+    xmlns:wxf="http://schemas.xmlsoap.org/ws/2004/09/transfer" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <env:Header>
+        <wsa:Action env:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/09/transfer/Create</wsa:Action>
+        <wsa:ReplyTo>
+            <wsa:Address env:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address>
+        </wsa:ReplyTo>
+        <wsa:MessageID env:mustUnderstand="true">uuid:dd5cc3e5-0c6c-4496-9889-a47e671c57ef</wsa:MessageID>
+        <wsa:To env:mustUnderstand="true">https://localhost:8443/wsman</wsa:To>
+        <wsman:ResourceURI>http://ns.l7tech.com/2010/04/gateway-management/services</wsman:ResourceURI>
+        <wsman:OperationTimeout>PT5M0.000S</wsman:OperationTimeout>
+    </env:Header>
+    <env:Body>
+        <Service xmlns="http://ns.l7tech.com/2010/04/gateway-management">
+            <ServiceDetail>
+                <Name>My Gateway Management Service</Name>
+                <Enabled>true</Enabled>
+                <ServiceMappings>
+                    <HttpMapping>
+                        <UrlPattern>/mywsman</UrlPattern>
+                        <Verbs>
+                            <Verb>POST</Verb>
+                        </Verbs>
+                    </HttpMapping>
+                    <SoapMapping>
+                        <Lax>false</Lax>
+                    </SoapMapping>
+                </ServiceMappings>
+                <Properties>
+                    <Property key="soapVersion">
+                        <StringValue>1.2</StringValue>
+                    </Property>
+                    <Property key="soap">
+                        <BooleanValue>true</BooleanValue>
+                    </Property>
+                </Properties>
+            </ServiceDetail>
+            <Resources>
+                <ResourceSet rootUrl="http://localhost:8080/wsman?wsdl" tag="wsdl"/>
+                <ResourceSet tag="policy">
+                    <Resource type="policy">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"&gt;
+    &lt;wsp:All wsp:Usage="Required"&gt;
+        &lt;L7p:SslAssertion/&gt;
+        &lt;L7p:HttpBasic/&gt;
+        &lt;L7p:Authentication&gt;
+            &lt;L7p:IdentityProviderOid longValue="-2"/&gt;
+        &lt;/L7p:Authentication&gt;
+        &lt;L7p:GatewayManagement/&gt;
+    &lt;/wsp:All&gt;
+&lt;/wsp:Policy&gt;</Resource>
+                </ResourceSet>
+            </Resources>
+        </Service>
+    </env:Body>
+</env:Envelope>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<IdentityProvider xmlns="http://ns.l7tech.com/2010/04/gateway-management" version="0" id="253788160">
+    <Name>Federated Example</Name>
+    <IdentityProviderType>Federated</IdentityProviderType>
+    <Properties>
+        <Property key="enableCredentialType.saml">
+            <BooleanValue>true</BooleanValue>
+        </Property>
+        <Property key="enableCredentialType.x509">
+            <BooleanValue>true</BooleanValue>
+        </Property>
+        <Property key="adminEnabled">
+            <BooleanValue>false</BooleanValue>
+        </Property>
+    </Properties>
+    <Extension>
+        <FederatedIdentityProviderDetail>
+            <CertificateReferences resourceUri="http://ns.l7tech.com/2010/04/gateway-management/trustedCertificates">
+                <Reference id="253755392"/>
+            </CertificateReferences>
+        </FederatedIdentityProviderDetail>
+    </Extension>
+</IdentityProvider>

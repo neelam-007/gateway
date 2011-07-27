@@ -13,19 +13,29 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.Map;
 
 /**
- * TODO [steve] javadoc
+ * The PrivateKeyCreationContext encapsulates a private key creation request.
+ *
+ * <p>The following properties can be used:
+ * <ul>
+ *   <li><code>caCapable</code>: Optional CA capability flag (boolean, default
+ *   false)</li>
+ *   <li><code>daysUntilExpiry</code>: Optional days until expiry for the
+ *   related certificate (integer)</li>
+ *   <li><code>ecName</code>: Required for Elliptic Curve private keys, e.g.
+ *   "secp384r1" (string)</li>
+ *   <li><code>rsaKeySize</code>: Optional RSA key size in bits (integer)</li>
+ *   <li><code>signatureHashAlgorithm</code>: Optional signature hash
+ *   algorithm, e.g. "SHA256" (string)</li>
+ * </ul>
+ * </p>
+ *
+ * @see ManagedObjectFactory#createPrivateKeyCreationContext()
  */
 @XmlRootElement(name="PrivateKeyCreationContext")
 @XmlType(name="PrivateKeyCreationContextType", propOrder={"dnValue", "properties", "extension", "extensions"})
 public class PrivateKeyCreationContext extends ElementExtendableManagedObject {
 
     //- PUBLIC
-
-    public static final String PROP_CA_CAPABLE = "caCapable";
-    public static final String PROP_DAYS_UNTIL_EXPIRY = "daysUntilExpiry";
-    public static final String PROP_ELLIPTIC_CURVE_NAME = "ecName";
-    public static final String PROP_RSA_KEY_SIZE = "rsaKeySize";
-    public static final String PROP_SIGNATURE_HASH = "signatureHashAlgorithm";
 
     /**
      * Get the Subject DN to use for the certificate (required)

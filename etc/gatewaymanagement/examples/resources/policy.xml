@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Policy xmlns="http://ns.l7tech.com/2010/04/gateway-management" guid="ba0d0d12-2fe3-4b6e-bcea-9af6266222ba" version="0" id="253820928">
+    <PolicyDetail version="0" id="253820928" guid="ba0d0d12-2fe3-4b6e-bcea-9af6266222ba" folderId="253624320">
+        <Name>Example</Name>
+        <PolicyType>Include</PolicyType>
+        <Properties>
+            <Property key="revision">
+                <LongValue>0</LongValue>
+            </Property>
+            <Property key="soap">
+                <BooleanValue>true</BooleanValue>
+            </Property>
+        </Properties>
+    </PolicyDetail>
+    <Resources>
+        <ResourceSet tag="policy">
+            <Resource type="policy">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;
+    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
+        &lt;L7p:AuditDetailAssertion&gt;
+            &lt;L7p:Detail stringValue=&quot;Policy Fragment: Example&quot;/&gt;
+        &lt;/L7p:AuditDetailAssertion&gt;
+    &lt;/wsp:All&gt;
+&lt;/wsp:Policy&gt;
+</Resource>
+        </ResourceSet>
+    </Resources>
+</Policy>

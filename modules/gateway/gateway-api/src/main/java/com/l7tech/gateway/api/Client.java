@@ -1,5 +1,6 @@
 package com.l7tech.gateway.api;
 
+import com.l7tech.gateway.api.Accessor.AccessorException;
 import com.l7tech.gateway.api.impl.AccessorFactory;
 import com.l7tech.gateway.api.impl.ResourceTracker;
 import com.l7tech.gateway.api.impl.TransportFactory;
@@ -35,6 +36,27 @@ public class Client implements Closeable {
                 url,
                 resourceFactory,
                 tracker );
+    }
+
+    /**
+     * Get the accessor for the given type.
+     *
+     * @param accessibleObjectClass The class of accessible object
+     * @param accessorClass The accessor class
+     * @param <AO> The accessible object type
+     * @param <AT> The type of the accessor class
+     * @return The accessor for the type
+     * @throws AccessorException If the accessor class is not compatible with the accessible object
+     */
+    public <AO extends AccessibleObject, AT extends Accessor<AO>> AT getAccessor( final Class<AO> accessibleObjectClass,
+                                                                                  final Class<AT> accessorClass ) throws AccessorException {
+        final Accessor<AO> accessor = getAccessor( accessibleObjectClass );
+
+        if ( !accessorClass.isInstance( accessor ) ) {
+            throw new AccessorException("Accessor of type " + accessorClass + " is not supported for class " + accessibleObjectClass);
+        }
+
+        return accessorClass.cast( accessor );
     }
 
     /**

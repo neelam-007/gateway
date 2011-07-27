@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<PrivateKey xmlns="http://ns.l7tech.com/2010/04/gateway-management" keystoreId="2" alias="Example" id="2:Example">
+    <CertificateChain>
+        <CertificateData>
+            <IssuerName>CN=Example</IssuerName>
+            <SerialNumber>6726482234422044191</SerialNumber>
+            <SubjectName>CN=Example</SubjectName>
+            <Encoded>MIIC6DCC ... 1n0Bvg==</Encoded>
+        </CertificateData>
+    </CertificateChain>
+    <Properties>
+        <Property key="keyAlgorithm">
+            <StringValue>RSA</StringValue>
+        </Property>
+    </Properties>
+</PrivateKey>

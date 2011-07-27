@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<IdentityProvider xmlns="http://ns.l7tech.com/2010/04/gateway-management" version="2" id="-2">
+    <Name>Internal Identity Provider</Name>
+    <IdentityProviderType>Internal</IdentityProviderType>
+    <Properties>
+        <Property key="certificateValidation">
+            <StringValue>Validate Certificate Path</StringValue>
+        </Property>
+        <Property key="adminEnabled">
+            <BooleanValue>true</BooleanValue>
+        </Property>
+    </Properties>
+</IdentityProvider>

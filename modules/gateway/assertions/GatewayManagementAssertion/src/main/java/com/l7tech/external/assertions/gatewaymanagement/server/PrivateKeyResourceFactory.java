@@ -335,11 +335,11 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                 final PrivateKeyAdminHelper helper = getPrivateKeyAdminHelper();
                 final Map<String,Object> properties = resource.getProperties();
                 final String dn = resource.getDn();
-                final Option<String> curveName = getProperty( properties, PrivateKeyCreationContext.PROP_ELLIPTIC_CURVE_NAME, Option.<String>none(), String.class );
-                final int keybits = getProperty( properties, PrivateKeyCreationContext.PROP_RSA_KEY_SIZE, some( DEFAULT_RSA_KEY_SIZE ), Integer.class).some();
-                final int expiryDays = getProperty( properties, PrivateKeyCreationContext.PROP_DAYS_UNTIL_EXPIRY, some( DEFAULT_CERTIFICATE_EXPIRY_DAYS ), Integer.class ).some();
-                final boolean makeCaCert = getProperty( properties, PrivateKeyCreationContext.PROP_CA_CAPABLE, some( false ), Boolean.class).some();
-                final Option<String> signatureHashAlgorithm = getProperty( properties, PrivateKeyCreationContext.PROP_SIGNATURE_HASH, Option.<String>none(), String.class );
+                final Option<String> curveName = getProperty( properties, PROP_ELLIPTIC_CURVE_NAME, Option.<String>none(), String.class );
+                final int keybits = getProperty( properties, PROP_RSA_KEY_SIZE, some( DEFAULT_RSA_KEY_SIZE ), Integer.class).some();
+                final int expiryDays = getProperty( properties, PROP_DAYS_UNTIL_EXPIRY, some( DEFAULT_CERTIFICATE_EXPIRY_DAYS ), Integer.class ).some();
+                final boolean makeCaCert = getProperty( properties, PROP_CA_CAPABLE, some( false ), Boolean.class).some();
+                final Option<String> signatureHashAlgorithm = getProperty( properties, PROP_SIGNATURE_HASH, Option.<String>none(), String.class );
 
                 try {
                     final KeyGenParams keyGenParams = curveName.isSome() ?
@@ -501,6 +501,12 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
     private static final int DEFAULT_CERTIFICATE_EXPIRY_DAYS = SyspropUtil.getInteger( "com.l7tech.external.assertions.gatewaymanagement.defaultCertificateExpiryDays", 365 * 5 );
     private static final int DEFAULT_CSR_EXPIRY_DAYS = SyspropUtil.getInteger( "com.l7tech.external.assertions.gatewaymanagement.defaultCsrExpiryDays", 365 * 2);
     private static final int DEFAULT_RSA_KEY_SIZE = SyspropUtil.getInteger( "com.l7tech.external.assertions.gatewaymanagement.defaultRsaKeySize", 2048 );
+
+    private static final String PROP_CA_CAPABLE = "caCapable";
+    private static final String PROP_DAYS_UNTIL_EXPIRY = "daysUntilExpiry";
+    private static final String PROP_ELLIPTIC_CURVE_NAME = "ecName";
+    private static final String PROP_RSA_KEY_SIZE = "rsaKeySize";
+    private static final String PROP_SIGNATURE_HASH = "signatureHashAlgorithm";
 
     private final Config config;
     private final SsgKeyStoreManager ssgKeyStoreManager;

@@ -16,13 +16,26 @@ import java.util.Map;
 /**
  * The JDBCConnectionMO managed object represents a JDBC connection.
  *
- * TODO [steve] document properties
- *             .put( "minimumPoolSize", 3 )
-            .put( "maximumPoolSize", 15 )
+ * <p>The Accessor for JDBC connections supports read and write. JDBC
+ * connections can be accessed by name or identifier.</p>
+
+ * <p>The following properties can be used:
+ * <ul>
+ *   <li><code>minimumPoolSize</code>: Optional minimum connection pool size
+ *   (integer, default 3)</li>
+ *   <li><code>maximumPoolSize</code>: Optional maximum connection pool size
+ *   (integer, default 15)</li>
+ * </ul>
+ * </p>
  *
- * <p>The Accessor for JDBC connections is read only. JDBC connections can be
- * accessed by name or identifier.</p>
- *
+ * <p>Connection properties are passed to JDBC. Commonly used connection
+ * properties are:
+ * <ul>
+ *   <li><code>user</code>: The username to use for the connection</li>
+ *   <li><code>password</code>: The password to use for the connection</li>
+ * </ul>
+ * </p>
+
  * @see ManagedObjectFactory#createJDBCConnection()
  */
 @XmlRootElement(name="JDBCConnection")
@@ -68,26 +81,56 @@ public class JDBCConnectionMO extends AccessibleObject {
         this.enabled = set(this.enabled,enabled);
     }
 
+    /**
+     * Get the driver class for the jdbc connection.
+     *
+     * @return The driver class name or null
+     */
     public String getDriverClass() {
         return get(this.jdbcExtension.driverClass);
     }
 
+    /**
+     * Set the driver class for the jdbc connection.
+     *
+     * @param driverClass The name of the driver class to use
+     */
     public void setDriverClass( final String driverClass ) {
         this.jdbcExtension.driverClass = set(this.jdbcExtension.driverClass,driverClass);
     }
 
+    /**
+     * Get the jdbc URL for the jdbc connection.
+     *
+     * @return The URL or null
+     */
     public String getJdbcUrl() {
         return get(this.jdbcExtension.jdbcUrl);
     }
 
+    /**
+     * Set the jdbc URL for the jdbc connection.
+     *
+     * @param jdbcUrl The URL to use
+     */
     public void setJdbcUrl( final String jdbcUrl ) {
         this.jdbcExtension.jdbcUrl = set(this.jdbcExtension.jdbcUrl,jdbcUrl);
     }
 
+    /**
+     * Get the connection properties for the jdbc connection.
+     *
+     * @return The connection properties or null
+     */
     public Map<String, Object> getConnectionProperties() {
         return jdbcExtension.connectionProperties;
     }
 
+    /**
+     * Set the connection properties for the jdbc connection.
+     *
+     * @param properties The connection properties to use
+     */
     public void setConnectionProperties( final Map<String, Object> properties ) {
         this.jdbcExtension.connectionProperties = properties;
     }

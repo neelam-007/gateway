@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<TrustedCertificate xmlns="http://ns.l7tech.com/2010/04/gateway-management" version="0" id="245465088">
+    <Name>example.layer7tech.com</Name>
+    <CertificateData>
+        <IssuerName>CN=Example CA,O=Layer 7 Technologies,C=CA</IssuerName>
+        <SerialNumber>1</SerialNumber>
+        <SubjectName>CN=example.layer7tech.com,O=Layer 7 Technologies,C=CA</SubjectName>
+        <Encoded>MIIDITCC ... WEEHXw==</Encoded>
+    </CertificateData>
+    <Properties>
+        <Property key="verifyHostname">
+            <BooleanValue>true</BooleanValue>
+        </Property>
+        <Property key="trustAnchor">
+            <BooleanValue>false</BooleanValue>
+        </Property>
+        <Property key="trustedForSigningServerCerts">
+            <BooleanValue>false</BooleanValue>
+        </Property>
+        <Property key="trustedForSsl">
+            <BooleanValue>false</BooleanValue>
+        </Property>
+        <Property key="trustedForSigningClientCerts">
+            <BooleanValue>false</BooleanValue>
+        </Property>
+        <Property key="revocationCheckingEnabled">
+            <BooleanValue>true</BooleanValue>
+        </Property>
+        <Property key="trustedAsSamlAttestingEntity">
+            <BooleanValue>false</BooleanValue>
+        </Property>
+        <Property key="trustedAsSamlIssuer">
+            <BooleanValue>false</BooleanValue>
+        </Property>
+    </Properties>
+</TrustedCertificate>

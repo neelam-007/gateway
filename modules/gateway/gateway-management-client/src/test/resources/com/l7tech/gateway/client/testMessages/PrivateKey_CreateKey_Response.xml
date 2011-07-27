@@ -1,0 +1,34 @@
+<env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope"
+    xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management"
+    xmlns:mdo="http://schemas.wiseman.dev.java.net/metadata/messagetypes"
+    xmlns:mex="http://schemas.xmlsoap.org/ws/2004/09/mex"
+    xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing"
+    xmlns:wse="http://schemas.xmlsoap.org/ws/2004/08/eventing"
+    xmlns:wsen="http://schemas.xmlsoap.org/ws/2004/09/enumeration"
+    xmlns:wsman="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd"
+    xmlns:wsmeta="http://schemas.dmtf.org/wbem/wsman/1/wsman/version1.0.0.a/default-addressing-model.xsd"
+    xmlns:wxf="http://schemas.xmlsoap.org/ws/2004/09/transfer" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <env:Header>
+        <wsa:Action env:mustUnderstand="true" xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">http://ns.l7tech.com/2010/04/gateway-management/privateKeys/CreateKeyResponse</wsa:Action>
+        <wsa:MessageID env:mustUnderstand="true">uuid:aa18152a-dfcb-4cf1-a828-e38c6d4715bb</wsa:MessageID>
+        <wsa:RelatesTo>uuid:5c686c2a-b9cf-4b86-b33b-d99a78afb650</wsa:RelatesTo>
+        <wsa:To env:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>
+    </env:Header>
+    <env:Body>
+        <l7:PrivateKey alias="mykey" id="2:mykey" keystoreId="2">
+            <l7:CertificateChain>
+                <l7:CertificateData>
+                    <l7:IssuerName>CN=MyKey</l7:IssuerName>
+                    <l7:SerialNumber>13779282364405580179</l7:SerialNumber>
+                    <l7:SubjectName>CN=MyKey</l7:SubjectName>
+                    <l7:Encoded>MIIC5TCCAc2gAwIBAgIJAL852E3+MwGTMA0GCSqGSIb3DQEBDAUAMBAxDjAMBgNVBAMTBU15S2V5MB4XDTExMDcyNzA0MTQwMloXDTE2MDcyNTA0MTQwMlowEDEOMAwGA1UEAxMFTXlLZXkwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCtcJ0kwB1LlxW/EQY02OVXlL2uNLI0UoS8/HLGOMqPKG3J2fGMX/AAE2tlII71uJhX5ClrCPuZpPvlapJ7QVALX5rdzUjCRFcw4p9CqL24pSmiL4LuDgPGFYmgHJ4DoeSTUVbf8dxmeAISTP5nebvYi8IA/pDPjO3FcBHRQriUSpzfej2/ZL5D8HjUM6l2LhOu5CAOIYxR6Zg0DOJsUPAYXawBROMoobNSz74tpQZzDtf6eiLl5gXhH3RoTCe5RjDjm9/GwfreP29SpoYSVd3uDp83S1uUrkYqkeJDyJ/iUNggHO35RiNJ2bZ/M2hPl+gmSWT618ENqqwtY0tSqilvAgMBAAGjQjBAMB0GA1UdDgQWBBTys4TtaR5rnI+3YQXpIz9KwGBReDAfBgNVHSMEGDAWgBTys4TtaR5rnI+3YQXpIz9KwGBReDANBgkqhkiG9w0BAQwFAAOCAQEAXgkDzwUxABikgwl0SLd6pTe6dJDM9e0Qj+QGCGKzVQPkXeymTkTEe5WnqVv8SniFR9pVP825R2kSp+UNKbIEuWCUdoJhswzUNtu+i18PC4S0jQnB7OOi9qES97u5iBajyYiA43v5VMekoQbr8eXdjAg+4Oi6zrKPLpZtl20Is0CZeyCw/bKnsLyArSjKmZJbPokBf6/dzvYJuu2EcXTYZVUpcsR8VH5kdGarzNoXuhA7wqEjl4BR3J80RrzcwAi/4shfvchKIbYiGnWtQqYCFnfuY4I417ctB2J3Gfs7c3cQBjF6QHvRJixHOmtOnwaga0g2TT0yrF4ybUI+dgBrDw==</l7:Encoded>
+                </l7:CertificateData>
+            </l7:CertificateChain>
+            <l7:Properties>
+                <l7:Property key="keyAlgorithm">
+                    <l7:StringValue>RSA</l7:StringValue>
+                </l7:Property>
+            </l7:Properties>
+        </l7:PrivateKey>
+    </env:Body>
+</env:Envelope>

@@ -47,31 +47,7 @@ public class TransportFactory {
                 SSLSocketFactory sslSocketFactory );
     }
 
-    //- PRIVATE
-
-    private static final String USER_AGENT = "SecureSpan-Gateway-API/" + BuildInfo.getBuildNumber();
-    private static TransportStrategy transportStrategy = new DefaultTransportStrategy();
-
-    private static final class DefaultTransportStrategy implements TransportStrategy {
-        @Override
-        public TransportClient newTransportClient( final int connectTimeout,
-                                                   final int readTimeout,
-                                                   final PasswordAuthentication passwordAuthentication,
-                                                   final HostnameVerifier hostnameVerifier,
-                                                   final SSLSocketFactory sslSocketFactory ) {
-
-            final ConfigurableHTTPTransportClient client = new ActionAwareHTTPTransportClient();
-            client.setConnectTimeout( connectTimeout );
-            client.setReadTimeout( readTimeout );
-            client.setPasswordAuthentication( passwordAuthentication );
-            client.setHostnameVerifier( hostnameVerifier );
-            client.setSslSocketFactory( sslSocketFactory );
-            client.setUserAgent( USER_AGENT );
-            return client;
-        }
-    }
-
-    private static final class ActionAwareHTTPTransportClient extends ConfigurableHTTPTransportClient {
+    public static class ActionAwareHTTPTransportClient extends ConfigurableHTTPTransportClient {
         @Override
         protected String getContentType( final SOAPMessage soapMessage,
                                          final Message message,
@@ -101,6 +77,30 @@ public class TransportFactory {
             }
 
             return contentType;
+        }
+    }
+
+    //- PRIVATE
+
+    private static final String USER_AGENT = "SecureSpan-Gateway-API/" + BuildInfo.getBuildNumber();
+    private static TransportStrategy transportStrategy = new DefaultTransportStrategy();
+
+    private static final class DefaultTransportStrategy implements TransportStrategy {
+        @Override
+        public TransportClient newTransportClient( final int connectTimeout,
+                                                   final int readTimeout,
+                                                   final PasswordAuthentication passwordAuthentication,
+                                                   final HostnameVerifier hostnameVerifier,
+                                                   final SSLSocketFactory sslSocketFactory ) {
+
+            final ConfigurableHTTPTransportClient client = new ActionAwareHTTPTransportClient();
+            client.setConnectTimeout( connectTimeout );
+            client.setReadTimeout( readTimeout );
+            client.setPasswordAuthentication( passwordAuthentication );
+            client.setHostnameVerifier( hostnameVerifier );
+            client.setSslSocketFactory( sslSocketFactory );
+            client.setUserAgent( USER_AGENT );
+            return client;
         }
     }
 }

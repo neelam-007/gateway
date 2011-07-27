@@ -2,7 +2,6 @@ package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.AccessorSupport;
 import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
-import static com.l7tech.gateway.api.impl.AttributeExtensibleType.set;
 
 import com.l7tech.gateway.api.impl.ElementExtendableAccessibleObject;
 import com.l7tech.gateway.api.impl.Extension;
@@ -23,7 +22,26 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * TODO [steve] javadoc and add to client docs / wsdl
+ * The ListenPortMO managed object represents a Gateway Listen Port.
+ *
+ * <p>The Accessor for listen ports supports read and write. Listen ports can
+ * be accessed by identifier or by name.</p>
+ *
+ * <p>The following properties can be used:
+ * <ul>
+ *   <li><code>overrideContentType</code>: Optional content type header
+ *   override (string)</li>
+ *   <li><code>portRangeCount</code>: The number of passive ports to use,
+ *   required for FTP listeners (integer)</li>
+ *   <li><code>portRangeStart</code>: The first passive port to use, required
+ *   for FTP listeners (integer)</li>
+ *   <li><code>threadPoolSize</code>: Optional, use a private thread pool of
+ *   the given size (integer)</li>
+ * </ul>
+ * </p>
+ *
+ *
+ * @see ManagedObjectFactory#createListenPort()
  */
 @XmlRootElement(name="ListenPort")
 @XmlType(name="ListenPortType", propOrder={"nameValue","enabledValue","protocolValue","interfaceValue","portValue","enabledFeatureValues","targetServiceReference","tlsSettings","properties","extension","extensions"})
@@ -42,7 +60,7 @@ public class ListenPortMO extends ElementExtendableAccessibleObject {
     }
 
     /**
-     * Set the name for the listen port
+     * Set the name for the listen port.
      *
      * @param name The name to use
      */
@@ -50,18 +68,38 @@ public class ListenPortMO extends ElementExtendableAccessibleObject {
         this.name = set(this.name,name);
     }
 
+    /**
+     * The listen port enabled flag
+     *
+     * @return True if the listen port is enabled.
+     */
     public boolean isEnabled() {
         return get(enabled,false);
     }
 
+    /**
+     * Set the listen port enabled flag.
+     *
+     * @param enabled True to enable the listen port
+     */
     public void setEnabled( final boolean enabled ) {
         this.enabled = set(this.enabled, enabled);
     }
 
+    /**
+     * Get the (Gateway) protocol for the listen port (required)
+     *
+     * @return The protocol
+     */
     public String getProtocol() {
         return get(protocol);
     }
 
+    /**
+     * Set the (Gateway) protocol for the listen port.
+     *
+     * @param protocol The protocol to use
+     */
     public void setProtocol( final String protocol ) {
         this.protocol = set(this.protocol,protocol);
     }
@@ -85,7 +123,7 @@ public class ListenPortMO extends ElementExtendableAccessibleObject {
     }
 
     /**
-     * Get the port to use (required)
+     * Get the port to use.
      *
      * @return The port number.
      */
@@ -94,7 +132,7 @@ public class ListenPortMO extends ElementExtendableAccessibleObject {
     }
 
     /**
-     * Set the port to use
+     * Set the port to use.
      *
      * @param port The port value to use
      */
@@ -104,8 +142,6 @@ public class ListenPortMO extends ElementExtendableAccessibleObject {
 
     /**
      * Get the enabled features for this listen port.
-     *
-     * TODO [steve] document the possible features (XmlEnumValue annotate Endpoint enum with names)
      *
      * @return The list of enabled features (never null)
      */
@@ -142,11 +178,21 @@ public class ListenPortMO extends ElementExtendableAccessibleObject {
                 new ManagedObjectReference( ServiceMO.class, id );
     }
 
+    /**
+     * Get the SSL/TLS settings for the listen port.
+     *
+     * @return The TLS settings for the port or null
+     */
     @XmlElement(name="TlsSettings")
     public TlsSettings getTlsSettings() {
         return tlsSettings;
     }
 
+    /**
+     * Set the SSL/TLS settings for the listen port.
+     *
+     * @param tlsSettings The settings to use
+     */
     public void setTlsSettings( final TlsSettings tlsSettings ) {
         this.tlsSettings = tlsSettings;
     }
@@ -171,57 +217,127 @@ public class ListenPortMO extends ElementExtendableAccessibleObject {
         this.properties = properties;
     }
 
+    /**
+     * Represents SSL/TLS configuration for a listen port.
+     *
+     * @see ManagedObjectFactory#createTlsSettings()
+     */
     @SuppressWarnings({ "ProtectedMemberInFinalClass" })
     @XmlType(name="TlsSettingsType", propOrder={"clientAuthenticationValue","privateKeyReference","enabledVersionValues","enabledCipherSuiteValues","properties","extension","extensions"})
     public static final class TlsSettings extends ExtensionSupport {
+
+        /**
+         * Enumeration of client authentication options for an SSL/TLS connection.
+         */
         @XmlEnum(String.class)
         @XmlType(name="ClientAuthenticationType")
         public enum ClientAuthentication {
+            /**
+             * Client authentication not supported
+             */
             @XmlEnumValue("None") NONE,
+
+            /**
+             * Client authentication is optional
+             */
             @XmlEnumValue("Optional") OPTIONAL,
+
+            /**
+             * Client authentication is required
+             */
             @XmlEnumValue("Required") REQUIRED
         }
 
+        /**
+         * Get the client authentication value.
+         *
+         * @return The client authentication value (never null)
+         */
         public ClientAuthentication getClientAuthentication() {
             return get(clientAuthentication, ClientAuthentication.OPTIONAL);
         }
 
+        /**
+         * Set the client authentication value.
+         *
+         * @param clientAuthentication The client authentication value to use
+         */
         public void setClientAuthentication( final ClientAuthentication clientAuthentication ) {
             this.clientAuthentication = setNonNull( this.clientAuthentication == null ? new AttributeExtensibleClientAuthentication() : this.clientAuthentication, clientAuthentication );
         }
 
+        /**
+         * Get the identifier of the servers private key.
+         *
+         * @return The key identifier or null
+         */
         public String getPrivateKeyId() {
             return privateKeyReference==null ? null : privateKeyReference.getId();
         }
 
+        /**
+         * Set the identifier of the servers private key.
+         *
+         * @param id The private key identifier
+         */
         public void setPrivateKeyId( final String id ) {
             privateKeyReference = id==null ?
                     null :
                     new ManagedObjectReference( PrivateKeyMO.class, id );
         }
 
+        /**
+         * Get the list of enabled SSL/TLS versions.
+         *
+         * @return The version list (never null)
+         */
         public List<String> getEnabledVersions() {
             return unwrap(get( enabledVersions, new ArrayList<AttributeExtensibleString>() ));
         }
 
+        /**
+         * Set the list of enabled SSL/TLS versions.
+         *
+         * @param enabledVersions The versions to enable
+         */
         public void setEnabledVersions( final List<String> enabledVersions ) {
             this.enabledVersions = set( this.enabledVersions, wrap(enabledVersions,AttributeExtensibleStringBuilder) );
         }
 
+        /**
+         * Get the list of enabled cipher suites.
+         *
+         * @return The cipher suite list (never null)
+         */
         public List<String> getEnabledCipherSuites() {
             return unwrap(get( enabledCipherSuites, new ArrayList<AttributeExtensibleString>() ));
         }
 
-        public void setEnabledCipherSuites( final List<String> enabledVersions ) {
-            this.enabledCipherSuites = set( this.enabledCipherSuites, wrap(enabledVersions,AttributeExtensibleStringBuilder) );
+        /**
+         * Set the list of enabled cipher suites.
+         *
+         * @param enabledCipherSuites The cipher suites to enable
+         */
+        public void setEnabledCipherSuites( final List<String> enabledCipherSuites ) {
+            this.enabledCipherSuites = set( this.enabledCipherSuites, wrap(enabledCipherSuites,AttributeExtensibleStringBuilder) );
         }
 
+        /**
+         * Get the properties for the SSL/TLS settings.
+         *
+         * @return The properties or null
+         */
         @XmlElement(name="Properties")
         @XmlJavaTypeAdapter(PropertiesMapType.PropertiesMapTypeAdapter.class)
         public Map<String, Object> getProperties() {
             return properties;
         }
 
+        /**
+         * Set the properties for the SSL/TLS settings.
+         *
+         * @param properties The properties to use
+         */
         public void setProperties( final Map<String, Object> properties ) {
             this.properties = properties;
         }

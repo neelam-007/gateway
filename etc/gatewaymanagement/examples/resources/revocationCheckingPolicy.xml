@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<RevocationCheckingPolicy xmlns="http://ns.l7tech.com/2010/04/gateway-management" version="0" id="44630016">
+    <Name>Example</Name>
+</RevocationCheckingPolicy>

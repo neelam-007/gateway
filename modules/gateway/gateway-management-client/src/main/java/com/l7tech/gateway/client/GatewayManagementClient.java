@@ -1,5 +1,6 @@
 package com.l7tech.gateway.client;
 
+import com.l7tech.gateway.api.Accessor.AccessorException;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
@@ -27,15 +28,19 @@ public class GatewayManagementClient {
 
     public static void main( final String[] args ) {
         JdkLoggerConfigurator.configure("com.l7tech.gateway.client", "com/l7tech/gateway/client/logging.properties", "logging.properties", true, true);
-        GatewayManagementClient gmc = new GatewayManagementClient(args, System.out, System.err);
+        GatewayManagementClient gmc = new GatewayManagementClient(args, System.in, System.out, System.err);
         final int exitCode = gmc.run();
         System.err.flush();
         System.exit( exitCode );
     }
 
-    public GatewayManagementClient( final String args[], final OutputStream out, final OutputStream err )  {
+    public GatewayManagementClient( final String args[],
+                                    final InputStream in,
+                                    final OutputStream out,
+                                    final OutputStream err )  {
         final Arguments arguments = new Arguments();
         final Map<Integer,String> extraArgs = new TreeMap<Integer,String>();
+        this.in = in;
         this.out = out;
         this.err = err;
 
@@ -107,7 +112,7 @@ public class GatewayManagementClient {
     private static final String HTTPS_PREFIX = "https://";
     private static final Charset charset = Charset.defaultCharset();
 
-
+    private final InputStream in;
     private final OutputStream out;
     private final OutputStream err;
     private final String[] commandLineArguments;
@@ -229,7 +234,7 @@ public class GatewayManagementClient {
 
 
         if ( command != null ) {
-            command.init( out, buildUrl( hostPortOrUrl ), arguments, Collections.unmodifiableList(extraArguments) );
+            command.init( in, out, buildUrl( hostPortOrUrl ), arguments, Collections.unmodifiableList(extraArguments) );
         } else if ( commandName != null ) {
             printErrorMessage("message.unknowncommand", commandName);
         }
@@ -440,10 +445,12 @@ public class GatewayManagementClient {
 
         //- PUBLIC
 
-        public void init( final OutputStream defaultOut,
+        public void init( final InputStream defaultIn,
+                          final OutputStream defaultOut,
                           final String url,
                           final Arguments arguments,
                           final List<String> extraArguments ) {
+            this.defaultIn = defaultIn;
             this.defaultOut = defaultOut;
             this.url = url;
             this.arguments = arguments;
@@ -501,24 +508,15 @@ public class GatewayManagementClient {
 
         protected <AT extends AccessibleObject> PolicyAccessor<AT> getPolicyAccessor( final Client client,
                                                                                       final Class<AT> objectType ) throws CommandException {
-            final Accessor<AT> accessor = client.getAccessor( objectType );
-
-            if ( !(accessor instanceof PolicyAccessor) ) {
-                throw new CommandException("Command not applicable for type '"+arguments.type+"'");
-            }
-
-            return (PolicyAccessor<AT>) accessor;
+            return getAccessor( client, objectType, PolicyAccessor.class );
         }
 
         protected <AT extends AccessibleObject> PrivateKeyMOAccessor getPrivateKeyAccessor( final Client client,
                                                                                             final Class<AT> objectType ) throws CommandException {
-            final Accessor<AT> accessor = client.getAccessor( objectType );
-
-            if ( !(accessor instanceof PrivateKeyMOAccessor) ) {
+            if ( !PrivateKeyMO.class.isAssignableFrom( objectType ) ) {
                 throw new CommandException("Command not applicable for type '"+arguments.type+"'");
             }
-
-            return (PrivateKeyMOAccessor) accessor;
+            return getAccessor( client, PrivateKeyMO.class, PrivateKeyMOAccessor.class );
         }
 
         protected final Map<String,Object> getSelectors() throws CommandException {
@@ -581,7 +579,7 @@ public class GatewayManagementClient {
                 if ( inText != null ) {
                     return ManagedObjectFactory.read( inText, ManagedObject.class );
                 } else if ( inFile.getName().equals( "-" ) ) {
-                    return ManagedObjectFactory.read( System.in, ManagedObject.class );
+                    return ManagedObjectFactory.read( defaultIn, ManagedObject.class );
                 } else {
                     InputStream in = null;
                     try {
@@ -613,7 +611,15 @@ public class GatewayManagementClient {
             try {
                 InputStream in = null;
                 try {
-                    in = new FileInputStream( inFile );
+                    if ( inFile.getName().equals( "-" ) ) {
+                        in = new FilterInputStream( defaultIn ){
+                            @Override
+                            public void close() throws IOException {
+                            }
+                        };
+                    } else {
+                        in = new FileInputStream( inFile );
+                    }
                     byte[] data = new byte[ (int) inFile.length() ];
                     if ( in.read( data ) != data.length ) {
                         throw new IOException( "File read failed." );
@@ -654,7 +660,7 @@ public class GatewayManagementClient {
             if ( outputWriter != null ) {
                 OutputStream out = null;
                 try {
-                    if ( outFile != null ) {
+                    if ( outFile != null && !outFile.getName().equals( "-" ) ) {
                         if ( isSafe() && outFile.exists() ) {
                             throw new CommandException( "Output file already exists, not overwriting : " + outFile.getAbsolutePath() );
                         }
@@ -697,6 +703,7 @@ public class GatewayManagementClient {
 
         private final boolean requireFileInput;
         private final boolean requireFileOutput;
+        private InputStream defaultIn;
         private OutputStream defaultOut;
         private String url;
         private Arguments arguments;
@@ -742,6 +749,16 @@ public class GatewayManagementClient {
             }
 
             return clientFactory.createClient( url );
+        }
+
+        private <AO extends AccessibleObject, AT extends Accessor<AO>> AT getAccessor( final Client client,
+                                                                                       final Class<AO> objectType,
+                                                                                       final Class<AT> accessorType ) throws CommandException {
+            try {
+                return client.getAccessor( objectType, accessorType );
+            } catch ( AccessorException ae ) {
+                throw new CommandException("Command not applicable for type '"+arguments.type+"'");
+            }
         }
 
         @SuppressWarnings( { "unchecked" } )
@@ -1070,7 +1087,6 @@ public class GatewayManagementClient {
         }
     }
 
-    //TODO [steve] help for options (import and export key)
     private static final class SetKeySpecialPurposesCommand extends Command {
         @SuppressWarnings({ "AssignmentToForLoopParameter" })
         @Override
@@ -1184,6 +1200,10 @@ public class GatewayManagementClient {
     }
 
     private static final class ImportKeyCommand extends Command {
+        private ImportKeyCommand() {
+            super( true, false );
+        }
+
         @SuppressWarnings({ "AssignmentToForLoopParameter" })
         @Override
         protected void doRun( final Client client ) throws CommandException {

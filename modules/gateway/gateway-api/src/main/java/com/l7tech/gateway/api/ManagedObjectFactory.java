@@ -1,5 +1,6 @@
 package com.l7tech.gateway.api;
 
+import com.l7tech.gateway.api.IdentityProviderMO.LdapIdentityProviderMapping;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.api.impl.ValidationUtils;
 import com.l7tech.util.HexUtils;
@@ -167,6 +168,15 @@ public class ManagedObjectFactory {
      */
     public static IdentityProviderMO createIdentityProvider() {
         return new IdentityProviderMO();
+    }
+
+    /**
+     * Create a new LdapIdentityProviderMapping instance.
+     *
+     * @return The new instance.
+     */
+    public static LdapIdentityProviderMapping createLdapIdentityProviderMapping() {
+        return new LdapIdentityProviderMapping();
     }
 
     /**

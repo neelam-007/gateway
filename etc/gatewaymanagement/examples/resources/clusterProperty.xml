@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ClusterProperty xmlns="http://ns.l7tech.com/2010/04/gateway-management" version="0" id="253591552">
+    <Name>example</Name>
+    <Value>value</Value>
+</ClusterProperty>

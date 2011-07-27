@@ -143,7 +143,9 @@ public class TrustedCertificateMO extends AccessibleObject {
 
     @XmlElement(name="Extension")
     protected TrustedCertificateExtension getTrustedCertificateExtension() {
-        return trustedCertificateExtension;
+        return trustedCertificateExtension.revocationCheckingPolicyReference == null ?
+                null :
+                trustedCertificateExtension;
     }
 
     protected void setTrustedCertificateExtension( final TrustedCertificateExtension trustedCertificateExtension ) {

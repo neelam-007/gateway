@@ -15,7 +15,6 @@ import org.junit.Test;
 import org.w3c.dom.Element;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSocketFactory;
@@ -165,7 +164,7 @@ public class AccessorTest {
         Client client = null;
         try {
             client = getClient();
-            final PolicyAccessor<PolicyMO> policyAccessor = (PolicyAccessor<PolicyMO>) client.getAccessor( PolicyMO.class );
+            final PolicyAccessor<PolicyMO> policyAccessor = client.getAccessor( PolicyMO.class, PolicyAccessor.class );
             final Resource policyResource = policyAccessor.getPolicy( "248872960" );
             assertEquals( "resource type", "policy", policyResource.getType() );
             assertEquals( "resource content", "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
@@ -190,7 +189,7 @@ public class AccessorTest {
         Client client = null;
         try {
             client = getClient();
-            final PolicyAccessor<PolicyMO> policyAccessor = (PolicyAccessor<PolicyMO>) client.getAccessor( PolicyMO.class );
+            final PolicyAccessor<PolicyMO> policyAccessor = client.getAccessor( PolicyMO.class, PolicyAccessor.class );
             final Resource policyResource = ManagedObjectFactory.createResource();
             policyResource.setType( "policy" );
             policyResource.setContent( "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
@@ -213,7 +212,7 @@ public class AccessorTest {
         Client client = null;
         try {
             client = getClient();
-            final PolicyAccessor<PolicyMO> policyAccessor = (PolicyAccessor<PolicyMO>) client.getAccessor( PolicyMO.class );
+            final PolicyAccessor<PolicyMO> policyAccessor = client.getAccessor( PolicyMO.class, PolicyAccessor.class );
             final PolicyValidationResult result = policyAccessor.validatePolicy( "248872960" );
             assertEquals("validation status", PolicyValidationResult.ValidationStatus.OK, result.getStatus());
             assertNull("validation messages", result.getPolicyValidationMessages());
@@ -242,7 +241,7 @@ public class AccessorTest {
         Client client = null;
         try {
             client = getClient();
-            final PolicyAccessor<PolicyMO> policyAccessor = (PolicyAccessor<PolicyMO>) client.getAccessor( PolicyMO.class );
+            final PolicyAccessor<PolicyMO> policyAccessor = client.getAccessor( PolicyMO.class, PolicyAccessor.class );
 
             final Map<String,Object> props = new HashMap<String,Object>();
             props.put( "revision", 2L );
@@ -301,7 +300,7 @@ public class AccessorTest {
         Client client = null;
         try {
             client = getClient();
-            final PolicyAccessor<PolicyMO> policyAccessor = (PolicyAccessor<PolicyMO>) client.getAccessor( PolicyMO.class );
+            final PolicyAccessor<PolicyMO> policyAccessor = client.getAccessor( PolicyMO.class, PolicyAccessor.class );
 
             final Map<String,Object> props = new HashMap<String,Object>();
             props.put( "revision", 2L );
@@ -351,7 +350,7 @@ public class AccessorTest {
         Client client = null;
         try {
             client = getClient();
-            final PolicyMOAccessor policyAccessor = (PolicyMOAccessor) client.getAccessor( PolicyMO.class );
+            final PolicyMOAccessor policyAccessor = client.getAccessor( PolicyMO.class, PolicyMOAccessor.class );
             final PolicyDetail detail = policyAccessor.getPolicyDetail( "248872960" );
             assertEquals( "id", "248872960", detail.getId() );
             assertEquals( "guid", "447a0133-5e33-43eb-a197-8a70e6e3d2f1", detail.getGuid() );
@@ -374,7 +373,7 @@ public class AccessorTest {
         Client client = null;
         try {
             client = getClient();
-            final PolicyMOAccessor policyAccessor = (PolicyMOAccessor) client.getAccessor( PolicyMO.class );
+            final PolicyMOAccessor policyAccessor = client.getAccessor( PolicyMO.class, PolicyMOAccessor.class );
             final PolicyDetail policyDetail = ManagedObjectFactory.createPolicyDetail();
             policyDetail.setId( "248872960" );
             policyDetail.setGuid( "447a0133-5e33-43eb-a197-8a70e6e3d2f1" );
@@ -397,7 +396,7 @@ public class AccessorTest {
         Client client = null;
         try {
             client = getClient();
-            final ServiceMOAccessor serviceAccessor = (ServiceMOAccessor) client.getAccessor( ServiceMO.class );
+            final ServiceMOAccessor serviceAccessor = client.getAccessor( ServiceMO.class, ServiceMOAccessor.class );
             final ServiceDetail detail = serviceAccessor.getServiceDetail( "229376" );
             assertEquals( "id", "229376", detail.getId() );
             assertEquals( "version", (Integer)51, detail.getVersion() );
@@ -421,7 +420,7 @@ public class AccessorTest {
         Client client = null;
         try {
             client = getClient();
-            final ServiceMOAccessor serviceAccessor = (ServiceMOAccessor) client.getAccessor( ServiceMO.class );
+            final ServiceMOAccessor serviceAccessor = client.getAccessor( ServiceMO.class, ServiceMOAccessor.class );
             final ServiceDetail serviceDetail = ManagedObjectFactory.createServiceDetail();
             serviceDetail.setId( "229376" );
             serviceDetail.setVersion( 51 );
@@ -444,7 +443,7 @@ public class AccessorTest {
         Client client = null;
         try {
             client = getClient();
-            final ServiceMOAccessor serviceAccessor = (ServiceMOAccessor) client.getAccessor( ServiceMO.class );
+            final ServiceMOAccessor serviceAccessor = client.getAccessor( ServiceMO.class, ServiceMOAccessor.class );
             final ResourceSet wsdlResourceSet = serviceAccessor.getWsdl( "229376" );
             assertEquals( "tag", "wsdl", wsdlResourceSet.getTag() );
             assertEquals( "root url", "http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx?wsdl", wsdlResourceSet.getRootUrl() );
@@ -468,7 +467,7 @@ public class AccessorTest {
         Client client = null;
         try {
             client = getClient();
-            final ServiceMOAccessor serviceAccessor = (ServiceMOAccessor) client.getAccessor( ServiceMO.class );
+            final ServiceMOAccessor serviceAccessor = client.getAccessor( ServiceMO.class, ServiceMOAccessor.class );
             final ResourceSet wsdlResourceSet = ManagedObjectFactory.createResourceSet();
             wsdlResourceSet.setTag( "wsdl" );
             wsdlResourceSet.setRootUrl( "http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx?wsdl" );

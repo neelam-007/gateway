@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<IdentityProvider xmlns="http://ns.l7tech.com/2010/04/gateway-management" version="8" id="207355904">
+    <Name>LDAP Example</Name>
+    <IdentityProviderType>LDAP</IdentityProviderType>
+    <Properties>
+        <Property key="groupCacheMaximumAge">
+            <LongValue>60000</LongValue>
+        </Property>
+        <Property key="groupMembershipCaseInsensitive">
+            <BooleanValue>false</BooleanValue>
+        </Property>
+        <Property key="groupMaximumNesting">
+            <IntegerValue>0</IntegerValue>
+        </Property>
+        <Property key="certificateValidation">
+            <StringValue>Revocation Checking</StringValue>
+        </Property>
+        <Property key="groupCacheSize">
+            <IntegerValue>100</IntegerValue>
+        </Property>
+        <Property key="userCertificateUsage">
+            <StringValue>None</StringValue>
+        </Property>
+        <Property key="adminEnabled">
+            <BooleanValue>true</BooleanValue>
+        </Property>
+    </Properties>
+    <Extension>
+        <LdapIdentityProviderDetail>
+            <SourceType>MicrosoftActiveDirectory</SourceType>
+            <ServerUrls>
+                <StringValue>ldap://example.layer7tech.com</StringValue>
+            </ServerUrls>
+            <UseSslClientAuthentication>false</UseSslClientAuthentication>
+            <SearchBase>ou= Users,DC=layer7tech,dc=com</SearchBase>
+            <BindDn>browse</BindDn>
+            <UserMappings>
+                <Mapping>
+                    <ObjectClass>user</ObjectClass>
+                    <Mappings>
+                        <Property key="kerberosEnterpriseAttrName">
+                            <StringValue>userPrincipalName</StringValue>
+                        </Property>
+                        <Property key="userCertAttrName">
+                            <StringValue>userCertificate</StringValue>
+                        </Property>
+                        <Property key="loginAttrName">
+                            <StringValue>sAMAccountName</StringValue>
+                        </Property>
+                        <Property key="nameAttrName">
+                            <StringValue>cn</StringValue>
+                        </Property>
+                        <Property key="passwdAttrName">
+                            <StringValue>userPassword</StringValue>
+                        </Property>
+                        <Property key="kerberosAttrName">
+                            <StringValue>sAMAccountName</StringValue>
+                        </Property>
+                        <Property key="emailNameAttrName">
+                            <StringValue>mail</StringValue>
+                        </Property>
+                        <Property key="firstNameAttrName">
+                            <StringValue>givenName</StringValue>
+                        </Property>
+                        <Property key="objClass">
+                            <StringValue>user</StringValue>
+                        </Property>
+                        <Property key="lastNameAttrName">
+                            <StringValue>sn</StringValue>
+                        </Property>
+                    </Mappings>
+                </Mapping>
+            </UserMappings>
+            <GroupMappings>
+                <Mapping>
+                    <ObjectClass>group</ObjectClass>
+                    <Mappings>
+                        <Property key="nameAttrName">
+                            <StringValue>cn</StringValue>
+                        </Property>
+                        <Property key="memberAttrName">
+                            <StringValue>member</StringValue>
+                        </Property>
+                        <Property key="objClass">
+                            <StringValue>group</StringValue>
+                        </Property>
+                    </Mappings>
+                    <Properties>
+                        <Property key="memberStrategy">
+                            <StringValue>Member is User DN</StringValue>
+                        </Property>
+                    </Properties>
+                </Mapping>
+            </GroupMappings>
+            <SpecifiedAttributes/>
+        </LdapIdentityProviderDetail>
+    </Extension>
+</IdentityProvider>

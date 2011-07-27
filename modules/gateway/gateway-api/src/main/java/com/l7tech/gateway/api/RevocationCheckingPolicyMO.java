@@ -16,7 +16,13 @@ import static com.l7tech.gateway.api.impl.AttributeExtensibleType.get;
 import static com.l7tech.gateway.api.impl.AttributeExtensibleType.set;
 
 /**
- * TODO [steve] javadoc and add to client docs / wsdl
+ * The RevocationCheckingPolicyMO managed object represents a revocation
+ * checking policy.
+ *
+ * <p>The Accessor for revocation checking policies only supports read access.
+ * Revocation checking policies can be accessed by identifier or by name.</p>
+ *
+ * @see ManagedObjectFactory#createRevocationCheckingPolicy()
  */
 @XmlRootElement(name="RevocationCheckingPolicy")
 @XmlType(name="RevocationCheckingPolicyType", propOrder={"nameValue","properties","extension","extensions"})

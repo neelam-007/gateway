@@ -3,4 +3,21 @@
     <property name="module.sign" value="true"/>
     <property name="module.version.target" value="1.1"/> <!-- This is the API version -->
     <import file="../../../etc/build/build-common.xml"/>
+
+    <!--
+      Generates the XML Schema that is packaged in the development kit
+    -->
+    <target name="package.custom.post">
+        <echo level="info">Generating XML Schema</echo>
+        <mkdir dir="${build.etc.dir}/schema"/>
+        <!-- Fork allows JAX-B classes to load -->
+        <java classname="com.l7tech.gateway.api.impl.ValidationUtils" failonerror="true" fork="true">
+            <classpath>
+                <path refid="lib.path.id"/>
+                <pathelement location="${classes.main.dir}"/>
+            </classpath>
+            <arg value="${build.etc.dir}/schema"/>
+        </java>
+    </target>
+
 </project>

@@ -15,7 +15,23 @@ import static com.l7tech.gateway.api.impl.AttributeExtensibleType.get;
 import static com.l7tech.gateway.api.impl.AttributeExtensibleType.set;
 
 /**
- * TODO [steve] javadoc (incl properties) and add to client docs
+ * The StoredPasswordMO managed object represents a stored password.
+ *
+ * <p>The Accessor for stored passwords supports read and write. Stored
+ * passwords can be accessed by identifier or by name.</p>
+ *
+ * <p>The following properties can be used:
+ * <ul>
+ *   <li><code>description</code>: An optional description for the password
+ *   (string)</li>
+ *   <li><code>lastUpdated</code> (read only): The date of the last update
+ *   (date)</li>
+ *   <li><code>usageFromVariable</code>: True if the password can be referenced
+ *   as a context variable (boolean, defaults to false)</li>
+ * </ul>
+ * </p>
+ *
+ * @see ManagedObjectFactory#createStoredPassword()
  */
 @XmlRootElement(name="StoredPassword")
 @XmlType(name="StoredPasswordType", propOrder={"nameValue","passwordValue","properties","extension","extensions"})

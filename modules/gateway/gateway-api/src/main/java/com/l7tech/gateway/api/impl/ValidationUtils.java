@@ -2,6 +2,7 @@ package com.l7tech.gateway.api.impl;
 
 import com.l7tech.gateway.api.ManagementRuntimeException;
 import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
 import org.xml.sax.SAXException;
 
@@ -19,8 +20,11 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -98,6 +102,35 @@ public class ValidationUtils {
      */
     public static Map<String,String> getOidKeywordMap() {
         return OID_KEYWORD_MAP;
+    }
+
+    /**
+     * Utility to write the XML Schema to file.
+     *
+     * @param args The first argument it the target directory.
+     */
+    public static void main(final String[] args) throws IOException {
+        if ( args.length < 1 ) throw new IllegalArgumentException("Output directory not specified");
+
+        final File outputDirectory = new File(args[0]);
+        if ( !outputDirectory.isDirectory() ) {
+            throw new IllegalArgumentException("Invalid output directory: " + outputDirectory.getAbsolutePath());
+        }
+
+        // Write XML Schema(s)
+        final Source[] schemaSources = getSchemaSources();
+        for ( final Source source : schemaSources ) {
+            final String name = "schema1.xsd".equals( source.getSystemId() ) ? "gateway-management.xsd" : source.getSystemId();
+            final File schemaFile = new File( outputDirectory, name );
+
+            OutputStreamWriter out = null;
+            try {
+                out = new OutputStreamWriter(new FileOutputStream( schemaFile ));
+                IOUtils.copyStream( ((StreamSource) source).getReader(), out );
+            } finally {
+                ResourceUtils.closeQuietly( out );
+            }
+        }
     }
 
     //- PRIVATE

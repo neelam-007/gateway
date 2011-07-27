@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ListenPort xmlns="http://ns.l7tech.com/2010/04/gateway-management" version="15" id="163840">
+    <Name>Default HTTPS (8443)</Name>
+    <Enabled>true</Enabled>
+    <Protocol>HTTPS</Protocol>
+    <Port>8443</Port>
+    <EnabledFeatures>
+        <StringValue>MESSAGE_INPUT</StringValue>
+        <StringValue>ADMIN_REMOTE_SSM</StringValue>
+        <StringValue>ADMIN_REMOTE_ESM</StringValue>
+        <StringValue>ADMIN_APPLET</StringValue>
+        <StringValue>OTHER_SERVLETS</StringValue>
+    </EnabledFeatures>
+    <TlsSettings>
+        <ClientAuthentication>Optional</ClientAuthentication>
+        <EnabledVersions>
+            <StringValue>TLSv1</StringValue>
+        </EnabledVersions>
+        <EnabledCipherSuites>
+            <StringValue>TLS_DHE_RSA_WITH_AES_256_CBC_SHA</StringValue>
+            <StringValue>TLS_RSA_WITH_AES_256_CBC_SHA</StringValue>
+            <StringValue>TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA</StringValue>
+            <StringValue>TLS_DHE_RSA_WITH_AES_128_CBC_SHA</StringValue>
+            <StringValue>TLS_RSA_WITH_AES_128_CBC_SHA</StringValue>
+            <StringValue>TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA</StringValue>
+            <StringValue>SSL_RSA_WITH_3DES_EDE_CBC_SHA</StringValue>
+            <StringValue>SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA</StringValue>
+            <StringValue>SSL_RSA_WITH_RC4_128_SHA</StringValue>
+        </EnabledCipherSuites>
+    </TlsSettings>
+</ListenPort>

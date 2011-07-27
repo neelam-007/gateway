@@ -216,7 +216,7 @@ public class IdentityProviderResourceFactory extends EntityManagerResourceFactor
             mappings = Functions.map( Arrays.asList(userMappings), new Functions.Unary<LdapIdentityProviderMapping,UserMappingConfig>(){
                 @Override
                 public LdapIdentityProviderMapping call( final UserMappingConfig userMappingConfig ) {
-                    final LdapIdentityProviderMapping mapping = new LdapIdentityProviderMapping();
+                    final LdapIdentityProviderMapping mapping = ManagedObjectFactory.createLdapIdentityProviderMapping();
                     mapping.setObjectClass( userMappingConfig.getObjClass() );
                     mapping.setMappings( getProperties( userMappingConfig, propertyDescriptors ) );
                     return mapping;
@@ -234,7 +234,7 @@ public class IdentityProviderResourceFactory extends EntityManagerResourceFactor
             mappings = Functions.map( Arrays.asList(groupMappings), new Functions.Unary<LdapIdentityProviderMapping,GroupMappingConfig>(){
                 @Override
                 public LdapIdentityProviderMapping call( final GroupMappingConfig groupMappingConfig ) {
-                    final LdapIdentityProviderMapping mapping = new LdapIdentityProviderMapping();
+                    final LdapIdentityProviderMapping mapping = ManagedObjectFactory.createLdapIdentityProviderMapping();
                     mapping.setObjectClass( groupMappingConfig.getObjClass() );
                     if ( groupMappingConfig.getMemberStrategy()!=null ) {
                         final Map<String,Object> properties = new HashMap<String,Object>();

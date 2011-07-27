@@ -11,9 +11,7 @@
     </EnabledFeatures>
     <TargetServiceReference resourceUri="http://ns.l7tech.com/2010/04/gateway-management/services" id="9223372036854775807"  other:extendedAttribute="extension" xmlns:other="urn:othernamespace"/>
     <TlsSettings extendedAttribute="value" other:extendedAttribute="extension" xmlns:other="urn:othernamespace">
-        <!-- TODO [steve] fix attributes for client authentication (JAX-B bug?)-->
-        <!--<ClientAuthentication other:extendedAttribute="extension" xmlns:other="urn:othernamespace">Required</ClientAuthentication>-->
-        <ClientAuthentication>Required</ClientAuthentication>
+        <ClientAuthentication other:extendedAttribute="extension" xmlns:other="urn:othernamespace">Required</ClientAuthentication>
         <PrivateKeyReference resourceUri="http://ns.l7tech.com/2010/04/gateway-management/privateKeys" id="-1:ssl" other:extendedAttribute="extension" xmlns:other="urn:othernamespace"/>
         <EnabledVersions other:extendedAttribute="extension" xmlns:other="urn:othernamespace"  extendedAttribute="extension">
             <StringValue other:extendedAttribute="extension" xmlns:other="urn:othernamespace">TLSv1</StringValue>

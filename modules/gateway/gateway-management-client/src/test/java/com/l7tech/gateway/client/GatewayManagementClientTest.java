@@ -7,7 +7,6 @@ import com.sun.ws.management.Management;
 import com.sun.ws.management.addressing.Addressing;
 import com.sun.ws.management.client.impl.TransportClient;
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -18,6 +17,7 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.xml.bind.JAXBException;
 import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPMessage;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -40,7 +40,7 @@ public class GatewayManagementClientTest {
     @Test
     public void testUsage() throws Exception {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        GatewayManagementClient gmc = new GatewayManagementClient( new String[]{}, out, out );
+        GatewayManagementClient gmc = new GatewayManagementClient( new String[]{}, System.in, out, out );
         int exitCode = gmc.run();
         String output = out.toString();
         assertEquals( "Exit code", 1, exitCode );
@@ -51,7 +51,7 @@ public class GatewayManagementClientTest {
     public void testHelp() throws Exception {
         {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ "-help", "enumerate" }, out, out );
+            GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ "-help", "enumerate" }, System.in, out, out );
             int exitCode = gmc.run();
             String output = out.toString();
             assertEquals( "Exit code", 0, exitCode );
@@ -59,7 +59,7 @@ public class GatewayManagementClientTest {
         }
         {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ "enumerate", "-help" }, out, out );
+            GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ "enumerate", "-help" }, System.in, out, out );
             int exitCode = gmc.run();
             String output = out.toString();
             assertEquals( "Exit code", 0, exitCode );
@@ -70,7 +70,7 @@ public class GatewayManagementClientTest {
     @Test
     public void testVersion() throws Exception {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        GatewayManagementClient gmc = new GatewayManagementClient( new String[]{"-version"}, out, out );
+        GatewayManagementClient gmc = new GatewayManagementClient( new String[]{"-version"}, System.in, out, out );
         int exitCode = gmc.run();
         String output = out.toString();
         assertEquals( "Exit code", 0, exitCode );
@@ -82,6 +82,7 @@ public class GatewayManagementClientTest {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         final GatewayManagementClient gmc = new GatewayManagementClient(
                 new String[]{ "gateway", "unknown-command" },
+                System.in,
                 out,
                 out );
         int exitCode = gmc.run();
@@ -96,6 +97,7 @@ public class GatewayManagementClientTest {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         final GatewayManagementClient gmc = new GatewayManagementClient(
                 new String[]{ "gateway", "get", "-type", "clusterProperty", "-name", "soap.roles" },
+                System.in,
                 out,
                 out );
         int exitCode = gmc.run();
@@ -110,6 +112,7 @@ public class GatewayManagementClientTest {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         final GatewayManagementClient gmc = new GatewayManagementClient(
                 new String[]{ "gateway", "get", "-type", "clusterProperty", "-name", "soap.roles" },
+                System.in,
                 out,
                 out );
         int exitCode = gmc.run();
@@ -124,6 +127,7 @@ public class GatewayManagementClientTest {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         final GatewayManagementClient gmc = new GatewayManagementClient(
                 new String[]{ "gateway", "get", "-type", "clusterProperty", "-name", "soap.roles" },
+                System.in,
                 out,
                 out );
         int exitCode = gmc.run();
@@ -142,6 +146,7 @@ public class GatewayManagementClientTest {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         final GatewayManagementClient gmc = new GatewayManagementClient(
                 new String[]{ "gateway", "get", "-type", "clusterProperty", "-name", "soap.roles" },
+                System.in,
                 out,
                 out );
         int exitCode = gmc.run();
@@ -156,6 +161,7 @@ public class GatewayManagementClientTest {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         final GatewayManagementClient gmc = new GatewayManagementClient(
                 new String[]{ "gateway", "get", "-type", "clusterProperty", "-name", "soap.roles" },
+                System.in,
                 out,
                 out );
         int exitCode = gmc.run();
@@ -174,6 +180,7 @@ public class GatewayManagementClientTest {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         final GatewayManagementClient gmc = new GatewayManagementClient(
                 new String[]{ "gateway", "get", "-type", "clusterProperty", "-name", "soap.roles" },
+                System.in,
                 out,
                 out );
         int exitCode = gmc.run();
@@ -187,6 +194,7 @@ public class GatewayManagementClientTest {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         final GatewayManagementClient gmc = new GatewayManagementClient(
                 new String[]{ "gateway", "validate", "-type", "clusterProperty", "-name", "soap.roles" },
+                System.in,
                 out,
                 out );
         int exitCode = gmc.run();
@@ -205,6 +213,7 @@ public class GatewayManagementClientTest {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         final GatewayManagementClient gmc = new GatewayManagementClient(
                 new String[]{ "gateway", "create", "-type", "clusterProperty", "-in", property },
+                System.in,
                 out,
                 out );
         int exitCode = gmc.run();
@@ -223,6 +232,7 @@ public class GatewayManagementClientTest {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         final GatewayManagementClient gmc = new GatewayManagementClient(
                 new String[]{ "gateway", "put", "-type", "folder", "-in", folder },
+                System.in,
                 out,
                 out );
         int exitCode = gmc.run();
@@ -242,6 +252,7 @@ public class GatewayManagementClientTest {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         final GatewayManagementClient gmc = new GatewayManagementClient(
                 new String[]{ "gateway", "put", "-type", "clusterProperty", "-in", property },
+                System.in,
                 out,
                 out );
         int exitCode = gmc.run();
@@ -257,7 +268,7 @@ public class GatewayManagementClientTest {
                 "ClusterProperty_Enumerate_Response2.xml", 
                 "ClusterProperty_Enumerate_Response3.xml" );
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
-        GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ "gateway", "enumerate", "-type", "clusterProperty" }, out, out );
+        GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ "gateway", "enumerate", "-type", "clusterProperty" }, System.in, out, out );
         int exitCode = gmc.run();
         String output = out.toString();
         assertEquals( "Exit code", 0, exitCode );
@@ -270,7 +281,7 @@ public class GatewayManagementClientTest {
                 "ClusterProperty_Enumerate_Response1.xml",
                 "ClusterProperty_Enumerate_Response4.xml" );
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
-        GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ "gateway", "enumerate", "-type", "clusterProperty" }, out, out );
+        GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ "gateway", "enumerate", "-type", "clusterProperty" }, System.in, out, out );
         int exitCode = gmc.run();
         String output = out.toString();
         assertEquals( "Exit code", 0, exitCode );
@@ -288,6 +299,7 @@ public class GatewayManagementClientTest {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         final GatewayManagementClient gmc = new GatewayManagementClient(
                 new String[]{ "gateway", "create", "-type", "clusterProperty", "-in", property },
+                System.in,
                 out,
                 out );
         int exitCode = gmc.run();
@@ -303,6 +315,7 @@ public class GatewayManagementClientTest {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         final GatewayManagementClient gmc = new GatewayManagementClient(
                 new String[]{ "gateway", "get", "-type", "clusterProperty", "-name", "soap.roles" },
+                System.in,
                 out,
                 out );
         int exitCode = gmc.run();
@@ -322,6 +335,7 @@ public class GatewayManagementClientTest {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         final GatewayManagementClient gmc = new GatewayManagementClient(
                 new String[]{ "gateway", "put", "-type", "clusterProperty", "-in", property },
+                System.in,
                 out,
                 out );
         int exitCode = gmc.run();
@@ -338,6 +352,7 @@ public class GatewayManagementClientTest {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         final GatewayManagementClient gmc = new GatewayManagementClient(
                 new String[]{ "gateway", "delete", "-type", "clusterProperty", "-name", "test.property" },
+                System.in,
                 out,
                 out );
         int exitCode = gmc.run();
@@ -352,6 +367,7 @@ public class GatewayManagementClientTest {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         final GatewayManagementClient gmc = new GatewayManagementClient(
                 new String[]{ "gateway", "validate", "-type", "service", "-id", "17268736" },
+                System.in,
                 out,
                 out );
         int exitCode = gmc.run();
@@ -366,6 +382,7 @@ public class GatewayManagementClientTest {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         final GatewayManagementClient gmc = new GatewayManagementClient(
                 new String[]{ "gateway", "validate", "-type", "service", "-in", "<Service xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\" version=\"21\" id=\"17268736\"><ServiceDetail version=\"21\" id=\"17268736\"><Name>Warehouse</Name><Enabled>true</Enabled><ServiceMappings><HttpMapping><UrlPattern>/wex</UrlPattern><Verbs><Verb>POST</Verb></Verbs></HttpMapping><SoapMapping><Lax>true</Lax></SoapMapping></ServiceMappings><Properties><Property key=\"wssProcessingEnabled\"><BooleanValue>true</BooleanValue></Property><Property key=\"soap\"><BooleanValue>true</BooleanValue></Property><Property key=\"soapVersion\"><StringValue>1.1</StringValue></Property><Property key=\"internal\"><BooleanValue>false</BooleanValue></Property></Properties></ServiceDetail><Resources><ResourceSet tag=\"policy\"><Resource type=\"policy\">&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;&lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;&lt;L7p:EchoRoutingAssertion/&gt;&lt;/wsp:All&gt;&lt;/wsp:Policy&gt;</Resource></ResourceSet></Resources></Service>" },
+                System.in,
                 out,
                 out );
         int exitCode = gmc.run();
@@ -380,6 +397,7 @@ public class GatewayManagementClientTest {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         final GatewayManagementClient gmc = new GatewayManagementClient(
                 new String[]{ "gateway", "validate", "-type", "service", "-in", "<Service xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\" version=\"21\" id=\"17268736\"><ServiceDetail version=\"21\" id=\"17268736\"><Name>Warehouse</Name><Enabled>true</Enabled><ServiceMappings><HttpMapping><UrlPattern>/wex</UrlPattern><Verbs><Verb>POST</Verb></Verbs></HttpMapping><SoapMapping><Lax>true</Lax></SoapMapping></ServiceMappings><Properties><Property key=\"wssProcessingEnabled\"><BooleanValue>true</BooleanValue></Property><Property key=\"soap\"><BooleanValue>true</BooleanValue></Property><Property key=\"internal\"><BooleanValue>false</BooleanValue></Property></Properties></ServiceDetail><Resources><ResourceSet tag=\"policy\"><Resource type=\"policy\">&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;&lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;&lt;L7p:EchoRoutingAssertion/&gt;&lt;/wsp:All&gt;&lt;/wsp:Policy&gt;</Resource></ResourceSet></Resources></Service>" },
+                System.in,
                 out,
                 out );
         int exitCode = gmc.run();
@@ -406,6 +424,7 @@ public class GatewayManagementClientTest {
                     "-import", "replace", "IdProviderReference", "10231", "23111",     // Replace references to the provider with the given id
                     "-import", "rename", "IncludedPolicyReference", "13214", "NewName" // Rename the included policy fragment when importing
                 },
+                System.in,
                 out,
                 out );
         int exitCode = gmc.run();
@@ -420,12 +439,90 @@ public class GatewayManagementClientTest {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         final GatewayManagementClient gmc = new GatewayManagementClient(
                 new String[]{ "gateway", "export", "-type", "service", "-id", "17268736" },
+                System.in,
                 out,
                 out );
         int exitCode = gmc.run();
         String output = out.toString();
         assertEquals( "Exit code", 0, exitCode );
         assertTrue( "Expected policy export:\n" + output , output.contains("<exp:Export") && output.contains( "<exp:References/>" ));
+    }
+
+    @Test
+    public void testCreateKey() throws Exception {
+        String createkey =
+                "<PrivateKeyCreationContext xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                "    <Dn>CN=MyKey</Dn>\n" +
+                "</PrivateKeyCreationContext>";
+        setResponse( "PrivateKey_CreateKey_Response.xml" );
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        final GatewayManagementClient gmc = new GatewayManagementClient(
+                new String[]{ "gateway", "createkey", "-type", "privateKey", "-id", "2:mykey", "-in", createkey},
+                System.in,
+                out,
+                out );
+        int exitCode = gmc.run();
+        String output = out.toString();
+        assertEquals( "Exit code", 0, exitCode );
+    }
+
+    @Test
+    public void testExportKey() throws Exception {
+        setResponse( "PrivateKey_ExportKey_Response.xml" );
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        final GatewayManagementClient gmc = new GatewayManagementClient(
+                new String[]{ "gateway", "exportkey", "-type", "privateKey", "-id", "2:ssl", "-keyAlias", "alias", "-keyPassword", "password", "-outFile", "-" },
+                System.in,
+                out,
+                out );
+        int exitCode = gmc.run();
+        String output = out.toString();
+        assertEquals( "Exit code", 0, exitCode );
+    }
+
+    @Test
+    public void testGenerateCsr() throws Exception {
+        setResponse( "PrivateKey_GenerateCsr_Response.xml" );
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        final GatewayManagementClient gmc = new GatewayManagementClient(
+                new String[]{ "gateway", "generatecsr", "-type", "privateKey", "-id", "2:ssl", "-outFile", "-" },
+                System.in,
+                out,
+                out );
+        int exitCode = gmc.run();
+        String output = out.toString();
+        assertEquals( "Exit code", 0, exitCode );
+    }
+
+    @Test
+    public void testImportKey() throws Exception {
+        setResponse( "PrivateKey_ImportKey_Response.xml" );
+        final byte[] fakeKeystore = new byte[32];
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        final GatewayManagementClient gmc = new GatewayManagementClient(
+                new String[]{ "gateway", "importkey", "-type", "privateKey", "-id", "2:ssl2", "-inFile", "-", "-keyPassword", "password" },
+                new ByteArrayInputStream( fakeKeystore ),
+                out,
+                out );
+        int exitCode = gmc.run();
+        String output = out.toString();
+        assertEquals( "Exit code", 0, exitCode );
+        assertTrue( "Expected private key resource:\n" + output , output.contains("<PrivateKey ") && output.contains( "<Encoded>MII" ));
+    }
+
+    @Test
+    public void testKeyPurposes() throws Exception {
+        setResponse( "PrivateKey_KeyPurposes_Response.xml" );
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        final GatewayManagementClient gmc = new GatewayManagementClient(
+                new String[]{ "gateway", "keypurposes", "-type", "privateKey", "-id", "2:ssl", "-keyPurpose", "Default SSL Key" },
+                System.in,
+                out,
+                out );
+        int exitCode = gmc.run();
+        String output = out.toString();
+        assertEquals( "Exit code", 0, exitCode );
+        assertTrue( "Expected private key resource:\n" + output , output.contains("<PrivateKey ") && output.contains( "Default SSL Key" ));
     }
 
     @BeforeClass
