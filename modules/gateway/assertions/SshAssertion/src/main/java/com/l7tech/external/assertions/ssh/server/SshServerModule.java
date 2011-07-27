@@ -74,12 +74,6 @@ public class SshServerModule extends TransportModule implements ApplicationListe
         SUPPORTED_SCHEMES.addAll(Arrays.asList(SCHEME_SSH));
     }
 
-    private static BlockingQueue<Runnable> requestQueue = new LinkedBlockingQueue<Runnable>();
-    private static final int CORE_POOL_SIZE = 25;
-    private static final int MAX_POOL_SIZE = 50;
-    private static final long KEEPALIVE_SECONDS = 5 * 60;
-    private static ExecutorService requestExecutor = new ThreadPoolExecutor(CORE_POOL_SIZE, MAX_POOL_SIZE, KEEPALIVE_SECONDS, TimeUnit.SECONDS, requestQueue);
-
     private final ApplicationEventProxy applicationEventProxy;
     private final GatewayState gatewayState;
     private final MessageProcessor messageProcessor;
@@ -263,14 +257,6 @@ public class SshServerModule extends TransportModule implements ApplicationListe
             bindAddress = ssgConnectorManager.translateBindAddress(bindAddress, connector.getPort());
         } else {
             bindAddress = InetAddressUtil.getAnyHostAddress();
-        }
-
-        ExecutorService executor = requestExecutor;
-        boolean executorNeedsClose = false;
-        int poolSize = connector.getIntProperty(SsgConnector.PROP_THREAD_POOL_SIZE, 0);
-        if (poolSize > 0) {
-            executor = new ThreadPoolExecutor(poolSize, poolSize, KEEPALIVE_SECONDS, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
-            executorNeedsClose = true;
         }
 
         // configure and start sshd

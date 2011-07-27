@@ -347,6 +347,25 @@ public final class ResourceUtils {
         return URI.create( relativePath + getBaseUri( baseUri, dirs ).relativize( uri ).toString() );
     }
 
+    /**
+     * Flush a {@link java.io.Flushable} without throwing any exceptions.
+     *
+     * @param flushable the object to close.
+     */
+    public static void flushQuietly(Flushable flushable) {
+        if (flushable != null) {
+            try {
+                flushable.flush();
+            }
+            catch(IOException ioe) {
+                logger.log(Level.INFO, "IO error when flushing flushable '"+message(ioe)+"'", debug(ioe));
+            }
+            catch (Exception e) {
+                logger.log(Level.WARNING, "Unexpected error when flushing object", e);
+            }
+        }
+    }
+
     //- PRIVATE
 
     /**

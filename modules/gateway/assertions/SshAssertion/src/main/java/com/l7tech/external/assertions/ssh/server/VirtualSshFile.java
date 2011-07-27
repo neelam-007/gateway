@@ -6,7 +6,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.StringTokenizer;
 
 /**
  * Represents a virtual file or directory.
@@ -18,6 +21,7 @@ public class VirtualSshFile implements SshFile {
     private static final long date = System.currentTimeMillis();
     private String fileName;
     private boolean file;
+    private PipedOutputStream pipedOutputStream;
 
     /**
      * Constructor, internal do not use directly.
@@ -306,5 +310,13 @@ public class VirtualSshFile implements SshFile {
             return this.getAbsolutePath().equals(((VirtualSshFile) obj).getAbsolutePath());
         }
         return false;
+    }
+
+    public PipedOutputStream getPipedOutputStream() {
+        return pipedOutputStream;
+    }
+
+    public void setPipedOutputStream(PipedOutputStream pipedOutputStream) {
+        this.pipedOutputStream = pipedOutputStream;
     }
 }

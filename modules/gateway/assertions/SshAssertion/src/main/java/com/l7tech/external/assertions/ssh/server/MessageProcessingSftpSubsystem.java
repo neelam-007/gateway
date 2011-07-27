@@ -634,6 +634,16 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
             }
             dis = null;
 
+            // flush and close output stream for all outstanding handles
+            if (handles != null) {
+                for (Handle handle : handles.values()) {
+                    if (handle instanceof FileHandle) {
+                        SshFile file = ((FileHandle) handle).getFile();
+                        flushAndCloseQuietly(file);
+                    }
+                }
+            }
+
             callback.onExit(0);
         }
     }
@@ -726,9 +736,10 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
                 if (version <= 4) {
                     String path = buffer.getString();
                     int pflags = buffer.getInt();
+                    SshFile file = null;
                     // attrs
                     try {
-                        SshFile file = resolveFile(path);
+                        file = resolveFile(path);
                         if (file.doesExist()) {
                             if (((pflags & SSH_FXF_CREAT) != 0) && ((pflags & SSH_FXF_EXCL) != 0)) {
                                 sendStatus(id, SSH_FX_FILE_ALREADY_EXISTS, path);
@@ -747,18 +758,24 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
                             file.truncate();
                         }
                         String handle = UUID.randomUUID().toString();
+
+                        // start thread to process Gateway request message
+                        startGatewayMessageProcessThread(connector, file);
+
                         handles.put(handle, new FileHandle(file, pflags)); // handle flags conversion
                         sendHandle(id, handle);
                     } catch (IOException e) {
+                        flushAndCloseQuietly(file);
                         sendStatus(id, SSH_FX_FAILURE, e.getMessage());
                     }
                 } else {
                     String path = buffer.getString();
                     int acc = buffer.getInt();
                     int flags = buffer.getInt();
+                    SshFile file = null;
                     // attrs
                     try {
-                        SshFile file = resolveFile(path);
+                        file = resolveFile(path);
                         switch (flags & SSH_FXF_ACCESS_DISPOSITION) {
                             case SSH_FXF_CREATE_NEW: {
                                 if (file.doesExist()) {
@@ -809,9 +826,14 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
                                 throw new IllegalArgumentException("Unsupported open mode: " + flags);
                         }
                         String handle = UUID.randomUUID().toString();
+
+                        // start thread to process Gateway request message
+                        startGatewayMessageProcessThread(connector, file);
+
                         handles.put(handle, new FileHandle(file, flags));
                         sendHandle(id, handle);
                     } catch (IOException e) {
+                        flushAndCloseQuietly(file);
                         sendStatus(id, SSH_FX_FAILURE, e.getMessage());
                     }
                 }
@@ -821,27 +843,22 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
         String handle = buffer.getString();
         long offset = buffer.getLong();
         byte[] data = buffer.getBytes();
+        SshFile sshFile = null;
         try {
             Handle p = handles.get(handle);
             if (!(p instanceof FileHandle)) {
                 sendStatus(id, SSH_FX_INVALID_HANDLE, handle);
             } else {
-                SshFile sshFile = ((FileHandle) p).getFile();
+                sshFile = ((FileHandle) p).getFile();
 
-                String path = sshFile.getAbsolutePath();
-                if (path.indexOf('/') > -1) {
-                    path = path.substring(0, path.lastIndexOf('/'));
-                }
-
-                if (!pipeDataToGatewayRequestMessage(connector, path, sshFile.getName(), data, offset)) {
-                    sendStatus(id, SSH_FX_FAILURE, path);
-                    return;
-                }
+                // write data
+                pipeDataToGatewayMessageProcessor(sshFile, data, 0);
 
                 sshFile.setLastModified(new Date().getTime());
                 sendStatus(id, SSH_FX_OK, "");
             }
         } catch (IOException e) {
+            flushAndCloseQuietly(sshFile);
             sendStatus(id, SSH_FX_FAILURE, e.getMessage());
         }
     }
@@ -855,6 +872,10 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
             } else {
                 handles.remove(handle);
                 h.close();
+
+                SshFile sshFile = ((FileHandle) h).getFile();
+                flushAndCloseQuietly(sshFile);
+
                 sendStatus(id, SSH_FX_OK, "", "");
             }
         } catch (IOException e) {
@@ -862,99 +883,104 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
         }
     }
 
-    private boolean pipeDataToGatewayRequestMessage(SsgConnector connector, String path, String file, byte[] data, long offset) throws IOException {
-        boolean success = false;
-        Message request = new Message();
-        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, null, true);
+    /*
+     * Start Gateway Message Process thread.  Thread will finish when there nothing left in the InputStream (e.g. when it has been closed).
+     */
+    private void startGatewayMessageProcessThread(SsgConnector connector, SshFile file) throws IOException {
 
-        String ctypeStr = connector.getProperty(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE);
-        ContentTypeHeader ctype = ctypeStr == null ? ContentTypeHeader.XML_DEFAULT : ContentTypeHeader.create(ctypeStr);
+        if (file instanceof VirtualSshFile) {
+            VirtualSshFile virtualSshFile = (VirtualSshFile) file;
 
-        request.initialize(stashManagerFactory.createStashManager(), ctype, getDataInputStream(data, path, (int) offset));
-        request.attachKnob(SshKnob.class, MessageProcessingSshUtil.buildSshKnob("sftp", session.getIoSession().getLocalAddress(),
-                session.getIoSession().getRemoteAddress(), file, path, true, true, user, userPublicKey));
+            PipedInputStream pis = new PipedInputStream();
+            PipedOutputStream pos = new PipedOutputStream(pis);
+            virtualSshFile.setPipedOutputStream(pos);
 
-        long hardwiredServiceOid = connector.getLongProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, -1);
-        if (hardwiredServiceOid != -1) {
-            request.attachKnob(HasServiceOid.class, new HasServiceOidImpl(hardwiredServiceOid));
-        }
-
-            AssertionStatus status = AssertionStatus.UNDEFINED;
-            String faultXml = null;
-            try {
-                try {
-                    status = messageProcessor.processMessage(context);
-
-                    if (logger.isLoggable(Level.FINER))
-                        logger.log(Level.FINER, "Policy resulted in status ''{0}''.", status);
-
-                } catch ( PolicyVersionException pve ) {
-                    logger.log( Level.INFO, "Request referred to an outdated version of policy" );
-                    faultXml = soapFaultManager.constructExceptionFault(pve, context.getFaultlevel(), context).getContent();
-                } catch ( Throwable t ) {
-                    logger.log( Level.WARNING, "Exception while processing SFTP message", t );
-                    faultXml = soapFaultManager.constructExceptionFault(t, context.getFaultlevel(), context).getContent();
-                }
-
-                if ( status != AssertionStatus.NONE ) {
-                    faultXml = soapFaultManager.constructReturningFault(context.getFaultlevel(), context).getContent();
-                } else {
-                    success = true;
-                }
-
-                if (faultXml != null) {
-                    messageProcessingEventChannel.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
-                }
-            } finally {
-                ResourceUtils.closeQuietly(context);
+            String path = virtualSshFile.getAbsolutePath();
+            if (path.indexOf('/') > -1) {
+                path = path.substring(0, path.lastIndexOf('/'));
             }
-        return success;
+
+            Message request = new Message();
+            final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, null, true);
+            String ctypeStr = connector.getProperty(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE);
+            ContentTypeHeader ctype = ctypeStr == null ? ContentTypeHeader.XML_DEFAULT : ContentTypeHeader.create(ctypeStr);
+
+            request.initialize(stashManagerFactory.createStashManager(), ctype, pis);
+            request.attachKnob(SshKnob.class, MessageProcessingSshUtil.buildSshKnob("sftp", session.getIoSession().getLocalAddress(),
+                    session.getIoSession().getRemoteAddress(), file.getName(), path, true, true, user, userPublicKey));
+
+            long hardwiredServiceOid = connector.getLongProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, -1);
+            if (hardwiredServiceOid != -1) {
+                request.attachKnob(HasServiceOid.class, new HasServiceOidImpl(hardwiredServiceOid));
+            }
+
+            final CountDownLatch startedSignal = new CountDownLatch(1);
+            Thread thread = new Thread(new Runnable(){
+                @Override
+                public void run() {
+                    AssertionStatus status = AssertionStatus.UNDEFINED;
+                    String faultXml = null;
+                    try {
+                        try {
+                            startedSignal.countDown();
+                            status = messageProcessor.processMessage(context);
+
+                            if (logger.isLoggable(Level.FINER))
+                                logger.log(Level.FINER, "Policy resulted in status ''{0}''.", status);
+
+                        } catch ( PolicyVersionException pve ) {
+                            logger.log( Level.INFO, "Request referred to an outdated version of policy" );
+                            faultXml = soapFaultManager.constructExceptionFault(pve, context.getFaultlevel(), context).getContent();
+                        } catch ( Throwable t ) {
+                            logger.log( Level.WARNING, "Exception while processing SFTP message", t );
+                            faultXml = soapFaultManager.constructExceptionFault(t, context.getFaultlevel(), context).getContent();
+                        }
+
+                        if ( status != AssertionStatus.NONE ) {
+                            faultXml = soapFaultManager.constructReturningFault(context.getFaultlevel(), context).getContent();
+                        }
+                        if (faultXml != null) {
+                            messageProcessingEventChannel.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
+                        }
+                    } finally {
+                        startedSignal.countDown();
+                        ResourceUtils.closeQuietly(context);
+                    }
+                }
+            }, "SftpServer-GatewayMessageProcessThread-" + System.currentTimeMillis());
+
+            thread.setDaemon(true);
+            thread.start();
+
+            try {
+                startedSignal.await();
+            }
+            catch(InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                throw new CausedIOException("Interrupted waiting for data.", ie);
+            }
+        }
     }
 
     /*
-     * Convert OutputStream to InputStream.
+     * Pipe data to Message Processor.
      */
-    private InputStream getDataInputStream(final byte[] data, final String fullPath, final int offset) throws IOException {
-        final PipedInputStream pis = new PipedInputStream();
-
-        final CountDownLatch startedSignal = new CountDownLatch(1);
-        Thread thread = new Thread(new Runnable(){
-            @Override
-            public void run() {
-                PipedOutputStream pos = null;
-                try {
-                    if (logger.isLoggable(Level.FINE))
-                       logger.log(Level.FINE, "Starting data transfer for ''{0}''.", fullPath);
-
-                    //noinspection IOResourceOpenedButNotSafelyClosed
-                    pos = new PipedOutputStream(pis);
-                    startedSignal.countDown();
-                    pos.write(data, offset, data.length);
-
-                    if (logger.isLoggable(Level.FINE))
-                        logger.log(Level.FINE, "Completed data transfer for ''{0}''.", fullPath);
-                }
-                catch (IOException ioe) {
-                    logger.log(Level.WARNING, "Data transfer error for '" + fullPath + "'.", ioe);
-                }
-                finally {
-                    ResourceUtils.closeQuietly(pos);
-                    startedSignal.countDown();
-                }
-            }
-        }, "SftpServer-DataTransferThread-" + System.currentTimeMillis());
-
-        thread.setDaemon(true);
-        thread.start();
-
-        try {
-            startedSignal.await();
+    private void pipeDataToGatewayMessageProcessor(final SshFile sshFile, final byte[] data, final int offset) throws IOException {
+        if (sshFile instanceof VirtualSshFile) {
+            final PipedOutputStream pos = ((VirtualSshFile) sshFile).getPipedOutputStream();
+            pos.write(data, offset, data.length);
         }
-        catch(InterruptedException ie) {
-            Thread.currentThread().interrupt();
-            throw new CausedIOException("Interrupted waiting for data.", ie);
-        }
+    }
 
-        return pis;
+    /*
+     * Flush and close VirtualSshFile's PipedOutputStream
+     */
+    private void flushAndCloseQuietly(SshFile sshFile) {
+        if (sshFile != null && sshFile instanceof VirtualSshFile) {
+            VirtualSshFile virtualSshFile = (VirtualSshFile) sshFile;
+            OutputStream os = virtualSshFile.getPipedOutputStream();
+            ResourceUtils.flushQuietly(os);
+            ResourceUtils.closeQuietly(os);
+        }
     }
 }
