@@ -42,11 +42,6 @@ CREATE TABLE wssc_session (
 ALTER IGNORE TABLE policy_version ADD UNIQUE KEY i_policy_ordinal (policy_oid, ordinal);
 
 --
--- Feature Request: Enable Built-in Services Granularity (bug 5999)
---
-UPDATE connector SET endpoints = 'MESSAGE_INPUT, POLICYDISCO, STS, WSDLPROXY, SNMPQUERY' WHERE port = 8080 AND scheme = 'HTTP';
-              
---
 -- Bug 6407: Specify max xml size for messages going into gateway
 --
 ALTER TABLE jms_endpoint ADD COLUMN request_max_size bigint NOT NULL default -1 AFTER use_message_id_for_correlation;

@@ -7,10 +7,13 @@
 package com.l7tech.server;
 
 import com.l7tech.gateway.common.cluster.ServiceUsage;
+import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.server.cluster.ServiceUsageManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.service.ServiceManager;
+import com.l7tech.server.transport.ListenerException;
+import com.l7tech.server.transport.http.HttpTransportModule;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
@@ -62,6 +65,24 @@ public class SnmpQueryServlet extends HttpServlet {
     private final Pattern match2 = Pattern.compile("^\\.(\\d+)\\.(\\d+)$");
 
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // Check if the service has been enabled by cluster property, 'builtinService.snmpQuery.enabled'.
+
+        final boolean serviceEnabled = Boolean.valueOf(ServerConfig.getInstance().getProperty(ServerConfig.PARAM_SNMP_QUERY_SERVICE_ENABLED));
+        if (! serviceEnabled) {
+            logger.info("SNMP query service disabled by cluster property, '" + ServerConfig.PARAM_SNMP_QUERY_SERVICE_ENABLED + "'");
+            response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "SNMP query service not available");
+            return;
+        }
+
+        // Check if the service is enabled on the connector.
+        try {
+            HttpTransportModule.requireEndpoint(request, SsgConnector.Endpoint.SNMPQUERY);
+        } catch (ListenerException e) {
+            logger.info("SNMP query service not enabled on this connector");
+            response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "SNMP query service not available on this port");
+            return;
+        }
+
         try {
             if(!InetAddress.getByName(request.getRemoteAddr()).isLoopbackAddress()){
                 throw new UnknownHostException();

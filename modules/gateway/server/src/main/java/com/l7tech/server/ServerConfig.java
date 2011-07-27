@@ -198,6 +198,8 @@ public class ServerConfig implements ClusterPropertyListener, Config {
 
     public static final String PARAM_CERTIFICATE_DISCOVERY_ENABLED = "services.certificateDiscoveryEnabled";
 
+    public static final String PARAM_SNMP_QUERY_SERVICE_ENABLED = "builtinService.snmpQuery.enabled";
+
     public static final String PARAM_EMAIL_LISTENER_THREAD_LIMIT = "emailListenerThreadLimit";
     public static final String PARAM_EMAIL_LISTENER_THREAD_DISTRIBUTION = "emailListenerThreadDistribution";
     public static final String PARAM_EMAIL_LISTENER_CONNECTION_TIMEOUT = "ioMailInConnectTimeout";
