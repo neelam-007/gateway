@@ -414,9 +414,7 @@
         <constructor-arg ref="clusterNodeId"/>
     </bean>
 
-    <bean id="emailAdmin" class="com.l7tech.server.transport.email.EmailAdminImpl">
-        <constructor-arg ref="serverConfig"/>
-    </bean>
+    <bean id="emailAdmin" class="com.l7tech.server.transport.email.EmailAdminImpl"/>
 
     <!-- kerberos admin servant -->
     <bean id="kerberosAdmin" class="com.l7tech.server.KerberosAdminImpl">

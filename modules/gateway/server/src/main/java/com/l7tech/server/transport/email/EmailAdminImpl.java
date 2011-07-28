@@ -4,19 +4,13 @@ import com.l7tech.gateway.common.transport.email.EmailAdmin;
 import com.l7tech.gateway.common.transport.email.EmailMessage;
 import com.l7tech.gateway.common.transport.email.EmailTestException;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
-import com.l7tech.server.ServerConfigParams;
 
 /**
  * Implementation of the Email Admin interface
  */
 public class EmailAdminImpl implements EmailAdmin {
-    private final ServerConfigParams serverConfig;
 
-    public EmailAdminImpl(ServerConfigParams serverConfig) {
-        if (serverConfig == null) throw new IllegalArgumentException("Server config cannot be null");
-        this.serverConfig = serverConfig;
-    }
-
+    @Override
     public void testSendEmail(String toAddr, String ccAddr, String bccAddr, String fromAddr, String subject, String host,
                                  int port, String base64Message, EmailAlertAssertion.Protocol protocol, boolean authenticate,
                                  String authUsername, String authPassword) throws EmailTestException {
@@ -29,6 +23,7 @@ public class EmailAdminImpl implements EmailAdmin {
         EmailUtils.sendTestMessage(emailMessage, emailConfig);
     }
 
+    @Override
     public void testSendEmail(EmailAlertAssertion eaa) throws EmailTestException {
         long connectTimeout = 25000;
         long readTimeout = 25000;
