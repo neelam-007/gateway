@@ -167,15 +167,15 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     }
 
     private void updateSettings(int period) {
-        long maxBytes = serverConfig.getLongPropertyCached(ServerConfig.PARAM_IO_FIRST_PART_MAX_BYTES, 2621440, period - 1);
+        long maxBytes = serverConfig.getLongPropertyCached( ServerConfigParams.PARAM_IO_FIRST_PART_MAX_BYTES, 2621440, period - 1);
         MimeBody.setFirstPartMaxBytes(maxBytes);
 
         wssSettingsReference.set( new WssSettings(
-            serverConfig.getLongPropertyCached(ServerConfig.PARAM_SIGNED_PART_MAX_BYTES, 0, period - 1),
-            serverConfig.getBooleanProperty(ServerConfig.PARAM_SOAP_REJECT_MUST_UNDERSTAND, true),
-            serverConfig.getBooleanProperty(ServerConfig.PARAM_WSS_ALLOW_MULTIPLE_TIMESTAMP_SIGNATURES, false),
-            serverConfig.getBooleanProperty(ServerConfig.PARAM_WSS_ALLOW_UNKNOWN_BINARY_SECURITY_TOKENS, false),
-            serverConfig.getBooleanProperty(ServerConfig.PARAM_WSS_PROCESSOR_STRICT_SIG_CONFIRMATION, true)
+            serverConfig.getLongPropertyCached( ServerConfigParams.PARAM_SIGNED_PART_MAX_BYTES, 0, period - 1),
+            serverConfig.getBooleanProperty( ServerConfigParams.PARAM_SOAP_REJECT_MUST_UNDERSTAND, true),
+            serverConfig.getBooleanProperty( ServerConfigParams.PARAM_WSS_ALLOW_MULTIPLE_TIMESTAMP_SIGNATURES, false),
+            serverConfig.getBooleanProperty( ServerConfigParams.PARAM_WSS_ALLOW_UNKNOWN_BINARY_SECURITY_TOKENS, false),
+            serverConfig.getBooleanProperty( ServerConfigParams.PARAM_WSS_PROCESSOR_STRICT_SIG_CONFIRMATION, true)
         ) );
     }
 
@@ -454,7 +454,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     }
 
     private boolean isAuditHintingEnabled() {
-        String propHintingStr = serverConfig.getPropertyCached(ServerConfig.PARAM_AUDIT_HINTING_ENABLED);
+        String propHintingStr = serverConfig.getPropertyCached( ServerConfigParams.PARAM_AUDIT_HINTING_ENABLED);
         boolean hintingEnabled = false;
         if(propHintingStr!=null) {
             hintingEnabled = Boolean.valueOf(propHintingStr.trim());
@@ -463,7 +463,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     }
 
     private boolean isAuditAssertionStatusEnabled() {
-        String propStatusStr = serverConfig.getPropertyCached(ServerConfig.PARAM_AUDIT_ASSERTION_STATUS_ENABLED);
+        String propStatusStr = serverConfig.getPropertyCached( ServerConfigParams.PARAM_AUDIT_ASSERTION_STATUS_ENABLED);
         boolean statusEnabled = false;
         if(propStatusStr!=null) {
             statusEnabled = Boolean.valueOf(propStatusStr.trim());
@@ -585,7 +585,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         }
 
         private void maybeEnableTracing() {
-            String traceGuid = serverConfig.getPropertyCached(ServerConfig.PARAM_TRACE_POLICY_GUID);
+            String traceGuid = serverConfig.getPropertyCached( ServerConfigParams.PARAM_TRACE_POLICY_GUID);
             if (traceGuid == null || traceGuid.trim().length() < 1) {
                 logger.info("Tracing enabled on service but no trace policy configured");
                 return;

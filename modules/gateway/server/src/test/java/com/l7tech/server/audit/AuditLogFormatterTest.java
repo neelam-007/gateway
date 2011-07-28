@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 
@@ -103,7 +104,7 @@ public class AuditLogFormatterTest {
     @Test
     public void testMessageSummaryAuditHeader() {
 
-        final String TEST_PROP = ServerConfig.PARAM_AUDIT_LOG_FORMAT_SERVICE_HEADER;
+        final String TEST_PROP = ServerConfigParams.PARAM_AUDIT_LOG_FORMAT_SERVICE_HEADER;
 
         TestingAuditLogFormatter.setTestingConfig(serverCfg);
         try {
@@ -165,7 +166,7 @@ public class AuditLogFormatterTest {
     @Test
     public void testMessageSummaryAuditFooter() {
 
-        final String TEST_PROP = ServerConfig.PARAM_AUDIT_LOG_FORMAT_SERVICE_FOOTER;
+        final String TEST_PROP = ServerConfigParams.PARAM_AUDIT_LOG_FORMAT_SERVICE_FOOTER;
 
         TestingAuditLogFormatter.setTestingConfig(serverCfg);
         try {
@@ -224,7 +225,7 @@ public class AuditLogFormatterTest {
     @Test
     public void testAuditDetail() {
 
-        final String TEST_PROP = ServerConfig.PARAM_AUDIT_LOG_FORMAT_SERVICE_DETAIL;
+        final String TEST_PROP = ServerConfigParams.PARAM_AUDIT_LOG_FORMAT_SERVICE_DETAIL;
 
         TestingAuditLogFormatter.setTestingConfig(serverCfg);
         try {
@@ -287,7 +288,7 @@ public class AuditLogFormatterTest {
     @Test
     public void testSystemAudit() {
 
-        final String TEST_PROP = ServerConfig.PARAM_AUDIT_LOG_FORMAT_OTHER;
+        final String TEST_PROP = ServerConfigParams.PARAM_AUDIT_LOG_FORMAT_OTHER;
 
         TestingAuditLogFormatter.setTestingConfig(serverCfg);
         try {
@@ -340,7 +341,7 @@ public class AuditLogFormatterTest {
     @Test
     public void testAdminAudit() {
 
-        final String TEST_PROP = ServerConfig.PARAM_AUDIT_LOG_FORMAT_OTHER;
+        final String TEST_PROP = ServerConfigParams.PARAM_AUDIT_LOG_FORMAT_OTHER;
 
         TestingAuditLogFormatter.setTestingConfig(serverCfg);
         try {
@@ -393,7 +394,7 @@ public class AuditLogFormatterTest {
     @Test
     public void testOtherAuditDetail() {
 
-        final String TEST_PROP = ServerConfig.PARAM_AUDIT_LOG_FORMAT_OTHER_DETAIL;
+        final String TEST_PROP = ServerConfigParams.PARAM_AUDIT_LOG_FORMAT_OTHER_DETAIL;
 
         TestingAuditLogFormatter.setTestingConfig(serverCfg);
         try {

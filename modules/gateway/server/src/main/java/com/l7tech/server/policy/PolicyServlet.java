@@ -33,6 +33,7 @@ import com.l7tech.server.AuthenticatableHttpServlet;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.event.system.PolicyServiceEvent;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -434,7 +435,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
         // Insert Cert-Check-NNN: headers if we can.
         boolean certificateDiscoveryEnabled = Boolean.valueOf(
-            ServerConfig.getInstance().getProperty(ServerConfig.PARAM_CERTIFICATE_DISCOVERY_ENABLED));
+            ServerConfig.getInstance().getProperty( ServerConfigParams.PARAM_CERTIFICATE_DISCOVERY_ENABLED));
         if (certificateDiscoveryEnabled && username != null && nonce != null) {
             Collection<HttpHeader> checkInfoHeaders = findCheckInfoHeaders(username, pemEncodedServerCertificate, nonce);
             for (HttpHeader header : checkInfoHeaders) {
@@ -528,8 +529,8 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     private void sendAuthChallenge(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws IOException {
         // send error back with a hint that credentials should be provided
         String newUrl = "https://" + InetAddressUtil.getHostForUrl(httpServletRequest.getServerName());
-        int httpPort = serverConfig.getIntPropertyCached(ServerConfig.PARAM_HTTPPORT, 8080, 10000L);
-        int httpsPort = serverConfig.getIntPropertyCached(ServerConfig.PARAM_HTTPSPORT, 8443, 10000L);
+        int httpPort = serverConfig.getIntPropertyCached( ServerConfigParams.PARAM_HTTPPORT, 8080, 10000L);
+        int httpsPort = serverConfig.getIntPropertyCached( ServerConfigParams.PARAM_HTTPSPORT, 8443, 10000L);
         if (httpServletRequest.getServerPort() == httpPort || httpServletRequest.getServerPort() == httpsPort) {
             newUrl += ":" + httpsPort;
         }

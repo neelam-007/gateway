@@ -7,6 +7,7 @@ import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.admin.ExtensionInterfaceManager;
 import com.l7tech.server.event.system.LicenseEvent;
 import com.l7tech.util.*;
@@ -188,11 +189,11 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
             return false;
 
 
-        String extsList = serverConfig.getProperty(ServerConfig.PARAM_MODULAR_ASSERTIONS_FILE_EXTENSIONS);
+        String extsList = serverConfig.getProperty( ServerConfigParams.PARAM_MODULAR_ASSERTIONS_FILE_EXTENSIONS);
         if ("-".equals(extsList)) // scanning disabled
             return false;
 
-        File dir = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_MODULAR_ASSERTIONS_DIRECTORY, false).getAbsoluteFile();
+        File dir = serverConfig.getLocalDirectoryProperty( ServerConfigParams.PARAM_MODULAR_ASSERTIONS_DIRECTORY, false).getAbsoluteFile();
         long dirLastModified = dir.lastModified();
         if (!isScanNeeded(dir, dirLastModified)) {
             // No files added/removed since last scan, and no failures to retry
@@ -727,7 +728,7 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
         super.afterPropertiesSet();
         scanModularAssertions();
         scanForNewClusterProperties();
-        long rescanMillis = serverConfig.getLongProperty(ServerConfig.PARAM_MODULAR_ASSERTIONS_RESCAN_MILLIS, 4523);
+        long rescanMillis = serverConfig.getLongProperty( ServerConfigParams.PARAM_MODULAR_ASSERTIONS_RESCAN_MILLIS, 4523);
         scanTimerTask = new TimerTask() {
             public void run() {
                 scanModularAssertions();

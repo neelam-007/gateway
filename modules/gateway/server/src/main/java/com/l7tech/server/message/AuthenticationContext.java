@@ -1,5 +1,6 @@
 package com.l7tech.server.message;
 
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.identity.User;
@@ -196,11 +197,11 @@ public class AuthenticationContext extends CredentialContext {
     }
 
     public int getAuthSuccessCacheTime() {
-        return ServerConfig.getInstance().getIntPropertyCached(ServerConfig.PARAM_AUTH_CACHE_MAX_SUCCESS_TIME, 1000, 27000L);
+        return ServerConfig.getInstance().getIntPropertyCached( ServerConfigParams.PARAM_AUTH_CACHE_MAX_SUCCESS_TIME, 1000, 27000L);
     }
 
     public int getAuthFailureCacheTime() {
-        return ServerConfig.getInstance().getIntPropertyCached(ServerConfig.PARAM_AUTH_CACHE_MAX_FAILURE_TIME, 1000, 27000L);
+        return ServerConfig.getInstance().getIntPropertyCached( ServerConfigParams.PARAM_AUTH_CACHE_MAX_FAILURE_TIME, 1000, 27000L);
     }
 
     //- PRIVATE

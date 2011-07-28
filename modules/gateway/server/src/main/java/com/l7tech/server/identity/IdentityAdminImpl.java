@@ -13,7 +13,7 @@ import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.DefaultKey;
-import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.TrustedEsmUserManager;
 import com.l7tech.server.event.admin.AdminEvent;
 import com.l7tech.server.event.admin.AdministrativePasswordsResetEvent;
@@ -609,7 +609,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
 
     @Override
     public AccountMinimums getAccountMinimums() {
-        final String policyName = config.getBooleanProperty(ServerConfig.PARAM_PCIDSS_ENABLED, false) ?
+        final String policyName = config.getBooleanProperty( ServerConfigParams.PARAM_PCIDSS_ENABLED, false) ?
                 "PCI-DSS" :
                 "STIG";
 

@@ -6,7 +6,7 @@ import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.audit.MessagesUtil;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.xml.DsigUtil;
-import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.*;
 import com.l7tech.common.io.XmlUtil;
@@ -269,7 +269,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
     public void setConfig(Config config) {
         final ValidatedConfig validatedConfig = new ValidatedConfig(config, logger);
         this.config = validatedConfig;
-        validatedConfig.setMinimumValue(ServerConfig.PARAM_AUDIT_EXPORT_GROUP_CONCAT_MAX_LEN, MIN_GROUP_CONCAT_LENGTH);
+        validatedConfig.setMinimumValue( ServerConfigParams.PARAM_AUDIT_EXPORT_GROUP_CONCAT_MAX_LEN, MIN_GROUP_CONCAT_LENGTH);
     }
 
     /**
@@ -363,7 +363,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
                 rs.close();
                 rs = null;
 
-                final int newMaxLen = config.getIntProperty(ServerConfig.PARAM_AUDIT_EXPORT_GROUP_CONCAT_MAX_LEN, 1048576);
+                final int newMaxLen = config.getIntProperty( ServerConfigParams.PARAM_AUDIT_EXPORT_GROUP_CONCAT_MAX_LEN, 1048576);
                 if (newMaxLen != mysqlGroupConcatMaxLenValue) {
                     final String setConcatMaxLenQuery = SET_GROUP_CONCAT_MAX_LEN + newMaxLen;
                     st.execute(setConcatMaxLenQuery);

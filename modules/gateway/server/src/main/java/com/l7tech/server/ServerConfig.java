@@ -1,7 +1,3 @@
-/*
- * Copyright (C) 2003-2006 Layer 7 Technologies Inc.
- */
-
 package com.l7tech.server;
 
 import com.l7tech.gateway.common.cluster.ClusterProperty;
@@ -12,8 +8,6 @@ import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedOperation;
 import org.springframework.jmx.export.annotation.ManagedResource;
 
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.*;
@@ -41,208 +35,6 @@ public class ServerConfig implements ClusterPropertyListener, Config {
 
     public static final long DEFAULT_CACHE_AGE = 30000L;
 
-    public static final String PARAM_SERVER_ID = "serverId";
-    public static final String PARAM_KEYSTORE = "keystorePropertiesPath";
-    public static final String PARAM_LDAP_TEMPLATES = "ldapTemplatesPath";
-    public static final String PARAM_UDDI_TEMPLATES = "uddiTemplatesPath";
-    public static final String PARAM_HIBERNATE = "hibernatePropertiesPath";
-    public static final String PARAM_SERVERXML = "serverXmlPath";
-    public static final String PARAM_IPS = "ipAddresses";
-    public static final String PARAM_HOSTNAME = "hostname";
-    public static final String PARAM_HTTPPORT = "httpPort";
-    public static final String PARAM_HTTPSPORT = "httpsPort";
-    public static final String PARAM_HTTP_SESSION_NAME = "httpSessionName";
-    public static final String PARAM_SYSTEMPROPS = "systemPropertiesPath";
-    public static final String PARAM_JMS_THREAD_POOL_SIZE = "jmsThreadPoolSize";
-    public static final String PARAM_MULTICAST_ADDRESS = "multicastAddress";
-    public static final String PARAM_MULTICAST_ENABLED = "cluster.replayProtection.multicast.enabled";
-    public static final String PARAM_SSG_HOME_DIRECTORY = "ssgHome";
-    public static final String PARAM_SSG_APPLIANCE_DIRECTORY = "ssgAppliance";
-    public static final String PARAM_CONFIG_DIRECTORY = "configDirectory";
-    public static final String PARAM_VAR_DIRECTORY = "varDirectory";
-    public static final String PARAM_WEB_DIRECTORY = "webDirectory";
-    public static final String PARAM_SSG_LOG_DIRECTORY = "logDirectory";
-    public static final String PARAM_SSG_LOG_FILE_PATTERN_TEMPLATE = "logFileTemplate";
-    public static final String PARAM_ATTACHMENT_DIRECTORY = "attachmentDirectory";
-    public static final String PARAM_ATTACHMENT_DISK_THRESHOLD = "attachmentDiskThreshold";
-    public static final String PARAM_messageCache_DIRECTORY = "messageCacheDirectory";
-    public static final String PARAM_messageCache_RESETGENERATION = "messageCacheResetGeneration";
-    public static final String PARAM_messageCache_DISK_THRESHOLD = "messageCacheDiskThreshold";
-    public static final String PARAM_MODULAR_ASSERTIONS_DIRECTORY = "modularAssertionsDirectory";
-    public static final String PARAM_MODULAR_ASSERTIONS_RESCAN_MILLIS = "modularAssertionsRescanMillis";
-    public static final String PARAM_MODULAR_ASSERTIONS_FILE_EXTENSIONS = "modularAssertionsFileExtensions";
-
-    public static final String PARAM_TRACE_POLICY_GUID = "trace.policy.guid"; // serverconfig name must be same as cluster property name for this property
-
-    public static final String PARAM_AUDIT_SINK_POLICY_GUID = "audit.sink.policy.guid";
-    public static final String PARAM_AUDIT_SINK_FALLBACK_ON_FAIL = "audit.sink.fallbackToInternal";
-    public static final String PARAM_AUDIT_SINK_ALWAYS_FALLBACK = "audit.sink.alwaysSaveInternal";
-
-    public static final String PARAM_AUDIT_MESSAGE_THRESHOLD = "auditMessageThreshold";
-    public static final String PARAM_AUDIT_ADMIN_THRESHOLD = "auditAdminThreshold";
-    public static final String PARAM_AUDIT_SYSTEM_CLIENT_THRESHOLD = "auditClientSystemLogsThreshold";
-    public static final String PARAM_AUDIT_PURGE_MINIMUM_AGE = "auditPurgeMinimumAge";
-
-    public static final String PARAM_AUDIT_REFRESH_PERIOD_SECS = "auditViewerRefreshSeconds";
-    public static final String PARAM_AUDIT_LOG_REFRESH_PERIOD_SECS = "auditLogViewerRefreshSeconds";
-
-    public static final String PARAM_AUDIT_HINTING_ENABLED = "auditHintingEnabled";
-    public static final String PARAM_AUDIT_ASSERTION_STATUS_ENABLED = "auditAssertionStatusEnabled";
-
-    public static final String PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD = "auditAssociatedLogsThreshold";
-    public static final String PARAM_AUDIT_USE_ASSOCIATED_LOGS_THRESHOLD = "auditAssociatedLogsThresholdRespected";
-
-    public static final String PARAM_AUDIT_LOG_FORMAT_SERVICE_HEADER = "auditLogFormatServiceHeader";
-    public static final String PARAM_AUDIT_LOG_FORMAT_SERVICE_FOOTER = "auditLogFormatServiceFooter";
-    public static final String PARAM_AUDIT_LOG_FORMAT_SERVICE_DETAIL = "auditLogFormatServiceDetail";
-    public static final String PARAM_AUDIT_LOG_FORMAT_OTHER = "auditLogFormatOther";
-    public static final String PARAM_AUDIT_LOG_FORMAT_OTHER_DETAIL = "auditLogFormatOtherDetail";
-    
-    public static final String PARAM_AUDIT_ARCHIVER_TIMER_PERIOD = "auditArchiverTimerPeriod";
-    public static final String PARAM_AUDIT_ARCHIVER_SHUTDOWN_THRESHOLD = "auditArchiverShutdownThreshold";
-    public static final String PARAM_AUDIT_ARCHIVER_START_THRESHOLD = "auditArchiverStartThreshold";
-    public static final String PARAM_AUDIT_ARCHIVER_STOP_THRESHOLD = "auditArchiverStopThreshold";
-    public static final String PARAM_AUDIT_ARCHIVER_STALE_TIMEOUT = "auditArchiverStaleTimeout";
-    public static final String PARAM_AUDIT_ARCHIVER_BATCH_SIZE = "auditArchiverBatchSize";
-    public static final String PARAM_AUDIT_ARCHIVER_IN_PROGRESS = "audit.archiverInProgress";
-    public static final String PARAM_AUDIT_ARCHIVER_FTP_DESTINATION = "audit.archiver.ftp.config";
-    public static final String PARAM_AUDIT_ARCHIVER_FTP_FILEPREFIX = "auditArchiverFtpFileprefix";
-    public static final String PARAM_AUDIT_ARCHIVER_FTP_MAX_UPLOAD_FILE_SIZE = "auditArchiverFtpMaxUploadFileSize";
-
-    public static final String CONFIG_AUDIT_SIGN_CLUSTER = "audit.signing";
-    public static final String PARAM_AUDIT_SIGN_MAX_VALIDATE = "audit.validateSignature.maxrecords";
-    public static final String PARAM_AUDIT_SEARCH_MAX_MESSAGE_SIZE = "audit.search.maxMessageSize";
-
-    public static final String PARAM_ANTIVIRUS_ENABLED = "savseEnable";
-    public static final String PARAM_ANTIVIRUS_HOST = "savseHost";
-    public static final String PARAM_ANTIVIRUS_PORT = "savsePort";
-
-    public static final String PARAM_METRICS_FINE_INTERVAL = "metricsFineInterval";
-
-    public static final String PARAM_IO_FRONT_BLOCKED_READ_TIMEOUT = "ioInReadTimeout";
-    public static final String PARAM_IO_FRONT_SLOW_READ_THRESHOLD = "ioInSlowReadThreshold";
-    public static final String PARAM_IO_FRONT_SLOW_READ_RATE = "ioInSlowReadRate";
-    public static final String PARAM_IO_BACK_CONNECTION_TIMEOUT = "ioOutConnectionTimeout";
-    public static final String PARAM_IO_BACK_READ_TIMEOUT = "ioOutReadTimeout";
-    public static final String PARAM_IO_BACK_HTTPS_HOST_CHECK = "ioHttpsHostVerify";
-    public static final String PARAM_IO_HOST_ALLOW_WILDCARD = "ioHttpsHostAllowWildcard";
-    public static final String PARAM_IO_STALE_CHECK_PER_INTERVAL = "ioStaleCheckCount";
-    public static final String PARAM_IO_STALE_MAX_HOSTS = "ioStaleCheckHosts";
-    public static final String PARAM_IO_FIRST_PART_MAX_BYTES = "ioXmlPartMaxBytes";
-    public static final String PARAM_SIGNED_PART_MAX_BYTES = "ioAttachmentSignedMaxBytes";
-
-    public static final String PARAM_XSLT_CACHE_MAX_ENTRIES = "xsltMaxCacheEntries";
-    public static final String PARAM_XSLT_CACHE_MAX_AGE = "xsltMaxCacheAge";
-    public static final String PARAM_XSLT_CACHE_MAX_STALE_AGE = "xsltMaxStaleCacheAge";
-
-    public static final String PARAM_SCHEMA_CACHE_MAX_ENTRIES = "schemaMaxCacheEntries";
-    public static final String PARAM_SCHEMA_CACHE_MAX_AGE = "schemaMaxCacheAge";
-    public static final String PARAM_SCHEMA_CACHE_MAX_STALE_AGE = "schemaMaxStaleCacheAge";
-    public static final String PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_LATENCY = "schemaRecompileLatency";
-    public static final String PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_MIN_AGE = "schemaRecompileMinAge";
-    public static final String PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_MAX_AGE = "schemaRecompileMaxAge";
-    public static final String PARAM_SCHEMA_CACHE_MAX_SCHEMA_SIZE = "schemaCacheMaxSchemaSize";
-    public static final String PARAM_SCHEMA_REMOTE_URL_REGEX = "schema.remoteResourceRegex";
-
-    public static final String PARAM_EPHEMERAL_KEY_CACHE_MAX_ENTRIES = "ephemeralKeyMaxCacheEntries";
-    public static final String PARAM_RSA_SIGNATURE_CACHE_MAX_ENTRIES = "rsaSignatureCacheMaxEntries";
-
-    public static final String PARAM_SCHEMA_SOFTWARE_FALLBACK = "schemaSoftwareFallback";
-    public static final String PARAM_SCHEMA_ALLOW_DOCTYPE = "schema.allowDoctype";
-
-    public static final String PARAM_KEYSTORE_SEARCH_FOR_ALIAS = "keyStoreSearchForAlias";
-    public static final String PARAM_KEYSTORE_DEFAULT_SSL_KEY = "keyStoreDefaultSslKey";
-    public static final String PARAM_KEYSTORE_DEFAULT_CA_KEY = "keyStoreDefaultCaKey";
-    public static final String PARAM_KEYSTORE_AUDIT_VIEWER_KEY = "keyStoreAuditViewerKey";
-    public static final String PARAM_KEYSTORE_AUDIT_SIGNING_KEY = "keyStoreAuditSigningKey";
-
-    public static final String PARAM_CERT_EXPIRY_CHECK_PERIOD = "trustedCert.expiryCheckPeriod";
-    public static final String PARAM_CERT_EXPIRY_FINE_AGE = "trustedCert.expiryFineAge";
-    public static final String PARAM_CERT_EXPIRY_INFO_AGE = "trustedCert.expiryInfoAge";
-    public static final String PARAM_CERT_EXPIRY_WARNING_AGE = "trustedCert.expiryWarningAge";
-
-    public static final String PARAM_CLUSTER_PORT = "clusterNodePort";
-    public static final String PARAM_CLUSTER_ADMIN_APPLET_PORT = "clusterAdminAppletPort";
-
-    public static final String PARAM_IO_HTTP_POOL_MAX_CONCURRENCY = "ioHttpPoolMaxConcurrency";
-    public static final String PARAM_IO_HTTP_POOL_MAX_IDLE_TIME = "ioHttpPoolMaxIdleTime";
-    public static final String PARAM_IO_HTTP_POOL_MIN_SPARE_THREADS = "ioHttpPoolMinSpareThreads";
-
-    public static final String PARAM_POLICY_VALIDATION_MAX_CONCURRENCY = "serverPolicyValidation.maxConcurrency";
-    public static final String PARAM_POLICY_VERSIONING_MAX_REVISIONS = "policyVersioningMaxRevisions";
-
-    public static final String PARAM_TEMPLATE_STRICTMODE = "template.strictMode";
-    public static final String PARAM_TEMPLATE_MULTIVALUE_DELIMITER = "template.defaultMultivalueDelimiter";
-
-    public static final String PARAM_SOAP_REJECT_MUST_UNDERSTAND = "soapRejectMustUnderstand";
-
-    public static final String PARAM_AUTH_CACHE_SUCCESS_CACHE_SIZE = "authCacheSuccessCacheSize";
-    public static final String PARAM_AUTH_CACHE_FAILURE_CACHE_SIZE = "authCacheFailureCacheSize";
-    public static final String PARAM_AUTH_CACHE_MAX_SUCCESS_TIME = "authCacheMaxSuccessTime";
-    public static final String PARAM_AUTH_CACHE_MAX_FAILURE_TIME = "authCacheMaxFailureTime";
-    public static final String PARAM_AUTH_CACHE_GROUP_MEMB_CACHE_SIZE = "authCacheGroupMembershipCacheSize";
-
-    public static final String PARAM_PRINCIPAL_SESSION_CACHE_SIZE = "principalSessionCacheSize";
-    public static final String PARAM_PRINCIPAL_SESSION_CACHE_MAX_TIME = "principalSessionCacheMaxTime";
-    public static final String PARAM_PRINCIPAL_SESSION_CACHE_MAX_PRINCIPAL_GROUPS = "principalSessionCacheMaxPrincipalGroups";
-    
-    public static final String PARAM_JMS_LISTENER_THREAD_LIMIT = "jmsListenerThreadLimit";
-    public static final String PARAM_JMS_RESPONSE_TIMEOUT = "ioJmsResponseTimeout";
-
-    public static final String PARAM_PROCESS_CONTROLLER_PRESENT = "processControllerPresent";
-    public static final String PARAM_PROCESS_CONTROLLER_PORT = "processControllerPort";
-    public static final String PARAM_PROCESS_CONTROLLER_EXTERNAL_PORT = "processControllerExternalPort";
-
-    public static final String PARAM_ADD_MAPPINGS_INTO_AUDIT = "customerMapping.addToGatewayAuditEvents";
-    public static final String PARAM_ADD_MAPPINGS_INTO_SERVICE_METRICS = "customerMapping.addToServiceMetrics";
-
-    public static final String PARAM_CERTIFICATE_DISCOVERY_ENABLED = "services.certificateDiscoveryEnabled";
-
-    public static final String PARAM_SNMP_QUERY_SERVICE_ENABLED = "builtinService.snmpQuery.enabled";
-
-    public static final String PARAM_EMAIL_LISTENER_THREAD_LIMIT = "emailListenerThreadLimit";
-    public static final String PARAM_EMAIL_LISTENER_THREAD_DISTRIBUTION = "emailListenerThreadDistribution";
-    public static final String PARAM_EMAIL_LISTENER_CONNECTION_TIMEOUT = "ioMailInConnectTimeout";
-    public static final String PARAM_EMAIL_LISTENER_TIMEOUT = "ioMailInTimeout";
-
-    public static final String PARAM_LOG_DIRECTORY = "logDirectory";
-
-    public static final String MAX_LDAP_SEARCH_RESULT_SIZE = "maxLdapSearchResultSize";
-    public static final String MAX_LDAP_GROUP_SEARCH_RESULT_SIZE = "ldap.group.searchMaxResults";
-
-    public static final String PARAM_MAX_LOGIN_ATTEMPTS_ALLOW = "logon.maxAllowableAttempts";
-    public static final String PARAM_MAX_LOCKOUT_TIME = "logon.lockoutTime";
-    public static final String PARAM_SESSION_EXPIRY = "logon.sessionExpiry";
-    public static final String PARAM_INACTIVITY_PERIOD = "logon.inactivityPeriod";
-
-    public static final String PARAM_KERBEROS_CONFIG_REALM = "krb5Realm";
-    public static final String PARAM_KERBEROS_CONFIG_KDC = "krb5KDC";
-
-    public static final String PARAM_LDAPCERTINDEX_REBUILD_INTERVAL="ldapCertIndexInterval";
-    public static final String PARAM_LDAPCERT_CACHE_LIFETIME="ldapCertCacheLifetime";
-
-    public static final String PARAM_LDAP_COMPARISON_CASE_INSENSITIVE="ldapCaseInsensitiveComparison";
-
-    public static final String PARAM_LDAP_CONNECTION_TIMEOUT = "ldapConnectionTimeout";
-    public static final String PARAM_LDAP_READ_TIMEOUT = "ldapReadTimeout";
-
-    public static final String PARAM_TIMESTAMP_CREATED_FUTURE_GRACE = "timestampCreatedFutureGrace";
-    public static final String PARAM_TIMESTAMP_EXPIRES_PAST_GRACE = "timestampExpiresPastGrace";
-
-    public static final String PARAM_KEY_USAGE = "pkix.keyUsage";
-    public static final String PARAM_KEY_USAGE_POLICY_XML = "pkix.keyUsagePolicy";
-
-    public static final String PARAM_FIPS = "security.fips.enabled";
-    public static final String PARAM_PCIDSS_ENABLED= "security.pcidss.enabled";       
-
-    public static final String PARAM_WSS_ALLOW_MULTIPLE_TIMESTAMP_SIGNATURES = "wss.processor.allowMultipleTimestampSignatures";
-    public static final String PARAM_WSS_ALLOW_UNKNOWN_BINARY_SECURITY_TOKENS = "wss.processor.allowUnknownBinarySecurityTokens";
-    public static final String PARAM_WSS_DECORATOR_MUSTUNDERSTAND = "wss.decorator.mustUnderstand";
-    public static final String PARAM_WSS_PROCESSOR_STRICT_SIG_CONFIRMATION = "wss.processor.strictSignatureConfirmationValidation";
-    public static final String  PARAM_WSS_PROCESSOR_LAZY_REQUEST = "wss.processor.enableDeferredRequestProcessing";
-
-    public static final String PARAM_LOGON_WARNING_BANNER = "logon.warningBanner";
-
     public static final String PROPS_PATH_PROPERTY = "com.l7tech.server.serverConfigPropertiesPath";
     public static final String PROPS_RESOURCE_PROPERTY = "com.l7tech.server.serverConfigPropertiesResource";
     public static final String PROPS_PATH_DEFAULT = "/ssg/etc/conf/serverconfig.properties";
@@ -254,105 +46,6 @@ public class ServerConfig implements ClusterPropertyListener, Config {
             ? "/ssg/etc/conf/serverconfig_override.properties"
             : System.getProperty("com.l7tech.server.home") + File.separator + "etc" + File.separator + "conf" + File.separator + "serverconfig_override.properties";
 
-    public static final String MAX_FOLDER_DEPTH_PROPERTY = "policyorganization.maxFolderDepth";
-
-    public static final String PARAM_SYSTEM_MONITORING_SETUP_SETTINGS = "system.monitoring.setup.settings";
-
-    public static final String PARAM_MONITORING_TRIGGER_AUDITSIZE = "trigger.auditSize";
-    public static final String PARAM_MONITORING_TRIGGER_DATABASEREPLICATIONDELAY = "trigger.databaseReplicationDelay";
-    public static final String PARAM_MONITORING_TRIGGER_LOGSIZE = "trigger.logSize";
-    public static final String PARAM_MONITORING_TRIGGER_DISKUSAGE = "trigger.diskUsage";
-    public static final String PARAM_MONITORING_TRIGGER_DISKFREE = "trigger.diskFree";
-    public static final String PARAM_MONITORING_TRIGGER_CPUTEMPERATURE = "trigger.cpuTemp";
-    public static final String PARAM_MONITORING_TRIGGER_CPUUSAGE = "trigger.cpuUsage";
-    public static final String PARAM_MONITORING_TRIGGER_SWAPUSAGE = "trigger.swapUsage";
-
-    public static final String PARAM_MONITORING_INTERVAL_AUDITSIZE = "interval.auditSize";
-    public static final String PARAM_MONITORING_INTERVAL_DATABASEREPLICATIONDELAY = "interval.databaseReplicationDelay";
-    public static final String PARAM_MONITORING_INTERVAL_OPERATINGSTATUS = "interval.operatingStatus";
-    public static final String PARAM_MONITORING_INTERVAL_LOGSIZE = "interval.logSize";
-    public static final String PARAM_MONITORING_INTERVAL_DISKUSAGE = "interval.diskUsage";
-    public static final String PARAM_MONITORING_INTERVAL_DISKFREE = "interval.diskFree";
-    public static final String PARAM_MONITORING_INTERVAL_RAIDSTATUS = "interval.raidStatus";
-    public static final String PARAM_MONITORING_INTERVAL_CPUTEMPERATURE = "interval.cpuTemp";
-    public static final String PARAM_MONITORING_INTERVAL_CPUUSAGE = "interval.cpuUsage";
-    public static final String PARAM_MONITORING_INTERVAL_SWAPUSAGE = "interval.swapUsage";
-    public static final String PARAM_MONITORING_INTERVAL_NTPSTATUS = "interval.ntpStatus";
-
-    public static final String PARAM_MONITORING_DISABLEALLNOTIFICATIONS = "disableAllNotifications";
-    public static final String PARAM_MONITORING_AUDITUPONALERTSTATE = "auditUponAlertState";
-    public static final String PARAM_MONITORING_AUDITUPONNORMALSTATE = "auditUponNormalState";
-    public static final String PARAM_MONITORING_AUDITUPONNOTIFICATION = "auditUponNotification";
-
-    public static final String PARAM_MONITORING_INIT_TRIGGER_AUDITSIZE = "monitoring.ssgCluster.initAlertTrigger.auditSize";
-    public static final String PARAM_MONITORING_INIT_TRIGGER_DATABASEREPLICATIONDELAY = "monitoring.ssgCluster.initAlertTrigger.databaseReplicationDelay";
-    public static final String PARAM_MONITORING_INIT_TRIGGER_LOGSIZE = "monitoring.ssgNode.initAlertTrigger.logSize";
-    public static final String PARAM_MONITORING_INIT_TRIGGER_DISKUSAGE = "monitoring.ssgNode.initAlertTrigger.diskUsage";
-    public static final String PARAM_MONITORING_INIT_TRIGGER_DISKFREE = "monitoring.ssgNode.initAlertTrigger.diskFree";
-    public static final String PARAM_MONITORING_INIT_TRIGGER_CPUTEMPERATURE = "monitoring.ssgNode.initAlertTrigger.cpuTemperature";
-    public static final String PARAM_MONITORING_INIT_TRIGGER_CPUUSAGE = "monitoring.ssgNode.initAlertTrigger.cpuUsage";
-    public static final String PARAM_MONITORING_INIT_TRIGGER_SWAPUSAGE = "monitoring.ssgNode.initAlertTrigger.swapUsage";
-
-    public static final String PARAM_MONITORING_INIT_INTERVAL_AUDITSIZE = "monitoring.ssgCluster.initSamplingInterval.auditSize";
-    public static final String PARAM_MONITORING_INIT_INTERVAL_DATABASEREPLICATIONDELAY = "monitoring.ssgCluster.initSamplingInterval.databaseReplicationDelay";
-    public static final String PARAM_MONITORING_INIT_INTERVAL_OPERATINGSTATUS = "monitoring.ssgNode.initSamplingInterval.operatingStatus";
-    public static final String PARAM_MONITORING_INIT_INTERVAL_LOGSIZE = "monitoring.ssgNode.initSamplingInterval.logSize";
-    public static final String PARAM_MONITORING_INIT_INTERVAL_DISKUSAGE = "monitoring.ssgNode.initSamplingInterval.diskUsage";
-    public static final String PARAM_MONITORING_INIT_INTERVAL_DISKFREE = "monitoring.ssgNode.initSamplingInterval.diskFree";
-    public static final String PARAM_MONITORING_INIT_INTERVAL_RAIDSTATUS = "monitoring.ssgNode.initSamplingInterval.raidStatus";
-    public static final String PARAM_MONITORING_INIT_INTERVAL_CPUTEMPERATURE = "monitoring.ssgNode.initSamplingInterval.cpuTemperature";
-    public static final String PARAM_MONITORING_INIT_INTERVAL_CPUUSAGE = "monitoring.ssgNode.initSamplingInterval.cpuUsage";
-    public static final String PARAM_MONITORING_INIT_INTERVAL_SWAPUSAGE = "monitoring.ssgNode.initSamplingInterval.swapUsage";
-    public static final String PARAM_MONITORING_INIT_INTERVAL_NTPSTATUS = "monitoring.ssgNode.initSamplingInterval.ntpStatus";
-
-    public static final String PARAM_MONITORING_INIT_DISABLEALLNOTIFICATIONS = "monitoring.initStatus.disableAllNotifications";
-    public static final String PARAM_MONITORING_INIT_AUDITUPONALERTSTATE = "monitoring.initStatus.auditUponAlertState";
-    public static final String PARAM_MONITORING_INIT_AUDITUPONNORMALSTATE = "monitoring.initStatus.auditUponNormalState";
-    public static final String PARAM_MONITORING_INIT_AUDITUPONNOTIFICATION = "monitoring.initStatus.auditUponNotification";
-
-    public static final String PARAM_MONITORING_SAMPLINGINTERVAL_LOWERLIMIT = "monitoring.samplingInterval.lowerLimit";
-    public static final String PARAM_MONITORING_SSGCLUSTER_AUDITSIZE_LOWERLIMIT = "monitoring.ssgCluster.auditSize.lowerLimit";
-    public static final String PARAM_MONITORING_SSGCLUSTER_DATABASEREPLICATIONDELAY_LOWERLIMIT = "monitoring.ssgCluster.databaseReplicationDelay.lowerLimit";
-    public static final String PARAM_MONITORING_SSGNODE_LOGSIZE_LOWERLIMIT = "monitoring.ssgNode.logSize.lowerLimit";
-    public static final String PARAM_MONITORING_SSGNODE_DISKUSAGE_LOWERLIMIT = "monitoring.ssgNode.diskUsage.lowerLimit";
-    public static final String PARAM_MONITORING_SSGNODE_DISKUSAGE_UPPERLIMIT = "monitoring.ssgNode.diskUsage.upperLimit";
-    public static final String PARAM_MONITORING_SSGNODE_DISKFREE_LOWERLIMIT = "monitoring.ssgNode.diskFree.lowerLimit";
-    public static final String PARAM_MONITORING_SSGNODE_CPUTEMPERATURE_LOWERLIMIT = "monitoring.ssgNode.cpuTemperature.lowerLimit";
-    public static final String PARAM_MONITORING_SSGNODE_CPUUSAGE_LOWERLIMIT = "monitoring.ssgNode.cpuUsage.lowerLimit";
-    public static final String PARAM_MONITORING_SSGNODE_CPUUSAGE_UPPERLIMIT = "monitoring.ssgNode.cpuUsage.upperLimit";
-    public static final String PARAM_MONITORING_SSGNODE_SWAPUSAGE_LOWERLIMIT = "monitoring.ssgNode.swapUsage.lowerLimit";
-
-    public static final String PARAM_MONITORING_NEXTREFRESH_INTERVAL = "monitoring.nextRefresh.interval";
-
-    public static final String PARAM_MONITORING_SSGCLUSTER_AUDITSIZE_UNIT = "monitoring.ssgCluster.auditSize.unit";
-    public static final String PARAM_MONITORING_SSGCLUSTER_DATABASEREPLICATIONDELAY_UNIT = "monitoring.ssgCluster.databaseReplicationDelay.unit";
-    public static final String PARAM_MONITORING_SSGNODE_LOGSIZE_UNIT = "monitoring.ssgNode.logSize.unit";
-    public static final String PARAM_MONITORING_SSGNODE_DISKUSAGE_UNIT = "monitoring.ssgNode.diskUsage.unit";
-    public static final String PARAM_MONITORING_SSGNODE_DISKFREE_UNIT = "monitoring.ssgNode.diskFree.unit";
-    public static final String PARAM_MONITORING_SSGNODE_CPUTEMPERATURE_UNIT = "monitoring.ssgNode.cpuTemp.unit";
-    public static final String PARAM_MONITORING_SSGNODE_CPUUSAGE_UNIT = "monitoring.ssgNode.cpuUsage.unit";
-    public static final String PARAM_MONITORING_SSGNODE_SWAPUSAGE_UNIT = "monitoring.ssgNode.swapUsage.unit";
-
-    public static final String PARAM_JDBC_CONNECTION_DEFAULT_DRIVERCLASS_LIST = "jdbcConnection.driverClass.defaultList";
-    public static final String PARAM_JDBC_QUERY_MAXRECORDS_DEFAULT = "jdbcQuery.maxRecords.defaultValue";
-    public static final String PARAM_JDBC_CONNECTION_POOLING_DEFAULT_MINPOOLSIZE = "jdbcConnection.pooling.minPoolSize.defaultValue";
-    public static final String PARAM_JDBC_CONNECTION_POOLING_DEFAULT_MAXPOOLSIZE = "jdbcConnection.pooling.maxPoolSize.defaultValue";
-
-    public static final String PARAM_samlValidateBeforeOffsetMinutes = "samlValidateBeforeOffsetMinutes";
-    public static final String PARAM_samlValidateAfterOffsetMinutes = "samlValidateAfterOffsetMinutes";
-
-    public static final String PARAM_DOCUMENT_DOWNLOAD_MAXSIZE = "documentDownload.maxSize";
-    public static final String PARAM_WSDL_MAX_DOWNLOAD_SIZE = "wsdlDocMaxDownloadSize";
-    public static final String PARAM_XSL_MAX_DOWNLOAD_SIZE = "xslDocMaxDownloadSize";
-
-    public static final String PARAM_OTHER_TEXTUAL_CONTENT_TYPES = "otherTextualContentTypes";
-
-    public static final String PARAM_AUDIT_EXPORT_GROUP_CONCAT_MAX_LEN = "audit.export.group_concat_max_len";
-
-    public static final String PARAM_GATEWAY_3SCALE_REPORTING_SERVER = "gateway.3scale.reportingServer";
-    public static final String PARAM_AUDIT_MESSAGE_LIMIT_SIZE = "audit.messageSizeLimit";
-    
-    private static final String SUFFIX_JNDI = ".jndi";
     private static final String SUFFIX_SYSPROP = ".systemProperty";
     private static final String SUFFIX_GETSYSPROP = ".getSystemProperty";
     private static final String SUFFIX_SETSYSPROP = ".setSystemProperty";
@@ -362,9 +55,6 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     private static final String SUFFIX_CLUSTER_KEY = ".clusterProperty";
     private static final String SUFFIX_CLUSTER_AGE = ".clusterPropertyAge";
     private static final int CLUSTER_DEFAULT_AGE = 30000;
-
-    private static final boolean ENABLE_JNDI_PROPERTY_LOOKUP = SyspropUtil.getBoolean("com.l7tech.server.config.enableJndiPropertyLookup", false);
-
 
     public static ServerConfig getInstance() {
         return InstanceHolder.INSTANCE;
@@ -486,7 +176,6 @@ public class ServerConfig implements ClusterPropertyListener, Config {
         String sysPropProp = propName + SUFFIX_SYSPROP;
         String getSysPropProp = propName + SUFFIX_GETSYSPROP;
         String setSysPropProp = propName + SUFFIX_SETSYSPROP;
-        String jndiProp = propName + SUFFIX_JNDI;
         String dfltProp = propName + SUFFIX_DEFAULT;
         String clusterKeyProp = propName + SUFFIX_CLUSTER_KEY;
         String clusterAgeProp = propName + SUFFIX_CLUSTER_AGE;
@@ -494,7 +183,6 @@ public class ServerConfig implements ClusterPropertyListener, Config {
         String systemPropertyName = getServerConfigProperty(sysPropProp);
         String isGetSystemProperty = getServerConfigProperty(getSysPropProp);
         String isSetSystemProperty = getServerConfigProperty(setSysPropProp);
-        String jndiName = getServerConfigProperty(jndiProp);
         String defaultValue = getServerConfigProperty(dfltProp);
         String clusterKey = getServerConfigProperty(clusterKeyProp);
         String clusterAge = getServerConfigProperty(clusterAgeProp);
@@ -502,11 +190,9 @@ public class ServerConfig implements ClusterPropertyListener, Config {
         String value = null;
 
         ClusterPropertyCache clusterPropertyCache;
-        InitialContext icontext;
         propLock.readLock().lock();
         try {
             clusterPropertyCache = this.clusterPropertyCache;
-            icontext = this._icontext;
         } finally {
             propLock.readLock().unlock();
         }
@@ -539,24 +225,6 @@ public class ServerConfig implements ClusterPropertyListener, Config {
                 } catch (Exception e) {
                     logger.log(Level.WARNING, "Couldn't find cluster property '" + clusterKey + "'", e);
                 }
-            }
-        }
-
-        if (value == null && ENABLE_JNDI_PROPERTY_LOOKUP && jndiName != null && jndiName.length() > 0 ) {
-            try {
-                logger.finest("Checking JNDI property " + jndiName);
-                if (icontext == null) {
-                    icontext = new InitialContext();
-                    propLock.writeLock().lock();
-                    try {
-                        _icontext = icontext;
-                    } finally {
-                        propLock.writeLock().unlock();
-                    }
-                }
-                value = (String)icontext.lookup(jndiName);
-            } catch (NamingException ne) {
-                logger.fine(ne.getMessage());
             }
         }
 
@@ -678,49 +346,6 @@ public class ServerConfig implements ClusterPropertyListener, Config {
         return name;
     }
 
-    public int getServerId() {
-        int serverId;
-        propLock.readLock().lock();
-        try{
-            serverId = _serverId;
-        } finally {
-            propLock.readLock().unlock();
-        }
-
-        if (serverId == 0) {
-            String sid = null;
-            try {
-                sid = getPropertyCached(PARAM_SERVER_ID);
-                if (sid != null && sid.length() > 0)
-                    serverId = Byte.parseByte(sid);
-            } catch (NumberFormatException nfe) {
-                logger.log(Level.WARNING, "Invalid ServerID value '" + sid + "'", nfe);
-            }
-
-            if (serverId == 0) {
-                try {
-                    InetAddress localhost = InetAddress.getLocalHost();
-                    byte[] ip = localhost.getAddress();
-                    serverId = ip[3] & 0xff;
-                    logger.info("ServerId parameter not set, assigning server ID " + serverId +
-                      " from server's IP address");
-                } catch (UnknownHostException e) {
-                    serverId = 1;
-                    logger.severe("Couldn't get server's local host!  Using server ID " + serverId);
-                }
-            }
-
-            propLock.writeLock().lock();
-            try {
-                _serverId = serverId;
-            } finally {
-                propLock.writeLock().unlock();
-            }
-        }
-
-        return serverId;
-    }
-
     public long getServerBootTime() {
         return _serverBootTime;
     }
@@ -735,7 +360,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
         }
 
         if (hostname == null) {
-            hostname = getPropertyCached(PARAM_HOSTNAME);
+            hostname = getPropertyCached(ServerConfigParams.PARAM_HOSTNAME);
 
             if (hostname == null) {
                 try {
@@ -769,7 +394,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
      * @return The theshold in bytes above which MIME parts will be spooled to disk.  Always nonnegative.
      */
     public int getAttachmentDiskThreshold() {
-        String str = getPropertyCached(PARAM_ATTACHMENT_DISK_THRESHOLD);
+        String str = getPropertyCached(ServerConfigParams.PARAM_ATTACHMENT_DISK_THRESHOLD);
 
         int ret = 0;
         if (str != null && str.length() > 0) {
@@ -782,7 +407,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
 
         if (ret < 1) {
             int def = 1048576;
-            String errorMsg = "The property " + PARAM_ATTACHMENT_DISK_THRESHOLD + " is undefined or invalid. Please ensure the SecureSpan " +
+            String errorMsg = "The property " + ServerConfigParams.PARAM_ATTACHMENT_DISK_THRESHOLD + " is undefined or invalid. Please ensure the SecureSpan " +
                     "Gateway is properly configured.  (Will use default of " + def + ")";
             logger.severe(errorMsg);
             return def;
@@ -792,7 +417,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     }
 
     public File getAttachmentDirectory() {
-        return getLocalDirectoryProperty(PARAM_ATTACHMENT_DIRECTORY, true);
+        return getLocalDirectoryProperty(ServerConfigParams.PARAM_ATTACHMENT_DIRECTORY, true);
     }
 
     /**
@@ -1089,9 +714,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     // 
     private PropertyChangeListener propertyChangeListener;
     private ClusterPropertyCache clusterPropertyCache;
-    private int _serverId;
     private String _hostname;
-    private InitialContext _icontext;
 
     protected ServerConfig() {
         _properties = new Properties();

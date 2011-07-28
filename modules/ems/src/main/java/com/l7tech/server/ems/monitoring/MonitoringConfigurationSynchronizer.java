@@ -5,8 +5,8 @@ import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.AuditContextUtils;
+import com.l7tech.server.ems.EsmConfigParams;
 import com.l7tech.server.ems.enterprise.JSONConstants;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.server.ems.enterprise.SsgClusterManager;
@@ -65,7 +65,7 @@ public class MonitoringConfigurationSynchronizer implements ApplicationContextAw
 
     /** We should mark all monitoring configurations as dirty any time one of these cluster properties changes. */
     private static final Set<String> CLUSTER_PROPS_TRIGGERING_COMPLETE_PUSHDOWN = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
-            ServerConfig.PARAM_SYSTEM_MONITORING_SETUP_SETTINGS
+            EsmConfigParams.PARAM_SYSTEM_MONITORING_SETUP_SETTINGS
     )));
 
     private static final Set<String> RELEVANT_SSGNODE_PROPERTIES = new HashSet<String>(Arrays.asList(
@@ -455,16 +455,16 @@ public class MonitoringConfigurationSynchronizer implements ApplicationContextAw
     }
 
     private static final Map<String, String> INTERVAL_NAME_BY_PROPERTY_NAME = Collections.unmodifiableMap(new HashMap<String, String>() {{
-        put("auditSize", ServerConfig.PARAM_MONITORING_INTERVAL_AUDITSIZE);
-        put("operatingStatus", ServerConfig.PARAM_MONITORING_INTERVAL_OPERATINGSTATUS);
-        put("logSize", ServerConfig.PARAM_MONITORING_INTERVAL_LOGSIZE);
-        put("diskUsage", ServerConfig.PARAM_MONITORING_INTERVAL_DISKUSAGE);
-        put("diskFree", ServerConfig.PARAM_MONITORING_INTERVAL_DISKFREE);
-        put("raidStatus", ServerConfig.PARAM_MONITORING_INTERVAL_RAIDSTATUS);
-        put("cpuTemp", ServerConfig.PARAM_MONITORING_INTERVAL_CPUTEMPERATURE);
-        put("cpuUsage", ServerConfig.PARAM_MONITORING_INTERVAL_CPUUSAGE);
-        put("swapUsage", ServerConfig.PARAM_MONITORING_INTERVAL_SWAPUSAGE);
-        put("ntpStatus", ServerConfig.PARAM_MONITORING_INTERVAL_NTPSTATUS);
+        put("auditSize",EsmConfigParams.PARAM_MONITORING_INTERVAL_AUDITSIZE);
+        put("operatingStatus",EsmConfigParams.PARAM_MONITORING_INTERVAL_OPERATINGSTATUS);
+        put("logSize",EsmConfigParams.PARAM_MONITORING_INTERVAL_LOGSIZE);
+        put("diskUsage",EsmConfigParams.PARAM_MONITORING_INTERVAL_DISKUSAGE);
+        put("diskFree",EsmConfigParams.PARAM_MONITORING_INTERVAL_DISKFREE);
+        put("raidStatus",EsmConfigParams.PARAM_MONITORING_INTERVAL_RAIDSTATUS);
+        put("cpuTemp",EsmConfigParams.PARAM_MONITORING_INTERVAL_CPUTEMPERATURE);
+        put("cpuUsage",EsmConfigParams.PARAM_MONITORING_INTERVAL_CPUUSAGE);
+        put("swapUsage",EsmConfigParams.PARAM_MONITORING_INTERVAL_SWAPUSAGE);
+        put("ntpStatus",EsmConfigParams.PARAM_MONITORING_INTERVAL_NTPSTATUS);
     }});
 
     // Given a monitorable property name, find the property under which its sampling interval can be looked up in globalSettings.

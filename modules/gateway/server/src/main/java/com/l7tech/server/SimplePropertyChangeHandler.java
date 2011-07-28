@@ -37,7 +37,7 @@ public class SimplePropertyChangeHandler implements PropertyChangeListener, Init
 
     @Override
     public void propertyChange(PropertyChangeEvent event) {
-        if (ServerConfig.PARAM_OTHER_TEXTUAL_CONTENT_TYPES.equals(event.getPropertyName())) {
+        if ( ServerConfigParams.PARAM_OTHER_TEXTUAL_CONTENT_TYPES.equals(event.getPropertyName())) {
             //Configurable content-types see bug 8884
             setConfiguredContentTypes();
         }
@@ -57,7 +57,7 @@ public class SimplePropertyChangeHandler implements PropertyChangeListener, Init
      * @return List of ContentTypeHeaders. Never null.
      */
     private ContentTypeHeader[] getConfiguredContentTypes() {
-        final String otherTypes = ServerConfig.getInstance().getPropertyCached(ServerConfig.PARAM_OTHER_TEXTUAL_CONTENT_TYPES);
+        final String otherTypes = ServerConfig.getInstance().getPropertyCached( ServerConfigParams.PARAM_OTHER_TEXTUAL_CONTENT_TYPES);
 
         List<String> types = TextUtils.getTokensFromString(otherTypes, "\n\r\f");
         List<ContentTypeHeader> returnList = new ArrayList<ContentTypeHeader>();

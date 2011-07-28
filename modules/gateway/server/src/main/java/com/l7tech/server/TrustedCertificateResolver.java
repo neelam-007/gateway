@@ -27,7 +27,6 @@ import org.springframework.context.ApplicationListener;
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
 import java.security.KeyStoreException;
-import java.security.UnrecoverableKeyException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
@@ -66,7 +65,7 @@ public class TrustedCertificateResolver implements SecurityTokenResolver, Applic
 
         final int checkPeriod = 10181;
         final int defaultSize = 1000; // Size to use if not configured, or if not enabled at first (since we can't change the size if it's later enabled)
-        int csize = serverConfig.getIntPropertyCached(ServerConfig.PARAM_EPHEMERAL_KEY_CACHE_MAX_ENTRIES, defaultSize, checkPeriod);
+        int csize = serverConfig.getIntPropertyCached( ServerConfigParams.PARAM_EPHEMERAL_KEY_CACHE_MAX_ENTRIES, defaultSize, checkPeriod);
         encryptedKeyCacheEnabled.set(csize > 0);
         encryptedKeyCache = WhirlycacheFactory.createCache("Ephemeral key cache",
                                                            encryptedKeyCacheEnabled.get() ? csize : defaultSize,
@@ -76,7 +75,7 @@ public class TrustedCertificateResolver implements SecurityTokenResolver, Applic
         Background.scheduleRepeated(new TimerTask() {
             @Override
             public void run() {
-                int csize = serverConfig.getIntPropertyCached(ServerConfig.PARAM_EPHEMERAL_KEY_CACHE_MAX_ENTRIES, defaultSize, checkPeriod - 1);
+                int csize = serverConfig.getIntPropertyCached( ServerConfigParams.PARAM_EPHEMERAL_KEY_CACHE_MAX_ENTRIES, defaultSize, checkPeriod - 1);
                 boolean newval = csize > 0;
                 boolean oldval = encryptedKeyCacheEnabled.getAndSet(newval);
                 if (newval != oldval && logger.isLoggable(Level.INFO))

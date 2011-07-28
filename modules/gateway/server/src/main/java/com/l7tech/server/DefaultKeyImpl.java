@@ -56,7 +56,7 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
     private final AtomicReference<SsgKeyEntry> cachedCaInfo = new AtomicReference<SsgKeyEntry>();
     private final AtomicReference<SsgKeyEntry> cachedAuditViewerInfo = new AtomicReference<SsgKeyEntry>();
     private final AtomicReference<SsgKeyEntry> cachedAuditSigningInfo = new AtomicReference<SsgKeyEntry>();
-    private static final String SC_PROP_SSL_KEY = ServerConfig.PARAM_KEYSTORE_DEFAULT_SSL_KEY;
+    private static final String SC_PROP_SSL_KEY = ServerConfigParams.PARAM_KEYSTORE_DEFAULT_SSL_KEY;
 
     public DefaultKeyImpl( final ServerConfig serverConfig,
                            final ClusterPropertyManager clusterPropertyManager,
@@ -235,7 +235,7 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
 
     public SsgKeyEntry getCaInfo() {
         try {
-            return getCachedEntry(cachedCaInfo, ServerConfig.PARAM_KEYSTORE_DEFAULT_CA_KEY, false);
+            return getCachedEntry(cachedCaInfo, ServerConfigParams.PARAM_KEYSTORE_DEFAULT_CA_KEY, false);
         } catch (IOException e) {
             throw new RuntimeException("Unable to look up default CA key: " + ExceptionUtils.getMessage(e), e);
         } catch (ObjectNotFoundException e) {
@@ -246,7 +246,7 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
     @Override
     public SsgKeyEntry getAuditSigningInfo() {
         try {
-            return getCachedEntry(cachedAuditSigningInfo, ServerConfig.PARAM_KEYSTORE_AUDIT_SIGNING_KEY, false);
+            return getCachedEntry(cachedAuditSigningInfo, ServerConfigParams.PARAM_KEYSTORE_AUDIT_SIGNING_KEY, false);
         } catch (IOException e) {
             throw new RuntimeException("Unable to look up audit signing key: " + ExceptionUtils.getMessage(e), e);
         } catch (ObjectNotFoundException e) {
@@ -257,7 +257,7 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
     @Override
     public SsgKeyEntry getAuditViewerInfo() {
         try {
-            return getCachedEntry(cachedAuditViewerInfo, ServerConfig.PARAM_KEYSTORE_AUDIT_VIEWER_KEY, false);
+            return getCachedEntry(cachedAuditViewerInfo, ServerConfigParams.PARAM_KEYSTORE_AUDIT_VIEWER_KEY, false);
         } catch (IOException e) {
             throw new RuntimeException("Unable to look up audit viewer key: " + ExceptionUtils.getMessage(e), e);
         } catch (ObjectNotFoundException e) {
@@ -272,7 +272,7 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
             return new Pair<Long, String>(info.getKeystoreId(), info.getAlias());
 
         try {
-            return getKeyStoreOidAndAlias(ServerConfig.PARAM_KEYSTORE_AUDIT_VIEWER_KEY);
+            return getKeyStoreOidAndAlias( ServerConfigParams.PARAM_KEYSTORE_AUDIT_VIEWER_KEY);
         } catch (IOException e) {
             throw new RuntimeException("Unable to look up audit viewer key alias: " + ExceptionUtils.getMessage(e), e);
         }

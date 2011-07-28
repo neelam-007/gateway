@@ -78,7 +78,7 @@ public final class PcApiConnectorActivationListener implements SsgConnectorActiv
     private boolean sawApiConnector = false;
 
     private File getApiPortFile() {
-        final File varDir = serverConfig().getLocalDirectoryProperty(ServerConfig.PARAM_VAR_DIRECTORY, true);
+        final File varDir = serverConfig().getLocalDirectoryProperty( ServerConfigParams.PARAM_VAR_DIRECTORY, true);
         return new File(varDir, "processControllerPort");
     }
 

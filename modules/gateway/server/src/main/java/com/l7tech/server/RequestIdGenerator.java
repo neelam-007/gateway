@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.server;
 
 import com.l7tech.gateway.common.RequestId;
@@ -11,8 +5,8 @@ import com.l7tech.gateway.common.RequestId;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Generates probably-unique request identifiers incorporating a server ID,
- * (see {@link ServerConfig#getServerId()}) a boot time and sequence number.
+ * Generates probably-unique request identifiers incorporating a boot time and
+ * sequence number.
  *
  * @author alex
  * @version $Revision$

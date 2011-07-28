@@ -13,7 +13,7 @@ import com.l7tech.policy.variable.PolicyVariableUtils;
 import com.l7tech.security.token.SignedElement;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
@@ -287,7 +287,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
                 throw new AddressingProcessingException("Message is not SOAP", AssertionStatus.NOT_APPLICABLE);
             }
 
-            if (assertion.getTarget() == TargetMessageType.REQUEST && !config.getBooleanProperty(ServerConfig.PARAM_WSS_PROCESSOR_LAZY_REQUEST,true) )  {
+            if (assertion.getTarget() == TargetMessageType.REQUEST && !config.getBooleanProperty( ServerConfigParams.PARAM_WSS_PROCESSOR_LAZY_REQUEST,true) )  {
                 wssResults = msg.getSecurityKnob().getProcessorResult();
             } else {
                 wssResults = WSSecurityProcessorUtils.getWssResults(msg, what, securityTokenResolver, getAudit());

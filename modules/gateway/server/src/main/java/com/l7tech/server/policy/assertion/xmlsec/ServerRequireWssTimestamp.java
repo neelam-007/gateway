@@ -15,6 +15,7 @@ import com.l7tech.security.xml.processor.ProcessorResultUtil;
 import com.l7tech.security.xml.processor.WssTimestamp;
 import com.l7tech.security.xml.processor.WssTimestampDate;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
@@ -71,7 +72,7 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
         }
 
         final ProcessorResult processorResult;
-        if ( isRequest() && !serverConfig.getBooleanProperty(ServerConfig.PARAM_WSS_PROCESSOR_LAZY_REQUEST,true) ) {
+        if ( isRequest() && !serverConfig.getBooleanProperty( ServerConfigParams.PARAM_WSS_PROCESSOR_LAZY_REQUEST,true) ) {
             processorResult = msg.getSecurityKnob().getProcessorResult();
         } else {
             processorResult = WSSecurityProcessorUtils.getWssResults(msg, what, securityTokenResolver, getAudit());
@@ -128,7 +129,7 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
             return getBadMessageStatus();
         }
 
-        long createdFutureFuzz = serverConfig.getLongPropertyCached(ServerConfig.PARAM_TIMESTAMP_CREATED_FUTURE_GRACE, DEFAULT_GRACE, (long) PROP_CACHE_AGE );
+        long createdFutureFuzz = serverConfig.getLongPropertyCached( ServerConfigParams.PARAM_TIMESTAMP_CREATED_FUTURE_GRACE, DEFAULT_GRACE, (long) PROP_CACHE_AGE );
         final long created = createdEl.asTime();
         if (created - createdFutureFuzz > now) {
             logAndAudit( AssertionMessages.REQUIRE_WSS_TIMESTAMP_CREATED_FUTURE, what );
@@ -152,7 +153,7 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
             expires = created + assertion.getMaxExpiryMilliseconds();
         }
 
-        long expiresPastFuzz = serverConfig.getLongPropertyCached(ServerConfig.PARAM_TIMESTAMP_EXPIRES_PAST_GRACE, DEFAULT_GRACE, (long) PROP_CACHE_AGE );
+        long expiresPastFuzz = serverConfig.getLongPropertyCached( ServerConfigParams.PARAM_TIMESTAMP_EXPIRES_PAST_GRACE, DEFAULT_GRACE, (long) PROP_CACHE_AGE );
         if (expires + expiresPastFuzz < now) {
             if (constrain && (!(originalExpires + expiresPastFuzz < now))) {
                 // then this only expired because we constrained the expiry time so audit that

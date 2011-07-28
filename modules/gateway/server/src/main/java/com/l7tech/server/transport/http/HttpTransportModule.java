@@ -10,6 +10,7 @@ import com.l7tech.server.DefaultKey;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.event.system.TransportEvent;
@@ -120,13 +121,13 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
         embedded = new Embedded();
 
-        String httpSessionName = serverConfig.getProperty(ServerConfig.PARAM_HTTP_SESSION_NAME);
+        String httpSessionName = serverConfig.getProperty( ServerConfigParams.PARAM_HTTP_SESSION_NAME);
         System.setProperty("org.apache.catalina.SESSION_PARAMETER_NAME", httpSessionName);
         System.setProperty("org.apache.catalina.SESSION_COOKIE_NAME", httpSessionName);
 
         // Create the thread pool
-        final int maxSize = serverConfig.getIntProperty(ServerConfig.PARAM_IO_HTTP_POOL_MAX_CONCURRENCY, 200);
-        final int coreSize = serverConfig.getIntProperty(ServerConfig.PARAM_IO_HTTP_POOL_MIN_SPARE_THREADS, maxSize / 2);
+        final int maxSize = serverConfig.getIntProperty( ServerConfigParams.PARAM_IO_HTTP_POOL_MAX_CONCURRENCY, 200);
+        final int coreSize = serverConfig.getIntProperty( ServerConfigParams.PARAM_IO_HTTP_POOL_MIN_SPARE_THREADS, maxSize / 2);
         executor = createExecutor( "executor", coreSize, maxSize );
         embedded.addExecutor(executor);
         try {
@@ -142,7 +143,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         engine.setDefaultHost(InetAddressUtil.getLocalHostName());
         embedded.addEngine(engine);
 
-        File inf = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_WEB_DIRECTORY, null, false);
+        File inf = serverConfig.getLocalDirectoryProperty( ServerConfigParams.PARAM_WEB_DIRECTORY, null, false);
         if (inf == null) throw new LifecycleException("No web directory set");
         if (!inf.exists() || !inf.isDirectory()) throw new LifecycleException("No such directory: " + inf.getPath());
 
@@ -154,7 +155,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
         context = (StandardContext)embedded.createContext("", s);
 
-        String ssgVarPath = serverConfig.getProperty(ServerConfig.PARAM_VAR_DIRECTORY);
+        String ssgVarPath = serverConfig.getProperty( ServerConfigParams.PARAM_VAR_DIRECTORY);
         if (ssgVarPath != null)
             context.setWorkDir(ssgVarPath + File.separatorChar + "work");
 
@@ -222,12 +223,12 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         if (executor == null) return; // not yet started
 
         final String propertyName = evt.getPropertyName();
-        if ( ServerConfig.PARAM_IO_HTTP_POOL_MAX_CONCURRENCY.equals(propertyName) ||
-             ServerConfig.PARAM_IO_HTTP_POOL_MIN_SPARE_THREADS.equals(propertyName))
+        if ( ServerConfigParams.PARAM_IO_HTTP_POOL_MAX_CONCURRENCY.equals(propertyName) ||
+             ServerConfigParams.PARAM_IO_HTTP_POOL_MIN_SPARE_THREADS.equals(propertyName))
         {
             try {
-                int maxSize = serverConfig.getIntProperty(ServerConfig.PARAM_IO_HTTP_POOL_MAX_CONCURRENCY, 200);
-                int coreSize = serverConfig.getIntProperty(ServerConfig.PARAM_IO_HTTP_POOL_MIN_SPARE_THREADS, maxSize / 2);
+                int maxSize = serverConfig.getIntProperty( ServerConfigParams.PARAM_IO_HTTP_POOL_MAX_CONCURRENCY, 200);
+                int coreSize = serverConfig.getIntProperty( ServerConfigParams.PARAM_IO_HTTP_POOL_MIN_SPARE_THREADS, maxSize / 2);
                 Pair<Integer, Integer> adjusted = adjustCoreAndMaxThreads(coreSize, maxSize);
                 coreSize = adjusted.left;
                 maxSize = adjusted.right;
@@ -344,7 +345,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         StandardThreadExecutor executor = new StandardThreadExecutor();
         executor.setName(name);
         executor.setDaemon(true);
-        executor.setMaxIdleTime( serverConfig.getIntProperty(ServerConfig.PARAM_IO_HTTP_POOL_MAX_IDLE_TIME, 60000) );
+        executor.setMaxIdleTime( serverConfig.getIntProperty( ServerConfigParams.PARAM_IO_HTTP_POOL_MAX_IDLE_TIME, 60000) );
         executor.setMaxThreads(maxSize);
         executor.setMinSpareThreads(coreSize);
         executor.setNamePrefix("tomcat-exec-" + name + "-");

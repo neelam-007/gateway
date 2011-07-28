@@ -5,6 +5,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.security.keystore.generic.GenericSsgKeyStore;
 import com.l7tech.server.security.keystore.luna.LunaSsgKeyStore;
 import com.l7tech.server.security.keystore.ncipher.NcipherSsgKeyStore;
@@ -222,7 +223,7 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingB
             }
         }
 
-        boolean scanOthers = mustSearchAll || serverConfig.getBooleanPropertyCached(ServerConfig.PARAM_KEYSTORE_SEARCH_FOR_ALIAS, true, 2 * 60 * 1000);
+        boolean scanOthers = mustSearchAll || serverConfig.getBooleanPropertyCached( ServerConfigParams.PARAM_KEYSTORE_SEARCH_FOR_ALIAS, true, 2 * 60 * 1000);
 
         // Scan the other keystores
         List<SsgKeyFinder> finders = scanOthers ? findAll() : Collections.<SsgKeyFinder>emptyList();

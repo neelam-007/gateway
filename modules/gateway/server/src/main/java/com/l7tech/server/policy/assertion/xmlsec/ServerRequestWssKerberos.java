@@ -13,7 +13,7 @@ import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.SecurityContextFinder;
-import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.security.kerberos.KerberosSessionContextManager;
@@ -55,7 +55,7 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion<RequestWss
                 logAndAudit( AssertionMessages.REQUEST_WSS_KERBEROS_NON_SOAP );
                 return AssertionStatus.BAD_REQUEST;
             }
-            if ( !config.getBooleanProperty(ServerConfig.PARAM_WSS_PROCESSOR_LAZY_REQUEST, true) ) {
+            if ( !config.getBooleanProperty( ServerConfigParams.PARAM_WSS_PROCESSOR_LAZY_REQUEST, true) ) {
                 wssResults = context.getRequest().getSecurityKnob().getProcessorResult();
             } else {
                 wssResults = WSSecurityProcessorUtils.getWssResults(context.getRequest(), "Request", securityTokenResolver, securityContextFinder, getAudit(), null);

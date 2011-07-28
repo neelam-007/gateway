@@ -11,7 +11,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.ServerConfigStub;
 import com.l7tech.server.TestLicenseManager;
 import com.l7tech.server.event.system.Started;
@@ -76,7 +76,7 @@ public class AuditPolicyEvaluatorTest {
 
     @Test
     public void testNoSinkPolicyConfigred() {
-        serverConfig.putProperty(ServerConfig.PARAM_AUDIT_SINK_POLICY_GUID, "");
+        serverConfig.putProperty( ServerConfigParams.PARAM_AUDIT_SINK_POLICY_GUID, "");
         AssertionStatus result = sink().outputRecordToPolicyAuditSink(makeSystemAuditRecord(1), null);
         assertNull(result);
         assertEquals(0, sinkInvocationCount);
@@ -84,7 +84,7 @@ public class AuditPolicyEvaluatorTest {
 
     @Test
     public void testInvalidSinkPolicyGuidConfigured() {
-        serverConfig.putProperty(ServerConfig.PARAM_AUDIT_SINK_POLICY_GUID, "qergqer3qergqerg");
+        serverConfig.putProperty( ServerConfigParams.PARAM_AUDIT_SINK_POLICY_GUID, "qergqer3qergqerg");
         AssertionStatus result = sink().outputRecordToPolicyAuditSink(makeSystemAuditRecord(1), null);
         assertEquals(AssertionStatus.SERVER_ERROR, result);
         assertEquals(0, sinkInvocationCount);
@@ -125,7 +125,7 @@ public class AuditPolicyEvaluatorTest {
 
     /** A ServerConfig that has a sink policy GUID configured. */
     ServerConfigStub serverConfig = new ServerConfigStub() {{
-        putProperty(ServerConfig.PARAM_AUDIT_SINK_POLICY_GUID, TEST_POLICY_GUID);
+        putProperty( ServerConfigParams.PARAM_AUDIT_SINK_POLICY_GUID, TEST_POLICY_GUID);
     }};
 
     /** A fake no-op test policy that uses the appropriate GUID. */

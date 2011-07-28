@@ -2,10 +2,10 @@ package com.l7tech.server.policy;
 
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyVersion;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.Config;
 import com.l7tech.util.Functions;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.event.AdminInfo;
 import org.hibernate.Criteria;
@@ -130,7 +130,7 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
 
         // Delete oldest anonymous revisions if we have exceeded MAX_REVISIONS
         // Revisions that have been assigned a name won't be deleted
-        int numToKeep = config.getIntProperty(ServerConfig.PARAM_POLICY_VERSIONING_MAX_REVISIONS, 20);
+        int numToKeep = config.getIntProperty( ServerConfigParams.PARAM_POLICY_VERSIONING_MAX_REVISIONS, 20);
         List<PolicyVersion> revisions = new ArrayList<PolicyVersion>(findAllForPolicy(policyOid));
 
         // Don't count revisions against the limit if they have been assigned names

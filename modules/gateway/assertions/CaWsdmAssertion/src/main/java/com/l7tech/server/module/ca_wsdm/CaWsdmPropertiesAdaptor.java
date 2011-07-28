@@ -3,6 +3,7 @@ package com.l7tech.server.module.ca_wsdm;
 import com.ca.wsdm.monitor.ObserverProperties;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.server.ServerConfigParams;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -219,7 +220,7 @@ public class CaWsdmPropertiesAdaptor {
         Properties properties = new Properties();
 
         properties.put("log.file.path",
-                       serverConfig.getProperty(ServerConfig.PARAM_SSG_HOME_DIRECTORY) +
+                       serverConfig.getProperty( ServerConfigParams.PARAM_SSG_HOME_DIRECTORY) +
                        File.separator + "logs" + File.separator + "ca_wsdm_observer");
         properties.put("log.file.ext", ".log");
 

@@ -17,7 +17,7 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.l7tech.server.ServerConfig.*;
+import static com.l7tech.server.ServerConfigParams.*;
 
 /**
  * Check the status of Audit Cluster Properties such as audit sink properties ("audit.sink.alwaysSaveInternal" and "audit.sink.policy.guid",

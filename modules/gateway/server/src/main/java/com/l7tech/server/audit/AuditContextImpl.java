@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InetAddressUtil;
@@ -402,15 +403,15 @@ public class AuditContextImpl implements AuditContext {
     }
 
     private boolean isPCIDSSEnabled() {
-        return serverConfig.getBooleanPropertyCached(ServerConfig.PARAM_PCIDSS_ENABLED, false, 30000);
+        return serverConfig.getBooleanPropertyCached( ServerConfigParams.PARAM_PCIDSS_ENABLED, false, 30000);
     }
 
     private boolean isFallbackToDatabaseIfSinkPolicyFails() {
-        return serverConfig.getBooleanPropertyCached(ServerConfig.PARAM_AUDIT_SINK_FALLBACK_ON_FAIL, true, 30000);
+        return serverConfig.getBooleanPropertyCached( ServerConfigParams.PARAM_AUDIT_SINK_FALLBACK_ON_FAIL, true, 30000);
     }
 
     private boolean isAlwaysSaveToDatabase() {
-        return serverConfig.getBooleanPropertyCached(ServerConfig.PARAM_AUDIT_SINK_ALWAYS_FALLBACK, false, 30000);
+        return serverConfig.getBooleanPropertyCached( ServerConfigParams.PARAM_AUDIT_SINK_ALWAYS_FALLBACK, false, 30000);
     }
 
     /**
@@ -458,7 +459,7 @@ public class AuditContextImpl implements AuditContext {
 
     private Level getSystemMessageThreshold() {
         if (currentMessageThreshold == null) {
-            String msgLevel = serverConfig.getPropertyCached(ServerConfig.PARAM_AUDIT_MESSAGE_THRESHOLD);
+            String msgLevel = serverConfig.getPropertyCached( ServerConfigParams.PARAM_AUDIT_MESSAGE_THRESHOLD);
             Level output = null;
             if (msgLevel != null) {
                 try {
@@ -478,7 +479,7 @@ public class AuditContextImpl implements AuditContext {
 
     private Level getAssociatedLogsThreshold() {
         if (currentAssociatedLogsThreshold == null) {
-            String msgLevel = serverConfig.getPropertyCached(ServerConfig.PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD);
+            String msgLevel = serverConfig.getPropertyCached( ServerConfigParams.PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD);
             Level output = null;
             if (msgLevel != null) {
                 try {
@@ -498,7 +499,7 @@ public class AuditContextImpl implements AuditContext {
 
     private boolean getUseAssociatedLogsThreshold() {
         if (currentUseAssociatedLogsThreshold == null) {
-            String configStr = serverConfig.getPropertyCached(ServerConfig.PARAM_AUDIT_USE_ASSOCIATED_LOGS_THRESHOLD);
+            String configStr = serverConfig.getPropertyCached( ServerConfigParams.PARAM_AUDIT_USE_ASSOCIATED_LOGS_THRESHOLD);
             Boolean configValue = null;
             if (configStr != null) {
                 configValue = Boolean.valueOf(configStr.trim());
@@ -513,7 +514,7 @@ public class AuditContextImpl implements AuditContext {
 
     private Level getSystemAdminThreshold() {
         if (currentAdminThreshold == null) {
-            String msgLevel = serverConfig.getPropertyCached(ServerConfig.PARAM_AUDIT_ADMIN_THRESHOLD);
+            String msgLevel = serverConfig.getPropertyCached( ServerConfigParams.PARAM_AUDIT_ADMIN_THRESHOLD);
             Level output = null;
             if (msgLevel != null) {
                 try {
@@ -533,7 +534,7 @@ public class AuditContextImpl implements AuditContext {
 
     private Level getSystemSystemClientThreshold() {
         if (currentSystemClientThreshold == null) {
-            String msgLevel = serverConfig.getPropertyCached(ServerConfig.PARAM_AUDIT_SYSTEM_CLIENT_THRESHOLD);
+            String msgLevel = serverConfig.getPropertyCached( ServerConfigParams.PARAM_AUDIT_SYSTEM_CLIENT_THRESHOLD);
             Level output = null;
             if (msgLevel != null) {
                 try {

@@ -1,5 +1,6 @@
 package com.l7tech.server.audit;
 
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.cluster.ClusterContextFactory;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
@@ -173,6 +174,6 @@ public class LogRecordManager {
     }
 
     private int getClusterPort() {
-        return ServerConfig.getInstance().getIntPropertyCached(ServerConfig.PARAM_CLUSTER_PORT, 2124, 30000);
+        return ServerConfig.getInstance().getIntPropertyCached( ServerConfigParams.PARAM_CLUSTER_PORT, 2124, 30000);
     }
 }

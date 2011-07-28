@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import com.l7tech.server.ServerConfigParams;
 import org.apache.commons.httpclient.HttpConnectionManager;
 import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
 
@@ -135,14 +136,14 @@ public class IdentityBindingHttpClientFactory implements GenericHttpClientFactor
      * Get the stale check count to use (set using a cluster/system property)
      */
     private int getStaleCheckCount() {
-        return getIntProperty(ServerConfig.PARAM_IO_STALE_CHECK_PER_INTERVAL,0,1000,1);
+        return getIntProperty( ServerConfigParams.PARAM_IO_STALE_CHECK_PER_INTERVAL,0,1000,1);
     }
 
     /**
      * Get the stale check max host count (set using a cluster/system property)
      */
     private int getStaleCheckHosts() {
-        return getIntProperty(ServerConfig.PARAM_IO_STALE_MAX_HOSTS,0,1000,10);
+        return getIntProperty( ServerConfigParams.PARAM_IO_STALE_MAX_HOSTS,0,1000,10);
     }
 
     /**

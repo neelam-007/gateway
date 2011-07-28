@@ -2,6 +2,7 @@ package com.l7tech.server.boot;
 
 import com.l7tech.gateway.common.Component;
 import com.l7tech.security.prov.JceProvider;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.JceUtil;
 import com.l7tech.util.StrongCryptoNotAvailableException;
 import com.l7tech.server.BootProcess;
@@ -133,7 +134,7 @@ public class GatewayBoot {
         // This thread is responsible for attempting to start the server, and for clearing "running" flag if it fails
         boolean itworked = false;
         try {
-            ServerConfig.getInstance().getLocalDirectoryProperty(ServerConfig.PARAM_LOG_DIRECTORY, true);
+            ServerConfig.getInstance().getLocalDirectoryProperty( ServerConfigParams.PARAM_LOG_DIRECTORY, true);
             FirewallUtils.initializeFirewall();
             spawnDbWarner();
             createApplicationContext();

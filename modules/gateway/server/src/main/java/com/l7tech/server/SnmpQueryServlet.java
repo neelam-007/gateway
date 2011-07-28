@@ -67,9 +67,9 @@ public class SnmpQueryServlet extends HttpServlet {
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         // Check if the service has been enabled by cluster property, 'builtinService.snmpQuery.enabled'.
 
-        final boolean serviceEnabled = Boolean.valueOf(ServerConfig.getInstance().getProperty(ServerConfig.PARAM_SNMP_QUERY_SERVICE_ENABLED));
+        final boolean serviceEnabled = Boolean.valueOf(ServerConfig.getInstance().getProperty( ServerConfigParams.PARAM_SNMP_QUERY_SERVICE_ENABLED));
         if (! serviceEnabled) {
-            logger.info("SNMP query service disabled by cluster property, '" + ServerConfig.PARAM_SNMP_QUERY_SERVICE_ENABLED + "'");
+            logger.info("SNMP query service disabled by cluster property, '" + ServerConfigParams.PARAM_SNMP_QUERY_SERVICE_ENABLED + "'");
             response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "SNMP query service not available");
             return;
         }

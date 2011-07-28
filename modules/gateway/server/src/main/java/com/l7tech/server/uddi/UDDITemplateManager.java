@@ -16,7 +16,7 @@ import java.io.InputStream;
 import java.lang.reflect.Proxy;
 import java.net.URL;
 
-import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.MappedMethodInvocationHandler;
 import com.l7tech.util.CausedIOException;
@@ -157,7 +157,7 @@ public class UDDITemplateManager {
     private Map<String,UDDITemplate> loadTemplatesFromFile() {
         final Map<String,UDDITemplate> templates = new TreeMap<String, UDDITemplate>();
 
-        final String rootPath = config.getProperty(ServerConfig.PARAM_UDDI_TEMPLATES, null);
+        final String rootPath = config.getProperty( ServerConfigParams.PARAM_UDDI_TEMPLATES, null);
         if ( rootPath != null ) {
             logger.config("Loading UDDI templates from directory '"+rootPath+"'.");
 

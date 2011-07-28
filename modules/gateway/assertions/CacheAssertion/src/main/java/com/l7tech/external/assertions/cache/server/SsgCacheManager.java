@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.cache.server;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.EntityInvalidationEvent;
@@ -79,7 +80,7 @@ public class SsgCacheManager {
         for (long oid : eiEvent.getEntityIds()) {
             try {
                 ClusterProperty cp = cpManager.findByPrimaryKey(oid);
-                if (cp != null && ServerConfig.getInstance().getClusterPropertyName(ServerConfig.PARAM_messageCache_RESETGENERATION).equals(cp.getName())) {
+                if (cp != null && ServerConfig.getInstance().getClusterPropertyName( ServerConfigParams.PARAM_MESSAGECACHE_RESETGENERATION ).equals(cp.getName())) {
                     clearAllCaches();
                 }
             } catch (FindException e) {

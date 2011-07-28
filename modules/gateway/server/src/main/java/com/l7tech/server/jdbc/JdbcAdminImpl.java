@@ -6,6 +6,7 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.server.ServerConfigParams;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -131,7 +132,7 @@ public class JdbcAdminImpl implements JdbcAdmin {
     public List<String> getPropertyDefaultDriverClassList() {
         List<String> driverClassList = new ArrayList<String>();
 
-        String defaultList = serverConfig.getProperty(ServerConfig.PARAM_JDBC_CONNECTION_DEFAULT_DRIVERCLASS_LIST);
+        String defaultList = serverConfig.getProperty( ServerConfigParams.PARAM_JDBC_CONNECTION_DEFAULT_DRIVERCLASS_LIST);
         if (defaultList != null && !defaultList.isEmpty()) {
             StringTokenizer tokens = new StringTokenizer(defaultList, "\n");
             while (tokens.hasMoreTokens()) {
@@ -153,7 +154,7 @@ public class JdbcAdminImpl implements JdbcAdmin {
     @Override
     public int getPropertyDefaultMaxRecords() {
         try {
-            String defaultMax = serverConfig.getProperty(ServerConfig.PARAM_JDBC_QUERY_MAXRECORDS_DEFAULT);
+            String defaultMax = serverConfig.getProperty( ServerConfigParams.PARAM_JDBC_QUERY_MAXRECORDS_DEFAULT);
             return Integer.parseInt(defaultMax);
         } catch (Exception e) {
             return ORIGINAL_MAX_RECORDS;
@@ -169,7 +170,7 @@ public class JdbcAdminImpl implements JdbcAdmin {
     @Override
     public int getPropertyDefaultMinPoolSize() {
         try {
-            String defaultMin = serverConfig.getProperty(ServerConfig.PARAM_JDBC_CONNECTION_POOLING_DEFAULT_MINPOOLSIZE);
+            String defaultMin = serverConfig.getProperty( ServerConfigParams.PARAM_JDBC_CONNECTION_POOLING_DEFAULT_MINPOOLSIZE);
             return Integer.parseInt(defaultMin);
         } catch (Exception e) {
             return ORIGINAL_C3P0_BASIC_POOL_CONFIG_MINPOOLSIZE;
@@ -185,7 +186,7 @@ public class JdbcAdminImpl implements JdbcAdmin {
     @Override
     public int getPropertyDefaultMaxPoolSize() {
         try {
-            String defaultMax = serverConfig.getProperty(ServerConfig.PARAM_JDBC_CONNECTION_POOLING_DEFAULT_MAXPOOLSIZE);
+            String defaultMax = serverConfig.getProperty( ServerConfigParams.PARAM_JDBC_CONNECTION_POOLING_DEFAULT_MAXPOOLSIZE);
             return Integer.parseInt(defaultMax);
         } catch (Exception e) {
             return ORIGINAL_C3P0_BASIC_POOL_CONFIG_MAXPOOLSIZE;

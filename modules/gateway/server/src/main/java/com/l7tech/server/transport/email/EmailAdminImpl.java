@@ -4,15 +4,15 @@ import com.l7tech.gateway.common.transport.email.EmailAdmin;
 import com.l7tech.gateway.common.transport.email.EmailMessage;
 import com.l7tech.gateway.common.transport.email.EmailTestException;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
-import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 
 /**
  * Implementation of the Email Admin interface
  */
 public class EmailAdminImpl implements EmailAdmin {
-    private final ServerConfig serverConfig;
+    private final ServerConfigParams serverConfig;
 
-    public EmailAdminImpl(ServerConfig serverConfig) {
+    public EmailAdminImpl(ServerConfigParams serverConfig) {
         if (serverConfig == null) throw new IllegalArgumentException("Server config cannot be null");
         this.serverConfig = serverConfig;
     }

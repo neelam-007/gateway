@@ -3,6 +3,7 @@ package com.l7tech.server.security.kerberos;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.kerberos.KerberosUtils;
 import com.l7tech.kerberos.KerberosException;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.util.ExceptionUtils;
@@ -36,8 +37,8 @@ public class ServerKerberosConfig implements InitializingBean, PropertyChangeLis
     @Override
     public void afterPropertiesSet() throws Exception {
         String keytabBase64 = config.getPropertyCached(KERBEROS_KEYTAB_PROP);
-        String realm = config.getProperty(ServerConfig.PARAM_KERBEROS_CONFIG_REALM);
-        String kdc = config.getProperty(ServerConfig.PARAM_KERBEROS_CONFIG_KDC);
+        String realm = config.getProperty( ServerConfigParams.PARAM_KERBEROS_CONFIG_REALM);
+        String kdc = config.getProperty( ServerConfigParams.PARAM_KERBEROS_CONFIG_KDC);
 
         synchronized( configSync ) {
             this.keytabB64 = keytabBase64;
@@ -61,7 +62,7 @@ public class ServerKerberosConfig implements InitializingBean, PropertyChangeLis
             synchronized( configSync ) {
                 keytabB64 = evt.getNewValue() == null ? null :  evt.getNewValue().toString();
             }
-        } else if (ServerConfig.PARAM_KERBEROS_CONFIG_REALM.equals(evt.getPropertyName())) {
+        } else if ( ServerConfigParams.PARAM_KERBEROS_CONFIG_REALM.equals(evt.getPropertyName())) {
             updated = true;
             synchronized( configSync ) {
                 if (evt.getNewValue() == null) {
@@ -70,7 +71,7 @@ public class ServerKerberosConfig implements InitializingBean, PropertyChangeLis
                     realm = evt.getNewValue().toString();
                 }
             }
-        } else if ((ServerConfig.PARAM_KERBEROS_CONFIG_KDC).equals(evt.getPropertyName()) ) {
+        } else if ((ServerConfigParams.PARAM_KERBEROS_CONFIG_KDC).equals(evt.getPropertyName()) ) {
             updated = true;
             synchronized( configSync ) {
                 if (evt.getNewValue() == null) {

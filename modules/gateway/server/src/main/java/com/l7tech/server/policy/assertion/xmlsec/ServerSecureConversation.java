@@ -16,7 +16,7 @@ import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.processor.BadSecurityContextException;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.SecurityContextFinder;
-import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
@@ -86,7 +86,7 @@ public class ServerSecureConversation extends AbstractServerAssertion<SecureConv
                 logAndAudit(AssertionMessages.SC_REQUEST_NOT_SOAP);
                 return AssertionStatus.NOT_APPLICABLE;
             }
-            if ( !config.getBooleanProperty(ServerConfig.PARAM_WSS_PROCESSOR_LAZY_REQUEST, true) ) {
+            if ( !config.getBooleanProperty( ServerConfigParams.PARAM_WSS_PROCESSOR_LAZY_REQUEST, true) ) {
                 wssResults = context.getRequest().getSecurityKnob().getProcessorResult();
             } else {
                 wssResults = WSSecurityProcessorUtils.getWssResults(context.getRequest(), "Request", securityTokenResolver, securityContextFinder, getAudit(), new Functions.Unary<Boolean,Throwable>(){

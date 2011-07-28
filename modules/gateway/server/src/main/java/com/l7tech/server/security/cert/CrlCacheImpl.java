@@ -7,6 +7,7 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.identity.ldap.LdapIdentityProvider;
 import com.l7tech.server.url.AbstractUrlObjectCache;
 import com.l7tech.server.url.HttpObjectCache;
@@ -83,8 +84,8 @@ public class CrlCacheImpl implements CrlCache, DisposableBean {
         }
 
         // TODO support configuration of login, password
-        long connectTimeout = serverConfig.getTimeUnitPropertyCached(ServerConfig.PARAM_LDAP_CONNECTION_TIMEOUT, LdapIdentityProvider.DEFAULT_LDAP_CONNECTION_TIMEOUT, MAX_CACHE_AGE_VALUE);
-        long readTimeout = serverConfig.getTimeUnitPropertyCached(ServerConfig.PARAM_LDAP_READ_TIMEOUT, LdapIdentityProvider.DEFAULT_LDAP_READ_TIMEOUT, MAX_CACHE_AGE_VALUE);
+        long connectTimeout = serverConfig.getTimeUnitPropertyCached( ServerConfigParams.PARAM_LDAP_CONNECTION_TIMEOUT, LdapIdentityProvider.DEFAULT_LDAP_CONNECTION_TIMEOUT, MAX_CACHE_AGE_VALUE);
+        long readTimeout = serverConfig.getTimeUnitPropertyCached( ServerConfigParams.PARAM_LDAP_READ_TIMEOUT, LdapIdentityProvider.DEFAULT_LDAP_READ_TIMEOUT, MAX_CACHE_AGE_VALUE);
         ldapUrlObjectCache = new LdapUrlObjectCache<X509CRL>( "CRL", maxCacheAge, AbstractUrlObjectCache.WAIT_LATEST, null, null, connectTimeout, readTimeout, true);
 
         int httpObjectCacheSize = SyspropUtil.getIntegerCached(MAX_HTTP_CACHE_OBJECTS_PROP, DEFAULT_MAX_HTTP_CACHE_OBJECTS_SIZE) ;

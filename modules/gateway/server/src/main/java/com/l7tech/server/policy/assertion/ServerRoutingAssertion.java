@@ -22,6 +22,7 @@ import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.decorator.WssDecoratorUtils;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.PostRoutingEvent;
 import com.l7tech.server.event.PreRoutingEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -349,7 +350,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
      * @return the configured or default timeout.
      */
     protected int getConnectionTimeout() {
-        return getIntProperty(ServerConfig.PARAM_IO_BACK_CONNECTION_TIMEOUT,0,Integer.MAX_VALUE,0);
+        return getIntProperty( ServerConfigParams.PARAM_IO_BACK_CONNECTION_TIMEOUT,0,Integer.MAX_VALUE,0);
     }
 
     /**
@@ -358,7 +359,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
      * @return the configured or default timeout.
      */
     protected int getTimeout() {
-        return getIntProperty(ServerConfig.PARAM_IO_BACK_READ_TIMEOUT,0,Integer.MAX_VALUE,0);
+        return getIntProperty( ServerConfigParams.PARAM_IO_BACK_READ_TIMEOUT,0,Integer.MAX_VALUE,0);
     }
 
     /**
@@ -366,7 +367,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
      * @return the stale check count to use
      */
     protected int getStaleCheckCount() {
-        return getIntProperty(ServerConfig.PARAM_IO_STALE_CHECK_PER_INTERVAL,0,1000,1);        
+        return getIntProperty( ServerConfigParams.PARAM_IO_STALE_CHECK_PER_INTERVAL,0,1000,1);
     }
 
     //- PRIVATE

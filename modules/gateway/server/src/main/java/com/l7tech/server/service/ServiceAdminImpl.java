@@ -1,5 +1,6 @@
 package com.l7tech.server.service;
 
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.admin.AsyncAdminMethodsImpl;
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.gateway.common.service.*;
@@ -118,7 +119,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
         this.serviceCache = serviceCache;
         this.resolutionConfigurationManager = resolutionConfigurationManager;
 
-        int maxConcurrency = validated(serverConfig).getIntProperty(ServerConfig.PARAM_POLICY_VALIDATION_MAX_CONCURRENCY, 15);
+        int maxConcurrency = validated(serverConfig).getIntProperty( ServerConfigParams.PARAM_POLICY_VALIDATION_MAX_CONCURRENCY, 15);
         BlockingQueue<Runnable> validatorQueue = new LinkedBlockingQueue<Runnable>();
         validatorExecutor = new ThreadPoolExecutor(1, maxConcurrency, 5 * 60, TimeUnit.SECONDS, validatorQueue );
     }
@@ -750,7 +751,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
             }
         } );
 
-        vc.setMinimumValue( ServerConfig.PARAM_POLICY_VALIDATION_MAX_CONCURRENCY, 1 );
+        vc.setMinimumValue( ServerConfigParams.PARAM_POLICY_VALIDATION_MAX_CONCURRENCY, 1 );
 
         return vc;
     }

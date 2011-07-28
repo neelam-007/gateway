@@ -10,7 +10,7 @@ import com.l7tech.security.xml.processor.ProcessorException;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.ProcessorResultUtil;
 import com.l7tech.security.xml.SecurityTokenResolver;
-import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
@@ -87,7 +87,7 @@ public abstract class ServerRequireWssOperation<AT extends XmlSecurityAssertionB
                 return getBadMessageStatus();
             }
 
-            if ( isRequest() && !config.getBooleanProperty(ServerConfig.PARAM_WSS_PROCESSOR_LAZY_REQUEST,true) ) {
+            if ( isRequest() && !config.getBooleanProperty( ServerConfigParams.PARAM_WSS_PROCESSOR_LAZY_REQUEST,true) ) {
                 wssResults = message.getSecurityKnob().getProcessorResult();
             } else {
                 wssResults = WSSecurityProcessorUtils.getWssResults(message, messageDescription, securityTokenResolver, getAudit());

@@ -5,6 +5,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.SyslogEvent;
 import com.l7tech.server.log.syslog.SyslogConnectionListener;
@@ -438,7 +439,7 @@ public class SinkManagerImpl
     }
 
     private void stashLogFileSettings( final List<MessageSink> sinks ) {
-        File varDir = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_VAR_DIRECTORY, true);
+        File varDir = serverConfig.getLocalDirectoryProperty( ServerConfigParams.PARAM_VAR_DIRECTORY, true);
         File logConfig = new File( varDir, LogUtils.LOG_SER_FILE );
 
         List<FileMessageSink> fileSinks = new ArrayList<FileMessageSink>();
@@ -495,7 +496,7 @@ public class SinkManagerImpl
      */
     private void addConsoleSink( final List<MessageSink> sinks ) {
         SinkConfiguration.SeverityThreshold threshold = SinkConfiguration.SeverityThreshold.INFO;
-        String thresholdConfig = serverConfig.getPropertyCached( ServerConfig.PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD );
+        String thresholdConfig = serverConfig.getPropertyCached( ServerConfigParams.PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD );
         if ( thresholdConfig != null ) {
             threshold = toSeverityThreshold( thresholdConfig, threshold );
         }

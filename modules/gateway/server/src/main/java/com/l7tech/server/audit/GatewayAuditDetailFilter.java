@@ -3,6 +3,7 @@ package com.l7tech.server.audit;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.audit.MessagesUtil;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.Pair;
 
 import java.beans.PropertyChangeListener;
@@ -57,7 +58,7 @@ public class GatewayAuditDetailFilter implements PropertyChangeListener, AuditDe
     private static final int MIN_VALUE = 3000; // range for MessageProcessingMessages audits
     private static final int MAX_VALUE = 3499;
 
-    private static final String PROP_THRESHOLD = ServerConfig.PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD;
+    private static final String PROP_THRESHOLD = ServerConfigParams.PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD;
 
     private final AtomicInteger detailThreshold = new AtomicInteger();
 

@@ -1,6 +1,7 @@
 package com.l7tech.server.transport.http;
 
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.security.cert.TrustedCert;
@@ -90,7 +91,7 @@ public class SslClientHostnameVerifier implements HostnameVerifier {
 
     private boolean isSkipHostnameVerificationByDefault() {
         boolean verify = true;
-        String defaultVerifyHostnameTxt = serverConfig.getPropertyCached(ServerConfig.PARAM_IO_BACK_HTTPS_HOST_CHECK, 30000);
+        String defaultVerifyHostnameTxt = serverConfig.getPropertyCached( ServerConfigParams.PARAM_IO_BACK_HTTPS_HOST_CHECK, 30000);
 
         if (defaultVerifyHostnameTxt != null) {
             verify = Boolean.valueOf(defaultVerifyHostnameTxt.trim());
@@ -101,7 +102,7 @@ public class SslClientHostnameVerifier implements HostnameVerifier {
 
     private boolean isAllowHostnameWildcards() {
         boolean allowWildcards = false;
-        String allowHostnameWildcardsTxt = serverConfig.getPropertyCached(ServerConfig.PARAM_IO_HOST_ALLOW_WILDCARD, 30000);
+        String allowHostnameWildcardsTxt = serverConfig.getPropertyCached( ServerConfigParams.PARAM_IO_HOST_ALLOW_WILDCARD, 30000);
 
         if (allowHostnameWildcardsTxt != null) {
             allowWildcards = Boolean.valueOf(allowHostnameWildcardsTxt.trim());

@@ -5,7 +5,7 @@ import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.MessageProcessor;
-import static com.l7tech.server.ServerConfig.*;
+import static com.l7tech.server.ServerConfigParams.*;
 import com.l7tech.server.cluster.ClusterLock;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.system.AuditArchiverEvent;

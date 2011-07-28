@@ -6,8 +6,8 @@ import com.l7tech.gateway.common.uddi.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.url.HttpObjectCache;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.SyspropUtil;
@@ -706,7 +706,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                     }
 
                                     // Fetch wsdl
-                                    final int maxSize = factory.serverConfig.getIntProperty(ServerConfig.PARAM_DOCUMENT_DOWNLOAD_MAXSIZE, HttpObjectCache.DEFAULT_DOWNLOAD_LIMIT);
+                                    final int maxSize = factory.serverConfig.getIntProperty( ServerConfigParams.PARAM_DOCUMENT_DOWNLOAD_MAXSIZE, HttpObjectCache.DEFAULT_DOWNLOAD_LIMIT);
                                     final SimpleHttpClient httpClient = new SimpleHttpClient(factory.httpClientFactory.createHttpClient(), maxSize);
                                     try {
                                         final RemoteEntityResolver resolver = new RemoteEntityResolver(httpClient, ps.getWsdlUrl());

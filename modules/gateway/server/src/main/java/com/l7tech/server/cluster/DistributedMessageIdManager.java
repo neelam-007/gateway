@@ -5,6 +5,7 @@
 package com.l7tech.server.cluster;
 
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.util.MessageId;
 import com.l7tech.server.util.MessageIdManager;
 import com.l7tech.util.Background;
@@ -46,7 +47,7 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
     //- PUBLIC
 
     public DistributedMessageIdManager( final ServerConfig serverConfig, final String clusterNodeId ) {
-        File configDir = serverConfig.getLocalDirectoryProperty( ServerConfig.PARAM_CONFIG_DIRECTORY, false );
+        File configDir = serverConfig.getLocalDirectoryProperty( ServerConfigParams.PARAM_CONFIG_DIRECTORY, false );
         String file = null;
         if ( configDir != null ) {
             File jgroupsFile = new File( configDir, "jgroups-config.xml" );
@@ -72,7 +73,7 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
             throw new IllegalStateException("Already Initialized");
         }
 
-        boolean useMulticast = serverConfig.getBooleanProperty(ServerConfig.PARAM_MULTICAST_ENABLED, true);
+        boolean useMulticast = serverConfig.getBooleanProperty( ServerConfigParams.PARAM_MULTICAST_ENABLED, true);
 
         cacheLock.readLock().lock();
         try {

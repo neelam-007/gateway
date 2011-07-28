@@ -27,7 +27,7 @@ public class MessageCacheStashManagerFactory implements StashManagerFactory, Pro
 
     @Override
     public void propertyChange(PropertyChangeEvent event) {
-        if ( event.getPropertyName().equals(ServerConfig.PARAM_messageCache_DISK_THRESHOLD) && event.getNewValue() != null ) {
+        if ( event.getPropertyName().equals( ServerConfigParams.PARAM_MESSAGECACHE_DISK_THRESHOLD ) && event.getNewValue() != null ) {
             reloadConfig();
         }
     }
@@ -35,7 +35,7 @@ public class MessageCacheStashManagerFactory implements StashManagerFactory, Pro
     // - PRIVATE
 
     private static class ConfigHolder {
-        private static final File MESSAGE_CACHE_DIR = ServerConfig.getInstance().getLocalDirectoryProperty(ServerConfig.PARAM_messageCache_DIRECTORY, true);
+        private static final File MESSAGE_CACHE_DIR = ServerConfig.getInstance().getLocalDirectoryProperty( ServerConfigParams.PARAM_MESSAGECACHE_DIRECTORY, true);
     }
 
     private static final MessageCacheStashManagerFactory INSTANCE = new MessageCacheStashManagerFactory();
@@ -48,7 +48,7 @@ public class MessageCacheStashManagerFactory implements StashManagerFactory, Pro
     }
 
     private static void reloadConfig() {
-        diskThreshold = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_messageCache_DISK_THRESHOLD, 8096);
+        diskThreshold = ServerConfig.getInstance().getIntProperty( ServerConfigParams.PARAM_MESSAGECACHE_DISK_THRESHOLD, 8096);
         logger.config("Message cache disk threshold set to " + diskThreshold + " bytes.");
     }
 

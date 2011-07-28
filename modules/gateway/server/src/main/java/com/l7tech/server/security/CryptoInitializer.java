@@ -5,6 +5,7 @@ import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.system.Initialized;
 import com.l7tech.server.event.system.Starting;
 import com.l7tech.util.SyspropUtil;
@@ -32,7 +33,7 @@ public class CryptoInitializer implements ApplicationListener {
 
     private void init() {
         // Check for FIPS flag
-        serverConfig.getBooleanProperty(ServerConfig.PARAM_FIPS, false);
+        serverConfig.getBooleanProperty( ServerConfigParams.PARAM_FIPS, false);
         if (licenseManager.isFeatureEnabled(GatewayFeatureSets.FLAG_PERMAFIPS)) {
             permafips = true;
             SyspropUtil.setProperty("com.l7tech.security.fips.alwaysEnabled", "true");

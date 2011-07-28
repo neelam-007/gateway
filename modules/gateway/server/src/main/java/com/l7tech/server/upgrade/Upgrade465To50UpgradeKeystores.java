@@ -1,6 +1,7 @@
 package com.l7tech.server.upgrade;
 
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.security.keystore.*;
 import com.l7tech.server.security.sharedkey.SharedKeyManager;
@@ -317,14 +318,14 @@ public class Upgrade465To50UpgradeKeystores implements UpgradeTask {
                                           final String sslAlias,
                                           final String caAlias) throws FatalUpgradeException, ObjectModelException {
         ClusterPropertyManager clusterPropertyManager = getBean("clusterPropertyManager", ClusterPropertyManager.class);
-        String sslPropertyName = serverConfig.getClusterPropertyName(ServerConfig.PARAM_KEYSTORE_DEFAULT_SSL_KEY);
+        String sslPropertyName = serverConfig.getClusterPropertyName( ServerConfigParams.PARAM_KEYSTORE_DEFAULT_SSL_KEY);
         if (sslPropertyName != null) {
             String value = keyStoreId + ":" + sslAlias;
             clusterPropertyManager.putProperty(sslPropertyName, value);
         } else {
             logger.warning("Could not configure default SSL key.");
         }
-        String caPropertyName = serverConfig.getClusterPropertyName(ServerConfig.PARAM_KEYSTORE_DEFAULT_CA_KEY);
+        String caPropertyName = serverConfig.getClusterPropertyName( ServerConfigParams.PARAM_KEYSTORE_DEFAULT_CA_KEY);
         if (caPropertyName != null) {
             String value = keyStoreId + ":" + caAlias;
             clusterPropertyManager.putProperty(caPropertyName, value);

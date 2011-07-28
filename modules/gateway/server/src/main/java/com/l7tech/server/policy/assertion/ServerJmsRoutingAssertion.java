@@ -18,6 +18,7 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -375,7 +376,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     String timeoutStr = assertion.getResponseTimeout();
                     int timeout;
                     if (timeoutStr == null) {
-                        timeout = serverConfig.getIntProperty(ServerConfig.PARAM_JMS_RESPONSE_TIMEOUT, emergencyTimeoutDefault);
+                        timeout = serverConfig.getIntProperty( ServerConfigParams.PARAM_JMS_RESPONSE_TIMEOUT, emergencyTimeoutDefault);
                     }
                     else  {
                         // try resolving context var
@@ -383,12 +384,12 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         try {
                             timeout = Integer.parseInt(timeoutStr);
                             if (timeout <= 0){
-                                timeout = serverConfig.getIntProperty(ServerConfig.PARAM_JMS_RESPONSE_TIMEOUT,emergencyTimeoutDefault);
+                                timeout = serverConfig.getIntProperty( ServerConfigParams.PARAM_JMS_RESPONSE_TIMEOUT,emergencyTimeoutDefault);
                                 logger.info("Using server default value (" + timeout + ") for JMS response timeout.");
                             }
                         } catch (NumberFormatException e) {
                             timeout = emergencyTimeoutDefault;
-                            logger.warning("Using default value (" + emergencyTimeoutDefault + ") for undefined cluster property: " + serverConfig.getClusterPropertyName(ServerConfig.PARAM_JMS_RESPONSE_TIMEOUT));
+                            logger.warning("Using default value (" + emergencyTimeoutDefault + ") for undefined cluster property: " + serverConfig.getClusterPropertyName( ServerConfigParams.PARAM_JMS_RESPONSE_TIMEOUT));
                         }
                     }
                     MessageConsumer jmsConsumer = null;

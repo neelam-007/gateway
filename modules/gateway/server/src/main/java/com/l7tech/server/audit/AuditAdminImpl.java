@@ -17,6 +17,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.server.GatewayKeyAccessFilter;
 import com.l7tech.server.PersistenceEventInterceptor;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.event.admin.AdminEvent;
@@ -227,25 +228,25 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
     public ClusterProperty getFtpAuditArchiveConfig() {
         ClusterProperty result = null;
         try {
-            result = clusterPropertyManager.findByUniqueName(ServerConfig.PARAM_AUDIT_ARCHIVER_FTP_DESTINATION);
+            result = clusterPropertyManager.findByUniqueName( ServerConfigParams.PARAM_AUDIT_ARCHIVER_FTP_DESTINATION);
         } catch ( FindException fe ) {
             logger.log( Level.WARNING, "Error getting cluster property: " + fe.getMessage(), ExceptionUtils.getDebugException( fe ) );
         }
 
-        return result != null ? result : new ClusterProperty(ServerConfig.PARAM_AUDIT_ARCHIVER_FTP_DESTINATION, null);
+        return result != null ? result : new ClusterProperty( ServerConfigParams.PARAM_AUDIT_ARCHIVER_FTP_DESTINATION, null);
     }
 
     @Override
     public void setFtpAuditArchiveConfig(ClusterProperty prop) throws UpdateException {
 
-        if (prop == null || ! ServerConfig.PARAM_AUDIT_ARCHIVER_FTP_DESTINATION.equals(prop.getName()))
+        if (prop == null || ! ServerConfigParams.PARAM_AUDIT_ARCHIVER_FTP_DESTINATION.equals(prop.getName()))
             throw new UpdateException("Invalid cluster property provided for FTP archiver configuration: " + prop);
 
         // bug #6574 - error calling update() for the first time to set the cluster property
         //             for ftp archiver -- Call save to create the first time
         ClusterProperty cp;
         try {
-            cp = clusterPropertyManager.findByUniqueName(ServerConfig.PARAM_AUDIT_ARCHIVER_FTP_DESTINATION);
+            cp = clusterPropertyManager.findByUniqueName( ServerConfigParams.PARAM_AUDIT_ARCHIVER_FTP_DESTINATION);
         } catch (FindException fe) {
             cp = null;
         }
@@ -371,10 +372,10 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
 
         switch(typeId) {
             case TYPE_AUDIT:
-                propertyName = ServerConfig.PARAM_AUDIT_REFRESH_PERIOD_SECS;
+                propertyName = ServerConfigParams.PARAM_AUDIT_REFRESH_PERIOD_SECS;
                 break;
             case TYPE_LOG:
-                propertyName = ServerConfig.PARAM_AUDIT_LOG_REFRESH_PERIOD_SECS;
+                propertyName = ServerConfigParams.PARAM_AUDIT_LOG_REFRESH_PERIOD_SECS;
                 break;
             default:
                 logger.warning("System logs refresh period requested for an unknown type '"+typeId+"'.");
@@ -403,12 +404,12 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
 
     @Override
     public Level serverMessageAuditThreshold() {
-        return getAuditLevel(ServerConfig.PARAM_AUDIT_MESSAGE_THRESHOLD, "message", AuditContext.DEFAULT_MESSAGE_THRESHOLD);
+        return getAuditLevel( ServerConfigParams.PARAM_AUDIT_MESSAGE_THRESHOLD, "message", AuditContext.DEFAULT_MESSAGE_THRESHOLD);
     }
 
     @Override
     public Level serverDetailAuditThreshold() {
-        return getAuditLevel(ServerConfig.PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD, "detail", AuditContext.DEFAULT_ASSOCIATED_LOGS_THRESHOLD);
+        return getAuditLevel( ServerConfigParams.PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD, "detail", AuditContext.DEFAULT_ASSOCIATED_LOGS_THRESHOLD);
     }
 
     private Level getAuditLevel(String serverConfigParam, String which, Level defaultLevel) {
@@ -431,7 +432,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
 
     @Override
     public int serverMinimumPurgeAge() {
-        String sAge = serverConfig.getPropertyCached(ServerConfig.PARAM_AUDIT_PURGE_MINIMUM_AGE);
+        String sAge = serverConfig.getPropertyCached( ServerConfigParams.PARAM_AUDIT_PURGE_MINIMUM_AGE);
         int age = 168;
         try {
             return Integer.valueOf(sAge);
@@ -449,7 +450,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
 
     @Override
     public int getMaxDigestRecords() {
-        return auditRecordManager.getAuditValidatedConfig().getIntProperty(ServerConfig.PARAM_AUDIT_SIGN_MAX_VALIDATE, 100);
+        return auditRecordManager.getAuditValidatedConfig().getIntProperty( ServerConfigParams.PARAM_AUDIT_SIGN_MAX_VALIDATE, 100);
     }
 
     @Override

@@ -16,6 +16,7 @@ import java.util.logging.LogRecord;
 import java.util.List;
 import java.util.ArrayList;
 
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.JdkLoggerConfigurator;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.SyspropUtil;
@@ -139,7 +140,7 @@ public class JdkLogConfig {
         List<LogFileConfiguration> logFileConfigurations = new ArrayList<LogFileConfiguration>();
 
         ServerConfig serverConfig = ServerConfig.getInstance();
-        File varDir = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_VAR_DIRECTORY, true);
+        File varDir = serverConfig.getLocalDirectoryProperty( ServerConfigParams.PARAM_VAR_DIRECTORY, true);
         int level = LogUtils.readLoggingThreshold( "sink.level" );
         File logConfig = new File( varDir, LogUtils.LOG_SER_FILE );
         if ( logConfig.exists() ) {

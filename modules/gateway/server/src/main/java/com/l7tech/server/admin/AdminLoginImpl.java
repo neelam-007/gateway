@@ -23,6 +23,7 @@ import com.l7tech.security.token.UsernamePasswordSecurityToken;
 import com.l7tech.security.token.http.HttpClientCertToken;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.system.FailedAdminLoginEvent;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
@@ -357,7 +358,7 @@ public class AdminLoginImpl
     }
 
     private String getLogonWarningBanner() {
-        String prop = serverConfig.getProperty(ServerConfig.PARAM_LOGON_WARNING_BANNER);
+        String prop = serverConfig.getProperty( ServerConfigParams.PARAM_LOGON_WARNING_BANNER);
 
         // If the banner prop value just contains whitespace, then set the prop as null.
         if (prop != null && prop.trim().isEmpty()) prop = null;

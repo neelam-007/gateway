@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.transport.ftp.FtpClientConfig;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.server.transport.ftp.FtpClientUtils;
@@ -307,7 +308,7 @@ public class FtpArchiveReceiver implements ArchiveReceiver, PropertyChangeListen
     private void reloadConfig() {
         if (logger.isLoggable(Level.FINE)) logger.fine("Reloading configuration.");
         try {
-            ClusterProperty configProp = clusterPropertyManager.findByUniqueName(ServerConfig.PARAM_AUDIT_ARCHIVER_FTP_DESTINATION);
+            ClusterProperty configProp = clusterPropertyManager.findByUniqueName( ServerConfigParams.PARAM_AUDIT_ARCHIVER_FTP_DESTINATION);
             String serializedConfig = configProp == null ? null : configProp.getValue();
             if ( serializedConfig != null ) {
                 if ( serializedConfig.trim().length() == 0) {
@@ -324,8 +325,8 @@ public class FtpArchiveReceiver implements ArchiveReceiver, PropertyChangeListen
                 }
             }
 
-            ftpFilePrefix = serverConfig.getProperty(ServerConfig.PARAM_AUDIT_ARCHIVER_FTP_FILEPREFIX);
-            maxUploadFileSize = serverConfig.getLongProperty(ServerConfig.PARAM_AUDIT_ARCHIVER_FTP_MAX_UPLOAD_FILE_SIZE, 1000000000);
+            ftpFilePrefix = serverConfig.getProperty( ServerConfigParams.PARAM_AUDIT_ARCHIVER_FTP_FILEPREFIX);
+            maxUploadFileSize = serverConfig.getLongProperty( ServerConfigParams.PARAM_AUDIT_ARCHIVER_FTP_MAX_UPLOAD_FILE_SIZE, 1000000000);
 
 
         } catch (FindException e) {

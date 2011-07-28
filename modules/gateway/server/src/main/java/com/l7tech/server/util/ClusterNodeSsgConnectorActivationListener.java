@@ -1,5 +1,6 @@
 package com.l7tech.server.util;
 
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.transport.SsgConnectorActivationListener;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.gateway.common.transport.SsgConnector;
@@ -22,7 +23,7 @@ public class ClusterNodeSsgConnectorActivationListener implements SsgConnectorAc
     public void notifyActivated( final SsgConnector ssgConnector ) {
         if ( ssgConnector.offersEndpoint(SsgConnector.Endpoint.NODE_COMMUNICATION) ) {
             logger.log( Level.CONFIG, "Cluster port {0} activated.", Integer.toString(ssgConnector.getPort()));
-            serverConfig.putProperty( ServerConfig.PARAM_CLUSTER_PORT, Integer.toString(ssgConnector.getPort()) );            
+            serverConfig.putProperty( ServerConfigParams.PARAM_CLUSTER_PORT, Integer.toString(ssgConnector.getPort()) );
         }
     }
 

@@ -9,6 +9,7 @@ import com.l7tech.identity.IdentityProvider;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.identity.internal.InternalIdentityProvider;
 import com.l7tech.util.TimeSource;
 import com.l7tech.util.SyspropUtil;
@@ -26,8 +27,8 @@ public final class AuthCache {
     private static final int SUCCESS_CACHE_TUNER_INTERVAL = 59;
     private static final int FAILURE_CACHE_TUNER_INTERVAL = 61;
 
-    public final static int SUCCESS_CACHE_SIZE = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_AUTH_CACHE_SUCCESS_CACHE_SIZE, 200);
-    public final static int FAILURE_CACHE_SIZE = ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_AUTH_CACHE_FAILURE_CACHE_SIZE, 100);
+    public final static int SUCCESS_CACHE_SIZE = ServerConfig.getInstance().getIntProperty( ServerConfigParams.PARAM_AUTH_CACHE_SUCCESS_CACHE_SIZE, 200);
+    public final static int FAILURE_CACHE_SIZE = ServerConfig.getInstance().getIntProperty( ServerConfigParams.PARAM_AUTH_CACHE_FAILURE_CACHE_SIZE, 100);
 
     private static final boolean AUTH_MUTEX_ENABLED = SyspropUtil.getBoolean( "com.l7tech.server.identity.authCacheMutexEnabled", true );
 

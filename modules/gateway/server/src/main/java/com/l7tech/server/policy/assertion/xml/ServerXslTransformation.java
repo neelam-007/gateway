@@ -17,6 +17,7 @@ import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
@@ -184,10 +185,10 @@ public class ServerXslTransformation
             Config config = validated( ServerConfig.getInstance(), logger );
             httpObjectCache = new HttpObjectCache<CompiledStylesheet>(
                         "XSL-T",
-                        config.getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_ENTRIES, 10000),
-                        config.getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_AGE, 300000),
-                        config.getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_STALE_AGE, -1),
-                        clientFactory, cacheObjectFactory, HttpObjectCache.WAIT_INITIAL, ServerConfig.PARAM_XSL_MAX_DOWNLOAD_SIZE);
+                        config.getIntProperty( ServerConfigParams.PARAM_XSLT_CACHE_MAX_ENTRIES, 10000),
+                        config.getIntProperty( ServerConfigParams.PARAM_XSLT_CACHE_MAX_AGE, 300000),
+                        config.getIntProperty( ServerConfigParams.PARAM_XSLT_CACHE_MAX_STALE_AGE, -1),
+                        clientFactory, cacheObjectFactory, HttpObjectCache.WAIT_INITIAL, ServerConfigParams.PARAM_XSL_MAX_DOWNLOAD_SIZE);
 
             return httpObjectCache;
         }
@@ -201,10 +202,10 @@ public class ServerXslTransformation
             }
         } );
 
-        vc.setMinimumValue( ServerConfig.PARAM_XSLT_CACHE_MAX_ENTRIES, 0 );
-        vc.setMaximumValue( ServerConfig.PARAM_XSLT_CACHE_MAX_ENTRIES, 1000000 );
+        vc.setMinimumValue( ServerConfigParams.PARAM_XSLT_CACHE_MAX_ENTRIES, 0 );
+        vc.setMaximumValue( ServerConfigParams.PARAM_XSLT_CACHE_MAX_ENTRIES, 1000000 );
 
-        vc.setMinimumValue( ServerConfig.PARAM_XSLT_CACHE_MAX_STALE_AGE, -1 );
+        vc.setMinimumValue( ServerConfigParams.PARAM_XSLT_CACHE_MAX_STALE_AGE, -1 );
 
         return vc;
     }

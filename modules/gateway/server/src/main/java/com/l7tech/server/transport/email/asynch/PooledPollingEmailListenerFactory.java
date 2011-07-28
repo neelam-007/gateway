@@ -1,5 +1,6 @@
 package com.l7tech.server.transport.email.asynch;
 
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.transport.email.PollingEmailListenerFactory;
 import com.l7tech.server.transport.email.PollingEmailListener;
 import com.l7tech.server.transport.email.EmailListenerConfig;
@@ -50,9 +51,9 @@ public class PooledPollingEmailListenerFactory implements PollingEmailListenerFa
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
         String propertyName = evt.getPropertyName();
-        if (ServerConfig.PARAM_EMAIL_LISTENER_CONNECTION_TIMEOUT.equals(propertyName)) {
+        if ( ServerConfigParams.PARAM_EMAIL_LISTENER_CONNECTION_TIMEOUT.equals(propertyName)) {
             this.connectionTimeout = serverConfig.getTimeUnitPropertyCached(IN_CONNECTION_TIMEOUT, DEFAULT_CONNECTION_TIMEOUT, MAX_CACHE_AGE_VALUE);
-        } else if (ServerConfig.PARAM_EMAIL_LISTENER_TIMEOUT.equals(propertyName)) {
+        } else if ( ServerConfigParams.PARAM_EMAIL_LISTENER_TIMEOUT.equals(propertyName)) {
             this.timeout = serverConfig.getTimeUnitPropertyCached(IN_TIMEOUT, DEFAULT_TIMEOUT, MAX_CACHE_AGE_VALUE);
         }
     }

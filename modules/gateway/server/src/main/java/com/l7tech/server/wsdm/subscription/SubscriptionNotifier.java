@@ -5,6 +5,7 @@ package com.l7tech.server.wsdm.subscription;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.io.ByteLimitInputStream;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -586,7 +587,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
      * @return the configured or default timeout.
      */
     private int getConnectionTimeout() {
-        return getIntProperty(ServerConfig.PARAM_IO_BACK_CONNECTION_TIMEOUT,0,Integer.MAX_VALUE,0);
+        return getIntProperty( ServerConfigParams.PARAM_IO_BACK_CONNECTION_TIMEOUT,0,Integer.MAX_VALUE,0);
     }
 
     /**
@@ -595,7 +596,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
      * @return the configured or default timeout.
      */
     private int getTimeout() {
-        return getIntProperty(ServerConfig.PARAM_IO_BACK_READ_TIMEOUT,0,Integer.MAX_VALUE,0);
+        return getIntProperty( ServerConfigParams.PARAM_IO_BACK_READ_TIMEOUT,0,Integer.MAX_VALUE,0);
     }
 
     /**

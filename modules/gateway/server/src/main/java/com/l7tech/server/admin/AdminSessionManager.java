@@ -14,7 +14,7 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.UsernamePasswordSecurityToken;
-import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.cluster.ClusterMaster;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.admin.Updated;
@@ -70,9 +70,9 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
         this.timer = timer;
         this.clusterMaster = clusterMaster;
 
-        int cacheSize = config.getIntProperty(ServerConfig.PARAM_PRINCIPAL_SESSION_CACHE_SIZE, 100);
-        int cacheMaxTime = config.getIntProperty(ServerConfig.PARAM_PRINCIPAL_SESSION_CACHE_MAX_TIME, 300000);
-        int cacheMaxGroups = config.getIntProperty(ServerConfig.PARAM_PRINCIPAL_SESSION_CACHE_MAX_PRINCIPAL_GROUPS, 50);
+        int cacheSize = config.getIntProperty( ServerConfigParams.PARAM_PRINCIPAL_SESSION_CACHE_SIZE, 100);
+        int cacheMaxTime = config.getIntProperty( ServerConfigParams.PARAM_PRINCIPAL_SESSION_CACHE_MAX_TIME, 300000);
+        int cacheMaxGroups = config.getIntProperty( ServerConfigParams.PARAM_PRINCIPAL_SESSION_CACHE_MAX_PRINCIPAL_GROUPS, 50);
 
         this.groupCache = new GroupCache("PrincipalCache_unified", cacheSize, cacheMaxTime, cacheMaxGroups);
         this.sessionExpiryMillis.set(loadExpiryMillis());
@@ -137,12 +137,12 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
         final String propertyName = event.getPropertyName();
 
         if (propertyName != null && propertyName.equals("principalSessionCacheMaxTime")) {
-            int cacheMaxTime = config.getIntProperty(ServerConfig.PARAM_PRINCIPAL_SESSION_CACHE_MAX_TIME, 300000);
+            int cacheMaxTime = config.getIntProperty( ServerConfigParams.PARAM_PRINCIPAL_SESSION_CACHE_MAX_TIME, 300000);
             logger.config("Updating principal session cache max time '" + cacheMaxTime + "'.");
             groupCache.setCacheMaxTime(cacheMaxTime);
         }
 
-        if (propertyName != null && propertyName.equals(ServerConfig.PARAM_SESSION_EXPIRY)) {
+        if (propertyName != null && propertyName.equals( ServerConfigParams.PARAM_SESSION_EXPIRY)) {
             long expiryMillis = loadExpiryMillis();
             logger.config("Updating session inactivity period '" + expiryMillis + "'.");
             this.sessionExpiryMillis.set(expiryMillis);
@@ -605,7 +605,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
     private final AtomicLong sessionExpiryMillis = new AtomicLong();
 
     private long loadExpiryMillis() {
-        return config.getTimeUnitProperty(ServerConfig.PARAM_SESSION_EXPIRY, DEFAULT_GATEWAY_SESSION_EXPIRY);
+        return config.getTimeUnitProperty( ServerConfigParams.PARAM_SESSION_EXPIRY, DEFAULT_GATEWAY_SESSION_EXPIRY);
     }
 
     {
@@ -660,8 +660,8 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
 
     private Config validated(final Config config) {
         final ValidatedConfig validatedConfig = new ValidatedConfig(config, logger);
-        validatedConfig.setMinimumValue(ServerConfig.PARAM_SESSION_EXPIRY, TimeUnit.MINUTES.toMillis(1L));
-        validatedConfig.setMaximumValue(ServerConfig.PARAM_SESSION_EXPIRY, MAX_INACTIVITY_TIME);
+        validatedConfig.setMinimumValue( ServerConfigParams.PARAM_SESSION_EXPIRY, TimeUnit.MINUTES.toMillis(1L));
+        validatedConfig.setMaximumValue( ServerConfigParams.PARAM_SESSION_EXPIRY, MAX_INACTIVITY_TIME);
         return validatedConfig;
     }
 

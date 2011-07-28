@@ -14,7 +14,7 @@ import com.l7tech.security.token.SamlSecurityToken;
 import com.l7tech.security.token.XmlSecurityToken;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
@@ -95,7 +95,7 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
             }
 
             ProcessorResult wssResults;
-            if ( isRequest() && !config.getBooleanProperty(ServerConfig.PARAM_WSS_PROCESSOR_LAZY_REQUEST,true) ) {
+            if ( isRequest() && !config.getBooleanProperty( ServerConfigParams.PARAM_WSS_PROCESSOR_LAZY_REQUEST,true) ) {
                 wssResults = message.getSecurityKnob().getProcessorResult();
             } else {
                 wssResults = WSSecurityProcessorUtils.getWssResults(message, messageDesc, securityTokenResolver, getAudit());

@@ -12,7 +12,7 @@ import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.audit.Audit;
-import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.url.AbstractUrlObjectCache;
 import com.l7tech.server.url.HttpObjectCache;
 import com.l7tech.util.CausedIOException;
@@ -135,7 +135,7 @@ public class HttpSchemaSourceResolver implements ApplicationListener, SchemaSour
                                                       hcf,
                                                       userObjectFactory,
                                                       HttpObjectCache.WAIT_LATEST,
-                                                      ServerConfig.PARAM_SCHEMA_CACHE_MAX_SCHEMA_SIZE ));
+                                                      ServerConfigParams.PARAM_SCHEMA_CACHE_MAX_SCHEMA_SIZE ));
 
     }
 

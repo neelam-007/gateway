@@ -100,7 +100,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
         _roleManager = (RoleManager)webApplicationContext.getBean("roleManager");
         _httpClientFactory = (GenericHttpClientFactory)webApplicationContext.getBean("internodeHttpClientFactory");
 
-        _ssgApplianceLibexecDir = new File(ServerConfig.getInstance().getPropertyCached(ServerConfig.PARAM_SSG_APPLIANCE_DIRECTORY) + File.separator + "libexec");
+        _ssgApplianceLibexecDir = new File(ServerConfig.getInstance().getPropertyCached( ServerConfigParams.PARAM_SSG_APPLIANCE_DIRECTORY) + File.separator + "libexec");
     }
 
     @Override

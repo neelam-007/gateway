@@ -17,7 +17,7 @@ import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.ProcessorResultUtil;
 import com.l7tech.security.xml.processor.WssTimestamp;
 import com.l7tech.security.xml.processor.WssTimestampDate;
-import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
@@ -137,7 +137,7 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
             }
 
             final boolean[] wssError = { false };
-            if ( isRequest() && !config.getBooleanProperty(ServerConfig.PARAM_WSS_PROCESSOR_LAZY_REQUEST,true) ) {
+            if ( isRequest() && !config.getBooleanProperty( ServerConfigParams.PARAM_WSS_PROCESSOR_LAZY_REQUEST,true) ) {
                 wssResults = msg.getSecurityKnob().getProcessorResult();
             } else {
                 final Functions.Unary<Boolean,Throwable> errorCallback = new Functions.Unary<Boolean,Throwable>(){

@@ -1,5 +1,6 @@
 package com.l7tech.server.transport;
 
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.PortRange;
 import com.l7tech.common.io.PortRanges;
@@ -347,7 +348,7 @@ public class SsgConnectorManagerImpl
     }
 
     private void openFirewallForConnectors() {
-        File conf = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_VAR_DIRECTORY, true);
+        File conf = serverConfig.getLocalDirectoryProperty( ServerConfigParams.PARAM_VAR_DIRECTORY, true);
         List<SsgConnector> connectors = new ArrayList<SsgConnector>(knownConnectors.values());
         connectors = Functions.map(connectors, new Functions.Unary<SsgConnector, SsgConnector>() {
             @Override
@@ -373,7 +374,7 @@ public class SsgConnectorManagerImpl
     }
 
     private void closeFirewallForConnectors() {
-        File conf = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_VAR_DIRECTORY, true);
+        File conf = serverConfig.getLocalDirectoryProperty( ServerConfigParams.PARAM_VAR_DIRECTORY, true);
         FirewallUtils.closeFirewallForConnectors( conf );
     }
 

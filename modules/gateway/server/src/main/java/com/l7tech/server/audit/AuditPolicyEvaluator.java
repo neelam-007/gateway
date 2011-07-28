@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.PolicyCacheEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -46,7 +47,7 @@ public class AuditPolicyEvaluator implements ApplicationListener {
     }
 
     private String loadAuditSinkPolicyGuid() {
-        return serverConfig.getPropertyCached(ServerConfig.PARAM_AUDIT_SINK_POLICY_GUID);
+        return serverConfig.getPropertyCached( ServerConfigParams.PARAM_AUDIT_SINK_POLICY_GUID);
     }
 
     /**

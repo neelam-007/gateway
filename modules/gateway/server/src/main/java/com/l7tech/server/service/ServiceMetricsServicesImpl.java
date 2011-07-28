@@ -12,6 +12,7 @@ import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.util.ManagedTimer;
 import com.l7tech.server.util.ManagedTimerTask;
@@ -64,7 +65,7 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
             logger.info("Service metrics collection is currently disabled.");
         }
 
-        if (Boolean.valueOf(serverConfig().getProperty(ServerConfig.PARAM_ADD_MAPPINGS_INTO_SERVICE_METRICS))) {
+        if (Boolean.valueOf(serverConfig().getProperty( ServerConfigParams.PARAM_ADD_MAPPINGS_INTO_SERVICE_METRICS))) {
             _addMappingsIntoServiceMetrics.set(true);
         } else {
             _addMappingsIntoServiceMetrics.set(false);
@@ -552,7 +553,7 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
             }
         }
 
-        if (ServerConfig.PARAM_ADD_MAPPINGS_INTO_SERVICE_METRICS.equals(event.getPropertyName())) {
+        if ( ServerConfigParams.PARAM_ADD_MAPPINGS_INTO_SERVICE_METRICS.equals(event.getPropertyName())) {
             if (Boolean.valueOf((String)event.getNewValue())) {
                 _addMappingsIntoServiceMetrics.set(true);
             } else {

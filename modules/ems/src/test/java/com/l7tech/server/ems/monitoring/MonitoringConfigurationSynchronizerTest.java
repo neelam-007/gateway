@@ -1,9 +1,9 @@
 package com.l7tech.server.ems.monitoring;
 
+import com.l7tech.server.ems.EsmConfigParams;
 import com.l7tech.util.TestTimeSource;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ems.enterprise.JSONConstants;
 import com.l7tech.server.ems.enterprise.MockSsgClusterManager;
 import com.l7tech.server.ems.enterprise.SsgCluster;
@@ -285,7 +285,7 @@ public class MonitoringConfigurationSynchronizerTest {
     }
 
     private Updated<ClusterProperty> makeClusterPropertyEvent() {
-        return new Updated<ClusterProperty>(new ClusterProperty(ServerConfig.PARAM_SYSTEM_MONITORING_SETUP_SETTINGS, "foo"), null);
+        return new Updated<ClusterProperty>(new ClusterProperty(EsmConfigParams.PARAM_SYSTEM_MONITORING_SETUP_SETTINGS, "foo"), null);
     }
 
     private Updated<SsgNode> makeUpdatedNodeEvent(TestNode node, String... props) {

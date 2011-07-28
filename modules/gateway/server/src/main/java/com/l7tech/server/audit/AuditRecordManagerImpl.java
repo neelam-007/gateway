@@ -7,6 +7,7 @@
 package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.audit.*;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.*;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
@@ -88,7 +89,7 @@ public class AuditRecordManagerImpl
         Session session = null;
         try {
 
-            final int maxRecords = validatedConfig.getIntProperty(ServerConfig.PARAM_AUDIT_SIGN_MAX_VALIDATE, 100);
+            final int maxRecords = validatedConfig.getIntProperty( ServerConfigParams.PARAM_AUDIT_SIGN_MAX_VALIDATE, 100);
 
             if (auditRecordIds.size() > maxRecords) {
                 int difference = auditRecordIds.size() - maxRecords;
@@ -107,7 +108,7 @@ public class AuditRecordManagerImpl
             // to fill in the audit record hierarchy.
             final Query query = session.createQuery(HQL_SELECT_AUDIT_RECORDS_SIZE_PROTECTED);
             query.setParameterList(IDS_PARAMETER, auditRecordIds);
-            final int maxMsgSize = validatedConfig.getIntProperty(ServerConfig.PARAM_AUDIT_SEARCH_MAX_MESSAGE_SIZE, 2621440);
+            final int maxMsgSize = validatedConfig.getIntProperty( ServerConfigParams.PARAM_AUDIT_SEARCH_MAX_MESSAGE_SIZE, 2621440);
             query.setInteger(MAX_SIZE_PARAMETER, maxMsgSize);
 
             final ScrollableResults results = query.scroll();
@@ -312,14 +313,14 @@ public class AuditRecordManagerImpl
     @Override
     public void deleteOldAuditRecords( final long minAge ) throws DeleteException {
         applicationContext.publishEvent(new AuditPurgeInitiated(this));
-        String sMinAgeHours = serverConfig.getPropertyCached(ServerConfig.PARAM_AUDIT_PURGE_MINIMUM_AGE);
+        String sMinAgeHours = serverConfig.getPropertyCached( ServerConfigParams.PARAM_AUDIT_PURGE_MINIMUM_AGE);
         if (sMinAgeHours == null || sMinAgeHours.length() == 0)
             sMinAgeHours = "168";
         int minAgeHours = 168;
         try {
             minAgeHours = Integer.valueOf(sMinAgeHours);
         } catch (NumberFormatException e) {
-            logger.info(ServerConfig.PARAM_AUDIT_PURGE_MINIMUM_AGE + " value '" + sMinAgeHours +
+            logger.info( ServerConfigParams.PARAM_AUDIT_PURGE_MINIMUM_AGE + " value '" + sMinAgeHours +
                     "' is not a valid number. Using " + minAgeHours + " instead.");
         }
 
@@ -460,15 +461,15 @@ public class AuditRecordManagerImpl
     public void setServerConfig(ServerConfig serverConfig) {
         this.serverConfig = serverConfig;
         validatedConfig = new ValidatedConfig(serverConfig, logger);
-        validatedConfig.setMinimumValue(ServerConfig.PARAM_AUDIT_SIGN_MAX_VALIDATE, 100);
-        validatedConfig.setMaximumValue(ServerConfig.PARAM_AUDIT_SIGN_MAX_VALIDATE, 1000);
+        validatedConfig.setMinimumValue( ServerConfigParams.PARAM_AUDIT_SIGN_MAX_VALIDATE, 100);
+        validatedConfig.setMaximumValue( ServerConfigParams.PARAM_AUDIT_SIGN_MAX_VALIDATE, 1000);
 
-        validatedConfig.setMinimumValue(ServerConfig.PARAM_AUDIT_SEARCH_MAX_MESSAGE_SIZE, 1024); // 1KB
-        validatedConfig.setMaximumValue(ServerConfig.PARAM_AUDIT_SEARCH_MAX_MESSAGE_SIZE, 20971520); // 20MB
+        validatedConfig.setMinimumValue( ServerConfigParams.PARAM_AUDIT_SEARCH_MAX_MESSAGE_SIZE, 1024); // 1KB
+        validatedConfig.setMaximumValue( ServerConfigParams.PARAM_AUDIT_SEARCH_MAX_MESSAGE_SIZE, 20971520); // 20MB
 
-        validatedConfig.setMinimumValue(ServerConfig.PARAM_AUDIT_MESSAGE_LIMIT_SIZE, 0);
-        validatedConfig.setMaximumValue(ServerConfig.PARAM_AUDIT_MESSAGE_LIMIT_SIZE, Long.MAX_VALUE);
-        this.messageLimitSize = this.validatedConfig.getLongProperty(ServerConfig.PARAM_AUDIT_MESSAGE_LIMIT_SIZE, 1048576);  // 10MB
+        validatedConfig.setMinimumValue( ServerConfigParams.PARAM_AUDIT_MESSAGE_LIMIT_SIZE, 0);
+        validatedConfig.setMaximumValue( ServerConfigParams.PARAM_AUDIT_MESSAGE_LIMIT_SIZE, Long.MAX_VALUE);
+        this.messageLimitSize = this.validatedConfig.getLongProperty( ServerConfigParams.PARAM_AUDIT_MESSAGE_LIMIT_SIZE, 1048576);  // 10MB
     }
 
     @Override
@@ -516,8 +517,8 @@ public class AuditRecordManagerImpl
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
         String propertyName = evt.getPropertyName();
-        if (propertyName != null && propertyName.equals(ServerConfig.PARAM_AUDIT_MESSAGE_LIMIT_SIZE)) {
-            this.messageLimitSize = this.validatedConfig.getLongProperty(ServerConfig.PARAM_AUDIT_MESSAGE_LIMIT_SIZE, 1048576);
+        if (propertyName != null && propertyName.equals( ServerConfigParams.PARAM_AUDIT_MESSAGE_LIMIT_SIZE)) {
+            this.messageLimitSize = this.validatedConfig.getLongProperty( ServerConfigParams.PARAM_AUDIT_MESSAGE_LIMIT_SIZE, 1048576);
         }
     }
 

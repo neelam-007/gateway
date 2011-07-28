@@ -15,6 +15,7 @@ import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.cluster.ClusterInfoManager;
@@ -200,7 +201,7 @@ public class TrustedCertManagerImp
     @Override
     protected void initDao() throws Exception {
         long period;
-        final String value = serverConfig.getPropertyCached(ServerConfig.PARAM_CERT_EXPIRY_CHECK_PERIOD);
+        final String value = serverConfig.getPropertyCached( ServerConfigParams.PARAM_CERT_EXPIRY_CHECK_PERIOD);
         try {
             period = TimeUnit.parse(value);
         } catch (Exception e) {
@@ -239,7 +240,7 @@ public class TrustedCertManagerImp
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        if (ServerConfig.PARAM_CERT_EXPIRY_CHECK_PERIOD.equals(evt.getPropertyName())) {
+        if ( ServerConfigParams.PARAM_CERT_EXPIRY_CHECK_PERIOD.equals(evt.getPropertyName())) {
             final String ov = evt.getOldValue() == null ? null : evt.getOldValue().toString();
             final String nv = evt.getNewValue().toString();
             try {
@@ -262,9 +263,9 @@ public class TrustedCertManagerImp
             final ClusterNodeInfo nodeInfo = clusterInfoManager.getSelfNodeInf();
 
             // These are retrieved here on every (infrequent) run so that the frequencies can change at runtime
-            final long fineExpiryPeriod = TimeUnit.parse(serverConfig.getPropertyCached(ServerConfig.PARAM_CERT_EXPIRY_FINE_AGE));
-            final long infoExpiryPeriod = TimeUnit.parse(serverConfig.getPropertyCached(ServerConfig.PARAM_CERT_EXPIRY_INFO_AGE));
-            final long warningExpiryPeriod = TimeUnit.parse(serverConfig.getPropertyCached(ServerConfig.PARAM_CERT_EXPIRY_WARNING_AGE));
+            final long fineExpiryPeriod = TimeUnit.parse(serverConfig.getPropertyCached( ServerConfigParams.PARAM_CERT_EXPIRY_FINE_AGE));
+            final long infoExpiryPeriod = TimeUnit.parse(serverConfig.getPropertyCached( ServerConfigParams.PARAM_CERT_EXPIRY_INFO_AGE));
+            final long warningExpiryPeriod = TimeUnit.parse(serverConfig.getPropertyCached( ServerConfigParams.PARAM_CERT_EXPIRY_WARNING_AGE));
 
             final Collection<TrustedCert> trustedCerts;
             try {

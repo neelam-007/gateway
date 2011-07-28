@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.folder;
 
 import com.l7tech.gateway.common.admin.FolderAdmin;
@@ -11,6 +8,7 @@ import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.objectmodel.folder.FolderedEntityManager;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
@@ -25,7 +23,7 @@ import java.util.regex.Pattern;
  */
 public class FolderAdminImpl implements FolderAdmin {
     private static final int MAX_FOLDER_NAME_LENGTH = 128;
-    private static final int MAX_FOLDER_DEPTH = ServerConfig.getInstance().getIntProperty(ServerConfig.MAX_FOLDER_DEPTH_PROPERTY, 8);
+    private static final int MAX_FOLDER_DEPTH = ServerConfig.getInstance().getIntProperty(ServerConfigParams.PARAM_MAX_FOLDER_DEPTH, 8);
 
     private static final Pattern replaceRoleName =
             Pattern.compile(MessageFormat.format(RbacAdmin.RENAME_REGEX_PATTERN, ROLE_NAME_TYPE_SUFFIX));

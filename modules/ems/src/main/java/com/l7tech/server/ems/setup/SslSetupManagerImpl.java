@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.ems.listener.ListenerConfigurationUpdatedEvent;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
@@ -117,9 +118,9 @@ public class SslSetupManagerImpl implements SslSetupManager {
     private SsgKeyEntry configureAsDefaultSslCert( final SsgKeyStore sks, final String alias) throws IOException {
         try {
             SsgKeyEntry entry = sks.getCertificateChain(alias);
-            String name = serverConfig.getClusterPropertyName( ServerConfig.PARAM_KEYSTORE_DEFAULT_SSL_KEY);
+            String name = serverConfig.getClusterPropertyName( ServerConfigParams.PARAM_KEYSTORE_DEFAULT_SSL_KEY);
             if (name == null)
-                throw new IOException("Unable to configure default SSL key: no cluster property defined for ServerConfig property " + ServerConfig.PARAM_KEYSTORE_DEFAULT_SSL_KEY);
+                throw new IOException("Unable to configure default SSL key: no cluster property defined for ServerConfig property " + ServerConfigParams.PARAM_KEYSTORE_DEFAULT_SSL_KEY);
             String value = entry.getKeystoreId() + ":" + alias;
             clusterPropertyManager.putProperty(name, value);
             return entry;

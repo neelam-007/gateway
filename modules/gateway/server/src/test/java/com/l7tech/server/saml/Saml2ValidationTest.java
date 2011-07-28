@@ -1,5 +1,6 @@
 package com.l7tech.server.saml;
 
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.test.BugNumber;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.security.xml.processor.ProcessorResult;
@@ -28,8 +29,8 @@ public class Saml2ValidationTest {
     @Before
     public void restoreTimeSkewSettings() {
         System.setProperty(ServerConfig.PROP_TEST_MODE, "true");
-        ServerConfig.getInstance().putProperty(ServerConfig.PARAM_samlValidateBeforeOffsetMinutes, "0");
-        ServerConfig.getInstance().putProperty(ServerConfig.PARAM_samlValidateAfterOffsetMinutes, "0");
+        ServerConfig.getInstance().putProperty( ServerConfigParams.PARAM_SAML_VALIDATE_BEFORE_OFFSET_MINUTES, "0");
+        ServerConfig.getInstance().putProperty( ServerConfigParams.PARAM_SAML_VALIDATE_AFTER_OFFSET_MINUTES, "0");
     }
 
     /**
@@ -117,7 +118,7 @@ public class Saml2ValidationTest {
      */
     @Test
     public void testExpiryValidationWithGracePeriod() throws Exception {
-        ServerConfig.getInstance().putProperty(ServerConfig.PARAM_samlValidateAfterOffsetMinutes, "15000000");
+        ServerConfig.getInstance().putProperty( ServerConfigParams.PARAM_SAML_VALIDATE_AFTER_OFFSET_MINUTES, "15000000");
 
         // create doc
         Document assertionDocument = XmlUtil.stringToDocument(ASSERTION_STR_EXPIRED);

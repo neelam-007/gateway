@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ems.EsmConfigParams;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.Charsets;
@@ -32,10 +33,10 @@ public class SystemMonitoringSetupSettingsManagerImpl implements SystemMonitorin
 
     @Override
     public long saveSetupSettings(Map<String, Object> setupSettings) throws FindException, SaveException, IOException, UpdateException {
-        ClusterProperty setupClusterProperty = clusterPropertyManager.findByUniqueName(ServerConfig.PARAM_SYSTEM_MONITORING_SETUP_SETTINGS);
+        ClusterProperty setupClusterProperty = clusterPropertyManager.findByUniqueName(EsmConfigParams.PARAM_SYSTEM_MONITORING_SETUP_SETTINGS);
         long oid;
         if (setupClusterProperty == null) {
-            oid = clusterPropertyManager.save(new ClusterProperty(ServerConfig.PARAM_SYSTEM_MONITORING_SETUP_SETTINGS, convertMapToString(setupSettings)));
+            oid = clusterPropertyManager.save(new ClusterProperty(EsmConfigParams.PARAM_SYSTEM_MONITORING_SETUP_SETTINGS, convertMapToString(setupSettings)));
         } else {
             oid = setupClusterProperty.getOid();
             setupClusterProperty.setValue(convertMapToString(setupSettings));
@@ -47,7 +48,7 @@ public class SystemMonitoringSetupSettingsManagerImpl implements SystemMonitorin
 
     @Override
     public void deleteSetupSettings() throws FindException, DeleteException {
-        ClusterProperty setupSettings = clusterPropertyManager.findByUniqueName(ServerConfig.PARAM_SYSTEM_MONITORING_SETUP_SETTINGS);
+        ClusterProperty setupSettings = clusterPropertyManager.findByUniqueName(EsmConfigParams.PARAM_SYSTEM_MONITORING_SETUP_SETTINGS);
         if (setupSettings != null) {
             clusterPropertyManager.delete(setupSettings.getOid());
         }
@@ -55,7 +56,7 @@ public class SystemMonitoringSetupSettingsManagerImpl implements SystemMonitorin
 
     @Override
     public Map<String, Object> findSetupSettings() throws FindException, InvalidMonitoringSetupSettingException {
-        ClusterProperty setupSettings = clusterPropertyManager.findByUniqueName(ServerConfig.PARAM_SYSTEM_MONITORING_SETUP_SETTINGS);
+        ClusterProperty setupSettings = clusterPropertyManager.findByUniqueName(EsmConfigParams.PARAM_SYSTEM_MONITORING_SETUP_SETTINGS);
 
         Map<String, Object> defaults = getInitialSetupSettings();
         if (setupSettings == null) {
@@ -74,31 +75,31 @@ public class SystemMonitoringSetupSettingsManagerImpl implements SystemMonitorin
         Map<String, Object> initialSetupSettingsMap = new HashMap<String, Object>();
 
         try {
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_AUDITSIZE,        Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_AUDITSIZE)));
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_DATABASEREPLICATIONDELAY, Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_DATABASEREPLICATIONDELAY)));
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_LOGSIZE,          Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_LOGSIZE)) * KB_MB_CONVERTOR);
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_DISKUSAGE,        Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_DISKUSAGE)));
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_DISKFREE,         Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_DISKFREE)) * KB_GB_CONVERTOR);
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_CPUTEMPERATURE,   Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_CPUTEMPERATURE)));
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_CPUUSAGE,         Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_CPUUSAGE)));
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_SWAPUSAGE,        Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_SWAPUSAGE)) * KB_MB_CONVERTOR);
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_TRIGGER_AUDITSIZE,        Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_TRIGGER_AUDITSIZE)));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_TRIGGER_DATABASEREPLICATIONDELAY, Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_TRIGGER_DATABASEREPLICATIONDELAY)));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_TRIGGER_LOGSIZE,          Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_TRIGGER_LOGSIZE)) * KB_MB_CONVERTOR);
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_TRIGGER_DISKUSAGE,        Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_TRIGGER_DISKUSAGE)));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_TRIGGER_DISKFREE,         Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_TRIGGER_DISKFREE)) * KB_GB_CONVERTOR);
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_TRIGGER_CPUTEMPERATURE,   Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_TRIGGER_CPUTEMPERATURE)));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_TRIGGER_CPUUSAGE,         Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_TRIGGER_CPUUSAGE)));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_TRIGGER_SWAPUSAGE,        Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_TRIGGER_SWAPUSAGE)) * KB_MB_CONVERTOR);
 
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_AUDITSIZE,       Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_AUDITSIZE)));
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_DATABASEREPLICATIONDELAY, Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_DATABASEREPLICATIONDELAY)));
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_OPERATINGSTATUS, Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_OPERATINGSTATUS)));
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_LOGSIZE,         Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_LOGSIZE)));
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_DISKUSAGE,       Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_DISKUSAGE)));
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_DISKFREE,        Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_DISKFREE)));
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_RAIDSTATUS,      Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_RAIDSTATUS)));
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_CPUTEMPERATURE,  Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_CPUTEMPERATURE)));
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_CPUUSAGE,        Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_CPUUSAGE)));
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_SWAPUSAGE,       Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_SWAPUSAGE)));
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_NTPSTATUS,       Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_NTPSTATUS)));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_AUDITSIZE,       Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_INTERVAL_AUDITSIZE)));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_DATABASEREPLICATIONDELAY, Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_INTERVAL_DATABASEREPLICATIONDELAY)));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_OPERATINGSTATUS, Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_INTERVAL_OPERATINGSTATUS)));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_LOGSIZE,         Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_INTERVAL_LOGSIZE)));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_DISKUSAGE,       Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_INTERVAL_DISKUSAGE)));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_DISKFREE,        Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_INTERVAL_DISKFREE)));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_RAIDSTATUS,      Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_INTERVAL_RAIDSTATUS)));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_CPUTEMPERATURE,  Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_INTERVAL_CPUTEMPERATURE)));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_CPUUSAGE,        Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_INTERVAL_CPUUSAGE)));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_SWAPUSAGE,       Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_INTERVAL_SWAPUSAGE)));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_NTPSTATUS,       Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_INTERVAL_NTPSTATUS)));
 
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_DISABLEALLNOTIFICATIONS,  Boolean.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_DISABLEALLNOTIFICATIONS)));
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_AUDITUPONALERTSTATE,      Boolean.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_AUDITUPONALERTSTATE)));
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_AUDITUPONNORMALSTATE,     Boolean.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_AUDITUPONNORMALSTATE)));
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_AUDITUPONNOTIFICATION,    Boolean.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_AUDITUPONNOTIFICATION)));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_DISABLEALLNOTIFICATIONS,  Boolean.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_DISABLEALLNOTIFICATIONS)));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_AUDITUPONALERTSTATE,      Boolean.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_AUDITUPONALERTSTATE)));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_AUDITUPONNORMALSTATE,     Boolean.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_AUDITUPONNORMALSTATE)));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_AUDITUPONNOTIFICATION,    Boolean.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_AUDITUPONNOTIFICATION)));
         } catch (NumberFormatException e) {
             throw new InvalidMonitoringSetupSettingException("Invalid system monitoring setup settings in the ESM config properties file.", e);
         }

@@ -679,8 +679,8 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         int port = req.getServerPort();
         String proto = secureRequest ? "https" : "http";
 
-        int httpPort = serverConfig.getIntPropertyCached(ServerConfig.PARAM_HTTPPORT, 8080, 10000L);
-        int httpsPort = serverConfig.getIntPropertyCached(ServerConfig.PARAM_HTTPSPORT, 8443, 10000L);
+        int httpPort = serverConfig.getIntPropertyCached( ServerConfigParams.PARAM_HTTPPORT, 8080, 10000L);
+        int httpsPort = serverConfig.getIntPropertyCached( ServerConfigParams.PARAM_HTTPSPORT, 8443, 10000L);
         if (("http".equals(proto) && (port==80 || port==httpPort)) ||
             ("https".equals(proto) && (port==443 || port==httpsPort))) {
             // then see if we should switch protocols for the endpoint

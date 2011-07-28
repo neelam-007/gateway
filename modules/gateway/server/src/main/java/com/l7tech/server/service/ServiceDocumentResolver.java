@@ -7,6 +7,7 @@ import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.url.HttpObjectCache;
 import java.io.IOException;
 import java.net.*;
@@ -34,17 +35,17 @@ public class ServiceDocumentResolver {
     public String resolveDocumentTarget(String url, ServiceAdmin.DownloadDocumentType docType, String modAssClusterProperty) throws IOException {
         final ServerConfig serverConfig = ServerConfig.getInstance();
 
-        final int defaultMaxSize = serverConfig.getIntProperty(ServerConfig.PARAM_DOCUMENT_DOWNLOAD_MAXSIZE, HttpObjectCache.DEFAULT_DOWNLOAD_LIMIT);
+        final int defaultMaxSize = serverConfig.getIntProperty( ServerConfigParams.PARAM_DOCUMENT_DOWNLOAD_MAXSIZE, HttpObjectCache.DEFAULT_DOWNLOAD_LIMIT);
         final int maxSize;
         switch(docType){
             case SCHEMA:
-                maxSize = serverConfig.getIntProperty(ServerConfig.PARAM_SCHEMA_CACHE_MAX_SCHEMA_SIZE, defaultMaxSize);
+                maxSize = serverConfig.getIntProperty( ServerConfigParams.PARAM_SCHEMA_CACHE_MAX_SCHEMA_SIZE, defaultMaxSize);
                 break;
             case WSDL:
-                maxSize = serverConfig.getIntProperty(ServerConfig.PARAM_WSDL_MAX_DOWNLOAD_SIZE, defaultMaxSize);
+                maxSize = serverConfig.getIntProperty( ServerConfigParams.PARAM_WSDL_MAX_DOWNLOAD_SIZE, defaultMaxSize);
                 break;
             case XSL:
-                maxSize = serverConfig.getIntProperty(ServerConfig.PARAM_XSL_MAX_DOWNLOAD_SIZE, defaultMaxSize);
+                maxSize = serverConfig.getIntProperty( ServerConfigParams.PARAM_XSL_MAX_DOWNLOAD_SIZE, defaultMaxSize);
                 break;
             case MOD_ASS:
                 if(modAssClusterProperty == null || modAssClusterProperty.trim().isEmpty()) throw new IllegalArgumentException("modAssClusterProperty cannot be null or empty");

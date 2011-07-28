@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.audit.CommonMessages;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.Functions;
 
 import java.text.MessageFormat;
@@ -34,7 +35,7 @@ public final class ExpandVariables {
     }
 
     private static boolean strict() {
-        return "true".equals(ServerConfig.getInstance().getPropertyCached(ServerConfig.PARAM_TEMPLATE_STRICTMODE));
+        return "true".equals(ServerConfig.getInstance().getPropertyCached( ServerConfigParams.PARAM_TEMPLATE_STRICTMODE));
     }
 
     public static Object processSingleVariableAsObject(final String expr, final Map<String,?> vars, final Audit audit, final boolean strict) {
@@ -87,7 +88,7 @@ public final class ExpandVariables {
     }
 
     public static String defaultDelimiter() {
-        String delim = ServerConfig.getInstance().getPropertyCached(ServerConfig.PARAM_TEMPLATE_MULTIVALUE_DELIMITER);
+        String delim = ServerConfig.getInstance().getPropertyCached( ServerConfigParams.PARAM_TEMPLATE_MULTIVALUE_DELIMITER);
         if (delim != null) return delim;
         return Syntax.DEFAULT_MV_DELIMITER;
     }

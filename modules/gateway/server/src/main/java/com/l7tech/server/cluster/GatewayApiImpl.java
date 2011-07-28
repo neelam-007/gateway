@@ -11,7 +11,7 @@ import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.server.EntityHeaderUtils;
-import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.management.api.node.GatewayApi;
 import com.l7tech.server.policy.PolicyManager;
@@ -85,7 +85,7 @@ public class GatewayApiImpl implements GatewayApi {
                     gatewayInfo.setSoftwareVersion( BuildInfo.getProductVersion() );
                     gatewayInfo.setStatusTimestamp( info.getLastUpdateTimeStamp() );
                     gatewayInfo.setGatewayPort( config.getIntProperty("admin.esmPort", 8443) );
-                    gatewayInfo.setProcessControllerPort( config.getIntProperty(ServerConfig.PARAM_PROCESS_CONTROLLER_EXTERNAL_PORT, 8765) );
+                    gatewayInfo.setProcessControllerPort( config.getIntProperty( ServerConfigParams.PARAM_PROCESS_CONTROLLER_EXTERNAL_PORT, 8765) );
                     gateways.add(gatewayInfo);
                 }
             }

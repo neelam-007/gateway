@@ -13,6 +13,7 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.AuditContextUtils;
+import com.l7tech.server.ems.EsmConfigParams;
 import com.l7tech.server.ems.EsmMessages;
 import com.l7tech.server.ems.enterprise.*;
 import com.l7tech.server.ems.monitoring.*;
@@ -505,7 +506,7 @@ public class Monitor extends EsmStandardWebPage {
             }
 
             Map<String, Object> jsonDataMap = new HashMap<String, Object>();
-            jsonDataMap.put("nextRefreshInterval", Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_NEXTREFRESH_INTERVAL)));
+            jsonDataMap.put("nextRefreshInterval", Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_NEXTREFRESH_INTERVAL)));
             jsonDataMap.put("entities", entitiesList);
 
             synchronized( previousPropValuesListSync ) {
@@ -827,73 +828,73 @@ public class Monitor extends EsmStandardWebPage {
 
         // "auditSize"
         Map<String, Object> auditSizeMap = new HashMap<String, Object>();
-        auditSizeMap.put(JSONConstants.MonitoringPropertySettings.SAMPLING_INTERVAL,         clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_INTERVAL_AUDITSIZE));
-        auditSizeMap.put(JSONConstants.MonitoringPropertySettings.DEFAULT_TRIGGER_VALUE,     clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_TRIGGER_AUDITSIZE));
-        auditSizeMap.put(JSONConstants.MonitoringPropertySettings.TRIGGER_VALUE_LOWER_LIMIT, Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGCLUSTER_AUDITSIZE_LOWERLIMIT)));
-        auditSizeMap.put(JSONConstants.MonitoringPropertySettings.UNIT,                      serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGCLUSTER_AUDITSIZE_UNIT));
+        auditSizeMap.put(JSONConstants.MonitoringPropertySettings.SAMPLING_INTERVAL,         clusterPropertyFormatMap.get(EsmConfigParams.PARAM_MONITORING_INTERVAL_AUDITSIZE));
+        auditSizeMap.put(JSONConstants.MonitoringPropertySettings.DEFAULT_TRIGGER_VALUE,     clusterPropertyFormatMap.get(EsmConfigParams.PARAM_MONITORING_TRIGGER_AUDITSIZE));
+        auditSizeMap.put(JSONConstants.MonitoringPropertySettings.TRIGGER_VALUE_LOWER_LIMIT, Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_SSGCLUSTER_AUDITSIZE_LOWERLIMIT)));
+        auditSizeMap.put(JSONConstants.MonitoringPropertySettings.UNIT,                      serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_SSGCLUSTER_AUDITSIZE_UNIT));
 
         // "databaseReplicationDelay"
         Map<String, Object> databaseReplicationDelayMap = new HashMap<String, Object>();
-        databaseReplicationDelayMap.put(JSONConstants.MonitoringPropertySettings.SAMPLING_INTERVAL,         clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_INTERVAL_DATABASEREPLICATIONDELAY));
-        databaseReplicationDelayMap.put(JSONConstants.MonitoringPropertySettings.DEFAULT_TRIGGER_VALUE,     clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_TRIGGER_DATABASEREPLICATIONDELAY));
-        databaseReplicationDelayMap.put(JSONConstants.MonitoringPropertySettings.TRIGGER_VALUE_LOWER_LIMIT, Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGCLUSTER_DATABASEREPLICATIONDELAY_LOWERLIMIT)));
-        databaseReplicationDelayMap.put(JSONConstants.MonitoringPropertySettings.UNIT,                      serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGCLUSTER_DATABASEREPLICATIONDELAY_UNIT));
+        databaseReplicationDelayMap.put(JSONConstants.MonitoringPropertySettings.SAMPLING_INTERVAL,         clusterPropertyFormatMap.get(EsmConfigParams.PARAM_MONITORING_INTERVAL_DATABASEREPLICATIONDELAY));
+        databaseReplicationDelayMap.put(JSONConstants.MonitoringPropertySettings.DEFAULT_TRIGGER_VALUE,     clusterPropertyFormatMap.get(EsmConfigParams.PARAM_MONITORING_TRIGGER_DATABASEREPLICATIONDELAY));
+        databaseReplicationDelayMap.put(JSONConstants.MonitoringPropertySettings.TRIGGER_VALUE_LOWER_LIMIT, Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_SSGCLUSTER_DATABASEREPLICATIONDELAY_LOWERLIMIT)));
+        databaseReplicationDelayMap.put(JSONConstants.MonitoringPropertySettings.UNIT,                      serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_SSGCLUSTER_DATABASEREPLICATIONDELAY_UNIT));
 
         // "operatingStatus"
         Map<String, Object> operatingStatusMap = new HashMap<String, Object>();
-        operatingStatusMap.put(JSONConstants.MonitoringPropertySettings.SAMPLING_INTERVAL,   clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_INTERVAL_OPERATINGSTATUS));
+        operatingStatusMap.put(JSONConstants.MonitoringPropertySettings.SAMPLING_INTERVAL,   clusterPropertyFormatMap.get(EsmConfigParams.PARAM_MONITORING_INTERVAL_OPERATINGSTATUS));
 
         // "logSize"
         Map<String, Object> logSizeMap = new HashMap<String, Object>();
-        logSizeMap.put(JSONConstants.MonitoringPropertySettings.SAMPLING_INTERVAL,           clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_INTERVAL_LOGSIZE));
-        logSizeMap.put(JSONConstants.MonitoringPropertySettings.DEFAULT_TRIGGER_VALUE,       convertKbToMbOrGb(true, (Long)clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_TRIGGER_LOGSIZE)));
-        logSizeMap.put(JSONConstants.MonitoringPropertySettings.TRIGGER_VALUE_LOWER_LIMIT,   Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGNODE_LOGSIZE_LOWERLIMIT)));
-        logSizeMap.put(JSONConstants.MonitoringPropertySettings.UNIT,                        serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGNODE_LOGSIZE_UNIT));
+        logSizeMap.put(JSONConstants.MonitoringPropertySettings.SAMPLING_INTERVAL,           clusterPropertyFormatMap.get(EsmConfigParams.PARAM_MONITORING_INTERVAL_LOGSIZE));
+        logSizeMap.put(JSONConstants.MonitoringPropertySettings.DEFAULT_TRIGGER_VALUE,       convertKbToMbOrGb(true, (Long)clusterPropertyFormatMap.get(EsmConfigParams.PARAM_MONITORING_TRIGGER_LOGSIZE)));
+        logSizeMap.put(JSONConstants.MonitoringPropertySettings.TRIGGER_VALUE_LOWER_LIMIT,   Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_SSGNODE_LOGSIZE_LOWERLIMIT)));
+        logSizeMap.put(JSONConstants.MonitoringPropertySettings.UNIT,                        serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_SSGNODE_LOGSIZE_UNIT));
 
         // "diskUsage"
         Map<String, Object> diskUsageMap = new HashMap<String, Object>();
-        diskUsageMap.put(JSONConstants.MonitoringPropertySettings.SAMPLING_INTERVAL,         clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_INTERVAL_DISKUSAGE));
-        diskUsageMap.put(JSONConstants.MonitoringPropertySettings.DEFAULT_TRIGGER_VALUE,     clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_TRIGGER_DISKUSAGE));
-        diskUsageMap.put(JSONConstants.MonitoringPropertySettings.TRIGGER_VALUE_LOWER_LIMIT, Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGNODE_DISKUSAGE_LOWERLIMIT)));
-        diskUsageMap.put(JSONConstants.MonitoringPropertySettings.TRIGGER_VALUE_UPPER_LIMIT, Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGNODE_DISKUSAGE_UPPERLIMIT)));
-        diskUsageMap.put(JSONConstants.MonitoringPropertySettings.UNIT,                      serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGNODE_DISKUSAGE_UNIT));
+        diskUsageMap.put(JSONConstants.MonitoringPropertySettings.SAMPLING_INTERVAL,         clusterPropertyFormatMap.get(EsmConfigParams.PARAM_MONITORING_INTERVAL_DISKUSAGE));
+        diskUsageMap.put(JSONConstants.MonitoringPropertySettings.DEFAULT_TRIGGER_VALUE,     clusterPropertyFormatMap.get(EsmConfigParams.PARAM_MONITORING_TRIGGER_DISKUSAGE));
+        diskUsageMap.put(JSONConstants.MonitoringPropertySettings.TRIGGER_VALUE_LOWER_LIMIT, Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_SSGNODE_DISKUSAGE_LOWERLIMIT)));
+        diskUsageMap.put(JSONConstants.MonitoringPropertySettings.TRIGGER_VALUE_UPPER_LIMIT, Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_SSGNODE_DISKUSAGE_UPPERLIMIT)));
+        diskUsageMap.put(JSONConstants.MonitoringPropertySettings.UNIT,                      serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_SSGNODE_DISKUSAGE_UNIT));
 
         // "diskFree"
         Map<String, Object> diskFreeMap = new HashMap<String, Object>();
-        diskFreeMap.put(JSONConstants.MonitoringPropertySettings.SAMPLING_INTERVAL,         clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_INTERVAL_DISKFREE));
-        diskFreeMap.put(JSONConstants.MonitoringPropertySettings.DEFAULT_TRIGGER_VALUE,     convertKbToMbOrGb(false, (Long)clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_TRIGGER_DISKFREE)));
-        diskFreeMap.put(JSONConstants.MonitoringPropertySettings.TRIGGER_VALUE_LOWER_LIMIT, Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGNODE_DISKFREE_LOWERLIMIT)));
-        diskFreeMap.put(JSONConstants.MonitoringPropertySettings.UNIT,                      serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGNODE_DISKFREE_UNIT));
+        diskFreeMap.put(JSONConstants.MonitoringPropertySettings.SAMPLING_INTERVAL,         clusterPropertyFormatMap.get(EsmConfigParams.PARAM_MONITORING_INTERVAL_DISKFREE));
+        diskFreeMap.put(JSONConstants.MonitoringPropertySettings.DEFAULT_TRIGGER_VALUE,     convertKbToMbOrGb(false, (Long)clusterPropertyFormatMap.get(EsmConfigParams.PARAM_MONITORING_TRIGGER_DISKFREE)));
+        diskFreeMap.put(JSONConstants.MonitoringPropertySettings.TRIGGER_VALUE_LOWER_LIMIT, Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_SSGNODE_DISKFREE_LOWERLIMIT)));
+        diskFreeMap.put(JSONConstants.MonitoringPropertySettings.UNIT,                      serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_SSGNODE_DISKFREE_UNIT));
 
         // "raidStatus"
         Map<String, Object> raidStatusMap = new HashMap<String, Object>();
-        raidStatusMap.put(JSONConstants.MonitoringPropertySettings.SAMPLING_INTERVAL,        clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_INTERVAL_RAIDSTATUS));
+        raidStatusMap.put(JSONConstants.MonitoringPropertySettings.SAMPLING_INTERVAL,        clusterPropertyFormatMap.get(EsmConfigParams.PARAM_MONITORING_INTERVAL_RAIDSTATUS));
 
         // "cpuTemp"
         Map<String, Object> cpuTempMap = new HashMap<String, Object>();
-        cpuTempMap.put(JSONConstants.MonitoringPropertySettings.SAMPLING_INTERVAL,           clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_INTERVAL_CPUTEMPERATURE));
-        cpuTempMap.put(JSONConstants.MonitoringPropertySettings.DEFAULT_TRIGGER_VALUE,       clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_TRIGGER_CPUTEMPERATURE));
-        cpuTempMap.put(JSONConstants.MonitoringPropertySettings.TRIGGER_VALUE_LOWER_LIMIT,   Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGNODE_CPUTEMPERATURE_LOWERLIMIT)));
-        cpuTempMap.put(JSONConstants.MonitoringPropertySettings.UNIT,                        serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGNODE_CPUTEMPERATURE_UNIT));
+        cpuTempMap.put(JSONConstants.MonitoringPropertySettings.SAMPLING_INTERVAL,           clusterPropertyFormatMap.get(EsmConfigParams.PARAM_MONITORING_INTERVAL_CPUTEMPERATURE));
+        cpuTempMap.put(JSONConstants.MonitoringPropertySettings.DEFAULT_TRIGGER_VALUE,       clusterPropertyFormatMap.get(EsmConfigParams.PARAM_MONITORING_TRIGGER_CPUTEMPERATURE));
+        cpuTempMap.put(JSONConstants.MonitoringPropertySettings.TRIGGER_VALUE_LOWER_LIMIT,   Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_SSGNODE_CPUTEMPERATURE_LOWERLIMIT)));
+        cpuTempMap.put(JSONConstants.MonitoringPropertySettings.UNIT,                        serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_SSGNODE_CPUTEMPERATURE_UNIT));
 
         // "cpuUsage"
         Map<String, Object> cpuUsageMap = new HashMap<String, Object>();
-        cpuUsageMap.put(JSONConstants.MonitoringPropertySettings.SAMPLING_INTERVAL,          clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_INTERVAL_CPUUSAGE));
-        cpuUsageMap.put(JSONConstants.MonitoringPropertySettings.DEFAULT_TRIGGER_VALUE,      clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_TRIGGER_CPUUSAGE));
-        cpuUsageMap.put(JSONConstants.MonitoringPropertySettings.TRIGGER_VALUE_LOWER_LIMIT,  Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGNODE_CPUUSAGE_LOWERLIMIT)));
-        cpuUsageMap.put(JSONConstants.MonitoringPropertySettings.TRIGGER_VALUE_UPPER_LIMIT,  Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGNODE_CPUUSAGE_UPPERLIMIT)));
-        cpuUsageMap.put(JSONConstants.MonitoringPropertySettings.UNIT,                       serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGNODE_CPUUSAGE_UNIT));
+        cpuUsageMap.put(JSONConstants.MonitoringPropertySettings.SAMPLING_INTERVAL,          clusterPropertyFormatMap.get(EsmConfigParams.PARAM_MONITORING_INTERVAL_CPUUSAGE));
+        cpuUsageMap.put(JSONConstants.MonitoringPropertySettings.DEFAULT_TRIGGER_VALUE,      clusterPropertyFormatMap.get(EsmConfigParams.PARAM_MONITORING_TRIGGER_CPUUSAGE));
+        cpuUsageMap.put(JSONConstants.MonitoringPropertySettings.TRIGGER_VALUE_LOWER_LIMIT,  Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_SSGNODE_CPUUSAGE_LOWERLIMIT)));
+        cpuUsageMap.put(JSONConstants.MonitoringPropertySettings.TRIGGER_VALUE_UPPER_LIMIT,  Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_SSGNODE_CPUUSAGE_UPPERLIMIT)));
+        cpuUsageMap.put(JSONConstants.MonitoringPropertySettings.UNIT,                       serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_SSGNODE_CPUUSAGE_UNIT));
 
         // "swapUsage"
         Map<String, Object> swapUsageMap = new HashMap<String, Object>();
-        swapUsageMap.put(JSONConstants.MonitoringPropertySettings.SAMPLING_INTERVAL,         clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_INTERVAL_SWAPUSAGE));
-        swapUsageMap.put(JSONConstants.MonitoringPropertySettings.DEFAULT_TRIGGER_VALUE,     convertKbToMbOrGb(true, (Long)clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_TRIGGER_SWAPUSAGE)));
-        swapUsageMap.put(JSONConstants.MonitoringPropertySettings.TRIGGER_VALUE_LOWER_LIMIT, Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGNODE_SWAPUSAGE_LOWERLIMIT)));
-        swapUsageMap.put(JSONConstants.MonitoringPropertySettings.UNIT,                      serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGNODE_SWAPUSAGE_UNIT));
+        swapUsageMap.put(JSONConstants.MonitoringPropertySettings.SAMPLING_INTERVAL,         clusterPropertyFormatMap.get(EsmConfigParams.PARAM_MONITORING_INTERVAL_SWAPUSAGE));
+        swapUsageMap.put(JSONConstants.MonitoringPropertySettings.DEFAULT_TRIGGER_VALUE,     convertKbToMbOrGb(true, (Long)clusterPropertyFormatMap.get(EsmConfigParams.PARAM_MONITORING_TRIGGER_SWAPUSAGE)));
+        swapUsageMap.put(JSONConstants.MonitoringPropertySettings.TRIGGER_VALUE_LOWER_LIMIT, Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_SSGNODE_SWAPUSAGE_LOWERLIMIT)));
+        swapUsageMap.put(JSONConstants.MonitoringPropertySettings.UNIT,                      serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_SSGNODE_SWAPUSAGE_UNIT));
 
         // "ntpStatus"
         Map<String, Object> ntpStatusMap = new HashMap<String, Object>();
-        ntpStatusMap.put(JSONConstants.MonitoringPropertySettings.SAMPLING_INTERVAL,         clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_INTERVAL_NTPSTATUS));
+        ntpStatusMap.put(JSONConstants.MonitoringPropertySettings.SAMPLING_INTERVAL,         clusterPropertyFormatMap.get(EsmConfigParams.PARAM_MONITORING_INTERVAL_NTPSTATUS));
 
         // "propertySetup"
         Map<String, Object> propertySetupMap = new HashMap<String, Object>();
@@ -912,11 +913,11 @@ public class Monitor extends EsmStandardWebPage {
         // Fill up jsonFormatMap
         jsonFormatMap.put(JSONConstants.READONLY, isReadOnly);
         jsonFormatMap.put(JSONConstants.SystemMonitoringSetup.PROPERTY_SETUP,                propertySetupMap);
-        jsonFormatMap.put(JSONConstants.SystemMonitoringSetup.SAMPLING_INTERVAL_LOWER_LIMIT, Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SAMPLINGINTERVAL_LOWERLIMIT)));
-        jsonFormatMap.put(JSONConstants.SystemMonitoringSetup.DISABLE_ALL_NOTIFICATIONS,     clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_DISABLEALLNOTIFICATIONS));
-        jsonFormatMap.put(JSONConstants.SystemMonitoringSetup.AUDIT_UPON_ALERT_STATE,        clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_AUDITUPONALERTSTATE));
-        jsonFormatMap.put(JSONConstants.SystemMonitoringSetup.AUDIT_UPON_NORMAL_STATE,       clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_AUDITUPONNORMALSTATE));
-        jsonFormatMap.put(JSONConstants.SystemMonitoringSetup.AUDIT_UPON_NOTIFICATION,       clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_AUDITUPONNOTIFICATION));
+        jsonFormatMap.put(JSONConstants.SystemMonitoringSetup.SAMPLING_INTERVAL_LOWER_LIMIT, Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_SAMPLINGINTERVAL_LOWERLIMIT)));
+        jsonFormatMap.put(JSONConstants.SystemMonitoringSetup.DISABLE_ALL_NOTIFICATIONS,     clusterPropertyFormatMap.get(EsmConfigParams.PARAM_MONITORING_DISABLEALLNOTIFICATIONS));
+        jsonFormatMap.put(JSONConstants.SystemMonitoringSetup.AUDIT_UPON_ALERT_STATE,        clusterPropertyFormatMap.get(EsmConfigParams.PARAM_MONITORING_AUDITUPONALERTSTATE));
+        jsonFormatMap.put(JSONConstants.SystemMonitoringSetup.AUDIT_UPON_NORMAL_STATE,       clusterPropertyFormatMap.get(EsmConfigParams.PARAM_MONITORING_AUDITUPONNORMALSTATE));
+        jsonFormatMap.put(JSONConstants.SystemMonitoringSetup.AUDIT_UPON_NOTIFICATION,       clusterPropertyFormatMap.get(EsmConfigParams.PARAM_MONITORING_AUDITUPONNOTIFICATION));
 
         return jsonFormatMap;
     }
@@ -949,123 +950,123 @@ public class Monitor extends EsmStandardWebPage {
             Map<String, Object> auditSizeMap = (Map<String, Object>) propertySetupMap.get(JSONConstants.SsgClusterMonitoringProperty.AUDIT_SIZE);
             if (auditSizeMap != null && !auditSizeMap.isEmpty()) {
                 long interval = getSamplingInterval(auditSizeMap, JSONConstants.SsgClusterMonitoringProperty.AUDIT_SIZE);
-                clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_AUDITSIZE, interval);
+                clusterPropertyFormatMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_AUDITSIZE, interval);
 
-                long triggerVal = getTriggerValue(auditSizeMap, JSONConstants.SsgClusterMonitoringProperty.AUDIT_SIZE, Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGCLUSTER_AUDITSIZE_LOWERLIMIT)), null);
-                clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_AUDITSIZE, triggerVal);
+                long triggerVal = getTriggerValue(auditSizeMap, JSONConstants.SsgClusterMonitoringProperty.AUDIT_SIZE, Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_SSGCLUSTER_AUDITSIZE_LOWERLIMIT)), null);
+                clusterPropertyFormatMap.put(EsmConfigParams.PARAM_MONITORING_TRIGGER_AUDITSIZE, triggerVal);
             }
 
             // "databaseReplicationDelay"
             Map<String, Object> databaseReplicationDelayMap = (Map<String, Object>) propertySetupMap.get(JSONConstants.SsgClusterMonitoringProperty.DATABASE_REPLICATION_DELAY);
             if (databaseReplicationDelayMap != null && !databaseReplicationDelayMap.isEmpty()) {
                 long interval = getSamplingInterval(databaseReplicationDelayMap, JSONConstants.SsgClusterMonitoringProperty.DATABASE_REPLICATION_DELAY);
-                clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_DATABASEREPLICATIONDELAY, interval);
+                clusterPropertyFormatMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_DATABASEREPLICATIONDELAY, interval);
 
-                long triggerVal = getTriggerValue(databaseReplicationDelayMap, JSONConstants.SsgClusterMonitoringProperty.DATABASE_REPLICATION_DELAY, Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGCLUSTER_DATABASEREPLICATIONDELAY_LOWERLIMIT)), null);
-                clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_DATABASEREPLICATIONDELAY, triggerVal);
+                long triggerVal = getTriggerValue(databaseReplicationDelayMap, JSONConstants.SsgClusterMonitoringProperty.DATABASE_REPLICATION_DELAY, Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_SSGCLUSTER_DATABASEREPLICATIONDELAY_LOWERLIMIT)), null);
+                clusterPropertyFormatMap.put(EsmConfigParams.PARAM_MONITORING_TRIGGER_DATABASEREPLICATIONDELAY, triggerVal);
             }
 
             // "operatingStatus"
             Map<String, Object> operatingStatusMap = (Map<String, Object>) propertySetupMap.get(JSONConstants.SsgNodeMonitoringProperty.OPERATING_STATUS);
             if (operatingStatusMap != null && !operatingStatusMap.isEmpty()) {
                 long interval = getSamplingInterval(operatingStatusMap, JSONConstants.SsgNodeMonitoringProperty.OPERATING_STATUS);
-                clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_OPERATINGSTATUS, interval);
+                clusterPropertyFormatMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_OPERATINGSTATUS, interval);
             }
 
             // "logSize"
             Map<String, Object> logSizeMap = (Map<String, Object>) propertySetupMap.get(JSONConstants.SsgNodeMonitoringProperty.LOG_SIZE);
             if (logSizeMap != null && !logSizeMap.isEmpty()) {
                 long interval = getSamplingInterval(logSizeMap, JSONConstants.SsgNodeMonitoringProperty.LOG_SIZE);
-                clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_LOGSIZE, interval);
+                clusterPropertyFormatMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_LOGSIZE, interval);
 
-                long triggerVal = getTriggerValue(logSizeMap, JSONConstants.SsgNodeMonitoringProperty.LOG_SIZE, Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGNODE_LOGSIZE_LOWERLIMIT)), null);
-                clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_LOGSIZE, convertMbOrGbToKb(true, triggerVal));
+                long triggerVal = getTriggerValue(logSizeMap, JSONConstants.SsgNodeMonitoringProperty.LOG_SIZE, Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_SSGNODE_LOGSIZE_LOWERLIMIT)), null);
+                clusterPropertyFormatMap.put(EsmConfigParams.PARAM_MONITORING_TRIGGER_LOGSIZE, convertMbOrGbToKb(true, triggerVal));
             }
 
             // "diskUsage"
             Map<String, Object> diskUsageMap = (Map<String, Object>) propertySetupMap.get(JSONConstants.SsgNodeMonitoringProperty.DISK_USAGE);
             if (diskUsageMap != null && !diskUsageMap.isEmpty()) {
                 long interval = getSamplingInterval(diskUsageMap, JSONConstants.SsgNodeMonitoringProperty.DISK_USAGE);
-                clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_DISKUSAGE, interval);
+                clusterPropertyFormatMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_DISKUSAGE, interval);
 
                 long triggerVal = getTriggerValue(diskUsageMap, JSONConstants.SsgNodeMonitoringProperty.DISK_USAGE,
-                    Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGNODE_DISKUSAGE_LOWERLIMIT)),
-                    Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGNODE_DISKUSAGE_UPPERLIMIT)));
-                clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_DISKUSAGE, triggerVal);
+                    Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_SSGNODE_DISKUSAGE_LOWERLIMIT)),
+                    Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_SSGNODE_DISKUSAGE_UPPERLIMIT)));
+                clusterPropertyFormatMap.put(EsmConfigParams.PARAM_MONITORING_TRIGGER_DISKUSAGE, triggerVal);
             }
 
             // "diskFree"
             Map<String, Object> diskFreeMap = (Map<String, Object>) propertySetupMap.get(JSONConstants.SsgNodeMonitoringProperty.DISK_FREE);
             if (diskFreeMap != null && !diskFreeMap.isEmpty()) {
                 long interval = getSamplingInterval(diskFreeMap, JSONConstants.SsgNodeMonitoringProperty.DISK_FREE);
-                clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_DISKFREE, interval);
+                clusterPropertyFormatMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_DISKFREE, interval);
 
-                long triggerVal = getTriggerValue(diskFreeMap, JSONConstants.SsgNodeMonitoringProperty.DISK_FREE, Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGNODE_DISKFREE_LOWERLIMIT)), null);
-                clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_DISKFREE, convertMbOrGbToKb(false, triggerVal));
+                long triggerVal = getTriggerValue(diskFreeMap, JSONConstants.SsgNodeMonitoringProperty.DISK_FREE, Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_SSGNODE_DISKFREE_LOWERLIMIT)), null);
+                clusterPropertyFormatMap.put(EsmConfigParams.PARAM_MONITORING_TRIGGER_DISKFREE, convertMbOrGbToKb(false, triggerVal));
             }
 
             // "raidStatus"
             Map<String, Object> raidStatusMap = (Map<String, Object>) propertySetupMap.get(JSONConstants.SsgNodeMonitoringProperty.RAID_STATUS);
             if (raidStatusMap != null && !raidStatusMap.isEmpty()) {
                 long interval = getSamplingInterval(raidStatusMap, JSONConstants.SsgNodeMonitoringProperty.RAID_STATUS);
-                clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_RAIDSTATUS, interval);
+                clusterPropertyFormatMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_RAIDSTATUS, interval);
             }
 
             // "cpuTemp"
             Map<String, Object> cpuTempMap = (Map<String, Object>) propertySetupMap.get(JSONConstants.SsgNodeMonitoringProperty.CPU_TEMP);
             if (cpuTempMap != null && !cpuTempMap.isEmpty()) {
                 long interval = getSamplingInterval(cpuTempMap, JSONConstants.SsgNodeMonitoringProperty.CPU_TEMP);
-                clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_CPUTEMPERATURE, interval);
+                clusterPropertyFormatMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_CPUTEMPERATURE, interval);
 
-                long triggerVal = getTriggerValue(cpuTempMap, JSONConstants.SsgNodeMonitoringProperty.CPU_TEMP, Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGNODE_CPUTEMPERATURE_LOWERLIMIT)), null);
-                clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_CPUTEMPERATURE, triggerVal);
+                long triggerVal = getTriggerValue(cpuTempMap, JSONConstants.SsgNodeMonitoringProperty.CPU_TEMP, Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_SSGNODE_CPUTEMPERATURE_LOWERLIMIT)), null);
+                clusterPropertyFormatMap.put(EsmConfigParams.PARAM_MONITORING_TRIGGER_CPUTEMPERATURE, triggerVal);
             }
 
             // "cpuUsage"
             Map<String, Object> cpuUsageMap = (Map<String, Object>) propertySetupMap.get(JSONConstants.SsgNodeMonitoringProperty.CPU_USAGE);
             if (cpuUsageMap != null && !cpuUsageMap.isEmpty()) {
                 long interval = getSamplingInterval(cpuUsageMap, JSONConstants.SsgNodeMonitoringProperty.CPU_USAGE);
-                clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_CPUUSAGE, interval);
+                clusterPropertyFormatMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_CPUUSAGE, interval);
 
                 long triggerVal = getTriggerValue(cpuUsageMap, JSONConstants.SsgNodeMonitoringProperty.CPU_USAGE,
-                    Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGNODE_CPUUSAGE_LOWERLIMIT)),
-                    Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGNODE_CPUUSAGE_UPPERLIMIT)));
-                clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_CPUUSAGE, triggerVal);
+                    Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_SSGNODE_CPUUSAGE_LOWERLIMIT)),
+                    Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_SSGNODE_CPUUSAGE_UPPERLIMIT)));
+                clusterPropertyFormatMap.put(EsmConfigParams.PARAM_MONITORING_TRIGGER_CPUUSAGE, triggerVal);
             }
 
             // "swapUsage"
             Map<String, Object> swapUsageMap = (Map<String, Object>) propertySetupMap.get(JSONConstants.SsgNodeMonitoringProperty.SWAP_USAGE);
             if (swapUsageMap != null && !swapUsageMap.isEmpty()) {
                 long interval = getSamplingInterval(swapUsageMap, JSONConstants.SsgNodeMonitoringProperty.SWAP_USAGE);
-                clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_SWAPUSAGE, interval);
+                clusterPropertyFormatMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_SWAPUSAGE, interval);
 
-                long triggerVal = getTriggerValue(swapUsageMap, JSONConstants.SsgNodeMonitoringProperty.SWAP_USAGE, Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGNODE_SWAPUSAGE_LOWERLIMIT)), null);
-                clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_SWAPUSAGE, convertMbOrGbToKb(true, triggerVal));
+                long triggerVal = getTriggerValue(swapUsageMap, JSONConstants.SsgNodeMonitoringProperty.SWAP_USAGE, Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_SSGNODE_SWAPUSAGE_LOWERLIMIT)), null);
+                clusterPropertyFormatMap.put(EsmConfigParams.PARAM_MONITORING_TRIGGER_SWAPUSAGE, convertMbOrGbToKb(true, triggerVal));
             }
 
             // "ntpStatus"
             Map<String, Object> ntpStatusMap = (Map<String, Object>) propertySetupMap.get(JSONConstants.SsgNodeMonitoringProperty.NTP_STATUS);
             if (ntpStatusMap != null && !ntpStatusMap.isEmpty()) {
                 long interval = getSamplingInterval(ntpStatusMap, JSONConstants.SsgNodeMonitoringProperty.NTP_STATUS);
-                clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_NTPSTATUS, interval);
+                clusterPropertyFormatMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_NTPSTATUS, interval);
             }
         }
 
         // "disableAllNotifications"
         Object optionObj = jsonFormatMap.get(JSONConstants.SystemMonitoringSetup.DISABLE_ALL_NOTIFICATIONS);
-        if (optionObj != null) clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_DISABLEALLNOTIFICATIONS, validateOption(optionObj, JSONConstants.SystemMonitoringSetup.DISABLE_ALL_NOTIFICATIONS));
+        if (optionObj != null) clusterPropertyFormatMap.put(EsmConfigParams.PARAM_MONITORING_DISABLEALLNOTIFICATIONS, validateOption(optionObj, JSONConstants.SystemMonitoringSetup.DISABLE_ALL_NOTIFICATIONS));
 
         // "auditUponAlertState"
         optionObj = jsonFormatMap.get(JSONConstants.SystemMonitoringSetup.AUDIT_UPON_ALERT_STATE);
-        if (optionObj != null) clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_AUDITUPONALERTSTATE, validateOption(optionObj, JSONConstants.SystemMonitoringSetup.AUDIT_UPON_ALERT_STATE));
+        if (optionObj != null) clusterPropertyFormatMap.put(EsmConfigParams.PARAM_MONITORING_AUDITUPONALERTSTATE, validateOption(optionObj, JSONConstants.SystemMonitoringSetup.AUDIT_UPON_ALERT_STATE));
 
         // "auditUponNormalState"
         optionObj = jsonFormatMap.get(JSONConstants.SystemMonitoringSetup.AUDIT_UPON_NORMAL_STATE);
-        if (optionObj != null) clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_AUDITUPONNORMALSTATE, validateOption(optionObj, JSONConstants.SystemMonitoringSetup.AUDIT_UPON_NORMAL_STATE));
+        if (optionObj != null) clusterPropertyFormatMap.put(EsmConfigParams.PARAM_MONITORING_AUDITUPONNORMALSTATE, validateOption(optionObj, JSONConstants.SystemMonitoringSetup.AUDIT_UPON_NORMAL_STATE));
 
         // "auditUponNotification"
         optionObj = jsonFormatMap.get(JSONConstants.SystemMonitoringSetup.AUDIT_UPON_NOTIFICATION);
-        if (optionObj != null) clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_AUDITUPONNOTIFICATION, validateOption(optionObj, JSONConstants.SystemMonitoringSetup.AUDIT_UPON_NOTIFICATION));
+        if (optionObj != null) clusterPropertyFormatMap.put(EsmConfigParams.PARAM_MONITORING_AUDITUPONNOTIFICATION, validateOption(optionObj, JSONConstants.SystemMonitoringSetup.AUDIT_UPON_NOTIFICATION));
 
         return clusterPropertyFormatMap;
     }
@@ -1090,7 +1091,7 @@ public class Monitor extends EsmStandardWebPage {
             throw new InvalidMonitoringSetupSettingException("The property (NAME = '" + propertyName + "') includes an invalid " + JSONConstants.MonitoringPropertySettings.SAMPLING_INTERVAL + ".");
         }
 
-        long samplingIntervalLowerLimit = Long.parseLong(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SAMPLINGINTERVAL_LOWERLIMIT));
+        long samplingIntervalLowerLimit = Long.parseLong(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_SAMPLINGINTERVAL_LOWERLIMIT));
         if (interval < samplingIntervalLowerLimit) {
             throw new InvalidMonitoringSetupSettingException("In the property (NAME = '" + propertyName + "'), " + JSONConstants.MonitoringPropertySettings.SAMPLING_INTERVAL + " is less than the sampling interval lower limit (VALUE = " + samplingIntervalLowerLimit + ").");
         }
@@ -1170,19 +1171,19 @@ public class Monitor extends EsmStandardWebPage {
             Object oldVal = oldMap.get(key);
 
             if (newVal != null && ! newVal.equals(oldVal)) {
-                String entityType = key.equals(ServerConfig.PARAM_MONITORING_TRIGGER_AUDITSIZE) ||
-                                    key.equals(ServerConfig.PARAM_MONITORING_TRIGGER_DATABASEREPLICATIONDELAY) ?
+                String entityType = key.equals(EsmConfigParams.PARAM_MONITORING_TRIGGER_AUDITSIZE) ||
+                                    key.equals(EsmConfigParams.PARAM_MONITORING_TRIGGER_DATABASEREPLICATIONDELAY) ?
                         "ssgCluster" :
                         "ssgNode";
                 String propertyName = key.split("\\.").length < 2? key : key.split("\\.")[1];
 
-                if (key.equals(ServerConfig.PARAM_MONITORING_TRIGGER_LOGSIZE)) {
+                if (key.equals(EsmConfigParams.PARAM_MONITORING_TRIGGER_LOGSIZE)) {
                     // Convert KB to MB, since the UI displays the log size in MB.
                     newVal = convertKbToMbOrGb(true, (Long)newVal);
-                } else if (key.equals(ServerConfig.PARAM_MONITORING_TRIGGER_DISKFREE)) {
+                } else if (key.equals(EsmConfigParams.PARAM_MONITORING_TRIGGER_DISKFREE)) {
                     // Convert KB to GB, since the UI displays the disk free in GB.
                     newVal = convertKbToMbOrGb(false, (Long)newVal);
-                } else if (key.equals(ServerConfig.PARAM_MONITORING_TRIGGER_SWAPUSAGE)) {
+                } else if (key.equals(EsmConfigParams.PARAM_MONITORING_TRIGGER_SWAPUSAGE)) {
                     // Convert KB to MB, since the UI displays the swap usage in MB.
                     newVal = convertKbToMbOrGb(true, (Long)newVal);
                 }
@@ -1273,8 +1274,8 @@ public class Monitor extends EsmStandardWebPage {
         }
         if (monitoringSetupSettings == null) return;
 
-        boolean auditUponAlertState = (Boolean) monitoringSetupSettings.get(ServerConfig.PARAM_MONITORING_AUDITUPONALERTSTATE);
-        boolean auditUponNormalState = (Boolean) monitoringSetupSettings.get(ServerConfig.PARAM_MONITORING_AUDITUPONNORMALSTATE);
+        boolean auditUponAlertState = (Boolean) monitoringSetupSettings.get(EsmConfigParams.PARAM_MONITORING_AUDITUPONALERTSTATE);
+        boolean auditUponNormalState = (Boolean) monitoringSetupSettings.get(EsmConfigParams.PARAM_MONITORING_AUDITUPONNORMALSTATE);
 
         // Audit a change if there is an alert state change from normal to alert.
         if (auditUponAlertState) {

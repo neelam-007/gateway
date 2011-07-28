@@ -6,6 +6,7 @@ import com.l7tech.identity.LogonInfo;
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.SaveException;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.system.SystemEvent;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.ServerConfig;
@@ -67,9 +68,9 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
         this.roleManager = roleManager;
         this.identityProviderFactory = identityProviderFactory;
 
-        this.maxLoginAttempts = this.config.getIntProperty(ServerConfig.PARAM_MAX_LOGIN_ATTEMPTS_ALLOW, DEFAULT_MAX_LOGIN_ATTEMPTS_ALLOW);
-        this.maxLockoutTime = this.config.getIntProperty(ServerConfig.PARAM_MAX_LOCKOUT_TIME, DEFAULT_MAX_LOCKOUT_TIME_IN_SECS);
-        this.maxInactivityPeriod = this.config.getIntProperty(ServerConfig.PARAM_INACTIVITY_PERIOD, DEFAULT_MAX_INACTIVITY_PERIOD);
+        this.maxLoginAttempts = this.config.getIntProperty( ServerConfigParams.PARAM_MAX_LOGIN_ATTEMPTS_ALLOW, DEFAULT_MAX_LOGIN_ATTEMPTS_ALLOW);
+        this.maxLockoutTime = this.config.getIntProperty( ServerConfigParams.PARAM_MAX_LOCKOUT_TIME, DEFAULT_MAX_LOCKOUT_TIME_IN_SECS);
+        this.maxInactivityPeriod = this.config.getIntProperty( ServerConfigParams.PARAM_INACTIVITY_PERIOD, DEFAULT_MAX_INACTIVITY_PERIOD);
     }
 
     public PlatformTransactionManager getTransactionManager() {
@@ -90,12 +91,12 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
 
     public void setConfig(Config config) {
         final ValidatedConfig validatedConfig = new ValidatedConfig(config, logger);
-        validatedConfig.setMinimumValue(ServerConfig.PARAM_MAX_LOGIN_ATTEMPTS_ALLOW, 1);
-        validatedConfig.setMaximumValue(ServerConfig.PARAM_MAX_LOGIN_ATTEMPTS_ALLOW, 20);
-        validatedConfig.setMinimumValue(ServerConfig.PARAM_MAX_LOCKOUT_TIME, 1);
-        validatedConfig.setMaximumValue(ServerConfig.PARAM_MAX_LOCKOUT_TIME, 86400);
-        validatedConfig.setMinimumValue(ServerConfig.PARAM_INACTIVITY_PERIOD, 1);
-        validatedConfig.setMaximumValue(ServerConfig.PARAM_INACTIVITY_PERIOD, 365);
+        validatedConfig.setMinimumValue( ServerConfigParams.PARAM_MAX_LOGIN_ATTEMPTS_ALLOW, 1);
+        validatedConfig.setMaximumValue( ServerConfigParams.PARAM_MAX_LOGIN_ATTEMPTS_ALLOW, 20);
+        validatedConfig.setMinimumValue( ServerConfigParams.PARAM_MAX_LOCKOUT_TIME, 1);
+        validatedConfig.setMaximumValue( ServerConfigParams.PARAM_MAX_LOCKOUT_TIME, 86400);
+        validatedConfig.setMinimumValue( ServerConfigParams.PARAM_INACTIVITY_PERIOD, 1);
+        validatedConfig.setMaximumValue( ServerConfigParams.PARAM_INACTIVITY_PERIOD, 365);
         this.config = validatedConfig;
 
     }
@@ -103,17 +104,17 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
         String propertyName = evt.getPropertyName();
-        if (propertyName != null && propertyName.equals(ServerConfig.PARAM_MAX_LOGIN_ATTEMPTS_ALLOW)) {
-            this.maxLoginAttempts = this.config.getIntProperty(ServerConfig.PARAM_MAX_LOGIN_ATTEMPTS_ALLOW, DEFAULT_MAX_LOGIN_ATTEMPTS_ALLOW);
+        if (propertyName != null && propertyName.equals( ServerConfigParams.PARAM_MAX_LOGIN_ATTEMPTS_ALLOW)) {
+            this.maxLoginAttempts = this.config.getIntProperty( ServerConfigParams.PARAM_MAX_LOGIN_ATTEMPTS_ALLOW, DEFAULT_MAX_LOGIN_ATTEMPTS_ALLOW);
         }
 
-        if (propertyName != null && propertyName.equals(ServerConfig.PARAM_MAX_LOCKOUT_TIME)) {
-            this.maxLockoutTime = this.config.getIntProperty(ServerConfig.PARAM_MAX_LOCKOUT_TIME, DEFAULT_MAX_LOCKOUT_TIME_IN_SECS);
+        if (propertyName != null && propertyName.equals( ServerConfigParams.PARAM_MAX_LOCKOUT_TIME)) {
+            this.maxLockoutTime = this.config.getIntProperty( ServerConfigParams.PARAM_MAX_LOCKOUT_TIME, DEFAULT_MAX_LOCKOUT_TIME_IN_SECS);
         }
 
 
-        if (propertyName != null && propertyName.equals(ServerConfig.PARAM_INACTIVITY_PERIOD)) {
-            this.maxInactivityPeriod = this.config.getIntProperty(ServerConfig.PARAM_INACTIVITY_PERIOD, DEFAULT_MAX_INACTIVITY_PERIOD);
+        if (propertyName != null && propertyName.equals( ServerConfigParams.PARAM_INACTIVITY_PERIOD)) {
+            this.maxInactivityPeriod = this.config.getIntProperty( ServerConfigParams.PARAM_INACTIVITY_PERIOD, DEFAULT_MAX_INACTIVITY_PERIOD);
         }
 
     }

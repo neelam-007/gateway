@@ -36,7 +36,7 @@ public class SystemProperties implements InitializingBean {
 
     private void setSystemProperties(ServerConfig config) throws IOException {
         // Set system properties
-        String sysPropsPath = config.getPropertyCached(ServerConfig.PARAM_SYSTEMPROPS);
+        String sysPropsPath = config.getPropertyCached( ServerConfigParams.PARAM_SYSTEMPROPS);
         File propsFile = new File(sysPropsPath);
         Properties props = new Properties();
 

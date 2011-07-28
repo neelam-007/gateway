@@ -1,7 +1,6 @@
 package com.l7tech.server.policy.assertion.credential.wss;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.security.token.EncryptedKey;
 import com.l7tech.security.token.SigningSecurityToken;
 import com.l7tech.security.token.UsernameToken;
@@ -9,6 +8,7 @@ import com.l7tech.security.token.XmlSecurityToken;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.ProcessorResultUtil;
 import com.l7tech.security.xml.SecurityTokenResolver;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.message.Message;
 import com.l7tech.message.MessageRole;
@@ -67,7 +67,7 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractMessageTarget
                 logAndAudit(AssertionMessages.WSS_BASIC_NOT_SOAP, messageDescription);
                 return AssertionStatus.NOT_APPLICABLE;
             }
-            if ( isRequest() && !config.getBooleanProperty(ServerConfig.PARAM_WSS_PROCESSOR_LAZY_REQUEST,true) ) {
+            if ( isRequest() && !config.getBooleanProperty( ServerConfigParams.PARAM_WSS_PROCESSOR_LAZY_REQUEST,true) ) {
                 wssResults = message.getSecurityKnob().getProcessorResult();
                 message.getSecurityKnob().setNeedsSignatureConfirmations(true);
             } else {

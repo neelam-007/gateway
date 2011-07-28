@@ -3,6 +3,7 @@ package com.l7tech.server.policy.assertion.xmlsec;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
@@ -294,7 +295,7 @@ class Saml2SubjectAndConditionValidate {
     }
 
     static Calendar adjustNotAfter(Calendar notOnOrAfter) {
-        int afterOffsetMinutes = ServerConfig.getInstance().getIntPropertyCached(ServerConfig.PARAM_samlValidateAfterOffsetMinutes, 0, 30000L);
+        int afterOffsetMinutes = ServerConfig.getInstance().getIntPropertyCached( ServerConfigParams.PARAM_SAML_VALIDATE_AFTER_OFFSET_MINUTES, 0, 30000L);
         if (afterOffsetMinutes != 0) {
             notOnOrAfter = (Calendar)notOnOrAfter.clone();
             notOnOrAfter.add(Calendar.MINUTE, afterOffsetMinutes);
@@ -303,7 +304,7 @@ class Saml2SubjectAndConditionValidate {
     }
 
     static Calendar adjustNotBefore(Calendar notBefore) {
-        int beforeOffsetMinutes = ServerConfig.getInstance().getIntPropertyCached(ServerConfig.PARAM_samlValidateBeforeOffsetMinutes, 0, 30000L);
+        int beforeOffsetMinutes = ServerConfig.getInstance().getIntPropertyCached( ServerConfigParams.PARAM_SAML_VALIDATE_BEFORE_OFFSET_MINUTES, 0, 30000L);
         if (beforeOffsetMinutes != 0) {
             notBefore = (Calendar)notBefore.clone();
             notBefore.add(Calendar.MINUTE, -beforeOffsetMinutes);

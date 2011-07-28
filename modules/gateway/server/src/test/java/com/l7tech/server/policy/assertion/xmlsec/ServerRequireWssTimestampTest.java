@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -83,8 +84,8 @@ public class ServerRequireWssTimestampTest {
 
     private ServerConfig makeServerConfig(final long futureGrace, final long pastGrace) {
         final Map<String, String> overrides = new HashMap<String, String>() {{
-            put(ServerConfig.PARAM_TIMESTAMP_CREATED_FUTURE_GRACE, Long.toString(futureGrace)); // 50 yers
-            put(ServerConfig.PARAM_TIMESTAMP_EXPIRES_PAST_GRACE, Long.toString(pastGrace));
+            put( ServerConfigParams.PARAM_TIMESTAMP_CREATED_FUTURE_GRACE, Long.toString(futureGrace)); // 50 yers
+            put( ServerConfigParams.PARAM_TIMESTAMP_EXPIRES_PAST_GRACE, Long.toString(pastGrace));
         }};
 
         return new ServerConfig() {

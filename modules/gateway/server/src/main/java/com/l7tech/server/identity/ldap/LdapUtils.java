@@ -1,5 +1,6 @@
 package com.l7tech.server.identity.ldap;
 
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.ExceptionUtils;
 import com.sun.jndi.ldap.LdapURL;
 import com.l7tech.server.ServerConfig;
@@ -83,7 +84,7 @@ public final class LdapUtils {
             return true;
 
         boolean shouldBeCaseInsensitiveValue = Boolean.parseBoolean(
-            ServerConfig.getInstance().getPropertyCached(ServerConfig.PARAM_LDAP_COMPARISON_CASE_INSENSITIVE));
+            ServerConfig.getInstance().getPropertyCached( ServerConfigParams.PARAM_LDAP_COMPARISON_CASE_INSENSITIVE));
 
                 for (int i = 0; i < attr.size(); i++) {
                     try {

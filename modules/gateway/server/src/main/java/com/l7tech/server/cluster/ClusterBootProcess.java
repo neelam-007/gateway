@@ -3,6 +3,7 @@
  */
 package com.l7tech.server.cluster;
 
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
@@ -34,7 +35,7 @@ public class ClusterBootProcess implements ServerComponentLifecycle {
         this.clusterInfoManager = clusterInfoManager;
         this.distributedMessageIdManager = distributedMessageIdManager;
 
-        multicastAddress = serverConfig.getPropertyCached(ServerConfig.PARAM_MULTICAST_ADDRESS);
+        multicastAddress = serverConfig.getPropertyCached( ServerConfigParams.PARAM_MULTICAST_ADDRESS);
         if (multicastAddress != null && multicastAddress.length() == 0) multicastAddress = null;
     }
 

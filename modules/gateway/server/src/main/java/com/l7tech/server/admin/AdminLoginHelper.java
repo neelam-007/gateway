@@ -11,7 +11,7 @@ import com.l7tech.identity.UserDisabledException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.token.http.HttpClientCertToken;
-import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.system.FailedAdminLoginEvent;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.util.JaasUtils;
@@ -146,7 +146,7 @@ public class AdminLoginHelper extends ApplicationObjectSupport {
     }
 
     private String getLogonWarningBanner() {
-        String prop = config.getProperty(ServerConfig.PARAM_LOGON_WARNING_BANNER, null);
+        String prop = config.getProperty( ServerConfigParams.PARAM_LOGON_WARNING_BANNER, null);
 
         // If the banner prop value just contains whitespace, then set the prop as null.
         if (prop != null && prop.trim().isEmpty()) prop = null;

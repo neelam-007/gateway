@@ -1,6 +1,7 @@
 package com.l7tech.server.log;
 
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.CausedIOException;
 
 import java.io.File;
@@ -33,10 +34,10 @@ class LogUtils {
         // get log directory, build from home if necessary
         String ssgLogs = filepath != null ?
                 filepath :
-                serverConfig.getPropertyCached( ServerConfig.PARAM_SSG_LOG_DIRECTORY );
+                serverConfig.getPropertyCached( ServerConfigParams.PARAM_SSG_LOG_DIRECTORY );
         if ( ssgLogs == null ) {
             try {
-                File ssgHome = serverConfig.getLocalDirectoryProperty( ServerConfig.PARAM_SSG_HOME_DIRECTORY, false );
+                File ssgHome = serverConfig.getLocalDirectoryProperty( ServerConfigParams.PARAM_SSG_HOME_DIRECTORY, false );
                 ssgLogs = new File(ssgHome, "var/logs").getAbsolutePath();
             } catch (RuntimeException re) {
                 throw new CausedIOException("Error with home directory: " + re.getMessage());
@@ -51,7 +52,7 @@ class LogUtils {
             ssgLogs += "/";
         }
 
-        String filePatternTemplate = useDefaultTemplate ? null : serverConfig.getProperty( ServerConfig.PARAM_SSG_LOG_FILE_PATTERN_TEMPLATE );
+        String filePatternTemplate = useDefaultTemplate ? null : serverConfig.getProperty( ServerConfigParams.PARAM_SSG_LOG_FILE_PATTERN_TEMPLATE );
         if ( filePatternTemplate == null ) {
             filePatternTemplate = DEFAULT_FILE_PATTERN_TEMPLATE;
         }

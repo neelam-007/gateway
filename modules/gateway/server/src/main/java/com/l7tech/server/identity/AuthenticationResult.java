@@ -5,6 +5,7 @@ import com.l7tech.identity.Group;
 import com.l7tech.identity.User;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.security.token.SecurityToken;
+import com.l7tech.server.ServerConfigParams;
 import com.whirlycott.cache.Cache;
 
 import java.security.cert.X509Certificate;
@@ -16,7 +17,7 @@ public final class AuthenticationResult {
 
     private static class CacheHolder {
         private static final int CACHE_SIZE =
-                ServerConfig.getInstance().getIntPropertyCached(ServerConfig.PARAM_AUTH_CACHE_GROUP_MEMB_CACHE_SIZE, 1000, 15000);
+                ServerConfig.getInstance().getIntPropertyCached( ServerConfigParams.PARAM_AUTH_CACHE_GROUP_MEMB_CACHE_SIZE, 1000, 15000);
         private static final Cache CACHE = CACHE_SIZE < 1
                                            ? null
                                            : WhirlycacheFactory.createCache("groupMemberships",

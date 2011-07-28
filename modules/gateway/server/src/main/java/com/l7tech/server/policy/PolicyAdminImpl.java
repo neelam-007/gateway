@@ -21,6 +21,7 @@ import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.service.ServiceManager;
@@ -156,10 +157,10 @@ public class PolicyAdminImpl implements PolicyAdmin {
         if (!(PolicyType.INTERNAL.equals(policy.getType())))
             return;
         String guid = policy.getGuid();
-        String sinkGuid = serverConfig.getProperty(ServerConfig.PARAM_AUDIT_SINK_POLICY_GUID);
+        String sinkGuid = serverConfig.getProperty( ServerConfigParams.PARAM_AUDIT_SINK_POLICY_GUID);
         if (sinkGuid != null && sinkGuid.trim().equals(guid))
             throw new PolicyDeletionForbiddenException(policy, EntityType.CLUSTER_PROPERTY, "it is currently in use as the global audit sink policy");
-        String traceGuid = serverConfig.getProperty(ServerConfig.PARAM_TRACE_POLICY_GUID);
+        String traceGuid = serverConfig.getProperty( ServerConfigParams.PARAM_TRACE_POLICY_GUID);
         if (traceGuid != null && traceGuid.trim().equals(guid)) {
             if (atLeastOneServiceHasTracingEnabled())
                 throw new PolicyDeletionForbiddenException(policy, EntityType.CLUSTER_PROPERTY, "it is currently in use as the global debug trace policy");
@@ -182,7 +183,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
         if (clusterPropertyManager == null)
             return;
         try {
-            ClusterProperty traceProp = clusterPropertyManager.findByUniqueName(ServerConfig.PARAM_TRACE_POLICY_GUID);
+            ClusterProperty traceProp = clusterPropertyManager.findByUniqueName( ServerConfigParams.PARAM_TRACE_POLICY_GUID);
             if (traceProp == null)
                 return;
 

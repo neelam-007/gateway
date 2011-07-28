@@ -1,6 +1,6 @@
 package com.l7tech.server.identity.ldap;
 
-import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.Config;
 import com.l7tech.util.ValidatedConfig;
 
@@ -58,20 +58,20 @@ public class LdapRuntimeConfig implements PropertyChangeListener {
     @Override
     public void propertyChange(final PropertyChangeEvent evt) {
         String propertyName = evt.getPropertyName();
-        if ( ServerConfig.PARAM_LDAP_CONNECTION_TIMEOUT.equals(propertyName)) {
+        if ( ServerConfigParams.PARAM_LDAP_CONNECTION_TIMEOUT.equals(propertyName)) {
             loadConnectionTimeout();
-        } else if (ServerConfig.PARAM_LDAP_READ_TIMEOUT.equals(propertyName)) {
+        } else if ( ServerConfigParams.PARAM_LDAP_READ_TIMEOUT.equals(propertyName)) {
             loadReadTimeout();
-        } else if (ServerConfig.MAX_LDAP_SEARCH_RESULT_SIZE.equals(propertyName)) {
+        } else if ( ServerConfigParams.PARAM_MAX_LDAP_SEARCH_RESULT_SIZE.equals(propertyName)) {
             loadMaxSearchResultSize();
             loadMaxGroupSearchResultSize(); // defaults to max search results size
-        } else if (ServerConfig.MAX_LDAP_GROUP_SEARCH_RESULT_SIZE.equals(propertyName)) {
+        } else if ( ServerConfigParams.PARAM_MAX_LDAP_GROUP_SEARCH_RESULT_SIZE.equals(propertyName)) {
             loadMaxGroupSearchResultSize();
         } else if (PROP_RECONNECT_TIMEOUT.equals(propertyName)) {
             loadReconnectTimeout();
-        } else if (ServerConfig.PARAM_LDAPCERTINDEX_REBUILD_INTERVAL.equals(propertyName)) {
+        } else if ( ServerConfigParams.PARAM_LDAPCERTINDEX_REBUILD_INTERVAL.equals(propertyName)) {
             loadIndexRebuildIntervalProperty();
-        } else if (ServerConfig.PARAM_LDAPCERT_CACHE_LIFETIME.equals(propertyName)) {
+        } else if ( ServerConfigParams.PARAM_LDAPCERT_CACHE_LIFETIME.equals(propertyName)) {
             loadCachedCertEntryLifeProperty();
         }
     }
@@ -113,35 +113,35 @@ public class LdapRuntimeConfig implements PropertyChangeListener {
     }
 
     private void loadConnectionTimeout() {
-        long ldapConnectionTimeout = config.getTimeUnitProperty(ServerConfig.PARAM_LDAP_CONNECTION_TIMEOUT, (long) LdapIdentityProvider.DEFAULT_LDAP_CONNECTION_TIMEOUT );
+        long ldapConnectionTimeout = config.getTimeUnitProperty( ServerConfigParams.PARAM_LDAP_CONNECTION_TIMEOUT, (long) LdapIdentityProvider.DEFAULT_LDAP_CONNECTION_TIMEOUT );
         logger.config("Connection timeout = " + ldapConnectionTimeout);
         this.ldapConnectionTimeout.set(ldapConnectionTimeout);
     }
 
     private void loadReadTimeout() {
-        long ldapReadTimeout = config.getTimeUnitProperty(ServerConfig.PARAM_LDAP_READ_TIMEOUT, (long) LdapIdentityProvider.DEFAULT_LDAP_READ_TIMEOUT );
+        long ldapReadTimeout = config.getTimeUnitProperty( ServerConfigParams.PARAM_LDAP_READ_TIMEOUT, (long) LdapIdentityProvider.DEFAULT_LDAP_READ_TIMEOUT );
         logger.config("Read timeout = " + ldapReadTimeout);
         this.ldapReadTimeout.set(ldapReadTimeout);
     }
 
     private void loadMaxSearchResultSize() {
-        String tmp = config.getProperty(ServerConfig.MAX_LDAP_SEARCH_RESULT_SIZE, Long.toString(DEFAULT_MAX_SEARCH_RESULT_SIZE));
+        String tmp = config.getProperty( ServerConfigParams.PARAM_MAX_LDAP_SEARCH_RESULT_SIZE, Long.toString(DEFAULT_MAX_SEARCH_RESULT_SIZE));
         if (tmp == null) {
-            logger.info(ServerConfig.MAX_LDAP_SEARCH_RESULT_SIZE + " is not set. using default value.");
+            logger.info( ServerConfigParams.PARAM_MAX_LDAP_SEARCH_RESULT_SIZE + " is not set. using default value.");
             maxSearchResultSize.set(DEFAULT_MAX_SEARCH_RESULT_SIZE);
         } else {
             try {
                 long tmpl = Long.parseLong(tmp);
                 if (tmpl <= 0L ) {
-                    logger.info(ServerConfig.MAX_LDAP_SEARCH_RESULT_SIZE + " has invalid value: " + tmp +
+                    logger.info( ServerConfigParams.PARAM_MAX_LDAP_SEARCH_RESULT_SIZE + " has invalid value: " + tmp +
                                 ". using default value.");
                     maxSearchResultSize.set(DEFAULT_MAX_SEARCH_RESULT_SIZE);
                 } else {
-                    logger.info("Read system value " + ServerConfig.MAX_LDAP_SEARCH_RESULT_SIZE + " of " + tmp);
+                    logger.info("Read system value " + ServerConfigParams.PARAM_MAX_LDAP_SEARCH_RESULT_SIZE + " of " + tmp);
                     maxSearchResultSize.set(tmpl);
                 }
             } catch (NumberFormatException e) {
-                logger.log( Level.WARNING, "The property " + ServerConfig.MAX_LDAP_SEARCH_RESULT_SIZE +
+                logger.log( Level.WARNING, "The property " + ServerConfigParams.PARAM_MAX_LDAP_SEARCH_RESULT_SIZE +
                                           " has an invalid format. falling back on default value.", e);
                 maxSearchResultSize.set(DEFAULT_MAX_SEARCH_RESULT_SIZE);
             }
@@ -149,7 +149,7 @@ public class LdapRuntimeConfig implements PropertyChangeListener {
     }
 
     private void loadMaxGroupSearchResultSize() {
-        maxGroupSearchResultSize.set( config.getLongProperty( ServerConfig.MAX_LDAP_GROUP_SEARCH_RESULT_SIZE, DEFAULT_MAX_SEARCH_RESULT_SIZE ) );
+        maxGroupSearchResultSize.set( config.getLongProperty( ServerConfigParams.PARAM_MAX_LDAP_GROUP_SEARCH_RESULT_SIZE, DEFAULT_MAX_SEARCH_RESULT_SIZE ) );
     }
 
     private void loadReconnectTimeout() {
@@ -171,22 +171,22 @@ public class LdapRuntimeConfig implements PropertyChangeListener {
     private void loadIndexRebuildIntervalProperty() {
         long indexRebuildInterval = DEFAULT_INDEX_REBUILD_INTERVAL;
 
-        String scp = config.getProperty(ServerConfig.PARAM_LDAPCERTINDEX_REBUILD_INTERVAL, Long.toString(DEFAULT_INDEX_REBUILD_INTERVAL));
+        String scp = config.getProperty( ServerConfigParams.PARAM_LDAPCERTINDEX_REBUILD_INTERVAL, Long.toString(DEFAULT_INDEX_REBUILD_INTERVAL));
         if (scp != null) {
             try {
                 indexRebuildInterval = Long.parseLong(scp);
                 if (indexRebuildInterval < MIN_INDEX_REBUILD_TIME) {
                     logger.info( MessageFormat.format("Property {0} is less than the minimum value {1} (configured value = {2}). Using the default value ({3} ms)",
-                            ServerConfig.PARAM_LDAPCERTINDEX_REBUILD_INTERVAL,
+                            ServerConfigParams.PARAM_LDAPCERTINDEX_REBUILD_INTERVAL,
                             MIN_INDEX_REBUILD_TIME,
                             indexRebuildInterval,
                             DEFAULT_INDEX_REBUILD_INTERVAL));
                     indexRebuildInterval = DEFAULT_INDEX_REBUILD_INTERVAL;
                 }
-                logger.fine("Read property " + ServerConfig.PARAM_LDAPCERTINDEX_REBUILD_INTERVAL + " with value " + indexRebuildInterval);
+                logger.fine("Read property " + ServerConfigParams.PARAM_LDAPCERTINDEX_REBUILD_INTERVAL + " with value " + indexRebuildInterval);
             } catch (NumberFormatException e) {
                 logger.warning(MessageFormat.format("Error parsing property {0} with value {1}. Using the default value ({2})",
-                        ServerConfig.PARAM_LDAPCERTINDEX_REBUILD_INTERVAL,
+                        ServerConfigParams.PARAM_LDAPCERTINDEX_REBUILD_INTERVAL,
                         scp,
                         DEFAULT_INDEX_REBUILD_INTERVAL));
             }
@@ -198,13 +198,13 @@ public class LdapRuntimeConfig implements PropertyChangeListener {
     private void loadCachedCertEntryLifeProperty() {
         long cleanupLife = DEFAULT_CACHED_CERT_ENTRY_LIFE;
 
-        String scp = config.getProperty(ServerConfig.PARAM_LDAPCERT_CACHE_LIFETIME, Long.toString(DEFAULT_CACHED_CERT_ENTRY_LIFE));
+        String scp = config.getProperty( ServerConfigParams.PARAM_LDAPCERT_CACHE_LIFETIME, Long.toString(DEFAULT_CACHED_CERT_ENTRY_LIFE));
         if (scp != null) {
             try {
                 cleanupLife = Long.parseLong(scp);
                 if (cleanupLife < MIN_CERT_CACHE_LIFETIME) {
                     logger.info(MessageFormat.format("Property {0} is less than the minimum value {1} (configured value = {2}). Using the default value ({3} ms)",
-                            ServerConfig.PARAM_LDAPCERT_CACHE_LIFETIME,
+                            ServerConfigParams.PARAM_LDAPCERT_CACHE_LIFETIME,
                             MIN_CERT_CACHE_LIFETIME,
                             cleanupLife,
                             DEFAULT_CACHED_CERT_ENTRY_LIFE));
@@ -212,7 +212,7 @@ public class LdapRuntimeConfig implements PropertyChangeListener {
                 }
             } catch (NumberFormatException e) {
                 logger.warning(MessageFormat.format("Could not parse property {0} with value {1}. Using the default ({2} ms)",
-                        ServerConfig.PARAM_LDAPCERT_CACHE_LIFETIME,
+                        ServerConfigParams.PARAM_LDAPCERT_CACHE_LIFETIME,
                         scp,
                         DEFAULT_CACHED_CERT_ENTRY_LIFE));
             }
@@ -224,7 +224,7 @@ public class LdapRuntimeConfig implements PropertyChangeListener {
     private Config validated( final Config config ) {
         final ValidatedConfig validatedConfig = new ValidatedConfig( config, logger );
 
-        validatedConfig.setMinimumValue( ServerConfig.MAX_LDAP_GROUP_SEARCH_RESULT_SIZE, 1 );
+        validatedConfig.setMinimumValue( ServerConfigParams.PARAM_MAX_LDAP_GROUP_SEARCH_RESULT_SIZE, 1 );
 
         return validatedConfig;
     }

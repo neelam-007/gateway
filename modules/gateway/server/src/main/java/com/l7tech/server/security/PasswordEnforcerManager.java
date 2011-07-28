@@ -13,7 +13,7 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.internal.PasswordChangeRecord;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.InvalidPasswordException;
-import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.event.system.SystemEvent;
@@ -79,12 +79,12 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
     @Override
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
         if (applicationEvent instanceof ReadyForMessages) {
-            auditPasswordPolicyMinimums(!config.getBooleanProperty(ServerConfig.PARAM_PCIDSS_ENABLED, false), internalIdpPasswordPolicy);
+            auditPasswordPolicyMinimums(!config.getBooleanProperty( ServerConfigParams.PARAM_PCIDSS_ENABLED, false), internalIdpPasswordPolicy);
         } else if (applicationEvent instanceof EntityInvalidationEvent) {
             EntityInvalidationEvent eie = (EntityInvalidationEvent) applicationEvent;
             if (IdentityProviderPasswordPolicy.class.equals(eie.getEntityClass())) {
                 internalIdpPasswordPolicy = getInternalIdpPasswordPolicy();
-                auditPasswordPolicyMinimums(!config.getBooleanProperty(ServerConfig.PARAM_PCIDSS_ENABLED, false), internalIdpPasswordPolicy);
+                auditPasswordPolicyMinimums(!config.getBooleanProperty( ServerConfigParams.PARAM_PCIDSS_ENABLED, false), internalIdpPasswordPolicy);
             }
         }
     }
@@ -94,7 +94,7 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
         String propertyName = evt.getPropertyName();
         String newValue = (String) evt.getNewValue();
 
-        if (propertyName != null && ServerConfig.PARAM_PCIDSS_ENABLED.equals(propertyName)) {
+        if (propertyName != null && ServerConfigParams.PARAM_PCIDSS_ENABLED.equals(propertyName)) {
             boolean newVal = Boolean.valueOf(newValue);
             auditPasswordPolicyMinimums(!newVal, internalIdpPasswordPolicy);
         }

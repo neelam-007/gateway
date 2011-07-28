@@ -4,7 +4,7 @@ import com.l7tech.common.http.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.LoggingAudit;
-import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.TestTimeSource;
 import com.l7tech.security.MockGenericHttpClient;
@@ -103,7 +103,7 @@ public class HttpObjectCacheTest {
                         clientFactory,
                         factory,
                         WAIT_NEVER,
-                        ServerConfig.PARAM_DOCUMENT_DOWNLOAD_MAXSIZE
+                        ServerConfigParams.PARAM_DOCUMENT_DOWNLOAD_MAXSIZE
                 );
         httpObjectCache.clock = clock;
 
@@ -175,7 +175,7 @@ public class HttpObjectCacheTest {
                         clientFactory,
                         factory,
                         WAIT_NEVER,
-                        ServerConfig.PARAM_DOCUMENT_DOWNLOAD_MAXSIZE
+                        ServerConfigParams.PARAM_DOCUMENT_DOWNLOAD_MAXSIZE
                 );
         httpObjectCache.clock = clock;
 
@@ -247,7 +247,7 @@ public class HttpObjectCacheTest {
                         clientFactory,
                         factory,
                         WAIT_NEVER,
-                        ServerConfig.PARAM_DOCUMENT_DOWNLOAD_MAXSIZE
+                        ServerConfigParams.PARAM_DOCUMENT_DOWNLOAD_MAXSIZE
                 );
         httpObjectCache.clock = clock;
 
@@ -341,7 +341,7 @@ public class HttpObjectCacheTest {
                         clientFactory,
                         factory,
                         WAIT_INITIAL,
-                        ServerConfig.PARAM_DOCUMENT_DOWNLOAD_MAXSIZE
+                        ServerConfigParams.PARAM_DOCUMENT_DOWNLOAD_MAXSIZE
                 );
         httpObjectCache.clock = clock;
 
@@ -550,7 +550,7 @@ public class HttpObjectCacheTest {
                         clientFactory,
                         factory,
                         WAIT_NEVER,
-                        ServerConfig.PARAM_DOCUMENT_DOWNLOAD_MAXSIZE
+                        ServerConfigParams.PARAM_DOCUMENT_DOWNLOAD_MAXSIZE
                 );
         httpObjectCache.clock = clock;
 
@@ -609,7 +609,7 @@ public class HttpObjectCacheTest {
                         clientFactory,
                         factory,
                         WAIT_INITIAL,
-                        ServerConfig.PARAM_DOCUMENT_DOWNLOAD_MAXSIZE
+                        ServerConfigParams.PARAM_DOCUMENT_DOWNLOAD_MAXSIZE
                 );
         httpObjectCache.clock = clock;
 

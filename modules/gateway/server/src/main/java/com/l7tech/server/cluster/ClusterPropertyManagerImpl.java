@@ -9,6 +9,7 @@ package com.l7tech.server.cluster;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.admin.AuditSigningStatusChange;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
@@ -59,7 +60,7 @@ public class ClusterPropertyManagerImpl
     }
 
     private void propertyChangeMonitor(ClusterProperty p) {
-        if (p.getName().equals(ServerConfig.CONFIG_AUDIT_SIGN_CLUSTER)) {
+        if (p.getName().equals( ServerConfigParams.PARAM_CONFIG_AUDIT_SIGN_CLUSTER )) {
             if (p.getValue().equals("true")) {
                 applicationContext.publishEvent(new AuditSigningStatusChange(this, "on"));
             } else {
