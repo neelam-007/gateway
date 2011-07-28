@@ -7,7 +7,6 @@ import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
@@ -84,6 +83,7 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
     private static final String META_INITIALIZED = SshRouteAssertion.class.getName() + ".metadataInitialized";
     protected static final Logger logger = Logger.getLogger(SshRouteAssertion.class.getName());
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
@@ -149,7 +149,7 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
 
     @Override
     public VariableMetadata[] getVariablesSet() {
-        return requestTarget.getVariablesSet();
+        return requestTarget.getMessageTargetVariablesSet().asArray();
     }
 
      public String getPropertiesDialogTitle() {
@@ -283,14 +283,12 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        Set<String> vars = new HashSet<String>();
-        if (hostName != null) vars.addAll(Arrays.asList(Syntax.getReferencedNames(hostName)));
-        if (port != null) vars.addAll(Arrays.asList(Syntax.getReferencedNames(port)));
-        if (directory != null) vars.addAll(Arrays.asList(Syntax.getReferencedNames(directory)));
-        if (username != null) vars.addAll(Arrays.asList(Syntax.getReferencedNames(username)));
-        if (fileNamePattern != null) vars.addAll(Arrays.asList(Syntax.getReferencedNames(fileNamePattern)));
-        vars.addAll(Arrays.asList(requestTarget.getVariablesUsed()));
-        
-        return vars.toArray(new String[vars.size()]);
+        return requestTarget.getMessageTargetVariablesUsed().withExpressions(
+            hostName,
+            port,
+            directory,
+            username,
+            fileNamePattern
+        ).asArray();
     }
 }

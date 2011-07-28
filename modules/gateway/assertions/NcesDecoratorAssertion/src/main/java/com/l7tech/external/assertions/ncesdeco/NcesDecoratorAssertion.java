@@ -5,15 +5,10 @@ import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
  * Decorates SOAP messages so that they are compliant with the US DOD's NCES requirements, by adding the following:
@@ -133,15 +128,6 @@ public class NcesDecoratorAssertion
         this.useExistingWsa = useExistingWsa;
     }
 
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
-    @Override
-    public String[] getVariablesUsed() {
-        List<String> vars = new ArrayList<String>();
-        vars.addAll(Arrays.asList(super.getVariablesUsed()));
-        if (samlIncluded && samlAssertionTemplate != null) vars.addAll(Arrays.asList(Syntax.getReferencedNames(samlAssertionTemplate)));
-        return vars.toArray(new String[vars.size()]);
-    }
-
     @Override
     public boolean isUsesDefaultKeyStore() {
         return usesDefaultKeystore;
@@ -242,5 +228,10 @@ public class NcesDecoratorAssertion
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
+    }
+
+    @Override
+    protected VariablesUsed doGetVariablesUsed() {
+        return super.doGetVariablesUsed().withExpressions( samlIncluded ? samlAssertionTemplate : null );
     }
 }

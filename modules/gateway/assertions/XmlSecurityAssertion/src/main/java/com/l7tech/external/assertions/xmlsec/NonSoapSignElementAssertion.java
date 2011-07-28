@@ -12,9 +12,7 @@ import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.xml.xpath.XpathExpression;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 import static com.l7tech.policy.assertion.AssertionMetadata.WSP_SUBTYPE_FINDER;
 
@@ -110,11 +108,10 @@ public class NonSoapSignElementAssertion extends NonSoapSecurityAssertionBase im
     }
 
     @Override
-    public VariableMetadata[] getVariablesSet() {
-        List<VariableMetadata> vars = new ArrayList<VariableMetadata>(Arrays.asList(super.getVariablesSet()));
-        if (detachedSignatureVariableName != null)
-            vars.add(new VariableMetadata(detachedSignatureVariableName));
-        return vars.toArray(new VariableMetadata[vars.size()]);
+    protected VariablesSet doGetVariablesSet() {
+        return super.doGetVariablesSet().withVariables(
+            detachedSignatureVariableName != null ? new VariableMetadata(detachedSignatureVariableName) : null
+        );
     }
 
     @Override

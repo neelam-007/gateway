@@ -2,7 +2,6 @@ package com.l7tech.external.assertions.mtom;
 
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.ProcessesMultipart;
-import com.l7tech.policy.variable.VariableMetadata;
 
 import java.util.Collections;
 
@@ -58,8 +57,8 @@ public class MtomDecodeAssertion extends MessageTargetableAssertion implements U
     }
 
     @Override
-    public VariableMetadata[] getVariablesSet() {
-        return outputTarget == null ? new VariableMetadata[0] : outputTarget.getVariablesSet();
+    protected VariablesSet doGetVariablesSet() {
+        return super.doGetVariablesSet().with( outputTarget==null ? null : outputTarget.getMessageTargetVariablesSet() );
     }
 
     @Override

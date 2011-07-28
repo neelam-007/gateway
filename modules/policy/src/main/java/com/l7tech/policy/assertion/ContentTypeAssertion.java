@@ -1,15 +1,5 @@
 package com.l7tech.policy.assertion;
 
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
-import com.l7tech.policy.variable.Syntax;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
@@ -54,12 +44,11 @@ public class ContentTypeAssertion extends MessageTargetableAssertion {
     }
 
     @Override
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
-    public String[] getVariablesUsed() {
-        List<String> vars = new ArrayList<String>(Arrays.asList(super.getVariablesUsed()));
-        if (messagePart) vars.addAll(Arrays.asList(Syntax.getReferencedNames(messagePartNum)));
-        if (changeContentType) vars.addAll(Arrays.asList(Syntax.getReferencedNames(newContentTypeValue)));
-        return vars.toArray(new String[vars.size()]);
+    protected VariablesUsed doGetVariablesUsed() {
+        return super.doGetVariablesUsed().withExpressions(
+                messagePart ? messagePartNum : null,
+                changeContentType ? newContentTypeValue : null
+        );
     }
 
     protected final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<ContentTypeAssertion>(){

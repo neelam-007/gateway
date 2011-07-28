@@ -1,13 +1,8 @@
 package com.l7tech.external.assertions.rawtcp;
 
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.SyspropUtil;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Bean for configuring outbound raw TCP (and someday TLS) single-shot message.
@@ -175,15 +170,14 @@ public class SimpleRawTransportAssertion extends RoutingAssertion implements Use
 
     @Override
     public String[] getVariablesUsed() {
-        List<String> ret = new ArrayList<String>();
-        ret.addAll(Arrays.asList(requestTarget.getVariablesUsed()));
-        if (responseContentType != null) ret.addAll(Arrays.asList(Syntax.getReferencedNames(responseContentType)));
-        if (targetHost != null) ret.addAll(Arrays.asList(Syntax.getReferencedNames(targetHost)));
-        return ret.toArray(new String[ret.size()]);
+        return requestTarget.getMessageTargetVariablesUsed().withExpressions(
+            responseContentType,
+            targetHost
+        ).asArray();
     }
 
     @Override
     public VariableMetadata[] getVariablesSet() {
-        return responseTarget.mergeVariablesSet(requestTarget.getVariablesSet());
+        return responseTarget.getMessageTargetVariablesSet().with( requestTarget.getMessageTargetVariablesSet() ).asArray();
     }
 }

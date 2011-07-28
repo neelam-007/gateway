@@ -16,8 +16,6 @@ import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 
 import java.util.*;
 
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
-
 /**
  * Enforces that a specific element in a request is signed.
  * <p/>
@@ -36,7 +34,7 @@ public class RequireWssSignedElement extends XmlSecurityAssertionBase implements
     public static final String VAR_TOKEN_ATTRIBUTES = "token.attributes";
 
     public RequireWssSignedElement() {
-        this(compatOrigDefaultXpathValue());
+        this( compatOrigDefaultXpathValue() );
     }
 
     public RequireWssSignedElement(XpathExpression xpath) {
@@ -79,33 +77,6 @@ public class RequireWssSignedElement extends XmlSecurityAssertionBase implements
             VAR_TOKEN_ELEMENT,
             VAR_TOKEN_ATTRIBUTES
         };
-    }
-
-    @Override
-    public VariableMetadata[] getVariablesSet() {
-        final List<VariableMetadata> vars = new ArrayList<VariableMetadata>();
-        if ( isSetVariables() ){
-            vars.add(new VariableMetadata(prefixVariable(VAR_SIGNATURE_ELEMENT), false, false, prefixVariable(VAR_SIGNATURE_ELEMENT), false, DataType.ELEMENT));
-            vars.add(new VariableMetadata(prefixVariable(VAR_TOKEN_TYPE), false, false, prefixVariable(VAR_TOKEN_TYPE), false));
-            vars.add(new VariableMetadata(prefixVariable(VAR_TOKEN_ELEMENT), false, false, prefixVariable(VAR_TOKEN_ELEMENT), false, DataType.ELEMENT));
-            vars.add(new VariableMetadata(prefixVariable(VAR_TOKEN_ATTRIBUTES), false, false, prefixVariable(VAR_TOKEN_ATTRIBUTES), false));
-        }
-        return vars.toArray(new VariableMetadata[vars.size()]);
-    }
-
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
-    @Override
-    public String[] getVariablesUsed() {
-        String[] varsUsed = super.getVariablesUsed();
-
-        if ( signedElementsVariable != null ) {
-            String[] allVarsUsed = new String[ varsUsed.length+1 ];
-            System.arraycopy( varsUsed, 0, allVarsUsed, 0, varsUsed.length );
-            allVarsUsed[varsUsed.length] = signedElementsVariable;
-            varsUsed = allVarsUsed;
-        }
-
-        return varsUsed;
     }
 
     @Override
@@ -191,6 +162,27 @@ public class RequireWssSignedElement extends XmlSecurityAssertionBase implements
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.XpathBasedAssertionValidator");
 
         return meta;
+    }
+
+    //- PROTECTED
+
+    @Override
+    protected VariablesSet doGetVariablesSet() {
+        final VariablesSet set = super.doGetVariablesSet();
+        if ( isSetVariables() ){
+            set.addVariables(
+                new VariableMetadata(prefixVariable(VAR_SIGNATURE_ELEMENT), false, false, prefixVariable(VAR_SIGNATURE_ELEMENT), false, DataType.ELEMENT),
+                new VariableMetadata(prefixVariable(VAR_TOKEN_TYPE), false, false, prefixVariable(VAR_TOKEN_TYPE), false),
+                new VariableMetadata(prefixVariable(VAR_TOKEN_ELEMENT), false, false, prefixVariable(VAR_TOKEN_ELEMENT), false, DataType.ELEMENT),
+                new VariableMetadata(prefixVariable(VAR_TOKEN_ATTRIBUTES), false, false, prefixVariable(VAR_TOKEN_ATTRIBUTES), false)
+            );
+        }
+        return set;
+    }
+
+    @Override
+    protected VariablesUsed doGetVariablesUsed() {
+        return super.doGetVariablesUsed().withVariables( signedElementsVariable );
     }
 
     //- PRIVATE

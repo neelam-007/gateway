@@ -1,12 +1,8 @@
 package com.l7tech.policy.assertion.xmlsec;
 
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.Functions;
 import com.l7tech.util.TextUtils;
@@ -14,7 +10,6 @@ import com.l7tech.util.TimeUnit;
 
 import java.util.*;
 
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
@@ -188,17 +183,15 @@ public class EstablishOutboundSecureConversation extends MessageTargetableAssert
     }
 
     @Override
-    public VariableMetadata[] getVariablesSet() {
-        return mergeVariablesSet(new VariableMetadata[] {
-            new VariableMetadata(VARIABLE_SESSION, false, false, null, false, DataType.UNKNOWN),
-        });
+    protected VariablesSet doGetVariablesSet() {
+        return super.doGetVariablesSet().withVariables(
+                new VariableMetadata(VARIABLE_SESSION, false, false, null, false, DataType.UNKNOWN)
+        );
     }
 
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
-    public String[] getVariablesUsed() {
-        final Set<String> allVars = new LinkedHashSet<String>();
-        final String[] strings = Syntax.getReferencedNames(
+    protected VariablesUsed doGetVariablesUsed() {
+        return super.doGetVariablesUsed().withExpressions(
                 serviceUrl,
                 clientEntropy,
                 serverEntropy,
@@ -206,12 +199,6 @@ public class EstablishOutboundSecureConversation extends MessageTargetableAssert
                 fullKey,
                 creationTime,
                 expirationTime
-        );
-
-        allVars.add( securityContextTokenVarName );
-        allVars.addAll(Arrays.asList(strings));
-        allVars.addAll(Arrays.asList(super.getVariablesUsed()));
-
-        return allVars.toArray(new String[allVars.size()]);
+        ).withVariables( securityContextTokenVarName );
     }
 }

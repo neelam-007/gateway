@@ -1,21 +1,15 @@
 package com.l7tech.external.assertions.jsonschema;
 
 import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 
 import java.util.*;
 import java.util.logging.Logger;
-
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
  * Configuration for the 'Validate JSON Schema' assertion. JSON schema can be configured in advance or obtained from a
@@ -36,35 +30,24 @@ public class JSONSchemaAssertion extends MessageTargetableAssertion implements U
     public static final String PARAM_JSON_SCHEMA_MAX_DOWNLOAD_SIZE = ClusterProperty.asServerConfigPropertyName(CPROP_JSON_SCHEMA_MAX_DOWNLOAD_SIZE);
 
     @Override
-    public VariableMetadata[] getVariablesSet() {
-        return mergeVariablesSet(new VariableMetadata[] {
+    protected VariablesSet doGetVariablesSet() {
+        return super.doGetVariablesSet().withVariables(
                 new VariableMetadata(JSON_SCHEMA_FAILURE_VARIABLE, false, true, JSON_SCHEMA_FAILURE_VARIABLE, false, DataType.STRING)
-        });
+        );
     }
 
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
-    public String[] getVariablesUsed() {
-        List<String> variables = new ArrayList<String>();
-
+    protected VariablesUsed doGetVariablesUsed() {
+        String resourceExpression = null;
         if (resourceInfo instanceof StaticResourceInfo) {
             StaticResourceInfo sri = (StaticResourceInfo) resourceInfo;
-            String doc = sri.getDocument();
-            if (doc != null) {
-                variables.addAll(Arrays.asList(Syntax.getReferencedNames(doc)));
-            }
+            resourceExpression = sri.getDocument();
         } else if (resourceInfo instanceof SingleUrlResourceInfo) {
             SingleUrlResourceInfo suri = (SingleUrlResourceInfo) resourceInfo;
-            variables.addAll(Arrays.asList(Syntax.getReferencedNames(suri.getUrl())));
+            resourceExpression = suri.getUrl();
         }
-
-        if ( getTarget() == TargetMessageType.OTHER ) {
-            variables.add(getOtherTargetMessageVariable());
-        }
-
-        return variables.toArray( new String[variables.size()] );
+        return super.doGetVariablesUsed().withExpressions( resourceExpression );
     }
-
 
     @Override
     public AssertionMetadata meta() {

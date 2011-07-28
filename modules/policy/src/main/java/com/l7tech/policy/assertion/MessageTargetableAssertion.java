@@ -1,11 +1,10 @@
-/**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.policy.assertion;
 
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.policy.assertion.VariableUseSupport.VariablesSetSupport;
+import com.l7tech.policy.assertion.VariableUseSupport.VariablesUsedSupport;
 import com.l7tech.policy.variable.VariableMetadata;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
@@ -47,13 +46,13 @@ public abstract class MessageTargetableAssertion extends Assertion implements Me
 
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
-    public String[] getVariablesUsed() {
-        return targetSupport.getVariablesUsed();
+    public final String[] getVariablesUsed() {
+        return doGetVariablesUsed().asArray();
     }
 
     @Override
-    public VariableMetadata[] getVariablesSet() {
-        return mergeVariablesSet(null);
+    public final VariableMetadata[] getVariablesSet() {
+        return doGetVariablesSet().asArray();
     }
 
     @Override
@@ -94,18 +93,38 @@ public abstract class MessageTargetableAssertion extends Assertion implements Me
         targetSupport.setTargetModifiedByGateway(targetModifiedByGateway);
     }
 
-    protected VariableMetadata getOtherTargetVariableMetadata() {
-        return targetSupport.getOtherTargetVariableMetadata();
+    protected void setSourceUsedByGateway( final boolean sourceUsedByGateway ) {
+        targetSupport.setSourceUsedByGateway( sourceUsedByGateway );
     }
 
-    /**
-     * Prepends an additional entry for the target message, if {@link #isTargetModifiedByGateway()} is true and {@link #getTarget()} is {@link TargetMessageType#OTHER}.
-     *
-     * @param otherVariablesSet  variables set, or null.  Null is treated as equivalent to empty (and is faster than creating a new zero-length array just for this purpose).
-     * @return variables with getOtherTargetVariableMetadata() prepended, if applicable.  Never null, but may be empty.
-     */
-    protected VariableMetadata[] mergeVariablesSet(VariableMetadata[] otherVariablesSet) {
-        return targetSupport.mergeVariablesSet(otherVariablesSet);
+    protected VariablesUsed doGetVariablesUsed() {
+        return new VariablesUsed( targetSupport.getMessageTargetVariablesUsed().asArray() );
+    }
+
+    protected VariablesSet doGetVariablesSet() {
+        return new VariablesSet( targetSupport.getMessageTargetVariablesSet().asArray() );
+    }
+
+    protected static final class VariablesUsed extends VariablesUsedSupport<VariablesUsed> {
+        private VariablesUsed( final String[] initialVariables ) {
+            super( initialVariables );
+        }
+
+        @Override
+        protected VariablesUsed get() {
+            return this;
+        }
+    }
+
+    protected static final class VariablesSet extends VariablesSetSupport<VariablesSet> {
+        private VariablesSet( final VariableMetadata[] initialVariables ) {
+            super( initialVariables );
+        }
+
+        @Override
+        protected VariablesSet get() {
+            return this;
+        }
     }
 
     //- PRIVATE

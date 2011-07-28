@@ -5,7 +5,6 @@ package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.validator.ValidatorFlag;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
@@ -14,11 +13,6 @@ import com.l7tech.util.Functions;
 
 import java.util.Set;
 import java.util.EnumSet;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Arrays;
-
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
  * @author mike
@@ -101,21 +95,6 @@ public class WssReplayProtection extends MessageTargetableAssertion implements I
         }
     }
 
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
-    @Override
-    public String[] getVariablesUsed() {
-        if ( !isCustomProtection() ) {
-            return super.getVariablesUsed();
-        }
-
-        List<String> variables = new ArrayList<String>( Arrays.asList(super.getVariablesUsed()) );
-        variables.add( customIdentifierVariable );
-        if ( customScope != null ) {
-            variables.addAll( Arrays.asList(Syntax.getReferencedNames( customScope )) );           
-        }
-        return variables.toArray( new String[ variables.size() ] );
-    }
-
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
@@ -143,6 +122,15 @@ public class WssReplayProtection extends MessageTargetableAssertion implements I
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.WssReplayProtectionValidator");
 
         return meta;
+    }
+
+    //- PROTECTED
+
+    @Override
+    protected VariablesUsed doGetVariablesUsed() {
+        return isCustomProtection() ?
+                super.doGetVariablesUsed().withExpressions(customScope).withVariables(customIdentifierVariable) :
+                super.doGetVariablesUsed();
     }
 
     //- PRIVATE

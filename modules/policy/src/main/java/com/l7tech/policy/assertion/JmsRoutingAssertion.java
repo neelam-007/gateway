@@ -7,15 +7,12 @@ import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.JmsDynamicProperties;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
@@ -233,23 +230,18 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
-        Set<String> vars = new HashSet<String>();
-
-        if (dynamicJmsRoutingProperties != null) {
-            String dynamicVars = dynamicJmsRoutingProperties.getFieldsAsVariables();
-
-            if (dynamicVars != null && !dynamicVars.equals(""))
-                vars.addAll(Arrays.asList(Syntax.getReferencedNames(dynamicVars)));
-        }
-
-        vars.addAll(Arrays.asList(Syntax.getReferencedNames(requestPriority, requestTimeToLive, responseTimeout)));
-        vars.addAll(Arrays.asList(requestTarget.getVariablesUsed()));
-        return vars.toArray(new String[vars.size()]);
+        return requestTarget.getMessageTargetVariablesUsed().withExpressions(
+                dynamicJmsRoutingProperties != null ? dynamicJmsRoutingProperties.getVariableExpressions() : null
+        ).withExpressions(
+                requestPriority,
+                requestTimeToLive,
+                responseTimeout
+        ).asArray();
     }
 
     @Override
     public VariableMetadata[] getVariablesSet() {
-        return responseTarget.getVariablesSet();
+        return responseTarget.getMessageTargetVariablesSet().asArray();
     }
 
     @Override

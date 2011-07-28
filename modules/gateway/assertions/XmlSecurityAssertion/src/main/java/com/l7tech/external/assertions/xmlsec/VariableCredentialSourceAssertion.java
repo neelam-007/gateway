@@ -28,12 +28,8 @@ public class VariableCredentialSourceAssertion extends MessageTargetableAssertio
     }
 
     @Override
-    public String[] getVariablesUsed() {
-        List<String> variables = new ArrayList<String>();
-        variables.addAll( Arrays.asList( super.getVariablesUsed() ) );
-        if (variableName != null)
-            variables.add(variableName);
-        return variables.toArray( new String[variables.size()] );
+    protected VariablesUsed doGetVariablesUsed() {
+        return super.doGetVariablesUsed().withVariables( variableName );
     }
 
     @Override

@@ -1,8 +1,5 @@
 package com.l7tech.external.assertions.mtom;
 
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.MessageTargetableAssertion;
@@ -16,10 +13,7 @@ import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathUtil;
 
 import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.Set;
 
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
@@ -48,27 +42,6 @@ public class MtomValidateAssertion extends MessageTargetableAssertion implements
 
     public void setValidationRules( final ValidationRule[] validationRules ) {
         this.validationRules = validationRules;
-    }
-
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
-    @Override
-    public String[] getVariablesUsed() {
-        final Set<String> variables = new LinkedHashSet<String>(Arrays.asList(super.getVariablesUsed()));
-
-        if ( validationRules != null ) {
-            for ( final ValidationRule validationRule : validationRules ) {
-                if ( validationRule == null || validationRule.getXpathExpression() == null ) {
-                    continue;
-                }
-
-                final String expression = validationRule.getXpathExpression().getExpression();
-                if ( expression != null ) {
-                    variables.addAll( XpathUtil.getUnprefixedVariablesUsedInXpath( expression ) );
-                }
-            }
-        }
-
-        return variables.toArray(new String[variables.size()]);
     }
 
     @Override
@@ -123,6 +96,28 @@ public class MtomValidateAssertion extends MessageTargetableAssertion implements
         public void setSize( final long size ) {
             this.size = size;
         }
+    }
+
+    //- PROTECTED
+
+    @Override
+    protected VariablesUsed doGetVariablesUsed() {
+        final VariablesUsed variablesUsed = super.doGetVariablesUsed();
+
+        if ( validationRules != null ) {
+            for ( final ValidationRule validationRule : validationRules ) {
+                if ( validationRule == null || validationRule.getXpathExpression() == null ) {
+                    continue;
+                }
+
+                final String expression = validationRule.getXpathExpression().getExpression();
+                if ( expression != null ) {
+                    variablesUsed.addVariables( XpathUtil.getUnprefixedVariablesUsedInXpath( expression ) );
+                }
+            }
+        }
+
+        return variablesUsed;
     }
 
     //- PRIVATE

@@ -7,17 +7,13 @@ import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
-import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
-import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.*;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 
 import java.util.*;
-
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
  * This assertion contains the configuration properties for building a SAML-Protocol (SAMLP) request message.
@@ -240,43 +236,42 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
     }
 
     @Override
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
-    public String[] getVariablesUsed() {
-        Set<String> varNames = new HashSet<String>();
-        collectVars(varNames, nameIdentifierFormat);
-        collectVars(varNames, nameIdentifierValue);
-        collectVars(varNames, subjectConfirmationMethodUri);
-        collectVars(varNames, subjectConfirmationDataAddress);
-        collectVars(varNames, subjectConfirmationDataRecipient);
-        collectVars(varNames, subjectConfirmationDataInResponseTo);
-        collectVars(varNames, audienceRestriction);
-        collectVars(varNames, nameQualifier);
-        // new stuff
-        collectVars(varNames, requestIdVariable);
-        collectVars(varNames, destinationAttribute);
-        collectVars(varNames, consentAttribute);
-        if (evidenceVariable != null && !evidenceVariable.isEmpty())
-            collectVars(varNames, "${"+evidenceVariable+"}");
-        collectVars(varNames, getTargetName());
-        if (attributeStatement != null) {
-            for (SamlAttributeStatement.Attribute attr : attributeStatement.getAttributes()) {
-                collectVars(varNames, attr.getNamespace());
-                collectVars(varNames, attr.getNameFormat());
-                collectVars(varNames, attr.getName());
-                collectVars(varNames, attr.getValue());
-                collectVars(varNames, attr.getFriendlyName());
+    protected VariablesUsed doGetVariablesUsed() {
+        final VariablesUsed variablesUsed = super.doGetVariablesUsed().withExpressions(
+                nameIdentifierFormat,
+                nameIdentifierValue,
+                subjectConfirmationMethodUri,
+                subjectConfirmationDataAddress,
+                subjectConfirmationDataRecipient,
+                subjectConfirmationDataInResponseTo,
+                audienceRestriction,
+                nameQualifier,
+                // new stuff
+                requestIdVariable,
+                destinationAttribute,
+                consentAttribute,
+                getTargetName()
+        ).withVariables( evidenceVariable );
+
+        if ( attributeStatement != null ) {
+            for ( final SamlAttributeStatement.Attribute attr : attributeStatement.getAttributes() ) {
+                variablesUsed.addExpressions(
+                        attr.getNamespace(),
+                        attr.getNameFormat(),
+                        attr.getName(),
+                        attr.getValue(),
+                        attr.getFriendlyName()
+                );
             }
         }
 
-        if (authorizationStatement != null) {
-            for (String action : authorizationStatement.getActions()) {
-                collectVars(varNames, action);
-            }
-            collectVars(varNames, authorizationStatement.getResource());
+        if ( authorizationStatement != null ) {
+            variablesUsed.addExpressions( authorizationStatement.getActions() );
+            variablesUsed.addExpressions( authorizationStatement.getResource() );
         }
 
         // TODO how could one parameterize the authentication statement at all?
-        return varNames.toArray(new String[varNames.size()]);
+        return variablesUsed;
     }
 
     private void collectVars(Set<String> varNames, String s) {
@@ -425,13 +420,5 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
-    }
-
-    @Override
-    public VariableMetadata[] getVariablesSet() {
-        if (getTarget() == TargetMessageType.OTHER && getOtherTargetMessageVariable() != null) {
-            return mergeVariablesSet(new VariableMetadata[] { new VariableMetadata(getOtherTargetMessageVariable(), false, false, null, false, DataType.MESSAGE) });
-        }
-        return super.getVariablesSet();
     }
 }

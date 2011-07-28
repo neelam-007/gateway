@@ -1,17 +1,9 @@
 package com.l7tech.policy.assertion.xmlsec;
 
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.VariableUseSupport.VariablesSetSupport;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.variable.VariableMetadata;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
  * Base class for XML Security Assertions (Confidentiality and Integrity). Shares the concept
@@ -78,18 +70,9 @@ public abstract class XmlSecurityAssertionBase extends XpathBasedAssertion imple
         return messageTargetableSupport.isTargetModifiedByGateway();
     }
 
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
-    public String[] getVariablesUsed() {
-        List<String> variables = new ArrayList<String>();
-        variables.addAll( Arrays.asList( super.getVariablesUsed() ) );
-        variables.addAll( Arrays.asList( messageTargetableSupport.getVariablesUsed() ) );
-        return variables.toArray( new String[variables.size()] );
-    }
-
-    @Override
-    public VariableMetadata[] getVariablesSet() {
-        return messageTargetableSupport.getVariablesSet();
+    public final VariableMetadata[] getVariablesSet() {
+        return doGetVariablesSet().asArray();
     }
 
     @Override
@@ -107,6 +90,25 @@ public abstract class XmlSecurityAssertionBase extends XpathBasedAssertion imple
 
     protected XmlSecurityAssertionBase( final TargetMessageType defaultTargetMessageType, boolean targetModifiedByGateway ) {
         this.messageTargetableSupport = new MessageTargetableSupport(defaultTargetMessageType, targetModifiedByGateway);
+    }
+
+    @Override
+    protected VariablesUsed doGetVariablesUsed() {
+        return super.doGetVariablesUsed().with( messageTargetableSupport.getMessageTargetVariablesUsed() );
+    }
+
+    protected VariablesSet doGetVariablesSet() {
+        return new VariablesSet().with( messageTargetableSupport.getMessageTargetVariablesSet() );
+    }
+
+    protected final class VariablesSet extends VariablesSetSupport<VariablesSet> {
+        private VariablesSet() {
+        }
+
+        @Override
+        protected VariablesSet get() {
+            return this;
+        }
     }
 
     //- PRIVATE

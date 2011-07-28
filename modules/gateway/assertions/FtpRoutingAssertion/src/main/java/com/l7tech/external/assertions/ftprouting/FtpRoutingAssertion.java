@@ -11,7 +11,6 @@ import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.WspEnumTypeMapping;
@@ -19,8 +18,6 @@ import com.l7tech.policy.wsp.WspSensitive;
 
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
@@ -308,14 +305,13 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        Set<String> vars = new HashSet<String>();
-        if (_hostName != null) vars.addAll(Arrays.asList(Syntax.getReferencedNames(_hostName)));
-        if (_port != null) vars.addAll(Arrays.asList(Syntax.getReferencedNames(_port)));
-        if (_directory != null) vars.addAll(Arrays.asList(Syntax.getReferencedNames(_directory)));
-        if (_userName != null) vars.addAll(Arrays.asList(Syntax.getReferencedNames(_userName)));
-        if (_password != null && _passwordUsesContextVariables) vars.addAll(Arrays.asList(Syntax.getReferencedNames(_password)));
-        if (_fileNamePattern != null) vars.addAll(Arrays.asList(Syntax.getReferencedNames(_fileNamePattern)));
-        vars.addAll(Arrays.asList(requestTarget.getVariablesUsed()));
-        return vars.toArray(new String[vars.size()]);
+        return requestTarget.getMessageTargetVariablesUsed().withExpressions(
+            _hostName,
+            _port,
+            _directory,
+            _userName,
+            _passwordUsesContextVariables ? _password : null,
+            _fileNamePattern
+        ).asArray();
     }
 }

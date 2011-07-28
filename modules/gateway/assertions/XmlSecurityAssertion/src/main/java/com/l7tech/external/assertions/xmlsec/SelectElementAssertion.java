@@ -18,9 +18,10 @@ public class SelectElementAssertion extends NonSoapSecurityAssertionBase impleme
     }
 
     @Override
-    public VariableMetadata[] getVariablesSet() {
-        return mergeVariablesSet(elementVariable == null ? new VariableMetadata[0] :
-                new VariableMetadata[] { new VariableMetadata(elementVariable, false, false, elementVariable, true, DataType.ELEMENT) });
+    protected VariablesSet doGetVariablesSet() {
+        return super.doGetVariablesSet().withVariables(
+                elementVariable == null ? null : new VariableMetadata(elementVariable, false, false, elementVariable, true, DataType.ELEMENT)
+        );
     }
 
     public String getElementVariable() {

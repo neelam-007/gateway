@@ -1,8 +1,5 @@
 package com.l7tech.policy.assertion.credential;
 
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.AssertionNodeNameFactory;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
@@ -13,8 +10,6 @@ import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathUtil;
 
 import java.util.*;
-
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
  * Gathers credentials based on XPath expressions pointing to the login and password.
@@ -87,15 +82,15 @@ public class XpathCredentialSource extends XpathBasedAssertion {
     }
 
     @Override
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
-    public String[] getVariablesUsed() {
-        List<String> vars = new ArrayList<String>(Arrays.asList(super.getVariablesUsed()));
-        if (passwordExpression != null) {
-            String passexpr = passwordExpression.getExpression();
-            if (passexpr != null)
-                vars.addAll(XpathUtil.getUnprefixedVariablesUsedInXpath(passexpr));
+    protected VariablesUsed doGetVariablesUsed() {
+        final VariablesUsed used = super.doGetVariablesUsed();
+        if ( passwordExpression != null ) {
+            final String passexpr = passwordExpression.getExpression();
+            if ( passexpr != null ) {
+                used.addVariables( XpathUtil.getUnprefixedVariablesUsedInXpath(passexpr) );
+            }
         }
-        return vars.toArray(new String[vars.size()]);
+        return used;
     }
 
     final static String baseName = "Require XPath Credentials";

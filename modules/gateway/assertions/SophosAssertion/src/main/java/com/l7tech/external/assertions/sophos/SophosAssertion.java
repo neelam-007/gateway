@@ -14,7 +14,6 @@ import java.util.logging.Logger;
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.IP_ADDRESS_ARRAY;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.OPTIONAL;
-import static com.l7tech.policy.assertion.AssertionMetadata.CLUSTER_PROPERTIES;
 
 /**
  *
@@ -43,14 +42,14 @@ public class SophosAssertion extends MessageTargetableAssertion implements SetsV
     private static final String META_INITIALIZED = SophosAssertion.class.getName() + ".metadataInitialized";
     
     @Override
-    public VariableMetadata[] getVariablesSet() {
-         return new VariableMetadata[] {
+    protected VariablesSet doGetVariablesSet() {
+        return super.doGetVariablesSet().withVariables(
                 new VariableMetadata(getPrefixVariable()+".name", false, true, null, false, DataType.STRING),
                 new VariableMetadata(getPrefixVariable()+".location", false, true, null, false, DataType.STRING),
                 new VariableMetadata(getPrefixVariable()+".type", false, true, null, false, DataType.STRING),
                 new VariableMetadata(getPrefixVariable()+".disinfectable", false, true, null, false, DataType.STRING),
-                new VariableMetadata(getPrefixVariable()+".count", false, true, null, false, DataType.STRING),
-        };
+                new VariableMetadata(getPrefixVariable()+".count", false, true, null, false, DataType.STRING)
+        );
     }
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();

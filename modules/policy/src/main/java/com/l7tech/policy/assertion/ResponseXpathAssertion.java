@@ -1,23 +1,8 @@
-/*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.policy.assertion;
 
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.annotation.ProcessesResponse;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.xml.xpath.XpathExpression;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
  * Data for an assertion that verifies whether a response matches a specified
@@ -68,12 +53,8 @@ public class ResponseXpathAssertion extends SimpleXpathAssertion implements Uses
     }
 
     @Override
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
-    public String[] getVariablesUsed() {
-        List<String> used = new ArrayList<String>(Arrays.asList(super.getVariablesUsed()));
-        if (xmlMsgSrc != null)
-            used.add(xmlMsgSrc);
-        return used.toArray(new String[used.size()]);
+    protected VariablesUsed doGetVariablesUsed() {
+        return super.doGetVariablesUsed().withVariables( xmlMsgSrc );
     }
 
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<ResponseXpathAssertion>(){

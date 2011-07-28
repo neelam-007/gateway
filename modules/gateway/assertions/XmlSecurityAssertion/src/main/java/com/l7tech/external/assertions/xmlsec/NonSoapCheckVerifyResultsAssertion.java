@@ -31,18 +31,15 @@ public class NonSoapCheckVerifyResultsAssertion extends NonSoapSecurityAssertion
     }
 
     @Override
-    public String[] getVariablesUsed() {
-        List<String> variables = new ArrayList<String>();
-        variables.addAll( Arrays.asList( super.getVariablesUsed() ) );
-        variables.addAll(Arrays.asList(
-                prefix(NonSoapVerifyElementAssertion.VAR_ELEMENTS_VERIFIED),
-                prefix(NonSoapVerifyElementAssertion.VAR_DIGEST_METHOD_URIS),
-                prefix(NonSoapVerifyElementAssertion.VAR_SIGNATURE_METHOD_URIS),
-                prefix(NonSoapVerifyElementAssertion.VAR_SIGNATURE_VALUES),
-                prefix(NonSoapVerifyElementAssertion.VAR_SIGNING_CERTIFICATES),
-                prefix(NonSoapVerifyElementAssertion.VAR_SIGNATURE_ELEMENTS)
-        ));
-        return variables.toArray( new String[variables.size()] );
+    protected VariablesUsed doGetVariablesUsed() {
+        return super.doGetVariablesUsed().withVariables(
+                prefix( NonSoapVerifyElementAssertion.VAR_ELEMENTS_VERIFIED ),
+                prefix( NonSoapVerifyElementAssertion.VAR_DIGEST_METHOD_URIS ),
+                prefix( NonSoapVerifyElementAssertion.VAR_SIGNATURE_METHOD_URIS ),
+                prefix( NonSoapVerifyElementAssertion.VAR_SIGNATURE_VALUES ),
+                prefix( NonSoapVerifyElementAssertion.VAR_SIGNING_CERTIFICATES ),
+                prefix( NonSoapVerifyElementAssertion.VAR_SIGNATURE_ELEMENTS )
+        );
     }
 
     @Override
@@ -55,10 +52,12 @@ public class NonSoapCheckVerifyResultsAssertion extends NonSoapSecurityAssertion
         return null;
     }
 
+    @Override
     public String getVariablePrefix() {
         return variablePrefix;
     }
 
+    @Override
     public void setVariablePrefix(String variablePrefix) {
         this.variablePrefix = variablePrefix;
     }
@@ -150,6 +149,7 @@ public class NonSoapCheckVerifyResultsAssertion extends NonSoapSecurityAssertion
         this.permittedDigestMethodUris = permittedDigestMethodUris;
     }
 
+    @Override
     public String prefix(String var) {
         String prefix = getVariablePrefix();
         return prefix == null || prefix.trim().length() < 1 ? var : prefix.trim() + "." + var;

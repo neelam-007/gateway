@@ -1,15 +1,11 @@
 package com.l7tech.policy.assertion;
 
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.policy.assertion.VariableUseSupport.VariablesSetSupport;
+import com.l7tech.policy.assertion.VariableUseSupport.VariablesUsedSupport;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Support class for MessageTargetable implementation.
@@ -111,16 +107,70 @@ public class MessageTargetableSupport implements MessageTargetable, Serializable
         return getTargetName(this);
     }
 
+    /**
+     * @see #getMessageTargetVariablesSet
+     */
     @Override
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
-    public String[] getVariablesUsed() {
-        if (otherTargetMessageVariable != null) return new String[] { otherTargetMessageVariable };
-        return new String[0];
+    public final VariableMetadata[] getVariablesSet() {
+        return getMessageTargetVariablesSet().asArray();
     }
 
+    /**
+     * @see #getMessageTargetVariablesUsed
+     */
     @Override
-    public VariableMetadata[] getVariablesSet() {
-        return mergeVariablesSet(null);
+    public final String[] getVariablesUsed() {
+        return getMessageTargetVariablesUsed().asArray();
+    }
+
+    /**
+     * Get the variable metadata describing the target message, if it is a message variable is required.
+     * <p/>
+     * This method returns a VariablesUsed containing the names of the
+     * variable for the target message if it is {@link TargetMessageType#OTHER}
+     * and the target is required by the gateway, otherwise this method returns
+     * an empty VariablesUsed.
+     *
+     * @return a VariablesUsed containing any variable names for the target message.
+     */
+    public VariablesUsed getMessageTargetVariablesUsed() {
+        return new VariablesUsed( sourceUsedByGateway ? new String[]{ otherTargetMessageVariable } : new String[0] );
+    }
+
+    /**
+     * Get the variable metadata describing the target message, if it is a message variable that may be modified.
+     * <p/>
+     * This method returns a VariablesSet containing a VariableMetadata
+     * instance describing the target message if it is
+     * {@link TargetMessageType#OTHER} and {@link #isTargetModifiedByGateway()}
+     * is true otherwise, this method returns an empty VariablesSet.
+     *
+     * @return a VariablesSet containing any VariableMetadata for the target message.
+     */
+    public VariablesSet getMessageTargetVariablesSet() {
+        return new VariablesSet( new VariableMetadata[]{getOtherTargetVariableMetadata()} );
+    }
+
+    public static final class VariablesUsed extends VariablesUsedSupport<VariablesUsed> {
+        private VariablesUsed( final String[] initialVariables ) {
+            super( initialVariables );
+        }
+
+        @Override
+        protected VariablesUsed get() {
+            return this;
+        }
+    }
+
+    public static final class VariablesSet extends VariablesSetSupport<VariablesSet> {
+        private VariablesSet( final VariableMetadata[] initialVariables ) {
+            super( initialVariables );
+        }
+
+        @Override
+        protected VariablesSet get() {
+            return this;
+        }
     }
 
     /**
@@ -128,6 +178,7 @@ public class MessageTargetableSupport implements MessageTargetable, Serializable
      *
      * @return true if the target message might be modified; false if the target message is only read.
      */
+    @Override
     public boolean isTargetModifiedByGateway() {
         return targetModifiedByGateway;
     }
@@ -142,34 +193,21 @@ public class MessageTargetableSupport implements MessageTargetable, Serializable
     }
 
     /**
-     * Get the variable metadata describing the target message, if it is a message variable that may be modified.
-     * <p/>
-     * This method returns a VariableMetadata instance describing the target message if it is
-     * {@link TargetMessageType#OTHER} and {@link #isTargetModifiedByGateway()} is true;
-     * otherwise, this method returns null.
+     * Check whether the source message is required by the assertion.
      *
-     * @return a VariableMetadata instance describing a target Message variable that may be modified in-place, or null.
+     * @return true if the source message is required (so it is a policy error if not available)
      */
-    public VariableMetadata getOtherTargetVariableMetadata() {
-        return TargetMessageType.OTHER.equals(getTarget()) && isTargetModifiedByGateway()
-                ? new VariableMetadata(getOtherTargetMessageVariable(), false, false, null, true, DataType.MESSAGE)
-                : null;
+    public boolean isSourceUsedByGateway() {
+        return sourceUsedByGateway;
     }
 
     /**
-     * Prepends an additional entry to a list of variables set representing a modified target message variable, if any.
+     * Set whether the source message is required by the assertion.
      *
-     * @param otherVariablesSet  variables set, or null.  Null is treated as equivalent to empty.
-     * @return variables with getOtherTargetVariableMetadata() prepended, if applicable.  Never null, but may be empty.
+     * @param sourceUsedByGateway true to require the source message
      */
-    public VariableMetadata[] mergeVariablesSet(VariableMetadata[] otherVariablesSet) {
-        List<VariableMetadata> ret = new ArrayList<VariableMetadata>();
-        VariableMetadata targetVariableMetadata = getOtherTargetVariableMetadata();
-        if (targetVariableMetadata != null)
-            ret.add(targetVariableMetadata);
-        if (otherVariablesSet != null && otherVariablesSet.length > 0)
-            ret.addAll(Arrays.asList(otherVariablesSet));
-        return ret.toArray(new VariableMetadata[ret.size()]);
+    public void setSourceUsedByGateway( final boolean sourceUsedByGateway ) {
+        this.sourceUsedByGateway = sourceUsedByGateway;
     }
 
     public void setTargetMessage( final MessageTargetable messageTargetable ) {
@@ -193,6 +231,7 @@ public class MessageTargetableSupport implements MessageTargetable, Serializable
             return false;
         if (target != that.target) return false;
         if (targetModifiedByGateway != that.targetModifiedByGateway) return false;
+        if (sourceUsedByGateway != that.sourceUsedByGateway) return false;
 
         return true;
     }
@@ -203,6 +242,7 @@ public class MessageTargetableSupport implements MessageTargetable, Serializable
         result = (target != null ? target.hashCode() : 0);
         result = 31 * result + (otherTargetMessageVariable != null ? otherTargetMessageVariable.hashCode() : 0);
         result = 31 * result + (targetModifiedByGateway ? 1231 : 1237);
+        result = 31 * result + (sourceUsedByGateway ? 1231 : 1237);
         return result;
     }
 
@@ -248,4 +288,11 @@ public class MessageTargetableSupport implements MessageTargetable, Serializable
     private TargetMessageType target;
     private String otherTargetMessageVariable;
     private boolean targetModifiedByGateway;
+    private boolean sourceUsedByGateway = true;
+
+    private VariableMetadata getOtherTargetVariableMetadata() {
+        return TargetMessageType.OTHER.equals(getTarget()) && isTargetModifiedByGateway()
+                ? new VariableMetadata(getOtherTargetMessageVariable(), false, false, null, true, DataType.MESSAGE)
+                : null;
+    }
 }

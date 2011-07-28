@@ -7,10 +7,6 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.variable.VariableMetadata;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
@@ -126,20 +122,16 @@ public class RequireWssX509Cert extends SecurityHeaderAddressableSupport impleme
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        List<String> used = new ArrayList<String>( Arrays.asList( messageTargetableSupport.getVariablesUsed() ) );
-        if ( signatureElementVariable != null ) {
-            used.add( signatureElementVariable );
-        }
-        if ( signatureReferenceElementVariable != null ) {
-            used.add( signatureReferenceElementVariable );
-        }
-        return used.toArray( new String[used.size()] );
+        return messageTargetableSupport.getMessageTargetVariablesUsed().withVariables(
+                signatureElementVariable,
+                signatureReferenceElementVariable
+        ).asArray();
     }
 
 
     @Override
     public VariableMetadata[] getVariablesSet() {
-        return messageTargetableSupport.getVariablesSet();
+        return messageTargetableSupport.getMessageTargetVariablesSet().asArray();
     }
 
     @Override

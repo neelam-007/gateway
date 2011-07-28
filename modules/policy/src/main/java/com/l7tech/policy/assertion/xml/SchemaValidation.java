@@ -14,17 +14,13 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.HardwareAccelerated;
 import com.l7tech.policy.assertion.annotation.RequiresXML;
 import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.WSP_SUBTYPE_FINDER;
 
 /**
@@ -81,13 +77,6 @@ public class SchemaValidation extends MessageTargetableAssertion implements Uses
         this.validationTarget = validationTarget;
     }
 
-    @Override
-    public VariableMetadata[] getVariablesSet() {
-        return mergeVariablesSet(new VariableMetadata[] {
-                new VariableMetadata(SCHEMA_FAILURE_VARIABLE, false, true, SCHEMA_FAILURE_VARIABLE, false, DataType.STRING)
-        });
-    }
-
     @Migration(mapName = MigrationMappingSelection.REQUIRED, mapValue = MigrationMappingSelection.NONE, resolver = PropertyResolver.Type.RESOURCE_ENTRY)
     @Override
     public AssertionResourceInfo getResourceInfo() {
@@ -107,15 +96,17 @@ public class SchemaValidation extends MessageTargetableAssertion implements Uses
     private AssertionResourceInfo resourceInfo = new StaticResourceInfo();
 
     @Override
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
-    public String[] getVariablesUsed() {
-        List<String> vars = new ArrayList<String>();
-        vars.addAll(Arrays.asList(super.getVariablesUsed()));
-        if (resourceInfo.getType() == AssertionResourceType.SINGLE_URL) {
-            SingleUrlResourceInfo suri = (SingleUrlResourceInfo) resourceInfo;
-            vars.addAll(Arrays.asList(Syntax.getReferencedNames(suri.getUrl())));
-        }
-        return vars.toArray(new String[vars.size()]);
+    protected VariablesSet doGetVariablesSet() {
+        return super.doGetVariablesSet().withVariables(
+                new VariableMetadata(SCHEMA_FAILURE_VARIABLE, false, true, SCHEMA_FAILURE_VARIABLE, false, DataType.STRING)
+        );
+    }
+
+    @Override
+    protected VariablesUsed doGetVariablesUsed() {
+        return super.doGetVariablesUsed().withExpressions(
+                resourceInfo.getType() == AssertionResourceType.SINGLE_URL ? ((SingleUrlResourceInfo) resourceInfo).getUrl() : null
+        );
     }
 
     private final static String baseName = "Validate XML Schema";

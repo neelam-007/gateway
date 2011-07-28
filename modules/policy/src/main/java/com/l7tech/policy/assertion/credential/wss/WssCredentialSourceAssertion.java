@@ -68,7 +68,7 @@ public abstract class WssCredentialSourceAssertion extends SecurityHeaderAddress
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
-        return messageTargetableSupport.getVariablesUsed();
+        return messageTargetableSupport.getMessageTargetVariablesUsed().asArray();
     }
 
     @Override
@@ -78,7 +78,7 @@ public abstract class WssCredentialSourceAssertion extends SecurityHeaderAddress
 
     @Override
     public VariableMetadata[] getVariablesSet() {
-        return messageTargetableSupport.getVariablesSet();
+        return messageTargetableSupport.getMessageTargetVariablesSet().asArray();
     }
 
     @Override

@@ -1,25 +1,16 @@
 package com.l7tech.external.assertions.samlpassertion;
 
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.ArrayTypeMapping;
 import com.l7tech.policy.wsp.BeanTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
  * User: vchan
@@ -102,37 +93,31 @@ public class SamlpResponseEvaluationAssertion extends SamlProtocolAssertion impl
 
 
     @Override
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
-    public String[] getVariablesUsed() {
-        Set<String> varNames = new HashSet<String>();
-        collectVars(varNames, audienceRestriction);
-        collectVars(varNames, nameQualifier);
-        // new stuff
-        collectVars(varNames, getTargetName());
-        if (attributeStatement != null) {
-            for (SamlAttributeStatement.Attribute attr : attributeStatement.getAttributes()) {
-                collectVars(varNames, attr.getNamespace());
-                collectVars(varNames, attr.getNameFormat());
-                collectVars(varNames, attr.getName());
-                collectVars(varNames, attr.getValue());
+    protected VariablesUsed doGetVariablesUsed() {
+        final VariablesUsed variablesUsed = super.doGetVariablesUsed().withExpressions(
+            audienceRestriction,
+            nameQualifier,
+            getTargetName()
+        );
+
+        if ( attributeStatement != null ) {
+            for ( final SamlAttributeStatement.Attribute attr : attributeStatement.getAttributes() ) {
+                variablesUsed.addExpressions(
+                        attr.getNamespace(),
+                        attr.getNameFormat(),
+                        attr.getName(),
+                        attr.getValue()
+                );
             }
         }
 
-        if (authorizationStatement != null) {
-            for (String action : authorizationStatement.getActions()) {
-                collectVars(varNames, action);
-            }
-            collectVars(varNames, authorizationStatement.getResource());
+        if ( authorizationStatement != null ) {
+            variablesUsed.addExpressions(authorizationStatement.getActions());
+            variablesUsed.addExpressions(authorizationStatement.getResource());
         }
 
         // TODO how could one parameterize the authentication statement at all?
-        return varNames.toArray(new String[varNames.size()]);
-    }
-
-    private void collectVars(Set<String> varNames, String s) {
-        if (s == null || s.length() == 0) return;
-        String[] vars = Syntax.getReferencedNames(s);
-        varNames.addAll(Arrays.asList(vars));
+        return variablesUsed;
     }
 
     protected boolean usesDefaultKeyStore = true;
@@ -216,21 +201,11 @@ public class SamlpResponseEvaluationAssertion extends SamlProtocolAssertion impl
     }
 
     @Override
-    public VariableMetadata[] getVariablesSet() {
-
-        ArrayList<VariableMetadata> varList = new ArrayList<VariableMetadata>();
-
-        varList.add(new VariableMetadata("samlpResponse.status", false, true, null, false, DataType.STRING));
-
-        if (getAuthorizationStatement() != null) {
-            varList.add(new VariableMetadata("samlpResponse.authz.decision", false, false, null, false, DataType.STRING));
-
-        } else if (getAttributeStatement() != null) {
-            varList.add(new VariableMetadata("samlpResponse.attribute", true, false, null, false, DataType.UNKNOWN));
-        }
-
-        VariableMetadata[] fullList = new VariableMetadata[varList.size()];
-        fullList = varList.toArray(fullList);
-        return fullList;
+    protected VariablesSet doGetVariablesSet() {
+        return super.doGetVariablesSet().withVariables(
+                new VariableMetadata("samlpResponse.status", false, true, null, false, DataType.STRING),
+                getAuthorizationStatement() != null ? new VariableMetadata("samlpResponse.authz.decision", false, false, null, false, DataType.STRING) : null,
+                getAttributeStatement() != null ? new VariableMetadata("samlpResponse.attribute", true, false, null, false, DataType.UNKNOWN) : null
+        );
     }
 }

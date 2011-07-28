@@ -1,9 +1,6 @@
 package com.l7tech.policy.assertion.xml;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
@@ -27,7 +24,6 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
@@ -144,20 +140,17 @@ public class XslTransformation extends MessageTargetableAssertion implements Use
     }
 
     @Override
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
-    public String[] getVariablesUsed() {
-        if (varsUsed != null) return varsUsed;
+    public VariablesUsed doGetVariablesUsed() {
+        if (varsUsed != null) super.doGetVariablesUsed().withVariables( varsUsed );
 
         List<String> vars = new ArrayList<String>();
-        vars.addAll(Arrays.asList(super.getVariablesUsed()));
-
         if (resourceInfo instanceof SingleUrlResourceInfo) {
             SingleUrlResourceInfo suri = (SingleUrlResourceInfo) resourceInfo;
             vars.addAll( Arrays.asList( Syntax.getReferencedNames(suri.getUrl()) ) );
         } else if ( resourceInfo instanceof StaticResourceInfo ) {
             StaticResourceInfo sri = (StaticResourceInfo)resourceInfo;
             String xslSrc = sri.getDocument();
-            if (xslSrc == null || xslSrc.length() == 0) return new String[0];
+            if (xslSrc == null || xslSrc.length() == 0) return super.doGetVariablesUsed();
 
             try {
                 TransformerFactory tf = TransformerFactory.newInstance();
@@ -183,7 +176,7 @@ public class XslTransformation extends MessageTargetableAssertion implements Use
 
         this.varsUsed = vars.toArray(new String[vars.size()]);
 
-        return varsUsed;
+        return super.doGetVariablesUsed().withVariables( varsUsed );
     }
 
     private final static String baseName = "Apply XSL Transformation";
@@ -224,12 +217,12 @@ public class XslTransformation extends MessageTargetableAssertion implements Use
     }
 
     @Override
-    public VariableMetadata[] getVariablesSet() {
-        return mergeVariablesSet(new VariableMetadata[] {
+    public VariablesSet doGetVariablesSet() {
+        return super.doGetVariablesSet().withVariables(
             new VariableMetadata(getMsgVarPrefix() + "." + VARIABLE_NAME, false, false, null, false, DataType.STRING),
             new VariableMetadata(getMsgVarPrefix() + "." + VARIABLE_NAME + ".first", false, false, null, false, DataType.STRING),
             new VariableMetadata(getMsgVarPrefix() + "." + VARIABLE_NAME + ".last", false, false, null, false, DataType.STRING)
-        });
+        );
     }
 
     private transient volatile String[] varsUsed;

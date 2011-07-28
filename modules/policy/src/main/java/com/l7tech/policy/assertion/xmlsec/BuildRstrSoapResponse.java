@@ -1,16 +1,10 @@
 package com.l7tech.policy.assertion.xmlsec;
 
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.TimeUnit;
 
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.PROPERTIES_ACTION_NAME;
 
 /**
@@ -193,17 +187,16 @@ public class BuildRstrSoapResponse extends MessageTargetableAssertion implements
     }
 
     @Override
-    public VariableMetadata[] getVariablesSet() {
-        return new VariableMetadata[] {
+    protected VariablesSet doGetVariablesSet() {
+        return super.doGetVariablesSet().withVariables(
             new VariableMetadata(variablePrefix + "." + VARIABLE_RSTR_RESPONSE, false, false, null, false, DataType.MESSAGE),
             new VariableMetadata(variablePrefix + "." + VARIABLE_WSA_NAMESPACE, false, false, null, false, DataType.STRING),
-            new VariableMetadata(variablePrefix + "." + VARIABLE_RSTR_WSA_ACTION, false, false, null, false, DataType.STRING),
-        };
+            new VariableMetadata(variablePrefix + "." + VARIABLE_RSTR_WSA_ACTION, false, false, null, false, DataType.STRING)
+        );
     }
 
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
-    public String[] getVariablesUsed() {
-        return ArrayUtils.concat( super.getVariablesUsed(), Syntax.getReferencedNames(tokenIssued, addressOfEPR ) );
+    protected VariablesUsed doGetVariablesUsed() {
+        return super.doGetVariablesUsed().withExpressions( tokenIssued, addressOfEPR );
     }
 }

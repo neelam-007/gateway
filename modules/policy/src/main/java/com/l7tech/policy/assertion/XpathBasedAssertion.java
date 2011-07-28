@@ -1,14 +1,9 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.policy.assertion;
 
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.policy.assertion.VariableUseSupport.VariablesUsedSupport;
 import com.l7tech.policy.assertion.annotation.RequiresXML;
 import com.l7tech.xml.NamespaceMigratable;
 import com.l7tech.xml.soap.SoapVersion;
@@ -40,14 +35,8 @@ public abstract class XpathBasedAssertion extends Assertion implements UsesVaria
     
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
-    public String[] getVariablesUsed() {
-        if (xpathExpression == null)
-            return new String[0];
-        String expr = xpathExpression.getExpression();
-        if (expr == null)
-            return new String[0];
-        List<String> varlist = XpathUtil.getUnprefixedVariablesUsedInXpath(expr);
-        return varlist.toArray(new String[varlist.size()]);
+    public final String[] getVariablesUsed() {
+        return doGetVariablesUsed().asArray();
     }
 
     @Override
@@ -111,5 +100,26 @@ public abstract class XpathBasedAssertion extends Assertion implements UsesVaria
     public Set<String> findNamespaceUrisUsed() {
         XpathExpression xpath = getXpathExpression();
         return xpath == null ? Collections.<String>emptySet() : xpath.findNamespaceUrisUsed();
+    }
+
+    protected VariablesUsed doGetVariablesUsed() {
+        VariablesUsed used = new VariablesUsed();
+        if (xpathExpression != null) {
+            final String expr = xpathExpression.getExpression();
+            if ( expr != null ) {
+                used.addVariables( XpathUtil.getUnprefixedVariablesUsedInXpath(expr) );
+            }
+        }
+        return used;
+    }
+
+    protected final class VariablesUsed extends VariablesUsedSupport<VariablesUsed> {
+        private VariablesUsed() {
+        }
+
+        @Override
+        protected VariablesUsed get() {
+            return this;
+        }
     }
 }

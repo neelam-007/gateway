@@ -1,14 +1,7 @@
 package com.l7tech.external.assertions.cache;
 
 import com.l7tech.external.assertions.cache.server.SsgCache;
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.variable.Syntax;
-
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
-import com.l7tech.util.ArrayUtils;
 
 /**
  * 
@@ -27,10 +20,9 @@ public class CacheStorageAssertion extends MessageTargetableAssertion implements
         setTargetModifiedByGateway(false);
     }
 
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
-    public String[] getVariablesUsed() {
-        return ArrayUtils.concat( super.getVariablesUsed(), Syntax.getReferencedNames( cacheId, cacheEntryKey ) );
+    protected VariablesUsed doGetVariablesUsed() {
+        return super.doGetVariablesUsed().withExpressions( cacheId, cacheEntryKey );
     }
 
     /** @return the name of the cache in which to store the item.  May contain variables that need interpolation. */

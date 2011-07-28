@@ -1,17 +1,12 @@
 package com.l7tech.external.assertions.mtom;
 
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.xml.NamespaceMigratable;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathUtil;
 
 import java.util.*;
 
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
@@ -72,30 +67,6 @@ public class MtomEncodeAssertion extends MessageTargetableAssertion implements U
             outputTarget.setTargetModifiedByGateway(true);
     }
 
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
-    @Override
-    public String[] getVariablesUsed() {
-        final Set<String> variables = new LinkedHashSet<String>(Arrays.asList(super.getVariablesUsed()));
-
-        if ( xpathExpressions != null ) {
-            for ( final XpathExpression xpathExpression : xpathExpressions ) {
-                if ( xpathExpression == null ) continue;
-
-                final String expression = xpathExpression.getExpression();
-                if ( expression != null ) {
-                    variables.addAll( XpathUtil.getUnprefixedVariablesUsedInXpath( expression ) );
-                }
-            }
-        }
-
-        return variables.toArray(new String[variables.size()]);
-    }
-
-    @Override
-    public VariableMetadata[] getVariablesSet() {
-        return outputTarget == null ? new VariableMetadata[0] : outputTarget.getVariablesSet();
-    }
-
     @Override
     public void migrateNamespaces(Map<String, String> nsUriSourceToDest) {
         if (xpathExpressions != null) {
@@ -140,6 +111,31 @@ public class MtomEncodeAssertion extends MessageTargetableAssertion implements U
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
+    }
+
+    //- PROTECTED
+
+    @Override
+    protected VariablesUsed doGetVariablesUsed() {
+        final VariablesUsed variablesUsed = super.doGetVariablesUsed();
+
+        if ( xpathExpressions != null ) {
+            for ( final XpathExpression xpathExpression : xpathExpressions ) {
+                if ( xpathExpression == null ) continue;
+
+                final String expression = xpathExpression.getExpression();
+                if ( expression != null ) {
+                    variablesUsed.addVariables( XpathUtil.getUnprefixedVariablesUsedInXpath( expression ) );
+                }
+            }
+        }
+
+        return variablesUsed;
+    }
+
+    @Override
+    protected VariablesSet doGetVariablesSet() {
+        return super.doGetVariablesSet().with( outputTarget==null ? null : outputTarget.getMessageTargetVariablesSet() );
     }
 
     //- PRIVATE

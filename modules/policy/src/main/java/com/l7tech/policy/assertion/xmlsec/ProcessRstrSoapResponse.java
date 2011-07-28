@@ -9,7 +9,6 @@ import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.security.token.SecurityTokenType;
 
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
-import static com.l7tech.policy.assertion.AssertionMetadata.PROPERTIES_ACTION_NAME;
 
 /**
  *
@@ -43,18 +42,6 @@ public class ProcessRstrSoapResponse extends MessageTargetableAssertion {
 
     public void setVariablePrefix( final String variablePrefix ) {
         this.variablePrefix = variablePrefix;
-    }
-
-    @Override
-    public VariableMetadata[] getVariablesSet() {
-        return mergeVariablesSet(new VariableMetadata[] {
-                new VariableMetadata(variablePrefix + "." + VARIABLE_TOKEN, false, false, null, false, DataType.ELEMENT ),
-                new VariableMetadata(variablePrefix + "." + VARIABLE_CREATE_TIME, false, false, null, false),
-                new VariableMetadata(variablePrefix + "." + VARIABLE_EXPIRY_TIME, false, false, null, false),
-                new VariableMetadata(variablePrefix + "." + VARIABLE_SERVER_ENTROPY, false, false, null, false),
-                new VariableMetadata(variablePrefix + "." + VARIABLE_KEY_SIZE, false, false, null, false, DataType.INTEGER),
-                new VariableMetadata(variablePrefix + "." + VARIABLE_FULL_KEY, false, false, null, false),
-        });
     }
 
     public static String[] getVariableSuffixes() {
@@ -92,6 +79,20 @@ public class ProcessRstrSoapResponse extends MessageTargetableAssertion {
         meta.put(META_INITIALIZED, Boolean.TRUE);
 
         return meta;
+    }
+
+    //- PROTECTED
+
+    @Override
+    protected VariablesSet doGetVariablesSet() {
+        return super.doGetVariablesSet().withVariables(
+                new VariableMetadata(variablePrefix + "." + VARIABLE_TOKEN, false, false, null, false, DataType.ELEMENT ),
+                new VariableMetadata(variablePrefix + "." + VARIABLE_CREATE_TIME, false, false, null, false),
+                new VariableMetadata(variablePrefix + "." + VARIABLE_EXPIRY_TIME, false, false, null, false),
+                new VariableMetadata(variablePrefix + "." + VARIABLE_SERVER_ENTROPY, false, false, null, false),
+                new VariableMetadata(variablePrefix + "." + VARIABLE_KEY_SIZE, false, false, null, false, DataType.INTEGER),
+                new VariableMetadata(variablePrefix + "." + VARIABLE_FULL_KEY, false, false, null, false)
+        );
     }
 
     //- PRIVATE

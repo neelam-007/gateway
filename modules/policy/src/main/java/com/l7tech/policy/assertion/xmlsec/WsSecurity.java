@@ -5,9 +5,7 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.xml.WsSecurityVersion;
-import com.l7tech.util.ArrayUtils;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.migration.Migration;
@@ -15,8 +13,6 @@ import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 
 import java.util.Collections;
-
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
  * Assertion for applying WS-Security to a message or removing security headers.
@@ -103,21 +99,6 @@ public class WsSecurity extends MessageTargetableAssertion implements UsesEntiti
         this.wsSecurityVersion = wsSecurityVersion;
     }
 
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
-    @Override
-    public String[] getVariablesUsed() {
-        String[] usedVariables = super.getVariablesUsed();
-
-        if ( recipientTrustedCertificateName != null ) {
-            String[] referenced = Syntax.getReferencedNames( recipientTrustedCertificateName );
-            if ( referenced.length > 0 ) {
-                usedVariables = ArrayUtils.concat( usedVariables, referenced );
-            }
-        }
-
-        return usedVariables;
-    }
-
     @Override
     @Migration(mapName = MigrationMappingSelection.REQUIRED, resolver = PropertyResolver.Type.ASSERTION)
     public EntityHeader[] getEntitiesUsed() {
@@ -183,6 +164,13 @@ public class WsSecurity extends MessageTargetableAssertion implements UsesEntiti
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
+    }
+
+    //- PROTECTED
+
+    @Override
+    protected VariablesUsed doGetVariablesUsed() {
+        return super.doGetVariablesUsed().withExpressions( recipientTrustedCertificateName );
     }
 
     //- PRIVATE

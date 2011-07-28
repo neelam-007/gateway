@@ -25,21 +25,23 @@ public class NonSoapDecryptElementAssertion extends NonSoapSecurityAssertionBase
         setXpathExpression(createDefaultXpathExpression(false, null));
     }
 
+    @Override
     public String getVariablePrefix() {
         return variablePrefix;
     }
 
+    @Override
     public void setVariablePrefix(String variablePrefix) {
         this.variablePrefix = variablePrefix;
     }
 
     @Override
-    public VariableMetadata[] getVariablesSet() {
-        return mergeVariablesSet(new VariableMetadata[] {
+    protected VariablesSet doGetVariablesSet() {
+        return super.doGetVariablesSet().withVariables(
                 new VariableMetadata(prefix(VAR_ELEMENTS_DECRYPTED), false, true, prefix(VAR_ELEMENTS_DECRYPTED), false, DataType.ELEMENT),
                 new VariableMetadata(prefix(VAR_ENCRYPTION_METHOD_URIS), false, true, prefix(VAR_ENCRYPTION_METHOD_URIS), false, DataType.STRING),
-                new VariableMetadata(prefix(VAR_RECIPIENT_CERTIFICATES), false, true, prefix(VAR_RECIPIENT_CERTIFICATES), false, DataType.CERTIFICATE),
-        });
+                new VariableMetadata(prefix(VAR_RECIPIENT_CERTIFICATES), false, true, prefix(VAR_RECIPIENT_CERTIFICATES), false, DataType.CERTIFICATE)
+        );
     }
 
     /**
@@ -49,6 +51,7 @@ public class NonSoapDecryptElementAssertion extends NonSoapSecurityAssertionBase
      * @param var  the variable name to prefix.  Required.
      * @return the variable name with the current prefix prepended, along with a dot; or the variable name unchanged if the prefix is currently null or empty.
      */
+    @Override
     public String prefix(String var) {
         String prefix = getVariablePrefix();
         return prefix == null || prefix.trim().length() < 1 ? var : prefix.trim() + "." + var;

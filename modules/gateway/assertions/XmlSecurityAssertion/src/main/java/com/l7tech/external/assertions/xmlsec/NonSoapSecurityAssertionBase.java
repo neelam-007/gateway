@@ -1,12 +1,8 @@
 package com.l7tech.external.assertions.xmlsec;
 
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.VariableUseSupport.VariablesSetSupport;
 import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.util.ArrayUtils;
 import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.xml.xpath.XpathExpression;
 
@@ -17,7 +13,7 @@ import java.util.*;
  */
 public abstract class NonSoapSecurityAssertionBase extends XpathBasedAssertion implements MessageTargetable {
     public static final String META_PROP_VERB = "NonSoapSecurityAssertion.verb";
-    private MessageTargetableSupport messageTargetableSupport;
+    private final MessageTargetableSupport messageTargetableSupport;
 
     protected NonSoapSecurityAssertionBase(TargetMessageType defaultTargetMessageType, boolean targetModifiedByGateway) {
         this.messageTargetableSupport = new MessageTargetableSupport(defaultTargetMessageType, targetModifiedByGateway);
@@ -31,20 +27,14 @@ public abstract class NonSoapSecurityAssertionBase extends XpathBasedAssertion i
         return verb == null ? "process" : String.valueOf(verb);
     }
 
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
-    @Override
-    public String[] getVariablesUsed() {
-        return ArrayUtils.concat( super.getVariablesUsed(), messageTargetableSupport.getVariablesUsed() );
-    }
-
     @Override
     public boolean isTargetModifiedByGateway() {
         return messageTargetableSupport.isTargetModifiedByGateway();
     }
 
     @Override
-    public VariableMetadata[] getVariablesSet() {
-        return messageTargetableSupport.getVariablesSet();
+    public final VariableMetadata[] getVariablesSet() {
+        return doGetVariablesSet().asArray();
     }
 
     @Override
@@ -92,8 +82,24 @@ public abstract class NonSoapSecurityAssertionBase extends XpathBasedAssertion i
         return String.valueOf(meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME));
     }
 
-    protected VariableMetadata[] mergeVariablesSet(VariableMetadata[] variablesSet) {
-        return messageTargetableSupport.mergeVariablesSet(variablesSet);
+    @Override
+    protected VariablesUsed doGetVariablesUsed() {
+        return super.doGetVariablesUsed().with( messageTargetableSupport.getMessageTargetVariablesUsed() );
+    }
+
+    protected VariablesSet doGetVariablesSet() {
+        return new VariablesSet( messageTargetableSupport.getMessageTargetVariablesSet().asArray() );
+    }
+
+    public static final class VariablesSet extends VariablesSetSupport<VariablesSet> {
+        private VariablesSet( final VariableMetadata[] initialVariables ) {
+            super( initialVariables );
+        }
+
+        @Override
+        protected VariablesSet get() {
+            return this;
+        }
     }
 
     protected final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<NonSoapSecurityAssertionBase>(){

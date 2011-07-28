@@ -1,13 +1,8 @@
 package com.l7tech.policy.assertion;
 
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.variable.Syntax;
-import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.ValidationUtils;
 
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
@@ -63,11 +58,9 @@ public class RequestSizeLimit extends MessageTargetableAssertion implements Uses
         this.entireMessage = entireMessage;
     }
 
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
-    public String[] getVariablesUsed() {
-        return ArrayUtils.concat( super.getVariablesUsed(), Syntax.getReferencedNames( new String[]{ limit } ) ); // allows null limit
-
+    protected VariablesUsed doGetVariablesUsed() {
+        return super.doGetVariablesUsed().withExpressions( limit );
     }
 
     @Override

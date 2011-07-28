@@ -1,16 +1,11 @@
 package com.l7tech.external.assertions.samlpassertion;
 
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.Syntax;
-import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
@@ -19,6 +14,11 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  * @author darmstrong
  */
 public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPrivateKeyable {
+
+    public SamlpResponseBuilderAssertion(){
+        setTargetModifiedByGateway(true);
+        setSourceUsedByGateway(false);
+    }
 
     public SamlVersion getSamlVersion() {
         return samlVersion;
@@ -177,44 +177,29 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPri
     }
 
     @Override
-    public String[] getVariablesUsed() {
-        final List<String> variableTemplates = new ArrayList<String>();
-        variableTemplates.add( getStatusMessage() );
-        variableTemplates.add( getStatusDetail() );
-
-        variableTemplates.add( getResponseId() );
-        variableTemplates.add( getIssueInstant() );
-        variableTemplates.add( getInResponseTo() );
-        variableTemplates.add( getResponseAssertions() );
+    protected VariablesUsed doGetVariablesUsed() {
+        final VariablesUsed variablesUsed = super.doGetVariablesUsed().withExpressions(
+                getStatusMessage(),
+                getStatusDetail(),
+                getResponseId(),
+                getIssueInstant(),
+                getInResponseTo(),
+                getResponseAssertions()
+        );
 
         switch (getSamlVersion()){
             case SAML2:
-                variableTemplates.add( getDestination() );
-                variableTemplates.add( getConsent() );
-                variableTemplates.add( getResponseExtensions() );
-                variableTemplates.add( getEncryptedAssertions() );
+                variablesUsed.addExpressions(
+                        getDestination(),
+                        getConsent(),
+                        getResponseExtensions(),
+                        getEncryptedAssertions() );
                 break;
             case SAML1_1:
-                variableTemplates.add( getRecipient() );
+                variablesUsed.addExpressions( getRecipient() );
         }
 
-        // Not including super.getVariablesUsed since we create the message target
-        // if it does not exist
-        return Syntax.getReferencedNames(variableTemplates.toArray(new String[variableTemplates.size()]));
-    }
-
-    @Override
-    public VariableMetadata[] getVariablesSet() {
-        if(this.getTarget() == TargetMessageType.OTHER){
-            List<VariableMetadata> list = new ArrayList<VariableMetadata>();
-            final String targetVar = this.getOtherTargetMessageVariable();
-            VariableMetadata meta = new VariableMetadata(targetVar, false, false, this.getOtherTargetMessageVariable(), true, DataType.MESSAGE);
-            list.addAll(Arrays.asList(super.getVariablesSet()));
-            list.add(meta);
-            return list.toArray(new VariableMetadata[list.size()]);
-
-        }
-        return super.getVariablesSet();
+        return variablesUsed;
     }
 
     // - PRIVATE

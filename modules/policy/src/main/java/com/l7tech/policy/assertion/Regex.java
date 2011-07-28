@@ -1,23 +1,8 @@
-/*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- *
- * $Id$
- */
 package com.l7tech.policy.assertion;
 
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Arrays;
-import java.util.Set;
-import java.util.TreeSet;
-
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
  * @author emil
@@ -99,7 +84,7 @@ public class Regex extends MessageTargetableAssertion implements UsesVariables, 
     }
 
     /**
-     * Set the boolean tooggle that enables replace
+     * Set the boolean toggle that enables replace
      * @param replace true to do search and replace.  False to just do search.
      */
     public void setReplace(boolean replace) {
@@ -260,23 +245,18 @@ public class Regex extends MessageTargetableAssertion implements UsesVariables, 
     }
 
     @Override
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
-    public String[] getVariablesUsed() {
-        Set<String> varsUsed = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
-        varsUsed.addAll(Arrays.asList(super.getVariablesUsed()));
-        if (replacement != null)
-            varsUsed.addAll(Arrays.asList(Syntax.getReferencedNames(replacement)));
-        if (patternContainsVariables && regex != null)
-            varsUsed.addAll(Arrays.asList(Syntax.getReferencedNames(regex)));
-        return varsUsed.toArray(new String[varsUsed.size()]);
+    protected VariablesUsed doGetVariablesUsed() {
+        return super.doGetVariablesUsed().withExpressions(
+                replacement,
+                patternContainsVariables ? regex : null
+        );
     }
 
     @Override
-    public VariableMetadata[] getVariablesSet() {
-        VariableMetadata[] set = captureVar == null ? null : new VariableMetadata[] {
-                new VariableMetadata(captureVar, false, true, captureVar, true, DataType.STRING),
-        };
-        return mergeVariablesSet(set);
+    protected VariablesSet doGetVariablesSet() {
+        return super.doGetVariablesSet().withVariables(
+                captureVar == null ? null : new VariableMetadata( captureVar, false, true, captureVar, true, DataType.STRING )
+        );
     }
 
     private final static String baseName = "Evaluate Regular Expression";

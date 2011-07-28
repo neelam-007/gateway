@@ -136,39 +136,6 @@ public class ProcessSamlAuthnRequestAssertion extends MessageTargetableAssertion
         return meta;
     }
 
-    @Override
-    public VariableMetadata[] getVariablesSet() {
-        VariableMetadata[] metadata;
-
-        if ( variablePrefix == null ) {
-            metadata = new VariableMetadata[0];
-        } else {
-            metadata = new VariableMetadata[] {
-                new VariableMetadata(variablePrefix+"."+SUFFIX_SUBJECT, false, false, null, false, DataType.STRING),
-                new VariableMetadata(variablePrefix+"."+SUFFIX_SUBJECT_NAME_QUALIFIER, false, false, null, false, DataType.STRING),
-                new VariableMetadata(variablePrefix+"."+SUFFIX_SUBJECT_SP_NAME_QUALIFIER, false, false, null, false, DataType.STRING),
-                new VariableMetadata(variablePrefix+"."+SUFFIX_SUBJECT_FORMAT, false, false, null, false, DataType.STRING),
-                new VariableMetadata(variablePrefix+"."+SUFFIX_SUBJECT_SP_PROVIDED_ID, false, false, null, false, DataType.STRING),
-                new VariableMetadata(variablePrefix+"."+SUFFIX_X509CERT_BASE64, false, false, null, false, DataType.STRING),
-                new VariableMetadata(variablePrefix+"."+SUFFIX_X509CERT, false, false, null, false, DataType.CERTIFICATE),
-                new VariableMetadata(variablePrefix+"."+SUFFIX_ACS_URL, false, false, null, false, DataType.STRING),
-                new VariableMetadata(variablePrefix+"."+SUFFIX_ID, false, false, null, false, DataType.STRING),
-                new VariableMetadata(variablePrefix+"."+SUFFIX_VERSION, false, false, null, false, DataType.STRING),
-                new VariableMetadata(variablePrefix+"."+SUFFIX_ISSUE_INSTANT, false, false, null, false, DataType.STRING),
-                new VariableMetadata(variablePrefix+"."+SUFFIX_DESTINATION, false, false, null, false, DataType.STRING),
-                new VariableMetadata(variablePrefix+"."+SUFFIX_CONSENT, false, false, null, false, DataType.STRING),
-                new VariableMetadata(variablePrefix+"."+SUFFIX_ISSUER, false, false, null, false, DataType.STRING),
-                new VariableMetadata(variablePrefix+"."+SUFFIX_ISSUER_NAME_QUALIFIER, false, false, null, false, DataType.STRING),
-                new VariableMetadata(variablePrefix+"."+SUFFIX_ISSUER_SP_NAME_QUALIFIER, false, false, null, false, DataType.STRING),
-                new VariableMetadata(variablePrefix+"."+SUFFIX_ISSUER_FORMAT, false, false, null, false, DataType.STRING),
-                new VariableMetadata(variablePrefix+"."+SUFFIX_ISSUER_SP_PROVIDED_ID, false, false, null, false, DataType.STRING),
-                new VariableMetadata(variablePrefix+"."+SUFFIX_REQUEST, false, false, null, false, DataType.MESSAGE),
-            };
-        }
-
-        return metadata;
-    }
-
     public enum SamlProtocolBinding {
         HttpPost("HTTP Post"),
         HttpRedirect("HTTP Redirect");
@@ -182,6 +149,35 @@ public class ProcessSamlAuthnRequestAssertion extends MessageTargetableAssertion
         public String toString() {
             return description;
         }
+    }
+
+    //- PROTECTED
+
+    @Override
+    protected VariablesSet doGetVariablesSet() {
+        return variablePrefix == null ?
+                super.doGetVariablesSet() :
+                super.doGetVariablesSet().withVariables(
+                        new VariableMetadata(variablePrefix+"."+SUFFIX_SUBJECT, false, false, null, false, DataType.STRING),
+                        new VariableMetadata(variablePrefix+"."+SUFFIX_SUBJECT_NAME_QUALIFIER, false, false, null, false, DataType.STRING),
+                        new VariableMetadata(variablePrefix+"."+SUFFIX_SUBJECT_SP_NAME_QUALIFIER, false, false, null, false, DataType.STRING),
+                        new VariableMetadata(variablePrefix+"."+SUFFIX_SUBJECT_FORMAT, false, false, null, false, DataType.STRING),
+                        new VariableMetadata(variablePrefix+"."+SUFFIX_SUBJECT_SP_PROVIDED_ID, false, false, null, false, DataType.STRING),
+                        new VariableMetadata(variablePrefix+"."+SUFFIX_X509CERT_BASE64, false, false, null, false, DataType.STRING),
+                        new VariableMetadata(variablePrefix+"."+SUFFIX_X509CERT, false, false, null, false, DataType.CERTIFICATE),
+                        new VariableMetadata(variablePrefix+"."+SUFFIX_ACS_URL, false, false, null, false, DataType.STRING),
+                        new VariableMetadata(variablePrefix+"."+SUFFIX_ID, false, false, null, false, DataType.STRING),
+                        new VariableMetadata(variablePrefix+"."+SUFFIX_VERSION, false, false, null, false, DataType.STRING),
+                        new VariableMetadata(variablePrefix+"."+SUFFIX_ISSUE_INSTANT, false, false, null, false, DataType.STRING),
+                        new VariableMetadata(variablePrefix+"."+SUFFIX_DESTINATION, false, false, null, false, DataType.STRING),
+                        new VariableMetadata(variablePrefix+"."+SUFFIX_CONSENT, false, false, null, false, DataType.STRING),
+                        new VariableMetadata(variablePrefix+"."+SUFFIX_ISSUER, false, false, null, false, DataType.STRING),
+                        new VariableMetadata(variablePrefix+"."+SUFFIX_ISSUER_NAME_QUALIFIER, false, false, null, false, DataType.STRING),
+                        new VariableMetadata(variablePrefix+"."+SUFFIX_ISSUER_SP_NAME_QUALIFIER, false, false, null, false, DataType.STRING),
+                        new VariableMetadata(variablePrefix+"."+SUFFIX_ISSUER_FORMAT, false, false, null, false, DataType.STRING),
+                        new VariableMetadata(variablePrefix+"."+SUFFIX_ISSUER_SP_PROVIDED_ID, false, false, null, false, DataType.STRING),
+                        new VariableMetadata(variablePrefix+"."+SUFFIX_REQUEST, false, false, null, false, DataType.MESSAGE)
+                );
     }
 
     //- PRIVATE

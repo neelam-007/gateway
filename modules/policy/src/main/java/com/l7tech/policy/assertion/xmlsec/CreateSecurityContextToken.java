@@ -113,9 +113,9 @@ public class CreateSecurityContextToken extends MessageTargetableAssertion {
     }
 
     @Override
-    public VariableMetadata[] getVariablesSet() {
-        return new VariableMetadata[] {
+    protected VariablesSet doGetVariablesSet() {
+        return super.doGetVariablesSet().withVariables(
             new VariableMetadata(variablePrefix + "." + VARIABLE_ISSUED_SCT, false, false, null, false, DataType.STRING)
-        };
+        );
     }
 }

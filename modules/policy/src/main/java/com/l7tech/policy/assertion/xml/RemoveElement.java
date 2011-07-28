@@ -142,13 +142,10 @@ public class RemoveElement extends MessageTargetableAssertion {
     }
 
     @Override
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
-    public String[] getVariablesUsed() {
-        List<String> vars = new ArrayList<String>(Arrays.asList(super.getVariablesUsed()));
-        if (elementFromVariable != null)
-            vars.add(elementFromVariable);
-        if (insertedElementLocation != null && elementToInsertVariable != null)
-            vars.add(elementToInsertVariable);
-        return vars.toArray(new String[vars.size()]);
+    protected VariablesUsed doGetVariablesUsed() {
+        return super.doGetVariablesUsed().withVariables(
+                elementFromVariable,
+                insertedElementLocation != null ? elementToInsertVariable : null
+        );
     }
 }

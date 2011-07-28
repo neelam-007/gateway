@@ -1,19 +1,12 @@
 package com.l7tech.external.assertions.wsaddressing;
 
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.SoapConstants;
 
 import java.util.*;
-
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 @RequiresSOAP(wss=true)
 public class AddWsAddressingAssertion extends MessageTargetableAssertion {
@@ -152,10 +145,11 @@ public class AddWsAddressingAssertion extends MessageTargetableAssertion {
         return meta;
     }
 
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
+    //- PROTECTED
+
     @Override
-    public String[] getVariablesUsed() {
-        final String[] variables = Syntax.getReferencedNames(
+    protected VariablesUsed doGetVariablesUsed() {
+        return super.doGetVariablesUsed().withExpressions(
                 getWsaNamespaceUri(),
                 getAction(),
                 getMessageId(),
@@ -163,22 +157,18 @@ public class AddWsAddressingAssertion extends MessageTargetableAssertion {
                 getSourceEndpoint(),
                 getReplyEndpoint(),
                 getFaultEndpoint(),
-                getRelatesToMessageId());
-        return ArrayUtils.concat( super.getVariablesUsed(), variables );
+                getRelatesToMessageId()
+        );
     }
 
     @Override
-    public VariableMetadata[] getVariablesSet() {
-        VariableMetadata[] metadata;
-
-        if ( variablePrefix == null ) {
-            metadata = new VariableMetadata[0];
-        } else {
-            metadata = new VariableMetadata[]{
-                    new VariableMetadata(variablePrefix + "." + SUFFIX_ACTION, false, false, null, false, DataType.STRING),
-                    new VariableMetadata(variablePrefix + "." + SUFFIX_MESSAGE_ID, false, false, null, false, DataType.STRING)};
-        }
-        return metadata;
+    protected VariablesSet doGetVariablesSet() {
+        return variablePrefix == null ?
+                super.doGetVariablesSet() :
+                super.doGetVariablesSet().withVariables(
+                        new VariableMetadata(variablePrefix + "." + SUFFIX_ACTION, false, false, null, false, DataType.STRING),
+                        new VariableMetadata(variablePrefix + "." + SUFFIX_MESSAGE_ID, false, false, null, false, DataType.STRING)
+                );
     }
 
     //- PRIVATE

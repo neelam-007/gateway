@@ -6,16 +6,10 @@ import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.wsp.WspSensitive;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.xml.KeyReference;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
@@ -38,7 +32,7 @@ public class AddWssSecurityToken extends MessageTargetableAssertion implements W
     private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
     private IdentityTarget identityTarget;
     private boolean includePassword;
-    private PrivateKeyableSupport privatekeyableSupport = new PrivateKeyableSupport();
+    private final PrivateKeyableSupport privatekeyableSupport = new PrivateKeyableSupport();
     private String digestAlgorithmName;
     private boolean useLastGatheredCredentials = true;
     private boolean includeNonce = true;
@@ -256,18 +250,10 @@ public class AddWssSecurityToken extends MessageTargetableAssertion implements W
     }
 
     @Override
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
-    public String[] getVariablesUsed() {
-        List<String> vars = new ArrayList<String>( Arrays.asList(super.getVariablesUsed()));
-
-        String[] referencedVariables = Syntax.getReferencedNames( username, password );
-        vars.addAll( Arrays.asList(referencedVariables));
-        if (wsscSessionVariable != null && wsscSessionVariable.length() > 0)
-            vars.add(wsscSessionVariable);
-        if (samlAssertionVariable != null && samlAssertionVariable.length() > 0)
-            vars.add(samlAssertionVariable);
-
-        return vars.toArray(new String[vars.size()]);
+    protected VariablesUsed doGetVariablesUsed() {
+        return super.doGetVariablesUsed()
+                .withExpressions( username, password )
+                .withVariables( wsscSessionVariable, samlAssertionVariable );
     }
 
     final static String baseName = "Add Security Token";

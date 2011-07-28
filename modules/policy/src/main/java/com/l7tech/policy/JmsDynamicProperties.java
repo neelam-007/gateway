@@ -56,14 +56,18 @@ public class JmsDynamicProperties {
         this.replytoQName = replytoQName;
     }
 
-    public String getFieldsAsVariables() {
-        String SEP = " ";
-        StringBuffer sb = new StringBuffer();
-        if (getDestQName() != null) sb.append(getDestQName()).append(SEP);
-        if (getJndiUrl() != null) sb.append(getJndiUrl()).append(SEP);
-        if (getIcfName() != null) sb.append(getIcfName()).append(SEP);
-        if (getQcfName() != null) sb.append(getQcfName()).append(SEP);
-        if (getReplytoQName() != null) sb.append(getReplytoQName()).append(SEP);
-        return sb.toString();
+    /**
+     * Get the variable expressions.
+     *
+     * @return An array containing the possibly null variable expressions.
+     */
+    public String[] getVariableExpressions() {
+        return new String[] {
+            getDestQName(),
+            getJndiUrl(),
+            getIcfName(),
+            getQcfName(),
+            getReplytoQName()
+        };
     }
 }

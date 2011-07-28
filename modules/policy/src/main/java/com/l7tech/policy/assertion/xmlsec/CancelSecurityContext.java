@@ -1,20 +1,13 @@
 package com.l7tech.policy.assertion.xmlsec;
 
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.util.TextUtils;
 
 import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.Set;
 
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
@@ -78,14 +71,10 @@ public class CancelSecurityContext extends MessageTargetableAssertion {
         this.failIfNotExist = failIfNotExist;
     }
 
-    @Override
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
-    public String[] getVariablesUsed() {
-        final Set<String> allVars = new LinkedHashSet<String>();
-        final String[] strings = Syntax.getReferencedNames( new String[]{ outboundServiceUrl } ); // allows null
-        allVars.addAll(Arrays.asList(strings));
-        allVars.addAll(Arrays.asList(super.getVariablesUsed()));
-        return allVars.toArray(new String[allVars.size()]);    }
+   @Override
+    protected VariablesUsed doGetVariablesUsed() {
+        return super.doGetVariablesUsed().withExpressions( outboundServiceUrl );
+    }
 
     @Override
     public AssertionMetadata meta() {

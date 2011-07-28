@@ -104,15 +104,15 @@ public class NonSoapVerifyElementAssertion extends NonSoapSecurityAssertionBase 
     }
 
     @Override
-    public VariableMetadata[] getVariablesSet() {
-        return mergeVariablesSet(new VariableMetadata[] {
+    protected VariablesSet doGetVariablesSet() {
+        return super.doGetVariablesSet().withVariables(
                 new VariableMetadata(prefix(VAR_ELEMENTS_VERIFIED), false, true, prefix(VAR_ELEMENTS_VERIFIED), false, DataType.ELEMENT),
                 new VariableMetadata(prefix(VAR_SIGNATURE_METHOD_URIS), false, true, prefix(VAR_SIGNATURE_METHOD_URIS), false, DataType.STRING),
                 new VariableMetadata(prefix(VAR_DIGEST_METHOD_URIS), false, true, prefix(VAR_DIGEST_METHOD_URIS), false, DataType.STRING),
                 new VariableMetadata(prefix(VAR_SIGNING_CERTIFICATES), false, true, prefix(VAR_SIGNING_CERTIFICATES), false, DataType.CERTIFICATE),
                 new VariableMetadata(prefix(VAR_SIGNATURE_VALUES), false, true, prefix(VAR_SIGNATURE_VALUES), false, DataType.STRING),
-                new VariableMetadata(prefix(VAR_SIGNATURE_ELEMENTS), false, true, prefix(VAR_SIGNATURE_ELEMENTS), false, DataType.ELEMENT),
-        });
+                new VariableMetadata(prefix(VAR_SIGNATURE_ELEMENTS), false, true, prefix(VAR_SIGNATURE_ELEMENTS), false, DataType.ELEMENT)
+        );
     }
 
     /**
@@ -122,6 +122,7 @@ public class NonSoapVerifyElementAssertion extends NonSoapSecurityAssertionBase 
      * @param var  the variable name to prefix.  Required.
      * @return the variable name with the current prefix prepended, along with a dot; or the variable name unchanged if the prefix is currently null or empty.
      */
+    @Override
     public String prefix(String var) {
         String prefix = getVariablePrefix();
         return prefix == null || prefix.trim().length() < 1 ? var : prefix.trim() + "." + var;

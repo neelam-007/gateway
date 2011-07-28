@@ -140,32 +140,6 @@ public class WsAddressingAssertion extends MessageTargetableAssertion implements
         this.enableOtherNamespace = enableOtherNamespace;
     }
 
-    /**
-     * If a prefix is set then this will return a full set of addressing variables.
-     *
-     * @return The variable metadata
-     */
-    @Override
-    public VariableMetadata[] getVariablesSet() {
-        String prefix = getVariablePrefix();
-
-        if ( prefix != null ) {
-            return new VariableMetadata[] {
-                // Note default prefixes are used here for property lookup purposes
-                new VariableMetadata(prefix + "." + VAR_SUFFIX_TO, false, false, null, false, DataType.STRING),
-                new VariableMetadata(prefix + "." + VAR_SUFFIX_ACTION, false, false, null, false, DataType.STRING),
-                new VariableMetadata(prefix + "." + VAR_SUFFIX_MESSAGEID, false, false, null, false, DataType.STRING),
-                new VariableMetadata(prefix + "." + VAR_SUFFIX_FROM, false, false, null, false, DataType.STRING),
-                new VariableMetadata(prefix + "." + VAR_SUFFIX_REPLYTO, false, false, null, false, DataType.STRING),
-                new VariableMetadata(prefix + "." + VAR_SUFFIX_FAULTTO, false, false, null, false, DataType.STRING),
-                new VariableMetadata(prefix + "." + VAR_SUFFIX_NAMESPACE, false, false, null, false, DataType.STRING),
-                new VariableMetadata(prefix + "." + VAR_SUFFIX_ELEMENTS, false, true, null, false, DataType.ELEMENT),
-            };
-        } else {
-            return new VariableMetadata[0];
-        }
-    }
-
     @Override
     public XmlSecurityRecipientContext getRecipientContext() {
         return recipientContext;
@@ -217,6 +191,26 @@ public class WsAddressingAssertion extends MessageTargetableAssertion implements
         }
 
         return meta;
+    }
+
+    //- PROTECTED
+
+    @Override
+    protected VariablesSet doGetVariablesSet() {
+        final String prefix = getVariablePrefix();
+        return prefix == null ?
+                super.doGetVariablesSet() :
+                super.doGetVariablesSet().withVariables(
+                    // Note default prefixes are used here for property lookup purposes
+                    new VariableMetadata(prefix + "." + VAR_SUFFIX_TO, false, false, null, false, DataType.STRING),
+                    new VariableMetadata(prefix + "." + VAR_SUFFIX_ACTION, false, false, null, false, DataType.STRING),
+                    new VariableMetadata(prefix + "." + VAR_SUFFIX_MESSAGEID, false, false, null, false, DataType.STRING),
+                    new VariableMetadata(prefix + "." + VAR_SUFFIX_FROM, false, false, null, false, DataType.STRING),
+                    new VariableMetadata(prefix + "." + VAR_SUFFIX_REPLYTO, false, false, null, false, DataType.STRING),
+                    new VariableMetadata(prefix + "." + VAR_SUFFIX_FAULTTO, false, false, null, false, DataType.STRING),
+                    new VariableMetadata(prefix + "." + VAR_SUFFIX_NAMESPACE, false, false, null, false, DataType.STRING),
+                    new VariableMetadata(prefix + "." + VAR_SUFFIX_ELEMENTS, false, true, null, false, DataType.ELEMENT)
+                );
     }
 
     //- PRIVATE
