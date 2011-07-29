@@ -23,15 +23,9 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.StringWriter;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Logger;
@@ -180,24 +174,13 @@ public class Api3ScaleAuthorizePropertiesDialog extends AssertionPropertiesOkCan
         try {
             Api3ScaleAdmin admin = Registry.getDefault().getExtensionInterface(Api3ScaleAdmin.class, null);
             String strResponse = admin.testAuthorize(ass,contextVars);
-            Document node = XmlUtil.stringToDocument(strResponse);
-
-            DOMSource domSource = new DOMSource(node);
-            StringWriter writer = new StringWriter();
-            StreamResult result = new StreamResult(writer);
-            TransformerFactory tf = TransformerFactory.newInstance();
-            Transformer transformer = tf.newTransformer();
-            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-            transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
-            transformer.transform(domSource, result);
-            String formattedStr = writer.toString();
+            String formattedStr = XmlUtil.nodeToFormattedString(XmlUtil.stringToDocument(strResponse));
 
             DialogDisplayer.showMessageDialog(testButton,
                 getPropertyValue("test.message.success")+'\n'+formattedStr,
                 getPropertyValue("test.title"),
                 JOptionPane.INFORMATION_MESSAGE, null);
-        } catch (Exception e) {                                //Api3ScaleAdmin.Api3ScaleTestException
+        } catch (Exception e) {
             DialogDisplayer.showMessageDialog(testButton,
                  getPropertyValue("test.message.fail")+ '\n' + e.getMessage(),
                  getPropertyValue("test.title"),
