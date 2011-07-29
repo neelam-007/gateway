@@ -876,9 +876,20 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
                 SshFile sshFile = ((FileHandle) h).getFile();
                 flushAndCloseQuietly(sshFile);
 
-                sendStatus(id, SSH_FX_OK, "", "");
+                AssertionStatus status = getStatusFromGatewayMessageProcess(sshFile, 1000);  // TODO make wait time configurable (manage listen port dialog)
+                if (status == null) {
+                    sendStatus(id, SSH_FX_FAILURE, "No status returned from Gateway message processing.");
+                } else {
+                     if (status == AssertionStatus.NONE) {
+                         sendStatus(id, SSH_FX_OK, "", "");
+                     } else {
+                         sendStatus(id, SSH_FX_BAD_MESSAGE, status.toString());
+                     }
+                }
             }
         } catch (IOException e) {
+            sendStatus(id, SSH_FX_FAILURE, e.getMessage());
+        } catch (InterruptedException e) {
             sendStatus(id, SSH_FX_FAILURE, e.getMessage());
         }
     }
@@ -887,9 +898,8 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
      * Start Gateway Message Process thread.  Thread will finish when there nothing left in the InputStream (e.g. when it has been closed).
      */
     private void startGatewayMessageProcessThread(SsgConnector connector, SshFile file) throws IOException {
-
         if (file instanceof VirtualSshFile) {
-            VirtualSshFile virtualSshFile = (VirtualSshFile) file;
+            final VirtualSshFile virtualSshFile = (VirtualSshFile) file;
 
             PipedInputStream pis = new PipedInputStream();
             PipedOutputStream pos = new PipedOutputStream(pis);
@@ -936,6 +946,7 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
                             faultXml = soapFaultManager.constructExceptionFault(t, context.getFaultlevel(), context).getContent();
                         }
 
+                        virtualSshFile.setMessageProcessStatus(status);
                         if ( status != AssertionStatus.NONE ) {
                             faultXml = soapFaultManager.constructReturningFault(context.getFaultlevel(), context).getContent();
                         }
@@ -949,6 +960,7 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
                 }
             }, "SftpServer-GatewayMessageProcessThread-" + System.currentTimeMillis());
 
+            virtualSshFile.setMessageProcessThread(thread);
             thread.setDaemon(true);
             thread.start();
 
@@ -982,5 +994,21 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
             ResourceUtils.flushQuietly(os);
             ResourceUtils.closeQuietly(os);
         }
+    }
+
+    /*
+     * Get status set by Gateway Message Processing
+     */
+    private AssertionStatus getStatusFromGatewayMessageProcess(SshFile file, long waitMillis) throws InterruptedException {
+        AssertionStatus status = null;
+        if (file instanceof VirtualSshFile) {
+            VirtualSshFile virtualSshFile = (VirtualSshFile) file;
+            status = virtualSshFile.getMessageProcessStatus();
+            if (status == null && virtualSshFile.getMessageProcessThread() != null) {
+                virtualSshFile.getMessageProcessThread().join(waitMillis);
+            }
+            status = virtualSshFile.getMessageProcessStatus();
+        }
+        return status;
     }
 }

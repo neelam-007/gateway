@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.ssh.server;
 
+import com.l7tech.policy.assertion.AssertionStatus;
 import org.apache.sshd.server.SshFile;
 import org.apache.sshd.server.filesystem.NameEqualsFileFilter;
 import org.slf4j.Logger;
@@ -22,6 +23,8 @@ public class VirtualSshFile implements SshFile {
     private String fileName;
     private boolean file;
     private PipedOutputStream pipedOutputStream;
+    private AssertionStatus messageProcessStatus;
+    private Thread messageProcessThread;
 
     /**
      * Constructor, internal do not use directly.
@@ -194,7 +197,7 @@ public class VirtualSshFile implements SshFile {
     /**
      * Get the physical canonical file name. It works like
      * File.getCanonicalPath().
-     * 
+     *
      * @param rootDir
      *            The root directory.
      * @param currDir
@@ -315,8 +318,21 @@ public class VirtualSshFile implements SshFile {
     public PipedOutputStream getPipedOutputStream() {
         return pipedOutputStream;
     }
-
     public void setPipedOutputStream(PipedOutputStream pipedOutputStream) {
         this.pipedOutputStream = pipedOutputStream;
+    }
+
+    public AssertionStatus getMessageProcessStatus() {
+        return messageProcessStatus;
+    }
+    public void setMessageProcessStatus(AssertionStatus messageProcessStatus) {
+        this.messageProcessStatus = messageProcessStatus;
+    }
+
+    public Thread getMessageProcessThread() {
+        return messageProcessThread;
+    }
+    public void setMessageProcessThread(Thread messageProcessThread) {
+        this.messageProcessThread = messageProcessThread;
     }
 }
