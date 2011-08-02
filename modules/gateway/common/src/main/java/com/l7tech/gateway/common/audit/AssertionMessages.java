@@ -993,5 +993,7 @@ public class AssertionMessages extends Messages {
     public static final M API_AUTHORIZE_FAILED_WITH_INVALID_USAGE = m(9412, Level.WARNING, "Failed to authorize: usage metric not found: {0}");
     public static final M API_REPORT_FAILED = m(9413, Level.WARNING, "Failed to report: {0}");
 
+    public static final M JSON_TRANSFORMATION_FAILED = m(9420, Level.WARNING, "Failed to perform transformation.");
+
     // Highest ID reserved for AssertionMessages = 99999
 }

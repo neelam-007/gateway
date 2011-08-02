@@ -102,17 +102,16 @@ public class TargetMessagePanel extends JPanel {
      * @param model the object whose values are to be read to configure the GUI controls.  Required.
      */
     public void setModel(MessageTargetable model , final Assertion prevAssertion) {
-        setModel(model, prevAssertion,model.isTargetModifiedByGateway());
+        setModel(model, (Assertion)model, prevAssertion,model.isTargetModifiedByGateway());
     }
-    public void setModel(MessageTargetable model , final Assertion prevAssertion, boolean isMessageTargetableModifiedByGateway) {
+    public void setModel(MessageTargetable model, Assertion thisAssertion , final Assertion prevAssertion, boolean isMessageTargetableModifiedByGateway) {
     
         modifyByGateway = isMessageTargetableModifiedByGateway ;
         
         if(modifyByGateway){
             otherMessageVariablePanel.add(otherMessageVariableTargetVariable, BorderLayout.CENTER);
             otherMessageVariableTargetVariable.addChangeListener(listener);
-            Assertion ass = (Assertion)model;
-            otherMessageVariableTargetVariable.setAssertion( ass , prevAssertion );
+            otherMessageVariableTargetVariable.setAssertion( thisAssertion , prevAssertion );
 
         }
         else{
@@ -140,7 +139,7 @@ public class TargetMessagePanel extends JPanel {
     /**
      * Check whether the view currently contains valid information.
      *
-     * @return true if {@link #updateModel} would succeed if called now; false if it would throw InvalidModelException
+     * @return true if {@link #updateModel(com.l7tech.policy.assertion.MessageTargetable)} would succeed if called now; false if it would throw InvalidModelException
      */
     public boolean isValidTarget() {
         return null == check();

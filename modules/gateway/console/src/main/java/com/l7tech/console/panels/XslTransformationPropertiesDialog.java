@@ -173,7 +173,7 @@ public class XslTransformationPropertiesDialog extends AssertionPropertiesOkCanc
     @Override
     public void setData(XslTransformation assertion) {
         this.assertion = assertion;
-        targetMessagePanel.setModel(assertion,getPreviousAssertion(),false);
+        targetMessagePanel.setModel(assertion,assertion,getPreviousAssertion(),false);
         specifyPanel.setModel(assertion);
         specifyUrlPanel.setModel(assertion);
         fetchPanel.setModel(assertion);
