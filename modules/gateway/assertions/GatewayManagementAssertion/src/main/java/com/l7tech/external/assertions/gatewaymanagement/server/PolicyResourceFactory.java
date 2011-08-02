@@ -21,6 +21,15 @@ import com.l7tech.policy.PolicyType;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
+import com.l7tech.util.Either;
+import com.l7tech.util.Eithers.E2;
+import static com.l7tech.util.Eithers.extract;
+import static com.l7tech.util.Eithers.extract2;
+import static com.l7tech.util.Either.left;
+import static com.l7tech.util.Eithers.right2;
+import static com.l7tech.util.Either.right;
+import static com.l7tech.util.Eithers.left2_1;
+import static com.l7tech.util.Eithers.left2_2;
 import com.l7tech.util.Option;
 import static com.l7tech.util.Option.optional;
 import com.l7tech.wsdl.Wsdl;
@@ -57,55 +66,73 @@ public class PolicyResourceFactory extends EntityManagerResourceFactory<PolicyMO
     @ResourceMethod(name="ImportPolicy", selectors=true, resource=true)
     public PolicyImportResult importPolicy( final Map<String,String> selectorMap,
                                             final PolicyImportContext resource ) throws ResourceNotFoundException, InvalidResourceException {
-        return transactional( new TransactionalCallback<PolicyImportResult,ResourceFactoryException>(){
+        return extract2( transactional( new TransactionalCallback<E2<ResourceNotFoundException, InvalidResourceException, PolicyImportResult>>() {
             @Override
-            public PolicyImportResult execute() throws ObjectModelException, ResourceFactoryException {
-                final Policy policy = selectEntity( selectorMap );
-                checkPermitted( OperationType.UPDATE, null, policy );
-                PolicyImportResult result = policyHelper.importPolicy( policy, resource );
-                policyManager.update( policy );
-                return result;
+            public E2<ResourceNotFoundException, InvalidResourceException, PolicyImportResult> execute() throws ObjectModelException {
+                try {
+                    final Policy policy = selectEntity( selectorMap );
+                    checkPermitted( OperationType.UPDATE, null, policy );
+                    PolicyImportResult result = policyHelper.importPolicy( policy, resource );
+                    policyManager.update( policy );
+                    return right2( result );
+                } catch ( ResourceNotFoundException e ) {
+                    return left2_1( e );
+                } catch ( InvalidResourceException e ) {
+                    return left2_2( e );
+                }
             }
-        }, false, ResourceNotFoundException.class, InvalidResourceException.class );
+        }, false ) );
     }
 
     @ResourceMethod(name="ExportPolicy", selectors=true)
     public PolicyExportResult exportPolicy( final Map<String,String> selectorMap ) throws ResourceNotFoundException {
-        return transactional( new TransactionalCallback<PolicyExportResult,ResourceNotFoundException>(){
+        return extract( transactional( new TransactionalCallback<Either<ResourceNotFoundException,PolicyExportResult>>(){
             @Override
-            public PolicyExportResult execute() throws ObjectModelException, ResourceNotFoundException {
-                final Policy policy = selectEntity( selectorMap );
-                checkPermitted( OperationType.READ, null, policy );
-                return policyHelper.exportPolicy( policy );
+            public Either<ResourceNotFoundException,PolicyExportResult> execute() throws ObjectModelException {
+                try {
+                    final Policy policy = selectEntity( selectorMap );
+                    checkPermitted( OperationType.READ, null, policy );
+                    return right( policyHelper.exportPolicy( policy ) );
+                } catch ( ResourceNotFoundException e ) {
+                    return left( e );
+                }
             }
-        }, true, ResourceNotFoundException.class );
+        }, true ) );
     }
 
     @ResourceMethod(name="ValidatePolicy", selectors=true, resource=true)
     public PolicyValidationResult validatePolicy( final Map<String,String> selectorMap,
                                                   final PolicyValidationContext resource ) throws ResourceNotFoundException, InvalidResourceException {
-        return transactional( new TransactionalCallback<PolicyValidationResult,ResourceFactoryException>(){
+        return extract2( transactional( new TransactionalCallback<E2<ResourceNotFoundException, InvalidResourceException, PolicyValidationResult>>(){
             @Override
-            public PolicyValidationResult execute() throws ObjectModelException, ResourceFactoryException {
-                checkPermittedForSomeEntity( OperationType.READ, EntityType.POLICY );
-                return policyHelper.validatePolicy( resource, new PolicyHelper.PolicyResolver(){
-                    @Override
-                    public Policy resolve() throws ResourceNotFoundException {
-                        final Policy policy = selectEntity( selectorMap );
-                        checkPermitted( OperationType.READ, null, policy );
-                        return policy;
-                    }
-                    @Override
-                    public Wsdl resolveWsdl() throws ResourceNotFoundException {
-                        return null;
-                    }
-                    @Override
-                    public SoapVersion resolveSoapVersion() throws ResourceNotFoundException {
-                        return null;
-                    }
-                } );
+            public E2<ResourceNotFoundException, InvalidResourceException, PolicyValidationResult> execute() throws ObjectModelException {
+                try {
+                    checkPermittedForSomeEntity( OperationType.READ, EntityType.POLICY );
+                    return right2( policyHelper.validatePolicy( resource, new PolicyHelper.PolicyResolver() {
+                        @Override
+                        public Policy resolve() throws ResourceNotFoundException {
+                            final Policy policy = selectEntity( selectorMap );
+                            checkPermitted( OperationType.READ, null, policy );
+                            return policy;
+                        }
+
+                        @Override
+                        public Wsdl resolveWsdl() throws ResourceNotFoundException {
+                            return null;
+                        }
+
+                        @Override
+                        public SoapVersion resolveSoapVersion() throws ResourceNotFoundException {
+                            return null;
+                        }
+                    } ) );
+                } catch ( ResourceNotFoundException e ) {
+                    return left2_1( e );
+                } catch ( InvalidResourceException e ) {
+                    return left2_2( e );
+                }
             }
-        }, true, ResourceNotFoundException.class, InvalidResourceException.class );
+        }, true ) );
     }
     
     //- PROTECTED

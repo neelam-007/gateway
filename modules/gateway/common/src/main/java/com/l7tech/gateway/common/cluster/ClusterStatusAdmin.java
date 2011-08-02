@@ -11,6 +11,7 @@ import com.l7tech.gateway.common.service.MetricsSummaryBin;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.CollectionUpdate;
 import com.l7tech.util.Either;
+import com.l7tech.util.Option;
 import com.l7tech.util.Pair;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -411,12 +412,12 @@ public interface ClusterStatusAdmin {
      * @param methodName name of method to invoke on interface.  Required.
      * @param parameterTypes  parameter types.  Required, but may be zero-length for a nullary method.  Must be same length as arguments.
      * @param arguments method arguments.  Required, but may be zero-length for a nullary method.  Must be same length as parameterTypes.
-     * @return the result of invoking the specified method on the specified extension interface.  May contain a return value or thrown exception.  Never null.
+     * @return the result of invoking the specified method on the specified extension interface.  May contain an optional return value or thrown exception.  Never null.
      * @throws ClassNotFoundException if no provider of the specified extension interface is registered.
      * @throws NoSuchMethodException if the invocation refers to a method that does not exist on the server's version of the specified extension interface.
      */
     @Transactional(propagation=Propagation.SUPPORTS)
-    Either<Throwable,Object> invokeExtensionMethod(String interfaceClassname, String targetObjectId, String methodName, Class[] parameterTypes, Object[] arguments)
+    Either<Throwable,Option<Object>> invokeExtensionMethod(String interfaceClassname, String targetObjectId, String methodName, Class[] parameterTypes, Object[] arguments)
             throws ClassNotFoundException, NoSuchMethodException;
 
     /**

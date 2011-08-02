@@ -13,6 +13,15 @@ import com.l7tech.objectmodel.RoleAwareEntityManager;
 import com.l7tech.objectmodel.StaleUpdateException;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
+import com.l7tech.util.Either;
+import com.l7tech.util.Eithers.E2;
+import static com.l7tech.util.Eithers.extract;
+import static com.l7tech.util.Eithers.extract2;
+import static com.l7tech.util.Either.left;
+import static com.l7tech.util.Eithers.right2;
+import static com.l7tech.util.Either.right;
+import static com.l7tech.util.Eithers.left2_1;
+import static com.l7tech.util.Eithers.left2_2;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Option;
 import static com.l7tech.util.Option.optional;
@@ -64,52 +73,60 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
     public Map<String, String> createResource( final Object resource ) throws InvalidResourceException {
         checkReadOnly();
         
-        final long id = transactional( new TransactionalCallback<Long,InvalidResourceException>(){
+        final long id = extract( transactional( new TransactionalCallback<Either<InvalidResourceException,Long>> (){
             @SuppressWarnings({ "unchecked" })
             @Override
-            public Long execute() throws ObjectModelException, InvalidResourceException {
-                final EntityBag<E> entityBag = fromResourceAsBag( resource );
-                for ( PersistentEntity entity : entityBag ) {
-                    if ( entity.getOid() != PersistentEntity.DEFAULT_OID ||
-                         (entity.getVersion() != 0 && entity.getVersion() != 1) ) { // some entities initialize the version to 1
-                        throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid identity or version");
+            public Either<InvalidResourceException,Long> execute() throws ObjectModelException {
+                try {
+                    final EntityBag<E> entityBag = fromResourceAsBag( resource );
+                    for ( PersistentEntity entity : entityBag ) {
+                        if ( entity.getOid() != PersistentEntity.DEFAULT_OID ||
+                             (entity.getVersion() != 0 && entity.getVersion() != 1) ) { // some entities initialize the version to 1
+                            throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid identity or version");
+                        }
                     }
+
+                    checkPermitted( OperationType.CREATE, null, entityBag.getEntity() );
+
+                    beforeCreateEntity( entityBag );
+
+                    for ( PersistentEntity entity : entityBag ) {
+                        validate( entity );
+                    }
+
+                    final long id = manager.save( entityBag.getEntity() );
+                    afterCreateEntity( entityBag, id );
+
+                    if ( manager instanceof RoleAwareEntityManager ) {
+                        ((RoleAwareEntityManager<E>)manager).createRoles( entityBag.getEntity() );
+                    }
+
+                    EntityContext.setEntityInfo( getType(), Long.toString(id) );
+
+                    return right( id );
+                } catch ( InvalidResourceException e ) {
+                    return left( e );
                 }
-
-                checkPermitted( OperationType.CREATE, null, entityBag.getEntity() );
-
-                beforeCreateEntity( entityBag );
-
-                for ( PersistentEntity entity : entityBag ) {
-                    validate( entity );                    
-                }
-
-                final long id = manager.save( entityBag.getEntity() );
-                afterCreateEntity( entityBag, id );
-
-                if ( manager instanceof RoleAwareEntityManager ) {
-                    ((RoleAwareEntityManager<E>)manager).createRoles( entityBag.getEntity() );
-                }
-
-                EntityContext.setEntityInfo( getType(), Long.toString(id) );                
-
-                return id;
             }
-        }, false, InvalidResourceException.class );
+        }, false ) );
 
         return Collections.singletonMap( IDENTITY_SELECTOR, Long.toString(id) );
     }
 
     @Override
     public R getResource( final Map<String, String> selectorMap ) throws ResourceNotFoundException {
-        return transactional( new TransactionalCallback<R,ResourceNotFoundException>(){
+        return extract( transactional( new TransactionalCallback<Either<ResourceNotFoundException,R>>(){
             @Override
-            public R execute() throws ObjectModelException, ResourceNotFoundException {
-                EntityBag<E> entityBag = selectEntityBag(selectorMap);
-                checkPermitted( OperationType.READ, null, entityBag.getEntity() );
-                return identify( asResource( entityBag ), entityBag.getEntity() );
+            public Either<ResourceNotFoundException,R> execute() throws ObjectModelException {
+                try {
+                    EntityBag<E> entityBag = selectEntityBag(selectorMap);
+                    checkPermitted( OperationType.READ, null, entityBag.getEntity() );
+                    return right( identify( asResource( entityBag ), entityBag.getEntity() ) );
+                } catch ( ResourceNotFoundException e ) {
+                    return left( e );
+                }
             }
-        }, true, ResourceNotFoundException.class );
+        }, true ) );
     }
 
     @Override
@@ -137,43 +154,49 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
     public R putResource( final Map<String, String> selectorMap, final Object resource ) throws ResourceNotFoundException, InvalidResourceException {
         checkReadOnly();
 
-        final String id = transactional( new TransactionalCallback<String, Exception>(){
+        final String id = extract2( transactional( new TransactionalCallback<E2<ResourceNotFoundException, InvalidResourceException, String>>() {
             @Override
-            public String execute() throws ObjectModelException, ResourceNotFoundException, InvalidResourceException {
-                final EntityBag<E> oldEntityBag = selectEntityBag( selectorMap );
-                final EntityBag<E> newEntityBag = fromResourceAsBag( resource );
+            public E2<ResourceNotFoundException, InvalidResourceException, String> execute() throws ObjectModelException {
+                try {
+                    final EntityBag<E> oldEntityBag = selectEntityBag( selectorMap );
+                    final EntityBag<E> newEntityBag = fromResourceAsBag( resource );
 
-                if ( resource instanceof ManagedObject ) {
-                    final ManagedObject managedResource = (ManagedObject) resource;
-                    setIdentifier( newEntityBag.getEntity(), managedResource.getId() );
-                    setVersion( newEntityBag.getEntity(), managedResource.getVersion() );
+                    if ( resource instanceof ManagedObject ) {
+                        final ManagedObject managedResource = (ManagedObject) resource;
+                        setIdentifier( newEntityBag.getEntity(), managedResource.getId() );
+                        setVersion( newEntityBag.getEntity(), managedResource.getVersion() );
+                    }
+
+                    updateEntityBag( oldEntityBag, newEntityBag );
+
+                    if ( oldEntityBag.getEntity().getOid() != PersistentEntity.DEFAULT_OID &&
+                            oldEntityBag.getEntity().getOid() != newEntityBag.getEntity().getOid() ) {
+                        throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "identifier mismatch" );
+                    }
+
+                    if ( oldEntityBag.getEntity().getVersion() != newEntityBag.getEntity().getVersion() ) {
+                        throw new StaleUpdateException();
+                    }
+
+                    checkPermitted( OperationType.UPDATE, null, newEntityBag.getEntity() );
+
+                    beforeUpdateEntity( oldEntityBag );
+
+                    for ( PersistentEntity entity : oldEntityBag ) {
+                        validate( entity );
+                    }
+
+                    manager.update( oldEntityBag.getEntity() );
+                    afterUpdateEntity( oldEntityBag );
+
+                    return right2( oldEntityBag.getEntity().getId() );
+                } catch ( ResourceNotFoundException e ) {
+                    return left2_1( e );
+                } catch ( InvalidResourceException e ) {
+                    return left2_2( e );
                 }
-
-                updateEntityBag( oldEntityBag, newEntityBag );
-
-                if ( oldEntityBag.getEntity().getOid() != PersistentEntity.DEFAULT_OID &&
-                     oldEntityBag.getEntity().getOid() != newEntityBag.getEntity().getOid() ) {
-                    throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "identifier mismatch");
-                }
-
-                if ( oldEntityBag.getEntity().getVersion() != newEntityBag.getEntity().getVersion() ) {
-                    throw new StaleUpdateException();
-                }
-
-                checkPermitted( OperationType.UPDATE, null, newEntityBag.getEntity() );
-
-                beforeUpdateEntity( oldEntityBag );
-
-                for ( PersistentEntity entity : oldEntityBag ) {
-                    validate( entity );
-                }
-
-                manager.update( oldEntityBag.getEntity() );
-                afterUpdateEntity( oldEntityBag );
-
-                return oldEntityBag.getEntity().getId();
             }
-        }, false, ResourceNotFoundException.class, InvalidResourceException.class);
+        }, false ) );
 
         return getResource( Collections.singletonMap( IDENTITY_SELECTOR, id )); // re-select to get updated version#
     }
@@ -182,24 +205,28 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
     public String deleteResource( final Map<String, String> selectorMap ) throws ResourceNotFoundException {
         checkReadOnly();
 
-        return transactional( new TransactionalCallback<String,ResourceNotFoundException>(){
+        return extract( transactional( new TransactionalCallback<Either<ResourceNotFoundException, String>>() {
             @SuppressWarnings({ "unchecked" })
             @Override
-            public String execute() throws ObjectModelException, ResourceNotFoundException {
-                final EntityBag<E> entityBag = selectEntityBag( selectorMap );
+            public Either<ResourceNotFoundException, String> execute() throws ObjectModelException {
+                try {
+                    final EntityBag<E> entityBag = selectEntityBag( selectorMap );
 
-                checkPermitted( OperationType.DELETE, null, entityBag.getEntity() );
+                    checkPermitted( OperationType.DELETE, null, entityBag.getEntity() );
 
-                beforeDeleteEntity( entityBag );
-                manager.delete( entityBag.getEntity() );
-                if ( manager instanceof RoleAwareEntityManager ) {
-                    ((RoleAwareEntityManager<E>)manager).deleteRoles( entityBag.getEntity().getOid() );
+                    beforeDeleteEntity( entityBag );
+                    manager.delete( entityBag.getEntity() );
+                    if ( manager instanceof RoleAwareEntityManager ) {
+                        ((RoleAwareEntityManager<E>) manager).deleteRoles( entityBag.getEntity().getOid() );
+                    }
+                    afterDeleteEntity( entityBag );
+
+                    return right( entityBag.getEntity().getId() );
+                } catch ( ResourceNotFoundException e ) {
+                    return left( e );
                 }
-                afterDeleteEntity( entityBag );
-
-                return entityBag.getEntity().getId();
             }
-        }, false, ResourceNotFoundException.class);
+        }, false ) );
     }
 
     //- PROTECTED

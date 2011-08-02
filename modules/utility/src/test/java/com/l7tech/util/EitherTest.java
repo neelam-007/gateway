@@ -1,13 +1,10 @@
 package com.l7tech.util;
 
-import static com.l7tech.util.CollectionUtils.list;
 import static com.l7tech.util.Either.*;
 import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Functions.UnaryThrows;
 import static org.junit.Assert.*;
 import org.junit.Test;
-
-import java.util.List;
 
 /**
  * Unit tests for Either
@@ -28,6 +25,38 @@ public class EitherTest {
         assertFalse( "left", either.isLeft() );
         assertTrue( "right", either.isRight() );
         assertEquals( "right value", 12L, (long)either.right() );
+    }
+
+    @Test
+    public void testOptionalLeft() {
+        final Either<Option<String>,Integer> either = leftOption( "text" );
+        assertTrue( "left", either.isLeft() );
+        assertFalse( "right", either.isRight() );
+        assertEquals( "left value", "text", either.left().some() );
+    }
+
+    @Test
+    public void testOptionalRight() {
+        final Either<String,Option<Integer>> either = rightOption( 12 );
+        assertFalse( "left", either.isLeft() );
+        assertTrue( "right", either.isRight() );
+        assertEquals( "right value", 12L, (long)either.right().some() );
+    }
+
+    @Test
+    public void testOptionalNullLeft() {
+        final Either<Option<String>,Integer> either = leftOption( null );
+        assertTrue( "left", either.isLeft() );
+        assertFalse( "right", either.isRight() );
+        assertFalse( "some left value", either.left().isSome() );
+    }
+
+    @Test
+    public void testOptionalNullRight() {
+        final Either<String,Option<Integer>> either = rightOption( null );
+        assertFalse( "left", either.isLeft() );
+        assertTrue( "right", either.isRight() );
+        assertFalse( "some right value", either.right().isSome() );
     }
 
     @Test
@@ -72,17 +101,5 @@ public class EitherTest {
             Either.<String,String>right( "text" ).either( returnerThrows, thrower );
             fail("Expected exception");
         } catch ( IllegalArgumentException e ){  }
-    }
-
-    @Test
-    public void testLists() {
-        final List<Either<String,String>> list = list(
-                Either.<String,String>right( "right1" ),
-                Either.<String,String>left( "left1" ),
-                Either.<String,String>right( "right2" ),
-                Either.<String,String>left( "left2" ) );
-
-        assertEquals( "lefts", list( "left1", "left2" ), lefts( list ) );
-        assertEquals( "rights", list( "right1", "right2" ), rights( list ) );
     }
 }

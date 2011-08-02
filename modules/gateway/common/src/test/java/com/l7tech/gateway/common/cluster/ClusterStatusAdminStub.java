@@ -12,6 +12,7 @@ import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.util.CollectionUpdate;
 import com.l7tech.util.CollectionUpdateProducer;
 import com.l7tech.util.Either;
+import com.l7tech.util.Option;
 import com.l7tech.util.Pair;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -233,7 +234,7 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
     }
 
     @Override
-    public Either<Throwable,Object> invokeExtensionMethod(String interfaceClassname, String targetObjectId, String methodName, Class[] parameterTypes, Object[] arguments) throws ClassNotFoundException, NoSuchMethodException {
+    public Either<Throwable,Option<Object>> invokeExtensionMethod(String interfaceClassname, String targetObjectId, String methodName, Class[] parameterTypes, Object[] arguments) throws ClassNotFoundException, NoSuchMethodException {
         throw new ClassNotFoundException("Not implemented in stub");
     }
 

@@ -25,6 +25,8 @@ import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.objectmodel.GuidBasedEntityManager;
 import com.l7tech.util.Either;
+import com.l7tech.util.Eithers;
+import com.l7tech.util.Option;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -354,10 +356,8 @@ public final class RegistryImpl extends Registry
         return (T)Proxy.newProxyInstance(interfaceClass.getClassLoader(), new Class[] { interfaceClass }, new InvocationHandler() {
             @Override
             public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                Either<Throwable,Object> result = getClusterStatusAdmin().invokeExtensionMethod(interfaceClass.getName(), instanceIdentifier, method.getName(), method.getParameterTypes(), args);
-                if (result.isLeft())
-                    throw result.left();
-                return result.right();
+                Either<Throwable,Option<Object>> result = getClusterStatusAdmin().invokeExtensionMethod(interfaceClass.getName(), instanceIdentifier, method.getName(), method.getParameterTypes(), args);
+                return Eithers.extract( result ).toNull();
             }
         });
     }

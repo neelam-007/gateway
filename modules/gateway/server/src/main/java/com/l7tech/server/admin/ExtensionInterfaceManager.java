@@ -4,6 +4,7 @@ import com.l7tech.policy.assertion.ExtensionInterfaceBinding;
 import com.l7tech.server.policy.AssertionModuleUnregistrationEvent;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Option;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.jetbrains.annotations.Nullable;
@@ -123,7 +124,7 @@ public class ExtensionInterfaceManager implements ApplicationListener {
     }
 
     @NotNull
-    public Either<Throwable,Object> invokeExtensionMethod(@NotNull String interfaceClassname, @Nullable String targetObjectId, @NotNull String methodName, @NotNull Class[] parameterTypes, @NotNull Object[] arguments)
+    public Either<Throwable,Option<Object>> invokeExtensionMethod(@NotNull String interfaceClassname, @Nullable String targetObjectId, @NotNull String methodName, @NotNull Class[] parameterTypes, @NotNull Object[] arguments)
             throws ClassNotFoundException, NoSuchMethodException
     {
         try {
@@ -147,7 +148,7 @@ public class ExtensionInterfaceManager implements ApplicationListener {
                 MethodInvocation invocation = new ReflectiveMethodInvocation(null, implHolder.getWrappedImpl(), method, arguments, interfaceClass, interceptors) {};
 
                 Object ret = invocation.proceed();
-                return Either.right(ret);
+                return Either.rightOption(ret);
             } catch (IllegalAccessException e) {
                 throw (NoSuchMethodException)new NoSuchMethodException("Method " + methodName + " not accessible: " + ExceptionUtils.getMessage(e)).initCause(e);
             } catch (InvocationTargetException e) {

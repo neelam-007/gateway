@@ -1,19 +1,23 @@
 package com.l7tech.util;
 
-import static com.l7tech.util.CollectionUtils.foreach;
-import com.l7tech.util.Functions.BinaryVoid;
-import static com.l7tech.util.Functions.partial;
+import static com.l7tech.util.Option.optional;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Utility class for a disjoint unions.
  *
  * <p>If one of the values is for "success" then this should be the right value
  * with the "failure" value being the left value.</p>
+ *
+ * <p>Either does not permit null values. To use nulls wrap the optional value
+ * in an <code>Option</code>, or use one of the provided constructors that does
+ * this.</p>
+ *
+ * @see Eithers
+ * @see Option
  */
 public class Either<A,B> implements Serializable {
 
@@ -27,8 +31,22 @@ public class Either<A,B> implements Serializable {
      * @param <B> The right type
      * @return An either for the given left value
      */
-    public static <A,B> Either<A,B> left( final A a ) {
+    @NotNull
+    public static <A,B> Either<A,B> left( @NotNull final A a ) {
         return new Either<A,B>( a, null );
+    }
+
+    /**
+     * Create an either with the given optional left value.
+     *
+     * @param a The left value to use.
+     * @param <A> The left type
+     * @param <B> The right type
+     * @return An either for the given left value
+     */
+    @NotNull
+    public static <A,B> Either<Option<A>,B> leftOption( @Nullable final A a ) {
+        return new Either<Option<A>,B>( optional(a), null );
     }
 
     /**
@@ -39,8 +57,22 @@ public class Either<A,B> implements Serializable {
      * @param <B> The right type
      * @return An either for the given right value
      */
-    public static <A,B> Either<A,B> right( final B b ) {
+    @NotNull
+    public static <A,B> Either<A,B> right( @NotNull final B b ) {
         return new Either<A,B>( null, b );
+    }
+
+    /**
+     * Create an either with the given optional right value.
+     *
+     * @param b The right value to use.
+     * @param <A> The left type
+     * @param <B> The right type
+     * @return An either for the given right value
+     */
+    @NotNull
+    public static <A,B> Either<A,Option<B>> rightOption( @Nullable final B b ) {
+        return new Either<A,Option<B>>( null, optional( b ) );
     }
 
     /**
@@ -66,7 +98,9 @@ public class Either<A,B> implements Serializable {
      *
      * @return The left value
      */
+    @NotNull
     public A left() {
+        if (!isLeft()) throw new IllegalStateException( "Right valued either" );
         return a;
     }
 
@@ -75,7 +109,9 @@ public class Either<A,B> implements Serializable {
      *
      * @return The right value
      */
+    @NotNull
     public B right() {
+        if (!isRight()) throw new IllegalStateException( "Left valued either" );
         return b;
     }
 
@@ -87,8 +123,9 @@ public class Either<A,B> implements Serializable {
      * @param <R> The function return type
      * @return The result of invoking the left or right function
      */
-    public <R> R either( final Functions.Unary<R,A> left,
-                         final Functions.Unary<R,B> right ) {
+    @Nullable
+    public <R> R either( @NotNull final Functions.Unary<R,A> left,
+                         @NotNull final Functions.Unary<R,B> right ) {
         if ( isLeft() ) {
             return left.call( a );
         } else {
@@ -106,8 +143,9 @@ public class Either<A,B> implements Serializable {
      * @return The result of invoking the left or right function
      * @throws E if the left or right function throws E
      */
-    public <R,E extends Throwable> R either( final Functions.UnaryThrows<R,A,E> left,
-                                             final Functions.UnaryThrows<R,B,E> right ) throws E {
+    @Nullable
+    public <R,E extends Throwable> R either( @NotNull final Functions.UnaryThrows<R,A,E> left,
+                                             @NotNull final Functions.UnaryThrows<R,B,E> right ) throws E {
         if ( isLeft() ) {
             return left.call( a );
         } else {
@@ -136,59 +174,16 @@ public class Either<A,B> implements Serializable {
         return result;
     }
 
-    /**
-     * Get the left values from the given list of eithers.
-     *
-     * @param eithers The list of eithers
-     * @param <L> The left type
-     * @param <R> The right type
-     * @return The list of left values
-     */
-    @NotNull
-    public static <L,R> List<L> lefts( @NotNull final List<Either<L,R>> eithers ) {
-        return toList( eithers, new BinaryVoid<List<L>,Either<L, R>>() {
-            @Override
-            public void call( final List<L> list,
-                              final Either<L, R> either ) {
-                if ( either.isLeft() ) list.add( either.left() );
-            }
-        } );
-    }
+    //- PACKAGE
 
-    /**
-     * Get the right values from the given list of eithers.
-     *
-     * @param eithers The list of eithers
-     * @param <L> The left type
-     * @param <R> The right type
-     * @return The list of right values
-     */
-    @NotNull
-    public static <L,R> List<R> rights( @NotNull final List<Either<L,R>> eithers ) {
-        return toList( eithers, new BinaryVoid<List<R>,Either<L, R>>() {
-            @Override
-            public void call( final List<R> list,
-                              final Either<L, R> either ) {
-                if ( either.isRight() ) list.add( either.right() );
-            }
-        } );
+    Either( final A a, final B b ) {
+        this.a = a;
+        this.b = b;
     }
 
     //- PRIVATE
 
     private final A a;
     private final B b;
-
-    private Either( final A a, final B b ) {
-        this.a = a;
-        this.b = b;
-    }
-
-    private static <L,R,T> List<T> toList( final List<Either<L,R>> eithers,
-                                           final BinaryVoid<List<T>,Either<L, R>> builder ) {
-        final List<T> list = new ArrayList<T>();
-        foreach( eithers, false, partial(builder,list));
-        return list;
-    }
 
 }

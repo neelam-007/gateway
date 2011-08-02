@@ -373,9 +373,8 @@ abstract class ResourceFactorySupport<R> implements ResourceFactory<R> {
     }
 
     @SuppressWarnings({"unchecked"})
-    protected <R> R transactional( final TransactionalCallback<R,?> callback,
-                                   final boolean readOnly,
-                                   final Class<?>... checkedExceptionTypes )  {
+    protected <R> R transactional( final TransactionalCallback<R> callback,
+                                   final boolean readOnly )  {
         try {
             final TransactionTemplate tt = new TransactionTemplate(transactionManager);
             tt.setReadOnly( readOnly );
@@ -388,14 +387,9 @@ abstract class ResourceFactorySupport<R> implements ResourceFactory<R> {
                         transactionStatus.setRollbackOnly();
                         handleObjectModelException(e);
                         return null; // not reached
-                    } catch ( Throwable t ) {
-                        throw new TransactionalException(t);
                     }
                 }
             });
-        } catch ( TransactionalException te ) {
-            te.throwException( checkedExceptionTypes );
-            return null; // not reached
         } catch ( TransactionException te ) {
             throw new ResourceAccessException( ExceptionUtils.getMessage(te), te );
         } catch ( DataAccessException dae ) {
@@ -403,8 +397,8 @@ abstract class ResourceFactorySupport<R> implements ResourceFactory<R> {
         }
     }
 
-    protected interface TransactionalCallback<R,E extends Exception> {
-        R execute() throws ObjectModelException, E;
+    protected interface TransactionalCallback<R> {
+        R execute() throws ObjectModelException;
     }
 
     //- PACKAGE
@@ -443,30 +437,6 @@ abstract class ResourceFactorySupport<R> implements ResourceFactory<R> {
             }
         } catch ( FindException fe ) {
             throw (PermissionDeniedException) new PermissionDeniedException( operationType, entityType, "Error in permission check.").initCause(fe);
-        }
-    }
-
-    @SuppressWarnings({"serial"})
-    private static class TransactionalException extends RuntimeException {
-        TransactionalException( final Throwable cause ) {
-            super(cause);
-        }
-
-        void throwException( final Class<?>... checkedExceptionTypes ) {
-            final Throwable cause = getCause();
-
-            for ( Class<?> exceptionClass : checkedExceptionTypes ) {
-                if ( exceptionClass.isInstance(cause) ) {
-                    this.<RuntimeException>throwAsType( cause );
-                }
-            }
-
-            throw ExceptionUtils.wrap( cause );
-        }
-
-        @SuppressWarnings({"unchecked"})
-        private <T extends Throwable> void throwAsType( final Throwable throwable ) throws T {
-            throw (T) throwable;
         }
     }
 }

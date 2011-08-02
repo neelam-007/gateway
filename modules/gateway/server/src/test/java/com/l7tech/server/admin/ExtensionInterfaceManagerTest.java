@@ -1,6 +1,7 @@
 package com.l7tech.server.admin;
 
 import com.l7tech.util.Either;
+import com.l7tech.util.Option;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -34,8 +35,8 @@ public class ExtensionInterfaceManagerTest {
     @Test
     public void testInvocation() throws Exception {
         manager.registerInterface(TestFace.class, null, new TestImpl());
-        Either<Throwable,Object> result = manager.invokeExtensionMethod(TestFace.class.getName(), null, "echo", new Class[]{String.class}, new Object[]{"whatToEcho"});
-        assertEquals("Echo: whatToEcho", result.right());
+        Either<Throwable,Option<Object>> result = manager.invokeExtensionMethod(TestFace.class.getName(), null, "echo", new Class[]{String.class}, new Object[]{"whatToEcho"});
+        assertEquals("Echo: whatToEcho", result.right().toNull());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -66,13 +67,13 @@ public class ExtensionInterfaceManagerTest {
             }
         });
 
-        Either<Throwable,Object> result;
+        Either<Throwable,Option<Object>> result;
 
         result = manager.invokeExtensionMethod(TestFace.class.getName(), "a", "echo", new Class[]{String.class}, new Object[]{"whatToEcho"});
-        assertEquals("(From a)Echo: whatToEcho", result.right());
+        assertEquals("(From a)Echo: whatToEcho", result.right().toNull());
 
         result = manager.invokeExtensionMethod(TestFace.class.getName(), "b", "echo", new Class[]{String.class}, new Object[]{"whatToEcho"});
-        assertEquals("(From b)Echo: whatToEcho", result.right());
+        assertEquals("(From b)Echo: whatToEcho", result.right().toNull());
     }
 
     @Test
