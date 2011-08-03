@@ -174,6 +174,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
     }
 
     public void setQueue( final boolean queue ) {
+        checkLocked();
         this.queue = queue;
     }
 
