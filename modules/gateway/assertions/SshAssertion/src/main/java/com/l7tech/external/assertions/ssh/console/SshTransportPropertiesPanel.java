@@ -25,6 +25,7 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
     private JTextField maxConcurrentSessionsPerUserField;
     private JTextField hostPrivateKeyTypeField;
     private JButton setHostPrivateKeyButton;
+    private JTextField idleTimeoutMinsField;
 
     private String hostPrivateKey;
 
@@ -54,6 +55,8 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
                 SyspropUtil.getBoolean("com.l7tech.external.assertions.ssh.defaultEnableScp", true)));
         sftpCheckBox.setSelected(getBooleanProp(props, SshRouteAssertion.LISTEN_PROP_ENABLE_SFTP,
                 SyspropUtil.getBoolean("com.l7tech.external.assertions.ssh.defaultEnableSftp", true)));
+        idleTimeoutMinsField.setText(getStringProp(props, SshRouteAssertion.LISTEN_PROP_IDLE_TIMEOUT_MINUTES,
+                SyspropUtil.getString("com.l7tech.external.assertions.ssh.idleTimeoutMinutes", "10")));
         maxConcurrentSessionsPerUserField.setText(getStringProp(props, SshRouteAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER,
                 SyspropUtil.getString("com.l7tech.external.assertions.ssh.defaultMaxConcurrentSessionsPerUser", "10")));
 
@@ -73,6 +76,7 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
         Map<String, String> data = new HashMap<String, String>();
         data.put(SshRouteAssertion.LISTEN_PROP_ENABLE_SCP, String.valueOf(scpCheckBox.isSelected()));
         data.put(SshRouteAssertion.LISTEN_PROP_ENABLE_SFTP, String.valueOf(sftpCheckBox.isSelected()));
+        data.put(SshRouteAssertion.LISTEN_PROP_IDLE_TIMEOUT_MINUTES, idleTimeoutMinsField.getText());
         data.put(SshRouteAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER, maxConcurrentSessionsPerUserField.getText());
         data.put(SshRouteAssertion.LISTEN_PROP_HOST_PRIVATE_KEY, hostPrivateKey);
         return data;
@@ -92,6 +96,7 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
         return new String[] {
             SshRouteAssertion.LISTEN_PROP_ENABLE_SCP,
             SshRouteAssertion.LISTEN_PROP_ENABLE_SFTP,
+            SshRouteAssertion.LISTEN_PROP_IDLE_TIMEOUT_MINUTES,
             SshRouteAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER,
             SshRouteAssertion.LISTEN_PROP_HOST_PRIVATE_KEY,
         };

@@ -22,6 +22,7 @@ import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.util.Pair;
+import org.apache.commons.lang.StringUtils;
 import org.apache.sshd.SshServer;
 import org.apache.sshd.common.*;
 import org.apache.sshd.common.cipher.*;
@@ -56,7 +57,7 @@ import java.net.InetSocketAddress;
 import java.security.InvalidKeyException;
 import java.security.Security;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -294,9 +295,19 @@ public class SshServerModule extends TransportModule implements ApplicationListe
             String hostPrivateKey = connector.getProperty(SshRouteAssertion.LISTEN_PROP_HOST_PRIVATE_KEY);
             sshd.setKeyPairProvider(new PemSshHostKeyProvider(hostPrivateKey));
 
+            // configure connection idle timeout in ms (min=60sec*1000ms)
+            String idleTimeoutMins = connector.getProperty(SshRouteAssertion.LISTEN_PROP_IDLE_TIMEOUT_MINUTES);
+            if (!StringUtils.isEmpty(idleTimeoutMins)) {
+                long idleTimeoutMs = Long.parseLong(idleTimeoutMins) * 60 * 1000;
+                sshd.getProperties().put(SshServer.IDLE_TIMEOUT, String.valueOf(idleTimeoutMs));
+            }
+
             // configure maximum concurrent open session count per user
-            sshd.getProperties().put(SshServer.MAX_CONCURRENT_SESSIONS, connector.getProperty(SshRouteAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER));
-            // 2011/07/08 TL: Apache SSHD does not appear to currently support configurable max total connections nor configurable connection timeout
+            // 2011/08/03 TL: Apache SSHD does not currently support configurable max total connections
+            String maxConcurrentSessionsPerUser = connector.getProperty(SshRouteAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER);
+            if (!StringUtils.isEmpty(maxConcurrentSessionsPerUser)) {
+                sshd.getProperties().put(SshServer.MAX_CONCURRENT_SESSIONS, maxConcurrentSessionsPerUser);
+            }
 
             auditStart("connector OID " + connector.getOid() + ", on port " + connector.getPort());
             sshd.start();

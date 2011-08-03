@@ -1,0 +1,329 @@
+Index: sshd-core/src/main/java/org/apache/sshd/SshServer.java
+===================================================================
+--- sshd-core/src/main/java/org/apache/sshd/SshServer.java	(revision 1027586)
++++ sshd-core/src/main/java/org/apache/sshd/SshServer.java	(revision )
+@@ -18,42 +18,12 @@
+  */
+ package org.apache.sshd;
+ 
+-import java.io.IOException;
+-import java.net.InetSocketAddress;
+-import java.net.Socket;
+-import java.security.InvalidKeyException;
+-import java.security.PublicKey;
+-import java.util.ArrayList;
+-import java.util.Arrays;
+-import java.util.EnumSet;
+-import java.util.Iterator;
+-import java.util.LinkedList;
+-import java.util.List;
+-import java.util.concurrent.CountDownLatch;
+-
+-import org.apache.sshd.server.FileSystemFactory;
+-import org.apache.sshd.server.filesystem.NativeFileSystemFactory;
+-import org.slf4j.LoggerFactory;
+-import org.slf4j.Logger;
+-
+ import org.apache.mina.core.service.IoAcceptor;
+ import org.apache.mina.core.session.IoSession;
+ import org.apache.mina.core.session.IoSessionConfig;
+ import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
+-import org.apache.sshd.common.AbstractFactoryManager;
+-import org.apache.sshd.common.Channel;
+-import org.apache.sshd.common.Cipher;
+-import org.apache.sshd.common.Compression;
+-import org.apache.sshd.common.Factory;
+-import org.apache.sshd.common.KeyExchange;
+-import org.apache.sshd.common.Mac;
+-import org.apache.sshd.common.NamedFactory;
+-import org.apache.sshd.common.Signature;
+-import org.apache.sshd.common.cipher.AES128CBC;
+-import org.apache.sshd.common.cipher.AES192CBC;
+-import org.apache.sshd.common.cipher.AES256CBC;
+-import org.apache.sshd.common.cipher.BlowfishCBC;
+-import org.apache.sshd.common.cipher.TripleDESCBC;
++import org.apache.sshd.common.*;
++import org.apache.sshd.common.cipher.*;
+ import org.apache.sshd.common.compression.CompressionNone;
+ import org.apache.sshd.common.future.CloseFuture;
+ import org.apache.sshd.common.future.SshFutureListener;
+@@ -69,17 +39,12 @@
+ import org.apache.sshd.common.signature.SignatureRSA;
+ import org.apache.sshd.common.util.OsUtils;
+ import org.apache.sshd.common.util.SecurityUtils;
+-import org.apache.sshd.server.Command;
+-import org.apache.sshd.server.CommandFactory;
+-import org.apache.sshd.server.PasswordAuthenticator;
+-import org.apache.sshd.server.PublickeyAuthenticator;
+-import org.apache.sshd.server.ServerFactoryManager;
+-import org.apache.sshd.server.ForwardingFilter;
+-import org.apache.sshd.server.UserAuth;
++import org.apache.sshd.server.*;
+ import org.apache.sshd.server.auth.UserAuthPassword;
+ import org.apache.sshd.server.auth.UserAuthPublicKey;
+ import org.apache.sshd.server.channel.ChannelDirectTcpip;
+ import org.apache.sshd.server.channel.ChannelSession;
++import org.apache.sshd.server.filesystem.NativeFileSystemFactory;
+ import org.apache.sshd.server.kex.DHG1;
+ import org.apache.sshd.server.kex.DHG14;
+ import org.apache.sshd.server.keyprovider.PEMGeneratorHostKeyProvider;
+@@ -87,7 +52,17 @@
+ import org.apache.sshd.server.session.ServerSession;
+ import org.apache.sshd.server.session.SessionFactory;
+ import org.apache.sshd.server.shell.ProcessShellFactory;
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
+ 
++import java.io.IOException;
++import java.net.InetSocketAddress;
++import java.net.Socket;
++import java.security.InvalidKeyException;
++import java.security.PublicKey;
++import java.util.*;
++import java.util.concurrent.CountDownLatch;
++
+ /**
+  * The SshServer class is the main entry point for the server side of the SSH protocol.
+  *
+@@ -124,6 +99,7 @@
+     protected List<NamedFactory<UserAuth>> userAuthFactories;
+     protected Factory<Command> shellFactory;
+     protected SessionFactory sessionFactory;
++    protected Timer sessionTimer;   // use a single Timer on the server for all sessions
+     protected CommandFactory commandFactory;
+     protected FileSystemFactory fileSystemFactory;
+     protected List<NamedFactory<Command>> subsystemFactories;
+@@ -251,6 +227,10 @@
+         this.forwardingFilter = forwardingFilter;
+     }
+ 
++    public Timer getSessionTimer() {
++        return sessionTimer !=null ? sessionTimer : new Timer(true);
++    }
++
+     protected void checkConfig() {
+         if (getPort() < 0) {
+             throw new IllegalArgumentException("Bad port number: " + port);
+@@ -349,7 +329,12 @@
+         }
+         acceptor.dispose();
+         acceptor = null;
++
++        if (sessionTimer != null) {
++            sessionTimer.cancel();
++            sessionTimer = null;
+-    }
++        }
++    }
+ 
+     protected IoAcceptor createAcceptor() {
+         return new NioSocketAcceptor();
+Index: sshd-core/src/main/java/org/apache/sshd/server/session/ServerSession.java
+===================================================================
+--- sshd-core/src/main/java/org/apache/sshd/server/session/ServerSession.java	(revision 1030199)
++++ sshd-core/src/main/java/org/apache/sshd/server/session/ServerSession.java	(revision )
+@@ -18,22 +18,10 @@
+  */
+ package org.apache.sshd.server.session;
+ 
+-import java.io.IOException;
+-import java.security.KeyPair;
+-import java.util.ArrayList;
+-import java.util.List;
+-import java.util.Timer;
+-import java.util.TimerTask;
+-
+ import org.apache.mina.core.session.IoSession;
+ import org.apache.sshd.agent.AgentForwardSupport;
+ import org.apache.sshd.client.future.OpenFuture;
+-import org.apache.sshd.common.Channel;
+-import org.apache.sshd.common.FactoryManager;
+-import org.apache.sshd.common.KeyExchange;
+-import org.apache.sshd.common.NamedFactory;
+-import org.apache.sshd.common.SshConstants;
+-import org.apache.sshd.common.SshException;
++import org.apache.sshd.common.*;
+ import org.apache.sshd.common.future.CloseFuture;
+ import org.apache.sshd.common.future.SshFutureListener;
+ import org.apache.sshd.common.session.AbstractSession;
+@@ -43,6 +31,13 @@
+ import org.apache.sshd.server.channel.OpenChannelException;
+ import org.apache.sshd.server.x11.X11ForwardSupport;
+ 
++import java.io.IOException;
++import java.security.KeyPair;
++import java.util.ArrayList;
++import java.util.List;
++import java.util.Timer;
++import java.util.TimerTask;
++
+ /**
+  *
+  * TODO: handle key re-exchange
+@@ -51,21 +46,22 @@
+  *
+  * TODO: better use of SSH_MSG_DISCONNECT and disconnect error codes
+  *
+- * TODO: use a single Timer for on the server for all sessions
+- *
+  * TODO Add javadoc
+  *
+  * @author <a href="mailto:dev@mina.apache.org">Apache MINA SSHD Project</a>
+  */
+ public class ServerSession extends AbstractSession {
+ 
+-    private Timer timer;
++    private Timer sessionTimer;
+     private TimerTask authTimerTask;
++    private TimerTask idleTimerTask;
++
+     private State state = State.ReceiveKexInit;
+     private String username;
+     private int maxAuthRequests = 20;
+     private int nbAuthRequests;
+     private int authTimeout = 10 * 60 * 1000; // 10 minutes in milliseconds
++    private int idleTimeout = 10 * 60 * 1000; // 10 minutes in milliseconds
+     private boolean allowMoreSessions = true;
+     private final TcpipForwardSupport tcpipForward;
+     private final AgentForwardSupport agentForward;
+@@ -77,10 +73,12 @@
+         ReceiveKexInit, Kex, ReceiveNewKeys, WaitingUserAuth, UserAuth, Running, Unknown
+     }
+ 
+-    public ServerSession(FactoryManager server, IoSession ioSession) throws Exception {
++    public ServerSession(FactoryManager server, IoSession ioSession, Timer timer) throws Exception {
+         super(server, ioSession);
+         maxAuthRequests = getIntProperty(FactoryManager.MAX_AUTH_REQUESTS, maxAuthRequests);
+         authTimeout = getIntProperty(FactoryManager.AUTH_TIMEOUT, authTimeout);
++        idleTimeout = getIntProperty(FactoryManager.IDLE_TIMEOUT, idleTimeout);
++        sessionTimer = timer;
+         tcpipForward = new TcpipForwardSupport(this);
+         agentForward = new AgentForwardSupport(this);
+         x11Forward = new X11ForwardSupport(this);
+@@ -193,7 +191,18 @@
+                         userAuth(buffer);
+                         break;
+                     case Running:
++                        unscheduleIdleTimer();
++                        running(cmd, buffer);
++                        scheduleIdleTimer();
++                        break;
++                    default:
++                        throw new IllegalStateException("Unsupported state: " + state);
++                }
++        }
++    }
++
++    private void running(SshConstants.Message cmd, Buffer buffer) throws Exception {
+-                        switch (cmd) {
++            switch (cmd) {
+                             case SSH_MSG_SERVICE_REQUEST:
+                                 serviceRequest(buffer);
+                                 break;
+@@ -245,13 +254,8 @@
+                                 break;
+                             default:
+                                 throw new IllegalStateException("Unsupported command: " + cmd);
+-                        }
++                            }
+-                        break;
+-                    default:
+-                        throw new IllegalStateException("Unsupported state: " + state);
+-                }
++    }
+-        }
+-    }
+ 
+     private void scheduleAuthTimer() {
+         authTimerTask = new TimerTask() {
+@@ -263,8 +267,7 @@
+                 }
+             }
+         };
+-        timer = new Timer(true);
+-        timer.schedule(authTimerTask, authTimeout);
++        sessionTimer.schedule(authTimerTask, authTimeout);
+     }
+ 
+     private void unscheduleAuthTimer() {
+@@ -272,11 +275,7 @@
+             authTimerTask.cancel();
+             authTimerTask = null;
+         }
+-        if (timer != null) {
+-            timer.cancel();
+-            timer = null;
+-        }
++    }
+-    }
+ 
+     private void processAuthTimer() throws IOException {
+         if (!authed) {
+@@ -285,6 +284,29 @@
+         }
+     }
+ 
++    private void scheduleIdleTimer() {
++        idleTimerTask = new TimerTask() {
++            public void run() {
++                try {
++                    processIdleTimer();
++                } catch (IOException e) {
++                    // Ignore
++                }
++            }
++        };
++        sessionTimer.schedule(idleTimerTask, idleTimeout);
++    }
++    private void unscheduleIdleTimer() {
++        if (idleTimerTask != null) {
++            idleTimerTask.cancel();
++            idleTimerTask = null;
++        }
++    }
++
++    private void processIdleTimer() throws IOException {
++        disconnect(SshConstants.SSH2_DISCONNECT_PROTOCOL_ERROR, "User idle has timed out after " + idleTimeout + "ms.");
++    }
++
+     private void sendServerIdentification() {
+         if (getFactoryManager().getProperties() != null && getFactoryManager().getProperties().get(ServerFactoryManager.SERVER_IDENTIFICATION) != null) {
+             serverVersion = "SSH-2.0-" + getFactoryManager().getProperties().get(ServerFactoryManager.SERVER_IDENTIFICATION);
+Index: sshd-core/src/main/java/org/apache/sshd/server/session/SessionFactory.java
+===================================================================
+--- sshd-core/src/main/java/org/apache/sshd/server/session/SessionFactory.java	(revision 835763)
++++ sshd-core/src/main/java/org/apache/sshd/server/session/SessionFactory.java	(revision )
+@@ -22,7 +22,6 @@
+ import org.apache.sshd.SshServer;
+ import org.apache.sshd.common.AbstractSessionIoHandler;
+ import org.apache.sshd.common.session.AbstractSession;
+-import org.apache.sshd.server.session.ServerSession;
+ 
+ /**
+  * A factory of server sessions.
+@@ -41,7 +40,7 @@
+     }
+ 
+     protected AbstractSession createSession(IoSession ioSession) throws Exception {
+-        return new ServerSession(server, ioSession);
++        return new ServerSession(server, ioSession, server.getSessionTimer());
+     }
+ 
+ }
+Index: sshd-core/src/main/java/org/apache/sshd/common/FactoryManager.java
+===================================================================
+--- sshd-core/src/main/java/org/apache/sshd/common/FactoryManager.java	(revision 835763)
++++ sshd-core/src/main/java/org/apache/sshd/common/FactoryManager.java	(revision )
+@@ -56,6 +56,12 @@
+     public static final String AUTH_TIMEOUT = "auth-timeout";
+ 
+     /**
++     * Key used to retrieve the value of idle timeout after which
++     * the server will close the connection.  In milliseconds.
++     */
++    public static final String IDLE_TIMEOUT = "idle-timeout";
++
++    /**
+      * A map of properties that can be used to configure the SSH server
+      * or client.  This map will never be changed by either the server or
+      * client and is not supposed to be changed at runtime (changes are not

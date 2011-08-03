@@ -1,0 +1,15 @@
+p96
+	Nov 14, 2010
+	Virtual File System improvement for SCP and session injection
+	https://issues.apache.org/jira/browse/SSHD-96
+		"The SCP Command does not yet use the Virtual File System implemented in SSHD-82.		
+		Another improvement is passing the ServerSession to FileSystemFactory instead of just the user name.		
+		This allows the injection of information known in the Authenticator into the file system.		
+		The particular use case is the implementation of a Virtual File System based on Apache Commons VFS.
+		There the authenticator already contains the root file object (resulting from the authentication) which needs to be passed to the FileSystemView."
+		
+	Use Maven to build and package: mvn package -Dmaven.test.skip=true
+				
+l7p1
+	Aug 2, 2011
+	Layer 7 patch to support idle timeout on SshServer.
