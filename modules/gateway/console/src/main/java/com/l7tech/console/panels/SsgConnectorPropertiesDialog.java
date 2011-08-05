@@ -339,7 +339,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                     collapseOrExpandButton.setIcon(collapseIcon);
                     builtinServicesPanel.setVisible(true);
                 }
-                SsgConnectorPropertiesDialog.this.pack();
+                resizeDialogAsNeeded();
             }
         });
 
@@ -351,7 +351,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                 if (allBuiltinServicesChecked) {
                     builtinServicesPanel.setVisible(true);
                     collapseOrExpandButton.setIcon(collapseIcon);
-                    SsgConnectorPropertiesDialog.this.pack();
+                    resizeDialogAsNeeded();
                 }
 
                 policyDiscoveryCheckBox.setSelected(allBuiltinServicesChecked);
@@ -364,7 +364,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                 if (snmpQueryServicePropertyEnabled()) snmpQueryCheckBox.setSelected(allBuiltinServicesChecked);
 
                 saveAllBuiltinServiceCheckboxStates();
-                pack();
+                resizeDialogAsNeeded();
             }
         });
 
@@ -385,7 +385,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                 }
 
                 saveAllBuiltinServiceCheckboxStates();
-                pack();
+                resizeDialogAsNeeded();
             }
         };
         policyDiscoveryCheckBox.addActionListener(cleanCheckboxListener);
@@ -577,6 +577,22 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             nameField.requestFocusInWindow();
     }
 
+    /**
+     * Resize the properties dialog if the width and/or height shrink or expanded.
+     */
+    private void resizeDialogAsNeeded() {
+        JRootPane rootPane = contentPane.getRootPane();
+        Container rootParent = rootPane.getParent();
+        if (rootParent instanceof JInternalFrame) {
+            JInternalFrame jif = (JInternalFrame)rootParent;
+            Dimension newSize = contentPane.getPreferredSize();
+            Dimension fullSize = new Dimension(10 + (int)newSize.getWidth(), 32 + (int)newSize.getHeight());
+            jif.setSize(fullSize);
+        } else {
+            pack();
+        }
+    }
+
     private CustomTransportPropertiesPanel getCustomPropertiesPanel(TransportDescriptor descriptor, String customPropertiesPanelClassname) {
         if (customPropertiesPanelClassname == null)
             return null;
@@ -586,7 +602,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         if (panel != null)
             return panel;
 
-        pack();
+        resizeDialogAsNeeded();
 
         String owningAssertionClassname = descriptor.getModularAssertionClassname();
         ClassLoader panelLoader = owningAssertionClassname == null ? Thread.currentThread().getContextClassLoader()
@@ -1117,7 +1133,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         }
 
         saveAllBuiltinServiceCheckboxStates();
-        pack();
+        resizeDialogAsNeeded();
     }
 
     private void saveAllBuiltinServiceCheckboxStates() {
