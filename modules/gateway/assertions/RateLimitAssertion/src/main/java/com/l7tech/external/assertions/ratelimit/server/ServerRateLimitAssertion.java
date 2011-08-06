@@ -43,7 +43,8 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     private static final BigInteger MILLIS_PER_SECOND_BIG = BigInteger.valueOf(MILLIS_PER_SECOND);
     static final long NANOS_PER_SECOND = MILLIS_PER_SECOND * NANOS_PER_MILLI;
     private static final BigInteger NANOS_PER_SECOND_BIG = BigInteger.valueOf(NANOS_PER_SECOND);
-    private static final long CLUSTER_POLL_INTERVAL = 43L * MILLIS_PER_SECOND; // Check every 43 seconds to see if cluster size has changed
+    private static final long DEFAULT_CLUSTER_POLL_INTERVAL = 43L * MILLIS_PER_SECOND; // Check every 43 seconds to see if cluster size has changed
+    private static final long DEFAULT_CLUSTER_STATUS_INTERVAL = 8L * MILLIS_PER_SECOND; // Nodes are considered "up" if they are the current node or if they have updated their status row within the last 8 seconds
     private static final int DEFAULT_MAX_QUEUED_THREADS = 20;
     private static final int DEFAULT_CLEANER_PERIOD = 13613;
     private static final int DEFAULT_MAX_NAP_TIME = 4703;
@@ -62,6 +63,8 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     private static final AtomicLong cleanerPeriod = new AtomicLong( (long) DEFAULT_CLEANER_PERIOD );
     private static final AtomicLong maxNapTime = new AtomicLong( (long) DEFAULT_MAX_NAP_TIME );
     private static final AtomicLong maxTotalSleepTime = new AtomicLong( (long) DEFAULT_MAX_TOTAL_SLEEP_TIME );
+    private static final AtomicLong clusterPollInterval = new AtomicLong( DEFAULT_CLUSTER_POLL_INTERVAL );
+    private static final AtomicLong clusterStatusInteval = new AtomicLong( DEFAULT_CLUSTER_STATUS_INTERVAL );
     static boolean useNanos = true;
     static boolean autoFallbackFromNanos = !Boolean.getBoolean("com.l7tech.external.server.ratelimit.forceNanos");
     static TimeSource clock = new TimeSource();
@@ -460,19 +463,26 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
             } finally {
                 clusterCheckLock.unlock();
             }
-        } else if (now - lastCheck >= CLUSTER_POLL_INTERVAL) {
-            // We have an existing value, but it's looking a bit stale.  Have one thread try to fetch an update
-            // while the rest continue working with the existing value.
-            if (clusterCheckLock.tryLock()) {
-                try {
-                    // See if we still need to do it
-                    if (clock.currentTimeMillis() - lastClusterCheck.get() > CLUSTER_POLL_INTERVAL) {
-                        logger.log(SUBINFO_LEVEL, "Checking current cluster size");
-                        clusterSize.set(BigInteger.valueOf( (long) loadClusterSizeFromDb() ));
-                        lastClusterCheck.set(clock.currentTimeMillis());
+        } else {
+            final long pollInterval = clusterPollInterval.get();
+            if (now - lastCheck >= pollInterval) {
+                // We have an existing value, but it's looking a bit stale.  Have one thread try to fetch an update
+                // while the rest continue working with the existing value.
+                if (clusterCheckLock.tryLock()) {
+                    try {
+                        // See if we still need to do it
+                        if (clock.currentTimeMillis() - lastClusterCheck.get() > pollInterval) {
+                            logger.log(SUBINFO_LEVEL, "Checking current cluster size");
+                            final int newSize = loadClusterSizeFromDb();
+                            clusterSize.set(BigInteger.valueOf( (long) newSize));
+                            lastClusterCheck.set(clock.currentTimeMillis());
+                            if (newSize != oldSize.longValue()) {
+                                logger.info("Rate limit cluster size changed from " + oldSize + " to " + newSize + " active nodes");
+                            }
+                        }
+                    } finally {
+                        clusterCheckLock.unlock();
                     }
-                } finally {
-                    clusterCheckLock.unlock();
                 }
             }
         }
@@ -483,14 +493,29 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     // Unconditionally load the cluster size from the database.
     private int loadClusterSizeFromDb() {
         try {
+            clusterPollInterval.set(serverConfig.getLongProperty( RateLimitAssertion.PARAM_CLUSTER_POLL_INTERVAL, DEFAULT_CLUSTER_POLL_INTERVAL ));
+            clusterStatusInteval.set( serverConfig.getLongProperty( RateLimitAssertion.PARAM_CLUSTER_STATUS_INTERVAL, DEFAULT_CLUSTER_STATUS_INTERVAL ) );
             maxSleepThreads.set(serverConfig.getIntProperty(RateLimitAssertion.PARAM_MAX_QUEUED_THREADS, DEFAULT_MAX_QUEUED_THREADS));
             cleanerPeriod.set( (long) serverConfig.getIntProperty( RateLimitAssertion.PARAM_CLEANER_PERIOD, DEFAULT_CLEANER_PERIOD ) );
             maxNapTime.set( (long) serverConfig.getIntProperty( RateLimitAssertion.PARAM_MAX_NAP_TIME, DEFAULT_MAX_NAP_TIME ) );
             maxTotalSleepTime.set( (long) serverConfig.getIntProperty( RateLimitAssertion.PARAM_MAX_TOTAL_SLEEP_TIME, DEFAULT_MAX_TOTAL_SLEEP_TIME ) );
-            Collection<ClusterNodeInfo> got = clusterInfoManager.retrieveClusterStatus();
-            final int ret = got == null || got.size() < 1 ? 1 : got.size();
-            if (logger.isLoggable(SUBINFO_LEVEL)) logger.log(SUBINFO_LEVEL, "Using cluster size: " + ret);
-            return ret;
+            ClusterNodeInfo selfNodeInf = clusterInfoManager.getSelfNodeInf();
+            String selfNodeId = selfNodeInf == null ? "" : selfNodeInf.getNodeIdentifier();
+            if (selfNodeId == null) selfNodeId = "";
+
+            int upnodes = 1;
+            long now = System.currentTimeMillis();
+            Collection<ClusterNodeInfo> nodes = clusterInfoManager.retrieveClusterStatus();
+            for (ClusterNodeInfo node : nodes) {
+                if (selfNodeId.equals(node.getNodeIdentifier()))
+                    continue;
+
+                if (now - node.getLastUpdateTimeStamp() <= clusterStatusInteval.get())
+                    upnodes++;
+            }
+
+            if (logger.isLoggable(SUBINFO_LEVEL)) logger.log(SUBINFO_LEVEL, "Using cluster size: " + upnodes);
+            return upnodes;
         } catch (FindException e) {
             logAndAudit( AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO,
                     new String[]{ "Unable to check cluster status: " + ExceptionUtils.getMessage( e ) },

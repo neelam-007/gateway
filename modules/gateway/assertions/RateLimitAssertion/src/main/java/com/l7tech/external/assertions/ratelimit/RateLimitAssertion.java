@@ -217,6 +217,8 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
     public static final String PARAM_CLEANER_PERIOD = "ratelimitCleanerPeriod";
     public static final String PARAM_MAX_NAP_TIME = "ratelimitMaxNapTime";
     public static final String PARAM_MAX_TOTAL_SLEEP_TIME = "ratelimitMaxTotalSleepTime";
+    public static final String PARAM_CLUSTER_POLL_INTERVAL = "ratelimitClusterPollInterval";
+    public static final String PARAM_CLUSTER_STATUS_INTERVAL = "ratelimitClusterStatusInterval";
 
     private final static String baseName = "Apply Rate Limit";
 
@@ -309,6 +311,14 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
         props.put("ratelimit.maxTotalSleepTime", new String[] {
                 "Maximum total time a request subject to traffic shaping will wait before giving up and failing (Milliseconds)",
                 "18371"
+        });
+        props.put("ratelimit.clusterPollInterval", new String[] {
+                "Time in between checks of the cluster status table, to check how many cluster nodes are up (Milliseconds)",
+                "43000"
+        });
+        props.put("ratelimit.clusterStatusInterval", new String[] {
+                "Another cluster node will be considered down if it has not posted its status more recently than this number of milliseconds ago (Milliseconds)",
+                "8000"
         });
         meta.put(CLUSTER_PROPERTIES, props);
 
