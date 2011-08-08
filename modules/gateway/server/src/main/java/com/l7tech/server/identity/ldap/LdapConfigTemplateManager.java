@@ -105,7 +105,7 @@ public class LdapConfigTemplateManager {
         try {
             resourceUrls = ClassUtils.listResources( LdapConfigTemplateManager.class, "ldapTemplates/templates.index" );
         } catch (IOException e) {
-            logger.log(Level.WARNING, "Could not list UDDI template resources.", e);
+            logger.log(Level.WARNING, "Could not list LDAP template resources.", e);
         }
 
         for ( URL resourceUrl : resourceUrls ) {

@@ -612,7 +612,7 @@ public class LdapIdentityProviderImpl
             } );
         } catch (SizeLimitExceededException e) {
             // add something to the result that indicates the fact that the search criteria is too wide
-            logger.log(Level.FINE, "the search results exceede the maximum: '" + e.getMessage() + "'");
+            logger.log(Level.FINE, "the search results exceeded the maximum: '" + e.getMessage() + "'");
             output.setMaxExceeded(ldapRuntimeConfig.getMaxSearchResultSize());
             // dont throw here, we still want to return what we got
         } catch (javax.naming.AuthenticationException ae) {
