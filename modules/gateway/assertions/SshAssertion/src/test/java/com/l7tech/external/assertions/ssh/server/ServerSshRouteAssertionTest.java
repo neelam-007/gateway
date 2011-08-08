@@ -1,7 +1,6 @@
 package com.l7tech.external.assertions.ssh.server;
 
 import com.l7tech.external.assertions.ssh.SshRouteAssertion;
-import com.l7tech.gateway.common.transport.ftp.FtpFileNameSource;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.assertion.TargetMessageType;
@@ -38,12 +37,11 @@ public class ServerSshRouteAssertionTest {
         assertion.setRequestTarget(requestTarget);
         assertion.setUsePublicKey(true);
         assertion.setDirectory("/home/ssgconfig");
-        assertion.setFileNameSource(FtpFileNameSource.PATTERN);
-        assertion.setFileNamePattern("test.txt");
+        assertion.setFileName("testFileName.txt");
         assertion.setHost("testmycompany.com");
         assertion.setPort("22");
         assertion.setUsePrivateKey(true);
-        assertion.setTimeout(10000);
+        assertion.setConnectTimeout(10000);
         assertion.setUsername("root");
     }
 
@@ -67,10 +65,9 @@ public class ServerSshRouteAssertionTest {
     public void testSftpAssertionData() throws Exception {
         assertNotNull(assertion.getHost());
         assertNotNull(assertion.getPort());
-        assertNotNull(assertion.getTimeout());
+        assertNotNull(assertion.getConnectTimeout());
         assertNotNull(assertion.getUsername());
-        assertNotNull(assertion.getFileNamePattern());
-        assertNotNull(assertion.getFileNameSource());
+        assertNotNull(assertion.getFileName());
         assertNotNull(assertion.getDirectory());
         assertTrue(assertion.isUsePrivateKey());
         assertTrue(assertion.isUsePublicKey());
@@ -108,6 +105,4 @@ public class ServerSshRouteAssertionTest {
 
     private static final String HostDataRSA = "myhost.com ssh-rsa ";
     private static final String HostDataDSA = "myhost.com ssh-dss ";
-
-
 }

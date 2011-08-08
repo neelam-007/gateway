@@ -3,7 +3,7 @@ package com.l7tech.external.assertions.ssh.server;
 import com.l7tech.gateway.common.audit.Messages;
 
 /**
- * This is the central place that consolidates all messages used by the SFTP Assertion for exceptions or logging.
+ * This is the central place that consolidates all messages used by the SCP and SFTP Assertion for exceptions or logging.
  */
 public class SshAssertionMessages extends Messages{
 

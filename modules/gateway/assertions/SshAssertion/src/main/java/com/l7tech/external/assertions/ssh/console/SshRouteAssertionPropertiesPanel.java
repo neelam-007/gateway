@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.ssh.console;
 
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.console.SsmApplication;
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.RoutingDialogUtils;
@@ -7,8 +8,6 @@ import com.l7tech.console.panels.SecurePasswordComboBox;
 import com.l7tech.console.panels.SecurePasswordManagerWindow;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.external.assertions.ssh.SshRouteAssertion;
-import com.l7tech.gateway.common.transport.ftp.FtpFileNameSource;
-import com.l7tech.gui.NumberField;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.policy.assertion.MessageTargetable;
@@ -25,14 +24,10 @@ import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
-/**
- * Created by IntelliJ IDEA.
- * User: cmclaughlin
- * Date: 20-April-2011
- * Time: 16:34:14 PM
- * To change this template use File | Settings | File Templates.
- */
 public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCancelSupport<SshRouteAssertion> {
+    public static final int DEFAULT_PORT_SSH = 22;
+    private static final ResourceBundle resources = ResourceBundle.getBundle( SshRouteAssertionPropertiesPanel.class.getName());
+
     private JPanel mainPanel;
     private JRadioButton usernamePasswordRadioButton;
     private JRadioButton privateKeyRadioButton;
@@ -40,24 +35,17 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
     private JTextField usernameField;
     private JScrollPane privateKeyScrollPane;
     private JTextArea privateKeyField;
-    private JCheckBox privateKeyRequiresPasswordCheckbox;
     private JButton loadPrivateKeyFromFileButton;
     private SecurePasswordComboBox passwordField;
     private JButton managePasswordsButton;
     private JTextField directoryTextField;
     private JComboBox messageSource;
-    private JPanel usernamePanel;
-    private JPanel privateKeyPanel;
-    private JRadioButton specifyPatternRadioButton;
-    private JRadioButton autoGenerateFileNameRadioButton;
-    private JTextField filenamePatternTextField;
-    private JTextField secondsTextField;
-    private JTextField timeoutTextField;
+    private JTextField fileNameTextField;
+    private JTextField connectTimeoutTextField;
     private JTextField portNumberTextField;
     private JRadioButton wssIgnoreButton;
     private JRadioButton wssCleanupButton;
     private JRadioButton wssRemoveButton;
-    private JTabbedPane tabbedPane1;
     private JCheckBox validateServerSHostCheckBox;
     private JButton manageHostKeyButton;
     private JRadioButton SCPRadioButton;
@@ -66,29 +54,23 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
     private JRadioButton downloadFromRadioButton;
     private JRadioButton passThroughCredentialsInRadioButton;
     private JRadioButton specifyUserCredentialsRadioButton;
-
-    private SshRouteAssertion assertion;
+    private JTextField readTimeoutTextField;
+    private JComboBox contentTypeComboBox;
     private InputValidator validators;
     private AbstractButton[] secHdrButtons = { wssIgnoreButton, wssCleanupButton, wssRemoveButton, null };
-
     private String hostKey;
-
-    private static final ResourceBundle resources = ResourceBundle.getBundle( SshRouteAssertionPropertiesPanel.class.getName() );
-    public static final int DEFAULT_PORT_FTP = 22;
-
     private RunOnChangeListener enableDisableListener = new RunOnChangeListener() {
         @Override
         public void run() {
             enableDisableFields();
         }
     };
+
     public SshRouteAssertionPropertiesPanel(Frame parent, SshRouteAssertion assertion) {
         super(SshRouteAssertion.class, parent, assertion.getPropertiesDialogTitle(), true);
 
         initComponents();
         setData(assertion);
-
-        this.assertion = assertion;
     }
 
     @Override
@@ -105,7 +87,6 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         };
         usernamePasswordRadioButton.addActionListener(enableDisableListener);
         privateKeyRadioButton.addActionListener(enableDisableListener);
-        privateKeyRequiresPasswordCheckbox.addActionListener(enableDisableListener);
         validateServerSHostCheckBox.addActionListener(enableDisableListener);
 
         loadPrivateKeyFromFileButton.addActionListener(new ActionListener() {
@@ -141,29 +122,40 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
             }
         });
 
-        timeoutTextField.setDocument(new NumberField(6));
-        final ActionListener filenameListener = new ActionListener() {
+        final ActionListener downloadUploadRadioListener = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                filenamePatternTextField.setEnabled(specifyPatternRadioButton.isSelected());
                 enableDisableFields();
             }
         };
-        autoGenerateFileNameRadioButton.addActionListener(filenameListener);
-        specifyPatternRadioButton.addActionListener(filenameListener);
+        downloadFromRadioButton.addActionListener(downloadUploadRadioListener);
+        uploadToRadioButton.addActionListener(downloadUploadRadioListener);
 
-        filenamePatternTextField.getDocument().addDocumentListener(enableDisableListener);
-        Utilities.enableGrayOnDisabled(filenamePatternTextField);
+        fileNameTextField.getDocument().addDocumentListener(enableDisableListener);
+        Utilities.enableGrayOnDisabled(fileNameTextField);
         
         messageSource.setRenderer( new TextListCellRenderer<MessageTargetable>( getMessageNameFunction("Default", null), null, false ) );
         RoutingDialogUtils.tagSecurityHeaderHandlingButtons(secHdrButtons);
 
+        DefaultComboBoxModel contentTypeComboBoxModel = new DefaultComboBoxModel();
+        ContentTypeHeader[] offeredTypes = new ContentTypeHeader[] {
+                ContentTypeHeader.XML_DEFAULT,
+                ContentTypeHeader.TEXT_DEFAULT,
+                ContentTypeHeader.SOAP_1_2_DEFAULT,
+                ContentTypeHeader.APPLICATION_JSON,
+                ContentTypeHeader.OCTET_STREAM_DEFAULT,
+        };
+        for (ContentTypeHeader offeredType : offeredTypes) {
+            contentTypeComboBoxModel.addElement(offeredType.getFullValue());
+        }
+        contentTypeComboBox.setModel(contentTypeComboBoxModel);
+
         //validators
         validators = new InputValidator(this, getResourceString("errorTitle"));
-        validators.addRule(validators.constrainTextFieldToBeNonEmpty(getResourceString("hostNameLabel"),hostField,null));
-        validators.addRule(validators.constrainTextFieldToBeNonEmpty(getResourceString("specifyPatternLabel"),filenamePatternTextField,null));
-        validators.addRule(validators.constrainTextFieldToBeNonEmpty(getResourceString("usernameLabel"),usernameField,null));
-        validators.addRule(validators.constrainTextFieldToNumberRange(getResourceString("sshTimeoutLabel"), timeoutTextField, 2, 10));
+        validators.addRule(validators.constrainTextFieldToBeNonEmpty(getResourceString("hostNameLabel"), hostField, null));
+        validators.addRule(validators.constrainTextFieldToBeNonEmpty(getResourceString("fileNameLabel"), fileNameTextField, null));
+        validators.addRule(validators.constrainTextFieldToBeNonEmpty(getResourceString("usernameLabel"), usernameField, null));
+        validators.addRule(validators.constrainTextFieldToNumberRange(getResourceString("sshTimeoutLabel"), connectTimeoutTextField, 2, 10));
 
         validators.addRule(new InputValidator.ComponentValidationRule(portNumberTextField) {
             @Override
@@ -182,7 +174,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
             @Override
             public String getValidationError() {
 
-                if(usernamePasswordRadioButton.isSelected() || privateKeyRequiresPasswordCheckbox.isSelected()) {
+                if(usernamePasswordRadioButton.isSelected()) {
                     if (passwordField == null || passwordField.getItemCount() == 0)
                     {
                         return getResourceString("passwordEmptyError");
@@ -207,7 +199,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         });
 
         super.initComponents();
-    }
+    }   // initComponents()
 
     private void readFromFile() {
         SsmApplication.doWithJFileChooser(new FileChooserUtil.FileChooserUser() {
@@ -240,24 +232,34 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
     private void enableDisableFields() {
         privateKeyScrollPane.setEnabled(privateKeyRadioButton.isSelected());
         privateKeyField.setEnabled(privateKeyRadioButton.isSelected());
-        privateKeyRequiresPasswordCheckbox.setEnabled(privateKeyRadioButton.isSelected());
         loadPrivateKeyFromFileButton.setEnabled(privateKeyRadioButton.isSelected());
-        passwordField.setEnabled(usernamePasswordRadioButton.isSelected() || privateKeyRequiresPasswordCheckbox.isSelected());
-        managePasswordsButton.setEnabled(usernamePasswordRadioButton.isSelected() || privateKeyRequiresPasswordCheckbox.isSelected());
+        passwordField.setEnabled(usernamePasswordRadioButton.isSelected());
+        managePasswordsButton.setEnabled(usernamePasswordRadioButton.isSelected());
         if(!validateServerSHostCheckBox.isSelected()) {
             manageHostKeyButton.setEnabled(false);
         } else {
             manageHostKeyButton.setEnabled(true);
         }
+        if (downloadFromRadioButton.isSelected()) {
+            contentTypeComboBox.setEnabled(true);
+            readTimeoutTextField.setEnabled(true);
+        } else {
+            contentTypeComboBox.setEnabled(false);
+            readTimeoutTextField.setEnabled(false);
+        }
     }
 
+    /*
+     * Populate fields in SSH Route dialog.
+     */
     @Override
     public void setData(SshRouteAssertion assertion) {
-
-        //populate SSH settings
-        messageSource.setModel( buildMessageSourceComboBoxModel(assertion) );
-        messageSource.setSelectedItem( new MessageTargetableSupport(assertion.getRequestTarget()) );
+        messageSource.setModel( buildMessageSourceComboBoxModel(assertion));
+        messageSource.setSelectedItem( new MessageTargetableSupport(assertion.getRequestTarget()));
         RoutingDialogUtils.configSecurityHeaderRadioButtons(assertion, -1, null, secHdrButtons);
+
+        // SCP? if not assume SFTP
+        SCPRadioButton.setSelected(assertion.isScpProtocol());
 
         if(assertion.getHost() != null) {
             hostField.setText(assertion.getHost().trim());
@@ -266,17 +268,25 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
             portNumberTextField.setText(assertion.getPort().trim());
         }
         if(assertion.getDirectory() != null) {
-                directoryTextField.setText(assertion.getDirectory().trim());
+            directoryTextField.setText(assertion.getDirectory().trim());
         }
-        
-        if (assertion.getFileNameSource() == null || assertion.getFileNameSource() == FtpFileNameSource.AUTO) {
-           autoGenerateFileNameRadioButton.doClick(0);
-        } else if (assertion.getFileNameSource() == FtpFileNameSource.PATTERN) {
-           specifyPatternRadioButton.doClick(0);
+        if (assertion.getFileName() != null) {
+           fileNameTextField.setText(assertion.getFileName());
         }
-        filenamePatternTextField.setText(assertion.getFileNamePattern() == null ? "" : assertion.getFileNamePattern());
 
-        timeoutTextField.setText(Integer.toString(assertion.getTimeout() / 1000));
+        connectTimeoutTextField.setText(Integer.toString(assertion.getConnectTimeout() / 1000));
+        readTimeoutTextField.setText(Integer.toString(assertion.getReadTimeout() / 1000));
+
+        String contentType = assertion.getDownloadContentType();
+        if (contentType == null) {
+            contentTypeComboBox.setSelectedIndex(0);
+        } else {
+            contentTypeComboBox.setSelectedItem(contentType);
+            if (!contentType.equalsIgnoreCase((String)contentTypeComboBox.getSelectedItem())) {
+                ((DefaultComboBoxModel)contentTypeComboBox.getModel()).addElement(contentType);
+                contentTypeComboBox.setSelectedItem(contentType);
+            }
+        }
 
         // populate authorization settings
         if(assertion.isUsePrivateKey()) {
@@ -299,12 +309,8 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         
         if(assertion.getPasswordOid() != null) {
             passwordField.setSelectedSecurePassword(assertion.getPasswordOid());
-            privateKeyRequiresPasswordCheckbox.setSelected(true);
-        } else {
-            privateKeyRequiresPasswordCheckbox.setSelected(false);
         }
         RoutingDialogUtils.configSecurityHeaderRadioButtons(assertion, -1, null, secHdrButtons);
-
     }
 
     /** Copies view into model. */
@@ -314,23 +320,26 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         if(error != null){
             throw new ValidationException(error);
         }
+
         // populate SSH settings
         assertion.setRequestTarget((MessageTargetableSupport) messageSource.getSelectedItem());
         assertion.setHost(hostField.getText().trim());
         assertion.setPort(portNumberTextField.getText().trim());
         assertion.setDirectory(directoryTextField.getText());
+        assertion.setFileName(fileNameTextField.getText());
+        if (connectTimeoutTextField.getText().trim().isEmpty()) {
+            connectTimeoutTextField.setText(Integer.toString(SshRouteAssertion.DEFAULT_CONNECT_TIMEOUT / 1000));
+        }
+        assertion.setConnectTimeout(Integer.parseInt(connectTimeoutTextField.getText()) * 1000);
 
-        if (autoGenerateFileNameRadioButton.isSelected()) {
-            assertion.setFileNameSource(FtpFileNameSource.AUTO);
-            filenamePatternTextField.setText("");
-        } else if (specifyPatternRadioButton.isSelected()) {
-            assertion.setFileNameSource(FtpFileNameSource.PATTERN);
+        if (readTimeoutTextField.getText().trim().isEmpty()) {
+            readTimeoutTextField.setText(Integer.toString(SshRouteAssertion.DEFAULT_READ_TIMEOUT / 1000));
         }
-        assertion.setFileNamePattern(filenamePatternTextField.getText());
-         if (timeoutTextField.getText().trim().isEmpty()) {
-            timeoutTextField.setText(Integer.toString(SshRouteAssertion.DEFAULT_TIMEOUT / 1000));
+        assertion.setReadTimeout(Integer.parseInt(readTimeoutTextField.getText()) * 1000);
+
+        if (contentTypeComboBox.getSelectedItem() != null) {
+            assertion.setDownloadContentType(contentTypeComboBox.getSelectedItem().toString());
         }
-        assertion.setTimeout(Integer.parseInt(timeoutTextField.getText()) * 1000);
 
         if(usernamePasswordRadioButton.isSelected()) {
             assertion.setUsePrivateKey(false);
@@ -341,7 +350,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
 
         // populate authorization settings
         assertion.setUsername(usernameField.getText().trim());
-       if(usernamePasswordRadioButton.isSelected() || privateKeyRequiresPasswordCheckbox.isSelected()) {
+       if(usernamePasswordRadioButton.isSelected()) {
             assertion.setPasswordOid(passwordField.getSelectedSecurePassword().getOid());
         } else {
             assertion.setPasswordOid(null);
@@ -355,6 +364,8 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
             assertion.setSshPublicKey(null);
         }
 
+        // SCP? if not assume SFTP
+        assertion.setScpProtocol(SCPRadioButton.isSelected());
 
         RoutingDialogUtils.configSecurityHeaderHandling(assertion, -1, secHdrButtons);
 
@@ -386,7 +397,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
     }
 
      private int getDefaultPortNumber() {
-        int port = DEFAULT_PORT_FTP;
+        int port = DEFAULT_PORT_SSH;
         return port;
     }
 }

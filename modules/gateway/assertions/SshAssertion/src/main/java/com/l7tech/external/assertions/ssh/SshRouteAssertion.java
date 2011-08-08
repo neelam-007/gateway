@@ -31,48 +31,27 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
     public static final String LISTEN_PROP_HOST_PRIVATE_KEY = "l7.ssh.hostPrivateKey";
     public static final String LISTEN_PROP_IDLE_TIMEOUT_MINUTES = "l7.ssh.idleTimeoutMinutes";
     public static final String LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER = "l7.ssh.maxConcurrentSessionsPerUser";
+    public static final int DEFAULT_CONNECT_TIMEOUT = 10000;  // Timeout (in milliseconds) when opening SSH Connection.
+    public static final int DEFAULT_READ_TIMEOUT = 1000 * 60;   // Timeout (in milliseconds) when reading a remote file.
+    public static final int DEFAULT_SSH_PORT = 22;   // Default port for SSH
 
-    /** Timeout (in milliseconds) when opening SSH Connection. */
-    public static final int DEFAULT_TIMEOUT = 10000;
+    private static final String baseName = "Route via SSH2";
 
-    /** Default port for SSH */
-    public static final int DEFAULT_SSH_PORT = 22;
-
-    /** Username. Can contain context variables. */
-    private String username;
-
-    /** privateKey. Can contain context variables. */
-    private String privateKey;
-
-    /** password. Can contain context variables. */
-    private Long passwordOid = null;
-
-    /** SSH server host name. Can contain context variables. */
-    private String hostName;
-
-    /** Port number. Can contain context variables. */
-    private String port = Integer.toString(DEFAULT_SSH_PORT);
-
-     /** Destination directory pattern. Can contain context variables. */
-    private String directory;
-
-    /** SSH Public Key. Can contain context variables. */
-    private String sshPublicKey;
-
+    private String username;   // Username. Can contain context variables.
+    private String privateKey;   // privateKey. Can contain context variables.
+    private Long passwordOid = null;   // password. Can contain context variables.
+    private String hostName;   // SSH server host name. Can contain context variables.
+    private String port = Integer.toString(DEFAULT_SSH_PORT);   // Port number. Can contain context variables.
+    private String directory;   // Destination directory. Can contain context variables.
+    private String fileName;   // Destination file name. Can contain context variables.
+    private String sshPublicKey;   // SSH Public Key. Can contain context variables.
     private boolean usePrivateKey = false;
     private boolean usePublicKey = false;
+    private int connectTimeout = DEFAULT_CONNECT_TIMEOUT;   // Timeout for opening connection to SFTP server (in milliseconds).
+    private int readTimeout = DEFAULT_READ_TIMEOUT;
+    private String downloadContentType;
 
-    /** Where the file name on server will come from. */
-    private FtpFileNameSource fileNameSource;
-
-    /** File name pattern if {@link #fileNameSource} is {@link com.l7tech.gateway.common.transport.ftp.FtpFileNameSource#PATTERN}; can contain context variables. */
-    private String fileNamePattern;
-
-    /** Timeout for opening connection to FTP server (in milliseconds). */
-    private int timeout = DEFAULT_TIMEOUT;
-
-    private final static String baseName = "Route via SSH2";
-
+    private boolean isScpProtocol;   // SCP? if not assume SFTP
     private MessageTargetableSupport requestTarget = defaultRequestTarget();
 
     private MessageTargetableSupport defaultRequestTarget() {
@@ -229,28 +208,26 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
         this.directory = directory;
     }
 
-    public String getFileNamePattern() {
-        return fileNamePattern;
+    public String getFileName() {
+        return fileName;
+    }
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
     }
 
-    public void setFileNamePattern(String fileNamePattern) {
-        this.fileNamePattern = fileNamePattern;
+    public int getConnectTimeout() {
+        return connectTimeout;
+    }
+    public void setConnectTimeout(int timeout) {
+        this.connectTimeout = timeout;
     }
 
-    public int getTimeout() {
-        return timeout;
-    }
 
-    public void setTimeout(int timeout) {
-        this.timeout = timeout;
+    public int getReadTimeout() {
+        return readTimeout;
     }
-
-    public FtpFileNameSource getFileNameSource() {
-        return fileNameSource;
-    }
-
-    public void setFileNameSource(FtpFileNameSource fileNameSource) {
-        this.fileNameSource = fileNameSource;
+    public void setReadTimeout(int readTimeout) {
+        this.readTimeout = readTimeout;
     }
     
     public MessageTargetableSupport getRequestTarget() {
@@ -259,6 +236,20 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
 
     public void setRequestTarget(MessageTargetableSupport requestTarget) {
         this.requestTarget = requestTarget;
+    }
+
+    public String getDownloadContentType() {
+        return downloadContentType;
+    }
+    public void setDownloadContentType(String downloadContentType) {
+        this.downloadContentType = downloadContentType;
+    }
+
+    public boolean isScpProtocol() {
+        return isScpProtocol;
+    }
+    public void setScpProtocol(boolean scpProtocol) {
+        isScpProtocol = scpProtocol;
     }
 
     @Override
@@ -289,7 +280,7 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
             port,
             directory,
             username,
-            fileNamePattern
+            fileName
         ).asArray();
     }
 }

@@ -1,5 +1,7 @@
 package com.l7tech.external.assertions.ssh.server;
 
+import com.jscape.inet.scp.Scp;
+import com.jscape.inet.scp.ScpException;
 import com.jscape.inet.sftp.Sftp;
 import com.jscape.inet.sftp.SftpException;
 import com.jscape.inet.ssh.util.SshHostKeys;
@@ -8,7 +10,6 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.external.assertions.ssh.SshRouteAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Messages;
-import com.l7tech.gateway.common.transport.ftp.FtpFileNameSource;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.objectmodel.FindException;
@@ -98,19 +99,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             }
         }
 
-        String fileName = null;
-        String dir = null;
-        if (assertion.getFileNameSource() == FtpFileNameSource.AUTO) {
-            fileName = context.getRequestId().toString();
-        } else if (assertion.getFileNameSource() == FtpFileNameSource.PATTERN) {
-            fileName = expandVariables(context, assertion.getFileNamePattern());
-        }
-
-        if ((assertion.getDirectory() != null) && (!assertion.getDirectory().equalsIgnoreCase(""))){
-            dir = expandVariables(context, assertion.getDirectory());
-        }
-
-        Sftp sftpClient = null;
+        ServerSshRouteClient sshClient = null;
         try {
             SshParameters sshParams = new SshParameters(host, port, username, password);
 
@@ -142,39 +131,48 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                 sshParams = new SshParameters(host, port, username, password);
             }
 
-            sftpClient = new Sftp(sshParams);
-            sftpClient.setTimeout(assertion.getTimeout());   // connect timeout value from assertion UI
-            sftpClient.connect();
+            if (assertion.isScpProtocol()) {
+                sshClient = new ServerSshRouteClient(new Scp(sshParams));
+            } else {
+                sshClient = new ServerSshRouteClient(new Sftp(sshParams));
+            }
 
-            if(!sftpClient.isConnected()) {
-                sftpClient.disconnect();
+            sshClient.setTimeout(assertion.getConnectTimeout());   // connect timeout value from assertion UI
+            sshClient.connect();
+
+            if(!sshClient.isConnected()) {
+                sshClient.disconnect();
                 logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, "Failed to authenticate with the remote server.");
                 return AssertionStatus.FAILED;
             }
 
             // upload the file
             try {
-                if (dir != null) {
-                    sftpClient.setDir(dir);
-                }
-                sftpClient.upload(mimeKnob.getEntireMessageBodyAsInputStream(), fileName);
+                sshClient.upload(mimeKnob.getEntireMessageBodyAsInputStream(), expandVariables(context, assertion.getDirectory()),  expandVariables(context, assertion.getFileName()));
             } catch (NoSuchPartException e) {
-                logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {SshAssertionMessages.SFTP_NO_SUCH_PART_ERROR + ",server:"+getHostName(context, assertion)+ ",error:"+e.getMessage()}, e);
+                logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {SshAssertionMessages.SFTP_NO_SUCH_PART_ERROR + ",server:" + getHostName(context, assertion)+ ",error:" + e.getMessage()}, e);
+                return AssertionStatus.FAILED;
+            } catch (ScpException e) {
+                if (ExceptionUtils.getMessage(e).contains("SSH_FX_NO_SUCH_FILE")){
+                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { SshAssertionMessages.SFTP_DIR_DOESNT_EXIST_ERROR+ ",server:" + getHostName(context, assertion)+ ",error:" + e.getMessage()}, e);
+                } else{
+                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { SshAssertionMessages.SFTP_EXCEPTION_ERROR + ",server:" + getHostName(context, assertion)+ ",error:"  + e.getMessage()}, e);
+                }
                 return AssertionStatus.FAILED;
             } catch (SftpException e) {
                 if (ExceptionUtils.getMessage(e).contains("SSH_FX_NO_SUCH_FILE")){
-                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { SshAssertionMessages.SFTP_DIR_DOESNT_EXIST_ERROR+ ",server:" +getHostName(context, assertion)+ ",error:"+e.getMessage()}, e);
+                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { SshAssertionMessages.SFTP_DIR_DOESNT_EXIST_ERROR+ ",server:" + getHostName(context, assertion)+ ",error:" + e.getMessage()}, e);
                 } else{
-                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { SshAssertionMessages.SFTP_EXCEPTION_ERROR + ",server:" +getHostName(context, assertion)+ ",error:" +e.getMessage()}, e);
+                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { SshAssertionMessages.SFTP_EXCEPTION_ERROR + ",server:" + getHostName(context, assertion)+ ",error:"  + e.getMessage()}, e);
                 }
                 return AssertionStatus.FAILED;
             } catch (IOException e) {
-                logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { SshAssertionMessages.SFTP_IO_EXCEPTION + ",server:"+getHostName(context, assertion)+ ",error:"+e.getMessage()}, e);
+                logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { SshAssertionMessages.SFTP_IO_EXCEPTION + ",server:" + getHostName(context, assertion) + ",error:" + e.getMessage()}, e);
                 logger.log(Level.WARNING, "SFTP Route Assertion IO error: " + e, ExceptionUtils.getDebugException(e));
                 return AssertionStatus.FAILED;
             } finally {
-                if (sftpClient != null){
-                    sftpClient.disconnect();
+                if (sshClient != null){
+                    sshClient.disconnect();
                 }
             }
 
@@ -197,8 +195,8 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             logger.log(Level.WARNING, "SFTP Route Assertion error: " + e, ExceptionUtils.getDebugException(e));
             return AssertionStatus.FAILED;
         } finally {
-            if(sftpClient != null) {
-                sftpClient.disconnect();
+            if(sshClient != null) {
+                sshClient.disconnect();
             }
         }
     }
