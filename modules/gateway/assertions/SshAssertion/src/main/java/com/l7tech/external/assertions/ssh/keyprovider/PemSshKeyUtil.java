@@ -14,7 +14,7 @@ import java.security.*;
 /**
  * PEM SSH key utility class.
  */
-public class PemSshKeyUtil {
+public class PemSshKeyUtil extends JceProvider {
     public static final String PEM = "PEM";
 
     private static final Logger LOG = LoggerFactory.getLogger(PemSshKeyUtil.class);
@@ -38,7 +38,6 @@ public class PemSshKeyUtil {
     }
 
     /**
-     * TODO add to JceProvider as a utility method as recommended by ML 2011/07/14
      * Get the provider name for AES service.
      * @return a String for the provider name
      */
@@ -48,14 +47,13 @@ public class PemSshKeyUtil {
     }
 
     /**
-     * TODO add to JceProvider as a utility method as recommended by ML 2011/07/14
      * Get the provider name for RSA service.
      * Note: Cipher.getInstance("RSA").getProvider().getName() throws error when using Bouncy Castle's PEMReader
      * @return a String for the provider name
      */
     public static String getAsymProvider() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
         Provider ap = JceProvider.getInstance().getProviderFor("Cipher.RSA");
-        return ap != null ? ap.getName() : Cipher.getInstance("RSA/NONE/NoPadding").getProvider().getName();
+        return ap != null ? ap.getName() : Cipher.getInstance(new PemSshKeyUtil().getRsaNoPaddingCipherName()).getProvider().getName();
     }
 
     public static KeyPair doReadKeyPair(String privateKey) throws Exception {
@@ -88,5 +86,10 @@ public class PemSshKeyUtil {
         } catch (IOException e) {
             // Ignore
         }
+    }
+
+    @Override
+    public String getDisplayName() {
+        return null;
     }
 }
