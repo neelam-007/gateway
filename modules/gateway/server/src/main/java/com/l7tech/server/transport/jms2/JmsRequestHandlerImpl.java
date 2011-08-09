@@ -124,8 +124,8 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                     requestStream = null;
                 }
 
-                // enforce size restriction
-                sizeLimit = endpointCfg.getEndpoint().getRequestMaxSize()<0 ? com.l7tech.message.Message.getMaxBytes() : endpointCfg.getEndpoint().getRequestMaxSize();
+                // todo enforce size restriction
+                sizeLimit = endpointCfg.getEndpoint().getRequestMaxSize()== null ? com.l7tech.message.Message.getMaxBytes() : Long.parseLong(endpointCfg.getEndpoint().getRequestMaxSize());
                 if ( sizeLimit > 0 && size > sizeLimit ) {
                     messageTooLarge = true;
                 }

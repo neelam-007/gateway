@@ -151,6 +151,10 @@ public interface TransportAdmin {
     @Secured(stereotype=SAVE_OR_UPDATE,types=RESOLUTION_CONFIGURATION)
     long saveResolutionConfiguration( ResolutionConfiguration configuration ) throws SaveException;
 
+    /**
+     * Gets the xml part max bytes value set in the io.xmlPartMaxBytes cluster property
+     * @return the xml part max bytes value set in the io.xmlPartMaxBytes cluster property
+     */
     @Transactional(readOnly=true)
     long getXmlMaxBytes();
 

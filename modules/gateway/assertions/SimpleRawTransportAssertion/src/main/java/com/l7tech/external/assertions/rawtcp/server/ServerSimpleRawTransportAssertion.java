@@ -117,7 +117,7 @@ public class ServerSimpleRawTransportAssertion extends AbstractServerAssertion<S
                         ? responseContentType
                         : ContentTypeHeader.create(ExpandVariables.process(responseContentTypeTemplate, vars, getAudit(), true));
 
-                long maxResponseSize = assertion.getMaxResponseBytes() > 0 ? assertion.getMaxResponseBytes(): Message.getMaxBytes() ;
+                long maxResponseSize = assertion.getMaxResponseBytes()== null ? Message.getMaxBytes(): Long.parseLong(assertion.getMaxResponseBytes());
                 response.initialize(stashManagerFactory.createStashManager(), contentType, new ByteLimitInputStream(new BufferedInputStream(sock.getInputStream()), 1024,maxResponseSize),maxResponseSize);
                 final Socket finalSock = sock;
                 sock = null; // defer closing response socket until end of request, so we might be able to stream it

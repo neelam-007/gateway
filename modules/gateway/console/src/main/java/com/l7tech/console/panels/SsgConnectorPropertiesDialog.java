@@ -417,7 +417,6 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         }
         contentTypeComboBox.setModel(contentTypeComboBoxModel);
 
-        requestByteLimitPanel.setValue(Registry.getDefault().getTransportAdmin().getXmlMaxBytes());
         requestByteLimitPanel.setLabelText("Set maximum request size:");
 
         threadPoolSizeSpinner.setModel( new SpinnerNumberModel( DEFAULT_POOL_SIZE, 1, 10000, 1 ) );
@@ -1311,10 +1310,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         }
 
         String requestLimit = connector.getProperty(SsgConnector.PROP_REQUEST_SIZE_LIMIT);
-        requestByteLimitPanel.setSelected(requestLimit != null);
-        if(requestLimit != null) {
-            requestByteLimitPanel.setValue(Long.valueOf(requestLimit));
-        }
+        requestByteLimitPanel.setValue(requestLimit, Registry.getDefault().getTransportAdmin().getXmlMaxBytes());
 
         saveCheckBoxState(savedStateCheckBoxes);
         enableOrDisableComponents();
@@ -1426,7 +1422,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             connector.putProperty(prop.left, prop.right);
 
         if(requestByteLimitPanel.isSelected()){
-            connector.putProperty(SsgConnector.PROP_REQUEST_SIZE_LIMIT, Long.toString(requestByteLimitPanel.getValue()));
+            connector.putProperty(SsgConnector.PROP_REQUEST_SIZE_LIMIT,requestByteLimitPanel.getValue());
         }else {
             connector.removeProperty(SsgConnector.PROP_REQUEST_SIZE_LIMIT);
         }

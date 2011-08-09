@@ -423,11 +423,12 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     }
 
                     long maxBytes = 0;
-                    if (assertion.getResponseSize() <0){
+                    if (assertion.getResponseSize()== null){
                         maxBytes = com.l7tech.message.Message.getMaxBytes();
                     }
                     else{
-                        maxBytes = assertion.getResponseSize();
+                        String maxBytesString = ExpandVariables.process(assertion.getResponseSize(),variables,getAudit());
+                        maxBytes = Long.parseLong(maxBytesString); // resolve var
                     }
                     if ( jmsResponse instanceof TextMessage ) {
                         responseMessage.initialize(XmlUtil.stringToDocument( ((TextMessage)jmsResponse).getText() ),maxBytes);
@@ -491,7 +492,10 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                 exception = e;
             } catch ( NamingException e ) {
                 exception = e;
-            } finally {
+            } catch ( NumberFormatException e ) {
+                exception = e;
+            } finally
+            {
                 if ( closeDestinationIfTemporaryQueue( jmsInboundDestinationHolder[0] ) ) {
                     jmsInboundDestinationHolder[0] = null;
                 }

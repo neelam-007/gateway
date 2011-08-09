@@ -39,8 +39,9 @@ public class ByteLimitPanel extends JPanel {
     private static ResourceBundle resources = ResourceBundle.getBundle(ByteLimitPanel.class.getName());
     private final ImageIcon BLANK_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Transparent16.png"));
     private final ImageIcon WARNING_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Warning16.png"));
-    private String PARAM_MAX_BYTES = "io.xmlPartMaxBytes";
     private long DEFAULT_MAX_BYTES = 2621440;
+    private boolean allowContextVars = false;
+    private InputValidator.ValidationRule textBoxRule = null;
 
 
     public ByteLimitPanel() {
@@ -75,7 +76,11 @@ public class ByteLimitPanel extends JPanel {
         }));
 
         validator = new InputValidator(this,setMaxCheckbox.getText());
-        validator.constrainTextFieldToNumberRange(resources.getString("max.bytes"),bytesTextBox,1,Integer.MAX_VALUE);
+
+
+        textBoxRule = validator.buildTextFieldNumberRangeValidationRule(resources.getString("max.bytes"),bytesTextBox,1,Integer.MAX_VALUE, false);
+        validator.addRule(textBoxRule);
+        validator.constrainTextFieldToBeNonEmpty(resources.getString("max.bytes"),bytesTextBox,null);
 
         enableDisableComponents();
 
@@ -86,58 +91,69 @@ public class ByteLimitPanel extends JPanel {
             }
         }));
 
-        // set default value from cluster property
-        ClusterProperty prop = null;
-        String strValue = null;
-        try {
-            prop = Registry.getDefault().getClusterStatusAdmin().findPropertyByName(PARAM_MAX_BYTES);
-        } catch (FindException e) {
-            logger.warning(MessageFormat.format(resources.getString("cluster.prop.error"), e.getMessage()));
-        }
-        if (prop == null) {
-            Collection<ClusterPropertyDescriptor> descriptors = Registry.getDefault().getClusterStatusAdmin().getAllPropertyDescriptors();
-            for (ClusterPropertyDescriptor desc : descriptors) {
-                if (desc.getName().equals(PARAM_MAX_BYTES))
-                    strValue = desc.getDefaultValue();
-            }
-        }else{
-           strValue = prop.getValue();
-        }
-        try{
-            setValue(Long.parseLong(strValue));
-        } catch (NumberFormatException e){
-            logger.warning(MessageFormat.format(resources.getString("cluster.prop.value.error"), PARAM_MAX_BYTES ,strValue ,DEFAULT_MAX_BYTES ));
-            setValue(DEFAULT_MAX_BYTES);
-        }
         this.setLayout(new BorderLayout());
         add(rootPanel, BorderLayout.CENTER);
     }
+
 
     public void setLabelText(String text){
         setMaxCheckbox.setText(text);
     }
 
-    public void setValue(long value){
-        if(value>0){
-            bytesRadioButton.setSelected(true);
-            bytesTextBox.setText(Long.toString(value));
+    public void setAllowContextVars(boolean allowContextVars){
+        if(this.allowContextVars == allowContextVars)
+            return;
+        this.allowContextVars = allowContextVars;
+        validator.removeRule(textBoxRule);
+        if(!allowContextVars){
+            textBoxRule = validator.buildTextFieldNumberRangeValidationRule(resources.getString("max.bytes"),bytesTextBox,1,Integer.MAX_VALUE, false);
+            validator.addRule(textBoxRule);
         }
-        else{
-            unlimitedRadioButton.setSelected(true);
+    }
+    /**
+     *
+     * @param strValue  Context variable or string of a Long
+     * @param defaultValue default value of the property, used when value not selected
+     */
+    public void setValue(String strValue, long defaultValue){
+        if(strValue== null || strValue.isEmpty()) {
+            setMaxCheckbox.setSelected(false);
+            bytesRadioButton.setSelected(true);
+            bytesTextBox.setText(Long.toString(defaultValue));
+        }else{
+            setMaxCheckbox.setSelected(true);
+            try{
+                long value = Long.parseLong(strValue);
+                if(value>0){
+                    bytesRadioButton.setSelected(true);
+                    bytesTextBox.setText(Long.toString(value));
+                }
+                else{
+                    unlimitedRadioButton.setSelected(true);
+                }
+            }
+            catch (NumberFormatException ex){
+                bytesRadioButton.setSelected(true);
+                bytesTextBox.setText(strValue);
+            }
         }
         enableDisableComponents();
     }
 
     /**
      *
-     * @return 0 for unlimited
+     * @return "0" for unlimited, null for not selected
      */
-    public long getValue() throws NumberFormatException{
-        if(bytesRadioButton.isSelected()){
-            return Long.parseLong(bytesTextBox.getText());
-        }
-        else{
-            return 0;
+    public String getValue() throws NumberFormatException{
+        if(setMaxCheckbox.isSelected()){
+            if(bytesRadioButton.isSelected()){
+                return bytesTextBox.getText();
+            }
+            else{
+                return "0";
+            }
+        }else{
+            return null;
         }
     }
 

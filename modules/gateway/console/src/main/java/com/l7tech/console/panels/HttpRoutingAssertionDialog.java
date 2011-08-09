@@ -404,8 +404,8 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 validateResMsgDest();
             }
         });
-        byteLimitPanel.setValue(Registry.getDefault().getPolicyAdmin().getXmlMaxBytes());
         byteLimitPanel.setLabelText("Set maximum response size:");
+        byteLimitPanel.setAllowContextVars(true);
 
         final String resMsgDest = assertion.getResponseMsgDest();
         resMsgDestVariableTextField.setAssertion(assertion,getPreviousAssertion());
@@ -415,10 +415,8 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             resMsgDestVariableTextField.setVariable(resMsgDest);
             resMsgDestVariableRadioButton.doClick();
         }
-        if(assertion.getResponseSize()>=0){
-            byteLimitPanel.setSelected(true);
-            byteLimitPanel.setValue(assertion.getResponseSize());
-        }
+
+        byteLimitPanel.setValue(assertion.getResponseSize(),Registry.getDefault().getPolicyAdmin().getXmlMaxBytes());
         validateResMsgDest();
 
         Set<HttpMethod> methods = EnumSet.allOf(HttpMethod.class);
@@ -766,7 +764,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         } else if (resMsgDestVariableRadioButton.isSelected()) {
             assertion.setResponseMsgDest(resMsgDestVariableTextField.getVariable());
         }
-        assertion.setResponseSize(byteLimitPanel.isSelected()?  byteLimitPanel.getValue() :-1 );
+        assertion.setResponseSize(byteLimitPanel.getValue());
 
         assertion.getResponseHeaderRules().setRules(responseHttpRulesTableHandler.getData());
         assertion.getResponseHeaderRules().setForwardAll(resHeadersAll.isSelected());

@@ -336,11 +336,8 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             String domain = assertion.getRealm();
             String host = assertion.getNtlmHost();
 
-            Map<String,Object> vars = null;
+            Map<String,Object> vars = context.getVariableMap(varNames, getAudit());
             if (login != null && login.length() > 0 && password != null && password.length() > 0) {
-                if (vars == null) {
-                    vars = context.getVariableMap(varNames, getAudit());
-                }
                 login = ExpandVariables.process(login, vars, getAudit());
                 password = ExpandVariables.process(password, vars, getAudit());
                 if (domain != null) domain = ExpandVariables.process(domain, vars, getAudit());
@@ -599,7 +596,21 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 });
             }
 
-            boolean readOk = readResponse(context, routedResponse, routedResponseDestination, method == HttpMethod.HEAD);
+            long maxBytes = 0;
+            if (assertion.getResponseSize()== null){
+                maxBytes = com.l7tech.message.Message.getMaxBytes();
+            }
+            else{
+                String maxBytesString = ExpandVariables.process(assertion.getResponseSize(),vars,getAudit());
+                try{
+                    maxBytes = Long.parseLong(maxBytesString); // resolve var
+                }catch (NumberFormatException ex){
+                    logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(ex));
+                    return AssertionStatus.FAILED;
+                }
+            }
+
+            boolean readOk = readResponse(context, routedResponse, routedResponseDestination, method == HttpMethod.HEAD, maxBytes);
             long latencyTimerEnd = System.currentTimeMillis();
             if (readOk) {
                 long latency = latencyTimerEnd - latencyTimerStart;
@@ -738,7 +749,8 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     private boolean readResponse(final PolicyEnforcementContext context,
                                  final GenericHttpResponse routedResponse,
                                  final Message destination,
-                                 final boolean wasHeadMethod) {
+                                 final boolean wasHeadMethod,
+                                 final long responseMaxSize) {
         boolean responseOk = true;
         try {
             final int status = routedResponse.getStatus();
@@ -765,18 +777,10 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 outerContentType = getDefaultContentType(false);
             }
 
-            long maxBytes = 0;
-            if (assertion.getResponseSize() <0){
-                maxBytes = com.l7tech.message.Message.getMaxBytes();
-            }
-            else{
-                maxBytes = assertion.getResponseSize();
-            }
-
             // Handle missing content type error
             if (assertion.isPassthroughHttpAuthentication() && status == HttpConstants.STATUS_UNAUTHORIZED) {
                 if ( outerContentType==null ) outerContentType = getDefaultContentType(true);
-                destination.initialize(stashManagerFactory.createStashManager(), outerContentType, responseStream, maxBytes);
+                destination.initialize(stashManagerFactory.createStashManager(), outerContentType, responseStream, responseMaxSize);
                 responseOk = false;
             } else if (status >= HttpConstants.STATUS_ERROR_RANGE_START && assertion.isFailOnErrorStatus() && !passthroughSoapFault) {
                 logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_BADSTATUS, Integer.toString(status));
@@ -788,7 +792,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                     destination.initialize(outerContentType, new byte[0]);
                 } else {
                     StashManager stashManager = stashManagerFactory.createStashManager();
-                    destination.initialize(stashManager, outerContentType, responseStream,maxBytes);
+                    destination.initialize(stashManager, outerContentType, responseStream,responseMaxSize);
                 }
             }
         } catch(EOFException eofe){

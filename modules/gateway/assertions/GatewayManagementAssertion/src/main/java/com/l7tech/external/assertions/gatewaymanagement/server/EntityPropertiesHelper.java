@@ -247,7 +247,7 @@ class EntityPropertiesHelper {
             .put( "useMessageIdForCorrelation", false )
             .put( "acknowledgementType", "AUTOMATIC" )
             .put( "outboundMessageType", "AUTOMATIC" )
-            .put( "requestMaxSize", -1)
+            .put( "requestMaxSize", null)
             .unmodifiableMap()
         )
         .put( Policy.class, MapBuilder.<String,Object>builder()

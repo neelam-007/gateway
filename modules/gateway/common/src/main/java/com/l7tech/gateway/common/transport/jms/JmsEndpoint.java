@@ -45,7 +45,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
     private boolean disabled;
     private boolean useMessageIdForCorrelation;
     private boolean template;
-    private long requestMaxSize = -1;
+    private String requestMaxSize = null;
 
     public JmsEndpoint(){
     }
@@ -291,11 +291,11 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
     }
 
     @Column(name="request_max_size", nullable=false)
-    public long getRequestMaxSize() {
+    public String getRequestMaxSize() {
         return requestMaxSize;
     }
 
-    public void setRequestMaxSize(long requestMaxSize) {
+    public void setRequestMaxSize(String requestMaxSize) {
         checkLocked();
         this.requestMaxSize = requestMaxSize;
     }

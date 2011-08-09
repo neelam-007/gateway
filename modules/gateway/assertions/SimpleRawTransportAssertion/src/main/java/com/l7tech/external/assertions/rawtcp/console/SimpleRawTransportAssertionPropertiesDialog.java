@@ -64,7 +64,7 @@ public class SimpleRawTransportAssertionPropertiesDialog extends AssertionProper
         responseContextVariablePanel.add(responseContextVariableField, BorderLayout.CENTER);
 
         responseLimitPanel = new ByteLimitPanel();
-        responseLimitPanel.setValue(Registry.getDefault().getPolicyAdmin().getXmlMaxBytes());
+        responseLimitPanel.setAllowContextVars(true);
         responseLimitPanel.setLabelText("Set maximum response size:");
         responseLimitHolderPanel.setLayout(new BorderLayout());
         responseLimitHolderPanel.add(responseLimitPanel, BorderLayout.CENTER);
@@ -165,9 +165,7 @@ public class SimpleRawTransportAssertionPropertiesDialog extends AssertionProper
         }
         responseContextVariableField.setAssertion(assertion,getPreviousAssertion());
 
-        long maxResponseBytes = assertion.getMaxResponseBytes();
-        responseLimitPanel.setSelected(maxResponseBytes>=0);
-        if(maxResponseBytes>=0)responseLimitPanel.setValue(maxResponseBytes);
+        responseLimitPanel.setValue(assertion.getMaxResponseBytes(),Registry.getDefault().getPolicyAdmin().getXmlMaxBytes());
 
         enableOrDisableComponents();
     }
@@ -194,7 +192,7 @@ public class SimpleRawTransportAssertionPropertiesDialog extends AssertionProper
         if(responseLimitError != null){
             throw new ValidationException(responseLimitError);
         }
-        assertion.setMaxResponseBytes(responseLimitPanel.isSelected() ? responseLimitPanel.getValue() : DEFAULT_RESPONSE_SIZE_LIMIT);
+        assertion.setMaxResponseBytes(responseLimitPanel.isSelected() ? responseLimitPanel.getValue() : Long.toString(DEFAULT_RESPONSE_SIZE_LIMIT));
         assertion.setWriteTimeoutMillis(customTransmitTimeoutCheckBox.isSelected() ?  Integer.parseInt(transmitTimeoutField.getText()) : DEFAULT_WRITE_TIMEOUT);
         assertion.setReadTimeoutMillis(customReceiveTimeoutCheckBox.isSelected() ? Integer.parseInt(receiveTimeoutField.getText()) : DEFAULT_READ_TIMEOUT);
 

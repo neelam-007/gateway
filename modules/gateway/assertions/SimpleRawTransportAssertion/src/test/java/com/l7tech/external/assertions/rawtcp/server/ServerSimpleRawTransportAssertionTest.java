@@ -46,7 +46,7 @@ public class ServerSimpleRawTransportAssertionTest {
         SimpleRawTransportAssertion ass = new SimpleRawTransportAssertion();
         ass.setTargetHost("127.0.0.3");
         ass.setTargetPort(2323);
-        ass.setMaxResponseBytes(0);
+        ass.setMaxResponseBytes("0");
 
         final String responseStr = "<response/>";
         final String requestStr = "<blah/>";
@@ -70,11 +70,11 @@ public class ServerSimpleRawTransportAssertionTest {
 
     @Test
     @BugNumber(9106)
-    public void testReponseSizeLimitSuccess() throws Exception {
+    public void testResponseSizeLimitSuccess() throws Exception {
         SimpleRawTransportAssertion ass = new SimpleRawTransportAssertion();
         ass.setTargetHost("127.0.0.3");
         ass.setTargetPort(2323);
-        ass.setMaxResponseBytes(20);
+        ass.setMaxResponseBytes("20");
 
         final String responseStr = "<response/>";
         final String requestStr = "<blah/>";
@@ -98,11 +98,11 @@ public class ServerSimpleRawTransportAssertionTest {
 
     @Test
     @BugNumber(9106)
-    public void testReponseSizeLimitFailure() throws Exception {
+    public void testResponseSizeLimitFailure() throws Exception {
         SimpleRawTransportAssertion ass = new SimpleRawTransportAssertion();
         ass.setTargetHost("127.0.0.3");
         ass.setTargetPort(2323);
-        ass.setMaxResponseBytes(10);
+        ass.setMaxResponseBytes("10");
         ass.setResponseContentType("text/xml");
 
         ServerSimpleRawTransportAssertion sass = new ServerSimpleRawTransportAssertion(ass, null);

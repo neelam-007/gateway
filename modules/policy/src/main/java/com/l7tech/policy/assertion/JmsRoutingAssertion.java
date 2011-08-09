@@ -155,11 +155,11 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
         this.requestTimeToLive = requestTimeToLive;
     }
 
-    public long getResponseSize(){
+    public String getResponseSize(){
         return responseSize;
     }
 
-    public void setResponseSize(long responseSize){
+    public void setResponseSize(String responseSize){
         this.responseSize = responseSize;
     }
 
@@ -235,7 +235,8 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
         ).withExpressions(
                 requestPriority,
                 requestTimeToLive,
-                responseTimeout
+                responseTimeout,
+                responseSize
         ).asArray();
     }
 
@@ -274,5 +275,5 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
     private String requestPriority;
     private String requestTimeToLive;
     private String responseTimeout = null;
-    protected long responseSize = -1;
+    protected String responseSize = "";
 }

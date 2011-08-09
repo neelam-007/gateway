@@ -454,7 +454,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 } else {
                     assertion.setResponseTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
                 }
-                assertion.setResponseSize(responseByteLimitPanel.isSelected()? responseByteLimitPanel.getValue():-1 );
+                assertion.setResponseSize(responseByteLimitPanel.getValue() );
 
                 String responseTimeoutOverride = jmsResponseTimeout.getText();
                 if (responseTimeoutOverride != null && ! responseTimeoutOverride.isEmpty()) {
@@ -548,10 +548,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         }
         responseTargetVariable.setAssertion(assertion,getPreviousAssertion());
 
-        responseByteLimitPanel.setSelected(assertion.getResponseSize()>=0);
-        if(assertion.getResponseSize()>=0){
-            responseByteLimitPanel.setValue(assertion.getResponseSize());
-        }
+        responseByteLimitPanel.setValue(assertion.getResponseSize(), Registry.getDefault().getPolicyAdmin().getXmlMaxBytes());
     }
 
     private boolean isReplyToQueue( final JmsEndpoint jmsEndpoint ) {

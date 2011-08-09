@@ -77,7 +77,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
     protected int maxRetries = -1;
     protected String requestMsgSrc;
     protected String responseMsgDest;
-    protected long responseSize = -1;
+    protected String responseSize = null;
     protected HttpPassthroughRuleSet responseHeaderRules = new HttpPassthroughRuleSet(false,
                                                             new HttpPassthroughRule[]{
                                                              new HttpPassthroughRule("Set-Cookie", false, null)});
@@ -283,11 +283,11 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         responseMsgDest = variableName;
     }
 
-    public long getResponseSize(){
+    public String getResponseSize(){
         return responseSize;
     }
 
-    public void setResponseSize(long responseSize){
+    public void setResponseSize(String responseSize){
         this.responseSize = responseSize;
     }
 
@@ -476,6 +476,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         expressions.add(krbConfiguredAccount);
         expressions.add(krbConfiguredPassword);
         expressions.add(proxyPassword);
+        expressions.add(responseSize);
         if (customURLs != null) expressions.addAll( Arrays.asList( customURLs ) );
         if (customIpAddresses != null) expressions.addAll( Arrays.asList( customIpAddresses ) );
         expressions.add(Syntax.getVariableExpression(requestMsgSrc));
