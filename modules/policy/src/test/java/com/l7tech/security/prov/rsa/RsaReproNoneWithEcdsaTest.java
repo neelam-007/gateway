@@ -2,6 +2,7 @@ package com.l7tech.security.prov.rsa;
 
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.security.prov.JceProvider;
+import com.l7tech.util.SyspropUtil;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import static org.junit.Assert.*;
 import org.junit.*;
@@ -52,7 +53,7 @@ public class RsaReproNoneWithEcdsaTest {
     @BeforeClass
     public static void installRsaProvider() {
         final String rsaEngineClass = "com.l7tech.security.prov.rsa.RsaJceProviderEngine";
-        System.setProperty("com.l7tech.common.security.jceProviderEngine", rsaEngineClass);
+        SyspropUtil.setProperty( "com.l7tech.common.security.jceProviderEngine", rsaEngineClass );
         JceProvider.init();
         assertEquals(rsaEngineClass, JceProvider.getEngineClass());
     }

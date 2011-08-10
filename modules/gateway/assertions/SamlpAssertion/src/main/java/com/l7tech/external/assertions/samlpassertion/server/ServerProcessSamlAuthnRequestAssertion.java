@@ -30,6 +30,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
@@ -38,7 +39,6 @@ import com.l7tech.util.MissingRequiredElementException;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.SoapConstants;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.TooManyChildElementsException;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
@@ -151,9 +151,9 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
     private static final String ELEMENT_AUTHN_REQUEST = "AuthnRequest";
 
     private static final AtomicReference<JAXBContext> jaxbContext = new AtomicReference<JAXBContext>();
-    private static final boolean useStaticContext = SyspropUtil.getBoolean( "com.l7tech.external.assertions.samlpassertion.useStaticContext", true );
-    private static final boolean allowMultipleCertificates = SyspropUtil.getBoolean( "com.l7tech.external.assertions.samlpassertion.allowMultipleCertificates", false );
-    private static final boolean validateSSOProfileDetails = SyspropUtil.getBoolean( "com.l7tech.external.assertions.samlpassertion.validateSSOProfile", true );
+    private static final boolean useStaticContext = ConfigFactory.getBooleanProperty( "com.l7tech.external.assertions.samlpassertion.useStaticContext", true );
+    private static final boolean allowMultipleCertificates = ConfigFactory.getBooleanProperty( "com.l7tech.external.assertions.samlpassertion.allowMultipleCertificates", false );
+    private static final boolean validateSSOProfileDetails = ConfigFactory.getBooleanProperty( "com.l7tech.external.assertions.samlpassertion.validateSSOProfile", true );
 
     private final SecurityTokenResolver securityTokenResolver;
 

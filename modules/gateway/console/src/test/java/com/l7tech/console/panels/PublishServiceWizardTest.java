@@ -1,8 +1,3 @@
-/*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.Registry;
@@ -17,6 +12,8 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.SyspropUtil;
 import org.junit.Ignore;
 
 /**
@@ -33,13 +30,13 @@ public class PublishServiceWizardTest {
     }
 
     public static void main(String[] args) throws IOException, FindException {
-        System.setProperty("com.l7tech.common.locator", "com.l7tech.common.locator.StubModeLocator");
+        SyspropUtil.setProperty( "com.l7tech.common.locator", "com.l7tech.common.locator.StubModeLocator" );
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Exception e) {
             log.log(Level.WARNING, "L&F error", e);
         }
-        log.info("Property: " + System.getProperty("com.l7tech.common.locator"));
+        log.info( "Property: " + ConfigFactory.getProperty( "com.l7tech.common.locator" ) );
         //PublishServiceWizard w = new PublishServiceWizard(new JFrame(), true);
         PublishServiceWizard w = PublishServiceWizard.getInstance(new JFrame());
         w.setVisible(true);

@@ -21,11 +21,11 @@ import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.security.cert.CertValidationProcessor;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.SoapConstants;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.context.ApplicationContext;
@@ -54,7 +54,7 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
               (CertValidationProcessor) context.getBean("certValidationProcessor"),
               (SecurityTokenResolver)context.getBean("securityTokenResolver"),
               (TrustedCertServices)context.getBean("trustedCertServices"),
-              SyspropUtil.getBoolean(ServerNcesValidatorAssertion.class.getName() + ".checkSingleSigner", true) );
+              ConfigFactory.getBooleanProperty( ServerNcesValidatorAssertion.class.getName() + ".checkSingleSigner", true ) );
     }
 
     protected ServerNcesValidatorAssertion( final NcesValidatorAssertion assertion,

@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2009 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.processcontroller.monitoring.sampling;
 
 import com.l7tech.common.io.ProcResult;
@@ -8,7 +5,7 @@ import static com.l7tech.common.io.ProcUtils.args;
 import static com.l7tech.common.io.ProcUtils.exec;
 import com.l7tech.server.management.api.monitoring.BuiltinMonitorables;
 import com.l7tech.server.processcontroller.ConfigService;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 import org.springframework.context.ApplicationContext;
 
 import java.io.File;
@@ -24,8 +21,8 @@ class CpuTemperatureSampler extends HostPropertySampler<Integer> {
     private static final Pattern TEMP_MATCHER = Pattern.compile("^temperature:\\s*(\\d+)\\s*C\\s*$");
     private static final String SCRIPT_NAME = "hardware-stats.pl";
 
-    private static final String SUDO_PATH = SyspropUtil.getString(PROP_BASE + ".sudoPath", "/usr/bin/sudo");
-    private static final boolean DOSUDO = SyspropUtil.getBoolean(PROP_BASE + ".runWithSudo", SUDO_PATH != null);
+    private static final String SUDO_PATH = ConfigFactory.getProperty( PROP_BASE + ".sudoPath", "/usr/bin/sudo" );
+    private static final boolean DOSUDO = ConfigFactory.getBooleanProperty( PROP_BASE + ".runWithSudo", SUDO_PATH != null );
 
     private final ConfigService config;
 

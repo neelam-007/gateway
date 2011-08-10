@@ -237,16 +237,23 @@
                 <patternset>
                     <exclude name="META-INF/*"/>
                     <exclude name="META-INF"/>
+                    <exclude name="com/l7tech/config.properties"/>
                     <exclude name="com/l7tech/EntityTypes.properties"/>
                 </patternset>
             </unjar>
+            <delete file="@{dir}/config.properties" quiet="true"/>
             <delete file="@{dir}/EntityTypes.properties" quiet="true"/>
             <unjar src="${jar.include.@{name}.text}" dest="@{dir}">
                 <patternset>
+                    <include name="com/l7tech/config.properties"/>
                     <include name="com/l7tech/EntityTypes.properties"/>
                 </patternset>
                 <mapper type="flatten"/>
             </unjar>
+            <concat destfile="@{dir}/com/l7tech/config.properties" append="yes">
+                <fileset dir="@{dir}" includes="config.properties"/>
+            </concat>
+            <delete file="@{dir}/config.properties" quiet="true"/>
             <concat destfile="@{dir}/com/l7tech/EntityTypes.properties" append="yes">
                 <fileset dir="@{dir}" includes="EntityTypes.properties"/>
             </concat>

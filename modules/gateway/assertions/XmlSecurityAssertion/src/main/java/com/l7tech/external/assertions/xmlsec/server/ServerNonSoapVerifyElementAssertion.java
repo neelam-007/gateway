@@ -49,7 +49,7 @@ import static com.l7tech.external.assertions.xmlsec.NonSoapVerifyElementAssertio
  */
 public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAssertion<NonSoapVerifyElementAssertion> {
     static final String PROP_CERT_PARSE_BC_FALLBACK = "com.l7tech.external.assertions.xmlsec.certParseBcFallback";
-    static boolean CERT_PARSE_BC_FALLBACK = SyspropUtil.getBoolean(PROP_CERT_PARSE_BC_FALLBACK, false);
+    static boolean CERT_PARSE_BC_FALLBACK = ConfigFactory.getBooleanProperty( PROP_CERT_PARSE_BC_FALLBACK, false );
 
     private static final int COL_SIGNED_ELEMENT = 0;
     private static final int COL_SIGNER_CERT = 1;

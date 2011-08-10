@@ -13,8 +13,8 @@ import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.SsgConnectorActivationListener;
 import com.l7tech.uddi.*;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.InetAddressUtil;
-import com.l7tech.util.SyspropUtil;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.jaxws.JaxWsClientProxy;
 import org.apache.cxf.transport.http.HTTPConduit;
@@ -192,7 +192,7 @@ public class UDDIHelper implements SsgConnectorActivationListener {
     public String getExternalPolicyUrlForService( final long serviceOid,
                                                   final boolean fullPolicy,
                                                   final boolean inlinePolicy ){
-        final String policyUrlTemplate = serverConfig.getProperty( 
+        final String policyUrlTemplate = serverConfig.getProperty(
                 "uddi.policyUrlTemplate",
                 "http://{0}:{1}/ssg/policy/disco?serviceoid={3}&fulldoc={4}&inline={5}" );
 
@@ -538,7 +538,7 @@ public class UDDIHelper implements SsgConnectorActivationListener {
     }
 
     private static final class CxfTLSConfigAdapter implements UDDIClientTLSConfig.TLSConfigAdapter {
-        private static final boolean VERIFY_HOSTNAME = SyspropUtil.getBoolean( "com.l7tech.server.uddi.verifyHostname", true );
+        private static final boolean VERIFY_HOSTNAME = ConfigFactory.getBooleanProperty( "com.l7tech.server.uddi.verifyHostname", true );
 
         @Override
         public boolean configure( final Object target,

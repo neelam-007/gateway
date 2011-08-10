@@ -13,13 +13,13 @@ import com.l7tech.security.types.CertificateValidationType;
 import static com.l7tech.security.types.CertificateValidationType.CERTIFICATE_ONLY;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.DefaultKey;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.identity.cert.RevocationCheckPolicyManager;
 import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.Config;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
-import com.l7tech.util.SyspropUtil;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -50,14 +50,14 @@ import java.util.logging.Logger;
 public class CertValidationProcessorImpl implements CertValidationProcessor, ApplicationListener, PropertyChangeListener, InitializingBean {
     private static final Logger logger = Logger.getLogger(CertValidationProcessorImpl.class.getName());
 
-    private static final boolean USE_EXCEPTION_DECODER = SyspropUtil.getBoolean( "com.l7tech.server.security.cert.useExceptionDecoder", true );
+    private static final boolean USE_EXCEPTION_DECODER = ConfigFactory.getBooleanProperty( "com.l7tech.server.security.cert.useExceptionDecoder", true );
     private static final String PROP_USE_DEFAULT_ANCHORS = "pkixTrust.useDefaultAnchors";
     private static final String PROP_PERMITTED_CRITICAL_EXTENSIONS = "pkixTrust.permittedCriticalExtensions";
 
     private final DefaultKey defaultKey;
     private final TrustedCertManager trustedCertManager;
     private final RevocationCheckPolicyManager revocationCheckPolicyManager;
-    private final ServerConfig serverConfig;
+    private final Config config;
     private final RevocationCheckPolicy permissiveRcp;
     private CrlCache crlCache;
     private OCSPCache ocspCache;
@@ -81,16 +81,16 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
     public CertValidationProcessorImpl(final TrustedCertManager trustedCertManager,
                                        final RevocationCheckPolicyManager revocationCheckPolicyManager,
                                        final DefaultKey defaultKey,
-                                       final ServerConfig serverConfig)
+                                       final Config config )
     {
-        if (trustedCertManager == null || revocationCheckPolicyManager == null || defaultKey == null || serverConfig == null) throw new NullPointerException("A required component is missing");
+        if (trustedCertManager == null || revocationCheckPolicyManager == null || defaultKey == null || config == null) throw new NullPointerException("A required component is missing");
         this.trustedCertManager = trustedCertManager;
         this.revocationCheckPolicyManager = revocationCheckPolicyManager;
         //this.revocationCheckerFactory = new RevocationCheckerFactory(this, crlCache, ocspCache);
         this.defaultKey = defaultKey;
         this.permissiveRcp = new RevocationCheckPolicy();
         this.permissiveRcp.setDefaultSuccess(true);
-        this.serverConfig = serverConfig;
+        this.config = config;
 
         Map<String, List<CertValidationCacheEntry>> myDnCache = new HashMap<String, List<CertValidationCacheEntry>>();
         Map<IDNSerialKey, CertValidationCacheEntry> myIssuerDnCache = new HashMap<IDNSerialKey, CertValidationCacheEntry>();
@@ -127,7 +127,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
         final CertificateValidationType valType;
         if (requestedValType == null) {
             final String syspropname = "pkixValidation." + facility.name().toLowerCase();
-            String stype = serverConfig.getPropertyCached(syspropname);
+            String stype = config.getProperty( syspropname );
             if (stype == null) {
                 logger.warning(syspropname + " system property unavailable, using default " + CERTIFICATE_ONLY);
                 valType = getAcceptedValidationLevel(CERTIFICATE_ONLY, minValType);
@@ -547,7 +547,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
             }
         }
 
-        initializeCertStoreAndTrustAnchors(tces, Boolean.valueOf(serverConfig.getProperty(PROP_USE_DEFAULT_ANCHORS)));
+        initializeCertStoreAndTrustAnchors(tces, config.getBooleanProperty( PROP_USE_DEFAULT_ANCHORS, false ));
 
         refreshPermittedCriticalExtensions();
 
@@ -683,7 +683,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
     /** Caller must hold write lock (or be the constructor) */
     private void refreshPermittedCriticalExtensions() {
         this.permittedCriticalExtensions.clear();
-        this.permittedCriticalExtensions.addAll( Arrays.asList( serverConfig.getProperty(PROP_PERMITTED_CRITICAL_EXTENSIONS, "" ).split("\\s") ) );
+        this.permittedCriticalExtensions.addAll( Arrays.asList( config.getProperty(PROP_PERMITTED_CRITICAL_EXTENSIONS, "").split("\\s") ) );
     }
 
     /** Caller must hold write lock */

@@ -18,6 +18,7 @@ import com.l7tech.gui.util.SaveErrorStrategy;
 import com.l7tech.gui.util.SheetHolder;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InetAddressUtil;
+import com.l7tech.util.SyspropUtil;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -134,7 +135,7 @@ public class AppletMain extends JApplet implements SheetHolder {
 
     private boolean looksLikeWindows() {
         try {
-            String osn = System.getProperty("os.name");
+            String osn = SyspropUtil.getProperty( "os.name" );
             return osn != null && osn.toLowerCase().startsWith("windows");
         } catch (SecurityException se) {
             return false;

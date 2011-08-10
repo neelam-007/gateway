@@ -11,8 +11,8 @@ import com.l7tech.server.LifecycleBean;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.policy.variable.ServerVariables;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Pair;
-import com.l7tech.util.SyspropUtil;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 
 import javax.naming.Context;
@@ -34,7 +34,7 @@ import java.util.logging.Logger;
 public class JdbcConnectionPoolManager extends LifecycleBean {
     private static final Logger logger = Logger.getLogger(JdbcConnectionPoolManager.class.getName());
 
-    private static final long MIN_CHECK_AGE = SyspropUtil.getLong( "com.l7tech.server.jdbc.poolConnectionCheckMinAge", 30000L );
+    private static final long MIN_CHECK_AGE = ConfigFactory.getLongProperty( "com.l7tech.server.jdbc.poolConnectionCheckMinAge", 30000L );
 
     private JdbcConnectionManager jdbcConnectionManager;
     private Timer timer;

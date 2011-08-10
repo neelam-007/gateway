@@ -1,8 +1,8 @@
 package com.l7tech.util;
 
 import static com.l7tech.util.CollectionUtils.*;
+import static com.l7tech.util.Option.some;
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
@@ -194,6 +194,14 @@ public class CollectionUtilsTest {
 
         final Map<String,String> map4 = CollectionUtils.<String,String>mapBuilder().put( "1", "a" ).put( "2", "b" ).put( "3", "c" ).map();
         assertEquals( "map4 contents", new HashMap<String,String>(){{ put( "1", "a" ); put( "2", "b" ); put( "3", "c" ); }}, map4 );
+
+        final Map<String,String> map5 = CollectionUtils.<String,String>mapBuilder().put( "1", "a" )
+                .put( Option.<String>none(), Option.<String>none() )
+                .put( some( "2" ), Option.<String>none() )
+                .put( Option.<String>none(), some("c") )
+                .put( some("2"), some("b") )
+                .unmodifiableMap();
+        assertEquals( "map5 contents", new HashMap<String,String>(){{ put( "1", "a" ); put( "2", "b" ); }}, map5 );
 
         try {
             CollectionUtils.<String,String>mapBuilder().unmodifiableMap().put( "a", "1" );

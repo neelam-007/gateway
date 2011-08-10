@@ -49,7 +49,7 @@ import java.util.logging.Logger;
 public class JmsRequestHandlerImpl implements JmsRequestHandler {
 
     private static final Logger _logger = Logger.getLogger(JmsRequestHandlerImpl.class.getName());
-    private static final boolean topicMasterOnly = SyspropUtil.getBoolean( "com.l7tech.server.transport.jms.topicMasterOnly", true );
+    private static final boolean topicMasterOnly = ConfigFactory.getBooleanProperty( "com.l7tech.server.transport.jms.topicMasterOnly", true );
 
     private final Config config;
     private final MessageProcessor messageProcessor;

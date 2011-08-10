@@ -1,6 +1,7 @@
 package com.l7tech.util;
 
 import static com.l7tech.util.Option.optional;
+import static com.l7tech.util.Option.some;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -113,6 +114,35 @@ public class Either<A,B> implements Serializable {
     public B right() {
         if (!isRight()) throw new IllegalStateException( "Left valued either" );
         return b;
+    }
+
+    /**
+     * Convert the left side of this either to an option.
+     *
+     * @return The optional left value.
+     */
+    @NotNull
+    public Option<A> toLeftOption() {
+        return isLeft() ? some( left() ) : Option.<A>none() ;
+    }
+
+    /**
+     * Convert the right side of this either to an option.
+     *
+     * @return The optional right value.
+     */
+    @NotNull
+    public Option<B> toRightOption() {
+        return isRight() ? some( right() ) : Option.<B>none() ;
+    }
+
+    /**
+     * Create a swapped version of this either.
+     *
+     * @return The either with left and right values swapped
+     */
+    public Either<B,A> swap() {
+        return new Either<B, A>( b, a );
     }
 
     /**

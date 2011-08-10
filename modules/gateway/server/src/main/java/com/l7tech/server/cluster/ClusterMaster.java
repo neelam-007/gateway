@@ -1,5 +1,6 @@
 package com.l7tech.server.cluster;
 
+import com.l7tech.util.ConfigFactory;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.SimpleJdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -20,7 +21,6 @@ import java.sql.SQLException;
 
 import com.l7tech.util.Config;
 import com.l7tech.util.Triple;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ExceptionUtils;
 
 /**
@@ -46,8 +46,8 @@ public class ClusterMaster {
 
     private static final Logger logger = Logger.getLogger(ClusterMaster.class.getName());
 
-    private static final long MASTER_INTERVAL = SyspropUtil.getLong( "com.l7tech.server.cluster.masterInterval", 10000L );
-    private static final long MASTER_TIMEOUT = SyspropUtil.getLong( "com.l7tech.server.cluster.masterTimeout", 40000L );
+    private static final long MASTER_INTERVAL = ConfigFactory.getLongProperty( "com.l7tech.server.cluster.masterInterval", 10000L );
+    private static final long MASTER_TIMEOUT = ConfigFactory.getLongProperty( "com.l7tech.server.cluster.masterTimeout", 40000L );
 
     private final AtomicBoolean isMaster = new AtomicBoolean(false);
 
@@ -80,7 +80,7 @@ public class ClusterMaster {
                     public Boolean doInTransaction( final TransactionStatus transactionStatus ) {
                         Boolean statusOnCommit = null;
 
-                        final String configuredMasterNodeId = config.getProperty( "clusterMasterNode", null );
+                        final String configuredMasterNodeId = config.getProperty( "clusterMasterNode" );
                         if ( configuredMasterNodeId != null && !configuredMasterNodeId.isEmpty() ) {
                             isMaster.set( nodeId.equals(configuredMasterNodeId) );
                         } else {

@@ -15,10 +15,10 @@ import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.util.ManagedTimerTask;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.Functions;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.TimeUnit;
 import org.apache.commons.collections.map.LRUMap;
 import org.springframework.beans.factory.BeanFactory;
@@ -113,7 +113,7 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
 
     //- PRIVATE
 
-    private static final long cacheCleanupInterval = SyspropUtil.getLong( "com.l7tech.external.assertions.ldapquery.cacheCleanupInterval", 321123L ); // around every 5 minutes
+    private static final long cacheCleanupInterval = ConfigFactory.getLongProperty( "com.l7tech.external.assertions.ldapquery.cacheCleanupInterval", 321123L ); // around every 5 minutes
 
     private final IdentityProviderFactory identityProviderFactory;
     private final String[] varsUsed;

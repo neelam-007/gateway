@@ -74,9 +74,9 @@ import java.util.logging.Logger;
 public class PolicyService extends ApplicationObjectSupport {
     @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
     private static final Logger logger = Logger.getLogger(PolicyService.class.getName());
-    private static final boolean disableSecurityChecks = SyspropUtil.getBoolean( "com.l7tech.server.policy.policyServiceSkipSecurityChecks", false);
-    private static final boolean fullSecurityChecks = SyspropUtil.getBoolean( "com.l7tech.server.policy.policyServiceFullSecurityChecks", false);
-    private static final boolean enableLegacyKerberos = SyspropUtil.getBoolean( "com.l7tech.server.policy.policyServiceEnableLegacyKerberos", false);
+    private static final boolean disableSecurityChecks = ConfigFactory.getBooleanProperty( "com.l7tech.server.policy.policyServiceSkipSecurityChecks", false );
+    private static final boolean fullSecurityChecks = ConfigFactory.getBooleanProperty( "com.l7tech.server.policy.policyServiceFullSecurityChecks", false );
+    private static final boolean enableLegacyKerberos = ConfigFactory.getBooleanProperty( "com.l7tech.server.policy.policyServiceEnableLegacyKerberos", false );
     private static final String SERVICE_VALIDATE_WSS_TIMESTAMPS = "service.validateWssTimestamps";
 
     private final List<Assertion> allMessageCredentialAssertions;

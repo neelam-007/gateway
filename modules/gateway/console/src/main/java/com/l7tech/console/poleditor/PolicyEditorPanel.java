@@ -37,6 +37,7 @@ import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.TypedReference;
 import com.l7tech.policy.wsp.WspSensitive;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.ResourceUtils;
@@ -86,8 +87,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private static final long TIME_BEFORE_OFFERING_CANCEL_DIALOG = 500L;
 
     private static final String PROP_PREFIX = "com.l7tech.console";
-    private static final long DELAY_INITIAL = SyspropUtil.getLong(PROP_PREFIX + ".policyValidator.serverSideDelay.initial", 71L);
-    private static final long DELAY_CAP = SyspropUtil.getLong(PROP_PREFIX + ".policyValidator.serverSideDelay.maximum", 15000L);
+    private static final long DELAY_INITIAL = ConfigFactory.getLongProperty( PROP_PREFIX + ".policyValidator.serverSideDelay.initial", 71L );
+    private static final long DELAY_CAP = ConfigFactory.getLongProperty( PROP_PREFIX + ".policyValidator.serverSideDelay.maximum", 15000L );
     private static final double DELAY_MULTIPLIER = SyspropUtil.getDouble(PROP_PREFIX + ".policyValidator.serverSideDelay.multiplier", 1.6);
 
     private JTextPane messagesTextPane;

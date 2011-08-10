@@ -3,7 +3,6 @@ package com.l7tech.external.assertions.actional.server;
 import com.l7tech.external.assertions.actional.ActionalAssertion;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.MessageProcessed;
 import com.l7tech.server.event.MessageReceived;
 import com.l7tech.server.event.PostRoutingEvent;
@@ -13,7 +12,9 @@ import com.l7tech.server.event.system.Starting;
 import com.l7tech.server.policy.AssertionModuleRegistrationEvent;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.Background;
+import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -49,7 +50,7 @@ public class InterceptorEventListener implements ApplicationListener {
     /**
      * Used for cluster property management
      */
-    private final ServerConfig serverConfig;
+    private final Config config;
 
     /**
      * Used to subscribe/unsubscribe to application events.
@@ -61,7 +62,7 @@ public class InterceptorEventListener implements ApplicationListener {
      * <p/>
      * Default is 2 minutes.
      */
-    private static final long POLLING_INTERVAL = 120000;
+    private static final long POLLING_INTERVAL = 120000L;
     // should the above be configurable via a cluster property?
 
     private AtomicReference<ActionalConfig> configuration =
@@ -78,7 +79,7 @@ public class InterceptorEventListener implements ApplicationListener {
      * @param applicationContext the Spring application context.  Required.
      */
     InterceptorEventListener(ApplicationContext applicationContext) {
-        this.serverConfig = applicationContext.getBean("serverConfig", ServerConfig.class);
+        this.config = applicationContext.getBean("serverConfig", Config.class);
         this.applicationEventProxy = applicationContext.getBean("messageProcessingEventChannel", ApplicationEventProxy.class);
         applicationEventProxy.addApplicationListener(this);
         initialize();
@@ -157,15 +158,15 @@ public class InterceptorEventListener implements ApplicationListener {
             logger.log(Level.FINE, "Updating Actional Interceptor cluster property values...");
         }
 
-        final boolean enabledPropertyValue = serverConfig.getBooleanProperty(ClusterProperty.asServerConfigPropertyName(INTERCEPTOR_ENABLE_CLUSTER_PROPERTY), false);
-        final boolean transmitProviderPayloadPropertyValue = serverConfig.getBooleanProperty(ClusterProperty.asServerConfigPropertyName(INTERCEPTOR_TRANSMIT_PROVIDER_PAYLOAD_CLUSTER_PROPERTY), false);
-        final boolean transmitConsumerPayloadPropertyValue = serverConfig.getBooleanProperty(ClusterProperty.asServerConfigPropertyName(INTERCEPTOR_TRANSMIT_CONSUMER_PAYLOAD_CLUSTER_PROPERTY), false);
-        final String configDirPropertyValue = serverConfig.getProperty(ClusterProperty.asServerConfigPropertyName(INTERCEPTOR_CONFIG_DIRECTORY));
-        final boolean enforceInboundTrustZoneCheck = serverConfig.getBooleanProperty(ClusterProperty.asServerConfigPropertyName(INTERCEPTOR_ENFORCE_INBOUND_TRUST_ZONE), false);
+        final boolean enabledPropertyValue = config.getBooleanProperty(ClusterProperty.asServerConfigPropertyName(INTERCEPTOR_ENABLE_CLUSTER_PROPERTY), false);
+        final boolean transmitProviderPayloadPropertyValue = config.getBooleanProperty(ClusterProperty.asServerConfigPropertyName(INTERCEPTOR_TRANSMIT_PROVIDER_PAYLOAD_CLUSTER_PROPERTY), false);
+        final boolean transmitConsumerPayloadPropertyValue = config.getBooleanProperty(ClusterProperty.asServerConfigPropertyName(INTERCEPTOR_TRANSMIT_CONSUMER_PAYLOAD_CLUSTER_PROPERTY), false);
+        final String configDirPropertyValue = config.getProperty( ClusterProperty.asServerConfigPropertyName( INTERCEPTOR_CONFIG_DIRECTORY ) );
+        final boolean enforceInboundTrustZoneCheck = config.getBooleanProperty(ClusterProperty.asServerConfigPropertyName(INTERCEPTOR_ENFORCE_INBOUND_TRUST_ZONE), false);
 
-        final boolean httpHeaderEnabled = serverConfig.getBooleanProperty(ClusterProperty.asServerConfigPropertyName( INTERCEPTOR_ENABLE_OUTBOUND_HTTP_HEADER ), true);
-        final String outboundHttpHeaderName = serverConfig.getProperty( ClusterProperty.asServerConfigPropertyName( ActionalAssertion.INTERCEPTOR_HTTP_OUTBOUND_HEADER_NAME ), DEFAULT_HEADER_NAME );
-        final String inboundHttpHeaderName = serverConfig.getProperty( ClusterProperty.asServerConfigPropertyName( ActionalAssertion.INTERCEPTOR_HTTP_INBOUND_HEADER_NAME ), DEFAULT_HEADER_NAME );
+        final boolean httpHeaderEnabled = config.getBooleanProperty(ClusterProperty.asServerConfigPropertyName( INTERCEPTOR_ENABLE_OUTBOUND_HTTP_HEADER ), true);
+        final String outboundHttpHeaderName = config.getProperty( ClusterProperty.asServerConfigPropertyName( ActionalAssertion.INTERCEPTOR_HTTP_OUTBOUND_HEADER_NAME ), DEFAULT_HEADER_NAME );
+        final String inboundHttpHeaderName = config.getProperty( ClusterProperty.asServerConfigPropertyName( ActionalAssertion.INTERCEPTOR_HTTP_INBOUND_HEADER_NAME ), DEFAULT_HEADER_NAME );
 
         configuration.set( new ActionalConfig(
                 enabledPropertyValue,
@@ -177,7 +178,7 @@ public class InterceptorEventListener implements ApplicationListener {
                 inboundHttpHeaderName ) );
 
         //this only takes effect on module re-load
-        System.setProperty("com.actional.lg.interceptor.config", configDirPropertyValue);
+        SyspropUtil.setProperty( "com.actional.lg.interceptor.config", configDirPropertyValue );
     }
 
     boolean isEnabled() {

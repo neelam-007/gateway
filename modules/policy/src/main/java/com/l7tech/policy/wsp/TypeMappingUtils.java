@@ -1,14 +1,9 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.policy.wsp;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -265,7 +260,7 @@ public class TypeMappingUtils {
      */
     static Object invokeMethod(Method method, Object targetObject, final Object[] args)
       throws IllegalAccessException, InvocationTargetException {
-        final boolean doWorkaround = SyspropUtil.getBoolean("com.l7tech.compat.enableInvokeMethodWorkaround", false);
+        final boolean doWorkaround = ConfigFactory.getBooleanProperty( "com.l7tech.compat.enableInvokeMethodWorkaround", false );
         if (!doWorkaround) {
             return method.invoke(targetObject, args);
         }

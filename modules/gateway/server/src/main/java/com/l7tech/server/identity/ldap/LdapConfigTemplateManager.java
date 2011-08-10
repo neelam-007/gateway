@@ -1,9 +1,9 @@
 package com.l7tech.server.identity.ldap;
 
 import com.l7tech.server.ServerConfigParams;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.IOUtils;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ClassUtils;
@@ -132,7 +132,7 @@ public class LdapConfigTemplateManager {
     private Map<String,LdapIdentityProviderConfig> loadTemplatesFromFile() {
         Map<String,LdapIdentityProviderConfig> templates = new HashMap<String,LdapIdentityProviderConfig>();
 
-        String rootPath = ServerConfig.getInstance().getPropertyCached( ServerConfigParams.PARAM_LDAP_TEMPLATES);
+        String rootPath = ConfigFactory.getProperty( ServerConfigParams.PARAM_LDAP_TEMPLATES, null );
         if ( rootPath != null ) {
             logger.config("Loading LDAP templates from directory '"+rootPath+"'.");
 

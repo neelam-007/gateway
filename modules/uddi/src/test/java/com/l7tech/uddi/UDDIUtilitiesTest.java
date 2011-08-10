@@ -1,9 +1,6 @@
-/**
- * Copyright (C) 2008, Layer 7 Technologies Inc.
- * @author darmstrong
- */
 package com.l7tech.uddi;
 
+import com.l7tech.util.SyspropUtil;
 import org.junit.Test;
 import org.junit.Before;
 import org.junit.Assert;
@@ -21,6 +18,9 @@ import java.io.InputStream;
 import java.io.File;
 import java.io.IOException;
 
+/**
+ * @author darmstrong
+ */
 public class UDDIUtilitiesTest {
     private Wsdl wsdl;
     private WsdlToUDDIModelConverter wsdlToUDDIModelConverter;
@@ -269,7 +269,7 @@ public class UDDIUtilitiesTest {
      */
     @Test
     public void testGetUDDIBindingImplInfoFindOtherBinding() throws UDDIException {
-        System.setProperty("com.l7tech.uddi.UDDIUtilities.fallBackOnFirstImplentingWsdlPort", "true");
+        SyspropUtil.setProperty( "com.l7tech.uddi.UDDIUtilities.fallBackOnFirstImplentingWsdlPort", "true" );
         try {
             InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/BusinessServiceDiffBindings.xml");
             final BusinessService businessService = JAXB.unmarshal(stream, BusinessService.class);
@@ -290,7 +290,7 @@ public class UDDIUtilitiesTest {
             Assert.assertFalse("Invalid wsdl:port information found", "WarehouseSoap".equals(bindingInfo.getImplementingWsdlPort()));
             Assert.assertEquals("Invalid wsdl:port information found", "WarehouseSoap1" , bindingInfo.getImplementingWsdlPort());
         } finally {
-            System.clearProperty("com.l7tech.uddi.UDDIUtilities.fallBackOnFirstImplentingWsdlPort");
+            SyspropUtil.clearProperty( "com.l7tech.uddi.UDDIUtilities.fallBackOnFirstImplentingWsdlPort" );
         }
 
     }

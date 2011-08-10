@@ -93,7 +93,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private final LicenseManager licenseManager;
     private final ServiceMetricsServices serviceMetricsServices;
     private final AuditContext auditContext;
-    private final ServerConfig serverConfig;
+    private final Config config;
     private final TrafficLogger trafficLogger;
     private SoapFaultManager soapFaultManager;
     private final ArrayList<TrafficMonitor> trafficMonitors = new ArrayList<TrafficMonitor>();
@@ -112,7 +112,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
      * @param licenseManager the SSG's Licence Manager
      * @param metricsServices the SSG's ServiceMetricsManager
      * @param auditContext    audit context for message processing
-     * @param serverConfig    serverConfig provider
+     * @param config          config provider
      * @param trafficLogger   traffic logger
      * @param soapFaultManager  soap fault manager
      * @param messageProcessingEventChannel   channel on which to publish the message processed event (for auditing)
@@ -126,7 +126,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                              final LicenseManager licenseManager,
                              final ServiceMetricsServices metricsServices,
                              final AuditContext auditContext,
-                             final ServerConfig serverConfig,
+                             final Config config,
                              final TrafficLogger trafficLogger,
                              final SoapFaultManager soapFaultManager,
                              ApplicationEventPublisher messageProcessingEventChannel )
@@ -137,7 +137,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         if (licenseManager == null) throw new IllegalArgumentException("License Manager is required");
         if (metricsServices == null) throw new IllegalArgumentException("Service Metrics Manager is required");
         if (auditContext == null) throw new IllegalArgumentException("Audit Context is required");
-        if (serverConfig == null) throw new IllegalArgumentException("Server Config is required");
+        if (config == null) throw new IllegalArgumentException("Server Config is required");
         if (trafficLogger == null) throw new IllegalArgumentException("Traffic Logger is required");
         if (soapFaultManager == null) throw new IllegalArgumentException("SoapFaultManager is required");
         if (messageProcessingEventChannel == null) messageProcessingEventChannel = new EventChannel();
@@ -149,7 +149,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         this.licenseManager = licenseManager;
         this.serviceMetricsServices = metricsServices;
         this.auditContext = auditContext;
-        this.serverConfig = serverConfig;
+        this.config = config;
         this.trafficLogger = trafficLogger;
         this.soapFaultManager = soapFaultManager;
         this.messageProcessingEventChannel = messageProcessingEventChannel;
@@ -167,15 +167,15 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     }
 
     private void updateSettings(int period) {
-        long maxBytes = serverConfig.getLongPropertyCached( ServerConfigParams.PARAM_IO_FIRST_PART_MAX_BYTES, 2621440, period - 1);
+        long maxBytes = config.getLongProperty( ServerConfigParams.PARAM_IO_FIRST_PART_MAX_BYTES, 2621440 );
         MimeBody.setFirstPartMaxBytes(maxBytes);
 
         wssSettingsReference.set( new WssSettings(
-            serverConfig.getLongPropertyCached( ServerConfigParams.PARAM_SIGNED_PART_MAX_BYTES, 0, period - 1),
-            serverConfig.getBooleanProperty( ServerConfigParams.PARAM_SOAP_REJECT_MUST_UNDERSTAND, true),
-            serverConfig.getBooleanProperty( ServerConfigParams.PARAM_WSS_ALLOW_MULTIPLE_TIMESTAMP_SIGNATURES, false),
-            serverConfig.getBooleanProperty( ServerConfigParams.PARAM_WSS_ALLOW_UNKNOWN_BINARY_SECURITY_TOKENS, false),
-            serverConfig.getBooleanProperty( ServerConfigParams.PARAM_WSS_PROCESSOR_STRICT_SIG_CONFIRMATION, true)
+            config.getLongProperty( ServerConfigParams.PARAM_SIGNED_PART_MAX_BYTES, 0 ),
+            config.getBooleanProperty( ServerConfigParams.PARAM_SOAP_REJECT_MUST_UNDERSTAND, true),
+            config.getBooleanProperty( ServerConfigParams.PARAM_WSS_ALLOW_MULTIPLE_TIMESTAMP_SIGNATURES, false),
+            config.getBooleanProperty( ServerConfigParams.PARAM_WSS_ALLOW_UNKNOWN_BINARY_SECURITY_TOKENS, false),
+            config.getBooleanProperty( ServerConfigParams.PARAM_WSS_PROCESSOR_STRICT_SIG_CONFIRMATION, true)
         ) );
     }
 
@@ -454,21 +454,11 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     }
 
     private boolean isAuditHintingEnabled() {
-        String propHintingStr = serverConfig.getPropertyCached( ServerConfigParams.PARAM_AUDIT_HINTING_ENABLED);
-        boolean hintingEnabled = false;
-        if(propHintingStr!=null) {
-            hintingEnabled = Boolean.valueOf(propHintingStr.trim());
-        }
-        return hintingEnabled;
+        return config.getBooleanProperty(ServerConfigParams.PARAM_AUDIT_HINTING_ENABLED,false);
     }
 
     private boolean isAuditAssertionStatusEnabled() {
-        String propStatusStr = serverConfig.getPropertyCached( ServerConfigParams.PARAM_AUDIT_ASSERTION_STATUS_ENABLED);
-        boolean statusEnabled = false;
-        if(propStatusStr!=null) {
-            statusEnabled = Boolean.valueOf(propStatusStr.trim());
-        }
-        return statusEnabled;
+        return config.getBooleanProperty(ServerConfigParams.PARAM_AUDIT_ASSERTION_STATUS_ENABLED,false);
     }
 
     private final class MessageProcessingContext implements ServiceCache.ResolutionListener, Closeable {
@@ -585,7 +575,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         }
 
         private void maybeEnableTracing() {
-            String traceGuid = serverConfig.getPropertyCached( ServerConfigParams.PARAM_TRACE_POLICY_GUID);
+            String traceGuid = config.getProperty( ServerConfigParams.PARAM_TRACE_POLICY_GUID );
             if (traceGuid == null || traceGuid.trim().length() < 1) {
                 logger.info("Tracing enabled on service but no trace policy configured");
                 return;

@@ -17,6 +17,7 @@ import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.util.DefaultMasterPasswordFinder;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.MasterPasswordManager;
+import com.l7tech.util.SyspropUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -88,7 +89,7 @@ public class ExporterTestsOffline {
         final File nodeProp = new File(tmpSsgHome + File.separator +
                 ImportExportUtilities.NODE_CONF_DIR, ImportExportUtilities.NODE_PROPERTIES);
 
-        System.setProperty("com.l7tech.util.buildVersion", "5.1.0");        
+        SyspropUtil.setProperty( "com.l7tech.util.buildVersion", "5.1.0" );
         final NodeConfig nodeConfig = NodeConfigurationManager.loadNodeConfig("default", nodeProp, true);
         final DatabaseConfig databaseConfig = nodeConfig.getDatabase( DatabaseType.NODE_ALL,
                             NodeConfig.ClusterType.STANDALONE, NodeConfig.ClusterType.REPL_MASTER );

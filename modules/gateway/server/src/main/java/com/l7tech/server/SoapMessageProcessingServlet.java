@@ -1,10 +1,8 @@
-/*
- * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.server;
 
 import com.l7tech.common.http.CookieUtils;
 import com.l7tech.common.http.HttpCookie;
+import com.l7tech.util.Config;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -88,7 +86,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 
-    private ServerConfig serverConfig;
+    private Config config;
     private MessageProcessor messageProcessor;
     private SoapFaultManager soapFaultManager;
     private LicenseManager licenseManager;
@@ -97,13 +95,13 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     private Auditor auditor;
 
     @Override
-    public void init(ServletConfig config) throws ServletException {
-        super.init(config);
+    public void init(ServletConfig servletConfig) throws ServletException {
+        super.init(servletConfig);
         WebApplicationContext applicationContext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
         if (applicationContext == null) {
             throw new ServletException("Configuration error; could not get application context");
         }
-        serverConfig = applicationContext.getBean("serverConfig", ServerConfig.class);
+        config = applicationContext.getBean("serverConfig", Config.class);
         messageProcessor = applicationContext.getBean("messageProcessor", MessageProcessor.class);
         soapFaultManager = applicationContext.getBean("soapFaultManager", SoapFaultManager.class);
         licenseManager = applicationContext.getBean("licenseManager", LicenseManager.class);
@@ -152,7 +150,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         boolean gzipEncodedTransaction = false;
         if (maybegzipencoding != null) { // case of value ?
             if (maybegzipencoding.contains("gzip")) {
-                if( !serverConfig.getBooleanProperty("request.compress.gzip.allow", true) ) {
+                if( !config.getBooleanProperty("request.compress.gzip.allow", true) ) {
                     logger.log(Level.WARNING, "Rejecting GZIP compressed request.");
                     String soapFault = GZIP_REQUESTS_FORBIDDEN_SOAP_FAULT.replace("http://soong:8080/xml/blub",
                             hrequest.getScheme() + "://" + InetAddressUtil.getHostForUrl(hrequest.getServerName()) +

@@ -5,7 +5,7 @@ import com.l7tech.gateway.common.esmtrust.TrustedEsmUser;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.security.rbac.RoleManager;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class TrustedEsmUserManagerImpl extends HibernateEntityManager<TrustedEsmUser, EntityHeader> implements TrustedEsmUserManager {
     private static final Logger logger = Logger.getLogger(TrustedEsmUserManagerImpl.class.getName());
-    private static final boolean PERMIT_MAPPING_UPDATE = SyspropUtil.getBoolean("com.l7tech.server.remotetrust.permitMappingUpdate", true);
+    private static final boolean PERMIT_MAPPING_UPDATE = ConfigFactory.getBooleanProperty("com.l7tech.server.remotetrust.permitMappingUpdate", true);
 
     @Inject
     private TrustedEsmManager trustedEsmManager;

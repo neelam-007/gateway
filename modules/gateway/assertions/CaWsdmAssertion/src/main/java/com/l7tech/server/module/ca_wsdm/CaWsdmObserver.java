@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.module.ca_wsdm;
 
 import com.ca.wsdm.monitor.ManagerEndpointNotDefinedException;
@@ -23,6 +20,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.AssertionModuleRegistrationEvent;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.util.EventChannel;
+import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.SoapFaultDetail;
@@ -76,7 +74,7 @@ public class CaWsdmObserver implements ApplicationListener {
     /** This module's instance of the CaWsdmObserver. */
     private static CaWsdmObserver instance = null;
 
-    private final ServerConfig _serverConfig;
+    private final Config _config;
     private final ApplicationEventProxy _applicationEventProxy;
     private final EventChannel _messageProcessingEventChannel;
     private CaWsdmPropertiesAdaptor propsAdaptor;
@@ -109,7 +107,7 @@ public class CaWsdmObserver implements ApplicationListener {
      * @param applicationContext the Spring application context.  Required.
      */
     public CaWsdmObserver(ApplicationContext applicationContext) {
-        this._serverConfig = applicationContext.getBean("serverConfig", ServerConfig.class);
+        this._config = applicationContext.getBean("serverConfig", Config.class);
         this._applicationEventProxy = applicationContext.getBean("applicationEventProxy", ApplicationEventProxy.class);
         this._messageProcessingEventChannel = applicationContext.getBean("messageProcessingEventChannel", EventChannel.class);
         _applicationEventProxy.addApplicationListener(this);
@@ -312,7 +310,7 @@ public class CaWsdmObserver implements ApplicationListener {
     /** @return the ProperteisAdaptor that provides the CA WSDM observer and SOMMA properties from the DB. Never null. */
     public synchronized CaWsdmPropertiesAdaptor getPropertiesAdaptor() {
         if (propsAdaptor == null)
-            propsAdaptor = new CaWsdmPropertiesAdaptor(_serverConfig);
+            propsAdaptor = new CaWsdmPropertiesAdaptor( _config );
         return propsAdaptor;
     }
 

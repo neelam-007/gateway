@@ -4,9 +4,9 @@ import com.l7tech.identity.ldap.*;
 import com.l7tech.identity.GroupBean;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.Pair;
 import com.l7tech.common.io.WhirlycacheFactory;
 import com.l7tech.server.Lifecycle;
@@ -1319,9 +1319,9 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
 
     private static final Logger logger = Logger.getLogger(LdapGroupManagerImpl.class.getName());
 
-    private static final String memberNvPairAttribute = SyspropUtil.getString( "com.l7tech.server.identity.ldap.memberAttrName", "cn" );
-    private static final boolean useSingleMemberNvPair = SyspropUtil.getBoolean( "com.l7tech.server.identity.ldap.useMemberAttrName", false );
-    private static final boolean compareMembershipCaseSensitively = SyspropUtil.getBoolean( "com.l7tech.server.identity.ldap.compareMembersCaseSensitively", true );
+    private static final String memberNvPairAttribute = ConfigFactory.getProperty( "com.l7tech.server.identity.ldap.memberAttrName", "cn" );
+    private static final boolean useSingleMemberNvPair = ConfigFactory.getBooleanProperty( "com.l7tech.server.identity.ldap.useMemberAttrName", false );
+    private static final boolean compareMembershipCaseSensitively = ConfigFactory.getBooleanProperty( "com.l7tech.server.identity.ldap.compareMembersCaseSensitively", true );
 
     private static final int DEFAULT_GROUP_CACHE_SIZE = 0; // Zero for backwards compatibility
     private static final long DEFAULT_GROUP_CACHE_HIERARCHY_MAXAGE = 60000L;

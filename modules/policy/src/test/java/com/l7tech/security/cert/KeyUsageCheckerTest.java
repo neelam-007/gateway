@@ -3,6 +3,7 @@ package com.l7tech.security.cert;
 import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.security.keys.AesKey;
 import com.l7tech.util.FileUtils;
+import com.l7tech.util.SyspropUtil;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.jce.X509KeyUsage;
 import static org.junit.Assert.*;
@@ -59,9 +60,9 @@ public class KeyUsageCheckerTest {
 
     @Before
     public void beforeTest() {
-        System.clearProperty(KeyUsageChecker.PROPERTY_POLICY_FILE);
-        System.clearProperty(KeyUsageChecker.PROPERTY_POLICY_XML);
-        System.clearProperty(KeyUsageChecker.PROPERTY_ENFORCEMENT_MODE);
+        SyspropUtil.clearProperty( KeyUsageChecker.PROPERTY_POLICY_FILE );
+        SyspropUtil.clearProperty( KeyUsageChecker.PROPERTY_POLICY_XML );
+        SyspropUtil.clearProperty( KeyUsageChecker.PROPERTY_ENFORCEMENT_MODE );
     }
 
     @Test
@@ -109,7 +110,7 @@ public class KeyUsageCheckerTest {
     @Test
     public void testDefaultInvalidXml() {
         try {
-            System.setProperty(KeyUsageChecker.PROPERTY_POLICY_XML, "<bad-xml <very-bad/>");
+            SyspropUtil.setProperty( KeyUsageChecker.PROPERTY_POLICY_XML, "<bad-xml <very-bad/>" );
             KeyUsageChecker kuc = KeyUsageChecker.makeDefaultKeyUsageChecker();
 
 
@@ -121,13 +122,13 @@ public class KeyUsageCheckerTest {
 
     @Test
     public void testSyspropEnforcementMode() throws CertificateParsingException {
-        System.setProperty(KeyUsageChecker.PROPERTY_ENFORCEMENT_MODE, "BLAHBLAH");
+        SyspropUtil.setProperty(KeyUsageChecker.PROPERTY_ENFORCEMENT_MODE, "BLAHBLAH");
         testEnforcement(KeyUsageChecker.makeDefaultKeyUsageChecker());
 
-        System.setProperty(KeyUsageChecker.PROPERTY_ENFORCEMENT_MODE, "ENFORCE");
+        SyspropUtil.setProperty(KeyUsageChecker.PROPERTY_ENFORCEMENT_MODE, "ENFORCE");
         testEnforcement(KeyUsageChecker.makeDefaultKeyUsageChecker());
 
-        System.setProperty(KeyUsageChecker.PROPERTY_ENFORCEMENT_MODE, "IGNORE");
+        SyspropUtil.setProperty(KeyUsageChecker.PROPERTY_ENFORCEMENT_MODE, "IGNORE");
         KeyUsageChecker kuc = KeyUsageChecker.makeDefaultKeyUsageChecker();
         assertTrue("Enforcement disabled permits anything", kuc.permitsActivity(KeyUsageActivity.verifyCrl, CERT_WITH_KU_DIGSIG_KEYENC));
         assertTrue("Enforcement disabled permits anything", kuc.permitsActivity(KeyUsageActivity.sslClientRemote, CERT_WITH_EKU_SERVAUTH));

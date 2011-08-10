@@ -5,6 +5,7 @@ import com.l7tech.security.prov.JceProvider;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
+import com.l7tech.util.SyspropUtil;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.test.FixedSecureRandom;
 import static org.junit.Assert.*;
@@ -37,7 +38,7 @@ public class RsaJceProviderEngineTest {
     @BeforeClass
     public static void installRsaProvider() {
         final String rsaEngineClass = "com.l7tech.security.prov.rsa.RsaJceProviderEngine";
-        System.setProperty("com.l7tech.common.security.jceProviderEngine", rsaEngineClass);
+        SyspropUtil.setProperty( "com.l7tech.common.security.jceProviderEngine", rsaEngineClass );
         JceProvider.init();
         assertEquals(rsaEngineClass, JceProvider.getEngineClass());
     }

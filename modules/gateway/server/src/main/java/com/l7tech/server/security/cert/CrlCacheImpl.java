@@ -6,7 +6,6 @@ import com.l7tech.common.io.WhirlycacheFactory;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.SystemMessages;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.identity.ldap.LdapIdentityProvider;
 import com.l7tech.server.url.AbstractUrlObjectCache;
@@ -59,7 +58,7 @@ public class CrlCacheImpl implements CrlCache, DisposableBean {
     private final LdapUrlObjectCache<X509CRL> ldapUrlObjectCache;
     private final HttpObjectCache<X509CRL> httpObjectCache;
     private final ExecutorService executor;
-    private final ServerConfig serverConfig;
+    private final Config config;
     private static final long MAX_CACHE_AGE_VALUE = 30000;
     private static final int DEFAULT_CACHE_THREADS = 3;
     private static final int DEFAULT_MAX_HTTP_CACHE_OBJECTS_SIZE = 1000;
@@ -69,30 +68,30 @@ public class CrlCacheImpl implements CrlCache, DisposableBean {
     protected static final int DEFAULT_MAX_CRL_SIZE = 1024 * 1024;
     
     public CrlCacheImpl( final GenericHttpClientFactory httpClientFactory,
-                         final ServerConfig serverConfig,
+                         final Config config,
                          final Timer cacheTimer ) throws Exception {
         this.crlCache = WhirlycacheFactory.createCache(CrlCache.class.getSimpleName() + ".crlCache", 100, 1800, WhirlycacheFactory.POLICY_LRU);
         this.certCache = WhirlycacheFactory.createCache(CrlCache.class.getSimpleName() + ".certCache", 1000, 1800, WhirlycacheFactory.POLICY_LRU);
 
-        this.serverConfig = serverConfig;
-        final long maxCacheAge = serverConfig.getTimeUnitPropertyCached("pkixCRL.cache.expiry", 300000, MAX_CACHE_AGE_VALUE);
-        final long cacheExpiry = serverConfig.getTimeUnitPropertyCached("pkixCRL.cache.preexpiry", 60000, MAX_CACHE_AGE_VALUE);
-        int cacheThreads = serverConfig.getIntProperty("pkixCRL.cache.threads", DEFAULT_CACHE_THREADS);
+        this.config = config;
+        final long maxCacheAge = config.getTimeUnitProperty( "pkixCRL.cache.expiry", 300000 );
+        final long cacheExpiry = config.getTimeUnitProperty( "pkixCRL.cache.preexpiry", 60000 );
+        int cacheThreads = config.getIntProperty("pkixCRL.cache.threads", DEFAULT_CACHE_THREADS);
         if ( cacheThreads < 0 || cacheThreads > 100 ) {
             cacheThreads = DEFAULT_CACHE_THREADS;
             logger.warning("Ignoring configured value for cache servicing threads '"+cacheThreads+"', using default '"+DEFAULT_CACHE_THREADS+"'.");
         }
 
         // TODO support configuration of login, password
-        long connectTimeout = serverConfig.getTimeUnitPropertyCached( ServerConfigParams.PARAM_LDAP_CONNECTION_TIMEOUT, LdapIdentityProvider.DEFAULT_LDAP_CONNECTION_TIMEOUT, MAX_CACHE_AGE_VALUE);
-        long readTimeout = serverConfig.getTimeUnitPropertyCached( ServerConfigParams.PARAM_LDAP_READ_TIMEOUT, LdapIdentityProvider.DEFAULT_LDAP_READ_TIMEOUT, MAX_CACHE_AGE_VALUE);
+        long connectTimeout = config.getTimeUnitProperty( ServerConfigParams.PARAM_LDAP_CONNECTION_TIMEOUT, LdapIdentityProvider.DEFAULT_LDAP_CONNECTION_TIMEOUT );
+        long readTimeout = config.getTimeUnitProperty( ServerConfigParams.PARAM_LDAP_READ_TIMEOUT, LdapIdentityProvider.DEFAULT_LDAP_READ_TIMEOUT );
         ldapUrlObjectCache = new LdapUrlObjectCache<X509CRL>( "CRL", maxCacheAge, AbstractUrlObjectCache.WAIT_LATEST, null, null, connectTimeout, readTimeout, true);
 
-        int httpObjectCacheSize = SyspropUtil.getIntegerCached(MAX_HTTP_CACHE_OBJECTS_PROP, DEFAULT_MAX_HTTP_CACHE_OBJECTS_SIZE) ;
+        int httpObjectCacheSize = ConfigFactory.getIntProperty( MAX_HTTP_CACHE_OBJECTS_PROP, DEFAULT_MAX_HTTP_CACHE_OBJECTS_SIZE ) ;
         if (httpObjectCacheSize <= 0 || httpObjectCacheSize < DEFAULT_MAX_HTTP_CACHE_OBJECTS_SIZE) {
             httpObjectCacheSize = DEFAULT_MAX_HTTP_CACHE_OBJECTS_SIZE;
         }
-        if (SyspropUtil.getPropertyCached(MAX_HTTP_CACHE_OBJECTS_PROP) != null) {
+        if (ConfigFactory.getProperty( MAX_HTTP_CACHE_OBJECTS_PROP, null ) != null) {
             logger.config("Using system property " + MAX_HTTP_CACHE_OBJECTS_PROP + "=" + httpObjectCacheSize);
         }
 
@@ -362,7 +361,7 @@ public class CrlCacheImpl implements CrlCache, DisposableBean {
         }
 
         private long getExpiry(String name) {
-            return serverConfig.getTimeUnitPropertyCached(name, ONE_HOUR, 30000);
+            return config.getTimeUnitProperty( name, ONE_HOUR );
         }
     }
 

@@ -1,7 +1,3 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- */
-
 package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.audit.*;
@@ -16,7 +12,6 @@ import com.l7tech.identity.internal.InternalGroupMembership;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.GatewayKeyAccessFilter;
 import com.l7tech.server.PersistenceEventInterceptor;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.AdminInfo;
@@ -49,10 +44,10 @@ import java.util.logging.Logger;
 public class AuditAdminImpl implements AuditAdmin, InitializingBean, ApplicationContextAware {
     private static final Logger logger = Logger.getLogger(AuditAdminImpl.class.getName());
     private static final String CLUSTER_PROP_LAST_AUDITACK_TIME = "audit.acknowledge.highestTime";
-    private static final int MAX_CRITERIA_HISTORY = SyspropUtil.getInteger( "com.l7tech.server.audit.maxAuditSearchCriteria", 20 );
+    private static final int MAX_CRITERIA_HISTORY = ConfigFactory.getIntProperty( "com.l7tech.server.audit.maxAuditSearchCriteria", 20 );
     private static final String MAX_AUDIT_DATA_CACHE_SIZE = "com.l7tech.server.audit.maxAuditDataCacheSize";
-    private static final int CLEANUP_DELAY = SyspropUtil.getInteger( "com.l7tech.server.audit.auditDataCacheDelay", 120000 );
-    private static final long CLEANUP_PERIOD = SyspropUtil.getLong( "com.l7tech.server.audit.auditDataCachePeriod",  60000 );
+    private static final int CLEANUP_DELAY = ConfigFactory.getIntProperty( "com.l7tech.server.audit.auditDataCacheDelay", 120000 );
+    private static final long CLEANUP_PERIOD = ConfigFactory.getLongProperty( "com.l7tech.server.audit.auditDataCachePeriod", 60000 );
     private static final Collection<String> ignoredEntityClassNames = Arrays.asList(new String[] {
         // If any entity is found as not relevant for auditing, add it into this list.
         AuditRecord.class.getName(),
@@ -65,13 +60,13 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
     });
 
     // map of IdentityHeader -> AuditViewData
-    private final LRUMap auditedData = new LRUMap(SyspropUtil.getInteger(MAX_AUDIT_DATA_CACHE_SIZE, 100));
+    private final LRUMap auditedData = new LRUMap( ConfigFactory.getIntProperty( MAX_AUDIT_DATA_CACHE_SIZE, 100 ) );
 
     private AuditDownloadManager auditDownloadManager;
     private AuditRecordManager auditRecordManager;
     private SecurityFilter filter;
     private LogRecordManager logRecordManager;
-    private ServerConfig serverConfig;
+    private Config config;
     private ClusterPropertyManager clusterPropertyManager;
     private AuditArchiver auditArchiver;
     private ApplicationContext applicationContext;
@@ -106,8 +101,8 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
         this.logRecordManager = logRecordManager;
     }
 
-    public void setServerConfig(ServerConfig serverConfig) {
-        this.serverConfig = serverConfig;
+    public void setServerConfig(Config config ) {
+        this.config = config;
     }
 
     public void setClusterPropertyManager(ClusterPropertyManager clusterPropertyManager) {
@@ -383,7 +378,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
         }
 
         if(propertyName!=null) {
-            String valueInSecsStr = serverConfig.getPropertyCached(propertyName);
+            String valueInSecsStr = config.getProperty( propertyName );
             if(valueInSecsStr!=null) {
                 try {
                     refreshInterval = Integer.parseInt(valueInSecsStr);
@@ -414,7 +409,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
 
     private Level getAuditLevel(String serverConfigParam, String which, Level defaultLevel) {
         // todo: consider moving this and the same code from AuditContextImpl in ServerConfig
-        String msgLevel = serverConfig.getPropertyCached(serverConfigParam);
+        String msgLevel = config.getProperty( serverConfigParam );
         Level output = null;
         if (msgLevel != null) {
             try {
@@ -432,7 +427,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
 
     @Override
     public int serverMinimumPurgeAge() {
-        String sAge = serverConfig.getPropertyCached( ServerConfigParams.PARAM_AUDIT_PURGE_MINIMUM_AGE);
+        String sAge = config.getProperty( ServerConfigParams.PARAM_AUDIT_PURGE_MINIMUM_AGE );
         int age = 168;
         try {
             return Integer.valueOf(sAge);

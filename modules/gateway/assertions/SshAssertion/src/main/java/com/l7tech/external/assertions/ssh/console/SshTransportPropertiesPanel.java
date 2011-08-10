@@ -5,7 +5,7 @@ import com.l7tech.external.assertions.ssh.SshRouteAssertion;
 import com.l7tech.external.assertions.ssh.keyprovider.PemSshKeyUtil;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
@@ -52,13 +52,13 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
     @Override
     public void setData(Map<String, String> props) {
         scpCheckBox.setSelected(getBooleanProp(props, SshRouteAssertion.LISTEN_PROP_ENABLE_SCP,
-                SyspropUtil.getBoolean("com.l7tech.external.assertions.ssh.defaultEnableScp", true)));
+                ConfigFactory.getBooleanProperty("com.l7tech.external.assertions.ssh.defaultEnableScp", true)));
         sftpCheckBox.setSelected(getBooleanProp(props, SshRouteAssertion.LISTEN_PROP_ENABLE_SFTP,
-                SyspropUtil.getBoolean("com.l7tech.external.assertions.ssh.defaultEnableSftp", true)));
+                ConfigFactory.getBooleanProperty("com.l7tech.external.assertions.ssh.defaultEnableSftp", true)));
         idleTimeoutMinsField.setText(getStringProp(props, SshRouteAssertion.LISTEN_PROP_IDLE_TIMEOUT_MINUTES,
-                SyspropUtil.getString("com.l7tech.external.assertions.ssh.idleTimeoutMinutes", "10")));
+                ConfigFactory.getProperty("com.l7tech.external.assertions.ssh.idleTimeoutMinutes", "10")));
         maxConcurrentSessionsPerUserField.setText(getStringProp(props, SshRouteAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER,
-                SyspropUtil.getString("com.l7tech.external.assertions.ssh.defaultMaxConcurrentSessionsPerUser", "10")));
+                ConfigFactory.getProperty("com.l7tech.external.assertions.ssh.defaultMaxConcurrentSessionsPerUser", "10")));
 
         hostPrivateKey = props.get(SshRouteAssertion.LISTEN_PROP_HOST_PRIVATE_KEY);
         if (!StringUtils.isEmpty(hostPrivateKey)) {

@@ -6,7 +6,7 @@ import com.l7tech.common.io.ParamsCertificateGenerator;
 import com.l7tech.security.prov.CertificateRequest;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.prov.bc.BouncyCastleCertificateRequest;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DERSet;
@@ -23,7 +23,7 @@ import java.security.cert.X509Certificate;
 public class BouncyCastleCertUtils {
 
     // true to set attrs to null (pre-6.0-2 behavior); false to set attrs to empty DERSet (Bug #10534)
-    private static final boolean omitAttrs = SyspropUtil.getBoolean("com.l7tech.security.cert.csr.omitAttrs", false);
+    private static final boolean omitAttrs = ConfigFactory.getBooleanProperty( "com.l7tech.security.cert.csr.omitAttrs", false );
 
     /**
      * Generate a self-signed certificate from the specified KeyPair and the specified cert generation parameters.

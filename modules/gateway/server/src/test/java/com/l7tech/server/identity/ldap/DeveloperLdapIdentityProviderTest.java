@@ -10,10 +10,10 @@ import com.l7tech.identity.ldap.PasswdStrategy;
 import com.l7tech.identity.ldap.UserMappingConfig;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.security.token.http.HttpBasicToken;
+import com.l7tech.util.Config;
 import org.junit.Ignore;
 import org.springframework.context.ApplicationContext;
 
@@ -127,7 +127,7 @@ public class DeveloperLdapIdentityProviderTest {
         spock.setGroupManager(new LdapGroupManagerImpl());
         spock.setIdentityProviderConfig(getConfigForSpock());
         spock.setClientCertManager((ClientCertManager)applicationContext.getBean("clientCertManager"));
-        spock.setLdapRuntimeConfig(new LdapRuntimeConfig((ServerConfig)applicationContext.getBean("serverConfig")));
+        spock.setLdapRuntimeConfig(new LdapRuntimeConfig((Config)applicationContext.getBean("serverConfig")));
 
         spock.afterPropertiesSet();
         return spock;
@@ -139,7 +139,7 @@ public class DeveloperLdapIdentityProviderTest {
         bones.setGroupManager(new LdapGroupManagerImpl());
         bones.setIdentityProviderConfig(getConfigForBones());        
         bones.setClientCertManager((ClientCertManager)applicationContext.getBean("clientCertManager"));
-        bones.setLdapRuntimeConfig(new LdapRuntimeConfig((ServerConfig)applicationContext.getBean("serverConfig")));
+        bones.setLdapRuntimeConfig(new LdapRuntimeConfig((Config)applicationContext.getBean("serverConfig")));
 
         bones.afterPropertiesSet();
         return bones;
@@ -157,7 +157,7 @@ public class DeveloperLdapIdentityProviderTest {
         msad.setGroupManager(new LdapGroupManagerImpl());
         msad.setIdentityProviderConfig(getConfigForMSAD());        
         msad.setClientCertManager((ClientCertManager)applicationContext.getBean("clientCertManager"));
-        msad.setLdapRuntimeConfig(new LdapRuntimeConfig((ServerConfig)applicationContext.getBean("serverConfig")));
+        msad.setLdapRuntimeConfig(new LdapRuntimeConfig((Config)applicationContext.getBean("serverConfig")));
         msad.afterPropertiesSet();
         return msad;
     }

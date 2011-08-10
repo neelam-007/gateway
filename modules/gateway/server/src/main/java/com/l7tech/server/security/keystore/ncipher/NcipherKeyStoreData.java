@@ -19,7 +19,7 @@ class NcipherKeyStoreData implements Serializable {
     private static final Logger logger = Logger.getLogger(NcipherKeyStoreData.class.getName());
     private static final long serialVersionUID = -1890805696377529829L;
 
-    private static final int MAX_DELETED_FILENAMES_TO_TRACK = SyspropUtil.getInteger("com.l7tech.keystore.ncipher.maxDeletedFilenames", 5000);
+    private static final int MAX_DELETED_FILENAMES_TO_TRACK = ConfigFactory.getIntProperty( "com.l7tech.keystore.ncipher.maxDeletedFilenames", 5000 );
 
     private static final Pattern PAT_ALPHANUM = Pattern.compile("^[a-zA-Z0-9]+$");
     private static final Pattern PAT_ALPHANUM_WITH_DASH_AND_UNDERSCORE = Pattern.compile("^[a-zA-Z0-9_\\-]+$");

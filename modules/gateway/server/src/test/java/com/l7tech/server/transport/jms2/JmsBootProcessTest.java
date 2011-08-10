@@ -66,7 +66,7 @@ public class JmsBootProcessTest extends JmsTestCase {
             TestConnectionManager connMgr = new TestConnectionManager(testName, 1);
             TestEndpointManager endptMgr = new TestEndpointManager(testName);
             endptMgr.connMgr = connMgr;
-            ThreadPoolBean jmsThreadPool = new ThreadPoolBean(serverConfig, "JMS Thread Pool", "jmsListenerThreadLimit",
+            ThreadPoolBean jmsThreadPool = new ThreadPoolBean( config, "JMS Thread Pool", "jmsListenerThreadLimit",
                     "jms.listenerThreadLimit", 25);
             bootProcess = new JmsBootProcess(jmsThreadPool, licenseManager, connMgr, endptMgr, mapper, new PooledJmsEndpointListenerFactory(jmsThreadPool), null);
             bootProcess.setApplicationContext(appCtx);

@@ -1,5 +1,8 @@
 package com.l7tech.util;
 
+import com.l7tech.util.Functions.Unary;
+
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -7,15 +10,35 @@ import java.util.Properties;
  */
 public class MockConfig implements Config {
 
-    private final Properties properties;
+    private final Unary<String,String> propertyGetter;
 
     public MockConfig( final Properties properties ) {
-        this.properties = properties;        
+        this.propertyGetter = new Unary<String,String>(){
+            @Override
+            public String call( final String propertyName ) {
+                return properties.getProperty( propertyName );
+            }
+        };
+    }
+
+    public MockConfig( final Map<String,String> properties ) {
+        this.propertyGetter = new Unary<String,String>(){
+            @Override
+            public String call( final String propertyName ) {
+                return properties.get( propertyName );
+            }
+        };
+    }
+
+    @Override
+    public String getProperty( final String propertyName ) {
+        return propertyGetter.call( propertyName );
     }
 
     @Override
     public String getProperty( final String propertyName, final String defaultValue) {
-        return properties.getProperty(propertyName, defaultValue);
+        final String value = propertyGetter.call( propertyName );
+        return value == null ? defaultValue : value;
     }
 
     @Override

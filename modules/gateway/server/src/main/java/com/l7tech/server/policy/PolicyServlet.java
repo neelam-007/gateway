@@ -32,7 +32,6 @@ import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.server.AuthenticatableHttpServlet;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.GatewayFeatureSets;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.event.system.PolicyServiceEvent;
@@ -92,22 +91,20 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     private AuditContext auditContext;
     private SoapFaultManager soapFaultManager;
     private byte[] serverCertificate;
-    private ServerConfig serverConfig;
     private PolicyPathBuilder policyPathBuilder;
     private PolicyCache policyCache;
     private SecureRandom secureRandom;
 
     @Override
-    public void init(ServletConfig config) throws ServletException {
-        super.init(config);
+    public void init(ServletConfig servletConfig) throws ServletException {
+        super.init(servletConfig);
         try {
             ApplicationContext applicationContext = getApplicationContext();
             auditContext = applicationContext.getBean("auditContext", AuditContext.class);
-            soapFaultManager = (SoapFaultManager)applicationContext.getBean("soapFaultManager");
+            soapFaultManager = applicationContext.getBean("soapFaultManager", SoapFaultManager.class);
             DefaultKey ku = applicationContext.getBean("defaultKey", DefaultKey.class);
             serverCertificate = ku.getSslInfo().getCertificate().getEncoded();
-            serverConfig = (ServerConfig)applicationContext.getBean("serverConfig");
-            PolicyPathBuilderFactory pathBuilderFactory = (PolicyPathBuilderFactory) applicationContext.getBean("policyPathBuilderFactory");
+            PolicyPathBuilderFactory pathBuilderFactory = applicationContext.getBean("policyPathBuilderFactory",PolicyPathBuilderFactory.class);
             policyPathBuilder = pathBuilderFactory.makePathBuilder();
             policyCache = applicationContext.getBean( "policyCache", PolicyCache.class );
             secureRandom = getBean("secureRandom", SecureRandom.class);
@@ -389,7 +386,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     private boolean systemAllowsAnonymousDownloads(HttpServletRequest req) {
         // split strings into seperate values
         // check whether any of those can match start of
-        String allPassthroughs = serverConfig.getPropertyCached("passthroughDownloads");
+        String allPassthroughs = config.getProperty( "passthroughDownloads" );
         StringTokenizer st = new StringTokenizer(allPassthroughs);
         String remote = req.getRemoteAddr();
         while (st.hasMoreTokens()) {
@@ -406,7 +403,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     private boolean systemAllowsDisabledServiceDownloads(final HttpServletRequest req) {
         boolean permitted = false;
 
-        String disabledDownloads = serverConfig.getPropertyCached("service.disabledServiceDownloads");
+        String disabledDownloads = config.getProperty( "service.disabledServiceDownloads" );
         if ( "all".equalsIgnoreCase( disabledDownloads ) ) {
             permitted = true;
         } else if ( "passthrough".equalsIgnoreCase(disabledDownloads)) {
@@ -434,8 +431,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         byte[] pemEncodedServerCertificate = pemEncodedServerCertificateString.getBytes(Charsets.UTF8);
 
         // Insert Cert-Check-NNN: headers if we can.
-        boolean certificateDiscoveryEnabled = Boolean.valueOf(
-            ServerConfig.getInstance().getProperty( ServerConfigParams.PARAM_CERTIFICATE_DISCOVERY_ENABLED));
+        boolean certificateDiscoveryEnabled = ConfigFactory.getBooleanProperty( ServerConfigParams.PARAM_CERTIFICATE_DISCOVERY_ENABLED, false );
         if (certificateDiscoveryEnabled && username != null && nonce != null) {
             Collection<HttpHeader> checkInfoHeaders = findCheckInfoHeaders(username, pemEncodedServerCertificate, nonce);
             for (HttpHeader header : checkInfoHeaders) {
@@ -529,8 +525,8 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     private void sendAuthChallenge(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws IOException {
         // send error back with a hint that credentials should be provided
         String newUrl = "https://" + InetAddressUtil.getHostForUrl(httpServletRequest.getServerName());
-        int httpPort = serverConfig.getIntPropertyCached( ServerConfigParams.PARAM_HTTPPORT, 8080, 10000L);
-        int httpsPort = serverConfig.getIntPropertyCached( ServerConfigParams.PARAM_HTTPSPORT, 8443, 10000L);
+        int httpPort = config.getIntProperty( ServerConfigParams.PARAM_HTTPPORT, 8080 );
+        int httpsPort = config.getIntProperty( ServerConfigParams.PARAM_HTTPSPORT, 8443 );
         if (httpServletRequest.getServerPort() == httpPort || httpServletRequest.getServerPort() == httpsPort) {
             newUrl += ":" + httpsPort;
         }

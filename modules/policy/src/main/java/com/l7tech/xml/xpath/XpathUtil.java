@@ -1,9 +1,9 @@
 package com.l7tech.xml.xpath;
 
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.FullQName;
-import com.l7tech.util.SyspropUtil;
 import org.jaxen.JaxenException;
 import org.jaxen.JaxenHandler;
 import org.jaxen.NamespaceContext;
@@ -265,11 +265,11 @@ public class XpathUtil {
     public static void removeNamespaces( final String expression,
                                          final Map<String, String> namespaces,
                                          final Set<String> removePrefixes ) {
-        if ( SyspropUtil.getBoolean( "com.l7tech.xml.xpath.enableNamespaceCleanup", true ) ) {
+        if ( ConfigFactory.getBooleanProperty( "com.l7tech.xml.xpath.enableNamespaceCleanup", true ) ) {
             try {
                 final Set<String> usedPrefixes = new HashSet<String>();
                 final XPathReader reader = new XPathReader();
-                reader.setXPathHandler( new JaxenHandler(){
+                reader.setXPathHandler( new JaxenHandler() {
                     @Override
                     public void variableReference( final String prefix, final String variableName ) throws JaxenException {
                         usedPrefixes.add( prefix );

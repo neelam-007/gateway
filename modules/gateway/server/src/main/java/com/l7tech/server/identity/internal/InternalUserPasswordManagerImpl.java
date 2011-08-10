@@ -1,7 +1,3 @@
-/**
- * Copyright (C) 2008, Layer 7 Technologies Inc.
- * @author darmstrong
- */
 package com.l7tech.server.identity.internal;
 
 import com.l7tech.common.password.IncorrectPasswordException;
@@ -10,16 +6,19 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.internal.PasswordChangeRecord;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.Config;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Resolver;
 import com.l7tech.util.ResolvingComparator;
-import com.l7tech.util.SyspropUtil;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * @author darmstrong
+ */
 public class InternalUserPasswordManagerImpl implements InternalUserPasswordManager{
 
     //- PUBLIC
@@ -106,7 +105,7 @@ public class InternalUserPasswordManagerImpl implements InternalUserPasswordMana
 
     // - PRIVATE
 
-    private static final int MAX_PASSWORD_HISTORY = SyspropUtil.getInteger( "com.l7tech.server.identity.internal.maxPasswordHistory", 50 );
+    private static final int MAX_PASSWORD_HISTORY = ConfigFactory.getIntProperty( "com.l7tech.server.identity.internal.maxPasswordHistory", 50 );
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 

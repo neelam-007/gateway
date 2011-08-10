@@ -7,6 +7,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.wsdl.WSDLException;
 
+import com.l7tech.util.Config;
 import org.xml.sax.InputSource;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
@@ -20,7 +21,6 @@ import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.ServerConfig;
 
 /**
  * Check for any non-cached WSDL imports and save to the DB.
@@ -38,11 +38,11 @@ public class ServiceWsdlImportChecker implements InitializingBean {
      * @param serviceManager         The service manager to use
      * @param serviceDocumentManager The service document manager to use
      */
-    public ServiceWsdlImportChecker(final ServerConfig serverConfig,
+    public ServiceWsdlImportChecker(final Config config,
                                     final PlatformTransactionManager transactionManager,
                                     final ServiceManager serviceManager,
                                     final ServiceDocumentManager serviceDocumentManager) {
-        this.serverConfig = serverConfig;
+        this.config = config;
         this.transactionManager = transactionManager;
         this.serviceManager = serviceManager;
         this.serviceDocumentManager = serviceDocumentManager;
@@ -63,7 +63,7 @@ public class ServiceWsdlImportChecker implements InitializingBean {
      * <p>If imports are not locally available they will be saved to the DB.</p>
      */
     public void checkServiceWsdlImports() {
-        if (Boolean.valueOf(serverConfig.getPropertyCached("wsdlImportFixupEnabled"))) {
+        if (Boolean.valueOf( config.getProperty( "wsdlImportFixupEnabled" ) )) {
             logger.info("Checking WSDL imports for SOAP services.");
 
             // Load all published services.
@@ -88,7 +88,7 @@ public class ServiceWsdlImportChecker implements InitializingBean {
 
     private static final Logger logger = Logger.getLogger(ServiceWsdlImportChecker.class.getName());
 
-    private final ServerConfig serverConfig;
+    private final Config config;
     private final PlatformTransactionManager transactionManager;
     private final ServiceManager serviceManager;
     private final ServiceDocumentManager serviceDocumentManager;

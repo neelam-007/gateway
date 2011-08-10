@@ -1,7 +1,3 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- */
-
 package com.l7tech.server.cluster;
 
 import com.l7tech.server.ServerConfig;
@@ -9,9 +5,10 @@ import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.util.MessageId;
 import com.l7tech.server.util.MessageIdManager;
 import com.l7tech.util.Background;
+import com.l7tech.util.Config;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.SyspropUtil;
 import org.hibernate.Session;
 import org.hibernate.jdbc.Work;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
@@ -46,8 +43,8 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
 
     //- PUBLIC
 
-    public DistributedMessageIdManager( final ServerConfig serverConfig, final String clusterNodeId ) {
-        File configDir = serverConfig.getLocalDirectoryProperty( ServerConfigParams.PARAM_CONFIG_DIRECTORY, false );
+    public DistributedMessageIdManager( final ServerConfig config, final String clusterNodeId ) {
+        File configDir = config.getLocalDirectoryProperty( ServerConfigParams.PARAM_CONFIG_DIRECTORY, false );
         String file = null;
         if ( configDir != null ) {
             File jgroupsFile = new File( configDir, "jgroups-config.xml" );
@@ -56,7 +53,7 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
             }
         }
 
-        this.serverConfig = serverConfig;
+        this.config = config;
         this.clusterNodeId = clusterNodeId;
         jgroupsConfigFile = file;
     }
@@ -73,7 +70,7 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
             throw new IllegalStateException("Already Initialized");
         }
 
-        boolean useMulticast = serverConfig.getBooleanProperty( ServerConfigParams.PARAM_MULTICAST_ENABLED, true);
+        boolean useMulticast = config.getBooleanProperty( ServerConfigParams.PARAM_MULTICAST_ENABLED, true);
 
         cacheLock.readLock().lock();
         try {
@@ -173,7 +170,7 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
     //- PRIVATE
 
     private final Logger logger = Logger.getLogger(getClass().getName());
-    private final ServerConfig serverConfig;
+    private final Config config;
     private final String clusterNodeId;
 
     private MessageIdCache cache;
@@ -188,7 +185,7 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
      */
     private static final ReadWriteLock cacheLock = new ReentrantReadWriteLock();
     private static final AtomicLong attemptedCacheRestartTime = new AtomicLong(0);
-    private static final boolean CACHE_RESTART_ENABLED = SyspropUtil.getBoolean( "com.l7tech.server.cluster.cacheRestartEnabled", true );
+    private static final boolean CACHE_RESTART_ENABLED = ConfigFactory.getBooleanProperty("com.l7tech.server.cluster.cacheRestartEnabled", true);
     private static final long MIN_RESTART_INTERVAL = 60000;
 
     /**

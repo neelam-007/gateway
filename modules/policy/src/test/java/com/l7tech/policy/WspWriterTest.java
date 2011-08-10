@@ -27,6 +27,7 @@ import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.LSInputImpl;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.wsdl.BindingInfo;
 import com.l7tech.wsdl.BindingOperationInfo;
 import com.l7tech.wsdl.MimePartInfo;
@@ -63,7 +64,7 @@ public class WspWriterTest {
     public static final String ALL_DISABLED_ASSERTIONS_POLICY = RESOURCE_PATH + "/all_disabled_assertions_policy.xml";
     
     static {
-        System.setProperty("com.l7tech.policy.wsp.checkAccessors", "true");
+        SyspropUtil.setProperty( "com.l7tech.policy.wsp.checkAccessors", "true" );
         AssertionRegistry.installEnhancedMetadataDefaults();
     }
 

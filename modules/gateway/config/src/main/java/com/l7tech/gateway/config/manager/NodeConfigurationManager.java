@@ -9,11 +9,11 @@ import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.server.management.config.node.PCNodeConfig;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.util.CausedIOException;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.DefaultMasterPasswordFinder;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.HexUtils;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
@@ -36,7 +36,7 @@ public class NodeConfigurationManager {
 
     private static final Logger logger = Logger.getLogger(NodeConfigurationManager.class.getName());
 
-    private static final File gatewayDir = new File(SyspropUtil.getString("com.l7tech.gateway.home","/opt/SecureSpan/Gateway"));
+    private static final File gatewayDir = new File( ConfigFactory.getProperty( "com.l7tech.gateway.home", "/opt/SecureSpan/Gateway" ) );
     private static final File nodesDir = new File(gatewayDir, "node");
     private static final String sqlPath = "../config/etc/sql/ssg.sql";
     private static final String configPath = "{0}/etc/conf";

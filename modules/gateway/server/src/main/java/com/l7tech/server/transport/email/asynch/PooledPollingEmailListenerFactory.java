@@ -5,8 +5,8 @@ import com.l7tech.server.transport.email.PollingEmailListenerFactory;
 import com.l7tech.server.transport.email.PollingEmailListener;
 import com.l7tech.server.transport.email.EmailListenerConfig;
 import com.l7tech.server.transport.email.EmailListenerManager;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.util.ThreadPoolBean;
+import com.l7tech.util.Config;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -15,7 +15,7 @@ import java.beans.PropertyChangeListener;
  * Creates new PooledPollingEmailListener objects.
  */
 public class PooledPollingEmailListenerFactory implements PollingEmailListenerFactory, PropertyChangeListener {
-    private ServerConfig serverConfig;
+    private Config config;
     private final ThreadPoolBean threadPoolBean;
     private static final long DEFAULT_CONNECTION_TIMEOUT = 30000;
     private static final long DEFAULT_TIMEOUT = 60000;
@@ -28,19 +28,19 @@ public class PooledPollingEmailListenerFactory implements PollingEmailListenerFa
 
     /**
      * Constructor
-     * @param serverConfig  Server config
+     * @param config  Server config
      * @param threadPoolBean thread pool bean for email listeners
      */
-    public PooledPollingEmailListenerFactory(final ServerConfig serverConfig,
+    public PooledPollingEmailListenerFactory(final Config config,
                                              final ThreadPoolBean threadPoolBean) {
-        if (serverConfig == null) throw new IllegalArgumentException("serverConfig cannot be null.");
+        if ( config == null) throw new IllegalArgumentException("serverConfig cannot be null.");
         if(threadPoolBean == null) throw new IllegalArgumentException("threadPoolBean cannot be null.");
-        this.serverConfig = serverConfig;
+        this.config = config;
         this.threadPoolBean = threadPoolBean;
 
         //initialize timeouts
-        this.connectionTimeout = serverConfig.getTimeUnitPropertyCached(IN_CONNECTION_TIMEOUT, DEFAULT_CONNECTION_TIMEOUT, MAX_CACHE_AGE_VALUE);
-        this.timeout = serverConfig.getTimeUnitPropertyCached(IN_TIMEOUT, DEFAULT_TIMEOUT, MAX_CACHE_AGE_VALUE);
+        this.connectionTimeout = config.getTimeUnitProperty( IN_CONNECTION_TIMEOUT, DEFAULT_CONNECTION_TIMEOUT );
+        this.timeout = config.getTimeUnitProperty( IN_TIMEOUT, DEFAULT_TIMEOUT );
     }
 
     @Override
@@ -52,9 +52,9 @@ public class PooledPollingEmailListenerFactory implements PollingEmailListenerFa
     public void propertyChange(PropertyChangeEvent evt) {
         String propertyName = evt.getPropertyName();
         if ( ServerConfigParams.PARAM_EMAIL_LISTENER_CONNECTION_TIMEOUT.equals(propertyName)) {
-            this.connectionTimeout = serverConfig.getTimeUnitPropertyCached(IN_CONNECTION_TIMEOUT, DEFAULT_CONNECTION_TIMEOUT, MAX_CACHE_AGE_VALUE);
+            this.connectionTimeout = config.getTimeUnitProperty( IN_CONNECTION_TIMEOUT, DEFAULT_CONNECTION_TIMEOUT );
         } else if ( ServerConfigParams.PARAM_EMAIL_LISTENER_TIMEOUT.equals(propertyName)) {
-            this.timeout = serverConfig.getTimeUnitPropertyCached(IN_TIMEOUT, DEFAULT_TIMEOUT, MAX_CACHE_AGE_VALUE);
+            this.timeout = config.getTimeUnitProperty( IN_TIMEOUT, DEFAULT_TIMEOUT );
         }
     }
 }

@@ -94,9 +94,9 @@ public class TokenServiceClient {
         this.httpClient = httpClient;
         this.soapNs = soapVersion != null ?
                 soapVersion.getNamespaceUri() :
-                SyspropUtil.getBoolean( "com.l7tech.security.wstrust.useSoap12", false ) ?
-                    SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE :
-                    SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE;
+                ConfigFactory.getBooleanProperty( "com.l7tech.security.wstrust.useSoap12", false ) ?
+                        SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE :
+                        SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE;
     }
 
     /** Internal checked exception for reliable handling of server cert rediscovery. */

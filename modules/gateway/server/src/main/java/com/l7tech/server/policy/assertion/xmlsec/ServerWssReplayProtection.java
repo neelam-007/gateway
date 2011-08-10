@@ -54,8 +54,8 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
     private static final long DEFAULT_EXPIRY_TIME = 1000L * 60L * 10L; // if no Expires, assume expiry after 10 min
 
     private static final String ID_PREFIX_WSA_HASHED = "uuid:wsa:digest:";
-    private static final int MAX_WSA_MESSAGEID_HASHTHRESHOLD = SyspropUtil.getInteger("com.l7tech.server.messageIDHashThrehold" , 150); // 255 is the max we allow in the DB
-    private static final int MAX_WSA_MESSAGEID_MAXLENGTH = SyspropUtil.getInteger("com.l7tech.server.messageIDMaxLength" , 8192); // 8k limit
+    private static final int MAX_WSA_MESSAGEID_HASHTHRESHOLD = ConfigFactory.getIntProperty( "com.l7tech.server.messageIDHashThrehold", 150 ); // 255 is the max we allow in the DB
+    private static final int MAX_WSA_MESSAGEID_MAXLENGTH = ConfigFactory.getIntProperty( "com.l7tech.server.messageIDMaxLength", 8192 ); // 8k limit
     private static final String ID_FORMAT_CUSTOM_HASHED = "uuid:custom:scope:{0}:{1}";
 
     private static final Charset UTF8 = Charsets.UTF8;

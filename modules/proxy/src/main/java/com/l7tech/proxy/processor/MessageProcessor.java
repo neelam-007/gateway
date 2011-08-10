@@ -438,13 +438,11 @@ public class MessageProcessor {
         log.info("Running pending request through WS-Security decorator");
         Ssg ssg = context.getSsg();
         Date ts = ssg.getRuntime().getDateTranslatorToSsg().translate(new Date());
-        Integer expiryMillis = SyspropUtil.getInteger(PROPERTY_TIMESTAMP_EXPIRY);
+        Integer expiryMillis = ConfigFactory.getIntProperty( PROPERTY_TIMESTAMP_EXPIRY, 0 );
         String actorNamespacedStr = ssg.getProperties().get(SSGPROP_ACTOR_NAMESPACED);
         for (DecorationRequirements wssrequirement : allDecReq) {
             wssrequirement.setTimestampCreatedDate(ts);
-            if (expiryMillis != null) {
-                wssrequirement.setTimestampTimeoutMillis(expiryMillis);
-            }
+            wssrequirement.setTimestampTimeoutMillis(expiryMillis);
             if (actorNamespacedStr != null) {
                 wssrequirement.setSecurityHeaderActorNamespaced(Boolean.valueOf(actorNamespacedStr));
             }
@@ -1391,14 +1389,14 @@ public class MessageProcessor {
     }
 
     private static class LogFlags {
-        private static final boolean logPosts = Boolean.getBoolean(PROPERTY_LOGPOSTS);
-        private static final int logPostsByteLimit = SyspropUtil.getInteger(PROPERTY_LOGPOSTS_BYTELIMIT, 1024 * 512);
-        private static final boolean logResponse = Boolean.getBoolean(PROPERTY_LOGRESPONSE);
-        private static final int logResponseByteLimit = SyspropUtil.getInteger(PROPERTY_LOGRESPONSE_BYTELIMIT, 1024 * 512);
-        private static final boolean logRawResponseStream = Boolean.getBoolean(PROPERTY_LOGRAWRESPONSESTREAM);
-        private static final boolean logAttachments = Boolean.getBoolean(PROPERTY_LOGATTACHMENTS);
-        private static final boolean reformatLoggedXml = Boolean.getBoolean(PROPERTY_REFORMATLOGGEDXML);
-        private static final boolean logPolicies = Boolean.getBoolean(PROPERTY_LOGPOLICIES);
+        private static final boolean logPosts = ConfigFactory.getBooleanProperty( PROPERTY_LOGPOSTS, false );
+        private static final int logPostsByteLimit = ConfigFactory.getIntProperty( PROPERTY_LOGPOSTS_BYTELIMIT, 1024 * 512 );
+        private static final boolean logResponse = ConfigFactory.getBooleanProperty( PROPERTY_LOGRESPONSE, false );
+        private static final int logResponseByteLimit = ConfigFactory.getIntProperty( PROPERTY_LOGRESPONSE_BYTELIMIT, 1024 * 512 );
+        private static final boolean logRawResponseStream = ConfigFactory.getBooleanProperty( PROPERTY_LOGRAWRESPONSESTREAM, false );
+        private static final boolean logAttachments = ConfigFactory.getBooleanProperty( PROPERTY_LOGATTACHMENTS, false );
+        private static final boolean reformatLoggedXml = ConfigFactory.getBooleanProperty( PROPERTY_REFORMATLOGGEDXML, false );
+        private static final boolean logPolicies = ConfigFactory.getBooleanProperty( PROPERTY_LOGPOLICIES, false );
     }
 
     /**

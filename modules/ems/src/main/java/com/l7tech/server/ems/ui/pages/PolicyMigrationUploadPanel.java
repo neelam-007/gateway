@@ -5,6 +5,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.ems.enterprise.EnterpriseFolder;
 import com.l7tech.server.ems.enterprise.EnterpriseFolderManager;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.apache.wicket.markup.html.panel.Panel;
@@ -32,7 +33,6 @@ import java.util.HashMap;
 import java.io.IOException;
 import java.io.Serializable;
 
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.server.ems.migration.MigrationRecordManager;
 import com.l7tech.server.ems.migration.MigrationArtifactResource;
@@ -46,7 +46,7 @@ import com.l7tech.objectmodel.ObjectModelException;
 public class PolicyMigrationUploadPanel extends Panel {
 
     private static final Logger logger = Logger.getLogger(PolicyMigrationUploadPanel.class.getName());
-    private static final int MAX_ARCHIVE_FILE_UPLOAD_BYTES = SyspropUtil.getInteger("com.l7tech.ems.migrationFile.maxBytes", 1024 * 1024);
+    private static final int MAX_ARCHIVE_FILE_UPLOAD_BYTES = ConfigFactory.getIntProperty( "com.l7tech.ems.migrationFile.maxBytes", 1024 * 1024 );
 
     private static final String RES_KEY_ERROR = "archive-error";
     private static final String RES_KEY_ENCRYPT = "archive-encrypted";

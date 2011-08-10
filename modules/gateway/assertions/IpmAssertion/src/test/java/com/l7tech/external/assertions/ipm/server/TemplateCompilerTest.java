@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.ipm.server;
 import com.l7tech.common.io.XmlUtil;
 import static com.l7tech.external.assertions.ipm.server.ServerIpmAssertionTest.*;
 import com.l7tech.external.assertions.ipm.server.resources.CompiledTemplate;
+import com.l7tech.util.SyspropUtil;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import org.xml.sax.SAXException;
@@ -20,7 +21,7 @@ public class TemplateCompilerTest {
     public static final int BUFFSIZE = 131040;
 
     /** Set to true to do slower but more accurate performance tests. */
-    private static final boolean LONG_PERFORMANCE_TEST = Boolean.getBoolean("ipm.test.perf.full");
+    private static final boolean LONG_PERFORMANCE_TEST = SyspropUtil.getBoolean( "ipm.test.perf.full" );
 
     @Test
     public void testTemplateCompiler() throws Exception {

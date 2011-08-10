@@ -39,7 +39,8 @@ import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.Charsets;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.Config;
+import com.l7tech.util.ConfigFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -72,11 +73,11 @@ import java.util.logging.Logger;
  */
 public abstract class AuthenticatableHttpServlet extends HttpServlet {
     protected final Logger logger = Logger.getLogger(getClass().getName());
-    private static final boolean checkCertificatePresent = SyspropUtil.getBoolean( "com.l7tech.server.services.checkCertificatePresent", true );
+    private static final boolean checkCertificatePresent = ConfigFactory.getBooleanProperty("com.l7tech.server.services.checkCertificatePresent", true);
 
     private WebApplicationContext applicationContext;
 
-    protected ServerConfig serverConfig;
+    protected Config config;
     protected PolicyManager policyManager;
     protected ServiceCache serviceCache;
     protected ClientCertManager clientCertManager;
@@ -87,15 +88,15 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
     private AdminSessionManager adminSessionManager;
 
     @Override
-    public void init(ServletConfig config) throws ServletException {
-        super.init(config);
+    public void init(ServletConfig servletConfig) throws ServletException {
+        super.init(servletConfig);
         applicationContext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
 
         if (applicationContext == null) {
             throw new ServletException("Configuration error; could not get application context");
         }
 
-        serverConfig = getBean("serverConfig", ServerConfig.class);
+        config = getBean("serverConfig", Config.class);
         clientCertManager = getBean("clientCertManager", ClientCertManager.class);
         identityProviderFactory = getBean("identityProviderFactory", IdentityProviderFactory.class);
         licenseManager = getBean("licenseManager",LicenseManager.class);
@@ -599,7 +600,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
      *              {@link #policyAllowAnonymous(com.l7tech.policy.Policy)} as though it had no identity assertions.
      */
     protected boolean isAllowAnonymousPolicyIfAllIdentitiesFederated() {
-        return serverConfig.getBooleanPropertyCached("service.anonFederatedPolicies", false, 120000);
+        return config.getBooleanProperty( "service.anonFederatedPolicies", false );
     }
 
     /**

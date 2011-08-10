@@ -9,6 +9,14 @@ public interface Config {
      * Get a String property by name.
      *
      * @param propertyName The name of the property.
+     * @return The value or null if not found.
+     */
+    String getProperty( String propertyName );
+
+    /**
+     * Get a String property by name.
+     *
+     * @param propertyName The name of the property.
      * @param defaultValue The default value for the property.
      * @return The value or the default value if not found.
      */

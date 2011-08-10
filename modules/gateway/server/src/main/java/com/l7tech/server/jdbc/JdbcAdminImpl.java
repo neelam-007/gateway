@@ -2,11 +2,11 @@ package com.l7tech.server.jdbc;
 
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.server.ServerConfigParams;
+import com.l7tech.util.Config;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,16 +21,16 @@ public class JdbcAdminImpl implements JdbcAdmin {
     private JdbcConnectionManager jdbcConnectionManager;
     private JdbcQueryingManager jdbcQueryingManager;
     private JdbcConnectionPoolManager jdbcConnectionPoolManager;
-    private ServerConfig serverConfig;
+    private Config config;
 
     public JdbcAdminImpl(JdbcConnectionManager jdbcConnectionManager,
                                    JdbcQueryingManager jdbcQueryingManager,
                                    JdbcConnectionPoolManager jdbcConnectionPoolManager,
-                                   ServerConfig serverConfig) {
+                                   Config config ) {
         this.jdbcConnectionManager = jdbcConnectionManager;
         this.jdbcQueryingManager = jdbcQueryingManager;
         this.jdbcConnectionPoolManager = jdbcConnectionPoolManager;
-        this.serverConfig = serverConfig;
+        this.config = config;
     }
 
     /**
@@ -132,7 +132,7 @@ public class JdbcAdminImpl implements JdbcAdmin {
     public List<String> getPropertyDefaultDriverClassList() {
         List<String> driverClassList = new ArrayList<String>();
 
-        String defaultList = serverConfig.getProperty( ServerConfigParams.PARAM_JDBC_CONNECTION_DEFAULT_DRIVERCLASS_LIST);
+        String defaultList = config.getProperty( ServerConfigParams.PARAM_JDBC_CONNECTION_DEFAULT_DRIVERCLASS_LIST );
         if (defaultList != null && !defaultList.isEmpty()) {
             StringTokenizer tokens = new StringTokenizer(defaultList, "\n");
             while (tokens.hasMoreTokens()) {
@@ -153,12 +153,7 @@ public class JdbcAdminImpl implements JdbcAdmin {
      */
     @Override
     public int getPropertyDefaultMaxRecords() {
-        try {
-            String defaultMax = serverConfig.getProperty( ServerConfigParams.PARAM_JDBC_QUERY_MAXRECORDS_DEFAULT);
-            return Integer.parseInt(defaultMax);
-        } catch (Exception e) {
-            return ORIGINAL_MAX_RECORDS;
-        }
+        return config.getIntProperty( ServerConfigParams.PARAM_JDBC_QUERY_MAXRECORDS_DEFAULT, ORIGINAL_MAX_RECORDS );
     }
 
     /**
@@ -169,12 +164,7 @@ public class JdbcAdminImpl implements JdbcAdmin {
      */
     @Override
     public int getPropertyDefaultMinPoolSize() {
-        try {
-            String defaultMin = serverConfig.getProperty( ServerConfigParams.PARAM_JDBC_CONNECTION_POOLING_DEFAULT_MINPOOLSIZE);
-            return Integer.parseInt(defaultMin);
-        } catch (Exception e) {
-            return ORIGINAL_C3P0_BASIC_POOL_CONFIG_MINPOOLSIZE;
-        }
+        return config.getIntProperty( ServerConfigParams.PARAM_JDBC_CONNECTION_POOLING_DEFAULT_MINPOOLSIZE, ORIGINAL_C3P0_BASIC_POOL_CONFIG_MINPOOLSIZE );
     }
 
     /**
@@ -185,11 +175,6 @@ public class JdbcAdminImpl implements JdbcAdmin {
      */
     @Override
     public int getPropertyDefaultMaxPoolSize() {
-        try {
-            String defaultMax = serverConfig.getProperty( ServerConfigParams.PARAM_JDBC_CONNECTION_POOLING_DEFAULT_MAXPOOLSIZE);
-            return Integer.parseInt(defaultMax);
-        } catch (Exception e) {
-            return ORIGINAL_C3P0_BASIC_POOL_CONFIG_MAXPOOLSIZE;
-        }
+        return config.getIntProperty( ServerConfigParams.PARAM_JDBC_CONNECTION_POOLING_DEFAULT_MAXPOOLSIZE, ORIGINAL_C3P0_BASIC_POOL_CONFIG_MAXPOOLSIZE );
     }
 }

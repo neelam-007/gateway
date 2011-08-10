@@ -1,8 +1,3 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.policy.wssp;
 
 import com.l7tech.common.TestDocuments;
@@ -11,6 +6,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.wsdl.Wsdl;
 import org.apache.ws.policy.Policy;
 import org.junit.Test;
@@ -33,8 +29,8 @@ public class WsspRoundTripTest {
     private static Logger log = Logger.getLogger(WsspRoundTripTest.class.getName());
 
     static {
-        System.setProperty("com.l7tech.policy.wssp.useNewWsspNs", "false");
-        System.setProperty("com.l7tech.policy.wssp.useNewWspNs", "false");
+        SyspropUtil.setProperty( "com.l7tech.policy.wssp.useNewWsspNs", "false" );
+        SyspropUtil.setProperty( "com.l7tech.policy.wssp.useNewWspNs", "false" );
     }
 
     @Test

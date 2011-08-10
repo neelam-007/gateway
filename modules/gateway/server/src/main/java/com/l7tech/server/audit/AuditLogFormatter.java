@@ -5,11 +5,12 @@ import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.policy.variable.Syntax;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.util.Config;
+import com.l7tech.util.ConfigFactory;
 
 import java.text.MessageFormat;
 import java.util.*;
@@ -55,7 +56,7 @@ public class AuditLogFormatter<REC extends AuditRecord> {
         clusterPropertiesNames.add( ServerConfigParams.PARAM_AUDIT_LOG_FORMAT_OTHER_DETAIL);
     }
 
-    protected static ServerConfig serverConfig;
+    protected static Config config;
 
     private final String serviceHeader;
     private final String serviceFooter;
@@ -126,7 +127,7 @@ public class AuditLogFormatter<REC extends AuditRecord> {
 
     private static void initializeTemplates() {
 
-        loadClusterProperties(serverConfig != null ? serverConfig : ServerConfig.getInstance());
+        loadClusterProperties( config != null ? config : ConfigFactory.getCachedConfig());
         parseTemplatesForVariables();
 
         templateServiceHeaderNoCtxVars = removeContextVariables(templateServiceHeader);
@@ -147,35 +148,35 @@ public class AuditLogFormatter<REC extends AuditRecord> {
         }
     }
 
-    protected static void loadClusterProperties(ServerConfig serverCfg) {
+    protected static void loadClusterProperties(Config config ) {
 
         final String badSyntaxRegex = "\\$\\{[\\s]*\\}|\\{[\\s]*\\}";
 
-        templateServiceHeader = serverCfg.getProperty( ServerConfigParams.PARAM_AUDIT_LOG_FORMAT_SERVICE_HEADER);
+        templateServiceHeader = config.getProperty( ServerConfigParams.PARAM_AUDIT_LOG_FORMAT_SERVICE_HEADER );
         if (templateServiceHeader == null)
             templateServiceHeader = DEFAULT_TEMPLATE_SERVICE_HEADER;
         else
             templateServiceHeader = templateServiceHeader.replaceAll(badSyntaxRegex, "");
 
-        templateServiceFooter = serverCfg.getProperty( ServerConfigParams.PARAM_AUDIT_LOG_FORMAT_SERVICE_FOOTER);
+        templateServiceFooter = config.getProperty( ServerConfigParams.PARAM_AUDIT_LOG_FORMAT_SERVICE_FOOTER );
         if (templateServiceFooter == null)
             templateServiceFooter = DEFAULT_TEMPLATE_SERVICE_FOOTER;
         else
             templateServiceFooter = templateServiceFooter.replaceAll(badSyntaxRegex, "");
 
-        templateServiceDetail = serverCfg.getProperty( ServerConfigParams.PARAM_AUDIT_LOG_FORMAT_SERVICE_DETAIL);
+        templateServiceDetail = config.getProperty( ServerConfigParams.PARAM_AUDIT_LOG_FORMAT_SERVICE_DETAIL );
         if (templateServiceDetail == null)
             templateServiceDetail = DEFAULT_TEMPLATE_SERVICE_DETAIL;
         else
             templateServiceDetail = templateServiceDetail.replaceAll(badSyntaxRegex, "");
 
-        templateOtherFormat = serverCfg.getProperty( ServerConfigParams.PARAM_AUDIT_LOG_FORMAT_OTHER);
+        templateOtherFormat = config.getProperty( ServerConfigParams.PARAM_AUDIT_LOG_FORMAT_OTHER );
         if (templateOtherFormat == null)
             templateOtherFormat = DEFAULT_TEMPLATE_OTHER_FORMAT;
         else
             templateOtherFormat = templateOtherFormat.replaceAll(badSyntaxRegex, "");
 
-        templateOtherDetail = serverCfg.getProperty( ServerConfigParams.PARAM_AUDIT_LOG_FORMAT_OTHER_DETAIL);
+        templateOtherDetail = config.getProperty( ServerConfigParams.PARAM_AUDIT_LOG_FORMAT_OTHER_DETAIL );
         if (templateOtherDetail == null)
             templateOtherDetail = DEFAULT_TEMPLATE_OTHER_DETAIL;
         else

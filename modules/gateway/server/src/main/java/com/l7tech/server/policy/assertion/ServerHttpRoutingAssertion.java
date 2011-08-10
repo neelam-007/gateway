@@ -23,7 +23,6 @@ import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.DefaultStashManagerFactory;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
@@ -61,7 +60,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     public static final String USER_AGENT = HttpConstants.HEADER_USER_AGENT;
     public static final String HOST = HttpConstants.HEADER_HOST;
 
-    private final ServerConfig serverConfig;
+    private final Config config;
     private final SignerInfo senderVouchesSignerInfo;
     private final GenericHttpClientFactory httpClientFactory;
     private final StashManagerFactory stashManagerFactory;
@@ -81,7 +80,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             throw new PolicyAssertionException(assertion, "NTLM and Kerberos delegated authentication are not supported when an HTTP proxy is configured");
         }
 
-        serverConfig = ctx.getBean( "serverConfig", ServerConfig.class );
+        config = ctx.getBean( "serverConfig", Config.class );
 
         customURLList = assertion.getCustomURLs() != null && assertion.getCustomURLs().length > 0;
 
@@ -129,7 +128,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
             final X509TrustManager trustManager = (X509TrustManager)applicationContext.getBean("routingTrustManager");
             sslContext.init(keyManagers, new TrustManager[]{trustManager}, null);
-            final int timeout = SyspropUtil.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT, HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT);
+            final int timeout = ConfigFactory.getIntProperty( HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT, HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT );
             sslContext.getClientSessionContext().setSessionTimeout(timeout);
             sslSocketFactory = sslContext.getSocketFactory();
 
@@ -346,7 +345,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 logAndAudit(AssertionMessages.HTTPROUTE_LOGIN_INFO, login);
                 if (domain != null && domain.length() > 0) {
                     if (host == null) {
-                        host = ServerConfig.getInstance().getPropertyCached("clusterHost");
+                        host = ConfigFactory.getProperty( "clusterHost", null );
                     }
                     routedRequestParams.setNtlmAuthentication(new NtlmAuthentication(login, password.toCharArray(), domain, host));
                 } else {
@@ -503,13 +502,13 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 final String requestContentType = reqMime == null ? "application/octet-stream" : reqMime.getOuterContentType().getFullValue();
                 routedRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_CONTENT_TYPE, requestContentType));
             }
-            if ( Boolean.valueOf(ServerConfig.getInstance().getPropertyCached("ioHttpUseExpectContinue")) ) {
+            if ( ConfigFactory.getBooleanProperty( "ioHttpUseExpectContinue", false ) ) {
                 routedRequestParams.setUseExpectContinue(true);
             }
             if ( !assertion.isUseKeepAlives()) {
                 routedRequestParams.setUseKeepAlives(false); // note that server config property is for NO Keep-Alives
             }
-            if ( "1.0".equals(ServerConfig.getInstance().getPropertyCached("ioHttpVersion")) ) {
+            if ( "1.0".equals( ConfigFactory.getProperty( "ioHttpVersion", null ) ) ) {
                 routedRequestParams.setHttpVersion(GenericHttpRequestParams.HttpVersion.HTTP_VERSION_1_0);
             }
 
@@ -808,7 +807,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     private ContentTypeHeader getDefaultContentType( final boolean ensureDefault ) {
         ContentTypeHeader contentTypeHeader = ensureDefault ? ContentTypeHeader.OCTET_STREAM_DEFAULT : null;
 
-        String defaultContentType = serverConfig.getPropertyCached( "ioHttpDefaultContentType" );
+        String defaultContentType = config.getProperty( "ioHttpDefaultContentType" );
         if ( defaultContentType != null ) {
             try {
                 contentTypeHeader = ContentTypeHeader.create(defaultContentType);

@@ -2,6 +2,7 @@ package com.l7tech.server.transport.jms;
 
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.http.SslClientSocketFactory;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
@@ -119,7 +120,7 @@ public class JmsSslCustomizerSupport {
                 context.init(keyManagers,
                              new TrustManager[] { trustManager } ,
                              null);
-                int timeout = Integer.getInteger(PROP_SSL_SESSION_TIMEOUT, DEFAULT_SSL_SESSION_TIMEOUT);
+                int timeout = ConfigFactory.getIntProperty( PROP_SSL_SESSION_TIMEOUT, DEFAULT_SSL_SESSION_TIMEOUT );
                 context.getClientSessionContext().setSessionTimeout(timeout);
                 instance = context;
             } catch (GeneralSecurityException e) {

@@ -14,15 +14,15 @@ import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.ProcessorResultUtil;
 import com.l7tech.security.xml.processor.WssTimestamp;
 import com.l7tech.security.xml.processor.WssTimestampDate;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
+import com.l7tech.util.Config;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
-import com.l7tech.util.SyspropUtil;
 import org.springframework.beans.factory.BeanFactory;
 import org.xml.sax.SAXException;
 
@@ -33,17 +33,17 @@ import java.util.Collection;
  * @author alex
  */
 public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAssertion<RequireWssTimestamp> {
-    private static final boolean requireCredentialSigningToken = SyspropUtil.getBoolean( "com.l7tech.server.policy.requireSigningTokenCredential", true );
+    private static final boolean requireCredentialSigningToken = ConfigFactory.getBooleanProperty( "com.l7tech.server.policy.requireSigningTokenCredential", true );
     private static final long DEFAULT_GRACE = 60000L;
     private static final int PROP_CACHE_AGE = 151013;
 
     private final SecurityTokenResolver securityTokenResolver;
-    private final ServerConfig serverConfig;
+    private final Config config;
 
     public ServerRequireWssTimestamp(RequireWssTimestamp assertion, BeanFactory spring) {
         super(assertion,assertion);
         this.securityTokenResolver = spring.getBean("securityTokenResolver",SecurityTokenResolver.class);
-        this.serverConfig = spring.getBean("serverConfig", ServerConfig.class);
+        this.config = spring.getBean("serverConfig", Config.class);
     }
 
     @Override
@@ -72,7 +72,7 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
         }
 
         final ProcessorResult processorResult;
-        if ( isRequest() && !serverConfig.getBooleanProperty( ServerConfigParams.PARAM_WSS_PROCESSOR_LAZY_REQUEST,true) ) {
+        if ( isRequest() && !config.getBooleanProperty( ServerConfigParams.PARAM_WSS_PROCESSOR_LAZY_REQUEST,true) ) {
             processorResult = msg.getSecurityKnob().getProcessorResult();
         } else {
             processorResult = WSSecurityProcessorUtils.getWssResults(msg, what, securityTokenResolver, getAudit());
@@ -129,7 +129,7 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
             return getBadMessageStatus();
         }
 
-        long createdFutureFuzz = serverConfig.getLongPropertyCached( ServerConfigParams.PARAM_TIMESTAMP_CREATED_FUTURE_GRACE, DEFAULT_GRACE, (long) PROP_CACHE_AGE );
+        long createdFutureFuzz = config.getLongProperty( ServerConfigParams.PARAM_TIMESTAMP_CREATED_FUTURE_GRACE, DEFAULT_GRACE );
         final long created = createdEl.asTime();
         if (created - createdFutureFuzz > now) {
             logAndAudit( AssertionMessages.REQUIRE_WSS_TIMESTAMP_CREATED_FUTURE, what );
@@ -153,7 +153,7 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
             expires = created + assertion.getMaxExpiryMilliseconds();
         }
 
-        long expiresPastFuzz = serverConfig.getLongPropertyCached( ServerConfigParams.PARAM_TIMESTAMP_EXPIRES_PAST_GRACE, DEFAULT_GRACE, (long) PROP_CACHE_AGE );
+        long expiresPastFuzz = config.getLongProperty( ServerConfigParams.PARAM_TIMESTAMP_EXPIRES_PAST_GRACE, DEFAULT_GRACE );
         if (expires + expiresPastFuzz < now) {
             if (constrain && (!(originalExpires + expiresPastFuzz < now))) {
                 // then this only expired because we constrained the expiry time so audit that

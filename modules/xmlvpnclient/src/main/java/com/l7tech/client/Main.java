@@ -113,8 +113,8 @@ public class Main {
      */
     protected static ClientProxy createClientProxy(SsgFinder ssgFinder) {
         int port = getBindPort();
-        int minThreads = SyspropUtil.getInteger(PROPERTY_LISTENER_MINTHREADS, MIN_THREADS);
-        int maxThreads = SyspropUtil.getInteger(PROPERTY_LISTENER_MAXTHREADS, MAX_THREADS);
+        int minThreads = ConfigFactory.getIntProperty( PROPERTY_LISTENER_MINTHREADS, MIN_THREADS );
+        int maxThreads = ConfigFactory.getIntProperty( PROPERTY_LISTENER_MAXTHREADS, MAX_THREADS );
 
         ClientProxy clientProxy = new ClientProxy(ssgFinder,
                                                   new MessageProcessor(),
@@ -131,7 +131,7 @@ public class Main {
     }
 
     protected static int getBindPort() {
-        return SyspropUtil.getInteger(PROPERTY_LISTENER_PORT, DEFAULT_PORT);
+        return ConfigFactory.getIntProperty( PROPERTY_LISTENER_PORT, DEFAULT_PORT );
     }
 
     /**

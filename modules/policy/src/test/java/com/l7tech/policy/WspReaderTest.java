@@ -16,6 +16,7 @@ import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.wsdl.BindingInfo;
 import com.l7tech.wsdl.BindingOperationInfo;
 import com.l7tech.xml.xpath.XpathExpression;
@@ -53,7 +54,7 @@ public class WspReaderTest {
     }
 
     static {
-        System.setProperty("com.l7tech.policy.wsp.checkAccessors", "true");
+        SyspropUtil.setProperty( "com.l7tech.policy.wsp.checkAccessors", "true" );
     }
     
     @Test

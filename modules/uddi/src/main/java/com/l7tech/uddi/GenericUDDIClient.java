@@ -1,7 +1,7 @@
 package com.l7tech.uddi;
 
 import com.l7tech.common.uddi.guddiv3.*;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 
 import java.util.*;
@@ -978,7 +978,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
         final Map<String, TModel> allTModels = new HashMap<String, TModel>();
         GetTModelDetail detail;
         final Set<String> keysToSearch = new HashSet<String>();
-        final int batchSize = SyspropUtil.getInteger(TMODEL_DOWNLOAD_BATCH_SIZE, 50);
+        final int batchSize = ConfigFactory.getIntProperty( TMODEL_DOWNLOAD_BATCH_SIZE, 50 );
         for (int i = 0; i < allTModelKeys.size(); i++) {
             keysToSearch.add(allTModelKeys.get(i));
             if ((i % batchSize == 0 && i != 0) || i == allTModelKeys.size() - 1) {//want to avoid truncated results, go with 50
@@ -1126,7 +1126,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                 if(serviceKey == null) throw new NullPointerException("serviceKey cannot be null");
 
                 WsdlPortInfoImpl wsdlPortInfo = null;
-                if (SyspropUtil.getBoolean("com.l7tech.uddi.GenericUDDIClient.uddiSearch.preferWsdlUrlFromBindingTemplate", false)) {
+                if ( ConfigFactory.getBooleanProperty( "com.l7tech.uddi.GenericUDDIClient.uddiSearch.preferWsdlUrlFromBindingTemplate", false ) ) {
                     wsdlPortInfo = getWsdlUrlFromBindingTemplate(Collections.unmodifiableMap(serviceKeyToInfo),
                             Collections.unmodifiableMap(bindingKeyToObject), Collections.unmodifiableMap(serviceToBindingKeys), serviceKey);
                     if (wsdlPortInfo == null){
@@ -2880,7 +2880,7 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
                     context.put("com.sun.xml.internal.ws.transport.https.client.hostname.verifier", config.getHostnameVerifier());
 
                     // SSL socket factory
-                    int timeout = SyspropUtil.getInteger(PROP_SSL_SESSION_TIMEOUT, DEFAULT_SSL_SESSION_TIMEOUT);
+                    int timeout = ConfigFactory.getIntProperty( PROP_SSL_SESSION_TIMEOUT, DEFAULT_SSL_SESSION_TIMEOUT );
                     try {
                         final SSLContext ctx = SSLContext.getInstance("TLS");
                         ctx.init( config.getKeyManagers(),  config.getTrustManagers(), random );

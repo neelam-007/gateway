@@ -3,7 +3,7 @@ package com.l7tech.server.security.kerberos;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.xml.processor.SecurityContext;
 import com.l7tech.security.xml.processor.SecurityContextFinder;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -103,8 +103,8 @@ public class KerberosSessionContextManager implements SecurityContextFinder {
     private Map<String,KerberosSession> sessions = new HashMap<String,KerberosSession>();
 
     private static final Logger logger = Logger.getLogger( KerberosSessionContextManager.class.getName());
-    private static final long DEFAULT_SESSION_DURATION = SyspropUtil.getLong("com.l7tech.server.security.kerberos.sessionDefaultDuration", 1000*60*60*2); // 2 hrs
-    private static final long MAXIMUM_SESSION_DURATION = SyspropUtil.getLong("com.l7tech.server.security.kerberos.sessionMaximumDuration", 1000*60*60*10); // 10 hrs
+    private static final long DEFAULT_SESSION_DURATION = ConfigFactory.getLongProperty( "com.l7tech.server.security.kerberos.sessionDefaultDuration", 1000 * 60 * 60 * 2 ); // 2 hrs
+    private static final long MAXIMUM_SESSION_DURATION = ConfigFactory.getLongProperty( "com.l7tech.server.security.kerberos.sessionMaximumDuration", 1000 * 60 * 60 * 10 ); // 10 hrs
     private static final long SESSION_CHECK_INTERVAL = 1000*60*5; // check every 5 minutes
 
     private long lastExpirationCheck = System.currentTimeMillis();

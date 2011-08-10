@@ -1,10 +1,9 @@
 package com.l7tech.server.identity.ldap;
 
 import com.l7tech.server.ServerConfigParams;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.sun.jndi.ldap.LdapURL;
-import com.l7tech.server.ServerConfig;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ResourceUtils;
 
 import javax.naming.CompositeName;
@@ -45,8 +44,8 @@ public final class LdapUtils {
      * @see <a href="http://www.ietf.org/rfc/rfc2255.txt">LDAP URL syntax</a>
      */
     public static final Pattern LDAP_URL_QUERY_PATTERN = Pattern.compile("^\\?([^\\?]+).*$");
-    public static final boolean LDAP_USES_UNSYNC_NAMING = SyspropUtil.getBoolean( "com.l7tech.server.ldap.unsyncNaming", false );
-    public static final boolean LDAP_PARSE_NAMES = SyspropUtil.getBoolean( "com.l7tech.server.ldap.parseNames", false );
+    public static final boolean LDAP_USES_UNSYNC_NAMING = ConfigFactory.getBooleanProperty( "com.l7tech.server.ldap.unsyncNaming", false );
+    public static final boolean LDAP_PARSE_NAMES = ConfigFactory.getBooleanProperty( "com.l7tech.server.ldap.parseNames", false );
     public static final String LDAP_ENV_PREFIX = "com.l7tech.server.ldap.env.";
     public static final Map<String,String> LDAP_ENV_OVERRIDES;
 
@@ -83,25 +82,26 @@ public final class LdapUtils {
         if (valueToLookFor == null || "".equals(valueToLookFor))
             return true;
 
-        boolean shouldBeCaseInsensitiveValue = Boolean.parseBoolean(
-            ServerConfig.getInstance().getPropertyCached( ServerConfigParams.PARAM_LDAP_COMPARISON_CASE_INSENSITIVE));
+        final boolean shouldBeCaseInsensitiveValue =
+                ConfigFactory.getBooleanProperty( ServerConfigParams.PARAM_LDAP_COMPARISON_CASE_INSENSITIVE, true );
 
-                for (int i = 0; i < attr.size(); i++) {
-                    try {
-                        Object attrVal = attr.get(i);
-                        if (attrVal == null) continue;
-                        if (shouldBeCaseInsensitiveValue) {
-                            if (valueToLookFor.equalsIgnoreCase(attrVal.toString()))
-                                return true;
-                        } else {
-                            if (valueToLookFor.equals(attrVal.toString()))
-                                return true;
-                        }
-                    } catch (NamingException e) {
-                        // ignore this (non)value
-                    }
+        for (int i = 0; i < attr.size(); i++) {
+            try {
+                Object attrVal = attr.get(i);
+                if (attrVal == null) continue;
+                if (shouldBeCaseInsensitiveValue) {
+                    if (valueToLookFor.equalsIgnoreCase(attrVal.toString()))
+                        return true;
+                } else {
+                    if (valueToLookFor.equals(attrVal.toString()))
+                        return true;
                 }
-                return false;
+            } catch (NamingException e) {
+                // ignore this (non)value
+            }
+        }
+
+        return false;
     }
 
     static Object extractOneAttributeValue(Attributes attributes, String attrName) throws NamingException {

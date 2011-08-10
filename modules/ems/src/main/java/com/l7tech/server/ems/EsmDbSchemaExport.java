@@ -1,12 +1,11 @@
 package com.l7tech.server.ems;
 
+import com.l7tech.util.ConfigFactory;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
 
 import java.io.File;
 import java.util.logging.Logger;
-
-import com.l7tech.util.SyspropUtil;
 
 /**
  * Bean to export the DB DDL.
@@ -30,7 +29,7 @@ public class EsmDbSchemaExport {
      * Perform export of schema to file.
      */
     public void init() {
-        String scriptOption = SyspropUtil.getProperty(PROP_SCRIPT);
+        String scriptOption = ConfigFactory.getProperty( PROP_SCRIPT );
 
         if ( scriptOption != null ) {
             if ( file.getParentFile().isDirectory() ) {

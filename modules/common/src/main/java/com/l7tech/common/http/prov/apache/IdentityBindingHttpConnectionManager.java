@@ -1,7 +1,7 @@
 package com.l7tech.common.http.prov.apache;
 
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Pair;
-import com.l7tech.util.SyspropUtil;
 import org.apache.commons.httpclient.ConnectionPoolTimeoutException;
 import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.HttpConnection;
@@ -266,12 +266,12 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
 
     private static final Logger logger = Logger.getLogger(IdentityBindingHttpConnectionManager.class.getName());
 
-    private static final boolean BINDING_ENABLED = SyspropUtil.getBoolean( "com.l7tech.common.http.prov.apache.identityBindingEnabled", true );
+    private static final boolean BINDING_ENABLED = ConfigFactory.getBooleanProperty( "com.l7tech.common.http.prov.apache.identityBindingEnabled", true );
 
-    private static final int DEFAULT_BINDING_MAX_AGE = SyspropUtil.getInteger( "com.l7tech.common.http.prov.apache.identityBindingMaxAge", 120000 );
+    private static final int DEFAULT_BINDING_MAX_AGE = ConfigFactory.getIntProperty( "com.l7tech.common.http.prov.apache.identityBindingMaxAge", 120000 );
     private static final int MIN_BINDING_MAX_AGE = 100;
     private static final int MAX_BINDING_MAX_AGE = 900000;
-    private static final int DEFAULT_BINDING_TIMEOUT = SyspropUtil.getInteger( "com.l7tech.common.http.prov.apache.identityBindingTimeout", 30000 );
+    private static final int DEFAULT_BINDING_TIMEOUT = ConfigFactory.getIntProperty( "com.l7tech.common.http.prov.apache.identityBindingTimeout", 30000 );
     private static final int MIN_BINDING_TIMEOUT = 100;
     private static final int MAX_BINDING_TIMEOUT = 300000;
 

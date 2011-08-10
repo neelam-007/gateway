@@ -218,4 +218,71 @@ public class FunctionsTest {
         assertNull( "Null memo 3", nullThenTextM.call() );
         assertNotNull( "Not null text", nullThenText.call() );
     }
+
+    @Test
+    public void testCached() {
+        final TestTimeSource testTimesource = new TestTimeSource();
+        final long cachePeriod = 1000L;
+
+        Functions.timeSource = testTimesource;
+        testTimesource.setCurrentTimeMillis( System.currentTimeMillis() );
+
+        final Nullary<Long> counter = new Nullary<Long>(){
+            private long count = 0L;
+            @Override
+            public Long call() {
+                return count++;
+            }
+        };
+        final Nullary<Long> counterC = cached( counter, cachePeriod );
+
+        assertEquals( "Counter 0", 0L, (long)counter.call() );
+        assertEquals( "Counter 1", 1L, (long)counter.call() );
+        assertEquals( "Cached counter 2", 2L, (long)counterC.call() );
+        assertEquals( "Cached counter 2a", 2L, (long)counterC.call() );
+        assertEquals( "Cached counter 2b", 2L, (long)counterC.call() );
+        assertEquals( "Counter 3", 3L, (long)counter.call() );
+
+        testTimesource.advanceByMillis( cachePeriod  );
+        assertEquals( "Cached counter 2c", 2L, (long)counterC.call() );
+        testTimesource.advanceByMillis( 1  );
+        assertEquals( "Cached counter 4", 4L, (long) counterC.call() );
+        assertEquals( "Cached counter 4a", 4L, (long) counterC.call() );
+
+        final Unary<Long,String> namedCounter = new Unary<Long, String>(){
+            private HashMap<String,Long> countMap = new HashMap<String, Long>();
+            @Override
+            public Long call( final String name ) {
+                long value = countMap.containsKey( name ) ?
+                        countMap.get( name ) + 1L:
+                        0L ;
+                countMap.put( name, value );
+                return value;
+            }
+        };
+        final Unary<Long,String> namedCounterC = cached( namedCounter, cachePeriod );
+
+        assertEquals( "Named counter a 0", 0L, (long)namedCounter.call("a") );
+        assertEquals( "Named counter a 1", 1L, (long)namedCounter.call("a") );
+        assertEquals( "Named cached counter a 2", 2L, (long)namedCounterC.call("a") );
+        assertEquals( "Named cached counter a 2a", 2L, (long)namedCounterC.call("a") );
+        assertEquals( "Named cached counter a 2b", 2L, (long)namedCounterC.call("a") );
+        assertEquals( "Named counter a 3", 3L, (long)namedCounter.call("a") );
+
+        assertEquals( "Named counter b 0", 0L, (long)namedCounter.call("b") );
+        assertEquals( "Named counter b 1", 1L, (long)namedCounter.call("b") );
+        assertEquals( "Named cached counter b 2", 2L, (long)namedCounterC.call("b") );
+        assertEquals( "Named cached counter b 2a", 2L, (long)namedCounterC.call("b") );
+        assertEquals( "Named cached counter b 2b", 2L, (long)namedCounterC.call("b") );
+        assertEquals( "Named counter b 3", 3L, (long)namedCounter.call("b") );
+
+        testTimesource.advanceByMillis( cachePeriod  );
+        assertEquals( "Named cached counter a 2c", 2L, (long)namedCounterC.call("a") );
+        assertEquals( "Named cached counter b 2c", 2L, (long)namedCounterC.call("b") );
+        testTimesource.advanceByMillis( 1  );
+        assertEquals( "Named cached counter a 4", 4L, (long) namedCounterC.call("a") );
+        assertEquals( "Named cached counter a 4a", 4L, (long) namedCounterC.call("a") );
+        assertEquals( "Named cached counter b 4", 4L, (long) namedCounterC.call("b") );
+        assertEquals( "Named cached counter b 4a", 4L, (long) namedCounterC.call("b") );
+    }
 }

@@ -3,9 +3,9 @@ package com.l7tech.server.security.cert;
 import com.l7tech.common.http.GenericHttpClientFactory;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.SystemMessages;
+import com.l7tech.util.Config;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.common.io.WhirlycacheFactory;
-import com.l7tech.server.ServerConfig;
 import com.whirlycott.cache.Cache;
 
 import java.security.cert.CertificateEncodingException;
@@ -29,15 +29,15 @@ public class OCSPCache {
      * Create an OCSPCache that uses the given http client factory and config.
      *
      * @param httpClientFactory The HTTP client factory to use (must not be null)
-     * @param serverConfig The server configuration to use (must not be null)
+     * @param config The server configuration to use (must not be null)
      */
     public OCSPCache(final GenericHttpClientFactory httpClientFactory,
-                     final ServerConfig serverConfig) {
+                     final Config config ) {
         if (httpClientFactory==null) throw new IllegalArgumentException("httpClientFactory must not be null");
-        if (serverConfig==null) throw new IllegalArgumentException("serverConfig must not be null");
+        if ( config ==null) throw new IllegalArgumentException("serverConfig must not be null");
 
         this.httpClientFactory = httpClientFactory;
-        this.serverConfig = serverConfig;
+        this.config = config;
         this.certValidationCache =
                 WhirlycacheFactory.createCache("OCSPResponseCache", 1000, 57, WhirlycacheFactory.POLICY_LRU);
     }
@@ -151,7 +151,7 @@ public class OCSPCache {
 
     private final Cache certValidationCache;
     private final GenericHttpClientFactory httpClientFactory;
-    private final ServerConfig serverConfig;
+    private final Config config;
 
     /**
      * Calculate expiry for response. 
@@ -202,7 +202,7 @@ public class OCSPCache {
      */
     private boolean useNonce() {
         boolean useNonce = true;
-        String value = serverConfig.getPropertyCached(PROP_USE_NONCE, 30000);
+        String value = config.getProperty( PROP_USE_NONCE );
         if (value != null) {
             useNonce = Boolean.valueOf(value);    
         }
@@ -213,7 +213,7 @@ public class OCSPCache {
      * Get the named timeunit from configuration
      */
     private long getExpiry(String name) {
-        return serverConfig.getTimeUnitPropertyCached(name, ONE_MINUTE, 30000);
+        return config.getTimeUnitProperty( name, ONE_MINUTE );
     }
 
     /**

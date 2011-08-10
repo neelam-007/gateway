@@ -7,6 +7,7 @@ import com.l7tech.config.client.options.OptionType;
 import com.l7tech.common.io.PermissiveSSLSocketFactory;
 import com.l7tech.common.io.PermissiveHostnameVerifier;
 import com.l7tech.gateway.config.client.beans.TypedConfigurableBean;
+import com.l7tech.util.SyspropUtil;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;
@@ -26,7 +27,7 @@ public class DeveloperTrustInterviewer extends TrustInterviewer {
     private static final String HTTPS_URL = "https://localhost:8182/";
 
     public static void main( final String[] args ) {
-        System.setProperty( "com.l7tech.server.controller.home", PC_HOME );
+        SyspropUtil.setProperty( "com.l7tech.server.controller.home", PC_HOME );
         new DeveloperTrustInterviewer().run();
     }
 

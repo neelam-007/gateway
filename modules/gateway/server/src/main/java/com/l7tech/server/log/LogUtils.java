@@ -34,7 +34,7 @@ class LogUtils {
         // get log directory, build from home if necessary
         String ssgLogs = filepath != null ?
                 filepath :
-                serverConfig.getPropertyCached( ServerConfigParams.PARAM_SSG_LOG_DIRECTORY );
+                serverConfig.getProperty( ServerConfigParams.PARAM_SSG_LOG_DIRECTORY );
         if ( ssgLogs == null ) {
             try {
                 File ssgHome = serverConfig.getLocalDirectoryProperty( ServerConfigParams.PARAM_SSG_HOME_DIRECTORY, false );

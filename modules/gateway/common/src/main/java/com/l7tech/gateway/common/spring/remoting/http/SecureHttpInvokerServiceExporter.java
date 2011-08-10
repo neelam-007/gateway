@@ -1,7 +1,7 @@
 package com.l7tech.gateway.common.spring.remoting.http;
 
 import com.l7tech.util.ArrayUtils;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 import org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter;
 import org.springframework.remoting.rmi.CodebaseAwareObjectInputStream;
 import org.springframework.remoting.support.RemoteInvocation;
@@ -102,9 +102,9 @@ public class SecureHttpInvokerServiceExporter extends HttpInvokerServiceExporter
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger( SecureHttpInvokerServiceExporter.class.getName() );
-    private static final boolean restrictMethods = SyspropUtil.getBoolean("com.l7tech.gateway.common.spring.remoting.http.restrictMethods", true);
+    private static final boolean restrictMethods = ConfigFactory.getBooleanProperty( "com.l7tech.gateway.common.spring.remoting.http.restrictMethods", true );
     private static final String[] restrictedMethods = { "getClass", "hashCode", "toString" };
-    private static final boolean restrictClasses = SyspropUtil.getBoolean("com.l7tech.gateway.common.spring.remoting.http.restrictClasses", true);
+    private static final boolean restrictClasses = ConfigFactory.getBooleanProperty( "com.l7tech.gateway.common.spring.remoting.http.restrictClasses", true );
 
     private Set<String> permittedClassNames;
     private SecurityCallback securityCallback;

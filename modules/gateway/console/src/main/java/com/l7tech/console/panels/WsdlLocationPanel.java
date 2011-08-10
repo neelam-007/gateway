@@ -17,6 +17,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.uddi.WsdlPortInfo;
 import com.l7tech.util.*;
 import com.l7tech.wsdl.ResourceTrackingWSDLLocator;
+import com.l7tech.wsdl.ResourceTrackingWSDLLocator.WSDLResource;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.wsdl.WsdlEntityResolver;
 import org.w3c.dom.Document;
@@ -240,7 +241,7 @@ public class WsdlLocationPanel extends JPanel {
             // If not, it means that the filePath is a relative path, then append the default directory at the front of the filePath.
             if (! wsdlFile.isAbsolute()) {
                 String defaultDirectory = FileUtils.getDefaultDirectory();
-                String separator = System.getProperty("file.separator");
+                String separator = SyspropUtil.getProperty( "file.separator" );
                 newFilePath = defaultDirectory + separator + newFilePath;
             }
         } catch (AccessControlException e) {
@@ -261,7 +262,7 @@ public class WsdlLocationPanel extends JPanel {
         FontUtil.resizeFont(exampleUrlLabel, 0.84);
         FontUtil.resizeFont(exampleFileLabel, 0.84);
         if (allowFile) {
-            boolean isWindows = System.getProperty("os.name", "win").toLowerCase().indexOf("win") >= 0;
+            boolean isWindows = SyspropUtil.getString( "os.name", "win" ).toLowerCase().indexOf("win") >= 0;
             exampleFileLabel.setText(isWindows ? EXAMPLE_PATH_WINDOWS : EXAMPLE_PATH_NIX);
         } else {
             exampleFileLabel.setText("");
@@ -531,30 +532,30 @@ public class WsdlLocationPanel extends JPanel {
                             baseUri = new File(baseUri).toURI().toString();
                         }
                         Wsdl wsdl;
-                        if (SyspropUtil.getBoolean(SYSPROP_NO_WSDL_IMPORTS)) {
+                        if ( ConfigFactory.getBooleanProperty( SYSPROP_NO_WSDL_IMPORTS, false ) ) {
                             // Old technique, don't process imports correctly
-                            String wsdlStr = XmlUtil.nodeToString(resolvedDoc);
-                            wsdl = Wsdl.newInstance(WSDLFactory.newInstance(), baseUri, new StringReader(wsdlStr), false);
+                            String wsdlStr = XmlUtil.nodeToString( resolvedDoc );
+                            wsdl = Wsdl.newInstance( WSDLFactory.newInstance(), baseUri, new StringReader( wsdlStr ), false );
                             wsdlDocument = resolvedDoc;
-                            wsdlResources = new ArrayList<ResourceTrackingWSDLLocator.WSDLResource>();
-                            wsdlResources.add(new ResourceTrackingWSDLLocator.WSDLResource(baseUri, "text/xml", wsdlStr));
+                            wsdlResources = new ArrayList<WSDLResource>();
+                            wsdlResources.add( new WSDLResource( baseUri, "text/xml", wsdlStr ) );
                         } else {
                             // New technique, process imports via SSG and save them for later
-                            String baseDoc = XmlUtil.nodeToString(resolvedDoc);
+                            String baseDoc = XmlUtil.nodeToString( resolvedDoc );
                             DocumentReferenceProcessor processor = new DocumentReferenceProcessor();
-                            EntityResolver entityResolver = SyspropUtil.getBoolean(SYSPROP_IGNORE_WSDL_DTDS) ?
+                            EntityResolver entityResolver = ConfigFactory.getBooleanProperty( SYSPROP_IGNORE_WSDL_DTDS, false ) ?
                                     null :
-                                    new GatewayEntityResolver(baseUri.startsWith( "file:" ));
-                            Map<String,String> urisToResources =
-                                    processor.processDocument( baseUri, new GatewayResourceResolver(logger, entityResolver, baseUri, baseDoc) );
+                                    new GatewayEntityResolver( baseUri.startsWith( "file:" ) );
+                            Map<String, String> urisToResources =
+                                    processor.processDocument( baseUri, new GatewayResourceResolver( logger, entityResolver, baseUri, baseDoc ) );
 
-                            wsdl = Wsdl.newInstance(WSDLFactory.newInstance(), Wsdl.getWSDLLocator(baseUri, urisToResources, logger));
+                            wsdl = Wsdl.newInstance( WSDLFactory.newInstance(), Wsdl.getWSDLLocator( baseUri, urisToResources, logger ) );
 
-                            Collection<ResourceTrackingWSDLLocator.WSDLResource> wsdls = ResourceTrackingWSDLLocator.toWSDLResources(baseUri, urisToResources, true, false, false);
+                            Collection<WSDLResource> wsdls = ResourceTrackingWSDLLocator.toWSDLResources( baseUri, urisToResources, true, false, false );
 
                             // parse in a way that sets the base URI for the document
-                            InputSource parseSource = new InputSource(baseUri);
-                            parseSource.setCharacterStream( new StringReader(baseDoc) );
+                            InputSource parseSource = new InputSource( baseUri );
+                            parseSource.setCharacterStream( new StringReader( baseDoc ) );
                             wsdlDocument = resolvedDoc;
                             wsdlResources = wsdls;
                         }

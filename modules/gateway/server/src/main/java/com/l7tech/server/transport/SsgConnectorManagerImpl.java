@@ -144,7 +144,7 @@ public class SsgConnectorManagerImpl
         } else {
             serverConfig.putProperty(varname, Integer.toString(c.getPort()));
         }
-        logger.info("Default " + scheme + " port: " + serverConfig.getProperty(varname));
+        logger.info( "Default " + scheme + " port: " + serverConfig.getProperty( varname ) );
     }
 
     private void updateDefaultPorts() {
@@ -234,7 +234,7 @@ public class SsgConnectorManagerImpl
     public PortRanges getReservedPorts() {
         Collection<PortRange> ret = new ArrayList<PortRange>();
 
-        String portsStr = SyspropUtil.getString(PROP_RESERVED_PORTS, null);
+        String portsStr = ConfigFactory.getProperty( PROP_RESERVED_PORTS, null );
         if (portsStr != null) {
             String[] ranges = portsStr.split(",");
             for (String range : ranges) {
@@ -271,7 +271,7 @@ public class SsgConnectorManagerImpl
     }
 
     private Pair<String, Set<InterfaceTag>> loadInterfaceTags() throws FindException, ParseException {
-        String stringForm= serverConfig.getPropertyUncached(InterfaceTag.PROPERTY_NAME, true);
+        String stringForm= ConfigFactory.getUncachedConfig().getProperty( InterfaceTag.PROPERTY_NAME );
         Set<InterfaceTag> tags = stringForm == null ? Collections.<InterfaceTag>emptySet() : InterfaceTag.parseMultiple(stringForm);
         return new Pair<String, Set<InterfaceTag>>(stringForm, tags);
     }

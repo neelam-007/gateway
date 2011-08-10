@@ -10,6 +10,7 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.soap.SoapUtil;
@@ -48,7 +49,7 @@ class TarariWssProcessingContext {
         }
     };
 
-    public static final boolean memoizeSigs = Boolean.getBoolean("memoizeSigs");
+    public static final boolean memoizeSigs = SyspropUtil.getBoolean( "memoizeSigs" );
     static { logger.info("memoizeSigs=" + memoizeSigs); }
 
     private static final Pattern spacePattern = Pattern.compile("\\s+");

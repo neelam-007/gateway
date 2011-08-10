@@ -2,8 +2,12 @@ package com.l7tech.server;
 
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Properties;
 
 import com.l7tech.server.cluster.ClusterPropertyCache;
+import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.Option;
+import static com.l7tech.util.Option.optional;
 
 /**
  * Stub mode ServerConfig.
@@ -11,11 +15,17 @@ import com.l7tech.server.cluster.ClusterPropertyCache;
 public class ServerConfigStub extends ServerConfig {
     private final Map<String, String> overrides = new HashMap<String, String>();
 
-    public String getPropertyUncached(String propName, boolean includeClusterProperties) {
-        if (overrides != null && overrides.containsKey(propName)) return overrides.get(propName);
-        return super.getPropertyUncached(propName, includeClusterProperties);
+    public ServerConfigStub() {
+        super( new Properties( ), 0L );
     }
 
+    @Override
+    protected Option<String> getConfigPropertyDirect( final String propertyName ) {
+        if (overrides != null && overrides.containsKey(propertyName)) return optional(overrides.get(propertyName));
+        return super.getConfigPropertyDirect( propertyName );
+    }
+
+    @Override
     public void setClusterPropertyCache(final ClusterPropertyCache clusterPropertyCache) {
         super.setClusterPropertyCache(clusterPropertyCache);
         try {
@@ -31,10 +41,11 @@ public class ServerConfigStub extends ServerConfig {
      * @param name   the property name
      * @param value  the value to force it to have from now on
      */
+    @Override
     public boolean putProperty(String name, String value) {
         super.putProperty(name, value);
         overrides.put(name, value);
-        invalidateCachedProperty(name);
+        ConfigFactory.clearCachedConfig();
         return true;
     }
 }

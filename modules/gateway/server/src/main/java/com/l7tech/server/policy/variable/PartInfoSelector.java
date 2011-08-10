@@ -5,9 +5,9 @@ import com.l7tech.common.mime.MimeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.SyspropUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -60,7 +60,7 @@ class PartInfoSelector implements ExpandVariables.Selector<PartInfo> {
     private static final String SIZE_NAME = "size";
 
     private static final String PROP_PART_MAX_SIZE = "com.l7tech.server.policy.variable.partInfoBodyMaxSize";
-    private static final int PART_MAX_SIZE = SyspropUtil.getInteger( PROP_PART_MAX_SIZE, 1024*1024 );
+    private static final int PART_MAX_SIZE = ConfigFactory.getIntProperty( PROP_PART_MAX_SIZE, 1024 * 1024 );
 
     private String name( final String root, final String suffix ) {
         String name = root +  "." + suffix;

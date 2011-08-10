@@ -1,8 +1,8 @@
 package com.l7tech.server.ems.ui.pages;
 
+import com.l7tech.util.ConfigFactory;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.WebPage;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.security.rbac.RequiredPermissionSet;
 
@@ -21,7 +21,7 @@ public class EsmError extends WebPage {
     public EsmError( final Throwable thrown ) {
         String errorText = "";
 
-        if ( thrown != null && SyspropUtil.getBoolean(PROP_ENABLE_STACK) ) {
+        if ( thrown != null && ConfigFactory.getBooleanProperty( PROP_ENABLE_STACK, false ) ) {
             StringWriter writer = new StringWriter(4096);
             thrown.printStackTrace(new PrintWriter(writer));
             errorText = writer.toString();

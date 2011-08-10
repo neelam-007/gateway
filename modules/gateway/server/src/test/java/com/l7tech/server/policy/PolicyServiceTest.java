@@ -33,6 +33,7 @@ import com.l7tech.server.policy.filter.FilterManager;
 import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.MockConfig;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.xpath.XpathExpression;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -67,7 +68,7 @@ public class PolicyServiceTest {
     @BeforeClass
     public static void init() {
         // Set to true to ensure that all "addressing" elements in the request are signed
-        System.setProperty( "com.l7tech.server.policy.policyServiceFullSecurityChecks", "true" );
+        SyspropUtil.setProperty( "com.l7tech.server.policy.policyServiceFullSecurityChecks", "true" );
 
         applicationContext =  ApplicationContexts.getTestApplicationContext();
 

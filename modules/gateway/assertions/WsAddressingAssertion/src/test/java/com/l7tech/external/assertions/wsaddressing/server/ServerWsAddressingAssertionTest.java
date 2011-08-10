@@ -44,7 +44,6 @@ public class ServerWsAddressingAssertionTest {
 
     static {
         // init JCE early to use crypto-j in classpath
-        System.setProperty("com.l7tech.security.prov.rsa.libpath.nonfips", "USECLASSPATH");
         JceProvider.init();
     }
 

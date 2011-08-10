@@ -1,12 +1,6 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.policy.wsp;
 
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 import org.w3c.dom.Element;
 
 import java.lang.reflect.*;
@@ -18,7 +12,7 @@ import java.util.logging.Logger;
  */
 public class BeanTypeMapping extends ComplexTypeMapping {
     private static final Logger log = Logger.getLogger(BeanTypeMapping.class.getName());
-    static boolean checkForNonPublicAccessors = SyspropUtil.getBoolean("com.l7tech.policy.wsp.checkAccessors");
+    static boolean checkForNonPublicAccessors = ConfigFactory.getBooleanProperty( "com.l7tech.policy.wsp.checkAccessors", false );
 
     public BeanTypeMapping(Class clazz, String externalName) {
         this(clazz, externalName, null);

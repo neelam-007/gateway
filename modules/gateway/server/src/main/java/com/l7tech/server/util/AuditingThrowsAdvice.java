@@ -3,8 +3,8 @@ package com.l7tech.server.util;
 import com.l7tech.server.event.admin.AdminError;
 import com.l7tech.server.event.system.SystemAdminError;
 import com.l7tech.util.Config;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.TextUtils;
 import org.springframework.aop.ThrowsAdvice;
 import org.springframework.context.ApplicationEventPublisher;
@@ -87,7 +87,7 @@ public class AuditingThrowsAdvice implements ThrowsAdvice, PropertyChangeListene
 
     private static final Logger logger = Logger.getLogger( AuditingThrowsAdvice.class.getName() );
 
-    private static final boolean enabled = SyspropUtil.getBoolean( "com.l7tech.server.admin.auditExceptions", true );
+    private static final boolean enabled = ConfigFactory.getBooleanProperty( "com.l7tech.server.admin.auditExceptions", true );
 
     private static final String PROP_PREFIX = "audit.adminExceptions.";
     private static final String PROP_DEFAULT_INCLUDE = PROP_PREFIX + "defaultIncludes";

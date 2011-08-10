@@ -125,7 +125,7 @@ public class ObfuscatedFileMasterPasswordFinder implements MasterPasswordManager
         if (masterPasswordFile != null)
             return masterPasswordFile;
 
-        String path = SyspropUtil.getPropertyCached(PROP_MASTER_PASSWORD_PATH);
+        String path = ConfigFactory.getProperty(PROP_MASTER_PASSWORD_PATH, null);
         if ( path == null ) {
             throw new IllegalStateException("Master password file was not specified and is not set using the system property '"+PROP_MASTER_PASSWORD_PATH+"'.");
         }

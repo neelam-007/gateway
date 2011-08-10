@@ -13,13 +13,13 @@ import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.BeanUtils;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.UnaryThrows;
 import com.l7tech.util.Option;
 import static com.l7tech.util.Option.none;
 import static com.l7tech.util.Option.optional;
 import static com.l7tech.util.Option.some;
-import com.l7tech.util.SyspropUtil;
 import static com.l7tech.util.TextUtils.trim;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -413,7 +413,7 @@ abstract class ResourceFactorySupport<R> implements ResourceFactory<R> {
 
     //- PRIVATE
 
-    private static final boolean VALIDATION_ENABLED = SyspropUtil.getBoolean( "com.l7tech.external.assertions.gatewaymanagement.validationEnabled", true );
+    private static final boolean VALIDATION_ENABLED = ConfigFactory.getBooleanProperty( "com.l7tech.external.assertions.gatewaymanagement.validationEnabled", true );
 
     private final RbacServices rbacServices;
     private final SecurityFilter securityFilter;

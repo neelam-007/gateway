@@ -9,7 +9,6 @@ import com.l7tech.policy.assertion.xmlsec.RequireWssTimestamp;
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -69,8 +68,8 @@ public class ServerRequireWssTimestampTest {
         assertEquals(expected, result);
     }
 
-    private ServerRequireWssTimestamp makeSass(final ServerConfig serverConfig) {
-        return new ServerRequireWssTimestamp(new RequireWssTimestamp(), makeBeanFactory(serverConfig,null));
+    private ServerRequireWssTimestamp makeSass(final Config config ) {
+        return new ServerRequireWssTimestamp(new RequireWssTimestamp(), makeBeanFactory( config,null));
     }
 
     private BeanFactory makeBeanFactory( final Config config,
@@ -82,25 +81,12 @@ public class ServerRequireWssTimestampTest {
         }});
     }
 
-    private ServerConfig makeServerConfig(final long futureGrace, final long pastGrace) {
+    private Config makeServerConfig(final long futureGrace, final long pastGrace) {
         final Map<String, String> overrides = new HashMap<String, String>() {{
             put( ServerConfigParams.PARAM_TIMESTAMP_CREATED_FUTURE_GRACE, Long.toString(futureGrace)); // 50 yers
             put( ServerConfigParams.PARAM_TIMESTAMP_EXPIRES_PAST_GRACE, Long.toString(pastGrace));
         }};
 
-        return new ServerConfig() {
-            @Override
-            public String getPropertyUncached(String propName) {
-                String val = overrides.get(propName);
-                if (val != null)
-                    return val;
-                return super.getPropertyUncached(propName);
-            }
-
-            @Override
-            public String getPropertyCached(final String propName, final long maxAge) {
-                return getPropertyUncached(propName);
-            }
-        };
+        return new MockConfig(overrides);
     }
 }

@@ -4,7 +4,7 @@ import com.l7tech.config.client.beans.PropertiesConfigurationBeanProvider;
 import com.l7tech.config.client.beans.ConfigurationBean;
 import com.l7tech.common.password.Sha512CryptPasswordHasher;
 import com.l7tech.util.Charsets;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -74,7 +74,7 @@ public class EsmConfigurationBeanProvider extends PropertiesConfigurationBeanPro
     private static final String DEFAULT_CONFIG_FILE = "/opt/SecureSpan/EnterpriseManager/var/emconfig.properties";
 
     private static File getConfigurationFile() {
-        File config = new File( SyspropUtil.getString( PROP_CONFIG_FILE, DEFAULT_CONFIG_FILE ) );
+        File config = new File( ConfigFactory.getProperty( PROP_CONFIG_FILE, DEFAULT_CONFIG_FILE ) );
         if ( !config.isFile() ) {
             File parent = config.getParentFile();
             if ( parent.isDirectory() ) {

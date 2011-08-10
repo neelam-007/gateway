@@ -25,7 +25,6 @@ import com.l7tech.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.AuditContextStubInt;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.TestIdentityProvider;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -90,7 +89,7 @@ public class PolicyProcessingTest {
     private static InboundSecureConversationContextManager inboundSecureConversationContextManager = null;
 
     static {
-        System.setProperty("com.l7tech.security.prov.rsa.libpath.nonfips", "USECLASSPATH");
+        SyspropUtil.setProperty( "com.l7tech.security.prov.rsa.libpath.nonfips", "USECLASSPATH" );
         JceProvider.init();
     }
 
@@ -160,7 +159,7 @@ public class PolicyProcessingTest {
 
     @Before
     public void setUpTest() throws Exception {
-        System.setProperty("com.l7tech.server.serviceResolution.strictSoap", "false");
+        SyspropUtil.setProperty( "com.l7tech.server.serviceResolution.strictSoap", "false" );
     }
 
     /**
@@ -169,7 +168,7 @@ public class PolicyProcessingTest {
     @BeforeClass
     public static void setUpSuite() throws Exception {
         // Software-only TransformerFactory to ignore the alluring Tarari impl, even if tarari_raxj.jar is sitting right there
-        System.setProperty("javax.xml.transform.TransformerFactory", "org.apache.xalan.processor.TransformerFactoryImpl");
+        SyspropUtil.setProperty( "javax.xml.transform.TransformerFactory", "org.apache.xalan.processor.TransformerFactoryImpl" );
 
         ApplicationContext applicationContext = ApplicationContexts.getTestApplicationContext();
         policyCache = applicationContext.getBean("policyCache", PolicyCache.class);

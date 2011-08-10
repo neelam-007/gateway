@@ -18,7 +18,7 @@ import java.util.logging.Logger;
  * Run backup / restore / migrate 
  */
 public class BackupRestoreLauncher {
-    public static final String EOL_CHAR = System.getProperty("line.separator");
+    public static final String EOL_CHAR = SyspropUtil.getProperty( "line.separator" );
     private static final String BACKUP_LOGCONFIG_NAME = "backuputilitylogging.properties";
     private static final String RESTORE_LOGCONFIG_NAME = "restore_logging.properties";
     private static final String SSGBACKUP_SH = "ssgbackup.sh";

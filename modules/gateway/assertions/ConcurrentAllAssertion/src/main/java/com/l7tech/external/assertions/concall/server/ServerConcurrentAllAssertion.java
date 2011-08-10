@@ -14,7 +14,6 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.variable.PolicyVariableUtils;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.VariableNotSettableException;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -23,6 +22,8 @@ import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.composite.ServerCompositeAssertion;
+import com.l7tech.util.Config;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
@@ -72,10 +73,10 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
     }
 
     private static void initializeAssertionExecutor(BeanFactory beanFactory) {
-        ServerConfig serverConfig = beanFactory == null ? ServerConfig.getInstance() : beanFactory.getBean("serverConfig", ServerConfig.class);
-        int globalMaxConcurrency = serverConfig.getIntProperty(ConcurrentAllAssertion.SC_MAX_CONC, 64);
-        int globalCoreConcurrency = serverConfig.getIntProperty(ConcurrentAllAssertion.SC_CORE_CONC, 32);
-        int globalMaxWorkQueue = serverConfig.getIntProperty(ConcurrentAllAssertion.SC_MAX_QUEUE, 64);
+        Config config = beanFactory == null ? ConfigFactory.getCachedConfig() : beanFactory.getBean("serverConfig", Config.class);
+        int globalMaxConcurrency = config.getIntProperty(ConcurrentAllAssertion.SC_MAX_CONC, 64);
+        int globalCoreConcurrency = config.getIntProperty(ConcurrentAllAssertion.SC_CORE_CONC, 32);
+        int globalMaxWorkQueue = config.getIntProperty(ConcurrentAllAssertion.SC_MAX_QUEUE, 64);
         synchronized (assertionExecutorInitLock) {
             if (assertionExecutor == null) {
                 assertionExecutor = createAssertionExecutor(globalMaxConcurrency, globalCoreConcurrency, globalMaxWorkQueue);

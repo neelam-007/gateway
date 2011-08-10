@@ -2,16 +2,16 @@ package com.l7tech.external.assertions.rawtcp;
 
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 
 /**
  * Bean for configuring outbound raw TCP (and someday TLS) single-shot message.
  */
 public class SimpleRawTransportAssertion extends RoutingAssertion implements UsesVariables, SetsVariables {
-    public static final int DEFAULT_WRITE_TIMEOUT = SyspropUtil.getInteger("com.l7tech.external.assertions.rawtcp.defaultWriteTimeout", 2000);
-    public static final int DEFAULT_READ_TIMEOUT = SyspropUtil.getInteger("com.l7tech.external.assertions.rawtcp.defaultReadTimeout", 2000);
-    public static final long DEFAULT_RESPONSE_SIZE_LIMIT = SyspropUtil.getLong("com.l7tech.external.assertions.rawtcp.defaultResponseSizeLimit", -1);
-    public static final long DEFAULT_REQUEST_SIZE_LIMIT = SyspropUtil.getLong("com.l7tech.external.assertions.rawtcp.defaultRequestSizeLimit", 1024 * 1024);
+    public static final int DEFAULT_WRITE_TIMEOUT = ConfigFactory.getIntProperty( "com.l7tech.external.assertions.rawtcp.defaultWriteTimeout", 2000 );
+    public static final int DEFAULT_READ_TIMEOUT = ConfigFactory.getIntProperty( "com.l7tech.external.assertions.rawtcp.defaultReadTimeout", 2000 );
+    public static final long DEFAULT_RESPONSE_SIZE_LIMIT = ConfigFactory.getLongProperty( "com.l7tech.external.assertions.rawtcp.defaultResponseSizeLimit", -1 );
+    public static final long DEFAULT_REQUEST_SIZE_LIMIT = ConfigFactory.getLongProperty( "com.l7tech.external.assertions.rawtcp.defaultRequestSizeLimit", 1024 * 1024 );
 
     public static final String LISTEN_PROP_BACKLOG = "l7.raw.backlog";
     public static final String LISTEN_PROP_READ_TIMEOUT = "l7.raw.readTimeout";

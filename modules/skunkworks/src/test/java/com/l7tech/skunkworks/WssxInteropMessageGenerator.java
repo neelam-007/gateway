@@ -8,6 +8,7 @@ import com.l7tech.security.xml.decorator.DecoratorException;
 import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.SyspropUtil;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -63,7 +64,7 @@ public class WssxInteropMessageGenerator {
     }
 
     public static void main(String[] args) throws Exception {
-        System.setProperty(WssDecoratorImpl.PROPERTY_SUPPRESS_NANOSECONDS, "true");
+        SyspropUtil.setProperty( WssDecoratorImpl.PROPERTY_SUPPRESS_NANOSECONDS, "true" );
         WssxInteropMessageGenerator generator = new WssxInteropMessageGenerator();
         Document doc = generator.generateRequest();
         System.out.println(XmlUtil.nodeToFormattedString(doc));

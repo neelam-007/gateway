@@ -4,13 +4,13 @@ import com.l7tech.gui.widgets.ContextMenuTextArea;
 import com.l7tech.common.http.GenericHttpHeaders;
 import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.http.HttpHeaders;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.message.HttpHeadersKnob;
 import com.l7tech.message.Message;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.Policy;
@@ -64,7 +64,7 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
 
     MessageViewerModel() {
         //initialize message viewer
-        perMessageStorageSize = SyspropUtil.getInteger(PER_MESSAGE_STORAGE_SIZE, DEFAULT_PER_MESSAGE_STORAGE_SIZE);
+        perMessageStorageSize = ConfigFactory.getIntProperty( PER_MESSAGE_STORAGE_SIZE, DEFAULT_PER_MESSAGE_STORAGE_SIZE );
         if (perMessageStorageSize <= 0) {
             perMessageStorageSize = DEFAULT_PER_MESSAGE_STORAGE_SIZE;
         }

@@ -8,12 +8,12 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.LifecycleBean;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.event.MessageProcessed;
 import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.util.Background;
+import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationEvent;
 
@@ -35,7 +35,7 @@ public abstract class TransportModule extends LifecycleBean {
     protected final SsgConnectorManager ssgConnectorManager;
     private final TrustedCertServices trustedCertServices;
     private final DefaultKey defaultKey;
-    private final ServerConfig serverConfig;
+    private final Config config;
 
     protected TransportModule(String name,
                               Logger logger,
@@ -44,15 +44,15 @@ public abstract class TransportModule extends LifecycleBean {
                               SsgConnectorManager ssgConnectorManager,
                               TrustedCertServices trustedCertServices,
                               DefaultKey defaultKey,
-                              ServerConfig serverConfig)
+                              Config config )
     {
         super(name, logger, licenseFeature, licenseManager);
         this.logger = logger;
         this.ssgConnectorManager = ssgConnectorManager;
         this.trustedCertServices = trustedCertServices;
         this.defaultKey = defaultKey;
-        this.serverConfig = serverConfig;
-        if (serverConfig == null || defaultKey == null || trustedCertServices == null || ssgConnectorManager == null || logger == null)
+        this.config = config;
+        if ( config == null || defaultKey == null || trustedCertServices == null || ssgConnectorManager == null || logger == null)
             throw new NullPointerException("A required bean was not provided to the TransportModule");
     }
 
@@ -223,8 +223,8 @@ public abstract class TransportModule extends LifecycleBean {
      *
      * @return the serverConfig instance.  Never null.
      */
-    public ServerConfig getServerConfig() {
-        return serverConfig;
+    public Config getServerConfig() {
+        return config;
     }
 
     /**

@@ -2,7 +2,7 @@ package com.l7tech.server.admin.ws;
 
 import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.util.Config;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ValidatedConfig;
 import org.apache.cxf.interceptor.AttachmentInInterceptor;
 import org.apache.cxf.interceptor.Fault;
@@ -57,7 +57,7 @@ public class StreamValidationInterceptor extends AbstractPhaseInterceptor<Messag
 
     private static final int DEFAULT_REQUEST_SIZE_LIMIT = 10 * 1024 * 1024;
     private static final String PROP_ESM_REQUEST_SIZE_LIMIT = "admin.esmRequestSizeLimit";
-    private static final int dtdLimit = SyspropUtil.getInteger( "com.l7tech.server.admin.ws.dtdLimit", 4096 );
+    private static final int dtdLimit = ConfigFactory.getIntProperty( "com.l7tech.server.admin.ws.dtdLimit", 4096 );
 
     private final Config config;
 

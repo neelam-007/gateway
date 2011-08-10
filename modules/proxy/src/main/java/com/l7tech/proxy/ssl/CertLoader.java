@@ -1,9 +1,6 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.proxy.ssl;
+
+import com.l7tech.util.ConfigFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -162,17 +159,17 @@ public class CertLoader {
      *         or one was configured but could not be loaded (errors logged).
      */
     private static CertLoader loadConfiguredCertLoader() {
-        String path      = System.getProperty(PROP_SSL_KEYSTORE_PATH);
-        String pass      = System.getProperty(PROP_SSL_KEYSTORE_PASS);
+        String path = ConfigFactory.getProperty( PROP_SSL_KEYSTORE_PATH );
+        String pass = ConfigFactory.getProperty( PROP_SSL_KEYSTORE_PASS );
 
         if (path == null || pass == null || pass.length() < 1) {
             logger.info("No custom keystore is configured.");
             return null;
         }
 
-        String type      = System.getProperty(PROP_SSL_KEYSTORE_TYPE);
-        String alias     = System.getProperty(PROP_SSL_KEYSTORE_ALIAS);
-        String aliasPass = System.getProperty(PROP_SSL_KEYSTORE_ALIASPASS);
+        String type = ConfigFactory.getProperty( PROP_SSL_KEYSTORE_TYPE );
+        String alias = ConfigFactory.getProperty( PROP_SSL_KEYSTORE_ALIAS );
+        String aliasPass = ConfigFactory.getProperty( PROP_SSL_KEYSTORE_ALIASPASS );
         try {
             return new CertLoader(path, pass, type, alias, aliasPass);
         } catch (IOException e) {

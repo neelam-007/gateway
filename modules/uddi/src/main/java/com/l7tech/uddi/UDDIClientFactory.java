@@ -3,7 +3,7 @@ package com.l7tech.uddi;
 import java.util.logging.Logger;
 import java.lang.reflect.Constructor;
 
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 
 /**
  * Factory for creation of UDDIClients.
@@ -111,9 +111,7 @@ public class UDDIClientFactory {
 
 
     static PolicyAttachmentVersion getDefaultPolicyAttachmentVersion() {
-        String id = SyspropUtil.getString(
-                SYSPROP_DEFAULT_VERSION,
-                PolicyAttachmentVersion.v1_2.toString());
+        String id = ConfigFactory.getProperty( SYSPROP_DEFAULT_VERSION, PolicyAttachmentVersion.v1_2.toString() );
         return PolicyAttachmentVersion.valueOf(id);
     }
 
@@ -128,7 +126,7 @@ public class UDDIClientFactory {
     private final String clientClass;
 
     private UDDIClientFactory() {
-        clientClass = SyspropUtil.getString(SYSPROP_UDDICLIENT, DEFAULT_UDDICLIENT);
+        clientClass = ConfigFactory.getProperty( SYSPROP_UDDICLIENT, DEFAULT_UDDICLIENT );
 
         logger.config("Using UDDIClient implementation '"+clientClass+"'.");
     }

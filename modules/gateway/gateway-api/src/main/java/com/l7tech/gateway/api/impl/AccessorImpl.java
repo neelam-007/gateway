@@ -4,8 +4,8 @@ import com.l7tech.gateway.api.AccessibleObject;
 import com.l7tech.gateway.api.Accessor;
 import com.l7tech.gateway.api.ManagedObject;
 import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
 import com.sun.ws.management.client.EnumerationCtx;
 import com.sun.ws.management.client.Resource;
 import com.sun.ws.management.client.ResourceFactory;
@@ -223,7 +223,7 @@ class AccessorImpl<AO extends AccessibleObject> implements Accessor<AO> {
 
     //- PRIVATE
 
-    private static final int DEFAULT_TIMEOUT = SyspropUtil.getInteger( "com.l7tech.gateway.api.operationTimeout", 300000 );
+    private static final int DEFAULT_TIMEOUT = ConfigFactory.getIntProperty( "com.l7tech.gateway.api.operationTimeout", 300000 );
 
     private final String url;
     private final String resourceUri;
@@ -374,7 +374,7 @@ class AccessorImpl<AO extends AccessibleObject> implements Accessor<AO> {
         private final int timeout;
         private final ResourceTracker resourceTracker;
         private final ResourceFactory resourceFactory;
-        private final int batchSize = SyspropUtil.getInteger( "com.l7tech.gateway.api.enumerationBatchSize", 10 );
+        private final int batchSize = ConfigFactory.getIntProperty( "com.l7tech.gateway.api.enumerationBatchSize", 10 );
         private final List<IMO> nextItems = new ArrayList<IMO>(batchSize);
 
         private EnumerationCtx context;

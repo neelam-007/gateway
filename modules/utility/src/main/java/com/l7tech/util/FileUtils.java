@@ -722,7 +722,7 @@ public class FileUtils {
         String s = (suffix == null) ? ".tmp" : suffix;
 
         if (directory == null) {
-            String tmpDir = System.getProperty("java.io.tmpdir");
+            String tmpDir = SyspropUtil.getProperty( "java.io.tmpdir" );
             directory = new File(tmpDir);
         }
 

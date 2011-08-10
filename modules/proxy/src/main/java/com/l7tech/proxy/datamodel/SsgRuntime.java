@@ -1,8 +1,3 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.http.FailoverHttpClient;
@@ -18,6 +13,7 @@ import com.l7tech.kerberos.KerberosServiceTicket;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.ssl.*;
 import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.DateTranslator;
 import com.l7tech.util.ExceptionUtils;
 import org.apache.commons.collections.map.LRUMap;
@@ -60,7 +56,7 @@ public class SsgRuntime {
     public static final int MAX_LOGON_CANCEL = 1;
 
     // Maximum number of Sender Vouches tokens to cache at a time.
-    private static final int MAX_SV_USERS = Integer.getInteger("com.l7tech.proxy.maxSvUsers", 1000);
+    private static final int MAX_SV_USERS = ConfigFactory.getIntProperty( "com.l7tech.proxy.maxSvUsers", 1000 );
 
     private MultiThreadedHttpConnectionManager httpConnectionManager;
 
@@ -474,7 +470,7 @@ public class SsgRuntime {
                 sslContext = CurrentSslPeer.doWithSslPeer(ssg, new Callable<SSLContext>() {
                     @Override
                     public SSLContext call() throws Exception {
-                        String tlsProv = System.getProperty(SslPeer.PROP_SSL_PROVIDER);
+                        String tlsProv = ConfigFactory.getProperty( SslPeer.PROP_SSL_PROVIDER );
                         SSLContext sslContext = tlsProv == null ? SSLContext.getInstance("TLS") : SSLContext.getInstance("TLS", tlsProv);
                         sslContext.init(new X509KeyManager[] {keyManager},
                                         new X509TrustManager[] {trustManager},

@@ -98,8 +98,8 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     private ServiceDocumentManager serviceDocumentManager;
     private PolicyPathBuilder policyPathBuilder;
 
-    public void setServerConfig(ServerConfig serverConfig) {
-        this.serverConfig = serverConfig;
+    public void setServerConfig(Config config ) {
+        this.config = config;
     }
 
     @Override
@@ -364,7 +364,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     private boolean systemAllowsAnonymousDownloads(final HttpServletRequest req) {
         // split strings into seperate values
         // check whether any of those can match start of
-        String allPassthroughs = serverConfig.getPropertyCached("passthroughDownloads");
+        String allPassthroughs = config.getProperty( "passthroughDownloads" );
         StringTokenizer st = new StringTokenizer(allPassthroughs);
         String remote = req.getRemoteAddr();
         while (st.hasMoreTokens()) {
@@ -381,7 +381,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     private boolean systemAllowsDisabledServiceDownloads(final HttpServletRequest req) {
         boolean permitted = false;
 
-        String disabledDownloads = serverConfig.getPropertyCached("service.disabledServiceDownloads");
+        String disabledDownloads = config.getProperty( "service.disabledServiceDownloads" );
         if ( "all".equalsIgnoreCase( disabledDownloads ) ) {
             permitted = true;
         } else if ( "passthrough".equalsIgnoreCase(disabledDownloads)) {
@@ -569,7 +569,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     }
 
     private void addSecurityPolicy(Document wsdl, PublishedService svc) {
-        if (!SyspropUtil.getBooleanCached(PROPERTY_WSSP_ATTACH, true)) {
+        if (!ConfigFactory.getBooleanProperty( PROPERTY_WSSP_ATTACH, true )) {
             logger.fine("WS-SecurityPolicy decoration not enabled.");
             return;
         }
@@ -637,7 +637,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                                           final HttpServletResponse res,
                                           final PublishedService svc,
                                           final AuthenticationResult[] results) throws IOException {
-        final boolean enableImportProxy = svc.isInternal() || proxyRequired(svc) || serverConfig.getBooleanProperty(PROPERTY_WSDL_IMPORT_PROXY, false);
+        final boolean enableImportProxy = svc.isInternal() || proxyRequired(svc) || config.getBooleanProperty(PROPERTY_WSDL_IMPORT_PROXY, false);
         final Collection<ServiceDocument> documents;
         Long serviceId = null;
         Document wsdlDoc = null;
@@ -679,8 +679,8 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         int port = req.getServerPort();
         String proto = secureRequest ? "https" : "http";
 
-        int httpPort = serverConfig.getIntPropertyCached( ServerConfigParams.PARAM_HTTPPORT, 8080, 10000L);
-        int httpsPort = serverConfig.getIntPropertyCached( ServerConfigParams.PARAM_HTTPSPORT, 8443, 10000L);
+        int httpPort = config.getIntProperty( ServerConfigParams.PARAM_HTTPPORT, 8080 );
+        int httpsPort = config.getIntProperty( ServerConfigParams.PARAM_HTTPSPORT, 8443 );
         if (("http".equals(proto) && (port==80 || port==httpPort)) ||
             ("https".equals(proto) && (port==443 || port==httpsPort))) {
             // then see if we should switch protocols for the endpoint

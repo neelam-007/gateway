@@ -6,6 +6,7 @@ import com.l7tech.console.util.registry.RegistryStub;
 
 import javax.swing.*;
 
+import com.l7tech.util.SyspropUtil;
 import org.junit.Ignore;
 
 /**
@@ -24,7 +25,7 @@ public class JmsRoutingAssertionDialogTest {
     }
 
     private static void realMain() throws Exception {
-        System.setProperty("com.l7tech.common.locator", "com.l7tech.common.locator.StubModeLocator");
+        SyspropUtil.setProperty( "com.l7tech.common.locator", "com.l7tech.common.locator.StubModeLocator" );
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 
         Registry.setDefault(new RegistryStub());

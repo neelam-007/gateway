@@ -2,9 +2,9 @@ package com.l7tech.server;
 
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
-import com.l7tech.util.SyspropUtil;
 import org.hibernate.*;
 import org.hibernate.criterion.*;
 import org.hibernate.jdbc.Work;
@@ -1061,7 +1061,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
     private final Logger logger = Logger.getLogger(getClass().getName());
 
-    private static final boolean useOptimizedCount = SyspropUtil.getBoolean( "com.l7tech.server.hibernate.useOptimizedCount", true );
+    private static final boolean useOptimizedCount = ConfigFactory.getBooleanProperty("com.l7tech.server.hibernate.useOptimizedCount", true);
 
     private ReadWriteLock cacheLock = new ReentrantReadWriteLock();
     private Map<Long, WeakReference<CacheInfo<ET>>> cacheInfoByOid = new HashMap<Long, WeakReference<CacheInfo<ET>>>();

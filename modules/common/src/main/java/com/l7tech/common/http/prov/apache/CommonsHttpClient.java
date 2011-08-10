@@ -53,8 +53,8 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
     public static final String PROP_GZIP_STREAMING_THRESHOLD = CommonsHttpClient.class.getName() + ".gzipStreamThreshold";
 
     public static final String DEFAULT_CREDENTIAL_CHARSET = "ISO-8859-1"; // see bugzilla #5729
-    public static final int DEFAULT_CONNECT_TIMEOUT = SyspropUtil.getInteger(PROP_DEFAULT_CONNECT_TIMEOUT, 30000);
-    public static final int DEFAULT_READ_TIMEOUT = SyspropUtil.getInteger(PROP_DEFAULT_READ_TIMEOUT, 60000);
+    public static final int DEFAULT_CONNECT_TIMEOUT = ConfigFactory.getIntProperty( PROP_DEFAULT_CONNECT_TIMEOUT, 30000 );
+    public static final int DEFAULT_READ_TIMEOUT = ConfigFactory.getIntProperty( PROP_DEFAULT_READ_TIMEOUT, 60000 );
     public static final int DEFAULT_GZIP_STREAMING_THRESHOLD = Integer.MAX_VALUE;
 
     private static final String PROTOCOL_HTTPS = "https";
@@ -66,18 +66,18 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
     /**
      * This property was true in 5.1, switched to false in 5.2, URLs should be encoded by the caller (see bug 7598).
      */
-    private static final boolean encodePath = SyspropUtil.getBoolean(CommonsHttpClient.class.getName() + ".encodePath", false);
-    private static final int gzipThreshold = SyspropUtil.getInteger( PROP_GZIP_STREAMING_THRESHOLD, DEFAULT_GZIP_STREAMING_THRESHOLD );
+    private static final boolean encodePath = ConfigFactory.getBooleanProperty( CommonsHttpClient.class.getName() + ".encodePath", false );
+    private static final int gzipThreshold = ConfigFactory.getIntProperty( PROP_GZIP_STREAMING_THRESHOLD, DEFAULT_GZIP_STREAMING_THRESHOLD );
 
     static {
         DefaultHttpParams.setHttpParamsFactory(new CachingHttpParamsFactory(new DefaultHttpParamsFactory()));
 
         HttpParams defaultParams = DefaultHttpParams.getDefaultParams();
-        if (SyspropUtil.getString(PROP_HTTP_EXPECT_CONTINUE, null) != null) {
-            defaultParams.setBooleanParameter("http.protocol.expect-continue", SyspropUtil.getBoolean(PROP_HTTP_EXPECT_CONTINUE));
+        if ( ConfigFactory.getProperty( PROP_HTTP_EXPECT_CONTINUE ) != null) {
+            defaultParams.setBooleanParameter( "http.protocol.expect-continue", ConfigFactory.getBooleanProperty( PROP_HTTP_EXPECT_CONTINUE, false ) );
         }
-        if (SyspropUtil.getBoolean(PROP_HTTP_DISABLE_KEEP_ALIVE)) {
-            defaultParams.setParameter("http.default-headers", Collections.singletonList(new Header("Connection", "close")));
+        if ( ConfigFactory.getBooleanProperty( PROP_HTTP_DISABLE_KEEP_ALIVE, false ) ) {
+            defaultParams.setParameter( "http.default-headers", Collections.singletonList( new Header( "Connection", "close" ) ) );
         }
     }
 
@@ -192,15 +192,15 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
     }
 
     public static int getDefaultMaxConnectionsPerHost() {
-        return SyspropUtil.getIntegerCached(PROP_MAX_CONN_PER_HOST, 200);
+        return ConfigFactory.getIntProperty(PROP_MAX_CONN_PER_HOST, 200);
     }
 
     public static int getDefaultMaxTotalConnections() {
-        return SyspropUtil.getIntegerCached(PROP_MAX_TOTAL_CONN, 2000);
+        return ConfigFactory.getIntProperty(PROP_MAX_TOTAL_CONN, 2000);
     }
 
     public static int getDefaultStaleCheckCount() {
-        return SyspropUtil.getIntegerCached(PROP_STALE_CHECKS, 1);
+        return ConfigFactory.getIntProperty(PROP_STALE_CHECKS, 1);
     }
 
     private static Constructor<? extends org.apache.commons.httpclient.HttpMethod> findApacheCtor(Class<? extends org.apache.commons.httpclient.HttpMethod> ac) {
@@ -522,7 +522,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
             state.setCredentials(AuthScope.ANY,
                                  new UsernamePasswordCredentials(username, new String(password)));
             clientParams.setAuthenticationPreemptive(params.isPreemptiveAuthentication());
-            clientParams.setCredentialCharset(SyspropUtil.getStringCached(PROP_CREDENTIAL_CHARSET, DEFAULT_CREDENTIAL_CHARSET));
+            clientParams.setCredentialCharset(ConfigFactory.getProperty(PROP_CREDENTIAL_CHARSET, DEFAULT_CREDENTIAL_CHARSET));
         } else if ( !proxyConfigured ) {
             httpMethod.setDoAuthentication(false);
             state.clearCredentials();
@@ -735,7 +735,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
     private static final Pattern commasWithWhitespace = Pattern.compile("\\s*,\\s*");
 
     private static String[] getCommaDelimitedSystemProperty(String propertyName) {
-        String delimited = SyspropUtil.getStringCached(propertyName, null);
+        String delimited = ConfigFactory.getProperty(propertyName, null);
         return delimited == null || delimited.length() < 1 ? null : commasWithWhitespace.split(delimited);
     }
 

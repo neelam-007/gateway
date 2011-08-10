@@ -9,7 +9,6 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.system.SystemEvent;
 import com.l7tech.server.identity.AuthenticationResult;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
@@ -54,17 +53,17 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
 
     public SSMLogonService(final PlatformTransactionManager transactionManager,
                            final LogonInfoManager logonManager,
-                           final ServerConfig serverConfig,
+                           final Config config,
                            final RoleManager roleManager,
                            final IdentityProviderFactory identityProviderFactory) {
         if (transactionManager == null)
             throw new IllegalArgumentException("PlateformTransactionManager cannot be null.");
         if (logonManager == null) throw new IllegalArgumentException("LogonInfoManager cannot be null.");
-        if (serverConfig == null) throw new IllegalArgumentException("ServerConfig cannot be null.");
+        if ( config == null) throw new IllegalArgumentException("ServerConfig cannot be null.");
 
         this.transactionManager = transactionManager;
         this.logonManager = logonManager;
-        setConfig(serverConfig);
+        setConfig( config );
         this.roleManager = roleManager;
         this.identityProviderFactory = identityProviderFactory;
 

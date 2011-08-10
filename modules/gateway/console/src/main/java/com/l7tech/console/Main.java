@@ -54,7 +54,7 @@ public class Main {
 
                 configureSecurity();
 
-                if (!SyspropUtil.getBoolean("com.l7tech.console.useSheets"))
+                if ( !SyspropUtil.getBoolean( "com.l7tech.console.useSheets", false ) )
                     DialogDisplayer.setForceNative(true);
 
                 ApplicationContext ctx = createApplicationContext();

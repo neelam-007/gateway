@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.console.panels;
 
 import com.l7tech.gateway.common.audit.AuditAdmin;
@@ -16,6 +13,7 @@ import com.l7tech.console.util.jcalendar.TimeRangePicker;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.util.SyspropUtil;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -288,7 +286,7 @@ public class DownloadAuditEventsWindow extends JFrame {
         outputFile = new File(filePath);
         if (! outputFile.isAbsolute()) {
             String defaultDirectory = FileUtils.getDefaultDirectory();
-            String separator = System.getProperty("file.separator");
+            String separator = SyspropUtil.getProperty( "file.separator" );
             if (! filePath.startsWith(defaultDirectory)) {
                 filePath = defaultDirectory + separator + filePath;
                 outputFile = new File(filePath);

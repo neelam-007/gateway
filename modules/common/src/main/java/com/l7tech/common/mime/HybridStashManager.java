@@ -1,12 +1,6 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.common.mime;
 
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.BufferPool;
 import com.l7tech.util.PoolByteArrayOutputStream;
 
@@ -18,7 +12,7 @@ import java.io.*;
 public class HybridStashManager implements StashManager {
     private static final int DEFAULT_MAX_INITIAL_BUFFER = 8192;
     private static final String MAX_INITIAL_BUFFER_PROPERTY = HybridStashManager.class.getName() + ".maxInitialBuffer";
-    private static final int MAX_INITIAL_BUFFER = SyspropUtil.getInteger(MAX_INITIAL_BUFFER_PROPERTY, DEFAULT_MAX_INITIAL_BUFFER);
+    private static final int MAX_INITIAL_BUFFER = ConfigFactory.getIntProperty( MAX_INITIAL_BUFFER_PROPERTY, DEFAULT_MAX_INITIAL_BUFFER );
 
     private final int limit;
     private final int initialBuffer;

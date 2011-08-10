@@ -143,8 +143,8 @@ public class PatchVerifier {
         if ( logsDir.exists() && logsDir.canWrite() ) {
             JdkLoggerConfigurator.configure("com.l7tech.server.processcontroller.patching.verifier", "com/l7tech/server/processcontroller/patching/resources/logging.properties", "etc/conf/patchinglogging.properties", false, true);
         }
-        if ( SyspropUtil.getBoolean("com.l7tech.server.log.console") ) {
-            Logger.getLogger("").addHandler( new ConsoleHandler() );
+        if ( SyspropUtil.getBoolean( "com.l7tech.server.log.console", false ) ) {
+            Logger.getLogger( "" ).addHandler( new ConsoleHandler() );
         }
     }
 

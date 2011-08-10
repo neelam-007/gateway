@@ -94,7 +94,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
     static final Logger log = Logger.getLogger(XpathBasedAssertionPropertiesDialog.class.getName());
 
     public static final boolean SHOW_WHOLE_ELEMENT_ENCRYPTION_CONFIG =
-            SyspropUtil.getBoolean("com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog.showWholeElementEncryption", false);
+            ConfigFactory.getBooleanProperty( "com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog.showWholeElementEncryption", false );
 
     private JPanel mainPanel;
     private JPanel messageViewerPanel;

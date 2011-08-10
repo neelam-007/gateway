@@ -12,6 +12,7 @@ import java.util.Set;
 
 import com.l7tech.kerberos.KerberosConfigConstants;
 import com.l7tech.kerberos.KerberosClient;
+import com.l7tech.util.SyspropUtil;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -31,16 +32,16 @@ public class KerberosTest implements KerberosConfigConstants {
 
     static {
         // override the values in the keytab
-        System.setProperty("java.security.krb5.realm", "TEST2003.COM");
-        System.setProperty("java.security.krb5.kdc", "192.168.1.145");
+        SyspropUtil.setProperty( "java.security.krb5.realm", "TEST2003.COM" );
+        SyspropUtil.setProperty( "java.security.krb5.kdc", "192.168.1.145" );
     }
 
     @BeforeClass
     public void setUp() throws Exception {
 
-        System.setProperty(SYSPROP_SSG_HOME, SSG_HOME_DIR);
-        System.setProperty(SYSPROP_LOGINCFG_PATH, SSG_HOME_DIR+"/login.config");
-        System.setProperty(SYSPROP_KRB5CFG_PATH, SSG_HOME_DIR+"/krb5.conf");
+        SyspropUtil.setProperty( SYSPROP_SSG_HOME, SSG_HOME_DIR );
+        SyspropUtil.setProperty( SYSPROP_LOGINCFG_PATH, SSG_HOME_DIR + "/login.config" );
+        SyspropUtil.setProperty( SYSPROP_KRB5CFG_PATH, SSG_HOME_DIR + "/krb5.conf" );
 
         if (krbClient == null)
             krbClient = new KerberosClient();

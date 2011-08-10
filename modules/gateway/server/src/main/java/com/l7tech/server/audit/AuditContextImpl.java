@@ -1,7 +1,3 @@
-/*
- * Copyright (C) 2004-2006 Layer 7 Technologies Inc.
- */
-
 package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.Component;
@@ -14,6 +10,7 @@ import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.util.Pair;
@@ -49,24 +46,24 @@ import java.util.logging.Logger;
 public class AuditContextImpl implements AuditContext {
 
     /**
-     * @param serverConfig   required
+     * @param config   required
      * @param auditRecordManager   required
      * @param auditPolicyEvaluator  may be null
      * @param auditFilterPolicyManager may be null
      * @param nodeId should not be null
      */
-    public AuditContextImpl(ServerConfig serverConfig,
+    public AuditContextImpl(Config config,
                             AuditRecordManager auditRecordManager,
                             AuditPolicyEvaluator auditPolicyEvaluator,
                             AuditFilterPolicyManager auditFilterPolicyManager,
                             String nodeId) {
-        if (serverConfig == null) {
+        if ( config == null) {
             throw new IllegalArgumentException("Server Config is required");
         }
         if (auditRecordManager == null) {
             throw new IllegalArgumentException("Audit Record Manager is required");
         }
-        this.serverConfig = serverConfig;
+        this.config = config;
         this.auditRecordManager = auditRecordManager;
         this.auditPolicyEvaluator = auditPolicyEvaluator;
         this.auditFilterPolicyManager = auditFilterPolicyManager;
@@ -403,15 +400,15 @@ public class AuditContextImpl implements AuditContext {
     }
 
     private boolean isPCIDSSEnabled() {
-        return serverConfig.getBooleanPropertyCached( ServerConfigParams.PARAM_PCIDSS_ENABLED, false, 30000);
+        return config.getBooleanProperty( ServerConfigParams.PARAM_PCIDSS_ENABLED, false );
     }
 
     private boolean isFallbackToDatabaseIfSinkPolicyFails() {
-        return serverConfig.getBooleanPropertyCached( ServerConfigParams.PARAM_AUDIT_SINK_FALLBACK_ON_FAIL, true, 30000);
+        return config.getBooleanProperty( ServerConfigParams.PARAM_AUDIT_SINK_FALLBACK_ON_FAIL, true );
     }
 
     private boolean isAlwaysSaveToDatabase() {
-        return serverConfig.getBooleanPropertyCached( ServerConfigParams.PARAM_AUDIT_SINK_ALWAYS_FALLBACK, false, 30000);
+        return config.getBooleanProperty( ServerConfigParams.PARAM_AUDIT_SINK_ALWAYS_FALLBACK, false );
     }
 
     /**
@@ -459,7 +456,7 @@ public class AuditContextImpl implements AuditContext {
 
     private Level getSystemMessageThreshold() {
         if (currentMessageThreshold == null) {
-            String msgLevel = serverConfig.getPropertyCached( ServerConfigParams.PARAM_AUDIT_MESSAGE_THRESHOLD);
+            String msgLevel = config.getProperty( ServerConfigParams.PARAM_AUDIT_MESSAGE_THRESHOLD );
             Level output = null;
             if (msgLevel != null) {
                 try {
@@ -479,7 +476,7 @@ public class AuditContextImpl implements AuditContext {
 
     private Level getAssociatedLogsThreshold() {
         if (currentAssociatedLogsThreshold == null) {
-            String msgLevel = serverConfig.getPropertyCached( ServerConfigParams.PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD);
+            String msgLevel = config.getProperty( ServerConfigParams.PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD );
             Level output = null;
             if (msgLevel != null) {
                 try {
@@ -499,7 +496,7 @@ public class AuditContextImpl implements AuditContext {
 
     private boolean getUseAssociatedLogsThreshold() {
         if (currentUseAssociatedLogsThreshold == null) {
-            String configStr = serverConfig.getPropertyCached( ServerConfigParams.PARAM_AUDIT_USE_ASSOCIATED_LOGS_THRESHOLD);
+            String configStr = config.getProperty( ServerConfigParams.PARAM_AUDIT_USE_ASSOCIATED_LOGS_THRESHOLD );
             Boolean configValue = null;
             if (configStr != null) {
                 configValue = Boolean.valueOf(configStr.trim());
@@ -514,7 +511,7 @@ public class AuditContextImpl implements AuditContext {
 
     private Level getSystemAdminThreshold() {
         if (currentAdminThreshold == null) {
-            String msgLevel = serverConfig.getPropertyCached( ServerConfigParams.PARAM_AUDIT_ADMIN_THRESHOLD);
+            String msgLevel = config.getProperty( ServerConfigParams.PARAM_AUDIT_ADMIN_THRESHOLD );
             Level output = null;
             if (msgLevel != null) {
                 try {
@@ -534,7 +531,7 @@ public class AuditContextImpl implements AuditContext {
 
     private Level getSystemSystemClientThreshold() {
         if (currentSystemClientThreshold == null) {
-            String msgLevel = serverConfig.getPropertyCached( ServerConfigParams.PARAM_AUDIT_SYSTEM_CLIENT_THRESHOLD);
+            String msgLevel = config.getProperty( ServerConfigParams.PARAM_AUDIT_SYSTEM_CLIENT_THRESHOLD );
             Level output = null;
             if (msgLevel != null) {
                 try {
@@ -554,7 +551,7 @@ public class AuditContextImpl implements AuditContext {
 
     private boolean isSignAudits() {
         if (currentSignAuditSetting == null) {
-            String configStr = serverConfig.getPropertyCached(CONFIG_AUDIT_SIGN);
+            String configStr = config.getProperty( CONFIG_AUDIT_SIGN );
             Boolean configValue = null;
             if (configStr != null) {
                 configValue = Boolean.valueOf(configStr.trim());
@@ -603,7 +600,7 @@ public class AuditContextImpl implements AuditContext {
     private static final Boolean DEFAULT_AUDIT_SIGN = false;
     private static final String OUR_IP = InetAddressUtil.getLocalHost().getHostAddress();
 
-    private final ServerConfig serverConfig;
+    private final Config config;
     private final AuditRecordManager auditRecordManager;
     private final String nodeId;
     private AuditPolicyEvaluator auditPolicyEvaluator;

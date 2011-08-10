@@ -5,7 +5,7 @@ import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.mime.*;
 import com.l7tech.util.CausedIllegalStateException;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.xml.MessageNotSoapException;
 import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
@@ -27,7 +27,7 @@ import java.util.Map;
 public final class Message implements Closeable {
     public static final String PROPERTY_ENABLE_ORIGINAL_DOCUMENT = "com.l7tech.message.enableOriginalDocument";
 
-    private static boolean defaultEnableOriginalDocument = SyspropUtil.getBoolean(PROPERTY_ENABLE_ORIGINAL_DOCUMENT, false);
+    private static boolean defaultEnableOriginalDocument = ConfigFactory.getBooleanProperty( PROPERTY_ENABLE_ORIGINAL_DOCUMENT, false );
 
     /**
      * enable this to enable XmlKnob.getOriginalDocument().

@@ -1,5 +1,6 @@
 package com.l7tech.test.performance.xmlbenchmark;
 
+import com.l7tech.util.SyspropUtil;
 import com.tarari.xml.XmlResult;
 import com.tarari.xml.xslt11.Stylesheet;
 import com.tarari.xml.rax.RaxDocument;
@@ -32,7 +33,7 @@ public class XMLBenchmarkingForTarariHardware extends XMLBenchmarking {
 
         try{
             //initialize tarari
-            System.setProperty("com.l7tech.common.xml.tarari.enable", "true");    //this just initialize the probe for tarari
+            SyspropUtil.setProperty( "com.l7tech.common.xml.tarari.enable", "true" );    //this just initialize the probe for tarari
             gtci = (GlobalTarariContextImpl) TarariLoader.getGlobalContext();
 
             SchemaLoader.unloadAllSchemas();    //make sure no schema loaded

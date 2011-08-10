@@ -80,7 +80,7 @@ public class AuditLevelDetailFilter implements MessagesUtil.AuditDetailLevelFilt
         //order is important.
         List<Pair<Level, Set<String>>> pairList = new ArrayList<Pair<Level, Set<String>>>();
         for (Level level : allLevels) {
-            final String idsForLevel = config.getProperty(clusterPropPrefix + level, null);
+            final String idsForLevel = config.getProperty( clusterPropPrefix + level );
             if(idsForLevel != null){
                 final Set<String> idsForSet = new HashSet<String>(Arrays.asList(idsForLevel.trim().split("\\s+")));
                 Pair<Level, Set<String>> levelToIds = new Pair<Level, Set<String>>(level, idsForSet);
@@ -91,7 +91,7 @@ public class AuditLevelDetailFilter implements MessagesUtil.AuditDetailLevelFilt
         copyOnWritePairLevelList.set(new CopyOnWriteArrayList<Pair<Level, Set<String>>>(pairList));
 
         //Get the never list
-        final String neverIds = config.getProperty(clusterPropNever, null);
+        final String neverIds = config.getProperty( clusterPropNever );
         final Set<String> neverSet = new HashSet<String>();
         if(neverIds != null){
             neverSet.addAll(Arrays.asList(neverIds.split("\\s+|,")));

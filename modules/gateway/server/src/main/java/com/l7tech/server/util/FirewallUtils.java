@@ -1,7 +1,7 @@
 package com.l7tech.server.util;
 
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.IpProtocol;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SudoUtils;
 import com.l7tech.gateway.common.transport.SsgConnector;
@@ -23,8 +23,8 @@ public class FirewallUtils {
     private static final String SYSPROP_FIREWALL_RULES_FILENAME = "com.l7tech.server.firewall.rules.filename";
     private static final String SYSPROP_FIREWALL6_RULES_FILENAME = "com.l7tech.server.firewall6.rules.filename";
 
-    private static final String FIREWALL_RULES_FILENAME = SyspropUtil.getString(SYSPROP_FIREWALL_RULES_FILENAME, "firewall_rules");
-    private static final String FIREWALL6_RULES_FILENAME = SyspropUtil.getString(SYSPROP_FIREWALL6_RULES_FILENAME, "firewall6_rules");
+    private static final String FIREWALL_RULES_FILENAME = ConfigFactory.getProperty( SYSPROP_FIREWALL_RULES_FILENAME, "firewall_rules" );
+    private static final String FIREWALL6_RULES_FILENAME = ConfigFactory.getProperty( SYSPROP_FIREWALL6_RULES_FILENAME, "firewall6_rules" );
 
     private static final String SYSPROP_FIREWALL_UPDATE_PROGRAM = "com.l7tech.server.firewall.update.program";
     private static final String DEFAULT_FIREWALL_UPDATE_PROGRAM = "/opt/SecureSpan/Appliance/libexec/update_firewall";
@@ -110,7 +110,7 @@ public class FirewallUtils {
     /** @return the program to be run whenever the firewall rules change, or null to take no such action. */
     private static File getFirewallUpdater() {
         File defaultProgram = new File(DEFAULT_FIREWALL_UPDATE_PROGRAM);
-        String program = SyspropUtil.getString(SYSPROP_FIREWALL_UPDATE_PROGRAM, defaultProgram.getAbsolutePath());
+        String program = ConfigFactory.getProperty( SYSPROP_FIREWALL_UPDATE_PROGRAM, defaultProgram.getAbsolutePath() );
         if (program == null || program.length() < 1)
             return null;
         File file = new File(program);

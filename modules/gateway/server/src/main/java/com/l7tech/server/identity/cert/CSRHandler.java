@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.identity.cert;
 
 import com.l7tech.common.io.CertGenParams;
@@ -50,9 +47,9 @@ import java.util.logging.Logger;
 public class CSRHandler extends AuthenticatableHttpServlet {
 
     @Override
-    public void init( final ServletConfig config ) throws ServletException {
-        super.init(config);
-        this.config = validated( serverConfig, logger );
+    public void init( final ServletConfig servletConfig ) throws ServletException {
+        super.init(servletConfig);
+        this.config = validated( config, logger );
         this.defaultKey = getApplicationContext().getBean("defaultKey", DefaultKey.class);
         this.providerConfigManager = getApplicationContext().getBean("identityProviderConfigManager", IdentityProviderConfigManager.class);
     }

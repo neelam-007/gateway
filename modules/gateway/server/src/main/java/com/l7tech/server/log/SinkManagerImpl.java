@@ -70,7 +70,7 @@ public class SinkManagerImpl
     public long getMaximumFileStorageSpace() {
         long storage = DEFAULT_FILE_SPACE_LIMIT;
 
-        String value = serverConfig.getPropertyCached( SCPROP_FILE_LIMIT, 30000L );
+        String value = serverConfig.getProperty( SCPROP_FILE_LIMIT );
         if ( value != null ) {
             try {
                 storage = Long.parseLong(value);
@@ -288,7 +288,7 @@ public class SinkManagerImpl
     private void updateLogLevels(final String oldValue, final String newValue) {
         String loggingLevels = newValue;
         if ( loggingLevels == null )
-            loggingLevels = serverConfig.getPropertyCached(SCPROP_LOG_LEVELS);
+            loggingLevels = serverConfig.getProperty( SCPROP_LOG_LEVELS );
 
         try {
             // load props
@@ -496,7 +496,7 @@ public class SinkManagerImpl
      */
     private void addConsoleSink( final List<MessageSink> sinks ) {
         SinkConfiguration.SeverityThreshold threshold = SinkConfiguration.SeverityThreshold.INFO;
-        String thresholdConfig = serverConfig.getPropertyCached( ServerConfigParams.PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD );
+        String thresholdConfig = serverConfig.getProperty( ServerConfigParams.PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD );
         if ( thresholdConfig != null ) {
             threshold = toSeverityThreshold( thresholdConfig, threshold );
         }
@@ -549,10 +549,10 @@ public class SinkManagerImpl
     private FileMessageSink buildClusterPropertyConfiguredTrafficSink() {
         FileMessageSink sink = null;
 
-        boolean enabled = serverConfig.getBooleanPropertyCached("trafficLoggerEnabled", false, 30000L);
-        String pattern = serverConfig.getPropertyCached("trafficLoggerPattern");
-        String limit = serverConfig.getPropertyCached("trafficLoggerLimit");
-        String count = serverConfig.getPropertyCached("trafficLoggerCount");
+        boolean enabled = serverConfig.getBooleanProperty( "trafficLoggerEnabled", false );
+        String pattern = serverConfig.getProperty( "trafficLoggerPattern" );
+        String limit = serverConfig.getProperty( "trafficLoggerLimit" );
+        String count = serverConfig.getProperty( "trafficLoggerCount" );
 
         if ( enabled ) {
             try {

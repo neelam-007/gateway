@@ -65,7 +65,7 @@ import java.net.MalformedURLException;
 @NavigationPage(page="SystemSettings",pageIndex=100,section="Settings",sectionIndex=200,pageUrl="SystemSettings.html")
 public class SystemSettings extends EsmStandardWebPage {
 
-    private static final int MAX_LICENSE_FILE_UPLOAD_BYTES = SyspropUtil.getInteger("com.l7tech.ems.licenseFile.maxBytes", 1024 * 500);
+    private static final int MAX_LICENSE_FILE_UPLOAD_BYTES = ConfigFactory.getIntProperty( "com.l7tech.ems.licenseFile.maxBytes", 1024 * 500 );
     private static final Logger logger = Logger.getLogger(SystemSettings.class.getName());
 
     @Inject
@@ -188,16 +188,16 @@ public class SystemSettings extends EsmStandardWebPage {
         add(hostIpLabel);
 
         // Operating System Information
-        String osInfo = System.getProperty("os.name") + " " +
-                        System.getProperty("os.arch") + " " +
-                        System.getProperty("os.version");
+        String osInfo = SyspropUtil.getProperty( "os.name" ) + " " +
+                SyspropUtil.getProperty( "os.arch" ) + " " +
+                SyspropUtil.getProperty( "os.version" );
         Label osInfoLabel = new Label("operating.system", osInfo);
         add(osInfoLabel);
 
         // Java VM Information
-        String jvmInfo = System.getProperty("java.vm.vendor") + " " +
-                         System.getProperty("java.vm.name") + " " +
-                         System.getProperty("java.vm.version");
+        String jvmInfo = SyspropUtil.getProperty( "java.vm.vendor" ) + " " +
+                SyspropUtil.getProperty( "java.vm.name" ) + " " +
+                SyspropUtil.getProperty( "java.vm.version" );
         Label jvmInfoLabel = new Label("jvm", jvmInfo);
         add(jvmInfoLabel);
 

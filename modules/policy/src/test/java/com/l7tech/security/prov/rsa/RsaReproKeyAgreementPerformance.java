@@ -3,6 +3,7 @@ package com.l7tech.security.prov.rsa;
 import com.l7tech.test.BenchmarkRunner;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
+import com.l7tech.util.SyspropUtil;
 
 import javax.crypto.KeyAgreement;
 import javax.crypto.interfaces.DHPublicKey;
@@ -63,7 +64,7 @@ public class RsaReproKeyAgreementPerformance {
                 final String type = serviceDesc.left;
                 final String algorithm = serviceDesc.right;
                 final Provider.Service service = provider.getService( type, algorithm );
-                if ( Boolean.getBoolean("blacklistServices") && service != null ) { // may be null in some modes
+                if ( SyspropUtil.getBoolean( "blacklistServices" ) && service != null ) { // may be null in some modes
                     logger.info( "Removing service '"+type+"."+algorithm+"'." );
                     method.invoke( provider, service );
                 }

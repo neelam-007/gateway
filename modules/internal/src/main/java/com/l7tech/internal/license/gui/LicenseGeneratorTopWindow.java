@@ -1,8 +1,3 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.internal.license.gui;
 
 import com.japisoft.xmlpad.XMLContainer;
@@ -20,6 +15,7 @@ import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.IOUtils;
+import com.l7tech.util.SyspropUtil;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -564,15 +560,15 @@ public class LicenseGeneratorTopWindow extends JFrame {
 
     private void loadKeyStore() throws GeneralSecurityException, IOException
     {
-        String storeType = System.getProperty(PROPERTY_KEYSTORE_TYPE, DEFAULT_KEYSTORE_TYPE);
+        String storeType = SyspropUtil.getString( PROPERTY_KEYSTORE_TYPE, DEFAULT_KEYSTORE_TYPE );
         if (storeType == null || storeType.length() < 1) storeType = DEFAULT_KEYSTORE_TYPE; // not needed
 
-        String storePath = System.getProperty(PROPERTY_KEYSTORE_PATH);
+        String storePath = SyspropUtil.getProperty( PROPERTY_KEYSTORE_PATH );
         if (storePath == null || storePath.length() < 1)
             return;
 
-        String storePass = System.getProperty(PROPERTY_KEYSTORE_PASSWORD, "");
-        String keyPass = System.getProperty(PROPERTY_KEYSTORE_ALIAS_PASSWORD, storePass);
+        String storePass = SyspropUtil.getString( PROPERTY_KEYSTORE_PASSWORD, "" );
+        String keyPass = SyspropUtil.getString( PROPERTY_KEYSTORE_ALIAS_PASSWORD, storePass );
 
         KeyStore ks = KeyStore.getInstance(storeType);
         final FileInputStream fis = new FileInputStream(storePath);
@@ -585,7 +581,7 @@ public class LicenseGeneratorTopWindow extends JFrame {
             try { fis.close(); } catch (IOException e) {}
         }
 
-        String alias = System.getProperty(PROPERTY_KEYSTORE_ALIAS);
+        String alias = SyspropUtil.getProperty( PROPERTY_KEYSTORE_ALIAS );
         if (alias == null || alias.length() < 1) {
             Enumeration aliases = ks.aliases();
             while (aliases.hasMoreElements()) {
@@ -643,7 +639,7 @@ public class LicenseGeneratorTopWindow extends JFrame {
         };
 
         for (String key : propsToMerge) {
-            String sysVal = System.getProperty(key);
+            String sysVal = SyspropUtil.getProperty( key );
             if (sysVal != null && sysVal.length() > 0)
                 props.setProperty(key, sysVal);
         }

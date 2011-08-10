@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.identity.internal;
 
 import com.l7tech.common.password.IncorrectPasswordException;
@@ -19,9 +16,9 @@ import com.l7tech.server.event.identity.Authenticated;
 import com.l7tech.server.identity.*;
 import com.l7tech.server.identity.cert.CertificateAuthenticator;
 import com.l7tech.util.Charsets;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
-import com.l7tech.util.SyspropUtil;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -44,7 +41,7 @@ public class InternalIdentityProviderImpl
         implements ApplicationContextAware, InternalIdentityProvider, ConfigurableIdentityProvider
 {
     private static final Logger logger = Logger.getLogger(InternalIdentityProviderImpl.class.getName());
-    private final static boolean allowDigestFallback = SyspropUtil.getBoolean("com.l7tech.server.identity.internal.allowDigestFallback", true);
+    private final static boolean allowDigestFallback = ConfigFactory.getBooleanProperty( "com.l7tech.server.identity.internal.allowDigestFallback", true );
     
     private IdentityProviderConfig config;
     private InternalUserManager userManager;

@@ -6,11 +6,11 @@ import com.l7tech.gateway.common.uddi.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.url.HttpObjectCache;
+import com.l7tech.util.Config;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.TimeUnit;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
@@ -21,7 +21,6 @@ import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
 import com.l7tech.uddi.*;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.ServiceDocumentManager;
-import com.l7tech.uddi.UDDIInvalidKeyException;
 import com.l7tech.wsdl.WsdlEntityResolver;
 import com.l7tech.wsdl.ResourceTrackingWSDLLocator;
 import com.l7tech.wsdl.Wsdl;
@@ -69,7 +68,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
         this.serviceManager = serviceManager;
         this.serviceDocumentManager = serviceDocumentManager;
         this.httpClientFactory = httpClientFactory;
-        this.serverConfig = ServerConfig.getInstance();
+        this.config = ConfigFactory.getCachedConfig();
     }
 
     @Override
@@ -82,8 +81,8 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                 task = new SubscriptionPollUDDITask(
                         this,
                         timerEvent.getRegistryOid(),
-                        -1,
-                        -1 );
+                        -1L,
+                        -1L );
             }
         } else if ( event instanceof PollUDDIEvent ) {
             PollUDDIEvent pollEvent = (PollUDDIEvent) event;
@@ -131,8 +130,8 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
 
     //- PRIVATE
 
-    private static final long SUBSCRIPTION_EXPIRY_INTERVAL = SyspropUtil.getLong( "com.l7tech.server.uddi.subscriptionExpiryInterval", TimeUnit.DAYS.toMillis( 5 ) );
-    private static final long SUBSCRIPTION_RENEW_THRESHOLD = SyspropUtil.getLong( "com.l7tech.server.uddi.subscriptionRenewThreshold", TimeUnit.DAYS.toMillis( 2 ) );
+    private static final long SUBSCRIPTION_EXPIRY_INTERVAL = ConfigFactory.getLongProperty( "com.l7tech.server.uddi.subscriptionExpiryInterval", TimeUnit.DAYS.toMillis( 5L ) );
+    private static final long SUBSCRIPTION_RENEW_THRESHOLD = ConfigFactory.getLongProperty( "com.l7tech.server.uddi.subscriptionRenewThreshold", TimeUnit.DAYS.toMillis( 2L ) );
 
     private final UDDIRegistryManager uddiRegistryManager;
     private final UDDIHelper uddiHelper;
@@ -142,7 +141,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
     private final ServiceManager serviceManager;
     private final ServiceDocumentManager serviceDocumentManager;
     private final GenericHttpClientFactory httpClientFactory;
-    private final ServerConfig serverConfig;
+    private final Config config;
 
     private static String describe( final UDDIRegistry uddiRegistry ) {
         return uddiRegistry.getName()+" (#"+uddiRegistry.getOid()+")";
@@ -193,7 +192,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                         }
 
                         String bindingKey = null;
-                        long monitoringInterval = 0;
+                        long monitoringInterval = 0L;
                         if ( uddiRegistry.isSubscribeForNotifications() ) {
                             bindingKey = context.getSubscriptionBindingKey( registryOid );
                             if ( bindingKey == null ) {
@@ -217,8 +216,8 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                         uddiRegistrySubscription.setSubscriptionKey( subscriptionKey );
                         uddiRegistrySubscription.setSubscriptionExpiryTime( expiryTime );
                         // when polling set the last check time to the subscription start time
-                        uddiRegistrySubscription.setSubscriptionCheckTime( bindingKey == null ? System.currentTimeMillis() : 0 );
-                        uddiRegistrySubscription.setSubscriptionNotifiedTime( 0 );
+                        uddiRegistrySubscription.setSubscriptionCheckTime( bindingKey == null ? System.currentTimeMillis() : 0L );
+                        uddiRegistrySubscription.setSubscriptionNotifiedTime( 0L );
 
                         try {
                             if ( uddiRegistrySubscription.getOid()==UDDIRegistrySubscription.DEFAULT_OID ) {
@@ -371,7 +370,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                 if ( uddiRegistry != null && uddiRegistry.isEnabled() ) {
                     UDDIRegistrySubscription uddiRegistrySubscription = factory.uddiRegistrySubscriptionManager.findByUDDIRegistryOid( registryOid );
                     if ( uddiRegistrySubscription != null ) {
-                        final boolean isNotificationPoll = startTime > 0;
+                        final boolean isNotificationPoll = startTime > 0L;
                         final String subscriptionKey = uddiRegistrySubscription.getSubscriptionKey();
                         final long lastCheckTime;
                         final long newCheckTime;
@@ -415,7 +414,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
     private static final class SubscriptionNotificationUDDITask extends SubscriptionProcessingUDDITask {
         private static final Logger logger = Logger.getLogger( SubscriptionNotificationUDDITask.class.getName() );
 
-        private static final long SUBSCRIPTION_TOLERANCE = SyspropUtil.getLong( "com.l7tech.server.uddi.subscriptionTolerance", TimeUnit.SECONDS.toMillis(10) );
+        private static final long SUBSCRIPTION_TOLERANCE = ConfigFactory.getLongProperty( "com.l7tech.server.uddi.subscriptionTolerance", TimeUnit.SECONDS.toMillis( 10L ) );
 
         private final SubscriptionUDDITaskFactory factory;
         private final String message;
@@ -706,7 +705,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                     }
 
                                     // Fetch wsdl
-                                    final int maxSize = factory.serverConfig.getIntProperty( ServerConfigParams.PARAM_DOCUMENT_DOWNLOAD_MAXSIZE, HttpObjectCache.DEFAULT_DOWNLOAD_LIMIT);
+                                    final int maxSize = factory.config.getIntProperty( ServerConfigParams.PARAM_DOCUMENT_DOWNLOAD_MAXSIZE, HttpObjectCache.DEFAULT_DOWNLOAD_LIMIT);
                                     final SimpleHttpClient httpClient = new SimpleHttpClient(factory.httpClientFactory.createHttpClient(), maxSize);
                                     try {
                                         final RemoteEntityResolver resolver = new RemoteEntityResolver(httpClient, ps.getWsdlUrl());
@@ -805,7 +804,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
 
             final UDDIServiceControl serviceControl = factory.uddiServiceControlManager.findByPrimaryKey(serviceControlOid);
             if(serviceControl != null) {
-                context.logAndAudit(SystemMessages.UDDI_ORIGINAL_SERVICE_INVALIDATED, new String[]{serviceKey, describe(uddiRegistry), String.valueOf(ps.getOid())});
+                context.logAndAudit(SystemMessages.UDDI_ORIGINAL_SERVICE_INVALIDATED, serviceKey, describe(uddiRegistry), String.valueOf(ps.getOid()) );
                 serviceControl.setUnderUddiControl(false);
                 serviceControl.setMonitoringEnabled(false);
                 factory.uddiServiceControlManager.update(serviceControl);

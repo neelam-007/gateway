@@ -27,6 +27,7 @@ import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.util.TestingHttpClientFactory;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.xml.SoapFaultLevel;
 import junit.extensions.TestSetup;
@@ -60,7 +61,7 @@ public class PolicyProcessingPerformanceTest extends TestCase {
     private static InboundSecureConversationContextManager inboundSecureConversationContextManager = null;
 
     static {
-        System.setProperty("com.l7tech.security.prov.rsa.libpath.nonfips", "USECLASSPATH");
+        SyspropUtil.setProperty( "com.l7tech.security.prov.rsa.libpath.nonfips", "USECLASSPATH" );
         JceProvider.init();
     }
 
@@ -194,10 +195,10 @@ public class PolicyProcessingPerformanceTest extends TestCase {
 
     @Override
     protected void setUp() throws Exception {
-        System.setProperty("com.l7tech.server.serviceResolution.strictSoap", "false");
+        SyspropUtil.setProperty( "com.l7tech.server.serviceResolution.strictSoap", "false" );
 
         // Software-only TransformerFactory to ignore the alluring Tarari impl, even if tarari_raxj.jar is sitting right there
-        System.setProperty("javax.xml.transform.TransformerFactory", "org.apache.xalan.processor.TransformerFactoryImpl");
+        SyspropUtil.setProperty( "javax.xml.transform.TransformerFactory", "org.apache.xalan.processor.TransformerFactoryImpl" );
 
         savedLoggerLevel = Logger.getLogger("com.l7tech.server").getLevel();
         Logger.getLogger("com.l7tech.server").setLevel(Level.OFF);

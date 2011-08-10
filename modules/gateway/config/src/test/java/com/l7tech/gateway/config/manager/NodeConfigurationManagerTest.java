@@ -1,5 +1,6 @@
 package com.l7tech.gateway.config.manager;
 
+import com.l7tech.util.SyspropUtil;
 import org.junit.Test;
 import org.junit.Assert;
 
@@ -16,7 +17,7 @@ import com.l7tech.server.management.config.node.DatabaseType;
 public class NodeConfigurationManagerTest {
 
     {
-        System.setProperty("com.l7tech.util.buildVersion", "4.7.0");
+        SyspropUtil.setProperty( "com.l7tech.util.buildVersion", "4.7.0" );
     }
 
     @Test

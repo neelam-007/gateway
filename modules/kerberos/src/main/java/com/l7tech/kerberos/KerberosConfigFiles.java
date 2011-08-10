@@ -1,7 +1,9 @@
 package com.l7tech.kerberos;
 
 import com.l7tech.util.Charsets;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.SyspropUtil;
 
 import java.io.File;
 import java.io.OutputStream;
@@ -28,7 +30,7 @@ class KerberosConfigFiles implements KerberosConfigConstants {
 
     Krb5ConfigProperties krb5Prop = new Krb5ConfigProperties();
 
-    private final String ls = System.getProperty(SYSPROP_LINE_SEP, "\n");
+    private final String ls = SyspropUtil.getString( SYSPROP_LINE_SEP, "\n" );
 
     /**
      * Constructor.
@@ -52,7 +54,7 @@ class KerberosConfigFiles implements KerberosConfigConstants {
     public void createLoginFile() {
         // only valid if the keytab file exists
         if (krb5Keytab.exists()) {
-            File loginFile = new File(System.getProperty(SYSPROP_SSG_HOME) + PATH_LOGINCFG);
+            File loginFile = new File( ConfigFactory.getProperty( SYSPROP_SSG_HOME ) + PATH_LOGINCFG);
             writeConfigFile(loginFile, formatLoginContents());
         }
     }
@@ -63,7 +65,7 @@ class KerberosConfigFiles implements KerberosConfigConstants {
     public void createKrb5ConfigFile() {
         // only valid if we have sufficient information
         if (krb5Prop.canWrite()) {
-            File krb5ConfFile = new File(System.getProperty(SYSPROP_SSG_HOME) + PATH_KRB5CFG);
+            File krb5ConfFile = new File( ConfigFactory.getProperty( SYSPROP_SSG_HOME ) + PATH_KRB5CFG);
             writeConfigFile(krb5ConfFile, formatKrb5ConfContents());
         }
     }
@@ -77,14 +79,14 @@ class KerberosConfigFiles implements KerberosConfigConstants {
     private void init() {
 
         // login file
-        File loginFile = new File(System.getProperty(SYSPROP_SSG_HOME) + PATH_LOGINCFG);
+        File loginFile = new File( ConfigFactory.getProperty( SYSPROP_SSG_HOME ) + PATH_LOGINCFG);
         logger.config("Setting Kerberos login config file as '" + loginFile.getAbsolutePath() + "'.");
-        System.setProperty(SYSPROP_LOGINCFG_PATH, loginFile.getAbsolutePath());
+        SyspropUtil.setProperty( SYSPROP_LOGINCFG_PATH, loginFile.getAbsolutePath() );
 
         // krb5 file
-        File krb5ConfFile = new File(System.getProperty(SYSPROP_SSG_HOME) + PATH_KRB5CFG);
+        File krb5ConfFile = new File( ConfigFactory.getProperty( SYSPROP_SSG_HOME ) + PATH_KRB5CFG);
         logger.config("Setting Kerberos config file as '" + krb5ConfFile.getAbsolutePath() + "'.");
-        System.setProperty(SYSPROP_KRB5CFG_PATH, krb5ConfFile.getAbsolutePath());
+        SyspropUtil.setProperty( SYSPROP_KRB5CFG_PATH, krb5ConfFile.getAbsolutePath() );
 
         if (krb5Prop.getRealm() == null) {
             krb5Prop.setRealm(krb5Keytab.parseRealm());
@@ -109,7 +111,7 @@ class KerberosConfigFiles implements KerberosConfigConstants {
      * @return String with the formatted contents
      */
     private String formatLoginContents() {
-        String refresh = System.getProperty(SYSPROP_KRB5_REFRESH, REFRESH_DEFAULT);
+        String refresh = ConfigFactory.getProperty( SYSPROP_KRB5_REFRESH, REFRESH_DEFAULT );
 
         return MessageFormat.format(LOGIN_CONFIG_TEMPLATE,
                 getKeytabFile().getAbsolutePath(), refresh).replace("\n", ls);
@@ -167,8 +169,8 @@ class KerberosConfigFiles implements KerberosConfigConstants {
 
         List<String> kdcList = new ArrayList<String>();
         String realm;
-        String encTypesTkt = System.getProperty(SYSPROP_KRB5_ENC_TKT, ENCTYPES_TKT_DEFAULT);
-        String encTypesTgs = System.getProperty(SYSPROP_KRB5_ENC_TGS, ENCTYPES_TGS_DEFAULT);
+        String encTypesTkt = ConfigFactory.getProperty( SYSPROP_KRB5_ENC_TKT, ENCTYPES_TKT_DEFAULT );
+        String encTypesTgs = ConfigFactory.getProperty( SYSPROP_KRB5_ENC_TGS, ENCTYPES_TGS_DEFAULT );
 
         String kdc_block;
 
@@ -227,7 +229,7 @@ class KerberosConfigFiles implements KerberosConfigConstants {
 
     private class Krb5Keytab {
 
-        File file = new File(System.getProperty(SYSPROP_SSG_HOME) + PATH_KEYTAB);
+        File file = new File( ConfigFactory.getProperty( SYSPROP_SSG_HOME ) + PATH_KEYTAB);
         Keytab keytab;
 
         private Krb5Keytab() throws KerberosException {
@@ -260,7 +262,7 @@ class KerberosConfigFiles implements KerberosConfigConstants {
 
             if (realm == null) {
                 // check the system property
-                realm = System.getProperty(SYSPROP_KRB5_REALM);
+                realm = SyspropUtil.getProperty( SYSPROP_KRB5_REALM );
             }
 
             if (realm != null) {
@@ -271,7 +273,7 @@ class KerberosConfigFiles implements KerberosConfigConstants {
         }
 
         String parseKdc(String realm) {
-            String kdcIp = System.getProperty(SYSPROP_KRB5_KDC);
+            String kdcIp = SyspropUtil.getProperty( SYSPROP_KRB5_KDC );
 
             if (kdcIp == null && realm != null) {
                 try {

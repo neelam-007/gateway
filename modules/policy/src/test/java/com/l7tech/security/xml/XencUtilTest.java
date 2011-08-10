@@ -7,6 +7,7 @@ package com.l7tech.security.xml;
 import com.l7tech.common.TestDocuments;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.SyspropUtil;
 import static org.junit.Assert.*;
 import org.junit.*;
 
@@ -92,14 +93,14 @@ public class XencUtilTest {
 
     @Test
     public void testCompareCipherOutputForEncryptedKeysBetweenSUNAndBC1() throws Exception {
-        System.setProperty(JceProvider.ENGINE_PROPERTY, JceProvider.SUN_ENGINE);
+        SyspropUtil.setProperty( JceProvider.ENGINE_PROPERTY, JceProvider.SUN_ENGINE );
         System.out.println("USING PROVIDER: " + JceProvider.getEngineClass());
         System.out.println("SUN OUTPUT:" + getEncryptedKey());
     }
 
     @Test
     public void testCompareCipherOutputForEncryptedKeysBetweenSUNAndBC2() throws Exception {
-        System.setProperty(JceProvider.ENGINE_PROPERTY, JceProvider.BC_ENGINE);
+        SyspropUtil.setProperty( JceProvider.ENGINE_PROPERTY, JceProvider.BC_ENGINE );
         System.out.println("USING PROVIDER: " + JceProvider.getEngineClass());
         System.out.println("BC OUTPUT:" + getEncryptedKey());
     }

@@ -12,7 +12,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.cluster.ClusterMaster;
@@ -209,7 +208,7 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
                 checkSubscriptions( Collections.<Long,UDDIRegistryRuntime>emptyMap(), registryRuntimes.get(), true );
             }
 
-            final long maintenanceFrequency = SyspropUtil.getLong(PROP_PUBLISH_PROXY_MAINTAIN_FREQUENCY, 900000);
+            final long maintenanceFrequency = ConfigFactory.getLongProperty( PROP_PUBLISH_PROXY_MAINTAIN_FREQUENCY, 900000 );
             timer.schedule(new PublishedProxyMaintenanceTimerTask(this), maintenanceFrequency, maintenanceFrequency);
             timer.schedule(new CheckPublishedEndpointsTimerTask(this), maintenanceFrequency, maintenanceFrequency);
         }
@@ -233,7 +232,7 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
     private static final Logger logger = Logger.getLogger( UDDICoordinator.class.getName() );
 
     private static final String SUBSCRIPTION_SERVICE_WSDL = "file://__ssginternal/uddi_subr_v3_service.wsdl";
-    private static final long METRICS_CLEANUP_INTERVAL = SyspropUtil.getLong( "com.l7tech.server.uddi.metricsCleanupInterval", TimeUnit.MINUTES.toMillis(1) );
+    private static final long METRICS_CLEANUP_INTERVAL = ConfigFactory.getLongProperty( "com.l7tech.server.uddi.metricsCleanupInterval", TimeUnit.MINUTES.toMillis( 1 ) );
     private static final String PROP_PUBLISH_PROXY_MAINTAIN_FREQUENCY = UDDICoordinator.class.getName() + ".publishedProxyMaintenanceFrequency";
 
     private final PlatformTransactionManager transactionManager;
@@ -499,7 +498,7 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
      * @throws ObjectModelException
      */
     private void checkPublishedEndpoints() throws ObjectModelException{
-        final boolean autoRepublish = ServerConfig.getInstance().getBooleanProperty("uddi.autorepublish", true);
+        final boolean autoRepublish = ConfigFactory.getBooleanProperty("uddi.autorepublish", true);
         if(!autoRepublish) return;
 
         final Collection<UDDIProxiedServiceInfo> infoCollection = uddiProxiedServiceInfoManager.findAll();
@@ -604,7 +603,7 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
             }
         }
 
-        final boolean autoRepublish = ServerConfig.getInstance().getBooleanProperty("uddi.autorepublish", true);
+        final boolean autoRepublish = ConfigFactory.getBooleanProperty("uddi.autorepublish", true);
         // Update / create service status
         for ( UDDIProxiedServiceInfo proxiedServiceInfo : proxiedServices ) {
             if ( proxiedServiceInfo.getProxiedServices() != null ) {

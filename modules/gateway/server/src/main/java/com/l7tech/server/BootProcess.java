@@ -272,7 +272,7 @@ public class BootProcess
 
         // load JAXP properties if any
         Properties jaxpProps = new Properties();
-        File file = new File(System.getProperty("java.home"));
+        File file = new File( SyspropUtil.getProperty( "java.home" ) );
         file = new File(file, "lib");
         file = new File(file, "jaxp.properties");
         InputStream in = null;
@@ -314,7 +314,7 @@ public class BootProcess
         // finally check system properties
         for (Class factoryClass : factoryClasses) {
             String factoryKey = factoryClass.getName();
-            String value = System.getProperty(factoryKey);
+            String value = SyspropUtil.getProperty( factoryKey );
             if (value != null) {
                 providers.put(factoryKey, value + " - [System property]");
             }

@@ -121,9 +121,9 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
         embedded = new Embedded();
 
-        String httpSessionName = serverConfig.getProperty( ServerConfigParams.PARAM_HTTP_SESSION_NAME);
-        System.setProperty("org.apache.catalina.SESSION_PARAMETER_NAME", httpSessionName);
-        System.setProperty("org.apache.catalina.SESSION_COOKIE_NAME", httpSessionName);
+        String httpSessionName = serverConfig.getProperty( ServerConfigParams.PARAM_HTTP_SESSION_NAME );
+        SyspropUtil.setProperty( "org.apache.catalina.SESSION_PARAMETER_NAME", httpSessionName );
+        SyspropUtil.setProperty( "org.apache.catalina.SESSION_COOKIE_NAME", httpSessionName );
 
         // Create the thread pool
         final int maxSize = serverConfig.getIntProperty( ServerConfigParams.PARAM_IO_HTTP_POOL_MAX_CONCURRENCY, 200);
@@ -155,7 +155,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
         context = (StandardContext)embedded.createContext("", s);
 
-        String ssgVarPath = serverConfig.getProperty( ServerConfigParams.PARAM_VAR_DIRECTORY);
+        String ssgVarPath = serverConfig.getProperty( ServerConfigParams.PARAM_VAR_DIRECTORY );
         if (ssgVarPath != null)
             context.setWorkDir(ssgVarPath + File.separatorChar + "work");
 
@@ -953,7 +953,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
      * @return the serverConfig
      */
     @Override
-    public ServerConfig getServerConfig() {
+    public Config getServerConfig() {
         return serverConfig;
     }
 

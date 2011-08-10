@@ -3,7 +3,7 @@ package com.l7tech.server.ems.ui;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
 import com.l7tech.util.Background;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ValidationUtils;
 import org.apache.commons.collections.map.LRUMap;
 import org.apache.wicket.markup.html.WebResource;
@@ -193,7 +193,7 @@ public abstract class SecureResource extends WebResource {
     private static final AtomicReference<EsmSecurityManager> securityManagerRef = new AtomicReference<EsmSecurityManager>();
     private static final Map resourceInfo = new LRUMap();
     private static final Object resourceLock = new Object();
-    private static final long resourceParameterExpiryAge = SyspropUtil.getLong( "com.l7tech.server.ems.resourceParameterExpiryAge", 60000L );
+    private static final long resourceParameterExpiryAge = ConfigFactory.getLongProperty( "com.l7tech.server.ems.resourceParameterExpiryAge", 60000L );
 
     private final AttemptedOperation attemptedOperation;
 

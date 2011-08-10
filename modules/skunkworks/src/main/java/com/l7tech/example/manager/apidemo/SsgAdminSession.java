@@ -1,20 +1,15 @@
-/**
- * Copyright (C) 2006-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.example.manager.apidemo;
 
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.HeavySsmPreferences;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.SsmApplication;
-import com.l7tech.console.MainWindow;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.util.SslCertificateSniffer;
+import com.l7tech.util.SyspropUtil;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -74,7 +69,7 @@ public class SsgAdminSession {
     }
 
     private ApplicationContext createApplicationContext() {
-        String ctxName = System.getProperty("ssm.application.context");
+        String ctxName = SyspropUtil.getProperty( "ssm.application.context" );
         if (ctxName == null) {
             ctxName = "com/l7tech/console/resources/beans-context.xml";
         }

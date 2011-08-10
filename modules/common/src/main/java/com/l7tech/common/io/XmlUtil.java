@@ -41,7 +41,7 @@ import java.util.logging.Level;
 public class XmlUtil extends DomUtils {
     private static final Logger logger = Logger.getLogger(XmlUtil.class.getName());
 
-    private static final boolean DEFAULT_SERIALIZE_WITH_XSS4J = SyspropUtil.getBoolean("com.l7tech.common.serializeWithXss4j", false);
+    private static final boolean DEFAULT_SERIALIZE_WITH_XSS4J = ConfigFactory.getBooleanProperty( "com.l7tech.common.serializeWithXss4j", false );
 
     public static final String XML_VERSION = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n";
     public static final String TEXT_XML = "text/xml";
@@ -245,7 +245,7 @@ public class XmlUtil extends DomUtils {
                     ExceptionUtils.getDebugException(pce));
         }
 
-        if ( !SyspropUtil.getBoolean( "com.l7tech.common.xmlDeferNodeExpansion", true ) ) {
+        if ( !ConfigFactory.getBooleanProperty( "com.l7tech.common.xmlDeferNodeExpansion", true ) ) {
             try {
                 dbf.setFeature( XERCES_DEFER_NODE_EXPANSION, false );
             } catch ( ParserConfigurationException pce ) {
@@ -255,13 +255,13 @@ public class XmlUtil extends DomUtils {
             }
         }
 
-        if ( SyspropUtil.getBoolean( "com.l7tech.common.xmlSoftSymbolTable", false ) ) {
+        if ( ConfigFactory.getBooleanProperty( "com.l7tech.common.xmlSoftSymbolTable", false ) ) {
             try {
                 dbf.setAttribute( XERCES_ATTR_SYMBOL_TABLE, new org.apache.xerces.util.SoftReferenceSymbolTable() );
             } catch ( IllegalArgumentException e ) {
                 logger.log( Level.CONFIG,
                         "Error configuring XML parser symbol table.",
-                        ExceptionUtils.getDebugException(e));
+                        ExceptionUtils.getDebugException( e ) );
             }
         }
 

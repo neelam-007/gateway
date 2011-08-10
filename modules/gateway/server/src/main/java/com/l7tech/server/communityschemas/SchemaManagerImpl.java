@@ -60,9 +60,9 @@ import java.util.regex.Pattern;
 public class SchemaManagerImpl implements ApplicationListener, SchemaManager, SchemaSourceResolver.SchemaInvalidationListener {
     private static final Logger logger = Logger.getLogger(SchemaManagerImpl.class.getName());
 
-    private static final long minCleanupPeriod = SyspropUtil.getLong( "com.l7tech.server.schema.minCleanupPeriod", 5000L );
-    private static final boolean allowRemoteReferencesFromLocal = SyspropUtil.getBoolean( "com.l7tech.server.schema.allowRemote", false );
-    private static final boolean strictDoctypeChecking = SyspropUtil.getBoolean( "com.l7tech.server.schema.strictDoctypeCheck", true );
+    private static final long minCleanupPeriod = ConfigFactory.getLongProperty( "com.l7tech.server.schema.minCleanupPeriod", 5000L );
+    private static final boolean allowRemoteReferencesFromLocal = ConfigFactory.getBooleanProperty( "com.l7tech.server.schema.allowRemote", false );
+    private static final boolean strictDoctypeChecking = ConfigFactory.getBooleanProperty( "com.l7tech.server.schema.strictDoctypeCheck", true );
 
     /**
      * Validated schema configuration.

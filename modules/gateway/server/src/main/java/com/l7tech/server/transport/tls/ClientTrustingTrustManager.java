@@ -3,7 +3,7 @@ package com.l7tech.server.transport.tls;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.security.cert.KeyUsageActivity;
 import com.l7tech.security.cert.KeyUsageChecker;
-import com.l7tech.server.ServerConfig;
+import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.net.ssl.X509TrustManager;
@@ -43,17 +43,17 @@ public class ClientTrustingTrustManager implements X509TrustManager {
     /**
      * Look up overridden issuer certs from a ServerConfig instance.
      *
-     * @param serverConfig severConfig instance to query.  If null, this method logs a warning and immediately returns null.
+     * @param config severConfig instance to query.  If null, this method logs a warning and immediately returns null.
      * @return the configured issuer certs PEM, or null if not configured.
      */
-    public static String getConfiguredIssuerCerts(ServerConfig serverConfig) {
+    public static String getConfiguredIssuerCerts(Config config ) {
         // try to get setting in cluster properties
-        if (serverConfig == null) {
+        if ( config == null) {
             logger.warning("cannot get server config");
             return null;
         }
 
-        String sslAcceptedClientCA = serverConfig.getProperty("ioHttpsAcceptedClientCa");
+        String sslAcceptedClientCA = config.getProperty( "ioHttpsAcceptedClientCa" );
         if (sslAcceptedClientCA == null || sslAcceptedClientCA.length() <= 0) {
             logger.fine("io.httpsAcceptedClientCa not set or empty");
             return null;

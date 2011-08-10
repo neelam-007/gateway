@@ -1,5 +1,6 @@
 package com.l7tech.gateway.common.spring.factory.config;
 
+import com.l7tech.util.SyspropUtil;
 import org.springframework.beans.factory.config.AbstractFactoryBean;
 
 /**
@@ -56,7 +57,7 @@ public class SystemPropertyFactoryBean extends AbstractFactoryBean {
         }
 
         try {
-            return System.getProperty(propertyName, defaultValue);
+            return SyspropUtil.getString( propertyName, defaultValue );
         }
         catch(SecurityException se) {
             return defaultValue;

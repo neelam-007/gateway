@@ -7,6 +7,7 @@ import com.l7tech.util.JdkLoggerConfigurator;
 import com.l7tech.console.util.History;
 import com.l7tech.console.util.SsmPreferences;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.util.SyspropUtil;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -27,7 +28,7 @@ public class SsgAdminSession {
     }
 
     public SsgAdminSession(String[] args) throws Exception {
-        System.setProperty( "com.l7tech.console.suppressVersionCheck", "true" );
+        SyspropUtil.setProperty( "com.l7tech.console.suppressVersionCheck", "true" );
         if (args.length >= 1) {
             hostPort = args[0];
 
@@ -58,7 +59,7 @@ public class SsgAdminSession {
     }
 
     private ApplicationContext createApplicationContext() {
-        String[] ctxNames = new String[]{System.getProperty("ssm.application.context")};
+        String[] ctxNames = new String[]{ SyspropUtil.getProperty( "ssm.application.context" ) };
         if (ctxNames[0] == null) {
             ctxNames = new String[]{
                     "com/l7tech/console/resources/beans-context.xml",

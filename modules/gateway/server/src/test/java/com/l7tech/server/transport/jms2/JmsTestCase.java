@@ -1,7 +1,6 @@
 package com.l7tech.server.transport.jms2;
 
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.transport.jms.JmsBag;
 import com.l7tech.server.transport.jms.JmsConfigException;
@@ -10,6 +9,7 @@ import com.l7tech.server.transport.jms.JmsUtil;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.transport.jms.*;
 
+import com.l7tech.util.Config;
 import org.springframework.context.ApplicationContext;
 import org.junit.Assert;
 
@@ -26,7 +26,7 @@ public class JmsTestCase {
     // Spring initialized objects
     protected ApplicationContext appCtx;
     protected JmsPropertyMapper mapper;
-    protected ServerConfig serverConfig;
+    protected Config config;
     protected LicenseManager licenseManager;
 
     // Test data maps
@@ -66,8 +66,8 @@ public class JmsTestCase {
             mapper = appCtx.getBean("jmsPropertyMapper", JmsPropertyMapper.class);
         }
 
-        if (serverConfig == null) {
-            serverConfig = appCtx.getBean("serverConfig", ServerConfig.class);
+        if ( config == null) {
+            config = appCtx.getBean("serverConfig", Config.class);
         }
 
         if (licenseManager == null) {

@@ -1,9 +1,9 @@
 package com.l7tech.common.password;
 
 import com.l7tech.util.Charsets;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
-import com.l7tech.util.SyspropUtil;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -14,7 +14,7 @@ import java.security.SecureRandom;
  */
 public class Sha512CryptPasswordHasher implements PasswordHasher {
     public static final String PROP_DEFAULT_ROUNDS = "com.l7tech.Sha512Crypt.defaultRounds";
-    private final int DEFAULT_ROUNDS = SyspropUtil.getInteger(PROP_DEFAULT_ROUNDS, 0);
+    private final int DEFAULT_ROUNDS = ConfigFactory.getIntProperty( PROP_DEFAULT_ROUNDS, 0 );
     private final SecureRandom secureRandom;
     private final ThreadLocal<Pair<MessageDigest, MessageDigest>> digests = new ThreadLocal<Pair<MessageDigest, MessageDigest>>();
     private final Functions.Unary<MessageDigest,String> messageDigestFactory;

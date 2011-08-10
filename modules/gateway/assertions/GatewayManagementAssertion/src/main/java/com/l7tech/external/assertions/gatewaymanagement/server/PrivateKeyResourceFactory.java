@@ -41,6 +41,7 @@ import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import static com.l7tech.util.CollectionUtils.foreach;
 import com.l7tech.util.Config;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Either;
 import com.l7tech.util.Eithers.E2;
 import static com.l7tech.util.Eithers.extract;
@@ -63,7 +64,6 @@ import com.l7tech.util.Option;
 import static com.l7tech.util.Option.optional;
 import static com.l7tech.util.Option.some;
 import com.l7tech.util.Pair;
-import com.l7tech.util.SyspropUtil;
 import static com.l7tech.util.TextUtils.join;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -539,9 +539,9 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
     private static final Logger logger = Logger.getLogger( PrivateKeyResourceFactory.class.getName() );
 
     private static final String IDENTITY_SELECTOR = "id";
-    private static final int DEFAULT_CERTIFICATE_EXPIRY_DAYS = SyspropUtil.getInteger( "com.l7tech.external.assertions.gatewaymanagement.defaultCertificateExpiryDays", 365 * 5 );
-    private static final int DEFAULT_CSR_EXPIRY_DAYS = SyspropUtil.getInteger( "com.l7tech.external.assertions.gatewaymanagement.defaultCsrExpiryDays", 365 * 2);
-    private static final int DEFAULT_RSA_KEY_SIZE = SyspropUtil.getInteger( "com.l7tech.external.assertions.gatewaymanagement.defaultRsaKeySize", 2048 );
+    private static final int DEFAULT_CERTIFICATE_EXPIRY_DAYS = ConfigFactory.getIntProperty( "com.l7tech.external.assertions.gatewaymanagement.defaultCertificateExpiryDays", 365 * 5 );
+    private static final int DEFAULT_CSR_EXPIRY_DAYS = ConfigFactory.getIntProperty( "com.l7tech.external.assertions.gatewaymanagement.defaultCsrExpiryDays", 365 * 2 );
+    private static final int DEFAULT_RSA_KEY_SIZE = ConfigFactory.getIntProperty( "com.l7tech.external.assertions.gatewaymanagement.defaultRsaKeySize", 2048 );
 
     private static final String PROP_CA_CAPABLE = "caCapable";
     private static final String PROP_DAYS_UNTIL_EXPIRY = "daysUntilExpiry";

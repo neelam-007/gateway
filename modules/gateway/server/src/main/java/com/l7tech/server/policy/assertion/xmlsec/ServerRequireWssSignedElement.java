@@ -12,8 +12,8 @@ import com.l7tech.security.token.*;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Pair;
-import com.l7tech.util.SyspropUtil;
 import org.springframework.context.ApplicationContext;
 
 import java.util.Arrays;
@@ -29,7 +29,7 @@ import java.util.logging.Level;
  * Date: July 14, 2004<br/>
  */
 public class ServerRequireWssSignedElement extends ServerRequireWssOperation<RequireWssSignedElement> {
-    private static final boolean requireCredentialSigningToken = SyspropUtil.getBoolean( "com.l7tech.server.policy.requireSigningTokenCredential", true );
+    private static final boolean requireCredentialSigningToken = ConfigFactory.getBooleanProperty( "com.l7tech.server.policy.requireSigningTokenCredential", true );
 
     public ServerRequireWssSignedElement(RequireWssSignedElement data, ApplicationContext springContext) {
         super(data, springContext);

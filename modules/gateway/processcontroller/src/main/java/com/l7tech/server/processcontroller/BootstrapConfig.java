@@ -57,8 +57,8 @@ public class BootstrapConfig {
         if ( logsDir.exists() && logsDir.canWrite() ) {
             JdkLoggerConfigurator.configure("com.l7tech.server.processcontroller", "com/l7tech/server/processcontroller/resources/logging.properties", "etc/conf/logging.properties", false, true);
         }
-        if ( SyspropUtil.getBoolean("com.l7tech.server.log.console") ) {
-            Logger.getLogger("").addHandler( new ConsoleHandler() );
+        if ( SyspropUtil.getBoolean( "com.l7tech.server.log.console", false ) ) {
+            Logger.getLogger( "" ).addHandler( new ConsoleHandler() );
         }
     }
 
@@ -189,7 +189,7 @@ public class BootstrapConfig {
         newProps.setProperty(ConfigService.HOSTPROPERTIES_SECRET, UUID.randomUUID().toString());        
         newProps.setProperty(ConfigService.HOSTPROPERTIES_SSL_KEYSTOREFILE, keystoreFile.getAbsolutePath());
         newProps.setProperty(ConfigService.HOSTPROPERTIES_SSL_KEYSTOREPASSWORD, obfKeystorePass);
-        newProps.setProperty(ConfigService.HOSTPROPERTIES_JRE, System.getProperty("java.home"));
+        newProps.setProperty( ConfigService.HOSTPROPERTIES_JRE, SyspropUtil.getProperty( "java.home" ) );
         newProps.setProperty(ConfigService.HOSTPROPERTIES_TYPE, PCUtils.isAppliance() ? HostConfig.HostType.APPLIANCE.name() : HostConfig.HostType.SOFTWARE.name());
 
         saveProperties( newProps, hostPropertiesFile );

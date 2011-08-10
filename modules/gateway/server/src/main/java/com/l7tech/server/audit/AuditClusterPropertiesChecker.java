@@ -2,10 +2,10 @@ package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.event.system.SystemEvent;
+import com.l7tech.util.Config;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -49,12 +49,12 @@ public class AuditClusterPropertiesChecker implements ApplicationContextAware, A
     private static final Logger logger = Logger.getLogger(AuditClusterPropertiesChecker.class.getName());
 
     private ApplicationContext applicationContext;
-    private final ServerConfig serverConfig;
+    private final Config config;
     private final Timer timer;
     private final Map<String, Boolean> propStatusMap = new HashMap<String, Boolean>();
 
-    public AuditClusterPropertiesChecker(ServerConfig serverConfig, Timer timer) {
-        this.serverConfig = serverConfig;
+    public AuditClusterPropertiesChecker(Config config, Timer timer) {
+        this.config = config;
         this.timer = timer;
     }
 
@@ -161,7 +161,7 @@ public class AuditClusterPropertiesChecker implements ApplicationContextAware, A
         }
 
         // Check Admin Audit Threshold Property
-        final Level currentThreshold = getAdminAuditThresholdByName(serverConfig.getPropertyCached(PARAM_AUDIT_ADMIN_THRESHOLD));
+        final Level currentThreshold = getAdminAuditThresholdByName( config.getProperty( PARAM_AUDIT_ADMIN_THRESHOLD ) );
         if (currentThreshold.intValue() > Level.INFO.intValue()) {
             applicationContext.publishEvent(
                 new SystemEvent(AuditClusterPropertiesChecker.this,
@@ -185,7 +185,7 @@ public class AuditClusterPropertiesChecker implements ApplicationContextAware, A
      * @return true if "Internal Audit System" property is evaluated as enabled.
      */
     public boolean isInternalAuditSystemEnabled(boolean toCheckAuditSinkPolicy) {
-        final boolean enabled = Boolean.parseBoolean(serverConfig.getPropertyUncached(PARAM_AUDIT_SINK_ALWAYS_FALLBACK));
+        final boolean enabled = config.getBooleanProperty( PARAM_AUDIT_SINK_ALWAYS_FALLBACK, false );
 
         // If the Internal Audit System property is enabled, then just return true, since the internal audit system has been enabled.
         // If the property is not enabled and the flag toCheckAuditSinkPolicy is true, then check if Audit Sink Policy is disabled or not,
@@ -198,7 +198,7 @@ public class AuditClusterPropertiesChecker implements ApplicationContextAware, A
      * @return true of "Audit Sink Policy" property is evaluated as enabled.
      */
     public boolean isAuditSinkPolicyEnabled() {
-        final String auditPolicyGuid = serverConfig.getPropertyUncached(PARAM_AUDIT_SINK_POLICY_GUID);
+        final String auditPolicyGuid = config.getProperty( PARAM_AUDIT_SINK_POLICY_GUID );
 
         return auditPolicyGuid != null && !auditPolicyGuid.trim().isEmpty();
     }
@@ -208,7 +208,7 @@ public class AuditClusterPropertiesChecker implements ApplicationContextAware, A
      * @return true if "Fall back to internal" property is evaluated as enabled.
      */
     public boolean isFallbackToDatabaseIfSinkPolicyFails() {
-        final String propValue = serverConfig.getPropertyUncached(PARAM_AUDIT_SINK_FALLBACK_ON_FAIL);
+        final String propValue = config.getProperty( PARAM_AUDIT_SINK_FALLBACK_ON_FAIL );
         return propValue == null || Boolean.parseBoolean(propValue); // If this prop does not exist, it is equivalent to set "true".
     }
 

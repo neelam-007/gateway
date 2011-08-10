@@ -30,7 +30,7 @@ public class DefaultMasterPasswordFinder implements MasterPasswordManager.Master
     @Override
     public byte[] findMasterPasswordBytes() {
         File kmpPropsFile = KeyStorePrivateKeyMasterPasswordFinder.findPropertiesFile(ompFile);
-        String finderClassname = SyspropUtil.getString(PROP_FINDER, kmpPropsFile.exists() ? PROP_FINDER_KMP_DEFAULT : PROP_FINDER_DEFAULT);
+        String finderClassname = ConfigFactory.getProperty( PROP_FINDER, kmpPropsFile.exists() ? PROP_FINDER_KMP_DEFAULT : PROP_FINDER_DEFAULT );
 
         try {
             Constructor<MasterPasswordManager.MasterPasswordFinder> ctor =

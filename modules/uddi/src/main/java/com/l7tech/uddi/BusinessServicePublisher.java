@@ -4,9 +4,9 @@ import com.l7tech.common.uddi.guddiv3.*;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import static com.l7tech.uddi.UDDIUtilities.TMODEL_TYPE.WSDL_PORT_TYPE;
 import static com.l7tech.uddi.UDDIUtilities.TMODEL_TYPE.WSDL_BINDING;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.Triple;
 import com.l7tech.wsdl.Wsdl;
 
@@ -17,8 +17,6 @@ import java.io.Closeable;
 import java.io.IOException;
 
 /**
- * Copyright (C) 2008, Layer 7 Technologies Inc.
- *
  * Responsible for publishing a set of BusinessServices or Gateway endpoints extracted from a WSDL to a UDDI Registry.
  *
  * @author darmstrong
@@ -763,8 +761,8 @@ public class BusinessServicePublisher implements Closeable {
 
         final WsdlToUDDIModelConverter modelConverter = new WsdlToUDDIModelConverter(wsdl, businessKey);
         try {
-            final String prependServiceName = SyspropUtil.getString("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName", "Layer7");
-            final String appendServiceName = SyspropUtil.getString("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName", Long.toString(serviceOid));
+            final String prependServiceName = ConfigFactory.getProperty( "com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName", "Layer7" );
+            final String appendServiceName = ConfigFactory.getProperty( "com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName", Long.toString( serviceOid ) );
             if (!isOverwriteUpdate) {
                 modelConverter.convertWsdlToUDDIModel(allEndpointPairs, prependServiceName, appendServiceName);
             } else {

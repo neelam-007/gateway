@@ -179,7 +179,7 @@ public class SecureSpanBridgeFactory {
     }
 
     private static RequestInterceptor getRequestInterceptor() {
-        String interceptorClassname = SyspropUtil.getStringCached(PROPERTY_MESSAGE_INTERCEPTOR, NullRequestInterceptor.class.getName());
+        String interceptorClassname = ConfigFactory.getProperty(PROPERTY_MESSAGE_INTERCEPTOR, NullRequestInterceptor.class.getName());
 
         try {
             return (RequestInterceptor)Class.forName(interceptorClassname).newInstance();

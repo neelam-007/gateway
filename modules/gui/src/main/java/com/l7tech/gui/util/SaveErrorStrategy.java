@@ -49,11 +49,11 @@ public abstract class SaveErrorStrategy {
 
         sb.append(MessageFormat.format(resources.getString("date.time"), dateFormat.format(new Date())));
         sb.append(MessageFormat.format(resources.getString("build.info"), BuildInfo.getLongBuildString()));
-        sb.append(MessageFormat.format(resources.getString("system.properties"),
-                System.getProperty(propertyKeys[0]),
-                System.getProperty(propertyKeys[1]),
-                System.getProperty(propertyKeys[2]),
-                System.getProperty(propertyKeys[3])));
+        sb.append(MessageFormat.format( resources.getString( "system.properties" ),
+                SyspropUtil.getProperty( propertyKeys[0] ),
+                SyspropUtil.getProperty( propertyKeys[1] ),
+                SyspropUtil.getProperty( propertyKeys[2] ),
+                SyspropUtil.getProperty( propertyKeys[3] ) ));
         sb.append(MessageFormat.format(resources.getString("memory.usage"),
                 Runtime.getRuntime().freeMemory(),
                 Runtime.getRuntime().totalMemory()));

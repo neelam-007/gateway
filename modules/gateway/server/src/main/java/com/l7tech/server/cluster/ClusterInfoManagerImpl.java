@@ -1,6 +1,7 @@
 package com.l7tech.server.cluster;
 
 import com.l7tech.gateway.common.transport.InterfaceTag;
+import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.util.IOUtils;
@@ -8,9 +9,7 @@ import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
-import com.l7tech.util.SyspropUtil;
 import org.hibernate.FlushMode;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
@@ -54,8 +53,8 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
     }
 
     @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
-    public void setServerConfig(ServerConfig serverConfig) {
-        this.serverConfig = serverConfig;
+    public void setServerConfig(Config config ) {
+        this.config = config;
     }
 
     @Override
@@ -294,7 +293,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
     private String thisNodeEsmIPAddress;
     private final String nodeid;
 
-    private ServerConfig serverConfig;
+    private Config config;
 
     private ClusterNodeInfo recreateRow() {
         ClusterNodeInfo recreatedNodeInfo = getSelfNodeInf();
@@ -490,7 +489,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
      * @return The property or null if not set
      */
     private String getSystemPropertyIPAddress() {
-        String configuredIp = System.getProperty(PROP_IP_ADDRESS);
+        String configuredIp = config.getProperty( PROP_IP_ADDRESS );
 
         try {
             if (configuredIp!=null && !isValidIPAddress(InetAddress.getByName(configuredIp))) {
@@ -523,7 +522,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
         if ( esmIpAddress == null ) {
             esmIpAddress = defaultIpAddress;
 
-            final String pcIp = SyspropUtil.getProperty( "com.l7tech.server.processControllerIpAddress" );
+            final String pcIp = config.getProperty( "com.l7tech.server.processControllerIpAddress" );
             if ( pcIp != null ) {
                 if ( !InetAddressUtil.isAnyHostAddress( pcIp ) &&
                      !InetAddressUtil.isLoopbackAddress( pcIp ) ) {
@@ -531,7 +530,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
                 }
             }
 
-            final String interfaceTag = serverConfig.getProperty( "admin.esmInterfaceTag", null );
+            final String interfaceTag = config.getProperty( "admin.esmInterfaceTag" );
             if ( interfaceTag != null ) {
                 final InterfaceTag tag = getInterfaceTagByName( interfaceTag );
                 if ( tag != null ) {
@@ -573,7 +572,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
         InterfaceTag interfaceTag = null;
 
         try {
-            final String stringForm = serverConfig.getProperty(InterfaceTag.PROPERTY_NAME);
+            final String stringForm = config.getProperty( InterfaceTag.PROPERTY_NAME );
             final Set<InterfaceTag> tags = stringForm == null ?
                     Collections.<InterfaceTag>emptySet() :
                     InterfaceTag.parseMultiple(stringForm);

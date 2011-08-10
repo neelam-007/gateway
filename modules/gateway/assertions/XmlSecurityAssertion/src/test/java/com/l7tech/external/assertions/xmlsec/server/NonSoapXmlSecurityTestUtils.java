@@ -54,7 +54,6 @@ public class NonSoapXmlSecurityTestUtils {
         try {
             KeyFactory.getInstance("EC");
         } catch (NoSuchAlgorithmException e) {
-            System.setProperty("com.l7tech.security.prov.rsa.libpath.nonfips", "USECLASSPATH");
             JceProvider.init();
         }
     }

@@ -18,7 +18,6 @@ import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.processor.*;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.AuthenticationContext;
@@ -848,13 +847,13 @@ public class WSSecurityProcessorUtils {
         WssSettings wssSettings = wssSettingsReference.get();
 
         if ( wssSettings == null || ( wssSettings.created + TimeUnit.SECONDS.toMillis( 30L ) < System.currentTimeMillis()) ) {
-            ServerConfig serverConfig = ServerConfig.getInstance();
+            final Config config = ConfigFactory.getUncachedConfig();
             wssSettings = new WssSettings(
-                serverConfig.getLongProperty( ServerConfigParams.PARAM_SIGNED_PART_MAX_BYTES, 0L ),
-                serverConfig.getBooleanProperty( ServerConfigParams.PARAM_SOAP_REJECT_MUST_UNDERSTAND, true),
-                serverConfig.getBooleanProperty( ServerConfigParams.PARAM_WSS_ALLOW_MULTIPLE_TIMESTAMP_SIGNATURES, false),
-                serverConfig.getBooleanProperty( ServerConfigParams.PARAM_WSS_ALLOW_UNKNOWN_BINARY_SECURITY_TOKENS, false),
-                serverConfig.getBooleanProperty( ServerConfigParams.PARAM_WSS_PROCESSOR_STRICT_SIG_CONFIRMATION, true)
+                config.getLongProperty( ServerConfigParams.PARAM_SIGNED_PART_MAX_BYTES, 0L ),
+                config.getBooleanProperty( ServerConfigParams.PARAM_SOAP_REJECT_MUST_UNDERSTAND, true),
+                config.getBooleanProperty( ServerConfigParams.PARAM_WSS_ALLOW_MULTIPLE_TIMESTAMP_SIGNATURES, false),
+                config.getBooleanProperty( ServerConfigParams.PARAM_WSS_ALLOW_UNKNOWN_BINARY_SECURITY_TOKENS, false),
+                config.getBooleanProperty( ServerConfigParams.PARAM_WSS_PROCESSOR_STRICT_SIG_CONFIRMATION, true)
             );
 
             wssSettingsReference.set(  wssSettings );

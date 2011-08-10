@@ -1,7 +1,3 @@
- /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- */
-
 package com.l7tech.common.mime;
 
  import com.l7tech.common.io.*;
@@ -39,9 +35,9 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
 
     private static final AtomicLong firstPartMaxBytes = new AtomicLong(0);
 
-    private static final long PREAMBLE_MAX_SIZE = SyspropUtil.getLong( "com.l7tech.common.mime.preambleMaxSize", 1024 * 32 );
-    private static final long HEADERS_MAX_SIZE = SyspropUtil.getLong( "com.l7tech.common.mime.headersMaxSize", 1024 * 32 );
-    private static final boolean RAW_PARTS = SyspropUtil.getBoolean( "com.l7tech.common.mime.rawParts", false );
+    private static final long PREAMBLE_MAX_SIZE = ConfigFactory.getLongProperty( "com.l7tech.common.mime.preambleMaxSize", 1024 * 32 );
+    private static final long HEADERS_MAX_SIZE = ConfigFactory.getLongProperty( "com.l7tech.common.mime.headersMaxSize", 1024 * 32 );
+    private static final boolean RAW_PARTS = ConfigFactory.getBooleanProperty( "com.l7tech.common.mime.rawParts", false );
 
     private final FlaggingByteLimitInputStream mainInputStream; // always pointed at current part's body, or just past end of message
     private final int pushbackSize;

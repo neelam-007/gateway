@@ -3,10 +3,10 @@ package com.l7tech.server.cluster;
 import com.l7tech.server.management.api.node.ReportApi;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.util.JaasUtils;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.TimeUnit;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ResolvingComparator;
 import com.l7tech.util.Resolver;
 import com.l7tech.gateway.standardreports.ReportGenerator;
@@ -256,8 +256,8 @@ public class ReportApiImpl extends HibernateDaoSupport implements ReportApi {
 
     private static final Logger logger = Logger.getLogger( ReportApiImpl.class.getName() );
 
-    private static final int MAX_REPORTS = SyspropUtil.getInteger("com.l7tech.server.reports.max", 50);
-    private static final long MAX_REPORT_AGE = SyspropUtil.getLong("com.l7tech.server.reports.expiry", TimeUnit.MINUTES.toMillis(30));
+    private static final int MAX_REPORTS = ConfigFactory.getIntProperty( "com.l7tech.server.reports.max", 50 );
+    private static final long MAX_REPORT_AGE = ConfigFactory.getLongProperty( "com.l7tech.server.reports.expiry", TimeUnit.MINUTES.toMillis( 30 ) );
 
     private static final String MAPPING_SQL =
             "SELECT mapping1_key FROM message_context_mapping_keys WHERE mapping1_type='CUSTOM_MAPPING' UNION\n" +

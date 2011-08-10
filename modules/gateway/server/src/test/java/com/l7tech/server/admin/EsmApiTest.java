@@ -1,5 +1,6 @@
 package com.l7tech.server.admin;
 
+import com.l7tech.util.SyspropUtil;
 import org.junit.Test;
 import org.junit.BeforeClass;
 import org.junit.Assert;
@@ -63,7 +64,7 @@ public class EsmApiTest {
 
     @BeforeClass
     public static void setup() {
-        System.setProperty("org.apache.cxf.nofastinfoset", "true");
+        SyspropUtil.setProperty( "org.apache.cxf.nofastinfoset", "true" );
 
         Bus bus = BusFactory.getDefaultBus();
 

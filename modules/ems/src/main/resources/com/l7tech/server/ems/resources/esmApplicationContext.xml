@@ -322,12 +322,12 @@
     </bean>
 
     <bean id="adminAuditListener" class="com.l7tech.server.audit.AdminAuditListener" depends-on="serverConfig">
-        <constructor-arg value="#{serverConfig.getProperty('em.server.id')}"/>
+        <constructor-arg value="#{serverConfig.getProperty('em.server.id',null)}"/>
         <constructor-arg ref="auditContext"/>
     </bean>
 
     <bean id="systemAuditListener" class="com.l7tech.server.audit.SystemAuditListener" depends-on="serverConfig">
-        <constructor-arg value="#{serverConfig.getProperty('em.server.id')}"/>
+        <constructor-arg value="#{serverConfig.getProperty('em.server.id',null)}"/>
         <constructor-arg ref="auditContext"/>
     </bean>
 

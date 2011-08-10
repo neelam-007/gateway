@@ -266,11 +266,14 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
                         break;
                     case CLUSTER:
                         if ( metricsSub != null && !metricsSub.isEmpty() ) {
-                            ClusterProperty property = factory.clusterPropertyCache.getCachedEntityByName( metricsSub, 30000 );
-                            if ( property != null && !property.isHiddenProperty() ) {
-                                value = property.getValue();
-                                if ( value == null ) {
-                                    value = ServerConfig.getInstance().getPropertyByClusterName( metricsSub, false );
+                            final ServerConfig serverConfig = ServerConfig.getInstance();
+                            final String configName = serverConfig.getNameFromClusterName( metricsSub );
+                            if ( configName != null ) {
+                                value = serverConfig.getProperty( configName );
+                            } else {
+                                final ClusterProperty property = factory.clusterPropertyCache.getCachedEntityByName( metricsSub, 30000 );
+                                if ( property != null && !property.isHiddenProperty() ) {
+                                    value = property.getValue();
                                 }
                             }
                         }

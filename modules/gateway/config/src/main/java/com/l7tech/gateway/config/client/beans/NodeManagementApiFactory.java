@@ -1,5 +1,6 @@
 package com.l7tech.gateway.config.client.beans;
 
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.gateway.config.manager.NodeConfigurationManager;
 import com.l7tech.gateway.config.manager.db.DBActions;
@@ -16,7 +17,6 @@ import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.SyspropUtil;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.endpoint.Client;
 import org.apache.cxf.frontend.ClientProxy;
@@ -96,7 +96,7 @@ public class NodeManagementApiFactory {
     private static final Logger logger = Logger.getLogger( NodeManagementApiFactory.class.getName() );
 
     private static final String DEFAULT_PC_HOSTCONFIG_PATH = "/opt/SecureSpan/Controller/etc/host.properties";
-    private static final String PC_HOSTCONFIG_PATH = SyspropUtil.getString( "com.l7tech.gateway.config.pcHostProperties" , DEFAULT_PC_HOSTCONFIG_PATH );
+    private static final String PC_HOSTCONFIG_PATH = ConfigFactory.getProperty( "com.l7tech.gateway.config.pcHostProperties", DEFAULT_PC_HOSTCONFIG_PATH );
 
     private final URL nodeManagementUrl;
     private NodeManagementApi managementService;
@@ -137,7 +137,7 @@ public class NodeManagementApiFactory {
     }
 
     private String getHostSecret() {
-        String secret = SyspropUtil.getString( "com.l7tech.gateway.config.pcAuth", "" );
+        String secret = ConfigFactory.getProperty( "com.l7tech.gateway.config.pcAuth", "" );
         if ( secret.isEmpty() ) {
             final File propertiesFile = new File(PC_HOSTCONFIG_PATH);
             if ( propertiesFile.exists() ) {

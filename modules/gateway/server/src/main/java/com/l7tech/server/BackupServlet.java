@@ -22,6 +22,7 @@ import com.l7tech.server.event.system.BackupEvent;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.transport.ListenerException;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.IOUtils;
@@ -241,7 +242,7 @@ public class BackupServlet extends AuthenticatableHttpServlet {
             tmpDirectory = FileUtils.createTempDirectory("ssg_backup_restore", "tmp", null, false);
             final String imageName = "image.zip";
 
-            final String ssgHome = System.getProperty("com.l7tech.server.home");
+            final String ssgHome = ConfigFactory.getProperty( "com.l7tech.server.home" );
             final File backupHome = new File(ssgHome, "../../config/backup");
 
             try {

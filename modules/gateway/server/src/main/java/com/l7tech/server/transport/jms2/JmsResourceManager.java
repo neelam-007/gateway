@@ -5,7 +5,7 @@ import com.l7tech.server.transport.jms.JmsRuntimeException;
 import com.l7tech.server.transport.jms.JmsUtil;
 import com.l7tech.server.util.ManagedTimer;
 import com.l7tech.util.Config;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.TimeUnit;
 import org.springframework.beans.factory.DisposableBean;
 
@@ -201,7 +201,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
     private static final int DEFAULT_CONNECTION_CACHE_SIZE = 100;
 
     private static final String PROP_CACHE_CLEAN_INTERVAL = "com.l7tech.server.transport.jms.cacheCleanInterval";
-    private static final long CACHE_CLEAN_INTERVAL = SyspropUtil.getLong( PROP_CACHE_CLEAN_INTERVAL, 27937L );
+    private static final long CACHE_CLEAN_INTERVAL = ConfigFactory.getLongProperty( PROP_CACHE_CLEAN_INTERVAL, 27937L );
 
     // need to store one connection per endpoint
     private final Config config;

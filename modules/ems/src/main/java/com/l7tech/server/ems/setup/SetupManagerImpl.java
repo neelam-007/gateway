@@ -1,5 +1,6 @@
 package com.l7tech.server.ems.setup;
 
+import com.l7tech.util.Config;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.rbac.OperationType;
@@ -123,7 +124,7 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
      * @param dataSource The datasource to test
      */
     public static void testDataSource( final DataSource dataSource,
-                                       final ServerConfig serverConfig,
+                                       final Config config,
                                        final Resource[] createScripts,
                                        final Resource[] updateScripts ) {
         Connection connection = null;
@@ -144,8 +145,8 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
 
             if ( created ) {
                 runScripts( connection, createScripts, false );
-            } else if ( serverConfig.getBooleanProperty("em.server.db.updates", false) ) {
-                runScripts( connection, updateScripts, serverConfig.getBooleanProperty("em.server.db.updatesDeleted", true) );
+            } else if ( config.getBooleanProperty("em.server.db.updates", false) ) {
+                runScripts( connection, updateScripts, config.getBooleanProperty("em.server.db.updatesDeleted", true) );
             }
         } catch ( SQLException se ) {
             throw new RuntimeException( "Could not connect to database.", se );
@@ -220,8 +221,8 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
                     try {
                         InternalUserManager internalUserManager = getInternalUserManager();
                         if ( internalUserManager != null ) {
-                            String initialAdminUsername = serverConfig.getProperty("em.admin.user");
-                            String initialAdminPassword = serverConfig.getProperty("em.admin.pass");
+                            String initialAdminUsername = serverConfig.getProperty( "em.admin.user" );
+                            String initialAdminPassword = serverConfig.getProperty( "em.admin.pass" );
 
                             boolean create = false;
                             if ( initialAdminUsername != null && initialAdminUsername.trim().length() > 0 &&

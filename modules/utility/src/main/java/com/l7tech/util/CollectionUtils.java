@@ -239,6 +239,24 @@ public final class CollectionUtils {
         }
 
         /**
+         * Add an optional entry to the map.
+         *
+         * <p>If either the key or value is missing then the entry will not be
+         * added. A duplicate key will overwrite an existing entry.</p>
+         *
+         * @param key The key to add
+         * @param value The value to add.
+         * @return This builder.
+         */
+        public MapBuilder<K,V> put( final Option<K> key,
+                                    final Option<V> value ) {
+            if ( key.isSome() && value.isSome() ) {
+                map.put( key.some(), value.some() );
+            }
+            return this;
+        }
+
+        /**
          * Construct the result map.
          *
          * @return The map.

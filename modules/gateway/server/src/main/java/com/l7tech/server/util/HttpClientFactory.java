@@ -4,7 +4,7 @@ import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.server.DefaultKey;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
@@ -27,8 +27,8 @@ public class HttpClientFactory implements GenericHttpClientFactory {
     private static final String PROP_MAX_CONN_PER_HOST = HttpClientFactory.class.getName() + ".maxConnectionsPerHost";
     private static final String PROP_MAX_TOTAL_CONN = HttpClientFactory.class.getName() + ".maxTotalConnections";
 
-    private static final int MAX_CONNECTIONS_PER_HOST = SyspropUtil.getInteger( PROP_MAX_CONN_PER_HOST, 100 );
-    private static final int MAX_CONNECTIONS = SyspropUtil.getInteger( PROP_MAX_TOTAL_CONN, 1000 );
+    private static final int MAX_CONNECTIONS_PER_HOST = ConfigFactory.getIntProperty( PROP_MAX_CONN_PER_HOST, 100 );
+    private static final int MAX_CONNECTIONS = ConfigFactory.getIntProperty( PROP_MAX_TOTAL_CONN, 1000 );
 
     private static final MultiThreadedHttpConnectionManager connectionManager = new MultiThreadedHttpConnectionManager();
     static {
@@ -94,8 +94,7 @@ public class HttpClientFactory implements GenericHttpClientFactory {
             SSLContext sc = SSLContext.getInstance("TLS");
             KeyManager[] keyman = keystore.getSslKeyManagers();
             sc.init(keyman, new TrustManager[]{trustManager}, null);
-            final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT,
-                                                   HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT);
+            final int timeout = ConfigFactory.getIntProperty( HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT, HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT );
             sc.getClientSessionContext().setSessionTimeout(timeout);
             return sslContext = sc;
         }

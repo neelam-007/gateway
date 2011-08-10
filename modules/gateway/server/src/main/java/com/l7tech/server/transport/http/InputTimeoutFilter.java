@@ -1,8 +1,8 @@
 package com.l7tech.server.transport.http;
 
 import com.l7tech.common.http.HttpConstants;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ShutdownExceptionHandler;
 
 import javax.servlet.*;
@@ -198,7 +198,7 @@ public class InputTimeoutFilter implements Filter {
      * Get the timeout from server config, use servlet config as default.
      */
     private long getTimeout(long currentValue) {
-        String rawVal = ServerConfig.getInstance().getPropertyCached( ServerConfigParams.PARAM_IO_FRONT_BLOCKED_READ_TIMEOUT);
+        String rawVal = ConfigFactory.getProperty( ServerConfigParams.PARAM_IO_FRONT_BLOCKED_READ_TIMEOUT, null );
         return parseLong(rawVal, 500L, 3600000L, currentValue, ServerConfigParams.PARAM_IO_FRONT_BLOCKED_READ_TIMEOUT);
     }
 
@@ -206,7 +206,7 @@ public class InputTimeoutFilter implements Filter {
      * Get the slow read threshold from server config, use servlet config as default.
      */
     private long getReadTime(long currentValue) {
-        String rawVal = ServerConfig.getInstance().getPropertyCached( ServerConfigParams.PARAM_IO_FRONT_SLOW_READ_THRESHOLD);
+        String rawVal = ConfigFactory.getProperty( ServerConfigParams.PARAM_IO_FRONT_SLOW_READ_THRESHOLD, null );
         return parseLong(rawVal, 500L, 3600000L, currentValue, ServerConfigParams.PARAM_IO_FRONT_SLOW_READ_THRESHOLD);
     }
 
@@ -214,7 +214,7 @@ public class InputTimeoutFilter implements Filter {
      * Get the slow read rate from server config, use servlet config as default.
      */
     private int getReadRate(int currentValue) {
-        String rawVal = ServerConfig.getInstance().getPropertyCached( ServerConfigParams.PARAM_IO_FRONT_SLOW_READ_RATE);
+        String rawVal = ConfigFactory.getProperty( ServerConfigParams.PARAM_IO_FRONT_SLOW_READ_RATE, null );
         return parseInt(rawVal, 0, 1000000, currentValue, ServerConfigParams.PARAM_IO_FRONT_SLOW_READ_RATE);
     }
 

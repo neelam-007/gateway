@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.identity.cert;
 
 import com.l7tech.common.io.CertUtils;
@@ -14,7 +11,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.HibernateEntityManager;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.Auditor;
@@ -22,6 +18,7 @@ import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.util.ManagedTimer;
 import com.l7tech.server.util.ManagedTimerTask;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import com.l7tech.util.Config;
 import com.l7tech.util.Functions;
 import com.l7tech.util.TimeUnit;
 import org.hibernate.Criteria;
@@ -63,14 +60,14 @@ public class TrustedCertManagerImp
     private static final long MINUTES_THRESHOLD = TimeUnit.parse("3h");
 
     private final ManagedTimer timer;
-    private final ServerConfig serverConfig;
+    private final Config config;
     private final ClusterInfoManager clusterInfoManager;
 
     private ExpiryCheckerTask expiryCheckerTask;
     private ApplicationContext spring;
 
-    public TrustedCertManagerImp(ServerConfig serverConfig, ManagedTimer timer, ClusterInfoManager clusterInfoManager) {
-        this.serverConfig = serverConfig;
+    public TrustedCertManagerImp(Config config, ManagedTimer timer, ClusterInfoManager clusterInfoManager) {
+        this.config = config;
         this.timer = timer;
         this.clusterInfoManager = clusterInfoManager;
     }
@@ -201,7 +198,7 @@ public class TrustedCertManagerImp
     @Override
     protected void initDao() throws Exception {
         long period;
-        final String value = serverConfig.getPropertyCached( ServerConfigParams.PARAM_CERT_EXPIRY_CHECK_PERIOD);
+        final String value = config.getProperty( ServerConfigParams.PARAM_CERT_EXPIRY_CHECK_PERIOD );
         try {
             period = TimeUnit.parse(value);
         } catch (Exception e) {
@@ -263,9 +260,9 @@ public class TrustedCertManagerImp
             final ClusterNodeInfo nodeInfo = clusterInfoManager.getSelfNodeInf();
 
             // These are retrieved here on every (infrequent) run so that the frequencies can change at runtime
-            final long fineExpiryPeriod = TimeUnit.parse(serverConfig.getPropertyCached( ServerConfigParams.PARAM_CERT_EXPIRY_FINE_AGE));
-            final long infoExpiryPeriod = TimeUnit.parse(serverConfig.getPropertyCached( ServerConfigParams.PARAM_CERT_EXPIRY_INFO_AGE));
-            final long warningExpiryPeriod = TimeUnit.parse(serverConfig.getPropertyCached( ServerConfigParams.PARAM_CERT_EXPIRY_WARNING_AGE));
+            final long fineExpiryPeriod = TimeUnit.parse( config.getProperty( ServerConfigParams.PARAM_CERT_EXPIRY_FINE_AGE ) );
+            final long infoExpiryPeriod = TimeUnit.parse( config.getProperty( ServerConfigParams.PARAM_CERT_EXPIRY_INFO_AGE ) );
+            final long warningExpiryPeriod = TimeUnit.parse( config.getProperty( ServerConfigParams.PARAM_CERT_EXPIRY_WARNING_AGE ) );
 
             final Collection<TrustedCert> trustedCerts;
             try {

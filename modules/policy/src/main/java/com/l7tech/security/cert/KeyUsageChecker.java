@@ -1,9 +1,9 @@
 package com.l7tech.security.cert;
 
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
-import com.l7tech.util.SyspropUtil;
 import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
@@ -244,11 +244,11 @@ public class KeyUsageChecker {
     }
 
     static String makeDefaultPolicyXml() {
-        String xmlString = SyspropUtil.getString(PROPERTY_POLICY_XML, null);
+        String xmlString = ConfigFactory.getProperty( PROPERTY_POLICY_XML, null );
         if (xmlString != null && xmlString.trim().length() > 0)
             return xmlString;
 
-        InputStream xmlStream = open(SyspropUtil.getString(PROPERTY_POLICY_FILE, null));
+        InputStream xmlStream = open( ConfigFactory.getProperty( PROPERTY_POLICY_FILE, null ) );
 
         if (xmlStream == null)
             xmlStream = KeyUsageChecker.class.getClassLoader().getResourceAsStream(DEFAULT_POLICY_RESOURCE);
@@ -264,6 +264,6 @@ public class KeyUsageChecker {
     }
 
     static KeyUsageChecker makeDefaultKeyUsageChecker() {
-        return new KeyUsageChecker(makeDefaultPolicy(), SyspropUtil.getString(PROPERTY_ENFORCEMENT_MODE, null));
+        return new KeyUsageChecker( makeDefaultPolicy(), ConfigFactory.getProperty( PROPERTY_ENFORCEMENT_MODE, null ) );
     }
 }

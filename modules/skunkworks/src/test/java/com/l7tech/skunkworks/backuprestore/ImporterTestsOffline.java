@@ -6,6 +6,7 @@
  */
 package com.l7tech.skunkworks.backuprestore;
 
+import com.l7tech.util.SyspropUtil;
 import org.junit.Test;
 import org.junit.Before;
 import org.junit.After;
@@ -35,8 +36,8 @@ public class ImporterTestsOffline {
         tmpSsgHome.mkdir();
 
         setUpEnvironment();
-        System.setProperty("com.l7tech.util.buildVersion", "5.1.0");
-        System.setProperty("com.l7tech.gateway.config.backuprestore.checkversion", Boolean.toString(false));
+        SyspropUtil.setProperty( "com.l7tech.util.buildVersion", "5.1.0" );
+        SyspropUtil.setProperty( "com.l7tech.gateway.config.backuprestore.checkversion", Boolean.toString( false ) );
     }
 
     @After
@@ -52,9 +53,9 @@ public class ImporterTestsOffline {
                 FileUtils.deleteDir(tmpSecureSpanHome);
             }
         }
-        
-        System.clearProperty("com.l7tech.util.buildVersion");
-        System.clearProperty("com.l7tech.gateway.config.backuprestore.checkversion");
+
+        SyspropUtil.clearProperty( "com.l7tech.util.buildVersion" );
+        SyspropUtil.clearProperty( "com.l7tech.gateway.config.backuprestore.checkversion" );
     }
 
     @Test
@@ -120,11 +121,11 @@ public class ImporterTestsOffline {
         };
 
         try{
-            System.setProperty("com.l7tech.config.backuprestore.mycnfdir", tmpSsgHome.getAbsolutePath());
+            SyspropUtil.setProperty( "com.l7tech.config.backuprestore.mycnfdir", tmpSsgHome.getAbsolutePath() );
             final ImportExportUtilities.UtilityResult result = importer.restoreOrMigrateBackupImage(args);
             Assert.assertEquals("Incorrect result found", ImportExportUtilities.UtilityResult.Status.SUCCESS, result.getStatus());
         }finally{
-            System.clearProperty("com.l7tech.config.backuprestore.mycnfdir");
+            SyspropUtil.clearProperty( "com.l7tech.config.backuprestore.mycnfdir" );
         }
     }
 
@@ -236,11 +237,11 @@ public class ImporterTestsOffline {
         };
 
         try{
-            System.setProperty("com.l7tech.config.backup.localDbOnly", Boolean.toString(false));
+            SyspropUtil.setProperty( "com.l7tech.config.backup.localDbOnly", Boolean.toString( false ) );
             final ImportExportUtilities.UtilityResult result = importer.restoreOrMigrateBackupImage(args);
             Assert.assertEquals("Incorrect result found", ImportExportUtilities.UtilityResult.Status.SUCCESS, result.getStatus());
         }finally{
-            System.clearProperty("com.l7tech.config.backup.localDbOnly");            
+            SyspropUtil.clearProperty( "com.l7tech.config.backup.localDbOnly" );
         }
     }
 

@@ -1,8 +1,8 @@
 package com.l7tech.gateway.config.backuprestore;
 
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.SyspropUtil;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -278,7 +278,7 @@ final class OSConfigManager {
         if(isReboot){
             //root of the entire operating system
             //allow system property to override this for tests
-            String rootDir = SyspropUtil.getString("com.l7tech.config.backuprestore.osrootdir", "/");
+            String rootDir = ConfigFactory.getProperty( "com.l7tech.config.backuprestore.osrootdir", "/" );
             targetRoot = new File(rootDir);
         }else{
             targetRoot = new File(internalOsFolder.getAbsolutePath());

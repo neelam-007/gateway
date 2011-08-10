@@ -24,9 +24,9 @@ import java.util.logging.Logger;
 public class JdkLoggerConfigurator {
     private static Probe probe;
     private static AtomicBoolean serviceNameAppenderState =
-            new AtomicBoolean(SyspropUtil.getBoolean("com.l7tech.logging.appendservicename"));
+            new AtomicBoolean( SyspropUtil.getBoolean( "com.l7tech.logging.appendservicename", false ) );
     private static AtomicBoolean debugState =
-            new AtomicBoolean(SyspropUtil.getBoolean("com.l7tech.logging.debug"));
+            new AtomicBoolean( SyspropUtil.getBoolean( "com.l7tech.logging.debug", false ) );
     private static AtomicReference<Properties> nonDefaultProperties =
             new AtomicReference<Properties>();
     static final String LOG4J_JDK_LOG_APPENDER_CLASS = "com.l7tech.util.Log4jJdkLogAppender";
@@ -118,7 +118,7 @@ public class JdkLoggerConfigurator {
         final boolean succeedSilently = shippedDefaults == null && shippedLoggingProperties == null;
 
         try {
-            System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
+            SyspropUtil.setProperty( "org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger" );
             String cf = SyspropUtil.getProperty("java.util.logging.config.file");
             List<String> configCandidates = new ArrayList<String>(3);
             if (cf != null) {

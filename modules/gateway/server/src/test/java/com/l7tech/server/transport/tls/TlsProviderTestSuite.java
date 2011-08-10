@@ -1,5 +1,6 @@
 package com.l7tech.server.transport.tls;
 
+import com.l7tech.util.SyspropUtil;
 import sun.misc.BASE64Decoder;
 
 import javax.net.ssl.*;
@@ -304,7 +305,7 @@ public class TlsProviderTestSuite {
     }
 
     private void start() throws Exception {
-        if (Boolean.valueOf(debug)) System.setProperty("javax.net.debug", "ssl");
+        if (Boolean.valueOf(debug)) SyspropUtil.setProperty( "javax.net.debug", "ssl" );
 
         if ("rsa".equals(jceprov)) {
             addProv("com.rsa.jsafe.provider.JsafeJCE", false);

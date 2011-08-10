@@ -1,7 +1,3 @@
-/*
- * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
- */
-
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
@@ -9,6 +5,7 @@ import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.wstrust.TokenServiceClient;
 import com.l7tech.security.wstrust.WsTrustConfig;
 import com.l7tech.security.wstrust.WsTrustConfigFactory;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.xml.WsTrustRequestType;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.common.http.GenericHttpClient;
@@ -45,7 +42,7 @@ public class TrustedSsgSamlTokenStrategy extends AbstractSamlTokenStrategy {
         log.log(Level.INFO, "Applying for SAML holder-of-key assertion from Gateway " + tokenServerSsg.toString());
         SamlAssertion s;
         // TODO extract the strategies for getting tokenServer client cert, private key, and server cert
-        String tokenServiceUri = System.getProperty(TrustedSsgSamlTokenStrategy.class.getName() + ".ssgTokenServiceUri", SecureSpanConstants.TOKEN_SERVICE_FILE);
+        String tokenServiceUri = ConfigFactory.getProperty( TrustedSsgSamlTokenStrategy.class.getName() + ".ssgTokenServiceUri", SecureSpanConstants.TOKEN_SERVICE_FILE );
         URL url = new URL("http",
                           tokenServerSsg.getSsgAddress(),
                           tokenServerSsg.getSsgPort(),

@@ -90,16 +90,16 @@ public class GenericSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore {
         this.name = name;
         this.keystorePassword = getPassword(PROP_KEYSTORE_PASSWORD, DEFAULT_KEYSTORE_PASSWORD, systemKeystorePassword);
         this.entryPassword = getPassword(PROP_ENTRY_PASSWORD, DEFAULT_ENTRY_PASSWORD, keystorePassword);
-        this.keystoreType = SyspropUtil.getString(PROP_KEYSTORE_TYPE, DEFAULT_KEYSTORE_TYPE);
-        this.loadPath = SyspropUtil.getString(PROP_LOAD_PATH, DEFAULT_LOAD_PATH);
-        String storePath = SyspropUtil.getString(PROP_STORE_PATH, DEFAULT_STORE_PATH);
+        this.keystoreType = ConfigFactory.getProperty( PROP_KEYSTORE_TYPE, DEFAULT_KEYSTORE_TYPE );
+        this.loadPath = ConfigFactory.getProperty( PROP_LOAD_PATH, DEFAULT_LOAD_PATH );
+        String storePath = ConfigFactory.getProperty( PROP_STORE_PATH, DEFAULT_STORE_PATH );
         if ("DEFAULT".equalsIgnoreCase(storePath))
             storePath = loadPath;
         this.savePath = storePath;
-        this.readOnly = SyspropUtil.getBoolean(PROP_READ_ONLY, DEFAULT_READ_ONLY);
-        this.saveFileSafely = SyspropUtil.getBoolean(PROP_SAVE_FILE_SAFELY, DEFAULT_SAVE_FILE_SAFELY);
-        this.storeAfterChange = SyspropUtil.getBoolean(PROP_STORE_AFTER_CHANGE, DEFAULT_STORE_AFTER_CHANGE);
-        this.reloadAfterStore = SyspropUtil.getBoolean(PROP_RELOAD_AFTER_STORE, DEFAULT_RELOAD_AFTER_STORE);
+        this.readOnly = ConfigFactory.getBooleanProperty( PROP_READ_ONLY, DEFAULT_READ_ONLY );
+        this.saveFileSafely = ConfigFactory.getBooleanProperty( PROP_SAVE_FILE_SAFELY, DEFAULT_SAVE_FILE_SAFELY );
+        this.storeAfterChange = ConfigFactory.getBooleanProperty( PROP_STORE_AFTER_CHANGE, DEFAULT_STORE_AFTER_CHANGE );
+        this.reloadAfterStore = ConfigFactory.getBooleanProperty( PROP_RELOAD_AFTER_STORE, DEFAULT_RELOAD_AFTER_STORE );
         logger.info("Using generic keystore type: " + keystoreType + " with path " + loadPath);
     }
 
@@ -221,7 +221,7 @@ public class GenericSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore {
      * @return  the value.  May be null.
      */
     private static char[] getPassword(String syspropName, String syspropDefaultValue, char[] explicitDefaultValue) {
-        String val = SyspropUtil.getString(syspropName, syspropDefaultValue);
+        String val = ConfigFactory.getProperty( syspropName, syspropDefaultValue );
         if ("NULL".equals(val)) {
             return null;
         } else if ("DEFAULT".equals(val)) {

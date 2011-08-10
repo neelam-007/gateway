@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.rawtcp.server;
 
 import com.l7tech.common.io.ByteLimitInputStream;
+import com.l7tech.util.Config;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.external.assertions.rawtcp.SimpleRawTransportAssertion;
@@ -157,12 +158,12 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
                                     SsgConnectorManager ssgConnectorManager,
                                     TrustedCertServices trustedCertServices,
                                     DefaultKey defaultKey,
-                                    ServerConfig serverConfig,
+                                    Config config,
                                     GatewayState gatewayState,
                                     MessageProcessor messageProcessor,
                                     StashManagerFactory stashManagerFactory)
     {
-        super("Simple raw transport module", logger, GatewayFeatureSets.SERVICE_L7RAWTCP_MESSAGE_INPUT, licenseManager, ssgConnectorManager, trustedCertServices, defaultKey, serverConfig);
+        super("Simple raw transport module", logger, GatewayFeatureSets.SERVICE_L7RAWTCP_MESSAGE_INPUT, licenseManager, ssgConnectorManager, trustedCertServices, defaultKey, config );
         this.applicationEventProxy = applicationEventProxy;
         this.gatewayState = gatewayState;
         this.messageProcessor = messageProcessor;
@@ -182,12 +183,12 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
         SsgConnectorManager ssgConnectorManager = getBean(appContext, "ssgConnectorManager", SsgConnectorManager.class);
         TrustedCertServices trustedCertServices = getBean(appContext, "trustedCertServices", TrustedCertServices.class);
         DefaultKey defaultKey = getBean(appContext, "defaultKey", DefaultKey.class);
-        ServerConfig serverConfig = getBean(appContext, "serverConfig", ServerConfig.class);
+        Config config = getBean(appContext, "serverConfig", Config.class);
         GatewayState gatewayState = getBean(appContext, "gatewayState", GatewayState.class);
         MessageProcessor messageProcessor = getBean(appContext, "messageProcessor", MessageProcessor.class);
         StashManagerFactory stashManagerFactory = getBean(appContext, "stashManagerFactory", StashManagerFactory.class);
         ApplicationEventProxy applicationEventProxy = getBean(appContext, "applicationEventProxy", ApplicationEventProxy.class);
-        return new SimpleRawTransportModule(applicationEventProxy, licenseManager, ssgConnectorManager, trustedCertServices, defaultKey, serverConfig, gatewayState, messageProcessor, stashManagerFactory);
+        return new SimpleRawTransportModule(applicationEventProxy, licenseManager, ssgConnectorManager, trustedCertServices, defaultKey, config, gatewayState, messageProcessor, stashManagerFactory);
     }
 
     @Override

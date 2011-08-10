@@ -3,6 +3,7 @@ package com.l7tech.console.util;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.util.SyspropUtil;
 
 import java.io.*;
 import java.security.KeyStore;
@@ -117,7 +118,7 @@ public class HeavySsmPreferences extends AbstractSsmPreferences implements SsmPr
     @SuppressWarnings({"unchecked"})
     public void updateSystemProperties() {
         for ( String property : Collections.list((Enumeration<String>)props.propertyNames()) ) {
-            System.setProperty( property, props.getProperty(property) );            
+            SyspropUtil.setProperty( property, props.getProperty( property ) );
         }
     }
 

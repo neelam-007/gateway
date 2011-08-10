@@ -2,8 +2,8 @@ package com.l7tech.security.prov.luna;
 
 import com.l7tech.security.prov.CertificateRequest;
 import com.l7tech.security.prov.JceProvider;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
 import com.safenetinc.luna.LunaSlotManager;
 import com.safenetinc.luna.provider.LunaProvider;
 
@@ -25,7 +25,7 @@ public class Luna5JceProviderEngine extends JceProvider {
 
     private static void logIntoPartition()  {
         char[] pin = lookupClientPassword();
-        int slotNum = SyspropUtil.getInteger("com.l7tech.lunaSlotNum", -1);
+        int slotNum = ConfigFactory.getIntProperty( "com.l7tech.lunaSlotNum", -1 );
         if (slotNum >= 1) {
             if (LunaSlotManager.getInstance().isLoggedIn())
                 LunaSlotManager.getInstance().logout(slotNum);
@@ -39,7 +39,7 @@ public class Luna5JceProviderEngine extends JceProvider {
     /** @return the client password, ie "///6-6KWT-SCMH-N3FE". */
     private static char[] lookupClientPassword() {
         char[] pin;
-        String pinFinderClassName = SyspropUtil.getString("com.l7tech.lunaPinFinder", DefaultLunaPinFinder.class.getName());
+        String pinFinderClassName = ConfigFactory.getProperty( "com.l7tech.lunaPinFinder", DefaultLunaPinFinder.class.getName() );
         try {
             Callable pinFinder = (Callable) Class.forName(pinFinderClassName).newInstance();
             pin = (char[]) pinFinder.call();

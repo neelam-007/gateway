@@ -26,8 +26,8 @@ import com.l7tech.server.management.config.monitoring.NotificationRule;
 import com.l7tech.server.management.config.monitoring.PropertyTrigger;
 import com.l7tech.server.management.config.monitoring.Trigger;
 import com.l7tech.util.ComparisonOperator;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.TimeSource;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -53,10 +53,10 @@ public class MonitoringConfigurationSynchronizer implements ApplicationContextAw
     private static final Logger logger = Logger.getLogger(MonitoringConfigurationSynchronizer.class.getName());
 
     private static final String PROP_PREFIX = "com.l7tech.server.ems.monitoring.configPush.";
-    static final long DELAY_UNTIL_FIRST_CONFIG_PUSH = SyspropUtil.getLong(PROP_PREFIX + "delayUntilFirst", 1637L);
-    static final long DELAY_BETWEEN_CONFIG_PUSHES = SyspropUtil.getLong(PROP_PREFIX + "delayBetween", 7457L);
-    static final long INITIAL_RETRY_DELAY = SyspropUtil.getLong(PROP_PREFIX + "failRetry.initialDelay", DELAY_BETWEEN_CONFIG_PUSHES + 1);
-    static final long MAX_RETRY_DELAY = SyspropUtil.getLong(PROP_PREFIX + "failRetry.maxDelay", 86028157L);
+    static final long DELAY_UNTIL_FIRST_CONFIG_PUSH = ConfigFactory.getLongProperty( PROP_PREFIX + "delayUntilFirst", 1637L );
+    static final long DELAY_BETWEEN_CONFIG_PUSHES = ConfigFactory.getLongProperty( PROP_PREFIX + "delayBetween", 7457L );
+    static final long INITIAL_RETRY_DELAY = ConfigFactory.getLongProperty( PROP_PREFIX + "failRetry.initialDelay", DELAY_BETWEEN_CONFIG_PUSHES + 1 );
+    static final long MAX_RETRY_DELAY = ConfigFactory.getLongProperty( PROP_PREFIX + "failRetry.maxDelay", 86028157L );
 
     /** We should mark all monitoring configurations as dirty any time one of these entities changes. */
     private static final Set<Class<? extends Entity>> ENTITIES_TRIGGERING_COMPLETE_PUSHDOWN = Collections.unmodifiableSet(new HashSet<Class<? extends Entity>>() {{

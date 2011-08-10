@@ -1,8 +1,3 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.util;
 
 import java.io.*;
@@ -14,7 +9,7 @@ import java.nio.charset.Charset;
  * Call {@link #close()} to return the buffer to the pool when you are done with it.
  */
 public class PoolByteArrayOutputStream extends OutputStream {
-    private static final int DEFAULT_BUF_SIZE = SyspropUtil.getInteger("com.l7tech.util.BufferPoolBaos.defaultBufSize", 1024);
+    private static final int DEFAULT_BUF_SIZE = ConfigFactory.getIntProperty( "com.l7tech.util.BufferPoolBaos.defaultBufSize", 1024 );
     public static final int MIN_BUF_SIZE = BufferPool.getMinBufferSize();
     protected byte[] buf; //      The buffer where data is stored.
     protected int count; //       The number of valid bytes in the buffer.

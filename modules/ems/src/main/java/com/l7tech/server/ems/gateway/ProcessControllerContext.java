@@ -4,7 +4,7 @@ package com.l7tech.server.ems.gateway;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.management.api.monitoring.MonitoringApi;
 import com.l7tech.server.management.api.node.NodeManagementApi;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 
 import java.text.MessageFormat;
 import java.util.concurrent.atomic.AtomicReference;
@@ -18,8 +18,8 @@ public class ProcessControllerContext extends ApiContext {
 
     private static final String PROP_CONTROLLER_URL = "com.l7tech.esm.controllerUrl";
     private static final String PROP_MONITORING_URL = "com.l7tech.esm.monitoringUrl";
-    private static final String CONTROLLER_URL = SyspropUtil.getString(PROP_CONTROLLER_URL, "https://{0}:{1}/services/nodeManagementApi");
-    private static final String MONITORING_URL = SyspropUtil.getString(PROP_MONITORING_URL, "https://{0}:{1}/services/monitoringApi");
+    private static final String CONTROLLER_URL = ConfigFactory.getProperty( PROP_CONTROLLER_URL, "https://{0}:{1}/services/nodeManagementApi" );
+    private static final String MONITORING_URL = ConfigFactory.getProperty( PROP_MONITORING_URL, "https://{0}:{1}/services/monitoringApi" );
 
     private final String controllerUrl;
     private final String monitoringUrl;

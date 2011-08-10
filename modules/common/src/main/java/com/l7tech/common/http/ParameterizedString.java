@@ -1,6 +1,6 @@
 package com.l7tech.common.http;
 
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
  * text when url decoding fails)</p>
  */
 public class ParameterizedString {
-    private static final int MAX_FIELD_LENGTH = SyspropUtil.getInteger("com.l7tech.http.maxParameterLength", 600000);
+    private static final int MAX_FIELD_LENGTH = ConfigFactory.getIntProperty( "com.l7tech.http.maxParameterLength", 600000 );
 
     //- PUBLIC
 

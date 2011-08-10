@@ -4,6 +4,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.token.UsernameTokenImpl;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.soap.SoapUtil;
 import org.junit.*;
 import org.w3c.dom.Element;
@@ -17,7 +18,7 @@ public class WssxInteropMessageGeneratorTest {
     private static final Logger log = Logger.getLogger(WssxInteropMessageGeneratorTest.class.getName());
 
     static {
-        System.setProperty("com.l7tech.security.prov.rsa.libpath.nonfips", "USECLASSPATH");
+        SyspropUtil.setProperty( "com.l7tech.security.prov.rsa.libpath.nonfips", "USECLASSPATH" );
         JceProvider.init();
     }
 

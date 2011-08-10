@@ -1,6 +1,7 @@
 package com.l7tech.server.ems.ui.pages;
 
 import com.l7tech.server.ems.setup.SslSetupManager;
+import com.l7tech.util.ConfigFactory;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.markup.html.form.*;
@@ -33,7 +34,6 @@ import java.io.IOException;
 import java.io.Serializable;
 
 import com.l7tech.server.ems.setup.SetupException;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ExceptionUtils;
 
 /**
@@ -42,7 +42,7 @@ import com.l7tech.util.ExceptionUtils;
 public class SslEditPanel extends Panel {
 
     private static final Logger logger = Logger.getLogger(SslEditPanel.class.getName());
-    private static final int MAX_KEYSTORE_FILE_UPLOAD_BYTES = SyspropUtil.getInteger("com.l7tech.ems.keystoreFile.maxBytes", 1024 * 500);
+    private static final int MAX_KEYSTORE_FILE_UPLOAD_BYTES = ConfigFactory.getIntProperty( "com.l7tech.ems.keystoreFile.maxBytes", 1024 * 500 );
 
     @Inject
     private SslSetupManager sslSetupManager;

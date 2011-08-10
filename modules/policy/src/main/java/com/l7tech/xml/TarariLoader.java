@@ -1,14 +1,8 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.xml;
 
 import com.l7tech.message.TarariMessageContextFactory;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.tarari.GlobalTarariContext;
 import com.l7tech.xml.tarari.TarariSchemaHandler;
 
@@ -64,7 +58,7 @@ public class TarariLoader {
         if (tarariPresent == null) {
             synchronized (TarariLoader.class) {
                 if (tarariPresent == null) {
-                    if (SyspropUtil.getBoolean(ENABLE_PROPERTY)) {
+                    if ( ConfigFactory.getBooleanProperty( ENABLE_PROPERTY, false ) ) {
                         try {
                             logger.fine("Tarari hardware XML acceleration probe is starting...");
 

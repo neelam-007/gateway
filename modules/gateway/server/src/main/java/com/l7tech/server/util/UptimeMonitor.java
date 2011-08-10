@@ -1,9 +1,6 @@
-/*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- */
-
 package com.l7tech.server.util;
 
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.UptimeMetrics;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.ShutdownExceptionHandler;
@@ -33,7 +30,7 @@ public class UptimeMonitor {
         "/bin/uptime",
         "c:/cygwin/bin/uptime",
         "c:/opt/cygwin/bin/uptime",
-        ServerConfig.getInstance().getPropertyCached("ssgHome") + File.separator + "bin" + File.separator + "uptime"
+            ConfigFactory.getProperty( "ssgHome", null ) + File.separator + "bin" + File.separator + "uptime"
     };
     private static String foundUptime = null;
 

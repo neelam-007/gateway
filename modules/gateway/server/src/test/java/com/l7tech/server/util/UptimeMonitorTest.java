@@ -1,11 +1,6 @@
-/*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.server.util;
 
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.UptimeMetrics;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -81,7 +76,7 @@ public class UptimeMonitorTest {
 
     @Test
     public void testUptime() throws Exception {
-        if (System.getProperty("os.name").contains("Windows"))
+        if ( SyspropUtil.getProperty( "os.name" ).contains( "Windows" ))
             return;
 
         assertTrue(UptimeMonitor.isUptimeMetricsAvailable());

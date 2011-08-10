@@ -1,11 +1,6 @@
-/**
- * Copyright (C) 2008, Layer 7 Technologies Inc.
- * User: darmstrong
- * Date: May 26, 2009
- * Time: 11:14:10 AM
- */
 package com.l7tech.gateway.config.backuprestore;
 
+import com.l7tech.util.SyspropUtil;
 import org.junit.Test;
 import org.junit.Assert;
 import org.junit.Before;
@@ -30,12 +25,12 @@ public class ImportExportUtilitiesTest {
 
     @Before
     public void setUp() throws IOException {
-        System.setProperty("com.l7tech.util.buildVersion", "5.1.0");
+        SyspropUtil.setProperty( "com.l7tech.util.buildVersion", "5.1.0" );
     }
 
     @After
     public void tearDown(){
-        System.clearProperty("com.l7tech.util.buildVersion");
+        SyspropUtil.clearProperty( "com.l7tech.util.buildVersion" );
     }
 
     /**
@@ -44,15 +39,15 @@ public class ImportExportUtilitiesTest {
     @Test
     public void testGetAbsolutePath(){
         try{
-            String tmpDir = System.getProperty("java.io.tmpdir");
-            System.setProperty(ImportExportUtilities.BASE_DIR_PROPERTY, tmpDir);
+            String tmpDir = SyspropUtil.getProperty( "java.io.tmpdir" );
+            SyspropUtil.setProperty( ImportExportUtilities.BASE_DIR_PROPERTY, tmpDir );
 
             String testFile = "testfile.txt";
             String absFile = ImportExportUtilities.getAbsolutePath(testFile);
             Assert.assertTrue("absFile's path should be '"+tmpDir+File.separator+testFile,
                     absFile.equals(tmpDir+File.separator+testFile));
         } finally {
-            System.clearProperty(ImportExportUtilities.BASE_DIR_PROPERTY);
+            SyspropUtil.clearProperty( ImportExportUtilities.BASE_DIR_PROPERTY );
         }
     }
 
@@ -186,7 +181,7 @@ public class ImportExportUtilitiesTest {
      */
     @Test
     public void testThrowIfFileExists() throws IOException {
-        String tmpDir = System.getProperty("java.io.tmpdir");
+        String tmpDir = SyspropUtil.getProperty( "java.io.tmpdir" );
         File testFile = new File(tmpDir + File.separator + "noexist.txt");
         ImportExportUtilities.throwIfFileExists(testFile.getAbsolutePath());
     }
@@ -197,7 +192,7 @@ public class ImportExportUtilitiesTest {
      */
     @Test(expected = IllegalArgumentException.class)
     public void testThrowIfFileExists_FileExists() throws IOException {
-        String tmpDir = System.getProperty("java.io.tmpdir");
+        String tmpDir = SyspropUtil.getProperty( "java.io.tmpdir" );
         File testFile = new File(tmpDir + File.separator + "noexist.txt");
         try{
             testFile.createNewFile();
@@ -213,7 +208,7 @@ public class ImportExportUtilitiesTest {
      */
     @Test
     public void testVerifyCanWriteFile() throws IOException {
-        String tmpDir = System.getProperty("java.io.tmpdir");
+        String tmpDir = SyspropUtil.getProperty( "java.io.tmpdir" );
         File f = new File(tmpDir, "testfilesdoesnotexist.txt");
         ImportExportUtilities.verifyCanWriteFile(f.getAbsolutePath());
     }

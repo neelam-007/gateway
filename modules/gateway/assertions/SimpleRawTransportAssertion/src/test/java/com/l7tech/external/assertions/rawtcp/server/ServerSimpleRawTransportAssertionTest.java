@@ -14,6 +14,7 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.IOUtils;
+import com.l7tech.util.SyspropUtil;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -33,7 +34,7 @@ public class ServerSimpleRawTransportAssertionTest {
     @BeforeClass
     public static void setup() {
         AssertionRegistry.installEnhancedMetadataDefaults();
-        System.setProperty("com.l7tech.logging.debug", "true");
+        SyspropUtil.setProperty( "com.l7tech.logging.debug", "true" );
     }
 
     @Test

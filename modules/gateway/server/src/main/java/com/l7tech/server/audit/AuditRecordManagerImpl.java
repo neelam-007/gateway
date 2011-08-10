@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.audit.*;
@@ -12,7 +6,6 @@ import com.l7tech.util.*;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.HibernateEntityManager;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.admin.AuditPurgeInitiated;
 import com.l7tech.server.event.system.AuditPurgeEvent;
 import org.hibernate.*;
@@ -313,7 +306,7 @@ public class AuditRecordManagerImpl
     @Override
     public void deleteOldAuditRecords( final long minAge ) throws DeleteException {
         applicationContext.publishEvent(new AuditPurgeInitiated(this));
-        String sMinAgeHours = serverConfig.getPropertyCached( ServerConfigParams.PARAM_AUDIT_PURGE_MINIMUM_AGE);
+        String sMinAgeHours = config.getProperty( ServerConfigParams.PARAM_AUDIT_PURGE_MINIMUM_AGE );
         if (sMinAgeHours == null || sMinAgeHours.length() == 0)
             sMinAgeHours = "168";
         int minAgeHours = 168;
@@ -458,9 +451,9 @@ public class AuditRecordManagerImpl
         return "audit_main";
     }
 
-    public void setServerConfig(ServerConfig serverConfig) {
-        this.serverConfig = serverConfig;
-        validatedConfig = new ValidatedConfig(serverConfig, logger);
+    public void setServerConfig(Config config ) {
+        this.config = config;
+        validatedConfig = new ValidatedConfig( config, logger);
         validatedConfig.setMinimumValue( ServerConfigParams.PARAM_AUDIT_SIGN_MAX_VALIDATE, 100);
         validatedConfig.setMaximumValue( ServerConfigParams.PARAM_AUDIT_SIGN_MAX_VALIDATE, 1000);
 
@@ -510,7 +503,7 @@ public class AuditRecordManagerImpl
     private static final AtomicBoolean mySql = new AtomicBoolean(true);
 
     private static final Logger logger = Logger.getLogger(AuditRecordManagerImpl.class.getName());
-    private ServerConfig serverConfig;
+    private Config config;
     private ApplicationContext applicationContext;
     private long messageLimitSize;
 

@@ -1,8 +1,3 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.client.gui.dialogs;
 
 import com.intellij.uiDesigner.core.GridConstraints;
@@ -17,8 +12,8 @@ import com.l7tech.gui.widgets.WrappingLabel;
 import com.l7tech.proxy.Constants;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgFinder;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.HexUtils;
-import com.l7tech.util.SyspropUtil;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -39,7 +34,7 @@ import java.util.regex.Pattern;
  */
 class SsgNetworkPanel extends JPanel {
     private static final Ssg referenceSsg = new Ssg(); // SSG bean with default values for all
-    private final int ENDPOINT_MAX = SyspropUtil.getInteger(getClass().getName() + ".endpointMax", 400).intValue();
+    private final int ENDPOINT_MAX = ConfigFactory.getIntProperty( getClass().getName() + ".endpointMax", 400 );
     private final Pattern ENDPOINT_PATTERN = Pattern.compile("^[a-zA-Z0-9_]+$");
 
     private final InputValidator validator;

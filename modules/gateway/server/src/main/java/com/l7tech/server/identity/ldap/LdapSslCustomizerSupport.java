@@ -6,9 +6,9 @@ import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.http.SslClientHostnameAwareSocketFactory;
 import com.l7tech.server.transport.http.SslClientSocketFactory;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.FilterClassLoader;
 import com.l7tech.util.Pair;
-import com.l7tech.util.SyspropUtil;
 import javassist.*;
 
 import javax.naming.NamingException;
@@ -237,7 +237,7 @@ public class LdapSslCustomizerSupport {
                 context.init(keyManagers,
                              new TrustManager[] { trustManager } ,
                              null);
-                int timeout = SyspropUtil.getIntegerCached(PROP_SSL_SESSION_TIMEOUT, DEFAULT_SSL_SESSION_TIMEOUT);
+                int timeout = ConfigFactory.getIntProperty( PROP_SSL_SESSION_TIMEOUT, DEFAULT_SSL_SESSION_TIMEOUT );
                 context.getClientSessionContext().setSessionTimeout(timeout);
                 instance = context;
             } catch (GeneralSecurityException e) {

@@ -272,7 +272,7 @@ public class ExceptionUtils {
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(ExceptionUtils.class.getName());
-    private static final String NEWLINE = System.getProperty("line.separator");
+    private static final String NEWLINE = SyspropUtil.getProperty( "line.separator" );
 
     /**
      * Check if the throwable argument is of any of the given types.

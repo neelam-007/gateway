@@ -8,9 +8,9 @@ import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.server.event.system.DatabaseReplicationCheckEvent;
 import com.l7tech.server.util.ManagedTimerTask;
 import com.l7tech.util.Config;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.ValidatedConfig;
 import org.springframework.context.ApplicationEventPublisher;
@@ -44,11 +44,11 @@ public class DatabaseReplicationMonitor implements PropertyChangeListener {
     private static final String DEFAULT_SQL_DELAY = "SELECT delay, sequence FROM replication_status WHERE objectid=1";
 
 
-    private static final String SQL_UPDATE = SyspropUtil.getString( "com.l7tech.server.cluster.replicationUpdate", DEFAULT_SQL_UPDATE );
-    private static final String SQL_QUERY = SyspropUtil.getString( "com.l7tech.server.cluster.replicationQuery", DEFAULT_SQL_QUERY );
-    private static final String SQL_DELAY = SyspropUtil.getString( "com.l7tech.server.cluster.replicationDelayQuery", DEFAULT_SQL_DELAY );
+    private static final String SQL_UPDATE = ConfigFactory.getProperty( "com.l7tech.server.cluster.replicationUpdate", DEFAULT_SQL_UPDATE );
+    private static final String SQL_QUERY = ConfigFactory.getProperty( "com.l7tech.server.cluster.replicationQuery", DEFAULT_SQL_QUERY );
+    private static final String SQL_DELAY = ConfigFactory.getProperty( "com.l7tech.server.cluster.replicationDelayQuery", DEFAULT_SQL_DELAY );
 
-    private static final long INITIAL_DELAY = SyspropUtil.getLong( "com.l7tech.server.cluster.replicationInitialCheckDelay", TimeUnit.MINUTES.toMillis( 1L ) );
+    private static final long INITIAL_DELAY = ConfigFactory.getLongProperty( "com.l7tech.server.cluster.replicationInitialCheckDelay", TimeUnit.MINUTES.toMillis( 1L ) );
 
     private final Config config;
     private final ClusterMaster clusterMaster;

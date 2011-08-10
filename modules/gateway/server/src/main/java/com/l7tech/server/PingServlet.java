@@ -11,6 +11,7 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.TextUtils;
 import com.l7tech.util.SudoUtils;
 import com.l7tech.identity.*;
@@ -89,8 +90,8 @@ public class PingServlet extends AuthenticatableHttpServlet {
     }
 
     @Override
-    public void init(ServletConfig config) throws ServletException {
-        super.init(config);
+    public void init(ServletConfig servletConfig) throws ServletException {
+        super.init(servletConfig);
 
         final WebApplicationContext webApplicationContext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
         if (webApplicationContext == null) {
@@ -100,7 +101,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
         _roleManager = (RoleManager)webApplicationContext.getBean("roleManager");
         _httpClientFactory = (GenericHttpClientFactory)webApplicationContext.getBean("internodeHttpClientFactory");
 
-        _ssgApplianceLibexecDir = new File(ServerConfig.getInstance().getPropertyCached( ServerConfigParams.PARAM_SSG_APPLIANCE_DIRECTORY) + File.separator + "libexec");
+        _ssgApplianceLibexecDir = new File( config.getProperty( ServerConfigParams.PARAM_SSG_APPLIANCE_DIRECTORY ) + File.separator + "libexec");
     }
 
     @Override
@@ -108,7 +109,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
             throws ServletException, IOException {
         // Determines the operating mode.
         Mode mode = DEFAULT_MODE;
-        final String modeString = ServerConfig.getInstance().getProperty(MODE_PROP_NAME);
+        final String modeString = config.getProperty( MODE_PROP_NAME );
         if (modeString == null) {
             if (_logger.isLoggable(Level.FINE)) {
                 _logger.fine("Property not found (" + MODE_PROP_NAME +
@@ -331,16 +332,16 @@ public class PingServlet extends AuthenticatableHttpServlet {
             //
             out.print("<h2>Operating System</h2>");
             out.println("<table>");
-            out.print("<tr><th>name</th><td>");  out.print(System.getProperty("os.name"));  out.println("</td></tr>");
-            out.print("<tr><th>architecture</th><td>"); out.print(System.getProperty("os.arch")); out.println("</td></tr>");
-            out.print("<tr><th>version</th><td>"); out.print(System.getProperty("os.version")); out.println("</td></tr>");
+            out.print("<tr><th>name</th><td>");  out.print( SyspropUtil.getProperty( "os.name" ) );  out.println("</td></tr>");
+            out.print("<tr><th>architecture</th><td>"); out.print( SyspropUtil.getProperty( "os.arch" ) ); out.println("</td></tr>");
+            out.print("<tr><th>version</th><td>"); out.print( SyspropUtil.getProperty( "os.version" ) ); out.println("</td></tr>");
             out.println("</table>");
 
             out.print("<h2>Java Virtual Machine</h2>");
             out.println("<table>");
-            out.print("<tr><th>vendor</th><td>"); out.print(System.getProperty("java.vm.vendor")); out.println("</td></tr>");
-            out.print("<tr><th>name</th><td>"); out.print(System.getProperty("java.vm.name")); out.println("</td></tr>");
-            out.print("<tr><th>version</th><td>"); out.print(System.getProperty("java.vm.version")); out.println("</td></tr>");
+            out.print("<tr><th>vendor</th><td>"); out.print( SyspropUtil.getProperty( "java.vm.vendor" ) ); out.println("</td></tr>");
+            out.print("<tr><th>name</th><td>"); out.print( SyspropUtil.getProperty( "java.vm.name" ) ); out.println("</td></tr>");
+            out.print("<tr><th>version</th><td>"); out.print( SyspropUtil.getProperty( "java.vm.version" ) ); out.println("</td></tr>");
             out.println("</table>");
 
             final Runtime runtime = Runtime.getRuntime();

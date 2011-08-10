@@ -504,19 +504,24 @@ public class ServerVariables {
         new Variable(BuiltinVariables.PREFIX_CLUSTER_PROPERTY, new Getter() {
             @Override
             public Object get(String name, PolicyEnforcementContext context) {
-                if (getClusterPropertyCache() != null) {
-                    if (name.length() < (BuiltinVariables.PREFIX_CLUSTER_PROPERTY.length() + 2)) {
-                        logger.warning("variable name " + name + " cannot be resolved to a cluster property");
+                if (name.length() < (BuiltinVariables.PREFIX_CLUSTER_PROPERTY.length() + 2)) {
+                    logger.warning("variable name " + name + " cannot be resolved to a cluster property");
+                    return null;
+                }
+                name = name.substring(BuiltinVariables.PREFIX_CLUSTER_PROPERTY.length() + 1);
+                final ServerConfig serverConfig = ServerConfig.getInstance();
+                final String configName = serverConfig.getNameFromClusterName( name );
+                if ( configName != null ) {
+                    return serverConfig.getProperty( configName );
+                } else {
+                    if (getClusterPropertyCache() != null) {
+                        ClusterProperty cp = getClusterPropertyCache().getCachedEntityByName(name);
+                        if (cp != null && cp.isHiddenProperty()) return null;
+                        return cp != null ? cp.getValue() : null;
+                    } else {
+                        logger.severe("cannot get ClusterPropertyCache context");
                         return null;
                     }
-                    name = name.substring(BuiltinVariables.PREFIX_CLUSTER_PROPERTY.length() + 1);
-                    ClusterProperty cp = getClusterPropertyCache().getCachedEntityByName(name, 30000);
-                    if (cp != null && cp.isHiddenProperty()) return null;
-                    return cp != null && cp.getValue() != null ? cp.getValue() :
-                                 ServerConfig.getInstance().getPropertyByClusterName( name, false );
-                } else {
-                    logger.severe("cannot get ClusterPropertyCache context");
-                    return null;
                 }
             }
         }),

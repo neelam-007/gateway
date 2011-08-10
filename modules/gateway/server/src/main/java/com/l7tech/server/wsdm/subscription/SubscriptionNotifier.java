@@ -219,7 +219,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
         // load period
         {
             long period;
-            String notifyPropStr = serverConfig.getPropertyCached(SERVERCONFIG_PROP_NOTIFY_INTERVAL);
+            String notifyPropStr = serverConfig.getProperty( SERVERCONFIG_PROP_NOTIFY_INTERVAL );
             if (notifyPropStr != null) {
                 try {
                     if (logValues) logger.info("Found Config Property '" + CLUSTER_PROP_NOTIFY_INTERVAL + "' with value '" + notifyPropStr + "'.");
@@ -241,7 +241,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
         // load enabled
         {
             boolean enabled;
-            String notifyEnablePropStr = serverConfig.getPropertyCached(SERVERCONFIG_PROP_ESM_ENABLED);
+            String notifyEnablePropStr = serverConfig.getProperty( SERVERCONFIG_PROP_ESM_ENABLED );
             if (notifyEnablePropStr != null) {
                 if (logValues) logger.info("Found Config Property '" + CLUSTER_PROP_ESM_ENABLED + "' with value '" + notifyEnablePropStr + "'.");
                 if ( "true".equalsIgnoreCase(notifyEnablePropStr) || "false".equalsIgnoreCase(notifyEnablePropStr) ) {
@@ -520,13 +520,13 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
         requestParams.addExtraHeader( new GenericHttpHeader( SoapUtil.SOAPACTION, "" ) );
 
         // dont add content-type for get and deletes
-        if ( Boolean.valueOf(serverConfig.getPropertyCached("ioHttpUseExpectContinue")) ) {
+        if ( Boolean.valueOf( serverConfig.getProperty( "ioHttpUseExpectContinue" ) ) ) {
             requestParams.setUseExpectContinue(true);
         }
-        if ( Boolean.valueOf(serverConfig.getPropertyCached("ioHttpNoKeepAlive")) ) {
+        if ( Boolean.valueOf( serverConfig.getProperty( "ioHttpNoKeepAlive" ) ) ) {
             requestParams.setUseKeepAlives(false); // note that server config property is for NO Keep-Alives
         }
-        if ( "1.0".equals(serverConfig.getPropertyCached("ioHttpVersion")) ) {
+        if ( "1.0".equals( serverConfig.getProperty( "ioHttpVersion" ) ) ) {
             requestParams.setHttpVersion(GenericHttpRequestParams.HttpVersion.HTTP_VERSION_1_0);
         }
 
@@ -606,7 +606,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
         int value = defaultValue;
 
         try {
-            String configuredValue = serverConfig.getPropertyCached(propName);
+            String configuredValue = serverConfig.getProperty( propName );
             if( configuredValue != null ) {
                 value = Integer.parseInt(configuredValue);
 

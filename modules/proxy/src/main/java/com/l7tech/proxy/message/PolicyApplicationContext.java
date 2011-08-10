@@ -38,6 +38,7 @@ import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
 import org.w3c.dom.Document;
@@ -992,7 +993,7 @@ public class PolicyApplicationContext extends ProcessingContext<CredentialContex
                                 } else if (callback instanceof NameCallback) {
                                     NameCallback nc = (NameCallback) callback;
                                     if (pa != null) nc.setName(pa.getUserName());
-                                    else nc.setName(System.getProperty("user.name", ""));
+                                    else nc.setName( SyspropUtil.getString( "user.name", "" ) );
                                 }
                             }
                         }

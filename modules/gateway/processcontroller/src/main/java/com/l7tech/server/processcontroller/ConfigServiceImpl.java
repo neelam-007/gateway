@@ -33,7 +33,7 @@ import java.util.logging.Logger;
  */
 public class ConfigServiceImpl implements ConfigService {
     private static final Logger logger = Logger.getLogger(ConfigServiceImpl.class.getName());
-    private static final String SLASH = System.getProperty("file.separator");
+    private static final String SLASH = SyspropUtil.getProperty( "file.separator" );
     private static final String SERVICES_CONTEXT_BASE_PATH = "/services";
     private static final String PROCESSCONTROLLER_PROPERTIES = "com/l7tech/server/processcontroller/resources/processcontroller.properties";
 
@@ -67,7 +67,7 @@ public class ConfigServiceImpl implements ConfigService {
     public ConfigServiceImpl() throws IOException, GeneralSecurityException {
         // TODO maybe just pass the host.properties path instead, and put the nodeBaseDirectory in there
         processControllerHomeDirectory = getHomeDirectory();
-        String s = System.getProperty("com.l7tech.server.processcontroller.nodeBaseDirectory");
+        String s = ConfigFactory.getProperty( "com.l7tech.server.processcontroller.nodeBaseDirectory" );
         if (s == null) {
             File parent = processControllerHomeDirectory.getParentFile();
             nodeBaseDirectory = new File(parent, "Gateway"+SLASH+"node");
@@ -112,7 +112,7 @@ public class ConfigServiceImpl implements ConfigService {
 
         this.hostProps = hostProps;
         String jrePath = this.hostProps.getProperty(HOSTPROPERTIES_JRE);
-        if (jrePath == null) jrePath = System.getProperty("java.home");
+        if (jrePath == null) jrePath = SyspropUtil.getProperty( "java.home" );
         final File javaBinary = new File(new File(jrePath), "bin" + SLASH + "java");
         if (!OSDetector.isWindows()) if (!javaBinary.exists() || !javaBinary.canExecute()) throw new IllegalStateException(javaBinary.getCanonicalPath() + " is not executable");
         this.javaBinary = javaBinary.getCanonicalFile();
@@ -228,9 +228,9 @@ public class ConfigServiceImpl implements ConfigService {
     }
 
     static File getHomeDirectory() {
-        String s = System.getProperty(PC_HOMEDIR_PROPERTY);
+        String s = ConfigFactory.getProperty( PC_HOMEDIR_PROPERTY );
         if (s == null) {
-            final File f = new File(System.getProperty("user.dir"));
+            final File f = new File( SyspropUtil.getProperty( "user.dir" ) );
             logger.info("Assuming Process Controller home directory is " + f.getAbsolutePath());
             return f;
         } else {

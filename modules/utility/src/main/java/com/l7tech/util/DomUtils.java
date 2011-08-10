@@ -40,7 +40,7 @@ public class DomUtils {
     /** Precompiled regex Pattern that will only match a string containing nothing but a valid XML QName (optional NCName-plus-colon, followed by an NCName). */
     private static final Pattern PATTERN_QNAME = Pattern.compile("^(?:" + PAT_STR_NCName + "\\:)?" + PAT_STR_NCName + "$");
 
-    private static final boolean ALLOW_DUPLICATE_ID_ATTRS_ON_ELEMENT = SyspropUtil.getBoolean("com.l7tech.util.allowDuplicateIdAttrsOnElem", true);
+    private static final boolean ALLOW_DUPLICATE_ID_ATTRS_ON_ELEMENT = ConfigFactory.getBooleanProperty( "com.l7tech.util.allowDuplicateIdAttrsOnElem", true );
 
    /**
      * Finds the first child {@link Element} of a parent {@link Element}.

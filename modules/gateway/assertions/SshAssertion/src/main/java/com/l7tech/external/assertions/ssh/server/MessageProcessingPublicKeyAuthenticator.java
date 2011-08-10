@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.ssh.server;
 
 import com.l7tech.external.assertions.ssh.keyprovider.PemSshKeyUtil;
+import com.l7tech.util.SyspropUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.sshd.server.PublickeyAuthenticator;
 import org.apache.sshd.server.session.ServerSession;
@@ -29,7 +30,7 @@ public class MessageProcessingPublicKeyAuthenticator implements PublickeyAuthent
        if (authorizedUserPublicKeys != null && authorizedUserPublicKeys.length > 0 && publicKey != null) {
            String publicKeyString = PemSshKeyUtil.writeKey(publicKey);
            if (!StringUtils.isEmpty(publicKeyString)) {
-               publicKeyString = publicKeyString.replace(System.getProperty("line.separator"), "");
+               publicKeyString = publicKeyString.replace( SyspropUtil.getProperty( "line.separator" ), "" );
                for (String authorizedUserPublicKey : authorizedUserPublicKeys) {
                    if (publicKeyString.equals(authorizedUserPublicKey)) {
                        isAllowedAccess = true;

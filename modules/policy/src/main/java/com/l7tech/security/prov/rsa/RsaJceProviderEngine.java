@@ -1,8 +1,8 @@
 package com.l7tech.security.prov.rsa;
 
 import com.l7tech.security.prov.JceProvider;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
@@ -21,7 +21,7 @@ public class RsaJceProviderEngine extends JceProvider {
     private static final String PROP_PERMAFIPS = "com.l7tech.security.fips.alwaysEnabled";
     private static final String PROP_TLS_PROV = "com.l7tech.security.tlsProvider";
 
-    private static final boolean FIPS = SyspropUtil.getBoolean(PROP_FIPS, false);
+    private static final boolean FIPS = ConfigFactory.getBooleanProperty( PROP_FIPS, false );
 
     private static final CryptoJWrapper cryptoj;
     private static final Provider PROVIDER;
@@ -34,7 +34,7 @@ public class RsaJceProviderEngine extends JceProvider {
 
     static {
         try {
-            final boolean permafips = SyspropUtil.getBoolean(PROP_PERMAFIPS, false);
+            final boolean permafips = ConfigFactory.getBooleanProperty( PROP_PERMAFIPS, false );
             if (FIPS || permafips) {
                 logger.info("Initializing RSA library in FIPS 140 mode");
                 cryptoj = new CryptoJWrapper(true);
@@ -70,7 +70,7 @@ public class RsaJceProviderEngine extends JceProvider {
     }
 
     private static void maybeChangeDefaultTlsProvider(String cryptojVersion) throws InstantiationException, IllegalAccessException {
-        if (null != SyspropUtil.getProperty(PROP_TLS_PROV)) {
+        if ( null != ConfigFactory.getProperty( PROP_TLS_PROV ) ) {
             logger.fine("Leaving default TLS provider unchanged");
             return;
         }
@@ -121,7 +121,7 @@ public class RsaJceProviderEngine extends JceProvider {
     }
 
     private static Provider findTls10Provider(String cryptojVersion, ClassLoader cryptojClassLoader) throws InstantiationException, IllegalAccessException {
-        String provName = SyspropUtil.getProperty(PROP_TLS_PROV);
+        String provName = ConfigFactory.getProperty( PROP_TLS_PROV );
         if (provName != null && provName.trim().length() > 0) {
             Provider prov = Security.getProvider(provName);
             if (prov != null) {
@@ -148,7 +148,7 @@ public class RsaJceProviderEngine extends JceProvider {
     }
 
     private static Provider findTls12Provider(String cryptojVersion) throws InstantiationException, IllegalAccessException {
-        String provName = SyspropUtil.getProperty(PROP_TLS_PROV);
+        String provName = ConfigFactory.getProperty( PROP_TLS_PROV );
         if (provName != null && provName.trim().length() > 0) {
             Provider prov = Security.getProvider(provName);
             if (prov != null) {

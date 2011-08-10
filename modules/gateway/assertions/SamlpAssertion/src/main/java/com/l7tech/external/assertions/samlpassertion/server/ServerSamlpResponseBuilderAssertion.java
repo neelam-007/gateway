@@ -971,6 +971,6 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
     private final SignerInfo signer;
 
     //Not static to support test cases
-    private final boolean validateSSOProfileDetails = SyspropUtil.getBoolean( "com.l7tech.external.assertions.samlpassertion.validateSSOProfile", true );
+    private final boolean validateSSOProfileDetails = ConfigFactory.getBooleanProperty( "com.l7tech.external.assertions.samlpassertion.validateSSOProfile", true );
 
 }

@@ -9,6 +9,7 @@ package com.l7tech.proxy.util;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
+import com.l7tech.util.SyspropUtil;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -35,7 +36,7 @@ public class SslUtilsTest extends TestCase {
 
     public void testPasswordChange() throws Exception {
         // Configure SSL for outgoing connections
-        System.setProperty("httpclient.useragent", SecureSpanConstants.USER_AGENT);
+        SyspropUtil.setProperty( "httpclient.useragent", SecureSpanConstants.USER_AGENT );
         Protocol https = new Protocol("https", (ProtocolSocketFactory) ClientProxySecureProtocolSocketFactory.getInstance(), 443);
         Protocol.registerProtocol("https", https);
 

@@ -4,10 +4,10 @@ import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.server.GatewayFeatureSets;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.system.Initialized;
 import com.l7tech.server.event.system.Starting;
+import com.l7tech.util.Config;
 import com.l7tech.util.SyspropUtil;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -21,19 +21,19 @@ import java.util.logging.Logger;
 public class CryptoInitializer implements ApplicationListener {
     private static final Logger logger = Logger.getLogger(CryptoInitializer.class.getName());
 
-    private final ServerConfig serverConfig;
+    private final Config config;
     private final LicenseManager licenseManager;
     private boolean permafips;
 
-    public CryptoInitializer(ServerConfig serverConfig, LicenseManager licenseManager) {
-        this.serverConfig = serverConfig;
+    public CryptoInitializer(Config config, LicenseManager licenseManager) {
+        this.config = config;
         this.licenseManager = licenseManager;
         init();
     }
 
     private void init() {
         // Check for FIPS flag
-        serverConfig.getBooleanProperty( ServerConfigParams.PARAM_FIPS, false);
+        config.getBooleanProperty( ServerConfigParams.PARAM_FIPS, false);
         if (licenseManager.isFeatureEnabled(GatewayFeatureSets.FLAG_PERMAFIPS)) {
             permafips = true;
             SyspropUtil.setProperty("com.l7tech.security.fips.alwaysEnabled", "true");

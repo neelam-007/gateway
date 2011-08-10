@@ -46,7 +46,7 @@ public class SoapUtil extends SoapConstants {
     public static final Logger log = Logger.getLogger(SoapUtil.class.getName());
 
     public static final String PROPERTY_DISCLOSE_ELEMENT_NAME_IN_WSU_ID = "com.l7tech.xml.soap.discloseElementNameInWsuId";
-    public static final boolean DISCLOSE_ELEMENT_NAME_IN_WSU_ID = SyspropUtil.getBoolean(PROPERTY_DISCLOSE_ELEMENT_NAME_IN_WSU_ID, false);
+    public static final boolean DISCLOSE_ELEMENT_NAME_IN_WSU_ID = ConfigFactory.getBooleanProperty( PROPERTY_DISCLOSE_ELEMENT_NAME_IN_WSU_ID, false );
 
     // Bug #6478
     public static final String PROPERTY_MUSTUNDERSTAND = "com.l7tech.common.security.xml.decorator.secHdrMustUnderstand";
@@ -270,7 +270,7 @@ public class SoapUtil extends SoapConstants {
      *         is not explicitly made at the time of creation.
      */
     public static boolean isSecHdrDefaultsToMustUnderstand() {
-        return SyspropUtil.getBooleanCached(PROPERTY_MUSTUNDERSTAND, true);
+        return ConfigFactory.getBooleanProperty(PROPERTY_MUSTUNDERSTAND, true);
     }
 
     public static Element makeSecurityElement(Document soapMsg, String preferredWsseNamespace, String actor, Boolean mustUnderstand) {
@@ -383,7 +383,7 @@ public class SoapUtil extends SoapConstants {
      * @return the ID attribute config curently configured via system property.
      */
     public static IdAttributeConfig getDefaultIdAttributeConfig() {
-        String idConfig = SyspropUtil.getStringCached(PROPERTY_ID_CONFIG, null);
+        String idConfig = ConfigFactory.getProperty(PROPERTY_ID_CONFIG, null);
         if (idConfig == null)
             return DEFAULT_ID_ATTRIBUTE_CONFIG;
 
@@ -500,8 +500,8 @@ public class SoapUtil extends SoapConstants {
 
         SoapVersion soapVersion = SoapVersion.namespaceToSoapVersion( soapMsg.getDocumentElement().getNamespaceURI() );
         String actors = soapVersion == SOAP_1_1 || soapVersion == SoapVersion.UNKNOWN ?
-                SyspropUtil.getStringCached( "com.l7tech.xml.soap.actors", SoapUtil.L7_SOAP_ACTORS ) :
-                SyspropUtil.getStringCached( "com.l7tech.xml.soap.roles", SoapUtil.L7_SOAP_ACTORS );
+                ConfigFactory.getProperty( "com.l7tech.xml.soap.actors", SoapUtil.L7_SOAP_ACTORS ) :
+                ConfigFactory.getProperty( "com.l7tech.xml.soap.roles", SoapUtil.L7_SOAP_ACTORS );
 
         for ( String actor : actors.split("\\s{1,1024}") ) {
            l7secheader = SoapUtil.getSecurityElement( soapMsg, actor );
@@ -534,8 +534,8 @@ public class SoapUtil extends SoapConstants {
             if ( actorValue != null ) {
                 SoapVersion soapVersion = SoapVersion.namespaceToSoapVersion( document.getDocumentElement().getNamespaceURI() );
                 String actors = soapVersion == SOAP_1_1 || soapVersion == SoapVersion.UNKNOWN ?
-                        SyspropUtil.getStringCached( "com.l7tech.xml.soap.actors", SoapUtil.L7_SOAP_ACTORS ) :
-                        SyspropUtil.getStringCached( "com.l7tech.xml.soap.roles", SoapUtil.L7_SOAP_ACTORS );
+                        ConfigFactory.getProperty( "com.l7tech.xml.soap.actors", SoapUtil.L7_SOAP_ACTORS ) :
+                        ConfigFactory.getProperty( "com.l7tech.xml.soap.roles", SoapUtil.L7_SOAP_ACTORS );
 
                 for ( String actor : actors.split("\\s{1,1024}") ) {
                     if ( actor.equals(actorValue) ) {

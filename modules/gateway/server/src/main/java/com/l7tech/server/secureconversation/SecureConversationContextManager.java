@@ -8,13 +8,12 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.security.xml.SecureConversationKeyDeriver;
 import com.l7tech.util.Config;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.SoapConstants;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.ValidatedConfig;
-import fiorano.jms.util.xmlutils.XMLUtils;
 import org.apache.commons.collections.map.LRUMap;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -369,8 +368,8 @@ public abstract class SecureConversationContextManager<KT> {
         // allow default size to be overridden per namespace (by index) if desired
         final int nsIndex = namespace==null? -1 : Arrays.asList( SoapConstants.WSSC_NAMESPACE_ARRAY ).indexOf( namespace );
         return nsIndex < 0 ?
-                SyspropUtil.getInteger( PROP_DEFAULT_KEY_SIZE, 32) :
-                SyspropUtil.getInteger( PROP_DEFAULT_KEY_SIZE + "." + nsIndex, SyspropUtil.getInteger( PROP_DEFAULT_KEY_SIZE, 32) );
+                ConfigFactory.getIntProperty( PROP_DEFAULT_KEY_SIZE, 32 ) :
+                ConfigFactory.getIntProperty( PROP_DEFAULT_KEY_SIZE + "." + nsIndex, ConfigFactory.getIntProperty( PROP_DEFAULT_KEY_SIZE, 32 ) );
     }
 
     protected SecureConversationSession fromStored( final StoredSecureConversationSession session,
@@ -441,12 +440,12 @@ public abstract class SecureConversationContextManager<KT> {
     private static final long DEFAULT_SESSION_DURATION = TimeUnit.HOURS.toMillis( 2L ); // 2 hrs
     private static final long SESSION_CHECK_INTERVAL = TimeUnit.MINUTES.toMillis( 5L ); // check every 5 minutes
 
-    protected static final int MIN_CLIENT_ENTROPY_BYTES = SyspropUtil.getInteger( "com.l7tech.server.secureconversation.clientEntropyMinBytes", 8 );
-    protected static final int MAX_CLIENT_ENTROPY_BYTES = SyspropUtil.getInteger( "com.l7tech.server.secureconversation.clientEntropyMaxBytes", 1024 );
-    protected static final int MIN_SERVER_ENTROPY_BYTES = SyspropUtil.getInteger( "com.l7tech.server.secureconversation.serverEntropyMinBytes", 8 );
-    protected static final int MAX_SERVER_ENTROPY_BYTES = SyspropUtil.getInteger( "com.l7tech.server.secureconversation.serverEntropyMaxBytes", 1024 );
-    protected static final int MIN_KEY_SIZE = SyspropUtil.getInteger("com.l7tech.security.wssc.minLength", 16);
-    protected static final int MAX_KEY_SIZE = SyspropUtil.getInteger("com.l7tech.security.wssc.maxLength", 512);
+    protected static final int MIN_CLIENT_ENTROPY_BYTES = ConfigFactory.getIntProperty( "com.l7tech.server.secureconversation.clientEntropyMinBytes", 8 );
+    protected static final int MAX_CLIENT_ENTROPY_BYTES = ConfigFactory.getIntProperty( "com.l7tech.server.secureconversation.clientEntropyMaxBytes", 1024 );
+    protected static final int MIN_SERVER_ENTROPY_BYTES = ConfigFactory.getIntProperty( "com.l7tech.server.secureconversation.serverEntropyMinBytes", 8 );
+    protected static final int MAX_SERVER_ENTROPY_BYTES = ConfigFactory.getIntProperty( "com.l7tech.server.secureconversation.serverEntropyMaxBytes", 1024 );
+    protected static final int MIN_KEY_SIZE = ConfigFactory.getIntProperty( "com.l7tech.security.wssc.minLength", 16 );
+    protected static final int MAX_KEY_SIZE = ConfigFactory.getIntProperty( "com.l7tech.security.wssc.maxLength", 512 );
     protected static final String PROP_DEFAULT_KEY_SIZE = "com.l7tech.security.secureconversation.defaultSecretLengthInBytes";
 
     private final Logger logger;
@@ -479,7 +478,7 @@ public abstract class SecureConversationContextManager<KT> {
 
         // Derive the shared secret
         byte[] secret = SecureConversationKeyDeriver.pSHA1(clientEntropy, serverEntropy, keySizeBytes);
-        if ( logger.isLoggable( Level.FINEST) && SyspropUtil.getBoolean( LOG_SECRET_VALUES, false))
+        if ( logger.isLoggable( Level.FINEST ) && ConfigFactory.getBooleanProperty( LOG_SECRET_VALUES, false ) )
             logger.log(Level.FINEST, "Shared secret computed, length = {0}; value = {1}", new Object[] {secret.length, HexUtils.encodeBase64(secret)});
 
 

@@ -65,8 +65,7 @@ public class WsTrustSamlTokenStrategy extends FederatedSamlTokenStrategy impleme
 
     static {
         try {
-            SSL_CONTEXT = SSLContext.getInstance("TLS", System.getProperty(SslPeer.PROP_SSL_PROVIDER,
-                                                                          SslPeer.DEFAULT_SSL_PROVIDER));
+            SSL_CONTEXT = SSLContext.getInstance( "TLS", ConfigFactory.getProperty( SslPeer.PROP_SSL_PROVIDER, SslPeer.DEFAULT_SSL_PROVIDER ) );
             SSL_CONTEXT.init(new X509KeyManager[] {new ClientProxyKeyManager()},
                             new X509TrustManager[] {new ClientProxyTrustManager()},
                             null);

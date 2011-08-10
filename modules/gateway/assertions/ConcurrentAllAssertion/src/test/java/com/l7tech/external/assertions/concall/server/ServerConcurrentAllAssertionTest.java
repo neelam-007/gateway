@@ -16,7 +16,6 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.TestLicenseManager;
 import com.l7tech.server.audit.AuditDetailProcessingAuditListener;
 import com.l7tech.server.event.system.Started;
@@ -29,6 +28,7 @@ import com.l7tech.server.util.MockInjector;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.IOUtils;
+import com.l7tech.util.MockConfig;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -99,7 +99,7 @@ public class ServerConcurrentAllAssertionTest {
             }
         };
         beanFactory = new SimpleSingletonBeanFactory(new HashMap<String,Object>() {{
-            put("serverConfig", ServerConfig.getInstance());
+            put("serverConfig", new MockConfig( new Properties() ));
             put("policyFactory", serverPolicyFactory);
             put("auditContext", auditContext);
             put("policyCache", policyCache);

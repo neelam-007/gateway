@@ -31,9 +31,9 @@ import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.security.rbac.RoleManagerIdentitySourceSupport;
 import com.l7tech.util.Background;
 import com.l7tech.util.Config;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.ValidatedConfig;
 import com.l7tech.util.Functions;
@@ -581,8 +581,8 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
     private static final long DEFAULT_MAX_INACTIVITY_TIME = TimeUnit.DAYS.toMillis(1L); // close after 24 hours of inactivity
     private static final long DEFAULT_SESSION_CLEANUP_INTERVAL = TimeUnit.MINUTES.toMillis(1L); // check every minute for stale sessions
 
-    private static final long MAX_INACTIVITY_TIME = SyspropUtil.getLong("com.l7tech.server.admin.sessionExpiryAge", DEFAULT_MAX_INACTIVITY_TIME);
-    private static final long SESSION_CLEANUP_INTERVAL = SyspropUtil.getLong("com.l7tech.server.admin.sessionCleanupInterval", DEFAULT_SESSION_CLEANUP_INTERVAL);
+    private static final long MAX_INACTIVITY_TIME = ConfigFactory.getLongProperty( "com.l7tech.server.admin.sessionExpiryAge", DEFAULT_MAX_INACTIVITY_TIME );
+    private static final long SESSION_CLEANUP_INTERVAL = ConfigFactory.getLongProperty( "com.l7tech.server.admin.sessionCleanupInterval", DEFAULT_SESSION_CLEANUP_INTERVAL );
 
     // spring components
     private final Config config;

@@ -1,6 +1,7 @@
 package com.l7tech.common.io;
 
 import com.l7tech.util.OSDetector;
+import com.l7tech.util.SyspropUtil;
 
 import javax.tools.ToolProvider;
 import java.io.File;
@@ -47,7 +48,7 @@ public class JarUtils {
         File java = null;
         IllegalStateException thrown = null;
         try {
-            java = new File(System.getProperty("java.home"), "bin" + File.separator + (OSDetector.isWindows() ? "java.exe" : "java"));
+            java = new File( SyspropUtil.getProperty( "java.home" ), "bin" + File.separator + (OSDetector.isWindows() ? "java.exe" : "java") );
             if (! java.canExecute())
                 thrown = new IllegalStateException("Cannot execute java binary: " + java.getCanonicalPath());
         } catch (Exception e) {

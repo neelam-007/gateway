@@ -13,10 +13,10 @@ import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.security.cert.KeyUsageException;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.SoapConstants;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.soap.SoapUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -578,7 +578,7 @@ public class DsigUtil {
         if ("DSA".equals(keyAlg))
             return SHA1; // Currently the only supported DSA signature method is SHA1withDSA, so it's always the default digest for this key type
         try {
-            return SupportedDigestMethods.fromAlias(SyspropUtil.getStringCached("com.l7tech.security.xml.decorator.digsig.messagedigest", null));
+            return SupportedDigestMethods.fromAlias(ConfigFactory.getProperty( "com.l7tech.security.xml.decorator.digsig.messagedigest", null ));
         } catch (IllegalArgumentException e) {
             return "EC".equals(keyAlg) ? SHA384 : SHA1;
         }

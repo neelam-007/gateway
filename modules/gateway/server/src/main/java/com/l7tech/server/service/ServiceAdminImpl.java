@@ -91,7 +91,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
                             WspReader wspReader,
                             UDDITemplateManager uddiTemplateManager,
                             PolicyVersionManager policyVersionManager,
-                            ServerConfig serverConfig,
+                            Config config,
                             ServiceTemplateManager serviceTemplateManager,
                             ServiceDocumentResolver serviceDocumentResolver,
                             UDDIRegistryAdmin uddiRegistryAdmin,
@@ -119,7 +119,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
         this.serviceCache = serviceCache;
         this.resolutionConfigurationManager = resolutionConfigurationManager;
 
-        int maxConcurrency = validated(serverConfig).getIntProperty( ServerConfigParams.PARAM_POLICY_VALIDATION_MAX_CONCURRENCY, 15);
+        int maxConcurrency = validated( config ).getIntProperty( ServerConfigParams.PARAM_POLICY_VALIDATION_MAX_CONCURRENCY, 15);
         BlockingQueue<Runnable> validatorQueue = new LinkedBlockingQueue<Runnable>();
         validatorExecutor = new ThreadPoolExecutor(1, maxConcurrency, 5 * 60, TimeUnit.SECONDS, validatorQueue );
     }

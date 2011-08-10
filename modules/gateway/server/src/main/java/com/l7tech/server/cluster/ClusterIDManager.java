@@ -97,7 +97,7 @@ public class ClusterIDManager extends HibernateDaoSupport {
         ArrayList<String> output = new ArrayList<String>();
 
         // try to get mac from system property
-        String macproperty = System.getProperty(PROP_MAC_ADDRESS);
+        String macproperty = ConfigFactory.getProperty( PROP_MAC_ADDRESS );
         if (macproperty != null && macproperty.length() > 0) {
             output.add(macproperty);
         } else {
@@ -360,7 +360,7 @@ public class ClusterIDManager extends HibernateDaoSupport {
      */
     static String loadNodeProperty(String propertyName) {
         String propertyValue = null;
-        String configDirectory = System.getProperty(SYSPROP_CONFIG_HOME);
+        String configDirectory = ConfigFactory.getProperty( SYSPROP_CONFIG_HOME );
         if ( configDirectory != null ) {
             File configDir = new File( configDirectory );
             File configProps = new File( configDir, NODE_ID_FILE );
@@ -388,7 +388,7 @@ public class ClusterIDManager extends HibernateDaoSupport {
      */
     private void storeNodeIdProperty( final String nodeid ) {
         logger.config("Storing node identifier '"+nodeid+"'.");
-        String configDirectory = System.getProperty(SYSPROP_CONFIG_HOME);
+        String configDirectory = ConfigFactory.getProperty( SYSPROP_CONFIG_HOME );
         if ( configDirectory != null ) {
             File configDir = new File( configDirectory );
             File configProps = new File( configDir, NODE_ID_FILE );

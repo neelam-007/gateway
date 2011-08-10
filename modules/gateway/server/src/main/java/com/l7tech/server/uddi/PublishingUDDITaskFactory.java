@@ -1,7 +1,6 @@
 package com.l7tech.server.uddi;
 
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.uddi.*;
 import com.l7tech.gateway.common.uddi.*;
@@ -10,6 +9,7 @@ import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
@@ -401,7 +401,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                         factory.uddiHelper.newUDDIClientConfig(uddiRegistry));
 
                     // what is the name of the WSMS for the required reference C.2?
-                    final String keyValue = ServerConfig.getInstance().getPropertyCached("uddi.systinet.gif.management.system");
+                    final String keyValue = ConfigFactory.getProperty( "uddi.systinet.gif.management.system", null );
 
                     final Set<UDDIKeyedReference> runtimeKeyedReferences = uddiProxiedServiceInfo.getProperty(UDDIProxiedServiceInfo.KEYED_REFERENCES_RUNTIME);
                     //provides best effort commit / rollback for all UDDI interactions

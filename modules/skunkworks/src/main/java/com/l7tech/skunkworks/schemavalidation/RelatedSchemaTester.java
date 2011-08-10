@@ -6,6 +6,7 @@
  */
 package com.l7tech.skunkworks.schemavalidation;
 
+import com.l7tech.util.SyspropUtil;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -43,7 +44,7 @@ public class RelatedSchemaTester {
 
     protected EntityResolver getRealEntityResolver() {
         return new EntityResolver () {
-            private final String HOMEDIR = System.getProperty("user.dir");
+            private final String HOMEDIR = SyspropUtil.getProperty( "user.dir" );
             public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
                 // by default, the parser constructs a systemId in the form of a url "file:///user.dir/filename"
                 String schemaId = systemId;

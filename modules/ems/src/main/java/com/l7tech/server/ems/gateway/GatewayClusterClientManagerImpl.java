@@ -8,9 +8,9 @@ import com.l7tech.server.ems.enterprise.SsgClusterManager;
 import com.l7tech.server.ems.enterprise.SsgNode;
 import com.l7tech.server.event.admin.Deleted;
 import com.l7tech.server.event.admin.Updated;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
-import com.l7tech.util.SyspropUtil;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -99,8 +99,8 @@ public class GatewayClusterClientManagerImpl implements GatewayClusterClientMana
             if ( !ssgCluster.getTrustStatus() )
                 throw new GatewayNoTrustException("Bad trust status for cluster with ID '" + clusterId + "'.");
 
-            final long connectionTimeout = SyspropUtil.getLong(PROP_CONN_TIMEOUT, 15000);
-            final long readTimeout = SyspropUtil.getLong(PROP_READ_TIMEOUT, 30000);
+            final long connectionTimeout = ConfigFactory.getLongProperty( PROP_CONN_TIMEOUT, 15000 );
+            final long readTimeout = ConfigFactory.getLongProperty( PROP_READ_TIMEOUT, 30000 );
             List<GatewayContext> nodeContexts = Functions.map(ssgCluster.getAvailableNodes(), new Functions.Unary<GatewayContext, SsgNode>() {
                 @Override
                 public GatewayContext call(SsgNode ssgNode) {

@@ -11,6 +11,7 @@
 package com.l7tech.skunkworks.standardreports;
 
 import com.l7tech.gateway.standardreports.Utilities;
+import com.l7tech.util.SyspropUtil;
 
 import java.io.*;
 import java.util.*;
@@ -202,12 +203,12 @@ public class CreateTestData {
 
             bw = new BufferedWriter(new FileWriter(f));
             for(String s: mappingKeyInsertList){
-                bw.write(s + System.getProperty("line.separator"));    
+                bw.write( s + SyspropUtil.getProperty( "line.separator" ) );
             }
 
             for(List<Map<Integer, String>> listMap: valueInsertsList){
                 for(Map<Integer, String> map: listMap){
-                    bw.write(map.values().iterator().next() + System.getProperty("line.separator"));
+                    bw.write( map.values().iterator().next() + SyspropUtil.getProperty( "line.separator" ) );
                 }
             }
             
@@ -255,7 +256,7 @@ public class CreateTestData {
                     sb.append(values[i]);
                 }
                 sb.append(");");
-                bw.write(sb.toString() + System.getProperty("line.separator"));
+                bw.write( sb.toString() + SyspropUtil.getProperty( "line.separator" ) );
                 writeSubBins(Integer.parseInt(values[0].toString()), bw);
                 bw.flush();
                 values = getValues(serviceId);
@@ -293,7 +294,7 @@ public class CreateTestData {
                     sb.append(", ").append(i);
                 }
                 sb.append(");");
-                bw.write(sb.toString() + System.getProperty("line.separator"));
+                bw.write( sb.toString() + SyspropUtil.getProperty( "line.separator" ) );
             }
         }
     }

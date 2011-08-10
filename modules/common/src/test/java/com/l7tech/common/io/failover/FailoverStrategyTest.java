@@ -1,11 +1,6 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.common.io.failover;
 
+import com.l7tech.util.SyspropUtil;
 import static org.junit.Assert.*;
 import org.junit.*;
 
@@ -17,7 +12,7 @@ import java.util.Set;
  */
 public class FailoverStrategyTest {
     static {
-        System.setProperty("com.l7tech.common.io.failover.robin.retryMillis", "200");
+        SyspropUtil.setProperty( "com.l7tech.common.io.failover.robin.retryMillis", "200" );
     }
 
     public static final String SA = "a";

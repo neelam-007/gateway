@@ -3,13 +3,13 @@ package com.l7tech.console.panels;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.uddi.UDDINamedEntity;
 import com.l7tech.gui.widgets.TextListCellRenderer;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.TextUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.util.Functions;
 import com.l7tech.util.ResolvingComparator;
 import com.l7tech.util.Resolver;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
@@ -201,8 +201,8 @@ public class ImportPolicyFromUDDIWizardStep extends WizardStepPanel {
             try {
                 URL url = new URL(policyURL);
                 URLConnection urlConn = url.openConnection();
-                urlConn.setConnectTimeout( SyspropUtil.getInteger("com.l7tech.console.policyImportConnectTimeout", 30000) );
-                urlConn.setReadTimeout( SyspropUtil.getInteger("com.l7tech.console.policyImportReadTimeout", 60000) );
+                urlConn.setConnectTimeout( ConfigFactory.getIntProperty( "com.l7tech.console.policyImportConnectTimeout", 30000 ) );
+                urlConn.setReadTimeout( ConfigFactory.getIntProperty( "com.l7tech.console.policyImportReadTimeout", 60000 ) );
                 urlConn.setUseCaches( false );
                 Document doc = XmlUtil.parse(urlConn.getInputStream());
 

@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2005-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.server;
 
 import com.l7tech.common.io.WhirlycacheFactory;
@@ -18,6 +15,7 @@ import com.l7tech.server.security.keystore.KeystoreFile;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.util.Background;
+import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SoapConstants;
 import com.whirlycott.cache.Cache;
@@ -53,11 +51,11 @@ public class TrustedCertificateResolver implements SecurityTokenResolver, Applic
      * Construct the Gateway's security token resolver.
      *
      * @param trustedCertManager     required
-     * @param serverConfig           required
+     * @param config                 required
      * @param keyStoreManager     private key sources.  required
      */
     public TrustedCertificateResolver( final TrustedCertManager trustedCertManager,
-                                       final ServerConfig serverConfig,
+                                       final Config config,
                                        final SsgKeyStoreManager keyStoreManager )
     {
         this.trustedCertManager = trustedCertManager;
@@ -65,7 +63,7 @@ public class TrustedCertificateResolver implements SecurityTokenResolver, Applic
 
         final int checkPeriod = 10181;
         final int defaultSize = 1000; // Size to use if not configured, or if not enabled at first (since we can't change the size if it's later enabled)
-        int csize = serverConfig.getIntPropertyCached( ServerConfigParams.PARAM_EPHEMERAL_KEY_CACHE_MAX_ENTRIES, defaultSize, checkPeriod);
+        int csize = config.getIntProperty( ServerConfigParams.PARAM_EPHEMERAL_KEY_CACHE_MAX_ENTRIES, defaultSize );
         encryptedKeyCacheEnabled.set(csize > 0);
         encryptedKeyCache = WhirlycacheFactory.createCache("Ephemeral key cache",
                                                            encryptedKeyCacheEnabled.get() ? csize : defaultSize,
@@ -75,7 +73,7 @@ public class TrustedCertificateResolver implements SecurityTokenResolver, Applic
         Background.scheduleRepeated(new TimerTask() {
             @Override
             public void run() {
-                int csize = serverConfig.getIntPropertyCached( ServerConfigParams.PARAM_EPHEMERAL_KEY_CACHE_MAX_ENTRIES, defaultSize, checkPeriod - 1);
+                int csize = config.getIntProperty( ServerConfigParams.PARAM_EPHEMERAL_KEY_CACHE_MAX_ENTRIES, defaultSize );
                 boolean newval = csize > 0;
                 boolean oldval = encryptedKeyCacheEnabled.getAndSet(newval);
                 if (newval != oldval && logger.isLoggable(Level.INFO))

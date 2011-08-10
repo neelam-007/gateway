@@ -361,7 +361,7 @@ public class SoapFaultManager implements ApplicationContextAware {
     private synchronized SoapFaultLevel constructFaultLevelFromServerConfig() {
         // parse default settings from system settings
         fromSettings = new SoapFaultLevel();
-        String tmp = config.getProperty("defaultfaultlevel", null);
+        String tmp = config.getProperty( "defaultfaultlevel" );
         // default setting not available through config ?
         if (tmp == null) {
             logger.warning("Cannot retrieve defaultfaultlevel server properties falling back on hardcoded defaults");
@@ -369,7 +369,7 @@ public class SoapFaultManager implements ApplicationContextAware {
         } else {
             try {
                 fromSettings.setSignSoapFault( config.getBooleanProperty( "defaultfaultsign", false ) );
-                String keyAlias = config.getProperty( "defaultfaultkeyalias", null );
+                String keyAlias = config.getProperty( "defaultfaultkeyalias" );
                 if ( fromSettings.isSignSoapFault() && keyAlias!=null && !keyAlias.trim().isEmpty() ) {
                     keyAlias = keyAlias.trim();
                     fromSettings.setUsesDefaultKeyStore( false );
@@ -387,7 +387,7 @@ public class SoapFaultManager implements ApplicationContextAware {
                 }
                 fromSettings.setLevel(Integer.parseInt(tmp));
                 fromSettings.setIncludePolicyDownloadURL(config.getBooleanProperty("defaultfaultpolicyurl", true));
-                fromSettings.setFaultTemplate(config.getProperty("defaultfaulttemplate", null));
+                fromSettings.setFaultTemplate( config.getProperty( "defaultfaulttemplate" ) );
             } catch (NumberFormatException e) {
                 logger.log(Level.WARNING, "user setting " + tmp + " for defaultfaultlevel is invalid", e);
                 populateUltimateDefaults(fromSettings);

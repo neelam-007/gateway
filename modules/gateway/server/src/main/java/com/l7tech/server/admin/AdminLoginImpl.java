@@ -22,7 +22,6 @@ import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.UsernamePasswordSecurityToken;
 import com.l7tech.security.token.http.HttpClientCertToken;
 import com.l7tech.server.DefaultKey;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.system.FailedAdminLoginEvent;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -33,6 +32,7 @@ import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.util.Charsets;
+import com.l7tech.util.Config;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
@@ -65,7 +65,7 @@ public class AdminLoginImpl
     private IdentityProviderConfigManager identityProviderConfigManager;
     private IdentityProviderFactory identityProviderFactory;
     private PasswordHasher passwordHasher;
-    private ServerConfig serverConfig;
+    private Config config;
 
     public AdminLoginImpl(DefaultKey defaultKey, SsgKeyStoreManager ssgKeyStoreManager, PasswordHasher passwordHasher, SecureRandom secureRandom) {
         this.defaultKey = defaultKey;
@@ -232,7 +232,7 @@ public class AdminLoginImpl
             byte[] passwordSalt = null;
             byte[] verifierSharedSecret = null;
 
-            if (username != null && serverConfig.getBooleanProperty("admin.certificateDiscoveryEnabled", true)) {
+            if (username != null && config.getBooleanProperty("admin.certificateDiscoveryEnabled", true)) {
                 try {
                     InternalUser user = getInternalIdentityProvider().getUserManager().findByLogin(username);
                     if (user != null) {
@@ -321,12 +321,12 @@ public class AdminLoginImpl
         return entry == null ? getDefaultSslCertificate() : entry.getCertificate();
     }
 
-    public ServerConfig getServerConfig() {
-        return serverConfig;
+    public Config getServerConfig() {
+        return config;
     }
 
-    public void setServerConfig(ServerConfig serverConfig) {
-        this.serverConfig = serverConfig;
+    public void setServerConfig(Config config) {
+        this.config = config;
     }
 
     @Override
@@ -358,7 +358,7 @@ public class AdminLoginImpl
     }
 
     private String getLogonWarningBanner() {
-        String prop = serverConfig.getProperty( ServerConfigParams.PARAM_LOGON_WARNING_BANNER);
+        String prop = config.getProperty( ServerConfigParams.PARAM_LOGON_WARNING_BANNER );
 
         // If the banner prop value just contains whitespace, then set the prop as null.
         if (prop != null && prop.trim().isEmpty()) prop = null;

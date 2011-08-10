@@ -16,6 +16,7 @@ import com.l7tech.server.security.keystore.KeystoreFile;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.util.Config;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
@@ -271,7 +272,6 @@ public class HttpConfigurationCache implements ApplicationListener, Initializing
         }
     }
 
-    @SuppressWarnings({ "UseOfArchaicSystemPropertyAccessors" })
     private SSLSocketFactory getSSLSocketFactory( final HttpConfiguration httpConfiguration ) throws NoSuchAlgorithmException, KeyManagementException {
         final SslSocketFactoryKey key = new SslSocketFactoryKey(
                 httpConfiguration.getTlsKeyUse(),
@@ -301,8 +301,7 @@ public class HttpConfigurationCache implements ApplicationListener, Initializing
                         sslSocketFactory = sslSocketFactoryMap.get( keyNoVersion );
                         if ( sslSocketFactory == null ) {
                             SSLContext sslContext = SSLContext.getInstance( "TLS" );
-                            final int timeout = Integer.getInteger( HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT,
-                                                                    HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT );
+                            final int timeout = ConfigFactory.getIntProperty( HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT, HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT );
                             sslContext.getClientSessionContext().setSessionTimeout( timeout );
                             final SsgKeyEntry keyEntry = ssgKeyStoreManager.lookupKeyByKeyAlias( keyAlias, keystoreId );
                             final X509Certificate[] certChain = keyEntry.getCertificateChain();
@@ -351,11 +350,9 @@ public class HttpConfigurationCache implements ApplicationListener, Initializing
         return sslSocketFactory;
     }
 
-    @SuppressWarnings({ "UseOfArchaicSystemPropertyAccessors" })
     private SSLSocketFactory buildDefaultSSLSocketFactory( final boolean useSslKeyForDefault ) throws NoSuchAlgorithmException, KeyManagementException {
         final SSLContext sslContext = SSLContext.getInstance("TLS");
-        final int timeout = Integer.getInteger( HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT,
-                                                HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT);
+        final int timeout = ConfigFactory.getIntProperty( HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT, HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT );
         sslContext.getClientSessionContext().setSessionTimeout(timeout);
         sslContext.init( useSslKeyForDefault ? defaultKey.getSslKeyManagers() : null, new TrustManager[]{trustManager}, null );
         return sslContext.getSocketFactory();

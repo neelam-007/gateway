@@ -9,6 +9,7 @@ import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.TransportModule;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.CachedCallable;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.net.ssl.*;
@@ -557,7 +558,7 @@ public class SsgConnectorSslHelper {
             // Use globally-overridden issuers list, even if it is empty.
             tm = new ClientTrustingTrustManager(ClientTrustingTrustManager.parseIssuerCerts(overriddenIssuers));
         } else {
-            long updateInterval = Long.getLong(SYSPROP_ACCEPTED_ISSUERS_CACHE_TIMEOUT, 79103L);
+            long updateInterval = ConfigFactory.getLongProperty( SYSPROP_ACCEPTED_ISSUERS_CACHE_TIMEOUT, 79103L );
             tm = new ClientTrustingTrustManager(new CachedCallable<X509Certificate[]>(updateInterval, new Callable<X509Certificate[]>() {
                     @Override
                     public X509Certificate[] call() throws Exception {

@@ -2,11 +2,11 @@ package com.l7tech.security.wstrust;
 
 import com.l7tech.security.token.SamlSecurityToken;
 import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.ISO8601Date;
 import com.l7tech.util.SoapConstants;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.WsTrustRequestType;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.xml.soap.SoapUtil;
@@ -22,8 +22,8 @@ import java.util.Set;
  * Encapsulates a version of WS-Trust, currently shared and immutable.
  */
 public abstract class WsTrustConfig {
-    private static final boolean deriveWsscNamespace = SyspropUtil.getBoolean( "com.l7tech.security.wstrust.deriveWsscNamespace", true ); // prior to 5.4.1 we did not derive the namespace
-    private static final boolean useLegacyTokenUris = SyspropUtil.getBoolean( "com.l7tech.security.wstrust.useLegacyTokenUris", false ); // prior to 5.4.1 we used "old" token uris
+    private static final boolean deriveWsscNamespace = ConfigFactory.getBooleanProperty( "com.l7tech.security.wstrust.deriveWsscNamespace", true ); // prior to 5.4.1 we did not derive the namespace
+    private static final boolean useLegacyTokenUris = ConfigFactory.getBooleanProperty( "com.l7tech.security.wstrust.useLegacyTokenUris", false ); // prior to 5.4.1 we used "old" token uris
 
     private final String wstNs;
     private final String wspNs;

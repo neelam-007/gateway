@@ -60,6 +60,28 @@ public class EitherTest {
     }
 
     @Test
+    public void testToOption() {
+        final Either<String,String> eitherL = left( "a" );
+        final Either<String,String> eitherR = right( "a" );
+
+        assertTrue( "Left is some", eitherL.toLeftOption().isSome() );
+        assertTrue( "Right is some", eitherR.toRightOption().isSome() );
+        assertFalse( "Right is none", eitherL.toRightOption().isSome() );
+        assertFalse( "Left is none", eitherR.toLeftOption().isSome() );
+    }
+
+    @Test
+    public void testSwap() {
+        final Either<String,Long> eitherL = left( "a" );
+        final Either<String,Long> eitherR = right( 1L );
+
+        assertEquals( "Left", "a", eitherL.left() );
+        assertEquals( "Swapped left", "a", eitherL.swap().right() );
+        assertEquals( "Right", 1L, (long)eitherR.right() );
+        assertEquals( "Swapped right", 1L, (long)eitherR.swap().left() );
+    }
+
+    @Test
     public void testEither() {
         final Unary<String,String> returner = new Unary<String,String>(){
             @Override

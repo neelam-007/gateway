@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
+import com.l7tech.util.ConfigFactory;
 import sun.security.util.DerValue;
 import sun.security.util.DerInputStream;
 import sun.security.util.ObjectIdentifier;
@@ -63,8 +64,6 @@ import com.l7tech.util.ExceptionUtils;
  *           integFlag       (6)
  *   }
  *
- * @author Steve Jones, $Author$
- * @version $Revision$
  */
 class GSSSpnego {
 
@@ -107,10 +106,10 @@ class GSSSpnego {
 
                 // Build optional 0
                 out = new DerOutputStream();
-                if (Boolean.getBoolean(SYSTEM_PROPERTY_INCLUDE_NTLMSSPMECH)) {
-                    out.putSequence(new DerValue[]{msftKrb5OidDerValue, kerberosOidDerValue, ntlmSspOidDerValue});
+                if ( ConfigFactory.getBooleanProperty( SYSTEM_PROPERTY_INCLUDE_NTLMSSPMECH, false ) ) {
+                    out.putSequence( new DerValue[]{ msftKrb5OidDerValue, kerberosOidDerValue, ntlmSspOidDerValue } );
                 } else {
-                    out.putSequence(new DerValue[]{msftKrb5OidDerValue, kerberosOidDerValue});
+                    out.putSequence( new DerValue[]{ msftKrb5OidDerValue, kerberosOidDerValue } );
                 }
                 DerValue mechsDV = new DerValue(out.toByteArray());
                 DerValue inittoken0 = new DerValue((byte)-96, mechsDV.toByteArray()); // CONSTRUCTED 32, CONTEXTUAL -128, INDEX 0

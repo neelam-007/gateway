@@ -13,8 +13,8 @@ import com.l7tech.server.management.api.node.NodeApi;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.server.audit.AuditRecordManager;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.IOUtils;
-import com.l7tech.util.SyspropUtil;
 
 import javax.annotation.Resource;
 import javax.inject.Inject;
@@ -144,7 +144,7 @@ public class NodeApiImpl implements NodeApi {
     private X509Certificate getProcessControllerCertificate() throws CertificateException, IOException {
         X509Certificate processControllerCertificate = this.processControllerCertificate;
         if ( processControllerCertificate == null ) {
-            String pcCertFile = SyspropUtil.getProperty( "com.l7tech.server.processControllerCert" );
+            String pcCertFile = ConfigFactory.getProperty( "com.l7tech.server.processControllerCert" );
             if ( pcCertFile != null ) {
                 processControllerCertificate = CertUtils.decodeCert( IOUtils.slurpFile( new File(pcCertFile) ) );
                 this.processControllerCertificate = processControllerCertificate;

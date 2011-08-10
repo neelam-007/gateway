@@ -146,7 +146,7 @@ public class AdminLoginHelper extends ApplicationObjectSupport {
     }
 
     private String getLogonWarningBanner() {
-        String prop = config.getProperty( ServerConfigParams.PARAM_LOGON_WARNING_BANNER, null);
+        String prop = config.getProperty( ServerConfigParams.PARAM_LOGON_WARNING_BANNER );
 
         // If the banner prop value just contains whitespace, then set the prop as null.
         if (prop != null && prop.trim().isEmpty()) prop = null;

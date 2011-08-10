@@ -24,7 +24,6 @@ import com.l7tech.message.TcpKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.token.SecurityTokenType;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
@@ -32,6 +31,7 @@ import com.l7tech.server.mapping.MessageContextMappingManager;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.Charsets;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.Pair;
 
@@ -66,7 +66,7 @@ public class MessageSummaryAuditFactory implements PropertyChangeListener {
             throw new IllegalArgumentException("Cluster Node ID is required");
         }
         this.nodeId = nodeId;
-        addMappingsIntoAudit = Boolean.valueOf(ServerConfig.getInstance().getProperty( ServerConfigParams.PARAM_ADD_MAPPINGS_INTO_AUDIT));
+        addMappingsIntoAudit = ConfigFactory.getBooleanProperty(ServerConfigParams.PARAM_ADD_MAPPINGS_INTO_AUDIT,false);
     }
 
     public MessageSummaryAuditRecord makeEvent(final PolicyEnforcementContext context, AssertionStatus status ) {

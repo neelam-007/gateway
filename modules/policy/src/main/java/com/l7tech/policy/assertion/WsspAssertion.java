@@ -1,7 +1,7 @@
 package com.l7tech.policy.assertion;
 
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 
 /**
  * Assertion for WS-Security Policy compliance.
@@ -11,7 +11,7 @@ import com.l7tech.util.SyspropUtil;
 @RequiresSOAP()
 public class WsspAssertion extends Assertion {
     public static final String PROP_ALLOW_OVERRIDE_GENERATED_XML = "com.l7tech.policy.wssp.allowOverrideGeneratedXml";
-    private static final boolean ALLOW_OVERRIDE_GENERATED_XML = SyspropUtil.getBoolean(PROP_ALLOW_OVERRIDE_GENERATED_XML, false);
+    private static final boolean ALLOW_OVERRIDE_GENERATED_XML = ConfigFactory.getBooleanProperty( PROP_ALLOW_OVERRIDE_GENERATED_XML, false );
 
     private String basePolicyXml;
     private String inputPolicyXml;

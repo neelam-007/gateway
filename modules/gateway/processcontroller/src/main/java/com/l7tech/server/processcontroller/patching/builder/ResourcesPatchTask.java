@@ -1,8 +1,6 @@
 package com.l7tech.server.processcontroller.patching.builder;
 
-import com.l7tech.common.io.ProcResult;
-import com.l7tech.common.io.ProcUtils;
-import com.l7tech.server.processcontroller.patching.PatchException;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
 
@@ -21,7 +19,7 @@ public class ResourcesPatchTask implements PatchTask {
         String fileNames = PatchMain.readResource(this.getClass(), resourceDirEntry + PatchTask.TASK_RESOURCE_FILE);
         String[] files = fileNames.split("\n");
 
-        File tempDir = new File(System.getProperty(PatchMain.RESOURCE_TEMP_PROPERTY));
+        File tempDir = new File( ConfigFactory.getProperty( PatchMain.RESOURCE_TEMP_PROPERTY ) );
         InputStream fileIn = null;
         OutputStream fileOut = null;
         for (String file : files) {

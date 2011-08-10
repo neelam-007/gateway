@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.objectmodel.EntityHeaderSet;
 import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.util.SyspropUtil;
 
 /**
  * @author alex
@@ -22,7 +23,7 @@ public class ListEverything extends SsgAdminSession {
 
     public static void main(final String[] args) throws Exception {
         try {
-            System.setProperty( "com.l7tech.console.suppressVersionCheck", "true" );
+            SyspropUtil.setProperty( "com.l7tech.console.suppressVersionCheck", "true" );
             ListEverything me = new ListEverything(args);
             me.doSomething();
             System.exit(0);

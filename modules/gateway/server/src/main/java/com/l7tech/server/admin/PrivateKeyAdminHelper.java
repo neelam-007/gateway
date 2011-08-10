@@ -26,9 +26,9 @@ import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.util.CallableRunnable;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.PoolByteArrayOutputStream;
-import com.l7tech.util.SyspropUtil;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
@@ -361,7 +361,7 @@ public class PrivateKeyAdminHelper {
     }
 
     private KeyStore createKeyStoreForParsingPkcs12() throws KeyStoreException, NoSuchProviderException {
-        String p = SyspropUtil.getString( PROP_PKCS12_PARSING_PROVIDER, "BC" );
+        String p = ConfigFactory.getProperty( PROP_PKCS12_PARSING_PROVIDER, "BC" );
         if (null == p || p.length() < 1 || p.equalsIgnoreCase("default"))
             return KeyStore.getInstance("PKCS12");
         if ("BC".equalsIgnoreCase(p))

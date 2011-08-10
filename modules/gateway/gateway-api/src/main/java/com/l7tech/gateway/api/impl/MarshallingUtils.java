@@ -1,6 +1,7 @@
 package com.l7tech.gateway.api.impl;
 
 import com.l7tech.gateway.api.ManagedObject;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -131,7 +132,7 @@ public class MarshallingUtils {
     static {
         boolean staticContext = false;
         try {
-            staticContext = Boolean.valueOf( System.getProperty( "com.l7tech.gateway.api.useStaticJAXBContext", "true" ) );
+            staticContext = Boolean.valueOf( ConfigFactory.getProperty( "com.l7tech.gateway.api.useStaticJAXBContext", "true" ) );
         } catch ( SecurityException se ) {
             // use safe default (non static)            
         }

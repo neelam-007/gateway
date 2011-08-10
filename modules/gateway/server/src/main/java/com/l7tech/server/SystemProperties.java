@@ -1,6 +1,8 @@
 package com.l7tech.server;
 
+import com.l7tech.util.Config;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.SyspropUtil;
 import org.springframework.beans.factory.InitializingBean;
 
 import java.io.File;
@@ -19,12 +21,12 @@ public class SystemProperties implements InitializingBean {
 
     //- PUBLIC
 
-    public SystemProperties(final ServerConfig serverConfig) {
-        this.serverConfig = serverConfig;
+    public SystemProperties(final Config config ) {
+        this.config = config;
     }
 
     public void afterPropertiesSet() throws Exception  {
-        setSystemProperties(this.serverConfig);
+        setSystemProperties(this.config );
     }
 
     //- PRIVATE
@@ -32,11 +34,11 @@ public class SystemProperties implements InitializingBean {
     private static final Logger logger = Logger.getLogger(SystemProperties.class.getName());
     private static final String DEFAULT_PROPS_RES = "resources/system.properties";
 
-    private final ServerConfig serverConfig;
+    private final Config config;
 
-    private void setSystemProperties(ServerConfig config) throws IOException {
+    private void setSystemProperties(Config config) throws IOException {
         // Set system properties
-        String sysPropsPath = config.getPropertyCached( ServerConfigParams.PARAM_SYSTEMPROPS);
+        String sysPropsPath = config.getProperty( ServerConfigParams.PARAM_SYSTEMPROPS );
         File propsFile = new File(sysPropsPath);
         Properties props = new Properties();
 
@@ -74,7 +76,7 @@ public class SystemProperties implements InitializingBean {
             String value = props.getProperty(unprefixedPropertyName);
             String sysPropName = realPrefix + unprefixedPropertyName;
             if (log) logger.config("Setting system property " + sysPropName + "=" + value);
-            System.setProperty(sysPropName, value);
+            SyspropUtil.setProperty( sysPropName, value );
         }
     }
 

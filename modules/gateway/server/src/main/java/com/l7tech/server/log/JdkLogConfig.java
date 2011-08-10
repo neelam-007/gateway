@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.ArrayList;
 
 import com.l7tech.server.ServerConfigParams;
+import com.l7tech.util.Config;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.JdkLoggerConfigurator;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.SyspropUtil;
@@ -105,13 +107,13 @@ public class JdkLogConfig {
     private static boolean loggingConfigured = false;
 
     private static void initLogging(final boolean isJdkInit) {
-        final ServerConfig serverConfig = ServerConfig.getInstance();
-        final String logConfigurationPath = serverConfig.getPropertyCached("configDirectory") + File.separator + "ssglog.properties";
+        final Config config = ConfigFactory.getCachedConfig();
+        final String logConfigurationPath = config.getProperty( "configDirectory" ) + File.separator + "ssglog.properties";
 
         final Runnable configCallback = new Runnable(){
             @Override
             public void run() {
-                boolean logToConsole = SyspropUtil.getBoolean(PARAM_LOG_TO_CONSOLE);
+                boolean logToConsole = SyspropUtil.getBoolean( PARAM_LOG_TO_CONSOLE, false );
                 if ( logToConsole ) {
                     addSystemErrorHandler();
                 }

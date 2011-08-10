@@ -1,6 +1,7 @@
 package com.l7tech.security.prov.ncipher;
 
 import com.l7tech.security.prov.JceProvider;
+import com.l7tech.util.SyspropUtil;
 import com.ncipher.provider.km.nCipherKM;
 
 import java.security.Provider;
@@ -14,9 +15,9 @@ public class NcipherJceProviderEngine extends JceProvider {
     final Provider MESSAGE_DIGEST_PROVIDER;
 
     public NcipherJceProviderEngine() {
-        if (null == System.getProperty("protect")) {
+        if ( null == SyspropUtil.getProperty( "protect" ) ) {
             // Prefer module-level key protection by default
-            System.setProperty("protect", "module");
+            SyspropUtil.setProperty( "protect", "module" );
         }
         Provider existing =  Security.getProvider("nCipherKM");
         if (null == existing) {

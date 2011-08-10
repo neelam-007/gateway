@@ -50,11 +50,11 @@ public class WssDecoratorImpl implements WssDecorator {
     public static final String PROPERTY_SAML_USE_URI_REF = "com.l7tech.server.saml.useUriReference";
     public static final String PROPERTY_PROTECTTOKENS_SIGNS_DERIVED_KEYS = "com.l7tech.security.xml.protectTokensSignsDerivedKeys";
 
-    private static final boolean PROTECTTOKENS_SIGNS_DERIVED_KEYS = SyspropUtil.getBoolean(PROPERTY_PROTECTTOKENS_SIGNS_DERIVED_KEYS, false);
+    private static final boolean PROTECTTOKENS_SIGNS_DERIVED_KEYS = ConfigFactory.getBooleanProperty( PROPERTY_PROTECTTOKENS_SIGNS_DERIVED_KEYS, false );
 
     public static final long TIMESTAMP_TIMOUT_MILLIS = 300000L;
     private static final int NEW_DERIVED_KEY_LENGTH = 32;
-    private static final int OLD_DERIVED_KEY_LENGTH = SyspropUtil.getInteger("com.l7tech.security.secureconversation.defaultDerivedKeyLengthInBytes", 32);
+    private static final int OLD_DERIVED_KEY_LENGTH = ConfigFactory.getIntProperty( "com.l7tech.security.secureconversation.defaultDerivedKeyLengthInBytes", 32 );
 
     private static final Random rand = new SecureRandom();
 
@@ -99,7 +99,7 @@ public class WssDecoratorImpl implements WssDecorator {
      * @return random extra microseconds to add to the timestamp to make it more unique, or zero to not bother.
      */
     private static long getExtraTime( final Boolean includeNanoseconds ) {
-        return  (includeNanoseconds != null && !includeNanoseconds) || (includeNanoseconds == null && SyspropUtil.getBooleanCached(PROPERTY_SUPPRESS_NANOSECONDS)) ?
+        return  (includeNanoseconds != null && !includeNanoseconds) || (includeNanoseconds == null && ConfigFactory.getBooleanProperty(PROPERTY_SUPPRESS_NANOSECONDS, false)) ?
                 -1L : 
                 (long) rand.nextInt(1000000);
     }
@@ -698,10 +698,10 @@ public class WssDecoratorImpl implements WssDecorator {
             SoapConstants.VALUETYPE_SAML_ASSERTIONID_SAML20;
 
         final KeyInfoDetails signatureKeyInfo;
-        if ( SyspropUtil.getBoolean(PROPERTY_SAML_USE_URI_REF) ) {
-            signatureKeyInfo = KeyInfoDetails.makeUriReference(assId, samlValueType);
+        if ( ConfigFactory.getBooleanProperty( PROPERTY_SAML_USE_URI_REF, false ) ) {
+            signatureKeyInfo = KeyInfoDetails.makeUriReference( assId, samlValueType );
         } else {
-            signatureKeyInfo = KeyInfoDetails.makeKeyId(assId, false, samlValueType);
+            signatureKeyInfo = KeyInfoDetails.makeKeyId( assId, false, samlValueType );
         }
 
         signatureInfo = new SignatureInfo(

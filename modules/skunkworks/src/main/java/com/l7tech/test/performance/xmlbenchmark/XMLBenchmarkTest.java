@@ -2,6 +2,7 @@ package com.l7tech.test.performance.xmlbenchmark;
 
 import com.l7tech.test.performance.xmlbenchmark.cfg.BenchmarkConfiguration;
 import com.l7tech.test.performance.xmlbenchmark.cfg.TestConfiguration;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.tarari.util.TarariXpathConverter;
 import com.tarari.xml.rax.fastxpath.XPathLoader;
 import com.tarari.xml.rax.fastxpath.XPathCompiler;
@@ -263,8 +264,8 @@ public class XMLBenchmarkTest extends TestCase {
     protected void createTestInfo() throws IOException
     {
         // create the test info text file for the chart util to use
-        String reportDir = System.getProperty(PROPERTY_JAPEX_REPORTS_DIR);
-        String numThreads = "T=" + System.getProperty(PROPERTY_JAPEX_NUMTHREADS);
+        String reportDir = SyspropUtil.getProperty( PROPERTY_JAPEX_REPORTS_DIR );
+        String numThreads = "T=" + SyspropUtil.getProperty( PROPERTY_JAPEX_NUMTHREADS );
         if (reportDir != null) {
 
             synchronized(this) {
@@ -350,7 +351,7 @@ public class XMLBenchmarkTest extends TestCase {
 
     private static void parseRunIndex() {
 
-        String value = System.getProperty(PROPERTY_RUN_INDEX);
+        String value = SyspropUtil.getProperty( PROPERTY_RUN_INDEX );
 
         if (value != null && value.length() > 0) {
             try {

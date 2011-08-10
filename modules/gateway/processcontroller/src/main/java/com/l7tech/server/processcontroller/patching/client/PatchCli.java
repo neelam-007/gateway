@@ -113,7 +113,7 @@ public class PatchCli {
         final File logsDir = new File("/opt/SecureSpan/Controller/var/logs");
         if ( logsDir.exists() && logsDir.canWrite() ) {
             JdkLoggerConfigurator.configure("com.l7tech.server.processcontroller.patching.client", "com/l7tech/server/processcontroller/patching/client/resources/logging.properties", "etc/conf/patchinglogging.properties", false, true);
-        } else if ( !SyspropUtil.getBoolean("com.l7tech.server.log.console") ){
+        } else if ( !SyspropUtil.getBoolean( "com.l7tech.server.log.console", false ) ){
             final Logger rootLogger = Logger.getLogger( "" );
             for ( final Handler handler : rootLogger.getHandlers() ) {
                 if ( handler instanceof ConsoleHandler ) {
@@ -121,8 +121,8 @@ public class PatchCli {
                 }
             }
         }
-        if ( SyspropUtil.getBoolean("com.l7tech.server.log.console") ) {
-            Logger.getLogger("").addHandler( new ConsoleHandler() );
+        if ( SyspropUtil.getBoolean( "com.l7tech.server.log.console", false ) ) {
+            Logger.getLogger( "" ).addHandler( new ConsoleHandler() );
         }
     }
 

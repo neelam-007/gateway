@@ -13,6 +13,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.xpath.XpathExpression;
@@ -36,7 +37,6 @@ import static org.junit.Assert.*;
  */
 public class ServerNonSoapSignatureRoundTripTest {
     private static final Logger logger = Logger.getLogger(ServerNonSoapSignatureRoundTripTest.class.getName());
-
 
     private static BeanFactory beanFactory;
 
@@ -62,6 +62,7 @@ public class ServerNonSoapSignatureRoundTripTest {
 
     @Test
     public void testSignatureRoundTripEcdsa() throws Exception {
+        SyspropUtil.setProperty( "com.l7tech.security.xml.decorator.digsig.messagedigest", "SHA384" );
         Document doc = createAndSign(NonSoapXmlSecurityTestUtils.ECDSA_KEY_ALIAS);
 
         verifySuccess(NonSoapXmlSecurityTestUtils.getEcdsaKey().getCertificate(),

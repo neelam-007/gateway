@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 import com.l7tech.server.ServerConfigParams;
+import com.l7tech.util.ConfigFactory;
 import org.apache.commons.httpclient.HttpConnectionManager;
 import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
 
@@ -14,7 +15,6 @@ import com.l7tech.common.http.GenericHttpClient;
 import com.l7tech.common.http.prov.apache.IdentityBindingHttpConnectionManager;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.http.prov.apache.SingleHostHttpConnectionManagerParams;
-import com.l7tech.server.ServerConfig;
 
 /**
  * GenericHttpClientFactory that supports identity binding.
@@ -153,7 +153,7 @@ public class IdentityBindingHttpClientFactory implements GenericHttpClientFactor
         int value = defaultValue;
 
         try {
-            String configuredValue = ServerConfig.getInstance().getPropertyCached(propName);
+            String configuredValue = ConfigFactory.getProperty( propName );
             if(configuredValue!=null) {
                 value = Integer.parseInt(configuredValue);
 

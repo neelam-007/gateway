@@ -9,7 +9,6 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.Syntax;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
@@ -51,7 +50,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     private static final int DEFAULT_MAX_TOTAL_SLEEP_TIME = 18371;
     private static final BigInteger POINTS_PER_REQUEST = BigInteger.valueOf(0x8000L); // cost in points to send a single request
     private static final Level SUBINFO_LEVEL =
-                Boolean.getBoolean("com.l7tech.external.server.ratelimit.logAtInfo") ? Level.INFO : Level.FINE;
+            ConfigFactory.getBooleanProperty( "com.l7tech.external.server.ratelimit.logAtInfo", false ) ? Level.INFO : Level.FINE;
 
     static final AtomicInteger maxSleepThreads = new AtomicInteger(DEFAULT_MAX_QUEUED_THREADS);
 
@@ -66,7 +65,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     private static final AtomicLong clusterPollInterval = new AtomicLong( DEFAULT_CLUSTER_POLL_INTERVAL );
     private static final AtomicLong clusterStatusInteval = new AtomicLong( DEFAULT_CLUSTER_STATUS_INTERVAL );
     static boolean useNanos = true;
-    static boolean autoFallbackFromNanos = !Boolean.getBoolean("com.l7tech.external.server.ratelimit.forceNanos");
+    static boolean autoFallbackFromNanos = !ConfigFactory.getBooleanProperty( "com.l7tech.external.server.ratelimit.forceNanos", false );
     static TimeSource clock = new TimeSource();
 
     static {
@@ -87,7 +86,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     interface BigIntFinder extends Functions.Unary<BigInteger, PolicyEnforcementContext> {}
 
     private final ClusterInfoManager clusterInfoManager;
-    private final ServerConfig serverConfig;
+    private final Config config;
 
     private final String[] variablesUsed;
     private final String counterNameRaw;
@@ -103,8 +102,8 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
         this.clusterInfoManager = context.getBean("clusterInfoManager", ClusterInfoManager.class);
         if (clusterInfoManager == null) throw new PolicyAssertionException(assertion, "Missing clusterInfoManager bean");
 
-        this.serverConfig = context.getBean("serverConfig", ServerConfig.class);
-        if (serverConfig == null) throw new PolicyAssertionException(assertion, "Missing serverConfig bean");
+        this.config = context.getBean("serverConfig", Config.class);
+        if ( config == null) throw new PolicyAssertionException(assertion, "Missing serverConfig bean");
 
         this.windowSizeInSecondsFinder = makeBigIntFinder(assertion.getWindowSizeInSeconds(), "windowSizeInSeconds", getAudit(), 1L );
         this.maxConcurrencyFinder = makeBigIntFinder(assertion.getMaxConcurrency(), "maxConcurrency", getAudit(), 0L );
@@ -493,12 +492,12 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     // Unconditionally load the cluster size from the database.
     private int loadClusterSizeFromDb() {
         try {
-            clusterPollInterval.set(serverConfig.getLongProperty( RateLimitAssertion.PARAM_CLUSTER_POLL_INTERVAL, DEFAULT_CLUSTER_POLL_INTERVAL ));
-            clusterStatusInteval.set( serverConfig.getLongProperty( RateLimitAssertion.PARAM_CLUSTER_STATUS_INTERVAL, DEFAULT_CLUSTER_STATUS_INTERVAL ) );
-            maxSleepThreads.set(serverConfig.getIntProperty(RateLimitAssertion.PARAM_MAX_QUEUED_THREADS, DEFAULT_MAX_QUEUED_THREADS));
-            cleanerPeriod.set( (long) serverConfig.getIntProperty( RateLimitAssertion.PARAM_CLEANER_PERIOD, DEFAULT_CLEANER_PERIOD ) );
-            maxNapTime.set( (long) serverConfig.getIntProperty( RateLimitAssertion.PARAM_MAX_NAP_TIME, DEFAULT_MAX_NAP_TIME ) );
-            maxTotalSleepTime.set( (long) serverConfig.getIntProperty( RateLimitAssertion.PARAM_MAX_TOTAL_SLEEP_TIME, DEFAULT_MAX_TOTAL_SLEEP_TIME ) );
+            clusterPollInterval.set(config.getLongProperty( RateLimitAssertion.PARAM_CLUSTER_POLL_INTERVAL, DEFAULT_CLUSTER_POLL_INTERVAL ));
+            clusterStatusInteval.set(config.getLongProperty( RateLimitAssertion.PARAM_CLUSTER_STATUS_INTERVAL, DEFAULT_CLUSTER_STATUS_INTERVAL ) );
+            maxSleepThreads.set(config.getIntProperty(RateLimitAssertion.PARAM_MAX_QUEUED_THREADS, DEFAULT_MAX_QUEUED_THREADS));
+            cleanerPeriod.set( (long) config.getIntProperty( RateLimitAssertion.PARAM_CLEANER_PERIOD, DEFAULT_CLEANER_PERIOD ) );
+            maxNapTime.set( (long) config.getIntProperty( RateLimitAssertion.PARAM_MAX_NAP_TIME, DEFAULT_MAX_NAP_TIME ) );
+            maxTotalSleepTime.set( (long) config.getIntProperty( RateLimitAssertion.PARAM_MAX_TOTAL_SLEEP_TIME, DEFAULT_MAX_TOTAL_SLEEP_TIME ) );
             ClusterNodeInfo selfNodeInf = clusterInfoManager.getSelfNodeInf();
             String selfNodeId = selfNodeInf == null ? "" : selfNodeInf.getNodeIdentifier();
             if (selfNodeId == null) selfNodeId = "";

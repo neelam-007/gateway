@@ -16,6 +16,7 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.test.BenchmarkRunner;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.TestTimeSource;
 import com.l7tech.util.TimeSource;
 import com.l7tech.util.TimeoutExecutor;
@@ -45,7 +46,7 @@ import static junit.framework.Assert.*;
  */
 public class ServerRateLimitAssertionTest {
     static {
-        System.setProperty("com.l7tech.external.server.ratelimit.logAtInfo", "true");
+        SyspropUtil.setProperty( "com.l7tech.external.server.ratelimit.logAtInfo", "true" );
     }
 
     private static final Logger log = Logger.getLogger(ServerRateLimitAssertionTest.class.getName());

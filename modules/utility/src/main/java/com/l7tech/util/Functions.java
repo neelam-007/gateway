@@ -1,11 +1,14 @@
 package com.l7tech.util;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Plumbing for building simple callbacks that don't deserve to have a special interface created just for them.
@@ -16,6 +19,7 @@ import java.util.*;
  * @noinspection PublicInnerClass,InterfaceNamingConvention,StaticMethodNamingConvention
  */
 public final class Functions {
+    static TimeSource timeSource = new TimeSource();
     private Functions() {}
 
     /**
@@ -498,16 +502,79 @@ public final class Functions {
      *
      * <p>This will memoize nulls. For single threaded use only.</p>
      *
-     * @param nullary The function to memoize.
+     * @param nullary The function to memoize
      * @param <R> The return type
      * @return A memoized version of the nullary
      */
-    public static <R> Nullary<R> memoize( final Nullary<R> nullary ) {
+    @NotNull
+    public static <R> Nullary<R> memoize( @NotNull final Nullary<R> nullary ) {
         return new Nullary<R>(){
             private Nullary<R> memo;
             @Override
             public R call() {
                 return (memo != null ? memo : (memo = nullary( nullary.call() ))).call();
+            }
+        };
+    }
+
+    /**
+     * Cache the given nullary for the specified time.
+     *
+     * <p>WARNING: This implementation permits multiple calls to the underlying
+     * nullary if invoked concurrently when a the cached result expires (or is
+     * first initialized)</p>
+     *
+     * @param nullary The function to cache
+     * @param <R> The return type
+     * @return A cached version of the nullary
+     * @see CachedCallable as an alternative for Callable implementations
+     */
+    @NotNull
+    public static <R> Nullary<R> cached( @NotNull final Nullary<R> nullary,
+                                         final long maxAge ) {
+        return new Nullary<R>(){
+            private volatile Pair<Long,R> cached;
+            @Override
+            public R call() {
+                final Pair<Long,R> cached = this.cached;
+                final long timeNow = timeSource.currentTimeMillis();
+                return (cached != null && cached.left+maxAge>=timeNow ?
+                        cached :
+                        (this.cached = new Pair<Long, R>( timeNow, nullary.call() ) )).right;
+            }
+        };
+    }
+
+    /**
+     * Cache the given unary for the specified time.
+     *
+     * <p>The caller is reponsible for ensuring that the parameter type is
+     * suitable for use as a map key (such as a String)</p>
+     *
+     * <p>WARNING: This implementation permits multiple calls to the underlying
+     * unary if invoked concurrently when a cached entry expires (or is first
+     * initialized)</p>
+     *
+     * @param unary The function to cache
+     * @param <R> The return type
+     * @param <P1> The parameter type
+     * @return A cached version of the unary
+     */
+    @NotNull
+    public static <R,P1> Unary<R,P1> cached( @NotNull final Unary<R,P1> unary,
+                                             final long maxAge ) {
+        return new Unary<R,P1>(){
+            private Map<P1,Nullary<R>> cache = new ConcurrentHashMap<P1, Nullary<R>>();
+            @Override
+            public R call( final P1 p1 ) {
+                return (cache.containsKey(p1) ?
+                        cache.get( p1 ) :
+                        put( p1, cached( partial( unary, p1 ), maxAge ) )).call();
+            }
+            private Nullary<R> put( final P1 p1,
+                                    final Nullary<R> partialUnary ) {
+                cache.put( p1, partialUnary );
+                return partialUnary;
             }
         };
     }

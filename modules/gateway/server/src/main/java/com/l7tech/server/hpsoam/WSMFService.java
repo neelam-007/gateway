@@ -1,6 +1,7 @@
 package com.l7tech.server.hpsoam;
 
 import com.l7tech.server.cluster.ClusterInfoManager;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ISO8601Date;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.util.DomUtils;
@@ -8,7 +9,6 @@ import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.logging.SSGLogRecord;
 import com.l7tech.server.MessageProcessor;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.LogRecordManager;
 import com.l7tech.server.service.ServiceManager;
 import org.springframework.beans.BeansException;
@@ -58,15 +58,15 @@ public class WSMFService implements ApplicationContextAware {
     static final Pattern serviceoidPattern = Pattern.compile(".*/service/(\\d*).*");
 
     public static boolean isEnabled() {
-        return Boolean.valueOf(ServerConfig.getInstance().getProperty(HPSOAM_ENABLED));
+        return ConfigFactory.getBooleanProperty( HPSOAM_ENABLED, false );
     }
 
     public static boolean isSSLRequired() {
-        return Boolean.valueOf(ServerConfig.getInstance().getProperty(HPSOAM_REQUIRE_SSL));
+        return ConfigFactory.getBooleanProperty( HPSOAM_REQUIRE_SSL, true );
     }
 
     public static boolean isCredentialsRequired() {
-        return Boolean.valueOf(ServerConfig.getInstance().getProperty(HPSOAM_REQUIRE_CREDENTIALS));
+        return ConfigFactory.getBooleanProperty( HPSOAM_REQUIRE_CREDENTIALS, true );
     }
 
     public WSMFService(ServiceManager serviceManager, MessageProcessor messageProcessor) {

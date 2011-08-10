@@ -6,8 +6,8 @@ import com.l7tech.uddi.UDDIException;
 import com.l7tech.uddi.UDDIClient;
 import com.l7tech.uddi.UDDIInvalidKeyException;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ResourceUtils;
 
 import java.util.logging.Logger;
@@ -185,7 +185,7 @@ public class WsPolicyAttachmentTaskFactory extends UDDITaskFactory {
 
             String nameFormat = template.getPolicyTModelName();
             if ( nameFormat == null ) {
-                nameFormat = SyspropUtil.getString( PROP_WS_POLICY_NAME, DEFAULT_NAME );
+                nameFormat = ConfigFactory.getProperty( PROP_WS_POLICY_NAME, DEFAULT_NAME );
             }
             if ( nameFormat != null ) {
                 name = MessageFormat.format( nameFormat, serviceName );
@@ -200,7 +200,7 @@ public class WsPolicyAttachmentTaskFactory extends UDDITaskFactory {
 
             String descriptionFormat = template.getPolicyTModelDescription();
             if ( descriptionFormat == null ) {
-                descriptionFormat = SyspropUtil.getString( PROP_WS_POLICY_DESCRIPTION, DEFAULT_DESCRIPTION );
+                descriptionFormat = ConfigFactory.getProperty( PROP_WS_POLICY_DESCRIPTION, DEFAULT_DESCRIPTION );
             }
             if ( descriptionFormat != null ) {
                 description = MessageFormat.format( descriptionFormat, serviceName );

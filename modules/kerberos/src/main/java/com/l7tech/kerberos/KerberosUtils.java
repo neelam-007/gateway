@@ -3,14 +3,12 @@ package com.l7tech.kerberos;
 import java.io.File;
 
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.SyspropUtil;
 
 /**
  * Kerberos Utility class.
  *
  * <p>You would not usually create an instance of this class.</p>
- *
- * @author $Author$
- * @version $Revision$
  */
 public class KerberosUtils {
 
@@ -24,7 +22,7 @@ public class KerberosUtils {
      * @return true if enabled.
      */
     public static boolean isEnabled() {
-        return System.getProperty("java.security.krb5.conf")!=null;
+        return SyspropUtil.getProperty( "java.security.krb5.conf" ) != null;
     }
 
     /**

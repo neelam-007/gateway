@@ -4,11 +4,11 @@ import com.l7tech.gateway.common.audit.AdminAuditRecord;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.audit.MessageSummaryAuditRecord;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.AuditLogFormatter;
 import com.l7tech.server.audit.AuditLogListener;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.util.Config;
 import com.l7tech.util.JdkLoggerConfigurator;
 
 import java.beans.PropertyChangeEvent;
@@ -45,10 +45,10 @@ public class FilteringAuditLogListener implements AuditLogListener, PropertyChan
      *
      * @param sink The sink for audit data
      */
-    public FilteringAuditLogListener(final ServerConfig serverConfig,
+    public FilteringAuditLogListener(final Config config,
                                      final MessageSink sink) {
         this.sink = sink;
-        this.auditOnCreate.set(!serverConfig.getBooleanPropertyCached(PROP_BATCH, PROP_BATCH_DEFAULT, 30000L));
+        this.auditOnCreate.set( !config.getBooleanProperty( PROP_BATCH, PROP_BATCH_DEFAULT ) );
     }
 
     /**

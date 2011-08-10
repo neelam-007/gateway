@@ -19,6 +19,7 @@ import com.l7tech.server.transport.TransportModule;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.SoapFaultManager;
+import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.util.Pair;
@@ -91,7 +92,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
                            SsgConnectorManager ssgConnectorManager,
                            TrustedCertServices trustedCertServices,
                            DefaultKey defaultKey,
-                           ServerConfig serverConfig,
+                           Config config,
                            GatewayState gatewayState,
                            MessageProcessor messageProcessor,
                            StashManagerFactory stashManagerFactory,
@@ -99,7 +100,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
                            EventChannel messageProcessingEventChannel,
                            AuditFactory auditFactory)
     {
-        super("SSH server module", logger, GatewayFeatureSets.SERVICE_SSH_MESSAGE_INPUT, licenseManager, ssgConnectorManager, trustedCertServices, defaultKey, serverConfig);
+        super("SSH server module", logger, GatewayFeatureSets.SERVICE_SSH_MESSAGE_INPUT, licenseManager, ssgConnectorManager, trustedCertServices, defaultKey, config );
         this.applicationEventProxy = applicationEventProxy;
         this.gatewayState = gatewayState;
         this.messageProcessor = messageProcessor;
@@ -121,7 +122,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
         SsgConnectorManager ssgConnectorManager = getBean(appContext, "ssgConnectorManager", SsgConnectorManager.class);
         TrustedCertServices trustedCertServices = getBean(appContext, "trustedCertServices", TrustedCertServices.class);
         DefaultKey defaultKey = getBean(appContext, "defaultKey", DefaultKey.class);
-        ServerConfig serverConfig = getBean(appContext, "serverConfig", ServerConfig.class);
+        Config config = getBean(appContext, "serverConfig", ServerConfig.class);
         GatewayState gatewayState = getBean(appContext, "gatewayState", GatewayState.class);
         MessageProcessor messageProcessor = getBean(appContext, "messageProcessor", MessageProcessor.class);
         StashManagerFactory stashManagerFactory = getBean(appContext, "stashManagerFactory", StashManagerFactory.class);
@@ -131,7 +132,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
         AuditFactory auditFactory = getBean(appContext, "auditFactory", AuditFactory.class);
 
         return new SshServerModule(applicationEventProxy, licenseManager, ssgConnectorManager, trustedCertServices,
-                defaultKey, serverConfig, gatewayState, messageProcessor, stashManagerFactory, soapFaultManager,
+                defaultKey, config, gatewayState, messageProcessor, stashManagerFactory, soapFaultManager,
                 messageProcessingEventChannel, auditFactory);
     }
 

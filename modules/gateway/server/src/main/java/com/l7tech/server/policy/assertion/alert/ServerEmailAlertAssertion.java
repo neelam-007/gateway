@@ -1,8 +1,9 @@
 package com.l7tech.server.policy.assertion.alert;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.util.Config;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
@@ -12,7 +13,6 @@ import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.transport.http.SslClientHostnameAwareSocketFactory;
 import com.l7tech.server.transport.http.AnonymousSslClientHostnameAwareSocketFactory;
 import com.l7tech.server.transport.email.EmailUtils;
-import com.l7tech.server.ServerConfig;
 import org.springframework.context.ApplicationContext;
 
 import javax.mail.MessagingException;
@@ -31,20 +31,20 @@ import java.net.ConnectException;
  * Server side implementation of assertion that sends an email alert.
  */
 public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAlertAssertion> {
-    private final ServerConfig config;
+    private final Config config;
 
     private static final Map<Map<String, String>, Session> sessionCache = new WeakHashMap<Map<String, String>, Session>();
 
     // We only support SSL without client cert, but allow configuration of SSL default key just in case.
     private static final String PROP_SSL_DEFAULT_KEY = "com.l7tech.server.policy.emailalert.useDefaultSsl";
-    private static final boolean SSL_DEFAULT_KEY = SyspropUtil.getBoolean(PROP_SSL_DEFAULT_KEY, false);
+    private static final boolean SSL_DEFAULT_KEY = ConfigFactory.getBooleanProperty( PROP_SSL_DEFAULT_KEY, false );
     private static final String SOCKET_FACTORY_CLASSNAME = SSL_DEFAULT_KEY ?
             SslClientHostnameAwareSocketFactory.class.getName() :
             AnonymousSslClientHostnameAwareSocketFactory.class.getName();
 
     public ServerEmailAlertAssertion(EmailAlertAssertion ass, ApplicationContext spring) {
         super(ass);
-        config = spring.getBean("serverConfig", ServerConfig.class);
+        config = spring.getBean("serverConfig", Config.class);
     }
 
     /*
@@ -126,8 +126,8 @@ public class ServerEmailAlertAssertion extends AbstractServerAssertion<EmailAler
         String portNum;
         String[] varsUsed = assertion.getVariablesUsed();
         Map<String, Object> variableMap = context.getVariableMap(varsUsed, getAudit());
-        long connectTimeout = config.getTimeUnitPropertyCached("ioMailConnectTimeout", 60000L, 30000L );
-        long readTimeout = config.getTimeUnitPropertyCached("ioMailReadTimeout", 60000L, 30000L );
+        long connectTimeout = config.getTimeUnitProperty( "ioMailConnectTimeout", 60000L );
+        long readTimeout = config.getTimeUnitProperty( "ioMailReadTimeout", 60000L );
 
         //start putting together the lists of email addresses and other variables to send email
         //and replace the context variables

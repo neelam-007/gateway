@@ -1,8 +1,6 @@
-/**
- * Copyright (C) 2008-2009 Layer 7 Technologies Inc.
- */
 package com.l7tech.gateway.config.client.beans.trust;
 
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.PermissiveHostnameVerifier;
 import com.l7tech.common.io.PermissiveSSLSocketFactory;
@@ -11,7 +9,6 @@ import com.l7tech.gateway.config.client.beans.ConfigResult;
 import com.l7tech.gateway.config.client.beans.ConfigurationContext;
 import com.l7tech.gateway.config.client.beans.UrlConfigurableBean;
 import com.l7tech.util.Pair;
-import com.l7tech.util.SyspropUtil;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;
@@ -43,8 +40,8 @@ public class TrustedCertUrl extends UrlConfigurableBean {
             HttpsURLConnection httpsURLConnection = (HttpsURLConnection)conn;
             httpsURLConnection.setSSLSocketFactory(new PermissiveSSLSocketFactory());
             httpsURLConnection.setHostnameVerifier(new PermissiveHostnameVerifier());
-            httpsURLConnection.setReadTimeout( SyspropUtil.getInteger(TrustedCertUrl.class.getName() + ".readTimeout", 30000) );
-            httpsURLConnection.setConnectTimeout( SyspropUtil.getInteger(TrustedCertUrl.class.getName() + ".connectTimeout", 30000) );
+            httpsURLConnection.setReadTimeout( ConfigFactory.getIntProperty( TrustedCertUrl.class.getName() + ".readTimeout", 30000 ) );
+            httpsURLConnection.setConnectTimeout( ConfigFactory.getIntProperty( TrustedCertUrl.class.getName() + ".connectTimeout", 30000 ) );
             httpsURLConnection.connect();
             Certificate[] certs = httpsURLConnection.getServerCertificates();
             if (certs == null || certs.length < 1) throw new ConfigurationException("Server presented no certificates");

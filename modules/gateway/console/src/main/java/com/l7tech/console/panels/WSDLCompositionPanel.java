@@ -3,12 +3,12 @@ package com.l7tech.console.panels;
 import com.l7tech.gui.util.ImageCache;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.console.util.WsdlComposer;
 import com.l7tech.console.tree.EntityTreeCellRenderer;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.util.SyspropUtil;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -121,7 +121,7 @@ public class WSDLCompositionPanel extends WizardStepPanel{
     }
 
     private void initialize() {
-        maxSources = SyspropUtil.getInteger(MAX_SOURCE_WSDLS, 50);
+        maxSources = ConfigFactory.getIntProperty( MAX_SOURCE_WSDLS, 50 );
         setShowDescriptionPanel(false);
         panelHeader.setFont(new java.awt.Font("Dialog", 1, 16));
 

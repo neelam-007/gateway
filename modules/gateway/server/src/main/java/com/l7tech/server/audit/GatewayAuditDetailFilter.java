@@ -2,8 +2,8 @@ package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.audit.MessagesUtil;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
+import com.l7tech.util.Config;
 import com.l7tech.util.Pair;
 
 import java.beans.PropertyChangeListener;
@@ -24,8 +24,8 @@ public class GatewayAuditDetailFilter implements PropertyChangeListener, AuditDe
 
     //- PUBLIC
 
-    public GatewayAuditDetailFilter( final ServerConfig serverConfig ) {
-        this.detailThreshold.set( getAssociatedLogsThreshold( serverConfig.getPropertyCached(PROP_THRESHOLD) ) );
+    public GatewayAuditDetailFilter( final Config config ) {
+        this.detailThreshold.set( getAssociatedLogsThreshold( config.getProperty( PROP_THRESHOLD ) ) );
     }
 
     public void propertyChange(PropertyChangeEvent event) {

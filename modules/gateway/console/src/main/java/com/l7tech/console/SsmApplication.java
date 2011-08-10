@@ -1,12 +1,7 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.console;
 
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.JavaVersionChecker;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.console.util.TopComponents;
 import org.springframework.context.support.ApplicationObjectSupport;
@@ -24,7 +19,7 @@ public abstract class SsmApplication extends ApplicationObjectSupport {
     private static final Logger logger = Logger.getLogger(SsmApplication.class.getName());
     private static final String KUNSTSTOFF_CLASSNAME = "com.incors.plaf.kunststoff.KunststoffLookAndFeel";
     private static final String KUNSTSTOFF_THEME_CLASSNAME = "com.incors.plaf.kunststoff.themes.KunststoffDesktopTheme";
-    private static final boolean SUPPRESS_AUTO_LNF = SyspropUtil.getBoolean("com.l7tech.console.SuppressAutoLookAndFeel");
+    private static final boolean SUPPRESS_AUTO_LNF = ConfigFactory.getBooleanProperty( "com.l7tech.console.SuppressAutoLookAndFeel", false );
 
     private String resourcePath;
     private boolean trusted = true;

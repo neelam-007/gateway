@@ -13,7 +13,6 @@ import com.l7tech.message.*;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.external.assertions.jsonschema.JSONSchemaAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -212,7 +211,7 @@ public class ServerJSONSchemaAssertion extends AbstractServerAssertion<JSONSchem
         GenericHttpClientFactory clientFactory = (GenericHttpClientFactory)spring.getBean("httpClientFactory");
         if (clientFactory == null) throw new IllegalStateException("No httpClientFactory bean");
 
-        Config config = validated( ServerConfig.getInstance() );
+        Config config = validated( spring.getBean( "serverConfig", Config.class ) );
         httpObjectCache = new HttpObjectCache<JSONSchema>(
                 "JSON Schema",
                 config.getIntProperty(JSONSchemaAssertion.PARAM_JSON_SCHEMA_CACHE_MAX_ENTRIES, 100),

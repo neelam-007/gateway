@@ -236,7 +236,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
 
     //- PRIVATE
 
-    private static final boolean requireCredentialSigningToken = SyspropUtil.getBoolean( "com.l7tech.server.policy.requireSigningTokenCredential", true );
+    private static final boolean requireCredentialSigningToken = ConfigFactory.getBooleanProperty( "com.l7tech.server.policy.requireSigningTokenCredential", true );
 
     private static final String NS_WS_ADDRESSING_200408 = SoapConstants.WSA_NAMESPACE2;
     private static final String[] NS_ADDRESSING = { SoapConstants.WSA_NAMESPACE_10, NS_WS_ADDRESSING_200408 };

@@ -1,8 +1,8 @@
 package com.l7tech.server.log.syslog;
 
 import com.l7tech.server.log.syslog.impl.MinaManagedSyslog;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.SyspropUtil;
 
 import java.io.Closeable;
 import java.net.InetSocketAddress;
@@ -45,19 +45,6 @@ public class SyslogManager implements Closeable {
      * @param lineDelimiter The delimiter for newlines when using TCP (null for default)
      * @return The existing or newly created Syslog
      */
-    @Deprecated
-    public Syslog getSyslog(final SyslogProtocol protocol,
-                            final String[][] syslogHosts,
-                            final String format,
-                            final String timeZone,
-                            final int facility,
-                            final String host,
-                            final String charset,
-                            final String lineDelimiter) {
-        return this.getSyslog(protocol, syslogHosts, format, timeZone, facility, host, charset, lineDelimiter, null, null);
-    }
-
-
     public Syslog getSyslog(final SyslogProtocol protocol,
                             final String[][] syslogHosts,
                             final String format,
@@ -121,23 +108,6 @@ public class SyslogManager implements Closeable {
     }
 
     //- PACKAGE
-
-    /**
-     * Get a syslog for sending messages to the given address.
-     *
-     * @return The existing or newly created Syslog
-     */
-    @Deprecated
-    Syslog getSyslog(final SyslogProtocol protocol,
-                     final SocketAddress[] addresses,
-                     final String format,
-                     final String timeZone,
-                     final int facility,
-                     final String host,
-                     final String charset,
-                     final String delimiter) {
-        return this.getSyslog(protocol, addresses, format, timeZone, facility, host, charset, delimiter, null, null);
-    }
 
     /**
      * Get a syslog for sending messages to the given address.
@@ -211,7 +181,7 @@ public class SyslogManager implements Closeable {
      * min/max values. 
      */
     private int getMaxLength() {
-        int length = SyspropUtil.getInteger(SYSPROP_MAX_LENGTH, DEFAULT_MAX_LENGTH);
+        int length = ConfigFactory.getIntProperty( SYSPROP_MAX_LENGTH, DEFAULT_MAX_LENGTH );
 
         if ( length < MIN_MAX_LENGTH ) length = MIN_MAX_LENGTH;
         if ( length > MAX_MAX_LENGTH ) length = MAX_MAX_LENGTH;

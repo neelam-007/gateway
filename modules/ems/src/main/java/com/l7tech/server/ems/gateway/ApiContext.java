@@ -2,8 +2,8 @@ package com.l7tech.server.ems.gateway;
 
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.DefaultKey;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.endpoint.Client;
 import org.apache.cxf.frontend.ClientProxy;
@@ -58,8 +58,8 @@ public abstract class ApiContext {
         cookie = buildCookie( esmId, userId );
         this.defaultKey = defaultKey;
         this.host = host;
-        this.connectionTimeout = SyspropUtil.getLong(PROP_CONN_TIMEOUT, 30000);
-        this.readTimeout = SyspropUtil.getLong(PROP_READ_TIMEOUT, 60000);
+        this.connectionTimeout = ConfigFactory.getLongProperty( PROP_CONN_TIMEOUT, 30000 );
+        this.readTimeout = ConfigFactory.getLongProperty( PROP_READ_TIMEOUT, 60000 );
     }
 
     public static boolean isNetworkException( final Exception exception ) {

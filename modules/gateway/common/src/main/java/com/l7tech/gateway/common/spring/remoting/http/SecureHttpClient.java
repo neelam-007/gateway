@@ -1,8 +1,8 @@
 package com.l7tech.gateway.common.spring.remoting.http;
 
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.gateway.common.spring.remoting.ssl.SSLTrustFailureHandler;
-import com.l7tech.util.SyspropUtil;
 import org.apache.commons.httpclient.ConnectTimeoutException;
 import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.HttpClient;
@@ -27,10 +27,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 /**
- * Extension of HttpClient that sets up SSL for the Manager (or other client).
- *
- * @author Steve Jones, $Author$
- * @version $Revision$
+ * Extension of HttpClient that sets up SSL for the Manager (or other client)
  */
 public class SecureHttpClient extends HttpClient {
 
@@ -57,10 +54,10 @@ public class SecureHttpClient extends HttpClient {
                 (MultiThreadedHttpConnectionManager) getHttpConnectionManager();
 
         HttpConnectionManagerParams params = connectionManager.getParams();
-        params.setMaxTotalConnections( SyspropUtil.getIntegerCached(PROP_MAX_CONNECTIONS, 20) );
-        params.setMaxConnectionsPerHost(HostConfiguration.ANY_HOST_CONFIGURATION, SyspropUtil.getIntegerCached(PROP_MAX_HOSTCONNECTIONS, 20));
-        params.setConnectionTimeout( SyspropUtil.getIntegerCached(PROP_CONNECTION_TIMEOUT, 30000) );
-        params.setSoTimeout( SyspropUtil.getIntegerCached(PROP_READ_TIMEOUT, 60000) );
+        params.setMaxTotalConnections( ConfigFactory.getIntProperty( PROP_MAX_CONNECTIONS, 20 ) );
+        params.setMaxConnectionsPerHost(HostConfiguration.ANY_HOST_CONFIGURATION, ConfigFactory.getIntProperty(PROP_MAX_HOSTCONNECTIONS, 20));
+        params.setConnectionTimeout( ConfigFactory.getIntProperty(PROP_CONNECTION_TIMEOUT, 30000) );
+        params.setSoTimeout( ConfigFactory.getIntProperty(PROP_READ_TIMEOUT, 60000) );
 
         updateHostConfiguration();
         getParams().setBooleanParameter("http.protocol.expect-continue", Boolean.TRUE);
@@ -86,6 +83,8 @@ public class SecureHttpClient extends HttpClient {
     }
 
     //- PRIVATE
+
+    private static final String PROTOCOLS = ConfigFactory.getProperty(PROP_PROTOCOLS, DEFAULT_PROTOCOLS);
 
     private static X509KeyManager keyManager;
     private static SSLTrustFailureHandler currentTrustFailureHandler;
@@ -153,7 +152,7 @@ public class SecureHttpClient extends HttpClient {
 
     private TrustManager[] getTrustManagers() {
         try {
-            String tmalg = SyspropUtil.getStringCached("com.l7tech.console.trustMananagerFactoryAlgorithm",
+            String tmalg = ConfigFactory.getProperty("com.l7tech.console.trustMananagerFactoryAlgorithm",
                     TrustManagerFactory.getDefaultAlgorithm());
             TrustManagerFactory tmf = TrustManagerFactory.getInstance(tmalg);
             tmf.init((KeyStore)null);
@@ -255,9 +254,8 @@ public class SecureHttpClient extends HttpClient {
 
     private static void configureSslClientSocket(Socket s) {
         SSLSocket sslSocket = (SSLSocket) s;
-        String protoString = SyspropUtil.getStringCached(PROP_PROTOCOLS, DEFAULT_PROTOCOLS);
-        if (protoString != null) {
-            String[] protos = protoString.trim().split("\\s*,\\s*");
+        if ( PROTOCOLS != null) {
+            String[] protos = PROTOCOLS.trim().split("\\s*,\\s*");
             sslSocket.setEnabledProtocols(protos);
         }
     }

@@ -1,10 +1,7 @@
-/**
- * Copyright (C) 2008, Layer 7 Technologies Inc.
- * @author darmstrong
- */
 package com.l7tech.server;
 
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TextUtils;
 import org.springframework.beans.factory.InitializingBean;
@@ -27,6 +24,8 @@ import java.util.logging.Logger;
  * If this class gets many usages beyond it's original use case it can be made into more of a generic bean where the
  * event processing code could be specified via spring configuration as a map of cluster properties to the class to process the
  * events.
+ *
+ * @author darmstrong
  */
 public class SimplePropertyChangeHandler implements PropertyChangeListener, InitializingBean {
 
@@ -57,7 +56,7 @@ public class SimplePropertyChangeHandler implements PropertyChangeListener, Init
      * @return List of ContentTypeHeaders. Never null.
      */
     private ContentTypeHeader[] getConfiguredContentTypes() {
-        final String otherTypes = ServerConfig.getInstance().getPropertyCached( ServerConfigParams.PARAM_OTHER_TEXTUAL_CONTENT_TYPES);
+        final String otherTypes = ConfigFactory.getProperty( ServerConfigParams.PARAM_OTHER_TEXTUAL_CONTENT_TYPES );
 
         List<String> types = TextUtils.getTokensFromString(otherTypes, "\n\r\f");
         List<ContentTypeHeader> returnList = new ArrayList<ContentTypeHeader>();

@@ -2,6 +2,7 @@ package com.l7tech.server;
 
 import com.l7tech.common.mime.HybridStashManager;
 import com.l7tech.common.mime.StashManager;
+import com.l7tech.util.ConfigFactory;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -48,7 +49,7 @@ public class MessageCacheStashManagerFactory implements StashManagerFactory, Pro
     }
 
     private static void reloadConfig() {
-        diskThreshold = ServerConfig.getInstance().getIntProperty( ServerConfigParams.PARAM_MESSAGECACHE_DISK_THRESHOLD, 8096);
+        diskThreshold = ConfigFactory.getIntProperty( ServerConfigParams.PARAM_MESSAGECACHE_DISK_THRESHOLD, 8096 );
         logger.config("Message cache disk threshold set to " + diskThreshold + " bytes.");
     }
 

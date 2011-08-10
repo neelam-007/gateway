@@ -1,14 +1,10 @@
-/*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.client.gui.dialogs;
 
 import com.l7tech.util.BuildInfo;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.client.gui.Gui;
 import com.l7tech.client.gui.util.IconManager;
+import com.l7tech.util.SyspropUtil;
 
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
@@ -67,8 +63,8 @@ public class AboutBox extends JDialog {
     private JPanel getVmDetailsPanel() {
         JPanel pane = new JPanel();
         pane.setLayout(new GridBagLayout());
-        JLabel vmVersion = new JLabel(System.getProperty("java.version"));
-        JLabel vmVendor = new JLabel(System.getProperty("java.vm.vendor"));
+        JLabel vmVersion = new JLabel( SyspropUtil.getProperty( "java.version" ) );
+        JLabel vmVendor = new JLabel( SyspropUtil.getProperty( "java.vm.vendor" ) );
         pane.add(new JLabel("JVM"),
                  new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
                                         GridBagConstraints.WEST,

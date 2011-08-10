@@ -17,7 +17,6 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
@@ -333,7 +332,7 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
         GenericHttpClientFactory clientFactory = (GenericHttpClientFactory)spring.getBean("httpClientFactory");
         if (clientFactory == null) throw new IllegalStateException("No httpClientFactory bean");
 
-        Config config = validated( ServerConfig.getInstance() );
+        Config config = validated( spring.getBean( "serverConfig", Config.class ) );
         httpObjectCache = new HttpObjectCache<PolicyFinder>(
                 "XACML Policy",
                 config.getIntProperty(XacmlPdpAssertion.PARAM_XACML_POLICY_CACHE_MAX_ENTRIES, 100),

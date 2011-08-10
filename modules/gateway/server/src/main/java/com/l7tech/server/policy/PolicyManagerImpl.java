@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2006-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.policy;
 
 import com.l7tech.gateway.common.admin.PolicyAdmin;
@@ -15,8 +12,8 @@ import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.TextUtils;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
@@ -52,7 +49,7 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
     /**
      * True if multiple global policy fragments of each tag are permitted, False for unique tags for global policy fragments.
      */
-    private static final boolean multipleGlobalPolicies = SyspropUtil.getBoolean( "com.l7tech.server.policy.multipleGlobalPolicies", false );
+    private static final boolean multipleGlobalPolicies = ConfigFactory.getBooleanProperty( "com.l7tech.server.policy.multipleGlobalPolicies", false );
 
     private PolicyCache policyCache;
     private final RoleManager roleManager;

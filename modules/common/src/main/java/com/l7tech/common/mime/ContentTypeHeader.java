@@ -2,7 +2,7 @@ package com.l7tech.common.mime;
 
 import com.l7tech.common.io.UncheckedIOException;
 import com.l7tech.util.CausedIOException;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 
 import javax.mail.internet.HeaderTokenizer;
 import javax.mail.internet.MimeUtility;
@@ -28,10 +28,10 @@ public class ContentTypeHeader extends MimeHeader {
     private static final Logger logger = Logger.getLogger(ContentTypeHeader.class.getName());
 
     public static final String PROP_STRICT_CHARSET = "com.l7tech.common.mime.strictCharset";
-    public static final boolean STRICT_CHARSET = SyspropUtil.getBoolean(PROP_STRICT_CHARSET, false);
+    public static final boolean STRICT_CHARSET = ConfigFactory.getBooleanProperty( PROP_STRICT_CHARSET, false );
 
     public static final String PROP_ALWAYS_VALIDATE = "com.l7tech.common.mime.alwaysValidateContentType";
-    public static final boolean ALWAYS_VALIDATE = SyspropUtil.getBoolean(PROP_ALWAYS_VALIDATE, false);
+    public static final boolean ALWAYS_VALIDATE = ConfigFactory.getBooleanProperty( PROP_ALWAYS_VALIDATE, false );
 
     /** Special instance (null object) that represents the lack of a content type header, where supported.  Where not supported, acts like application/octet-stream. */
     public static final ContentTypeHeader NONE;

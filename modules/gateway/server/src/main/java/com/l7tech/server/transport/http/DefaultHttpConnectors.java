@@ -1,9 +1,8 @@
 package com.l7tech.server.transport.http;
 
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.gateway.common.transport.SsgConnector;
-import com.l7tech.server.ServerConfig;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.TextUtils;
 
 import java.net.InetAddress;
@@ -48,11 +47,11 @@ public class DefaultHttpConnectors {
     private static final String RSA_ECC = TextUtils.join(",", RSA_256, ECC_256, RSA_128, ECC_128).toString();
     private static final String RSA_ECC_3DES_RC4 = TextUtils.join(",", RSA_ECC, RSA_3DES, RSA_RC4).toString();
 
-    static final String defaultHttpEndpoints = SyspropUtil.getString(PROP_INIT_LISTENER_HTTP_ENDPOINTS, "MESSAGE_INPUT, POLICYDISCO, STS, WSDLPROXY, SNMPQUERY"); // Other two built-in endpoints (CSRHANDLER and PASSWD) are not available for HTTP protocol.
-    static final String defaultHttpsEndpoints = SyspropUtil.getString(PROP_INIT_LISTENER_HTTPS_ENDPOINTS, "MESSAGE_INPUT,ADMIN_REMOTE,ADMIN_APPLET,OTHER_SERVLETS");
-    static final String defaultListenerStrongCiphers = SyspropUtil.getString(PROP_INIT_LISTENER_CIPHERS, RSA_ECC_3DES_RC4);
-    static final String defaultInternodeStrongCiphers = SyspropUtil.getString(PROP_INIT_INTERNODE_CIPHERS, RSA_ECC);
-    static final String defaultInternodePoolSize = SyspropUtil.getString(PROP_INIT_INTERNODE_POOLSIZE, "10");
+    static final String defaultHttpEndpoints = ConfigFactory.getProperty( PROP_INIT_LISTENER_HTTP_ENDPOINTS, "MESSAGE_INPUT, POLICYDISCO, STS, WSDLPROXY, SNMPQUERY" ); // Other two built-in endpoints (CSRHANDLER and PASSWD) are not available for HTTP protocol.
+    static final String defaultHttpsEndpoints = ConfigFactory.getProperty( PROP_INIT_LISTENER_HTTPS_ENDPOINTS, "MESSAGE_INPUT,ADMIN_REMOTE,ADMIN_APPLET,OTHER_SERVLETS" );
+    static final String defaultListenerStrongCiphers = ConfigFactory.getProperty( PROP_INIT_LISTENER_CIPHERS, RSA_ECC_3DES_RC4 );
+    static final String defaultInternodeStrongCiphers = ConfigFactory.getProperty( PROP_INIT_INTERNODE_CIPHERS, RSA_ECC );
+    static final String defaultInternodePoolSize = ConfigFactory.getProperty( PROP_INIT_INTERNODE_POOLSIZE, "10" );
 
     /**
      * Create connectors from server.xml if possible, or by creating some hardcoded defaults.
@@ -63,7 +62,7 @@ public class DefaultHttpConnectors {
         List<SsgConnector> ret = new ArrayList<SsgConnector>();
 
         boolean enableOtherConnectors = true;
-        int initPort = SyspropUtil.getInteger( PROP_INIT_PORT, 0 );
+        int initPort = ConfigFactory.getIntProperty( PROP_INIT_PORT, 0 );
         if ( initPort > 0 ) {
             enableOtherConnectors = false;
             SsgConnector https = new SsgConnector();
@@ -78,7 +77,7 @@ public class DefaultHttpConnectors {
             https.setClientAuth(SsgConnector.CLIENT_AUTH_OPTIONAL);
             https.setEnabled(true);
 
-            String ipAddr = SyspropUtil.getProperty( PROP_INIT_ADDR );
+            String ipAddr = ConfigFactory.getProperty( PROP_INIT_ADDR );
             if ( ipAddr != null ) {
                 // Fail if an ip address is specified but does not exist.
                 validateIpAddress( ipAddr );
@@ -138,7 +137,7 @@ public class DefaultHttpConnectors {
         List<SsgConnector> ret = new ArrayList<SsgConnector>();
 
         if ( !connectorExists( existingConnectors, SsgConnector.Endpoint.NODE_COMMUNICATION ) ) {
-            int port = ServerConfig.getInstance().getIntPropertyCached("clusterPortOld", 0, 30000);
+            int port = ConfigFactory.getIntProperty( "clusterPortOld", 0 );
 
             if ( port > 0 ) {
                 // If port > 0 then they have a cluster property for the inter-node port

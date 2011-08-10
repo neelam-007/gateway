@@ -33,6 +33,7 @@ import com.l7tech.util.Pair;
 import com.l7tech.common.io.ResourceMapEntityResolver;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.server.management.api.node.ReportApi;
+import com.l7tech.util.SyspropUtil;
 import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.engine.export.JRHtmlExporter;
 import net.sf.jasperreports.engine.export.JRHtmlExporterParameter;
@@ -225,7 +226,7 @@ public class ReportGenerator {
     private static final Map<ReportApi.ReportType, ReportTemplate> reportTemplates;
 
     static {
-        System.setProperty("jasper.reports.compiler.class", GatewayJavaReportCompiler.class.getName());
+        SyspropUtil.setProperty( "jasper.reports.compiler.class", GatewayJavaReportCompiler.class.getName() );
         GatewayJavaReportCompiler.registerClass(Utilities.class);
         GatewayJavaReportCompiler.registerClass(Utilities.UNIT_OF_TIME.class);
         GatewayJavaReportCompiler.registerClass(UsageSummaryAndSubReportHelper.class);

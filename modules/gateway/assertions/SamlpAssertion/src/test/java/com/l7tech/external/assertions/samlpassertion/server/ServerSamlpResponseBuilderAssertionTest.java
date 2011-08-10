@@ -19,6 +19,7 @@ import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.DomElementCursor;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.xpath.XpathExpression;
@@ -178,10 +179,10 @@ public class ServerSamlpResponseBuilderAssertionTest {
     @Test
     public void testSaml_2_0_NoValidationWhenSystemPropertyIsOff() throws Exception{
         try {
-            System.setProperty("com.l7tech.external.assertions.samlpassertion.validateSSOProfile", "false");
+            SyspropUtil.setProperty( "com.l7tech.external.assertions.samlpassertion.validateSSOProfile", "false" );
             v2EvaluateAllProfileRules(false);
         } finally {
-            System.clearProperty("com.l7tech.external.assertions.samlpassertion.validateSSOProfile");
+            SyspropUtil.clearProperty( "com.l7tech.external.assertions.samlpassertion.validateSSOProfile" );
         }
     }
 
@@ -203,10 +204,10 @@ public class ServerSamlpResponseBuilderAssertionTest {
     @Test
     public void testSaml_1_1_NoValidationWhenSystemPropertyIsOff() throws Exception{
         try {
-            System.setProperty("com.l7tech.external.assertions.samlpassertion.validateSSOProfile", "false");
+            SyspropUtil.setProperty( "com.l7tech.external.assertions.samlpassertion.validateSSOProfile", "false" );
             v1EvaluateAllProfileRules(false);
         } finally {
-            System.clearProperty("com.l7tech.external.assertions.samlpassertion.validateSSOProfile");
+            SyspropUtil.clearProperty( "com.l7tech.external.assertions.samlpassertion.validateSSOProfile" );
         }
     }
 
@@ -898,10 +899,10 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
         ServerSamlpResponseBuilderAssertion serverAssertion;
         try {
-            System.setProperty("com.l7tech.external.assertions.samlpassertion.validateSSOProfile", "false");
+            SyspropUtil.setProperty( "com.l7tech.external.assertions.samlpassertion.validateSSOProfile", "false" );
             serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
         } finally {
-            System.clearProperty("com.l7tech.external.assertions.samlpassertion.validateSSOProfile");
+            SyspropUtil.clearProperty( "com.l7tech.external.assertions.samlpassertion.validateSSOProfile" );
         }
 
         final PolicyEnforcementContext context = getContext();
@@ -962,10 +963,10 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
         ServerSamlpResponseBuilderAssertion serverAssertion;
         try {
-            System.setProperty("com.l7tech.external.assertions.samlpassertion.validateSSOProfile", "false");
+            SyspropUtil.setProperty( "com.l7tech.external.assertions.samlpassertion.validateSSOProfile", "false" );
             serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
         } finally {
-            System.clearProperty("com.l7tech.external.assertions.samlpassertion.validateSSOProfile");
+            SyspropUtil.clearProperty( "com.l7tech.external.assertions.samlpassertion.validateSSOProfile" );
         }
 
         final PolicyEnforcementContext context = getContext();
@@ -1074,10 +1075,10 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
         ServerSamlpResponseBuilderAssertion serverAssertion;
         try {
-            System.setProperty("com.l7tech.external.assertions.samlpassertion.validateSSOProfile", "false");
+            SyspropUtil.setProperty( "com.l7tech.external.assertions.samlpassertion.validateSSOProfile", "false" );
             serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
         } finally {
-            System.clearProperty("com.l7tech.external.assertions.samlpassertion.validateSSOProfile");
+            SyspropUtil.clearProperty( "com.l7tech.external.assertions.samlpassertion.validateSSOProfile" );
         }
 
         final PolicyEnforcementContext context = getContext();

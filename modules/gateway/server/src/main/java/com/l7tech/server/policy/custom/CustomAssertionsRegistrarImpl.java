@@ -10,10 +10,10 @@ import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.ext.CustomAssertionUI;
 import com.l7tech.policy.wsp.ClassLoaderUtil;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.policy.AssertionModule;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.util.ModuleClassLoader;
+import com.l7tech.util.Config;
 import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
@@ -268,8 +268,8 @@ public class CustomAssertionsRegistrarImpl
     /**
      *
      */
-    public void setServerConfig(ServerConfig serverConfig) {
-        this.serverConfig = serverConfig;
+    public void setServerConfig(Config config ) {
+        this.config = config;
     }
 
     /**
@@ -277,7 +277,7 @@ public class CustomAssertionsRegistrarImpl
      */
     @Override
     public void afterPropertiesSet() throws Exception {
-        if (serverConfig == null) {
+        if ( config == null) {
             throw new IllegalArgumentException("Server Config is required");
         }
 
@@ -292,7 +292,7 @@ public class CustomAssertionsRegistrarImpl
     private static final String KEY_CUSTOM_MODULES_TEMP = "custom.assertions.temp";
 
     private boolean initialized = false;
-    private ServerConfig serverConfig;
+    private Config config;
     private ClassLoader customAssertionClassloader;
     private final ServerAssertionRegistry assertionRegistry;
 
@@ -322,14 +322,14 @@ public class CustomAssertionsRegistrarImpl
     private void init() {
         if (initialized) return;
 
-        String fileName = serverConfig.getPropertyCached(KEY_CONFIG_FILE);
+        String fileName = config.getProperty( KEY_CONFIG_FILE );
         if (fileName == null) {
             logger.config("'" + KEY_CONFIG_FILE + "' not specified");
             return;
         }
 
-        String moduleDirectory = serverConfig.getPropertyCached(KEY_CUSTOM_MODULES);
-        String moduleWorkDirectory = serverConfig.getPropertyCached(KEY_CUSTOM_MODULES_TEMP);
+        String moduleDirectory = config.getProperty( KEY_CUSTOM_MODULES );
+        String moduleWorkDirectory = config.getProperty( KEY_CUSTOM_MODULES_TEMP );
         ClassLoader caClassLoader = getClass().getClassLoader();
         if (moduleDirectory == null) {
             logger.config("'" + KEY_CUSTOM_MODULES + "' not specified");

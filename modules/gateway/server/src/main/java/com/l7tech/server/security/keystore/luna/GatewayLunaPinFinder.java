@@ -25,7 +25,7 @@ public class GatewayLunaPinFinder implements Callable<char[]> {
     public char[] call() throws Exception {
         char[] pin = getLunaPin();
         // Clear it after it is queried so custom assertions/etc can't read it
-        System.clearProperty("com.l7tech.encryptedLunaPin");
+        SyspropUtil.clearProperty("com.l7tech.encryptedLunaPin");
         return pin;
     }
 
@@ -41,7 +41,7 @@ public class GatewayLunaPinFinder implements Callable<char[]> {
     }
 
     public static char[] getLunaPin() {
-        String encrypted = SyspropUtil.getString("com.l7tech.encryptedLunaPin", null);
+        String encrypted = SyspropUtil.getProperty( "com.l7tech.encryptedLunaPin" );
         if (encrypted == null)
             throw new RuntimeException("No encrypted Luna PIN available");
         if (lunaPinEncryption == null)

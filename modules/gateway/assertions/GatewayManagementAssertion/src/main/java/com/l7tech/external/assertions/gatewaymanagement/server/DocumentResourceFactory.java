@@ -10,9 +10,9 @@ import static com.l7tech.gateway.common.resources.ResourceType.*;
 import com.l7tech.server.globalresources.ResourceEntryManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Option;
-import com.l7tech.util.SyspropUtil;
 import static com.l7tech.util.TextUtils.trim;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.xml.sax.EntityResolver;
@@ -131,7 +131,7 @@ public class DocumentResourceFactory extends EntityManagerResourceFactory<Resour
 
     //- PRIVATE
 
-    private static final Boolean TNS_REQUIRED = SyspropUtil.getBoolean( "com.l7tech.external.assertions.gatewaymanagement.schemaTNSRequired", false );
+    private static final Boolean TNS_REQUIRED = ConfigFactory.getBooleanProperty( "com.l7tech.external.assertions.gatewaymanagement.schemaTNSRequired", false );
 
     private static final String PROP_PUBLIC_IDENTIFIER = "publicIdentifier";
     private static final String PROP_TARGET_NAMESPACE = "targetNamespace";

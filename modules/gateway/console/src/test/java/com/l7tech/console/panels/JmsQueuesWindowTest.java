@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.util.SyspropUtil;
 import org.junit.Ignore;
 
 import javax.swing.*;
@@ -23,7 +24,7 @@ public class JmsQueuesWindowTest {
     }
 
     private static void realMain() throws Exception {
-        System.setProperty("com.l7tech.common.locator", "com.l7tech.common.locator.StubModeLocator");
+        SyspropUtil.setProperty( "com.l7tech.common.locator", "com.l7tech.common.locator.StubModeLocator" );
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         Registry.setDefault(new RegistryStub());
         final JFrame owner = new JFrame("main");

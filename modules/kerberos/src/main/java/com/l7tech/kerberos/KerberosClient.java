@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
+import com.l7tech.util.ConfigFactory;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
@@ -30,7 +31,6 @@ import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.GSSName;
 import org.ietf.jgss.Oid;
 import sun.security.krb5.*;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ExceptionUtils;
 
 /**
@@ -117,14 +117,14 @@ public class KerberosClient {
      *
      */
     public static String getServiceName() {
-        return System.getProperty(KERBEROS_SERVICE_NAME_PROPERTY, KERBEROS_SERVICE_NAME_DEFAULT);
+        return ConfigFactory.getProperty( KERBEROS_SERVICE_NAME_PROPERTY, KERBEROS_SERVICE_NAME_DEFAULT );
     }
 
     /**
      *
      */
     public static String getHostName() {
-        return System.getProperty(KERBEROS_HOST_NAME_PROPERTY, KERBEROS_HOST_NAME_DEFAULT);
+        return ConfigFactory.getProperty( KERBEROS_HOST_NAME_PROPERTY, KERBEROS_HOST_NAME_DEFAULT );
     }
 
     /**
@@ -553,10 +553,10 @@ public class KerberosClient {
 
     private static final String KERBEROS_LIFETIME_PROPERTY = "com.l7tech.common.security.kerberos.lifetime";
     private static final Integer KERBEROS_LIFETIME_DEFAULT = 60 * 60; // in seconds, default ==> 1 hour
-    private static final Integer KERBEROS_LIFETIME = SyspropUtil.getInteger(KERBEROS_LIFETIME_PROPERTY, KERBEROS_LIFETIME_DEFAULT);
+    private static final Integer KERBEROS_LIFETIME = ConfigFactory.getIntProperty( KERBEROS_LIFETIME_PROPERTY, KERBEROS_LIFETIME_DEFAULT );
 
     private static final String PASS_INETADDR_PROPERTY = "com.l7tech.common.security.kerberos.useaddr";
-    private static final boolean PASS_INETADDR = SyspropUtil.getBoolean(PASS_INETADDR_PROPERTY, true);
+    private static final boolean PASS_INETADDR = ConfigFactory.getBooleanProperty( PASS_INETADDR_PROPERTY, true );
 
     private static Oid kerb5Oid;
     private static String acceptPrincipal;

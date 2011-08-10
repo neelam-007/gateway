@@ -100,7 +100,7 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
     public void propertyChange(PropertyChangeEvent evt) {
         if ( evt != null && SESSION_TIMEOUT_PROP.equals(evt.getPropertyName()) ) {
             if ( sessionManager != null ) {
-                int sessionTimeoutSeconds = (int)(serverConfig.getTimeUnitPropertyCached(SESSION_TIMEOUT_PROP,DEFAULT_SESSION_TIMEOUT,30000)/1000L);
+                int sessionTimeoutSeconds = (int)(serverConfig.getTimeUnitProperty( SESSION_TIMEOUT_PROP, DEFAULT_SESSION_TIMEOUT )/1000L);
                 logger.config( "Updated session timeout configuration, now " + sessionTimeoutSeconds + " seconds.");
                 sessionManager.setMaxInactiveInterval( sessionTimeoutSeconds );            
             }
@@ -138,7 +138,7 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
     }
 
     private void persistConfiguration( final ListenerConfiguration configuration ) {
-        String propfilePath = System.getProperty(ServerConfig.PROPS_OVER_PATH_PROPERTY, "var/emconfig.properties");
+        String propfilePath = "var/emconfig.properties";
         File propertyFile = new File( propfilePath );
         if ( propertyFile.exists() && propertyFile.canWrite() ) {
             InputStream in = null;
@@ -188,7 +188,7 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
         final Context root = new Context(server, "/", Context.SESSIONS);
         AbstractSessionManager sessionManager = ((AbstractSessionManager)root.getSessionHandler().getSessionManager());
         sessionManager.setSecureCookies(true);
-        sessionManager.setMaxInactiveInterval((int)(serverConfig.getTimeUnitPropertyCached(SESSION_TIMEOUT_PROP,DEFAULT_SESSION_TIMEOUT,30000)/1000L));
+        sessionManager.setMaxInactiveInterval((int)(serverConfig.getTimeUnitProperty( SESSION_TIMEOUT_PROP, DEFAULT_SESSION_TIMEOUT )/1000L));
         this.sessionManager = sessionManager;
         root.setBaseResource(Resource.newClassPathResource("com/l7tech/server/ems/resources/web"));
         root.setDisplayName("Layer 7 Enterprise Service Manager Server");
@@ -271,7 +271,7 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
     }
 
     private ListenerConfiguration buildConfiguration() throws IOException {
-        String addr = this.serverConfig.getProperty("em.server.listenaddr");
+        String addr = this.serverConfig.getProperty( "em.server.listenaddr" );
         int httpPort = this.serverConfig.getIntProperty("em.server.listenportdev", 8181);
         int httpsPort = this.serverConfig.getIntProperty("em.server.listenport", 8182);
 
@@ -318,7 +318,7 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
     private void rebuildConnectors( final ListenerConfiguration configuration ) throws IOException {
         logger.info("Building HTTPS listener '" + InetAddressUtil.getHostForUrl(configuration.getIpAddress()) + ":" + configuration.getHttpsPort() + "'.");
 
-        boolean enableHttp = SyspropUtil.getBoolean("com.l7tech.ems.enableHttpListener");
+        boolean enableHttp = ConfigFactory.getBooleanProperty( "com.l7tech.ems.enableHttpListener", false );
 
         //
         // Create new connectors
@@ -483,7 +483,7 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
                 }
             }
         };
-        errorHandler.setShowStacks( SyspropUtil.getBoolean("com.l7tech.ems.development") );
+        errorHandler.setShowStacks( ConfigFactory.getBooleanProperty( "com.l7tech.ems.development", false ) );
 
         return errorHandler;
     }

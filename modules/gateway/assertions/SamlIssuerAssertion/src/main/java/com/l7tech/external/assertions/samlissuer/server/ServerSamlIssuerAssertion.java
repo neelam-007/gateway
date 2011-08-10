@@ -22,13 +22,13 @@ import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecorator;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertionUtils;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.soap.SoapUtil;
@@ -70,7 +70,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
             this.version = ver;
         }
 
-        ServerConfig sc = spring.getBean("serverConfig", ServerConfig.class);
+        Config sc = spring.getBean("serverConfig", Config.class);
         this.decorator = spring.getBean("wssDecorator", WssDecorator.class);
 
         this.defaultBeforeOffsetMinutes = sc.getIntProperty("samlBeforeOffsetMinute", 2);

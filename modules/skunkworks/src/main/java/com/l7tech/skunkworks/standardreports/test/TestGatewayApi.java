@@ -9,6 +9,7 @@ package com.l7tech.skunkworks.standardreports.test;
 import com.l7tech.server.ems.gateway.GatewayContext;
 import com.l7tech.server.ems.standardreports.*;
 import com.l7tech.server.management.api.node.ReportApi;
+import com.l7tech.util.SyspropUtil;
 import org.junit.*;
 import org.mortbay.util.ajax.JSON;
 
@@ -26,7 +27,7 @@ public class TestGatewayApi {
     private ReportApi reportApi;
     @Before
     public void setUp(){
-        System.setProperty("org.apache.cxf.nofastinfoset", "true");
+        SyspropUtil.setProperty( "org.apache.cxf.nofastinfoset", "true" );
         GatewayContext gatewayContext = new GatewayContext(null, "irishman.l7tech.com", 8443, "admin", "password");
         reportApi = gatewayContext.getReportApi();
     }

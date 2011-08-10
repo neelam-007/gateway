@@ -589,7 +589,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
     private boolean isValidRequest( final com.l7tech.message.Message message ) throws IOException {
         boolean valid = true;
 
-        long maxSize = serverConfig.getLongPropertyCached( "ioJmsMessageMaxBytes", 5242880L, 30000L );
+        long maxSize = serverConfig.getLongProperty( "ioJmsMessageMaxBytes", 5242880L );
         final MimeKnob mk = message.getKnob(MimeKnob.class);
 
         if (mk == null || !message.isInitialized()) {

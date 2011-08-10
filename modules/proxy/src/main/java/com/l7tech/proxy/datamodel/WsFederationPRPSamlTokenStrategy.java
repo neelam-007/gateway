@@ -10,6 +10,7 @@ import com.l7tech.security.wsfederation.FederationPassiveClient;
 import com.l7tech.security.wsfederation.InvalidTokenException;
 import com.l7tech.security.wsfederation.ResponseStatusException;
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.EncryptionUtil;
 import com.l7tech.util.HexUtils;
 import com.l7tech.xml.saml.SamlAssertion;
@@ -267,8 +268,7 @@ public class WsFederationPRPSamlTokenStrategy extends FederatedSamlTokenStrategy
      */
     static {
         try {
-            SSL_CONTEXT = SSLContext.getInstance("TLS", System.getProperty(SslPeer.PROP_SSL_PROVIDER,
-                                                                          SslPeer.DEFAULT_SSL_PROVIDER));
+            SSL_CONTEXT = SSLContext.getInstance( "TLS", ConfigFactory.getProperty( SslPeer.PROP_SSL_PROVIDER, SslPeer.DEFAULT_SSL_PROVIDER ) );
             SSL_CONTEXT.init(new X509KeyManager[] {new ClientProxyKeyManager()},
                             new X509TrustManager[] {new ClientProxyTrustManager()},
                             null);

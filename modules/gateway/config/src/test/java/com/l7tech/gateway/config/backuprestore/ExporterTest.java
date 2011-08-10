@@ -1,12 +1,7 @@
-/**
- * Copyright (C) 2008, Layer 7 Technologies Inc.
- * User: darmstrong
- * Date: May 25, 2009
- * Time: 10:16:11 AM
- */
 package com.l7tech.gateway.config.backuprestore;
 
 import com.l7tech.test.BugNumber;
+import com.l7tech.util.SyspropUtil;
 import org.junit.*;
 
 import java.io.File;
@@ -51,8 +46,8 @@ public class ExporterTest {
         tmpSsgHome = new File(tmpSecureSpanHome, ImportExportUtilities.GATEWAY);
         tmpSsgHome.mkdir();
         imageFileToCreate = new File(ImportExportUtilities.createTmpDirectory(), "image1.zip");
-        System.setProperty("com.l7tech.util.buildVersion", TEST_DEFAULT_VERSION);
-        System.setProperty("com.l7tech.gateway.config.backuprestore.checkversion", Boolean.toString(false));
+        SyspropUtil.setProperty( "com.l7tech.util.buildVersion", TEST_DEFAULT_VERSION );
+        SyspropUtil.setProperty( "com.l7tech.gateway.config.backuprestore.checkversion", Boolean.toString( false ) );
     }
 
     @After
@@ -64,8 +59,8 @@ public class ExporterTest {
         }
 
         FileUtils.deleteDir(imageFileToCreate.getParentFile());
-        System.clearProperty("com.l7tech.util.buildVersion");
-        System.clearProperty("com.l7tech.gateway.config.backuprestore.checkversion");
+        SyspropUtil.clearProperty( "com.l7tech.util.buildVersion" );
+        SyspropUtil.clearProperty( "com.l7tech.gateway.config.backuprestore.checkversion" );
     }
 
     /**
@@ -432,7 +427,7 @@ public class ExporterTest {
             programArgs.add(imageZipFile);
             final String[] args = programArgs.toArray(new String[]{});
             final Exporter exporter = new Exporter(tmpSecureSpanHome, System.out);
-            System.setProperty(Exporter.NO_UNIQUE_IMAGE_SYSTEM_PROP, "true");
+            SyspropUtil.setProperty( Exporter.NO_UNIQUE_IMAGE_SYSTEM_PROP, "true" );
             final Exporter.BackupResult result = exporter.createBackupImage(args);
             Assert.assertEquals("Status should be success", result.getStatus(), Exporter.BackupResult.Status.SUCCESS);
 
@@ -441,7 +436,7 @@ public class ExporterTest {
             Assert.assertEquals("Returned file name should equal the supplie image name", imageZipFile, uniqueImageZipFile);
         }finally{
             if(tmpDir != null) FileUtils.deleteDir(new File(tmpDir));
-            System.clearProperty(Exporter.NO_UNIQUE_IMAGE_SYSTEM_PROP);
+            SyspropUtil.clearProperty( Exporter.NO_UNIQUE_IMAGE_SYSTEM_PROP );
         }
     }
 
@@ -859,10 +854,10 @@ public class ExporterTest {
         Assert.assertTrue("File name ending should not have been changed",
                 fiveOUniqueImage.endsWith(imageNameNoPath));
 
-        System.setProperty("com.l7tech.gateway.config.backuprestore.setpostfiveo", Boolean.toString(true));
+        SyspropUtil.setProperty( "com.l7tech.gateway.config.backuprestore.setpostfiveo", Boolean.toString( true ) );
         final Exporter exporter = new Exporter(tmpSecureSpanHome, System.out);
         final String uniqueImageNameNoPath = exporter.getUniqueImageFileName(imageNameNoPath, false, "atimestamp");
-        System.clearProperty("com.l7tech.gateway.config.backuprestore.setpostfiveo");
+        SyspropUtil.clearProperty( "com.l7tech.gateway.config.backuprestore.setpostfiveo" );
 
         //Validate the directory part was created correctly
         Assert.assertEquals("Incorret file part",
@@ -911,8 +906,8 @@ public class ExporterTest {
     public void testPostVersion5Release() throws Exception{
         //pre five o the image name should not be changed
         try {
-            System.setProperty("com.l7tech.util.buildVersion", "6.0");
-            System.setProperty("com.l7tech.gateway.config.backuprestore.checkversion", Boolean.toString(true));
+            SyspropUtil.setProperty( "com.l7tech.util.buildVersion", "6.0" );
+            SyspropUtil.setProperty( "com.l7tech.gateway.config.backuprestore.checkversion", Boolean.toString( true ) );
 
             final URL resource = this.getClass().getClassLoader().getResource("Gateway/runtime");
             final File nodeDirSrc = new File(resource.getPath());
@@ -928,8 +923,8 @@ public class ExporterTest {
 
 
         } finally {
-            System.setProperty("com.l7tech.util.buildVersion", TEST_DEFAULT_VERSION);//test default value
-            System.setProperty("com.l7tech.gateway.config.backuprestore.checkversion", Boolean.toString(false));
+            SyspropUtil.setProperty( "com.l7tech.util.buildVersion", TEST_DEFAULT_VERSION );//test default value
+            SyspropUtil.setProperty( "com.l7tech.gateway.config.backuprestore.checkversion", Boolean.toString( false ) );
         }
 
     }

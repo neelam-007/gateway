@@ -3,19 +3,17 @@
  */
 package com.l7tech.server.policy.assertion.xml;
 
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.tarari.GlobalTarariContextImpl;
-import com.l7tech.server.ApplicationContexts;
 import com.tarari.xml.rax.schema.SchemaLoader;
 import com.tarari.xml.rax.schema.SchemaResolver;
-import org.springframework.context.ApplicationContext;
 import org.junit.Ignore;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.InputStream;
 import java.net.URL;
-import java.util.logging.Logger;
 
 /**
  * Tests for schema validation code.
@@ -33,7 +31,7 @@ public class TarariSchemaValidationTest {
 
     @Before
     public void setUp() throws Exception {
-        System.setProperty("com.l7tech.common.xml.tarari.enable", "true");
+        SyspropUtil.setProperty( "com.l7tech.common.xml.tarari.enable", "true" );
         GlobalTarariContextImpl context = (GlobalTarariContextImpl) TarariLoader.getGlobalContext();
         if (context != null) {
             context.compileAllXpaths();

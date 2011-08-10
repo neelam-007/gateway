@@ -4,7 +4,6 @@ import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.security.prov.JceProvider;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.security.keystore.generic.GenericSsgKeyStore;
 import com.l7tech.server.security.keystore.luna.LunaSsgKeyStore;
@@ -12,9 +11,10 @@ import com.l7tech.server.security.keystore.ncipher.NcipherSsgKeyStore;
 import com.l7tech.server.security.keystore.sca.ScaSsgKeyStore;
 import com.l7tech.server.security.keystore.software.DatabasePkcs12SsgKeyStore;
 import com.l7tech.server.security.sharedkey.SharedKeyManager;
+import com.l7tech.util.Config;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.MasterPasswordManager;
-import com.l7tech.util.SyspropUtil;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,14 +45,14 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingB
     private final char[] softwareKeystorePasssword;
 
     private final KeystoreFileManager keystoreFileManager;
-    private final ServerConfig serverConfig;
+    private final Config config;
     private final MasterPasswordManager dbEncrypter;
 
     private boolean initialized = false;
     private List<SsgKeyFinder> keystores = null;
     private KeyAccessFilter keyAccessFilter;
 
-    public SsgKeyStoreManagerImpl(SharedKeyManager skm, KeystoreFileManager kem, ServerConfig serverConfig, char[] sslKeystorePassphrase, MasterPasswordManager passwordManager) throws KeyStoreException, FindException {
+    public SsgKeyStoreManagerImpl(SharedKeyManager skm, KeystoreFileManager kem, Config config, char[] sslKeystorePassphrase, MasterPasswordManager passwordManager) throws KeyStoreException, FindException {
         if ( sslKeystorePassphrase == null || sslKeystorePassphrase.length==0 ) throw new IllegalArgumentException("sslKeystorePassphrase is required");
         if ( kem instanceof KeystoreFileManagerImpl ) {
             logger.severe("kem autoproxy failure");
@@ -60,7 +60,7 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingB
         }
         this.keystoreFileManager = kem;
         this.softwareKeystorePasssword = toPassphrase(skm.getSharedKey());
-        this.serverConfig = serverConfig;
+        this.config = config;
         this.dbEncrypter = passwordManager;
     }
 
@@ -144,7 +144,7 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingB
         }
 
         if (haveGeneric && list.isEmpty()) {
-            String password = SyspropUtil.getString(GenericSsgKeyStore.PROP_KEYSTORE_PASSWORD, GenericSsgKeyStore.DEFAULT_KEYSTORE_PASSWORD);
+            String password = ConfigFactory.getProperty( GenericSsgKeyStore.PROP_KEYSTORE_PASSWORD, GenericSsgKeyStore.DEFAULT_KEYSTORE_PASSWORD );
             char[] decryptedPassword = password == null ? null : dbEncrypter.decryptPasswordIfEncrypted(password);
             list.add(new GenericSsgKeyStore(5, SsgKeyFinder.SsgKeyStoreType.GENERIC, "Generic", decryptedPassword, keyAccessFilter));
         }
@@ -223,7 +223,7 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingB
             }
         }
 
-        boolean scanOthers = mustSearchAll || serverConfig.getBooleanPropertyCached( ServerConfigParams.PARAM_KEYSTORE_SEARCH_FOR_ALIAS, true, 2 * 60 * 1000);
+        boolean scanOthers = mustSearchAll || config.getBooleanProperty( ServerConfigParams.PARAM_KEYSTORE_SEARCH_FOR_ALIAS, true );
 
         // Scan the other keystores
         List<SsgKeyFinder> finders = scanOthers ? findAll() : Collections.<SsgKeyFinder>emptyList();

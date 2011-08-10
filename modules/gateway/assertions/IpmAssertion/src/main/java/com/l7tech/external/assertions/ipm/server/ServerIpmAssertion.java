@@ -7,13 +7,13 @@ import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.util.BufferPool;
+import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.external.assertions.ipm.IpmAssertion;
 import com.l7tech.external.assertions.ipm.server.resources.CompiledTemplate;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import org.apache.commons.pool.BasePoolableObjectFactory;
@@ -46,7 +46,7 @@ public class ServerIpmAssertion extends AbstractServerAssertion<IpmAssertion> {
 
     private final String varname;
     private final ThreadLocal<CompiledTemplate> threadLocalCompiledTemplate;
-    private final ServerConfig serverConfig;
+    private final Config config;
 
     public ServerIpmAssertion(IpmAssertion assertion, ApplicationContext context) throws PolicyAssertionException {
         super(assertion, context==null ? null : context.getBean( "auditFactory", AuditFactory.class ));
@@ -62,7 +62,7 @@ public class ServerIpmAssertion extends AbstractServerAssertion<IpmAssertion> {
                                 new String[] { "Unable to compile template; assertion will always fail: " + ExceptionUtils.getMessage(e) }, e);
         }
 
-        serverConfig = context == null ? null : context.getBean("serverConfig", ServerConfig.class);
+        config = context == null ? null : context.getBean("serverConfig", Config.class);
 
         if (ctClass == null) {
             threadLocalCompiledTemplate = null;
@@ -183,17 +183,17 @@ public class ServerIpmAssertion extends AbstractServerAssertion<IpmAssertion> {
         }
     }
 
-    private synchronized static void resetCharBufferPool(ServerConfig serverConfig) throws OutputBufferException {
-        final int newBuffSize = lookupBuffSize(serverConfig);
+    private synchronized static void resetCharBufferPool(Config config) throws OutputBufferException {
+        final int newBuffSize = lookupBuffSize(config);
         if (newBuffSize == curBuffSize.get())
             return; // another thread got here first
 
         closeCharBufferPool();
         closeByteBufferPool();
 
-        final int maxActive = serverConfig == null
+        final int maxActive = config == null
                               ? DEFAULT_MAX_BUFFERS
-                              : serverConfig.getIntPropertyCached(IpmAssertion.PARAM_IPM_MAXBUFFERS, DEFAULT_MAX_BUFFERS, 1L);
+                              : config.getIntProperty( IpmAssertion.PARAM_IPM_MAXBUFFERS, DEFAULT_MAX_BUFFERS );
 
         charBufferPool = new GenericObjectPool(new BasePoolableObjectFactory() {
             @Override
@@ -208,9 +208,9 @@ public class ServerIpmAssertion extends AbstractServerAssertion<IpmAssertion> {
         }, makePoolConfig(maxActive));
 
         final int byteSize = (int)(newBuffSize * 1.15);
-        bytesBufferSize.set(byteSize);
-        sharedByteBuffers.set(serverConfig != null &&
-                              serverConfig.getBooleanPropertyCached(IpmAssertion.PARAM_IPM_SHAREBYTEBUFFERS, false, 1L));
+        bytesBufferSize.set( byteSize );
+        sharedByteBuffers.set(config != null &&
+                              config.getBooleanProperty( IpmAssertion.PARAM_IPM_SHAREBYTEBUFFERS, false ));
 
         byteBufferPool = new GenericObjectPool(new BasePoolableObjectFactory() {
             @Override
@@ -242,10 +242,10 @@ public class ServerIpmAssertion extends AbstractServerAssertion<IpmAssertion> {
         return config;
     }
 
-    private static int lookupBuffSize(ServerConfig serverConfig) {
-        int buffSize = serverConfig == null
+    private static int lookupBuffSize(Config config) {
+        int buffSize = config == null
                ? DEFAULT_BUFF_SIZE
-               : serverConfig.getIntPropertyCached(IpmAssertion.PARAM_IPM_OUTPUTBUFFER, DEFAULT_BUFF_SIZE, 120000L);
+               : config.getIntProperty( IpmAssertion.PARAM_IPM_OUTPUTBUFFER, DEFAULT_BUFF_SIZE );
         if (buffSize < 4096) // 4k minimum, for sanity
             buffSize = 4096;
         return buffSize;
@@ -258,9 +258,9 @@ public class ServerIpmAssertion extends AbstractServerAssertion<IpmAssertion> {
     }
 
     private byte[] getByteOutputBuffer() throws OutputBufferException {
-        int buffSize = lookupBuffSize(serverConfig);
+        int buffSize = lookupBuffSize(config);
         if (buffSize != curBuffSize.get())
-            resetCharBufferPool(serverConfig);
+            resetCharBufferPool(config);
 
         if (sharedByteBuffers.get()) {
             return BufferPool.getBuffer(bytesBufferSize.get());
@@ -276,7 +276,7 @@ public class ServerIpmAssertion extends AbstractServerAssertion<IpmAssertion> {
     private void returnByteOutputBuffer(byte[] buffer) throws OutputBufferException {
         try {
             if (curBuffSize.get() < 0)
-                resetCharBufferPool(serverConfig);
+                resetCharBufferPool(config);
 
             if (sharedByteBuffers.get()) {
                 BufferPool.returnBuffer(buffer);
@@ -291,9 +291,9 @@ public class ServerIpmAssertion extends AbstractServerAssertion<IpmAssertion> {
 
     private char[] getCharOutputBuffer() throws OutputBufferException {
         try {
-            int buffSize = lookupBuffSize(serverConfig);
+            int buffSize = lookupBuffSize(config);
             if (buffSize != curBuffSize.get())
-                resetCharBufferPool(serverConfig);
+                resetCharBufferPool(config);
 
             return (char[])charBufferPool.borrowObject();
         } catch (Exception e) {
@@ -303,7 +303,7 @@ public class ServerIpmAssertion extends AbstractServerAssertion<IpmAssertion> {
 
     private void returnCharOutputBuffer(char[] buffer) throws OutputBufferException {
         if (curBuffSize.get() < 0)
-            resetCharBufferPool(serverConfig);
+            resetCharBufferPool(config);
 
         try {
             charBufferPool.returnObject(buffer);

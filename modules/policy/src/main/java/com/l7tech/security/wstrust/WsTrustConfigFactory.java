@@ -1,9 +1,9 @@
 package com.l7tech.security.wstrust;
 
 import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.DomUtils;
 import com.l7tech.xml.WsTrustRequestType;
-import com.l7tech.util.SyspropUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -30,9 +30,9 @@ public class WsTrustConfigFactory {
     // Backward compat with old Bridge operating environments: detect overridden WS-Trust URI system prop and DTRT
     public static final String PROP_WST_NS = "com.l7tech.common.security.wstrust.ns.wst";
     public static final String PROP_WST_REQUESTTYPEINDEX = "com.l7tech.common.security.wstrust.requestTypeIndex";
-    private static final String tscWstNs = SyspropUtil.getString(PROP_WST_NS, WST_NAMESPACE2);
+    private static final String tscWstNs = ConfigFactory.getProperty( PROP_WST_NS, WST_NAMESPACE2 );
     private static final int DEFAULT_WST_REQUESTTYPEINDEX = 0;
-    private static int tscWstRequestTypeIndex = SyspropUtil.getInteger(PROP_WST_REQUESTTYPEINDEX, DEFAULT_WST_REQUESTTYPEINDEX);
+    private static int tscWstRequestTypeIndex = ConfigFactory.getIntProperty( PROP_WST_REQUESTTYPEINDEX, DEFAULT_WST_REQUESTTYPEINDEX );
 
 
     private static final Map<String,WsTrustConfig> configs = new HashMap<String,WsTrustConfig>();

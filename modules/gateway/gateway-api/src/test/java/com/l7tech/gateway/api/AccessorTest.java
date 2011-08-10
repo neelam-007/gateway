@@ -1,11 +1,11 @@
 package com.l7tech.gateway.api;
 
 import com.l7tech.gateway.api.impl.TransportFactory;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.SyspropUtil;
 import com.sun.ws.management.Management;
 import com.sun.ws.management.addressing.Addressing;
 import com.sun.ws.management.client.exceptions.FaultException;
@@ -482,7 +482,6 @@ public class AccessorTest {
         }
     }
 
-    @SuppressWarnings({ "ThrowableInstanceNeverThrown" })
     @Test
     public void testSOAPFaults() throws Exception {
         {
@@ -651,7 +650,7 @@ public class AccessorTest {
     private static final String NS_GATEWAY_MANAGEMENT = "http://ns.l7tech.com/2010/04/gateway-management";
     private static Functions.UnaryVoid<Addressing> validationCallback;
     private static final Queue<Object> responseObjects = new ArrayDeque<Object>();
-    private static final boolean logMessages = SyspropUtil.getBoolean( "com.l7tech.gateway.api.logTestMessages", false );
+    private static final boolean logMessages = ConfigFactory.getBooleanProperty( "com.l7tech.gateway.api.logTestMessages", false );
 
     private static void setResponse( final String... responseFileNames ) {
         responseObjects.clear();
@@ -702,7 +701,6 @@ public class AccessorTest {
         return factory.createClient( "http://localhost:12345/thisisnotused" );
     }
 
-    @SuppressWarnings({ "ThrowableInstanceNeverThrown" })
     private FaultException buildSOAPFaultException( final String soapFaultMessage ) throws Exception {
         MessageFactory factory = MessageFactory.newInstance( SOAPConstants.SOAP_1_2_PROTOCOL);
         SOAPMessage message = factory.createMessage( null, new ByteArrayInputStream(soapFaultMessage.getBytes()) );

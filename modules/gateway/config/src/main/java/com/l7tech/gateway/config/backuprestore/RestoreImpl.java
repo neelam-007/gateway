@@ -1,16 +1,10 @@
-/**
- * Copyright (C) 2008, Layer 7 Technologies Inc.
- * User: darmstrong
- * Date: Jun 22, 2009
- * Time: 3:14:09 PM
- */
 package com.l7tech.gateway.config.backuprestore;
 
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.util.Charsets;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.IOUtils;
-import com.l7tech.util.SyspropUtil;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
@@ -547,7 +541,7 @@ final class RestoreImpl implements Restore{
             } else {
                 //copy file
                 //FileUtils.copyFile(file, new File(dir.getAbsolutePath() + File.separator + file.getName()));
-                final String etcFolder = SyspropUtil.getString("com.l7tech.config.backuprestore.mycnfdir", "/etc");
+                final String etcFolder = ConfigFactory.getProperty( "com.l7tech.config.backuprestore.mycnfdir", "/etc" );
                 final File etcDir = new File(etcFolder);
                 boolean dontCopy = false;
                 if(isMigrate){

@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.util;
 
 import java.util.StringTokenizer;
@@ -30,7 +24,7 @@ public class JavaVersionChecker {
      * @return True iff. the java version appears to be at least the version requested.
      */
     public static boolean isJavaVersionAtLeast(int[] targetVersion) {
-        String jv = System.getProperty("java.version");
+        String jv = SyspropUtil.getProperty( "java.version" );
         boolean isDesiredVersion = false;
         int count = 0;
         for (StringTokenizer tokenizer = new StringTokenizer(jv, "._"); tokenizer.hasMoreTokens(); ++count) {

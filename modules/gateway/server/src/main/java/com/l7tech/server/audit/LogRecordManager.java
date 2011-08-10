@@ -5,12 +5,12 @@ import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.cluster.ClusterContextFactory;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.cluster.ClusterContext;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.gateway.common.logging.GenericLogAdmin;
 import com.l7tech.gateway.common.logging.SSGLogRecord;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.log.LogRecordRingBuffer;
-import com.l7tech.server.ServerConfig;
 
 import javax.security.auth.Subject;
 import java.net.ConnectException;
@@ -174,6 +174,6 @@ public class LogRecordManager {
     }
 
     private int getClusterPort() {
-        return ServerConfig.getInstance().getIntPropertyCached( ServerConfigParams.PARAM_CLUSTER_PORT, 2124, 30000);
+        return ConfigFactory.getIntProperty( ServerConfigParams.PARAM_CLUSTER_PORT, 2124 );
     }
 }

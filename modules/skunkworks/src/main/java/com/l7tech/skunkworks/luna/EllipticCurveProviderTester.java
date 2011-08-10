@@ -1,5 +1,6 @@
 package com.l7tech.skunkworks.luna;
 
+import com.l7tech.util.ConfigFactory;
 import sun.misc.BASE64Decoder;
 
 import javax.crypto.KeyAgreement;
@@ -847,7 +848,7 @@ public class EllipticCurveProviderTester {
     }
 
     static String getRequiredSystemProperty(String prop) {
-        String val = System.getProperty(prop, null);
+        String val = ConfigFactory.getProperty( prop, null );
         if (val == null)
             throw new IllegalStateException("The system property \"" + prop + "\" must be set for this provider.");
         return val;

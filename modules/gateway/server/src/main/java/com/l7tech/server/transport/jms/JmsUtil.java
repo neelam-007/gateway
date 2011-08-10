@@ -6,8 +6,8 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.policy.variable.GatewaySecurePasswordReferenceExpander;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.server.transport.jms2.JmsEndpointConfig;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
 
 import javax.jms.*;
 import javax.naming.*;
@@ -27,8 +27,8 @@ public class JmsUtil {
     private static final Logger logger = Logger.getLogger(JmsUtil.class.getName());
     public static final String DEFAULT_ENCODING = "UTF-8";
     private static final int MAX_CAUSE_DEPTH = 25;
-    public static final boolean detectTypes = SyspropUtil.getBoolean( "com.l7tech.server.transport.jms.detectJmsTypes", true );
-    public static final boolean useTopicTypes = SyspropUtil.getBoolean( "com.l7tech.server.transport.jms.useTopicTypes", false );
+    public static final boolean detectTypes = ConfigFactory.getBooleanProperty( "com.l7tech.server.transport.jms.detectJmsTypes", true );
+    public static final boolean useTopicTypes = ConfigFactory.getBooleanProperty( "com.l7tech.server.transport.jms.useTopicTypes", false );
 
     private static ClassLoader contextClassLoader;
 

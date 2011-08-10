@@ -17,6 +17,7 @@ import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.message.PolicyApplicationContext;
+import com.l7tech.util.SyspropUtil;
 
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -54,7 +55,7 @@ public class SecureSpanBridgeTest {
             System.exit(1);
         }
 
-        System.setProperty(SecureSpanBridgeFactory.PROPERTY_MESSAGE_INTERCEPTOR, MyInterceptor.class.getName());
+        SyspropUtil.setProperty( SecureSpanBridgeFactory.PROPERTY_MESSAGE_INTERCEPTOR, MyInterceptor.class.getName() );
 
         int i = 0;
         String host = args[i++];

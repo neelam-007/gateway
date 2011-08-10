@@ -1,5 +1,6 @@
 package com.l7tech.skunkworks.luna;
 
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 
@@ -18,7 +19,7 @@ import java.util.List;
  */
 public class TestLunaCommon {
     public static char[] getTokenPin() {
-        final String tokenpin = System.getProperty("com.l7tech.lunaPin", null);
+        final String tokenpin = ConfigFactory.getProperty( "com.l7tech.lunaPin", null );
         if (tokenpin == null) throw new IllegalStateException("Please set system property com.l7tech.lunaPin to the token PIN (ie, ///6-6KWT-SCMH-N3FE)");
         return tokenpin.toCharArray();
     }

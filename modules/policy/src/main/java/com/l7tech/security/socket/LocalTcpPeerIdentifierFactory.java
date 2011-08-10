@@ -1,7 +1,7 @@
 package com.l7tech.security.socket;
 
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Functions;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ExceptionUtils;
 
 import java.util.logging.Logger;
@@ -19,7 +19,7 @@ public class LocalTcpPeerIdentifierFactory {
     static final String IMPL_CLASSNAME;
 
     static {
-        String className = SyspropUtil.getString( PROP_IMPL_CLASSNAME, IMPL_CLASSNAME_WIN32 );
+        String className = ConfigFactory.getProperty( PROP_IMPL_CLASSNAME, IMPL_CLASSNAME_WIN32 );
         if ( OLD_IMPL_CLASSNAME_WIN32.equals( className ) ) {
             className = IMPL_CLASSNAME_WIN32;                    
         }

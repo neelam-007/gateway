@@ -5,9 +5,9 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.HyperlinkLabel;
 import com.l7tech.util.Charsets;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
-import com.l7tech.util.SyspropUtil;
 
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
@@ -31,7 +31,7 @@ import java.util.logging.Level;
  * @version 1.0
  */
 public class ExceptionDialog extends JDialog implements ActionListener {
-    private static final boolean HIDE_STACK_TRACES = SyspropUtil.getBoolean("com.l7tech.common.hideStackTraces");
+    private static final boolean HIDE_STACK_TRACES = ConfigFactory.getBooleanProperty( "com.l7tech.common.hideStackTraces", false );
     private static final String OPEN_HTML = "<html>";
     private static final String CLOSE_HTML = "</html>";
 

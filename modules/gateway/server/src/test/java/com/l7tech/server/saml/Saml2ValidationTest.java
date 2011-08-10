@@ -1,7 +1,7 @@
 package com.l7tech.server.saml;
 
-import com.l7tech.server.ServerConfigParams;
 import com.l7tech.test.BugNumber;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.MockProcessorResult;
@@ -9,7 +9,6 @@ import com.l7tech.security.token.XmlSecurityToken;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.server.policy.assertion.xmlsec.SamlAssertionValidate;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
@@ -28,9 +27,8 @@ public class Saml2ValidationTest {
 
     @Before
     public void restoreTimeSkewSettings() {
-        System.setProperty(ServerConfig.PROP_TEST_MODE, "true");
-        ServerConfig.getInstance().putProperty( ServerConfigParams.PARAM_SAML_VALIDATE_BEFORE_OFFSET_MINUTES, "0");
-        ServerConfig.getInstance().putProperty( ServerConfigParams.PARAM_SAML_VALIDATE_AFTER_OFFSET_MINUTES, "0");
+        SyspropUtil.setProperty( "com.l7tech.server.saml.validate.notBeforeOffsetMin", "0" );
+        SyspropUtil.setProperty( "com.l7tech.server.saml.validate.notOnOrAfterOffsetMin", "0");
     }
 
     /**
@@ -118,7 +116,7 @@ public class Saml2ValidationTest {
      */
     @Test
     public void testExpiryValidationWithGracePeriod() throws Exception {
-        ServerConfig.getInstance().putProperty( ServerConfigParams.PARAM_SAML_VALIDATE_AFTER_OFFSET_MINUTES, "15000000");
+        SyspropUtil.setProperty( "com.l7tech.server.saml.validate.notOnOrAfterOffsetMin", "15000000");
 
         // create doc
         Document assertionDocument = XmlUtil.stringToDocument(ASSERTION_STR_EXPIRED);

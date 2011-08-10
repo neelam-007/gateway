@@ -1,6 +1,6 @@
 package com.l7tech.security.cert;
 
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.common.io.WhirlycacheFactory;
 import com.l7tech.common.io.CertUtils;
@@ -21,7 +21,7 @@ public class CertVerifier {
     private static final Logger logger = Logger.getLogger(CertVerifier.class.getName());
 
     private static final String PROPBASE = CertUtils.class.getName();
-    public static final int CERT_VERIFY_CACHE_MAX = SyspropUtil.getInteger(PROPBASE + ".certVerifyCacheSize", 500);// Map of VerifiedCert => Boolean.TRUE
+    public static final int CERT_VERIFY_CACHE_MAX = ConfigFactory.getIntProperty( PROPBASE + ".certVerifyCacheSize", 500 );// Map of VerifiedCert => Boolean.TRUE
 
     public static final Cache certVerifyCache =
             WhirlycacheFactory.createCache("certCache",

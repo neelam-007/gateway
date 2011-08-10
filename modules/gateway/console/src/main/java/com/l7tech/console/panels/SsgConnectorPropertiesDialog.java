@@ -41,7 +41,7 @@ import static com.l7tech.gateway.common.transport.SsgConnector.*;
 
 public class SsgConnectorPropertiesDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(SsgConnectorPropertiesDialog.class.getName());
-    private static final boolean ENABLE_FTPS_TLS12 = SyspropUtil.getBoolean("com.l7tech.console.connector.allowFtpsTls12");
+    private static final boolean ENABLE_FTPS_TLS12 = ConfigFactory.getBooleanProperty( "com.l7tech.console.connector.allowFtpsTls12", false );
     private static final String CLUSTER_PROP_PARAM_SNMP_QUERY_SERVICE = "builtinService.snmpQuery.enabled";
     private static final String DIALOG_TITLE = "Listen Port Properties";
     private static final int TAB_SSL = 1;

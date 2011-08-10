@@ -1,7 +1,3 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- */
-
 package com.l7tech.server.identity.fed;
 
 import com.l7tech.identity.AuthenticationException;
@@ -19,9 +15,8 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.security.cert.CertValidationProcessor;
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 
-import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.EnumSet;
@@ -32,7 +27,7 @@ import java.util.logging.Logger;
  * @author alex
  */
 class X509AuthorizationHandler extends FederatedAuthorizationHandler {
-    private static final boolean ALLOW_SELF_SIGNED_TRUSTED_CERT = SyspropUtil.getBoolean(X509AuthorizationHandler.class.getName()+".allowSelfSigned", false); 
+    private static final boolean ALLOW_SELF_SIGNED_TRUSTED_CERT = ConfigFactory.getBooleanProperty( X509AuthorizationHandler.class.getName() + ".allowSelfSigned", false );
 
     X509AuthorizationHandler(FederatedIdentityProvider provider,
                              TrustedCertServices trustedCertServices,

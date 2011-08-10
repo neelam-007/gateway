@@ -1,8 +1,3 @@
-/*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- *
- * $Id$
- */
 package com.l7tech.server;
 
 import com.l7tech.gateway.common.LicenseException;
@@ -21,6 +16,7 @@ import com.l7tech.server.service.ServiceMetricsServicesImpl;
 import com.l7tech.server.util.ManagedTimer;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.common.TestDocuments;
+import com.l7tech.util.ConfigFactory;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -54,9 +50,9 @@ public class TestMessageProcessor extends MessageProcessor {
                 new TestLicenseManager(),
                 new ServiceMetricsServicesImpl("yo"),
                 new AuditContextStub(),
-                ServerConfig.getInstance(),
-                new TrafficLogger(ServerConfig.getInstance(), null),
-                new SoapFaultManager(ServerConfig.getInstance(), new AuditContextStub(), new ManagedTimer("Soap fault manager refresh")),
+                ConfigFactory.getCachedConfig(),
+                new TrafficLogger(ConfigFactory.getCachedConfig(), null),
+                new SoapFaultManager(ConfigFactory.getCachedConfig(), new AuditContextStub(), new ManagedTimer("Soap fault manager refresh")),
                 null);
     }
 

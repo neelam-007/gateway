@@ -83,7 +83,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     public static final String CONNECTION_PREFIX = " [connected to node: ";
 
-    private static final long PING_INTERVAL = SyspropUtil.getLong("com.l7tech.console.sessionPingInterval", 50000L);
+    private static final long PING_INTERVAL = ConfigFactory.getLongProperty( "com.l7tech.console.sessionPingInterval", 50000L );
 
     /**
      * the resource bundle name

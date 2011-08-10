@@ -1,8 +1,3 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.internal.license.gui;
 
 import com.l7tech.gateway.common.InvalidLicenseException;
@@ -142,7 +137,7 @@ public class LicenseSpecPanel extends JPanel {
             }
         });
 
-        featureLabelComboBox.setModel(new DefaultComboBoxModel(System.getProperty(LicenseGeneratorTopWindow.PROPERTY_FEATURE_LABELS, "").split("\\s*,\\s*")));
+        featureLabelComboBox.setModel(new DefaultComboBoxModel( SyspropUtil.getString( LicenseGeneratorTopWindow.PROPERTY_FEATURE_LABELS, "" ).split( "\\s*,\\s*" )));
 
         idField.addFocusListener(getFocusListener());
         descriptionField.addFocusListener(getFocusListener());

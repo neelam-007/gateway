@@ -14,6 +14,7 @@ import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.policy.assertion.OversizedTextAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.util.SyspropUtil;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -31,7 +32,7 @@ public class OversizedTextAssertionTest {
     @Before
     public void setUp() throws Exception {
         // Software-only TransformerFactory to ignore the alluring Tarari impl, even if tarari_raxj.jar is sitting right there
-        System.setProperty("javax.xml.transform.TransformerFactory", "org.apache.xalan.processor.TransformerFactoryImpl");
+        SyspropUtil.setProperty( "javax.xml.transform.TransformerFactory", "org.apache.xalan.processor.TransformerFactoryImpl" );
     }
 
     @Test

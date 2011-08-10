@@ -2,6 +2,7 @@ package com.l7tech.server.policy.assertion.xml;
 
 import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.message.ValidationTarget;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.wsdl.WsdlSchemaAnalizer;
 import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
@@ -64,7 +65,7 @@ public class SchemaValidationTest {
 
     @Before
     public void setUp() throws Exception {
-        System.setProperty("com.l7tech.common.xml.tarari.enable", "true");
+        SyspropUtil.setProperty( "com.l7tech.common.xml.tarari.enable", "true" );
         GlobalTarariContextImpl context = (GlobalTarariContextImpl) TarariLoader.getGlobalContext();
         if (context != null) {
             context.compileAllXpaths();

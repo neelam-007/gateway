@@ -1,14 +1,10 @@
-/*
- * Copyright (C) 2005-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.url;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.gateway.common.audit.Audit;
-import com.l7tech.server.ServerConfig;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.IOUtils;
 
 import org.apache.commons.collections.map.LRUMap;
@@ -32,8 +28,8 @@ public class HttpObjectCache<UT> extends AbstractUrlObjectCache<UT> {
     private static final Logger logger = Logger.getLogger(HttpObjectCache.class.getName());
     private static final String SYSPROP_ENABLE_LASTMODIFED = "com.l7tech.server.url.httpCacheEnableLastModified";
     private static final String SYSPROP_ENABLE_ETAG = "com.l7tech.server.url.httpCacheEnableETag";
-    private static final boolean enableLastModified = SyspropUtil.getBoolean( SYSPROP_ENABLE_LASTMODIFED, true );
-    private static final boolean enableETag = SyspropUtil.getBoolean( SYSPROP_ENABLE_ETAG, true );
+    private static final boolean enableLastModified = ConfigFactory.getBooleanProperty( SYSPROP_ENABLE_LASTMODIFED, true );
+    private static final boolean enableETag = ConfigFactory.getBooleanProperty( SYSPROP_ENABLE_ETAG, true );
 
     protected final GenericHttpClientFactory httpClientFactory;
     protected final UserObjectFactory<UT> userObjectFactory;
@@ -223,7 +219,7 @@ public class HttpObjectCache<UT> extends AbstractUrlObjectCache<UT> {
 
             final GenericHttpResponse sourceResponse = resp;
             //read max size here so that it can be modified after a HttpObjectCache has been created
-            final int maxSize = ServerConfig.getInstance().getIntProperty(maxDownloadSizeProperty, emergencyDownloadSize);
+            final int maxSize = ConfigFactory.getIntProperty( maxDownloadSizeProperty, emergencyDownloadSize );
             UT userObject = userObjectFactory.createUserObject(params.getTargetUrl().toExternalForm(), new UserObjectSource(){
                 @Override
                 public byte[] getBytes() throws IOException {

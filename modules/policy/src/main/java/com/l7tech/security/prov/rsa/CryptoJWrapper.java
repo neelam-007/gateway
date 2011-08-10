@@ -1,8 +1,8 @@
 package com.l7tech.security.prov.rsa;
 
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
-import com.l7tech.util.SyspropUtil;
 
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
@@ -32,11 +32,11 @@ class CryptoJWrapper {
     public static final String PROP_SSLJ_PATH = "com.l7tech.security.prov.rsa.libpath.sslj";
     public static final String PROP_DISABLE_BLACKLISTED_SERVICES = "com.l7tech.security.prov.rsa.disableServices";
 
-    static final String FIPS_LIB_PATH = SyspropUtil.getString(PROP_FIPS_LIB_PATH, null);
-    static final String NON_FIPS_LIB_PATH = SyspropUtil.getString(PROP_NON_FIPS_LIB_PATH, null);
-    static final String SSLJ_LIB_PATH = SyspropUtil.getString(PROP_SSLJ_PATH, replaceFilename(NON_FIPS_LIB_PATH, "sslj-5.1.1.jar"));
-    static final String CERTJ_LIB_PATH = SyspropUtil.getString(PROP_CERTJ_PATH, replaceFilename(NON_FIPS_LIB_PATH, "certj-3.1.jar"));
-    static final boolean DISABLE_BLACKLISTED_SERVICES = SyspropUtil.getBoolean(PROP_DISABLE_BLACKLISTED_SERVICES, true);
+    static final String FIPS_LIB_PATH = ConfigFactory.getProperty( PROP_FIPS_LIB_PATH, null );
+    static final String NON_FIPS_LIB_PATH = ConfigFactory.getProperty( PROP_NON_FIPS_LIB_PATH, null );
+    static final String SSLJ_LIB_PATH = ConfigFactory.getProperty( PROP_SSLJ_PATH, replaceFilename( NON_FIPS_LIB_PATH, "sslj-5.1.1.jar" ) );
+    static final String CERTJ_LIB_PATH = ConfigFactory.getProperty( PROP_CERTJ_PATH, replaceFilename( NON_FIPS_LIB_PATH, "certj-3.1.jar" ) );
+    static final boolean DISABLE_BLACKLISTED_SERVICES = ConfigFactory.getBooleanProperty( PROP_DISABLE_BLACKLISTED_SERVICES, true );
 
     static final String CLASSNAME_CRYPTOJ = "com.rsa.jsafe.crypto.CryptoJ";
     static final String CLASSNAME_PROVIDER = "com.rsa.jsafe.provider.JsafeJCE";

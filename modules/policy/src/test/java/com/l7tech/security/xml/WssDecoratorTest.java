@@ -1382,7 +1382,7 @@ public class WssDecoratorTest {
     }
 
     private void doTestSecHdrMustUnderstand(boolean expect) throws IOException, SAXException, InvalidDocumentFormatException, GeneralSecurityException, DecoratorException {
-        String oldPropertyValue = System.getProperty(SoapUtil.PROPERTY_MUSTUNDERSTAND);
+        String oldPropertyValue = ConfigFactory.getProperty( SoapUtil.PROPERTY_MUSTUNDERSTAND );
         try {
             SyspropUtil.setProperty(SoapUtil.PROPERTY_MUSTUNDERSTAND, Boolean.toString(expect));
             DecorationRequirements req = new DecorationRequirements();

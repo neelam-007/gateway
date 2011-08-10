@@ -2,6 +2,7 @@ package com.l7tech.server.processcontroller.monitoring.notification;
 
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.LoggingAudit;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.server.management.api.monitoring.NotificationAttempt;
@@ -13,7 +14,6 @@ import com.l7tech.server.transport.email.EmailUtils;
 import com.l7tech.server.transport.http.SslClientSocketFactory;
 import com.l7tech.server.processcontroller.monitoring.InOut;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
 
 import javax.mail.AuthenticationFailedException;
 import javax.mail.MessagingException;
@@ -49,8 +49,8 @@ class EmailNotifier extends Notifier<EmailNotificationRule> {
         super(rule);
         auditor = new LoggingAudit(logger);
 
-        long connectTimeout = SyspropUtil.getLong( "com.l7tech.server.processcontroller.monitoring.ioMailConnectTimeout", 60000);
-        long readTimeout = SyspropUtil.getLong( "com.l7tech.server.processcontroller.monitoringioMailReadTimeout", 60000);
+        long connectTimeout = ConfigFactory.getLongProperty( "com.l7tech.server.processcontroller.monitoring.ioMailConnectTimeout", 60000 );
+        long readTimeout = ConfigFactory.getLongProperty( "com.l7tech.server.processcontroller.monitoringioMailReadTimeout", 60000 );
         propertyMap = buildProperties( rule, connectTimeout, readTimeout );
 
         try {

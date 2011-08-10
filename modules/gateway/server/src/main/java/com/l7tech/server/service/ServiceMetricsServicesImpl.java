@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2009 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.service;
 
 import com.l7tech.gateway.common.mapping.MessageContextMapping;
@@ -11,11 +8,12 @@ import com.l7tech.gateway.common.service.ServiceState;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.util.ManagedTimer;
 import com.l7tech.server.util.ManagedTimerTask;
+import com.l7tech.util.Config;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TimeUnit;
 import org.springframework.beans.BeansException;
@@ -52,20 +50,20 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
 
     @PostConstruct
     void start() throws Exception {
-        int fineBinInterval = serverConfig().getIntProperty("metricsFineInterval", DEF_FINE_BIN_INTERVAL);
+        int fineBinInterval = config().getIntProperty("metricsFineInterval", DEF_FINE_BIN_INTERVAL);
         if (fineBinInterval > MAX_FINE_BIN_INTERVAL || fineBinInterval < MIN_FINE_BIN_INTERVAL) {
             logger.warning(String.format("Configured metricsFineInterval %d is out of the valid range (%d-%d); using default %d", fineBinInterval, MIN_FINE_BIN_INTERVAL, MAX_FINE_BIN_INTERVAL, DEF_FINE_BIN_INTERVAL));
             fineBinInterval = DEF_FINE_BIN_INTERVAL;
         }
         this.fineBinInterval = fineBinInterval;
 
-        if (Boolean.valueOf(serverConfig().getProperty(CLUSTER_PROP_ENABLED))) {
+        if ( config().getBooleanProperty(CLUSTER_PROP_ENABLED, false) ) {
             enable();
         } else {
             logger.info("Service metrics collection is currently disabled.");
         }
 
-        if (Boolean.valueOf(serverConfig().getProperty( ServerConfigParams.PARAM_ADD_MAPPINGS_INTO_SERVICE_METRICS))) {
+        if ( config().getBooleanProperty(ServerConfigParams.PARAM_ADD_MAPPINGS_INTO_SERVICE_METRICS, false) ) {
             _addMappingsIntoServiceMetrics.set(true);
         } else {
             _addMappingsIntoServiceMetrics.set(false);
@@ -213,9 +211,9 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
             // Schedules timer tasks to delete old metrics bins from database.
             //
 
-            final long fineTtl = getLongSystemProperty("com.l7tech.service.metrics.maxFineAge", MIN_FINE_AGE, MAX_FINE_AGE, DEF_FINE_AGE);
-            final long hourlyTtl = getLongSystemProperty("com.l7tech.service.metrics.maxHourlyAge", MIN_HOURLY_AGE, MAX_HOURLY_AGE, DEF_HOURLY_AGE);
-            final long dailyTtl = getLongSystemProperty("com.l7tech.service.metrics.maxDailyAge", MIN_DAILY_AGE, MAX_DAILY_AGE, DEF_DAILY_AGE);
+            final long fineTtl = getLongProperty( "com.l7tech.service.metrics.maxFineAge", MIN_FINE_AGE, MAX_FINE_AGE, DEF_FINE_AGE );
+            final long hourlyTtl = getLongProperty( "com.l7tech.service.metrics.maxHourlyAge", MIN_HOURLY_AGE, MAX_HOURLY_AGE, DEF_HOURLY_AGE );
+            final long dailyTtl = getLongProperty( "com.l7tech.service.metrics.maxDailyAge", MIN_DAILY_AGE, MAX_DAILY_AGE, DEF_DAILY_AGE );
 
             _fineDeleter = new DeleteTask(fineTtl, MetricsBin.RES_FINE);
             timer.schedule(_fineDeleter, MINUTE, 5 * MINUTE);
@@ -284,7 +282,7 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
     }
 
     /**
-     * Convenience method to return a system property value parsed into a long
+     * Convenience method to return a configuration property value parsed into a long
      * integer, constrained by the given lower and upper limits. If the system
      * property does not exist, or is not parsable as an integer, then the given
      * default value is returned instead.
@@ -295,9 +293,8 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
      * @param defaultValue  default value
      * @return property value
      */
-    @Deprecated() // use ServerConfig!
-    private static long getLongSystemProperty(final String name, final long lower, final long upper, final long defaultValue) {
-        final String value = System.getProperty(name);
+    private static long getLongProperty( final String name, final long lower, final long upper, final long defaultValue ) {
+        final String value = ConfigFactory.getProperty( name );
         if (value == null) {
             logger.info("Using default value (" + defaultValue + ") for missing system property: " + name);
             return defaultValue;
@@ -563,8 +560,8 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
         }
     }
 
-    private ServerConfig serverConfig() {
-        return serverConfig != null ? serverConfig : ServerConfig.getInstance();
+    private Config config() {
+        return config != null ? config : ConfigFactory.getCachedConfig();
     }
 
     /**
@@ -659,7 +656,7 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
     private ManagedTimer timer;
 
     @Inject
-    private ServerConfig serverConfig;
+    private Config config;
 
     /** Fine resolution bin interval (in milliseconds). */
     private int fineBinInterval;

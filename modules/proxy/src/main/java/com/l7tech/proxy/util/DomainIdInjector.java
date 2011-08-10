@@ -5,7 +5,7 @@ import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.protocol.DomainIdStatusCode;
 import com.l7tech.proxy.message.PolicyApplicationContext;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.security.socket.LocalTcpPeerIdentifier;
 
 import javax.mail.internet.MimeUtility;
@@ -26,12 +26,12 @@ public class DomainIdInjector {
     public static final String PROP_HEADER_DOMAIN = "com.l7tech.proxy.domainidlookup.domain.name";
     public static final String PROP_HEADER_PROGRAM = "com.l7tech.proxy.processlookup.name";
 
-    static boolean INJECT_ALWAYS = SyspropUtil.getBoolean(PROP_INJECT_ALWAYS, false);
-    static boolean INJECTION_ENABLED = INJECT_ALWAYS || SyspropUtil.getBoolean(PROP_INJECTION_ENABLED, true);
+    static boolean INJECT_ALWAYS = ConfigFactory.getBooleanProperty( PROP_INJECT_ALWAYS, false );
+    static boolean INJECTION_ENABLED = INJECT_ALWAYS || ConfigFactory.getBooleanProperty( PROP_INJECTION_ENABLED, true );
 
-    static String HEADER_USERNAME = SyspropUtil.getString(PROP_HEADER_USERNAME, "X-Injected-User-Name");
-    static String HEADER_DOMAIN = SyspropUtil.getString(PROP_HEADER_DOMAIN, "X-Injected-Domain-Name");
-    static String HEADER_PROGRAM = SyspropUtil.getString(PROP_HEADER_PROGRAM, "X-Injected-Program-Name");
+    static String HEADER_USERNAME = ConfigFactory.getProperty( PROP_HEADER_USERNAME, "X-Injected-User-Name" );
+    static String HEADER_DOMAIN = ConfigFactory.getProperty( PROP_HEADER_DOMAIN, "X-Injected-Domain-Name" );
+    static String HEADER_PROGRAM = ConfigFactory.getProperty( PROP_HEADER_PROGRAM, "X-Injected-Program-Name" );
 
     /**
      * Handle any domain ID injection that is configured to occur.

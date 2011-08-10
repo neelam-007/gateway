@@ -5,6 +5,7 @@ package com.l7tech.skunkworks.tarari;
 
 import com.l7tech.message.Message;
 import com.l7tech.message.TarariKnob;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.tarari.TarariSchemaHandler;
 import com.l7tech.xml.tarari.TarariMessageContext;
@@ -31,7 +32,7 @@ public class TarariSchemaHandlerTest extends TestCase {
     }
 
     protected void setUp() throws Exception {
-        System.setProperty("com.l7tech.common.xml.tarari.enable", "true");
+        SyspropUtil.setProperty( "com.l7tech.common.xml.tarari.enable", "true" );
         TarariLoader.compile();
     }
 

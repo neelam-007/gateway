@@ -171,7 +171,7 @@ public class ServerRequireWssX509Cert extends AbstractMessageTargetableServerAss
 
     //- PRIVATE
 
-    private static final boolean strictTokenTypeCheck = SyspropUtil.getBoolean( "com.l7tech.server.policy.assertion.xmlsec.x509StrictTokenTypeCheck", true );
+    private static final boolean strictTokenTypeCheck = ConfigFactory.getBooleanProperty( "com.l7tech.server.policy.assertion.xmlsec.x509StrictTokenTypeCheck", true );
 
     private final Config config;
     private final SecurityTokenResolver securityTokenResolver;

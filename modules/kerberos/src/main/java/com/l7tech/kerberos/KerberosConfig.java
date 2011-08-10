@@ -1,8 +1,10 @@
 package com.l7tech.kerberos;
 
 import com.l7tech.util.Charsets;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.SyspropUtil;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -14,9 +16,6 @@ import java.util.logging.Logger;
 
 /**
  * Generates Kerberos configuration for SecureSpan Bridge and Gateway.
- *
- * @author Steve Jones, $Author$
- * @version $Revision$
  */
 public class KerberosConfig implements KerberosConfigConstants {
 
@@ -46,7 +45,7 @@ public class KerberosConfig implements KerberosConfigConstants {
             return kerberosFiles.getKeytab();
 
         } else {
-            File keytabFile = new File(System.getProperty(SYSPROP_SSG_HOME) + PATH_KEYTAB);
+            File keytabFile = new File( SyspropUtil.getProperty( SYSPROP_SSG_HOME ) + PATH_KEYTAB);
             try {
                 if (!keytabFile.exists()) {
                     if (nullIfMissing) return null;
@@ -86,7 +85,7 @@ public class KerberosConfig implements KerberosConfigConstants {
             return (kerberosFiles.getKeytab() != null);
 
         } else {
-            File ktFile = new File(System.getProperty(SYSPROP_SSG_HOME) + PATH_KEYTAB);
+            File ktFile = new File( SyspropUtil.getProperty( SYSPROP_SSG_HOME ) + PATH_KEYTAB);
             return ktFile.exists();
         }
     }
@@ -117,11 +116,11 @@ public class KerberosConfig implements KerberosConfigConstants {
         if (!isInit || !initialized) {
             initialized = true;
 
-            if (System.getProperty(SYSPROP_SSG_HOME) != null) {
+            if ( SyspropUtil.getProperty( SYSPROP_SSG_HOME ) != null) {
                 configSsg( kdc, realm );
             }
-            else if (System.getProperty(SYSPROP_LOGINCFG_PATH) != null &&
-                     System.getProperty(SYSPROP_KRB5CFG_PATH) == null) {
+            else if ( SyspropUtil.getProperty( SYSPROP_LOGINCFG_PATH ) != null &&
+                    SyspropUtil.getProperty( SYSPROP_KRB5CFG_PATH ) == null) {
                 configSsb();
             }
         }
@@ -168,7 +167,7 @@ public class KerberosConfig implements KerberosConfigConstants {
     private static volatile boolean initialized = false;
 
     private static File getKeytabFile() {
-        return new File(System.getProperty(SYSPROP_SSG_HOME) + PATH_KEYTAB);
+        return new File( SyspropUtil.getProperty( SYSPROP_SSG_HOME ) + PATH_KEYTAB);
     }
 
     /**
@@ -196,7 +195,7 @@ public class KerberosConfig implements KerberosConfigConstants {
      */
     private static void configSsb() {
         try {
-            File loginConfigFile = new File(System.getProperty(SYSPROP_LOGINCFG_PATH));
+            File loginConfigFile = new File( SyspropUtil.getProperty( SYSPROP_LOGINCFG_PATH ) );
             File krb5ConfigFile = new File(loginConfigFile.getParentFile(), FILE_NAME_KRB5CFG);
 
             loginConfigFile.delete();
@@ -234,7 +233,7 @@ public class KerberosConfig implements KerberosConfigConstants {
             }
 
             if (realm == null) {
-                realm = System.getProperty(SYSPROP_KRB5_REALM);
+                realm = SyspropUtil.getProperty( SYSPROP_KRB5_REALM );
             }
 
             if (realm != null) {
@@ -242,7 +241,7 @@ public class KerberosConfig implements KerberosConfigConstants {
             }
 
             if (krb5ConfigFile.exists()) {
-                System.setProperty(SYSPROP_KRB5CFG_PATH, krb5ConfigFile.getAbsolutePath());
+                SyspropUtil.setProperty( SYSPROP_KRB5CFG_PATH, krb5ConfigFile.getAbsolutePath() );
             }
         }
         catch(Exception e) {
@@ -259,13 +258,13 @@ public class KerberosConfig implements KerberosConfigConstants {
      * @param ucRealm the Realm value (in uppercase) to use
      */
     private static void generateKrb5Config(File file, String kdcIp, String ucRealm) {
-        String ls = System.getProperty(SYSPROP_LINE_SEP, "\n");
+        String ls = SyspropUtil.getString( SYSPROP_LINE_SEP, "\n" );
         String lcRealm = ucRealm.toLowerCase();
-        String encTypesTkt = System.getProperty(SYSPROP_KRB5_ENC_TKT, ENCTYPES_TKT_DEFAULT);
-        String encTypesTgs= System.getProperty(SYSPROP_KRB5_ENC_TGS, ENCTYPES_TGS_DEFAULT);
+        String encTypesTkt = ConfigFactory.getProperty( SYSPROP_KRB5_ENC_TKT, ENCTYPES_TKT_DEFAULT );
+        String encTypesTgs = ConfigFactory.getProperty( SYSPROP_KRB5_ENC_TGS, ENCTYPES_TGS_DEFAULT );
 
         if (kdcIp == null) {
-            kdcIp = System.getProperty(SYSPROP_KRB5_KDC);
+            kdcIp = SyspropUtil.getProperty( SYSPROP_KRB5_KDC );
         }
         if (kdcIp == null) {
             try {

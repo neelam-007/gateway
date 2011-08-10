@@ -1,9 +1,6 @@
-/**
- * Copyright (C) 2008, Layer 7 Technologies Inc.
- * @author darmstrong
- */
 package com.l7tech.uddi;
 
+import com.l7tech.util.SyspropUtil;
 import org.junit.Test;
 import org.junit.Assert;
 import com.l7tech.wsdl.Wsdl;
@@ -16,6 +13,9 @@ import java.io.File;
 import java.io.InputStream;
 import java.util.*;
 
+/**
+ * @author darmstrong
+ */
 public class BusinessServicePublisherTest {
 
     /**
@@ -1109,14 +1109,14 @@ public class BusinessServicePublisherTest {
         BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
 
         try {
-            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName","");
-            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName", "");
+            SyspropUtil.setProperty( "com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName", "" );
+            SyspropUtil.setProperty( "com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName", "" );
             //going to test it's behaviour internally in TestUDDIClient and not any return value
             servicePublisher.publishServicesToUDDIRegistry("business key",
                             new HashSet(Arrays.asList("uddi:e3544a00-2234-11df-acce-251c32a0acbe")), false, null, Arrays.asList(endpointPair));
         } finally {
-            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName");
-            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName");
+            SyspropUtil.clearProperty( "com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName" );
+            SyspropUtil.clearProperty( "com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName" );
         }
 
         Assert.assertEquals("Only 1 service should have had empty keys", 1, uddiClient.getNumServicesWithNoKey());
@@ -1166,14 +1166,14 @@ public class BusinessServicePublisherTest {
         BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
 
         try {
-            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName","");
-            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName", "");
+            SyspropUtil.setProperty( "com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName", "" );
+            SyspropUtil.setProperty( "com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName", "" );
             //going to test it's behaviour internally in TestUDDIClient and not any return value
             servicePublisher.publishServicesToUDDIRegistry("business key",
                             new HashSet(Arrays.asList("uddi:e3544a00-2234-11df-acce-251c32a0acbe")), false, null, Arrays.asList(endpointPair));
         } finally {
-            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName");
-            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName");
+            SyspropUtil.clearProperty( "com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName" );
+            SyspropUtil.clearProperty( "com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName" );
         }
 
         Assert.assertEquals("No services should have had empty keys", 0, uddiClient.getNumServicesWithNoKey());
@@ -1228,14 +1228,14 @@ public class BusinessServicePublisherTest {
         BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
 
         try {
-            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName","");
-            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName", "");
+            SyspropUtil.setProperty( "com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName", "" );
+            SyspropUtil.setProperty( "com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName", "" );
             //going to test it's behaviour internally in TestUDDIClient and not any return value
             servicePublisher.publishServicesToUDDIRegistry("business key",
                             new HashSet(Arrays.asList("uddi:e3544a00-2234-11df-acce-251c32a0acbe")), false, null, Arrays.asList(endpointPair));
         } finally {
-            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName");
-            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName");
+            SyspropUtil.clearProperty( "com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName" );
+            SyspropUtil.clearProperty( "com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName" );
         }
 
         Assert.assertEquals("No services should have had empty keys", 1, uddiClient.getNumServicesWithNoKey());
@@ -1286,8 +1286,8 @@ public class BusinessServicePublisherTest {
         BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
 
         try {
-            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName","");
-            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName", "");
+            SyspropUtil.setProperty( "com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName", "" );
+            SyspropUtil.setProperty( "com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName", "" );
             //going to test it's behaviour internally in TestUDDIClient and not any return value
             final Set<String> publishedBindings = servicePublisher.overwriteServiceInUDDI(
                     "uddi:e3544a00-2234-11df-acce-251c32a0acbe",
@@ -1296,8 +1296,8 @@ public class BusinessServicePublisherTest {
             
             Assert.assertEquals("Incorrect number of bindings published", 2, publishedBindings.size());
         } finally {
-            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName");
-            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName");
+            SyspropUtil.clearProperty( "com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName" );
+            SyspropUtil.clearProperty( "com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName" );
         }
 
         Assert.assertEquals("No services should have had empty keys", 0, uddiClient.getNumServicesWithNoKey());
@@ -1350,8 +1350,8 @@ public class BusinessServicePublisherTest {
 
         Set<String> bindingKeys;
         try {
-            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName","");
-            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName", "");
+            SyspropUtil.setProperty( "com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName", "" );
+            SyspropUtil.setProperty( "com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName", "" );
             //going to test it's behaviour internally in TestUDDIClient and not any return value
 
             bindingKeys = servicePublisher.publishBindingTemplate(
@@ -1364,8 +1364,8 @@ public class BusinessServicePublisherTest {
                     null,
                     false, null, null);
         } finally {
-            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName");
-            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName");
+            SyspropUtil.clearProperty( "com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName" );
+            SyspropUtil.clearProperty( "com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName" );
         }
 
         Assert.assertEquals("No services should have been published", 0, uddiClient.getPublishedServices().size());
@@ -1430,8 +1430,8 @@ public class BusinessServicePublisherTest {
 
         Set<String> bindingKeys;
         try {
-            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName","");
-            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName", "");
+            SyspropUtil.setProperty( "com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName", "" );
+            SyspropUtil.setProperty( "com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName", "" );
             //going to test it's behaviour internally in TestUDDIClient and not any return value
 
             bindingKeys = servicePublisher.publishBindingTemplate(
@@ -1444,8 +1444,8 @@ public class BusinessServicePublisherTest {
                     null,
                     false, null, null);
         } finally {
-            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName");
-            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName");
+            SyspropUtil.clearProperty( "com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName" );
+            SyspropUtil.clearProperty( "com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName" );
         }
 
         Assert.assertEquals("No services should have been published", 0, uddiClient.getPublishedServices().size());
@@ -1512,8 +1512,8 @@ public class BusinessServicePublisherTest {
 
         Set<String> bindingKeys;
         try {
-            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName", "");
-            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName", "");
+            SyspropUtil.setProperty( "com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName", "" );
+            SyspropUtil.setProperty( "com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName", "" );
 
             bindingKeys = servicePublisher.publishBindingTemplate(
                     "uddi:e3544a00-2234-11df-acce-251c32a0acbe",
@@ -1525,8 +1525,8 @@ public class BusinessServicePublisherTest {
                     new HashSet<String>(Arrays.asList("uddi:e3549820-2234-11df-acce-251c32a0acbd", "uddi:e3549820-2234-11df-acce-251c32a03333")),
                     false, null, null);
         } finally {
-            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName");
-            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName");
+            SyspropUtil.clearProperty( "com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName" );
+            SyspropUtil.clearProperty( "com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName" );
         }
 
         Assert.assertEquals("No services should have been published", 0, uddiClient.getPublishedServices().size());
@@ -1591,8 +1591,8 @@ public class BusinessServicePublisherTest {
 
         Set<String> bindingKeys;
         try {
-            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName", "");
-            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName", "");
+            SyspropUtil.setProperty( "com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName", "" );
+            SyspropUtil.setProperty( "com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName", "" );
 
             bindingKeys = servicePublisher.publishBindingTemplate(
                     "uddi:e3544a00-2234-11df-acce-251c32a0acbe",
@@ -1604,8 +1604,8 @@ public class BusinessServicePublisherTest {
                     new HashSet<String>(Arrays.asList("uddi:e3549820-2234-11df-acce-251c32a0acbd", "uddi:e3549820-2234-11df-acce-251c32a03333")),
                     false, null, null);
         } finally {
-            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName");
-            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName");
+            SyspropUtil.clearProperty( "com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName" );
+            SyspropUtil.clearProperty( "com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName" );
         }
 
         Assert.assertEquals("No services should have been published", 0, uddiClient.getPublishedServices().size());
@@ -1799,8 +1799,8 @@ public class BusinessServicePublisherTest {
 
         Set<String> bindingKeys;
         try {
-            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName","");
-            System.setProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName", "");
+            SyspropUtil.setProperty( "com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName", "" );
+            SyspropUtil.setProperty( "com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName", "" );
             //going to test it's behaviour internally in TestUDDIClient and not any return value
 
             servicePublisher.publishBindingTemplate(
@@ -1813,8 +1813,8 @@ public class BusinessServicePublisherTest {
                     null,
                     false, null, null);
         } finally {
-            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName");
-            System.clearProperty("com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName");
+            SyspropUtil.clearProperty( "com.l7tech.uddi.BusinessServicePublisher.prependServiceLocalName" );
+            SyspropUtil.clearProperty( "com.l7tech.uddi.BusinessServicePublisher.appendServiceLocalName" );
         }
 
         final List<BindingTemplate> bindingTemplates = uddiClient.getPublishedBindingTemplates();

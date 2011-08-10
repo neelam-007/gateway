@@ -4,6 +4,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
+import com.l7tech.util.SyspropUtil;
 import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -50,7 +51,7 @@ public class CustomAssertionsRegistrarClientTest extends TestCase {
 
                     public void checkPermission(Permission perm, Object context) {}
                 });
-                System.setProperty("com.l7tech.common.locator.properties", "/com/l7tech/console/resources/services.properties");
+                SyspropUtil.setProperty( "com.l7tech.common.locator.properties", "/com/l7tech/console/resources/services.properties" );
                 TopComponents.getInstance().getPreferences().updateSystemProperties();
             }
 

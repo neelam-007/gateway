@@ -2,9 +2,9 @@ package com.l7tech.security.prov;
 
 import com.l7tech.security.cert.BouncyCastleCertUtils;
 import com.l7tech.security.prov.bc.BouncyCastleRsaSignerEngine;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.JceUtil;
-import com.l7tech.util.SyspropUtil;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
@@ -36,8 +36,8 @@ public abstract class JceProvider {
     // System property to disable fallback to default JceProvider if overridden JceProvider fails to initialize
     public static final String DISABLE_FALLBACK_PROPERTY = "com.l7tech.common.security.disableJceProviderFallback";
 
-    public static final int DEFAULT_RSA_KEYSIZE = SyspropUtil.getInteger("com.l7tech.security.prov.defaultRsaKeySize", 2048);
-    public static final String DEFAULT_CSR_SIG_ALG = SyspropUtil.getString("com.l7tech.security.prov.defaultCsrSigAlg", "SHA1withRSA");
+    public static final int DEFAULT_RSA_KEYSIZE = ConfigFactory.getIntProperty( "com.l7tech.security.prov.defaultRsaKeySize", 2048 );
+    public static final String DEFAULT_CSR_SIG_ALG = ConfigFactory.getProperty( "com.l7tech.security.prov.defaultCsrSigAlg", "SHA1withRSA" );
 
     // Available drivers
     public static final String BC_ENGINE = "com.l7tech.security.prov.bc.BouncyCastleJceProviderEngine";
@@ -117,7 +117,7 @@ public abstract class JceProvider {
         private static final JceProvider engine = createEngine();
 
         private static String getEngineClassname() {
-            String overrideEngineName = SyspropUtil.getString(ENGINE_OVERRIDE_PROPERTY, null);
+            String overrideEngineName = ConfigFactory.getProperty( ENGINE_OVERRIDE_PROPERTY, null );
             if (overrideEngineName != null && overrideEngineName.trim().length() > 0) {
                 String overrideClassname = OVERRIDE_MAP.get(overrideEngineName.trim().toLowerCase());
                 if (overrideClassname != null)
@@ -125,7 +125,7 @@ public abstract class JceProvider {
                 logger.log(Level.WARNING, "Ignoring unknown " + ENGINE_OVERRIDE_PROPERTY + ": " + overrideEngineName);
             }
 
-            return mapEngine(SyspropUtil.getString(ENGINE_PROPERTY, DEFAULT_ENGINE));
+            return mapEngine( ConfigFactory.getProperty( ENGINE_PROPERTY, DEFAULT_ENGINE ) );
         }
 
         private static JceProvider createEngine() {
@@ -134,7 +134,7 @@ public abstract class JceProvider {
             } catch (Throwable t) {
                 String msg = "Requested JceProvider could not be instantiated: " + ExceptionUtils.getMessage(t);
                 logger.log(Level.SEVERE, msg, t);
-                final boolean nofallback = SyspropUtil.getBoolean(DISABLE_FALLBACK_PROPERTY, false);
+                final boolean nofallback = ConfigFactory.getBooleanProperty( DISABLE_FALLBACK_PROPERTY, false );
                 if (nofallback)
                     throw new RuntimeException(t);
                 try {

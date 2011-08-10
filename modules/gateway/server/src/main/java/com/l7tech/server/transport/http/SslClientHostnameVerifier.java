@@ -2,11 +2,11 @@ package com.l7tech.server.transport.http;
 
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.server.ServerConfigParams;
+import com.l7tech.util.Config;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.CertVerifier;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.identity.cert.TrustedCertServices;
 
 import javax.net.ssl.HostnameVerifier;
@@ -32,15 +32,15 @@ public class SslClientHostnameVerifier implements HostnameVerifier {
 
     //- PUBLIC
 
-    public SslClientHostnameVerifier( final ServerConfig serverConfig,
+    public SslClientHostnameVerifier( final Config config,
                                       final TrustedCertServices trustedCertServices ) {
-        this( serverConfig, trustedCertServices, false );
+        this( config, trustedCertServices, false );
     }
 
-    public SslClientHostnameVerifier( final ServerConfig serverConfig,
+    public SslClientHostnameVerifier( final Config config,
                                       final TrustedCertServices trustedCertServices,
                                       final boolean hostnameWildcardsOnly ) {
-        this.serverConfig = serverConfig;
+        this.config = config;
         this.trustedCertServices = trustedCertServices;
         this.hostnameWildcardsOnly = hostnameWildcardsOnly;
     }
@@ -72,7 +72,7 @@ public class SslClientHostnameVerifier implements HostnameVerifier {
     private static final int NAME_TYPE_IPADDRESS = 7;
     private static final int NAME_TYPE_DNS = 2;
 
-    private final ServerConfig serverConfig;
+    private final Config config;
     private final TrustedCertServices trustedCertServices;
     private final boolean hostnameWildcardsOnly; // When wildcards are enabled, are they only allowed for hostnames?
 
@@ -91,7 +91,7 @@ public class SslClientHostnameVerifier implements HostnameVerifier {
 
     private boolean isSkipHostnameVerificationByDefault() {
         boolean verify = true;
-        String defaultVerifyHostnameTxt = serverConfig.getPropertyCached( ServerConfigParams.PARAM_IO_BACK_HTTPS_HOST_CHECK, 30000);
+        String defaultVerifyHostnameTxt = config.getProperty( ServerConfigParams.PARAM_IO_BACK_HTTPS_HOST_CHECK );
 
         if (defaultVerifyHostnameTxt != null) {
             verify = Boolean.valueOf(defaultVerifyHostnameTxt.trim());
@@ -102,7 +102,7 @@ public class SslClientHostnameVerifier implements HostnameVerifier {
 
     private boolean isAllowHostnameWildcards() {
         boolean allowWildcards = false;
-        String allowHostnameWildcardsTxt = serverConfig.getPropertyCached( ServerConfigParams.PARAM_IO_HOST_ALLOW_WILDCARD, 30000);
+        String allowHostnameWildcardsTxt = config.getProperty( ServerConfigParams.PARAM_IO_HOST_ALLOW_WILDCARD );
 
         if (allowHostnameWildcardsTxt != null) {
             allowWildcards = Boolean.valueOf(allowHostnameWildcardsTxt.trim());

@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2003-2009 Layer 7 Technologies Inc.
- */
 package com.l7tech.common.io;
 
 import com.l7tech.util.*;
@@ -60,7 +57,7 @@ public class CertUtils {
 
     private static final Logger logger = Logger.getLogger(CertUtils.class.getName());
     private static CertificateFactory certFactory;
-    private static final String X509_PROVIDER = SyspropUtil.getProperty( "com.l7tech.common.x509Provider");
+    private static final String X509_PROVIDER = ConfigFactory.getProperty( "com.l7tech.common.x509Provider" );
     private static final DnFormatter dnFormatter = findDnFormatter();
 
     public static final String ALG_MD5 = "MD5";
@@ -77,8 +74,8 @@ public class CertUtils {
     public static final String X509_OID_AIA_OCSP_URL = "1.3.6.1.5.5.7.48.1";
     public static final String X509_OID_BASIC_CONSTRAINTS = "2.5.29.19";
 
-    public static final int DEFAULT_X509V1_MAX_PATH_LENGTH = SyspropUtil.getInteger("com.l7tech.pkix.defaultX509v1MaxPathLength", 0);
-    public static final boolean DISABLE_SHARED_CERTIFICATE_FACTORY = SyspropUtil.getBoolean("com.l7tech.pkix.disableSharedCertificateFactory", false);
+    public static final int DEFAULT_X509V1_MAX_PATH_LENGTH = ConfigFactory.getIntProperty( "com.l7tech.pkix.defaultX509v1MaxPathLength", 0 );
+    public static final boolean DISABLE_SHARED_CERTIFICATE_FACTORY = ConfigFactory.getBooleanProperty( "com.l7tech.pkix.disableSharedCertificateFactory", false );
 
     public static final String CERT_PROP_NOTBEFORE_DATE = "Validity start date";
     public static final String CERT_PROP_NOTAFTER_DATE = "Expiry date";
@@ -2076,7 +2073,7 @@ public class CertUtils {
     }
 
     private static final class DefaultDnFormatter implements DnFormatter {
-        private static final boolean DECODE_DN_VALUES = SyspropUtil.getBoolean( "com.l7tech.common.io.decodeStringDnValues", true );
+        private static final boolean DECODE_DN_VALUES = ConfigFactory.getBooleanProperty( "com.l7tech.common.io.decodeStringDnValues", true );
 
         @Override
         public String formatDN( final String dn ) {

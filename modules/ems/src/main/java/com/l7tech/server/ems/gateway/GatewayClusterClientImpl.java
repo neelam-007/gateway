@@ -8,10 +8,10 @@ import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.server.management.api.node.GatewayApi;
 import com.l7tech.server.management.api.node.MigrationApi;
 import com.l7tech.server.management.api.node.ReportApi;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
-import com.l7tech.util.SyspropUtil;
 
 import javax.xml.ws.WebServiceException;
 import javax.xml.ws.soap.SOAPFaultException;
@@ -49,13 +49,13 @@ class GatewayClusterClientImpl implements GatewayClusterClient {
         this.ssgCluster = ssgCluster;
         this.numContexts = nodeContexts.size();
 
-        String failname = SyspropUtil.getString(PROP_FAILOVER_STRATEGY_NAME, DEFAULT_FAILOVER_STRATEGY_NAME);
+        String failname = ConfigFactory.getProperty( PROP_FAILOVER_STRATEGY_NAME, DEFAULT_FAILOVER_STRATEGY_NAME );
         final FailoverStrategy<GatewayContext> failstrat = numContexts>0 ?
                 FailoverStrategyFactory.createFailoverStrategy(failname, nodeContexts.toArray(new GatewayContext[numContexts])) :
                 new FailedFailoverStrategy();
         this.failover = AbstractFailoverStrategy.makeSynchronized(failstrat);
 
-        this.timeout = SyspropUtil.getLong(PROP_CACHE_TIMEOUT, DEFAULT_CACHE_TIMEOUT);
+        this.timeout = ConfigFactory.getLongProperty( PROP_CACHE_TIMEOUT, DEFAULT_CACHE_TIMEOUT );
     }
 
     @Override

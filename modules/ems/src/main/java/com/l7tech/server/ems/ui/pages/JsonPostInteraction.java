@@ -2,8 +2,8 @@ package com.l7tech.server.ems.ui.pages;
 
 import com.l7tech.server.ems.enterprise.JSONException;
 import com.l7tech.util.Charsets;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.IOUtils;
-import com.l7tech.util.SyspropUtil;
 import org.apache.wicket.IRequestTarget;
 import org.apache.wicket.Page;
 import org.apache.wicket.RequestCycle;
@@ -110,7 +110,7 @@ public class JsonPostInteraction extends Panel {
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(JsonPostInteraction.class.getName());
-    private static final int MAX_POST_SIZE = SyspropUtil.getInteger(JsonPostInteraction.class.getName()+".maxSize", 128*1024);
+    private static final int MAX_POST_SIZE = ConfigFactory.getIntProperty( JsonPostInteraction.class.getName() + ".maxSize", 128 * 1024 );
 
     private final JsonDataProvider provider;
 }

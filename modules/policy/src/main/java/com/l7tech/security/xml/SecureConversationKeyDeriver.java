@@ -29,10 +29,10 @@ public class SecureConversationKeyDeriver {
             URI_ALG_PHSA1_3
     ));
     private static final String DEFAULT_DEFAULT_LABEL = "WS-SecureConversationWS-SecureConversation";
-    private static final String DEFAULT_LABEL = nullAsNull(SyspropUtil.getString("com.l7tech.security.wssc.defaultLabel", DEFAULT_DEFAULT_LABEL));
-    private static final boolean IGNORE_ALGORITHM_URI = SyspropUtil.getBoolean("com.l7tech.security.wssc.ignoreAlgorithmUri", false);
-    private static final int MAX_GENERATION = SyspropUtil.getInteger("com.l7tech.security.wssc.maxGeneration", 100);
-    private static final int MAX_LENGTH = SyspropUtil.getInteger("com.l7tech.security.wssc.maxLength", 512);
+    private static final String DEFAULT_LABEL = nullAsNull( ConfigFactory.getProperty( "com.l7tech.security.wssc.defaultLabel", DEFAULT_DEFAULT_LABEL ) );
+    private static final boolean IGNORE_ALGORITHM_URI = ConfigFactory.getBooleanProperty( "com.l7tech.security.wssc.ignoreAlgorithmUri", false );
+    private static final int MAX_GENERATION = ConfigFactory.getIntProperty( "com.l7tech.security.wssc.maxGeneration", 100 );
+    private static final int MAX_LENGTH = ConfigFactory.getIntProperty( "com.l7tech.security.wssc.maxLength", 512 );
 
     private static final String ATTR_ALGORITHM = "Algorithm";
     private static final String ELE_GENERATION = "Generation";

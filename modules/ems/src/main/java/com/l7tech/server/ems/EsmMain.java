@@ -22,25 +22,19 @@ import java.io.File;
 public class EsmMain {
 
     public static void main(String[] args) {
-        if ( System.getProperty("java.util.logging.manager") == null ) {
+        if ( SyspropUtil.getProperty( "java.util.logging.manager" ) == null ) {
             System.setProperty("java.util.logging.manager", EsmLogManager.class.getName());
         }
         try {
             BuildInfo.setProduct( EsmMain.class.getPackage(), "Layer 7 Enterprise Service Manager" );
             System.setProperty("org.apache.cxf.nofastinfoset", "true");
 
-            // initialize config location
-            System.setProperty(ServerConfig.PROPS_RESOURCE_PROPERTY, "/com/l7tech/server/ems/resources/emconfig.properties");
-            if ( new File("var").exists() ) {
-                System.setProperty(ServerConfig.PROPS_OVER_PATH_PROPERTY, "var/emconfig.properties");
-            }
-
             // configure logging if the logs directory is found, else leave console output
             if ( new File("var/logs").exists() ) {
                 JdkLoggerConfigurator.configure("com.l7tech.server.ems", "com/l7tech/server/ems/resources/logging.properties", "etc/logging.properties", true, true);
             }
-            if ( SyspropUtil.getBoolean("com.l7tech.server.log.console") ) {
-                Logger.getLogger("").addHandler( new ConsoleHandler() );
+            if ( SyspropUtil.getBoolean( "com.l7tech.server.log.console", false ) ) {
+                Logger.getLogger( "" ).addHandler( new ConsoleHandler() );
             }
 
             // create Logger after initializing logging framework
@@ -50,19 +44,19 @@ public class EsmMain {
             // configure background timer
             Background.installTimer( new ManagedTimer( "Default background timer" ) );
 
-            if ( SyspropUtil.getBoolean("com.l7tech.ems.development") ) {
-                System.setProperty("com.l7tech.ems.showExceptions", "true");
-                System.setProperty("com.l7tech.ems.enableHttpListener", "true");
+            if ( SyspropUtil.getBoolean( "com.l7tech.ems.development", false ) ) {
+                System.setProperty( "com.l7tech.ems.showExceptions", "true" );
+                System.setProperty( "com.l7tech.ems.enableHttpListener", "true" );
                 ServerConfig serverConfig = ServerConfig.getInstance();
-                if ( serverConfig.getProperty("em.admin.user") == null ) {
-                    logger.info("Creating default administration account on startup.");
-                    serverConfig.putProperty("em.admin.user", "admin");
-                    serverConfig.putProperty("em.admin.pass", "$6$S7Z3HcudYNsObgs8$SjwZ3xtCkSjXOK2vHfOVEg2dJES3cgvtIUdHbEN/KdCBXoI6uuPSbxTEwcH.av6lpcb1p6Lu.gFeIX04FBxiJ.");
+                if ( serverConfig.getProperty( "em.admin.user" ) == null ) {
+                    logger.info( "Creating default administration account on startup." );
+                    serverConfig.putProperty( "em.admin.user", "admin" );
+                    serverConfig.putProperty( "em.admin.pass", "$6$S7Z3HcudYNsObgs8$SjwZ3xtCkSjXOK2vHfOVEg2dJES3cgvtIUdHbEN/KdCBXoI6uuPSbxTEwcH.av6lpcb1p6Lu.gFeIX04FBxiJ." );
                 }
             }
 
             // derby init
-            if ( System.getProperty("derby.system.home") == null ) {
+            if ( SyspropUtil.getProperty( "derby.system.home" ) == null ) {
                 System.setProperty("derby.system.home", "var/db");
             }
 

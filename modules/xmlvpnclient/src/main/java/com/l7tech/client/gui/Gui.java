@@ -1,11 +1,9 @@
-/*
- * Ultimate holder of everything related to an SSB GUI.
- */
 package com.l7tech.client.gui;
 
 import com.l7tech.gui.ExceptionDialog;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.HelpUtil;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.JavaVersionChecker;
 import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.Constants;
@@ -25,6 +23,8 @@ import java.util.logging.Logger;
 
 /**
  * Encapsulates the Client Proxy's user interface.
+ *
+ * Ultimate holder of everything related to an SSB GUI.
  */
 public class Gui {
     private static final Logger log = Logger.getLogger( Gui.class.getName() );
@@ -475,8 +475,8 @@ public class Gui {
         } else if ( MENU_HELP_ABOUT.equals( e.getActionCommand() ) ) {
             new AboutBox().setVisible(true);
         } else if ( MENU_HELP_HELP.equals( e.getActionCommand() ) ) {
-            HelpUtil.showHelpTopicsRoot(System.getProperty(APPLICATION_HOME_PROPERTY, new File(".").getAbsolutePath()),
-                                    Gui.getInstance().getFrame());
+            HelpUtil.showHelpTopicsRoot( ConfigFactory.getProperty( APPLICATION_HOME_PROPERTY, new File( "." ).getAbsolutePath() ),
+                    Gui.getInstance().getFrame() );
         }
     }
 

@@ -4,6 +4,10 @@ import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.cluster.ClusterPropertyListener;
 import com.l7tech.util.*;
+import com.l7tech.util.CollectionUtils.MapBuilder;
+import com.l7tech.util.ConfigFactory.ConfigProviderSpi;
+import com.l7tech.util.ConfigFactory.DefaultConfig;
+import static com.l7tech.util.Option.optional;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedOperation;
 import org.springframework.jmx.export.annotation.ManagedResource;
@@ -14,7 +18,7 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
@@ -26,35 +30,9 @@ import java.util.logging.Logger;
  *
  * @author alex
  */
-public class ServerConfig implements ClusterPropertyListener, Config {
+public class ServerConfig extends DefaultConfig implements ClusterPropertyListener {
 
     //- PUBLIC
-
-    /** If testmode property set to true, all properties are considered mutable, not just the ones with .mutable = true. */
-    public static final String PROP_TEST_MODE = "com.l7tech.server.serverconfig.testmode";
-
-    public static final long DEFAULT_CACHE_AGE = 30000L;
-
-    public static final String PROPS_PATH_PROPERTY = "com.l7tech.server.serverConfigPropertiesPath";
-    public static final String PROPS_RESOURCE_PROPERTY = "com.l7tech.server.serverConfigPropertiesResource";
-    public static final String PROPS_PATH_DEFAULT = "/ssg/etc/conf/serverconfig.properties";
-    public static final String PROPS_RESOURCE_PATH = "resources/serverconfig.properties";
-
-    public static final String PROPS_OVER_PATH_PROPERTY = "com.l7tech.server.serverConfigOverridePropertiesPath";
-    public static final String PROPS_OVER_PATH_DEFAULT =
-            System.getProperty("com.l7tech.server.home") == null
-            ? "/ssg/etc/conf/serverconfig_override.properties"
-            : System.getProperty("com.l7tech.server.home") + File.separator + "etc" + File.separator + "conf" + File.separator + "serverconfig_override.properties";
-
-    private static final String SUFFIX_SYSPROP = ".systemProperty";
-    private static final String SUFFIX_GETSYSPROP = ".getSystemProperty";
-    private static final String SUFFIX_SETSYSPROP = ".setSystemProperty";
-    private static final String SUFFIX_DESC = ".description";
-    private static final String SUFFIX_DEFAULT = ".default";
-    private static final String SUFFIX_VISIBLE = ".visible";
-    private static final String SUFFIX_CLUSTER_KEY = ".clusterProperty";
-    private static final String SUFFIX_CLUSTER_AGE = ".clusterPropertyAge";
-    private static final int CLUSTER_DEFAULT_AGE = 30000;
 
     public static ServerConfig getInstance() {
         return InstanceHolder.INSTANCE;
@@ -68,7 +46,6 @@ public class ServerConfig implements ClusterPropertyListener, Config {
      *                 [serverConfigPropertyName, clusterPropertyName, description, defaultValue].
      */
     public void registerServerConfigProperties(String[][] newProps) {
-        long now = System.currentTimeMillis();
         for (String[] tuple : newProps) {
             String propName = tuple[0];
             String clusterPropName = tuple[1];
@@ -83,9 +60,6 @@ public class ServerConfig implements ClusterPropertyListener, Config {
             } finally {
                 propLock.writeLock().unlock();
             }
-
-            String value = getPropertyUncached(propName, true);
-            valueCache.put(propName, new CachedValue(value, now));
         }
     }
 
@@ -99,16 +73,9 @@ public class ServerConfig implements ClusterPropertyListener, Config {
         }
     }
 
+    @SuppressWarnings({ "AccessStaticViaInstance" })
     public void setClusterPropertyCache(final ClusterPropertyCache clusterPropertyCache) {
-        propLock.writeLock().lock();
-        try {
-            if (this.clusterPropertyCache != null) throw new IllegalStateException("clusterPropertyCache already set!");
-            this.clusterPropertyCache = clusterPropertyCache;
-        } finally {
-            propLock.writeLock().unlock();
-        }
-
-        prepopulateSystemProperties();
+        this.clusterPropertyCache.compareAndSet( null, clusterPropertyCache );
     }
 
     @Override
@@ -119,142 +86,6 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     @Override
     public void clusterPropertyDeleted(final ClusterProperty clusterProperty) {
         clusterPropertyEvent(clusterProperty, clusterProperty);
-    }
-
-    /**
-     * @return the requested property, possibly with caching at this layer only
-     * unless the system property {@link #NO_CACHE_BY_DEFAULT} is true.
-     */
-    public String getProperty(String propName) {
-        return NO_CACHE_BY_DEFAULT_VALUE ? getPropertyUncached(propName) : getPropertyCached(propName);
-    }
-
-    /**
-     * @return the requested property, possibly with caching at this layer only
-     * unless the system property {@link #NO_CACHE_BY_DEFAULT} is true.
-     */
-    @Override
-    public String getProperty(String propName, String emergencyDefault) {
-        String value = getProperty(propName);
-
-        if ( value == null ) {
-            value = emergencyDefault;            
-        }
-
-        return value;
-    }
-
-    /**
-     * @return the requested property, or a cached value if hte cached value is less than {@link #DEFAULT_CACHE_AGE}
-     * millis old.
-     */
-    public String getPropertyCached(final String propName) {
-        return getPropertyCached(propName, DEFAULT_CACHE_AGE);
-    }
-
-    /** @return the requested property, or a cached value if the cached value is less than maxAge millis old. */
-    public String getPropertyCached(final String propName, final long maxAge) {
-        CachedValue cached = valueCache.get(propName);
-        final long now = System.currentTimeMillis();
-        if (cached != null) {
-            final long age = now - cached.when;
-            if (age <= maxAge)
-                return cached.value;
-        }
-        String value = getPropertyUncached(propName);
-        valueCache.put(propName, new CachedValue(value, now));
-        return value;
-    }
-
-    /** @return the requested property, with no caching at this layer. */
-    public String getPropertyUncached(String propName) {
-        return getPropertyUncached(propName, true);
-    }
-
-    /** @return the requested property, with no caching at this layer. */
-    public String getPropertyUncached(String propName, boolean includeClusterProperties) {
-        String sysPropProp = propName + SUFFIX_SYSPROP;
-        String getSysPropProp = propName + SUFFIX_GETSYSPROP;
-        String setSysPropProp = propName + SUFFIX_SETSYSPROP;
-        String dfltProp = propName + SUFFIX_DEFAULT;
-        String clusterKeyProp = propName + SUFFIX_CLUSTER_KEY;
-        String clusterAgeProp = propName + SUFFIX_CLUSTER_AGE;
-
-        String systemPropertyName = getServerConfigProperty(sysPropProp);
-        String isGetSystemProperty = getServerConfigProperty(getSysPropProp);
-        String isSetSystemProperty = getServerConfigProperty(setSysPropProp);
-        String defaultValue = getServerConfigProperty(dfltProp);
-        String clusterKey = getServerConfigProperty(clusterKeyProp);
-        String clusterAge = getServerConfigProperty(clusterAgeProp);
-
-        String value = null;
-
-        ClusterPropertyCache clusterPropertyCache;
-        propLock.readLock().lock();
-        try {
-            clusterPropertyCache = this.clusterPropertyCache;
-        } finally {
-            propLock.readLock().unlock();
-        }
-
-        if ( systemPropertyName != null && systemPropertyName.length() > 0 && !"false".equals(isGetSystemProperty) ) {
-            logger.finest("Checking System property " + systemPropertyName);
-            value = System.getProperty(systemPropertyName);
-        }
-
-        if (value == null && includeClusterProperties && clusterKey != null && clusterKey.length() > 0) {
-            if (clusterPropertyCache == null) {
-                logger.warning("Property '" + propName + "' has a cluster properties key defined, but the ClusterPropertyCache is not yet available");
-            } else {
-                logger.finest("Checking for cluster property '" + clusterKey + "'");
-                try {
-                    int age;
-                    if (clusterAge != null && clusterAge.length() > 0) {
-                        age = Integer.parseInt(clusterAge);
-                    } else {
-                        age = CLUSTER_DEFAULT_AGE;
-                    }
-
-                    ClusterProperty cp = clusterPropertyCache.getCachedEntityByName(clusterKey, age);
-                    if (cp == null) {
-                        logger.finest("No cluster property named '" + clusterKey + "'");
-                    } else {
-                        logger.finest("Using cluster property " + clusterKey + " = '" + cp.getValue() + "'");
-                        value = cp.getValue();
-                    }
-                } catch (Exception e) {
-                    logger.log(Level.WARNING, "Couldn't find cluster property '" + clusterKey + "'", e);
-                }
-            }
-        }
-
-        if ( value == null ) value = getServerConfigProperty( propName );
-
-        if ( value == null ) {
-            logger.finest("Using default value " + defaultValue);
-            value = defaultValue;
-        }
-
-        if (value != null && value.length() >= 2) {
-            value = unquote(value);
-        }
-
-        if (value != null && "true".equalsIgnoreCase(isSetSystemProperty) && systemPropertyName != null && systemPropertyName.length() > 0) {
-            System.setProperty(systemPropertyName, value);
-        }
-
-        return value;
-    }
-
-    private String unquote(String value) {
-        // Remove surrounding quotes
-        final int len = value.length();
-        final char fc = value.charAt(0);
-        final char lc = value.charAt(len -1);
-        if ((fc == '"' && lc == '"') || (fc == '\'' && lc == '\'')) {
-            value = value.substring(1, len-1);
-        }
-        return value;
     }
 
     /**
@@ -285,65 +116,21 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     }
 
     /**
-     * Get a server config property value by cluster property name.
-     *
-     * @param clusterPropertyName The cluster property name.
-     * @param includeClusterProperties True to include values from cluster properties.
-     * @return The value of the related server config property or null.
-     */
-    public String getPropertyByClusterName( final String clusterPropertyName,
-                                            final boolean includeClusterProperties ) {
-        String value = null;
-
-        final String propertyName = getNameFromClusterName( clusterPropertyName );
-        if ( propertyName != null ) {
-            value = getPropertyUncached( propertyName, includeClusterProperties );
-        }
-
-        return value;
-    }
-
-    /**
      * Get the cluster property name, if any, for the specified ServerConfig property.
      *
-     * @param serverConfigPropertyName the ServerConfig property whose cluster property name to look up.
+     * @param propertyName the ServerConfig property whose cluster property name to look up.
      * @return the cluster property name, or null if there isn't one.
      */
-    public String getClusterPropertyName(String serverConfigPropertyName) {
-        return getPropertyUncached(serverConfigPropertyName + SUFFIX_CLUSTER_KEY, false);
+    public String getClusterPropertyName(String propertyName) {
+        return getServerConfigProperty( propertyName + SUFFIX_CLUSTER_KEY );
     }
 
     public String getNameFromClusterName(String clusterPropertyName) {
         return getServerConfigPropertyName(SUFFIX_CLUSTER_KEY, clusterPropertyName);
     }
 
-    public String getPropertyDescription(String propName) {
-        String sysPropDesc = propName + SUFFIX_DESC;
-        return getServerConfigProperty(sysPropDesc);
-    }
-
-    private String getServerConfigPropertyName(String suffix, String value) {
-        String name = null;
-        if(suffix!=null && value!=null) {
-            propLock.readLock().lock();
-            try {
-                Set<Map.Entry<Object,Object>> propEntries = _properties.entrySet();
-                for (Map.Entry<Object,Object> propEntry : propEntries) {
-                    String propKey = (String) propEntry.getKey();
-                    String propVal = (String) propEntry.getValue();
-
-                    if (propKey == null || propVal == null) continue;
-
-                    if (propKey.endsWith(suffix) && propVal.equals(value)) {
-                        name = propKey.substring(0, propKey.length() - suffix.length());
-                        break;
-                    }
-                }
-            } finally {
-                propLock.readLock().unlock();
-            }
-        }
-        return name;
+    public String getPropertyDescription(String propertyName) {
+        return getServerConfigProperty( propertyName + SUFFIX_DESC );
     }
 
     public long getServerBootTime() {
@@ -360,7 +147,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
         }
 
         if (hostname == null) {
-            hostname = getPropertyCached(ServerConfigParams.PARAM_HOSTNAME);
+            hostname = getProperty( ServerConfigParams.PARAM_HOSTNAME, null );
 
             if (hostname == null) {
                 try {
@@ -394,7 +181,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
      * @return The theshold in bytes above which MIME parts will be spooled to disk.  Always nonnegative.
      */
     public int getAttachmentDiskThreshold() {
-        String str = getPropertyCached(ServerConfigParams.PARAM_ATTACHMENT_DISK_THRESHOLD);
+        String str = getProperty( ServerConfigParams.PARAM_ATTACHMENT_DISK_THRESHOLD, null );
 
         int ret = 0;
         if (str != null && str.length() > 0) {
@@ -448,7 +235,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
      *         If mustBeWritable, then it will be writable as well.
      */
     public File getLocalDirectoryProperty(String propName, String def, boolean mustBeWritable) {
-        String path = getPropertyCached(propName);
+        String path = getProperty( propName, null );
 
         if (path == null || path.length() < 1) {
             String errorMsg = "The property " + propName + " is not defined.  Please ensure that the " +
@@ -496,107 +283,6 @@ public class ServerConfig implements ClusterPropertyListener, Config {
         return dir;
     }
 
-    @Override
-    public int getIntProperty(String propName, int emergencyDefault) {
-        String strval = getProperty(propName);
-        int val;
-        try {
-            val = Integer.parseInt(strval);
-        } catch (NumberFormatException e) {
-            logger.warning("Parameter " + propName + " value '" + strval + "' not a valid integer; using " + emergencyDefault + " instead");
-            val = emergencyDefault;
-        }
-        return val;
-    }
-
-    /**
-     * Get a serverconfig property converted to an int.
-     *
-     * @param propName the property name. required
-     * @param emergencyDefault  the default to use if a value can't be found, or if the value isn't a valid int
-     * @param maxAge maximum number of millisconds a value may be cached for
-     * @return the requested value (possibly a default)
-     */
-    public int getIntPropertyCached(String propName, int emergencyDefault, long maxAge) {
-        String strval = getPropertyCached(propName, maxAge);
-        int val;
-        try {
-            val = Integer.parseInt(strval);
-        } catch (NumberFormatException e) {
-            logger.warning("Parameter " + propName + " value '" + strval + "' not a valid integer; using " + emergencyDefault + " instead");
-            val = emergencyDefault;
-        }
-        return val;
-    }
-
-    @Override
-    public long getLongProperty(String propName, long emergencyDefault) {
-        String strval = getProperty(propName);
-        long val;
-        try {
-            val = Long.parseLong(strval);
-        } catch (NumberFormatException e) {
-            logger.warning("Parameter " + propName + " value '" + strval + "' not a valid long integer; using " + emergencyDefault + " instead");
-            val = emergencyDefault;
-        }
-        return val;
-    }
-
-    /**
-     * Get a serverconfig property converted to a long.
-     *
-     * @param propName the property name. required
-     * @param emergencyDefault  the default to use if a value can't be found, or if the value isn't a valid long
-     * @param maxAge maximum number of millisconds a value may be cached for
-     * @return the requested value (possibly a default)
-     */
-    public long getLongPropertyCached(String propName, long emergencyDefault, long maxAge) {
-        String strval = getPropertyCached(propName, maxAge);
-        long val;
-        try {
-            val = Long.parseLong(strval);
-        } catch (NumberFormatException e) {
-            logger.warning("Parameter " + propName + " value '" + strval + "' not a valid long integer; using " + emergencyDefault + " instead");
-            val = emergencyDefault;
-        }
-        return val;
-    }
-
-    @Override
-    public boolean getBooleanProperty(String propName, boolean emergencyDefault) {
-        String strval = getProperty(propName);
-        return strval == null ? emergencyDefault : Boolean.parseBoolean(strval);
-    }
-
-    public boolean getBooleanPropertyCached(String propName, boolean emergencyDefault, long maxAge) {
-        String strval = getPropertyCached(propName, maxAge);
-        return strval == null ? emergencyDefault : Boolean.parseBoolean(strval);
-    }
-
-    public long getTimeUnitPropertyCached(String propName, long emergencyDefault, long maxAge) {
-        return asTimeUnit( propName, getPropertyCached(propName, maxAge), emergencyDefault);
-    }
-
-    @Override
-    public long getTimeUnitProperty(String propName, long emergencyDefault) {
-        return asTimeUnit( propName, getProperty(propName), emergencyDefault);
-    }
-
-    private long asTimeUnit( final String propName, final String strval, long emergencyDefault ) {
-        long val;
-        if ( strval == null ) {
-            val = emergencyDefault;
-        } else {
-            try {
-                val = TimeUnit.parse(strval, TimeUnit.MINUTES);
-            } catch (NumberFormatException e) {
-                logger.warning("Parameter " + propName + " value '" + strval + "' not a valid timeunit; using " + emergencyDefault + " instead");
-                val = emergencyDefault;
-            }
-        }
-        return val;
-    }
-
     /**
      * Check if the specified property's value may be changed directly at runtime by the Gateway code.
      *
@@ -606,7 +292,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     boolean isMutable(String propName) {
         propLock.readLock().lock();
         try {
-            return SyspropUtil.getBooleanCached(PROP_TEST_MODE, false) || "true".equals(_properties.getProperty(propName + ".mutable"));
+            return "true".equals(_properties.getProperty(propName + ".mutable"));
         } finally {
             propLock.readLock().unlock();
         }
@@ -628,7 +314,8 @@ public class ServerConfig implements ClusterPropertyListener, Config {
         } finally {
             propLock.writeLock().unlock();
         }
-        valueCache.remove(propName);
+
+        notifyConfigPropertyChanged( propName );
 
         PropertyChangeListener pcl;
         propLock.readLock().lock();
@@ -667,7 +354,9 @@ public class ServerConfig implements ClusterPropertyListener, Config {
         } finally {
             propLock.writeLock().unlock();
         }
-        valueCache.remove(propName);
+
+        notifyConfigPropertyChanged( propName );
+
         return true;
     }
 
@@ -681,7 +370,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
 
         @ManagedOperation(description="Get Property Value")
         public String getProperty( final String name ) {
-            return serverConfig.getProperty( name );            
+            return serverConfig.getPropertyInternal( name );
         }
 
         @ManagedAttribute(description="Property Names", currencyTimeLimit=30)
@@ -698,94 +387,157 @@ public class ServerConfig implements ClusterPropertyListener, Config {
 
     }
 
+    public static class ServerConfigConfigProviderSpi implements ConfigProviderSpi {
+        @Override
+        public Config newConfig( final Properties properties, final long cacheAge ) {
+            return new ServerConfig( properties, cacheAge );
+        }
+    }
+
+    //- PROTECTED
+
+    @Override
+    protected Option<String> getConfigPropertyDirect( final String propertyName ) {
+        String configName;
+
+        if ( propertyName.startsWith( SYSPROP_NAME_PREFIX ) ) {
+            configName = systemPropertyNameToConfigNameMap.get().get( propertyName );
+            if ( configName == null ) {
+                return optional( SyspropUtil.getProperty( propertyName ) );
+            }
+        } else {
+            configName = propertyName;
+        }
+
+        return optional( getPropertyInternal( configName, true ) );
+    }
+
     //- PRIVATE
 
-    private static final String NO_CACHE_BY_DEFAULT = "com.l7tech.server.ServerConfig.suppressCacheByDefault";
-    private static final Boolean NO_CACHE_BY_DEFAULT_VALUE = SyspropUtil.getBoolean(NO_CACHE_BY_DEFAULT);
+    private static final String SUFFIX_SYSPROP = ".systemProperty";
+    private static final String SUFFIX_SETSYSPROP = ".setSystemProperty";
+    private static final String SUFFIX_DESC = ".description";
+    private static final String SUFFIX_DEFAULT = ".default";
+    private static final String SUFFIX_VISIBLE = ".visible";
+    private static final String SUFFIX_CLUSTER_KEY = ".clusterProperty";
 
-    private static final Map<String,CachedValue> valueCache = new ConcurrentHashMap<String,CachedValue>();
+    private static final String SYSPROP_NAME_PREFIX = "com.l7tech.";
 
-    //
+    private final AtomicReference<Map<String,String>> systemPropertyNameToConfigNameMap =
+            new AtomicReference<Map<String, String>>( Collections.<String, String>emptyMap() );
+    private final AtomicReference<Map<String,String>> configNameToSystemPropertyNameMap =
+            new AtomicReference<Map<String, String>>( Collections.<String, String>emptyMap() );
     private final ReadWriteLock propLock = new ReentrantReadWriteLock(false);
     private final Properties _properties;
     private final long _serverBootTime = System.currentTimeMillis();
     private final Logger logger = Logger.getLogger(getClass().getName());
 
-    // 
     private PropertyChangeListener propertyChangeListener;
-    private ClusterPropertyCache clusterPropertyCache;
+    private static AtomicReference<ClusterPropertyCache> clusterPropertyCache = new AtomicReference<ClusterPropertyCache>();
     private String _hostname;
 
-    protected ServerConfig() {
+    protected ServerConfig( final Properties properties,
+                            final long cacheAge ) {
+        super( properties, cacheAge );
         _properties = new Properties();
 
-        InputStream propStream = null;
-        try {
-            String configPropertiesPath = SyspropUtil.getString(PROPS_PATH_PROPERTY, PROPS_PATH_DEFAULT);
-            File file = new File(configPropertiesPath);
-            if (file.exists()) {
-                propStream = new FileInputStream(file);
-            } else {
-                String configPropertiesResource = SyspropUtil.getString(PROPS_RESOURCE_PROPERTY, PROPS_RESOURCE_PATH);
-                propStream = ServerConfig.class.getResourceAsStream(configPropertiesResource);
-            }
-
-            if (propStream != null) {
-                _properties.load(propStream);
-            } else {
-                logger.severe("Couldn't load serverconfig.properties!");
-                throw new RuntimeException("Couldn't load serverconfig.properties!");
-            }
-        } catch (IOException ioe) {
-            logger.severe("Couldn't load serverconfig.properties!");
-            throw new RuntimeException("Couldn't load serverconfig.properties!");
-        } finally {
-            if (propStream != null)
-                try {
-                    propStream.close();
-                    propStream = null;
-                } catch (IOException e) {
-                    logger.log(Level.WARNING, "Couldn't close properties file", e);
-                }
+        for ( final String name : properties.stringPropertyNames() ) {
+            _properties.setProperty( name, properties.getProperty( name ) );
         }
 
-        // Find and process any override properties
-        String overridePath = System.getProperty(PROPS_OVER_PATH_PROPERTY);
-        if (overridePath == null) overridePath = PROPS_OVER_PATH_DEFAULT;
-
-        try {
-            if (overridePath != null) {
-                propStream = new FileInputStream(overridePath);
-                Properties op = new Properties();
-                op.load(propStream);
-
-                Set opKeys = op.keySet();
-                for (Object s : opKeys) {
-                    _properties.put(s, op.get(s));
-                    logger.log(Level.FINE, "Overriding serverconfig property: " + s);
+        final MapBuilder<String,String> systemBuilder = CollectionUtils.mapBuilder();
+        final MapBuilder<String,String> configBuilder = CollectionUtils.mapBuilder();
+        for ( final String name : _properties.stringPropertyNames() ) {
+            if ( name.endsWith( SUFFIX_SYSPROP ) ) {
+                final String value = properties.getProperty( name );
+                final String systemPropertyName = expand( value );
+                if ( systemPropertyName != null && systemPropertyName.startsWith(SYSPROP_NAME_PREFIX) ) {
+                    final String configName = name.substring( 0, name.length()-SUFFIX_SYSPROP.length() );
+                    systemBuilder.put( systemPropertyName, configName );
+                    configBuilder.put( configName, systemPropertyName );
                 }
             }
-        } catch (FileNotFoundException e) {
-            logger.log(Level.INFO, "Couldn't find serverconfig_override.properties; continuing with no overrides");
-        } catch (IOException e) {
-            logger.log(Level.SEVERE, "Error loading serverconfig_override.properties; continuing with no overrides", e);
-        } finally {
-            ResourceUtils.closeQuietly( propStream );
+
         }
 
-        // export as system property. This is required so custom assertions
-        // do not need to import in the ServerConfig and the clases referred by it
-        // (LogManager, TransportProtocol) to read the single property.  - em20040506
-        String cfgDirectory = getPropertyCached("ssg.conf");
-        if (cfgDirectory !=null) {
-            System.setProperty("ssg.config.dir", cfgDirectory);
-        } else {
-            logger.warning("The server config directory value is empty");
-        }
+        systemPropertyNameToConfigNameMap.set( systemBuilder.unmodifiableMap() );
+        configNameToSystemPropertyNameMap.set( configBuilder.unmodifiableMap() );
+
+        prepopulateSystemProperties();
     }
     
-    void invalidateCachedProperty(final String propName) {
-        valueCache.remove(propName);
+    private String getPropertyInternal( String propName ) {
+        return getPropertyInternal( propName, true );
+    }
+
+    @SuppressWarnings({ "AccessStaticViaInstance" })
+    private String getPropertyInternal( final String propName,
+                                        final boolean includeClusterProperties ) {
+        String sysPropProp = propName + SUFFIX_SYSPROP;
+        String setSysPropProp = propName + SUFFIX_SETSYSPROP;
+        String dfltProp = propName + SUFFIX_DEFAULT;
+        String clusterKeyProp = propName + SUFFIX_CLUSTER_KEY;
+
+        String systemPropertyName = getServerConfigProperty(sysPropProp);
+        String isSetSystemProperty = getServerConfigProperty(setSysPropProp);
+        String defaultValue = getServerConfigProperty(dfltProp);
+        String clusterKey = getServerConfigProperty(clusterKeyProp);
+
+        String value = null;
+
+        ClusterPropertyCache clusterPropertyCache = this.clusterPropertyCache.get();
+
+        if ( systemPropertyName != null && systemPropertyName.length() > 0 ) {
+            logger.finest("Checking System property " + systemPropertyName);
+            value = SyspropUtil.getProperty( systemPropertyName );
+        }
+
+        if (value == null && includeClusterProperties && clusterKey != null && clusterKey.length() > 0) {
+            if (clusterPropertyCache == null) {
+                logger.warning("Property '" + propName + "' has a cluster properties key defined, but the ClusterPropertyCache is not yet available");
+            } else {
+                logger.finest("Checking for cluster property '" + clusterKey + "'");
+                try {
+                    ClusterProperty cp = clusterPropertyCache.getCachedEntityByName(clusterKey);
+                    if (cp == null) {
+                        logger.finest("No cluster property named '" + clusterKey + "'");
+                    } else {
+                        logger.finest("Using cluster property " + clusterKey + " = '" + cp.getValue() + "'");
+                        value = cp.getValue();
+                    }
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "Couldn't find cluster property '" + clusterKey + "'", e);
+                }
+            }
+        }
+
+        if ( value == null ) value = getServerConfigProperty( propName );
+
+        if ( value == null ) {
+            logger.finest("Using default value " + defaultValue);
+            value = defaultValue;
+        }
+
+        if (value != null && value.length() >= 2) {
+            value = unquote(value);
+        }
+
+        if (value != null && "true".equalsIgnoreCase(isSetSystemProperty) && systemPropertyName != null && systemPropertyName.length() > 0) {
+            System.setProperty(systemPropertyName, value);
+        }
+
+        return value;
+    }
+
+    private String unquote(String value) {
+        // Remove surrounding quotes
+        final int len = value.length();
+        final char fc = value.charAt(0);
+        final char lc = value.charAt(len -1);
+        if ((fc == '"' && lc == '"') || (fc == '\'' && lc == '\'')) {
+            value = value.substring(1, len-1);
+        }
+        return value;
     }
 
     private void prepopulateSystemProperties() {
@@ -804,15 +556,23 @@ public class ServerConfig implements ClusterPropertyListener, Config {
                 String prop = key.substring(0, key.length() - SUFFIX_SETSYSPROP.length());
                 if (prop.length() < 1)
                     continue;
-                getPropertyUncached(prop);
+                getPropertyInternal( prop );
             }
+        }
+    }
+
+    private void notifyConfigPropertyChanged( final String propName ) {
+        notifyPropertyChanged( propName );
+        final String systemProperyName = configNameToSystemPropertyNameMap.get().get( propName );
+        if ( systemProperyName != null ) {
+            notifyPropertyChanged( systemProperyName );
         }
     }
 
     private void clusterPropertyEvent(final ClusterProperty clusterProperty, final ClusterProperty clusterPropertyOld) {
         String propertyName = getNameFromClusterName(clusterProperty.getName());
         if (propertyName != null) {
-            invalidateCachedProperty(propertyName);
+            notifyConfigPropertyChanged( propertyName );
 
             PropertyChangeListener pcl;
             propLock.readLock().lock();
@@ -825,8 +585,8 @@ public class ServerConfig implements ClusterPropertyListener, Config {
             if (pcl != null) {
                 String oldValue = clusterPropertyOld!=null ?
                         clusterPropertyOld.getValue() :
-                        getPropertyUncached(propertyName, false);
-                String newValue = getPropertyCached(propertyName);
+                        getPropertyInternal( propertyName, false );
+                String newValue = getProperty( propertyName, null );
 
                 if (oldValue==null || newValue==null || !oldValue.equals(newValue)) {
                     PropertyChangeEvent pce = new PropertyChangeEvent(this, propertyName, oldValue, newValue);
@@ -838,7 +598,30 @@ public class ServerConfig implements ClusterPropertyListener, Config {
                 }
             }
         }
-        SyspropUtil.clearCache();
+    }
+
+    private String getServerConfigPropertyName(String suffix, String value) {
+        String name = null;
+        if(suffix!=null && value!=null) {
+            propLock.readLock().lock();
+            try {
+                Set<Map.Entry<Object,Object>> propEntries = _properties.entrySet();
+                for (Map.Entry<Object,Object> propEntry : propEntries) {
+                    String propKey = (String) propEntry.getKey();
+                    String propVal = (String) propEntry.getValue();
+
+                    if (propKey == null || propVal == null) continue;
+
+                    if (propKey.endsWith(suffix) && propVal.equals(value)) {
+                        name = propKey.substring(0, propKey.length() - suffix.length());
+                        break;
+                    }
+                }
+            } finally {
+                propLock.readLock().unlock();
+            }
+        }
+        return name;
     }
 
     private Map<String, String> getMappedServerConfigPropertyNames(String keySuffix, String valueSuffix) {
@@ -855,7 +638,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
                     if(propKey.endsWith(keySuffix)) {
                         keyValueToMappedValue.put(
                                 propVal,
-                                getServerConfigProperty(propKey.substring(0, propKey.length()-keySuffix.length()) + valueSuffix));
+                                getServerConfigProperty(propKey.substring(0, propKey.length()-keySuffix.length()) + valueSuffix) );
                     }
                 }
             } finally {
@@ -865,69 +648,16 @@ public class ServerConfig implements ClusterPropertyListener, Config {
         return keyValueToMappedValue;
     }
 
-    private String getServerConfigProperty(String prop) {
-        String val;
+    private String getServerConfigProperty( final String prop ) {
         propLock.readLock().lock();
         try {
-            val = _properties.getProperty(prop);
+            return expand( _properties.getProperty(prop) );
         } finally {
             propLock.readLock().unlock();
         }
-        if (val == null) return null;
-        if (val.length() == 0) return val;
-
-        StringBuilder val2 = new StringBuilder();
-        int pos = val.indexOf('$');
-        if (pos >= 0) {
-            val2.append(val.substring(0, pos));
-            while (pos >= 0) {
-                if (val.charAt(pos + 1) == '{') {
-                    int pos2 = val.indexOf('}', pos + 1);
-                    if (pos2 >= 0) {
-                        // there's a reference
-                        String prop2 = val.substring(pos + 2, pos2);
-                        String ref = getProperty(prop2);
-                        if (ref == null) {
-                            val2.append("${");
-                            val2.append(prop2);
-                            val2.append("}");
-                        } else {
-                            val2.append(ref);
-                        }
-
-                        pos = val.indexOf('$', pos + 1);
-                        if (pos >= 0) {
-                            val2.append(val.substring(pos2 + 1, pos));
-                        } else {
-                            val2.append(val.substring(pos2 + 1));
-                        }
-                    } else {
-                        // there's no terminating }, pass it through literally
-                        val2.append(val.substring(pos));
-                        break;
-                    }
-                } else {
-                    val2.append(val.substring(pos));
-                    break;                    
-                }
-            }
-        } else {
-            val2.append(val);
-        }
-        return val2.toString();
-
     }
 
     private static final class InstanceHolder {
-        private static final ServerConfig INSTANCE = new ServerConfig();
-    }
-
-    private static final class CachedValue {
-        private final String value;
-        private final long when;
-        public CachedValue(String value, long when) {
-            this.value = value;
-            this.when = when;
-        }
+        private static final ServerConfig INSTANCE = (ServerConfig) ConfigFactory.getCachedConfig();
     }
 }

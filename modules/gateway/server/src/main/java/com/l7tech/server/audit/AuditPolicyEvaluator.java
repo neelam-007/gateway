@@ -5,13 +5,13 @@ import com.l7tech.gateway.common.audit.SystemAuditRecord;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.PolicyCacheEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.ServerPolicyHandle;
+import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import org.springframework.context.ApplicationEvent;
@@ -35,19 +35,19 @@ import java.util.logging.Logger;
 public class AuditPolicyEvaluator implements ApplicationListener {
     private static final Logger logger = Logger.getLogger(AuditPolicyEvaluator.class.getName());
 
-    private final ServerConfig serverConfig;
+    private final Config config;
     private final PolicyCache policyCache;
 
     private final AtomicBoolean sinkOpen = new AtomicBoolean(false);
     private final Queue<SystemAuditRecord> startupRecords = new ConcurrentLinkedQueue<SystemAuditRecord>();
 
-    public AuditPolicyEvaluator(ServerConfig serverConfig, PolicyCache policyCache) {
-        this.serverConfig = serverConfig;
+    public AuditPolicyEvaluator(Config config, PolicyCache policyCache) {
+        this.config = config;
         this.policyCache = policyCache;
     }
 
     private String loadAuditSinkPolicyGuid() {
-        return serverConfig.getPropertyCached( ServerConfigParams.PARAM_AUDIT_SINK_POLICY_GUID);
+        return config.getProperty( ServerConfigParams.PARAM_AUDIT_SINK_POLICY_GUID );
     }
 
     /**

@@ -43,6 +43,11 @@ public class SwitchedConfig implements Config {
     }
 
     @Override
+    public String getProperty( final String propertyName ) {
+        return getSwitchedValue( String.class, propertyName, config.getProperty( propertyName ) );
+    }
+
+    @Override
     public String getProperty( final String propertyName, final String defaultValue ) {
         return getSwitchedValue( String.class, propertyName, config.getProperty( propertyName, defaultValue ) );
     }

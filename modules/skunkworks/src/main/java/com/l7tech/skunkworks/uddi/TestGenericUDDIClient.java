@@ -1,5 +1,6 @@
 package com.l7tech.skunkworks.uddi;
 
+import com.l7tech.util.SyspropUtil;
 import org.junit.Test;
 import org.junit.Before;
 import org.junit.After;
@@ -140,7 +141,7 @@ public class TestGenericUDDIClient {
             throws MalformedURLException, LoginException, RemoteException, FindException,
             UDDIRegistryAdmin.PublishProxiedServiceException, VersionException, SaveException, UpdateException, UDDIRegistryAdmin.UDDIRegistryNotEnabledException {
 
-        System.setProperty("com.l7tech.console.suppressVersionCheck", "true");
+        SyspropUtil.setProperty( "com.l7tech.console.suppressVersionCheck", "true" );
 
         SsgAdminSession ssgAdminSession = new SsgAdminSession("irishman.l7tech.com", "admin", "password");
         UDDIRegistryAdmin uddiRegistryAdmin = ssgAdminSession.getUDDIRegistryAdmin();
@@ -165,7 +166,7 @@ public class TestGenericUDDIClient {
 
         uddiRegistryAdmin.publishGatewayWsdl(serviceToPublish, activeSoa.getOid(), businessKey, "Skunkworks Organization", false);
 
-        System.clearProperty("com.l7tech.console.suppressVersionCheck");
+        SyspropUtil.clearProperty( "com.l7tech.console.suppressVersionCheck" );
     }
 
     /**
@@ -181,7 +182,7 @@ public class TestGenericUDDIClient {
             throws IOException, LoginException, FindException,
             UDDIRegistryAdmin.PublishProxiedServiceException, VersionException, SaveException, UpdateException, WSDLException, SAXException, PolicyAssertionException, UDDIRegistryAdmin.UDDIRegistryNotEnabledException, DeleteException {
 
-        System.setProperty("com.l7tech.console.suppressVersionCheck", "true");
+        SyspropUtil.setProperty( "com.l7tech.console.suppressVersionCheck", "true" );
 
         SsgAdminSession ssgAdminSession = new SsgAdminSession("irishman.l7tech.com", "admin", "password");
         UDDIRegistryAdmin uddiRegistryAdmin = ssgAdminSession.getUDDIRegistryAdmin();
@@ -213,7 +214,7 @@ public class TestGenericUDDIClient {
         if(uddiProxiedServiceInfo == null) throw new IllegalStateException("UDDIProxiedService not found");
         uddiRegistryAdmin.updatePublishedGatewayWsdl(uddiProxiedServiceInfo.getOid());
 
-        System.clearProperty("com.l7tech.console.suppressVersionCheck");
+        SyspropUtil.clearProperty( "com.l7tech.console.suppressVersionCheck" );
     }
 
     /**
@@ -228,7 +229,7 @@ public class TestGenericUDDIClient {
             throws IOException, LoginException, FindException,
             UDDIRegistryAdmin.PublishProxiedServiceException, VersionException, SaveException, UpdateException, WSDLException, SAXException, PolicyAssertionException, UDDIRegistryAdmin.UDDIRegistryNotEnabledException, DeleteException {
 
-        System.setProperty("com.l7tech.console.suppressVersionCheck", "true");
+        SyspropUtil.setProperty( "com.l7tech.console.suppressVersionCheck", "true" );
 
         SsgAdminSession ssgAdminSession = new SsgAdminSession("irishman.l7tech.com", "admin", "password");
         UDDIRegistryAdmin uddiRegistryAdmin = ssgAdminSession.getUDDIRegistryAdmin();
@@ -260,13 +261,13 @@ public class TestGenericUDDIClient {
         if(uddiProxiedServiceInfo == null) throw new IllegalStateException("UDDIProxiedServiceInfo not found");
         uddiRegistryAdmin.updatePublishedGatewayWsdl(uddiProxiedServiceInfo.getOid());
 
-        System.clearProperty("com.l7tech.console.suppressVersionCheck");
+        SyspropUtil.clearProperty( "com.l7tech.console.suppressVersionCheck" );
     }
 
     @Test
     public void testDeleteUDDIProxiedService()
             throws MalformedURLException, LoginException, RemoteException, FindException, DeleteException, UDDIException, UDDIRegistryAdmin.UDDIRegistryNotEnabledException {
-        System.setProperty("com.l7tech.console.suppressVersionCheck", "true");
+        SyspropUtil.setProperty( "com.l7tech.console.suppressVersionCheck", "true" );
 
         SsgAdminSession ssgAdminSession = new SsgAdminSession("irishman.l7tech.com", "admin", "password");
         UDDIRegistryAdmin uddiRegistryAdmin = ssgAdminSession.getUDDIRegistryAdmin();
@@ -274,7 +275,7 @@ public class TestGenericUDDIClient {
 //        UDDIProxiedService proxiedService = uddiRegistryAdmin.findProxiedServiceInfoForPublishedService(70615040);
 //        uddiRegistryAdmin.deleteGatewayWsdlFromUDDI(proxiedService);
 
-        System.clearProperty("com.l7tech.console.suppressVersionCheck");
+        SyspropUtil.clearProperty( "com.l7tech.console.suppressVersionCheck" );
     }
 
     /**
@@ -283,7 +284,7 @@ public class TestGenericUDDIClient {
      */
     @Test
     public void testUpdatePublishedServiceUnderUDDIControl() throws Exception {
-        System.setProperty("com.l7tech.console.suppressVersionCheck", "true");
+        SyspropUtil.setProperty( "com.l7tech.console.suppressVersionCheck", "true" );
 
         InputStream inputStream = this.getClass().getResourceAsStream("Warehouse.wsdl"); //completely change the wsdl - a different namespace!
         Document dom = XmlUtil.parse(inputStream);
@@ -295,7 +296,7 @@ public class TestGenericUDDIClient {
 
         ssgAdminSession.getServiceAdmin().savePublishedService(service);
 
-        System.clearProperty("com.l7tech.console.suppressVersionCheck");
+        SyspropUtil.clearProperty( "com.l7tech.console.suppressVersionCheck" );
     }
 
     /**
@@ -304,7 +305,7 @@ public class TestGenericUDDIClient {
      */
     @Test
     public void testUpdatePublishedServiceUnderUDDIControlOk() throws Exception {
-        System.setProperty("com.l7tech.console.suppressVersionCheck", "true");
+        SyspropUtil.setProperty( "com.l7tech.console.suppressVersionCheck", "true" );
 
         SsgAdminSession ssgAdminSession = new SsgAdminSession("irishman.l7tech.com", "admin", "password");
         final PublishedService service = ssgAdminSession.getServiceAdmin().findServiceByID("1540099");
@@ -312,7 +313,7 @@ public class TestGenericUDDIClient {
 
         ssgAdminSession.getServiceAdmin().savePublishedService(service);
 
-        System.clearProperty("com.l7tech.console.suppressVersionCheck");
+        SyspropUtil.clearProperty( "com.l7tech.console.suppressVersionCheck" );
     }
 
     /**
@@ -373,14 +374,14 @@ public class TestGenericUDDIClient {
 
     @Test
     public void testDeleteUDDIServiceControl() throws Exception {
-        System.setProperty("com.l7tech.console.suppressVersionCheck", "true");
+        SyspropUtil.setProperty( "com.l7tech.console.suppressVersionCheck", "true" );
 
         SsgAdminSession ssgAdminSession = new SsgAdminSession("irishman.l7tech.com", "admin", "password");
         UDDIRegistryAdmin uddiRegistryAdmin = ssgAdminSession.getUDDIRegistryAdmin();
 
         uddiRegistryAdmin.deleteUDDIServiceControl(70615040);
 
-        System.clearProperty("com.l7tech.console.suppressVersionCheck");
+        SyspropUtil.clearProperty( "com.l7tech.console.suppressVersionCheck" );
     }
 
     @Test

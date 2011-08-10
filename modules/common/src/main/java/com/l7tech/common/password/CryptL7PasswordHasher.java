@@ -1,8 +1,8 @@
 package com.l7tech.common.password;
 
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
-import com.l7tech.util.SyspropUtil;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -15,8 +15,8 @@ import java.util.regex.Pattern;
  * string, and encoding the work factor into the salt.
  */
 public class CryptL7PasswordHasher implements PasswordHasher {
-    public static final String MESSAGE_DIGEST_ALGORITHM_NAME = SyspropUtil.getString("com.l7tech.CryptL7.messageDigestAlgorithm", "SHA-256");
-    public static final int SALT_BYTES = SyspropUtil.getInteger("com.l7tech.CryptL7.saltBytes", 10);
+    public static final String MESSAGE_DIGEST_ALGORITHM_NAME = ConfigFactory.getProperty( "com.l7tech.CryptL7.messageDigestAlgorithm", "SHA-256" );
+    public static final int SALT_BYTES = ConfigFactory.getIntProperty( "com.l7tech.CryptL7.saltBytes", 10 );
     public static final String PREFIX = "$L7H$";
 
     private static final String B64STR = "[a-zA-Z0-9\\+/=]+"; // Matches one or more characters of Base-64

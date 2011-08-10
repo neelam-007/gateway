@@ -21,7 +21,6 @@ import com.l7tech.security.xml.SecurityActor;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.decorator.WssDecoratorUtils;
 import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.PostRoutingEvent;
 import com.l7tech.server.event.PreRoutingEvent;
@@ -29,6 +28,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.security.kerberos.KerberosRoutingClient;
 import com.l7tech.server.util.EventChannel;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.SoapConstants;
@@ -379,7 +379,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
         int value = defaultValue;
 
         try {
-            String configuredValue = ServerConfig.getInstance().getPropertyCached(propName);
+            String configuredValue = ConfigFactory.getProperty( propName, null );
             if(configuredValue!=null) {
                 value = Integer.parseInt(configuredValue);
 

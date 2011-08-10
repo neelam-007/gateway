@@ -1,8 +1,8 @@
 package com.l7tech.security.xml;
 
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.NamespaceFactory;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.soap.SoapUtil;
 import org.w3c.dom.Element;
 
@@ -44,7 +44,7 @@ public class KeyNameKeyInfoDetails extends KeyInfoDetails {
 
     //- PRIVATE
 
-    private static final boolean rfc2253KeyName = SyspropUtil.getBoolean( "com.l7tech.security.xml.rfc2253KeyName", true );
+    private static final boolean rfc2253KeyName = ConfigFactory.getBooleanProperty( "com.l7tech.security.xml.rfc2253KeyName", true );
 
     private final X509Certificate certificate;
     private final boolean includeStr;

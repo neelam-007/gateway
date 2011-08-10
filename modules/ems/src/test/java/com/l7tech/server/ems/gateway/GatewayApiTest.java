@@ -1,5 +1,6 @@
 package com.l7tech.server.ems.gateway;
 
+import com.l7tech.util.SyspropUtil;
 import org.junit.Test;
 import org.junit.Ignore;
 import com.l7tech.server.management.api.node.GatewayApi;
@@ -25,7 +26,7 @@ public class GatewayApiTest {
     @Test
     @Ignore("Developer test")
     public void testConcurrentInvocation() throws Exception {
-        System.setProperty("org.apache.cxf.nofastinfoset", "true");
+        SyspropUtil.setProperty( "org.apache.cxf.nofastinfoset", "true" );
 
         Runnable runnable = new Runnable() {
             @Override

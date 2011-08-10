@@ -29,7 +29,7 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
     private static final String DB_FORMAT = "hsm.NcipherKeyStoreData";
     private static final String KEYSTORE_TYPE = "nCipher.sworld";
     private static final long refreshTime = 5 * 1000;
-    private static final File KMDATA_LOCAL_DIR = new File(SyspropUtil.getString("com.l7tech.server.security.keystore.ncipher.kmdataLocalPath", "/opt/nfast/kmdata/local"));
+    private static final File KMDATA_LOCAL_DIR = new File( ConfigFactory.getProperty( "com.l7tech.server.security.keystore.ncipher.kmdataLocalPath", "/opt/nfast/kmdata/local" ) );
     static final String KF_PROP_INITIAL_KEYSTORE_ID = "initialKeystoreId";
     static final String KF_PROP_IGNORE_KEYSTORE_IDS = "ignoreKeystoreIds";
 

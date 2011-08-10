@@ -486,6 +486,8 @@
         <property name="clusterPropertyCache" ref="clusterPropertyCache"/>
     </bean>
 
+    <bean id="uncachedConfig" class="com.l7tech.util.ConfigFactory" factory-method="getUncachedConfig" autowire-candidate="false"/>
+
     <bean id="simplePropertyChangeHandler" class="com.l7tech.server.SimplePropertyChangeHandler"/>
 
     <bean id="managedServerConfig" class="com.l7tech.server.ServerConfig$ManagedServerConfig">
@@ -1226,7 +1228,7 @@
 
     <!-- Checking Audit Cluster Properties -->
     <bean id="auditClusterPropertiesChecker" class="com.l7tech.server.audit.AuditClusterPropertiesChecker">
-        <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="uncachedConfig"/>
         <constructor-arg ref="entityVersionCheckerTimer"/>
     </bean>
 

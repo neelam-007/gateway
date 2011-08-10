@@ -23,9 +23,9 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.security.cert.*;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.FileUtils;
-import com.l7tech.util.SyspropUtil;
 
 import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
@@ -52,7 +52,7 @@ import static com.l7tech.console.panels.PrivateKeyPropertiesDialog.SpecialKeyTyp
  */
 public class PrivateKeyPropertiesDialog extends JDialog {
     private static final String PROP_ALLOW_EC_FOR_DEFAULT_SSL = "com.l7tech.allowEcKeyForDefaultSsl";
-    private static final boolean ALLOW_EC_FOR_DEFAULT_SSL = SyspropUtil.getBoolean(PROP_ALLOW_EC_FOR_DEFAULT_SSL, false);
+    private static final boolean ALLOW_EC_FOR_DEFAULT_SSL = ConfigFactory.getBooleanProperty( PROP_ALLOW_EC_FOR_DEFAULT_SSL, false );
 
     private JList certList;
     private JButton destroyPrivateKeyButton;

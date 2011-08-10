@@ -1,5 +1,6 @@
 package com.l7tech.server.transport.ftp;
 
+import com.l7tech.util.Config;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.LicenseManager;
@@ -47,7 +48,7 @@ public class FtpServerManager extends TransportModule {
 
     //- PUBLIC
 
-    public FtpServerManager(final ServerConfig serverConfig,
+    public FtpServerManager(final Config config,
                             final MessageProcessor messageProcessor,
                             final SoapFaultManager soapFaultManager,
                             final StashManagerFactory stashManagerFactory,
@@ -57,7 +58,7 @@ public class FtpServerManager extends TransportModule {
                             final SsgConnectorManager ssgConnectorManager,
                             final EventChannel messageProcessingEventChannel,
                             final Timer timer) {
-        super("FTP Server Manager", logger, GatewayFeatureSets.SERVICE_FTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager, trustedCertServices, defaultKeystore, serverConfig);
+        super("FTP Server Manager", logger, GatewayFeatureSets.SERVICE_FTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager, trustedCertServices, defaultKeystore, config );
 
         this.messageProcessor = messageProcessor;
         this.soapFaultManager = soapFaultManager;

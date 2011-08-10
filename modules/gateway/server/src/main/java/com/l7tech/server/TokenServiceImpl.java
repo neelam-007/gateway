@@ -428,14 +428,14 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         // the saml generator is common code and can be also used in the bridge which does not have access to the
         // cluster config. doing this enables us to support this functionality in both the SSG and the bridge
         if (getApplicationContext() != null) {
-            ServerConfig sg = (ServerConfig)getApplicationContext().getBean("serverConfig");
+            Config sg = (Config)getApplicationContext().getBean("serverConfig");
             if (sg != null) {
                 int beforeoffset = sg.getIntProperty("samlBeforeOffsetMinute", 2);
                 options.setNotBeforeSeconds(beforeoffset * 60);
-                System.setProperty(SamlAssertionGenerator.BEFORE_OFFSET_SYSTEM_PROPERTY, Integer.toString(beforeoffset));
+                SyspropUtil.setProperty( SamlAssertionGenerator.BEFORE_OFFSET_SYSTEM_PROPERTY, Integer.toString( beforeoffset ) );
                 int afteroffset = sg.getIntProperty("samlAfterOffsetMinute", 5);
                 options.setNotAfterSeconds(afteroffset * 60);
-                System.setProperty(SamlAssertionGenerator.AFTER_OFFSET_SYSTEM_PROPERTY, Integer.toString(afteroffset));
+                SyspropUtil.setProperty( SamlAssertionGenerator.AFTER_OFFSET_SYSTEM_PROPERTY, Integer.toString( afteroffset ) );
             }
         }
         SamlAssertionGenerator generator = new SamlAssertionGenerator(signerInfo);

@@ -1,7 +1,7 @@
 package com.l7tech.uddi;
 
 import com.l7tech.common.uddi.guddiv3.*;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.util.Pair;
 
@@ -127,7 +127,7 @@ public class UDDIUtilities {
             //UDDI has been updated to no longer contain the bindingTemplate which maps to the wsdl:port we were searching for
             //Return null in this case unless the SSG has been configured to allow for this, in which case we continue
             //and search for the first found bindingTemplate which implements the required wsdl:binding
-            if(!SyspropUtil.getBoolean("com.l7tech.uddi.UDDIUtilities.fallBackOnFirstImplentingWsdlPort", false)){
+            if( !ConfigFactory.getBooleanProperty( "com.l7tech.uddi.UDDIUtilities.fallBackOnFirstImplentingWsdlPort", false ) ){
                 return null;
             }
 
@@ -224,7 +224,7 @@ public class UDDIUtilities {
             return null;
         }
 
-        final boolean strictAccessPoint = SyspropUtil.getBoolean("com.l7tech.uddi.UDDIUtilities.strictAccessPointAttributes", false);
+        final boolean strictAccessPoint = ConfigFactory.getBooleanProperty( "com.l7tech.uddi.UDDIUtilities.strictAccessPointAttributes", false );
         if (!accessPoint.getUseType().equalsIgnoreCase("endPoint") && strictAccessPoint) {
             logger.log(Level.INFO, "Service with serviceKey " + serviceKey + " contains a bindingTemplate which maps to the wsdl:port with name: " + wsdlPortName +
                     " but it does not contain an accessPoint element with a useType of 'endPoint'");

@@ -260,7 +260,7 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
 
     //- PRIVATE
 
-    private static final int MAX_DOCUMENT_SIZE = SyspropUtil.getInteger("com.l7tech.wsdl.defaultMaxSize", 1024 * 1024 * 10); //10MB
+    private static final int MAX_DOCUMENT_SIZE = ConfigFactory.getIntProperty( "com.l7tech.wsdl.defaultMaxSize", 1024 * 1024 * 10 ); //10MB
     private static final String NOOP_WSDL = "<wsdl:definitions xmlns:wsdl=\"http://schemas.xmlsoap.org/wsdl/\"/>";
 
     private static final Logger logger = Logger.getLogger(ResourceTrackingWSDLLocator.class.getName());

@@ -1,6 +1,10 @@
 package com.l7tech.server.log.syslog;
 
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.SyspropUtil;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.core.IsEqual.equalTo;
+import org.hamcrest.core.IsNot;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -50,7 +54,7 @@ public class SyslogManagerTest {
         final long time = sdf.parse("2007-12-01 14:59:59").getTime();
         final String message = "Test message";
 
-        String result = sendMessage(1234, facility, severity, hostname, process, threadId, time, message);
+        String result = sendMessage(1234, facility, severity, hostname, process, (long) threadId, time, message);
         assertNotNull("Message received", result);
 
         Pattern pattern = Pattern.compile(REGEX_STANDARD);
@@ -65,11 +69,11 @@ public class SyslogManagerTest {
         long outThread = Long.valueOf(matcher.group(5));
         String outMess = matcher.group(6);
 
-        assertEquals("Priority", (8*facility) + severity.getSeverity(), outPriority);
+        assertEquals("Priority", (long) ((8 * facility) + severity.getSeverity()), (long) outPriority );
         assertEquals("Date", date, outDateStr);
         assertEquals("Host", hostname, outHost);
         assertEquals("Process", process, outProc);
-        assertEquals("Thread", threadId, outThread);
+        assertEquals("Thread", (long) threadId, outThread);
         assertEquals("Message", message, outMess);
     }
 
@@ -78,7 +82,7 @@ public class SyslogManagerTest {
      */
     @Test
     public void testSenderMessageTruncation() throws Exception {
-        System.setProperty(SyslogManagerTest.class.getPackage().getName() + ".maxLength", "1");  // 1 is not valid, so this uses min length
+        SyspropUtil.setProperty( SyslogManagerTest.class.getPackage().getName() + ".maxLength", "1" );  // 1 is not valid, so this uses min length
 
         // create client
         final String hostname = "test";
@@ -95,7 +99,7 @@ public class SyslogManagerTest {
                 " 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789" +
                 " 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789";
 
-        String result = sendMessage(1234, facility, severity, hostname, process, threadId, time, message);
+        String result = sendMessage(1234, facility, severity, hostname, process, (long) threadId, time, message);
         assertNotNull("Message received", result);
 
         Pattern pattern = Pattern.compile(REGEX_STANDARD);
@@ -109,13 +113,13 @@ public class SyslogManagerTest {
         long outThread = Long.valueOf(matcher.group(5));
         String outMess = matcher.group(6);
 
-        assertEquals("Priority", (8*facility) + severity.getSeverity(), outPriority);
+        assertEquals("Priority", (long) ((8 * facility) + severity.getSeverity()), (long) outPriority );
         assertEquals("Date", date, outDateStr);
         assertEquals("Host", hostname, outHost);
         assertEquals("Process", process, outProc);
-        assertEquals("Thread", threadId, outThread);
+        assertEquals("Thread", (long) threadId, outThread);
         assertTrue("Message start", message.startsWith(outMess));
-        assertFalse("Message truncated", message.length() == outMess.length());
+        assertThat( "Message truncated", message.length(), not( equalTo( outMess.length() ) ) );
     }
 
     /**
@@ -161,31 +165,31 @@ public class SyslogManagerTest {
         acceptor.bind(addresses[0], handler, config);
 
         // create client
-        Syslog syslog = manager.getSyslog(SyslogProtocol.VM, addresses, null, null, 23, "test.l7tech.com", null, null);
+        Syslog syslog = manager.getSyslog(SyslogProtocol.VM, addresses, null, null, 23, "test.l7tech.com", null, null, null, null);
 
         try {
             // wait until connected
-            assertTrue("Client connected", startLatch.await(5, TimeUnit.SECONDS));
+            assertTrue("Client connected", startLatch.await( 5L, TimeUnit.SECONDS));
 
             // send some messages
-            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1, System.currentTimeMillis(), "Test message 1");
-            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1, System.currentTimeMillis(), "Test message 2");
-            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1, System.currentTimeMillis(), "Test message 3");
-            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1, System.currentTimeMillis(), "Test message 4");
-            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1, System.currentTimeMillis(), "Test message 5");
-            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1, System.currentTimeMillis(), "Test message 6");
-            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1, System.currentTimeMillis(), "Test message 7");
-            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1, System.currentTimeMillis(), "Test message 8");
-            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1, System.currentTimeMillis(), "Test message 9");
-            Thread.sleep(10); // see how many messages come through ...
+            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1L, System.currentTimeMillis(), "Test message 1");
+            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1L, System.currentTimeMillis(), "Test message 2");
+            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1L, System.currentTimeMillis(), "Test message 3");
+            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1L, System.currentTimeMillis(), "Test message 4");
+            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1L, System.currentTimeMillis(), "Test message 5");
+            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1L, System.currentTimeMillis(), "Test message 6");
+            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1L, System.currentTimeMillis(), "Test message 7");
+            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1L, System.currentTimeMillis(), "Test message 8");
+            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1L, System.currentTimeMillis(), "Test message 9");
+            Thread.sleep( 10L ); // see how many messages come through ...
 
             // server shuts down
             acceptor.unbindAll();
             sessionHolder[0].close();
 
-            assertEquals("Connection events", 1, connectEventCount.get());
+            assertEquals("Connection events", 1L, (long) connectEventCount.get() );
 
-            if ( !endLatch.await(5, TimeUnit.SECONDS) ) {
+            if ( !endLatch.await( 5L, TimeUnit.SECONDS) ) {
                 fail("Timeout waiting for disconnect event.");
             }
         } finally {
@@ -236,45 +240,45 @@ public class SyslogManagerTest {
         acceptor.bind(addresses[0], handler, config);
 
         // create client
-        Syslog syslog = manager.getSyslog(SyslogProtocol.VM, addresses, null, null, 23, "test.l7tech.com", null, null);
+        Syslog syslog = manager.getSyslog(SyslogProtocol.VM, addresses, null, null, 23, "test.l7tech.com", null, null, null, null);
 
         try {
             // wait until connected
-            assertTrue("Client connected", startLatchRef.get().await(2, TimeUnit.SECONDS));
+            assertTrue("Client connected", startLatchRef.get().await( 2L, TimeUnit.SECONDS));
 
             // send some messages
-            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1, System.currentTimeMillis(), "Test message 1");
-            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1, System.currentTimeMillis(), "Test message 2");
-            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1, System.currentTimeMillis(), "Test message 3");
+            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1L, System.currentTimeMillis(), "Test message 1");
+            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1L, System.currentTimeMillis(), "Test message 2");
+            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1L, System.currentTimeMillis(), "Test message 3");
 
-            Thread.sleep(10); // see how many messages come through ...
+            Thread.sleep( 10L ); // see how many messages come through ...
             startLatchRef.set(new CountDownLatch(1));
             sessionHolder[0].close();
 
             // wait until connected
-            assertTrue("Client connected", startLatchRef.get().await(2, TimeUnit.SECONDS));
+            assertTrue("Client connected", startLatchRef.get().await( 2L, TimeUnit.SECONDS));
 
             // send some messages
-            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1, System.currentTimeMillis(), "Test message 4");
-            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1, System.currentTimeMillis(), "Test message 5");
-            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1, System.currentTimeMillis(), "Test message 6");
+            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1L, System.currentTimeMillis(), "Test message 4");
+            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1L, System.currentTimeMillis(), "Test message 5");
+            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1L, System.currentTimeMillis(), "Test message 6");
 
-            Thread.sleep(10); // see how many messages come through ...
+            Thread.sleep( 10L ); // see how many messages come through ...
             startLatchRef.set(new CountDownLatch(1));
             sessionHolder[0].close();
 
             // wait until connected
-            assertTrue("Client connected", startLatchRef.get().await(2, TimeUnit.SECONDS));
+            assertTrue("Client connected", startLatchRef.get().await( 2L, TimeUnit.SECONDS));
 
             // send some messages
-            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1, System.currentTimeMillis(), "Test message 7");
-            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1, System.currentTimeMillis(), "Test message 8");
-            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1, System.currentTimeMillis(), "Test message 9");
+            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1L, System.currentTimeMillis(), "Test message 7");
+            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1L, System.currentTimeMillis(), "Test message 8");
+            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1L, System.currentTimeMillis(), "Test message 9");
 
-            Thread.sleep(10); // see how many messages come through ...
+            Thread.sleep( 10L ); // see how many messages come through ...
             sessionHolder[0].close();
 
-            if ( !endLatch.await(5, TimeUnit.SECONDS) ) {
+            if ( !endLatch.await( 5L, TimeUnit.SECONDS) ) {
                 fail("Timeout waiting for disconnect event.");
             }
 
@@ -317,28 +321,28 @@ public class SyslogManagerTest {
         acceptor.bind(addresses[0], handler, config);
 
         // create client
-        Syslog syslog = manager.getSyslog(SyslogProtocol.VM, addresses, null, null, 23, "test.l7tech.com", null, null);
+        Syslog syslog = manager.getSyslog(SyslogProtocol.VM, addresses, null, null, 23, "test.l7tech.com", null, null, null, null);
 
         try {
             // wait until connected
-            assertTrue("Client connected", startLatch.await(5, TimeUnit.SECONDS));
+            assertTrue("Client connected", startLatch.await( 5L, TimeUnit.SECONDS));
 
             // send some messages
-            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1, System.currentTimeMillis(), "Test message 1");
-            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1, System.currentTimeMillis(), "Test message 2");
-            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1, System.currentTimeMillis(), "Test message 3");
-            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1, System.currentTimeMillis(), "Test message 4");
-            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1, System.currentTimeMillis(), "Test message 5");
-            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1, System.currentTimeMillis(), "Test message 6");
-            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1, System.currentTimeMillis(), "Test message 7");
-            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1, System.currentTimeMillis(), "Test message 8");
-            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1, System.currentTimeMillis(), "Test message 9");
-            Thread.sleep(10); // see how many messages come through ...
+            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1L, System.currentTimeMillis(), "Test message 1");
+            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1L, System.currentTimeMillis(), "Test message 2");
+            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1L, System.currentTimeMillis(), "Test message 3");
+            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1L, System.currentTimeMillis(), "Test message 4");
+            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1L, System.currentTimeMillis(), "Test message 5");
+            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1L, System.currentTimeMillis(), "Test message 6");
+            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1L, System.currentTimeMillis(), "Test message 7");
+            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1L, System.currentTimeMillis(), "Test message 8");
+            syslog.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1L, System.currentTimeMillis(), "Test message 9");
+            Thread.sleep( 10L ); // see how many messages come through ...
 
             // close client
             ResourceUtils.closeQuietly(syslog);
     
-            if ( !endLatch.await(5, TimeUnit.SECONDS) ) {
+            if ( !endLatch.await( 5L, TimeUnit.SECONDS) ) {
                 fail("Timeout waiting for disconnect.");
             }
         } finally {
@@ -384,31 +388,31 @@ public class SyslogManagerTest {
         acceptor.bind(addresses[0], handler, config);
 
         // create clients
-        Syslog syslog1 = manager.getSyslog(SyslogProtocol.VM, addresses, null, null, 23, "test.l7tech.com", null, null);
-        Syslog syslog2 = manager.getSyslog(SyslogProtocol.VM, addresses, null, null,  2, "test.l7tech.com", null, null);
-        Syslog syslog3 = manager.getSyslog(SyslogProtocol.VM, addresses, null, null, 13, "test.l7tech.com", null, null);
+        Syslog syslog1 = manager.getSyslog(SyslogProtocol.VM, addresses, null, null, 23, "test.l7tech.com", null, null, null, null);
+        Syslog syslog2 = manager.getSyslog(SyslogProtocol.VM, addresses, null, null,  2, "test.l7tech.com", null, null, null, null);
+        Syslog syslog3 = manager.getSyslog(SyslogProtocol.VM, addresses, null, null, 13, "test.l7tech.com", null, null, null, null);
 
         try {
             // wait until connected
-            assertTrue("Client connected", startLatch.await(2, TimeUnit.SECONDS));
+            assertTrue("Client connected", startLatch.await( 2L, TimeUnit.SECONDS));
 
             // send some messages
-            syslog1.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1, System.currentTimeMillis(), "Test message 1");
-            syslog2.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 2, System.currentTimeMillis(), "Test message 2");
-            syslog3.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 3, System.currentTimeMillis(), "Test message 3");
+            syslog1.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 1L, System.currentTimeMillis(), "Test message 1");
+            syslog2.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 2L, System.currentTimeMillis(), "Test message 2");
+            syslog3.log(SyslogSeverity.INFORMATIONAL, "SSG-default_", 3L, System.currentTimeMillis(), "Test message 3");
 
-            assertTrue("Messages received", messagesLatch.await(2, TimeUnit.SECONDS));
+            assertTrue("Messages received", messagesLatch.await( 2L, TimeUnit.SECONDS));
 
             // close client
             ResourceUtils.closeQuietly(syslog1);
             ResourceUtils.closeQuietly(syslog2);
             ResourceUtils.closeQuietly(syslog3);
 
-            if ( !endLatch.await(5, TimeUnit.SECONDS) ) {
+            if ( !endLatch.await( 5L, TimeUnit.SECONDS) ) {
                 fail("Timeout waiting for disconnect.");
             }
 
-            assertEquals("Session count", 1, sessionCount.get());
+            assertEquals("Session count", 1L, (long) sessionCount.get() );
         } finally {
             ResourceUtils.closeQuietly(syslog1);
             ResourceUtils.closeQuietly(syslog2);
@@ -457,12 +461,12 @@ public class SyslogManagerTest {
             acceptor.bind(addresses[0], handler, config);
 
             // create client
-            syslog = manager.getSyslog(SyslogProtocol.VM, addresses, null, null, facility, hostname + ".l7tech.com", null, null);
+            syslog = manager.getSyslog(SyslogProtocol.VM, addresses, null, null, facility, hostname + ".l7tech.com", null, null, null, null);
 
             // log message
             syslog.log(severity, process, threadId, time, message.replace(' ', '\n')); // covers testing translation of \n to <SPACE>
 
-            if (latch.await(1, TimeUnit.SECONDS) ) {
+            if (latch.await( 1L, TimeUnit.SECONDS) ) {
                 System.out.println(holder[0]);
                 return holder[0];
             } else {

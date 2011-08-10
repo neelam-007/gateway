@@ -36,7 +36,7 @@ public class ConfigurableJmsEndpointListenerFactory implements JmsEndpointListen
         JmsEndpointListenerFactory factory = null;
         String name = null;
 
-        final String configuredFactory = config != null ? config.getProperty( "ioJmsEndpointListenerFactory", null ) : null;
+        final String configuredFactory = config != null ? config.getProperty( "ioJmsEndpointListenerFactory" ) : null;
         if ( configuredFactory != null ) {
             factory = factories.get( configuredFactory );
             if ( factory == null ) {

@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.policy;
 
 import com.l7tech.gateway.common.LicenseManager;
@@ -20,13 +17,13 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.DefaultKey;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.BeanUtils;
+import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.HexUtils;
@@ -58,7 +55,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
     private static final Set<PropertyDescriptor> OMIT_XML = BeanUtils.omitProperties(BeanUtils.getProperties(Policy.class), "xml");
     private final PolicyAliasManager policyAliasManager;
 
-    private ServerConfig serverConfig;
+    private Config config;
     private LicenseManager licenseManager;
     private DefaultKey defaultKey;
 
@@ -149,7 +146,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
     }
 
     private void checkForActiveAuditSinkOrTracePolicy(long oid) throws FindException, PolicyDeletionForbiddenException {
-        if (serverConfig == null)
+        if ( config == null)
             return;
         Policy policy = policyManager.findByPrimaryKey(oid);
         if (policy == null)
@@ -157,10 +154,10 @@ public class PolicyAdminImpl implements PolicyAdmin {
         if (!(PolicyType.INTERNAL.equals(policy.getType())))
             return;
         String guid = policy.getGuid();
-        String sinkGuid = serverConfig.getProperty( ServerConfigParams.PARAM_AUDIT_SINK_POLICY_GUID);
+        String sinkGuid = config.getProperty( ServerConfigParams.PARAM_AUDIT_SINK_POLICY_GUID );
         if (sinkGuid != null && sinkGuid.trim().equals(guid))
             throw new PolicyDeletionForbiddenException(policy, EntityType.CLUSTER_PROPERTY, "it is currently in use as the global audit sink policy");
-        String traceGuid = serverConfig.getProperty( ServerConfigParams.PARAM_TRACE_POLICY_GUID);
+        String traceGuid = config.getProperty( ServerConfigParams.PARAM_TRACE_POLICY_GUID );
         if (traceGuid != null && traceGuid.trim().equals(guid)) {
             if (atLeastOneServiceHasTracingEnabled())
                 throw new PolicyDeletionForbiddenException(policy, EntityType.CLUSTER_PROPERTY, "it is currently in use as the global debug trace policy");
@@ -554,8 +551,8 @@ public class PolicyAdminImpl implements PolicyAdmin {
         policyVersionManager.deactivateVersions(policyOid, PolicyVersion.DEFAULT_OID);
     }
 
-    public void setServerConfig(ServerConfig serverConfig) {
-        this.serverConfig = serverConfig;
+    public void setServerConfig(Config config ) {
+        this.config = config;
     }
 
     @Override

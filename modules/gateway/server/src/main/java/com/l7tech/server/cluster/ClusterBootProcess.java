@@ -1,15 +1,13 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.cluster;
 
 import com.l7tech.server.ServerConfigParams;
+import com.l7tech.util.Config;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerComponentLifecycle;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.util.ExceptionUtils;
 
@@ -29,13 +27,13 @@ public class ClusterBootProcess implements ServerComponentLifecycle {
 
     public ClusterBootProcess( final ClusterInfoManager clusterInfoManager,
                                final DistributedMessageIdManager distributedMessageIdManager,
-                               final ServerConfig serverConfig ) {
+                               final Config config ) {
         if ( clusterInfoManager instanceof ClusterInfoManagerImpl ) throw new IllegalArgumentException("cim autoproxy failure");
 
         this.clusterInfoManager = clusterInfoManager;
         this.distributedMessageIdManager = distributedMessageIdManager;
 
-        multicastAddress = serverConfig.getPropertyCached( ServerConfigParams.PARAM_MULTICAST_ADDRESS);
+        multicastAddress = config.getProperty( ServerConfigParams.PARAM_MULTICAST_ADDRESS );
         if (multicastAddress != null && multicastAddress.length() == 0) multicastAddress = null;
     }
 
@@ -122,20 +120,20 @@ public class ClusterBootProcess implements ServerComponentLifecycle {
     static String generateMulticastAddress4() {
         StringBuffer addr = new StringBuffer();
 
-        if (Boolean.getBoolean(PROP_OLD_MULTICAST_GEN)) {
+        if ( ConfigFactory.getBooleanProperty( PROP_OLD_MULTICAST_GEN, false ) ) {
             // old method ... not so random
-            addr.append("224.0.7.");
-            addr.append(Math.abs(random.nextInt() % 256));
+            addr.append( "224.0.7." );
+            addr.append( Math.abs( random.nextInt() % 256 ) );
         } else {
             // randomize an address from the 224.0.2.0 - 224.0.255.255 range
-            addr.append("224.0.");
+            addr.append( "224.0." );
             int randomVal = 0;
-            while (randomVal < 2) {
-                randomVal = Math.abs(random.nextInt() % 256);
+            while ( randomVal < 2 ) {
+                randomVal = Math.abs( random.nextInt() % 256 );
             }
-            addr.append(randomVal);
-            addr.append(".");
-            addr.append(Math.abs(random.nextInt() % 256));
+            addr.append( randomVal );
+            addr.append( "." );
+            addr.append( Math.abs( random.nextInt() % 256 ) );
         }
 
         return addr.toString();

@@ -2,7 +2,7 @@ package com.l7tech.security.prov.pkcs11;
 
 import com.l7tech.security.prov.CertificateRequest;
 import com.l7tech.security.prov.JceProvider;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 
 import java.io.File;
 import java.security.*;
@@ -26,7 +26,7 @@ public class Pkcs11JceProviderEngine extends JceProvider {
      */
     public static final String PROPERTY_CONFIG_PATH = "com.l7tech.server.pkcs11ConfigFile";
     private static final String DEFAULT_CONFIG_PATH = "/opt/SecureSpan/Appliance/etc/pkcs11_linux.cfg";
-    private static final String CONFIG_PATH = SyspropUtil.getString(PROPERTY_CONFIG_PATH, DEFAULT_CONFIG_PATH);
+    private static final String CONFIG_PATH = ConfigFactory.getProperty( PROPERTY_CONFIG_PATH, DEFAULT_CONFIG_PATH );
     private static final Provider PROVIDER;
 
     static {

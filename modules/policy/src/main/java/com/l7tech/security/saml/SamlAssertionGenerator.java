@@ -502,7 +502,7 @@ public class SamlAssertionGenerator {
         private int notBeforeSeconds = DEFAULT_NOT_BEFORE_SECONDS;
         private int notAfterSeconds = DEFAULT_NOT_AFTER_SECONDS;
         private InetAddress clientAddress;
-        private boolean clientAddressDNS = SyspropUtil.getBoolean( SUBJECT_ENABLE_DNS_SYSTEM_PROPERTY, false );
+        private boolean clientAddressDNS = ConfigFactory.getBooleanProperty( SUBJECT_ENABLE_DNS_SYSTEM_PROPERTY, false );
         private boolean signAssertion = true;
         private SignerInfo attestingEntity;
         private String id = null;

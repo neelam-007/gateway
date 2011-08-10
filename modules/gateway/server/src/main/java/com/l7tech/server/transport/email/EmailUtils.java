@@ -3,7 +3,7 @@ package com.l7tech.server.transport.email;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.server.transport.http.SslClientHostnameAwareSocketFactory;
 import com.l7tech.server.transport.http.AnonymousSslClientHostnameAwareSocketFactory;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.gateway.common.transport.email.EmailMessage;
 import com.l7tech.gateway.common.transport.email.EmailTestException;
@@ -30,7 +30,7 @@ public class EmailUtils {
 
     // We only support SSL without client cert, but allow configuration of SSL default key just in case.
     private static final String PROP_SSL_DEFAULT_KEY = "com.l7tech.server.policy.emailalert.useDefaultSsl";
-    private static final boolean SSL_DEFAULT_KEY = SyspropUtil.getBoolean(PROP_SSL_DEFAULT_KEY, false);
+    private static final boolean SSL_DEFAULT_KEY = ConfigFactory.getBooleanProperty( PROP_SSL_DEFAULT_KEY, false );
     private static final String SOCKET_FACTORY_CLASSNAME = SSL_DEFAULT_KEY ?
             SslClientHostnameAwareSocketFactory.class.getName() :
             AnonymousSslClientHostnameAwareSocketFactory.class.getName();

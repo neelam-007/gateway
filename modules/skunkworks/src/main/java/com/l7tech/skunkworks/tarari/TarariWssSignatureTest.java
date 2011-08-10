@@ -5,6 +5,7 @@ package com.l7tech.skunkworks.tarari;
 
 import com.l7tech.message.Message;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.test.BenchmarkRunner;
@@ -20,7 +21,7 @@ public class TarariWssSignatureTest {
     private static final Logger logger = Logger.getLogger(TarariWssSignatureTest.class.getName());
 
     public static void main(String[] args) throws Exception {
-        System.setProperty("com.l7tech.common.xml.tarari.enable", args[0]);
+        SyspropUtil.setProperty( "com.l7tech.common.xml.tarari.enable", args[0] );
         TarariLoader.compile();
 
         //WssProcessorTest.TestDocument testdoc = WssProcessorTest.makeDotNetTestDocument("thing", TestDocuments.DOTNET_SIGNED_REQUEST);

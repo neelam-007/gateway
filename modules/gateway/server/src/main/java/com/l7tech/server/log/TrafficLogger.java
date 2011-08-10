@@ -6,11 +6,11 @@ import com.l7tech.message.MimeKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.Syntax;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.util.SoapFaultManager;
+import com.l7tech.util.Config;
 import com.l7tech.util.IOUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -76,9 +76,9 @@ public class TrafficLogger implements ApplicationContextAware, PropertyChangeLis
     /**
      *
      */
-    public TrafficLogger(final ServerConfig serverConfig,
+    public TrafficLogger(final Config config,
                          final SoapFaultManager soapFaultManager) {
-        this.serverConfig = serverConfig;
+        this.config = config;
         this.soapFaultManager = soapFaultManager;
     }
 
@@ -193,7 +193,7 @@ public class TrafficLogger implements ApplicationContextAware, PropertyChangeLis
     private static final Logger logger = Logger.getLogger(TrafficLogger.class.getName());
     private static final Logger trafficLogger = Logger.getLogger(SinkManagerImpl.TRAFFIC_LOGGER_NAME);
 
-    private final ServerConfig serverConfig;
+    private final Config config;
     private final SoapFaultManager soapFaultManager;
     private final AtomicBoolean enabled = new AtomicBoolean(false);
     private Auditor auditor;
@@ -234,10 +234,10 @@ public class TrafficLogger implements ApplicationContextAware, PropertyChangeLis
             logger.log(Level.CONFIG, "Updating traffic logger settings");
         }
 
-        String tmpdetail = serverConfig.getProperty(SERVCFG_DETAIL);
-        boolean tmpIncludeReq = Boolean.parseBoolean(serverConfig.getProperty(SERVCFG_ADDREQ));
-        boolean tmpIncludeRes = Boolean.parseBoolean(serverConfig.getProperty(SERVCFG_ADDRES));
-        boolean tmpSelective = Boolean.parseBoolean(serverConfig.getProperty(SERVCFG_SELECTIVE));
+        String tmpdetail = config.getProperty( SERVCFG_DETAIL );
+        boolean tmpIncludeReq = config.getBooleanProperty( SERVCFG_ADDREQ, false );
+        boolean tmpIncludeRes = config.getBooleanProperty( SERVCFG_ADDRES, false );
+        boolean tmpSelective = config.getBooleanProperty( SERVCFG_SELECTIVE, false );
 
         ReentrantReadWriteLock.WriteLock lock = cacheLock.writeLock();
         lock.lock();

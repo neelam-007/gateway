@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.proxy.util;
 
 import com.l7tech.common.http.*;
@@ -11,7 +5,7 @@ import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.util.Charsets;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 
 import java.io.IOException;
 import java.net.URL;
@@ -29,7 +23,7 @@ import java.util.logging.Logger;
  */
 public class CertificateDownloader {
     private static final Logger logger = Logger.getLogger(CertificateDownloader.class.getName());
-    private static final boolean ENABLE_PRE60 = SyspropUtil.getBoolean("com.l7tech.proxy.util.enablePre60CertDisco", true);
+    private static final boolean ENABLE_PRE60 = ConfigFactory.getBooleanProperty( "com.l7tech.proxy.util.enablePre60CertDisco", true );
 
     private final SimpleHttpClient httpClient;
     private final URL ssgUrl;

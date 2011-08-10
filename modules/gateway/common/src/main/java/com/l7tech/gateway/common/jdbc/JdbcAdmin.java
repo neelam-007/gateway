@@ -1,5 +1,6 @@
 package com.l7tech.gateway.common.jdbc;
 
+import com.l7tech.util.ConfigFactory;
 import org.springframework.transaction.annotation.Transactional;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import com.l7tech.gateway.common.security.rbac.Secured;
@@ -9,7 +10,6 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.util.SyspropUtil;
 
 import java.util.List;
 
@@ -36,10 +36,10 @@ public interface JdbcAdmin {
     static final int ORIGINAL_C3P0_BASIC_POOL_CONFIG_MAXPOOLSIZE = 15;
 
     // The original maximum length of a query statement
-    static final int MAX_QUERY_LENGTH = SyspropUtil.getInteger("com.l7tech.jdbcquery.maxquerylength", 4*1024);
+    static final int MAX_QUERY_LENGTH = ConfigFactory.getIntProperty( "com.l7tech.jdbcquery.maxquerylength", 4 * 1024 );
 
     // The original upper bound of the maximum number of records returned by the query 
-    static final int UPPER_BOUND_MAX_RECORDS = SyspropUtil.getInteger("com.l7tech.jdbcquery.maxrecords.upperbound", 10000);
+    static final int UPPER_BOUND_MAX_RECORDS = ConfigFactory.getIntProperty( "com.l7tech.jdbcquery.maxrecords.upperbound", 10000 );
 
     /**
      * Retrieve a JDBC Connection entity from the database by using a connection name.

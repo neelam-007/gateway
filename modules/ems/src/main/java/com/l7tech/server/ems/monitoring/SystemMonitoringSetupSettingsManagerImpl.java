@@ -6,9 +6,9 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ems.EsmConfigParams;
 import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.util.Config;
 import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
@@ -24,11 +24,11 @@ import java.util.Map;
  */
 public class SystemMonitoringSetupSettingsManagerImpl implements SystemMonitoringSetupSettingsManager {
     private final ClusterPropertyManager clusterPropertyManager;
-    private ServerConfig serverConfig;
+    private Config config;
 
-    public SystemMonitoringSetupSettingsManagerImpl(ClusterPropertyManager clusterPropertyManager, ServerConfig serverConfig) {
+    public SystemMonitoringSetupSettingsManagerImpl(ClusterPropertyManager clusterPropertyManager, Config config ) {
         this.clusterPropertyManager = clusterPropertyManager;
-        this.serverConfig = serverConfig;
+        this.config = config;
     }
 
     @Override
@@ -75,31 +75,31 @@ public class SystemMonitoringSetupSettingsManagerImpl implements SystemMonitorin
         Map<String, Object> initialSetupSettingsMap = new HashMap<String, Object>();
 
         try {
-            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_TRIGGER_AUDITSIZE,        Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_TRIGGER_AUDITSIZE)));
-            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_TRIGGER_DATABASEREPLICATIONDELAY, Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_TRIGGER_DATABASEREPLICATIONDELAY)));
-            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_TRIGGER_LOGSIZE,          Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_TRIGGER_LOGSIZE)) * KB_MB_CONVERTOR);
-            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_TRIGGER_DISKUSAGE,        Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_TRIGGER_DISKUSAGE)));
-            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_TRIGGER_DISKFREE,         Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_TRIGGER_DISKFREE)) * KB_GB_CONVERTOR);
-            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_TRIGGER_CPUTEMPERATURE,   Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_TRIGGER_CPUTEMPERATURE)));
-            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_TRIGGER_CPUUSAGE,         Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_TRIGGER_CPUUSAGE)));
-            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_TRIGGER_SWAPUSAGE,        Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_TRIGGER_SWAPUSAGE)) * KB_MB_CONVERTOR);
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_TRIGGER_AUDITSIZE,        Long.valueOf( config.getProperty( EsmConfigParams.PARAM_MONITORING_INIT_TRIGGER_AUDITSIZE ) ));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_TRIGGER_DATABASEREPLICATIONDELAY, Long.valueOf( config.getProperty( EsmConfigParams.PARAM_MONITORING_INIT_TRIGGER_DATABASEREPLICATIONDELAY ) ));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_TRIGGER_LOGSIZE,          Long.valueOf( config.getProperty( EsmConfigParams.PARAM_MONITORING_INIT_TRIGGER_LOGSIZE ) ) * KB_MB_CONVERTOR);
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_TRIGGER_DISKUSAGE,        Long.valueOf( config.getProperty( EsmConfigParams.PARAM_MONITORING_INIT_TRIGGER_DISKUSAGE ) ));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_TRIGGER_DISKFREE,         Long.valueOf( config.getProperty( EsmConfigParams.PARAM_MONITORING_INIT_TRIGGER_DISKFREE ) ) * KB_GB_CONVERTOR);
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_TRIGGER_CPUTEMPERATURE,   Long.valueOf( config.getProperty( EsmConfigParams.PARAM_MONITORING_INIT_TRIGGER_CPUTEMPERATURE ) ));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_TRIGGER_CPUUSAGE,         Long.valueOf( config.getProperty( EsmConfigParams.PARAM_MONITORING_INIT_TRIGGER_CPUUSAGE ) ));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_TRIGGER_SWAPUSAGE,        Long.valueOf( config.getProperty( EsmConfigParams.PARAM_MONITORING_INIT_TRIGGER_SWAPUSAGE ) ) * KB_MB_CONVERTOR);
 
-            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_AUDITSIZE,       Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_INTERVAL_AUDITSIZE)));
-            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_DATABASEREPLICATIONDELAY, Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_INTERVAL_DATABASEREPLICATIONDELAY)));
-            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_OPERATINGSTATUS, Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_INTERVAL_OPERATINGSTATUS)));
-            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_LOGSIZE,         Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_INTERVAL_LOGSIZE)));
-            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_DISKUSAGE,       Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_INTERVAL_DISKUSAGE)));
-            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_DISKFREE,        Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_INTERVAL_DISKFREE)));
-            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_RAIDSTATUS,      Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_INTERVAL_RAIDSTATUS)));
-            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_CPUTEMPERATURE,  Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_INTERVAL_CPUTEMPERATURE)));
-            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_CPUUSAGE,        Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_INTERVAL_CPUUSAGE)));
-            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_SWAPUSAGE,       Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_INTERVAL_SWAPUSAGE)));
-            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_NTPSTATUS,       Long.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_INTERVAL_NTPSTATUS)));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_AUDITSIZE,       Long.valueOf( config.getProperty( EsmConfigParams.PARAM_MONITORING_INIT_INTERVAL_AUDITSIZE ) ));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_DATABASEREPLICATIONDELAY, Long.valueOf( config.getProperty( EsmConfigParams.PARAM_MONITORING_INIT_INTERVAL_DATABASEREPLICATIONDELAY ) ));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_OPERATINGSTATUS, Long.valueOf( config.getProperty( EsmConfigParams.PARAM_MONITORING_INIT_INTERVAL_OPERATINGSTATUS ) ));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_LOGSIZE,         Long.valueOf( config.getProperty( EsmConfigParams.PARAM_MONITORING_INIT_INTERVAL_LOGSIZE ) ));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_DISKUSAGE,       Long.valueOf( config.getProperty( EsmConfigParams.PARAM_MONITORING_INIT_INTERVAL_DISKUSAGE ) ));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_DISKFREE,        Long.valueOf( config.getProperty( EsmConfigParams.PARAM_MONITORING_INIT_INTERVAL_DISKFREE ) ));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_RAIDSTATUS,      Long.valueOf( config.getProperty( EsmConfigParams.PARAM_MONITORING_INIT_INTERVAL_RAIDSTATUS ) ));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_CPUTEMPERATURE,  Long.valueOf( config.getProperty( EsmConfigParams.PARAM_MONITORING_INIT_INTERVAL_CPUTEMPERATURE ) ));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_CPUUSAGE,        Long.valueOf( config.getProperty( EsmConfigParams.PARAM_MONITORING_INIT_INTERVAL_CPUUSAGE ) ));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_SWAPUSAGE,       Long.valueOf( config.getProperty( EsmConfigParams.PARAM_MONITORING_INIT_INTERVAL_SWAPUSAGE ) ));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_INTERVAL_NTPSTATUS,       Long.valueOf( config.getProperty( EsmConfigParams.PARAM_MONITORING_INIT_INTERVAL_NTPSTATUS ) ));
 
-            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_DISABLEALLNOTIFICATIONS,  Boolean.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_DISABLEALLNOTIFICATIONS)));
-            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_AUDITUPONALERTSTATE,      Boolean.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_AUDITUPONALERTSTATE)));
-            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_AUDITUPONNORMALSTATE,     Boolean.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_AUDITUPONNORMALSTATE)));
-            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_AUDITUPONNOTIFICATION,    Boolean.valueOf(serverConfig.getProperty(EsmConfigParams.PARAM_MONITORING_INIT_AUDITUPONNOTIFICATION)));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_DISABLEALLNOTIFICATIONS,  Boolean.valueOf( config.getProperty( EsmConfigParams.PARAM_MONITORING_INIT_DISABLEALLNOTIFICATIONS ) ));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_AUDITUPONALERTSTATE,      Boolean.valueOf( config.getProperty( EsmConfigParams.PARAM_MONITORING_INIT_AUDITUPONALERTSTATE ) ));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_AUDITUPONNORMALSTATE,     Boolean.valueOf( config.getProperty( EsmConfigParams.PARAM_MONITORING_INIT_AUDITUPONNORMALSTATE ) ));
+            initialSetupSettingsMap.put(EsmConfigParams.PARAM_MONITORING_AUDITUPONNOTIFICATION,    Boolean.valueOf( config.getProperty( EsmConfigParams.PARAM_MONITORING_INIT_AUDITUPONNOTIFICATION ) ));
         } catch (NumberFormatException e) {
             throw new InvalidMonitoringSetupSettingException("Invalid system monitoring setup settings in the ESM config properties file.", e);
         }

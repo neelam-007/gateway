@@ -1,10 +1,6 @@
-/*
- * Copyright (C) 2005-2008 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.saml.SamlAssertionGenerator;
@@ -84,8 +80,7 @@ public class SenderVouchesSamlTokenStrategy extends AbstractSamlTokenStrategy {
         opts.setClientAddress(InetAddressUtil.getLocalHost());       // TODO allow override from API caller (i.e. portal)
         opts.setNotAfterSeconds(300);
         opts.setId(SamlAssertionGenerator.generateAssertionId("SSB-SamlAssertion"));
-        opts.setSignAssertion(Boolean.getBoolean(PROP_SIGN_SAML_SV));
-        opts.setSignAssertion(Boolean.getBoolean(PROP_SIGN_SAML_SV));
+        opts.setSignAssertion( ConfigFactory.getBooleanProperty( PROP_SIGN_SAML_SV, false ) );
         opts.setIssuerKeyInfoType(KeyInfoInclusionType.STR_THUMBPRINT);
         if (SecurityTokenType.SAML2_ASSERTION.equals(this.getType())) {
             opts.setVersion(2);

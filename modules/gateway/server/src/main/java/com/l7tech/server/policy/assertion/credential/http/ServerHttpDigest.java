@@ -11,9 +11,9 @@ import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.security.token.http.HttpDigestToken;
 import com.l7tech.server.policy.assertion.credential.DigestSessions;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
-import com.l7tech.util.SyspropUtil;
 
 import javax.mail.internet.HeaderTokenizer;
 import javax.mail.internet.ParseException;
@@ -294,7 +294,7 @@ public class ServerHttpDigest extends ServerHttpCredentialSource<HttpDigest> {
 
     // - PRIVATE
 
-    private static final boolean OLD_PARSER = SyspropUtil.getBoolean( "com.l7tech.server.policy.assertion.credential.http.oldDigestParser", false );
+    private static final boolean OLD_PARSER = ConfigFactory.getBooleanProperty( "com.l7tech.server.policy.assertion.credential.http.oldDigestParser", false );
 
     private Map<String,String> myChallengeParams( String nonce ) {
         Map<String,String> params = new HashMap<String,String>();

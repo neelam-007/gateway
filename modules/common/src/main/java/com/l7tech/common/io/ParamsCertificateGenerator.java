@@ -1,8 +1,8 @@
 package com.l7tech.common.io;
 
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
-import com.l7tech.util.SyspropUtil;
 import org.bouncycastle.asn1.*;
 import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.jce.X509KeyUsage;
@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.*;
 import java.util.*;
@@ -29,7 +28,7 @@ import java.util.*;
 public class ParamsCertificateGenerator {
     private final CertGenParams c;
 
-    static final boolean PREFER_SHA1_SIG = SyspropUtil.getBoolean("com.l7tech.security.cert.alwaysSignWithSha1", false);
+    static final boolean PREFER_SHA1_SIG = ConfigFactory.getBooleanProperty( "com.l7tech.security.cert.alwaysSignWithSha1", false );
     private static final SecureRandom DEFAULT_RAND = new SecureRandom();
     private final SecureRandom rand;
     private final String signatureProviderName;

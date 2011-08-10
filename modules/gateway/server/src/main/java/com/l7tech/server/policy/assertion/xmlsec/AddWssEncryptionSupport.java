@@ -18,9 +18,9 @@ import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
-import com.l7tech.util.SyspropUtil;
 
 import java.io.IOException;
 import java.security.cert.CertificateException;
@@ -36,7 +36,7 @@ public class AddWssEncryptionSupport implements AuditHaver {
     // X.509 credentials, it seems useful for any X509SigningSecurityToken though.
     //
     // This system property allows you to return the default behaviour to that used in 5.0
-    static boolean useDetectedKeyAlgorithmForSAML = SyspropUtil.getBoolean( "com.l7tech.server.wss.decoration.useDetectedKeyAlgorithmForSaml", true );
+    static boolean useDetectedKeyAlgorithmForSAML = ConfigFactory.getBooleanProperty( "com.l7tech.server.wss.decoration.useDetectedKeyAlgorithmForSaml", true );
 
     private final AuditHaver auditorHaver;
     private final MessageTargetable messageTargetable;

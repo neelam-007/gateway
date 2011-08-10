@@ -1,13 +1,8 @@
-/*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.util.FileUtils;
 import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
+import com.l7tech.util.SyspropUtil;
 
 import java.beans.XMLDecoder;
 import java.io.File;
@@ -27,7 +22,7 @@ import java.util.logging.Logger;
 public class SsgFinderImpl implements SsgFinder {
     private static final Logger log = Logger.getLogger(SsgFinderImpl.class.getName());
 
-    protected static final String STORE_DIR = System.getProperty("user.home") + File.separator + ".l7tech";
+    protected static final String STORE_DIR = SyspropUtil.getProperty( "user.home" ) + File.separator + ".l7tech";
     protected static final String STORE_PATH = STORE_DIR + File.separator + "ssgs.xml";
     protected static final File STORE_FILE = new File(STORE_PATH);
 

@@ -1,8 +1,3 @@
-/*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- *
- * $Id$
- */
 package com.l7tech.console;
 
 import com.l7tech.console.util.HeavySsmPreferences;
@@ -10,6 +5,7 @@ import com.l7tech.console.util.PreferencesChangedEvent;
 import com.l7tech.console.util.SsmPreferences;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.util.HelpUtil;
+import com.l7tech.util.ConfigFactory;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
@@ -128,7 +124,7 @@ public class SsmApplicationHeavy extends SsmApplication implements ApplicationLi
      * This procedure displays the WebHelp contents in the preferred browser for the system on which the SSM is running.
      */
     public void showHelpTopicsRoot() {
-        String applicationHome = System.getProperty(APPLICATION_HOME_PROPERTY, new File(".").getAbsolutePath());
+        String applicationHome = ConfigFactory.getProperty( APPLICATION_HOME_PROPERTY, new File( "." ).getAbsolutePath() );
         HelpUtil.showHelpTopicsRoot(applicationHome, TopComponents.getInstance().getTopParent());
     }
 

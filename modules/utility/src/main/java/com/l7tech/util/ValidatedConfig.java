@@ -38,6 +38,12 @@ public class ValidatedConfig implements Config {
     }
 
     @Override
+    public String getProperty( final String propertyName ) {
+        String value = config.getProperty( propertyName );
+        return validateStringProperty( propertyName, resolveName(propertyName), value, null );
+    }
+
+    @Override
     public String getProperty( final String propertyName,
                                final String defaultValue ) {
         String value = config.getProperty( propertyName, defaultValue );

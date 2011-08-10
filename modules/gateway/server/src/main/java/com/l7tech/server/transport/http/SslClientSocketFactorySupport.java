@@ -1,6 +1,6 @@
 package com.l7tech.server.transport.http;
 
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.common.io.SSLSocketWrapper;
@@ -119,7 +119,7 @@ public abstract class SslClientSocketFactorySupport extends SSLSocketFactory imp
         if ( trustManager == null )
             throw new IllegalStateException("TrustManager must be set before first use");
 
-        final int timeout = SyspropUtil.getInteger(PROP_SSL_SESSION_TIMEOUT, DEFAULT_SSL_SESSION_TIMEOUT);
+        final int timeout = ConfigFactory.getIntProperty( PROP_SSL_SESSION_TIMEOUT, DEFAULT_SSL_SESSION_TIMEOUT );
 
         final SSLContext context;
         try {

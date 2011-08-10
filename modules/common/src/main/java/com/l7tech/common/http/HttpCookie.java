@@ -1,12 +1,6 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.common.http;
 
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 
 import java.net.URL;
 import java.text.ParseException;
@@ -22,7 +16,7 @@ import java.util.regex.Matcher;
  */
 public class HttpCookie {
 
-    private static final boolean STRICT_COOKIE_EXPIRY_FORMAT = SyspropUtil.getBoolean("com.l7tech.common.http.strickCookieExpiryFormat");
+    private static final boolean STRICT_COOKIE_EXPIRY_FORMAT = ConfigFactory.getBooleanProperty( "com.l7tech.common.http.strickCookieExpiryFormat", false );
 
     //- PUBLIC
 

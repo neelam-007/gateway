@@ -8,9 +8,9 @@ import com.l7tech.security.cert.ParamsKeyGenerator;
 import com.l7tech.security.prov.CertificateRequest;
 import com.l7tech.server.event.system.Started;
 import com.l7tech.server.event.system.Stopped;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.NotFuture;
-import com.l7tech.util.SyspropUtil;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
@@ -32,7 +32,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
 
     private static final Logger logger = Logger.getLogger(JdkKeyStoreBackedSsgKeyStore.class.getName());
 
-    private static final boolean FORCE_CASE_INSENSITIVE_ALIAS_MATCH = SyspropUtil.getBoolean("com.l7tech.server.security.keystore.jdkbacked.checkForCaseInsensitiveAliasMatch", true);
+    private static final boolean FORCE_CASE_INSENSITIVE_ALIAS_MATCH = ConfigFactory.getBooleanProperty( "com.l7tech.server.security.keystore.jdkbacked.checkForCaseInsensitiveAliasMatch", true );
 
     private static BlockingQueue<Runnable> mutationQueue = new LinkedBlockingQueue<Runnable>();
     private static ExecutorService mutationExecutor = new ThreadPoolExecutor(1, 1, 5 * 60, TimeUnit.SECONDS, mutationQueue);

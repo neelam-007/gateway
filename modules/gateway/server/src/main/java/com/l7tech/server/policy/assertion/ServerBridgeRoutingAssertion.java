@@ -35,7 +35,6 @@ import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.processor.BadSecurityContextException;
 import com.l7tech.security.xml.processor.ProcessorException;
 import com.l7tech.server.DefaultStashManagerFactory;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.util.HttpForwardingRuleEnforcer;
@@ -514,13 +513,13 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
             @Override
             public GenericHttpRequest createRequest(HttpMethod method, GenericHttpRequestParams params) throws GenericHttpException {
                 // override params to match server config
-                if ( Boolean.valueOf(ServerConfig.getInstance().getPropertyCached("ioHttpUseExpectContinue")) ) {
+                if ( ConfigFactory.getBooleanProperty( "ioHttpUseExpectContinue", false ) ) {
                     params.setUseExpectContinue(true);
                 }
                 if ( !assertion.isUseKeepAlives() ) {
                     params.setUseKeepAlives(false);
                 }
-                if ( "1.0".equals(ServerConfig.getInstance().getPropertyCached("ioHttpVersion")) ) {
+                if ( "1.0".equals( ConfigFactory.getProperty( "ioHttpVersion", null ) ) ) {
                     params.setHttpVersion(GenericHttpRequestParams.HttpVersion.HTTP_VERSION_1_0);
                 }
                 if ( assertion.getMaxRetries() >= 0 ) {

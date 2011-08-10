@@ -1,9 +1,9 @@
 package com.l7tech.server.security.kerberos;
 
-import com.l7tech.server.ServerConfig;
 import com.l7tech.kerberos.KerberosUtils;
 import com.l7tech.kerberos.KerberosException;
 import com.l7tech.server.ServerConfigParams;
+import com.l7tech.util.Config;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.util.ExceptionUtils;
@@ -25,7 +25,7 @@ public class ServerKerberosConfig implements InitializingBean, PropertyChangeLis
 
     //- PUBLIC
 
-    public ServerKerberosConfig( final ServerConfig config,
+    public ServerKerberosConfig( final Config config,
                                  final MasterPasswordManager clusterEncryptionManager ) {
         this.config = config;
         this.clusterEncryptionManager = clusterEncryptionManager;
@@ -36,9 +36,9 @@ public class ServerKerberosConfig implements InitializingBean, PropertyChangeLis
      */
     @Override
     public void afterPropertiesSet() throws Exception {
-        String keytabBase64 = config.getPropertyCached(KERBEROS_KEYTAB_PROP);
-        String realm = config.getProperty( ServerConfigParams.PARAM_KERBEROS_CONFIG_REALM);
-        String kdc = config.getProperty( ServerConfigParams.PARAM_KERBEROS_CONFIG_KDC);
+        String keytabBase64 = config.getProperty( KERBEROS_KEYTAB_PROP );
+        String realm = config.getProperty( ServerConfigParams.PARAM_KERBEROS_CONFIG_REALM );
+        String kdc = config.getProperty( ServerConfigParams.PARAM_KERBEROS_CONFIG_KDC );
 
         synchronized( configSync ) {
             this.keytabB64 = keytabBase64;
@@ -95,7 +95,7 @@ public class ServerKerberosConfig implements InitializingBean, PropertyChangeLis
     private static final Logger logger = Logger.getLogger(ServerKerberosConfig.class.getName());
     private static final Object configSync = new Object();
     private static final String KERBEROS_KEYTAB_PROP = "krb5Keytab";
-    private final ServerConfig config;
+    private final Config config;
     private final MasterPasswordManager clusterEncryptionManager;
 
     private String keytabB64;

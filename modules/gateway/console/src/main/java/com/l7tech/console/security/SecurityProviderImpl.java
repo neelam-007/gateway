@@ -54,7 +54,7 @@ import java.util.logging.Logger;
  */
 public class SecurityProviderImpl extends SecurityProvider
   implements ApplicationContextAware, ApplicationListener {
-    private static final Boolean suppressVersionCheck = SyspropUtil.getBoolean("com.l7tech.console.suppressVersionCheck");
+    private static final Boolean suppressVersionCheck = ConfigFactory.getBooleanProperty( "com.l7tech.console.suppressVersionCheck", false );
 
     //- PUBLIC
 

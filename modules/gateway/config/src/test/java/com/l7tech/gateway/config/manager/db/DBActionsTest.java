@@ -2,6 +2,7 @@ package com.l7tech.gateway.config.manager.db;
 
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.util.BuildInfo;
+import com.l7tech.util.SyspropUtil;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -44,7 +45,7 @@ public class DBActionsTest {
     @Before
     public void setUp() throws Exception {
         if (!DBalreadyCreated) {
-            System.setProperty("com.l7tech.server.home", "/ssg");
+            SyspropUtil.setProperty( "com.l7tech.server.home", "/ssg" );
             dbActions = new DBActions();
             DBActions.StatusType result = createTestDatabases(dbActions);
             Assert.assertEquals(DBActions.StatusType.SUCCESS, result);

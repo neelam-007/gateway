@@ -157,7 +157,7 @@ public class UDDITemplateManager {
     private Map<String,UDDITemplate> loadTemplatesFromFile() {
         final Map<String,UDDITemplate> templates = new TreeMap<String, UDDITemplate>();
 
-        final String rootPath = config.getProperty( ServerConfigParams.PARAM_UDDI_TEMPLATES, null);
+        final String rootPath = config.getProperty( ServerConfigParams.PARAM_UDDI_TEMPLATES );
         if ( rootPath != null ) {
             logger.config("Loading UDDI templates from directory '"+rootPath+"'.");
 

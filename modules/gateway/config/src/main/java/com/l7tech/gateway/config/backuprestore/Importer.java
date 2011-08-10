@@ -6,10 +6,10 @@ import com.l7tech.gateway.config.manager.NodeConfigurationManager;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.server.management.config.node.NodeConfig;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.DefaultMasterPasswordFinder;
 import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.util.Pair;
-import com.l7tech.util.SyspropUtil;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
@@ -175,7 +175,7 @@ public final class Importer{
 
         //this class is not usable without an installed SSG >= 5.0
         final boolean checkVersion =
-                SyspropUtil.getBoolean("com.l7tech.gateway.config.backuprestore.checkversion", true);
+                ConfigFactory.getBooleanProperty( "com.l7tech.gateway.config.backuprestore.checkversion", true );
         if (checkVersion) ImportExportUtilities.throwIfLessThanFiveO(new File(ssgHome, "runtime/Gateway.jar"));
 
         this.printStream = printStream;

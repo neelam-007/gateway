@@ -123,7 +123,7 @@ public class KeyStorePrivateKeyMasterPasswordFinder implements MasterPasswordMan
      */
     public static File findPropertiesFile(File dir) {
         dir = dir.isDirectory() ? dir : dir.getParentFile();
-        return asAbsolute(dir, SyspropUtil.getString(SYSPROP_PROPS_FILE_PATH, DEFAULT_PROPS_FILE_PATH));
+        return asAbsolute( dir, ConfigFactory.getProperty( SYSPROP_PROPS_FILE_PATH, DEFAULT_PROPS_FILE_PATH ) );
     }
 
 

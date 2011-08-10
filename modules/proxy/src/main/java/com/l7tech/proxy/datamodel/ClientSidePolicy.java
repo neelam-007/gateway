@@ -1,12 +1,6 @@
-/*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.proxy.datamodel;
 
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 
 /**
  * A simple policy that the client side can enforce.  At the moment the only policy we support on the client
@@ -20,7 +14,7 @@ public class ClientSidePolicy {
     public static final String PROPERTY_DISALLOWPLAINTEXT = "com.l7tech.proxy.disallowPlaintextPassword";
 
     private static class Defaults {
-        private static boolean plaintextAuthDisallowed = SyspropUtil.getBoolean(PROPERTY_DISALLOWPLAINTEXT);
+        private static boolean plaintextAuthDisallowed = ConfigFactory.getBooleanProperty( PROPERTY_DISALLOWPLAINTEXT, false );
     }
 
     private ClientSidePolicy() {

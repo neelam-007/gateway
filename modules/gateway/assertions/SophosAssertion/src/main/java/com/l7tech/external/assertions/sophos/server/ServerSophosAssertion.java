@@ -10,7 +10,6 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.message.Message;
 import com.l7tech.policy.variable.Syntax;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.external.assertions.sophos.SophosAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -21,8 +20,6 @@ import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAsserti
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.*;
 import org.springframework.context.ApplicationContext;
-
-import com.l7tech.server.ServerConfig;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -115,7 +112,7 @@ public class ServerSophosAssertion extends AbstractMessageTargetableServerAssert
     {
         SsspClient client = null;
         try {
-                for(int i = 0;i < ServerConfig.getInstance().getIntProperty(SophosAssertion.PARAM_SOPHOS_FAILOVER_RETRIES, 5);i++) {
+                for(int i = 0;i < ConfigFactory.getIntProperty(SophosAssertion.PARAM_SOPHOS_FAILOVER_RETRIES, 5);i++) {
                     String hostPort = failoverStrategy.selectService();
                     Pair<String, String> hostAndPort = InetAddressUtil.getHostAndPort(hostPort, SophosAssertion.DEFAULT_PORT);
 

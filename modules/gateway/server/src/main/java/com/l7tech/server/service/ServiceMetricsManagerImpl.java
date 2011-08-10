@@ -15,7 +15,7 @@ import com.l7tech.server.mapping.MessageContextMappingManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
-import com.l7tech.server.ServerConfig;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ResourceUtils;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
@@ -711,7 +711,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
     private int getFineInterval() {
         int fineBinInterval = this.fineBinInterval;
         if ( fineBinInterval == 0 ) {
-            fineBinInterval = ServerConfig.getInstance().getIntProperty("metricsFineInterval", ServiceMetricsServices.DEF_FINE_BIN_INTERVAL);
+            fineBinInterval = ConfigFactory.getIntProperty( "metricsFineInterval", ServiceMetricsServices.DEF_FINE_BIN_INTERVAL );
             if (fineBinInterval > ServiceMetricsServices.MAX_FINE_BIN_INTERVAL || fineBinInterval < ServiceMetricsServices.MIN_FINE_BIN_INTERVAL) {
                 fineBinInterval = ServiceMetricsServices.DEF_FINE_BIN_INTERVAL;
             }

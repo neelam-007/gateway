@@ -1,7 +1,7 @@
 package com.l7tech.common.password;
 
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.PoolByteArrayOutputStream;
-import com.l7tech.util.SyspropUtil;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -16,22 +16,22 @@ public class CryptL7 {
     // Work factor 3 results in 256 work rounds and is computed pretty much instantly by my workstation.
     // This is about as low as we should consider permitting, initially.
     // If this value is raised then passwords hashed using lower values can no longer be authenticated.  We should avoid this course of action unless serious security concerns require it.
-    public static final int MIN_WORK_FACTOR = SyspropUtil.getInteger("com.l7tech.CryptL7.minWorkFactor", 3);
+    public static final int MIN_WORK_FACTOR = ConfigFactory.getIntProperty( "com.l7tech.CryptL7.minWorkFactor", 3 );
 
     // Maximum work factor to allow when computing a new password hash or checking an existing one.
     // Work factor 10 results in 4194304 work rounds and takes about 8 CPU seconds with 64-bit JDK 6 on my current workstation (Core i5 750 @ 2.67 GHz, quad core, circa 2011).
     // This is about as high as we should currently consider allowing, in order to avoid a CPU DoS if a hostile hashed password is encountered.
     // This can be raised in the future with no backward-compatibility consequences.
-    public static final int MAX_WORK_FACTOR = SyspropUtil.getInteger("com.l7tech.CryptL7.maxWorkFactor", 10);
+    public static final int MAX_WORK_FACTOR = ConfigFactory.getIntProperty( "com.l7tech.CryptL7.maxWorkFactor", 10 );
 
     // Default work factor to use for new hashed passwords.  The value of 4 is optimized for speed, but can be raised to
     // optimize for security instead.
-    public static final int DEFAULT_WORK_FACTOR = SyspropUtil.getInteger("com.l7tech.CryptL7.defaultWorkFactor", 4);
+    public static final int DEFAULT_WORK_FACTOR = ConfigFactory.getIntProperty( "com.l7tech.CryptL7.defaultWorkFactor", 4 );
 
     // This is the minimum size of underlying hash that we will allow.  This implementation will work
     // with hashes with outputs as small as 1 byte, but MD5's 16 byte output is the smallest we should
     // consider allowing in real life.
-    public static final int MIN_HASH_OUTPUT_SIZE = SyspropUtil.getInteger("com.l7tech.CryptL7.minHashOutputSize", 16);
+    public static final int MIN_HASH_OUTPUT_SIZE = ConfigFactory.getIntProperty( "com.l7tech.CryptL7.minHashOutputSize", 16 );
 
     /*
 The CryptL7 algorithm is intended to work with PCI-approved hash algorithms (ie, SHA-2) but to be computationally

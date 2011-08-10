@@ -148,7 +148,7 @@ public final class Exporter{
 
         //this class is not usable without an installed SSG >= 5.0
         final boolean checkVersion =
-                SyspropUtil.getBoolean("com.l7tech.gateway.config.backuprestore.checkversion", true);
+                ConfigFactory.getBooleanProperty( "com.l7tech.gateway.config.backuprestore.checkversion", true );
         if (checkVersion) {
             int[] versionInfo = ImportExportUtilities.throwIfLessThanFiveO(new File(ssgHome, "runtime/Gateway.jar"));
             final int majorVersion = versionInfo[0];
@@ -160,7 +160,7 @@ public final class Exporter{
             }
         } else {
             //we won't have the /opt/SecureSpan/Gateway/Backup folder, set false by default, system prop is for testing
-            isPostFiveO = SyspropUtil.getBoolean("com.l7tech.gateway.config.backuprestore.setpostfiveo", false);
+            isPostFiveO = ConfigFactory.getBooleanProperty( "com.l7tech.gateway.config.backuprestore.setpostfiveo", false );
         }
 
         this.printStream = printStream;
@@ -282,7 +282,7 @@ public final class Exporter{
         final String imagePathAndName = (isPostFiveO && !addDefaultImageFolderIfNeeded)? getPostFiveOAbsOutputPath(pathToImageFile)
                 :pathToImageFile;
 
-        final String ignoreProp = System.getProperty(NO_UNIQUE_IMAGE_SYSTEM_PROP);
+        final String ignoreProp = ConfigFactory.getProperty( NO_UNIQUE_IMAGE_SYSTEM_PROP );
         if(ignoreProp != null){
             if(Boolean.valueOf(ignoreProp)) return imagePathAndName;
         }

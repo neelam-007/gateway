@@ -7,11 +7,11 @@ import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.transport.ftp.FtpClientConfig;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.DefaultKey;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.server.transport.ftp.FtpClientUtils;
+import com.l7tech.util.Config;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.ResourceUtils;
 
@@ -48,7 +48,7 @@ public class FtpArchiveReceiver implements ArchiveReceiver, PropertyChangeListen
 
     public static final String TIMESTAMP_PATTERN = "yyyyMMdd'T'HHmmss.S'Z'";
 
-    private final ServerConfig serverConfig;
+    private final Config config;
     private final ClusterPropertyManager clusterPropertyManager;
     private final AuditExporter auditExporter;
     private final X509TrustManager trustManager;      // may be needed for ftps verification
@@ -67,13 +67,13 @@ public class FtpArchiveReceiver implements ArchiveReceiver, PropertyChangeListen
 //    private long bytesRemaining;
     private AuditExporter.ExportedInfo exportedInfo;
 
-    public FtpArchiveReceiver( final ServerConfig serverConfig,
+    public FtpArchiveReceiver( final Config config,
                                final ClusterPropertyManager cpm,
                                final AuditExporter ae,
                                final X509TrustManager trustManager,
                                final HostnameVerifier hostnameVerifier,
                                final DefaultKey defaultKey ) {
-        if (serverConfig == null)
+        if ( config == null)
             throw new NullPointerException("ServerConfig parameter must not be null.");
         if (cpm == null)
             throw new NullPointerException("ClusterPropertyManager parameter must not be null.");
@@ -84,7 +84,7 @@ public class FtpArchiveReceiver implements ArchiveReceiver, PropertyChangeListen
         if (defaultKey == null)
             throw new NullPointerException("SsgKeyStore parameter must not be null.");
 
-        this.serverConfig = serverConfig;
+        this.config = config;
         this.clusterPropertyManager = cpm;
         this.auditExporter = ae;
         this.trustManager = trustManager;
@@ -325,8 +325,8 @@ public class FtpArchiveReceiver implements ArchiveReceiver, PropertyChangeListen
                 }
             }
 
-            ftpFilePrefix = serverConfig.getProperty( ServerConfigParams.PARAM_AUDIT_ARCHIVER_FTP_FILEPREFIX);
-            maxUploadFileSize = serverConfig.getLongProperty( ServerConfigParams.PARAM_AUDIT_ARCHIVER_FTP_MAX_UPLOAD_FILE_SIZE, 1000000000);
+            ftpFilePrefix = config.getProperty( ServerConfigParams.PARAM_AUDIT_ARCHIVER_FTP_FILEPREFIX );
+            maxUploadFileSize = config.getLongProperty( ServerConfigParams.PARAM_AUDIT_ARCHIVER_FTP_MAX_UPLOAD_FILE_SIZE, 1000000000);
 
 
         } catch (FindException e) {

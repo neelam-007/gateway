@@ -9,12 +9,12 @@ import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.WssTimestamp;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
-import com.l7tech.server.ServerConfig;
 import org.apache.xmlbeans.XmlObject;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -451,7 +451,7 @@ public class SamlAssertionValidate {
     }
 
     static Calendar adjustNotAfter(Calendar notOnOrAfter) {
-        int afterOffsetMinutes = ServerConfig.getInstance().getIntPropertyCached( ServerConfigParams.PARAM_SAML_VALIDATE_AFTER_OFFSET_MINUTES, 0, 30000L);
+        int afterOffsetMinutes = ConfigFactory.getIntProperty( ServerConfigParams.PARAM_SAML_VALIDATE_AFTER_OFFSET_MINUTES, 0 );
         if (afterOffsetMinutes != 0) {
             notOnOrAfter = (Calendar)notOnOrAfter.clone();
             notOnOrAfter.add(Calendar.MINUTE, afterOffsetMinutes);
@@ -460,7 +460,7 @@ public class SamlAssertionValidate {
     }
 
     static Calendar adjustNotBefore(Calendar notBefore) {
-        int beforeOffsetMinutes = ServerConfig.getInstance().getIntPropertyCached( ServerConfigParams.PARAM_SAML_VALIDATE_BEFORE_OFFSET_MINUTES, 0, 30000L);
+        int beforeOffsetMinutes = ConfigFactory.getIntProperty( ServerConfigParams.PARAM_SAML_VALIDATE_BEFORE_OFFSET_MINUTES, 0 );
         if (beforeOffsetMinutes != 0) {
             notBefore = (Calendar)notBefore.clone();
             notBefore.add(Calendar.MINUTE, -beforeOffsetMinutes);

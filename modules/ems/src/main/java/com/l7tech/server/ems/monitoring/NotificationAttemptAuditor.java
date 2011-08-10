@@ -17,8 +17,8 @@ import com.l7tech.server.ems.gateway.GatewayContextFactory;
 import com.l7tech.server.ems.gateway.GatewayException;
 import com.l7tech.server.ems.gateway.ProcessControllerContext;
 import com.l7tech.server.management.api.monitoring.NotificationAttempt;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -39,8 +39,8 @@ import java.util.logging.Logger;
 public class NotificationAttemptAuditor implements InitializingBean, ApplicationContextAware {
     private static final Logger logger = Logger.getLogger(NotificationAttemptAuditor.class.getName());
 
-    private static final long DELAY_UNTIL_FIRST_AUDIT_CHECK = SyspropUtil.getLong("com.l7tech.server.ems.monitoring.auditCheck.delayUntilFirst", 13417L);
-    private static final long DELAY_BETWEEN_AUDIT_CHECKS = SyspropUtil.getLong("com.l7tech.server.ems.monitoring.auditCheck.delayBetween", 596261L);
+    private static final long DELAY_UNTIL_FIRST_AUDIT_CHECK = ConfigFactory.getLongProperty( "com.l7tech.server.ems.monitoring.auditCheck.delayUntilFirst", 13417L );
+    private static final long DELAY_BETWEEN_AUDIT_CHECKS = ConfigFactory.getLongProperty( "com.l7tech.server.ems.monitoring.auditCheck.delayBetween", 596261L );
 
     private final Timer timer;
     private final PlatformTransactionManager transactionManager;

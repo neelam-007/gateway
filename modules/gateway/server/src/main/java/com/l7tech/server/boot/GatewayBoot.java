@@ -3,6 +3,7 @@ package com.l7tech.server.boot;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.ServerConfigParams;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.JceUtil;
 import com.l7tech.util.StrongCryptoNotAvailableException;
 import com.l7tech.server.BootProcess;
@@ -68,7 +69,7 @@ public class GatewayBoot {
     }
     private static void setupSecurityProviders() {
         //setup the security providers needed by the SCA6000 HSM if it's enabled (via a system property)
-        boolean hsmEnabled = Boolean.getBoolean(SYSPROP_ENABLE_HSM);
+        boolean hsmEnabled = ConfigFactory.getBooleanProperty( SYSPROP_ENABLE_HSM, false );
 
         if (hsmEnabled) {
 
@@ -78,7 +79,7 @@ public class GatewayBoot {
 
             try {
                 prepareProviders(HSM_SECURITY_PROVIDERS);
-                System.setProperty(JceProvider.ENGINE_PROPERTY, JceProvider.PKCS11_ENGINE);
+                SyspropUtil.setProperty( JceProvider.ENGINE_PROPERTY, JceProvider.PKCS11_ENGINE );
             } catch (LifecycleException e) {
                 throw new RuntimeException("Could not start the server. The HSM is enabled, but there was an error preparing the security providers. ", e);
             }
@@ -158,7 +159,7 @@ public class GatewayBoot {
         if (!running.get())
             return;
 
-        final int shutdownDelay = ServerConfig.getInstance().getIntProperty("ssg.shutdownDelay", 3);
+        final int shutdownDelay = ConfigFactory.getIntProperty( "ssg.shutdownDelay", 3 );
         logger.info("Starting shutdown.");
         stopBootProcess();
         try {
@@ -198,7 +199,7 @@ public class GatewayBoot {
 
     // Launch a background thread that warns if no DB connections appear within a reasonable period of time (Bug #4271)
     private void spawnDbWarner() {
-        if ( SyspropUtil.getBoolean(SYSPROP_STARTUPCHECKS, true) ) {
+        if ( ConfigFactory.getBooleanProperty(SYSPROP_STARTUPCHECKS, true) ) {
             Thread dbcheck = new Thread("Database Check") {
                 @Override
                 public void run() {
@@ -311,7 +312,7 @@ public class GatewayBoot {
     }
 
     private void preFlightCheck() throws LifecycleException {
-        if (SyspropUtil.getBoolean(SYSPROP_STARTUPCHECKS, true)) {
+        if (ConfigFactory.getBooleanProperty(SYSPROP_STARTUPCHECKS, true)) {
             // check strong crypto is available
             try {
                 JceUtil.requireStrongCryptoEnabledInJvm();

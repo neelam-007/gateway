@@ -3,9 +3,9 @@ package com.l7tech.ems.config.client;
 import com.l7tech.config.client.beans.ConfigurationBeanProvider;
 import com.l7tech.config.client.beans.ConfigurationBean;
 import com.l7tech.config.client.ConfigurationException;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Functions;
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ExceptionUtils;
 
 import java.util.Collection;
@@ -98,7 +98,7 @@ public class EsmDbConfigurationBeanProvider implements ConfigurationBeanProvider
     }
 
     protected String getDatabaseName() {
-        return SyspropUtil.getString(SYSPROP_DATABASE_NAME,"../var/db/emsdb");
+        return ConfigFactory.getProperty( SYSPROP_DATABASE_NAME, "../var/db/emsdb" );
     }
 
     //- PRIVATE

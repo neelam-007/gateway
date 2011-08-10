@@ -1,11 +1,6 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.gateway.common.security.rbac;
 
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
@@ -46,7 +41,7 @@ public class RbacUtilities {
     }
 
     public static boolean isEnableRoleEditing() {
-        return StringUtils.equalsIgnoreCase(SyspropUtil.getPropertyCached(SYSTEM_PROP_ENABLEROLEEDIT), "true");
+        return ConfigFactory.getBooleanProperty( SYSTEM_PROP_ENABLEROLEEDIT, false );
     }
 
     public static String getDescriptionString(Role role, boolean asHtml) {

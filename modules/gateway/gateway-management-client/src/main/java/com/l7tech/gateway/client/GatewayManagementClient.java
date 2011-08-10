@@ -405,11 +405,11 @@ public class GatewayManagementClient {
 
         sb.append(MessageFormat.format(resources.getString("error.datetime"), dateFormat.format(new Date())));
         sb.append(MessageFormat.format(resources.getString("error.version"), getVersion()));
-        sb.append(MessageFormat.format(resources.getString("error.systemproperties"),
-                System.getProperty("java.version"),
-                System.getProperty("java.specification.version"),
-                System.getProperty("os.name"),
-                System.getProperty("os.arch")));
+        sb.append(MessageFormat.format( resources.getString( "error.systemproperties" ),
+                SyspropUtil.getProperty( "java.version" ),
+                SyspropUtil.getProperty( "java.specification.version" ),
+                SyspropUtil.getProperty( "os.name" ),
+                SyspropUtil.getProperty( "os.arch" ) ));
         sb.append(MessageFormat.format(resources.getString("error.memoryusage"),
                 Runtime.getRuntime().freeMemory(),
                 Runtime.getRuntime().totalMemory()));
@@ -1148,7 +1148,6 @@ public class GatewayManagementClient {
     }
 
     private static final class CreateKeyCommand extends Command {
-        @SuppressWarnings({ "AssignmentToForLoopParameter" })
         @Override
         protected void doRun( final Client client ) throws CommandException {
             final PrivateKeyMOAccessor accessor = getPrivateKeyAccessor( client, getAccessibleObjectType() );

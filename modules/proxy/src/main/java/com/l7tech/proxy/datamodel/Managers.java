@@ -1,12 +1,10 @@
-/*
- * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.mime.HybridStashManager;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.wsp.WspConstants;
+import com.l7tech.util.ConfigFactory;
 
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -104,7 +102,7 @@ public class Managers {
     }
 
     private static void loadModularAssertionsFromSystemProperty() {
-        String assnames = System.getProperty(PROP_ASSERTION_CLASSNAMES);
+        String assnames = ConfigFactory.getProperty( PROP_ASSERTION_CLASSNAMES );
         if (assnames == null) return;
         String[] names = assnames.split(",\\s*");
         if (names == null || names.length == 0) return;

@@ -19,9 +19,9 @@ import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
-import com.l7tech.util.SyspropUtil;
 
 import javax.swing.*;
 import java.lang.reflect.InvocationTargetException;
@@ -178,9 +178,9 @@ public class AdminContextImpl extends RemotingContext implements AdminContext {
     private static final Logger logger = Logger.getLogger(AdminContextImpl.class.getName());
 
     private static final String PROP_BASE = "com.l7tech.console.";
-    private static final boolean NO_CANCEL_DIALOGS = SyspropUtil.getBoolean(PROP_BASE + "suppressRemoteInvocationCancelDialog");
-    private static final long MS_BEFORE_DLG = SyspropUtil.getLong(PROP_BASE + "remoteInvocationCancelDialogDelayMillis", 10000L);
-    private static final boolean TRACE = SyspropUtil.getBoolean(PROP_BASE + "remoteInvocationTracing", false);
+    private static final boolean NO_CANCEL_DIALOGS = ConfigFactory.getBooleanProperty( PROP_BASE + "suppressRemoteInvocationCancelDialog", false );
+    private static final long MS_BEFORE_DLG = ConfigFactory.getLongProperty( PROP_BASE + "remoteInvocationCancelDialogDelayMillis", 10000L );
+    private static final boolean TRACE = ConfigFactory.getBooleanProperty( PROP_BASE + "remoteInvocationTracing", false );
 
     private final Functions.Nullary<Void> activityCallback;
 

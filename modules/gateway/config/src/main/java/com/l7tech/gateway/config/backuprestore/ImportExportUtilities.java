@@ -93,7 +93,7 @@ public class ImportExportUtilities {
      * @return true if can restore to the host, false otherwise
      */
     static boolean isDatabaseAvailableForBackupRestore(final String host){
-        return !SyspropUtil.getBoolean(LOCAL_DB_ONLY, true)
+        return !ConfigFactory.getBooleanProperty( LOCAL_DB_ONLY, true )
                 || isHostLocal(host);
     }
     
@@ -473,7 +473,7 @@ public class ImportExportUtilities {
             return path;
         }
 
-        final String baseDir = System.getProperty(BASE_DIR_PROPERTY);
+        final String baseDir = ConfigFactory.getProperty( BASE_DIR_PROPERTY );
         if (baseDir == null) {
             throw new RuntimeException("System property \"" + BASE_DIR_PROPERTY + "\" not set.");
         }

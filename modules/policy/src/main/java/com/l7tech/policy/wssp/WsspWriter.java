@@ -287,8 +287,8 @@ public class WsspWriter {
     private static final int ALGORITHM_SUITE_TRIPLEDES_RSAOAEP = 8;
 
     // namespaces / prefix
-    private static final String DEFAULT_WSSP_VERSION = SyspropUtil.getString("com.l7tech.policy.wssp.defaultVersion", "1.1");
-    private static final String DEFAULT_WSP_VERSION = SyspropUtil.getString("com.l7tech.policy.wsp.defaultVersion", "1.2");
+    private static final String DEFAULT_WSSP_VERSION = ConfigFactory.getProperty( "com.l7tech.policy.wssp.defaultVersion", "1.1" );
+    private static final String DEFAULT_WSP_VERSION = ConfigFactory.getProperty( "com.l7tech.policy.wsp.defaultVersion", "1.2" );
 
     private static final String SP12_NS = "http://docs.oasis-open.org/ws-sx/ws-securitypolicy/200702";
     private static final String SP11_NS = "http://schemas.xmlsoap.org/ws/2005/07/securitypolicy";

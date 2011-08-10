@@ -5,6 +5,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.SyspropUtil;
 
 import java.io.*;
 
@@ -24,7 +25,7 @@ public class PatchMain {
 
         try {
             System.setProperty(RESOURCE_TEMP_PROPERTY,
-                FileUtils.createTempDirectory("patchertemp", null, new File(System.getProperty("java.io.tmpdir")), true).getPath());
+                FileUtils.createTempDirectory("patchertemp", null, new File( SyspropUtil.getProperty( "java.io.tmpdir" ) ), true).getPath());
             InputStream tasksIn = PatchMain.class.getResourceAsStream(PatchTask.TASK_FILE);
             if (tasksIn != null) {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(tasksIn));

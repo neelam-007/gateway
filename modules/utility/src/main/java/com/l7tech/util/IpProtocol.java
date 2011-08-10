@@ -75,7 +75,7 @@ public enum IpProtocol {
     private static final String DEFAULT_GATEWAY_INTERFACE_PROMPT = "Select the Interface you wish to use as the {0} gateway device: ";
     private static final String MISSING_IP_ADDRESS_MSG = "Missing IP Address";
 
-    private static final String LINE_SEPARATOR = System.getProperty("line.separator");
+    private static final String LINE_SEPARATOR = SyspropUtil.getProperty( "line.separator" );
 
     private static List<String> validateIpv4Address(String ipAddress) {
         List<String> errors = new ArrayList<String>();

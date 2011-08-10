@@ -13,6 +13,7 @@ import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -337,7 +338,7 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
     }
 
     private Pair<Long, String> getKeyStoreOidAndAlias(String propertyName) throws IOException {
-        String propVal = serverConfig.getPropertyUncached(propertyName);
+        String propVal = ConfigFactory.getUncachedConfig().getProperty( propertyName );
         if (propVal == null || propVal.trim().length() < 1)
             return null;
 

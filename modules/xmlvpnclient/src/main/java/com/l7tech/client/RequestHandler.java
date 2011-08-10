@@ -76,7 +76,7 @@ public class RequestHandler extends AbstractHandler {
      * Turn this on to avoid unnecessary parsing of the request if you know all services used with the same
      * Gateway account will have unique SOAPAction headers or URIs.
      */
-    private static final boolean IGNORE_PAYLOAD_NS = Boolean.valueOf(SyspropUtil.getString(PROP_IGNORE_PAYLOAD_NS, "false"));
+    private static final boolean IGNORE_PAYLOAD_NS = Boolean.valueOf( ConfigFactory.getProperty( PROP_IGNORE_PAYLOAD_NS, "false" ) );
 
     private SsgFinder ssgFinder;
     private MessageProcessor messageProcessor;

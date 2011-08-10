@@ -11,6 +11,7 @@ import com.l7tech.util.JdkLoggerConfigurator;
 import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.util.SyspropUtil;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -38,7 +39,7 @@ public class AgentPerfClient {
      */
     protected static void initLogging() {
         // apache logging layer to use the jdk logger
-        System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
+        SyspropUtil.setProperty( "org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger" );
 
         // Prepare .l7tech directory before initializing logging (Bug #1288)
         new File(Ssg.PROXY_CONFIG).mkdirs(); // expected to fail on all but the very first execution

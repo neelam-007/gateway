@@ -7,11 +7,11 @@ import com.l7tech.server.ems.standardreports.ReportViewCodingStrategy;
 import com.l7tech.server.ems.user.UserPropertyManager;
 import com.l7tech.server.ems.migration.MigrationArtifactResource;
 import com.l7tech.server.DefaultKey;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.UpdatableLicenseManager;
 import com.l7tech.server.ems.util.SpringInjectComponentInjector;
 import com.l7tech.server.security.rbac.RoleManager;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.Config;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
@@ -100,7 +100,7 @@ public class EsmApplication extends WebApplication {
      */
     @Override
     public String getConfigurationType() {
-        return SyspropUtil.getBoolean("com.l7tech.ems.development") ? WebApplication.DEVELOPMENT : WebApplication.DEPLOYMENT;
+        return ConfigFactory.getBooleanProperty( "com.l7tech.ems.development", false ) ? WebApplication.DEVELOPMENT : WebApplication.DEPLOYMENT;
     }
 
     @Override
@@ -327,7 +327,7 @@ public class EsmApplication extends WebApplication {
     private EsmSecurityManager esmSecurityManager;
     private UserPropertyManager userPropertyManager;
     private RoleManager roleManager;
-    private ServerConfig config;
+    private Config config;
     private UpdatableLicenseManager licenseManager;
     private DefaultKey defaultKey;
 
@@ -410,7 +410,7 @@ public class EsmApplication extends WebApplication {
 
         long expiryWarningPeriod = 0;
         String propertyName = "license.expiryWarnAge";
-        String propStr = getServerConfig().getPropertyCached(propertyName);
+        String propStr = getServerConfig().getProperty( propertyName );
         if (propStr != null) {
             try {
                 expiryWarningPeriod = TimeUnit.parse(propStr, TimeUnit.DAYS);
@@ -491,11 +491,11 @@ public class EsmApplication extends WebApplication {
         return roleManager;
     }
 
-    private ServerConfig getServerConfig() {
-        ServerConfig config = this.config;
+    private Config getServerConfig() {
+        Config config = this.config;
         if ( config == null ) {
             BeanFactory beanFactory = WebApplicationContextUtils.getWebApplicationContext(getWicketFilter().getFilterConfig().getServletContext());
-            config = beanFactory.getBean( "serverConfig", ServerConfig.class );
+            config = beanFactory.getBean( "serverConfig", Config.class );
             this.config = config;
         }
         return config;

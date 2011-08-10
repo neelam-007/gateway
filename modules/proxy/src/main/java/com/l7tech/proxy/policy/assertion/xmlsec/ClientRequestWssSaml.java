@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.proxy.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -14,6 +11,7 @@ import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import com.l7tech.proxy.policy.assertion.ClientAssertionWithMetaSupport;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.saml.SamlAssertion;
@@ -117,7 +115,7 @@ public class ClientRequestWssSaml extends ClientAssertionWithMetaSupport {
                     if (privateKey != null && certificate != null) {
                         wssReqs.setSenderMessageSigningCertificate(certificate);
                         // only sign the SAML token if the assertion is not signed
-                        wssReqs.setSenderSamlToken(ass, !Boolean.getBoolean(PROP_SIGN_SAML_SV));
+                        wssReqs.setSenderSamlToken(ass, !ConfigFactory.getBooleanProperty( PROP_SIGN_SAML_SV, false ) );
                     } else {
                         logger.log(Level.INFO, "No private key available to sign assertion -- will include the assertion without a signature.");
                         wssReqs.setSenderSamlToken(ass, false);

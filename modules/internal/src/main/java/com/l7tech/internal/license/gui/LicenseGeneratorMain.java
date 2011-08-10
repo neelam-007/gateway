@@ -1,12 +1,8 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.internal.license.gui;
 
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 
 import javax.swing.*;
 import java.awt.event.WindowAdapter;
@@ -29,7 +25,7 @@ public class LicenseGeneratorMain {
     public static final String PROPERTY_PROPERTIES_PATH = "licenseGenerator.properties";
     public static final String DEFAULT_PROPERTIES_PATH = "licenseGenerator.properties";
 
-    private static File propertiesFile = new File(System.getProperty(PROPERTY_PROPERTIES_PATH, DEFAULT_PROPERTIES_PATH));
+    private static File propertiesFile = new File( SyspropUtil.getString( PROPERTY_PROPERTIES_PATH, DEFAULT_PROPERTIES_PATH ) );
     private static Properties properties = new Properties();
 
     public static void main(String[] args) {

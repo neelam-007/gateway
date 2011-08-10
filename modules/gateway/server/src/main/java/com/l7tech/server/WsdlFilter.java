@@ -15,6 +15,7 @@ import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 
 import com.l7tech.common.http.HttpConstants;
+import com.l7tech.util.Config;
 
 /**
  * Filter that intercepts WSDL requests that would otherwise go to the message processor.
@@ -47,7 +48,7 @@ public class WsdlFilter implements Filter {
             forwardUriVal = DEFAULT_FORWARD_URI;
         }
 
-        serverConfig = (ServerConfig) filterConfig.getServletContext().getAttribute("serverConfig");
+        config = (Config) filterConfig.getServletContext().getAttribute("serverConfig");
         passthroughPrefixes = pprefixes.split(",\\s*");
         wsdlForwardUri = forwardUriVal;
 
@@ -114,12 +115,12 @@ public class WsdlFilter implements Filter {
     private static final String PARAM_FORWARD_URI = "wsdl-forward-uri";
     private static final String DEFAULT_FORWARD_URI = "/ssg/wsdl?uri=";
 
-    private ServerConfig serverConfig;
+    private Config config;
     private String wsdlForwardUri;
     private String[] passthroughPrefixes;  
 
     private boolean isEnabled() {
-        return serverConfig.getBooleanPropertyCached("wsdlQuery", false, 60000);
+        return config.getBooleanProperty( "wsdlQuery", false );
     }
 
     private boolean isPassThrough( final String uri ) {

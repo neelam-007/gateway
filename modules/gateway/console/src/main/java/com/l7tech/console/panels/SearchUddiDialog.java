@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.gui.util.*;
 import com.l7tech.uddi.UDDINamedEntity;
 import com.l7tech.uddi.WsdlPortInfo;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.console.table.WsdlTable;
@@ -67,8 +68,8 @@ public class SearchUddiDialog extends JDialog {
     private static final int MAX_SERVICE_NAME_LENGTH = 255;
 
     private static final String PROP_PREFIX = "com.l7tech.console";
-    private static final long DELAY_INITIAL = SyspropUtil.getLong(PROP_PREFIX + ".uddiSearch.serverSideDelay.initial", 100L);
-    private static final long DELAY_CAP = SyspropUtil.getLong(PROP_PREFIX + ".uddiSearch.serverSideDelay.maximum", 30000L);
+    private static final long DELAY_INITIAL = ConfigFactory.getLongProperty( PROP_PREFIX + ".uddiSearch.serverSideDelay.initial", 100L );
+    private static final long DELAY_CAP = ConfigFactory.getLongProperty( PROP_PREFIX + ".uddiSearch.serverSideDelay.maximum", 30000L );
     private static final double DELAY_MULTIPLIER = SyspropUtil.getDouble(PROP_PREFIX + ".uddiSearch.serverSideDelay.multiplier", 1.6);
     
     private Map<String, UDDIRegistry> allRegistries;

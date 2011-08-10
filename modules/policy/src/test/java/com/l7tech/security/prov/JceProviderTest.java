@@ -17,6 +17,7 @@ import com.l7tech.security.keys.AesKey;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.util.SyspropUtil;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.junit.Assert;
 import org.junit.Test;
@@ -91,7 +92,7 @@ public class JceProviderTest {
 
         int scale = Integer.parseInt(sscale);
         int concur = Integer.parseInt(sconcur);
-        String ps = System.getProperty("file.separator");
+        String ps = SyspropUtil.getProperty( "file.separator" );
         if (!dir.endsWith(ps)) dir += ps;
 
         String driver;
@@ -107,7 +108,7 @@ public class JceProviderTest {
             driver = "com.l7tech.common.security.prov.sun.SunJceProviderEngine";
         }else
             throw new IllegalArgumentException("Unknown provider " + USAGE);
-        System.setProperty(JceProvider.ENGINE_PROPERTY, driver);
+        SyspropUtil.setProperty( JceProvider.ENGINE_PROPERTY, driver );
 
         final byte[] keyBytes = new byte[]{
             (byte)0x9f, (byte)0x04, (byte)0xe4, (byte)0xcf, (byte)0x95, (byte)0x9e, (byte)0xd6, (byte)0x16,

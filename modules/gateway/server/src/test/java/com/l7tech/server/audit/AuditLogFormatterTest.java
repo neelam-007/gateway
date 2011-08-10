@@ -7,12 +7,12 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.security.token.SecurityTokenType;
-import com.l7tech.server.ApplicationContexts;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 
+import com.l7tech.util.Config;
+import com.l7tech.util.MockConfig;
 import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,8 +30,8 @@ public class AuditLogFormatterTest {
     private ApplicationContext appCtx;
     private PolicyEnforcementContext pec;
 
-    private ServerConfig serverCfg;
-    private HashMap<String, String> cfgMap;
+    private Config config;
+    private Map<String,String> cfgMap;
     private Map<String, Object> ctxMap;
 
     // audit generators
@@ -47,10 +47,6 @@ public class AuditLogFormatterTest {
 
     @Before
     public void setUp() throws Exception {
-
-        if (appCtx == null) {
-            appCtx = ApplicationContexts.getTestApplicationContext();
-        }
         if (pec == null) {
             PublishedService pubsvc = new PublishedService();
             pubsvc.setOid(393216L);
@@ -62,7 +58,6 @@ public class AuditLogFormatterTest {
             pec.setService(pubsvc);
         }
         if (appCtx != null && pec != null) {
-            ServerConfig.getInstance();
             try {
                 Class.forName(com.l7tech.gateway.common.audit.CommonMessages.class.getName());
             } catch (ClassNotFoundException nfe) {
@@ -90,15 +85,13 @@ public class AuditLogFormatterTest {
         }
 
         cfgMap = new HashMap<String, String>();
-        serverCfg = new ServerConfig() {
-            @Override
-            public String getProperty(String propName) {
-                if (cfgMap.containsKey(propName)) {
-                    return cfgMap.get(propName);
-                }
-                return super.getProperty(propName);
-            }
-        };
+        cfgMap.put( "auditLogFormatServiceHeader", "Processing request for service: {3}" );
+        cfgMap.put( "auditLogFormatServiceFooter", "{1}" );
+        cfgMap.put( "auditLogFormatServiceDetail", "{0}: {1}" );
+        cfgMap.put( "auditLogFormatOther", "{1}" );
+        cfgMap.put( "auditLogFormatOtherDetail", "{0}: {1}" );
+
+        config = new MockConfig(cfgMap);
     }
 
     @Test
@@ -106,7 +99,7 @@ public class AuditLogFormatterTest {
 
         final String TEST_PROP = ServerConfigParams.PARAM_AUDIT_LOG_FORMAT_SERVICE_HEADER;
 
-        TestingAuditLogFormatter.setTestingConfig(serverCfg);
+        TestingAuditLogFormatter.setTestingConfig( config );
         try {
             MessageSummaryAuditRecord testRecord = summAuditGenerator.createAuditRecord();
             String logStr = new TestingAuditLogFormatter<MessageSummaryAuditRecord>(null).format(testRecord, true);
@@ -155,8 +148,6 @@ public class AuditLogFormatterTest {
 
             // ++test var length limit, test total msg length limit++
 
-        } catch (Exception ex) {
-            fail("Unexpected error encountered: " + ex);
         } finally {
             TestingAuditLogFormatter.setTestingConfig(null);
             TestingAuditLogFormatter.notifyPropertyChange(TEST_PROP);
@@ -168,7 +159,7 @@ public class AuditLogFormatterTest {
 
         final String TEST_PROP = ServerConfigParams.PARAM_AUDIT_LOG_FORMAT_SERVICE_FOOTER;
 
-        TestingAuditLogFormatter.setTestingConfig(serverCfg);
+        TestingAuditLogFormatter.setTestingConfig( config );
         try {
             MessageSummaryAuditRecord testRecord = summAuditGenerator.createAuditRecord();
             String logStr = new TestingAuditLogFormatter<MessageSummaryAuditRecord>(null).format(testRecord, false);
@@ -214,8 +205,6 @@ public class AuditLogFormatterTest {
                     "bad tags template. ><  Message processed successfully 393216 >< Warehoust [/wh2] {4} {1011} >< >< >< >< $ section 2. >< >< >< >< >< >< >< >< >< >< section 3. >< >< >< >< >< >< >< ><",
                     logStr);
 
-        } catch (Exception ex) {
-            fail("Unexpected error encountered: " + ex);
         } finally {
             TestingAuditLogFormatter.setTestingConfig(null);
             TestingAuditLogFormatter.notifyPropertyChange(TEST_PROP);
@@ -227,7 +216,7 @@ public class AuditLogFormatterTest {
 
         final String TEST_PROP = ServerConfigParams.PARAM_AUDIT_LOG_FORMAT_SERVICE_DETAIL;
 
-        TestingAuditLogFormatter.setTestingConfig(serverCfg);
+        TestingAuditLogFormatter.setTestingConfig( config );
         try {
             MessageSummaryAuditRecord testRecord = summAuditGenerator.createAuditRecord();
             AuditDetailMessage dtl = summAuditGenerator.createAuditDetail(4001);
@@ -277,8 +266,6 @@ public class AuditLogFormatterTest {
                     "bad tags template. >< "+mid+" "+mmsg+" 393216 >< Warehoust [/wh2] {4} {1011} >< >< >< >< $ section 2. >< >< >< >< >< >< >< >< >< >< section 3. >< >< >< >< >< >< >< ><", 
                     logStr);
 
-        } catch (Exception ex) {
-            fail("Unexpected error encountered: " + ex);
         } finally {
             TestingAuditLogFormatter.setTestingConfig(null);
             TestingAuditLogFormatter.notifyPropertyChange(TEST_PROP);
@@ -290,7 +277,7 @@ public class AuditLogFormatterTest {
 
         final String TEST_PROP = ServerConfigParams.PARAM_AUDIT_LOG_FORMAT_OTHER;
 
-        TestingAuditLogFormatter.setTestingConfig(serverCfg);
+        TestingAuditLogFormatter.setTestingConfig( config );
         try {
             pec.close();
 
@@ -330,8 +317,6 @@ public class AuditLogFormatterTest {
                     "bad tags template. ><  "+testRecord.getMessage()+"  ><  {4} {1011} >< >< >< >< $ section 2. >< >< >< >< >< >< >< >< >< >< section 3. >< >< >< >< >< >< >< ><",
                     logStr);
 
-        } catch (Exception ex) {
-            fail("Unexpected error encountered: " + ex);
         } finally {
             TestingAuditLogFormatter.setTestingConfig(null);
             TestingAuditLogFormatter.notifyPropertyChange(TEST_PROP);
@@ -343,7 +328,7 @@ public class AuditLogFormatterTest {
 
         final String TEST_PROP = ServerConfigParams.PARAM_AUDIT_LOG_FORMAT_OTHER;
 
-        TestingAuditLogFormatter.setTestingConfig(serverCfg);
+        TestingAuditLogFormatter.setTestingConfig( config );
         try {
             pec.close();
 
@@ -383,8 +368,6 @@ public class AuditLogFormatterTest {
                     "bad tags template. ><  "+testRecord.getMessage()+"  ><  {4} {1011} >< >< >< >< $ section 2. >< >< >< >< >< >< >< >< >< >< section 3. >< >< >< >< >< >< >< ><",
                     logStr);
 
-        } catch (Exception ex) {
-            fail("Unexpected error encountered: " + ex);
         } finally {
             TestingAuditLogFormatter.setTestingConfig(null);
             TestingAuditLogFormatter.notifyPropertyChange(TEST_PROP);
@@ -396,7 +379,7 @@ public class AuditLogFormatterTest {
 
         final String TEST_PROP = ServerConfigParams.PARAM_AUDIT_LOG_FORMAT_OTHER_DETAIL;
 
-        TestingAuditLogFormatter.setTestingConfig(serverCfg);
+        TestingAuditLogFormatter.setTestingConfig( config );
         try {
             pec.close();
 
@@ -441,8 +424,6 @@ public class AuditLogFormatterTest {
                     "bad tags template. >< "+mid+" "+mmsg+"  ><  {4} {1011} >< >< >< >< $ section 2. >< >< >< >< >< >< >< >< >< >< section 3. >< >< >< >< >< >< >< ><",
                     logStr);
 
-        } catch (Exception ex) {
-            fail("Unexpected error encountered: " + ex);
         } finally {
             TestingAuditLogFormatter.setTestingConfig(null);
             TestingAuditLogFormatter.notifyPropertyChange(TEST_PROP);
@@ -568,8 +549,8 @@ public class AuditLogFormatterTest {
         }
 
         // lets us override the properties in ServerConfig
-        static void setTestingConfig(ServerConfig serverCfg) {
-            serverConfig = serverCfg;
+        static void setTestingConfig( final Config config ) {
+            AuditLogFormatter.config = config;
         }
     }
 }

@@ -1,9 +1,3 @@
-/**
- * Copyright (C) 2008, Layer 7 Technologies Inc.
- * User: darmstrong
- * Date: Jun 19, 2009
- * Time: 10:14:23 AM
- */
 package com.l7tech.gateway.config.backuprestore;
 
 import com.l7tech.gateway.config.manager.NodeConfigurationManager;
@@ -13,6 +7,7 @@ import com.l7tech.test.BugNumber;
 import com.l7tech.util.DefaultMasterPasswordFinder;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.MasterPasswordManager;
+import com.l7tech.util.SyspropUtil;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -35,8 +30,8 @@ public class ImporterTest {
         tmpSsgHome.mkdir();
 
         createTestEnvironment();
-        System.setProperty("com.l7tech.util.buildVersion", "5.1.0");
-        System.setProperty("com.l7tech.gateway.config.backuprestore.checkversion", Boolean.toString(false));
+        SyspropUtil.setProperty( "com.l7tech.util.buildVersion", "5.1.0" );
+        SyspropUtil.setProperty( "com.l7tech.gateway.config.backuprestore.checkversion", Boolean.toString( false ) );
     }
 
     @After
@@ -46,8 +41,8 @@ public class ImporterTest {
                 FileUtils.deleteDir(tmpSecureSpanHome);    
             }
         }
-        System.clearProperty("com.l7tech.util.buildVersion");
-        System.clearProperty("com.l7tech.gateway.config.backuprestore.checkversion");
+        SyspropUtil.clearProperty( "com.l7tech.util.buildVersion" );
+        SyspropUtil.clearProperty( "com.l7tech.gateway.config.backuprestore.checkversion" );
     }
 
     /**
@@ -207,7 +202,7 @@ public class ImporterTest {
         final String tempDirectory = ImportExportUtilities.createTmpDirectory();
         try {
             //modify the root folder of where files are copied to
-            System.setProperty("com.l7tech.config.backuprestore.osrootdir", tempDirectory);
+            SyspropUtil.setProperty( "com.l7tech.config.backuprestore.osrootdir", tempDirectory );
             final boolean filesCopied = osConfigManager.finishRestoreOfFilesOnReboot();
             Assert.assertTrue("Files should have been copied", filesCopied);
 
@@ -216,7 +211,7 @@ public class ImporterTest {
             Assert.assertTrue("my.cnf was not restored to /etc/my.cnf", checkMyCnf.exists());
         } finally{
             FileUtils.deleteDir(new File(tempDirectory));
-            System.clearProperty("com.l7tech.config.backuprestore.osrootdir");
+            SyspropUtil.clearProperty( "com.l7tech.config.backuprestore.osrootdir" );
         }
     }
 
@@ -251,12 +246,12 @@ public class ImporterTest {
         final String tempDirectory = ImportExportUtilities.createTmpDirectory();
         try {
             //modify the root folder of where files are copied to
-            System.setProperty("com.l7tech.config.backuprestore.osrootdir", tempDirectory);
+            SyspropUtil.setProperty( "com.l7tech.config.backuprestore.osrootdir", tempDirectory );
             final boolean filesCopied = osConfigManager.finishRestoreOfFilesOnReboot();
             Assert.assertTrue("Files should have been copied", filesCopied);
         } finally{
             FileUtils.deleteDir(new File(tempDirectory));
-            System.clearProperty("com.l7tech.config.backuprestore.osrootdir");
+            SyspropUtil.clearProperty( "com.l7tech.config.backuprestore.osrootdir" );
         }
     }
 

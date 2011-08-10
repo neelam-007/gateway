@@ -582,7 +582,7 @@ public class XOPUtils {
     private static final byte[] HEADER_SEPARATOR = ": ".getBytes(CHARSET_UTF8);
     private static final String[] XMLMIME_NAMESPACES = new String[]{ NS_XMLMIME_2, NS_XMLMIME_1 };
     private static final String BASE64_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"; // "=" handled as special case
-    private static final boolean URL_DECODE_INCLUDE_HREF = SyspropUtil.getBoolean( "com.l7tech.external.assertions.mtom.urlDecodeIncludeHref", true ); // For WCF compat
+    private static final boolean URL_DECODE_INCLUDE_HREF = ConfigFactory.getBooleanProperty( "com.l7tech.external.assertions.mtom.urlDecodeIncludeHref", true ); // For WCF compat
 
     /**
      * Get the element equivalent to the template in the copied target document.

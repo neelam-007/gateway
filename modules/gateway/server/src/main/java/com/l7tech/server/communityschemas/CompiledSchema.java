@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.communityschemas;
 
 import com.l7tech.common.io.XmlUtil;
@@ -11,10 +8,10 @@ import com.l7tech.message.ValidationTarget;
 import com.l7tech.server.util.AbstractReferenceCounted;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.Charsets;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.tarari.TarariMessageContext;
@@ -42,8 +39,8 @@ final class CompiledSchema extends AbstractReferenceCounted<SchemaHandle> implem
 
     private static Map<String,Long> systemIdGeneration = new HashMap<String,Long>();
 
-    private static final boolean checkSoapBodyPayloadElements = SyspropUtil.getBoolean( "com.l7tech.server.schema.checkSoapBodyPayloadElements", true );
-    private static final boolean checkTarariIncompatibleImport = SyspropUtil.getBoolean( "com.l7tech.server.schema.checkTarariIncompatibleImport", true );
+    private static final boolean checkSoapBodyPayloadElements = ConfigFactory.getBooleanProperty( "com.l7tech.server.schema.checkSoapBodyPayloadElements", true );
+    private static final boolean checkTarariIncompatibleImport = ConfigFactory.getBooleanProperty( "com.l7tech.server.schema.checkTarariIncompatibleImport", true );
 
     private final String targetNamespace; // could be null
     private final String[] payloadElementNames;

@@ -2,8 +2,8 @@ package com.l7tech.server.admin;
 
 import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.util.Background;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
 
 import java.io.Closeable;
 import java.io.Serializable;
@@ -20,7 +20,7 @@ import java.util.logging.Logger;
  */
 public class AsyncAdminMethodsImpl implements AsyncAdminMethods, Closeable {
     public static final String PROP_STALE_JOB_MILLIS = "com.l7tech.server.admin.async.defaultStaleJobMillis";
-    public static final int DEFAULT_STALE_JOB_MILLIS = SyspropUtil.getInteger(PROP_STALE_JOB_MILLIS, 30 * 1000);
+    public static final int DEFAULT_STALE_JOB_MILLIS = ConfigFactory.getIntProperty( PROP_STALE_JOB_MILLIS, 30 * 1000 );
     protected static final Logger logger = Logger.getLogger(AsyncAdminMethodsImpl.class.getName());
 
     private final long staleJobMillis;

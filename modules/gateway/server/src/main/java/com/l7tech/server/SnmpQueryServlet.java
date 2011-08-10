@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.server;
 
 import com.l7tech.gateway.common.cluster.ServiceUsage;
@@ -14,6 +8,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.http.HttpTransportModule;
+import com.l7tech.util.ConfigFactory;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
@@ -67,7 +62,7 @@ public class SnmpQueryServlet extends HttpServlet {
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         // Check if the service has been enabled by cluster property, 'builtinService.snmpQuery.enabled'.
 
-        final boolean serviceEnabled = Boolean.valueOf(ServerConfig.getInstance().getProperty( ServerConfigParams.PARAM_SNMP_QUERY_SERVICE_ENABLED));
+        final boolean serviceEnabled = ConfigFactory.getBooleanProperty( ServerConfigParams.PARAM_SNMP_QUERY_SERVICE_ENABLED, false );
         if (! serviceEnabled) {
             logger.info("SNMP query service disabled by cluster property, '" + ServerConfigParams.PARAM_SNMP_QUERY_SERVICE_ENABLED + "'");
             response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "SNMP query service not available");

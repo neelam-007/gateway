@@ -2,9 +2,9 @@ package com.l7tech.internal.audit;
 
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.security.prov.JceProvider;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
-import com.l7tech.util.SyspropUtil;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -20,7 +20,7 @@ import static org.junit.Assert.*;
  *
  */
 public class AuditRecordCompatibilityVerifier52Test {
-    static boolean PRINTOUT = SyspropUtil.getBoolean("com.l7tech.internal.audit.testPrintout", false);
+    static boolean PRINTOUT = ConfigFactory.getBooleanProperty( "com.l7tech.internal.audit.testPrintout", false );
 
     @BeforeClass
     public static void initJceProvider() {

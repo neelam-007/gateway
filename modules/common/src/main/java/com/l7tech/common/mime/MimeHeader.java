@@ -1,15 +1,9 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.common.mime;
 
 import com.l7tech.common.http.HttpHeader;
 import com.l7tech.util.Charsets;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.PoolByteArrayOutputStream;
-import com.l7tech.util.SyspropUtil;
 
 import javax.mail.internet.HeaderTokenizer;
 import javax.mail.internet.MimeUtility;
@@ -36,7 +30,7 @@ public class MimeHeader implements HttpHeader {
     private static final Logger logger = Logger.getLogger(MimeHeader.class.getName());
 
     public static final String PROP_PRESERVE_FORMAT = "com.l7tech.common.mime.preserveFormat";
-    public static final boolean PRESERVE_FORMAT = SyspropUtil.getBoolean(PROP_PRESERVE_FORMAT, true);
+    public static final boolean PRESERVE_FORMAT = ConfigFactory.getBooleanProperty( PROP_PRESERVE_FORMAT, true );
 
     /** Encoding used by MIME headers.  Actually limited to 7-bit ASCII per RFC, but UTF-8 is a safer choice. */
     public static final Charset ENCODING = Charsets.UTF8;

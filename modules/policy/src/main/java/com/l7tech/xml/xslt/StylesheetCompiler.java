@@ -1,8 +1,8 @@
 package com.l7tech.xml.xslt;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.tarari.GlobalTarariContext;
 import com.l7tech.xml.tarari.TarariCompiledStylesheet;
@@ -125,7 +125,7 @@ public class StylesheetCompiler {
             removeOutputXalanExtensions(document);
 
             // remove any output elements that use xalan extensions from the stylesheet doc before compiling
-            if ( !SyspropUtil.getBoolean(PROP_DISABLE_FORCE_ENCODING)) {
+            if ( !ConfigFactory.getBooleanProperty( PROP_DISABLE_FORCE_ENCODING, false ) ) {
                 configureOutputEncoding(document);
             }
 

@@ -4,7 +4,7 @@ import com.l7tech.server.DefaultKey;
 import com.l7tech.server.management.api.node.GatewayApi;
 import com.l7tech.server.management.api.node.MigrationApi;
 import com.l7tech.server.management.api.node.ReportApi;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 
 import java.text.MessageFormat;
 import java.util.concurrent.atomic.AtomicReference;
@@ -22,9 +22,9 @@ public class GatewayContext extends ApiContext {
     private static final String PROP_GATEWAY_URL = "com.l7tech.esm.gatewayUrl";
     private static final String PROP_REPORT_URL = "com.l7tech.esm.reportUrl";
     private static final String PROP_MIGRATION_URL = "com.l7tech.esm.migrationUrl";
-    private static final String REPORT_URL = SyspropUtil.getString(PROP_REPORT_URL, "https://{0}:{1}/ssg/services/reportApi");
-    private static final String MIGRATION_URL = SyspropUtil.getString(PROP_MIGRATION_URL, "https://{0}:{1}/ssg/services/migrationApi");
-    private static final String GATEWAY_URL = SyspropUtil.getString(PROP_GATEWAY_URL, "https://{0}:{1}/ssg/services/gatewayApi");
+    private static final String REPORT_URL = ConfigFactory.getProperty( PROP_REPORT_URL, "https://{0}:{1}/ssg/services/reportApi" );
+    private static final String MIGRATION_URL = ConfigFactory.getProperty( PROP_MIGRATION_URL, "https://{0}:{1}/ssg/services/migrationApi" );
+    private static final String GATEWAY_URL = ConfigFactory.getProperty( PROP_GATEWAY_URL, "https://{0}:{1}/ssg/services/gatewayApi" );
 
     private final AtomicReference<GatewayApi> api = new AtomicReference<GatewayApi>();
     private final AtomicReference<ReportApi> reportApi = new AtomicReference<ReportApi>();

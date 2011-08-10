@@ -283,7 +283,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
     public long getLicenseExpiryWarningPeriod() {
         long expiryWarnPeriod = 0;
         String propertyName = "license.expiryWarnAge";
-        String propStr = serverConfig.getPropertyCached(propertyName);
+        String propStr = serverConfig.getProperty( propertyName );
         if (propStr != null) {
             try {
                 expiryWarnPeriod = TimeUnit.parse(propStr, TimeUnit.DAYS);    

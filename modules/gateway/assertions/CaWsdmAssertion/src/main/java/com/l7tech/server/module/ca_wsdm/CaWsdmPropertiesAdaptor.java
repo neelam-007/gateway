@@ -1,9 +1,9 @@
 package com.l7tech.server.module.ca_wsdm;
 
 import com.ca.wsdm.monitor.ObserverProperties;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.server.ServerConfigParams;
+import com.l7tech.util.Config;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -34,17 +34,17 @@ public class CaWsdmPropertiesAdaptor {
 
     private static final Set<String> caProps = new HashSet<String>();
     private static final Set<String> sommaProps = new HashSet<String>();
-    private final ServerConfig serverConfig;
+    private final Config config;
 
     /**
      * Create an adaptor that will build a {@link com.ca.wsdm.monitor.ObserverProperties} instance
      * using cluster properties loaded from the specified ServerConfig instance.
      *
-     * @param serverConfig  the ServerConfig instance from which to load the properties to build the
+     * @param config  the ServerConfig instance from which to load the properties to build the
      *                      CA WSDM ObserverProperties instance.  Required.
      */
-    public CaWsdmPropertiesAdaptor(ServerConfig serverConfig) {
-        this.serverConfig = serverConfig;
+    public CaWsdmPropertiesAdaptor(Config config ) {
+        this.config = config;
 
         // Make sure the caProps is populated
         if (caProps.size() < 1)
@@ -203,7 +203,7 @@ public class CaWsdmPropertiesAdaptor {
     public ObserverProperties getObserverProperties() {
         Map<String, Object> properties = new HashMap<String, Object>();
         for (String caProp : caProps) {
-            String value = serverConfig.getProperty(asScName(caProp));
+            String value = config.getProperty( asScName( caProp ) );
             properties.put(caProp, value);
         }
 
@@ -220,13 +220,13 @@ public class CaWsdmPropertiesAdaptor {
         Properties properties = new Properties();
 
         properties.put("log.file.path",
-                       serverConfig.getProperty( ServerConfigParams.PARAM_SSG_HOME_DIRECTORY) +
-                       File.separator + "logs" + File.separator + "ca_wsdm_observer");
+                config.getProperty( ServerConfigParams.PARAM_SSG_HOME_DIRECTORY ) +
+                        File.separator + "logs" + File.separator + "ca_wsdm_observer");
         properties.put("log.file.ext", ".log");
 
         for (String caProp : sommaProps) {
             String scName = asScName(caProp);
-            String value = serverConfig.getProperty(scName);
+            String value = config.getProperty( scName );
             if (value != null) {
                 properties.put(caProp, value);
             } else {
@@ -238,7 +238,7 @@ public class CaWsdmPropertiesAdaptor {
 
     public int getObserverType() {
         int observerType;
-        String s = serverConfig.getProperty(PARAM_OBSERVER_TYPE);
+        String s = config.getProperty( PARAM_OBSERVER_TYPE );
         if (s == null) {
             observerType = OBSERVER_TYPE_DEFAULT;
         } else {
@@ -255,7 +255,7 @@ public class CaWsdmPropertiesAdaptor {
     }
 
     public int getMessageBodyLimit() {
-        String s = serverConfig.getProperty(PARAM_MESSAGE_BODY_LIMIT);
+        String s = config.getProperty( PARAM_MESSAGE_BODY_LIMIT );
         int limit;
         if (s == null) {
             limit = MESSAGE_BODY_LIMIT_DEFAULT;

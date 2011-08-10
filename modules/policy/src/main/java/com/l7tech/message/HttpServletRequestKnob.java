@@ -1,14 +1,11 @@
-/*
- * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.message;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.IteratorEnumeration;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.soap.SoapUtil;
 
 import javax.servlet.http.HttpServletRequest;
@@ -50,8 +47,8 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
     private final URL url;
     private static final String SERVLET_REQUEST_ATTR_X509CERTIFICATE = "javax.servlet.request.X509Certificate";
     private static final String SERVLET_REQUEST_ATTR_CONNECTION_ID = "com.l7tech.server.connectionIdentifierObject";
-    private static final int MAX_FORM_POST = SyspropUtil.getInteger( "com.l7tech.message.httpParamsMaxFormPost", 512 * 1024 );
-    private static final boolean VALIDATE_PARAMETERS = SyspropUtil.getBoolean( "com.l7tech.message.httpParamsValidate", true );
+    private static final int MAX_FORM_POST = ConfigFactory.getIntProperty( "com.l7tech.message.httpParamsMaxFormPost", 512 * 1024 );
+    private static final boolean VALIDATE_PARAMETERS = ConfigFactory.getBooleanProperty( "com.l7tech.message.httpParamsValidate", true );
 
     public HttpServletRequestKnob(HttpServletRequest request) {
         this.request = request;

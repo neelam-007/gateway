@@ -1,8 +1,8 @@
 package com.l7tech.gateway.client;
 
 import com.l7tech.gateway.api.impl.TransportFactory;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.SyspropUtil;
 import com.sun.ws.management.Management;
 import com.sun.ws.management.addressing.Addressing;
 import com.sun.ws.management.client.impl.TransportClient;
@@ -32,7 +32,6 @@ import java.util.Queue;
 /**
  * Tests for Gateway Management Client
  */
-@SuppressWarnings({ "ThrowableInstanceNeverThrown" })
 public class GatewayManagementClientTest {
 
     //- PUBLIC
@@ -43,7 +42,7 @@ public class GatewayManagementClientTest {
         GatewayManagementClient gmc = new GatewayManagementClient( new String[]{}, System.in, out, out );
         int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 1, exitCode );
+        assertEquals( "Exit code", 1L, (long) exitCode );
         assertTrue( "Expected usage:\n"+output, output.startsWith( "Usage:" ));
     }
 
@@ -54,7 +53,7 @@ public class GatewayManagementClientTest {
             GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ "-help", "enumerate" }, System.in, out, out );
             int exitCode = gmc.run();
             String output = out.toString();
-            assertEquals( "Exit code", 0, exitCode );
+            assertEquals( "Exit code", 0L, (long) exitCode );
             assertTrue( "Expected help for enumerate command:\n"+output, output.startsWith( "enumerate:" ));
         }
         {
@@ -62,7 +61,7 @@ public class GatewayManagementClientTest {
             GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ "enumerate", "-help" }, System.in, out, out );
             int exitCode = gmc.run();
             String output = out.toString();
-            assertEquals( "Exit code", 0, exitCode );
+            assertEquals( "Exit code", 0L, (long) exitCode );
             assertTrue( "Expected help for enumerate command:\n"+output, output.startsWith( "enumerate:" ));
         }
     }
@@ -73,7 +72,7 @@ public class GatewayManagementClientTest {
         GatewayManagementClient gmc = new GatewayManagementClient( new String[]{"-version"}, System.in, out, out );
         int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 0, exitCode );
+        assertEquals( "Exit code", 0L, (long) exitCode );
         assertTrue( "Expected usage:\n"+output, output.startsWith( "Version " ));
     }
 
@@ -87,7 +86,7 @@ public class GatewayManagementClientTest {
                 out );
         int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 1, exitCode );
+        assertEquals( "Exit code", 1L, (long) exitCode );
         assertTrue( "Expected unknown command:\n" + output , output.startsWith("Command 'unknown-command' not recognized." ));
     }
 
@@ -102,7 +101,7 @@ public class GatewayManagementClientTest {
                 out );
         int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 1, exitCode );
+        assertEquals( "Exit code", 1L, (long) exitCode );
         assertEquals( "Expected network error", "Network error 'Connection refused'\n", output);
     }
 
@@ -117,7 +116,7 @@ public class GatewayManagementClientTest {
                 out );
         int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 1, exitCode );
+        assertEquals( "Exit code", 1L, (long) exitCode );
         assertEquals( "Expected trust error", "Server TLS/SSL certificate is not trusted.\n", output);
     }
 
@@ -132,7 +131,7 @@ public class GatewayManagementClientTest {
                 out );
         int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 1, exitCode );
+        assertEquals( "Exit code", 1L, (long) exitCode );
         assertEquals( "Expected soap fault",
                 "SOAP Fault from service:\n" +
                 "  Fault: Policy Falsified\n" +
@@ -151,7 +150,7 @@ public class GatewayManagementClientTest {
                 out );
         int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 1, exitCode );
+        assertEquals( "Exit code", 1L, (long) exitCode );
         assertEquals( "Expected not authorized", "Not authorized to access Gateway Management service.\n", output);
     }
 
@@ -166,7 +165,7 @@ public class GatewayManagementClientTest {
                 out );
         int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 1, exitCode );
+        assertEquals( "Exit code", 1L, (long) exitCode );
         assertEquals( "Expected soap fault",
                 "SOAP Fault from service:\n" +
                 "  Fault: Policy Falsified\n" +
@@ -185,7 +184,7 @@ public class GatewayManagementClientTest {
                 out );
         int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 1, exitCode );
+        assertEquals( "Exit code", 1L, (long) exitCode );
         assertEquals( "Expected resource not found message", "No resource matched the specified name or identifier.\n", output);
     }
 
@@ -199,7 +198,7 @@ public class GatewayManagementClientTest {
                 out );
         int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 1, exitCode );
+        assertEquals( "Exit code", 1L, (long) exitCode );
         assertEquals( "Expected not applicable message", "Command not applicable for type 'clusterProperty'\n", output);
     }
 
@@ -218,7 +217,7 @@ public class GatewayManagementClientTest {
                 out );
         int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 1, exitCode );
+        assertEquals( "Exit code", 1L, (long) exitCode );
         assertTrue( "Expected input error:\n" + output , output.contains("Error processing input") );
     }
 
@@ -237,7 +236,7 @@ public class GatewayManagementClientTest {
                 out );
         int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 1, exitCode );
+        assertEquals( "Exit code", 1L, (long) exitCode );
         assertTrue( "Expected not supported:\n" + output , output.equals("Command not supported for type 'folder'.\n") );
     }
     
@@ -257,7 +256,7 @@ public class GatewayManagementClientTest {
                 out );
         int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 1, exitCode );
+        assertEquals( "Exit code", 1L, (long) exitCode );
         assertTrue( "Expected permission denied:\n" + output , output.equals("Permission denied when accessing resource.\n") );
     }
 
@@ -271,7 +270,7 @@ public class GatewayManagementClientTest {
         GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ "gateway", "enumerate", "-type", "clusterProperty" }, System.in, out, out );
         int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 0, exitCode );
+        assertEquals( "Exit code", 0L, (long) exitCode );
         assertTrue( "Expected cluster property enumeration:\n" + output , output.contains("<ClusterProperty") && output.contains( "<enumeration>" ) && output.endsWith( "</enumeration>\n" ));
     }
 
@@ -284,7 +283,7 @@ public class GatewayManagementClientTest {
         GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ "gateway", "enumerate", "-type", "clusterProperty" }, System.in, out, out );
         int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 0, exitCode );
+        assertEquals( "Exit code", 0L, (long) exitCode );
         assertTrue( "Expected empty enumeration:\n" + output , output.contains( "<enumeration/>" ));
     }
 
@@ -304,7 +303,7 @@ public class GatewayManagementClientTest {
                 out );
         int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 0, exitCode );
+        assertEquals( "Exit code", 0L, (long) exitCode );
         assertTrue( "Expected cluster property:\n" + output , output.contains("<ClusterProperty") && output.contains( "test value" ));
         assertTrue( "Expected ID in output:\n" + output , output.contains( "id=\"264372224\"" ));
     }
@@ -320,7 +319,7 @@ public class GatewayManagementClientTest {
                 out );
         int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 0, exitCode );
+        assertEquals( "Exit code", 0L, (long) exitCode );
         assertTrue( "Expected cluster property:\n" + output , output.contains("<ClusterProperty") && output.contains( "secure_span" ));
     }
 
@@ -340,7 +339,7 @@ public class GatewayManagementClientTest {
                 out );
         int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 0, exitCode );
+        assertEquals( "Exit code", 0L, (long) exitCode );
         assertTrue( "Expected cluster property:\n" + output , output.contains("<ClusterProperty") && output.contains( "test value2" ));
         assertTrue( "Expected ID in output:\n" + output , output.contains( "id=\"264372224\"" ));
         assertTrue( "Expected version in output:\n" + output , output.contains( "version=\"1\"" ));
@@ -357,7 +356,7 @@ public class GatewayManagementClientTest {
                 out );
         int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 0, exitCode );
+        assertEquals( "Exit code", 0L, (long) exitCode );
         assertTrue( "Expected no output:\n" + output , output.isEmpty());
     }
 
@@ -372,7 +371,7 @@ public class GatewayManagementClientTest {
                 out );
         int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 0, exitCode );
+        assertEquals( "Exit code", 0L, (long) exitCode );
         assertTrue( "Expected validation result:\n" + output , output.contains("<PolicyValidationResult") && output.contains( "Credentials are collected but not authenticated." ));
     }
 
@@ -387,7 +386,7 @@ public class GatewayManagementClientTest {
                 out );
         int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 0, exitCode );
+        assertEquals( "Exit code", 0L, (long) exitCode );
         assertTrue( "Expected validation result:\n" + output , output.contains("<PolicyValidationResult") && output.contains( "Credentials are collected but not authenticated." ));
     }
 
@@ -402,7 +401,7 @@ public class GatewayManagementClientTest {
                 out );
         int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 0, exitCode );
+        assertEquals( "Exit code", 0L, (long) exitCode );
         assertTrue( "Expected validation result:\n" + output , output.contains("<PolicyValidationResult") && output.contains( "Credentials are collected but not authenticated." ));
     }
 
@@ -429,7 +428,7 @@ public class GatewayManagementClientTest {
                 out );
         int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 0, exitCode );
+        assertEquals( "Exit code", 0L, (long) exitCode );
         assertTrue( "Expected policy import result:\n" + output , output.contains("<PolicyImportResult") );
     }
 
@@ -444,7 +443,7 @@ public class GatewayManagementClientTest {
                 out );
         int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 0, exitCode );
+        assertEquals( "Exit code", 0L, (long) exitCode );
         assertTrue( "Expected policy export:\n" + output , output.contains("<exp:Export") && output.contains( "<exp:References/>" ));
     }
 
@@ -462,8 +461,7 @@ public class GatewayManagementClientTest {
                 out,
                 out );
         int exitCode = gmc.run();
-        String output = out.toString();
-        assertEquals( "Exit code", 0, exitCode );
+        assertEquals( "Exit code", 0L, (long) exitCode );
     }
 
     @Test
@@ -476,8 +474,7 @@ public class GatewayManagementClientTest {
                 out,
                 out );
         int exitCode = gmc.run();
-        String output = out.toString();
-        assertEquals( "Exit code", 0, exitCode );
+        assertEquals( "Exit code", 0L, (long) exitCode );
     }
 
     @Test
@@ -490,8 +487,7 @@ public class GatewayManagementClientTest {
                 out,
                 out );
         int exitCode = gmc.run();
-        String output = out.toString();
-        assertEquals( "Exit code", 0, exitCode );
+        assertEquals( "Exit code", 0L, (long) exitCode );
     }
 
     @Test
@@ -506,7 +502,7 @@ public class GatewayManagementClientTest {
                 out );
         int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 0, exitCode );
+        assertEquals( "Exit code", 0L, (long) exitCode );
         assertTrue( "Expected private key resource:\n" + output , output.contains("<PrivateKey ") && output.contains( "<Encoded>MII" ));
     }
 
@@ -521,7 +517,7 @@ public class GatewayManagementClientTest {
                 out );
         int exitCode = gmc.run();
         String output = out.toString();
-        assertEquals( "Exit code", 0, exitCode );
+        assertEquals( "Exit code", 0L, (long) exitCode );
         assertTrue( "Expected private key resource:\n" + output , output.contains("<PrivateKey ") && output.contains( "Default SSL Key" ));
     }
 
@@ -569,7 +565,7 @@ public class GatewayManagementClientTest {
     //- PRIVATE
 
     private static final Queue<Object> responseObjects = new ArrayDeque<Object>();
-    private static final boolean logMessages = SyspropUtil.getBoolean( "com.l7tech.gateway.client.logTestMessages", true );
+    private static final boolean logMessages = ConfigFactory.getBooleanProperty( "com.l7tech.gateway.client.logTestMessages", true );
 
     private static void setResponse( final String... responseFileNames ) {
         responseObjects.clear();

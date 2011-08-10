@@ -6,7 +6,7 @@ import com.ibm.xml.dsig.Transform;
 import com.ibm.xml.dsig.transform.FixedExclusiveC11r;
 import com.ibm.xml.enc.AlgorithmFactoryExtn;
 import com.l7tech.security.xml.*;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.xml.soap.SoapUtil;
 import org.w3c.dom.Node;
 
@@ -25,7 +25,7 @@ import java.util.*;
  *
  */
 public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
-    private static final boolean USE_IBM_EXC_C11R = Boolean.getBoolean("com.l7tech.common.security.xml.c14n.useIbmExcC11r");
+    private static final boolean USE_IBM_EXC_C11R = ConfigFactory.getBooleanProperty( "com.l7tech.common.security.xml.c14n.useIbmExcC11r", false );
     private static final String PROP_PERMITTED_DIGEST_ALGS = "com.l7tech.security.xml.dsig.permittedDigestAlgorithms";
 
     private final Map<Node, Node> strToTarget;
@@ -50,7 +50,7 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
         this.ecdsaSignatureMethodTable.put(SupportedSignatureMethods.ECDSA_SHA384.getAlgorithmIdentifier(), "SHA384withECDSA");
         this.ecdsaSignatureMethodTable.put(SupportedSignatureMethods.ECDSA_SHA512.getAlgorithmIdentifier(), "SHA512withECDSA");
 
-        String enabledDigestStr = SyspropUtil.getStringCached(PROP_PERMITTED_DIGEST_ALGS, "SHA,SHA-1,SHA-256,SHA-384,SHA-512");
+        String enabledDigestStr = ConfigFactory.getProperty( PROP_PERMITTED_DIGEST_ALGS, "SHA,SHA-1,SHA-256,SHA-384,SHA-512" );
         String[] enabledDigests = enabledDigestStr == null ? new String[0] : enabledDigestStr.toUpperCase().split(",");
         enabledDigestSet = new HashSet<String>();
         for (String digest : enabledDigests) {

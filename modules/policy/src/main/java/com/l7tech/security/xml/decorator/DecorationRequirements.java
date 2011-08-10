@@ -8,9 +8,9 @@ import com.l7tech.security.xml.KeyInfoDetails;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.WsSecurityVersion;
 import com.l7tech.security.xml.processor.SecurityContext;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.NamespaceFactory;
 import com.l7tech.util.SoapConstants;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.saml.SamlAssertion;
 import org.w3c.dom.Element;
 
@@ -900,7 +900,7 @@ public class DecorationRequirements {
     private TimestampResolution timestampResolution = TimestampResolution.DEFAULT;
     private boolean securityHeaderReusable = false;
     private String securityHeaderActor = SoapConstants.L7_SOAP_ACTOR;
-    private boolean securityHeaderActorNamespaced = SyspropUtil.getBoolean( "com.l7tech.security.xml.decorator.soap.soapActorNamespaced", true );
+    private boolean securityHeaderActorNamespaced = ConfigFactory.getBooleanProperty( "com.l7tech.security.xml.decorator.soap.soapActorNamespaced", true );
     private SecurityHeaderMustUnderstand securityHeaderMustUnderstand = SecurityHeaderMustUnderstand.DEFAULT;
     private boolean includeSamlTokenInSignature = false;
     private KeyInfoInclusionType keyInfoInclusionType = KeyInfoInclusionType.CERT;

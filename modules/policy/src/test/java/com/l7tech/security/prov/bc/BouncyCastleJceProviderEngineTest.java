@@ -3,6 +3,7 @@ package com.l7tech.security.prov.bc;
 import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.Pair;
+import com.l7tech.util.SyspropUtil;
 import static org.junit.Assert.*;
 import org.junit.*;
 
@@ -21,7 +22,7 @@ public class BouncyCastleJceProviderEngineTest {
     @BeforeClass
     public static void installBcProvider() {
         final String bcEngineClass = "com.l7tech.security.prov.bc.BouncyCastleJceProviderEngine";
-        System.setProperty("com.l7tech.common.security.jceProviderEngine", bcEngineClass);
+        SyspropUtil.setProperty( "com.l7tech.common.security.jceProviderEngine", bcEngineClass );
         JceProvider.init();
 
         // TODO uncomment and reenable test as soon as there is a way to force a test suite to run in a new JVM

@@ -15,6 +15,7 @@ import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.util.CollectionUtils;
 import static com.l7tech.util.CollectionUtils.foreach;
 import static com.l7tech.util.CollectionUtils.set;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Functions.UnaryVoid;
@@ -25,7 +26,6 @@ import static com.l7tech.util.Option.none;
 import static com.l7tech.util.Option.optional;
 import static com.l7tech.util.Option.some;
 import com.l7tech.util.Pair;
-import com.l7tech.util.SyspropUtil;
 import static com.l7tech.util.TextUtils.isNotEmpty;
 import static com.l7tech.util.TextUtils.join;
 import com.l7tech.util.ValidationUtils;
@@ -136,7 +136,7 @@ public class ListenPortResourceFactory extends EntityManagerResourceFactory<List
             SsgConnector.PROP_TLS_PROTOCOLS,
             SsgConnector.PROP_TLS_CIPHERLIST
     );
-    private static final List<String> DEFAULT_TLS_VERSIONS = Collections.unmodifiableList( split( SyspropUtil.getString( "com.l7tech.external.assertions.gatewaymanagement.listenPortDefaultTlsVersions", "TLSv1" ) ) );
+    private static final List<String> DEFAULT_TLS_VERSIONS = Collections.unmodifiableList( split( ConfigFactory.getProperty( "com.l7tech.external.assertions.gatewaymanagement.listenPortDefaultTlsVersions", "TLSv1" ) ) );
 
     private static final Unary<Option<String>,String> BOOLEAN_VALIDATOR =  new Unary<Option<String>,String>(){
         @Override

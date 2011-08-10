@@ -8,8 +8,8 @@ import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.security.xml.processor.WssProcessorImpl;
 import com.l7tech.test.BugNumber;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.soap.SoapUtil;
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -25,7 +25,7 @@ import static org.junit.Assert.fail;
  * Check for padding oracle vulnerability in the WSS processor.
  */
 public class PaddingOracleTest {
-    private static final boolean log = SyspropUtil.getBoolean("com.l7tech.test.log", false);
+    private static final boolean log = ConfigFactory.getBooleanProperty( "com.l7tech.test.log", false );
 
     private static final String SHORT_SOAP_MSG =
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +

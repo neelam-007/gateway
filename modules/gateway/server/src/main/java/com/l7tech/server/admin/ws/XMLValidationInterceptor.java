@@ -2,9 +2,9 @@ package com.l7tech.server.admin.ws;
 
 import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SAXParsingCompleteException;
-import com.l7tech.util.SyspropUtil;
 import org.apache.cxf.interceptor.AttachmentInInterceptor;
 import org.apache.cxf.interceptor.Fault;
 import org.apache.cxf.message.Message;
@@ -66,7 +66,7 @@ public class XMLValidationInterceptor extends AbstractPhaseInterceptor<Message> 
 
     //- PRIVATE
 
-    private static final int dtdLimit = SyspropUtil.getInteger( "com.l7tech.server.admin.ws.dtdLimit", 4096 );
+    private static final int dtdLimit = ConfigFactory.getIntProperty( "com.l7tech.server.admin.ws.dtdLimit", 4096 );
 
     private void ensureNoDoctype( final InputStream in ) throws SAXException, IOException {
         in.mark( dtdLimit );

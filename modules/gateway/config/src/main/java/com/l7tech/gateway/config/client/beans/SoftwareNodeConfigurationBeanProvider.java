@@ -4,6 +4,7 @@ import com.l7tech.util.InetAddressUtil;
 import com.l7tech.config.client.beans.ConfigurationBean;
 import com.l7tech.config.client.beans.PropertiesConfigurationBeanProvider;
 import com.l7tech.config.client.ConfigurationException;
+import com.l7tech.util.SyspropUtil;
 
 import java.util.Collection;
 import java.util.List;
@@ -35,7 +36,7 @@ public class SoftwareNodeConfigurationBeanProvider extends NodeConfigurationBean
         Object value;
 
         if ( "java.path".equals(configName) ) {
-            value = System.getProperty("java.home");
+            value = SyspropUtil.getProperty( "java.home" );
         } else {
             value =  super.getInitialValue(configName);
         }

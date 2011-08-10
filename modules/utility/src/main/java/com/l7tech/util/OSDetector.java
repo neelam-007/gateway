@@ -7,7 +7,7 @@ public class OSDetector {
     private static Pattern SOLARIS_PATTERN = Pattern.compile("SunOS.*");
     private static Pattern WINDOWS_PATTERN = Pattern.compile("Windows.*");
 
-    private static String OSName = System.getProperty("os.name");
+    private static String OSName = SyspropUtil.getProperty( "os.name" );
 
     public static boolean isWindows() {
         return WINDOWS_PATTERN.matcher(OSName).matches();

@@ -1,8 +1,8 @@
 package com.l7tech.console.util;
 
 import com.l7tech.console.panels.CipherSuiteListModel;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Functions;
-import com.l7tech.util.SyspropUtil;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -18,7 +18,7 @@ public final class CipherSuiteGuiUtil {
 
     private CipherSuiteGuiUtil() {}
 
-    public static final boolean INCLUDE_ALL_CIPHERS = SyspropUtil.getBoolean("com.l7tech.console.connector.includeAllCiphers");
+    public static final boolean INCLUDE_ALL_CIPHERS = ConfigFactory.getBooleanProperty( "com.l7tech.console.connector.includeAllCiphers", false );
 
     /**
      * Set up a group of GUI controls for manipulating enabled TLS cipher suites.
