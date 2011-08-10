@@ -72,9 +72,6 @@ public class EsmSubscriptionAssertion extends Assertion implements UsesEntities,
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
-        // Cluster properties used by this assertion
-        meta.put(CLUSTER_PROPERTIES, new HashMap<String, String[]>());
-
         // Set description for GUI
         meta.put(SHORT_NAME, "Subscribe to WSDM Resource");
         meta.put(DESCRIPTION, "Send subscription requests to a specified resource based on the WSDM specification.");

@@ -72,14 +72,6 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
         // ensure inbound transport gets wired up
         meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.ssh.server.SshServerModuleLoadListener");
 
-        // Cluster properties used by this assertion
-        Map<String, String[]> props = new HashMap<String, String[]>();
-        //props.put(NAME, new String[] {
-        //        DESCRIPTION,
-        //        DEFAULT
-        //});
-        meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
-
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
         meta.put(AssertionMetadata.LONG_NAME, "Route requests from the Gateway to another server, using SSH. This assertion supports the SSH2 protocol for SCP and SFTP transfer.");

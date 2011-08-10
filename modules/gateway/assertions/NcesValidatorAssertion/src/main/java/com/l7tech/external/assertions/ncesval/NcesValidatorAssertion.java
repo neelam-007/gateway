@@ -81,14 +81,6 @@ public class NcesValidatorAssertion extends MessageTargetableAssertion implement
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
-        // Cluster properties used by this assertion
-        Map<String, String[]> props = new HashMap<String, String[]>();
-        //props.put(NAME, new String[] {
-        //        DESCRIPTION,
-        //        DEFAULT
-        //});
-        meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
-
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
         meta.put(AssertionMetadata.DESCRIPTION, "Validate Message for NCES Compliance.");

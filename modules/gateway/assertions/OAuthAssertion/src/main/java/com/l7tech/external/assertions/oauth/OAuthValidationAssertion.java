@@ -99,14 +99,6 @@ public class OAuthValidationAssertion extends Assertion implements UsesVariables
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
-        // Cluster properties used by this assertion
-        Map<String, String[]> props = new HashMap<String, String[]>();
-        //props.put(NAME, new String[] {
-        //        DESCRIPTION,
-        //        DEFAULT
-        //});
-        meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
-
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, "Verify OAuth Token");
         meta.put(AssertionMetadata.LONG_NAME, "Verify an OAuth token against an input string or a set of variables.");

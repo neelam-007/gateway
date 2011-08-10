@@ -147,10 +147,6 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
-        // Cluster properties used by this assertion
-        Map<String, String[]> props = new HashMap<String, String[]>();
-        meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
-
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, ASSERTION_SHORT_NAME);
         meta.put(AssertionMetadata.DESCRIPTION, "Query an external database via a JDBC connection.");

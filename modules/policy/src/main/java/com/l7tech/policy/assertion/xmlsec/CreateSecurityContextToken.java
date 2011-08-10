@@ -88,10 +88,6 @@ public class CreateSecurityContextToken extends MessageTargetableAssertion {
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
-        // Cluster properties used by this assertion
-        Map<String, String[]> props = new HashMap<String, String[]>();
-        meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
-
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, ASSERTION_BASIC_NAME);
         meta.put(AssertionMetadata.DESCRIPTION, "Create a security context token containing a secure conversation session identifier.");

@@ -138,10 +138,6 @@ public class EstablishOutboundSecureConversation extends MessageTargetableAssert
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
-        // Cluster properties used by this assertion
-        Map<String, String[]> props = new HashMap<String, String[]>();
-        meta.put(CLUSTER_PROPERTIES, props);
-
         // Set description for GUI
         meta.put(SHORT_NAME, ASSERTION_BASIC_NAME);
         meta.put(DESCRIPTION, "Establish Outbound WS-Secure Conversation");

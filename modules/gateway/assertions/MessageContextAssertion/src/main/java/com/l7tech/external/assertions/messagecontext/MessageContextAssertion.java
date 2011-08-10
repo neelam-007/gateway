@@ -65,11 +65,6 @@ public class MessageContextAssertion extends Assertion implements UsesVariables 
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
-        // Cluster properties used by this assertion
-        Map<String, String[]> props = new HashMap<String, String[]>();
-
-        meta.put(CLUSTER_PROPERTIES, props);
-
         // Set description for GUI
         meta.put(SHORT_NAME, "Capture Identity of Requestor");
         meta.put(DESCRIPTION, "Record contextual information about the current request by capturing the IP address, authenticated user ID, or a context variable.");
