@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.TestDocuments;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.external.assertions.gatewaymanagement.GatewayManagementAssertion;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
@@ -9,6 +10,7 @@ import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.password.SecurePassword;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.service.ServiceTemplate;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
@@ -16,20 +18,16 @@ import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.UserBean;
-import com.l7tech.message.Message;
+import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.HttpServletResponseKnob;
-import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.message.Message;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.folder.Folder;
-import com.l7tech.policy.AssertionRegistry;
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyType;
-import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.policy.PolicyValidatorStub;
+import com.l7tech.policy.*;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.server.EntityManagerStub;
@@ -51,37 +49,29 @@ import com.l7tech.server.security.rbac.FolderManagerStub;
 import com.l7tech.server.security.rbac.RbacServicesStub;
 import com.l7tech.server.service.ServiceDocumentManagerStub;
 import com.l7tech.server.service.ServiceManager;
-import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.server.transport.jms.JmsConnectionManagerStub;
 import com.l7tech.server.transport.jms.JmsEndpointManagerStub;
 import com.l7tech.server.uddi.ServiceWsdlUpdateChecker;
 import com.l7tech.test.BugNumber;
-import com.l7tech.util.ArrayUtils;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.MockConfig;
-import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
-import org.springframework.mock.web.MockServletContext;
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.beans.factory.support.StaticListableBeanFactory;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
+import org.springframework.beans.factory.support.StaticListableBeanFactory;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.mock.web.MockServletContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import javax.xml.soap.SOAPConstants;
 import java.net.MalformedURLException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Properties;
-import java.util.UUID;
-import javax.xml.soap.SOAPConstants;
+import java.util.*;
+
+import static org.junit.Assert.*;
 
 /**
  * Test the GatewayManagementAssertion.
@@ -263,6 +253,37 @@ public class ServerGatewayManagementAssertionTest {
     }
 
     @Test
+    public void testGetLDAPIdentityProvider() throws Exception {
+        final String message =
+                "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
+                "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
+                "            xmlns:w=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\">\n" +
+                "  <s:Header>\n" +
+                "    <a:MessageID>uuid:4ED2993C-4339-4E99-81FC-C2FD3812781A</a:MessageID> \n" +
+                "    <a:To>http://127.0.0.1:8080/wsman</a:To> \n" +
+                "    <a:ReplyTo> \n" +
+                "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
+                "    </a:ReplyTo> \n" +
+                "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Get</a:Action> \n" +
+                "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/identityProviders</w:ResourceURI> \n" +
+                "    <w:SelectorSet>\n" +
+                "      <w:Selector Name=\"name\">LDAP</w:Selector> \n" +
+                "    </w:SelectorSet>\n" +
+                "    <w:OperationTimeout>PT60.000S</w:OperationTimeout> \n" +
+                "  </s:Header>\n" +
+                "  <s:Body/> \n" +
+                "</s:Envelope>";
+
+        final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Get", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element identityProvider = XmlUtil.findExactlyOneChildElementByName( soapBody, NS_GATEWAY_MANAGEMENT, "IdentityProvider" );
+        final Element name = XmlUtil.findExactlyOneChildElementByName(identityProvider, NS_GATEWAY_MANAGEMENT, "Name");
+
+        assertEquals("Identity provider name", "LDAP", XmlUtil.getTextValue( name ));
+    }
+
+    @Test
     public void testGetInvalidSelector() throws Exception {
         final String message =
                 "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
@@ -428,6 +449,9 @@ public class ServerGatewayManagementAssertionTest {
                 "    <Properties extendedAttribute=\"extension\">\n" +
                 "        <Property key=\"userCertificateUsage\" extendedAttribute=\"extension\">\n" +
                 "            <StringValue>Index</StringValue>\n" +
+                "        </Property>\n" +
+                "        <Property key=\"userLookupByCertMode\" extendedAttribute=\"extension\">\n" +
+                "            <StringValue>Entire Certificate</StringValue>\n" +
                 "        </Property>\n" +
                 "    </Properties>\n" +
                 "    <Extension other:extendedAttribute=\"extension\" xmlns:other=\"urn:othernamespace\">\n" +
@@ -1766,7 +1790,8 @@ public class ServerGatewayManagementAssertionTest {
                 rootFolder,
                 folder( 1L, rootFolder, "Test Folder") ) );
         beanFactory.addBean( "identityProviderConfigManager", new TestIdentityProviderConfigManager(
-                provider( -2L, IdentityProviderType.INTERNAL, "Internal Identity Provider") ) );
+                provider( -2L, IdentityProviderType.INTERNAL, "Internal Identity Provider"),
+                provider( -3L, IdentityProviderType.LDAP, "LDAP", "userLookupByCertMode", "CERT")));
         beanFactory.addBean( "jmsConnectionManager",  new JmsConnectionManagerStub(
                 jmsConnection( 1L, "Test Endpoint", "com.context.Classname", "qcf", "ldap://jndi") ));
         beanFactory.addBean( "jmsEndpointManager",  new JmsEndpointManagerStub(
@@ -1821,10 +1846,25 @@ public class ServerGatewayManagementAssertionTest {
         return folder;
     }
 
-    private static IdentityProviderConfig provider( final long oid, final IdentityProviderType type, final String name ) {
-        final IdentityProviderConfig provider = new IdentityProviderConfig( type );
+    private static IdentityProviderConfig provider( final long oid, final IdentityProviderType type, final String name, String... props ) {
+        final IdentityProviderConfig provider = type == IdentityProviderType.LDAP ? new LdapIdentityProviderConfig() : new IdentityProviderConfig( type );
         provider.setOid( oid );
         provider.setName( name );
+        if (props != null && props.length > 0) {
+            int numprops = props.length / 2;
+            if (props.length != numprops * 2)
+                throw new IllegalArgumentException("An even number of strings must be provided (to be interpreted as test property name,value pairs)");
+
+            for (int i = 0; i < props.length; i+=2) {
+                String prop = props[i];
+                String val = props[i + 1];
+                if ("userLookupByCertMode".equals(prop)) {
+                    ((LdapIdentityProviderConfig)provider).setUserLookupByCertMode(LdapIdentityProviderConfig.UserLookupByCertMode.valueOf(val));
+                } else {
+                    throw new IllegalArgumentException("Unsupported test idp property: " + prop);
+                }
+            }
+        }
         return provider;
     }
 

@@ -2,22 +2,16 @@ package com.l7tech.identity.ldap;
 
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.util.TimeUnit;
+import org.hibernate.annotations.Proxy;
 
-import javax.xml.bind.annotation.XmlEnumValue;
-import javax.xml.bind.annotation.XmlRootElement;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.Transient;
+import javax.xml.bind.annotation.XmlEnumValue;
+import javax.xml.bind.annotation.XmlRootElement;
 import java.io.Serializable;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.TreeSet;
-import java.util.Set;
-import java.util.Arrays;
-
-import com.l7tech.util.TimeUnit;
-import org.hibernate.annotations.Proxy;
+import java.util.*;
 
 /**
  * General LDAP connector config.
@@ -523,11 +517,25 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
         setProperty(GROUP_MEMBERSHIP_CASE_INSENSITIVE, caseInsensitive);
     }
 
+    @Transient
+    public UserLookupByCertMode getUserLookupByCertMode() {
+        return getEnumProperty(USER_LOOKUP_BY_CERT_MODE, UserLookupByCertMode.LOGIN, UserLookupByCertMode.class);
+    }
+
+    public void setUserLookupByCertMode(UserLookupByCertMode mode) {
+        setProperty(USER_LOOKUP_BY_CERT_MODE, mode == null ? UserLookupByCertMode.LOGIN.toString() : mode.toString());
+    }
+
     public enum UserCertificateUseType {
         @XmlEnumValue("None") NONE,
         @XmlEnumValue("Index") INDEX,
         @XmlEnumValue("Custom Index") INDEX_CUSTOM,
         @XmlEnumValue("Search") SEARCH
+    }
+
+    public enum UserLookupByCertMode {
+        @XmlEnumValue("Common Name from Certificate") LOGIN,
+        @XmlEnumValue("Entire Certificate") CERT
     }
 
     public static final String URL = "ldapurl";
@@ -545,6 +553,7 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
     private static final String USER_CERT_CUSTOM_INDEX = "userCertIndex";
     private static final String USER_CERT_SEARCH_ISSUER_SERIAL = "userCertSearchIssuerSerial";
     private static final String USER_CERT_SEARCH_SKI = "userCertSearchSKI";
+    private static final String USER_LOOKUP_BY_CERT_MODE = "userLookupByCertMode";
     private static final String RETURNING_ATTRIBUTES = "returningAttributes";    
     private static final String GROUP_CACHE_SIZE = "groupCacheSize";
     private static final String GROUP_CACHE_MAX_AGE = "groupCacheMaxAge";

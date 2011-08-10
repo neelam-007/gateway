@@ -72,6 +72,8 @@ import java.util.Map;
  *   <li><code>userCertificateUsage</code>: Certificate use type, one of
  *   <code>None</code>, <code>Index</code>, <code>Custom</code>,
  *   <code>Search</code> (string)</li>
+ *   <li><code>userLookupByCertMode</code>: Method of looking up an LDAP user from their client certificate, one of</li>
+ *      "<code>Common Name from Certificate</code>" or "<code>Entire Certificate</code>".
  * </ul>
  * </p>
  *

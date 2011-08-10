@@ -164,6 +164,7 @@ class EntityPropertiesHelper {
             .put( "userCertificateIssuerSerialSearchFilter", null )
             .put( "userCertificateSKISearchFilter", null )
             .put( "userCertificateUseType", "userCertificateUsage" )
+            .put( "userLookupByCertMode", null )
             .unmodifiableMap() )
         .put( IdentityProviderConfig.class, MapBuilder.<String,String>builder()
             .put( "adminEnabled", null )

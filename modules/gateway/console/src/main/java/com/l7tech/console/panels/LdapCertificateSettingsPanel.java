@@ -71,6 +71,9 @@ public class LdapCertificateSettingsPanel extends IdentityProviderStepPanel {
                     subjectKeyIdentifierSearchTextField.setText(ldapSettings.getUserCertificateSKISearchFilter());
                     break;
             }
+
+            userLookupByCertModeComboBox.setSelectedItem(ldapSettings.getUserLookupByCertMode());
+
             enableDisableUserCertOptions();
 
             if ( customIndexSearchFilterTextField.getText()==null || customIndexSearchFilterTextField.getText().isEmpty() ) {
@@ -128,6 +131,8 @@ public class LdapCertificateSettingsPanel extends IdentityProviderStepPanel {
                 ldapSettings.setUserCertificateSKISearchFilter(subjectKeyIdentifierSearchTextField.getText());
             }
 
+            ldapSettings.setUserLookupByCertMode((LdapIdentityProviderConfig.UserLookupByCertMode) userLookupByCertModeComboBox.getSelectedItem());
+
             ldapSettings.setCertificateValidationType((CertificateValidationType) validationOptionComboBox.getSelectedItem());
         }
     }
@@ -154,6 +159,7 @@ public class LdapCertificateSettingsPanel extends IdentityProviderStepPanel {
     private static final String RES_STEP_DESCRIPTION = "certificateSettings.step.description";
     private static final String RES_VALTYPE_PREFIX = "validation.option.";
     private static final String RES_VALTYPE_DEFAULT = "default";
+    private static final String RES_LOOKUPTYPE_PREFIX = "userlookup.type.";
 
     private JPanel mainPanel;
     private JComboBox validationOptionComboBox;
@@ -164,6 +170,7 @@ public class LdapCertificateSettingsPanel extends IdentityProviderStepPanel {
     private JTextField issuerSerialSearchTextField;
     private JTextField subjectKeyIdentifierSearchTextField;
     private JTextField customIndexSearchFilterTextField;
+    private JComboBox userLookupByCertModeComboBox;
     private ResourceBundle resources;
 
     /**
@@ -195,8 +202,19 @@ public class LdapCertificateSettingsPanel extends IdentityProviderStepPanel {
         doNotUseCertificatesRadioButton.addActionListener( listener );
         scanAndIndexCertificatesRadioButton.addActionListener( listener );
         scanAndIndexCertificatesWithFilterRadioButton.addActionListener( listener );
-        searchForCertificatesInRadioButton.addActionListener( listener );
-        customIndexSearchFilterTextField.getDocument().addDocumentListener( listener );
+        searchForCertificatesInRadioButton.addActionListener(listener);
+        customIndexSearchFilterTextField.getDocument().addDocumentListener(listener);
+
+        DefaultComboBoxModel lookupByCertModel = new DefaultComboBoxModel(LdapIdentityProviderConfig.UserLookupByCertMode.values());
+        userLookupByCertModeComboBox.setModel(lookupByCertModel);
+        userLookupByCertModeComboBox.setRenderer(new TextListCellRenderer<LdapIdentityProviderConfig.UserLookupByCertMode>(new Functions.Unary<String,LdapIdentityProviderConfig.UserLookupByCertMode>() {
+            @Override
+            public String call(LdapIdentityProviderConfig.UserLookupByCertMode userLookupByCertMode) {
+                return userLookupByCertMode == null ? "<null>" : resources.getString(RES_LOOKUPTYPE_PREFIX + userLookupByCertMode.name());
+            }
+        }));
+        userLookupByCertModeComboBox.setEnabled(!readOnly);
+
         enableDisableUserCertOptions();
 
         DefaultComboBoxModel model = new DefaultComboBoxModel( CertificateValidationType.values());
@@ -229,6 +247,8 @@ public class LdapCertificateSettingsPanel extends IdentityProviderStepPanel {
 
             issuerSerialSearchTextField.setEnabled( searchEnabled );
             subjectKeyIdentifierSearchTextField.setEnabled( searchEnabled );
+
+            userLookupByCertModeComboBox.setEnabled(!doNotUseCertificatesRadioButton.isSelected());
         }
     }
 }

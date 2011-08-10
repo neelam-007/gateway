@@ -32,6 +32,7 @@ import javax.naming.*;
 import javax.naming.directory.*;
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
@@ -322,6 +323,13 @@ public class LdapIdentityProviderImpl
             final String id = sessionAuthenticator.getUserId( pc );
             if ( id!=null ) {
                 user = userManager.findByPrimaryKey( id );
+            }
+        } else if (pc.getFormat() == CredentialFormat.CLIENTCERT && certsAreEnabled() && LdapIdentityProviderConfig.UserLookupByCertMode.CERT.equals(config.getUserLookupByCertMode())) {
+            try {
+                String userDn = ldapCertificateCache.findUserDnByCert(pc.getClientCert());
+                user = userDn == null ? null : userManager.findByPrimaryKey(userDn);
+            } catch (CertificateEncodingException e) {
+                throw new FindException("Invalid user certificate: " + ExceptionUtils.getMessage(e), e);
             }
         } else if ( pc.getLogin() != null ) {
             user = userManager.findByLogin(pc.getLogin());

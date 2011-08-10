@@ -1,36 +1,33 @@
 package com.l7tech.server.identity.ldap;
 
-import com.l7tech.server.Lifecycle;
-import com.l7tech.server.util.ManagedTimerTask;
-import com.l7tech.server.util.ManagedTimer;
-import com.l7tech.util.Pair;
-import com.l7tech.util.Functions;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.UserMappingConfig;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.Lifecycle;
+import com.l7tech.server.util.ManagedTimer;
+import com.l7tech.server.util.ManagedTimerTask;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
+import com.l7tech.util.Pair;
 
-import javax.security.auth.x500.X500Principal;
 import javax.naming.NamingException;
-import javax.naming.directory.SearchControls;
 import javax.naming.directory.Attributes;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Set;
-import java.util.Map;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.concurrent.atomic.AtomicReference;
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
+import javax.naming.directory.SearchControls;
+import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.text.MessageFormat;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * LDAP certificate caching and indexing support.
@@ -81,7 +78,8 @@ class LdapCertificateCache implements Lifecycle {
         CertCacheKey certCacheKey = index.getCertCacheKeyBySki( ski );
 
         if ( certCacheKey != null ) {
-            lookedupCert = getCertificateByKey(certCacheKey);
+            final Pair<String, X509Certificate> result = getCertificateByKey(certCacheKey);
+            lookedupCert = result == null ? null : result.right;
         }
 
         return lookedupCert;
@@ -95,7 +93,8 @@ class LdapCertificateCache implements Lifecycle {
         CertCacheKey certCacheKey = index.getCertCacheKeyByIssuerAndSerial( issuerDN, certSerial );
 
         if ( certCacheKey != null ) {
-            lookedupCert = getCertificateByKey(certCacheKey);
+            final Pair<String, X509Certificate> result = getCertificateByKey(certCacheKey);
+            lookedupCert = result == null ? null : result.right;
         }
 
         return lookedupCert;
@@ -109,10 +108,24 @@ class LdapCertificateCache implements Lifecycle {
         CertCacheKey certCacheKey = index.getCertCacheKeyByThumbprintSHA1( thumbprintSHA1 );
 
         if ( certCacheKey != null ) {
-            lookedupCert = getCertificateByKey(certCacheKey);
+            final Pair<String, X509Certificate> result = getCertificateByKey(certCacheKey);
+            lookedupCert = result == null ? null : result.right;
         } 
 
         return lookedupCert;
+    }
+
+    String findUserDnByCert( final X509Certificate cert ) throws FindException, CertificateEncodingException {
+        String userDn = null;
+
+        CertIndex index = certIndexRef.get();
+        CertCacheKey certCacheKey = index.getCertCacheKeyByThumbprintSHA1(CertUtils.getThumbprintSHA1(cert));
+        if (certCacheKey != null) {
+            final Pair<String, X509Certificate> result = getCertificateByKey(certCacheKey);
+            userDn = result == null ? null : result.left;
+        }
+
+        return userDn;
     }
 
     void clearIndex( final X500Principal issuer, final BigInteger serial, final String ski ) {
@@ -127,7 +140,7 @@ class LdapCertificateCache implements Lifecycle {
         for ( X509Certificate cert : certificates ) {
             CertCacheKey certCacheKey = index.addCertificateToIndexes( dn, cert );
             if ( certCacheKey != null ) {
-                newCertCacheEntries.put( certCacheKey, new CertCacheEntry(cert) );
+                newCertCacheEntries.put( certCacheKey, new CertCacheEntry(dn, cert) );
             }
         }
 
@@ -237,19 +250,19 @@ class LdapCertificateCache implements Lifecycle {
         }
     }
 
-    private X509Certificate getCertificateByKey( final CertCacheKey certCacheKey ) {
-        final X509Certificate[] outputHolder = new X509Certificate[1];
+    private Pair<String, X509Certificate> getCertificateByKey( final CertCacheKey certCacheKey ) {
+        final AtomicReference<Pair<String, X509Certificate>> outputHolder = new AtomicReference<Pair<String, X509Certificate>>();
 
         // try to find cert in cert cache
         cacheLock.readLock().lock();
         try {
             CertCacheEntry cce = certCache.get(certCacheKey);
-            if (cce != null) outputHolder[0] = cce.cert;
+            if (cce != null) outputHolder.set(new Pair<String, X509Certificate>(cce.userDn, cce.cert));
         } finally {
             cacheLock.readLock().unlock();
         }
 
-        if (outputHolder[0] != null) {
+        if (outputHolder.get() != null) {
             logger.fine("Cert found in cache '"+certCacheKey+"'.");
         } else {
             // load the cert from ldap
@@ -270,7 +283,7 @@ class LdapCertificateCache implements Lifecycle {
                                     try {
                                         X509Certificate certificate = CertUtils.decodeCert((byte[])certificateObj);
                                         if ( certCacheKey.getValue().equals(CertUtils.getThumbprintSHA1(certificate)) ) {
-                                            outputHolder[0] = certificate;
+                                            outputHolder.set(new Pair<String, X509Certificate>(dn, certificate));
                                             break;
                                         }
                                     } catch ( CertificateException ce ) {
@@ -285,21 +298,21 @@ class LdapCertificateCache implements Lifecycle {
                 logger.log(Level.WARNING, "Error looking up certificate in directory " + certCacheKey, e);
             }
 
-            if (outputHolder[0] == null) {
+            if (outputHolder.get() == null) {
                 logger.fine("Certificate is in the index but not in directory (" + certCacheKey + ")");
             } else {
                 // add the cert to the cert cache and return
                 logger.fine("Caching cert for " + certCacheKey);
                 cacheLock.writeLock().lock();
                 try {
-                    certCache.put(certCacheKey, new CertCacheEntry(outputHolder[0]));
+                    certCache.put(certCacheKey, new CertCacheEntry(outputHolder.get().left, outputHolder.get().right));
                 } finally {
                     cacheLock.writeLock().unlock();
                 }
             }
         }
 
-        return outputHolder[0];
+        return outputHolder.get();
     }
 
     private void doRebuildCertIndex() {
@@ -391,11 +404,13 @@ class LdapCertificateCache implements Lifecycle {
     }
 
     private static final class CertCacheEntry {
+        private final String userDn;
         private final X509Certificate cert;
         private final long entryCreation;
 
-        CertCacheEntry(X509Certificate cert) {
+        CertCacheEntry(String userDn, X509Certificate cert) {
             this.entryCreation = System.currentTimeMillis();
+            this.userDn = userDn;
             this.cert = cert;
         }
     }

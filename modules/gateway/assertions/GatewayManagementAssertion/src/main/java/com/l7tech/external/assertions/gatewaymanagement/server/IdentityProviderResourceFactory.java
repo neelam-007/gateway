@@ -1,11 +1,9 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.gateway.api.IdentityProviderMO;
-import static com.l7tech.gateway.api.IdentityProviderMO.*;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.identity.ldap.GroupMappingConfig;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
@@ -16,21 +14,15 @@ import com.l7tech.security.types.CertificateValidationType;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
-import com.l7tech.util.ArrayUtils;
-import com.l7tech.util.BeanUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.Option;
-import com.l7tech.util.TimeUnit;
+import com.l7tech.util.*;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+
+import static com.l7tech.gateway.api.IdentityProviderMO.*;
 
 /**
  * 
@@ -93,7 +85,7 @@ public class IdentityProviderResourceFactory extends EntityManagerResourceFactor
         final IdentityProviderConfig identityProvider;
         switch ( identityProviderResource.getIdentityProviderType() ) {
             case INTERNAL:
-                identityProvider = new IdentityProviderConfig(IdentityProviderType.INTERNAL);
+                identityProvider = new IdentityProviderConfig(com.l7tech.identity.IdentityProviderType.INTERNAL);
                 break;
             case LDAP:
                 identityProvider = fromResource( identityProviderResource, new LdapIdentityProviderConfig() );
@@ -426,6 +418,8 @@ public class IdentityProviderResourceFactory extends EntityManagerResourceFactor
                 oldConfig.setUserCertificateSKISearchFilter( newConfig.getUserCertificateSKISearchFilter() );
                 break;
         }
+
+        oldConfig.setUserLookupByCertMode( newConfig.getUserLookupByCertMode() );
     }
 
     private void updateEntity( final FederatedIdentityProviderConfig oldConfig,
