@@ -432,6 +432,7 @@ public class AuditRecordManagerImpl
     }
 
     @Override
+    @Transactional(propagation= Propagation.SUPPORTS)
     public long getMessageLimitSize() {
         return messageLimitSize;
     }
@@ -462,7 +463,7 @@ public class AuditRecordManagerImpl
 
         validatedConfig.setMinimumValue( ServerConfigParams.PARAM_AUDIT_MESSAGE_LIMIT_SIZE, 0);
         validatedConfig.setMaximumValue( ServerConfigParams.PARAM_AUDIT_MESSAGE_LIMIT_SIZE, Long.MAX_VALUE);
-        this.messageLimitSize = this.validatedConfig.getLongProperty( ServerConfigParams.PARAM_AUDIT_MESSAGE_LIMIT_SIZE, 1048576);  // 10MB
+        this.messageLimitSize = this.validatedConfig.getLongProperty( ServerConfigParams.PARAM_AUDIT_MESSAGE_LIMIT_SIZE, 10485760);  // 10MB
     }
 
     @Override
@@ -511,7 +512,7 @@ public class AuditRecordManagerImpl
     public void propertyChange(PropertyChangeEvent evt) {
         String propertyName = evt.getPropertyName();
         if (propertyName != null && propertyName.equals( ServerConfigParams.PARAM_AUDIT_MESSAGE_LIMIT_SIZE)) {
-            this.messageLimitSize = this.validatedConfig.getLongProperty( ServerConfigParams.PARAM_AUDIT_MESSAGE_LIMIT_SIZE, 1048576);
+            this.messageLimitSize = this.validatedConfig.getLongProperty( ServerConfigParams.PARAM_AUDIT_MESSAGE_LIMIT_SIZE, 10485760);
         }
     }
 

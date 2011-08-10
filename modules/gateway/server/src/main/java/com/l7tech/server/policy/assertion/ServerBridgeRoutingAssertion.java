@@ -262,6 +262,22 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                     PolicyApplicationContext pac = newPolicyApplicationContext(context, bridgeRequest, bridgeResponse, pak, origUrl, hh, latencyHolder);
                     messageProcessor.processMessage(pac);
 
+                    // enforce xml size limit
+                    long xmlSizeLimit = 0;
+                    if (assertion.getResponseSize()== null){
+                        xmlSizeLimit = com.l7tech.message.Message.getMaxBytes();
+                    }
+                    else{
+                        String maxBytesString = ExpandVariables.process(assertion.getResponseSize(),vars,getAudit());
+                        try{
+                            xmlSizeLimit = Long.parseLong(maxBytesString); // resolve var
+                        }catch (NumberFormatException ex){
+                            logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(ex));
+                            return AssertionStatus.FAILED;
+                        }
+                    }
+                    bridgeResponse.getMimeKnob().setContentLengthLimit(xmlSizeLimit);
+
                     final HttpResponseKnob hrk = bridgeResponse.getKnob(HttpResponseKnob.class);
                     int status = hrk == null ? HttpConstants.STATUS_SERVER_ERROR : hrk.getStatus();
                     if (status == HttpConstants.STATUS_OK)
