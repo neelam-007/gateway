@@ -4,6 +4,7 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.util.TimeUnit;
 import org.hibernate.annotations.Proxy;
+import org.jetbrains.annotations.Nullable;
 
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
@@ -522,7 +523,7 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
         return getEnumProperty(USER_LOOKUP_BY_CERT_MODE, UserLookupByCertMode.LOGIN, UserLookupByCertMode.class);
     }
 
-    public void setUserLookupByCertMode(UserLookupByCertMode mode) {
+    public void setUserLookupByCertMode(@Nullable UserLookupByCertMode mode) {
         setProperty(USER_LOOKUP_BY_CERT_MODE, mode == null ? UserLookupByCertMode.LOGIN.toString() : mode.toString());
     }
 

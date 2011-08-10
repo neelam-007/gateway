@@ -120,18 +120,20 @@ public class LdapCertificateSettingsPanel extends IdentityProviderStepPanel {
 
             if ( doNotUseCertificatesRadioButton.isSelected() ) {
                 ldapSettings.setUserCertificateUseType( LdapIdentityProviderConfig.UserCertificateUseType.NONE );
+                ldapSettings.setUserLookupByCertMode(null);
             } else if ( scanAndIndexCertificatesRadioButton.isSelected() ) {
                 ldapSettings.setUserCertificateUseType( LdapIdentityProviderConfig.UserCertificateUseType.INDEX );
+                ldapSettings.setUserLookupByCertMode((LdapIdentityProviderConfig.UserLookupByCertMode) userLookupByCertModeComboBox.getSelectedItem());
             } else if ( scanAndIndexCertificatesWithFilterRadioButton.isSelected() ) {
                 ldapSettings.setUserCertificateUseType( LdapIdentityProviderConfig.UserCertificateUseType.INDEX_CUSTOM );
                 ldapSettings.setUserCertificateIndexSearchFilter(customIndexSearchFilterTextField.getText());
+                ldapSettings.setUserLookupByCertMode((LdapIdentityProviderConfig.UserLookupByCertMode) userLookupByCertModeComboBox.getSelectedItem());
             } else if ( searchForCertificatesInRadioButton.isSelected() ) {
                 ldapSettings.setUserCertificateUseType( LdapIdentityProviderConfig.UserCertificateUseType.SEARCH );
                 ldapSettings.setUserCertificateIssuerSerialSearchFilter(issuerSerialSearchTextField.getText());
                 ldapSettings.setUserCertificateSKISearchFilter(subjectKeyIdentifierSearchTextField.getText());
+                ldapSettings.setUserLookupByCertMode(null);
             }
-
-            ldapSettings.setUserLookupByCertMode((LdapIdentityProviderConfig.UserLookupByCertMode) userLookupByCertModeComboBox.getSelectedItem());
 
             ldapSettings.setCertificateValidationType((CertificateValidationType) validationOptionComboBox.getSelectedItem());
         }
@@ -240,15 +242,16 @@ public class LdapCertificateSettingsPanel extends IdentityProviderStepPanel {
 
     private void enableDisableUserCertOptions() {
         if ( !isReadOnly() ) {
-            boolean indexEnabled = scanAndIndexCertificatesWithFilterRadioButton.isSelected();
+            boolean indexEnabled = scanAndIndexCertificatesRadioButton.isSelected();
+            boolean indexWithFilterEnabled = scanAndIndexCertificatesWithFilterRadioButton.isSelected();
             boolean searchEnabled = searchForCertificatesInRadioButton.isSelected();
 
-            customIndexSearchFilterTextField.setEnabled( indexEnabled );
+            customIndexSearchFilterTextField.setEnabled( indexWithFilterEnabled );
 
             issuerSerialSearchTextField.setEnabled( searchEnabled );
             subjectKeyIdentifierSearchTextField.setEnabled( searchEnabled );
 
-            userLookupByCertModeComboBox.setEnabled(!doNotUseCertificatesRadioButton.isSelected());
+            userLookupByCertModeComboBox.setEnabled(indexEnabled || indexWithFilterEnabled);
         }
     }
 }
