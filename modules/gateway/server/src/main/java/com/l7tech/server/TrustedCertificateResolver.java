@@ -68,7 +68,7 @@ public class TrustedCertificateResolver implements SecurityTokenResolver, Applic
         encryptedKeyCache = WhirlycacheFactory.createCache("Ephemeral key cache",
                                                            encryptedKeyCacheEnabled.get() ? csize : defaultSize,
                                                            127,
-                                                           WhirlycacheFactory.POLICY_LFU);
+                                                           WhirlycacheFactory.POLICY_LRU);
 
         Background.scheduleRepeated(new TimerTask() {
             @Override
