@@ -95,17 +95,8 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<Ha
         final HttpResponseKnob hrk = getHttpResponseKnob( response );
 
         final Map<String,Object> variableMap;
-        try{
-            variableMap = context.getVariableMap(variablesUsed, getAudit());
-        }catch(RuntimeException e){
-            if (e.getCause() instanceof ByteLimitInputStream.DataSizeLimitExceededException){
-                logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                            new String[] {e.getCause().getMessage()},
-                            ExceptionUtils.getDebugException(e));
-                return AssertionStatus.FAILED;
-            }
-            throw e;
-        }
+        variableMap = context.getVariableMap(variablesUsed, getAudit());
+
 
         final ContentTypeHeader contentType = getResponseContentType( variableMap );
         final byte[] bytes = getResponseContent( variableMap, contentType );

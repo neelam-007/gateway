@@ -3,6 +3,7 @@
  */
 package com.l7tech.server.policy.variable;
 
+import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.io.UncheckedIOException;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -306,6 +307,8 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
                     if (strict) throw new IllegalArgumentException(msg);
                     return null;
                 }
+            } catch (ByteLimitInputStream.DataSizeLimitExceededException e){
+                throw new IllegalArgumentException("Unable to get message text: " + e.getMessage());
             } catch (IOException e) {
                 throw new RuntimeException(e); // Can't happen
             } catch (NoSuchPartException e) {
