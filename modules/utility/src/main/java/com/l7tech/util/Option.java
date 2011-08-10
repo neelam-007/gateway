@@ -1,20 +1,17 @@
 package com.l7tech.util;
 
-import com.l7tech.util.Functions.Binary;
-import com.l7tech.util.Functions.Nullary;
-import com.l7tech.util.Functions.Unary;
-import com.l7tech.util.Functions.UnaryThrows;
-import com.l7tech.util.Functions.UnaryVoid;
+import com.l7tech.util.Functions.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 
 /**
  * Represents an optional value, use instead of returning null.
  */
-public class Option<T> {
+public class Option<T> implements Serializable {
 
     //- PUBLIC
 
