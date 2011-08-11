@@ -128,8 +128,13 @@ public class ByteLimitPanel extends JPanel {
                     bytesRadioButton.setSelected(true);
                     bytesTextBox.setText(Long.toString(value));
                 }
-                else{
+                else if (value == 0){
                     unlimitedRadioButton.setSelected(true);
+                }
+                else {
+                    setMaxCheckbox.setSelected(false);
+                    bytesRadioButton.setSelected(true);
+                    bytesTextBox.setText(Long.toString(defaultValue));
                 }
             }
             catch (NumberFormatException ex){
@@ -154,6 +159,23 @@ public class ByteLimitPanel extends JPanel {
             }
         }else{
             return null;
+        }
+    }
+
+        /**
+     *
+     * @return 0 for unlimited, -1 for not selected
+     */
+    public long getLongValue() throws NumberFormatException{
+        if(setMaxCheckbox.isSelected()){
+            if(bytesRadioButton.isSelected()){
+                return Long.parseLong(bytesTextBox.getText());
+            }
+            else{
+                return 0;
+            }
+        }else{
+            return -1;
         }
     }
 

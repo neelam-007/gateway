@@ -41,7 +41,7 @@ public class EmailHandlerImpl implements EmailHandler {
     private MessageProcessor messageProcessor;
     private StashManagerFactory stashManagerFactory;
     private EventChannel messageProcessingEventChannel;
-    
+
     public EmailHandlerImpl(ApplicationContext ctx) {
         if (ctx == null) {
             throw new IllegalArgumentException("Spring Context is required");
@@ -78,7 +78,7 @@ public class EmailHandlerImpl implements EmailHandler {
             requestStream = message.getInputStream();
 
             // enforce size restriction
-            int sizeLimit = emailListenerCfg.getMaxMessageSize();
+            long sizeLimit = emailListenerCfg.getMaxMessageSize()<0 ?com.l7tech.message.Message.getMaxBytes():emailListenerCfg.getMaxMessageSize();
             if ( sizeLimit > 0 && size > sizeLimit ) {
                 messageTooLarge = true;
             }
@@ -127,7 +127,7 @@ public class EmailHandlerImpl implements EmailHandler {
             }
 
             com.l7tech.message.Message request = new com.l7tech.message.Message();
-            request.initialize(stashManagerFactory.createStashManager(), ctype, requestStream,emailListenerCfg.getMaxMessageSize());
+            request.initialize(stashManagerFactory.createStashManager(), ctype, requestStream,0);
             request.attachEmailKnob(new EmailKnob() {
                 @Override
                 public Map<String, Object> getEmailMsgPropMap() {

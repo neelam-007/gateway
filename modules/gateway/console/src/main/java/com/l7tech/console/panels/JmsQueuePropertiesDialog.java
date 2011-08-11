@@ -872,7 +872,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         // Save if the destination is disabled or not
         // save request limit size
         if (inboundRadioButton.isSelected()) {
-            ep.setRequestMaxSize(byteLimitPanel.getValue());
+            ep.setRequestMaxSize(byteLimitPanel.getLongValue());
             ep.setDisabled(disableListeningTheQueueCheckBox.isSelected());
         }
 
@@ -1067,7 +1067,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
                     inboundMessageIdRadioButton.setSelected(true);
                 else
                     inboundCorrelationIdRadioButton.setSelected(true);
-                byteLimitPanel.setValue(endpoint.getRequestMaxSize(), Registry.getDefault().getPolicyAdmin().getXmlMaxBytes());
+                byteLimitPanel.setValue(Long.toString(endpoint.getRequestMaxSize()), Registry.getDefault().getPolicyAdmin().getXmlMaxBytes());
             } else {
                 outboundReplyAutomaticRadioButton.setSelected(endpoint.getReplyType() == JmsReplyType.AUTOMATIC);
                 outboundReplyNoneRadioButton.setSelected(endpoint.getReplyType() == JmsReplyType.NO_REPLY);

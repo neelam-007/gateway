@@ -115,6 +115,7 @@ public interface ServerConfigParams {
     String PARAM_PRINCIPAL_SESSION_CACHE_MAX_TIME = "principalSessionCacheMaxTime";
     String PARAM_PRINCIPAL_SESSION_CACHE_MAX_PRINCIPAL_GROUPS = "principalSessionCacheMaxPrincipalGroups";
     String PARAM_JMS_RESPONSE_TIMEOUT = "ioJmsResponseTimeout";
+    String PARAM_JMS_MESSAGE_MAX_BYTES = "ioJmsMessageMaxBytes";
     String PARAM_PROCESS_CONTROLLER_PRESENT = "processControllerPresent";
     String PARAM_PROCESS_CONTROLLER_PORT = "processControllerPort";
     String PARAM_PROCESS_CONTROLLER_EXTERNAL_PORT = "processControllerExternalPort";

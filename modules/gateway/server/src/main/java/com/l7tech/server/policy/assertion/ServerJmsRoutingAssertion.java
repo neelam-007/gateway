@@ -37,6 +37,7 @@ import javax.jms.*;
 import javax.jms.Message;
 import javax.naming.CommunicationException;
 import javax.naming.NamingException;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.IllegalStateException;
 import java.util.*;
@@ -50,6 +51,8 @@ import java.util.logging.Logger;
 public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRoutingAssertion> {
     private static final int MAX_OOPSES = 5;
     private static final long RETRY_DELAY = 1000L;
+    private static final long DEFAULT_MESSAGE_MAX_BYTES = 2621440L;
+
 
     private final ApplicationContext spring;
     private final ServerConfig serverConfig;
@@ -414,6 +417,36 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         throw new AssertionStatusException(AssertionStatus.FAILED);
                     }
 
+                    // enforce size restriction
+                    long sizeLimit = 0;
+                    if (assertion.getResponseSize()== null)
+                    {
+                        long clusterPropValue = serverConfig.getLongProperty(ServerConfigParams.PARAM_JMS_MESSAGE_MAX_BYTES, DEFAULT_MESSAGE_MAX_BYTES);
+                        if(clusterPropValue < 0 ){
+                            sizeLimit = clusterPropValue;
+                        }else{
+                            sizeLimit = com.l7tech.message.Message.getMaxBytes();
+                        }
+                    }else{
+                        String maxBytesString = ExpandVariables.process(assertion.getResponseSize(),variables,getAudit());
+                        sizeLimit = Long.parseLong(maxBytesString); // resolve var
+                    }
+
+                    long size = 0;
+                    if ( jmsResponse instanceof TextMessage ) {
+                        size = ((TextMessage)jmsResponse).getText().length() ;
+                    } else if ( jmsResponse instanceof BytesMessage ) {
+                        size = ((BytesMessage)jmsResponse).getBodyLength();
+                    }else {
+                        logAndAudit(AssertionMessages.JMS_ROUTING_UNSUPPORTED_RESPONSE_MSG_TYPE, jmsResponse.getClass().getName());
+                        throw new AssertionStatusException(AssertionStatus.FAILED);
+                    }
+
+                    if ( sizeLimit > 0 && size > sizeLimit ) {
+                        logAndAudit(AssertionMessages.JMS_ROUTING_RESPONSE_TOO_LARGE);
+                        throw new AssertionStatusException(AssertionStatus.FAILED);
+                    }
+
                     final com.l7tech.message.Message responseMessage;
                     try {
                         responseMessage = context.getOrCreateTargetMessage(assertion.getResponseTarget(), false);
@@ -422,20 +455,15 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
 
                     }
 
-                    long maxBytes = 0;
-                    if (assertion.getResponseSize()== null){
-                        maxBytes = com.l7tech.message.Message.getMaxBytes();
-                    }
-                    else{
-                        String maxBytesString = ExpandVariables.process(assertion.getResponseSize(),variables,getAudit());
-                        maxBytes = Long.parseLong(maxBytesString); // resolve var
-                    }
+
+
+                    // copy into response message
                     if ( jmsResponse instanceof TextMessage ) {
-                        responseMessage.initialize(XmlUtil.stringToDocument( ((TextMessage)jmsResponse).getText() ),maxBytes);
+                        responseMessage.initialize(XmlUtil.stringToDocument( ((TextMessage)jmsResponse).getText() ),0);
                     } else if ( jmsResponse instanceof BytesMessage ) {
                         BytesMessage bytesMessage = (BytesMessage)jmsResponse;
                         final StashManager stashManager = stashManagerFactory.createStashManager();
-                        responseMessage.initialize(stashManager, ContentTypeHeader.XML_DEFAULT, new BytesMessageInputStream(bytesMessage),maxBytes);
+                        responseMessage.initialize(stashManager, ContentTypeHeader.XML_DEFAULT, new BytesMessageInputStream(bytesMessage),0);
                     } else {
                         logAndAudit(AssertionMessages.JMS_ROUTING_UNSUPPORTED_RESPONSE_MSG_TYPE, jmsResponse.getClass().getName());
                         throw new AssertionStatusException(AssertionStatus.FAILED);
@@ -444,7 +472,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
 
                     // Copies the response JMS message properties into the response JmsKnob.
                     // Do this before enforcing the propagation rules so that they will
-                    // be available as context variables.
+                    // be available as context variables.                       ;
                     final Map<String, Object> inResJmsMsgProps = new HashMap<String, Object>();
                     for (Enumeration e = jmsResponse.getPropertyNames(); e.hasMoreElements() ;) {
                         final String name = (String)e.nextElement();
