@@ -52,6 +52,10 @@ public final class Message implements Closeable {
     private JsonKnob jsonKnob;
     private boolean initialized;
 
+    /**
+     * Returns the xml part max bytes value set in the io.xmlPartMaxBytes cluster property
+     * @return the xml part max bytes value set in the io.xmlPartMaxBytes cluster property
+     */
     static public long getMaxBytes(){
         return MimeBody.getFirstPartMaxBytes();
     }

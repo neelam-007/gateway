@@ -269,6 +269,10 @@ public interface PolicyAdmin extends AliasAdmin<PolicyAlias> {
     @Transactional(readOnly = true)
     String getDefaultPolicyXml(PolicyType type, String internalTag);
 
+    /**
+     * Get the xml part max bytes value set in the io.xmlPartMaxBytes cluster property
+     * @return the xml part max bytes value set in the io.xmlPartMaxBytes cluster property
+     */
     @Transactional(readOnly=true)
     long getXmlMaxBytes();
 }
