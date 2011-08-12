@@ -1,15 +1,23 @@
 package com.l7tech.identity.internal;
 
+import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.PersistentUser;
 import com.l7tech.identity.User;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.PoolByteArrayOutputStream;
+import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.beans.XMLDecoder;
+import java.beans.XMLEncoder;
+import java.io.ByteArrayInputStream;
+import java.nio.charset.Charset;
+import java.util.HashMap;
 import java.util.List;
-
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.Proxy;
+import java.util.Map;
 
 /**
  * User from the internal identity provider.
@@ -28,7 +36,10 @@ import org.hibernate.annotations.Proxy;
 @Proxy(lazy=false)
 @Table(name="internal_user")
 public class InternalUser extends PersistentUser {
+    public static final String PROPERTIES_KEY_SSH_USER_PUBLIC_KEY = "SshUserPublicKey";
+
     private static final long serialVersionUID = 3783059925599980175L;
+    private static final Charset PROPERTIES_ENCODING = Charsets.UTF8;
 
     private long expiration = -1;
     protected String hashedPassword;
@@ -43,6 +54,8 @@ public class InternalUser extends PersistentUser {
     private long passwordExpiry;
     private boolean changePassword;
     private boolean enabled = true;
+    private transient String xmlProperties;
+    private Map<String, String> properties;
 
     public InternalUser() {
         this(null);
@@ -75,6 +88,7 @@ public class InternalUser extends PersistentUser {
         setChangePassword(imp.isChangePassword());
         setEnabled(imp.isEnabled());
         setHttpDigest(imp.getHttpDigest());
+        setXmlProperties(imp.getXmlProperties());
     }
 
     public void setHashedPassword(String password) {
@@ -212,5 +226,58 @@ public class InternalUser extends PersistentUser {
                 this, System.currentTimeMillis(), oldPasswordHash);
         this.passwordChangesHistory.add(passChangeRecord);
         this.changePassword = false;
+    }
+
+    @Column(name="properties",length=Integer.MAX_VALUE)
+    @Lob
+    public String getXmlProperties() {
+        if ( xmlProperties == null ) {
+            Map<String, String> properties = this.properties;
+            if ( properties == null ) return null;
+            PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream();
+            try {
+                XMLEncoder xe = new XMLEncoder(new NonCloseableOutputStream(baos));
+                xe.writeObject(properties);
+                xe.close();
+                xmlProperties = baos.toString(PROPERTIES_ENCODING);
+            } finally {
+                baos.close();
+            }
+        }
+        return xmlProperties;
+    }
+
+    public void setXmlProperties( final String xml ) {
+        if (xml != null && xml.equals(xmlProperties)) return;
+        this.xmlProperties = xml;
+        if ( xml != null && xml.length() > 0 ) {
+            XMLDecoder xd = new XMLDecoder(new ByteArrayInputStream(xml.getBytes(PROPERTIES_ENCODING)));
+            //noinspection unchecked
+            this.properties = (Map<String, String>)xd.readObject();
+        }
+    }
+
+    public String getProperty( final String propertyName ) {
+        String propertyValue = null;
+
+        Map<String,String> properties = this.properties;
+        if (properties != null) {
+            propertyValue = properties.get(propertyName);
+        }
+
+        return propertyValue;
+    }
+
+    public void setProperty( final String propertyName, final String propertyValue ) {
+        Map<String,String> properties = this.properties;
+        if (properties == null) {
+            properties = new HashMap<String, String>();
+            this.properties = properties;
+        }
+
+        properties.put(propertyName, propertyValue);
+
+        // invalidate cached properties
+        xmlProperties = null;
     }
 }

@@ -53,6 +53,11 @@ INSERT INTO cluster_properties
     values (-600200, 0, "upgrade.task.600200", "com.l7tech.server.upgrade.Upgrade61to62UpdateGatewayManagementWsdl");
 
 --
+-- Add generic "properties" field for a persistent identity
+--
+ALTER TABLE internal_user ADD COLUMN properties mediumtext default NULL;
+
+--
 --
 -- Reenable FK at very end of script
 --

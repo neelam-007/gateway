@@ -1,14 +1,5 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.gateway.common.security.rbac.*;
-import com.l7tech.gui.util.ImageCache;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.MaxLengthDocument;
-
-import static com.l7tech.objectmodel.EntityType.USER;
-
-import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
@@ -17,6 +8,15 @@ import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.jcalendar.JDateTimeChooser;
+import com.l7tech.gateway.common.admin.IdentityAdmin;
+import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
+import com.l7tech.gateway.common.security.rbac.AttemptedCreateSpecific;
+import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
+import com.l7tech.gui.MaxLengthDocument;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.ImageCache;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapUser;
@@ -26,12 +26,14 @@ import com.l7tech.util.ExceptionUtils;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.Date;
 import java.util.NoSuchElementException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
+
+import static com.l7tech.objectmodel.EntityType.USER;
 
 /**
  * GenericUserPanel - edits the <CODE>Generic User/CODE> instances. This includes internal users, LDAP users.
@@ -60,6 +62,8 @@ public class GenericUserPanel extends UserPanel {
     private UserRoleAssignmentsPanel rolesPanel;
     private UserGroupsPanel groupPanel; // membership
     private UserCertPanel certPanel; //certificate
+    private UserSshPanel sshPanel;
+
     // Apply/Revert buttons
     private JButton okButton;
     private JButton cancelButton;
@@ -69,6 +73,7 @@ public class GenericUserPanel extends UserPanel {
     private static final String MEMBERSHIP_LABEL = "Groups";
     private static final String ROLES_LABEL = "Administration";
     private static final String CERTIFICATE_LABEL = "Certificate";
+    private static final String SSH_LABEL = "SSH";
 
     private static final String CANCEL_BUTTON = "Cancel";
     private final static String CHANGE_PASSWORD_LABEL = "Reset Password";
@@ -95,6 +100,9 @@ public class GenericUserPanel extends UserPanel {
             rolesPanel = new UserRoleAssignmentsPanel(user, config.isAdminEnabled(), canUpdate);
             groupPanel = new UserGroupsPanel(this, config, config.isWritable() && canUpdate);
             certPanel = new NonFederatedUserCertPanel(this, config.isWritable() ? passwordChangeListener : null, canUpdate);
+            if (config.type().equals(IdentityProviderType.INTERNAL) && user instanceof InternalUser) {
+                sshPanel = new UserSshPanel((InternalUser) user, config.isWritable(), canUpdate);
+            }
             layoutComponents();
             this.addHierarchyListener(hierarchyListener);
             applyFormSecurity();
@@ -240,6 +248,9 @@ public class GenericUserPanel extends UserPanel {
         tabbedPane.add(rolesPanel, ROLES_LABEL);
         tabbedPane.add(groupPanel, MEMBERSHIP_LABEL);
         tabbedPane.add(certPanel, CERTIFICATE_LABEL);
+        if (config.type().equals(IdentityProviderType.INTERNAL) && sshPanel != null) {
+            tabbedPane.add(sshPanel, SSH_LABEL);
+        }
 
         // Return tabbed pane
         return tabbedPane;
@@ -751,6 +762,9 @@ public class GenericUserPanel extends UserPanel {
                 iu.setExpiration(-1);
             } else {
                 iu.setExpiration(expireTimeChooser.getDate().getTime());
+            }
+            if (sshPanel != null) {
+                iu.setProperty(InternalUser.PROPERTIES_KEY_SSH_USER_PUBLIC_KEY, sshPanel.getInternalUserPublicKey());
             }
         } else if (user instanceof LdapUser) {
             LdapUser lu = (LdapUser) user;

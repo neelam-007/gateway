@@ -107,6 +107,7 @@ CREATE TABLE internal_user (
   password_expiry bigint(20) DEFAULT 0,
   change_password boolean DEFAULT TRUE,
   enabled boolean DEFAULT TRUE,
+  properties mediumtext default NULL,
   PRIMARY KEY  (objectid),
   UNIQUE KEY l_idx (login)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
