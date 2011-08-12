@@ -441,6 +441,11 @@ public class RegexAssertionTest {
     }
 
     @Test
+    public void testNewSimpleReplaceBadBackref() throws Exception {
+        expect(AssertionStatus.SERVER_ERROR, regex(SUBSTR_FOO, SUBSTR_POO + "$1"), context(PHRASE_FOO, PHRASE_ORLY));
+    }
+
+    @Test
     public void testNewAutoTargetRequestResponse() throws Exception {
         final PolicyEnforcementContext context = context(PHRASE_FOO, PHRASE_ORLY);
 

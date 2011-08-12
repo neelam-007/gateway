@@ -543,6 +543,7 @@ public class AssertionMessages extends Messages {
     public static final M REGEX_ENCODING_OVERRIDE = m(6305, Level.FINE, "Using overridden character encoding {0}");
     public static final M REGEX_NO_MATCH_FAILURE = m(6306, Level.INFO, "Failing because expression was not matched {0}");
     public static final M REGEX_MATCH_FAILURE = m(6307, Level.INFO, "Failing because expression was matched {0}");
+    public static final M REGEX_REPLACEMENT_INVALID = m(6308, Level.WARNING, "Failing because replacement expression was not valid: {0}");
 
     // SAML Browser General
     public static final M SAMLBROWSER_LOGINFORM_NON_200 = m(6400, Level.WARNING, "HTTP GET for login form resulted in non-200 status");
