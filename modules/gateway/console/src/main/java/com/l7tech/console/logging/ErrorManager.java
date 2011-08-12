@@ -2,6 +2,7 @@ package com.l7tech.console.logging;
 
 import com.l7tech.util.ExceptionUtils;
 
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.logging.Level;
@@ -13,7 +14,7 @@ import java.text.MessageFormat;
  * It is designed as a <i>Chain of Responibility</i> pattern for
  * Exceptions handling.<br>
  *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a> 
+ * @author Emil Marceta
  */
 public class ErrorManager {
     public static final String DEFAULT_ERROR_MESSAGE ="The Policy Manager encountered an internal error or " +
@@ -99,6 +100,18 @@ public class ErrorManager {
 
         // process the error
         processError(new DefaultErrorEvent(eh, level, t, formattedMessage, log));
+    }
+
+    public static void installUncaughtExceptionHandler() {
+        Thread.setDefaultUncaughtExceptionHandler( new UncaughtExceptionHandler(){
+            @Override
+            public void uncaughtException( final Thread thread, final Throwable throwable ) {
+                ErrorManager.getDefault().notify(
+                        Level.WARNING,
+                        throwable,
+                        "Uncaught exception in thread '" +thread.getName()+ "' [Id:" +thread.getId()+ "]." );
+            }
+        } );
     }
 
     //- PROTECTED

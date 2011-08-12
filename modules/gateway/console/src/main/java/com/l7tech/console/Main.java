@@ -32,7 +32,7 @@ import java.security.Security;
 /**
  * This class is the SSG console Main entry point.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
+ * @author Emil Marceta
  */
 public class Main {
     Logger log = Logger.getLogger(Main.class.getName());
@@ -51,6 +51,8 @@ public class Main {
             try {
                 screen.splash();
                 JdkLoggerConfigurator.configure("com.l7tech.console", "com/l7tech/console/resources/logging.properties");
+                // create logger after logging is configured
+                Logger.getLogger( Main.class.getName() ).info("Starting " + BuildInfo.getLongBuildString());
 
                 configureSecurity();
 
@@ -66,6 +68,7 @@ public class Main {
                     log.log(Level.WARNING, "error on copying resources", e);
                 }
                 initializeUIPreferences(prefs);
+                ErrorManager.installUncaughtExceptionHandler();
 
                 SsmApplication app = ctx.getBean("ssmApplication", SsmApplication.class);
                 app.run();
