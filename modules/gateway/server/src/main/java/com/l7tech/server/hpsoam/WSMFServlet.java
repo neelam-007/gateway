@@ -178,6 +178,10 @@ public class WSMFServlet extends AuthenticatableHttpServlet {
                         returnError(res, "Not permitted", HttpServletResponse.SC_FORBIDDEN);
                         return false;
                     }
+                } else {
+                    logger.warning("Request blocked: permission checked failed");
+                    returnError(res, "Permission check failed", HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                    return false;
                 }
             } catch (BadCredentialsException e) {
                 logger.warning("Request blocked: invalid credentials: " + e.toString());
