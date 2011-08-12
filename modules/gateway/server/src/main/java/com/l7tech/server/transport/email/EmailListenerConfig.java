@@ -6,6 +6,7 @@ import org.springframework.context.ApplicationContext;
 
 import javax.mail.internet.MimeMessage;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * A wrapper for EmailListener objects, that also contains a reference to the application context.
@@ -15,7 +16,7 @@ public class EmailListenerConfig {
     /** Spring application context */
     private final ApplicationContext appContext;
     /** Maximum email message size allowed */
-    private final AtomicInteger maxMessageSize = new AtomicInteger(PooledPollingEmailListenerImpl.DEFAULT_MAX_SIZE);
+    private final AtomicLong maxMessageSize = new AtomicLong(PooledPollingEmailListenerImpl.DEFAULT_MAX_SIZE);
 
     /**
      * Constructor.
@@ -44,7 +45,7 @@ public class EmailListenerConfig {
      * Returns the max message size.
      * @return int value
      */
-    public int getMaxMessageSize() {
+    public long getMaxMessageSize() {
         return maxMessageSize.intValue();
     }
 
@@ -52,7 +53,7 @@ public class EmailListenerConfig {
      * Sets the max message size property.
       * @param newValue the new value to set
      */
-    public void setMessageMaxSize(int newValue) {
+    public void setMessageMaxSize(long newValue) {
         maxMessageSize.set(newValue);
     }
 }

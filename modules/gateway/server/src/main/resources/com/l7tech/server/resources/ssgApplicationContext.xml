@@ -479,6 +479,12 @@
                                 <value>db.replicationErrorAuditInterval</value>
                             </list>
                         </entry>
+                        <entry key="emailListenerBootProcess">
+                            <list>
+                                <value>io.EmailListenerMessageMaxBytes</value>
+                            </list>
+                        </entry>
+
                     </map>
                 </constructor-arg>
             </bean>

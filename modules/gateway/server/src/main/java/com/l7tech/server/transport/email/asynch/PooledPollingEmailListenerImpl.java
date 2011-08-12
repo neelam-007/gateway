@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.transport.email.EmailServerType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.LifecycleException;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.system.EmailEvent;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.server.transport.email.EmailListenerConfig;
@@ -11,7 +12,9 @@ import com.l7tech.server.transport.email.EmailListenerManager;
 import com.l7tech.server.transport.email.EmailMessages;
 import com.l7tech.server.transport.email.PollingEmailListener;
 import com.l7tech.server.transport.http.SslClientHostnameAwareSocketFactory;
+import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.ThreadPoolBean;
+import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ThreadPool;
 import com.l7tech.util.TimeUnit;
@@ -37,7 +40,7 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
      * Is there a better place for these properties?
      */
     protected static final String PROPERTY_ERROR_SLEEP = "ioEmailListenerErrorSleep";
-    protected static final String PROPERTY_MAX_SIZE = "ioEmailListenerMessageMaxBytes";
+    protected static final String PROPERTY_MAX_SIZE = "io.EmailListenerMessageMaxBytes";
     protected static final int MAXIMUM_OOPSES = 5;
     protected static final long RECEIVE_TIMEOUT = 5 * 1000;
     protected static final long SHUTDOWN_TIMEOUT = 7 * 1000;
@@ -46,7 +49,7 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
     protected static final int MIN_OOPS_SLEEP = 10 * 1000; // 10 seconds
     protected static final int MAX_OOPS_SLEEP = TimeUnit.DAYS.getMultiplier(); // 24 hours
     protected static final int OOPS_AUDIT = 15 * 60 * 1000; // 15 mins;
-    public static final int DEFAULT_MAX_SIZE = 5242880;
+    public static final long DEFAULT_MAX_SIZE = 5242880;
 
     private EmailListenerConfig emailListenerCfg;
     private final ThreadPoolBean threadPoolBean;
@@ -107,6 +110,11 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
             }
             emailSession = Session.getInstance(props);
         }
+
+        Config serverConfig = emailListenerCfg.getApplicationContext().getBean("serverConfig", ServerConfig.class);
+        emailListenerCfg.setMessageMaxSize(serverConfig.getLongProperty(PROPERTY_MAX_SIZE, DEFAULT_MAX_SIZE));
+
+        _logger.log(Level.WARNING, "Max size = " + emailListenerCfg.getMaxMessageSize());
 
         // create the ListenerThread
         this._listener = new ListenerThread();
@@ -299,10 +307,10 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
     {
         if (PROPERTY_MAX_SIZE.equals(evt.getPropertyName())) {
             String stringValue = (String) evt.getNewValue();
-            int newMaxSize = DEFAULT_MAX_SIZE;
+            long newMaxSize = DEFAULT_MAX_SIZE;
 
             try {
-                newMaxSize = Integer.parseInt( stringValue );
+                newMaxSize = Long.parseLong(stringValue);
             } catch (NumberFormatException nfe) {
                 _logger.log(Level.WARNING, "Ignoring invalid email message max size ''{0}'' (using default).", stringValue);
             }
@@ -312,8 +320,8 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
                 newMaxSize = 0;
             }
 
-            _logger.log(Level.CONFIG, "Updated email message max size to {0}.", newMaxSize);
             emailListenerCfg.setMessageMaxSize(newMaxSize);
+            _logger.log(Level.CONFIG, "Updated email message max size to {0}.", newMaxSize);
         }
 
         /*
