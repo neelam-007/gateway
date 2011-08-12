@@ -241,12 +241,17 @@ public class OCSPClient {
         return nonceBytes;
     }
 
+    long currentTimeMillis() {
+        return System.currentTimeMillis();
+    }
+
     //- PRIVATE
 
     private static final String SYSPROP_PROVIDER = "com.l7tech.server.security.ocspProvider";
     private static final String DEFAULT_PROVIDER = "SUN";
 
     private static final long MAX_RESPONSE_AGE = ConfigFactory.getLongProperty( "com.l7tech.server.security.ocspMaxResponseAge", TimeUnit.DAYS.toMillis( 31L ) );// default to around one month
+    private static final long NEXT_UPDATE_OFFSET = ConfigFactory.getTimeUnitProperty( "com.l7tech.server.security.ocspNextUpdateOffset", 0L );
 
     private static final String CONTENT_TYPE_OCSP_REQUEST = "application/ocsp-request";
     private static final String CONTENT_TYPE_OCSP_RESPONSE = "application/ocsp-response";
@@ -465,14 +470,14 @@ public class OCSPClient {
 
         // validate response time (producedAt appears to be infrormational, thisUpdate requires validation
         // to ensure it is "sufficiently recent" [RFC 2560 section 3.2])
-        long timeNow = System.currentTimeMillis();
+        long timeNow = currentTimeMillis();
 
         for (SingleResp response : basicOcspResp.getResponses()) {
             if (response.getCertID().equals(certId)) {
 
                 Date thisUpdate =  response.getThisUpdate();
                 if ( thisUpdate == null || (timeNow - thisUpdate.getTime()) > MAX_RESPONSE_AGE ) {
-                    throw new OCSPClientException("OCSP response is stale.");                    
+                    throw new OCSPClientException("OCSP response is stale (beyond maximum permitted age)");
                 }
 
                 Date nextUpdate = response.getNextUpdate();
@@ -481,6 +486,9 @@ public class OCSPClient {
                     nextUpdateTime = timeNow;
                 } else {
                     nextUpdateTime = nextUpdate.getTime();
+                    if ( (nextUpdateTime + NEXT_UPDATE_OFFSET) <= timeNow ) {
+                        throw new OCSPClientException("OCSP response is stale (next update due)");
+                    }
                 }
 
                 Object certStatusObject = response.getCertStatus();
