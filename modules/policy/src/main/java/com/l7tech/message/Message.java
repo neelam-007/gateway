@@ -89,12 +89,13 @@ public final class Message implements Closeable {
      * Create a Message pre-initialized with a Document.
      *
      * @param doc the Document to use.  Must not be null.
+     * @param maxBytes message byte size limit. default 0 = unlimited
      */
-    public Message(Document doc) {
-        initialize(doc,Message.getMaxBytes());
-    }
     public Message(Document doc, long maxBytes) {
         initialize(doc, maxBytes);
+    }
+    public Message(Document doc) {
+        initialize(doc,0);
     }
 
     /**
@@ -114,16 +115,10 @@ public final class Message implements Closeable {
      * @param sm  the StashManager to use for stashing MIME parts temporarily.  Must not be null.
      * @param outerContentType  the content type of the body InputStream.  Must not be null.
      * @param body an InputStream positioned at the first byte of body content for this Message.
+     * @param firstPartMaxBytes first part byte size limit. default 0 = unlimited
      * @throws IOException if there is a problem reading the initial boundary from a multipart/related body, or
      *                     if the message is multipart/related but contains no initial boundary.
      */
-    public void initialize( final StashManager sm,
-                            final ContentTypeHeader outerContentType,
-                            final InputStream body )
-            throws IOException
-    {
-        initialize(sm, outerContentType,body,Message.getMaxBytes());
-    }
 
     public void initialize( final StashManager sm,
                             final ContentTypeHeader outerContentType,
@@ -142,6 +137,14 @@ public final class Message implements Closeable {
         invalidateCachedKnobs();
         initialized = true;
     }
+    public void initialize( final StashManager sm,
+                            final ContentTypeHeader outerContentType,
+                            final InputStream body )
+            throws IOException
+    {
+        initialize(sm, outerContentType,body,0);
+    }
+
 
     /**
      * Initialize, or re-initialize, a Message with a memory-based MIME facet and an XML facet initialized with
@@ -151,16 +154,17 @@ public final class Message implements Closeable {
      * any previously existing facets of this Message will be lost and replaced with a single MIME facet.
      *
      * @param body the Document to replace this Message's current content
+     * @param maxBytes message byte size limit. default 0 = unlimited
      */
-    public void initialize(Document body)
-    {
-        initialize( body, ContentTypeHeader.XML_DEFAULT, Message.getMaxBytes());
-    }
-
     public void initialize(Document body, long maxBytes)
     {
         initialize( body, ContentTypeHeader.XML_DEFAULT, maxBytes );
     }
+    public void initialize(Document body)
+    {
+        initialize( body, ContentTypeHeader.XML_DEFAULT,0);
+    }
+
 
     /**
      * Initialize, or re-initialize, a Message with a memory-based MIME facet and an XML facet initialized with
@@ -171,11 +175,8 @@ public final class Message implements Closeable {
      *
      * @param body the Document to replace this Message's current content
      * @param contentTypeHeader the XML content type to use
+     * @param firstPartMaxBytes first part byte size limit. default 0 = unlimited
      */
-    public void initialize(Document body, ContentTypeHeader contentTypeHeader)
-    {
-        initialize(body, contentTypeHeader, Message.getMaxBytes());
-    }
     public void initialize(Document body, ContentTypeHeader contentTypeHeader, long firstPartMaxBytes)
     {
         try {
@@ -196,6 +197,10 @@ public final class Message implements Closeable {
             throw new RuntimeException(e); // can't happen, the content type is set to xml
         }
     }
+    public void initialize(Document body, ContentTypeHeader contentTypeHeader)
+    {
+        initialize(body, contentTypeHeader, 0);
+    }
 
     /**
      * Initialize, or re-initialize, a Message with a memory-based MIME facet containing the specified body
@@ -203,12 +208,9 @@ public final class Message implements Closeable {
      *
      * @param contentType  the MIME content type.  Required.
      * @param bodyBytes the body bytes.  May be empty but must not be null.
+     * @param firstPartMaxBytes first part byte size limit. default 0 = unlimited
      * @throws IOException if contentType is multipart, but the body does not contain the boundary or contains no parts
      */
-    public void initialize(ContentTypeHeader contentType, byte[] bodyBytes) throws IOException {
-        initialize(contentType,bodyBytes, Message.getMaxBytes());
-    }
-
     public void initialize(ContentTypeHeader contentType, byte[] bodyBytes, long firstPartMaxBytes) throws IOException {
         try {
             HttpRequestKnob reqKnob = getKnob(HttpRequestKnob.class);
@@ -224,6 +226,10 @@ public final class Message implements Closeable {
             throw new RuntimeException(e); // can't happen, it's a byte array input stream
         }
     }
+    public void initialize(ContentTypeHeader contentType, byte[] bodyBytes) throws IOException {
+        initialize(contentType,bodyBytes,0);
+    }
+
 
     public void setEnableOriginalDocument() {
         this.enableOriginalDocument = true;
