@@ -136,6 +136,7 @@ public class ServerRateLimitAssertionTest {
         context.setVariable("ten", "10");
         context.setVariable("tenthousand", "10000");
         context.setVariable("negone", "-1");
+        context.setVariable("zero", "0");
         context.setVariable("junk", "asdfasdf");
         return context;
     }
@@ -351,6 +352,19 @@ public class ServerRateLimitAssertionTest {
         rla.setHardLimit(false);
         rla.setCounterName("testBadContextVariable_rate");
         rla.setMaxRequestsPerSecond("${negone}");
+        ServerAssertion ass = makePolicy(rla);
+
+        clock.sync();
+        assertEquals(AssertionStatus.SERVER_ERROR, checkRequest(ass, makeContext()));
+    }
+
+    @Test
+    @BugNumber(10688)
+    public void testBadContextVariable_rate_zero() throws Exception {
+        RateLimitAssertion rla = new RateLimitAssertion();
+        rla.setHardLimit(false);
+        rla.setCounterName("testBadContextVariable_rate");
+        rla.setMaxRequestsPerSecond("${zero}");
         ServerAssertion ass = makePolicy(rla);
 
         clock.sync();

@@ -107,7 +107,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
 
         this.windowSizeInSecondsFinder = makeBigIntFinder(assertion.getWindowSizeInSeconds(), "windowSizeInSeconds", getAudit(), 1L );
         this.maxConcurrencyFinder = makeBigIntFinder(assertion.getMaxConcurrency(), "maxConcurrency", getAudit(), 0L );
-        this.maxRequestsPerSecondFinder = makeBigIntFinder(assertion.getMaxRequestsPerSecond(), "maxRequestsPerSecond", getAudit(), 0L );
+        this.maxRequestsPerSecondFinder = makeBigIntFinder(assertion.getMaxRequestsPerSecond(), "maxRequestsPerSecond", getAudit(), 1L );
         final String blackout = assertion.getBlackoutPeriodInSeconds();
         this.blackoutSecondsFinder = blackout == null ? null : makeBigIntFinder(blackout, "blackoutPeriodInSeconds", getAudit(), 1L );
     }
