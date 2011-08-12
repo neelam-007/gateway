@@ -71,8 +71,16 @@ public class ParamsCertificateGenerator {
      */
     public X509Certificate generateCertificate(PublicKey subjectPublicKey, PrivateKey issuerPrivateKey, X509Certificate issuerCertificate) throws CertificateGeneratorException {
         X500Principal subjectDn = c.getSubjectDn();
+
+        // If the hash algorithm is set to "Automatic", then it will be reset to null and the signature algorithm wil be determined
+        // by using the previous manner (See the method getSignAlg).
+        String hashAlgorithm = c.getHashAlgorithm();
+        if ("Automatic".equals(hashAlgorithm)) {
+            hashAlgorithm = null;
+        }
+
         String sigAlg = c.getSignatureAlgorithm() != null ? c.getSignatureAlgorithm()
-                :  getSigAlg(issuerCertificate == null ? subjectPublicKey : issuerCertificate.getPublicKey(), null);
+                :  getSigAlg(issuerCertificate == null ? subjectPublicKey : issuerCertificate.getPublicKey(), hashAlgorithm, null);
         X500Principal issuerDn = issuerCertificate != null ? issuerCertificate.getSubjectX500Principal() : subjectDn;
         PublicKey issuerPublicKey = issuerCertificate != null ? issuerCertificate.getPublicKey() : subjectPublicKey;
         int daysUntilExpiry = c.getDaysUntilExpiry() > 0 ? c.getDaysUntilExpiry() : 5 * 365; // default: five years
@@ -249,25 +257,29 @@ public class ParamsCertificateGenerator {
      * using the specified provider.
      *
      * @param publicKey the public key that will be used to verify the signature, corresponding to the privateKey that will be used to perform the signature.  Required.
+     * @param hashAlgorithm a hash algorithm used for hashing.  If it is null, then it will be set to the default value, "SHA384" (This case is derived from the previous default behavior.)
      * @param signatureProvider  a specified Provider to use for the Signature algorithm, or null to use the default.
      * @return the signature algorithm name, ie "SHA384withECDSA".
      */
-    public static String getSigAlg(PublicKey publicKey, Provider signatureProvider) {
+    public static String getSigAlg(PublicKey publicKey, String hashAlgorithm, Provider signatureProvider) {
         String strongSigAlg;
         String weakSigAlg;
 
+        // If hashAlgorithm is not specified (i.e. null), then we go back the previous default behavior, i.e. set strongSignAlg to SHA384WithXXX, where XXX is keyAlg.
+        if (hashAlgorithm == null) hashAlgorithm = "SHA384";
+
         final String keyAlg = publicKey.getAlgorithm();
         if (publicKey instanceof ECKey || "EC".equalsIgnoreCase(keyAlg))  {
-            strongSigAlg = "SHA384withECDSA";
+            strongSigAlg = hashAlgorithm + "withECDSA";
             weakSigAlg = "SHA1withECDSA";
         } else if (publicKey instanceof RSAKey || "RSA".equalsIgnoreCase(keyAlg)) {
-            strongSigAlg = "SHA384withRSA";
+            strongSigAlg = hashAlgorithm + "withRSA";
             weakSigAlg = "SHA1withRSA";
         } else if (publicKey instanceof DSAKey || "DSA".equalsIgnoreCase(keyAlg)) {
-            strongSigAlg = "SHA384withDSA";
+            strongSigAlg = hashAlgorithm + "withDSA";
             weakSigAlg = "SHA1withDSA";
         } else {
-            strongSigAlg = "SHA384with" + keyAlg;
+            strongSigAlg = hashAlgorithm + "with" + keyAlg;
             weakSigAlg = "SHA1with" + keyAlg;
         }
 

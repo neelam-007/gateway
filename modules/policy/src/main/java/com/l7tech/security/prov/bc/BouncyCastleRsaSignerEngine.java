@@ -89,7 +89,7 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         return cert;
     }
 
-    private PublicKey getPublicKey(PKCS10CertificationRequest pkcs10) throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeyException, InvalidKeySpecException {
+    public static PublicKey getPublicKey(PKCS10CertificationRequest pkcs10) throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeyException, InvalidKeySpecException {
         CertificationRequestInfo reqInfo = pkcs10.getCertificationRequestInfo();
         SubjectPublicKeyInfo subjectPKInfo = reqInfo.getSubjectPublicKeyInfo();
         X509EncodedKeySpec xspec = new X509EncodedKeySpec(new DERBitString(subjectPKInfo).getBytes());

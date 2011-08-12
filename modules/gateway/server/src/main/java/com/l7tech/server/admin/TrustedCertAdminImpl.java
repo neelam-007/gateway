@@ -336,7 +336,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     }
 
     @Override
-    public String[] signCSR(long keystoreId, String alias, byte[] csrBytes, String sigAlg) throws FindException, GeneralSecurityException {
+    public String[] signCSR(long keystoreId, String alias, byte[] csrBytes, X500Principal subjectDn, int expiryDays, String sigAlg, String hashAlg) throws FindException, GeneralSecurityException {
         checkLicenseKeyStore();
         SsgKeyFinder keyFinder;
         try {
@@ -368,7 +368,11 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
                 // Try as DER
                 decodedCsrBytes = csrBytes;
             }
-            cert = (X509Certificate) signer.createCertificate(decodedCsrBytes, new CertGenParams(null, 365 * 2, false, sigAlg).useUserCertDefaults());
+            final CertGenParams certGenParams = new CertGenParams(subjectDn, expiryDays, false, sigAlg);
+            // If sigAlg is not specified, then hashAlg will be used to derived the signature algorithm.
+            certGenParams.setHashAlgorithm(hashAlg);
+
+            cert = (X509Certificate) signer.createCertificate(decodedCsrBytes, certGenParams.useUserCertDefaults());
         } catch (GeneralSecurityException e) {
             throw e;
         } catch (Exception e) {

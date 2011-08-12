@@ -317,9 +317,26 @@ public class PrivateKeyManagerWindow extends JDialog {
         if (csrBytes[0] == null)
             return;
 
+        final SigningCertificatePropertiesDialog signingCertPropertiesDialog =
+            new SigningCertificatePropertiesDialog(TopComponents.getInstance().getTopParent(), csrBytes[0]);
+        Utilities.centerOnScreen(signingCertPropertiesDialog);
+        DialogDisplayer.display(signingCertPropertiesDialog);
+
+        if (! signingCertPropertiesDialog.isConfirmed()) {
+            return;
+        }
+
         final String[] pemCertChain;
         try {
-            pemCertChain = getTrustedCertAdmin().signCSR(subject.getKeyEntry().getKeystoreId(), subject.getKeyEntry().getAlias(), csrBytes[0], null);
+            pemCertChain = getTrustedCertAdmin().signCSR(
+                subject.getKeyEntry().getKeystoreId(),
+                subject.getKeyEntry().getAlias(),
+                csrBytes[0],
+                new X500Principal(signingCertPropertiesDialog.getSubjectDn()),
+                signingCertPropertiesDialog.getExpiryAge(),
+                null,
+                signingCertPropertiesDialog.getHashAlg()
+            );
         } catch (CertificateException e) {
             showErrorMessage("Unable to Sign Certificate", "Unable to process certificate signing request: " + ExceptionUtils.getMessage(e), e);
             return;

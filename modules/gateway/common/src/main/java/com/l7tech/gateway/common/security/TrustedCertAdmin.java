@@ -315,13 +315,14 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @param alias the alias of the private key to use the CA key for processing this CSR.  Required.
      * @param csrBytes binary or PEM encoded PKCS#10 certificate signing request.
      * @param sigAlg signature algorithm, ie "SHA1withRSA", or null to select one automatically based on the CA key type.
+     * @param hashAlg hash algorithm such as SHA-1, SHA-256, SHA-384, or SHA-512.  If sigAlg is missed, then hashAlg plus key algorithm info will be used to derive the signature algorithm.
      * @return a PEM-encoded certificate chain including the newly-signed cert.  Never null.
      * @throws FindException if there is a problem getting info from the database
      * @throws java.security.GeneralSecurityException if there is a problem signing the specified certificate.
      */
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(stereotype=FIND_ENTITIES, types=SSG_KEY_ENTRY)
-    String[] signCSR(long keystoreId, String alias, byte[] csrBytes, String sigAlg) throws FindException, GeneralSecurityException;
+    String[] signCSR(long keystoreId, String alias, byte[] csrBytes, X500Principal subjectDn, int expiryDays, String sigAlg, String hashAlg) throws FindException, GeneralSecurityException;
 
     /**
      * Replace the certificate chain for the specified private key with a new one whose subject cert

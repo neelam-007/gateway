@@ -20,6 +20,7 @@ public class CertGenParams implements Serializable {
     private Date notBefore;
     private Date notAfter;
     private String signatureAlgorithm;
+    private String hashAlgorithm;
     private BigInteger serialNumber;
 
     // SKI and AKI extensions
@@ -143,6 +144,14 @@ public class CertGenParams implements Serializable {
 
     public void setSignatureAlgorithm(String signatureAlgorithm) {
         this.signatureAlgorithm = signatureAlgorithm;
+    }
+
+    public String getHashAlgorithm() {
+        return hashAlgorithm;
+    }
+
+    public void setHashAlgorithm(String hashAlgorithm) {
+        this.hashAlgorithm = hashAlgorithm;
     }
 
     public BigInteger getSerialNumber() {
