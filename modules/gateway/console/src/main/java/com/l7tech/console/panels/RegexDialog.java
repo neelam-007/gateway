@@ -88,7 +88,7 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
 
         matchAndReplaceRadioButton.setToolTipText("If the pattern matches, replace the match with the replacement expression, then proceed to process the message");
 
-        repeatCountField.setDocument(new NumberField());
+        repeatCountField.setDocument(new NumberField(8));
 
         final ItemListener radioButtonListener = new ItemListener() {
             @Override
