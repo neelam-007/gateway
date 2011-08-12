@@ -310,10 +310,10 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
             return;
 
         String bindAddress = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
-        if ( ! InetAddressUtil.isAnyHostAddress(bindAddress) ) {
-            bindAddress = ssgConnectorManager.translateBindAddress(bindAddress, connector.getPort());
-        } else {
+        if (bindAddress == null || InetAddressUtil.isAnyHostAddress(bindAddress)) {
             bindAddress = InetAddressUtil.getAnyHostAddress();
+        } else {
+            bindAddress = ssgConnectorManager.translateBindAddress(bindAddress, connector.getPort());
         }
 
         int backlog = connector.getIntProperty(SimpleRawTransportAssertion.LISTEN_PROP_BACKLOG, 5);
