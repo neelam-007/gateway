@@ -51,6 +51,18 @@ public class Option<T> implements Serializable {
     }
 
     /**
+     * Join the given options.
+     *
+     * @param option The nested option
+     * @param <T> The nested optional type
+     * @return The joined option
+     */
+    @NotNull
+    public static <T> Option<T> join( @NotNull final Option<Option<T>> option ) {
+        return option.isSome() ? option.some() : Option.<T>none();
+    }
+
+    /**
      * Does this option have a value?
      *
      * @return true if there is a value

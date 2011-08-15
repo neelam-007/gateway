@@ -4,7 +4,9 @@ import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Functions.UnaryThrows;
 import com.l7tech.util.Functions.UnaryVoid;
 import static com.l7tech.util.Functions.nullary;
+import static com.l7tech.util.Option.join;
 import static com.l7tech.util.Option.none;
+import static com.l7tech.util.Option.optional;
 import static com.l7tech.util.Option.some;
 import static com.l7tech.util.TextUtils.isEmpty;
 import static com.l7tech.util.TextUtils.isNotEmpty;
@@ -154,5 +156,18 @@ public class OptionTest {
                 fail( "should not run" );
             }
         } );
+    }
+
+    @Test
+    public void testJoin() {
+        final Unary<Option<Integer>,Integer> divideBySelf = new Unary<Option<Integer>, Integer>(){
+            @Override
+            public Option<Integer> call( final Integer integer ) {
+                return integer==0 ? Option.<Integer>none() : some( integer / integer );
+            }
+        };
+
+        assertEquals( "result", 1L, (long)join( optional( 2 ).map( divideBySelf ) ).some() );
+        assertFalse( "result", join( optional( 0 ).map( divideBySelf ) ).isSome() );
     }
 }

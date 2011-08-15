@@ -1,5 +1,6 @@
 package com.l7tech.util;
 
+import com.l7tech.util.Functions.Unary;
 import static com.l7tech.util.Option.optional;
 import static com.l7tech.util.Option.some;
 import org.jetbrains.annotations.NotNull;
@@ -74,6 +75,32 @@ public class Either<A,B> implements Serializable {
     @NotNull
     public static <A,B> Either<A,Option<B>> rightOption( @Nullable final B b ) {
         return new Either<A,Option<B>>( null, optional( b ) );
+    }
+
+    /**
+     * Join nested left either.
+     *
+     * @param either The either to join
+     * @param <A> The left type
+     * @param <B> The right type
+     * @return The joined either
+     */
+    @NotNull
+    public static <A,B> Either<A,B> joinLeft( @NotNull final Either<Either<A,B>,B> either ) {
+        return either.isLeft() ? either.left() : Either.<A,B>right( either.right() );
+    }
+
+    /**
+     * Join nested right either.
+     *
+     * @param either The either to join
+     * @param <A> The left type
+     * @param <B> The right type
+     * @return The joined either
+     */
+    @NotNull
+    public static <A,B> Either<A,B> joinRight( @NotNull final Either<A,Either<A,B>> either ) {
+        return either.isRight() ? either.right() : Either.<A,B>left( either.left() );
     }
 
     /**
@@ -181,6 +208,34 @@ public class Either<A,B> implements Serializable {
         } else {
             return right.call( b );
         }
+    }
+
+    /**
+     * Map the given function across the left value.
+     *
+     * @param mapper The mapping function
+     * @param <T> The result type
+     * @return An either with the left value mapped
+     */
+    @NotNull
+    public <T> Either<T,B> mapLeft( @NotNull Unary<T,? super A> mapper ) {
+        return isLeft() ?
+                Either.<T,B>left( mapper.call( left() ) ) :
+                Either.<T,B>right( right() );
+    }
+
+    /**
+     * Map the given function across the right value.
+     *
+     * @param mapper The mapping function
+     * @param <T> The result type
+     * @return An either with the right value mapped
+     */
+    @NotNull
+    public <T> Either<A,T> mapRight( @NotNull Unary<T,? super B> mapper ) {
+        return isLeft() ?
+                Either.<A,T>left( left() ) :
+                Either.<A,T>right( mapper.call( right() ) );
     }
 
     @SuppressWarnings({ "RedundantIfStatement" })
