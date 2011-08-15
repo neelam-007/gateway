@@ -65,7 +65,6 @@ public class SimpleRawTransportAssertionPropertiesDialog extends AssertionProper
 
         responseLimitPanel = new ByteLimitPanel();
         responseLimitPanel.setAllowContextVars(true);
-        responseLimitPanel.setLabelText("Set maximum response size:");
         responseLimitHolderPanel.setLayout(new BorderLayout());
         responseLimitHolderPanel.add(responseLimitPanel, BorderLayout.CENTER);
 

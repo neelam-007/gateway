@@ -3,20 +3,12 @@
  */
 package com.l7tech.console.panels;
 
-import com.l7tech.console.util.Registry;
-import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.gateway.common.cluster.ClusterPropertyDescriptor;
 import com.l7tech.gui.util.*;
-import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
-import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.text.JTextComponent;
 import java.awt.*;
-import java.text.MessageFormat;
-import java.util.Collection;
 import java.util.EventListener;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
@@ -31,15 +23,11 @@ public class ByteLimitPanel extends JPanel {
     private JRadioButton bytesRadioButton;
     private JTextField bytesTextBox;
     private JRadioButton unlimitedRadioButton;
-    private JLabel warningLabel;
     private JPanel rootPanel;
     private InputValidator validator;
     private static final Logger logger = Logger.getLogger(ByteLimitPanel.class.getName());
 
     private static ResourceBundle resources = ResourceBundle.getBundle(ByteLimitPanel.class.getName());
-    private final ImageIcon BLANK_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Transparent16.png"));
-    private final ImageIcon WARNING_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Warning16.png"));
-    private long DEFAULT_MAX_BYTES = 2621440;
     private boolean allowContextVars = false;
     private InputValidator.ValidationRule textBoxRule = null;
 
@@ -93,11 +81,6 @@ public class ByteLimitPanel extends JPanel {
 
         this.setLayout(new BorderLayout());
         add(rootPanel, BorderLayout.CENTER);
-    }
-
-
-    public void setLabelText(String text){
-        setMaxCheckbox.setText(text);
     }
 
     public void setAllowContextVars(boolean allowContextVars){
@@ -194,8 +177,6 @@ public class ByteLimitPanel extends JPanel {
         bytesRadioButton.setEnabled(isChecked );
         bytesTextBox.setEnabled(isChecked && bytesRadioButton.isSelected());
         unlimitedRadioButton.setEnabled(isChecked );
-        warningLabel.setIcon((isChecked && unlimitedRadioButton.isSelected()) ? WARNING_ICON : BLANK_ICON);
-        warningLabel.setText((isChecked && unlimitedRadioButton.isSelected()) ? resources.getString("warning.label") : "");
     }
 
     public String validateFields() {

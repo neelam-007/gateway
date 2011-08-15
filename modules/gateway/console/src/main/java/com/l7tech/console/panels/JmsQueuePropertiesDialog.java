@@ -1019,7 +1019,6 @@ public class JmsQueuePropertiesDialog extends JDialog {
         useQueueForFailedCheckBox.setSelected(false);
         failureQueueNameTextField.setText("");
 
-        byteLimitPanel.setLabelText("Set request size:");
         byteLimitPanel.setAllowContextVars(false);
         byteLimitPanel.addChangeListener(new RunOnChangeListener(){
             @Override

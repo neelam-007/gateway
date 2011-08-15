@@ -342,7 +342,6 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 validateResMsgDest();
             }
         });
-        responseByteLimitPanel.setLabelText("Set maximum response size:");
 
         validateResMsgDest();
 

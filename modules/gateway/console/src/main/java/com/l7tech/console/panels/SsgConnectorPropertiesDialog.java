@@ -417,8 +417,6 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         }
         contentTypeComboBox.setModel(contentTypeComboBoxModel);
 
-        requestByteLimitPanel.setLabelText("Set maximum request size:");
-
         threadPoolSizeSpinner.setModel( new SpinnerNumberModel( DEFAULT_POOL_SIZE, 1, 10000, 1 ) );
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(threadPoolSizeSpinner, "Thread Pool Size"));
 

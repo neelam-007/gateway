@@ -404,7 +404,6 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 validateResMsgDest();
             }
         });
-        byteLimitPanel.setLabelText("Set maximum response size:");
         byteLimitPanel.setAllowContextVars(true);
 
         final String resMsgDest = assertion.getResponseMsgDest();
