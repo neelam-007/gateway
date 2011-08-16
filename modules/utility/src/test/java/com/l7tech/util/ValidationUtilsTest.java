@@ -1,8 +1,13 @@
 package com.l7tech.util;
 
+import static com.l7tech.util.Option.optional;
+import static com.l7tech.util.Option.some;
+import com.l7tech.util.ValidationUtils.Validator;
+import static org.hamcrest.CoreMatchers.not;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
+import java.lang.management.MonitorInfo;
 import java.util.regex.Pattern;
 
 /**
@@ -29,19 +34,19 @@ public class ValidationUtilsTest {
 
     @Test
     public void testValidLong() {
-        assertFalse("Invalid empty", ValidationUtils.isValidLong("", false, 0, 1000));
-        assertFalse("Invalid range min", ValidationUtils.isValidLong("1", false, 10, 1000));
-        assertFalse("Invalid range max", ValidationUtils.isValidLong("10000", false, 10, 1000));
-        assertFalse("Invalid negative", ValidationUtils.isValidLong("-1", false, 10, 1000));
-        assertFalse("Invalid negative min", ValidationUtils.isValidLong("-101", false, -100, -10));
-        assertFalse("Invalid negative max", ValidationUtils.isValidLong("-1", false, -100, -10));
+        assertFalse("Invalid empty", ValidationUtils.isValidLong("", false, 0L, 1000L ));
+        assertFalse("Invalid range min", ValidationUtils.isValidLong("1", false, 10L, 1000L ));
+        assertFalse("Invalid range max", ValidationUtils.isValidLong("10000", false, 10L, 1000L ));
+        assertFalse("Invalid negative", ValidationUtils.isValidLong("-1", false, 10L, 1000L ));
+        assertFalse("Invalid negative min", ValidationUtils.isValidLong("-101", false, -100L, -10L ));
+        assertFalse("Invalid negative max", ValidationUtils.isValidLong("-1", false, -100L, -10L ));
 
-        assertTrue("Valid simple",  ValidationUtils.isValidLong("10", false, 1, 100));
+        assertTrue("Valid simple",  ValidationUtils.isValidLong("10", false, 1L, 100L ));
         assertTrue("Valid large",  ValidationUtils.isValidLong("100000000000", false, 10000000000L, 100000000000L));
-        assertTrue("Valid empty", ValidationUtils.isValidLong("", true, 0, 1000));
-        assertTrue("Valid inclusive min",  ValidationUtils.isValidLong("10", false, 10, 100));
-        assertTrue("Valid inclusive max",  ValidationUtils.isValidLong("100", false, 10, 100));
-        assertTrue("Valid inclusive min/max",  ValidationUtils.isValidLong("10", false, 10, 10));
+        assertTrue("Valid empty", ValidationUtils.isValidLong("", true, 0L, 1000L ));
+        assertTrue("Valid inclusive min",  ValidationUtils.isValidLong("10", false, 10L, 100L ));
+        assertTrue("Valid inclusive max",  ValidationUtils.isValidLong("100", false, 10L, 100L ));
+        assertTrue("Valid inclusive min/max",  ValidationUtils.isValidLong("10", false, 10L, 10L ));
     }
 
     @Test
@@ -88,5 +93,74 @@ public class ValidationUtilsTest {
         assertTrue( "Valid file url 2 slash", ValidationUtils.isValidUrl( "fiLe://path/to/file" ) );
         assertTrue( "Valid file url 3 slash", ValidationUtils.isValidUrl( "file:///path/to/file" ) );
         assertTrue( "Valid ftp url", ValidationUtils.isValidUrl( "fTp://host/path/to/file" ) );
+    }
+
+    @Test
+    public void testIntegerValidator() {
+        final Validator<String> validatorS = ValidationUtils.getIntegerTextValidator( 1, 10 );
+        final Validator<Integer> validatorI = ValidationUtils.getIntegerValidator( ConversionUtils.<Integer>getIdentityConverter(), 1, 10 );
+
+        assertTrue( "Valid string 1", validatorS.isValid( "1" ) );
+        assertTrue( "Valid integer 1", validatorI.isValid( 1 ) );
+
+        assertFalse( "Invalid string 0", validatorS.isValid( "0" ) );
+        assertFalse( "Invalid integer 0", validatorI.isValid( 0 ) );
+
+        assertTrue( "Valid string 10 with space", validatorS.isValid( " 10 " ) );
+        assertTrue( "Valid integer 10", validatorI.isValid( 10 ) );
+
+        assertFalse( "Invalid string 11", validatorS.isValid( "11" ) );
+        assertFalse( "Invalid integer 11", validatorI.isValid( 11 ) );
+
+        assertFalse( "Invalid string null", validatorS.isValid( null ) );
+        assertFalse( "Invalid string empty", validatorS.isValid( null ) );
+
+        assertTrue( some( "1" ).filter( validatorS ).isSome() );
+        assertFalse( some( "-1" ).filter( validatorS ).isSome() );
+        assertFalse( some( "R1" ).filter( validatorS ).isSome() );
+        assertTrue( some( 1 ).filter( validatorI ).isSome() );
+        assertFalse( some( -1 ).filter( validatorI ).isSome() );
+    }
+
+    @Test
+    public void testLongValidator() {
+        final Validator<String> validatorS = ValidationUtils.getLongTextValidator( -10000000000L, 10000000000L );
+        final Validator<String> validatorSTU = ValidationUtils.getLongValidator( ConversionUtils.getTimeUnitTextToLongConverter(), -10000000000L, 10000000000L );
+        final Validator<Long> validatorL = ValidationUtils.getLongValidator( ConversionUtils.<Long>getIdentityConverter(), -10000000000L, 10000000000L );
+
+        assertTrue( "Valid string -10000000000", validatorS.isValid( "-10000000000" ) );
+        assertTrue( "Valid string -100d", validatorSTU.isValid( "-100d" ) );
+        assertTrue( "Valid integer -10000000000", validatorL.isValid( -10000000000L ) );
+
+        assertFalse( "Invalid string -10000000001", validatorS.isValid( " -10000000001" ) );
+        assertFalse( "Invalid string 1000d", validatorSTU.isValid( "1000d" ) );
+        assertFalse( "Invalid integer -10000000001", validatorL.isValid(  -10000000001L ) );
+
+        assertTrue( "Valid string 10000000000 with space", validatorS.isValid( " 10000000000 " ) );
+        assertTrue( "Valid string 100d with space", validatorSTU.isValid( " 100d " ) );
+        assertTrue( "Valid integer 10000000000", validatorL.isValid( 10000000000L ) );
+
+        assertFalse( "Invalid string 10000000001", validatorS.isValid( "10000000001" ) );
+        assertFalse( "Invalid integer 10000000001", validatorL.isValid( 10000000001L ) );
+
+        assertFalse( "Invalid string null", validatorS.isValid( null ) );
+        assertFalse( "Invalid string empty", validatorS.isValid( null ) );
+        assertFalse( "Invalid string null timeunit", validatorSTU.isValid( null ) );
+        assertFalse( "Invalid string empty timeunit", validatorSTU.isValid( null ) );
+        assertFalse( "Invalid string syntax timeunit", validatorSTU.isValid( "asdf" ) );
+
+        assertTrue( some( "10000000000" ).filter( validatorS ).isSome() );
+        assertFalse( some( "10000000001" ).filter( validatorS ).isSome() );
+        assertFalse( some( "1L" ).filter( validatorS ).isSome() );
+        assertTrue( some( 10000000000L ).filter( validatorL ).isSome() );
+        assertFalse( some( -10000000001L ).filter( validatorL ).isSome() );
+    }
+
+    @Test
+    public void testPatternValidator() {
+        final Validator<String> validator = ValidationUtils.getPatternTextValidator( Pattern.compile( "[a-z]{1,3}" ) );
+
+        assertTrue( "Valid string abc", validator.isValid( "abc" ) );
+        assertFalse( "Invalid string abcd", validator.isValid( "abcd" ) );
     }
 }

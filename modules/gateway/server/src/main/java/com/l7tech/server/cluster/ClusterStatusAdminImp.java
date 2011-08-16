@@ -30,6 +30,8 @@ import com.l7tech.server.service.ServiceMetricsManager;
 import com.l7tech.server.service.ServiceMetricsServices;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.*;
+import static com.l7tech.util.Option.optional;
+import com.l7tech.util.ValidationUtils.Validator;
 import com.l7tech.xml.TarariLoader;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -233,6 +235,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
         Map<String,String> namesToDesc =  serverConfig.getClusterPropertyNames();
         Map<String,String> namesToDefs =  serverConfig.getClusterPropertyDefaults();
         Map<String,String> namesToVisi =  serverConfig.getClusterPropertyVisibilities();
+        Map<String,Validator<String>> namesToValidators =  serverConfig.getClusterPropertyValidators();
 
         Collection<ClusterPropertyDescriptor> properties = new ArrayList<ClusterPropertyDescriptor>();
         for (String name : namesToDesc.keySet()) {
@@ -245,7 +248,8 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
                     name,
                     namesToDesc.get(name),
                     namesToDefs.get(name),
-                    Boolean.valueOf(visible)) );
+                    Boolean.valueOf(visible),
+                    optional( namesToValidators.get( name ) )) );
         }
 
         return Collections.unmodifiableCollection(properties);

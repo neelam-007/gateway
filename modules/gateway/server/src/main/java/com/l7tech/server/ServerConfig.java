@@ -8,6 +8,7 @@ import com.l7tech.util.CollectionUtils.MapBuilder;
 import com.l7tech.util.ConfigFactory.ConfigProviderSpi;
 import com.l7tech.util.ConfigFactory.DefaultConfig;
 import static com.l7tech.util.Option.optional;
+import com.l7tech.util.ValidationUtils.Validator;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedOperation;
 import org.springframework.jmx.export.annotation.ManagedResource;
@@ -23,6 +24,8 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * Provides cached access to Gateway global configuration items, including (once the
@@ -113,6 +116,55 @@ public class ServerConfig extends DefaultConfig implements ClusterPropertyListen
      */
     public Map<String, String> getClusterPropertyVisibilities() {
         return getMappedServerConfigPropertyNames(SUFFIX_CLUSTER_KEY, SUFFIX_VISIBLE);
+    }
+
+    /**
+     * Get the Map of all cluster property names to validators.
+     *
+     * @return The Map of declared property names to their validators.
+     */
+    public Map<String, Validator<String>> getClusterPropertyValidators() {
+        final MapBuilder<String,Validator<String>> builder = CollectionUtils.mapBuilder();
+
+        final ValidatorFactory<Validator<String>, Validator<String>, Validator<String>, Validator<String>> factory =
+                new ValidatorFactory<Validator<String>, Validator<String>, Validator<String>, Validator<String>>(){
+            @Override
+            protected Validator<String> buildIntegerValidator( final int min, final int max ) {
+                return ValidationUtils.getIntegerValidator(
+                                    ConversionUtils.getTextToIntegerConverter(),
+                                    min,
+                                    max);
+            }
+
+            @Override
+            protected Validator<String> buildLongValidator( final long min, final long max ) {
+                return ValidationUtils.getLongValidator(
+                                    ConversionUtils.getTextToLongConverter(),
+                                    min,
+                                    max);
+            }
+
+            @Override
+            protected Validator<String> buildPatternValidator( final String pattern ) throws PatternSyntaxException {
+                return ValidationUtils.getPatternTextValidator( Pattern.compile( pattern ) );
+            }
+
+            @Override
+            protected Validator<String> buildTimeUnitValidator( final long min, final long max ) {
+                return ValidationUtils.getLongValidator(
+                                    ConversionUtils.getTimeUnitTextToLongConverter(),
+                                    min,
+                                    max);
+            }
+        };
+
+        final Map<String, String> clusterProperties = getMappedServerConfigPropertyNames(SUFFIX_CLUSTER_KEY, SUFFIX_DESC);
+        for ( final String clusterPropertyName : clusterProperties.keySet() ) {
+            final String configName = getNameFromClusterName( clusterPropertyName );
+            builder.put( clusterPropertyName, buildValidator( configName, factory ) );
+        }
+
+        return builder.unmodifiableMap();
     }
 
     /**

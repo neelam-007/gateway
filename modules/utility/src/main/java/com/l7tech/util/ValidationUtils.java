@@ -1,10 +1,18 @@
 package com.l7tech.util;
 
+import com.l7tech.util.Functions.Unary;
+import static com.l7tech.util.Option.join;
+import static com.l7tech.util.Option.optional;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.io.Serializable;
 import java.net.URL;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collection;
+import java.util.regex.Pattern;
 
 /**
  * Input validation methods.
@@ -346,11 +354,152 @@ public class ValidationUtils {
         return valid;
     }
 
+    /**
+     * Get a validator for an integer (string) in the described range.
+     *
+     * @param min The minimum value (inclusive)
+     * @param max The maximum value (inclusive)
+     * @return The validator
+     */
+    public static Validator<String> getIntegerTextValidator( final int min,
+                                                             final int max  ) {
+        return new PredicatedValidator<Integer,String>(
+                ConversionUtils.getTextToIntegerConverter(),
+                minMaxPredicate( min, max ) );
+    }
+
+    /**
+     * Get a validator for an integer in the described range.
+     *
+     * <p>NOTE: Validators are serializable, so the given converter should be
+     * serializable.</p>
+     *
+     * @param converter Converter from the input representation to an integer
+     * @param min The minimum value (inclusive)
+     * @param max The maximum value (inclusive)
+     * @param <S> The source (input) type
+     * @return The validator
+     */
+    public static <S> Validator<S> getIntegerValidator( @NotNull final Unary<Option<Integer>,S> converter,
+                                                        final int min,
+                                                        final int max  ) {
+        return new PredicatedValidator<Integer,S>( converter, minMaxPredicate( min, max ) );
+    }
+
+    /**
+     * Get a validator for a long (string) in the described range.
+     *
+     * @param min The minimum value (inclusive)
+     * @param max The maximum value (inclusive)
+     * @return The validator
+     */
+    public static Validator<String> getLongTextValidator( final long min,
+                                                          final long max ) {
+        return new PredicatedValidator<Long,String>(
+                ConversionUtils.getTextToLongConverter(),
+                minMaxPredicate( min, max ) );
+    }
+
+    /**
+     * Get a validator for a long in the described range.
+     *
+     * <p>NOTE: Validators are serializable, so the given converter should be
+     * serializable.</p>
+     *
+     * @param converter Converter from the input representation to a long
+     * @param min The minimum value (inclusive)
+     * @param max The maximum value (inclusive)
+     * @param <S> The source (input) type
+     * @return The validator
+     */
+    public static <S> Validator<S> getLongValidator( @NotNull final Unary<Option<Long>,S> converter,
+                                                     final long min,
+                                                     final long max  ) {
+        return new PredicatedValidator<Long,S>( converter, minMaxPredicate( min, max ) );
+    }
+
+    /**
+     * Get the validator that uses a regular expression.
+     *
+     * @param pattern The pattern to use.
+     * @return The validator
+     */
+    public static Validator<String> getPatternTextValidator( @NotNull final Pattern pattern ) {
+        return new PredicatedValidator<String,String>(
+                ConversionUtils.<String>getIdentityConverter(),
+                regexPredicate(pattern) );
+    }
+
+    /**
+     * Abstract base class for Validators.
+     *
+     * @param <S> The source type
+     */
+    public static abstract class Validator<S> implements Serializable, Unary<Boolean,S> {
+
+        /**
+         * Validate the given value.
+         *
+         * @param value The value being validated
+         * @return True if valid
+         */
+        public abstract boolean isValid( @Nullable S value );
+
+        /**
+         * Convenience implementation of a Unary Function that calls <code>isValid</code>.
+         *
+         * @param value The value to validate
+         * @return True if valid
+         */
+        @Override
+        public final Boolean call( final S value ) {
+            return isValid( value );
+        }
+    }
+
     //- PRIVATE
 
     private static final String DOMAIN_ALLOWED_CHARS = LETTERS_LOWER + LETTERS_UPPER + DIGITS + ".-";
     private static final String[] DOMAIN_INVALID_START_OR_END = {"-","."};
     private static final String REGEX_HTTP_URL = "^(?:[hH][tT][tT][pP][sS]?://[a-zA-Z0-9\\._-]{1,255}(?::(?:6(?:[1-4]\\d{3}|(?:5(?:[0-4]\\d{2}|5(?:[0-2]\\d|3[0-5]))))|[1-5]\\d{4}|(?!0)\\d{2,4}|[1-9]))?(?:[\\?/][a-zA-Z0-9$\\-_\\.+!\\*\\?'\\(\\),:/\\\\%@=&;*'~#]{0,1024})?)$";
+
+
+    private static <T extends Number> ValidationPredicate<T> minMaxPredicate( @NotNull final T min,
+                                                                              @NotNull final T max ) {
+        return new ValidationPredicate<T>(){
+            @Override
+            public Boolean call( final T t ) {
+                return t.longValue() >= min.longValue() && t.longValue() <= max.longValue();
+            }
+        };
+    }
+
+    private static ValidationPredicate<String> regexPredicate( @NotNull final Pattern pattern ) {
+        return new ValidationPredicate<String>(){
+            @Override
+            public Boolean call( final String text ) {
+                return pattern.matcher( text ).matches();
+            }
+        };
+    }
+
+    private static interface ValidationPredicate<T> extends Serializable, Unary<Boolean, T> {}
+
+    private static final class PredicatedValidator<T,S> extends Validator<S> {
+        private final Unary<Option<T>,S> converter;
+        private final ValidationPredicate<T> predicate;
+
+        private PredicatedValidator( @NotNull final Unary<Option<T>,S> converter,
+                                     @NotNull final ValidationPredicate<T> predicate ) {
+            this.converter = converter;
+            this.predicate = predicate;
+        }
+
+        @Override
+        public final boolean isValid( final S value ) {
+            return join( optional( value ).map( converter ) ).exists( predicate );
+        }
+    }
 
     /**
      * The XML spec lists these characters as permitted :

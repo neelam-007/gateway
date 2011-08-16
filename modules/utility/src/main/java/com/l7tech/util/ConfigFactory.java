@@ -1,16 +1,18 @@
 package com.l7tech.util;
 
 import com.l7tech.util.CollectionUtils.MapBuilder;
+import static com.l7tech.util.ConversionUtils.getTextToIntegerConverter;
+import static com.l7tech.util.ConversionUtils.getTextToLongConverter;
 import static com.l7tech.util.Either.left;
 import static com.l7tech.util.Either.right;
 import com.l7tech.util.Functions.Nullary;
 import com.l7tech.util.Functions.Unary;
 import static com.l7tech.util.Functions.cached;
-import static com.l7tech.util.Functions.partial;
-import static com.l7tech.util.Option.none;
+import static com.l7tech.util.Option.join;
 import static com.l7tech.util.Option.optional;
 import static com.l7tech.util.Option.some;
 import static com.l7tech.util.TextUtils.trim;
+import com.l7tech.util.ValidationUtils.Validator;
 import static java.util.Collections.list;
 import static java.util.Collections.reverse;
 import org.jetbrains.annotations.NotNull;
@@ -38,6 +40,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * Factory for global Config instances with convenience methods for static use.
@@ -201,9 +205,14 @@ public class ConfigFactory {
      * <p>Supports access of configuration / system properties and caching.</p>
      */
     public static class DefaultConfig implements Config {
+        private static final Logger logger = Logger.getLogger( DefaultConfig.class.getName() );
 
         private static final String SYSPROP_NAME_PREFIX = "com.l7tech.";
         private static final String SYSPROP_PROP_SUFFIX = ".systemProperty";
+        private static final String VALIDATION_REGEX_SUFFIX = ".validation.regex";
+        private static final String VALIDATION_TYPE_SUFFIX = ".validation.type";
+        private static final String VALIDATION_MIN_SUFFIX = ".validation.min";
+        private static final String VALIDATION_MAX_SUFFIX = ".validation.max";
         private static final String DEFAULT_PROP_SUFFIX = ".default";
 
         private final long cacheAge;
@@ -211,6 +220,7 @@ public class ConfigFactory {
         private final Map<String,String> configNameToSystemPropertyNameMap;
         private final Map<String,String> systemPropertyNameToConfigNameMap;
         private final AtomicReference<Unary<Option<String>,String>> propertyLookup = new AtomicReference<Unary<Option<String>,String>>();
+        private final Unary<Option<ValidatorHolder<?>>,String> validatorLookup;
 
         public DefaultConfig( final Properties properties,
                               final long cacheAge ) {
@@ -239,36 +249,37 @@ public class ConfigFactory {
             this.configNameToSystemPropertyNameMap = configBuilder.unmodifiableMap();
             this.systemPropertyNameToConfigNameMap = systemBuilder.unmodifiableMap();
             this.propertyLookup.set( buildPropertyLookup() );
+            this.validatorLookup = buildValidatorLookup();
         }
 
         @Override
         public final String getProperty( @NotNull final String propertyName ) {
-            return getProperty( propertyName, Option.<String>none(), propertyLookup.get(), stringConverter );
+            return getProperty( propertyName, Option.<String>none(), lookup( propertyName ), stringConverter, validator( propertyName, String.class ) );
         }
 
         @Override
         public final String getProperty( @NotNull final String propertyName, final String defaultValue ) {
-            return getProperty( propertyName, optional( defaultValue ), propertyLookup.get(), stringConverter );
+            return getProperty( propertyName, optional( defaultValue ), lookup( propertyName ), stringConverter, validator( propertyName, String.class ) );
         }
 
         @Override
         public final int getIntProperty( @NotNull final String propertyName, final int defaultValue ) {
-            return getProperty( propertyName, some( defaultValue ), propertyLookup.get(), intConverter );
+            return getProperty( propertyName, some( defaultValue ), lookup( propertyName ), intConverter, validator( propertyName, Integer.class ) );
         }
 
         @Override
         public final long getLongProperty( @NotNull final String propertyName, final long defaultValue ) {
-            return getProperty( propertyName, some( defaultValue ), propertyLookup.get(), longConverter );
+            return getProperty( propertyName, some( defaultValue ), lookup(propertyName), longConverter, validator( propertyName, Long.class ) );
         }
 
         @Override
         public final boolean getBooleanProperty( @NotNull final String propertyName, final boolean defaultValue ) {
-            return getProperty( propertyName, some( defaultValue ), propertyLookup.get(), booleanConverter );
+            return getProperty( propertyName, some( defaultValue ), lookup( propertyName ), booleanConverter, validator( propertyName, Boolean.class ) );
         }
 
         @Override
         public final long getTimeUnitProperty( @NotNull final String propertyName, final long defaultValue ) {
-            return getProperty( propertyName, some( defaultValue ), propertyLookup.get(), timeUnitConverter );
+            return getProperty( propertyName, some( defaultValue ), lookup( propertyName ), timeUnitConverter, validator( propertyName, Long.class ) );
         }
 
         /**
@@ -344,6 +355,66 @@ public class ConfigFactory {
                     Option.<String>none();
         }
 
+        /**
+         * Construct a "validator" for the property using the given factory.
+         *
+         * @param propertyName The property to be validated
+         * @param factory The constructor for "validators"
+         * @param <BVT> The base validation type
+         * @param <LVT> Long validator type
+         * @param <IVT> Integer validator type
+         * @param <PVT> Pattern validator type
+         * @return The validator or null
+         */
+        protected <BVT, LVT extends BVT, IVT extends BVT, PVT extends BVT> BVT buildValidator(
+                final String propertyName,
+                final ValidatorFactory<BVT, IVT, LVT, PVT> factory ) {
+            final Option<String> propRegex = propertyLookup.get().call( propertyName + VALIDATION_REGEX_SUFFIX );
+            final Option<String> propType = propertyLookup.get().call( propertyName + VALIDATION_TYPE_SUFFIX );
+            final Option<String> propMin = propertyLookup.get().call( propertyName + VALIDATION_MIN_SUFFIX );
+            final Option<String> propMax = propertyLookup.get().call( propertyName + VALIDATION_MAX_SUFFIX );
+
+            BVT validator = null;
+            if ( propRegex.isSome() ) {
+                try {
+                    validator = factory.buildPatternValidator( propRegex.some() );
+                } catch ( PatternSyntaxException pse ) {
+                    logger.warning( "Ignoring invalid validation regex for '" + propertyName + "': " + ExceptionUtils.getMessage( pse ));
+                }
+            } else if ( propType.isSome() ) {
+                final String type = propType.some();
+                final Option<Long> min = join( propMin.map( getTextToLongConverter() ) );
+                final Option<Long> max = join( propMax.map( getTextToLongConverter() ) );
+                if ( "integer".equalsIgnoreCase( type ) ) {
+                    final Option<Integer> minInt = join( propMin.map( getTextToIntegerConverter() ) );
+                    final Option<Integer> maxInt = join( propMax.map( getTextToIntegerConverter() ) );
+                    validator = factory.buildIntegerValidator( minInt.orSome( Integer.MIN_VALUE ), maxInt.orSome( Integer.MAX_VALUE ) );
+                } else if ( "timeUnit".equalsIgnoreCase( type ) ) {
+                    validator = factory.buildTimeUnitValidator( min.orSome( Long.MIN_VALUE ), max.orSome( Long.MAX_VALUE ) );
+                } else if ( "long".equalsIgnoreCase( type ) ) {
+                    validator = factory.buildLongValidator( min.orSome( Long.MIN_VALUE ), max.orSome( Long.MAX_VALUE ) );
+                } else {
+                    logger.warning( "Ignoring unknown type '"+type+"' for validation of property '"+propertyName+"'" );
+                }
+            }
+
+            return validator;
+        }
+
+        /**
+         * Factory for "validator" instances.
+         *
+         * @param <BVT> The base validation type
+         * @param <LVT> Long validator type
+         * @param <PVT> Pattern validator type
+         */
+        protected static abstract class ValidatorFactory<BVT, IVT extends BVT, LVT extends BVT, PVT extends BVT> {
+            protected abstract IVT buildIntegerValidator( int min, int max );
+            protected abstract LVT buildLongValidator( long min, long max );
+            protected abstract PVT buildPatternValidator( String pattern ) throws PatternSyntaxException;
+            protected abstract LVT buildTimeUnitValidator( long min, long max );
+        }
+
         private Unary<Option<String>, String> buildPropertyLookup() {
             final Unary<Option<String>, String> propertyLookup =  new Unary<Option<String>, String>(){
                 @Override
@@ -357,16 +428,92 @@ public class ConfigFactory {
                      cached( propertyLookup , cacheAge );
         }
 
+        private Unary<Option<ValidatorHolder<?>>,String> buildValidatorLookup() {
+            // Validator factory that builds wrapped (typed) validators
+            final ValidatorFactory<ValidatorHolder<?>, ValidatorHolder<Integer>, ValidatorHolder<Long>, ValidatorHolder<String>> factory =
+                    new ValidatorFactory<ValidatorHolder<?>, ValidatorHolder<Integer>, ValidatorHolder<Long>, ValidatorHolder<String>>(){
+                @Override
+                protected ValidatorHolder<Integer> buildIntegerValidator( final int min, final int max ) {
+                    return new ValidatorHolder<Integer>( ValidationUtils.getIntegerValidator(
+                                        ConversionUtils.<Integer>getIdentityConverter(),
+                                        min,
+                                        max), Integer.class );
+                }
+
+                @Override
+                protected ValidatorHolder<Long> buildLongValidator( final long min, final long max ) {
+                    return new ValidatorHolder<Long>( ValidationUtils.getLongValidator(
+                                        ConversionUtils.<Long>getIdentityConverter(),
+                                        min,
+                                        max), Long.class );
+                }
+
+                @Override
+                protected ValidatorHolder<String> buildPatternValidator( final String pattern ) throws PatternSyntaxException {
+                    return new ValidatorHolder<String>( ValidationUtils.getPatternTextValidator( Pattern.compile( pattern ) ), String.class );
+                }
+
+                @Override
+                protected ValidatorHolder<Long> buildTimeUnitValidator( final long min, final long max ) {
+                    return buildLongValidator( min, max );
+                }
+            };
+
+            return cached( new Unary<Option<ValidatorHolder<?>>, String>() {
+                @Override
+                public Option<ValidatorHolder<?>> call( final String propertyName ) {
+                    return Option.<ValidatorHolder<?>>optional( buildValidator( propertyName, factory ) );
+                }
+            }, VALIDATOR_CACHE_AGE );
+        }
+
+        private Option<String> lookup( final String propertyName ) {
+            return propertyLookup.get().call( propertyName );
+        }
+
+        private <T> Unary<Boolean,T> validator( final String propertyName,
+                                                final Class<T> validationType ) {
+            return validatorLookup.call( propertyName )
+                    .map( new Unary<Unary<Boolean, T>, ValidatorHolder<?>>() {
+                        @Override
+                        public Unary<Boolean, T> call( final ValidatorHolder<?> validatorHolder ) {
+                            return logging( validatorHolder.get( validationType ).toNull(), propertyName );
+                        }
+                    } ).orSome(
+                        new Unary<Boolean, T>() {
+                            @Override
+                            public Boolean call( final T t ) {
+                                return true;
+                            }
+                        } );
+        }
+
+        private <T> Unary<Boolean,T> logging( final Unary<Boolean,T> validator,
+                                              final String propertyName ) {
+            return validator==null ? null : new Unary<Boolean, T>(){
+                @Override
+                public Boolean call( final T value ) {
+                    final Boolean result = validator.call( value );
+
+                    if ( !result ) {
+                        logger.warning( "Configuration property '"+propertyName+"' has an invalid value '"+value+"', using default value." );
+                    }
+
+                    return result;
+                }
+            };
+        }
+
         private <T> T getProperty( final String propertyName,
                                    final Option<T> defaultValue,
-                                   final Unary<Option<String>, String> propertyLookup,
-                                   final Unary<Either<String,T>,String> propertyConverter ) {
-            final Option<String> propertyValue = propertyLookup.call( propertyName );
+                                   final Option<String> propertyValue,
+                                   final Unary<Either<String,T>,String> propertyConverter,
+                                   final Unary<Boolean,T> propertyValidator ) {
             final Option<T> value;
 
             if ( propertyValue.isSome() ) {
                 final Either<String,T> conversionResult = propertyConverter.call( propertyValue.some() );
-                value = conversionResult.toRightOption().orElse( defaultValue );
+                value = conversionResult.toRightOption().filter( propertyValidator ).orElse( defaultValue );
                 if ( conversionResult.isLeft() ) {
                     logger.log( Level.WARNING,
                             "Configuration property {0} value ''{1}'' is invalid; using default value ''{2}'' instead.",
@@ -376,6 +523,22 @@ public class ConfigFactory {
                 value = defaultValue;
             }
             return value.toNull();
+        }
+
+        private static final class ValidatorHolder<T> {
+            private final Class<T> type;
+            private final Validator<T> validator;
+
+            private ValidatorHolder( final Validator<T> validator, final Class<T> type ) {
+                this.validator = validator;
+                this.type = type;
+            }
+
+            private <I> Option<Validator<I>> get( final Class<I> instanceClass ) {
+                return type.equals( instanceClass ) ?
+                        Option.some( (Validator<I>) validator ) :
+                        Option.<Validator<I>>none();
+            }
         }
     }
 
@@ -408,7 +571,8 @@ public class ConfigFactory {
     private static final Logger logger = Logger.getLogger( ConfigFactory.class.getName() );
 
     private static final String PROP_CACHE_AGE = "com.l7tech.util.configCacheAge";
-    private static final long DEFAULT_CACHE_AGE = 30000L;
+    private static final long DEFAULT_CACHE_AGE = TimeUnit.SECONDS.toMillis( 30L );
+    private static final long VALIDATOR_CACHE_AGE = TimeUnit.MINUTES.toMillis( 5L );
     private static final String PROPS_RESOURCE_PATH = "com/l7tech/config.properties";
 
     private static final CopyOnWriteArrayList<SmartConfigurationListener> listeners
@@ -440,7 +604,7 @@ public class ConfigFactory {
         if (pos >= 0) {
             val2.append(val.substring(0, pos));
             while (pos >= 0) {
-                if ( (int) val.charAt( pos + 1 ) == (int) '{' ) {
+                if ( val.length()>pos+1 && (int) val.charAt( pos + 1 ) == (int) '{' ) {
                     int pos2 = val.indexOf('}', pos + 1);
                     if (pos2 >= 0) {
                         // there's a reference

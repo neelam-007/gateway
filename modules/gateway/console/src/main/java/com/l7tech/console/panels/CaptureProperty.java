@@ -1,9 +1,3 @@
-/**
- * LAYER 7 TECHNOLOGIES, INC<br/>
- *
- * User: flascell<br/>
- * Date: Aug 16, 2005<br/>
- */
 package com.l7tech.console.panels;
 
 import com.l7tech.gateway.common.cluster.ClusterProperty;
@@ -14,6 +8,8 @@ import com.l7tech.gui.util.DocumentSizeFilter;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.console.util.Registry;
+import com.l7tech.util.Functions.Unary;
+import com.l7tech.util.TextUtils;
 
 import javax.swing.*;
 import javax.swing.text.AbstractDocument;
@@ -43,6 +39,7 @@ public class CaptureProperty extends JDialog {
     private JButton okButton;
 
     private String description;
+    private Unary<Boolean,String> validator;
     private final ClusterProperty property;
     private String title;
     private boolean oked = false;
@@ -71,6 +68,14 @@ public class CaptureProperty extends JDialog {
             keyComboBox.setEditable(false);
             valueField.setText(property.getValue());
             valueField.setCaretPosition(0);
+            final ClusterPropertyDescriptor propertyDescriptor =
+                    getClusterPropertyDescriptorByName(descriptors, (String) keyComboBox.getSelectedItem());
+            validator = propertyDescriptor == null ? null : new Unary<Boolean, String>() {
+                @Override
+                public Boolean call( final String s ) {
+                    return propertyDescriptor.isValid( s );
+                }
+            };
         } else {
             valueField.setText("");
             if (descriptors == null || descriptors.isEmpty()) {
@@ -83,7 +88,7 @@ public class CaptureProperty extends JDialog {
                 keyComboBox.setEditable(true);
                 ItemListener itemListener = new ItemListener() {
                     public void itemStateChanged(ItemEvent e) {
-                        ClusterPropertyDescriptor propertyDescriptor =
+                        final ClusterPropertyDescriptor propertyDescriptor =
                                 getClusterPropertyDescriptorByName(descriptors, (String) keyComboBox.getSelectedItem());
                         // Get and set description
                         String description = propertyDescriptor == null? "" : propertyDescriptor.getDescription();
@@ -94,6 +99,12 @@ public class CaptureProperty extends JDialog {
                         String initialValue = propertyDescriptor == null? "" : propertyDescriptor.getDefaultValue();
                         String currentValue = getCurrentPropValue((String) keyComboBox.getSelectedItem());
                         valueField.setText(currentValue == null? initialValue : currentValue);
+                        validator = propertyDescriptor == null ? null : new Unary<Boolean, String>() {
+                            @Override
+                            public Boolean call( final String s ) {
+                                return propertyDescriptor.isValid( s );
+                            }
+                        };
                     }
                 };
                 keyComboBox.addItemListener(itemListener);
@@ -206,6 +217,18 @@ public class CaptureProperty extends JDialog {
                                           "Invalid Property Value",
                                           JOptionPane.ERROR_MESSAGE);
             return false;
+        }
+
+        // Validate the value
+        if ( validator != null ) {
+            if (!validator.call( value )) {
+                JOptionPane.showMessageDialog(CaptureProperty.this,
+                        Utilities.getTextDisplayComponent( "The value '"+TextUtils.truncStringMiddle( value, 128 )+"' is not valid.\n\n" + descField.getText() ),
+                        "Invalid Property Value",
+                        JOptionPane.ERROR_MESSAGE);
+
+                return false;
+            }
         }
 
         // add your validations here

@@ -295,8 +295,12 @@ public class ClusterPropertyDialog extends JDialog {
 
             String title = canEdit ? "Edit Cluster Property" : "View Cluster Property";
 
+            if (knownProperties == null && canEdit) {
+                knownProperties = reg.getClusterStatusAdmin().getAllPropertyDescriptors();
+            }
+
             final CaptureProperty dlg = new CaptureProperty(this, title,
-                    prop.getDescription(), prop, null, canEdit);
+                    prop.getDescription(), prop, knownProperties, canEdit);
             dlg.pack();
             Utilities.centerOnScreen(dlg);
             DialogDisplayer.display(dlg, new Runnable() {
