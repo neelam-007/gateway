@@ -21,6 +21,7 @@ import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.security.prov.CertificateRequest;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.prov.RsaSignerEngine;
+import com.l7tech.security.prov.bc.BouncyCastleRsaSignerEngine;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.cluster.ClusterPropertyManager;
@@ -30,14 +31,22 @@ import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.util.*;
+import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
+import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.ECPublicKey;
+import java.security.interfaces.RSAPublicKey;
+import java.security.spec.ECParameterSpec;
+import java.security.spec.ECPoint;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
@@ -116,7 +125,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
 
     @Override
     public Collection<TrustedCert> findCertsBySubjectDn(final String dn) throws FindException {
-        return getManager().findBySubjectDn( CertUtils.formatDN(dn) );
+        return getManager().findBySubjectDn(CertUtils.formatDN(dn));
     }
 
     @Override
@@ -574,6 +583,60 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     @Override
     public void deleteSecurePassword(long oid) throws DeleteException, FindException {
         securePasswordManager.delete(oid);
+    }
+
+    @Override
+    public Map<String, String> getCsrProperties(byte[] csrBytes) {
+        // The details array will store three pieces of information: Subject DN, Public Key Brief Details, Public Key Full Details
+        Map<String, String> csrProps = new HashMap<String, String>();
+
+        byte[] decodedCsrBytes;
+        try {
+            decodedCsrBytes = CertUtils.csrPemToBinary(csrBytes);
+        } catch (IOException e) {
+            // Try as DER
+            decodedCsrBytes = csrBytes;
+        }
+
+        PKCS10CertificationRequest pkcs10 = new PKCS10CertificationRequest(decodedCsrBytes);
+        CertificationRequestInfo certReqInfo = pkcs10.getCertificationRequestInfo();
+
+        // Subject DN:
+        csrProps.put(CSR_PROP_SUBJECT_DN, certReqInfo.getSubject().toString(true, X509Name.DefaultSymbols));
+
+        // Public Key:
+        final PublicKey publicKey;
+        try {
+            publicKey = BouncyCastleRsaSignerEngine.getPublicKey(pkcs10);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Unable to get the public key from the CSR: " + ExceptionUtils.getMessage(e));
+            return csrProps;
+        }
+
+        if (publicKey instanceof RSAPublicKey) {
+            final RSAPublicKey rsa = (RSAPublicKey) publicKey;
+            final BigInteger modulus = rsa.getModulus();
+
+            csrProps.put(CSR_PROP_KEY_TYPE, "RSA public key");
+            csrProps.put(CSR_PROP_KEY_SIZE, String.valueOf(modulus.bitLength()));
+            csrProps.put(CSR_PROP_MODULUS, modulus.toString(16));
+            csrProps.put(CSR_PROP_EXPONENT, rsa.getPublicExponent().toString(16));
+        } else if (publicKey instanceof ECPublicKey) {
+            final ECPublicKey ec = (ECPublicKey) publicKey;
+            final ECParameterSpec params = ec.getParams();
+            final ECPoint w = ec.getW();
+            final String curveName = CertUtils.guessEcCurveName(publicKey);
+
+            csrProps.put(CSR_PROP_KEY_TYPE, "EC public key");
+            if (curveName != null) csrProps.put(CSR_PROP_CURVE_NAME, curveName);
+            csrProps.put(CSR_PROP_CURVE_SIZE, String.valueOf(params.getCurve().getField().getFieldSize()));
+            csrProps.put(CSR_PROP_CURVE_POINT_W_X, w.getAffineX().toString());
+            csrProps.put(CSR_PROP_CURVE_POINT_W_Y, w.getAffineY().toString());
+        } else {
+            csrProps.put(CSR_PROP_KEY_TYPE, publicKey.getAlgorithm());
+        }
+
+        return csrProps;
     }
 
     private TrustedCertManager getManager() {

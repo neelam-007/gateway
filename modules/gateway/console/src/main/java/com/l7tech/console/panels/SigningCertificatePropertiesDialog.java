@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
@@ -24,6 +25,7 @@ import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -59,10 +61,31 @@ public class SigningCertificatePropertiesDialog extends JDialog {
     private String publicKeyDetails;
     private boolean confirmed;
 
-    public SigningCertificatePropertiesDialog(Frame owner, byte[] csrBytes) {
+    public SigningCertificatePropertiesDialog(Frame owner) {
         super(owner, resources.getString("dialog.title"));
         initialize();
+    }
+
+    /**
+     * The constructor will process the given raw CSR bytes given and get the contents of the CSR.
+     *
+     * @param owner parent of this dialog
+     * @param csrBytes raw CSR bytes
+     */
+    public SigningCertificatePropertiesDialog(Frame owner, byte[] csrBytes) {
+        this(owner);
         modelToView(csrBytes);
+    }
+
+    /**
+     * The constructor will be given the contents of the CSR.
+     *
+     * @param owner parent of this dialog
+     * @param csrProps CSR properties
+     */
+    public SigningCertificatePropertiesDialog(Frame owner, Map<String, String> csrProps) {
+        this(owner);
+        modelToView(csrProps);
     }
 
     public boolean isConfirmed() {
@@ -144,6 +167,11 @@ public class SigningCertificatePropertiesDialog extends JDialog {
         return expiryAge;
     }
 
+    /**
+     * Display the contents of the CSR
+     *
+     * @param csrBytes given CSR raw bytes
+     */
     private void modelToView(final byte[] csrBytes) {
         byte[] decodedCsrBytes;
         try {
@@ -166,24 +194,24 @@ public class SigningCertificatePropertiesDialog extends JDialog {
             return;
         }
 
-        final String shortDetails;
+        final String briefDetails;
         if (publicKey instanceof RSAPublicKey) {
             final RSAPublicKey rsa = (RSAPublicKey) publicKey;
             final BigInteger modulus = rsa.getModulus();
 
-            shortDetails = "RSA, " + modulus.bitLength() + " bits";
+            briefDetails = "RSA, " + modulus.bitLength() + " bits";
 
             publicKeyDetails = "Key type: RSA public key\n" +
                 "Key size: " + modulus.bitLength() + " bits\n" +
                 "Modulus: " + modulus.toString(16) + "\n" +
-                "Public exponent: " + rsa.getPublicExponent();
+                "Public exponent: " + rsa.getPublicExponent().toString(16);
         } else if (publicKey instanceof ECPublicKey) {
             final ECPublicKey ec = (ECPublicKey) publicKey;
             final ECParameterSpec params = ec.getParams();
             final ECPoint w = ec.getW();
             final String curveName = CertUtils.guessEcCurveName(publicKey);
 
-            shortDetails = "EC" + (curveName == null? "" : ", " + curveName);
+            briefDetails = "EC" + (curveName == null? "" : ", " + curveName);
 
             publicKeyDetails = "Key type: EC public key\n" +
                 (curveName == null? "" : "Curve name: " + curveName + "\n") + // If curve name is know, then display curve name.
@@ -191,13 +219,51 @@ public class SigningCertificatePropertiesDialog extends JDialog {
                 "Curve point-W (X): " + w.getAffineX() + "\n" +
                 "Curve point-W (Y): " + w.getAffineY();
         } else {
-            shortDetails = publicKey.getAlgorithm();
+            briefDetails = publicKey.getAlgorithm();
             publicKeyDetails = publicKey.toString();
         }
 
-        publicKeyDetailsTextField.setText(shortDetails);
+        publicKeyDetailsTextField.setText(briefDetails);
     }
 
+    /**
+     * Display the contents of the CSR
+     *
+     * @param csrProps given the properties of the CSR
+     */
+    private void modelToView(final Map<String, String> csrProps) {
+        if (csrProps == null || csrProps.isEmpty()) return;
+
+        subjectDnTextField.setText(csrProps.get(TrustedCertAdmin.CSR_PROP_SUBJECT_DN));
+
+        final String keyType = csrProps.get(TrustedCertAdmin.CSR_PROP_KEY_TYPE);
+        if (keyType == null) return;
+
+        final String briefDetails;
+        if (keyType.startsWith("RSA")) {
+            final String keySize = csrProps.get(TrustedCertAdmin.CSR_PROP_KEY_SIZE);
+            briefDetails = "RSA, " + keySize + " bits";
+
+            publicKeyDetails = "Key type: RSA public key\n" +
+                "Key size: " + keySize + " bits\n" +
+                "Modulus: " + csrProps.get(TrustedCertAdmin.CSR_PROP_MODULUS) + "\n" +
+                "Public exponent: " + csrProps.get(TrustedCertAdmin.CSR_PROP_EXPONENT);
+        } else if (keyType.startsWith("EC")) {
+            final String curveName = csrProps.get(TrustedCertAdmin.CSR_PROP_CURVE_NAME);
+            briefDetails = "EC" + (curveName == null? "" : ", " + curveName);
+
+            publicKeyDetails = "Key type: EC public key\n" +
+                (curveName == null? "" : "Curve name: " + curveName + "\n") + // If curve name is know, then display curve name.
+                "Curve size: " + csrProps.get(TrustedCertAdmin.CSR_PROP_CURVE_SIZE) + " bits\n" +
+                "Curve point-W (X): " + csrProps.get(TrustedCertAdmin.CSR_PROP_CURVE_POINT_W_X) + "\n" +
+                "Curve point-W (Y): " + csrProps.get(TrustedCertAdmin.CSR_PROP_CURVE_POINT_W_Y);
+        } else {
+            briefDetails = csrProps.get(TrustedCertAdmin.CSR_PROP_KEY_TYPE);
+            fullDetailsButton.setEnabled(false); // No full details available for this case.
+        }
+
+        publicKeyDetailsTextField.setText(briefDetails);
+    }
     /**
      * The dialog displays the details of a public key.
      */

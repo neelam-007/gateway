@@ -24,6 +24,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
 import static com.l7tech.objectmodel.EntityType.*;
@@ -35,6 +36,16 @@ import static com.l7tech.objectmodel.EntityType.*;
 @Administrative
 @Secured(types=TRUSTED_CERT)
 public interface TrustedCertAdmin extends AsyncAdminMethods {
+    public static final String CSR_PROP_SUBJECT_DN = "subject.dn";
+    public static final String CSR_PROP_KEY_TYPE = "public.key.type";
+    public static final String CSR_PROP_KEY_SIZE = "rsa.public.key.size";
+    public static final String CSR_PROP_MODULUS = "rsa.public.key.modulus";
+    public static final String CSR_PROP_EXPONENT = "rsa.public.key.public.exponent";
+    public static final String CSR_PROP_CURVE_NAME = "ec.public.key.curve.name";
+    public static final String CSR_PROP_CURVE_SIZE = "ec.public.key.curve.size";
+    public static final String CSR_PROP_CURVE_POINT_W_X = "ec.public.key.curve.point.w.x.coord";
+    public static final String CSR_PROP_CURVE_POINT_W_Y = "ec.public.key.curve.point.w.y.coord";
+
     /**
      * Retrieves all {@link TrustedCert}s from the database.
      * @return a {@link List} of {@link TrustedCert}s
@@ -482,4 +493,12 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(types=SECURE_PASSWORD,stereotype=DELETE_BY_ID, relevantArg=0)
     void deleteSecurePassword(long oid) throws ConstraintViolationException, DeleteException, FindException;
+
+    /**
+     * Get the properties of a CSR, such as Subject DN and Public Key details (key type, key size, and other parameters).
+     *
+     * @param csrBytes raw CSR bytes
+     * @return a map containing CSR properties.
+     */
+    Map<String, String> getCsrProperties(byte[] csrBytes);
 }

@@ -187,6 +187,11 @@ public class TrustedCertAdminStub implements TrustedCertAdmin {
     }
 
     @Override
+    public Map<String, String> getCsrProperties(byte[] csrBytes) {
+        return null;
+    }
+
+    @Override
     public <OUT extends Serializable> String getJobStatus(JobId<OUT> jobId) {
         return null;
     }

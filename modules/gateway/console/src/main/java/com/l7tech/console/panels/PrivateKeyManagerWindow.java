@@ -317,41 +317,59 @@ public class PrivateKeyManagerWindow extends JDialog {
         if (csrBytes[0] == null)
             return;
 
-        final SigningCertificatePropertiesDialog signingCertPropertiesDialog =
-            new SigningCertificatePropertiesDialog(TopComponents.getInstance().getTopParent(), csrBytes[0]);
-        Utilities.centerOnScreen(signingCertPropertiesDialog);
-        DialogDisplayer.display(signingCertPropertiesDialog);
+        // Display the contents of the CSR and allow user to set/modify some settings before signing certificate.
+        final SigningCertificatePropertiesDialog signingCertPropertiesDialog;
 
-        if (! signingCertPropertiesDialog.isConfirmed()) {
-            return;
-        }
-
-        final String[] pemCertChain;
-        try {
-            pemCertChain = getTrustedCertAdmin().signCSR(
-                subject.getKeyEntry().getKeystoreId(),
-                subject.getKeyEntry().getAlias(),
-                csrBytes[0],
-                new X500Principal(signingCertPropertiesDialog.getSubjectDn()),
-                signingCertPropertiesDialog.getExpiryAge(),
-                null,
-                signingCertPropertiesDialog.getHashAlg()
+        // For security permission issue, if the client is running on an applet, send the request and let server side to finish the task.
+        if(TopComponents.getInstance().isApplet()) {
+            signingCertPropertiesDialog = new SigningCertificatePropertiesDialog(
+                TopComponents.getInstance().getTopParent(),
+                getTrustedCertAdmin().getCsrProperties(csrBytes[0])  // Call Remote Admin API to process the task
             );
-        } catch (CertificateException e) {
-            showErrorMessage("Unable to Sign Certificate", "Unable to process certificate signing request: " + ExceptionUtils.getMessage(e), e);
-            return;
-        } catch (FindException e) {
-            showErrorMessage("Unable to Sign Certificate", "Unable to process certificate signing request: " + ExceptionUtils.getMessage(e), e);
-            return;
-        } catch (GeneralSecurityException e) {
-            showErrorMessage("Unable to Sign Certificate", "Unable to process certificate signing request: " + ExceptionUtils.getMessage(e), e);
-            return;
+        }
+        // If the client is a standalone application,, the client side will directly process the task without the server involved.
+        else {
+            signingCertPropertiesDialog = new SigningCertificatePropertiesDialog(
+                TopComponents.getInstance().getTopParent(),
+                csrBytes[0]
+            );
         }
 
-        FileChooserUtil.doWithJFileChooser(new FileChooserUtil.FileChooserUser() {
+        Utilities.centerOnScreen(signingCertPropertiesDialog);
+        DialogDisplayer.display(signingCertPropertiesDialog, new Runnable() {
             @Override
-            public void useFileChooser(JFileChooser fc) {
-                savePemCertChain(fc, pemCertChain);
+            public void run() {
+                // After the dialog is confirmed against the contents of the CSR, then generate a new certificate chain and save the new certificate.
+                if (signingCertPropertiesDialog.isConfirmed()) {
+                    final String[] pemCertChain;
+                    try {
+                        pemCertChain = getTrustedCertAdmin().signCSR(
+                            subject.getKeyEntry().getKeystoreId(),
+                            subject.getKeyEntry().getAlias(),
+                            csrBytes[0],
+                            new X500Principal(signingCertPropertiesDialog.getSubjectDn()),
+                            signingCertPropertiesDialog.getExpiryAge(),
+                            null,
+                            signingCertPropertiesDialog.getHashAlg()
+                        );
+                    } catch (CertificateException e) {
+                        showErrorMessage("Unable to Sign Certificate", "Unable to process certificate signing request: " + ExceptionUtils.getMessage(e), e);
+                        return;
+                    } catch (FindException e) {
+                        showErrorMessage("Unable to Sign Certificate", "Unable to process certificate signing request: " + ExceptionUtils.getMessage(e), e);
+                        return;
+                    } catch (GeneralSecurityException e) {
+                        showErrorMessage("Unable to Sign Certificate", "Unable to process certificate signing request: " + ExceptionUtils.getMessage(e), e);
+                        return;
+                    }
+
+                    FileChooserUtil.doWithJFileChooser(new FileChooserUtil.FileChooserUser() {
+                        @Override
+                        public void useFileChooser(JFileChooser fc) {
+                            savePemCertChain(fc, pemCertChain);
+                        }
+                    });
+                }
             }
         });
     }
