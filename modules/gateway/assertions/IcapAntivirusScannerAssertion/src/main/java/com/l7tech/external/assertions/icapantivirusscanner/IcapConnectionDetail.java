@@ -1,12 +1,12 @@
 package com.l7tech.external.assertions.icapantivirusscanner;
 
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * A bean to hold the server information.
+ * @author Ken Diep
  */
 public final class IcapConnectionDetail implements Serializable {
 

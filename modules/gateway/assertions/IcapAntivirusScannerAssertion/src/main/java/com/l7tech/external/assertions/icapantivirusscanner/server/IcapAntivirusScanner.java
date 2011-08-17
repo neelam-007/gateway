@@ -21,6 +21,8 @@ import java.util.regex.Pattern;
  * A simple ICAP client implemtation.  This client connects to the specified server and issue the 'RESPMOD' function
  * to request the server for a scan of the uploaded contents.
  * </p>
+ *
+ * @author Ken Diep
  */
 public final class IcapAntivirusScanner {
 
@@ -32,7 +34,7 @@ public final class IcapAntivirusScanner {
     private static final String ENCAPSULATED_HEADER = "Encapsulated";
     private static final Pattern ENCAPSULATED_BODY_LENGTH = Pattern.compile(".*-body=(\\d+).*");
     private static final String CONTENT_LENGTH_HEADER = "Content-Length";
-    private static final Pattern X_VIOLATIONS_FOUND = Pattern.compile("(?i)X-Violations-Found.*");
+    private static final Pattern X_VIOLATIONS_FOUND = Pattern.compile("(?i)X-Violations?-Found.*");
     private static final String CRLF = "\r\n";
     private static ThreadLocal<Socket> socketHolder = new ThreadLocal<Socket>();
     private static ThreadLocal<Long> socketLastUsed = new ThreadLocal<Long>();
@@ -152,7 +154,7 @@ public final class IcapAntivirusScanner {
             final OutputStream out = socket.getOutputStream();
             out.write(String.format("OPTIONS %1$s %2$s %3$s%3$s", getIcapUri(), DEFAULT_ICAP_VERSION, CRLF).getBytes());
             IcapResponse resp = readResponse(socket.getInputStream());
-            String code = resp.getIcapHeader("STATUS_CODE");
+            String code = resp.getIcapHeader(IcapResponse.STATUS_CODE);
             success = "200".equals(code);
         } catch (IOException e) {
             logger.warning("Error connecting to specified ICAP server: " + e.getMessage());
@@ -166,7 +168,7 @@ public final class IcapAntivirusScanner {
 
         Map<String, String> contentBody = new HashMap<String, String>();
         InputStream stream = null;
-        String code = icap.get("STATUS_CODE");
+        String code = icap.get(IcapResponse.STATUS_CODE);
         if ("200".equals(code) || "204".equals(code)) {
             final String encapsulated = icap.get(ENCAPSULATED_HEADER);
             final Matcher matcher = ENCAPSULATED_BODY_LENGTH.matcher(encapsulated);
@@ -189,8 +191,10 @@ public final class IcapAntivirusScanner {
             //discard the first line, which is the content length in hex
             readLine(is);
             final byte[] content = new byte[contentLength];
-            is.read(content, 0, contentLength);
-            stream = new ByteArrayInputStream(content);
+            int bread = is.read(content, 0, contentLength);
+            if (bread > 0) {
+                stream = new ByteArrayInputStream(content);
+            }
         }
         return stream;
     }
@@ -218,8 +222,8 @@ public final class IcapAntivirusScanner {
         final String statusCode = matcher.group(2).trim();
         final String statusText = matcher.group(3).trim();
         headers.put("PROTOCOL", protocol);
-        headers.put("STATUS_CODE", statusCode);
-        headers.put("STATUS_TEXT", statusText);
+        headers.put(IcapResponse.STATUS_CODE, statusCode);
+        headers.put(IcapResponse.STATUS_TEXT, statusText);
         return headers;
     }
 
@@ -242,11 +246,22 @@ public final class IcapAntivirusScanner {
             final String filename = readLine(is);
             final String violationName = readLine(is);
             final String violationId = readLine(is);
-            final String disposition = readLine(is);
+
+            //disposition is a number returned by the server and it is mapped to a text description
+            //as per the Symantec SDK
+            String disposition = readLine(is).trim();
+            if ("0".equals(disposition)) {
+                disposition = "was not fixed";
+            } else if ("1".equals(disposition)) {
+                disposition = "was not repaired";
+            } else if ("2".equals(disposition)) {
+                disposition = "was not deleted";
+            }
+
             violationsFound.put("X-Violation-Filename", filename.trim());
             violationsFound.put("X-Violation-Name", violationName.trim());
             violationsFound.put("X-Violation-ID", violationId.trim());
-            violationsFound.put("X-Violation-Disposition", disposition.trim());
+            violationsFound.put("X-Violation-Disposition", disposition);
         } catch (IOException e) {
             logger.warning("Error occurred while parsing violation headers: " + e.getMessage());
         }
@@ -280,6 +295,26 @@ public final class IcapAntivirusScanner {
          */
         public static final String STATUS_TEXT = "STATUS_TEXT";
 
+        /**
+         * The service header key.
+         */
+        public static final String SERVICE_NAME = "Service";
+
+        /**
+         * The violation name key.
+         */
+        public static final String VIOLATION_NAME = "X-Violation-Name";
+
+        /**
+         * The violation id key.
+         */
+        public static final String VIOLATION_ID = "X-Violation-ID";
+
+        /**
+         * The violation disposition key.
+         */
+        public static final String VIOLATION_DISPOSITION = "X-Violation-Disposition";
+
         private final Map<String, String> icapHeaders;
         private final Map<String, String> encapsulatedHeaders;
         private final InputStream bodyContent;
@@ -291,6 +326,9 @@ public final class IcapAntivirusScanner {
         }
 
         /**
+         * Retrieve the content body as returned by the server (if any), it is the responsibility of the caller to
+         * close the underlying stream after use.
+         *
          * @return the content body as an {@link InputStream} if available, null otherwise.
          */
         public InputStream getBodyContent() {

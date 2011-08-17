@@ -9,27 +9,22 @@ import com.l7tech.common.mime.PartIterator;
 import com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAssertion;
 import com.l7tech.external.assertions.icapantivirusscanner.IcapConnectionDetail;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
-import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import org.springframework.context.ApplicationContext;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
-import javax.inject.Inject;
-import javax.inject.Named;
+import java.util.logging.Level;
 
 /**
  * Server side implementation of the IcapAntivirusScannerAssertion.
@@ -52,8 +47,9 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
     public AssertionStatus doCheckRequest(final PolicyEnforcementContext context, final Message message,
                                           final String messageDescription, final AuthenticationContext authContext)
             throws IOException, PolicyAssertionException {
-        IcapAntivirusScanner scanner = getScanner();
+        final IcapAntivirusScanner scanner = getScanner();
         AssertionStatus status = AssertionStatus.NONE;
+
         if (scanner == null) {
             status = AssertionStatus.SERVICE_UNAVAILABLE;
             logAndAudit(AssertionMessages.USERDETAIL_WARNING,
@@ -62,9 +58,7 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
             try {
                 for (PartIterator pi = message.getMimeKnob().getParts(); pi.hasNext(); ) {
                     PartInfo partInfo = pi.next();
-                    if (partInfo != null) {
-                        status = scanPart(scanner, partInfo);
-                    }
+                    status = scanPart(scanner, partInfo);
                 }
             } finally {
                 scanner.disconnect();
@@ -83,9 +77,12 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
             IcapAntivirusScanner.IcapResponse response = scanner.scan(partInfo.getContentId(true),
                     createHeader(partInfo), payload);
             if ("200".equals(response.getIcapHeader(IcapAntivirusScanner.IcapResponse.STATUS_CODE))) {
-                String headerInfo = getResponseHeaderInfo(response);
-                logAndAudit(AssertionMessages.USERDETAIL_WARNING, headerInfo);
-                if (assertion.isFailOnVirusFound()) {
+                logAndAudit(getMessage(),
+                        response.getIcapHeader(IcapAntivirusScanner.IcapResponse.SERVICE_NAME),
+                        response.getIcapHeader(IcapAntivirusScanner.IcapResponse.VIOLATION_NAME),
+                        response.getIcapHeader(IcapAntivirusScanner.IcapResponse.VIOLATION_ID),
+                        response.getIcapHeader(IcapAntivirusScanner.IcapResponse.VIOLATION_DISPOSITION));
+                if (!assertion.isContinueOnVirusFound()) {
                     status = AssertionStatus.FAILED;
                 }
             } else if (!"204".equals(response.getIcapHeader(IcapAntivirusScanner.IcapResponse.STATUS_CODE))) {
@@ -121,14 +118,6 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
         return headers;
     }
 
-    private String getResponseHeaderInfo(final IcapAntivirusScanner.IcapResponse response) {
-        final StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String, String> ent : response.getIcapHeaders().entrySet()) {
-            sb.append(ent.getKey()).append(" = ").append(ent.getValue()).append("\r\n");
-        }
-        return sb.toString();
-    }
-
     private IcapAntivirusScanner getScanner() {
         IcapAntivirusScanner scanner = null;
         for (int i = 0; i < assertion.getConnectionDetails().size(); ++i) {
@@ -139,11 +128,26 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
                 failoverStrategy.reportSuccess(connectionDetail);
                 break;
             }
-            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Error connecting to '" +
-                    connectionDetail + "'"});
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Error connecting to '" +
+                    connectionDetail + "'");
             failoverStrategy.reportFailure(connectionDetail);
             scanner = null;
         }
         return scanner;
+    }
+
+
+    private AuditDetailMessage getMessage() {
+        AuditDetailMessage msg = AssertionMessages.ICAP_RESPONSE_FINEST;
+        if (logger.getLevel() == Level.FINER) {
+            msg = AssertionMessages.ICAP_RESPONSE_FINER;
+        } else if (logger.getLevel() == Level.FINE) {
+            msg = AssertionMessages.ICAP_RESPONSE_FINE;
+        } else if (logger.getLevel() == Level.INFO) {
+            msg = AssertionMessages.ICAP_RESPONSE_INFO;
+        } else if (logger.getLevel() == Level.WARNING) {
+            msg = AssertionMessages.ICAP_RESPONSE_WARNING;
+        }
+        return msg;
     }
 }

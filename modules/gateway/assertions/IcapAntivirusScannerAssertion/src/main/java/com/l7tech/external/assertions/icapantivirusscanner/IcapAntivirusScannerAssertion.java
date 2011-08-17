@@ -27,7 +27,7 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
 
     private List<IcapConnectionDetail> connectionDetails = new ArrayList<IcapConnectionDetail>();
 
-    private boolean failOnVirusFound = true;
+    private boolean continueOnVirusFound = false;
 
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
@@ -78,12 +78,12 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
         this.failoverStrategy = failoverStrategy;
     }
 
-    public boolean isFailOnVirusFound() {
-        return failOnVirusFound;
+    public boolean isContinueOnVirusFound() {
+        return continueOnVirusFound;
     }
 
-    public void setFailOnVirusFound(final boolean failOnVirusFound) {
-        this.failOnVirusFound = failOnVirusFound;
+    public void setContinueOnVirusFound(final boolean continueOnVirusFound) {
+        this.continueOnVirusFound = continueOnVirusFound;
     }
 
     public List<IcapConnectionDetail> getConnectionDetails() {
@@ -98,7 +98,7 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
 
         private final IcapAntivirusScannerAssertion assertion;
 
-        public Validator(IcapAntivirusScannerAssertion assertion) {
+        public Validator(final IcapAntivirusScannerAssertion assertion) {
             if (assertion == null) {
                 throw new IllegalArgumentException("assertion is required");
             }

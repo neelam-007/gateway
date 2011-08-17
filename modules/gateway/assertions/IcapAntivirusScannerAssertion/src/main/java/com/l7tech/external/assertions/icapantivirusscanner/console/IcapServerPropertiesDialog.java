@@ -10,7 +10,10 @@ import java.awt.event.ActionListener;
 import java.util.HashMap;
 import java.util.Map;
 
-public class IcapServerPropertiesDialog extends JDialog {
+/**
+ * @author Ken Diep
+ */
+public final class IcapServerPropertiesDialog extends JDialog {
 
     private static final int NAME_COLUMN = 0;
     private static final int VALUE_COLUMN = 1;
@@ -97,28 +100,28 @@ public class IcapServerPropertiesDialog extends JDialog {
     }
 
     private boolean toModel() {
-        String connectionName = txtConnectionName.getText().trim();
+        final String connectionName = txtConnectionName.getText().trim();
         if (connectionName.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Please enter a connection name.", "Error", JOptionPane.ERROR_MESSAGE);
             return false;
         }
-        String hostname = txtHostname.getText().trim();
+        final String hostname = txtHostname.getText().trim();
         if (hostname.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Please enter a host name.", "Error", JOptionPane.ERROR_MESSAGE);
             return false;
         }
-        String serviceName = txtServiceName.getText().trim();
+        final String serviceName = txtServiceName.getText().trim();
         if (serviceName.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Please enter a service name.", "Error", JOptionPane.ERROR_MESSAGE);
             return false;
         }
-        String portText = txtPort.getText().trim();
+        final String portText = txtPort.getText().trim();
         if (portText.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Please enter a port number.", "Error", JOptionPane.ERROR_MESSAGE);
             return false;
         }
         try {
-            int port = Integer.parseInt(portText);
+            final int port = Integer.parseInt(portText);
             if (port < 1 || port > MAX_PORT) {
                 JOptionPane.showMessageDialog(this, "Port number must be between 1 and 65535", "Error", JOptionPane.ERROR_MESSAGE);
                 return false;
@@ -129,13 +132,13 @@ public class IcapServerPropertiesDialog extends JDialog {
             return false;
         }
 
-        String timeoutText = txtTimeout.getText().trim();
+        final String timeoutText = txtTimeout.getText().trim();
         if (timeoutText.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Please enter a timeout value.", "Error", JOptionPane.ERROR_MESSAGE);
             return false;
         }
         try {
-            int timeout = Integer.parseInt(timeoutText);
+            final int timeout = Integer.parseInt(timeoutText);
             if (timeout < 1) {
                 JOptionPane.showMessageDialog(this, "Timeout value must be greater than 1", "Error", JOptionPane.ERROR_MESSAGE);
                 return false;
@@ -149,7 +152,7 @@ public class IcapServerPropertiesDialog extends JDialog {
         connectionDetail.setConnectionName(connectionName);
         connectionDetail.setHostname(hostname);
         connectionDetail.setServiceName(serviceName);
-        Map<String, String> serviceParams = new HashMap<String, String>();
+        final Map<String, String> serviceParams = new HashMap<String, String>();
         for (int i = 0; i < tableModel.getRowCount(); ++i) {
             String key = tableModel.getValueAt(i, NAME_COLUMN).toString();
             String value = tableModel.getValueAt(i, VALUE_COLUMN).toString();

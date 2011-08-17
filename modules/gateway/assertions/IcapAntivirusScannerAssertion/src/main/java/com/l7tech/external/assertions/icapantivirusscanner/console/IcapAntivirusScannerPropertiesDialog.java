@@ -16,7 +16,11 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
-public class IcapAntivirusScannerPropertiesDialog extends AssertionPropertiesOkCancelSupport<IcapAntivirusScannerAssertion> {
+/**
+ * @author Ken Diep
+ */
+public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropertiesOkCancelSupport<IcapAntivirusScannerAssertion> {
+
     private static final String DIALOG_TITLE = "ICAP Anti-Virus Servers";
     private static final String DIALOG_TITLE_NEW_SERVER = "New Server";
     private static final String DIALOG_TITLE_EDIT_SERVER_PREFIX = "Properties for ";
@@ -28,7 +32,7 @@ public class IcapAntivirusScannerPropertiesDialog extends AssertionPropertiesOkC
     private JButton edit;
     private JList serverList;
     private JComboBox cbStrategy;
-    private JCheckBox failAssertionIfVirusCheckBox;
+    private JCheckBox continueIfVirusFound;
 
     private DefaultListModel serverListModel;
 
@@ -61,7 +65,7 @@ public class IcapAntivirusScannerPropertiesDialog extends AssertionPropertiesOkC
         add.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
-                IcapConnectionDetail conn = new IcapConnectionDetail();
+                final IcapConnectionDetail conn = new IcapConnectionDetail();
                 showPropertiesDialog(owner, DIALOG_TITLE_NEW_SERVER, conn);
                 serverListModel.addElement(conn);
             }
@@ -84,24 +88,24 @@ public class IcapAntivirusScannerPropertiesDialog extends AssertionPropertiesOkC
     }
 
     private void showPropertiesDialog(final Window owner, final String title, final IcapConnectionDetail connectionDetail) {
-        IcapServerPropertiesDialog ispd = new IcapServerPropertiesDialog((Frame) owner, title, connectionDetail);
+        final IcapServerPropertiesDialog ispd = new IcapServerPropertiesDialog((Frame) owner, title, connectionDetail);
         ispd.pack();
         Utilities.centerOnScreen(ispd);
         ispd.setVisible(true);
     }
 
     private void editSelectedServer(final Window owner) {
-        int selectedIndex = serverList.getSelectedIndex();
-        IcapConnectionDetail conn = (IcapConnectionDetail) serverListModel.get(selectedIndex);
+        final int selectedIndex = serverList.getSelectedIndex();
+        final IcapConnectionDetail conn = (IcapConnectionDetail) serverListModel.get(selectedIndex);
         showPropertiesDialog(owner, DIALOG_TITLE_EDIT_SERVER_PREFIX + conn.getConnectionName(), conn);
         serverListModel.set(selectedIndex, conn);
     }
 
     @Override
     public void setData(IcapAntivirusScannerAssertion assertion) {
-        failAssertionIfVirusCheckBox.setSelected(assertion.isFailOnVirusFound());
+        continueIfVirusFound.setSelected(assertion.isContinueOnVirusFound());
         for (int i = 0; i < cbStrategy.getModel().getSize(); i++) {
-            FailoverStrategy fs = (FailoverStrategy) cbStrategy.getModel().getElementAt(i);
+            final FailoverStrategy fs = (FailoverStrategy) cbStrategy.getModel().getElementAt(i);
             if (fs.getName().equals(assertion.getFailoverStrategy())) {
                 cbStrategy.setSelectedItem(fs);
                 break;
@@ -116,7 +120,7 @@ public class IcapAntivirusScannerPropertiesDialog extends AssertionPropertiesOkC
 
     @Override
     public IcapAntivirusScannerAssertion getData(IcapAntivirusScannerAssertion assertion) throws ValidationException {
-        assertion.setFailOnVirusFound(failAssertionIfVirusCheckBox.isSelected());
+        assertion.setContinueOnVirusFound(continueIfVirusFound.isSelected());
         assertion.setFailoverStrategy(((FailoverStrategy) cbStrategy.getSelectedItem()).getName());
         assertion.getConnectionDetails().clear();
         for (int i = 0; i < serverListModel.size(); ++i) {

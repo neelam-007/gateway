@@ -264,6 +264,13 @@ public class AssertionMessages extends Messages {
     public static final M SOPHOS_RESPONSE_INFO = m(4873, Level.INFO, "Sophos AV detected a virus name ( {0} ), type ( {1} ), location ( {2} ), disinfectable ( {3} ). ");
     public static final M SOPHOS_RESPONSE_WARNING = m(4874, Level.WARNING, "Sophos AV detected a virus name ( {0} ), type ( {1} ), location ( {2} ), disinfectable ( {3} ). ");
 
+    // ICAP modular assertion messages
+    public static final M ICAP_RESPONSE_FINEST = m(4875, Level.FINEST, "The ( {0} ) detected the ( {1} ) virus with an ID of ( {2} ) this message {3}.");
+    public static final M ICAP_RESPONSE_FINER = m(4876, Level.FINER, "The ( {0} ) detected the ( {1} ) virus with an ID of ( {2} ) this message {3}.");
+    public static final M ICAP_RESPONSE_FINE = m(4877, Level.FINE, "The ( {0} ) detected the ( {1} ) virus with an ID of ( {2} ) this message {3}.");
+    public static final M ICAP_RESPONSE_INFO = m(4878, Level.INFO, "The ( {0} ) detected the ( {1} ) virus with an ID of ( {2} ) this message {3}.");
+    public static final M ICAP_RESPONSE_WARNING = m(4879, Level.WARNING, "The ( {0} ) detected the ( {1} ) virus with an ID of ( {2} ) this message {3}.");
+
     // ServerRequestWssReplayProtection messages
     public static final M REQUEST_WSS_REPLAY_NON_SOAP = m(4900, Level.INFO, "{0} not SOAP; cannot check for replayed signed WS-Security message");
     public static final M REQUEST_WSS_REPLAY_NO_WSS_LEVEL_SECURITY = m(4901, Level.INFO, "{0} did not contain any WSS level security");
