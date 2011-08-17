@@ -481,7 +481,7 @@
                         </entry>
                         <entry key="emailListenerBootProcess">
                             <list>
-                                <value>io.EmailListenerMessageMaxBytes</value>
+                                <value>ioEmailMessageMaxBytes</value>
                             </list>
                         </entry>
 

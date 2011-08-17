@@ -572,6 +572,21 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                     }
                 }
             }
+
+            long maxBytes = 0L;
+            if (assertion.getResponseSize()== null){
+                maxBytes = com.l7tech.message.Message.getMaxBytes();
+            }
+            else{
+                String maxBytesString = ExpandVariables.process(assertion.getResponseSize(),vars,getAudit());
+                try{
+                    maxBytes = Long.parseLong(maxBytesString); // resolve var
+                }catch (NumberFormatException ex){
+                    logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), "Invalid response size limit: " + ExceptionUtils.getMessage(ex));
+                    return AssertionStatus.FAILED;
+                }
+            }
+
             long latencyTimerStart = System.currentTimeMillis();
             routedResponse = routedRequest.getResponse();
 
@@ -593,20 +608,6 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                         // TODO what to do with the cookie?
                     }
                 });
-            }
-
-            long maxBytes = 0;
-            if (assertion.getResponseSize()== null){
-                maxBytes = com.l7tech.message.Message.getMaxBytes();
-            }
-            else{
-                String maxBytesString = ExpandVariables.process(assertion.getResponseSize(),vars,getAudit());
-                try{
-                    maxBytes = Long.parseLong(maxBytesString); // resolve var
-                }catch (NumberFormatException ex){
-                    logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(ex));
-                    return AssertionStatus.FAILED;
-                }
             }
 
             boolean readOk = readResponse(context, routedResponse, routedResponseDestination, method == HttpMethod.HEAD, maxBytes);

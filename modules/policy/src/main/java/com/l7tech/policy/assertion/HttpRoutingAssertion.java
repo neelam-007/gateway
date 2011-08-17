@@ -56,9 +56,11 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
     @Deprecated 
     public static final String VAR_SERVICE_URL = "service.url";
 
-    // WARNING
-    // WARNING : If you add properties, update the copyFrom method
-    // WARNING
+    // TODO WARNING
+    // TODO WARNING
+    // TODO WARNING : If you add properties, update the copyFrom method
+    // TODO WARNING
+    // TODO WARNING
 
     protected String protectedServiceUrl;
     protected String login;
@@ -109,9 +111,11 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
     protected String tlsVersion;
     protected String tlsCipherSuites;
 
-    // WARNING
-    // WARNING : If you add properties, update the copyFrom method
-    // WARNING
+    // TODO WARNING
+    // TODO WARNING
+    // TODO WARNING : If you add properties, update the copyFrom method
+    // TODO WARNING
+    // TODO WARNING
 
     public HttpRoutingAssertion() {
         this(null, null, null, null);
@@ -149,6 +153,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         this.setRequestHeaderRules(source.getRequestHeaderRules());
         this.setRequestParamRules(source.getRequestParamRules());
         this.setResponseMsgDest(source.getResponseMsgDest());
+        this.setResponseSize(source.getResponseSize());
         this.setResponseHeaderRules(source.getResponseHeaderRules());
         this.setKrbConfiguredAccount(source.getKrbConfiguredAccount());
         this.setKrbConfiguredPassword(source.getKrbConfiguredPassword());

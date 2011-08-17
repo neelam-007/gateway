@@ -275,5 +275,5 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
     private String requestPriority;
     private String requestTimeToLive;
     private String responseTimeout = null;
-    protected String responseSize = "";
+    private String responseSize = null;
 }

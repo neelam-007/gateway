@@ -4,8 +4,6 @@ import com.l7tech.server.transport.email.asynch.PooledPollingEmailListenerImpl;
 import com.l7tech.gateway.common.transport.email.EmailListener;
 import org.springframework.context.ApplicationContext;
 
-import javax.mail.internet.MimeMessage;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -27,7 +25,6 @@ public class EmailListenerConfig {
     public EmailListenerConfig(final EmailListener emailListener,
                                final ApplicationContext appContext)
     {
-        super();
         this.emailListener = emailListener;
         this.appContext = appContext;
     }
@@ -46,7 +43,7 @@ public class EmailListenerConfig {
      * @return int value
      */
     public long getMaxMessageSize() {
-        return maxMessageSize.intValue();
+        return maxMessageSize.get();
     }
 
     /**

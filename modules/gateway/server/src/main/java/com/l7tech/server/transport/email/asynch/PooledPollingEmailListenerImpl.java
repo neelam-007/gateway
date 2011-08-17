@@ -39,20 +39,20 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
     /*
      * Is there a better place for these properties?
      */
-    protected static final String PROPERTY_ERROR_SLEEP = "ioEmailListenerErrorSleep";
-    protected static final String PROPERTY_MAX_SIZE = "io.EmailListenerMessageMaxBytes";
+    protected static final String PROPERTY_MAX_SIZE = "ioEmailMessageMaxBytes";
     protected static final int MAXIMUM_OOPSES = 5;
-    protected static final long RECEIVE_TIMEOUT = 5 * 1000;
-    protected static final long SHUTDOWN_TIMEOUT = 7 * 1000;
+    protected static final long RECEIVE_TIMEOUT = 5000L;
+    protected static final long SHUTDOWN_TIMEOUT = 7000L;
     protected static final int OOPS_RETRY = 5000; // Five seconds
     protected static final int DEFAULT_OOPS_SLEEP = 60 * 1000; // One minute
     protected static final int MIN_OOPS_SLEEP = 10 * 1000; // 10 seconds
     protected static final int MAX_OOPS_SLEEP = TimeUnit.DAYS.getMultiplier(); // 24 hours
     protected static final int OOPS_AUDIT = 15 * 60 * 1000; // 15 mins;
-    public static final long DEFAULT_MAX_SIZE = 5242880;
+    public static final long DEFAULT_MAX_SIZE = 5242880L;
 
     private EmailListenerConfig emailListenerCfg;
     private final ThreadPoolBean threadPoolBean;
+    private final Config config;
 
     private EmailListenerManager emailListenerManager;
 
@@ -111,10 +111,10 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
             emailSession = Session.getInstance(props);
         }
 
-        Config serverConfig = emailListenerCfg.getApplicationContext().getBean("serverConfig", ServerConfig.class);
-        emailListenerCfg.setMessageMaxSize(serverConfig.getLongProperty(PROPERTY_MAX_SIZE, DEFAULT_MAX_SIZE));
+        config = emailListenerCfg.getApplicationContext().getBean("serverConfig", ServerConfig.class);
+        emailListenerCfg.setMessageMaxSize(config.getLongProperty(PROPERTY_MAX_SIZE, DEFAULT_MAX_SIZE));
 
-        _logger.log(Level.WARNING, "Max size = " + emailListenerCfg.getMaxMessageSize());
+        _logger.log(Level.CONFIG, "Using email message max size " + emailListenerCfg.getMaxMessageSize() + ".");
 
         // create the ListenerThread
         this._listener = new ListenerThread();
@@ -227,7 +227,7 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
 
         try {
             long waitTime = SHUTDOWN_TIMEOUT - (System.currentTimeMillis() - stopRequestedTime);
-            if ( waitTime > 10 ) {
+            if ( waitTime > 10L ) {
                 _thread.join( SHUTDOWN_TIMEOUT );
             }
         } catch ( InterruptedException ie ) {
@@ -303,30 +303,13 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
     }
 
     @Override
-    public void propertyChange(PropertyChangeEvent evt)
+    public void propertyChange( final PropertyChangeEvent evt )
     {
-        if (PROPERTY_MAX_SIZE.equals(evt.getPropertyName())) {
-            String stringValue = (String) evt.getNewValue();
-            long newMaxSize = DEFAULT_MAX_SIZE;
-
-            try {
-                newMaxSize = Long.parseLong(stringValue);
-            } catch (NumberFormatException nfe) {
-                _logger.log(Level.WARNING, "Ignoring invalid email message max size ''{0}'' (using default).", stringValue);
-            }
-
-            if ( newMaxSize < 0 ) {
-                _logger.log(Level.WARNING, "Ignoring invalid email message max size ''{0}'' (using 0).", stringValue);
-                newMaxSize = 0;
-            }
-
-            emailListenerCfg.setMessageMaxSize(newMaxSize);
+        if ( PROPERTY_MAX_SIZE.equals(evt.getPropertyName()) ) {
+            final long newMaxSize = config.getLongProperty(PROPERTY_MAX_SIZE, DEFAULT_MAX_SIZE);
+            emailListenerCfg.setMessageMaxSize( newMaxSize );
             _logger.log(Level.CONFIG, "Updated email message max size to {0}.", newMaxSize);
         }
-
-        /*
-         * What about the thread pool cluster properties?
-         */
     }
 
     /**
@@ -361,12 +344,12 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
 
                         messages = emailFolder.search(new FlagTerm(new Flags(Flags.Flag.SEEN), false));
                        emailListenerManager.updateLastPolled(emailListenerCfg.getEmailListener().getOid());
-                        long minMessageId = emailListenerCfg.getEmailListener().getEmailListenerState().getLastMessageId() == null ? 0 : emailListenerCfg.getEmailListener().getEmailListenerState().getLastMessageId();
+                        long minMessageId = emailListenerCfg.getEmailListener().getEmailListenerState().getLastMessageId() == null ? 0L : emailListenerCfg.getEmailListener().getEmailListenerState().getLastMessageId();
                         for(Message m : messages) {
                             try {
                                 message = (MimeMessage)m;
 
-                                if(message.getMessageNumber() <= minMessageId) {
+                                if( (long) message.getMessageNumber() <= minMessageId) {
                                     continue; // Skip this message since it should have already been seen
                                 }
 
@@ -417,8 +400,8 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
                         emailListenerManager.updateState(emailListenerCfg.getEmailListener().getEmailListenerState());
 
                         long now = System.currentTimeMillis();
-                        if(now - startTime < emailListenerCfg.getEmailListener().getPollInterval() * 1000) {
-                            Thread.sleep(emailListenerCfg.getEmailListener().getPollInterval() * 1000 - (now - startTime));
+                        if(now - startTime < (long) (emailListenerCfg.getEmailListener().getPollInterval() * 1000) ) {
+                            Thread.sleep( (long) (emailListenerCfg.getEmailListener().getPollInterval() * 1000) - (now - startTime));
                         }
                     } catch ( Throwable e ) {
                         if (ExceptionUtils.causedBy(e, InterruptedException.class)) {
@@ -435,7 +418,7 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
                         if ( ++oopses < MAXIMUM_OOPSES ) {
                             // sleep for a short period of time before retrying
                             try {
-                                Thread.sleep(OOPS_RETRY);
+                                Thread.sleep( (long) OOPS_RETRY );
                             } catch ( InterruptedException e1 ) {
                                 log(Level.INFO, EmailMessages.INFO_LISTENER_POLLING_INTERRUPTED, new Object[] {"retry interval"});
                             }
@@ -446,7 +429,7 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
                             log(Level.WARNING, EmailMessages.WARN_LISTENER_MAX_OOPS_REACHED, new Object[] {emailListenerCfg.getEmailListener().getName(), MAXIMUM_OOPSES, sleepTime });
 
                             try {
-                                Thread.sleep(sleepTime);
+                                Thread.sleep( (long) sleepTime );
                             } catch ( InterruptedException e1 ) {
                                 log(Level.INFO, EmailMessages.INFO_LISTENER_POLLING_INTERRUPTED, new Object[] {"sleep interval"});
                             }
@@ -491,7 +474,7 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
         if (emailListenerCfg.getApplicationContext() != null) {
             long timeNow = System.currentTimeMillis();
 
-            if ((lastAuditErrorTime + OOPS_AUDIT) < timeNow) {
+            if ((lastAuditErrorTime + (long) OOPS_AUDIT) < timeNow) {
                 lastAuditErrorTime = timeNow;
                 emailListenerCfg.getApplicationContext().publishEvent(event);
 

@@ -19,7 +19,7 @@ public class SimpleRawTransportAssertion extends RoutingAssertion implements Use
 
     private MessageTargetableSupport responseTarget = new MessageTargetableSupport(TargetMessageType.RESPONSE, true);
     private MessageTargetableSupport requestTarget = new MessageTargetableSupport(TargetMessageType.REQUEST, false);
-    private String maxResponseBytes = Long.toString(DEFAULT_RESPONSE_SIZE_LIMIT);
+    private String maxResponseBytesText = Long.toString(DEFAULT_RESPONSE_SIZE_LIMIT);
     private String responseContentType = "text/xml; charset=UTF-8";
     private int writeTimeoutMillis = DEFAULT_WRITE_TIMEOUT;
     private int readTimeoutMillis = DEFAULT_READ_TIMEOUT;
@@ -89,12 +89,18 @@ public class SimpleRawTransportAssertion extends RoutingAssertion implements Use
         this.requestTarget = requestTarget;
     }
 
-    public String getMaxResponseBytes() {
-        return maxResponseBytes;
+    public String getMaxResponseBytesText() {
+        return maxResponseBytesText;
     }
 
-    public void setMaxResponseBytes(String maxResponseBytes) {
-        this.maxResponseBytes = maxResponseBytes;
+    public void setMaxResponseBytesText( String maxResponseBytesText ) {
+        this.maxResponseBytesText = maxResponseBytesText;
+    }
+
+    public void setMaxResponseBytes( long maxResponseBytes ) {
+        if ( maxResponseBytes >= 0L ) {
+            this.maxResponseBytesText = Long.toString( maxResponseBytes );
+        }
     }
 
     public int getWriteTimeoutMillis() {
@@ -173,7 +179,7 @@ public class SimpleRawTransportAssertion extends RoutingAssertion implements Use
         return requestTarget.getMessageTargetVariablesUsed().withExpressions(
             responseContentType,
             targetHost,
-            maxResponseBytes
+                maxResponseBytesText
         ).asArray();
     }
 

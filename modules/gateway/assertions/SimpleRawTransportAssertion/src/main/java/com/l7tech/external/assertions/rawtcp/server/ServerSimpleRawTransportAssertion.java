@@ -100,7 +100,10 @@ public class ServerSimpleRawTransportAssertion extends AbstractServerAssertion<S
         OutputStream outputStream;
         InputStream inputStream = null;
         try {
-            String targetHost = ExpandVariables.process(assertion.getTargetHost(), vars, getAudit(), true);
+            final String targetHost = ExpandVariables.process(assertion.getTargetHost(), vars, getAudit(), true);
+            final long maxResponseSize = assertion.getMaxResponseBytesText()== null ?
+                    Message.getMaxBytes() :
+                    Long.parseLong(ExpandVariables.process(assertion.getMaxResponseBytesText(), vars, getAudit(), true));
             sock = socketFactory.createSocket(InetAddress.getByName(targetHost), assertion.getTargetPort());
             sock.setSoTimeout(assertion.getWriteTimeoutMillis());
             inputStream = request == null
@@ -117,7 +120,6 @@ public class ServerSimpleRawTransportAssertion extends AbstractServerAssertion<S
                         ? responseContentType
                         : ContentTypeHeader.create(ExpandVariables.process(responseContentTypeTemplate, vars, getAudit(), true));
 
-                long maxResponseSize = assertion.getMaxResponseBytes()== null ? Message.getMaxBytes(): Long.parseLong(assertion.getMaxResponseBytes());
                 response.initialize(stashManagerFactory.createStashManager(), contentType, new ByteLimitInputStream(new BufferedInputStream(sock.getInputStream()), 1024,maxResponseSize),maxResponseSize);
                 final Socket finalSock = sock;
                 sock = null; // defer closing response socket until end of request, so we might be able to stream it

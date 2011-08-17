@@ -257,11 +257,6 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                         });
                     }
 
-                    HeaderHolder hh = new HeaderHolder();
-                    long[] latencyHolder = new long[]{-1};
-                    PolicyApplicationContext pac = newPolicyApplicationContext(context, bridgeRequest, bridgeResponse, pak, origUrl, hh, latencyHolder);
-                    messageProcessor.processMessage(pac);
-
                     // enforce xml size limit
                     long xmlSizeLimit = 0;
                     if (assertion.getResponseSize()== null){
@@ -272,10 +267,16 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                         try{
                             xmlSizeLimit = Long.parseLong(maxBytesString); // resolve var
                         }catch (NumberFormatException ex){
-                            logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(ex));
+                            logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), "Invalid response size limit: " + ExceptionUtils.getMessage(ex));
                             return AssertionStatus.FAILED;
                         }
                     }
+
+                    HeaderHolder hh = new HeaderHolder();
+                    long[] latencyHolder = new long[]{-1};
+                    PolicyApplicationContext pac = newPolicyApplicationContext(context, bridgeRequest, bridgeResponse, pak, origUrl, hh, latencyHolder);
+                    messageProcessor.processMessage(pac);
+
                     bridgeResponse.getMimeKnob().setContentLengthLimit(xmlSizeLimit);
 
                     final HttpResponseKnob hrk = bridgeResponse.getKnob(HttpResponseKnob.class);

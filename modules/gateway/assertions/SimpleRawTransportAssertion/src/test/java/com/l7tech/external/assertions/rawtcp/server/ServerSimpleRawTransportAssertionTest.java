@@ -39,7 +39,7 @@ public class ServerSimpleRawTransportAssertionTest {
 
     @Test
     public void testFeatureSetName() throws Exception {
-        assertEquals("assertion:SimpleRawTransport", new SimpleRawTransportAssertion().getFeatureSetName());
+        assertEquals( "assertion:SimpleRawTransport", new SimpleRawTransportAssertion().getFeatureSetName() );
     }
 
     @Test
@@ -47,7 +47,7 @@ public class ServerSimpleRawTransportAssertionTest {
         SimpleRawTransportAssertion ass = new SimpleRawTransportAssertion();
         ass.setTargetHost("127.0.0.3");
         ass.setTargetPort(2323);
-        ass.setMaxResponseBytes("0");
+        ass.setMaxResponseBytesText( "0" );
 
         final String responseStr = "<response/>";
         final String requestStr = "<blah/>";
@@ -75,7 +75,7 @@ public class ServerSimpleRawTransportAssertionTest {
         SimpleRawTransportAssertion ass = new SimpleRawTransportAssertion();
         ass.setTargetHost("127.0.0.3");
         ass.setTargetPort(2323);
-        ass.setMaxResponseBytes("20");
+        ass.setMaxResponseBytesText( "20" );
 
         final String responseStr = "<response/>";
         final String requestStr = "<blah/>";
@@ -103,14 +103,39 @@ public class ServerSimpleRawTransportAssertionTest {
         SimpleRawTransportAssertion ass = new SimpleRawTransportAssertion();
         ass.setTargetHost("127.0.0.3");
         ass.setTargetPort(2323);
-        ass.setMaxResponseBytes("10");
+        ass.setMaxResponseBytesText( "11" );
         ass.setResponseContentType("text/xml");
 
         ServerSimpleRawTransportAssertion sass = new ServerSimpleRawTransportAssertion(ass, null);
         final StubSocketImpl sockimp = new StubSocketImpl(new ByteArrayInputStream("<response/>".getBytes()), new ByteArrayOutputStream());
         sass.socketFactory = new StubSocketFactory(new StubSocket(sockimp));
         AssertionStatus result = sass.checkRequest(context("<blah/>"));
-        assertEquals(AssertionStatus.FAILED, result);
+        assertEquals( AssertionStatus.FAILED, result );
+    }
+
+    @Test
+    @BugNumber(6407)
+    public void testResponseSizeLimitSuccessFromVariable() throws Exception {
+        testWithResponseSizeLimitVariable( 11, AssertionStatus.FAILED );
+        testWithResponseSizeLimitVariable( 12, AssertionStatus.NONE );
+    }
+
+    private void testWithResponseSizeLimitVariable( final int sizeLimit,
+                                                    final AssertionStatus expectedStatus ) throws Exception {
+        SimpleRawTransportAssertion ass = new SimpleRawTransportAssertion();
+        ass.setTargetHost("127.0.0.3");
+        ass.setTargetPort(2323);
+        ass.setMaxResponseBytesText( "${limit}" );
+        ass.setResponseContentType("text/xml");
+
+        ServerSimpleRawTransportAssertion sass = new ServerSimpleRawTransportAssertion(ass, null);
+        final StubSocketImpl sockimp = new StubSocketImpl(new ByteArrayInputStream("<response/>".getBytes()), new ByteArrayOutputStream());
+        sass.socketFactory = new StubSocketFactory(new StubSocket(sockimp));
+        final PolicyEnforcementContext policyEnforcementContext = context( "<blah/>" );
+        policyEnforcementContext.setVariable( "limit", sizeLimit );
+        AssertionStatus result = sass.checkRequest( policyEnforcementContext );
+        assertEquals(expectedStatus, result);
+
     }
 
     @Test
