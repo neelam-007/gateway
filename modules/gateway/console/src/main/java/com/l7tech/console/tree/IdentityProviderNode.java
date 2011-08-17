@@ -73,6 +73,7 @@ public class IdentityProviderNode extends EntityHeaderNode<EntityHeader> {
                 newUserAction.setEnabled(true);
                 newGroupAction.setEnabled(true);
                 newVirtualGroupAction.setEnabled(true);
+                list.add(new CopyFederatedIdentityProviderAction(this));
             } else {
                 // the actions here is dummy as they are always disabled from the beginning
                 // this is currently for LDAP user
@@ -82,6 +83,7 @@ public class IdentityProviderNode extends EntityHeaderNode<EntityHeader> {
                 newUserAction.setEnabled(false);
                 newGroupAction.setEnabled(false);
                 newVirtualGroupAction.setEnabled(false);
+                list.add(new CopyLdapProviderAction(this));
             }
 
             list.add(newUserAction);

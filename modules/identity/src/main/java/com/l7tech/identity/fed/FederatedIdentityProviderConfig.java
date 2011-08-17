@@ -28,6 +28,14 @@ import org.hibernate.annotations.Proxy;
 @Proxy(lazy=false)
 @DiscriminatorValue("3")
 public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
+
+    public FederatedIdentityProviderConfig(IdentityProviderConfig other) {
+        super(IdentityProviderType.FEDERATED);
+        this._version = other.getVersion();
+	    this._oid = other.getOid();
+        copyFrom(other);
+    }
+
     public FederatedIdentityProviderConfig() {
         super(IdentityProviderType.FEDERATED);
     }

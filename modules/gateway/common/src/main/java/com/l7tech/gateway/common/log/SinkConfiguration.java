@@ -431,6 +431,17 @@ public class SinkConfiguration extends NamedEntityImp {
         return result;
     }
 
+    public void copyFrom( SinkConfiguration objToCopy ) {
+        this.setOid(objToCopy.getOid());
+        this.setName(objToCopy.getName());
+        this.setDescription(objToCopy.getDescription());
+        this.setType(objToCopy.getType());
+        this.setEnabled(objToCopy.isEnabled());
+        this.setSeverity(objToCopy.getSeverity());
+        this.setCategories(objToCopy.getCategories());
+        this.setXmlProperties(objToCopy.getXmlProperties());
+    }
+
     /**
      * Represents one host:port entry in the Syslog host list.
      */

@@ -254,4 +254,26 @@ public class UDDIRegistry extends NamedEntityImp {
     public void setSubscribeForNotifications(boolean subscribeForNotifications) {
         isSubscribeForNotifications = subscribeForNotifications;
     }
+
+    public void copyFrom (UDDIRegistry copyFrom){
+        this.setOid(copyFrom.getOid());
+        this.setName(copyFrom.getName());
+        this.setEnabled(copyFrom.isEnabled());
+        this.setUddiRegistryType(copyFrom.getUddiRegistryType());
+        this.setBaseUrl(copyFrom.getBaseUrl());
+        this.setInquiryUrl(copyFrom.getInquiryUrl());
+        this.setPublishUrl(copyFrom.getPublishUrl());
+        this.setSecurityUrl(copyFrom.getSecurityUrl());
+        this.setSubscriptionUrl(copyFrom.getSubscriptionUrl());
+        this.setClientAuth(copyFrom.isClientAuth());
+        this.setKeystoreOid(copyFrom.getKeystoreOid());
+        this.setKeyAlias(copyFrom.getKeyAlias());
+        this.setRegistryAccountUserName(copyFrom.getRegistryAccountUserName());
+        this.setRegistryAccountPassword(copyFrom.getRegistryAccountPassword());
+        this.setMetricsEnabled(copyFrom.isMetricsEnabled());
+        this.setMetricPublishFrequency(copyFrom.getMetricPublishFrequency());
+        this.setMonitoringEnabled(copyFrom.isMonitoringEnabled());
+        this.setMonitoringFrequency(copyFrom.getMonitoringFrequency());
+        this.setSubscribeForNotifications(copyFrom.isSubscribeForNotifications());
+    }
 }

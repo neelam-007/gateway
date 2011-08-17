@@ -37,6 +37,7 @@ public class LogSinkManagerWindow extends JDialog {
     private JButton propertiesButton;
     private JButton closeButton;
     private JButton auditSinkButton;
+    private JButton copyButton;
     private LogSinkTable logSinkTable;
 
     private PermissionFlags flags;
@@ -117,6 +118,12 @@ public class LogSinkManagerWindow extends JDialog {
             }
         });
 
+        copyButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                doCopy();
+            }
+        });
+
         removeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 doRemove();
@@ -184,6 +191,14 @@ public class LogSinkManagerWindow extends JDialog {
 
     private void doCreate() {
         editAndSave(new SinkConfiguration());
+    }
+
+    private void doCopy() {
+        SinkConfiguration sinkConfiguration = logSinkTable.getSelectedConnector();
+        SinkConfiguration newSinkConfiguration = new SinkConfiguration();
+        newSinkConfiguration.copyFrom(sinkConfiguration);
+        newSinkConfiguration.setOid(SinkConfiguration.DEFAULT_OID);
+        editAndSave(newSinkConfiguration);
     }
 
     private void doProperties() {

@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
@@ -20,6 +21,7 @@ import java.awt.event.ActionEvent;
 import java.util.ResourceBundle;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.text.MessageFormat;
 
@@ -39,6 +41,7 @@ public class JdbcConnectionManagerWindow extends JDialog {
     private JButton removeButton;
     private JButton closeButton;
     private JTable connectionTable;
+    private JButton copyButton;
 
     private java.util.List<JdbcConnection> connectionList = new ArrayList<JdbcConnection>();
     private AbstractTableModel connectionTableModel;
@@ -70,6 +73,13 @@ public class JdbcConnectionManagerWindow extends JDialog {
             @Override
             public void actionPerformed(ActionEvent e) {
                 doAdd();
+            }
+        });
+
+        copyButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                doCopy();
             }
         });
 
@@ -203,6 +213,16 @@ public class JdbcConnectionManagerWindow extends JDialog {
         editAndSave(connection);
     }
 
+    private void doCopy() {
+        int selectedRow = connectionTable.getSelectedRow();
+        if (selectedRow < 0) return;
+
+        JdbcConnection newConnection = new JdbcConnection();
+        newConnection.copyFrom(connectionList.get(selectedRow));
+        newConnection.setOid(JdbcConnection.DEFAULT_OID);
+        editAndSave(newConnection);
+    }
+
     private void doEdit() {
         int selectedRow = connectionTable.getSelectedRow();
         if (selectedRow < 0) return;
@@ -218,13 +238,23 @@ public class JdbcConnectionManagerWindow extends JDialog {
             @Override
             public void run() {
                 if (dlg.isConfirmed()) {
+                    Runnable reedit = new Runnable() {
+                        public void run() {
+                            loadJdbcConnectionList();
+                            editAndSave(connection);
+                        }
+                    };
+
                     // Save the connection
                     JdbcAdmin admin = getJdbcConnectionAdmin();
                     if (admin == null) return;
                     try {
                         admin.saveJdbcConnection(connection);
                     } catch (UpdateException e) {
-                        logger.warning("Cannot save a JDBC connection, " + connection.getName());
+                        showErrorMessage(resources.getString("errors.saveFailed.title"),
+                                resources.getString("errors.saveFailed.message") + " " + ExceptionUtils.getMessage(e),
+                                e,
+                                reedit);
                         return;
                     }
 
@@ -246,6 +276,11 @@ public class JdbcConnectionManagerWindow extends JDialog {
                 }
             }
         });
+    }
+
+    private void showErrorMessage(String title, String msg, Throwable e, Runnable continuation) {
+        logger.log(Level.WARNING, msg, e);
+        DialogDisplayer.showMessageDialog(this, msg, title, JOptionPane.ERROR_MESSAGE, continuation);
     }
 
     private void doRemove() {

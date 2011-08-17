@@ -3,10 +3,7 @@ package com.l7tech.gateway.common.jdbc;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.policy.wsp.WspSensitive;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.PoolByteArrayOutputStream;
-import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.*;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
@@ -200,5 +197,18 @@ public class JdbcConnection extends NamedEntityImp implements Comparable {
 
         if (originalConnectionName == null || comparedConnectionName == null) throw new NullPointerException("JDBC connection name must not be null.");
         return originalConnectionName.compareToIgnoreCase(comparedConnectionName);
+    }
+
+    public void copyFrom(JdbcConnection other) {
+        this.setOid(other.getOid());
+        this.setName(other.getName());
+        this.setDriverClass(other.getDriverClass());
+        this.setJdbcUrl(other.getJdbcUrl());
+        this.setUserName(other.getUserName());
+        this.setPassword(other.getPassword());
+        this.setMinPoolSize(other.getMinPoolSize());
+        this.setMaxPoolSize(other.getMaxPoolSize());
+        this.setEnabled(other.isEnabled());
+        this.setSerializedProps(other.additionalPropsXml);
     }
 }

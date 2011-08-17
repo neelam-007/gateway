@@ -38,6 +38,7 @@ public class SsgConnectorManagerWindow extends JDialog {
     private JLabel conflictLabel;
     private JButton interfacesButton;
     private JButton serviceResolutionButton;
+    private JButton copyButton;
     private ConnectorTable connectorTable;
 
     private PermissionFlags flags;
@@ -95,6 +96,13 @@ public class SsgConnectorManagerWindow extends JDialog {
             @Override
             public void actionPerformed(ActionEvent e) {
                 doCreate();
+            }
+        });
+
+        copyButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                doCopy();
             }
         });
 
@@ -175,6 +183,18 @@ public class SsgConnectorManagerWindow extends JDialog {
         connector.putProperty(SsgConnector.PROP_TLS_CIPHERLIST, cipherlist.toString());
 
         editAndSave(connector, connector.getReadOnlyCopy());
+    }
+
+
+    private void doCopy() {
+        final SsgConnector connector = connectorTable.getSelectedConnector();
+        if (connector == null)
+            return;
+
+        SsgConnector newConnector = connector.getCopy();
+        newConnector.setOid(SsgConnector.DEFAULT_OID);
+        editAndSave(newConnector, newConnector.getReadOnlyCopy());
+
     }
 
     private void doProperties() {

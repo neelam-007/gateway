@@ -31,6 +31,7 @@ public class UddiRegistryManagerWindow extends JDialog {
     private JButton propertiesButton;
     private JButton closeButton;
     private JScrollPane mainScrollPane;
+    private JButton copyButton;
     private UddiRegistryTable uddiRegistryTable;
 
     private PermissionFlags flags;
@@ -93,6 +94,13 @@ public class UddiRegistryManagerWindow extends JDialog {
             }
         });
 
+        copyButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                doCopy();
+            }
+        });
+
         removeButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -117,6 +125,14 @@ public class UddiRegistryManagerWindow extends JDialog {
     private void doCreate() {
         final UDDIRegistry uddiRegistry = new UDDIRegistry();
         editAndSave(uddiRegistry);
+    }
+
+    private void doCopy() {
+        UDDIRegistry uddiRegistry = uddiRegistryTable.getSelectedUddiRegistry();
+        UDDIRegistry newUddiRegistry = new UDDIRegistry();
+        newUddiRegistry.copyFrom(uddiRegistry);
+        newUddiRegistry.setOid(UDDIRegistry.DEFAULT_OID);
+        editAndSave(newUddiRegistry);
     }
 
     private void doRemove() {

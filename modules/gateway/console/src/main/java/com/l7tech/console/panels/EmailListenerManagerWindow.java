@@ -41,6 +41,7 @@ public class EmailListenerManagerWindow extends JDialog {
     private JButton closeButton;
     private JScrollPane mainScrollPane;
     private JPanel contentPane;
+    private JButton copyButton;
     private EmailListenerTable emailListenerTable;
 
     private PermissionFlags flags;
@@ -121,6 +122,12 @@ public class EmailListenerManagerWindow extends JDialog {
             }
         });
 
+        copyButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                doCopy();
+            }
+        });
+
         removeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 doRemove();
@@ -168,6 +175,13 @@ public class EmailListenerManagerWindow extends JDialog {
 
     private void doCreate() {
         editAndSave(new EmailListener(EmailServerType.POP3));
+    }
+
+    private void doCopy() {
+        EmailListener emailListener = emailListenerTable.getSelectedEmailListener();
+        EmailListener newEmailListener = new EmailListener(emailListener);
+        newEmailListener.setOid(EmailListener.DEFAULT_OID);
+        editAndSave(newEmailListener);
     }
 
     private void doProperties() {
