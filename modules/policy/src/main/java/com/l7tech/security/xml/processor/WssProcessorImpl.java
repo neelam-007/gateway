@@ -1243,7 +1243,7 @@ public class WssProcessorImpl implements WssProcessor {
                 }
 
                 if (ek == null) {
-                    throw new InvalidDocumentFormatException("DerivedKey KeyIdentifier refers to an unknown SAML assertion");
+                    throw new InvalidDocumentFormatException("DerivedKey KeyIdentifier refers to an unknown SAML assertion '"+samlAssertionId+"'");
                 }
 
                 derivationSource = ek;
