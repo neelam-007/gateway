@@ -369,7 +369,10 @@ sub deleteLocalWorld() {
 sub lookupKmpKeystoreId() {
     die "File not found: " . KMPFILE unless -f KMPFILE;
     my $kmpcontents = slurpFile(KMPFILE);
-    my %props = map { split /=/ } split /[\015\012]+/, $kmpcontents;
+    my %props = map {
+        my ($k, $v) = split /=/;
+        $k ? ($k, $v || "") : ();
+    } split /[\015\012]+/, $kmpcontents;
     my $b64 = $props{'keystore.contents.base64'};
     return $b64 ? decode_base64($b64) : undef;
 }
