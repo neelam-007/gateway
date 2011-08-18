@@ -230,7 +230,7 @@ public class TrustedCertificateResolver implements SecurityTokenResolver, Applic
     public void putSecretKeyByTokenIdentifier( final String type,
                                                final String identifier,
                                                final byte[] secretKey ) {
-        if (encryptedKeyCacheEnabled.get()) encryptedKeyCache.store(new SecretKeyKey( type, identifier ), secretKey);
+        if (encryptedKeyCacheEnabled.get()) store(encryptedKeyCache, new SecretKeyKey( type, identifier ), secretKey);
     }
 
     /**
@@ -252,6 +252,22 @@ public class TrustedCertificateResolver implements SecurityTokenResolver, Applic
                 keyCache = null;
             }
         }
+    }
+
+    /**
+     * Store an item in the cache.
+     *
+     * This method "uses" the stored value, to ensure that it has the desired
+     * ordering with in the cache. This prevents recently added (but never
+     * accessed) items from being removed first.
+     *
+     * If the item is removed from the cache between the storage and the initial
+     * retrieval then it will be re-added to the cache.
+     */
+    private static void store( final Cache encryptedKeyCache, final Object key, final Object value ) {
+        do {
+            encryptedKeyCache.store( key, value );
+        } while ( encryptedKeyCache.retrieve( key ) == null );
     }
 
     private static final class SecretKeyKey {
