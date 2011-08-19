@@ -70,7 +70,7 @@ public class TrustedCertificateResolver implements SecurityTokenResolver, Applic
                                                            cacheSize,
                                                            127,
                                                            WhirlycacheFactory.POLICY_LRU);
-        logger.info("Initializing ephemeral key cache with size " + cacheSize + " and POLICY_LRU");
+        logger.info("Initializing ephemeral key cache with size " + cacheSize);
 
         Background.scheduleRepeated(new TimerTask() {
             @Override
