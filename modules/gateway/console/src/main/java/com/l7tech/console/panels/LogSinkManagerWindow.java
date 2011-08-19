@@ -251,6 +251,7 @@ public class LogSinkManagerWindow extends JDialog {
         createButton.setEnabled(flags.canCreateSome());
         propertiesButton.setEnabled(haveSel);
         removeButton.setEnabled(haveSel && flags.canDeleteSome());
+        copyButton.setEnabled(haveSel && flags.canCreateSome());
     }
 
     private void showErrorMessage(String title, String msg, Throwable e) {

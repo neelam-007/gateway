@@ -353,6 +353,7 @@ public class SsgConnectorManagerWindow extends JDialog {
         createButton.setEnabled(flags.canCreateSome());
         propertiesButton.setEnabled(haveSel);
         removeButton.setEnabled(haveSel && flags.canDeleteSome());
+        copyButton.setEnabled(haveSel && flags.canCreateSome());
     }
 
     /** @return the TransportAdmin interface, or null if not connected or it's unavailable for some other reason */

@@ -301,6 +301,7 @@ public class UddiRegistryManagerWindow extends JDialog {
         createButton.setEnabled(flags.canCreateSome());
         propertiesButton.setEnabled(haveSel);
         removeButton.setEnabled(haveSel && flags.canDeleteSome());
+        copyButton.setEnabled(haveSel && flags.canCreateSome());
     }
 
     private static class UddiRegistryTable extends JTable {

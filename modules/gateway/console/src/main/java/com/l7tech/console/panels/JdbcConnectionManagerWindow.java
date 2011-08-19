@@ -330,9 +330,12 @@ public class JdbcConnectionManagerWindow extends JDialog {
         boolean addEnabled = true;
         boolean editEnabled = selectedRow >= 0;
         boolean removeEnabled = selectedRow >= 0;
+        boolean copyEnabled = selectedRow >= 0;
+
 
         addButton.setEnabled(flags.canCreateSome() && addEnabled);
         editButton.setEnabled(editEnabled);  // Not using flags.canUpdateSome(), since we still allow users to view the properties.
         removeButton.setEnabled(flags.canDeleteSome() && removeEnabled);
+        copyButton.setEnabled(flags.canCreateSome() && copyEnabled);
     }
 }
