@@ -278,8 +278,7 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
 
         regexAssertion.setAutoTarget(false);
         targetMessagePanel.updateModel(regexAssertion);
-
-        if (repeatReplacementCheckBox.isSelected()) {
+        if (repeatReplacementCheckBox.isSelected() && repeatCountField.getText() != null && repeatCountField.getText().trim().length() > 0) {
             regexAssertion.setReplaceRepeatCount(Integer.parseInt(repeatCountField.getText()));
         } else {
             regexAssertion.setReplaceRepeatCount(0);
