@@ -1142,6 +1142,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
     private LdapGroup getCachedGroup( final GroupCacheKey key ) {
         LdapGroup ldapGroup = null;
 
+        final Cache groupCache = this.groupCache;
         if ( groupCache != null ) {
             GroupCacheEntry entry = (GroupCacheEntry) groupCache.retrieve( key );
             if ( !isExpired(entry) ) {
