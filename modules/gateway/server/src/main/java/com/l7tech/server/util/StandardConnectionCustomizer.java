@@ -4,7 +4,6 @@ import com.mchange.v2.c3p0.ConnectionCustomizer;
 
 import java.sql.Connection;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
@@ -25,17 +24,21 @@ public class StandardConnectionCustomizer implements ConnectionCustomizer {
     public StandardConnectionCustomizer() {        
     }
 
+    @Override
     public void onAcquire( final Connection connection, final String dataSourceId ) throws Exception {
     }
 
+    @Override
     public void onDestroy( final Connection connection, final String dataSourceId ) throws Exception {
     }
 
+    @Override
     public void onCheckOut( final Connection connection, final String dataSourceId ) throws Exception {
-        connection.setAutoCommit( false );
-        connection.setTransactionIsolation( Connection.TRANSACTION_READ_COMMITTED );
+        connection.setAutoCommit( StandardConnectionCustomizer.autoCommit.get() );
+        connection.setTransactionIsolation( isolation.get() );
     }
 
+    @Override
     public void onCheckIn( final Connection connection, final String dataSourceId ) throws Exception {
     }
 
