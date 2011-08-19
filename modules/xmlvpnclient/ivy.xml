@@ -34,6 +34,8 @@
         <dependency org="org.mortbay.jetty" name="jetty-util" rev="6.1.26" force="true" conf="core"/>
         <dependency org="org.slf4j" name="slf4j-api" rev="1.6.1" force="true" conf="core"/>
         <dependency org="org.slf4j" name="slf4j-jdk14" rev="1.6.1" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="jcl-over-slf4j" rev="1.6.1" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="log4j-over-slf4j" rev="1.6.1" force="true" conf="core"/>
         <dependency org="snoozesoft" name="systray4j" rev="2.3.2" force="true" conf="core"/>
         <dependency org="junit" name="junit" rev="4.8.2" force="true" conf="test"/>
         <!-- For the XVC and Bridge API, we'll always use the FIPS version of RSA for the time being -->
@@ -44,6 +46,8 @@
 
         <!-- The XVC needs the signed version of bouncy castle because it uses it as a provider in some places. -->
         <exclude org="bouncycastle" module="bcprov-unsigned-jdk16" artifact="*" type="*" ext="jar" conf="*" matcher="exact" /> <!-- exclude unsigned BC jar -->
+        <exclude org="commons-logging" module="commons-logging" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
+        <exclude org="log4j" module="log4j" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
 
         <conflict org="org.slf4j" module="slf4j-api" rev="1.6.1"/>
     </dependencies>

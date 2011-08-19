@@ -37,7 +37,7 @@ public class ClusterAddressConfig {
     private static final String NODEPROPERTIES_CLUSTER_IP = "node.cluster.ip";
 
     public static void main(final String[] args) {
-        JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties", false, true);
+        JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties");
         try {
             File nodePropsFile = new File( MessageFormat.format(CONFIG_PATH, NODE), NODE_PROPS_FILE );
             if (nodePropsFile.exists()) {

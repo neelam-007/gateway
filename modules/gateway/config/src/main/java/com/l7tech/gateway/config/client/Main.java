@@ -54,7 +54,7 @@ public class Main {
         boolean success = false;
         int successCode = 0;
         System.setProperty("org.apache.cxf.nofastinfoset", "true");
-        JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties", false, true);
+        JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties");
 
         if ( !isStrongCryptoEnabledInJvm() ) {
             String message = "The Java virtual machine does not have strong cryptography enabled.  The unlimited strength juristiction JCE policy files may need to be installed.";

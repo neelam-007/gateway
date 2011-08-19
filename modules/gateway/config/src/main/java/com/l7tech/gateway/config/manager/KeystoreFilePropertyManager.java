@@ -43,7 +43,7 @@ public class KeystoreFilePropertyManager {
     private static class NoSuchObjectIdException extends Exception {}
 
     public static void main(final String[] argsArray) {
-        JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties", false, true);
+        JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties");
         int oid = -1;
         String action = "process";
         String propertyName = null;

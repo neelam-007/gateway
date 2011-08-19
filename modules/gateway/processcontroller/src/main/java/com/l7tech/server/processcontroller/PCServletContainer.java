@@ -12,6 +12,7 @@ import org.mortbay.jetty.servlet.Context;
 import org.mortbay.jetty.servlet.DefaultServlet;
 import org.mortbay.jetty.servlet.ServletHolder;
 import org.mortbay.log.Log;
+import org.mortbay.log.Slf4jLog;
 import org.mortbay.resource.Resource;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
@@ -46,10 +47,9 @@ import static com.l7tech.server.processcontroller.ConfigService.DEFAULT_SSL_REMO
 public class PCServletContainer implements ApplicationContextAware, InitializingBean, DisposableBean {
     public static final String INIT_PARAM_INSTANCE_ID = "httpTransportModuleInstanceId";
 
-    @SuppressWarnings({ "UnusedDeclaration" })
     private static final Logger logger = Logger.getLogger(PCServletContainer.class.getName());
 
-    private static final AtomicLong nextInstanceId = new AtomicLong(1);
+    private static final AtomicLong nextInstanceId = new AtomicLong(1L);
     private static final Map<Long, Reference<PCServletContainer>> instancesById =
             new ConcurrentHashMap<Long, Reference<PCServletContainer>>();
 
@@ -70,7 +70,7 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
         this.configService = configService;
 
         try {
-            Log.setLog( new JulLogger(PCServletContainer.class.getName() + ".SERVLET") );
+            Log.setLog( new Slf4jLog(PCServletContainer.class.getName() + ".SERVLET") );
         } catch ( Exception e ) {
             logger.log( Level.WARNING, "Error installing Jetty logger.", e );
         }
@@ -219,53 +219,6 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
     public static PCServletContainer getInstance(long id) {
         Reference<PCServletContainer> instance = instancesById.get(id);
         return instance == null ? null : instance.get();
-    }
-
-    private static final class JulLogger implements org.mortbay.log.Logger {
-        private final Logger logger;
-
-        public JulLogger( final String name ) {
-            logger = Logger.getLogger( name );
-        }
-
-        @Override
-        public void debug(String msg, Object arg0, Object arg1) {
-            logger.log( Level.FINE, msg, new Object[]{arg0, arg1} );
-        }
-
-        @Override
-        public void debug(String msg, Throwable th) {
-            logger.log( Level.FINE, msg, ExceptionUtils.getDebugException(th) );
-        }
-
-        @Override
-        public org.mortbay.log.Logger getLogger(String name) {
-            return new JulLogger(name);
-        }
-
-        @Override
-        public void info(String msg, Object arg0, Object arg1) {
-            logger.log( Level.INFO, msg, new Object[]{arg0, arg1} );
-        }
-
-        @Override
-        public boolean isDebugEnabled() {
-            return false;
-        }
-
-        @Override
-        public void setDebugEnabled(boolean enabled) {
-        }
-
-        @Override
-        public void warn(String msg, Object arg0, Object arg1) {
-            logger.log( Level.WARNING, msg, new Object[]{arg0, arg1} );
-        }
-
-        @Override
-        public void warn(String msg, Throwable th) {
-            logger.log( Level.WARNING, msg, th );
-        }
     }
 
     private static final class SimpleSslSocketConnector extends SslSocketConnector {

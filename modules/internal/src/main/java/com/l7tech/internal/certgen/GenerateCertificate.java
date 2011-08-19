@@ -233,7 +233,7 @@ public class GenerateCertificate {
     }
 
     public static void main(String[] rawArgs) {
-        JdkLoggerConfigurator.configure(GenerateCertificate.class.getName(), null, null, false, true);
+        JdkLoggerConfigurator.configure(GenerateCertificate.class.getName(), null);
         System.setProperty("com.l7tech.common.security.jceProviderEngineName", "BC");
 
         try {

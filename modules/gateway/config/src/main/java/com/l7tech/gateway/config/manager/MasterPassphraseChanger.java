@@ -53,7 +53,7 @@ public class MasterPassphraseChanger {
     }
 
     public static void main(String[] argv) {
-        JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties", false, true);
+        JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties");
         try {
             LinkedList<String> args = new LinkedList<String>(Arrays.asList(argv));
 

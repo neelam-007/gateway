@@ -84,7 +84,7 @@ public class ConfigurationWizard {
     private static final Logger logger = Logger.getLogger(ConfigurationWizard.class.getName());
 
     private void initLogging() {
-        JdkLoggerConfigurator.configure(L7TECH_CLASSNAME, "com/l7tech/server/config/resources/logging.properties", LOGCONFIG_NAME, false, true);
+        JdkLoggerConfigurator.configure(L7TECH_CLASSNAME, "com/l7tech/server/config/resources/logging.properties", LOGCONFIG_NAME);
     }
 
     private void addSteps(List<ConfigWizardConsoleStep> steps) {

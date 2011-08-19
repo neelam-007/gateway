@@ -32,6 +32,8 @@
         <dependency org="bouncycastle" name="bcpg-jdk16" rev="1.46" force="true" conf="core"/>
         <dependency org="org.slf4j" name="slf4j-api" rev="1.6.1" force="true" conf="core"/>
         <dependency org="org.slf4j" name="slf4j-jdk14" rev="1.6.1" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="jcl-over-slf4j" rev="1.6.1" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="log4j-over-slf4j" rev="1.6.1" force="true" conf="core"/>
         <dependency org="org.apache.wicket" name="wicket" rev="1.4.5" force="true" conf="core"/>
         <dependency org="org.apache.wicket" name="wicket-ioc" rev="1.4.5" force="true" conf="core"/>
         <dependency org="org.apache.wicket" name="wicket-spring" rev="1.4.5" force="true" conf="core">
@@ -63,6 +65,8 @@
 
         <!-- This needs the signed version of bouncy castle because it registers it as a provider. -->
         <exclude org="bouncycastle" module="bcprov-unsigned-jdk16" artifact="*" type="*" ext="jar" conf="*" matcher="exact" />
+        <exclude org="commons-logging" module="commons-logging" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
+        <exclude org="log4j" module="log4j" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
 
         <override org="antlr" module="antlr" matcher="exact" rev="2.7.7-l7p1"/>
 

@@ -29,7 +29,6 @@
         <dependency name="layer7-wsdl" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-policy-exporter" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-test" rev="latest.integration" force="true" conf="test"/>
-        <dependency org="log4j" name="log4j" rev="1.2.16" force="true" conf="core"/>
         <dependency org="antlr" name="antlr" rev="2.7.7-l7p1" force="true" conf="core"/>
         <!-- This is included for handling of runtime exceptions and at compile time for annotations -->
         <dependency org="org.hibernate" name="hibernate-core" rev="3.6.1.Final" force="true" conf="core->master"/>
@@ -50,12 +49,19 @@
         <dependency org="com.rsa" name="jsafe-jce-fips" rev="4.1" force="true" conf="core"/>
         <dependency org="com.rsa" name="certj" rev="3.1" force="true" conf="core"/>
         <dependency org="com.rsa" name="sslj" rev="5.1.1" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="slf4j-api" rev="1.6.1" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="slf4j-jdk14" rev="1.6.1" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="jcl-over-slf4j" rev="1.6.1" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="log4j-over-slf4j" rev="1.6.1" force="true" conf="core"/>
+
         <dependency org="junit" name="junit" rev="4.8.2" force="true" conf="test"/>
         <dependency org="bouncycastle" name="bcprov-unsigned-jdk16" rev="1.46" force="true" conf="core"/> <!-- use unsigned BC jar to avoid applet trusted issues -->
 
         <exclude org="bouncycastle" module="bcprov-jdk16" artifact="*" type="*" ext="jar" conf="*" matcher="exact" />  <!-- exclude signed BC jar -->
         <exclude org="asm" module="asm" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="asm" module="asm-attrs" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
+        <exclude org="commons-logging" module="commons-logging" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
+        <exclude org="log4j" module="log4j" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="xerces" module="xmlParserAPIs" artifact="*" type="*" ext="jar" conf="*" matcher="exact" />
     </dependencies>
 </ivy-module>

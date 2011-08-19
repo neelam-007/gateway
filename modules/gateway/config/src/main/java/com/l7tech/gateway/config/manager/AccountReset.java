@@ -30,7 +30,7 @@ public class AccountReset {
     private static final PasswordHasher passwordHasher = new Sha512CryptPasswordHasher();
 
     public static void main(String[] args) {
-        JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties", false, true);
+        JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties");
         try {
             new AccountReset().run();
         } catch (Throwable e) {

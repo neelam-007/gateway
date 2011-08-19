@@ -22,9 +22,6 @@ import java.util.logging.LogManager;
 public class Main {
 
     private static void initLogging(String configPath) {
-        // apache logging layer to use the jdk logger
-        System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
-
         // Software-only TransformerFactory to ignore the alluring Tarari impl, even if tarari_raxj.jar is sitting right there
         System.setProperty("javax.xml.transform.TransformerFactory", "org.apache.xalan.processor.TransformerFactoryImpl");
         

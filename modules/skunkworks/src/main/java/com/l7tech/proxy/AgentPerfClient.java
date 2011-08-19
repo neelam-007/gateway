@@ -38,9 +38,6 @@ public class AgentPerfClient {
      * will have somewhere to go.  Also calls JceProvider.init().
      */
     protected static void initLogging() {
-        // apache logging layer to use the jdk logger
-        SyspropUtil.setProperty( "org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger" );
-
         // Prepare .l7tech directory before initializing logging (Bug #1288)
         new File(Ssg.PROXY_CONFIG).mkdirs(); // expected to fail on all but the very first execution
 

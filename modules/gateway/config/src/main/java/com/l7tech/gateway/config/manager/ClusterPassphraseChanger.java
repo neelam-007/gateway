@@ -39,7 +39,7 @@ public class ClusterPassphraseChanger {
     private static final String CONFIG_PATH = SyspropUtil.getString("com.l7tech.config.path", DEFAULT_CONFIG_PATH);
 
     public static void main(final String[] args) {
-        JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties", false, true);
+        JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties");
         try {
             new ClusterPassphraseChanger().run(MessageFormat.format(CONFIG_PATH, NODE));
         } catch (Throwable e) {

@@ -39,7 +39,7 @@ public class TrustInterviewer {
     private static final SecureRandom rand = new SecureRandom();
 
     public static void main(String[] args) {
-        JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties", false, true);
+        JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties");
         new TrustInterviewer().run();
     }
 

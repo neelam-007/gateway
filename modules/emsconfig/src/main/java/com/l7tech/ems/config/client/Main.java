@@ -34,7 +34,7 @@ public class Main {
      */
     public static void main( String[] args ) {
         boolean success = false;
-        JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/ems/config/client/logging.properties", "configlogging.properties", false, true);
+        JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/ems/config/client/logging.properties", "configlogging.properties");
 
         String typeName = "ems";
         if ( args.length > 1 ) {

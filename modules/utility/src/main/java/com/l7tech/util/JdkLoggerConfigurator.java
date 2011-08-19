@@ -15,8 +15,6 @@ import java.util.logging.Logger;
  * property <code>java.util.logging.config.file</code>, then look for
  * <code>logging.properties</code>. If that fails fall back to the
  * application-specified config file (ie, <code>com/l7tech/console/resources/logging.properties</code>).
- * Set the configuration properties, such as <i>org.apache.commons.logging.Log</i>
- * to the vlaues to trigger JDK logger.
  *
  * @author emil
  * @version 23-Apr-2004
@@ -29,8 +27,6 @@ public class JdkLoggerConfigurator {
             new AtomicBoolean( SyspropUtil.getBoolean( "com.l7tech.logging.debug", false ) );
     private static AtomicReference<Properties> nonDefaultProperties =
             new AtomicReference<Properties>();
-    static final String LOG4J_JDK_LOG_APPENDER_CLASS = "com.l7tech.util.Log4jJdkLogAppender";
-    static final String LOG4J_JDK_LOG_APPENDER_INIT = "init";
 
     static {
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable(){
@@ -57,7 +53,7 @@ public class JdkLoggerConfigurator {
      * @param shippedLoggingProperties the logging.properties to use if no locally-customized file is found,
      */
     public static synchronized void configure(String classname, String shippedLoggingProperties) {
-        configure(classname, null, shippedLoggingProperties, false, true);
+        configure(classname, null, shippedLoggingProperties, false, null);
     }
 
     /**
@@ -71,7 +67,24 @@ public class JdkLoggerConfigurator {
      * @param reloading                whether to start the configuration reloading thread
      */
     public static synchronized void configure(String classname, String shippedLoggingProperties, boolean reloading) {
-        configure(classname, null, shippedLoggingProperties, reloading, true);
+        configure(classname, null, shippedLoggingProperties, reloading, null);
+    }
+
+    /**
+     * initialize logging, try different strategies. First look for the system
+     * property <code>java.util.logging.config.file</code>, then look for
+     * <code>logging.properties</code>. If that fails fall back to the
+     * <code>shippedLoggingProperties</code>
+     *
+     * @param classname                the classname to use for logging info about which logging.properties was found
+     * @param shippedDefaults          path or file for default log properties (these are overridden by those in shippedLoggingProperties)
+     * @param shippedLoggingProperties the logging.properties to use if no locally-customized file is found
+     */
+    public static synchronized void configure(final String classname,
+                                              final String shippedDefaults,
+                                              final String shippedLoggingProperties )
+    {
+        configure( classname, shippedDefaults, shippedLoggingProperties, false, null );
     }
 
     /**
@@ -84,15 +97,13 @@ public class JdkLoggerConfigurator {
      * @param shippedDefaults          path or file for default log properties (these are overridden by those in shippedLoggingProperties)
      * @param shippedLoggingProperties the logging.properties to use if no locally-customized file is found
      * @param reloading                whether to start the configuration reloading thread
-     * @param redirectOtherFrameworks  true to redirect other logging frameworks to JUL (should not be used during initial JDK config)
      */
     public static synchronized void configure(final String classname,
                                               final String shippedDefaults,
                                               final String shippedLoggingProperties,
-                                              final boolean reloading,
-                                              final boolean redirectOtherFrameworks)
+                                              final boolean reloading)
     {
-        configure( classname, shippedDefaults, shippedLoggingProperties, reloading, redirectOtherFrameworks, null );
+        configure( classname, shippedDefaults, shippedLoggingProperties, reloading, null );
     }
 
     /**
@@ -105,20 +116,15 @@ public class JdkLoggerConfigurator {
      * @param shippedDefaults          path or file for default log properties (these are overridden by those in shippedLoggingProperties)
      * @param shippedLoggingProperties the logging.properties to use if no locally-customized file is found
      * @param reloading                whether to start the configuration reloading thread
-     * @param redirectOtherFrameworks  true to redirect other logging frameworks to JUL (should not be used during initial JDK config)
      * @param configCallback           the callback for additional log configuration (may be null)
      */
     public static synchronized void configure(final String classname,
                                               final String shippedDefaults,
                                               final String shippedLoggingProperties,
                                               final boolean reloading,
-                                              final boolean redirectOtherFrameworks,
                                               final Runnable configCallback )
     {
-        final boolean succeedSilently = shippedDefaults == null && shippedLoggingProperties == null;
-
         try {
-            SyspropUtil.setProperty( "org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger" );
             String cf = SyspropUtil.getProperty("java.util.logging.config.file");
             List<String> configCandidates = new ArrayList<String>(3);
             if (cf != null) {
@@ -208,10 +214,6 @@ public class JdkLoggerConfigurator {
         } catch (SecurityException e) {
             e.printStackTrace(System.err);
         }
-
-        if ( redirectOtherFrameworks ) {
-            setupLog4j(succeedSilently);
-        }
     }
 
     /**
@@ -224,6 +226,7 @@ public class JdkLoggerConfigurator {
 
         Properties nonDefaultProps = nonDefaultProperties.get();
         if ( nonDefaultProps != null ) {
+            //noinspection UseOfPropertiesAsHashtable
             properties.putAll( nonDefaultProps );
         }
 
@@ -321,32 +324,6 @@ public class JdkLoggerConfigurator {
     }
 
     /**
-     * If the Log4j library is present then configure it to use our
-     * logging framework.
-     * @param succeedSilently true to suppress the INFO message on successful redirection
-     */
-    private static void setupLog4j(boolean succeedSilently) {
-        try {
-            Class configClass = Class.forName( LOG4J_JDK_LOG_APPENDER_CLASS );
-            java.lang.reflect.Method configMethod = configClass.getMethod( LOG4J_JDK_LOG_APPENDER_INIT, new Class[0]);
-            configMethod.invoke(null);
-            // get logger here since we don't want this to occur on class load
-            if (!succeedSilently)
-                Logger.getLogger(JdkLoggerConfigurator.class.getName()).log(Level.INFO, "Redirected Log4j logging to JDK logging.");
-        }
-        catch(NoClassDefFoundError ncdfe) {
-            // then we won't configure it ...
-        }
-        catch(ClassNotFoundException cnfe) {
-            // then we won't configure it ...
-        }
-        catch(Exception e) {
-            Logger.getLogger(JdkLoggerConfigurator.class.getName()).log(Level.WARNING, "Error setting up Log4j logging.", e);
-        }
-    }
-
-
-    /**
      * Thread to probe for config file changes and force reread
      */
     private static class Probe extends Thread {
@@ -389,12 +366,12 @@ public class JdkLoggerConfigurator {
         public void run() {
             Logger logger = Logger.getLogger(loggerName);
             try {
-                while (interval > 0) {
-                    Thread.sleep(interval * 1000);
+                while (interval > 0L ) {
+                    Thread.sleep(interval * 1000L );
                     LogManager logManager = LogManager.getLogManager();
                     long lastModified = file.lastModified();
 
-                    if (lastModified > 0 &&
+                    if (lastModified > 0L &&
                       (lastModified != prevModified)) {
                         InputStream in = null;
                         try {

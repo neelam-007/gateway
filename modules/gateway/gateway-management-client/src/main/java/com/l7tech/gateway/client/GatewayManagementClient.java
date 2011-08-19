@@ -27,7 +27,7 @@ public class GatewayManagementClient {
     //- PUBLIC
 
     public static void main( final String[] args ) {
-        JdkLoggerConfigurator.configure("com.l7tech.gateway.client", "com/l7tech/gateway/client/logging.properties", "logging.properties", true, true);
+        JdkLoggerConfigurator.configure("com.l7tech.gateway.client", "com/l7tech/gateway/client/logging.properties", "logging.properties", true);
         GatewayManagementClient gmc = new GatewayManagementClient(args, System.in, System.out, System.err);
         final int exitCode = gmc.run();
         System.err.flush();

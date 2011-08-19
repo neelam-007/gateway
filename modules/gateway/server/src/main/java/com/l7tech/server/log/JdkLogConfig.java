@@ -73,7 +73,7 @@ public class JdkLogConfig {
             captureSystemStreams();
 
             // This ensures logging of any error when loading server config
-            JdkLoggerConfigurator.configure(null, "com/l7tech/server/resources/logging.properties", null, false, false);
+            JdkLoggerConfigurator.configure(null, "com/l7tech/server/resources/logging.properties", null);
 
             // Init logging based config
             initLogging(true);
@@ -125,11 +125,11 @@ public class JdkLogConfig {
         final String logClassname = !isJdkInit ? "com.l7tech.logging" : null;
 
         if ( new File(logConfigurationPath).exists() ) {
-            JdkLoggerConfigurator.configure(logClassname, "com/l7tech/server/resources/logging.properties", logConfigurationPath, !isJdkInit, !isJdkInit, configCallback);
+            JdkLoggerConfigurator.configure(logClassname, "com/l7tech/server/resources/logging.properties", logConfigurationPath, !isJdkInit, configCallback);
         } else {
             // specify "ssglog.properties" twice since the non-default one can be overridden by
             // a system property.
-            JdkLoggerConfigurator.configure(logClassname, "com/l7tech/server/resources/logging.properties", "com/l7tech/server/resources/logging.properties", !isJdkInit, !isJdkInit, configCallback);
+            JdkLoggerConfigurator.configure(logClassname, "com/l7tech/server/resources/logging.properties", "com/l7tech/server/resources/logging.properties", !isJdkInit, configCallback);
         }
     }
 

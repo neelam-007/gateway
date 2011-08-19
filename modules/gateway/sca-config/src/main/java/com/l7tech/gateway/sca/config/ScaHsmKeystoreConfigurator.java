@@ -92,7 +92,7 @@ public class ScaHsmKeystoreConfigurator {
     }
 
     private static void initLogging() {
-        JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties", false, true);
+        JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties");
     }
 
     public int run(String[] args) {

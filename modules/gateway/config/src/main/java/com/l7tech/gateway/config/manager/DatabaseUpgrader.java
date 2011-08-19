@@ -34,7 +34,7 @@ public class DatabaseUpgrader {
     private static final String CONFIG_PATH = "../node/default/etc/conf";
 
     public static void main(String[] args) {
-        JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties", false, true);
+        JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties");
         try {
             new DatabaseUpgrader().run();
         } catch (Throwable e) {
