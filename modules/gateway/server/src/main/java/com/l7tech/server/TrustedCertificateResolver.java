@@ -65,10 +65,12 @@ public class TrustedCertificateResolver implements SecurityTokenResolver, Applic
         final int defaultSize = 1000; // Size to use if not configured, or if not enabled at first (since we can't change the size if it's later enabled)
         int csize = config.getIntProperty( ServerConfigParams.PARAM_EPHEMERAL_KEY_CACHE_MAX_ENTRIES, defaultSize );
         encryptedKeyCacheEnabled.set(csize > 0);
+        int cacheSize = encryptedKeyCacheEnabled.get() ? csize : defaultSize;
         encryptedKeyCache = WhirlycacheFactory.createCache("Ephemeral key cache",
-                                                           encryptedKeyCacheEnabled.get() ? csize : defaultSize,
+                                                           cacheSize,
                                                            127,
                                                            WhirlycacheFactory.POLICY_LRU);
+        logger.info("Initializing ephemeral key cache with size " + cacheSize + " and POLICY_LRU");
 
         Background.scheduleRepeated(new TimerTask() {
             @Override
