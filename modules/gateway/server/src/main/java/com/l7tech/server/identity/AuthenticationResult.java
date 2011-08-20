@@ -3,28 +3,21 @@ package com.l7tech.server.identity;
 import com.l7tech.common.io.WhirlycacheFactory;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.User;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.security.token.SecurityToken;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.ConfigFactory;
 import com.whirlycott.cache.Cache;
 
 import java.security.cert.X509Certificate;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created on successful authentication events.
  */
 public final class AuthenticationResult {
-
-    private static class CacheHolder {
-        private static final int CACHE_SIZE =
-                ConfigFactory.getIntProperty( ServerConfigParams.PARAM_AUTH_CACHE_GROUP_MEMB_CACHE_SIZE, 1000 );
-        private static final Cache CACHE = CACHE_SIZE < 1
-                                           ? null
-                                           : WhirlycacheFactory.createCache("groupMemberships",
-                                                                            CACHE_SIZE,
-                                                                            71,
-                                                                            WhirlycacheFactory.POLICY_LFU);
-    }
 
     /**
      * Create an authentication result with given settings.
@@ -61,14 +54,7 @@ public final class AuthenticationResult {
                                  final SecurityToken[] securityTokens,
                                  final X509Certificate authenticatedCert,
                                  final boolean certWasSignedByStaleCA ) {
-        if (user == null) throw new IllegalArgumentException("user is required");
-        if (securityTokens == null || securityTokens.length==0) throw new IllegalArgumentException("security token(s) are required");
-        if (certWasSignedByStaleCA && authenticatedCert == null) throw new IllegalArgumentException("Must include the stale cert if there is one");
-
-        this.user = user;
-        this.securityTokens = securityTokens;
-        this.certSignedByStaleCA = certWasSignedByStaleCA;
-        this.authenticatedCert = authenticatedCert;
+        this( user, securityTokens, authenticatedCert, certWasSignedByStaleCA, System.currentTimeMillis(), getCache() );
     }
 
     /**
@@ -91,17 +77,6 @@ public final class AuthenticationResult {
     public AuthenticationResult( final User user,
                                  final SecurityToken securityToken ) {
         this(user, securityToken, null, false);
-    }
-
-    /**
-     * Create an authentication result with fresh token.
-     *
-     * @param result The authentication result (required)
-     * @param securityTokens The authenticating token(s) (required)
-     */
-    public AuthenticationResult( final AuthenticationResult result,
-                                 final SecurityToken[] securityTokens ) {
-        this(result.getUser(), securityTokens, result.getAuthenticatedCert(), result.isCertSignedByStaleCA());
     }
 
     /**
@@ -182,20 +157,89 @@ public final class AuthenticationResult {
         return result;
     }
 
+    public void setCachedGroupMembership(Group group, boolean isMember) {
+        if (groupCache == null) return; // fail fast if caching disabled
+        groupCache.put(
+                new CacheKey( user.getProviderId(), user.getId(), group.getProviderId(), group.getId() ),
+                System.currentTimeMillis() * (isMember ? 1L : -1L) );
+    }
+
+    public Boolean getCachedGroupMembership(Group group) {
+        if (groupCache == null) return null; // fail fast if caching disabled
+        Long when = groupCache.get(
+                new CacheKey(user.getProviderId(), user.getId(),
+                             group.getProviderId(), group.getId()));
+        if (when == null) return null; // missed
+        long w = when;
+        boolean success = w > 0L;
+        w = Math.abs(w);
+        if (w < timestamp)
+            return null; // ignore group membership checks cached before this authresult was created
+
+        return success;
+    }
+
+    long getTimestamp() {
+        return timestamp;
+    }
+
+    /**
+     * Create an authentication result with fresh token.
+     *
+     * @param result The authentication result (required)
+     * @param securityTokens The authenticating token(s) (required)
+     */
+    AuthenticationResult( final AuthenticationResult result,
+                          final SecurityToken[] securityTokens ) {
+        this(result.getUser(), securityTokens, result.getAuthenticatedCert(), result.isCertSignedByStaleCA(), result.getTimestamp(), getConsistentCache());
+    }
+
+    private AuthenticationResult( final User user,
+                                  final SecurityToken[] securityTokens,
+                                  final X509Certificate authenticatedCert,
+                                  final boolean certWasSignedByStaleCA,
+                                  final long timestamp,
+                                  final GroupCache groupCache ) {
+        if (user == null) throw new IllegalArgumentException("user is required");
+        if (securityTokens == null || securityTokens.length==0) throw new IllegalArgumentException("security token(s) are required");
+        if (certWasSignedByStaleCA && authenticatedCert == null) throw new IllegalArgumentException("Must include the stale cert if there is one");
+
+        this.user = user;
+        this.securityTokens = securityTokens;
+        this.certSignedByStaleCA = certWasSignedByStaleCA;
+        this.authenticatedCert = authenticatedCert;
+        this.timestamp = timestamp;
+        this.groupCache = groupCache;
+    }
+
+    private static GroupCache getCache() {
+        return CacheHolder.CACHE;
+    }
+
+    private static GroupCache getConsistentCache() {
+        return new ConsistentGroupCache();
+    }
+
     private static class CacheKey {
+        private static final String IGNORE_USER_ID = Long.toString( PersistentEntity.DEFAULT_OID );
+
         private final long userProviderOid;
         private final String userId;
         private final long groupProviderOid;
         private final String groupId;
         private final int hashCode;
 
-        public CacheKey(long userProviderOid, String userId, long groupProviderOid, String groupId) {
+        private CacheKey(long userProviderOid, String userId, long groupProviderOid, String groupId) {
             if (userId == null || groupId == null) throw new NullPointerException();
             this.userProviderOid = userProviderOid;
             this.userId = userId;
             this.groupProviderOid = groupProviderOid;
             this.groupId = groupId;
             this.hashCode = makeHashCode();
+        }
+
+        private boolean isValid() {
+            return !userId.isEmpty() && !IGNORE_USER_ID.equals( userId );
         }
 
         /** @noinspection RedundantIfStatement*/
@@ -229,41 +273,74 @@ public final class AuthenticationResult {
         }
     }
 
-    private static Cache getCache() {
-        return CacheHolder.CACHE;
+    private interface GroupCache {
+        void put( CacheKey key, Long value );
+        Long get( CacheKey key );
     }
 
-    public void setCachedGroupMembership(Group group, boolean isMember) {
-        Cache cache = getCache();
-        if (cache == null) return; // fail fast if caching disabled
-        cache.store(
-                new CacheKey(user.getProviderId(),  user.getId(), group.getProviderId(), group.getId()),
-                System.currentTimeMillis() * (isMember ? 1 : -1));
+    private static class CacheHolder {
+        private static final GroupCache CACHE = new GroupCache() {
+            private final int cacheSize =
+                    ConfigFactory.getIntProperty( ServerConfigParams.PARAM_AUTH_CACHE_GROUP_MEMB_CACHE_SIZE, 1000 );
+            private final Cache membershipCache = cacheSize < 1
+                                               ? null
+                                               : WhirlycacheFactory.createCache("groupMemberships",
+                    cacheSize,
+                                                                                71,
+                                                                                WhirlycacheFactory.POLICY_LFU);
+
+            @Override
+            public void put( final CacheKey key, final Long value ) {
+                if ( key.isValid() ) {
+                    membershipCache.store( key, value );
+                }
+            }
+
+            @Override
+            public Long get( final CacheKey key ) {
+                return (Long) membershipCache.retrieve( key );
+            }
+        };
     }
 
-    public Boolean getCachedGroupMembership(Group group) {
-        Cache cache = getCache();
-        if (cache == null) return null; // fail fast if caching disabled
-        Long when = (Long)cache.retrieve(
-                new CacheKey(user.getProviderId(), user.getId(),
-                             group.getProviderId(), group.getId()));
-        if (when == null) return null; // missed
-        long w = when;
-        boolean success = w > 0;
-        w = Math.abs(w);
-        if (w < timestamp) return null; // ignore group membership checks cached before this authresult was created
-        //noinspection UnnecessaryBoxing
-        return Boolean.valueOf(success);
+    /**
+     * A consistent GroupCache that will hold a reference to the underlying
+     * group membership information for the lifetime of the encapsulating
+     * AuthenticationResult (which should be appropriately scoped)
+     *
+     * This wrapping provides a consistent view of group membership for the
+     * lifetime of a request.
+     */
+    private static final class ConsistentGroupCache implements GroupCache {
+        private final GroupCache cache = getCache();
+        private final Map<CacheKey,Long> consistentCache = Collections.synchronizedMap( new HashMap<CacheKey,Long>() );
+
+        @Override
+        public void put( final CacheKey key, final Long value ) {
+            // Ok to store invalid keys since this cache is scoped to a single AuthenticationResult
+            consistentCache.put( key, value );
+            if ( cache != null ) cache.put( key, value );
+        }
+
+        @Override
+        public Long get( final CacheKey key ) {
+            Long value = consistentCache.get( key );
+            if ( value == null && cache != null ) {
+                value = cache.get( key );
+                if ( value != null ) {
+                    consistentCache.put( key, value );
+                }
+            }
+            return value;
+        }
     }
 
-    public long getTimestamp() {
-        return timestamp;
-    }
-
+    private final GroupCache groupCache;
     private final User user;
-    private final long timestamp = System.currentTimeMillis();
+    private final long timestamp;
     private final boolean certSignedByStaleCA;
     private final X509Certificate authenticatedCert;
     private final SecurityToken[] securityTokens; // should not be accessible
+
 }
 

@@ -1,8 +1,3 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.common.io;
 
 import java.util.Collections;
@@ -85,7 +80,7 @@ public class WhirlycacheFactory {
             if (!shutdown) {
                 if ( cacheMap.containsKey(name) ) logger.warning("Duplicate cache name used '" + name + "'.");
 
-                CacheDecorator cacheDecorator = new CacheDecorator(managedCache, cc, new CacheMaintenancePolicy[] { maintenancePolicy });
+                final CacheDecorator cacheDecorator = new LruAwareCacheDecorator(managedCache, cc, maintenancePolicy );
                 cache = cacheDecorator;
                 cacheMap.put(name, cacheDecorator);
             }
@@ -154,6 +149,35 @@ public class WhirlycacheFactory {
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(WhirlycacheFactory.class.getName());
+
+    private static final class LruAwareCacheDecorator extends CacheDecorator {
+        private final boolean isLru;
+
+        private LruAwareCacheDecorator( final ManagedCache _managedCache,
+                                        final CacheConfiguration _configuration,
+                                        final CacheMaintenancePolicy policy ) {
+            super( _managedCache, _configuration,  new CacheMaintenancePolicy[] { policy } );
+            this.isLru = policy instanceof LRUMaintenancePolicy;
+        }
+
+        /**
+         * Store an item in the cache.
+         *
+         * This method "uses" the stored value if the cache is an LRU cache, to
+         * ensure that it has the desired ordering with in the cache. This
+         * prevents recently added (but never accessed) items from being
+         * removed first.
+         *
+         * If the item is removed from the cache between the storage and the
+         * initial retrieval then it will be re-added to the cache.
+         */
+        @Override
+        protected void internalStore( final Object _key, final Object _value, final long _expiresAfter ) {
+            do {
+                super.internalStore( _key, _value, _expiresAfter );
+            } while ( isLru && _key != null && _value != null && internalRetrieve( _key ) == null );
+        }
+    }
 
     private static final Cache NullCache = new Cache() {
         @Override public void clear() {}

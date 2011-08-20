@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2009 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.processcontroller.monitoring.notification;
 
 import com.l7tech.common.io.WhirlycacheFactory;
@@ -9,7 +6,6 @@ import com.l7tech.server.management.config.monitoring.HttpNotificationRule;
 import com.l7tech.server.management.config.monitoring.NotificationRule;
 import com.l7tech.server.management.config.monitoring.SnmpTrapNotificationRule;
 import com.whirlycott.cache.Cache;
-import com.whirlycott.cache.policy.LRUMaintenancePolicy;
 
 import java.lang.reflect.Constructor;
 import java.util.Collections;
@@ -23,7 +19,7 @@ public final class NotifierFactory {
         put(HttpNotificationRule.class, HttpNotifier.class);
     }});
 
-    private final Cache notifierCache = WhirlycacheFactory.createCache("notifierCache", 500, 9931, new LRUMaintenancePolicy());
+    private final Cache notifierCache = WhirlycacheFactory.createCache("notifierCache", 500, 9931, WhirlycacheFactory.POLICY_LRU);
 
     public <RT extends NotificationRule> Notifier<RT> getNotifier(RT rule) {
         @SuppressWarnings({"unchecked"})

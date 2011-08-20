@@ -79,7 +79,7 @@ public final class AuthCache {
         private final long providerOid;
         private final LoginCredentials creds;
 
-        public CacheKey(long providerOid, LoginCredentials creds) {
+        private CacheKey(long providerOid, LoginCredentials creds) {
             this.providerOid = providerOid;
             this.creds = creds;
         }
@@ -207,8 +207,10 @@ public final class AuthCache {
 
         if (thrown != null) {
             throw thrown;
+        } else if ( result != null ) {
+            return new AuthenticationResult(result, creds.getSecurityTokens());
         } else {
-            return result;
+            return null;
         }
     }
 
