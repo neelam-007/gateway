@@ -26,8 +26,6 @@ public class OSCommandPatchTask implements PatchTask {
         return new String[] {
             PatchException.class.getName(),
             "com.l7tech.common.io.ProcUtils",
-            "com.l7tech.common.io.ProcUtils$1",
-            "com.l7tech.common.io.ProcUtils$ByteArrayHolder",
             "com.l7tech.common.io.ProcResult",
             "com.l7tech.util.ResourceUtils",
             "com.l7tech.util.CausedIOException"
