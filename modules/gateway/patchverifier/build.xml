@@ -28,6 +28,7 @@
         <jar-include name="commons-lang" organisation="commons-lang" dir="${class-dependencies}"/>
         <jar-include name="commons-codec" organisation="commons-codec" dir="${class-dependencies}"/>
         <jar-include name="commons-configuration" organisation="commons-configuration" dir="${class-dependencies}"/>
+        <jar-include name="bcprov-jdk16" organisation="bouncycastle" dir="${class-dependencies}" conf="default"/>
 
         <classfileset id="verifier-dependencies" dir="${class-dependencies}">
             <root classname="com.l7tech.server.processcontroller.patching.PatchVerifier"/>

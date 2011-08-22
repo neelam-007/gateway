@@ -37,6 +37,7 @@
         <dependency org="commons-lang" name="commons-lang" rev="2.6" force="true" conf="core"/>
         <dependency org="commons-codec" name="commons-codec" rev="1.4" force="true" conf="core"/>
         <dependency org="commons-configuration" name="commons-configuration" rev="1.6" force="true" conf="core"/>
+        <dependency org="bouncycastle" name="bcprov-jdk16" rev="1.46" force="true" conf="core->default"/>
 
         <exclude org="com.l7tech"/>
         <exclude org="xerces" module="xmlParserAPIs" artifact="*" type="*" ext="jar" conf="*" matcher="exact" />
