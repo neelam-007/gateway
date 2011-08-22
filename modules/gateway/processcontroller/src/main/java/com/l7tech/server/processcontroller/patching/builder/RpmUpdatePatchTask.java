@@ -68,6 +68,7 @@ public class RpmUpdatePatchTask implements PatchTask {
         return new String[] {
             PatchException.class.getName(),
             "com.l7tech.util.FileUtils",
+            "com.l7tech.util.SyspropUtil",
             "com.l7tech.common.io.ProcUtils",
             "com.l7tech.common.io.ProcResult",
             "com.l7tech.util.ResourceUtils",

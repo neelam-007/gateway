@@ -28,7 +28,8 @@ public class OSCommandPatchTask implements PatchTask {
             "com.l7tech.common.io.ProcUtils",
             "com.l7tech.common.io.ProcResult",
             "com.l7tech.util.ResourceUtils",
-            "com.l7tech.util.CausedIOException"
+            "com.l7tech.util.CausedIOException",
+            "com.l7tech.util.SyspropUtil"
         };
     }
 }

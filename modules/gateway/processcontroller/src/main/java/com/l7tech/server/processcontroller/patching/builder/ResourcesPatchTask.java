@@ -42,6 +42,7 @@ public class ResourcesPatchTask implements PatchTask {
             "com.l7tech.util.FileUtils",
             "com.l7tech.util.FileUtils$Saver",
             "com.l7tech.util.ResourceUtils",
+            "com.l7tech.util.SyspropUtil",
             "com.l7tech.common.io.ProcUtils",
             "com.l7tech.common.io.ProcResult",
             "com.l7tech.server.processcontroller.patching.PatchException",

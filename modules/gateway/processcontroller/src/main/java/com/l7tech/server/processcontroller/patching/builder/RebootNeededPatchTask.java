@@ -21,7 +21,8 @@ public class RebootNeededPatchTask implements PatchTask {
     @Override
     public String[] getClassDependencies() {
         return new String[] {
-            "com.l7tech.util.IOUtils"
+            "com.l7tech.util.IOUtils",
+            "com.l7tech.util.SyspropUtil"
         };
     }
 
