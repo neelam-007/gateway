@@ -17,6 +17,7 @@ import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ResourceUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.sshd.common.util.DirectoryScanner;
 import org.apache.sshd.server.*;
 import org.apache.sshd.server.session.ServerSession;
@@ -351,7 +352,16 @@ public class MessageProcessingScpCommand implements Command, Runnable, SessionAw
         long length = Long.parseLong(header.substring(6, header.indexOf(' ', 6)));
         String name = header.substring(header.indexOf(' ', 6) + 1);
 
-        pipeInputStreamToGatewayRequestMessage(connector, path.getAbsolutePath(), name, in, length);
+        // if required, remove filename from the absolute path (e.g. jscape scp client appends the file name to the path)
+        String absolutePath = path.getAbsolutePath();
+        if (!StringUtils.isEmpty(absolutePath)) {
+            int index = absolutePath.lastIndexOf("/" + name);
+            if (index >= 0) {
+                absolutePath = absolutePath.substring(0, index);
+            }
+        }
+
+        pipeInputStreamToGatewayRequestMessage(connector, absolutePath, name, in, length);
 
         readAck(false);
     }
@@ -372,7 +382,7 @@ public class MessageProcessingScpCommand implements Command, Runnable, SessionAw
 
     protected void readFile(SshFile path) throws IOException {
 
-        // TODO SCP copy from sever
+        // TODO SCP download (i.e. copy from sever)
         throw new IOException("Copy from server currently unsupported.");
 
         /*if (logger.isLoggable(Level.FINER)) {

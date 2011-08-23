@@ -1,7 +1,10 @@
 package com.l7tech.external.assertions.ssh.server;
 
+import com.l7tech.external.assertions.ssh.keyprovider.PemSshKeyUtil;
 import com.l7tech.message.SshKnob;
 import com.l7tech.util.Pair;
+import com.l7tech.util.SyspropUtil;
+import org.apache.commons.lang.StringUtils;
 
 import java.net.PasswordAuthentication;
 import java.net.SocketAddress;
@@ -80,8 +83,12 @@ public class MessageProcessingSshUtil {
             }
             @Override
             public PublicKeyAuthentication getPublicKeyAuthentication() {
-                if (userPublicKey != null) {
-                    return new PublicKeyAuthentication(userPublicKey.getUserName(), userPublicKey.getPublicKey());
+                if (userPublicKey != null && userPublicKey.getPublicKey() != null) {
+                    String userPublicKeyStr = PemSshKeyUtil.writeKey(userPublicKey.getPublicKey());
+                    if (!StringUtils.isEmpty(userPublicKeyStr)) {
+                        userPublicKeyStr = userPublicKeyStr.replace(SyspropUtil.getProperty("line.separator"), "");
+                    }
+                    return new PublicKeyAuthentication(userPublicKey.getUserName(), userPublicKeyStr);
                 } else {
                     return null;
                 }

@@ -132,6 +132,9 @@ public class SecurityTokenType implements Serializable {
     public static final SecurityTokenType FTP_CREDENTIAL =
             new SecurityTokenType(n++, "FTP Credentials", "Password", null, null, null, UsernameToken.class);
 
+    public static final SecurityTokenType SSH_CREDENTIAL =
+            new SecurityTokenType(n++, "SSH Credentials", "SSH", null, null, null, SshSecurityToken.class);
+
     public static final SecurityTokenType X509_ISSUER_SERIAL =
                 new SecurityTokenType(n++, "X509 Issuer Serial", "X.509", null, null, null, X509SigningSecurityToken.class);
 

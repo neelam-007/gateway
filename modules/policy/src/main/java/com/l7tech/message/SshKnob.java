@@ -1,7 +1,6 @@
 package com.l7tech.message;
 
 import java.net.PasswordAuthentication;
-import java.security.PublicKey;
 
 /**
  * Information about a message over SSH.
@@ -14,9 +13,9 @@ public interface SshKnob extends TcpKnob {
      */
     public class PublicKeyAuthentication {
         private String userName;
-        private PublicKey publicKey;
+        private String publicKey;
 
-        public PublicKeyAuthentication(String userName, PublicKey publicKey) {
+        public PublicKeyAuthentication(String userName, String publicKey) {
             this.userName = userName;
             this.publicKey = publicKey;
         }
@@ -25,7 +24,7 @@ public interface SshKnob extends TcpKnob {
             return userName;
         }
 
-        public PublicKey getPublicKey() {
+        public String getPublicKey() {
             return publicKey;
         }
     }

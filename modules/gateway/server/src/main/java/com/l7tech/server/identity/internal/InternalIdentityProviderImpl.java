@@ -11,14 +11,13 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.security.token.SshSecurityToken;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.identity.Authenticated;
 import com.l7tech.server.identity.*;
 import com.l7tech.server.identity.cert.CertificateAuthenticator;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.HexUtils;
+import com.l7tech.util.*;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -91,6 +90,8 @@ public class InternalIdentityProviderImpl
             ar = certificateAuthenticator.authenticateX509Credentials(pc, dbUser, config.getCertificateValidationType(), auditor);
         } else if ( format == CredentialFormat.SESSIONTOKEN ) {
             ar = sessionAuthenticator.authenticateSessionCredentials( pc, dbUser );
+        } else if (pc.getSecurityToken() != null && pc.getSecurityToken() instanceof SshSecurityToken) {
+            ar = authenticateSshCredentials((SshSecurityToken) pc.getSecurityToken(), pc, dbUser, allowUserUpgrade);
         } else {
             ar = authenticatePasswordCredentials(pc, dbUser, allowUserUpgrade);
         }
@@ -142,6 +143,40 @@ public class InternalIdentityProviderImpl
             }
         }
         return user;
+    }
+
+    private AuthenticationResult authenticateSshCredentials(SshSecurityToken sshSecurityToken, LoginCredentials pc,
+                                                            InternalUser dbUser, boolean allowUserUpgrade)
+            throws MissingCredentialsException, BadCredentialsException
+    {
+
+        // make sure we have at least one: a public key or a password
+        String publicKey = sshSecurityToken.getPublicKey();
+        char[] password = pc.getCredentials();
+        if (StringUtils.isEmpty(publicKey) && (password == null || password.length <= 0)) {
+            throw new MissingCredentialsException("No SSH public key nor password provided");
+        }
+
+        // first try to authenticate with public key
+        String dbPublicKey = dbUser.getProperty(InternalUser.PROPERTIES_KEY_SSH_USER_PUBLIC_KEY);
+        if (!StringUtils.isEmpty(publicKey) && !StringUtils.isEmpty(dbPublicKey)) {
+            dbPublicKey = dbPublicKey.replace(SyspropUtil.getProperty("line.separator"), "");
+
+            // also strip Unix newline for Windows dev environments
+            dbPublicKey = dbPublicKey.replace("\n", "");
+
+            if (dbPublicKey.contains(publicKey)) {
+                return new AuthenticationResult(dbUser, pc.getSecurityTokens());
+            }
+        }
+
+        // make sure we have a password since public key authentication has failed
+        if (password == null || password.length <= 0) {
+            throw new BadCredentialsException("Invalid public key");
+        }
+
+        // if still required or possible, try to authenticate with password
+        return authenticatePasswordCredentials(pc, dbUser, allowUserUpgrade);
     }
 
     private AuthenticationResult authenticatePasswordCredentials(LoginCredentials pc,

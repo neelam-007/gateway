@@ -764,6 +764,7 @@ public class GenericUserPanel extends UserPanel {
                 iu.setExpiration(expireTimeChooser.getDate().getTime());
             }
             if (sshPanel != null) {
+                // TODO store public key as one long line of Base64, without PEM headers
                 iu.setProperty(InternalUser.PROPERTIES_KEY_SSH_USER_PUBLIC_KEY, sshPanel.getInternalUserPublicKey());
             }
         } else if (user instanceof LdapUser) {

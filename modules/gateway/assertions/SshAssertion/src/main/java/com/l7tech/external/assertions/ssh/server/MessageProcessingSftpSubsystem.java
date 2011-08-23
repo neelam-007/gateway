@@ -876,12 +876,14 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
                 SshFile sshFile = ((FileHandle) h).getFile();
                 flushAndCloseQuietly(sshFile);
 
-                AssertionStatus status = getStatusFromGatewayMessageProcess(sshFile, 1000);  // TODO make wait time configurable (manage listen port dialog)
+                AssertionStatus status = getStatusFromGatewayMessageProcess(sshFile, 3000);  // TODO make wait time configurable (manage listen port dialog)
                 if (status == null) {
                     sendStatus(id, SSH_FX_FAILURE, "No status returned from Gateway message processing.");
                 } else {
                      if (status == AssertionStatus.NONE) {
                          sendStatus(id, SSH_FX_OK, "", "");
+                     } else if (status == AssertionStatus.AUTH_FAILED) {
+                         sendStatus(id, SSH_FX_PERMISSION_DENIED, status.toString());
                      } else {
                          sendStatus(id, SSH_FX_BAD_MESSAGE, status.toString());
                      }

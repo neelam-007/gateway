@@ -30,7 +30,7 @@ public class MessageProcessingPublicKeyAuthenticator implements PublickeyAuthent
        if (authorizedUserPublicKeys != null && authorizedUserPublicKeys.length > 0 && publicKey != null) {
            String publicKeyString = PemSshKeyUtil.writeKey(publicKey);
            if (!StringUtils.isEmpty(publicKeyString)) {
-               publicKeyString = publicKeyString.replace( SyspropUtil.getProperty( "line.separator" ), "" );
+               publicKeyString = publicKeyString.replace( SyspropUtil.getProperty("line.separator"), "" );
                for (String authorizedUserPublicKey : authorizedUserPublicKeys) {
                    if (publicKeyString.equals(authorizedUserPublicKey)) {
                        isAllowedAccess = true;

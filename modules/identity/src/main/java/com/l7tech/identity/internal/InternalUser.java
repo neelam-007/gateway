@@ -38,7 +38,7 @@ import java.util.Map;
 public class InternalUser extends PersistentUser {
     public static final String PROPERTIES_KEY_SSH_USER_PUBLIC_KEY = "SshUserPublicKey";
 
-    private static final long serialVersionUID = 3783059925599980175L;
+    private static final long serialVersionUID = 5056935403670495223L;
     private static final Charset PROPERTIES_ENCODING = Charsets.UTF8;
 
     private long expiration = -1;
