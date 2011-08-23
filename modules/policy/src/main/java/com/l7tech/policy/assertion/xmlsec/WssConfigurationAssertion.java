@@ -29,6 +29,7 @@ public class WssConfigurationAssertion extends MessageTargetableAssertion implem
     private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
     private PrivateKeyableSupport privatekeyableSupport = new PrivateKeyableSupport();
     private String digestAlgorithmName;
+    private String referenceDigestAlgorithmName;
     private String encryptionKeyReference;
     private String encryptionAlgorithmUri;
     private String keyWrappingAlgorithmUri;
@@ -106,6 +107,14 @@ public class WssConfigurationAssertion extends MessageTargetableAssertion implem
     @Override
     public void setDigestAlgorithmName(String digestAlgorithmName) {
         this.digestAlgorithmName = digestAlgorithmName;
+    }
+
+    public String getReferenceDigestAlgorithmName() {
+        return referenceDigestAlgorithmName;
+    }
+
+    public void setReferenceDigestAlgorithmName(String referenceDigestAlgorithmName) {
+        this.referenceDigestAlgorithmName = referenceDigestAlgorithmName;
     }
 
     @Override

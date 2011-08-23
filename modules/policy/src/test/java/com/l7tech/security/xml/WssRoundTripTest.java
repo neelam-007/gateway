@@ -236,6 +236,12 @@ public class WssRoundTripTest {
                                                wssDecoratorTest.getSigningOnly_dsa_sha1_TestDocument()));
     }
 
+    @Test
+    public void testSigningOnly_dsa_sha1_sha256References() throws Exception {
+        runRoundTripTest(new NamedTestDocument("SigningOnly_dsa_sha1_sha256References",
+                                               wssDecoratorTest.getSigningOnly_dsa_sha1_sha256References_TestDocument()));
+    }
+
     @Ignore("Fails because we currently do not support sha256 with DSA and fall back to sha1 instead (which signs and verifies ok, but fails the post-check for SHA-256)")
     @Test
     public void testSigningOnly_dsa_sha256() throws Exception {
@@ -764,7 +770,9 @@ public class WssRoundTripTest {
         if (!td.req.getElementsToSign().isEmpty() && td.req.getSenderMessageSigningPrivateKey() != null && td.req.getSignatureMessageDigest() != null) {
             SupportedSignatureMethods sigmeth = SupportedSignatureMethods.fromKeyAndMessageDigest(td.req.getSenderMessageSigningPrivateKey().getAlgorithm(), td.req.getSignatureMessageDigest());
             String signatureUri = sigmeth.getAlgorithmIdentifier();
-            String digestUri = sigmeth.getMessageDigestIdentifier();
+            String digestUri = td.req.getSignatureReferenceMessageDigest() == null
+                ? SupportedDigestMethods.fromAlias(sigmeth.getDigestAlgorithmName()).getIdentifier()
+                : SupportedDigestMethods.fromAlias(td.req.getSignatureReferenceMessageDigest()).getIdentifier();
 
             // We'll just do an extremely crude sanity check to rule out obvious failure modes (ignoring configured digest/falling back to SHA-1/not signing at all/etc)
             String decoratedMessageString = new String(decoratedMessage);

@@ -213,7 +213,7 @@ public class SamlAssertionGenerator {
 
         // Create signature template and populate with appropriate transforms. Reference is to SOAP Envelope
         TemplateGenerator template = new TemplateGenerator(assertionDoc,
-                                                           signaturemethod.getMessageDigestIdentifier(),
+                                                           SupportedDigestMethods.fromAlias(signaturemethod.getDigestAlgorithmName()).getIdentifier(),
                                                            Canonicalizer.EXCLUSIVE,
                                                            signaturemethod.getAlgorithmIdentifier());
 

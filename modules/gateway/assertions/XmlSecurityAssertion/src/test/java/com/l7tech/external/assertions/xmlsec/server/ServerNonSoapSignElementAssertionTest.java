@@ -7,6 +7,8 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.security.prov.JceProvider;
+import com.l7tech.security.xml.SupportedDigestMethods;
+import com.l7tech.security.xml.SupportedSignatureMethods;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
@@ -52,6 +54,24 @@ public class ServerNonSoapSignElementAssertionTest {
 
         Element sigElement = applySignature(ass, makeRequest(null));
         assertTrue("default signature type is LAST_CHILD", null == sigElement.getNextSibling());
+    }
+
+    @Test
+    @BugNumber(10852)
+    public void testSignElement_customDigests() throws Exception {
+        NonSoapSignElementAssertion ass = makeAssertion();
+        ass.setDigestAlgName("SHA-256");
+        ass.setRefDigestAlgName("SHA-384");
+
+        Element sigElement = applySignature(ass, makeRequest(null));
+        String sigXml = XmlUtil.nodeToFormattedString(sigElement);
+
+        String wantSigMethod = SupportedSignatureMethods.fromKeyAndMessageDigest(NonSoapXmlSecurityTestUtils.getTestKey().getPublic().getAlgorithm(), ass.getDigestAlgName()).getAlgorithmIdentifier();
+        String wantDigMethod = SupportedDigestMethods.fromAlias(ass.getRefDigestAlgName()).getIdentifier();
+
+        // For now we'll just do a very crude substring test, to rule out obvious failures to honor the config
+        assertTrue(sigXml.contains(wantSigMethod));
+        assertTrue(sigXml.contains(wantDigMethod));
     }
 
     @Test

@@ -54,7 +54,7 @@ public class ServerNonSoapSignElementAssertion extends ServerNonSoapSecurityAsse
         final String detachedVar = assertion.getDetachedSignatureVariableName();
         if (detachedVar != null) {
             HashMap<String, Element> elementsToSignWithIDs = generateIds(affectedElements);
-            Element signature = DsigUtil.createSignature(elementsToSignWithIDs, doc, signer.getCertificate(), signer.getPrivate(), null, null, null, assertion.isForceEnvelopedTransform(), enableImplicitEmptyUriDocRef);
+            Element signature = DsigUtil.createSignature(elementsToSignWithIDs, doc, signer.getCertificate(), signer.getPrivate(), null, null, assertion.getDigestAlgName(), assertion.getRefDigestAlgName(), assertion.isForceEnvelopedTransform(), enableImplicitEmptyUriDocRef);
             context.setVariable(detachedVar, signature);
         } else {
             int count = 1;
@@ -73,7 +73,7 @@ public class ServerNonSoapSignElementAssertion extends ServerNonSoapSecurityAsse
 
         final Map<String, Element> elementsToSignWithIDs = new HashMap<String, Element>();
         elementsToSignWithIDs.put(idValue, elementToSign);
-        Element signature = DsigUtil.createSignature(elementsToSignWithIDs, elementToSign.getOwnerDocument(), signer.getCertificate(), signer.getPrivate(), null, null, null, true, enableImplicitEmptyUriDocRef);
+        Element signature = DsigUtil.createSignature(elementsToSignWithIDs, elementToSign.getOwnerDocument(), signer.getCertificate(), signer.getPrivate(), null, null, assertion.getDigestAlgName(), assertion.getRefDigestAlgName(), true, enableImplicitEmptyUriDocRef);
 
         Node firstChild = elementToSign.getFirstChild();
         if (NonSoapSignElementAssertion.SignatureLocation.FIRST_CHILD.equals(assertion.getSignatureLocation()) && firstChild != null) {

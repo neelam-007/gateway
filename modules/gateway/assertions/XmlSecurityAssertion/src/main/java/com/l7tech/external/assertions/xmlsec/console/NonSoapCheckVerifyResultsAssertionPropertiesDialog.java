@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.xmlsec.console;
 import com.l7tech.external.assertions.xmlsec.NonSoapCheckVerifyResultsAssertion;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.JCheckBoxListModel;
+import com.l7tech.security.xml.SupportedDigestMethods;
 import com.l7tech.security.xml.SupportedSignatureMethods;
 import com.l7tech.util.Functions;
 
@@ -69,7 +70,7 @@ public class NonSoapCheckVerifyResultsAssertionPropertiesDialog extends NonSoapS
             if ("SecretKey".equals(sm.getKeyAlgorithmName())) // Omit HMAC (Bug #7787)
                 continue;
             sigBoxes.add(new JCheckBox(sm.getDisplayName()));
-            digestMethods.put(sm.getMessageDigestIdentifier(), sm.getDigestAlgorithmName());
+            digestMethods.put(SupportedDigestMethods.fromAlias(sm.getDigestAlgorithmName()).getIdentifier(), sm.getDigestAlgorithmName());
             sigMethodDisplayNameToUri.put(sm.getDisplayName(), sm.getAlgorithmIdentifier());
         }
         return signatureMethodsModel = new JCheckBoxListModel(sigBoxes);

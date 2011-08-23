@@ -20,7 +20,7 @@ import java.security.cert.X509Certificate;
 /**
  * Certificate utility methods that require static imports of Bouncy Castle classes.
  */
-public class BouncyCastleCertUtils {
+public class BouncyCastleCertUtils  {
 
     // true to set attrs to null (pre-6.0-2 behavior); false to set attrs to empty DERSet (Bug #10534)
     private static final boolean omitAttrs = ConfigFactory.getBooleanProperty( "com.l7tech.security.cert.csr.omitAttrs", false );

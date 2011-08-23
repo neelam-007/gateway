@@ -76,6 +76,7 @@ public class ServerWssConfigurationAssertionTest {
         ass.setUseDerivedKeys(true);
         ass.setSecureConversationNamespace( SoapConstants.WSSC_NAMESPACE3 );
         ass.setDigestAlgorithmName("you dig it");
+        ass.setReferenceDigestAlgorithmName("you ref dig it");
         ass.setEncryptionAlgorithmUri("you enc it");
         ass.setKeyWrappingAlgorithmUri("you enc keys");
         ass.setKeyReference(KeyReference.ISSUER_SERIAL.getName());
@@ -96,6 +97,7 @@ public class ServerWssConfigurationAssertionTest {
         assertTrue("Default key is message signing certificate", dreq.getSenderMessageSigningCertificate() == defaultKey.getSslInfo().getCertificate());
         assertTrue("Default key is message private key", dreq.getSenderMessageSigningPrivateKey() == defaultKey.getSslInfo().getPrivateKey());
         assertEquals("Message signature message digest", dreq.getSignatureMessageDigest(), "you dig it");
+        assertEquals("Message signature reference message digest", dreq.getSignatureReferenceMessageDigest(), "you ref dig it");
         assertEquals("Message encryption algorithm", dreq.getEncryptionAlgorithm(), "you enc it");
         assertEquals("SKI encryption key inclusion type", dreq.getEncryptionKeyInfoInclusionType(), KeyInfoInclusionType.STR_SKI);
         assertNull("Kerberos ticket", dreq.getKerberosTicket());

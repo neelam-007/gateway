@@ -4,6 +4,8 @@ import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.external.assertions.xmlsec.NonSoapSignElementAssertion;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.security.xml.SupportedDigestMethods;
+import com.l7tech.util.ArrayUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -19,7 +21,10 @@ public class NonSoapSignElementAssertionPropertiesDialog extends NonSoapSecurity
     private JPanel detachedVariablePanel;
     private TargetVariablePanel detachedVariableField;
     private JCheckBox envelopedCheckBox;
+    private JComboBox signatureDigestComboBox;
+    private JComboBox referenceDigestComboBox;
 
+    private static final String DEFAULT = "Default";
 
     public NonSoapSignElementAssertionPropertiesDialog(Window owner, NonSoapSignElementAssertion assertion) {
         super(owner, assertion);
@@ -58,6 +63,9 @@ public class NonSoapSignElementAssertionPropertiesDialog extends NonSoapSecurity
 
         Utilities.enableGrayOnDisabled(signatureLocationComboBox);
         Utilities.enableGrayOnDisabled(envelopedCheckBox);
+
+        signatureDigestComboBox.setModel(new DefaultComboBoxModel(prependDefault(SupportedDigestMethods.getDigestNames())));
+        referenceDigestComboBox.setModel(new DefaultComboBoxModel(prependDefault(SupportedDigestMethods.getDigestNames())));
 
         return contentPane;
     }
@@ -100,6 +108,8 @@ public class NonSoapSignElementAssertionPropertiesDialog extends NonSoapSecurity
         detachedVariableField.setAssertion(assertion, getPreviousAssertion());
         detachedVariableField.setVariable(detachedVar == null ? "" : detachedVar);
         envelopedCheckBox.setSelected(assertion.isForceEnvelopedTransform());
+        setSelectedItemOrDefaultIfNull(signatureDigestComboBox, assertion.getDigestAlgName());
+        setSelectedItemOrDefaultIfNull(referenceDigestComboBox, assertion.getRefDigestAlgName());
 
         enableOrDisableComponents();
     }
@@ -117,7 +127,26 @@ public class NonSoapSignElementAssertionPropertiesDialog extends NonSoapSecurity
             throw new ValidationException("A variable name must be provided in order to create a detached signature.");
         ass.setDetachedSignatureVariableName(detached ? detachedVar : null);
         ass.setForceEnvelopedTransform(envelopedCheckBox.isSelected());
+        ass.setDigestAlgName((String)getSelectedItemOrNullIfDefault(signatureDigestComboBox));
+        ass.setRefDigestAlgName((String)getSelectedItemOrNullIfDefault(referenceDigestComboBox));
 
         return ass;
+    }
+
+    private static Object[] prependDefault(Object[] things) {
+        return ArrayUtils.unshift(things, DEFAULT);
+    }
+
+    private static void setSelectedItemOrDefaultIfNull(JComboBox comboBox, Object objOrUnchanged) {
+        if (null == objOrUnchanged) {
+            comboBox.setSelectedItem(DEFAULT);
+        } else {
+            comboBox.setSelectedItem(objOrUnchanged);
+        }
+    }
+
+    private static Object getSelectedItemOrNullIfDefault(JComboBox comboBox) {
+        Object ret = comboBox.getSelectedItem();
+        return DEFAULT == ret || !comboBox.isEnabled() ? null : ret;
     }
 }

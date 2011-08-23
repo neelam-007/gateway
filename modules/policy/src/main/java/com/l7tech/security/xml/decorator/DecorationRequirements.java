@@ -830,6 +830,21 @@ public class DecorationRequirements {
         this.signatureMessageDigest = signatureMessageDigest;
     }
 
+    /**
+     * @return the message digest alg name (ie, "SHA-384") for signature Reference values, or null if using the same as the signature method.
+     */
+    public String getSignatureReferenceMessageDigest() {
+        return signatureReferenceMessageDigest;
+    }
+
+    /**
+     * @param signatureReferenceMessageDigest set the digest algorithm name (ie, "SHA-384") for signature Reference values, if different from the
+     *              signature method, or null to just use the same digest as will be used for the signature method.
+     */
+    public void setSignatureReferenceMessageDigest(String signatureReferenceMessageDigest) {
+        this.signatureReferenceMessageDigest = signatureReferenceMessageDigest;
+    }
+
     enum SecurityHeaderMustUnderstand { YES, NO, SKIP, DEFAULT }
 
     SecurityHeaderMustUnderstand getMustUnderstand() {
@@ -918,6 +933,7 @@ public class DecorationRequirements {
     private boolean suppressSamlStrTransform = false;
     private boolean protectTokens = false;
     private String signatureMessageDigest = null;
+    private String signatureReferenceMessageDigest = null;
     private PreferredSigningTokenType preferredSigningTokenType = null;
     private WsSecurityVersion wssVersion = null;
     private WsaHeaderSigningStrategy wsaHeaderSignStrategy = DEFAULT_WSA_HEADER_SIGNING_BEHAVIOUR;

@@ -22,6 +22,7 @@ import com.l7tech.security.xml.processor.X509SigningSecurityTokenImpl;
 import com.l7tech.util.*;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -320,6 +321,7 @@ public class WssDecoratorImpl implements WssDecorator {
                 signatureInfo.senderSigningKey,
                 signatureInfo.senderSigningCert,
                 dreq.getSignatureMessageDigest(),
+                dreq.getSignatureReferenceMessageDigest(),
                 signList.toArray(new Element[signList.size()]),
                 signPartList.toArray(new String[signPartList.size()]),
                 dreq.isSignPartHeaders(),
@@ -1196,7 +1198,8 @@ public class WssDecoratorImpl implements WssDecorator {
      * @param senderSigningKey       the Key that should be used to compute the signature.  May be RSA public or private key, or an AES symmetric key.
      * @param senderSigningCert      if X509 certificate associated with senderSigningKey, or null if senderSigningKey is not associated with a cert.
      *                               Must be provided if senderSigningKey is an RSA or DSA key.
-     * @param messageDigestAlgorithm the message digest algorithm to use.  A null value means the default digest will be used for the signing key type.
+     * @param sigMethodDigestAlg the message digest algorithm to use.  A null value means the default digest will be used for the signing key type.
+     * @param referenceDigestAlg the message digest algorithm to use for References, if different from that of the signature method, or null to use the same one.
      * @param elementsToSign         an array of elements that should be signed.  Must be non-null references to elements in the Document being processed.  Must not be null or empty.
      * @param partsToSign            content-IDs of MIME parts to include in signature, omitting any leading "cid:" prefix.  Required, but may be empty.
      * @param signPartHeaders        whether to cover signed MIME part's MIME headers in the signature
@@ -1215,7 +1218,8 @@ public class WssDecoratorImpl implements WssDecorator {
     private Element addSignature(final Context c,
                                  Key senderSigningKey,
                                  X509Certificate senderSigningCert,
-                                 String messageDigestAlgorithm,
+                                 String sigMethodDigestAlg,
+                                 @Nullable String referenceDigestAlg,
                                  Element[] elementsToSign,
                                  String[] partsToSign,
                                  boolean signPartHeaders,
@@ -1262,14 +1266,18 @@ public class WssDecoratorImpl implements WssDecorator {
 
         final SupportedSignatureMethods signaturemethod;
         try {
-            signaturemethod = DsigUtil.getSignatureMethodForSignerPrivateKey(senderSigningKey, messageDigestAlgorithm, false);
+            signaturemethod = DsigUtil.getSignatureMethodForSignerPrivateKey(senderSigningKey, sigMethodDigestAlg, false);
         } catch (SignatureException e) {
             throw new DecoratorException("Unable to find signature method: " + ExceptionUtils.getMessage(e), e);
         }
 
+        SupportedDigestMethods refDigestMethod = referenceDigestAlg == null
+                ? SupportedDigestMethods.fromAlias(signaturemethod.getDigestAlgorithmName())
+                : SupportedDigestMethods.fromAlias(referenceDigestAlg);
+
         // Create signature template and populate with appropriate transforms. Reference is to SOAP Envelope
         TemplateGenerator template = new TemplateGenerator(elementsToSign[0].getOwnerDocument(),
-                                                           signaturemethod.getMessageDigestIdentifier(),
+                                                           refDigestMethod.getIdentifier(),
                                                            Canonicalizer.EXCLUSIVE,
                                                            signaturemethod.getAlgorithmIdentifier());
         template.setIndentation(false);

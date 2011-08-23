@@ -18,6 +18,7 @@ import com.l7tech.util.DomUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.xml.soap.SoapUtil;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -116,7 +117,7 @@ public class DsigUtil {
     {
         final Map<String, Element> elementsToSignWithIDs = new HashMap<String, Element>();
         elementsToSignWithIDs.put(targetElementIdValue, elementToSign);
-        return createSignature(elementsToSignWithIDs, elementToSign.getOwnerDocument(), senderSigningCert, senderSigningKey, keyInfoChildElement, keyName, messageDigestAlgorithm, true, false);
+        return createSignature(elementsToSignWithIDs, elementToSign.getOwnerDocument(), senderSigningCert, senderSigningKey, keyInfoChildElement, keyName, messageDigestAlgorithm, null, true, false);
     }
 
     /**
@@ -128,8 +129,9 @@ public class DsigUtil {
      * @param senderSigningKey      private key to sign it with.
      * @param keyInfoChildElement   Custom key info child element to use
      * @param keyName               if specified, KeyInfo will use a keyName instead of an STR or a literal cert.
-     * @param messageDigestAlgorithm the message digest algorithm to use for the signature, or null to use the default behavior, which is:
+     * @param signatureMethodDigestAlg the message digest algorithm to use for the signature, or null to use the default behavior, which is:
      *                               SHA-1 for everything except an EC private key, in which case SHA-256
+     * @param referenceDigestAlg message digest algorithm for References, if different from that of the signature method, or null to use the same as the signature method.
      * @param includeEnvelopedTransform  if true, the created signature will include the Enveloped transform, so it can be added as a descendant of one of the signed elements.
      * @param enableImplicitEmptyUriRef  if true, a Reference to an ID consisting of the empty string will be recognized as a reference to the document root.
      * @return the new dsig:Signature element, as a standalone element not yet attached into the document.
@@ -143,7 +145,8 @@ public class DsigUtil {
                                           PrivateKey senderSigningKey,
                                           Element keyInfoChildElement,
                                           String keyName,
-                                          String messageDigestAlgorithm,
+                                          String signatureMethodDigestAlg,
+                                          @Nullable String referenceDigestAlg,
                                           boolean includeEnvelopedTransform,
                                           final boolean enableImplicitEmptyUriRef)
             throws SignatureException, SignatureStructureException, XSignatureException
@@ -151,11 +154,12 @@ public class DsigUtil {
         if (elementsToSignWithIDs == null) throw new NullPointerException("elementsToSignWithIDs must be provided");
         if (document == null) throw new NullPointerException("document must be provided");
 
-        SupportedSignatureMethods signaturemethod = getSignatureMethodForSignerPrivateKey(senderSigningKey, messageDigestAlgorithm, true);
+        SupportedSignatureMethods signaturemethod = getSignatureMethodForSignerPrivateKey(senderSigningKey, signatureMethodDigestAlg, true);
+        SupportedDigestMethods digestMethod = referenceDigestAlg == null ? SupportedDigestMethods.fromAlias(signaturemethod.getDigestAlgorithmName()) : SupportedDigestMethods.fromAlias(referenceDigestAlg);
 
         // Create signature template and populate with appropriate transforms. Reference is to SOAP Envelope
         TemplateGenerator template = new TemplateGenerator(document,
-                                                           signaturemethod.getMessageDigestIdentifier(),
+                                                           digestMethod.getIdentifier(),
                                                            Canonicalizer.EXCLUSIVE,
                                                            signaturemethod.getAlgorithmIdentifier());
         template.setIndentation(false);
@@ -465,7 +469,7 @@ public class DsigUtil {
 
     public static String[] findDigestAlgorithms(Element sigElement) throws SignatureException {
         List<String> result = new ArrayList<String>();
-        result.add(SupportedSignatureMethods.fromSignatureAlgorithm(findSigAlgorithm(sigElement)).getMessageDigestIdentifier());
+        result.add(SupportedDigestMethods.fromAlias(SupportedSignatureMethods.fromSignatureAlgorithm(findSigAlgorithm(sigElement)).getDigestAlgorithmName()).getIdentifier());
 
         try {
             Element signedInfo = DomUtils.findExactlyOneChildElementByName(sigElement, SoapUtil.DIGSIG_URI, "SignedInfo");

@@ -5,10 +5,7 @@ import com.ibm.xml.dsig.*;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.security.saml.SamlConstants;
-import com.l7tech.security.xml.DsigUtil;
-import com.l7tech.security.xml.KeyInfoDetails;
-import com.l7tech.security.xml.KeyInfoInclusionType;
-import com.l7tech.security.xml.SupportedSignatureMethods;
+import com.l7tech.security.xml.*;
 import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.util.NamespaceFactory;
 import com.l7tech.util.TooManyChildElementsException;
@@ -47,7 +44,7 @@ public class RequestSigner {
         SupportedSignatureMethods sigMeth = DsigUtil.getSignatureMethod(signingKey);
 
         TemplateGenerator template =
-                new TemplateGenerator(samlpRequest, sigMeth.getMessageDigestIdentifier(),
+                new TemplateGenerator(samlpRequest, SupportedDigestMethods.fromAlias(sigMeth.getDigestAlgorithmName()).getIdentifier(),
                                       Canonicalizer.EXCLUSIVE, sigMeth.getAlgorithmIdentifier());
 
         String idAttr = (samlVersion == 1 ? "RequestID" : "ID");

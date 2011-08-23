@@ -343,6 +343,21 @@ public class WssDecoratorTest {
         return td;
     }
 
+    @Test
+	public void testSigningOnly_dsa_sha1_sha256References() throws Exception {
+        runTest(getSigningOnly_dsa_sha1_sha256References_TestDocument());
+    }
+
+    public TestDocument getSigningOnly_dsa_sha1_sha256References_TestDocument() throws Exception {
+        final TestDocument td = getSigningOnlyTestDocument();
+        Pair<X509Certificate, PrivateKey> k = TestKeys.getCertAndKey("DSA_1024");
+        td.req.setSenderMessageSigningCertificate(k.left);
+        td.req.setSenderMessageSigningPrivateKey(k.right);
+        td.req.setSignatureMessageDigest("SHA-1");
+        td.req.setSignatureReferenceMessageDigest("SHA-256");
+        return td;
+    }
+
     @Ignore("This actually passes, but is misleading, since we currently just ignore the SHA-256 for DSA and just use SHA-1")
     @Test
 	public void testSigningOnly_dsa_sha256() throws Exception {

@@ -84,15 +84,6 @@ public enum SupportedSignatureMethods {
     }
 
     /**
-     * Returns the corresponding message digest identifier associated with the signature algorithm.
-     *
-     * @return string
-     */
-    public String getMessageDigestIdentifier() {
-        return digestMethod.getIdentifier();
-    }
-
-    /**
      * @return a display name to use for UI purposes.
      */
     public String getDisplayName() {

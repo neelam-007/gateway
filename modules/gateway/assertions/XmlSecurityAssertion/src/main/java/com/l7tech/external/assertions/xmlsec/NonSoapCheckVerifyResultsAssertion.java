@@ -4,6 +4,7 @@ import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.validator.ValidatorFlag;
+import com.l7tech.security.xml.SupportedDigestMethods;
 import com.l7tech.security.xml.SupportedSignatureMethods;
 import com.l7tech.util.Functions;
 import com.l7tech.xml.soap.SoapVersion;
@@ -81,7 +82,7 @@ public class NonSoapCheckVerifyResultsAssertion extends NonSoapSecurityAssertion
         Set<String> got = new HashSet<String>(Functions.map(SupportedSignatureMethods.getDefaultMethods(), new Functions.Unary<String, SupportedSignatureMethods>() {
             @Override
             public String call(SupportedSignatureMethods supportedSignatureMethods) {
-                return supportedSignatureMethods.getMessageDigestIdentifier();
+                return SupportedDigestMethods.fromAlias(supportedSignatureMethods.getDigestAlgorithmName()).getIdentifier();
             }
         }));
         return got.toArray(new String[got.size()]);

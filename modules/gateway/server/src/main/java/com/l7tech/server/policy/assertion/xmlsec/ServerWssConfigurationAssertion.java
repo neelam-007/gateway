@@ -89,6 +89,8 @@ public class ServerWssConfigurationAssertion extends AbstractMessageTargetableSe
             dreq.setKeyEncryptionAlgorithm(assertion.getKeyWrappingAlgorithmUri());
         if (assertion.getDigestAlgorithmName() != null)
             dreq.setSignatureMessageDigest(assertion.getDigestAlgorithmName());
+        if (assertion.getReferenceDigestAlgorithmName() != null)
+            dreq.setSignatureReferenceMessageDigest(assertion.getReferenceDigestAlgorithmName());
         if (sigKeyReference != null)
             dreq.setKeyInfoInclusionType(sigKeyReference);
         if (encKeyReference != null)

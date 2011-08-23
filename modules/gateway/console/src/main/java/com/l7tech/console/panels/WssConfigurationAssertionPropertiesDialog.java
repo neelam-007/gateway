@@ -21,6 +21,7 @@ public class WssConfigurationAssertionPropertiesDialog extends AssertionProperti
     private JPanel mainPanel;
     private JComboBox wssVersionCombo;
     private JComboBox signatureDigestCombo;
+    private JComboBox signatureReferenceDigestCombo;
     private JComboBox encryptionAlgCombo;
     private JComboBox keyEncryptionAlgCombo;
     private JComboBox signatureKeyReferenceCombo;
@@ -46,6 +47,7 @@ public class WssConfigurationAssertionPropertiesDialog extends AssertionProperti
     public void setData(WssConfigurationAssertion assertion) {
         setSelectedItemOrUnchangedIfNull(wssVersionCombo, assertion.getWssVersion());
         setSelectedItemOrUnchangedIfNull(signatureDigestCombo, assertion.getDigestAlgorithmName());
+        setSelectedItemOrUnchangedIfNull(signatureReferenceDigestCombo, assertion.getReferenceDigestAlgorithmName());
         final String sigRef = assertion.getKeyReference();
         setSelectedItemOrUnchangedIfNull(signatureKeyReferenceCombo, sigRef == null ? null : KeyReference.valueOf(sigRef));
         final String encRef = assertion.getEncryptionKeyReference();
@@ -65,7 +67,8 @@ public class WssConfigurationAssertionPropertiesDialog extends AssertionProperti
     @Override
     public WssConfigurationAssertion getData(WssConfigurationAssertion assertion) throws ValidationException {
         assertion.setWssVersion((WsSecurityVersion)getSelectedItemOrNullIfUnchanged(wssVersionCombo));
-        assertion.setDigestAlgorithmName((String)getSelectedItemOrNullIfUnchanged(signatureDigestCombo));
+        assertion.setDigestAlgorithmName((String) getSelectedItemOrNullIfUnchanged(signatureDigestCombo));
+        assertion.setReferenceDigestAlgorithmName((String)getSelectedItemOrNullIfUnchanged(signatureReferenceDigestCombo));
         KeyReference sigRef = (KeyReference)getSelectedItemOrNullIfUnchanged(signatureKeyReferenceCombo);
         assertion.setKeyReference(sigRef == null ? null : sigRef.getName());
         KeyReference encRef = (KeyReference)getSelectedItemOrNullIfUnchanged(encryptionKeyReferenceCombo);
@@ -86,6 +89,7 @@ public class WssConfigurationAssertionPropertiesDialog extends AssertionProperti
     protected JPanel createPropertyPanel() {
         wssVersionCombo.setModel(new DefaultComboBoxModel(prependUnchanged(WsSecurityVersion.values())));
         signatureDigestCombo.setModel(new DefaultComboBoxModel(prependUnchanged(SupportedDigestMethods.getDigestNames())));
+        signatureReferenceDigestCombo.setModel(new DefaultComboBoxModel(prependUnchanged(SupportedDigestMethods.getDigestNames())));
         Set<KeyReference> sigTypes = new HashSet<KeyReference>(KeyReference.getAllTypes());
         sigTypes.remove( KeyReference.KEY_NAME ); // key name references not supported for signatures
         signatureKeyReferenceCombo.setModel(new DefaultComboBoxModel(prependUnchanged(sigTypes.toArray())));

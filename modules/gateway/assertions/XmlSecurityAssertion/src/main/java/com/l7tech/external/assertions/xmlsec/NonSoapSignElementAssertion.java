@@ -47,6 +47,8 @@ public class NonSoapSignElementAssertion extends NonSoapSecurityAssertionBase im
     private String customIdAttributeQname = null;
     private String detachedSignatureVariableName = null;
     private boolean forceEnvelopedTransform = false;
+    private String digestAlgName = null;
+    private String refDigestAlgName = null;
 
     public NonSoapSignElementAssertion() {
         super(TargetMessageType.RESPONSE, true);
@@ -100,6 +102,34 @@ public class NonSoapSignElementAssertion extends NonSoapSecurityAssertionBase im
      */
     public void setForceEnvelopedTransform(boolean forceEnvelopedTransform) {
         this.forceEnvelopedTransform = forceEnvelopedTransform;
+    }
+
+    /**
+     * @return digest algorithm name for SignatureMethod (ie, "SHA-384") or null to use default.
+     */
+    public String getDigestAlgName() {
+        return digestAlgName;
+    }
+
+    /**
+     * @param digestAlgName digest algorithm name for SignatureMethod (ie, "SHA-512") or null to use default.
+     */
+    public void setDigestAlgName(String digestAlgName) {
+        this.digestAlgName = digestAlgName;
+    }
+
+    /**
+     * @return digest algorithm name for Reference DigestMethod (ie, "SHA-1"), or null to use same as SignatureMethod.
+     */
+    public String getRefDigestAlgName() {
+        return refDigestAlgName;
+    }
+
+    /**
+     * @param refDigestAlgName digest algorithm name for Reference DigestMethod (ie, "SHA-256"), or null to use same as SignatureMethod.
+     */
+    public void setRefDigestAlgName(String refDigestAlgName) {
+        this.refDigestAlgName = refDigestAlgName;
     }
 
     @Override
