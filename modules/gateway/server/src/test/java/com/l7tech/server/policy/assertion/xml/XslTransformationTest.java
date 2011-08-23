@@ -20,12 +20,12 @@ import com.l7tech.server.TestStashManagerFactory;
 import com.l7tech.server.url.HttpObjectCache;
 import com.l7tech.server.url.UrlResolver;
 import com.l7tech.server.url.AbstractUrlObjectCache;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.xslt.CompiledStylesheet;
 import org.springframework.beans.factory.BeanFactory;
 import org.w3c.dom.Document;
 import org.junit.Assert;
-import org.junit.Test;
-import org.junit.Ignore;
+import org.junit.*;
 
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
@@ -76,6 +76,11 @@ public class XslTransformationTest {
         DOMResult result = new DOMResult();
         XmlUtil.softXSLTransform(srcdoc, result, transformer, Collections.EMPTY_MAP);
         return (Document) result.getNode();
+    }
+
+    @Before
+    public void init() {
+        SyspropUtil.setProperty("com.l7tech.xml.xslt.useSaxon", "false");
     }
 
     @Test
@@ -200,6 +205,32 @@ public class XslTransformationTest {
 
     @Test
     public void testContextVariablesStatic() throws Exception {
+        StaticResourceInfo ri = new StaticResourceInfo();
+        ri.setDocument(ECF_MDE_ID_XSL);
+
+        XslTransformation assertion = new XslTransformation();
+        assertion.setDirection(XslTransformation.APPLY_TO_REQUEST);
+        assertion.setResourceInfo(ri);
+        BeanFactory beanFactory = new SimpleSingletonBeanFactory(new HashMap<String,Object>() {{
+            put("httpClientFactory", new TestingHttpClientFactory());
+        }});
+        ServerAssertion sa = new ServerXslTransformation(assertion, beanFactory);
+
+        Message request = new Message(XmlUtil.stringToDocument(DUMMY_SOAP_XML));
+        Message response = new Message();
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
+        context.setVariable("ecf-mde-id", "VARIABLE CONTENT");
+        sa.checkRequest(context);
+
+        String res = new String( IOUtils.slurpStream(request.getMimeKnob().getFirstPart().getInputStream(false)));
+
+        Assert.assertEquals(res, EXPECTED_VAR_RESULT);
+    }
+
+    @Test
+    public void testContextVariablesStaticWithSaxon() throws Exception {
+        SyspropUtil.setProperty("com.l7tech.xml.xslt.useSaxon", "true");
+
         StaticResourceInfo ri = new StaticResourceInfo();
         ri.setDocument(ECF_MDE_ID_XSL);
 

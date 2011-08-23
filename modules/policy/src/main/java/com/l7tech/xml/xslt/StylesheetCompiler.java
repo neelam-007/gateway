@@ -3,17 +3,16 @@ package com.l7tech.xml.xslt;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.tarari.GlobalTarariContext;
 import com.l7tech.xml.tarari.TarariCompiledStylesheet;
-
+import net.sf.saxon.PreparedStylesheet;
+import net.sf.saxon.TransformerFactoryImpl;
+import net.sf.saxon.om.StructuredQName;
 import org.apache.xalan.templates.ElemVariable;
 import org.apache.xalan.templates.StylesheetRoot;
-import org.w3c.dom.Document;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Element;
+import org.w3c.dom.*;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -23,8 +22,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
-import java.io.StringReader;
 import java.io.IOException;
+import java.io.StringReader;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +42,9 @@ public class StylesheetCompiler {
     /* Namespace attributes used for xalan extension */
     private static final String XALAN_EXTENSION_NS1 = "http://xml.apache.org/xalan";
     private static final String XALAN_EXTENSION_NS2 = "http://xml.apache.org/xslt";
-    private static final String PROP_DISABLE_FORCE_ENCODING = "com.l7tech.xml.disableForceXsltEncoding"; 
+    private static final String PROP_DISABLE_FORCE_ENCODING = "com.l7tech.xml.disableForceXsltEncoding";
+
+    private static final String PROP_USE_SAXON = "com.l7tech.xml.xslt.useSaxon";
 
     /**
      * Compile the specified XSLT stylesheet.
@@ -81,7 +82,10 @@ public class StylesheetCompiler {
         // Prepare a software template
         try {
             // Configure transformer
-            TransformerFactory transfactory = TransformerFactory.newInstance();
+            final Class<TransformerFactoryImpl> factoryClass = SyspropUtil.getBoolean(PROP_USE_SAXON, false) ? TransformerFactoryImpl.class : null;
+            TransformerFactory transfactory = factoryClass == null
+                    ? TransformerFactory.newInstance()
+                    : TransformerFactory.newInstance(factoryClass.getName(), factoryClass.getClassLoader());
             transfactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
             transfactory.setURIResolver(XmlUtil.getSafeURIResolver());
             final List<TransformerException> fatals = new ArrayList<TransformerException>();
@@ -149,6 +153,14 @@ public class StylesheetCompiler {
                 for (Object aVictor : victor) {
                     ElemVariable elemVariable = (ElemVariable)aVictor;
                     vars.add(elemVariable.getName().getLocalName());
+                }
+                varsUsed = vars.toArray(new String[vars.size()]);
+            } else if (temp instanceof PreparedStylesheet) {
+                List<String> vars = new ArrayList<String>();
+                PreparedStylesheet ps = (PreparedStylesheet) temp;
+                List<StructuredQName> qns = ps.getGlobalVariableMap().getVariableMap();
+                for (StructuredQName qn : qns) {
+                    vars.add(qn.getLocalName());
                 }
                 varsUsed = vars.toArray(new String[vars.size()]);
             } else {
