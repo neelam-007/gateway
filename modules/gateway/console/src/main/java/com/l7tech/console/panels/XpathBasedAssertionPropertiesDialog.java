@@ -365,6 +365,10 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             }
         }
 
+        speedIndicator = new SpeedIndicator(0);
+        speedIndicatorPanel.setLayout(new BorderLayout());
+        speedIndicatorPanel.add(speedIndicator, BorderLayout.CENTER);
+
         initialize(readOnly);
 
         // display the existing xpath expression
@@ -479,9 +483,6 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         });
 
         haveTarari = checkForTarari();
-        speedIndicator = new SpeedIndicator(0);
-        speedIndicatorPanel.setLayout(new BorderLayout());
-        speedIndicatorPanel.add(speedIndicator, BorderLayout.CENTER);
     }
 
     /**
