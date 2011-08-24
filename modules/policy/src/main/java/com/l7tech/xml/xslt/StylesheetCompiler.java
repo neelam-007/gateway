@@ -82,7 +82,7 @@ public class StylesheetCompiler {
         // Prepare a software template
         try {
             // Configure transformer
-            final Class<TransformerFactoryImpl> factoryClass = SyspropUtil.getBoolean(PROP_USE_SAXON, false) ? TransformerFactoryImpl.class : null;
+            final Class<TransformerFactoryImpl> factoryClass = ConfigFactory.getBooleanProperty(PROP_USE_SAXON, false) ? TransformerFactoryImpl.class : null;
             TransformerFactory transfactory = factoryClass == null
                     ? TransformerFactory.newInstance()
                     : TransformerFactory.newInstance(factoryClass.getName(), factoryClass.getClassLoader());
