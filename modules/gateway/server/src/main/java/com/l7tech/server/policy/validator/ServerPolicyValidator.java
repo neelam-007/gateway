@@ -31,6 +31,7 @@ import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.policy.validator.AbstractPolicyValidator;
 import com.l7tech.policy.validator.PolicyValidationContext;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.EntityFinder;
 import com.l7tech.server.globalresources.ResourceEntryManager;
 import com.l7tech.server.globalresources.ResourceEntrySchemaSourceResolver;
@@ -549,7 +550,7 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                                         final AssertionPath ap,
                                         final PolicyValidatorResult r ) {
         final String name = jdbcConnectionable.getConnectionName();
-        if ( name != null ) {
+        if ( name != null && Syntax.getReferencedNames(name).length == 0) {
             try {
                 JdbcConnection connection = jdbcConnectionManager.getJdbcConnection( name );
                 if ( connection == null ) {

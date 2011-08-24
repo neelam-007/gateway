@@ -110,14 +110,15 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         sqlQueryTextArea.setDocument(new MaxLengthDocument(JdbcAdmin.MAX_QUERY_LENGTH));
         queryNameTextField.setDocument(new MaxLengthDocument(128));
 
-        final EventListener changeListener = new RunOnChangeListener(new Runnable() {
+        final RunOnChangeListener changeListener = new RunOnChangeListener(new Runnable() {
             public void run() {
                 enableOrDisableOkButton();
             }
         });
-        connectionComboBox.addItemListener((ItemListener)changeListener);
-        sqlQueryTextArea.getDocument().addDocumentListener((DocumentListener)changeListener);
-        variablePrefixTextField.addChangeListener((ChangeListener)changeListener);
+        ((JTextField)connectionComboBox.getEditor().getEditorComponent()).getDocument().addDocumentListener(changeListener);
+        connectionComboBox.addItemListener(changeListener);
+        sqlQueryTextArea.getDocument().addDocumentListener(changeListener);
+        variablePrefixTextField.addChangeListener(changeListener);
 
         initNamingTable();
 
@@ -298,11 +299,10 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
     }
 
     private void enableOrDisableOkButton() {
-         boolean enabled =
-             !isReadOnly() &&
-             isNonEmptyRequiredTextField((String) connectionComboBox.getSelectedItem()) &&
-             isNonEmptyRequiredTextField(sqlQueryTextArea.getText()) &&
-             variablePrefixTextField.isEntryValid();
+        boolean enabled = !isReadOnly() &&
+            isNonEmptyRequiredTextField(((JTextField)connectionComboBox.getEditor().getEditorComponent()).getText()) &&
+            isNonEmptyRequiredTextField(sqlQueryTextArea.getText()) &&
+            variablePrefixTextField.isEntryValid();
 
         okButton.setEnabled(enabled);
     }
@@ -330,20 +330,23 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
                         warningMsg[0] = "canceled";
                         return;
                     }
-                    String connName = (String) connectionComboBox.getSelectedItem();
-                    String query = sqlQueryTextArea.getText();
-                    int numOfContextVariablesUsed = Syntax.getReferencedNames(query).length;
 
+                    final String connName = (String) connectionComboBox.getSelectedItem();
+                    if (Syntax.getReferencedNames(connName).length > 0) {
+                        warningMsg[0] = "Cannot process testing due to JDBC Connection name containing context variable(s).";
+                        return;
+                    }
+
+                    final String query = sqlQueryTextArea.getText();
+                    final int numOfContextVariablesUsed = Syntax.getReferencedNames(query).length;
                     if (numOfContextVariablesUsed > 0) {
                         warningMsg[0] = "Unable to evaluate a query containing context variable" +  (numOfContextVariablesUsed > 1? "s." : ".");
-                    } else {
-                        JdbcAdmin admin = getJdbcConnectionAdmin();
-                        if (admin == null) {
-                            warningMsg[0] = "Cannot process testing due to JDBC Conneciton Admin unavailable.";
-                        } else {
-                            warningMsg[0] = admin.testJdbcQuery(connName, query);
-                        }
+                        return;
                     }
+
+                    JdbcAdmin admin = getJdbcConnectionAdmin();
+                    warningMsg[0] = admin == null?
+                        "Cannot process testing due to JDBC Conneciton Admin unavailable." : admin.testJdbcQuery(connName, query);
                 }
             }
         );
