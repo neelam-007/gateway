@@ -28,6 +28,12 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
+import javax.xml.namespace.NamespaceContext;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
+import javax.xml.xpath.XPathFactoryConfigurationException;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -53,7 +59,7 @@ public class WssRoundTripTest {
         String name;
         WssDecoratorTest.TestDocument td;
 
-        public NamedTestDocument(String name, WssDecoratorTest.TestDocument td) {
+        private NamedTestDocument(String name, WssDecoratorTest.TestDocument td) {
             this.name = name;
             this.td = td;
         }
@@ -79,7 +85,7 @@ public class WssRoundTripTest {
 
     @Test
     public void testSignedUsernameToken() throws Exception {
-        runRoundTripTest(new NamedTestDocument("signedUsernameToken", wssDecoratorTest.getSignedUsernameTokenTestDocument()), false);
+        runRoundTripTest(new NamedTestDocument("signedUsernameToken", wssDecoratorTest.getSignedUsernameTokenTestDocument()), null);
     }
 
     public void doTestSignedAndEncryptedUsernameToken( SecurityTokenResolver securityTokenResolver) throws Exception {
@@ -87,7 +93,7 @@ public class WssRoundTripTest {
                                                       wssDecoratorTest.getSignedAndEncryptedUsernameTokenTestDocument());
         ntd.td.securityTokenResolver = securityTokenResolver;
         EncryptedKey[] ekh = new EncryptedKey[1];
-        runRoundTripTest(ntd, false, ekh);
+        runRoundTripTest(ntd, null, ekh);
         EncryptedKey encryptedKey = ekh[0];
         assertNotNull(encryptedKey);
 
@@ -125,9 +131,9 @@ public class WssRoundTripTest {
             ProcessorResultUtil.SearchResult foo = ProcessorResultUtil.searchInResult(log, doc1,
                     new DomCompiledXpath(new XpathExpression("//wsse:UsernameToken", ns)), null, false, r.getElementsThatWereSigned(), "signed");
             if (securityTokenResolver == null)
-                assertEquals(foo.getResultCode(), ProcessorResultUtil.FALSIFIED);
+                assertEquals( (long) foo.getResultCode(), (long) ProcessorResultUtil.FALSIFIED );
             else
-                assertEquals(foo.getResultCode(), ProcessorResultUtil.NO_ERROR);
+                assertEquals( (long) foo.getResultCode(), (long) ProcessorResultUtil.NO_ERROR );
         }
 
         if (securityTokenResolver == null) {
@@ -149,7 +155,7 @@ public class WssRoundTripTest {
     @BugNumber(9802)
     public void testSignedAndEncryptedUsernameTokenWithEncryptedSignature() throws Exception {
         runRoundTripTest(new NamedTestDocument("SignedAndEncryptedUsernameTokenWithEncryptedSignature",
-                wssDecoratorTest.getSignedAndEncryptedUsernameTokenWithEncryptedSignatureTestDocument()), false);
+                wssDecoratorTest.getSignedAndEncryptedUsernameTokenWithEncryptedSignatureTestDocument()), null);
     }
 
     @Test
@@ -174,7 +180,7 @@ public class WssRoundTripTest {
     public void testEncryptionOnlyAES192() throws Exception {
         runRoundTripTest(new NamedTestDocument("EncryptionOnlyAES192",
                                                wssDecoratorTest.getEncryptionOnlyTestDocument(XencAlgorithm.AES_192_CBC.getXEncName())),
-                         false);
+                         null);
     }
 
     @Test
@@ -198,7 +204,7 @@ public class WssRoundTripTest {
                 final NamedTestDocument testDocument = new NamedTestDocument( "EncryptionOnlyAES128",
                         wssDecoratorTest.getEncryptionOnlyTestDocument( XencAlgorithm.AES_128_CBC.getXEncName() ) );
                 testDocument.td.req.setEncryptionKeyInfoInclusionType( keyInfoInclusionType );
-                final String decoratedRequest = runRoundTripTest( testDocument, false );
+                final String decoratedRequest = runRoundTripTest( testDocument, null );
                 final Document document = XmlUtil.parse( decoratedRequest );
                 final Element header = SoapUtil.getSecurityElementForL7( document );
                 assertNotNull( "No security header found", header );
@@ -239,7 +245,11 @@ public class WssRoundTripTest {
     @Test
     public void testSigningOnly_dsa_sha1_sha256References() throws Exception {
         runRoundTripTest(new NamedTestDocument("SigningOnly_dsa_sha1_sha256References",
-                                               wssDecoratorTest.getSigningOnly_dsa_sha1_sha256References_TestDocument()));
+                                               wssDecoratorTest.getSigningOnly_dsa_sha1_sha256References_TestDocument()),
+                         xpathVerifier(
+                                 "1=count(/soapenv:Envelope/soapenv:Header/wsse:Security/ds:Signature/ds:SignedInfo/ds:SignatureMethod[@Algorithm = 'http://www.w3.org/2000/09/xmldsig#dsa-sha1'])",
+                                 "2=count(/soapenv:Envelope/soapenv:Header/wsse:Security/ds:Signature/ds:SignedInfo/ds:Reference/ds:DigestMethod[@Algorithm = 'http://www.w3.org/2001/04/xmlenc#sha256'])"
+                                 ));
     }
 
     @Ignore("Fails because we currently do not support sha256 with DSA and fall back to sha1 instead (which signs and verifies ok, but fails the post-check for SHA-256)")
@@ -332,14 +342,14 @@ public class WssRoundTripTest {
     public void testSigningOnlyWithSecureConversation() throws Exception {
         runRoundTripTest(new NamedTestDocument("SigningOnlyWithSecureConversation",
                                                wssDecoratorTest.getSigningOnlyWithSecureConversationTestDocument()),
-                         false);
+                         null);
     }
 
     @Test
     public void testSigningAndEncryptionWithSecureConversation() throws Exception {
         runRoundTripTest(new NamedTestDocument("SigningAndEncryptionWithSecureConversation",
                                                wssDecoratorTest.getSigningAndEncryptionWithSecureConversationTestDocument()),
-                         false);
+                         null);
     }
 
     @Test
@@ -352,28 +362,28 @@ public class WssRoundTripTest {
         ntd.td.req.setSignTimestamp(false);
         ntd.td.req.getElementsToEncrypt().clear();
         ntd.td.req.getElementsToSign().clear();
-        runRoundTripTest(ntd, false);
+        runRoundTripTest(ntd, null);
     }
 
     @Test
     public void testSigningWithSecureConversation2005WithSct() throws Exception {
         runRoundTripTest(new NamedTestDocument("testSigningWithSecureConversation2005WithSct",
                 wssDecoratorTest.getSigningWithSecureConversation2005WithSctTestDocument()),
-                false);
+                null);
     }
 
     @Test
     public void testSigningWithSecureConversation2004WithoutSct() throws Exception {
         runRoundTripTest(new NamedTestDocument("testSigningWithSecureConversation2004WithoutSct",
                 wssDecoratorTest.getSigningWithSecureConversation2004WithoutSctTestDocument()),
-                false);
+                null);
     }
 
     @Test
     public void testSigningWithSecureConversation2005WithoutSct() throws Exception {
         runRoundTripTest(new NamedTestDocument("testSigningWithSecureConversation2005WithoutSct",
                 wssDecoratorTest.getSigningWithSecureConversation2005WithoutSctTestDocument()),
-                false);
+                null);
     }
 
     @Test
@@ -382,35 +392,35 @@ public class WssRoundTripTest {
                                                wssDecoratorTest.getSigningAndEncryptionWithSecureConversationTestDocument());
         ntd.td.req.addSignatureConfirmation("abc11SignatureConfirmationValue11blahblahblah11==");
         runRoundTripTest(ntd,
-                         false);
+                         null);
     }
 
     @Test
     public void testSignedSamlHolderOfKeyRequest() throws Exception {
         runRoundTripTest(new NamedTestDocument("SignedSamlHolderOfKeyRequest",
                                                wssDecoratorTest.getSignedSamlHolderOfKeyRequestTestDocument(1)),
-                         false);
+                         null);
     }
 
     @Test
     public void testSignedSamlSenderVouchesRequest() throws Exception {
         runRoundTripTest(new NamedTestDocument("SignedSamlSenderVouchesRequest",
                                                wssDecoratorTest.getSignedSamlSenderVouchesRequestTestDocument(1)),
-                         false);
+                         null);
     }
 
     @Test
     public void testSignedSaml2HolderOfKeyRequest() throws Exception {
         runRoundTripTest(new NamedTestDocument("SignedSaml2HolderOfKeyRequest",
                                                wssDecoratorTest.getSignedSamlHolderOfKeyRequestTestDocument(2)),
-                         false);
+                         null);
     }
 
     @Test
     public void testSignedSaml2SenderVouchesRequest() throws Exception {
         runRoundTripTest(new NamedTestDocument("SignedSaml2SenderVouchesRequest",
                                                wssDecoratorTest.getSignedSamlSenderVouchesRequestTestDocument(2)),
-                         false);
+                         null);
     }
 
     @Test
@@ -441,7 +451,7 @@ public class WssRoundTripTest {
         partsToSign.clear();
         partsToSign.add("-76392836.13454");
 
-        String result = runRoundTripTest(ntd, false);
+        String result = runRoundTripTest(ntd, null);
 
         assertTrue("Use of correct transform", result.contains(SoapUtil.TRANSFORM_ATTACHMENT_CONTENT));
     }
@@ -454,7 +464,7 @@ public class WssRoundTripTest {
         ntd.td.req.setSignPartHeaders(true);
         ntd.td.req.getPartsToSign().add("-76392836.13454");
 
-        String result = runRoundTripTest(ntd, false);
+        String result = runRoundTripTest(ntd, null);
 
         assertTrue("Use of correct transform", result.contains(SoapUtil.TRANSFORM_ATTACHMENT_COMPLETE));
     }
@@ -475,21 +485,21 @@ public class WssRoundTripTest {
     public void testEncryptedUsernameToken() throws Exception {
         runRoundTripTest(new NamedTestDocument("EncryptedUsernameToken",
                                                wssDecoratorTest.getEncryptedUsernameTokenTestDocument()),
-                                               false);
+                                               null);
     }
 
     @Test
     public void testEncryptedUsernameTokenWithDerivedKeys() throws Exception {
         runRoundTripTest(new NamedTestDocument("EncryptedUsernameTokenWithDerivedKeys",
                                                wssDecoratorTest.getEncryptedUsernameTokenWithDerivedKeysTestDocument()),
-                                               false);
+                                               null);
     }
 
     @Test
     public void testOaepEncryptedKey() throws Exception {
         runRoundTripTest(new NamedTestDocument("EncryptedKeyAlgorithm",
                                                wssDecoratorTest.getOaepKeyEncryptionTestDocument()),
-                         false);
+                         null);
     }
 
     @Test
@@ -501,7 +511,7 @@ public class WssRoundTripTest {
     public void testExplicitSignatureConfirmation() throws Exception {
         NamedTestDocument ntd = new NamedTestDocument("ExplicitSignatureConfirmation",
             wssDecoratorTest.getExplicitSignatureConfirmationsTestDocument());
-        runRoundTripTest(ntd, false);
+        runRoundTripTest(ntd, null);
     }
 
     @Test
@@ -524,17 +534,74 @@ public class WssRoundTripTest {
         runRoundTripTest(new NamedTestDocument("testSuiteBCryptoSignature(ECDSA-SHA384", wssDecoratorTest.getSuiteBSigningTestDocument("SHA-384")));
     }
 
-    private void runRoundTripTest(NamedTestDocument ntd) throws Exception {
-        runRoundTripTest(ntd, true);
+    private Functions.Unary<Boolean,Document> wsiBspVerifier() {
+        return new Functions.Unary<Boolean,Document>(){
+            @Override
+            public Boolean call( final Document document ) {
+                return validator.isValid( document );
+            }
+        };
+    }
+
+    /**
+     * Create a verifier for the given XPath expressions.
+     *
+     * The given expressions should evaluate to true or false to indicate
+     * success or failure.
+     */
+    private Functions.Unary<Boolean,Document> xpathVerifier( final String... xpaths ) {
+        return new Functions.Unary<Boolean,Document>(){
+            @Override
+            public Boolean call( final Document document ) {
+                try {
+                    final XPathFactory factory = XPathFactory.newInstance( XPathFactory.DEFAULT_OBJECT_MODEL_URI );
+                    final NamespaceContextImpl namespaces = new NamespaceContextImpl(XmlUtil.findAllNamespaces( document.getDocumentElement() ));
+                    final XPath xpath = factory.newXPath();
+                    xpath.setNamespaceContext( namespaces );
+
+                    boolean verified = true;
+                    for ( final String xpathExpr : xpaths ) {
+                        final boolean xpathVerified =
+                                (Boolean) xpath.evaluate( xpathExpr, document, XPathConstants.BOOLEAN );
+                        if ( !xpathVerified ) {
+                            System.out.println( "Verification xpath failed: " + xpathExpr );
+                        }
+                        verified = verified && xpathVerified;
+                    }
+
+                    return verified;
+                } catch ( XPathFactoryConfigurationException e ) {
+                    e.printStackTrace();
+                } catch ( XPathExpressionException e ) {
+                    e.printStackTrace();
+                }
+                return false;
+            }
+        };
+    }
+
+
+    private void runRoundTripTest( final NamedTestDocument ntd ) throws Exception {
+        runRoundTripTest(ntd, wsiBspVerifier());
     }
 
     // @return  the decorated request, in case you want to test replaying it
-    private String runRoundTripTest(NamedTestDocument ntd, boolean checkBSP1Compliance) throws Exception {
-        return runRoundTripTest(ntd, checkBSP1Compliance, null);
+    private String runRoundTripTest( final NamedTestDocument ntd,
+                                     final Functions.Unary<Boolean,Document> verifier ) throws Exception {
+        return runRoundTripTest(ntd, verifier, null);
     }
 
-    // @return  the decorated request, in case you want to test replaying it
-    private String runRoundTripTest(NamedTestDocument ntd, boolean checkBSP1Compliance, EncryptedKey[] ekOut) throws Exception {
+    /**
+     *
+     * @param ntd The test document to use
+     * @param verifier A verifier to run against the decorated message
+     * @param ekOut holder for any encrypted key
+     * @return the decorated request, in case you want to test replaying it
+     * @throws Exception
+     */
+    private String runRoundTripTest( final NamedTestDocument ntd,
+                                     final Functions.Unary<Boolean,Document> verifier,
+                                     final EncryptedKey[] ekOut) throws Exception {
         log.info("Running round-trip test on test document: " + ntd.name);
         final WssDecoratorTest.TestDocument td = ntd.td;
         WssDecoratorTest.Context c = td.c;
@@ -617,7 +684,7 @@ public class WssRoundTripTest {
         incomingMessage.notifyMessage(fakeRequest, MessageRole.REQUEST);
         Document incomingSoapDocument = incomingMessage.getXmlKnob().getDocumentReadOnly();
 
-        boolean isValid = !checkBSP1Compliance || validator.isValid(incomingSoapDocument);
+        boolean isValid = verifier==null || verifier.call(incomingSoapDocument);
 
         assertTrue("Serialization did not affect the integrity of the XML message",
                    XmlUtil.nodeToString(soapMessage).equals(XmlUtil.nodeToString(XmlUtil.stringToDocument(networkRequestString))));
@@ -648,7 +715,7 @@ public class WssRoundTripTest {
             ns.put("wsse", SoapUtil.SECURITY_NAMESPACE);
             ProcessorResultUtil.SearchResult foo = ProcessorResultUtil.searchInResult(log, incomingSoapDocument,
                     new DomCompiledXpath(new XpathExpression("//wsse:UsernameToken", ns)), null, false, r.getElementsThatWereSigned(), "signed");
-            assertEquals(foo.getResultCode(), ProcessorResultUtil.NO_ERROR);
+            assertEquals( (long) foo.getResultCode(), (long) ProcessorResultUtil.NO_ERROR );
         }
 
         // If timestamp was supposed to be signed, make sure it actually was
@@ -791,7 +858,7 @@ public class WssRoundTripTest {
             assertEquals(reqs.getSecurityHeaderActor(), SoapUtil.getActorValue(processedSecurityHeader));
         }
 
-        assertTrue("WS-I BSP check.", isValid);
+        assertTrue("Verifier check failed.", isValid);
 
         return networkRequestString;
     }
@@ -1047,26 +1114,26 @@ public class WssRoundTripTest {
     @Test
     public void testSamlSecretKeyHokSubjectConfirmation() throws Exception {
         runRoundTripTest(new NamedTestDocument("SamlSecretKeyHokSubjectConfirmation",
-                wssDecoratorTest.getSignWithSamlHokSecretKeyTestDocument()), false);
+                wssDecoratorTest.getSignWithSamlHokSecretKeyTestDocument()), null);
     }
 
     @Test
     @BugNumber(9965)
     public void testSamlSecretKeyHokSubjectConfirmationWithSamlPreferred() throws Exception {
         runRoundTripTest(new NamedTestDocument("SamlSecretKeyHokSubjectConfirmationwWithSamlPreferred",
-                wssDecoratorTest.getSignWithSamlHokSecretKeyWithSamlPreferredTestDocument()), false);
+                wssDecoratorTest.getSignWithSamlHokSecretKeyWithSamlPreferredTestDocument()), null);
     }
 
     @Test
     @BugNumber(9749)
     public void testEncryptedSignature() throws Exception {
-        runRoundTripTest(new NamedTestDocument("EncryptedSignature", wssDecoratorTest.getEncryptedSignatureTestDocument()), false);
+        runRoundTripTest(new NamedTestDocument("EncryptedSignature", wssDecoratorTest.getEncryptedSignatureTestDocument()), null);
     }
 
     @Test
     @BugNumber(9749)
     public void testWholeElementEncryption() throws Exception {
-        runRoundTripTest(new NamedTestDocument("EncryptedSignature", wssDecoratorTest.getTestWholeElementEncryptionTestDocument()), false);
+        runRoundTripTest(new NamedTestDocument("EncryptedSignature", wssDecoratorTest.getTestWholeElementEncryptionTestDocument()), null);
     }
 
 }
