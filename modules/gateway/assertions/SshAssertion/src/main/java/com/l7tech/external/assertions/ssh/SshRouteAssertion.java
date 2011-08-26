@@ -50,8 +50,9 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
     private int connectTimeout = DEFAULT_CONNECT_TIMEOUT;   // Timeout for opening connection to SFTP server (in milliseconds).
     private int readTimeout = DEFAULT_READ_TIMEOUT;
     private String downloadContentType;
+    private boolean isScpProtocol;   // SCP? if not, assume SFTP
+    private boolean isCredentialsSourceSpecified;   // login credentials specified?  if not, assume pass through
 
-    private boolean isScpProtocol;   // SCP? if not assume SFTP
     private MessageTargetableSupport requestTarget = defaultRequestTarget();
 
     private MessageTargetableSupport defaultRequestTarget() {
@@ -242,6 +243,13 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
     }
     public void setScpProtocol(boolean scpProtocol) {
         isScpProtocol = scpProtocol;
+    }
+
+    public boolean isCredentialsSourceSpecified() {
+        return isCredentialsSourceSpecified;
+    }
+    public void setCredentialsSourceSpecified(boolean credentialsSourceSpecified) {
+        isCredentialsSourceSpecified = credentialsSourceSpecified;
     }
 
     @Override

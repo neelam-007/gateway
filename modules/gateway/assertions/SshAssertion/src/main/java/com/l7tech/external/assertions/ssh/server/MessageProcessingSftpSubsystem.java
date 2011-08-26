@@ -884,6 +884,8 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
                          sendStatus(id, SSH_FX_OK, "", "");
                      } else if (status == AssertionStatus.AUTH_FAILED) {
                          sendStatus(id, SSH_FX_PERMISSION_DENIED, status.toString());
+                     } else if (status == AssertionStatus.FAILED) {
+                         sendStatus(id, SSH_FX_FAILURE, status.toString());
                      } else {
                          sendStatus(id, SSH_FX_BAD_MESSAGE, status.toString());
                      }

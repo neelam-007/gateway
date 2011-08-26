@@ -17,6 +17,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -25,39 +26,61 @@ import java.util.regex.Pattern;
  * Dialog to enter host key.
  */
 public class HostKeyDialog extends JDialog {
+
+    public enum HostKeyValidationType {
+        VALIDATE_PEM_PRIVATE_KEY_FORMAT, VALIDATE_SSH_PUBLIC_KEY_FORMAT
+    }
+
     private JPanel mainPanel;
     private JTextArea hostKeyField;
     private JButton loadFromFileButton;
     private JButton okButton;
     private JButton cancelButton;
+    private JPanel hostKeyFieldPanel;
 
     private boolean confirmed = false;
-    private static final ResourceBundle resources = ResourceBundle.getBundle( HostKeyDialog.class.getName() );
+    private static final ResourceBundle resources = ResourceBundle.getBundle(HostKeyDialog.class.getName());
 
-    public HostKeyDialog(Window owner, String hostKey) {
-        super(owner, "SSH Server Host Key", Dialog.ModalityType.APPLICATION_MODAL);
-        initComponents(hostKey);
+    public HostKeyDialog(Window owner, String hostKey, HostKeyValidationType validationType) {
+        super(owner, getResourceString("sshServerHostKeyLabel"), Dialog.ModalityType.APPLICATION_MODAL);
+        initComponents(hostKey, validationType);
     }
 
-    public HostKeyDialog(Frame owner, String hostKey) {
-        super(owner, "SSH Server Host Key", true);
-        initComponents(hostKey);
+    public HostKeyDialog(Frame owner, String hostKey, HostKeyValidationType validationType) {
+        super(owner, getResourceString("sshServerHostKeyLabel"), true);
+        initComponents(hostKey, validationType);
     }
 
-    public HostKeyDialog(Dialog owner, String hostKey) {
-        super(owner, "SSH Server Host Key", true);
-        initComponents(hostKey);
+    public HostKeyDialog(Dialog owner, String hostKey, HostKeyValidationType validationType) {
+        super(owner, getResourceString("sshServerHostKeyLabel"), true);
+        initComponents(hostKey, validationType);
     }
 
-    private void initComponents(String hostKey) {
+    private void initComponents(String hostKey, final HostKeyValidationType validationType) {
         okButton.setEnabled(hostKey != null);
         hostKeyField.setLineWrap(true);
         hostKeyField.setText(hostKey == null ? "" : hostKey);
         hostKeyField.setEditable(true);
+
+        String borderTitle = "";
+        switch (validationType)
+        {
+            case VALIDATE_PEM_PRIVATE_KEY_FORMAT:
+                borderTitle = getResourceString("privateKeyLabel");
+                break;
+            case VALIDATE_SSH_PUBLIC_KEY_FORMAT:
+                borderTitle = getResourceString("sshPublicKeyLabel");
+                break;
+            default:
+                break;
+        }
+        hostKeyFieldPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), borderTitle));
+
+
         hostKeyField.getDocument().addDocumentListener(new RunOnChangeListener() {
             @Override
             public void run() {
-                if(hostKeyField.getText().trim().length() > 0 && PemSshKeyUtil.getPemAlgorithm(hostKeyField.getText().trim()) != null) {
+                if(hostKeyField.getText().trim().length() > 0) {
                     okButton.setEnabled(true);
                 } else {
                     okButton.setEnabled(false);
@@ -74,12 +97,26 @@ public class HostKeyDialog extends JDialog {
         okButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                // for now we won't validate the host key format
-                 /*Pair<Boolean, String> hostKeyFormatIsValid = isValidHostKeyFormat();
-                 if(!hostKeyFormatIsValid.left.booleanValue()){
-                     JOptionPane.showMessageDialog(HostKeyDialog.this, MessageFormat.format(getResourceString("sshHostKeyFormatError"), hostKeyFormatIsValid.right));
-                     return;
-                 }*/
+                switch (validationType)
+                {
+                    case VALIDATE_PEM_PRIVATE_KEY_FORMAT:
+                        if (PemSshKeyUtil.getPemPrivateKeyAlgorithm(hostKeyField.getText().trim()) == null) {
+                            JOptionPane.showMessageDialog(HostKeyDialog.this, MessageFormat.format(
+                                    getResourceString("sshHostKeyFormatError"), "The key must be in PEM private key format."));
+                            return;
+                        }
+                        break;
+                    case VALIDATE_SSH_PUBLIC_KEY_FORMAT:
+                        Pair<Boolean, String> hostKeyFormatIsValid = isValidHostKeyFormat();
+                        if(!hostKeyFormatIsValid.left.booleanValue()){
+                            JOptionPane.showMessageDialog(HostKeyDialog.this, MessageFormat.format(
+                                    getResourceString("sshHostKeyFormatError"), hostKeyFormatIsValid.right));
+                            return;
+                        }
+                        break;
+                    default:
+                        break;
+                }
 
                 confirmed = true;
                 dispose();
@@ -134,8 +171,8 @@ public class HostKeyDialog extends JDialog {
     }
 
     /**
-     * @return Return a PAIR <true, empty string> iff the serverkey is valid
-     * otherwise Return a PAIR <false, error message> iff the serverkey is invalid.
+     * @return Return a PAIR <true, empty string> if the serverkey is valid
+     * otherwise Return a PAIR <false, error message> if the serverkey is invalid.
      */
     private Pair<Boolean, String> isValidHostKeyFormat() {
         boolean isValid = false;
@@ -186,7 +223,7 @@ public class HostKeyDialog extends JDialog {
         return new Pair<Boolean, String>(isValid, errorText);
     }
 
-     private String getResourceString(String key){
+     private static String getResourceString(String key){
         final String value = resources.getString(key);
         if(value.endsWith(":")){
             return value.substring(0, value.lastIndexOf(":"));

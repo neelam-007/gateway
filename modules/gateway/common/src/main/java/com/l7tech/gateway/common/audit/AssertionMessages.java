@@ -1007,6 +1007,7 @@ public class AssertionMessages extends Messages {
     public static final M SSH_CREDENTIAL_NOT_SSH = m(9430, Level.INFO, "Request not SSH; unable to extract SSH credentials.");
     public static final M SSH_CREDENTIAL_NO_AUTH = m(9431, Level.FINE, "Not authenticated.");
     public static final M SSH_CREDENTIAL_AUTH_USER = m(9432, Level.FINE, "Found credentials for user ''{0}''.");
+    public static final M SSH_ROUTING_PASSTHRU_NO_USERNAME = m(9433, Level.WARNING, "No user name found for passing through to SSH server");
 
     // Highest ID reserved for AssertionMessages = 99999
 }

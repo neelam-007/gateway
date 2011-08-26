@@ -12,7 +12,7 @@ public class PemSshHostKeyProvider extends AbstractSshHostKeyProvider {
 
     public PemSshHostKeyProvider(String privateKey) {
         super(privateKey);
-        String algorithm = PemSshKeyUtil.getPemAlgorithm(privateKey);
+        String algorithm = PemSshKeyUtil.getPemPrivateKeyAlgorithm(privateKey);
         if (algorithm != null) {
             setAlgorithm(algorithm);
         }

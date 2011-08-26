@@ -27,7 +27,7 @@ public class PemSshKeyUtil extends JceProvider {
      * @param pemPrivateKey a private key string in PEM format
      * @return an algorithm string for RSA or DSA
      */
-    public static String getPemAlgorithm(String pemPrivateKey) {
+    public static String getPemPrivateKeyAlgorithm(String pemPrivateKey) {
         if (pemPrivateKey.indexOf(PEM_BEGIN + ALGORITHM_RSA) >= 0) {
             return ALGORITHM_RSA;
         } else if (pemPrivateKey.indexOf(PEM_BEGIN + ALGORITHM_DSA) >= 0) {

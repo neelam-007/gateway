@@ -15,6 +15,7 @@ import com.l7tech.message.MimeKnob;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.cluster.ClusterPropertyCache;
@@ -79,7 +80,32 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             logger.log(Level.INFO, "Error processing security header, request XML invalid ''{0}''", se.getMessage());
         }
 
-        String username = ExpandVariables.process(assertion.getUsername(), context.getVariableMap(Syntax.getReferencedNames(assertion.getUsername()), getAudit()), getAudit());
+        // determine username and password based on if they were pass-through or specified
+        String username = null;
+        String password = null;
+        if (assertion.isCredentialsSourceSpecified()) {
+            username = ExpandVariables.process(assertion.getUsername(), context.getVariableMap(Syntax.getReferencedNames(assertion.getUsername()), getAudit()), getAudit());
+            if(assertion.getPasswordOid() != null) {
+                try {
+                    password = new String(securePasswordManager.decryptPassword(securePasswordManager.findByPrimaryKey(assertion.getPasswordOid()).getEncodedPassword()));
+                } catch(FindException fe) {
+                    return AssertionStatus.FAILED;
+                } catch(ParseException pe) {
+                    return AssertionStatus.FAILED;
+                }
+            }
+        } else {
+            final LoginCredentials credentials = context.getDefaultAuthenticationContext().getLastCredentials();
+            if (credentials != null) {
+                username = credentials.getName();
+                password = new String(credentials.getCredentials());
+            }
+            if (username == null) {
+                logAndAudit(AssertionMessages.SSH_ROUTING_PASSTHRU_NO_USERNAME);
+                return AssertionStatus.FAILED;
+            }
+        }
+
         String host = ExpandVariables.process(assertion.getHost(), context.getVariableMap(Syntax.getReferencedNames(assertion.getHost()), getAudit()), getAudit());
         int port;
         try{
@@ -87,16 +113,6 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
         } catch (Exception e){
             //use default port
             port = 22;
-        }
-        String password = null;
-        if(assertion.getPasswordOid() != null) {
-            try {
-                password = new String(securePasswordManager.decryptPassword(securePasswordManager.findByPrimaryKey(assertion.getPasswordOid()).getEncodedPassword()));
-            } catch(FindException fe) {
-                return AssertionStatus.FAILED;
-            } catch(ParseException pe) {
-                return AssertionStatus.FAILED;
-            }
         }
 
         ServerSshRouteClient sshClient = null;
@@ -127,7 +143,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                 } else {
                     sshParams.setPrivateKey(privateKeyText, password);
                 }
-            } else  {
+            } else {
                 sshParams = new SshParameters(host, port, username, password);
             }
 

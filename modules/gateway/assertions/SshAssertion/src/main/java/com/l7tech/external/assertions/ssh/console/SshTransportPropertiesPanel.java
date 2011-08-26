@@ -62,7 +62,7 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
 
         hostPrivateKey = props.get(SshRouteAssertion.LISTEN_PROP_HOST_PRIVATE_KEY);
         if (!StringUtils.isEmpty(hostPrivateKey)) {
-            String determinedAlgorithm = PemSshKeyUtil.getPemAlgorithm(hostPrivateKey);
+            String determinedAlgorithm = PemSshKeyUtil.getPemPrivateKeyAlgorithm(hostPrivateKey);
             if (determinedAlgorithm != null) {
                 hostPrivateKeyTypeField.setText(PemSshKeyUtil.PEM + " " + determinedAlgorithm);
             } else {
@@ -106,14 +106,15 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
         setHostPrivateKeyButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                final HostKeyDialog dialog = new HostKeyDialog(SwingUtilities.getWindowAncestor(SshTransportPropertiesPanel.this), null);
+                final HostKeyDialog dialog = new HostKeyDialog(SwingUtilities.getWindowAncestor(
+                        SshTransportPropertiesPanel.this), null, HostKeyDialog.HostKeyValidationType.VALIDATE_PEM_PRIVATE_KEY_FORMAT);
                 Utilities.centerOnScreen(dialog);
                 DialogDisplayer.display(dialog, new Runnable() {
                     @Override
                     public void run() {
                         if (dialog.isConfirmed()) {
                             hostPrivateKey = dialog.getHostKey();
-                            String determinedAlgorithm = PemSshKeyUtil.getPemAlgorithm(hostPrivateKey);
+                            String determinedAlgorithm = PemSshKeyUtil.getPemPrivateKeyAlgorithm(hostPrivateKey);
                             if (determinedAlgorithm != null) {
                                 hostPrivateKeyTypeField.setText(PemSshKeyUtil.PEM + " " + determinedAlgorithm);
                             } else {

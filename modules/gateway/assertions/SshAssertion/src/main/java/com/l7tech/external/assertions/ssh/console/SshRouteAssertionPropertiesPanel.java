@@ -56,6 +56,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
     private JRadioButton specifyUserCredentialsRadioButton;
     private JTextField readTimeoutTextField;
     private JComboBox contentTypeComboBox;
+    private JPanel specifyUserCredentialsPanel;
     private InputValidator validators;
     private AbstractButton[] secHdrButtons = { wssIgnoreButton, wssCleanupButton, wssRemoveButton, null };
     private String hostKey;
@@ -75,19 +76,13 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
 
     @Override
     protected void initComponents() {
-
-        // initialise
-        final ActionListener securityListener = new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                enableDisableFields();
-                final int port = getDefaultPortNumber();
-                portNumberTextField.setText(Integer.toString(port));
-            }
-        };
         usernamePasswordRadioButton.addActionListener(enableDisableListener);
         privateKeyRadioButton.addActionListener(enableDisableListener);
         validateServerSHostCheckBox.addActionListener(enableDisableListener);
+        passThroughCredentialsInRadioButton.addActionListener(enableDisableListener);
+        specifyUserCredentialsRadioButton.addActionListener(enableDisableListener);
+        fileNameTextField.getDocument().addDocumentListener(enableDisableListener);
+        Utilities.enableGrayOnDisabled(fileNameTextField);
 
         loadPrivateKeyFromFileButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
@@ -98,7 +93,8 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         manageHostKeyButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                final HostKeyDialog dialog = new HostKeyDialog(SshRouteAssertionPropertiesPanel.this, hostKey);
+                final HostKeyDialog dialog = new HostKeyDialog(SshRouteAssertionPropertiesPanel.this, hostKey,
+                        HostKeyDialog.HostKeyValidationType.VALIDATE_SSH_PUBLIC_KEY_FORMAT);
                 Utilities.centerOnScreen(dialog);
                 DialogDisplayer.display(dialog, new Runnable() {
                     @Override
@@ -130,9 +126,6 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         };
         downloadFromRadioButton.addActionListener(downloadUploadRadioListener);
         uploadToRadioButton.addActionListener(downloadUploadRadioListener);
-
-        fileNameTextField.getDocument().addDocumentListener(enableDisableListener);
-        Utilities.enableGrayOnDisabled(fileNameTextField);
         
         messageSource.setRenderer( new TextListCellRenderer<MessageTargetable>( getMessageNameFunction("Default", null), null, false ) );
         RoutingDialogUtils.tagSecurityHeaderHandlingButtons(secHdrButtons);
@@ -230,22 +223,40 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
     }
 
     private void enableDisableFields() {
-        privateKeyScrollPane.setEnabled(privateKeyRadioButton.isSelected());
-        privateKeyField.setEnabled(privateKeyRadioButton.isSelected());
-        loadPrivateKeyFromFileButton.setEnabled(privateKeyRadioButton.isSelected());
-        passwordField.setEnabled(usernamePasswordRadioButton.isSelected());
-        managePasswordsButton.setEnabled(usernamePasswordRadioButton.isSelected());
+        // connection tab
         if(!validateServerSHostCheckBox.isSelected()) {
-            manageHostKeyButton.setEnabled(false);
+                manageHostKeyButton.setEnabled(false);
+            } else {
+                manageHostKeyButton.setEnabled(true);
+            }
+            if (downloadFromRadioButton.isSelected()) {
+                contentTypeComboBox.setEnabled(true);
+                readTimeoutTextField.setEnabled(true);
+            } else {
+                contentTypeComboBox.setEnabled(false);
+                readTimeoutTextField.setEnabled(false);
+            }
+
+        // authentication tab
+        specifyUserCredentialsPanel.setEnabled(specifyUserCredentialsRadioButton.isSelected());
+        if (specifyUserCredentialsRadioButton.isSelected()) {
+            usernameField.setEnabled(true);
+            usernamePasswordRadioButton.setEnabled(true);
+            privateKeyRadioButton.setEnabled(true);
+            privateKeyScrollPane.setEnabled(privateKeyRadioButton.isSelected());
+            privateKeyField.setEnabled(privateKeyRadioButton.isSelected());
+            loadPrivateKeyFromFileButton.setEnabled(privateKeyRadioButton.isSelected());
+            passwordField.setEnabled(usernamePasswordRadioButton.isSelected());
+            managePasswordsButton.setEnabled(usernamePasswordRadioButton.isSelected());
         } else {
-            manageHostKeyButton.setEnabled(true);
-        }
-        if (downloadFromRadioButton.isSelected()) {
-            contentTypeComboBox.setEnabled(true);
-            readTimeoutTextField.setEnabled(true);
-        } else {
-            contentTypeComboBox.setEnabled(false);
-            readTimeoutTextField.setEnabled(false);
+            usernameField.setEnabled(false);
+            usernamePasswordRadioButton.setEnabled(false);
+            privateKeyRadioButton.setEnabled(false);
+            privateKeyScrollPane.setEnabled(false);
+            privateKeyField.setEnabled(false);
+            loadPrivateKeyFromFileButton.setEnabled(false);
+            passwordField.setEnabled(false);
+            managePasswordsButton.setEnabled(false);
         }
     }
 
@@ -258,7 +269,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         messageSource.setSelectedItem( new MessageTargetableSupport(assertion.getRequestTarget()));
         RoutingDialogUtils.configSecurityHeaderRadioButtons(assertion, -1, null, secHdrButtons);
 
-        // SCP? if not assume SFTP
+        // SCP? if not, assume SFTP
         SCPRadioButton.setSelected(assertion.isScpProtocol());
 
         if(assertion.getHost() != null) {
@@ -289,6 +300,12 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         }
 
         // populate authorization settings
+        specifyUserCredentialsRadioButton.setSelected(assertion.isCredentialsSourceSpecified());
+        passThroughCredentialsInRadioButton.setSelected(!assertion.isCredentialsSourceSpecified());
+        if(assertion.getPasswordOid() != null) {
+            passwordField.setSelectedSecurePassword(assertion.getPasswordOid());
+        }
+
         if(assertion.isUsePrivateKey()) {
             privateKeyRadioButton.setSelected(true);
             privateKeyField.setText(assertion.getPrivateKey() == null ? "" : assertion.getPrivateKey());
@@ -297,7 +314,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         }
         usernameField.setText(assertion.getUsername() == null ? "" : assertion.getUsername());
 
-       if(assertion.isUsePublicKey() && assertion.getSshPublicKey() != null) {
+        if(assertion.isUsePublicKey() && assertion.getSshPublicKey() != null) {
             validateServerSHostCheckBox.setSelected(true);
             hostKey = assertion.getSshPublicKey();
         } else {
@@ -306,10 +323,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         }
 
         enableDisableFields();
-        
-        if(assertion.getPasswordOid() != null) {
-            passwordField.setSelectedSecurePassword(assertion.getPasswordOid());
-        }
+
         RoutingDialogUtils.configSecurityHeaderRadioButtons(assertion, -1, null, secHdrButtons);
     }
 
@@ -322,6 +336,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         }
 
         // populate SSH settings
+
         assertion.setRequestTarget((MessageTargetableSupport) messageSource.getSelectedItem());
         assertion.setHost(hostField.getText().trim());
         assertion.setPort(portNumberTextField.getText().trim());
@@ -331,6 +346,9 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
             connectTimeoutTextField.setText(Integer.toString(SshRouteAssertion.DEFAULT_CONNECT_TIMEOUT / 1000));
         }
         assertion.setConnectTimeout(Integer.parseInt(connectTimeoutTextField.getText()) * 1000);
+
+        // SCP? if not assume SFTP
+        assertion.setScpProtocol(SCPRadioButton.isSelected());
 
         if (readTimeoutTextField.getText().trim().isEmpty()) {
             readTimeoutTextField.setText(Integer.toString(SshRouteAssertion.DEFAULT_READ_TIMEOUT / 1000));
@@ -348,14 +366,6 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
             assertion.setPrivateKey(privateKeyField.getText());
         }
 
-        // populate authorization settings
-        assertion.setUsername(usernameField.getText().trim());
-       if(usernamePasswordRadioButton.isSelected()) {
-            assertion.setPasswordOid(passwordField.getSelectedSecurePassword().getOid());
-        } else {
-            assertion.setPasswordOid(null);
-        }
-
         if(validateServerSHostCheckBox.isSelected() && hostKey != null) {
             assertion.setUsePublicKey(true);
             assertion.setSshPublicKey(hostKey);
@@ -364,11 +374,19 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
             assertion.setSshPublicKey(null);
         }
 
-        // SCP? if not assume SFTP
-        assertion.setScpProtocol(SCPRadioButton.isSelected());
+        // populate authorization settings
+
+        assertion.setCredentialsSourceSpecified(specifyUserCredentialsRadioButton.isSelected());
+        if (specifyUserCredentialsRadioButton.isSelected()) {
+            assertion.setUsername(usernameField.getText().trim());
+            if(usernamePasswordRadioButton.isSelected()) {
+                assertion.setPasswordOid(passwordField.getSelectedSecurePassword().getOid());
+            } else {
+                assertion.setPasswordOid(null);
+            }
+        }
 
         RoutingDialogUtils.configSecurityHeaderHandling(assertion, -1, secHdrButtons);
-
         return assertion;
     }
     
