@@ -268,6 +268,17 @@ fi
 # END of 'doConfigAUTHhash' function
 }
 
+doLocalAuthSufficient (){
+# local authorization is sufficient for local users
+LINE2=$(grep -n "^account" /etc/pam.d/system-auth-ac | head -1 | cut -d":" -f1)
+sed -i '$LINEs|\(^account.*$\)|\1\n# Added by $0 on $DATE_TIME:\naccount     sufficient    pam_localuser.so\n|' /etc/pam.d/system-auth-ac
+if [ $? -ne 0 ] || [ "$(grep "pam_localuser.so" /etc/pam.d/system-auth-ac | awk '{print $3}')" != "pam_localuser.so" ]; then
+	RETVAL=1
+else
+	RETVAL=0
+fi
+}
+
 doConfigureRADIUSonly () {
 ## ==========================================
 ##     Configuration for RADIUS Only Auth
@@ -280,7 +291,7 @@ if [ "X$RETVAL" == "X1" ]; then
 else
 	toLog "   Info - FILE etc/ssh/sshd_config VERIFICATION:"
 	# Making sure that "UsePAM" directive is set to "yes". The SSG appliance usually has this set to yes.
-	SSHD_CONFIG_CHECK=$(grep "^UsePAM " /etc/ssh/sshd_config | awk '{print $2}')
+	SSHD_CONFIG_CHECK=$(grep "^UsePAM " /etc/ssh/sshd_config | cut -d" " -f2)
 	if [ "X$SSHD_CONFIG_CHECK" == "Xyes" ]; then
 		toLog "    Success - SSHD is configured to use PAM."
 	else
@@ -896,6 +907,15 @@ elif [ $# -eq 2 ]; then
 						exit 1
 				esac
 				
+				# Make sure that local auth is sufficient for local users:
+				doLocalAuthSufficient
+				if [ "X$RETVAL" == "X1" ]; then
+					toLog "  ERROR - Configuring /etc/pam.d/system-auth-ac to consider local auth sufficient for local users failed! Exiting..."
+					exit 1
+				else
+					toLog "   Success - The system was configured to consider local auth to be sufficient for local users."
+				fi
+				
 				# Deleting the config file:
 				echo "rm -rf "$2""
 				if [ "X$?" == "X0" ]; then
@@ -929,17 +949,5 @@ fi
 #fi
 #################
 
+
 # END of script
-
-# TO DO:
-# local users auth - local or remote?
-# - local auth is sufficient
-# authconfig --enablemkhomedir --disablesysnetauth --enableshadow --passalgo=<sha512> --enableldap --enableldapauth --enableldaptls --ldapserver=<server> --ldapbasedn=<basedn> --updateall
-# --enablelocauthorize	local authorization is sufficient for local users
-# --disablelocauthorize	authorize local users also through remote service
-# --enablesysnetauth		authenticate system accounts by network services
-# --disablesysnetauth		authenticate system accounts by local files only
-
-
-
-
