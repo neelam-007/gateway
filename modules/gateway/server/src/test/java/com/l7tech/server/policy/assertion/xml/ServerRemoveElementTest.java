@@ -1,8 +1,12 @@
 package com.l7tech.server.policy.assertion.xml;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.message.Message;
+import com.l7tech.message.MimeKnob;
+import com.l7tech.message.XmlKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xml.RemoveElement;
@@ -11,6 +15,7 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.util.Charsets;
+import com.l7tech.util.IOUtils;
 import com.l7tech.util.MissingRequiredElementException;
 import com.l7tech.util.TooManyChildElementsException;
 import org.junit.Test;
@@ -18,6 +23,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -45,7 +51,24 @@ public class ServerRemoveElementTest {
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
 
-        assertEquals("<a/>", XmlUtil.nodeToString(mess.getXmlKnob().getDocumentReadOnly()));
+        assertEquals("<a/>", toString(mess.getXmlKnob()));
+    }
+
+    @Test
+    public void testRemoveSingleElement_andUseMimeKnob() throws Exception {
+        Message mess = makemess("<a><b/></a>");
+        Element b = XmlUtil.findOnlyOneChildElement(mess.getXmlKnob().getDocumentWritable().getDocumentElement());
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(mess, new Message());
+        context.setVariable("remel", b);
+
+        RemoveElement ass = new RemoveElement();
+        ass.setElementFromVariable("remel");
+
+        ServerRemoveElement sass = new ServerRemoveElement(ass);
+        AssertionStatus result = sass.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+
+        assertEquals("<a/>", toString(mess.getMimeKnob()));
     }
 
     @Test
@@ -214,10 +237,11 @@ public class ServerRemoveElementTest {
 
     private PolicyEnforcementContext makeInsertPec(String xml) throws SAXException, IOException, TooManyChildElementsException, MissingRequiredElementException {
         Message mess = makemess(xml);
-        final Document doc = mess.getXmlKnob().getDocumentWritable();
+        final Document doc = mess.getXmlKnob().getDocumentReadOnly();
         final Element docel = doc.getDocumentElement();
         Element c = XmlUtil.findExactlyOneChildElementByName(docel, null, "c");
-        Element n = doc.createElement("blarg");
+
+        Element n = XmlUtil.createEmptyDocument().createElement("blarg");
         n.setTextContent("This is some text content");
 
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(mess, new Message());
@@ -226,11 +250,12 @@ public class ServerRemoveElementTest {
         return context;
     }
 
-    void runCheck(RemoveElement ass, PolicyEnforcementContext context, AssertionStatus expectedStatus, String expectedMess) throws IOException, PolicyAssertionException, SAXException {
+    void runCheck(RemoveElement ass, PolicyEnforcementContext context, AssertionStatus expectedStatus, String expectedMess) throws IOException, PolicyAssertionException, SAXException, NoSuchPartException {
         ServerRemoveElement sass = new ServerRemoveElement(ass);
         AssertionStatus result = checkRequest(sass, context);
         assertEquals(expectedStatus, result);
-        assertEquals(expectedMess, XmlUtil.nodeToString(context.getRequest().getXmlKnob().getDocumentReadOnly()));
+        assertEquals(expectedMess, toString(context.getRequest().getXmlKnob()));
+        assertEquals(expectedMess, toString(context.getRequest().getMimeKnob()));
     }
 
     // Wraps checkRequest and emulates an AssertionStatusException, just as a ServerCompositeAssertion would.
@@ -242,7 +267,15 @@ public class ServerRemoveElementTest {
         }
     }
 
-    static Message makemess(String mess) {
-        return new Message(XmlUtil.stringAsDocument(mess));
+    static Message makemess(String mess) throws IOException {
+        return new Message(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(mess.getBytes(Charsets.UTF8)));
+    }
+
+    static String toString(MimeKnob mimeKnob) throws NoSuchPartException, IOException {
+        return new String(IOUtils.slurpStream(mimeKnob.getEntireMessageBodyAsInputStream()), mimeKnob.getOuterContentType().getEncoding());
+    }
+
+    static String toString(XmlKnob xmlKnob) throws IOException, SAXException {
+        return XmlUtil.nodeToString(xmlKnob.getDocumentReadOnly());
     }
 }

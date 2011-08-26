@@ -58,7 +58,7 @@ public class ServerRemoveElement extends AbstractMessageTargetableServerAssertio
             Element[] existingElements = asElementArrayValue(existingElementsObj, existingElementVariableName, false);
 
             if (inserting) {
-                return doInsert(context, vars, existingElements);
+                return doInsert(context, vars, message, existingElements);
             }
 
             if ( existingElements.length > 0 ) {
@@ -109,7 +109,9 @@ public class ServerRemoveElement extends AbstractMessageTargetableServerAssertio
         return elements;
     }
 
-    private AssertionStatus doInsert(PolicyEnforcementContext context, Map<String, Object> vars, Element[] existingElements) throws NoSuchVariableException {
+    private AssertionStatus doInsert(PolicyEnforcementContext context, Map<String, Object> vars, Message message, Element[] existingElements) throws NoSuchVariableException, SAXException, IOException {
+        Document targetDoc = message.getXmlKnob().getDocumentWritable();
+
         if (existingElements.length < 1) {
             logAndAudit(AssertionMessages.INSERT_ELEMENT_EXISTING_NOT_FOUND);
             return AssertionStatus.FAILED;
@@ -124,9 +126,14 @@ public class ServerRemoveElement extends AbstractMessageTargetableServerAssertio
             return AssertionStatus.SERVER_ERROR;
         }
 
-        Document targetDoc = existing.getOwnerDocument();
-        if (targetDoc == null) {
+        Document containerTargetDoc = existing.getOwnerDocument();
+        if (containerTargetDoc == null) {
             logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Existing element did not belong to a document");
+            return AssertionStatus.SERVER_ERROR;
+        }
+
+        if (containerTargetDoc != targetDoc) {
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Existing element does not belong to the target message document");
             return AssertionStatus.SERVER_ERROR;
         }
 

@@ -91,6 +91,7 @@ public interface MimeKnob extends MessageKnob,Iterable<PartInfo> {
 
     /**
      * @return the outer content type of the request, or a default.  never null.
+     * @throws IOException never thrown.  TODO remove this throws clause
      */
     ContentTypeHeader getOuterContentType() throws IOException;
 
