@@ -2,6 +2,7 @@ package com.l7tech.policy.exporter;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.JdbcConnectionable;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.objectmodel.FindException;
@@ -141,6 +142,9 @@ public class JdbcConnectionReference extends ExternalReference {
 
     @Override
     boolean verifyReference() throws InvalidPolicyStreamException {
+        if (Syntax.getReferencedNames(connectionName).length > 0) {
+            return true;
+        }
         try {
             JdbcConnection connection = getFinder().getJdbcConnection(connectionName);
             return
