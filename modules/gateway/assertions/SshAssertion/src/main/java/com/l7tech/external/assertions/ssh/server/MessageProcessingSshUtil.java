@@ -1,6 +1,6 @@
 package com.l7tech.external.assertions.ssh.server;
 
-import com.l7tech.external.assertions.ssh.keyprovider.PemSshKeyUtil;
+import com.l7tech.external.assertions.ssh.keyprovider.SshKeyUtil;
 import com.l7tech.message.SshKnob;
 import com.l7tech.util.Pair;
 import com.l7tech.util.SyspropUtil;
@@ -84,7 +84,7 @@ public class MessageProcessingSshUtil {
             @Override
             public PublicKeyAuthentication getPublicKeyAuthentication() {
                 if (userPublicKey != null && userPublicKey.getPublicKey() != null) {
-                    String userPublicKeyStr = PemSshKeyUtil.writeKey(userPublicKey.getPublicKey());
+                    String userPublicKeyStr = SshKeyUtil.writeKey(userPublicKey.getPublicKey());
                     if (!StringUtils.isEmpty(userPublicKeyStr)) {
                         userPublicKeyStr = userPublicKeyStr.replace(SyspropUtil.getProperty("line.separator"), "");
                     }

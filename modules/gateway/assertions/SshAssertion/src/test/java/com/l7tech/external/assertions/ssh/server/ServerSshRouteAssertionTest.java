@@ -1,18 +1,14 @@
 package com.l7tech.external.assertions.ssh.server;
 
 import com.l7tech.external.assertions.ssh.SshRouteAssertion;
+import com.l7tech.external.assertions.ssh.keyprovider.SshKeyUtil;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import com.l7tech.util.HexUtils;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.io.IOException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static org.junit.Assert.*;
 
@@ -50,15 +46,15 @@ public class ServerSshRouteAssertionTest {
     }
 
     @Test
-    public void testSftpSshRSAPublicKey() throws Exception {
-        assertTrue(validateHostKeyData(HostDataRSA + sshRsaPublicServerKeyData));
-        assertFalse(validateHostKeyData(HostDataRSA + sshDsaPublicServerKeyData));
-    }
-
-    @Test
-    public void testSftpSshDSAPublicKey() throws Exception {
-        assertTrue(validateHostKeyData(HostDataDSA + sshDsaPublicServerKeyData));
-        assertFalse(validateHostKeyData(HostDataDSA + sshRsaPublicServerKeyData));
+    public void testSshPublicKeyFingerprintValidation() throws Exception {
+        assertTrue(SshKeyUtil.validateSshPublicKeyFingerprint("54:45:5e:ec:80:cb:d3:a8:01:a1:b0:7b:9f:82:80:9e").left);
+        assertTrue(SshKeyUtil.validateSshPublicKeyFingerprint("95:53:22:67:42:28:54:0d:86:0e:98:73:05:3f:d1:84").left);
+        assertTrue(SshKeyUtil.validateSshPublicKeyFingerprint("85:d9:2d:45:cf:50:ed:0f:1e:61:d5:38:9a:18:4d:c0").left);
+        assertTrue(SshKeyUtil.validateSshPublicKeyFingerprint("${contextVariable}").left);
+        assertFalse(SshKeyUtil.validateSshPublicKeyFingerprint("54:45:5e:zz:80:cb:d3:a8:01:a1:b0:7b:9f:82:80:9e").left);
+        assertFalse(SshKeyUtil.validateSshPublicKeyFingerprint("54:45:5e:ec:80").left);
+        assertFalse(SshKeyUtil.validateSshPublicKeyFingerprint("").left);
+        assertFalse(SshKeyUtil.validateSshPublicKeyFingerprint(null).left);
     }
 
     @Test
@@ -72,37 +68,4 @@ public class ServerSshRouteAssertionTest {
         assertTrue(assertion.isUsePrivateKey());
         assertTrue(assertion.isUsePublicKey());
     }
-
-    private boolean validateHostKeyData(String chardata) {
-        boolean isValid = false;
-        try {
-            Pattern p = Pattern.compile("(.*)\\s?(ssh-(dss|rsa))\\s+([a-zA-Z0-9+/]+={0,2})(?: .*|$)");
-            Matcher m = p.matcher(chardata.trim());
-            if(m.matches()) {
-                String keyType = m.group(2);
-                String keyText = m.group(4);
-                byte[] key = HexUtils.decodeBase64(keyText, true);
-
-                String decodedAlgorithmDesc = new String(key, 4, 7, "ISO8859_1");
-                if (keyType.compareTo(decodedAlgorithmDesc) == 0){
-                       isValid = true;
-                } else {
-                       isValid = false;
-                }
-
-            } else {
-               isValid = false;
-            }
-        } catch (IOException e) {
-            isValid = false;
-        }
-
-        return isValid;
-    }
-
-    private static final String sshRsaPublicServerKeyData = "AAAAB3NzaC1yc2EAAAABIwAAAQEAt9ac4kXWbTX1bAv9DjyGb3wxq/Hbf2dPs+v4jd5MlxEvqbDiQKS0MSjnSs1E3eVCh+lpL8H50q9zpsIaGS7lGxKVSWnKVVCD09g2XLSMob9jM+C/9aVvrxzZijLDlxRPc+Fdttpro6Lw8e6Vc4nFuzwvYo/hrzkFVLsmia19t/++UySh8AaBEvC3XnJYQvMF1NM6469MBLmd0xq5GzkkdoDQVh1kg9z8xydIJUpcb7qrS6XQItNY9GfV6km6dmoMw2BVwsiheD5S5YjVgaoqk0JletAPB0zfWfRmbY/+FzuHUHnMf4PHJjkk4vNIe/4sH93BNp2JazsJ3z/3KMvscw==";
-    private static final String sshDsaPublicServerKeyData = "AAAAB3NzaC1kc3MAAACBALZJrosbjHQdvwxYyon5YS3mgviut5iCibrSgm0WqeUaeXLl0RSzpxxUrQzwFm3tXpDDh85NiibdBUiYy4cvmLBPtToaaqC0cwM8sojDcuJMO/hQQtruZrimmVY/SbC0MF3ohEpuyyYGQf108r4fwLRqlgZJu84/NnJLb0kz4Nh7AAAAFQCfkhVeUbMfXS9Kn77ouF1hkk68awAAAIBPB2qBvkzXNsiQzTmiC05FhfqCvVe3UlCpQbPE71YISCqIwQWZ+1beDOOMfKtXkr2Mb/s5ok92nujAgXYXS7ukIEpUy2e5CIe7RHQWjVLh4DsubnUlTGvafC4TNzmAdZmQkU1LKEts1LpYLy5VPZqRgzwCHS19Mr3rEVbgIpBJjgAAAIAKjtuWUbbjmpyNTrnxxCkLBEV3u4cvvApO3JNoukgG8n7JsHtuCNAfJSES1kttXdt8m9ps1ZJiUAUOfgUNm+oUi39gGsJfHkMYoCK2bVUrDJtbZeI/Nn6FGPDAC5YmJIl38+MbBBKeWsZWdVa8sDHF/BRZNU11o0fbRv2g1QjUKg==";
-
-    private static final String HostDataRSA = "myhost.com ssh-rsa ";
-    private static final String HostDataDSA = "myhost.com ssh-dss ";
 }

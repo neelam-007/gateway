@@ -8,6 +8,7 @@ import com.jscape.inet.ssh.util.SshHostKeys;
 import com.jscape.inet.ssh.util.SshParameters;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.external.assertions.ssh.SshRouteAssertion;
+import com.l7tech.external.assertions.ssh.keyprovider.SshKeyUtil;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Messages;
 import com.l7tech.message.Message;
@@ -25,7 +26,6 @@ import com.l7tech.server.policy.assertion.ServerRoutingAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
@@ -36,8 +36,6 @@ import java.net.SocketException;
 import java.text.ParseException;
 import java.util.Map;
 import java.util.logging.Level;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Server side implementation of the SshRouteAssertion.
@@ -120,16 +118,16 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             SshParameters sshParams = new SshParameters(host, port, username, password);
 
             if (assertion.isUsePublicKey() && assertion.getSshPublicKey() != null){
-                String publicKey = ExpandVariables.process(assertion.getSshPublicKey().trim(), context.getVariableMap(
+                String publicKeyFingerprint = ExpandVariables.process(assertion.getSshPublicKey().trim(), context.getVariableMap(
                         Syntax.getReferencedNames(assertion.getSshPublicKey().trim()), getAudit()), getAudit());
 
-                // validate Public Key Data to cover context var scenario
-                Pair<Boolean, String> publicIsValid = validatePublicKeyData(publicKey);
-                if(!publicIsValid.left){
-                    logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, SshAssertionMessages.SFTP_INVALID_CERT_EXCEPTION);
+                // validate public key fingerprint
+                Pair<Boolean, String> fingerprintIsValid = SshKeyUtil.validateSshPublicKeyFingerprint(publicKeyFingerprint);
+                if(!fingerprintIsValid.left){
+                    logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, SshAssertionMessages.SSH_INVALID_PUBLIC_KEY_FINGERPRINT_EXCEPTION);
                     return AssertionStatus.FAILED;
                 }
-                String hostPublicKey = publicIsValid.right;
+                String hostPublicKey = publicKeyFingerprint;
                 SshHostKeys sshHostKeys = new SshHostKeys();
                 sshHostKeys.addKey(InetAddress.getByName(host), hostPublicKey);
                 sshParams.setHostKeys(sshHostKeys, false);
@@ -166,24 +164,24 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             try {
                 sshClient.upload(mimeKnob.getEntireMessageBodyAsInputStream(), expandVariables(context, assertion.getDirectory()),  expandVariables(context, assertion.getFileName()));
             } catch (NoSuchPartException e) {
-                logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {SshAssertionMessages.SFTP_NO_SUCH_PART_ERROR + ",server:" + getHostName(context, assertion)+ ",error:" + e.getMessage()}, e);
+                logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {SshAssertionMessages.SSH_NO_SUCH_PART_ERROR + ",server:" + getHostName(context, assertion)+ ",error:" + e.getMessage()}, e);
                 return AssertionStatus.FAILED;
             } catch (ScpException e) {
                 if (ExceptionUtils.getMessage(e).contains("SSH_FX_NO_SUCH_FILE")){
-                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { SshAssertionMessages.SFTP_DIR_DOESNT_EXIST_ERROR+ ",server:" + getHostName(context, assertion)+ ",error:" + e.getMessage()}, e);
+                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { SshAssertionMessages.SSH_DIR_DOESNT_EXIST_ERROR + ",server:" + getHostName(context, assertion)+ ",error:" + e.getMessage()}, e);
                 } else{
-                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { SshAssertionMessages.SFTP_EXCEPTION_ERROR + ",server:" + getHostName(context, assertion)+ ",error:"  + e.getMessage()}, e);
+                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { SshAssertionMessages.SSH_EXCEPTION_ERROR + ",server:" + getHostName(context, assertion)+ ",error:"  + e.getMessage()}, e);
                 }
                 return AssertionStatus.FAILED;
             } catch (SftpException e) {
                 if (ExceptionUtils.getMessage(e).contains("SSH_FX_NO_SUCH_FILE")){
-                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { SshAssertionMessages.SFTP_DIR_DOESNT_EXIST_ERROR+ ",server:" + getHostName(context, assertion)+ ",error:" + e.getMessage()}, e);
+                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { SshAssertionMessages.SSH_DIR_DOESNT_EXIST_ERROR + ",server:" + getHostName(context, assertion)+ ",error:" + e.getMessage()}, e);
                 } else{
-                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { SshAssertionMessages.SFTP_EXCEPTION_ERROR + ",server:" + getHostName(context, assertion)+ ",error:"  + e.getMessage()}, e);
+                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { SshAssertionMessages.SSH_EXCEPTION_ERROR + ",server:" + getHostName(context, assertion)+ ",error:"  + e.getMessage()}, e);
                 }
                 return AssertionStatus.FAILED;
             } catch (IOException e) {
-                logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { SshAssertionMessages.SFTP_IO_EXCEPTION + ",server:" + getHostName(context, assertion) + ",error:" + e.getMessage()}, e);
+                logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { SshAssertionMessages.SSH_IO_EXCEPTION + ",server:" + getHostName(context, assertion) + ",error:" + e.getMessage()}, e);
                 logger.log(Level.WARNING, "SFTP Route Assertion IO error: " + e, ExceptionUtils.getDebugException(e));
                 return AssertionStatus.FAILED;
             } finally {
@@ -195,19 +193,19 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             return AssertionStatus.NONE;
         } catch(IOException ioe) {
             if (ExceptionUtils.getMessage(ioe).startsWith("Malformed SSH")){
-                logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {SshAssertionMessages.SFTP_CERT_ISSUE_EXCEPTION, ioe.getMessage()}, ioe);
-                logger.log(Level.WARNING, SshAssertionMessages.SFTP_CERT_ISSUE_EXCEPTION);
+                logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {SshAssertionMessages.SSH_CERT_ISSUE_EXCEPTION, ioe.getMessage()}, ioe);
+                logger.log(Level.WARNING, SshAssertionMessages.SSH_CERT_ISSUE_EXCEPTION);
             } else if ( ioe instanceof SocketException ){
                 logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Socket Exception for SFTP connection. Ensure the timeout entered is valid" + ioe.getMessage()}, ioe);
-                logger.log(Level.WARNING, SshAssertionMessages.SFTP_SOCKET_EXCEPTION +ioe,new String[] {host, String.valueOf(port), username});
+                logger.log(Level.WARNING, SshAssertionMessages.SSH_SOCKET_EXCEPTION +ioe,new String[] {host, String.valueOf(port), username});
             } else {
                 logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"IO Exception... SFTP connection establishment failed. Ensure the server trusted cert is valid" + ioe.getMessage()}, ioe);
-                logger.log(Level.WARNING, SshAssertionMessages.SFTP_CONNECTION_EXCEPTION +ioe,new String[] {host, String.valueOf(port), username});
+                logger.log(Level.WARNING, SshAssertionMessages.SSH_CONNECTION_EXCEPTION +ioe,new String[] {host, String.valueOf(port), username});
             }
             return AssertionStatus.FAILED;
         } catch(Exception e) {
             logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {e.getMessage()}, e);
-            logger.log(Level.WARNING, SshAssertionMessages.SFTP_CONNECTION_EXCEPTION, new String[] {host, String.valueOf(port), username});
+            logger.log(Level.WARNING, SshAssertionMessages.SSH_CONNECTION_EXCEPTION, new String[] {host, String.valueOf(port), username});
             logger.log(Level.WARNING, "SFTP Route Assertion error: " + e, ExceptionUtils.getDebugException(e));
             return AssertionStatus.FAILED;
         } finally {
@@ -225,39 +223,6 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
 
     private String getHostName(PolicyEnforcementContext context, SshRouteAssertion assertion) {
         return expandVariables(context, assertion.getHost());
-    }
-
-     public Pair<Boolean, String> validatePublicKeyData(String chardata) {
-        boolean isValid;
-        String keyString = "";
-        try {
-            Pattern p = Pattern.compile("(.*)\\s?(ssh-(dss|rsa))\\s+([a-zA-Z0-9+/]+={0,2})(?: .*|$)");
-            Matcher m = p.matcher(chardata.trim());
-            if(m.matches()) {
-                String keyType = m.group(2);
-                String keyText = m.group(4);
-                byte[] key = HexUtils.decodeBase64(keyText, true);
-
-                String decodedAlgorithmDesc = new String(key, 4, 7, "ISO8859_1");
-                if (keyType.compareTo(decodedAlgorithmDesc) == 0){
-                       keyString = keyType+ " "+keyText;
-                       isValid = true;
-                } else {
-                       isValid = false;
-                       logger.log(Level.WARNING, SshAssertionMessages.SFTP_ALGO_NOT_SUPPORTED_EXCEPTION, keyType);
-                }
-
-            } else {
-               isValid = false;
-               logger.log(Level.WARNING, SshAssertionMessages.SFTP_WRONG_FORMAT_SUPPORTED_EXCEPTION);
-            }
-        } catch (IOException e) {
-            isValid = false;
-            logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, e.toString(), "IO Exception... SFTP server trusted cert is INVALID");
-            logger.log(Level.WARNING, SshAssertionMessages.SFTP_INVALID_CERT_EXCEPTION);
-        }
-
-        return new Pair<Boolean, String>(isValid, keyString);
     }
 }
 

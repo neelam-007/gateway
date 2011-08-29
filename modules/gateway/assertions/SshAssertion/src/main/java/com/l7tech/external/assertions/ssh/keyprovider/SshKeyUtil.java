@@ -1,6 +1,8 @@
 package com.l7tech.external.assertions.ssh.keyprovider;
 
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.prov.JceProvider;
+import com.l7tech.util.Pair;
 import org.bouncycastle.openssl.PEMReader;
 import org.bouncycastle.openssl.PEMWriter;
 import org.slf4j.Logger;
@@ -10,14 +12,16 @@ import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import java.io.*;
 import java.security.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
- * PEM SSH key utility class.
+ * SSH key utility class.
  */
-public class PemSshKeyUtil extends JceProvider {
+public class SshKeyUtil extends JceProvider {
     public static final String PEM = "PEM";
 
-    private static final Logger LOG = LoggerFactory.getLogger(PemSshKeyUtil.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SshKeyUtil.class);
     private static final String ALGORITHM_DSA = "DSA";
     private static final String ALGORITHM_RSA = "RSA";
     private static final String PEM_BEGIN = "-----BEGIN ";
@@ -53,7 +57,7 @@ public class PemSshKeyUtil extends JceProvider {
      */
     public static String getAsymProvider() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
         Provider ap = JceProvider.getInstance().getProviderFor("Cipher.RSA");
-        return ap != null ? ap.getName() : Cipher.getInstance(new PemSshKeyUtil().getRsaNoPaddingCipherName()).getProvider().getName();
+        return ap != null ? ap.getName() : Cipher.getInstance(new SshKeyUtil().getRsaNoPaddingCipherName()).getProvider().getName();
     }
 
     public static KeyPair doReadKeyPair(String privateKey) throws Exception {
@@ -91,5 +95,34 @@ public class PemSshKeyUtil extends JceProvider {
     @Override
     public String getDisplayName() {
         return null;
+    }
+
+    /**
+     * Validate the format of an SSH public key fingerprint
+     * @param fingerPrint SSH public key fingerprint format string
+     * @return Return a PAIR <true, empty string> if the fingerprint is valid,
+     * otherwise Return a PAIR <false, error message> if the fingerprint is invalid.
+     */
+    public static Pair<Boolean, String> validateSshPublicKeyFingerprint(String fingerPrint) {
+        boolean isValid = false;
+        String errorText = "The SSH public key fingerprint entered is not valid.";
+        if (fingerPrint != null) {
+            Pattern p = Pattern.compile("^[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]\\:" +
+                    "[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]\\:" +
+                    "[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]\\:" +
+                    "[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]$");
+            Matcher m = p.matcher(fingerPrint);
+            isValid = m.matches();
+
+            // could be a context variable
+            if (!isValid) {
+                isValid = Syntax.getReferencedNames(fingerPrint).length > 0;
+            }
+
+            if (isValid){
+                errorText = "";
+            }
+        }
+        return new Pair<Boolean, String>(isValid, errorText);
     }
 }

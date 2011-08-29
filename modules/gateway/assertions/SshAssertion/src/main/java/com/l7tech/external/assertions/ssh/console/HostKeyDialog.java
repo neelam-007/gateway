@@ -1,12 +1,10 @@
 package com.l7tech.external.assertions.ssh.console;
 
 import com.l7tech.console.SsmApplication;
-import com.l7tech.external.assertions.ssh.keyprovider.PemSshKeyUtil;
+import com.l7tech.external.assertions.ssh.keyprovider.SshKeyUtil;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.policy.variable.Syntax;
-import com.l7tech.util.HexUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.Pair;
 
@@ -19,8 +17,6 @@ import java.io.File;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Dialog to enter host key.
@@ -69,7 +65,7 @@ public class HostKeyDialog extends JDialog {
                 borderTitle = getResourceString("privateKeyLabel");
                 break;
             case VALIDATE_SSH_PUBLIC_KEY_FORMAT:
-                borderTitle = getResourceString("sshPublicKeyLabel");
+                borderTitle = getResourceString("sshPublicKeyFingerprintLabel");
                 break;
             default:
                 break;
@@ -100,14 +96,19 @@ public class HostKeyDialog extends JDialog {
                 switch (validationType)
                 {
                     case VALIDATE_PEM_PRIVATE_KEY_FORMAT:
-                        if (PemSshKeyUtil.getPemPrivateKeyAlgorithm(hostKeyField.getText().trim()) == null) {
+                        if (SshKeyUtil.getPemPrivateKeyAlgorithm(hostKeyField.getText().trim()) == null) {
                             JOptionPane.showMessageDialog(HostKeyDialog.this, MessageFormat.format(
                                     getResourceString("sshHostKeyFormatError"), "The key must be in PEM private key format."));
                             return;
                         }
                         break;
                     case VALIDATE_SSH_PUBLIC_KEY_FORMAT:
-                        Pair<Boolean, String> hostKeyFormatIsValid = isValidHostKeyFormat();
+                        Pair<Boolean, String> hostKeyFormatIsValid;
+                        if (hostKeyField == null || hostKeyField.getText().equalsIgnoreCase("")){
+                            hostKeyFormatIsValid = new Pair<Boolean, String>(false, "Server key cannot be blank, please enter a value or cancel");
+                        } else {
+                            hostKeyFormatIsValid = SshKeyUtil.validateSshPublicKeyFingerprint(hostKeyField.getText());
+                        }
                         if(!hostKeyFormatIsValid.left.booleanValue()){
                             JOptionPane.showMessageDialog(HostKeyDialog.this, MessageFormat.format(
                                     getResourceString("sshHostKeyFormatError"), hostKeyFormatIsValid.right));
@@ -168,59 +169,6 @@ public class HostKeyDialog extends JDialog {
 
     public String getHostKey() {
         return hostKeyField.getText().trim();
-    }
-
-    /**
-     * @return Return a PAIR <true, empty string> if the serverkey is valid
-     * otherwise Return a PAIR <false, error message> if the serverkey is invalid.
-     */
-    private Pair<Boolean, String> isValidHostKeyFormat() {
-        boolean isValid = false;
-        String errorText = " ";
-        if (hostKeyField == null || hostKeyField.getText().equalsIgnoreCase("")){
-            return new Pair<Boolean, String>(isValid, "Server key cannot be blank, please enter a value or cancel");
-        }
-        
-        String publicKeyStr = hostKeyField.getText().trim();
-         try {
-                Pattern p = Pattern.compile("(.*)\\s?(ssh-(dss|rsa))\\s+([a-zA-Z0-9+/]+={0,2})(?: .*|$)");
-                Matcher m = p.matcher(publicKeyStr);
-                if(m.matches()) {
-                    String keyType = m.group(2);
-                    String keyText = m.group(4);
-                    byte[] key = HexUtils.decodeBase64(keyText, true);
-
-                    String decodedAlgorithmDesc = new String(key, 4, 7, "ISO8859_1");
-                    if (keyType.compareTo(decodedAlgorithmDesc) == 0){
-                           isValid = true;
-                    } else {
-                            isValid = false;
-                            errorText = "The SSH Server Key entered does not match algorithm '"+keyType +"'.";
-                    }
-
-                } else {
-                   // could be a context var
-                   isValid = Syntax.getReferencedNames(publicKeyStr).length > 0;
-                   if (!isValid){
-                       errorText = "The SSH Server Key algorithm entered is not supported - only RSA and DSA keys are supported";
-                   }
-                }
-           
-        } catch (IOException e) {
-            // must be using context variable
-            isValid = Syntax.getReferencedNames(publicKeyStr).length > 0;
-            if (!isValid){
-                errorText = "The SSH Server Key must be in the format 'ssh-algorithm serverykey' as per RSA or DSA public cert contents";
-            }
-        } catch (Exception e) {
-            // must be using context variable
-            isValid = Syntax.getReferencedNames(publicKeyStr).length > 0;
-            if (!isValid){
-                errorText = "The SSH Server Key must be in the format 'ssh-algorithm serverykey' as per RSA or DSA public cert contents";
-            }
-        }
-
-        return new Pair<Boolean, String>(isValid, errorText);
     }
 
      private static String getResourceString(String key){

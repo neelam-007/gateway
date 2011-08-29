@@ -2,7 +2,7 @@ package com.l7tech.external.assertions.ssh.console;
 
 import com.l7tech.console.panels.CustomTransportPropertiesPanel;
 import com.l7tech.external.assertions.ssh.SshRouteAssertion;
-import com.l7tech.external.assertions.ssh.keyprovider.PemSshKeyUtil;
+import com.l7tech.external.assertions.ssh.keyprovider.SshKeyUtil;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.ConfigFactory;
@@ -62,9 +62,9 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
 
         hostPrivateKey = props.get(SshRouteAssertion.LISTEN_PROP_HOST_PRIVATE_KEY);
         if (!StringUtils.isEmpty(hostPrivateKey)) {
-            String determinedAlgorithm = PemSshKeyUtil.getPemPrivateKeyAlgorithm(hostPrivateKey);
+            String determinedAlgorithm = SshKeyUtil.getPemPrivateKeyAlgorithm(hostPrivateKey);
             if (determinedAlgorithm != null) {
-                hostPrivateKeyTypeField.setText(PemSshKeyUtil.PEM + " " + determinedAlgorithm);
+                hostPrivateKeyTypeField.setText(SshKeyUtil.PEM + " " + determinedAlgorithm);
             } else {
                 hostPrivateKeyTypeField.setText("Unknown type");
             }
@@ -114,9 +114,9 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
                     public void run() {
                         if (dialog.isConfirmed()) {
                             hostPrivateKey = dialog.getHostKey();
-                            String determinedAlgorithm = PemSshKeyUtil.getPemPrivateKeyAlgorithm(hostPrivateKey);
+                            String determinedAlgorithm = SshKeyUtil.getPemPrivateKeyAlgorithm(hostPrivateKey);
                             if (determinedAlgorithm != null) {
-                                hostPrivateKeyTypeField.setText(PemSshKeyUtil.PEM + " " + determinedAlgorithm);
+                                hostPrivateKeyTypeField.setText(SshKeyUtil.PEM + " " + determinedAlgorithm);
                             } else {
                                 hostPrivateKeyTypeField.setText("Unknown type");
                             }
