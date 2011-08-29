@@ -158,4 +158,11 @@ public interface TransportAdmin {
     @Transactional(readOnly=true)
     long getXmlMaxBytes();
 
+
+    /**
+     * Check if SNMP Query built-in service is enabled or not.
+     * @return true if SNMP Query built-in service is enabled.
+     */
+    @Transactional(readOnly=true)
+    boolean isSnmpQueryEnabled();
 }

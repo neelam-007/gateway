@@ -2,6 +2,7 @@ package com.l7tech.server.transport;
 
 import com.l7tech.gateway.common.transport.ResolutionConfiguration;
 import com.l7tech.message.Message;
+import com.l7tech.util.Config;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.PortRanges;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
@@ -39,14 +40,17 @@ public class TransportAdminImpl implements TransportAdmin {
     private final SsgConnectorManager connectorManager;
     private final ResolutionConfigurationManager resolutionConfigurationManager;
     private final DefaultKey defaultKeystore;
+    private final Config config;
     private ConcurrentMap<String, SSLContext> testSslContextByProviderName = new ConcurrentHashMap<String, SSLContext>();
 
     public TransportAdminImpl( final SsgConnectorManager connectorManager,
                                final ResolutionConfigurationManager resolutionConfigurationManager,
-                               final DefaultKey defaultKeystore ) {
+                               final DefaultKey defaultKeystore,
+                               final Config config ) {
         this.connectorManager = connectorManager;
         this.resolutionConfigurationManager = resolutionConfigurationManager;
         this.defaultKeystore = defaultKeystore;
+        this.config = config;
     }
 
     @Override
@@ -196,5 +200,10 @@ public class TransportAdminImpl implements TransportAdmin {
     @Override
     public long getXmlMaxBytes(){
         return Message.getMaxBytes();
+    }
+
+    @Override
+    public boolean isSnmpQueryEnabled() {
+        return config.getBooleanProperty("builtinService.snmpQuery.enabled", true);
     }
 }

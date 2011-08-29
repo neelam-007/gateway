@@ -296,6 +296,11 @@ public class RegistryStub extends Registry {
             public long getXmlMaxBytes(){
                 return 0;
             }
+
+            @Override
+            public boolean isSnmpQueryEnabled() {
+                return true;
+            }
         };
     }
 

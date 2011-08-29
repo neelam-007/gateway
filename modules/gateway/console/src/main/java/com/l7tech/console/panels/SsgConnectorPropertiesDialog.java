@@ -1188,19 +1188,9 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     }
 
     private boolean snmpQueryServicePropertyEnabled() {
-        boolean prop_snmp_enabled = false;
-
         Registry registry = Registry.getDefault();
-        if (registry.isAdminContextPresent()) {
-            try {
-                ClusterProperty prop = registry.getClusterStatusAdmin().findPropertyByName(CLUSTER_PROP_PARAM_SNMP_QUERY_SERVICE);
-                prop_snmp_enabled = prop == null? false: Boolean.parseBoolean(prop.getValue());
-            } catch (FindException fe) {
-                logger.warning("Cannot find the cluster property, '" + CLUSTER_PROP_PARAM_SNMP_QUERY_SERVICE + "'.");
-            }
-        }
-
-        return prop_snmp_enabled;
+        return registry.isAdminContextPresent()?
+            registry.getTransportAdmin().isSnmpQueryEnabled() : true;
     }
 
     /**
