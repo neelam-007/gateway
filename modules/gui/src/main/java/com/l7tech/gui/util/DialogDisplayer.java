@@ -834,15 +834,15 @@ public class DialogDisplayer {
         okButton.setEnabled(enableOkCheckBox.isSelected());
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                result.reportResult(JOptionPane.OK_OPTION);
                 safeConfirmationDialog.dispose();
+                result.reportResult(JOptionPane.OK_OPTION);
             }
         });
 
         cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                result.reportResult(JOptionPane.CANCEL_OPTION);
                 safeConfirmationDialog.dispose();
+                result.reportResult(JOptionPane.CANCEL_OPTION);
             }
         });
 

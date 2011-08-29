@@ -18,15 +18,12 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.variable.Syntax;
 
 import javax.swing.*;
-import javax.swing.event.ChangeListener;
-import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ItemListener;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
@@ -327,42 +324,44 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
                 @Override
                 public void reportResult(int option) {
                     if (option == JOptionPane.CANCEL_OPTION) {
-                        warningMsg[0] = "canceled";
+                        displayQueryTestingResult("TestingCanceled");
                         return;
                     }
 
                     final String connName = (String) connectionComboBox.getSelectedItem();
                     if (Syntax.getReferencedNames(connName).length > 0) {
-                        warningMsg[0] = "Cannot process testing due to JDBC Connection name containing context variable(s).";
+                        displayQueryTestingResult("Cannot process testing due to JDBC Connection name containing context variable(s).");
                         return;
                     }
 
                     final String query = sqlQueryTextArea.getText();
                     final int numOfContextVariablesUsed = Syntax.getReferencedNames(query).length;
                     if (numOfContextVariablesUsed > 0) {
-                        warningMsg[0] = "Unable to evaluate a query containing context variable" +  (numOfContextVariablesUsed > 1? "s." : ".");
+                        displayQueryTestingResult("Unable to evaluate a query containing context variable" + (numOfContextVariablesUsed > 1 ? "s." : "."));
                         return;
                     }
 
                     JdbcAdmin admin = getJdbcConnectionAdmin();
-                    warningMsg[0] = admin == null?
-                        "Cannot process testing due to JDBC Conneciton Admin unavailable." : admin.testJdbcQuery(connName, query);
+                    displayQueryTestingResult(admin == null ?
+                        "Cannot process testing due to JDBC Conneciton Admin unavailable." : admin.testJdbcQuery(connName, query));
                 }
             }
         );
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                if (! "canceled".equals(warningMsg[0])) {
-                    DialogDisplayer.showMessageDialog(
-                        JdbcQueryAssertionPropertiesDialog.this,
-                        (warningMsg[0] == null)? resources.getString("message.query.testing.passed") : resources.getString("message.query.testing.failed") + " " + warningMsg[0],
-                        resources.getString("dialog.title.test.query"),
-                        (warningMsg[0] == null)? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE,
-                        null);
-                }
-            }
-        });
+    }
+
+    /**
+     * The testing result could be test success message or failure messages.
+     * @param resultMessage: the result message of testing
+     */
+    private void displayQueryTestingResult(String resultMessage) {
+        if ("TestingCanceled".equals(resultMessage)) return;
+
+        DialogDisplayer.showMessageDialog(
+            JdbcQueryAssertionPropertiesDialog.this,
+            (resultMessage == null)? resources.getString("message.query.testing.passed") : resources.getString("message.query.testing.failed") + " " + resultMessage,
+            resources.getString("dialog.title.test.query"),
+            (resultMessage == null)? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE,
+            null);
     }
 
     private void doAdd() {
