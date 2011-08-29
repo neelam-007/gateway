@@ -123,7 +123,6 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
     @Override
     public VariableMetadata[] getVariablesSet() {
         List<VariableMetadata> varMeta = new ArrayList<VariableMetadata>();
-        varMeta.add(new VariableMetadata(variablePrefix, true, false, null, false, DataType.STRING));
         varMeta.add(new VariableMetadata(variablePrefix + "." + VARIABLE_COUNT, false, false, null, false, DataType.INTEGER));
 
         for (String key: namingMap.keySet()) {
