@@ -17,7 +17,9 @@ import com.l7tech.policy.wsp.TypeMapping;
 import java.util.*;
 
 /**
+ * <p>The ICAP Antivirus modular assertion.</p>
  *
+ * @author Ken Diep
  */
 public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion implements UsesVariables {
 
@@ -26,6 +28,8 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
     private String failoverStrategy = FailoverStrategyFactory.ORDERED.getName();
 
     private List<IcapConnectionDetail> connectionDetails = new ArrayList<IcapConnectionDetail>();
+
+    private Map<String, String> serviceParameters = new HashMap<String, String>();
 
     private boolean continueOnVirusFound = false;
 
@@ -70,32 +74,71 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
         return meta;
     }
 
+    /**
+     * @return the failover strategy name.
+     */
     public String getFailoverStrategy() {
         return failoverStrategy;
     }
 
+    /**
+     * @param failoverStrategy the failover strategy name to use.
+     */
     public void setFailoverStrategy(final String failoverStrategy) {
         this.failoverStrategy = failoverStrategy;
     }
 
+    /**
+     * @return true if the assertion should continue processing if a virus is found, false otherwise.
+     */
     public boolean isContinueOnVirusFound() {
         return continueOnVirusFound;
     }
 
+    /**
+     * @param continueOnVirusFound when true, the assertion will continue processing if a virus is found.  When false,
+     *                             the assertion will fail and stop processing.
+     */
     public void setContinueOnVirusFound(final boolean continueOnVirusFound) {
         this.continueOnVirusFound = continueOnVirusFound;
     }
 
+    /**
+     * @return a list of configured servers to the antivirus server.
+     */
     public List<IcapConnectionDetail> getConnectionDetails() {
         return connectionDetails;
     }
 
+    /**
+     * @param connectionDetails the list of configured servers to use.
+     */
     public void setConnectionDetails(final List<IcapConnectionDetail> connectionDetails) {
         this.connectionDetails = connectionDetails;
     }
 
-    public static class Validator implements AssertionValidator {
+    /**
+     * @return a map containing all the configured service parameter name and values.   The key is the parameter name and the value is the parameter value.
+     */
+    public Map<String, String> getServiceParameters() {
+        return serviceParameters;
+    }
 
+    /**
+     * @param serviceParameters the server parameters to use.
+     */
+    public void setServiceParameters(final Map<String, String> serviceParameters) {
+        this.serviceParameters = serviceParameters;
+    }
+
+    /**
+     * <p>An implementation of the {@link AssertionValidator} to validate the ICAP Antivirus assertion.  This simply
+     * check to see if there are one or more servers configured.
+     * </p>
+     *
+     * @author Ken Diep
+     */
+    public static class Validator implements AssertionValidator {
         private final IcapAntivirusScannerAssertion assertion;
 
         public Validator(final IcapAntivirusScannerAssertion assertion) {
@@ -108,7 +151,8 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
         @Override
         public void validate(final AssertionPath path, final PolicyValidationContext pvc, final PolicyValidatorResult result) {
             if (assertion.getConnectionDetails().isEmpty()) {
-                result.addError(new PolicyValidatorResult.Error(assertion, "Require at least one valid connection to an ICAP anti-virus server.", null));
+                result.addError(new PolicyValidatorResult.Error(assertion,
+                        "Require at least one valid connection to an ICAP anti-virus server.", null));
             }
         }
     }

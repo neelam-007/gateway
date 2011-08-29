@@ -18,7 +18,8 @@ import java.io.ByteArrayInputStream;
 import java.util.Collections;
 
 /**
- *
+ * <p>The test coverage for the {@link ServerIcapAntivirusScannerAssertion} class.</p>
+ * @author Ken Diep
  */
 public class ServerIcapAntivirusScannerAssertionTest {
 
