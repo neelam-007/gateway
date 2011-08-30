@@ -15,6 +15,7 @@ import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.util.MockInjector;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
+import com.l7tech.test.BugNumber;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
@@ -81,6 +82,19 @@ public class ServerForEachLoopAssertionTest {
         assertEquals("bar", context.getVariable("i.current"));
         assertEquals(2, context.getVariable("i.iterations"));
         assertEquals(true, context.getVariable("i.exceededlimit"));
+    }
+
+    @Test
+    @BugNumber(10897)
+    public void testIterationLimitExact() throws Exception {
+        ass.setLoopVariableName("stringsArray");
+        ass.setVariablePrefix("i");
+        ass.setIterationLimit(3);
+        checkRequest();
+        assertEquals(",0-foo,1-bar,2-baz", context.getVariable("accum"));
+        assertEquals("baz", context.getVariable("i.current"));
+        assertEquals(3, context.getVariable("i.iterations"));
+        assertEquals(false, context.getVariable("i.exceededlimit"));
     }
 
     @Test

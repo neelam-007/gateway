@@ -70,6 +70,10 @@ public class ServerForEachLoopAssertion extends ServerCompositeAssertion<ForEach
         boolean failed = false;
         context.setVariable(hitLimitVar, hitLimit);
         while (iterator.hasNext()) {
+            if (iterationLimit > 0 && iterations >= iterationLimit) {
+                hitLimit = true;
+                break;
+            }
             Object next = iterator.next();
             context.setVariable(currentValueVar, next);
             context.setVariable(iterationsVar, iterations);
@@ -79,10 +83,6 @@ public class ServerForEachLoopAssertion extends ServerCompositeAssertion<ForEach
                 break;
             }
             iterations++;
-            if (iterationLimit > 0 && iterations >= iterationLimit) {
-                hitLimit = true;
-                break;
-            }
         }
 
         context.setVariable(iterationsVar, iterations);
