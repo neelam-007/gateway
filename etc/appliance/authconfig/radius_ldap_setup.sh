@@ -8,7 +8,7 @@
 # This configuration file is to be created by a Java interactive wizard used to gather info
 # from the user setting up the SSG appliance
 
-# this fucntion is called if the script is ran with --initialconfig parameter
+# this fucntion is called if the script is ran with --backuporiginalconfig parameter
 # the purpose is to create the $ORIG_CONF_FILES_DIR in which it will copy the
 # configuration files that will be considered original files; it should only
 # be called once, during application install time
@@ -27,7 +27,10 @@ DATE_TIME=$(date +"%Y-%m-%d %H:%M:%S")
 BK_DIR="/opt/SecureSpan/Appliance/config/authconfig/bk_files"
 ORIG_CONF_FILES_DIR="/opt/SecureSpan/Appliance/config/authconfig/orig_conf_files"
 LOG_FILE="/opt/SecureSpan/Appliance/config/radius_ldap_setup.log"
-CFG_FILES="$OPENLDAP_CONF_FILE $NSS_LDAP_CONF_FILE $NSS_CONF_FILE $PAM_RADIUS_CONF_FILE $PAM_SSHD_CONF_FILE /etc/sysconfig/authconfig /etc/pam.d/system-auth-ac"
+RADIUS_CFG_FILES="$PAM_RADIUS_CONF_FILE $PAM_SSHD_CONF_FILE /etc/pam.d/system-auth-ac"
+LDAP_CFG_FILES="$OPENLDAP_CONF_FILE $NSS_LDAP_CONF_FILE $NSS_CONF_FILE /etc/sysconfig/authconfig /etc/pam.d/system-auth-ac"
+RADIUS_WITH_LDAP_FILES="$OPENLDAP_CONF_FILE $NSS_LDAP_CONF_FILE $NSS_CONF_FILE $PAM_RADIUS_CONF_FILE $PAM_SSHD_CONF_FILE /etc/sysconfig/authconfig /etc/pam.d/system-auth-ac"
+
 OWNER_CFG_FILE="layer7"
 PERM_CFG_FILE="600"
 
@@ -177,24 +180,43 @@ fi
 }
 
 getOriginalFiles () {
-# this function will replace any current configuration file relevant to this setup with the original version.
-if [ $# -eq 0 ]; then
+# this function will replace any current configuration files relevant to the setup
+# type indicated by the only pramater it accepts with the original versions of those files.
+if [ $# -eq 1 ]; then
 	# making sure the directory exists and it is readable
 	if [ ! -d $ORIG_CONF_FILES_DIR ]; then
-		toLog "    Info - $ORIG_CONF_FILES_DIR does not exists. Exiting..."
+		toLog "    ERROR - $ORIG_CONF_FILES_DIR does not exists. Exiting..."
 		exit 1
 	fi
-	FILES=$(ls -1 $ORIG_CONF_FILES_DIR)
-	for F in $FILES; do
-		cp --preserve=mode,ownership $ORIG_CONF_FILES_DIR"/"$F "/$(echo $F | sed -e 's/-/\//g')"
-		if [ "X$?" == "X0" ]; then
-			toLog "Success - Restoration of $F successful."
-			RETVAL=0
-		else
-			toLog "Warning - Restoration of $F could not be completed!"
-			RETVAL=1
-		fi
-	done
+	if [ "X$1" == "Xradius_only" ]; then
+		for F in $RADIUS_CFG_FILES; do
+			cp --preserve=mode,ownership $ORIG_CONF_FILES_DIR"/"$(echo $F | sed -e 's|/|+|g') "/$(echo $F | sed -e 's|+|/|g')"
+			if [ "X$?" == "X0" ]; then
+				RETVAL=0
+			else
+				RETVAL=1
+			fi
+		done
+	elif [ "X$1" == "Xldap_only" ]; then
+		for F in $LDAP_CFG_FILES; do
+			cp --preserve=mode,ownership $ORIG_CONF_FILES_DIR"/"$(echo $F | sed -e 's|/|+|g') "/$(echo $F | sed -e 's|+|/|g')"
+			if [ "X$?" == "X0" ]; then
+				RETVAL=0
+			else
+				RETVAL=1
+			fi
+		done
+	elif [ "X$1" == "Xradius_with_ldap" ]; then
+		FILES=$(ls -1 $ORIG_CONF_FILES_DIR)
+		for F in $FILES; do
+			cp --preserve=mode,ownership $ORIG_CONF_FILES_DIR"/"$F "/$(echo $F | sed -e 's|+|/|g')"
+			if [ "X$?" == "X0" ]; then
+				RETVAL=0
+			else
+				RETVAL=1
+			fi
+		done
+	fi
 else
 	toLog "    ERROR - Function 'getOriginalFiles' should be called with one parameter only! Exiting..."
 	exit 1
@@ -204,7 +226,7 @@ fi
 }
 
 doBackupOriginalConfig () {
-# this fucntion is called if the script is ran with --initialconfig parameter
+# this fucntion is called if the script is ran with --backuporiginalconfig parameter;
 # the purpose is to create the $ORIG_CONF_FILES_DIR in which it will copy the
 # configuration files that will be considered original files; it should only
 # be called once, during application install time
@@ -221,7 +243,7 @@ if [ ! -d $ORIG_CONF_FILES_DIR ]; then
 	fi
 fi
 if [ $(ls -1A $ORIG_CONF_FILES_DIR | wc -l) -eq 0 ]; then
-	for F in $CFG_FILES; do
+	for F in $RADIUS_WITH_LDAP_FILES; do
 		checkFileExists $F
 		if [ "X$RETVAL" == "X1" ]; then
 			toLog "ERROR - File $F does not exist! Exiting..."
@@ -245,8 +267,8 @@ doConfigPAMmkHomeDir () {
 # This function will be used to configure pam to automatically create home directories for
 # any user allowed to login via any service that includes the pam auth rules from system-auth-ac:
 LINE=$(grep -n "^session" /etc/pam.d/system-auth-ac | head -1 | cut -d":" -f1)
-sed -i '$LINEs|\(^session.*$\)|# Added by $0 on $DATE_TIME:\nsession required pam_mkhomedir.so skel=$SKEL_DIR umask=077\n\1|' /etc/pam.d/system-auth-ac
-if [ $? -ne 0 ] || [ "$(grep "skel" /etc/pam.d/system-auth-ac | cut -d" " -f3)" != "pam_mkhomedir.so" ]; then
+sed -i ""$LINE"s|\(^session.*$\)|# Added by $0 on $DATE_TIME:\nsession     required     pam_mkhomedir.so skel=$SKEL_DIR umask=077\n\1|" /etc/pam.d/system-auth-ac
+if [ $? -ne 0 ] || [ "$(grep "skel" /etc/pam.d/system-auth-ac |  awk '{print $3}')" != "pam_mkhomedir.so" ]; then
 	RETVAL=1
 else
 	RETVAL=0
@@ -271,7 +293,7 @@ fi
 doLocalAuthSufficient (){
 # local authorization is sufficient for local users
 LINE2=$(grep -n "^account" /etc/pam.d/system-auth-ac | head -1 | cut -d":" -f1)
-sed -i '$LINEs|\(^account.*$\)|\1\n# Added by $0 on $DATE_TIME:\naccount     sufficient    pam_localuser.so\n|' /etc/pam.d/system-auth-ac
+sed -i ""$LINE2"s|\(^account.*$\)|\1\n# Added by $0 on $DATE_TIME:\naccount     sufficient    pam_localuser.so|" /etc/pam.d/system-auth-ac
 if [ $? -ne 0 ] || [ "$(grep "pam_localuser.so" /etc/pam.d/system-auth-ac | awk '{print $3}')" != "pam_localuser.so" ]; then
 	RETVAL=1
 else
@@ -316,15 +338,15 @@ else
 	
 	# search for the requisite line (added by the hardenning script... but after) and if it's not there, add it:
 	if [ $(grep "requisite" $PAM_SSHD_CONF_FILE | wc -l) -eq 1 ]; then
-		sed -i "s/\(.*requisite.*$\)/auth\tsufficient\tpam_radius_auth.so conf=\/etc\/pam_radius.conf retry=2 localifdown\n\1/" $PAM_SSHD_CONF_FILE
-		if [ $(grep "pam_radius.conf" $PAM_SSHD_CONF_FILE | cut -d"/" -f3 | cut -d" " -f1) != "pam_radius.conf" ]; then
+		sed -i "s|\(.*requisite.*$\)|# Added by $0 on $DATE_TIME:\nauth\tsufficient\tpam_radius_auth.so conf=$PAM_RADIUS_CONF_FILE retry=2 localifdown\n\1|" $PAM_SSHD_CONF_FILE
+		if [ $(grep "$PAM_RADIUS_CONF_FILE" $PAM_SSHD_CONF_FILE | awk '{print $4}' | cut -d"=" -f2) != "$PAM_RADIUS_CONF_FILE" ]; then
 			toLog "    ERROR - Inserting the pam_radius module line in the $PAM_SSHD_CONF_FILE file failed! Exiting..."
 			exit 1
 		fi
 	else
-		sed -i "s|\(^#%PAM.*$\)|\1\n# Added by $0 on $DATE_TIME:\nauth\tsufficient\tpam_radius_auth.so conf=\/etc\/pam_radius.conf retry=2 localifdown\n /
+		sed -i "s|\(^#%PAM.*$\)|\1\n# Added by $0 on $DATE_TIME:\nauth\tsufficient\tpam_radius_auth.so conf=$PAM_RADIUS_CONF_FILE retry=2 localifdown\n /
 		auth\trequisite\tpam_listfile.so item=user sense=allow file=\/etc\/ssh\/ssh_allowed_users onerr=succeed|" $PAM_SSHD_CONF_FILE
-		if [ $(grep "pam_radius.conf" $PAM_SSHD_CONF_FILE | cut -d"/" -f3 | cut -d" " -f1) != "pam_radius.conf" ]; then
+		if [ $(grep "$PAM_RADIUS_CONF_FILE" $PAM_SSHD_CONF_FILE | awk '{print $4}' | cut -d"=" -f2) != "$PAM_RADIUS_CONF_FILE" ]; then
 			toLog "    ERROR - Inserting the pam_radius module line in the $PAM_SSHD_CONF_FILE file failed! Exiting..."
 			exit 1
 		fi
@@ -339,7 +361,7 @@ if [ "X$RETVAL" == "X1" ]; then
 	exit 1
 else
 	toLog "   Info - FILE $PAM_RADIUS_CONF_FILE CONFIGURATION:"
-	sed -i "s|\(^127.0.0.1.*$\)/# Commented by $0 on $DATE_TIME:\n#\1\n|" $PAM_RADIUS_CONF_FILE
+	sed -i "s|\(^127.0.0.1.*$\)|# Commented by $0 on $DATE_TIME:\n#\1\n|" $PAM_RADIUS_CONF_FILE
 	if [ $? -ne 0 ]; then
 		toLog "    ERROR - Commenting the default host (127.0.0.1) line in $PAM_RADIUS_CONF_FILE failed! Exiting..."
 		exit 1
@@ -375,12 +397,12 @@ toLog "Info - ===== Starting system configuration for LDAP only authentication. 
 toLog " Info - Applying all necessary ldap only authentication specific configurations:"
 
 # Enable LDAP auth on the system
-sed -i "s|^USELDAP.*$|USELDAP=yes|" /etc/sysconfig/authconfig
-if [ $? -ne 0 ] || [ "X$(grep "^USELDAP" /etc/sysconfig/authconfig | cut -d"=" -f2)" != "Xyes" ]; then
-	toLog "    ERROR - Enabling LDAP in /etc/sysconfig/authconfig failed. Exiting..."
+sed -i "s|^USELDAP=.*$|USELDAP=yes|" /etc/sysconfig/authconfig
+if [ $? -ne 0 ] || [ "X$(grep "^USELDAP=" /etc/sysconfig/authconfig | cut -d"=" -f2)" != "Xyes" ]; then
+	toLog "  ERROR - Enabling LDAP in /etc/sysconfig/authconfig failed. Exiting..."
 	exit 1
 else
-	toLog "    Success - LDAP has been enabled."
+	toLog "  Success - LDAP has been enabled."
 fi
 
 checkFileExists $OPENLDAP_CONF_FILE
@@ -390,7 +412,7 @@ if [ "X$RETVAL" == "X1" ]; then
 else
 	toLog "   Info - FILE $OPENLDAP_CONF_FILE CONFIGURATION:"
 	# BASE field
-	if [ "X$LDAP_BASE" != "X" ];then
+	if [ "X$LDAP_BASE" != "X" ]; then
 		sed -i "s|\(^#BASE.*$\)|\1\n# Added by $0 on $DATE_TIME:\nBASE $LDAP_BASE\n|" $OPENLDAP_CONF_FILE
 		if [ $? -ne 0 ] || [ "$(grep "^BASE" $OPENLDAP_CONF_FILE | cut -d" " -f2)" != "$LDAP_BASE" ]; then
 			toLog "    ERROR - Configuring 'BASE' field in $OPENLDAP_CONF_FILE failed. Exiting..."
@@ -401,10 +423,10 @@ else
 	else
 		toLog "    ERROR - The value of LDAP_BASE ($LDAP_BASE) variable in the configuration file is not valid! Exiting..."
 		exit 1
-	if
+	fi
 	# URI field
-	sed -i "s|\(^#URI.*$\)|\1\n# Added by $0 on $DATE_TIME:\n$LDAP_TYPE://$LDAP_SRV:$LDAP_PORT\n|" $OPENLDAP_CONF_FILE
-	if [ $? -ne 0 ] || [ "$(grep "^URI" $OPENLDAP_CONF_FILE | cut -d" " -f2)" != "$LDAP_TYPE://$LDAP_SRV:LDAP_PORT" ]; then
+	sed -i "s|\(^#URI.*$\)|\1\n# Added by $0 on $DATE_TIME:\nURI $LDAP_TYPE://$LDAP_SRV:$LDAP_PORT\n|" $OPENLDAP_CONF_FILE
+	if [ $? -ne 0 ] || [ "$(grep "^URI" $OPENLDAP_CONF_FILE | cut -d" " -f2)" != "$LDAP_TYPE://$LDAP_SRV:$LDAP_PORT" ]; then
 		toLog "    ERROR - Configuring 'URI' field in $OPENLDAP_CONF_FILE failed. Exiting..."
 		exit 1
 	else
@@ -415,6 +437,7 @@ else
 		# tls_reqcert
 		if [ "X$LDAP_TLS_REQCERT" == "Xnever" ] || [ "X$LDAP_TLS_REQCERT" == "Xallow" ] || [ "X$LDAP_TLS_REQCERT" == "Xtry" ] || \
 			[ "X$LDAP_TLS_REQCERT" == "Xdemand" ] || [ "X$LDAP_TLS_REQCERT" == "Xhard" ]; then
+			echo "# Added by $0 on $DATE_TIME" >> $OPENLDAP_CONF_FILE
 			echo -e "TLS_REQCERT $LDAP_TLS_REQCERT\n" >> $OPENLDAP_CONF_FILE
 			if [ $? -ne 0 ] || [ "$(grep "^TLS_REQCERT" $OPENLDAP_CONF_FILE | cut -d" " -f2)" != "$LDAP_TLS_REQCERT" ]; then
 				toLog "    ERROR - Configuring 'TLS_REQCERT' field in $OPENLDAP_CONF_FILE failed. Exiting..."
@@ -429,6 +452,7 @@ else
 		
 		# tls crlcheck
 		if [ "X$LDAP_TLS_CRLCHECK" == "Xnone" ] || [ "X$LDAP_TLS_CRLCHECK" == "Xpeer" ] || [ "X$LDAP_TLS_CRLCHECK" == "Xall" ]; then
+			echo "# Added by $0 on $DATE_TIME" >> $OPENLDAP_CONF_FILE
 			echo -e "TLS_CRLCHECK $LDAP_TLS_CRLCHECK\n" >> $OPENLDAP_CONF_FILE
 			if [ $? -ne 0 ] || [ "$(grep "^TLS_CRLCHECK" $OPENLDAP_CONF_FILE | cut -d" " -f2)" != "$LDAP_TLS_CRLCHECK" ]; then
 				toLog "    ERROR - Configuring 'TLS_CRLCHECK' field in $OPENLDAP_CONF_FILE failed. Exiting..."
@@ -463,9 +487,8 @@ else
 	fi
 
 	# base field
-	if [ "X$LDAP_BASE" != "X" ];then
-		sed -i "s|\(^base dc=example,dc=com.*$\)|# Commented by 0$ on $DATE_TIME:\n#\1\n \
-		# Added by $0 on $DATE_TIME:\nbase $LDAP_BASE\n|" $NSS_LDAP_CONF_FILE
+	if [ "X$LDAP_BASE" != "X" ]; then
+		sed -i "s|\(^base dc=example,dc=com.*$\)|# Commented by 0$ on $DATE_TIME:\n#\1\n# Added by $0 on $DATE_TIME:\nbase $LDAP_BASE\n|" $NSS_LDAP_CONF_FILE
 		if [ $? -ne 0 ] || [ "$(grep "^base" $NSS_LDAP_CONF_FILE | cut -d" " -f 2)" != "$LDAP_BASE" ]; then
 			toLog "    ERROR - Configuring the 'base' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
 			exit 1
@@ -493,9 +516,9 @@ else
 	
 	# Decide if LDAP or LDAPS (defined by $LDAP_TYPE):
 	if [ "X$LDAP_TYPE" == "Xldaps" ]; then
-		toLog "    INFO - '$LDAP_TYPE' will be configured."
+		toLog "   Info - '$LDAP_TYPE' will be configured."
 		# ssl field is set to start_tls
-		sed -i "s|\(^#ssl on.*$\)|\1\n# Added by $0 on $DATE_TIME:\nssl start_tls\n|" $NSS_LDAP_CONF_FILE
+		sed -i "s|\(^# OpenLDAP SSL mechanism.*$\)|\1\n# Added by $0 on $DATE_TIME:\nssl start_tls\n|" $NSS_LDAP_CONF_FILE
 		if [ $? -ne 0 ] || [ "$(grep "^ssl" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "start_tls" ]; then
 			toLog "    ERROR - Configuring 'ssl' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
 			exit 1
@@ -509,23 +532,28 @@ else
 		# For both situations (using URL or a previously copied file as the CA certificate) the file will end up in the /etc/openldap/cacerts dir.
 		if [ "X$LDAP_CACERT_URL" != "X" ]; then
 			CACERT_FILE_NAME=$(echo "$LDAP_CACERT_URL" | sed 's/.*\///')
-			pushd /etc/openldap/cacerts/
 			wget --quiet --no-check-certificate --no-clobber --dns-timeout=2 --timeout=2 --waitretry=2 --tries=2 $LDAP_CACERT_URL
-			if [ $? -ne 0 ] || [ "basename $(ls -1 /etc/openldap/cacerts/ | grep "$CACERT_FILE_NAME")" != "$CACERT_FILE_NAME" ] || [ ! -s "$CACERT_FILE_NAME" ]; then
-				toLog "    ERROR - Retriving the CA certificate from URL failed or certificate file is empty. Exiting..."
+			if [ $? -ne 0 ]; then
+				toLog "    ERROR - Retriving the CA certificate from URL failed! Exiting..."
 				exit 1
+			else
+				mv -f --backup=numbered $CACERT_FILE_NAME /etc/openldap/cacerts/
+				if [ $? -ne 0 ] || [ ! -s "/etc/openldap/cacerts/$CACERT_FILE_NAME" ]; then
+					toLog "    ERROR - Installing the CA certificate in /etc/openldap/cacerts directory failed or certificate file is empty! Exiting..."
+					exit 1
+				fi
+				toLog "    Success - CA certificate installation completed."
 			fi
-			popd
 		else
 			# a file copied via scp to the ssg system will be used:
-			unalias cp; cp -a --backup=numbered $LDAP_CACERT_FILE /etc/openldap/cacerts/
+			/bin/cp -a --backup=numbered $LDAP_CACERT_FILE /etc/openldap/cacerts/
 			if [ $? -ne 0 ] || [ ! -s "$LDAP_CACERT_FILE" ]; then
 				toLog "    ERROR - Copying the CA certificate file failed or the certificate file is empty. Exiting..."
 				exit 1
 			fi
 			# If this point was reached the certificate file has been retrieved sucessfully and it is not empty.
 			# Basic verification to make sure the file is a certificate:
-			if [ "$(openssl verify /etc/openldap/cacerts/$CACERT_FILE_NAME 2>&1 | grep "^unable")" == "unable to load certificate" ]; then
+			if [ "X$(openssl verify /etc/openldap/cacerts/$(basename $LDAP_CACERT_FILE) 2>&1 | grep "^unable")" == "Xunable to load certificate" ]; then
 				toLog "    ERROR - The CA certificate retrieved does not seem to be a certificate! Exiting..."
 				exit 1
 			else
@@ -536,7 +564,7 @@ else
 		# client tls auth (mutual authentication)
 		if [ "X$CLT_TLS_AUTH" == "Xyes" ]; then
 			# tls cert
-			sed -i "s|\(^#tls_cert.*$\)|\1# Added by $0 on $DATE_TIME:\ntls_cert $LDAP_TLS_CERT\n|" $NSS_LDAP_CONF_FILE
+			sed -i "s|\(^#tls_cert.*$\)|\1\n# Added by $0 on $DATE_TIME:\ntls_cert $LDAP_TLS_CERT\n|" $NSS_LDAP_CONF_FILE
 			if [ $? -ne 0 ] || [ "$(grep "^tls_cert" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "$LDAP_TLS_CERT" ]; then
 				toLog "    ERROR - Configuring 'tls_cert' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
 				exit 1
@@ -545,7 +573,7 @@ else
 			fi
 			
 			# tls key
-			sed -i "s|\(^#tls_key.*$\)|\1# Added by $0 on $DATE_TIME:\ntls_key $LDAP_TLS_KEY\n|" $NSS_LDAP_CONF_FILE
+			sed -i "s|\(^#tls_key.*$\)|\1\n# Added by $0 on $DATE_TIME:\ntls_key $LDAP_TLS_KEY\n|" $NSS_LDAP_CONF_FILE
 			if [ $? -ne 0 ] || [ "$(grep "^tls_key" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "$LDAP_TLS_KEY" ]; then
 				toLog "    ERROR - Configuring 'tls_key' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
 				exit 1
@@ -581,7 +609,7 @@ else
 		fi
 	elif [ "X$LDAP_TYPE" == "Xldap" ]; then
 		# ssl field will be set to no:
-		sed -i "s|\(^#ssl on.*$\)|\1\n# Added by $0 on $DATE_TIME:\nssl no\n|" $NSS_LDAP_CONF_FILE
+		sed -i "s|\(^# OpenLDAP SSL mechanism.*$\)|\1\n# Added by $0 on $DATE_TIME:\nssl no\n|" $NSS_LDAP_CONF_FILE
 		if [ $? -ne 0 ] || [ "$(grep "^ssl" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "no" ]; then
 			toLog "    ERROR - Disabling 'ssl' in $NSS_LDAP_CONF_FILE failed. Exiting..."
 			exit 1
@@ -607,7 +635,7 @@ else
 		# binddn field
 		if [ "X$LDAP_BINDDN" != "X" ]; then
 			sed -i "s|\(^#binddn.*$\)|\1\n# Added by $0 on $DATE_TIME:\nbinddn $LDAP_BINDDN\n|" $NSS_LDAP_CONF_FILE
-			if [ $? -ne 0 ] || [ "$(grep "^bindn" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "$LDAP_BINDDN" ]; then
+			if [ $? -ne 0 ] || [ "$(grep "^binddn" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "$LDAP_BINDDN" ]; then
 				toLog "    ERROR - Configuring 'binddn' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
 				exit 1
 			else
@@ -641,9 +669,7 @@ else
 			toLog "    Success - LDAP AUTH has been disabled."
 		fi
 	fi			
-else		
-	toLog "    Success - Configuration of $NSS_LDAP_CONF_FILE completed."
-	
+	toLog "   Success - Configuration of $NSS_LDAP_CONF_FILE completed."
 fi
 
 # Configuring the $NSS_CONF_FILE file
@@ -655,7 +681,7 @@ else
 	toLog "   Info - FILE $NSS_CONF_FILE CONFIGURATION:"
 	# passwd field
 	sed -i "s|^passwd:\(.*$\)|# Commented by $0 on $DATE_TIME:\n#passwd:\1\n# Added by $0 on $DATE_TIME:\npasswd: files ldap\n|" $NSS_CONF_FILE
-	if [ $? -ne 0 ] || [ "X$(grep "^passwd" file | cut -d" " -f3)" != "Xldap" ]; then
+	if [ $? -ne 0 ] || [ "X$(grep "^passwd" $NSS_CONF_FILE | cut -d" " -f3)" != "Xldap" ]; then
 		toLog "    ERROR - Configuration of 'passwd' field in $NSS_CONF_FILE failed. Exiting..."
 		exit 1
 	else
@@ -664,7 +690,7 @@ else
 	
 	# shadow field
 	sed -i "s|^shadow:\(.*$\)|# Commented by $0 on $DATE_TIME:\n#shadow:\1\n# Added by $0 on $DATE_TIME:\nshadow: files ldap\n|" $NSS_CONF_FILE
-	if [ $? -ne 0 ] || [ "X$(grep "^shadow" file | cut -d" " -f3)" != "Xldap" ]; then
+	if [ $? -ne 0 ] || [ "X$(grep "^shadow" $NSS_CONF_FILE | cut -d" " -f3)" != "Xldap" ]; then
 		toLog "    ERROR - Configuration of 'shadow:' field in $NSS_CONF_FILE failed. Exiting..."
 		exit 1
 	else
@@ -673,7 +699,7 @@ else
 	
 	# group field
 	sed -i "s|^group:\(.*$\)|# Commented by $0 on $DATE_TIME:\n#group:\1\n# Added by $0 on $DATE_TIME:\ngroup: files ldap\n|" $NSS_CONF_FILE
-	if [ $? -ne 0 ] || [ "X$(grep "^group" file | cut -d" " -f3)" != "Xldap" ]; then
+	if [ $? -ne 0 ] || [ "X$(grep "^group" $NSS_CONF_FILE | cut -d" " -f3)" != "Xldap" ]; then
 		toLog "    ERROR - Configuration of 'group:' field in $NSS_CONF_FILE failed. Exiting..."
 		exit 1
 	else
@@ -681,7 +707,7 @@ else
 	fi
 			
 	# if this point was reached, then:
-	toLog "    Success - Configuration of $NSS_CONF_FILE completed."
+	toLog "   Success - Configuration of $NSS_CONF_FILE completed."
 	RETVAL=0
 fi
 
@@ -694,6 +720,26 @@ fi
 
 #############################################
 # script BODY section
+
+# the original configuration directory must exist and have all the files in it before
+# getting to any other decision:
+# if [ ! -d $ORIG_CONF_FILES_DIR ]; then
+		# toLog " ERROR - $ORIG_CONF_FILES_DIR does not exists. Exiting..."
+		# exit 1
+# else	
+	# for F in $RADIUS_CFG_FILES; do
+		# if [ ! -s $F ]; then
+			# toLog " ERROR - The content of $ORIG_CONF_FILES_DIR is not correct! Exiting..."
+			# exit 1
+		# fi
+	# done
+	# for G in $LDAP_CFG_FILES; do 
+		# if [ -s $F ]; then
+			# toLog " ERROR - The content of $ORIG_CONF_FILES_DIR is not correct! Exiting..."
+			# exit 1
+		# fi
+	# done
+# fi
 
 if [ $# -eq 1 ]; then
 	if [ "X$1" == "X--getcurrentconfig" ]; then
@@ -782,7 +828,7 @@ elif [ $# -eq 2 ]; then
 						doBackup /etc/sysconfig/authconfig
 						# bring back the original files
 						toLog "Info - ===== Restoring original configuration files. ====="
-						getOriginalFiles
+						getOriginalFiles ldap_only
 						if [ $RETVAL -ne 0 ]; then
                             toLog "  ERROR - Restoring original files failed. Exiting..."
                             exit 1
@@ -810,18 +856,19 @@ elif [ $# -eq 2 ]; then
 						toLog "Info - ===== Starting backup for Radius current configuration files. ====="
 						doBackup $PAM_SSHD_CONF_FILE
 						doBackup $PAM_RADIUS_CONF_FILE
+						doBackup /etc/pam.d/system-auth-ac
 						# bring back the original files
 						toLog "Info - ===== Restoring original configuration files. ====="
-						getOriginalFiles
+						getOriginalFiles radius_only
 						if [ $RETVAL -ne 0 ]; then
 							toLog "  ERROR - Restoring original files failed. Exiting..."
                             exit 1
                         else
 							doConfigureRADIUSonly
 							if [ "$RETVAL" -eq "0" ]; then
-								toLog "  Success - System configuration for Radius only authentication completed."
+								toLog " Success - System configuration for Radius only authentication completed."
 							else
-								toLog "  ERROR - System configuration for Radius only authentication failed! Exiting..."
+								toLog " ERROR - System configuration for Radius only authentication failed! Exiting..."
 								exit 1
 							fi
 							# Configuration of pam to create home directories at sucessful login:
@@ -831,6 +878,7 @@ elif [ $# -eq 2 ]; then
 								exit 1
 							else
 								toLog "Success - Home directories will be automatically created at first successful login."
+								toLog "Info - /etc/skel_ssg is the directory holding the skeleton files for new users."
 							fi
 						fi
 						;;
@@ -848,7 +896,7 @@ elif [ $# -eq 2 ]; then
 						doBackup /etc/sysconfig/authconfig
 						# bring back the original files
 						toLog "Info - ===== Restoring original configuration files. ====="
-						getOriginalFiles
+						getOriginalFiles radius_with_ldap
 						if [ $RETVAL -ne 0 ]; then
 							toLog "  ERROR - Restoring original files failed. Exiting..."
 							exit 1
@@ -910,16 +958,17 @@ elif [ $# -eq 2 ]; then
 				# Make sure that local auth is sufficient for local users:
 				doLocalAuthSufficient
 				if [ "X$RETVAL" == "X1" ]; then
-					toLog "  ERROR - Configuring /etc/pam.d/system-auth-ac to consider local auth sufficient for local users failed! Exiting..."
+					toLog "ERROR - Configuring /etc/pam.d/system-auth-ac to consider local auth sufficient for local users failed! Exiting..."
 					exit 1
 				else
-					toLog "   Success - The system was configured to consider local auth to be sufficient for local users."
+					toLog "Success - The system was configured to consider local auth to be sufficient for local users."
 				fi
 				
-				# Deleting the config file:
-				echo "rm -rf "$2""
+				# Backing-up and deleting the config file:
+				doBackup "$2"
+				rm -rf "$2"
 				if [ "X$?" == "X0" ]; then
-					toLog "Info - Configuration file ($(basename $2)) was successfuly deleted."
+					toLog "Info - Configuration file ($(basename $2)) was successfuly backed-up and deleted."
 				else
 					toLog "ERROR - Configuration file ($(basename $2)) was NOT successfuly deleted!"
 				fi
