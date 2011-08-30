@@ -1,44 +1,52 @@
-Mon Apr 11 15:44:35 2011: Log file created.
-Mon Apr 11 15:44:35 2011: Success - Configuration of /etc/openldap/ldap.conf completed.
-Mon Apr 11 15:44:35 2011: Info - /etc/ldap.conf_orig_20110411_154435 created.
-Mon Apr 11 15:44:35 2011: Success - Configuration of /etc/ldap.conf completed.
-Mon Apr 11 15:44:35 2011: Info - /etc/nsswitch.conf_orig_20110411_154435 created.
-Mon Apr 11 15:44:35 2011: Success - Configuration of /etc/nsswitch.conf completed.
-Mon Apr 11 15:44:35 2011: Info - SSHD is configured to use PAM.
-Mon Apr 11 15:44:35 2011: Info - /etc/pamd/sshd_orig_20110411_154435 backup file created.
-Mon Apr 11 15:44:35 2011: Success - Configuration of /etc/pam.d/sshd completed.
-Mon Apr 11 15:44:35 2011: Info - /etc/pam_radius.conf_orig_20110411_154435 backup file created.
-Mon Apr 11 15:44:35 2011: Success - Configuration of /etc/pam_radius.conf completed.
-Tue Apr 12 15:15:40 2011: Info - /etc/openldap/ldap.conf_orig_20110412_151540 created.
-Tue Apr 12 15:15:40 2011: Success - Configuration of /etc/openldap/ldap.conf completed.
-Tue Apr 12 15:15:40 2011: Info - /etc/ldap.conf_orig_20110412_151540 created.
-Tue Apr 12 15:15:40 2011: Success - Configuration of /etc/ldap.conf completed.
-Tue Apr 12 15:15:40 2011: Info - /etc/nsswitch.conf_orig_20110412_151540 created.
-Tue Apr 12 15:15:40 2011: Success - Configuration of /etc/nsswitch.conf completed.
-Tue Apr 12 15:15:40 2011: Info - SSHD is configured to use PAM.
-Tue Apr 12 15:15:40 2011: Info - /etc/pamd/sshd_orig_20110412_151540 backup file created.
-Tue Apr 12 15:15:40 2011: Success - Configuration of /etc/pam.d/sshd completed.
-Tue Apr 12 15:15:40 2011: Info - /etc/pam_radius.conf_orig_20110412_151540 backup file created.
-Tue Apr 12 15:15:40 2011: Success - Configuration of /etc/pam_radius.conf completed.
-Tue Apr 12 15:16:05 2011: Info - /etc/openldap/ldap.conf_orig_20110412_151605 created.
-Tue Apr 12 15:16:05 2011: Success - Configuration of /etc/openldap/ldap.conf completed.
-Tue Apr 12 15:16:05 2011: Info - /etc/ldap.conf_orig_20110412_151605 created.
-Tue Apr 12 15:16:05 2011: Success - Configuration of /etc/ldap.conf completed.
-Tue Apr 12 15:16:05 2011: Info - /etc/nsswitch.conf_orig_20110412_151605 created.
-Tue Apr 12 15:16:05 2011: Success - Configuration of /etc/nsswitch.conf completed.
-Tue Apr 12 15:27:02 2011: Info - SSHD is configured to use PAM.
-Tue Apr 12 15:27:02 2011: Info - /etc/pamd/sshd_orig_20110412_152702 backup file created.
-Tue Apr 12 15:27:02 2011: Success - Configuration of /etc/pam.d/sshd completed.
-Tue Apr 12 15:27:02 2011: Info - /etc/pam_radius.conf_orig_20110412_152702 backup file created.
-Tue Apr 12 15:27:03 2011: Success - Configuration of /etc/pam_radius.conf completed.
-Tue Apr 12 15:53:33 2011: Info - SSHD is configured to use PAM.
-Tue Apr 12 15:53:33 2011: Info - /etc/pamd/sshd_orig_20110412_155333 backup file created.
-Tue Apr 12 15:53:33 2011: Success - Configuration of /etc/pam.d/sshd completed.
-Tue Apr 12 15:53:33 2011: Info - /etc/pam_radius.conf_orig_20110412_155333 backup file created.
-Tue Apr 12 15:53:33 2011: Success - Configuration of /etc/pam_radius.conf completed.
-Wed Apr 13 16:15:22 2011: Info - /etc/openldap/ldap.conf_orig_20110413_161522 created.
-Wed Apr 13 16:15:22 2011: Success - Configuration of /etc/openldap/ldap.conf completed.
-Wed Apr 13 16:15:22 2011: Info - /etc/ldap.conf_orig_20110413_161522 created.
-Wed Apr 13 16:15:22 2011: Success - Configuration of /etc/ldap.conf completed.
-Wed Apr 13 16:15:22 2011: Info - /etc/nsswitch.conf_orig_20110413_161522 created.
-Wed Apr 13 16:15:22 2011: Success - Configuration of /etc/nsswitch.conf completed.
+Tue Aug 30 14:21:47 2011: Info - Verifying the configuration file.
+Tue Aug 30 14:21:47 2011: Info - Configuration file (radius_ldap_setup.conf) successfuly sourced.
+Tue Aug 30 14:21:47 2011: Info - ===== Starting backup for Radius current configuration files. =====
+Tue Aug 30 14:21:47 2011:   Success - Backup of current /etc/pam.d/sshd file created.
+Tue Aug 30 14:21:47 2011:   Success - Backup of current /etc/pam_radius.conf file created.
+Tue Aug 30 14:21:47 2011: Info - ===== Starting backup for LDAP current configuration files. =====
+Tue Aug 30 14:21:47 2011:   Success - Backup of current /etc/openldap/ldap.conf file created.
+Tue Aug 30 14:21:47 2011:   Success - Backup of current /etc/ldap.conf file created.
+Tue Aug 30 14:21:47 2011:   Success - Backup of current /etc/nsswitch.conf file created.
+Tue Aug 30 14:21:47 2011:   Success - Backup of current /etc/pam.d/system-auth-ac file created.
+Tue Aug 30 14:21:47 2011:   Success - Backup of current /etc/sysconfig/authconfig file created.
+Tue Aug 30 14:21:47 2011: Info - ===== Restoring original configuration files. =====
+Tue Aug 30 14:21:47 2011: Info - ===== Starting system configuration for RADIUS only authentication. =====
+Tue Aug 30 14:21:47 2011:    Info - FILE etc/ssh/sshd_config VERIFICATION:
+Tue Aug 30 14:21:47 2011:     Success - SSHD is configured to use PAM.
+Tue Aug 30 14:21:47 2011:    Info - FILE /etc/pam.d/sshd CONFIGURATION:
+Tue Aug 30 14:21:47 2011:     Success - Configuration of /etc/pam.d/sshd completed.
+Tue Aug 30 14:21:47 2011:    Info - FILE /etc/pam_radius.conf CONFIGURATION:
+Tue Aug 30 14:21:47 2011:     Success - Configuration of /etc/pam_radius.conf completed.
+Tue Aug 30 14:21:47 2011: Info - ===== Starting system configuration for LDAP only authentication. =====
+Tue Aug 30 14:21:47 2011:  Info - Applying all necessary ldap only authentication specific configurations:
+Tue Aug 30 14:21:47 2011:   Success - LDAP has been enabled.
+Tue Aug 30 14:21:47 2011:    Info - FILE /etc/openldap/ldap.conf CONFIGURATION:
+Tue Aug 30 14:21:47 2011:     Success - 'BASE' set to dc=l7tech,dc=com in /etc/openldap/ldap.conf.
+Tue Aug 30 14:21:47 2011:     Success - 'URI' set to ldaps://10.7.48.50:636 in /etc/openldap/ldap.conf.
+Tue Aug 30 14:21:47 2011:     Success - 'TLS_REQCERT' set to allow in /etc/openldap/ldap.conf.
+Tue Aug 30 14:21:47 2011:     Success - 'TLS_CRLCHECK' set to none in /etc/openldap/ldap.conf.
+Tue Aug 30 14:21:47 2011:    Success - Configuration of /etc/openldap/ldap.conf completed.
+Tue Aug 30 14:21:47 2011:    Info - FILE /etc/ldap.conf CONFIGURATION:
+Tue Aug 30 14:21:47 2011:     Success - 'host' field disabled in /etc/ldap.conf.
+Tue Aug 30 14:21:47 2011:     Success - 'base' field set to dc=l7tech,dc=com in /etc/ldap.conf.
+Tue Aug 30 14:21:47 2011:     Success - 'uri' field set to ldaps://10.7.48.50:636 in /etc/ldap.conf.
+Tue Aug 30 14:21:47 2011:    Info - 'ldaps' will be configured.
+Tue Aug 30 14:21:47 2011:     Success - 'ssl' field set to start_tls in /etc/ldap.conf.
+Tue Aug 30 14:21:47 2011:     Success - CA certificate has been retreived successfuly.
+Tue Aug 30 14:21:47 2011:     Success - 'tls_cert' set to /home/ssgconfig/client.pem in /etc/ldap.conf.
+Tue Aug 30 14:21:47 2011:     Success - 'tls_key' set to /home/ssgconfig/client.key in /etc/ldap.conf.
+Tue Aug 30 14:21:47 2011:     Success - 'tls_ciphers' set to HIGH:MEDIUM:+SSLv2 in /etc/ldap.conf.
+Tue Aug 30 14:21:47 2011:     Success - 'tls_checkpeer' set to yes in /etc/ldap.conf.
+Tue Aug 30 14:21:47 2011:     Success - LDAP AUTH has been enabled.
+Tue Aug 30 14:21:47 2011:     Success - 'binddn' field set to cn=Manager,dc=l7tech,dc=com in /etc/ldap.conf file.
+Tue Aug 30 14:21:47 2011:     Success - 'bindpw' field set to 1234 in /etc/ldap.conf file.
+Tue Aug 30 14:21:47 2011:     Success - Configuration of /etc/ldap.conf completed.
+Tue Aug 30 14:21:47 2011:    Info - FILE /etc/nsswitch.conf CONFIGURATION:
+Tue Aug 30 14:21:47 2011:     Success - 'passwd' field in /etc/nsswitch.conf configured.
+Tue Aug 30 14:21:47 2011:     Success - 'shadow' field in /etc/nsswitch.conf configured.
+Tue Aug 30 14:21:47 2011:     Success - 'group' field in /etc/nsswitch.conf configured.
+Tue Aug 30 14:21:47 2011:     Success - Configuration of /etc/nsswitch.conf completed.
+Tue Aug 30 14:21:47 2011:   Success - System configuration for Radius with LDAP authentication completed.
+Tue Aug 30 14:21:47 2011: Success - Home directories will be automatically created at first successful login.
+Tue Aug 30 14:21:47 2011: Success - The system was configured to consider local auth to be sufficient for local users.
+Tue Aug 30 14:21:47 2011: Info - Configuration file (radius_ldap_setup.conf) was successfuly backed-up and deleted.
