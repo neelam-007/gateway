@@ -30,7 +30,7 @@
         <dependency name="layer7-uddi" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-test" rev="latest.integration" force="true" conf="test"/>
         <dependency org="aopalliance" name="aopalliance" rev="1.0" force="true" conf="core"/>
-        <dependency org="com.jscape" name="sftp" rev="8.7.0" force="true" conf="core"/>
+        <dependency org="com.jscape" name="sftp" rev="8.8.0" force="true" conf="core"/>
         <dependency org="javax.validation" name="validation-api" rev="1.0.0.GA" force="true" conf="core"/>
         <!-- Hibernate annotations used on beans that we use, so we need the hibernate JAR to compile -->
         <dependency org="org.hibernate" name="hibernate-core" rev="3.6.1.Final" force="true" conf="compile->master"/>

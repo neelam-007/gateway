@@ -6,6 +6,7 @@ import com.jscape.inet.sftp.Sftp;
 import com.jscape.inet.sftp.SftpException;
 import org.apache.commons.lang.StringUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -64,7 +65,17 @@ public class ServerSshRouteClient {
             }
             ((Sftp)sshClient).upload(in, remoteFile);
         } else if (sshClient instanceof Scp) {
-            ((Scp)sshClient).upload(in, remoteDir, remoteFile);
+
+            // normalize separate character, separate character should be '/' always
+            String normalizedRemoteDir = remoteDir.replace(File.separatorChar, '/');
+            normalizedRemoteDir = normalizedRemoteDir.replace('\\', '/');
+
+            // append directory separator to path if required, JScape SCP client simply concatenates the path and file name
+            if (normalizedRemoteDir != null && !normalizedRemoteDir.endsWith("/")) {
+                normalizedRemoteDir = normalizedRemoteDir + "/";
+            }
+
+            ((Scp)sshClient).upload(in, normalizedRemoteDir, remoteFile);
         }
     }
 }

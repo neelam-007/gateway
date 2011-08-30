@@ -4,6 +4,7 @@ import com.jscape.inet.scp.Scp;
 import com.jscape.inet.scp.ScpException;
 import com.jscape.inet.sftp.Sftp;
 import com.jscape.inet.sftp.SftpException;
+import com.jscape.inet.ssh.util.HostKeyFingerprintVerifier;
 import com.jscape.inet.ssh.util.SshHostKeys;
 import com.jscape.inet.ssh.util.SshParameters;
 import com.l7tech.common.mime.NoSuchPartException;
@@ -130,7 +131,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                 String hostPublicKey = publicKeyFingerprint;
                 SshHostKeys sshHostKeys = new SshHostKeys();
                 sshHostKeys.addKey(InetAddress.getByName(host), hostPublicKey);
-                sshParams.setHostKeys(sshHostKeys, false);
+                sshParams.setHostKeyVerifier(new HostKeyFingerprintVerifier(sshHostKeys));
             }
 
             if(assertion.isUsePrivateKey()) {
