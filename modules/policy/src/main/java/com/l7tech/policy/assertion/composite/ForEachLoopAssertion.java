@@ -77,6 +77,32 @@ public class ForEachLoopAssertion extends CompositeAssertion implements UsesVari
     //
     private static final String META_INITIALIZED = ForEachLoopAssertion.class.getName() + ".metadataInitialized";
 
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<ForEachLoopAssertion>(){
+        @Override
+        public String getAssertionName( final ForEachLoopAssertion assertion, final boolean decorate) {
+            String shortName = assertion.meta().get(AssertionMetadata.SHORT_NAME);
+            if(!decorate) return shortName;
+
+            StringBuilder sb = new StringBuilder(256);
+            sb.append(shortName);
+
+            if (assertion.getLoopVariableName() != null && assertion.getLoopVariableName().length() > 0) {
+                sb.append(" of ${");
+                sb.append(assertion.getLoopVariableName());
+                sb.append("}");
+            }
+
+            if (assertion.getVariablePrefix() != null && assertion.getVariablePrefix().length() > 0 && !assertion.getVariablePrefix().equals(assertion.getLoopVariableName())) {
+                sb.append(" as ${");
+                sb.append(assertion.getVariablePrefix());
+                sb.append(".");
+                sb.append("current}");
+            }
+
+            return AssertionUtils.decorateName( assertion, sb);
+        }
+    };
+
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
@@ -98,6 +124,7 @@ public class ForEachLoopAssertion extends CompositeAssertion implements UsesVari
 
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/folder.gif");
         meta.put(AssertionMetadata.POLICY_NODE_ICON_OPEN, "com/l7tech/console/resources/folderOpen.gif");
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.ForEachLoopAssertionPropertiesDialog");
 
