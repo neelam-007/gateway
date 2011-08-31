@@ -22,6 +22,7 @@ import java.util.EventListener;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
 
 /**
  * User: wlui
@@ -188,7 +189,14 @@ public class TargetVariablePanel  extends JPanel {
      * @return the entire variable, including the prefix if available
      */
     public String getVariable(){
-        return prefix.isEmpty()? suffixField.getText(): prefix + '.' + suffixField.getText();
+        String ret = prefix.isEmpty()? suffixField.getText(): prefix + '.' + suffixField.getText();
+
+        Matcher m = Syntax.oneVarPattern.matcher(ret.trim());
+        if (m.matches()) {
+            ret = m.group(1);
+        }
+
+        return ret;
     }
 
     /**
