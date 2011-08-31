@@ -334,7 +334,7 @@ public class GatewayBoot {
         try {
             shutdown.await();
         } catch (InterruptedException e) {
-            logger.info("Shutting down due to interrruped.");
+            logger.info("Shutting down due to interruped.");
         }
     }
 
