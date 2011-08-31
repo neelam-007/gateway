@@ -46,7 +46,7 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
     private static final int EVIDENCE_MARGIN_AFTER = 24;
 
     public ServerCodeInjectionProtectionAssertion(final CodeInjectionProtectionAssertion assertion) {
-        super(assertion, assertion);
+        super(assertion);
     }
 
     @Override

@@ -48,7 +48,7 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
     private final OutboundSecureConversationContextManager outboundSecurityContextManager;
 
     public ServerEstablishOutboundSecureConversation(EstablishOutboundSecureConversation assertion, final BeanFactory factory) {
-        super(assertion, assertion);
+        super(assertion);
         config = validated(factory.getBean("serverConfig", Config.class), logger);
         variablesUsed = assertion.getVariablesUsed();
         inboundSecurityContextManager = factory.getBean("inboundSecureConversationContextManager", InboundSecureConversationContextManager.class);

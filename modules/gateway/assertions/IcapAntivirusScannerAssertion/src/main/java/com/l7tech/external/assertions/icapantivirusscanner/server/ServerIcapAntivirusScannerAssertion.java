@@ -62,7 +62,7 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
 
     public ServerIcapAntivirusScannerAssertion(final IcapAntivirusScannerAssertion assertion,
                                                final ApplicationContext context) throws PolicyAssertionException {
-        super(assertion, assertion);
+        super(assertion);
         failoverStrategy = AbstractFailoverStrategy.makeSynchronized(FailoverStrategyFactory.createFailoverStrategy(
                 assertion.getFailoverStrategy(),
                 assertion.getConnectionDetails().toArray(

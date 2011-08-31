@@ -41,7 +41,7 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
     private final Config config;
 
     public ServerRequireWssTimestamp(RequireWssTimestamp assertion, BeanFactory spring) {
-        super(assertion,assertion);
+        super(assertion);
         this.securityTokenResolver = spring.getBean("securityTokenResolver",SecurityTokenResolver.class);
         this.config = spring.getBean("serverConfig", Config.class);
     }

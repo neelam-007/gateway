@@ -21,7 +21,7 @@ public class ServerRequestSizeLimit extends AbstractMessageTargetableServerAsser
     private final String limitString;
 
     public ServerRequestSizeLimit(RequestSizeLimit ass) {
-        super(ass,ass);
+        super(ass);
         this.entireMessage = ass.isEntireMessage();
         this.limitString = ass.getLimit();
     }

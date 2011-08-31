@@ -40,7 +40,7 @@ public abstract class ServerRequireWssOperation<AT extends XmlSecurityAssertionB
 
     protected ServerRequireWssOperation( final AT data,
                                          final ApplicationContext context ) {
-        super(data,data);
+        super(data);
         this.config = context.getBean("serverConfig", Config.class);
         this.securityTokenResolver = context.getBean("securityTokenResolver",SecurityTokenResolver.class);
         DomCompiledXpath xp;

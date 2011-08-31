@@ -24,7 +24,7 @@ public class ServerLookupOutboundSecureConversationSession extends AbstractMessa
     private final OutboundSecureConversationContextManager securityContextManager;
 
     public ServerLookupOutboundSecureConversationSession(final LookupOutboundSecureConversationSession assertion, final BeanFactory factory) {
-        super(assertion, assertion);
+        super(assertion);
         variablesUsed = assertion.getVariablesUsed();
         securityContextManager = factory.getBean("outboundSecureConversationContextManager", OutboundSecureConversationContextManager.class);
     }

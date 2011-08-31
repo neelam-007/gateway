@@ -66,7 +66,7 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
     private final TimeSource timeSource;
 
     public ServerWssReplayProtection( final WssReplayProtection subject, final BeanFactory spring ) {
-        super(subject, subject);
+        super(subject);
         this.messageIdManager = spring.getBean("distributedMessageIdManager",MessageIdManager.class);
         this.config = spring.getBean("serverConfig", Config.class);
         this.securityTokenResolver = spring.getBean("securityTokenResolver",SecurityTokenResolver.class);

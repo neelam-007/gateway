@@ -35,7 +35,7 @@ public class ServerMtomDecodeAssertion extends AbstractMessageTargetableServerAs
 
     public ServerMtomDecodeAssertion( final MtomDecodeAssertion assertion,
                                       final ApplicationContext context) throws PolicyAssertionException {
-        super( assertion, assertion );
+        super( assertion );
         this.stashManagerFactory = context.getBean( "stashManagerFactory", StashManagerFactory.class );
         this.config = context.getBean( "serverConfig", Config.class );
     }
@@ -45,7 +45,7 @@ public class ServerMtomDecodeAssertion extends AbstractMessageTargetableServerAs
     protected ServerMtomDecodeAssertion( final MtomDecodeAssertion assertion,
                                          final StashManagerFactory stashManagerFactory,
                                          final Config config ){
-        super( assertion, assertion );
+        super( assertion );
         this.stashManagerFactory = stashManagerFactory;
         this.config = config;
     }

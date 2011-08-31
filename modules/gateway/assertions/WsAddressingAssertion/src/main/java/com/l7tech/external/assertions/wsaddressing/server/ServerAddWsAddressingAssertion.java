@@ -27,7 +27,7 @@ import java.util.logging.Level;
 public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableServerAssertion<AddWsAddressingAssertion> {
 
     public ServerAddWsAddressingAssertion(final AddWsAddressingAssertion assertion ) throws PolicyAssertionException {
-        super(assertion, assertion);
+        super(assertion);
         this.variablesUsed = assertion.getVariablesUsed();
         //validate required fields
         if(assertion.getWsaNamespaceUri() == null){

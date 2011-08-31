@@ -80,7 +80,7 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
 
     public ServerProcessSamlAuthnRequestAssertion( final ProcessSamlAuthnRequestAssertion assertion,
                                                    final ApplicationContext applicationContext ) throws ServerPolicyException {
-        super( assertion, assertion );
+        super( assertion );
         this.securityTokenResolver = applicationContext.getBean( "securityTokenResolver", SecurityTokenResolver.class );
     }
 

@@ -32,7 +32,7 @@ public class ServerWssBasic extends AbstractMessageTargetableServerAssertion<Wss
     //- PUBLIC
 
     public ServerWssBasic(final WssBasic data, final ApplicationContext springContext) {
-        super(data, data);
+        super(data);
         this.config = springContext.getBean("serverConfig", Config.class);
         this.securityTokenResolver = (SecurityTokenResolver)springContext.getBean("securityTokenResolver");
     }

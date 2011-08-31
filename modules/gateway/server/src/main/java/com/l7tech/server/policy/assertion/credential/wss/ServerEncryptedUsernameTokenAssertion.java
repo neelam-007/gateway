@@ -37,7 +37,7 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractMessageTarget
 
     public ServerEncryptedUsernameTokenAssertion( final EncryptedUsernameTokenAssertion data,
                                                   final ApplicationContext springContext ) {
-        super(data,data);
+        super(data);
         this.data = data;
         this.config = springContext.getBean("serverConfig", Config.class);
         this.securityTokenResolver = springContext.getBean("securityTokenResolver", SecurityTokenResolver.class);

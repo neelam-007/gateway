@@ -30,7 +30,7 @@ public class ServerAddWssUsernameToken extends ServerAddWssEncryption<AddWssUser
     //- PUBLIC
 
     public ServerAddWssUsernameToken( final AddWssUsernameToken assertion ) {
-        super( assertion, assertion, assertion, assertion );
+        super( assertion );
         variableNames = assertion.getVariablesUsed();
     }
 

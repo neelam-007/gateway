@@ -44,7 +44,7 @@ public class ServerRequireWssX509Cert extends AbstractMessageTargetableServerAss
     //- PUBLIC
 
     public ServerRequireWssX509Cert( final RequireWssX509Cert subject, final BeanFactory springContext ) {
-        super(subject, subject);
+        super(subject);
         this.config = springContext.getBean("serverConfig", Config.class);
         this.securityTokenResolver = springContext.getBean("securityTokenResolver", SecurityTokenResolver.class);
     }

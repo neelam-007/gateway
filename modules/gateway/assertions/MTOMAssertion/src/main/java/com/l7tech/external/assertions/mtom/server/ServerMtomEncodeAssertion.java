@@ -42,7 +42,7 @@ public class ServerMtomEncodeAssertion extends AbstractMessageTargetableServerAs
 
     public ServerMtomEncodeAssertion( final MtomEncodeAssertion assertion,
                                       final ApplicationContext context ) throws PolicyAssertionException {
-        super( assertion, assertion );
+        super( assertion );
         this.stashManagerFactory = context.getBean( "stashManagerFactory", StashManagerFactory.class );
         this.compiledXpaths = compileXpaths( assertion.getXpathExpressions() );
     }
@@ -51,7 +51,7 @@ public class ServerMtomEncodeAssertion extends AbstractMessageTargetableServerAs
 
     protected ServerMtomEncodeAssertion( final MtomEncodeAssertion assertion,
                                          final StashManagerFactory stashManagerFactory ){
-        super( assertion, assertion );
+        super( assertion );
         this.stashManagerFactory = stashManagerFactory;
         this.compiledXpaths = compileXpaths( assertion.getXpathExpressions() );
     }

@@ -15,7 +15,7 @@ import org.w3c.dom.Document;
 public class ServerAddWssTimestamp extends ServerAddWssSignature<AddWssTimestamp> {
 
     public ServerAddWssTimestamp(AddWssTimestamp assertion, ApplicationContext spring) {
-        super(assertion, assertion, assertion, spring, false);
+        super(assertion, spring, false);
     }
 
     @Override

@@ -32,7 +32,7 @@ public class ServerMtomValidateAssertion extends AbstractMessageTargetableServer
     //- PUBLIC
 
     public ServerMtomValidateAssertion( final MtomValidateAssertion assertion ) throws PolicyAssertionException {
-        super( assertion, assertion );
+        super( assertion );
         this.compiledXpaths = compileXpaths( getXpathExpressions(assertion) );
     }
 

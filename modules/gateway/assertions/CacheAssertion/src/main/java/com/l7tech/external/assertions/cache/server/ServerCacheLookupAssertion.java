@@ -26,7 +26,7 @@ public class ServerCacheLookupAssertion extends AbstractMessageTargetableServerA
     private final SsgCacheManager cacheManager;
 
     public ServerCacheLookupAssertion(CacheLookupAssertion assertion, BeanFactory beanFactory) throws PolicyAssertionException {
-        super(assertion, assertion);
+        super(assertion);
         this.variablesUsed = assertion.getVariablesUsed();
         this.cacheManager = SsgCacheManager.getInstance(beanFactory);
     }

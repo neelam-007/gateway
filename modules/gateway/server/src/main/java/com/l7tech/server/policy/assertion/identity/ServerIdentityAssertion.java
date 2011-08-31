@@ -34,7 +34,7 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
     private final IdentityProviderFactory identityProviderFactory;
 
     public ServerIdentityAssertion(AT data, ApplicationContext ctx) {
-        super(data, data);
+        super(data);
         if (ctx == null) {
             throw new IllegalArgumentException("Application Context is required");
         }

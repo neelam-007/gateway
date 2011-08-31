@@ -29,7 +29,7 @@ public class ServerWssDigest extends AbstractMessageTargetableServerAssertion<Ws
     //- PUBLIC
 
     public ServerWssDigest(WssDigest assertion) {
-        super(assertion, assertion);
+        super(assertion);
     }
 
     @Override

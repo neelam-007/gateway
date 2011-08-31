@@ -27,7 +27,7 @@ public class ServerAuditRecordToXmlAssertion extends AbstractMessageTargetableSe
     private static final AuditRecordDomMarshaller auditRecordDomMarshaller = new AuditRecordDomMarshaller();
 
     public ServerAuditRecordToXmlAssertion(AuditRecordToXmlAssertion assertion) {
-        super(assertion, assertion);
+        super(assertion);
     }
 
     @Override

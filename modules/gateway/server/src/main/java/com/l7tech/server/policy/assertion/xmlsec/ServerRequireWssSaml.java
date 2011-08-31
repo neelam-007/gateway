@@ -52,7 +52,7 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
      * @param sa the saml
      */
     public ServerRequireWssSaml(AT sa, BeanFactory beanFactory) {
-        super(sa,sa);
+        super(sa);
         if (sa == null) {
             throw new IllegalArgumentException();
         }

@@ -12,16 +12,13 @@ import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAsserti
 /**
  * Support class for server assertions that perform encryption.
  */
-public abstract class ServerAddWssEncryption<AT extends Assertion> extends AbstractMessageTargetableServerAssertion<AT> {
+public abstract class ServerAddWssEncryption<AT extends Assertion & MessageTargetable & SecurityHeaderAddressable & IdentityTargetable> extends AbstractMessageTargetableServerAssertion<AT> {
 
     //- PUBLIC
 
-    public ServerAddWssEncryption( final AT assertion,
-                                   final SecurityHeaderAddressable securityHeaderAddressable,
-                                   final MessageTargetable messageTargetable,
-                                   final IdentityTargetable identityTargetable ) {
-        super( assertion, messageTargetable );
-        this.addWssEncryptionSupport = new AddWssEncryptionSupport(getAuditHaver(), logger, messageTargetable, securityHeaderAddressable, identityTargetable);
+    public ServerAddWssEncryption( final AT assertion ) {
+        super( assertion );
+        this.addWssEncryptionSupport = new AddWssEncryptionSupport(getAuditHaver(), logger, assertion, assertion, assertion);
     }
 
     //- PROTECTED

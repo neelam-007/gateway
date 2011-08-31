@@ -39,7 +39,7 @@ public class ServerWssEncryptElement extends ServerAddWssEncryption<WssEncryptEl
     private final DeferredFailureDomCompiledXpathHolder compiledXpath;
 
     public ServerWssEncryptElement( final WssEncryptElement data ) throws IOException {
-        super(data, data, data, data);
+        super(data);
         this.compiledXpath = new DeferredFailureDomCompiledXpathHolder(assertion.getXpathExpression());
     }
 

@@ -27,7 +27,7 @@ public class ServerCacheStorageAssertion extends AbstractMessageTargetableServer
     private final SsgCacheManager cacheManager;
 
     public ServerCacheStorageAssertion(CacheStorageAssertion assertion, BeanFactory beanFactory) throws PolicyAssertionException {
-        super(assertion, assertion);
+        super(assertion);
         this.variablesUsed = assertion.getVariablesUsed();
         this.cacheManager = SsgCacheManager.getInstance(beanFactory);
     }

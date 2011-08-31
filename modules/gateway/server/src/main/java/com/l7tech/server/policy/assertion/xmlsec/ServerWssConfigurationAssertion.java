@@ -34,7 +34,7 @@ public class ServerWssConfigurationAssertion extends AbstractMessageTargetableSe
     private final SignerInfo signerInfo;
 
     public ServerWssConfigurationAssertion(final WssConfigurationAssertion assertion, BeanFactory beanFactory) throws PolicyAssertionException {
-        super(assertion, assertion);
+        super(assertion);
 
         SignerInfo signer = null;
         if (beanFactory != null) {

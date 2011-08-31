@@ -16,29 +16,26 @@ import java.io.IOException;
 /**
  * Support class for implementation of MessageTargetable server assertions.
  */
-public abstract class AbstractMessageTargetableServerAssertion<AT extends Assertion> extends AbstractServerAssertion<AT> {
+public abstract class AbstractMessageTargetableServerAssertion<AT extends Assertion & MessageTargetable> extends AbstractServerAssertion<AT> {
 
     //- PUBLIC
 
     /**
      * Create a new instance.
      *
-     * @param assertion The assertion bean.
-     * @param messageTargetable The message target (usually the assertion bean)
+     * @param assertion The message targetable assertion bean.
      */
-    public AbstractMessageTargetableServerAssertion( final AT assertion,
-                                                     final MessageTargetable messageTargetable ) {
+    public AbstractMessageTargetableServerAssertion( final AT assertion ) {
         super(assertion);
-        this.messageTargetable = messageTargetable;
     }
 
     @Override
     public AssertionStatus checkRequest( final PolicyEnforcementContext context )
             throws IOException, PolicyAssertionException {
-        final String messageDesc = messageTargetable.getTargetName();
+        final String messageDesc = assertion.getTargetName();
         final Message message;
         try {
-            message = context.getTargetMessage(messageTargetable);
+            message = context.getTargetMessage(assertion);
         } catch (NoSuchVariableException e) {
             logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, e.getVariable(), ExceptionUtils.getMessage(e));
             return AssertionStatus.FAILED;
@@ -104,7 +101,4 @@ public abstract class AbstractMessageTargetableServerAssertion<AT extends Assert
         return status;
     }
 
-    //- PRIVATE
-
-    private final MessageTargetable messageTargetable;
 }

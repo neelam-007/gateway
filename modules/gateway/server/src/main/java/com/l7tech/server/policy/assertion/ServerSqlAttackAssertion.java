@@ -18,7 +18,7 @@ public class ServerSqlAttackAssertion extends AbstractMessageTargetableServerAss
                                     new ArrayList<AbstractServerAssertion<? extends Assertion>>();
 
     public ServerSqlAttackAssertion(SqlAttackAssertion assertion) {
-        super(assertion, assertion);
+        super(assertion);
         boolean abort = false;
 
         // Set up children to do all the actual work

@@ -34,7 +34,7 @@ public class ServerRemoveElement extends AbstractMessageTargetableServerAssertio
     private final String[] varsUsed;
 
     public ServerRemoveElement( final RemoveElement assertion ) {
-        super(assertion, assertion);
+        super(assertion);
         this.elementLocation = assertion.getInsertedElementLocation();
         this.inserting = elementLocation != null;
         this.existingElementVariableName = assertion.getElementFromVariable();

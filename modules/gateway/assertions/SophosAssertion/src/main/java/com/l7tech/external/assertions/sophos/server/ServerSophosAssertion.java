@@ -41,7 +41,7 @@ public class ServerSophosAssertion extends AbstractMessageTargetableServerAssert
     private FailoverStrategy<String> failoverStrategy;
 
      public ServerSophosAssertion(SophosAssertion assertion, ApplicationContext context) throws PolicyAssertionException {
-        super(assertion, assertion);
+        super(assertion);
 
         this.variablesUsed = assertion.getVariablesUsed();
 

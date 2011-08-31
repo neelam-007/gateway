@@ -63,7 +63,7 @@ public class ServerOversizedTextAssertion extends AbstractMessageTargetableServe
      * @throws ServerPolicyException if the provided assertion bean produced an invalid XPath.  Normally not possible.
      */
     ServerOversizedTextAssertion(OversizedTextAssertion data, ApplicationContext springContext, boolean omitTarariTests) throws ServerPolicyException {
-        super(data,data);
+        super(data);
         auditor = new Auditor(this, springContext, ServerOversizedTextAssertion.logger);
 
         // These three tests might be taken over by ServerAcceleratedOversizedTextAssertion

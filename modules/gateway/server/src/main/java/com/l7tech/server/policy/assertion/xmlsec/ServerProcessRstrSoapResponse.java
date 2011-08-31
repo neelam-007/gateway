@@ -34,7 +34,7 @@ public class ServerProcessRstrSoapResponse extends AbstractMessageTargetableServ
 
     public ServerProcessRstrSoapResponse( final ProcessRstrSoapResponse assertion,
                                           final BeanFactory factory ) {
-        super(assertion, assertion);
+        super(assertion);
         securityTokenResolver = factory.getBean( "securityTokenResolver", SecurityTokenResolver.class );
     }
 

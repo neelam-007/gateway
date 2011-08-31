@@ -49,7 +49,7 @@ public class ServerAddWssSecurityToken extends AbstractMessageTargetableServerAs
     private final SecurityTokenResolver securityTokenResolver;
 
     public ServerAddWssSecurityToken( final AddWssSecurityToken assertion, final BeanFactory beanFactory ) {
-        super(assertion, assertion);
+        super(assertion);
         this.variableNames = assertion.getVariablesUsed();
         this.addWssEncryptionSupport = new AddWssEncryptionSupport(getAuditHaver(), logger, assertion, assertion, assertion);
         this.addWssSignatureSupport = new AddWssSignatureSupport(getAuditHaver(), assertion, beanFactory, shouldFailIfNoElementsToSign(assertion), Assertion.isResponse(assertion));

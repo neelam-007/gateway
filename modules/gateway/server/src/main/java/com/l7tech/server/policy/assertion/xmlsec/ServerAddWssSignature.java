@@ -23,16 +23,14 @@ import java.io.IOException;
  *
  * @author alex
  */
-public abstract class ServerAddWssSignature<AT extends Assertion> extends AbstractMessageTargetableServerAssertion<AT> {
+public abstract class ServerAddWssSignature<AT extends Assertion & MessageTargetable & WssDecorationConfig> extends AbstractMessageTargetableServerAssertion<AT> {
     protected final AddWssSignatureSupport addWssSignatureSupport;
 
     protected ServerAddWssSignature( final AT assertion,
-                                     final WssDecorationConfig wssConfig,
-                                     final MessageTargetable messageTargetable,
                                      final ApplicationContext spring,
                                      final boolean failIfNotSigning ) {
-        super(assertion, messageTargetable);
-        this.addWssSignatureSupport = new AddWssSignatureSupport(getAuditHaver(), wssConfig, spring, failIfNotSigning, Assertion.isResponse(assertion));
+        super(assertion);
+        this.addWssSignatureSupport = new AddWssSignatureSupport(getAuditHaver(), assertion, spring, failIfNotSigning, Assertion.isResponse(assertion));
     }
 
     /**

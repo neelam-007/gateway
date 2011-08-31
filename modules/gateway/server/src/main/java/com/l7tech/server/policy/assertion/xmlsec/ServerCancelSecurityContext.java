@@ -35,7 +35,7 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
 
     public ServerCancelSecurityContext( final CancelSecurityContext assertion,
                                         final BeanFactory factory ) {
-        super(assertion, assertion);
+        super(assertion);
         inboundSecureConversationContextManager = factory.getBean("inboundSecureConversationContextManager", InboundSecureConversationContextManager.class);
         outboundSecureConversationContextManager = factory.getBean("outboundSecureConversationContextManager", OutboundSecureConversationContextManager.class);
         variablesUsed = assertion.getVariablesUsed();

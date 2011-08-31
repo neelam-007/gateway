@@ -20,7 +20,7 @@ public class ServerVariableCredentialSourceAssertion extends AbstractMessageTarg
     private final String variableName;
 
     public ServerVariableCredentialSourceAssertion(VariableCredentialSourceAssertion assertion) throws PolicyAssertionException {
-        super(assertion, assertion);
+        super(assertion);
         variableName = assertion.getVariableName();
         if (variableName == null || variableName.length() < 1)
             throw new PolicyAssertionException(assertion, "Variable name is not set");

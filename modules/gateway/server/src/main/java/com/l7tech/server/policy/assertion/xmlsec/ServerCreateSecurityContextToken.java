@@ -32,7 +32,7 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
 
     public ServerCreateSecurityContextToken( final CreateSecurityContextToken assertion,
                                              final BeanFactory factory ) {
-        super(assertion, assertion);
+        super(assertion);
         scContextManager = factory.getBean("inboundSecureConversationContextManager", InboundSecureConversationContextManager.class);
     }
 

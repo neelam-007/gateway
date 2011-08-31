@@ -27,7 +27,7 @@ public class ServerContentTypeAssertion extends AbstractMessageTargetableServerA
     private final String[] varsUsed;
 
     public ServerContentTypeAssertion(final ContentTypeAssertion assertion) throws PolicyAssertionException {
-        super(assertion, assertion);
+        super(assertion);
 
         if (assertion.isChangeContentType() && Syntax.getReferencedNames(assertion.getNewContentTypeValue()).length < 1) {
             fixedContentType = ContentTypeHeader.create(assertion.getNewContentTypeValue());

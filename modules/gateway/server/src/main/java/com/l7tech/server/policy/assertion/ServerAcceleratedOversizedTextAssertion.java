@@ -39,7 +39,7 @@ public class ServerAcceleratedOversizedTextAssertion extends AbstractMessageTarg
 
     public ServerAcceleratedOversizedTextAssertion( final OversizedTextAssertion data,
                                                     final ApplicationContext springContext ) throws ServerPolicyException {
-        super(data,data);
+        super(data);
         auditor = new Auditor(this, springContext, logger);
         // The delegate will do all the checking except for oversized text and attr nodes, which we can do
         // specially by just scanning the token buffer in one pass.

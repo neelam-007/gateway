@@ -46,7 +46,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
 
     public ServerBuildRstrSoapResponse( final BuildRstrSoapResponse assertion,
                                         final BeanFactory factory ) {
-        super(assertion, assertion);
+        super(assertion);
         variablesUsed = assertion.getVariablesUsed();
         scContextManager = factory.getBean("inboundSecureConversationContextManager", InboundSecureConversationContextManager.class);
         addWssEncryptionSupport = new AddWssEncryptionSupport(getAuditHaver(), logger, new MessageTargetableSupport(TargetMessageType.RESPONSE), assertion, assertion);

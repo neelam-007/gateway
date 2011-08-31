@@ -35,7 +35,7 @@ public class ServerWssSignElement extends ServerAddWssSignature<WssSignElement> 
 
     public ServerWssSignElement( final WssSignElement assertion,
                                  final ApplicationContext ctx ) throws IOException {
-        super(assertion, assertion, assertion, ctx, true);
+        super(assertion, ctx, true);
         this.compiledXpath = new DeferredFailureDomCompiledXpathHolder(assertion.getXpathExpression());
     }
 
