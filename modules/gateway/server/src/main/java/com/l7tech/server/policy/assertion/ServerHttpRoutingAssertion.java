@@ -116,7 +116,9 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             signerInfo = ServerAssertionUtils.getSignerInfo(ctx, assertion);
 
             final KeyManager[] keyManagers;
-            if (!assertion.isUsesDefaultKeyStore()) {
+            if (assertion.isUsesNoKey()) {
+                keyManagers = null;
+            } else if (!assertion.isUsesDefaultKeyStore()) {
                 X509Certificate[] certChain = signerInfo.getCertificateChain();
                 PrivateKey privateKey = signerInfo.getPrivate();
                 keyManagers = new KeyManager[] { new SingleCertX509KeyManager(certChain, privateKey) };

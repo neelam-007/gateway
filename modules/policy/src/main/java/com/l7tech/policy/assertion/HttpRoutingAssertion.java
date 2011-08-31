@@ -36,7 +36,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  * @author mike
  * @version 1.0
  */
-public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariables, SetsVariables, PrivateKeyable
+public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariables, SetsVariables, OptionalPrivateKeyable
 {
     public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST = -1;
     public static final String VAR_ROUTING_LATENCY = "httpRouting.latency";
@@ -99,6 +99,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
     protected String krbConfiguredPassword;
 
     protected boolean usesDefaultKeyStore = true;
+    protected boolean usesNoKey = false;
     protected long nonDefaultKeystoreId;
     protected String keyId;
     private HttpMethod httpMethod;
@@ -553,6 +554,21 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
     @Override
     public void setKeyAlias(String keyid) {
         this.keyId = keyid;
+    }
+
+    @Override
+    public boolean isUsesNoKeyAllowed() {
+        return true;
+    }
+
+    @Override
+    public boolean isUsesNoKey() {
+        return usesNoKey;
+    }
+
+    @Override
+    public void setUsesNoKey(boolean usesNoKey) {
+        this.usesNoKey = usesNoKey;
     }
 
     public boolean isGzipEncodeDownstream() {

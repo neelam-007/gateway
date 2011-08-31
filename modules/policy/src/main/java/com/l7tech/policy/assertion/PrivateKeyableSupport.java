@@ -9,14 +9,20 @@ import java.io.Serializable;
 /**
  * Support class for PrivateKeyable.
  */
-public class PrivateKeyableSupport implements PrivateKeyable, Serializable {
+public class PrivateKeyableSupport implements OptionalPrivateKeyable, Serializable {
 
     //- PUBLIC
 
     public PrivateKeyableSupport() {
+        this(false);
+    }
+
+    public PrivateKeyableSupport( boolean usesNoKeyAllowed ) {
+        this.usesNoKeyAllowed = usesNoKeyAllowed;
     }
 
     public PrivateKeyableSupport( final PrivateKeyableSupport privateKeyableSupport ) {
+        this(privateKeyableSupport != null && privateKeyableSupport.isUsesNoKeyAllowed());
         if ( privateKeyableSupport != null ) {
             copyFrom( privateKeyableSupport );
         }
@@ -53,16 +59,35 @@ public class PrivateKeyableSupport implements PrivateKeyable, Serializable {
         this.usesDefaultKeyStore = usesDefaultKeyStore;
     }
 
+    @Override
+    public boolean isUsesNoKeyAllowed() {
+        return usesNoKeyAllowed;
+    }
+
+    @Override
+    public boolean isUsesNoKey() {
+        return usesNoKey;
+    }
+
+    @Override
+    public void setUsesNoKey(boolean usesNoKey) {
+        this.usesNoKey = usesNoKey;
+    }
+
     public void copyFrom( final PrivateKeyableSupport other ) {
         this.usesDefaultKeyStore = other.usesDefaultKeyStore;
         this.nonDefaultKeystoreId = other.nonDefaultKeystoreId;
         this.keyAlias = other.keyAlias;
+        this.usesNoKey = other.usesNoKey;
     }
 
     //- PRIVATE
 
+    private final boolean usesNoKeyAllowed;
+
     private boolean usesDefaultKeyStore = true;
     private long nonDefaultKeystoreId;
     private String keyAlias;
+    private boolean usesNoKey = false;
 
 }

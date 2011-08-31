@@ -5,15 +5,17 @@
 
 package com.l7tech.policy.assertion;
 
-import com.l7tech.policy.assertion.annotation.RequiresSOAP;
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * Represents a routing assertion that provides the full functionality of the SecureSpan Bridge.
@@ -144,6 +146,11 @@ public class BridgeRoutingAssertion extends HttpRoutingAssertion implements Uses
 
     public void setClientPolicyProperties( final Map<String, String> properties) {
         this.clientPolicyProperties = properties;
+    }
+
+    @Override
+    public boolean isUsesNoKeyAllowed() {
+        return false;
     }
 
     @Override
