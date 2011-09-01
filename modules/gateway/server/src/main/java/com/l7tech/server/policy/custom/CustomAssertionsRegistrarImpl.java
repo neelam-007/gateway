@@ -3,13 +3,11 @@ package com.l7tech.server.policy.custom;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.ext.CustomAssertionUI;
 import com.l7tech.policy.wsp.ClassLoaderUtil;
-import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.policy.AssertionModule;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.util.ModuleClassLoader;
@@ -249,20 +247,6 @@ public class CustomAssertionsRegistrarImpl
     @Override
     public CustomAssertionUI getUI(String assertionClassName) {
         return CustomAssertions.getUI(assertionClassName);
-    }
-
-
-    /**
-     * Resolve the policy in the xml string format with the custom assertions
-     * support. The server is asked will resolve registered custom elements.
-     *
-     * @param xml the netity header representing the service
-     * @return the policy tree
-     * @throws IOException              on policy format error
-     */
-    @Override
-    public Assertion resolvePolicy(String xml) throws IOException {
-        return getApplicationContext().getBean("wspReader", WspReader.class).parsePermissively(xml, WspReader.OMIT_DISABLED);
     }
 
     /**

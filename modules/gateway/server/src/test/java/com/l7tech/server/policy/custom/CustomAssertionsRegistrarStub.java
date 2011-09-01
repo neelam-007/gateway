@@ -85,19 +85,6 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
     }
 
     /**
-     * Resolve the policy in the xml string format with the custom assertions
-     * support. The server is asked will resolve registered custom elements.
-     *
-     * @param xml the netity header representing the service
-     * @return the policy tree
-     * @throws IOException              on policy format error
-     */
-    @Override
-    public Assertion resolvePolicy(String xml) throws IOException {
-        return WspReader.getDefault().parsePermissively(xml, WspReader.INCLUDE_DISABLED);
-    }
-
-    /**
      * Return the <code>CustomAssertionDescriptor</code> for a given assertion or
      * <b>null<b>
      *

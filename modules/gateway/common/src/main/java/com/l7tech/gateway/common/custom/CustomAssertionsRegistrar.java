@@ -1,11 +1,9 @@
 package com.l7tech.gateway.common.custom;
 
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertionUI;
 import com.l7tech.gateway.common.admin.Administrative;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collection;
 
@@ -56,17 +54,6 @@ public interface CustomAssertionsRegistrar {
      */
     @Administrative(licensed=false)
     Collection getAssertions( Category c);
-
-    /**
-     * Resolve the policy in the xml string format with the custom assertions
-     * support. The server is asked will resolve registered custom elements.
-     *
-     * @param xml the netity header representing the service
-     * @return the policy tree
-     * @throws IOException     on policy format error
-     */
-    @Administrative(licensed=false)
-    Assertion resolvePolicy(String xml) throws IOException;
 
     /**
      * Return the <code>CustomAssertionDescriptor</code> for a given assertion or
