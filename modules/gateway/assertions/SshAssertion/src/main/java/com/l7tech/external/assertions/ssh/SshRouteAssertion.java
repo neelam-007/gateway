@@ -52,6 +52,7 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
     private String downloadContentType;
     private boolean isScpProtocol;   // SCP? if not, assume SFTP
     private boolean isCredentialsSourceSpecified;   // login credentials specified?  if not, assume pass through
+    private boolean isDownloadCopyMethod;   // download copy method?  if not, assume upload
 
     private MessageTargetableSupport requestTarget = defaultRequestTarget();
 
@@ -250,6 +251,13 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
     }
     public void setCredentialsSourceSpecified(boolean credentialsSourceSpecified) {
         isCredentialsSourceSpecified = credentialsSourceSpecified;
+    }
+
+    public boolean isDownloadCopyMethod() {
+        return isDownloadCopyMethod;
+    }
+    public void setDownloadCopyMethod(boolean downloadCopyMethod) {
+        isDownloadCopyMethod = downloadCopyMethod;
     }
 
     @Override

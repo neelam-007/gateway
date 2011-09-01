@@ -9,6 +9,7 @@ import org.apache.commons.lang.StringUtils;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * Encapsulate SSH client logic used by ServerSshRouteAssertion.
@@ -65,17 +66,34 @@ public class ServerSshRouteClient {
             }
             ((Sftp)sshClient).upload(in, remoteFile);
         } else if (sshClient instanceof Scp) {
+            ((Scp)sshClient).upload(in, normalizeAndAppendDirectorySeparator(remoteDir), remoteFile);
+        }
+    }
 
-            // normalize separate character, separate character should be '/' always
-            String normalizedRemoteDir = remoteDir.replace(File.separatorChar, '/');
-            normalizedRemoteDir = normalizedRemoteDir.replace('\\', '/');
+    public void download(OutputStream out, String remoteDir, String remoteFile) throws IOException {
+        if (sshClient instanceof Sftp) {
+            if (!StringUtils.isEmpty(remoteDir)) {
+                ((Sftp)sshClient).setDir(remoteDir);
+            }
+            ((Sftp)sshClient).download(out, remoteFile);
+        } else if (sshClient instanceof Scp) {
+            ((Scp)sshClient).download(out, normalizeAndAppendDirectorySeparator(remoteDir), remoteFile);
+        }
+
+    }
+
+    private String normalizeAndAppendDirectorySeparator(String directory) {
+        String normalizedDirectory = directory;
+        if (normalizedDirectory != null) {
+            // normalize separator character, separator character should be '/' always
+            normalizedDirectory = normalizedDirectory.replace(File.separatorChar, '/');
+            normalizedDirectory = normalizedDirectory.replace('\\', '/');
 
             // append directory separator to path if required, JScape SCP client simply concatenates the path and file name
-            if (normalizedRemoteDir != null && !normalizedRemoteDir.endsWith("/")) {
-                normalizedRemoteDir = normalizedRemoteDir + "/";
+            if (normalizedDirectory != null && !normalizedDirectory.endsWith("/")) {
+                normalizedDirectory = normalizedDirectory + "/";
             }
-
-            ((Scp)sshClient).upload(in, normalizedRemoteDir, remoteFile);
         }
+        return normalizedDirectory;
     }
 }

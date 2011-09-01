@@ -905,7 +905,7 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
         if (file instanceof VirtualSshFile) {
             final VirtualSshFile virtualSshFile = (VirtualSshFile) file;
 
-            PipedInputStream pis = new PipedInputStream();
+            final PipedInputStream pis = new PipedInputStream();
             PipedOutputStream pos = new PipedOutputStream(pis);
             virtualSshFile.setPipedOutputStream(pos);
 
@@ -960,6 +960,7 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
                     } finally {
                         startedSignal.countDown();
                         ResourceUtils.closeQuietly(context);
+                        ResourceUtils.closeQuietly(pis);
                     }
                 }
             }, "SftpServer-GatewayMessageProcessThread-" + System.currentTimeMillis());

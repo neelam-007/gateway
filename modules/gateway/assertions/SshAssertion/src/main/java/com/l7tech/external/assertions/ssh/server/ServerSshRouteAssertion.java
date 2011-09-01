@@ -7,6 +7,7 @@ import com.jscape.inet.sftp.SftpException;
 import com.jscape.inet.ssh.util.HostKeyFingerprintVerifier;
 import com.jscape.inet.ssh.util.SshHostKeys;
 import com.jscape.inet.ssh.util.SshParameters;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.external.assertions.ssh.SshRouteAssertion;
 import com.l7tech.external.assertions.ssh.keyprovider.SshKeyUtil;
@@ -17,9 +18,11 @@ import com.l7tech.message.MimeKnob;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
@@ -32,11 +35,15 @@ import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.text.ParseException;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Server side implementation of the SshRouteAssertion.
@@ -47,12 +54,14 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
 
     private SecurePasswordManager securePasswordManager;
     private ClusterPropertyCache clusterPropertyCache;
+    private final StashManagerFactory stashManagerFactory;
 
     public ServerSshRouteAssertion(SshRouteAssertion assertion, ApplicationContext context) throws PolicyAssertionException {
         super(assertion, context);
 
         securePasswordManager = context.getBean("securePasswordManager", SecurePasswordManager.class);
         clusterPropertyCache = context.getBean("clusterPropertyCache", ClusterPropertyCache.class);
+        stashManagerFactory = applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
     }
 
     @Override
@@ -79,7 +88,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             logger.log(Level.INFO, "Error processing security header, request XML invalid ''{0}''", se.getMessage());
         }
 
-        // determine username and password based on if they were pass-through or specified
+        // determine username and password based or if they were pass-through or specified
         String username = null;
         String password = null;
         if (assertion.isCredentialsSourceSpecified()) {
@@ -161,9 +170,29 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                 return AssertionStatus.FAILED;
             }
 
-            // upload the file
+            // download / upload the file
             try {
-                sshClient.upload(mimeKnob.getEntireMessageBodyAsInputStream(), expandVariables(context, assertion.getDirectory()),  expandVariables(context, assertion.getFileName()));
+                if (assertion.isDownloadCopyMethod()) {
+                    PipedInputStream pis = new PipedInputStream();
+                    PipedOutputStream pos = new PipedOutputStream(pis);
+
+                    // download file on a new thread
+                    Thread thread = sshDownloadOnNewThread(sshClient, expandVariables(context, assertion.getDirectory()),
+                            expandVariables(context, assertion.getFileName()), pos, logger);
+
+                    Message response = context.getResponse();
+                    response.initialize(stashManagerFactory.createStashManager(), ContentTypeHeader.create(assertion.getDownloadContentType()), pis);
+                    // TODO impose configurable max size limit on response
+
+                    // force all message parts to be initialized, it is by default lazy
+                    response.getMimeKnob().getContentLength();
+
+                    logger.log(Level.INFO, "Waiting for read thread join().");
+                    thread.join(assertion.getConnectTimeout() * 1000L);
+                    logger.log(Level.INFO, "Done read thread join().");
+                } else {
+                    sshClient.upload(mimeKnob.getEntireMessageBodyAsInputStream(), expandVariables(context, assertion.getDirectory()),  expandVariables(context, assertion.getFileName()));
+                }
             } catch (NoSuchPartException e) {
                 logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {SshAssertionMessages.SSH_NO_SUCH_PART_ERROR + ",server:" + getHostName(context, assertion)+ ",error:" + e.getMessage()}, e);
                 return AssertionStatus.FAILED;
@@ -191,6 +220,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                 }
             }
 
+            context.setRoutingStatus(RoutingStatus.ROUTED);
             return AssertionStatus.NONE;
         } catch(IOException ioe) {
             if (ExceptionUtils.getMessage(ioe).startsWith("Malformed SSH")){
@@ -224,6 +254,49 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
 
     private String getHostName(PolicyEnforcementContext context, SshRouteAssertion assertion) {
         return expandVariables(context, assertion.getHost());
+    }
+
+    /*
+     * Download the given file on a new thread.
+     */
+    private static Thread sshDownloadOnNewThread(final ServerSshRouteClient sshClient, final String directory,
+                                                 final String fileName, final PipedOutputStream pos, final Logger logger) throws IOException {
+        final CountDownLatch startedSignal = new CountDownLatch(1);
+        logger.log(Level.INFO, "Start new thread for downloading");
+        Thread thread = new Thread(new Runnable(){
+            public void run() {
+                try {
+                    startedSignal.countDown();
+                    sshClient.download(pos, directory, fileName);
+                }
+                catch (Exception e) {
+                    logger.log(Level.SEVERE, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                }
+                finally {
+                    logger.log(Level.INFO, "... downloading thread stopped.");
+                    try {
+                        pos.flush();
+                        pos.close();
+                    } catch(IOException ioe) {
+                        logger.log(Level.SEVERE, ExceptionUtils.getMessage(ioe), ExceptionUtils.getDebugException(ioe));
+                    }
+                    startedSignal.countDown();
+                }
+            }
+        }, "SshDownloadThread-" + System.currentTimeMillis());
+
+        thread.setDaemon(true);
+        thread.start();
+
+        try {
+            startedSignal.await();
+        }
+        catch(InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            logger.log(Level.SEVERE, ExceptionUtils.getMessage(ie), ExceptionUtils.getDebugException(ie));
+        }
+
+        return thread;
     }
 }
 

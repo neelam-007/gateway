@@ -232,9 +232,11 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
             if (downloadFromRadioButton.isSelected()) {
                 contentTypeComboBox.setEnabled(true);
                 readTimeoutTextField.setEnabled(true);
+                messageSource.setEnabled(false);
             } else {
                 contentTypeComboBox.setEnabled(false);
                 readTimeoutTextField.setEnabled(false);
+                messageSource.setEnabled(true);
             }
 
         // authentication tab
@@ -265,12 +267,12 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
      */
     @Override
     public void setData(SshRouteAssertion assertion) {
-        messageSource.setModel( buildMessageSourceComboBoxModel(assertion));
-        messageSource.setSelectedItem( new MessageTargetableSupport(assertion.getRequestTarget()));
+        messageSource.setModel(buildMessageSourceComboBoxModel(assertion));
+        messageSource.setSelectedItem(new MessageTargetableSupport(assertion.getRequestTarget()));
         RoutingDialogUtils.configSecurityHeaderRadioButtons(assertion, -1, null, secHdrButtons);
 
-        // SCP? if not, assume SFTP
         SCPRadioButton.setSelected(assertion.isScpProtocol());
+        downloadFromRadioButton.setSelected(assertion.isDownloadCopyMethod());
 
         if(assertion.getHost() != null) {
             hostField.setText(assertion.getHost().trim());
@@ -347,8 +349,8 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         }
         assertion.setConnectTimeout(Integer.parseInt(connectTimeoutTextField.getText()) * 1000);
 
-        // SCP? if not assume SFTP
         assertion.setScpProtocol(SCPRadioButton.isSelected());
+        assertion.setDownloadCopyMethod(downloadFromRadioButton.isSelected());
 
         if (readTimeoutTextField.getText().trim().isEmpty()) {
             readTimeoutTextField.setText(Integer.toString(SshRouteAssertion.DEFAULT_READ_TIMEOUT / 1000));
