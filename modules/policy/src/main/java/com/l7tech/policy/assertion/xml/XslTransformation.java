@@ -141,7 +141,7 @@ public class XslTransformation extends MessageTargetableAssertion implements Use
 
     @Override
     public VariablesUsed doGetVariablesUsed() {
-        if (varsUsed != null) super.doGetVariablesUsed().withVariables( varsUsed );
+        if (varsUsed != null) return super.doGetVariablesUsed().withVariables( varsUsed );
 
         List<String> vars = new ArrayList<String>();
         if (resourceInfo instanceof SingleUrlResourceInfo) {
