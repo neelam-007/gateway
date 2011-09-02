@@ -151,6 +151,8 @@ public class StaleCheckingHttpConnectionManager extends MultiThreadedHttpConnect
                     HttpConnection connection = super.getConnectionWithTimeout( hostConfiguration, 10L );
                     try {
                         if ( connection.closeIfStale() || !connection.isOpen() ) {
+                            connection.releaseConnection();
+                            connection = null;
                             deleteClosedConnections();
                         }
                     } catch ( IOException ioe ) {
