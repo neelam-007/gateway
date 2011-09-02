@@ -15,3 +15,4 @@ message_id
 service_metrics
 service_metrics_details
 service_usage
+wssc_session
