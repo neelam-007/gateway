@@ -109,8 +109,8 @@ public class ForEachLoopAssertion extends CompositeAssertion implements UsesVari
             return meta;
 
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "Apply to Each Member");
-        meta.put(AssertionMetadata.LONG_NAME, "Apply to Each Member Of Multivalued Variable");
+        meta.put(AssertionMetadata.SHORT_NAME, "Run Assertions for Each Item");
+        meta.put(AssertionMetadata.LONG_NAME, "Run Assertions for Each Item Of Multivalued Variable");
         meta.put(AssertionMetadata.DESCRIPTION, "Runs all child assertions against each value of a multivalued variable.");
 
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.assertion.composite.ForEachLoopAssertionValidator");
