@@ -93,7 +93,7 @@ public class SinkManagerImpl
      */
     @Override
     public long getReservedFileStorageSpace() {
-        long reservedSpace = 0;
+        long reservedSpace = 0L;
 
         Collection<SinkConfiguration> sinkConfigs = loadSinkConfigurations();
         for ( SinkConfiguration sinkConfiguration : sinkConfigs ) {
@@ -223,6 +223,7 @@ public class SinkManagerImpl
 
     //- PRIVATE
 
+    @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
     private static final Logger logger = Logger.getLogger(SinkManager.class.getName());
 
     private static final String SCPROP_LOG_LEVELS = "logLevels";
@@ -237,6 +238,8 @@ public class SinkManagerImpl
     private final SyslogManager syslogManager;
     private final TrafficLogger trafficLogger;
     private ApplicationContext applicationContext;
+    @SuppressWarnings({ "MismatchedQueryAndUpdateOfCollection" })
+    private final Collection<Logger> configuredLoggers = new ArrayList<Logger>(); // hold a reference to prevent GC
 
     /**
      * Handle application event
@@ -286,68 +289,72 @@ public class SinkManagerImpl
      * We detect if a log level has been removed so we can set it to it's parent value.
      */
     private void updateLogLevels(final String oldValue, final String newValue) {
-        String loggingLevels = newValue;
-        if ( loggingLevels == null )
-            loggingLevels = serverConfig.getProperty( SCPROP_LOG_LEVELS );
+        synchronized ( configuredLoggers ) {
+            String loggingLevels = newValue;
+            if ( loggingLevels == null )
+                loggingLevels = serverConfig.getProperty( SCPROP_LOG_LEVELS );
 
-        try {
-            // load props
-            Properties levelProps = new Properties();
-            levelProps.load(new StringReader(loggingLevels));
+            try {
+                // load props
+                Properties levelProps = new Properties();
+                levelProps.load(new StringReader(loggingLevels));
 
-            Properties oldProps = new Properties();
-            if (oldValue != null)
-                oldProps.load(new StringReader(oldValue));
+                Properties oldProps = new Properties();
+                if (oldValue != null)
+                    oldProps.load(new StringReader(oldValue));
 
-            // get locally configured levels, these should
-            // not be overridden
-            Properties properties = JdkLoggerConfigurator.getNonDefaultProperties();
+                // get locally configured levels, these should
+                // not be overridden
+                Properties properties = JdkLoggerConfigurator.getNonDefaultProperties();
 
-            // set configured levels
-            for ( Map.Entry<Object,Object> property : levelProps.entrySet() ) {
-                String key = (String) property.getKey();
-                String value = (String) property.getValue();
+                // set configured levels
+                configuredLoggers.clear();
+                for ( Map.Entry<Object,Object> property : levelProps.entrySet() ) {
+                    String key = (String) property.getKey();
+                    String value = (String) property.getValue();
 
-                if ( key.endsWith(".level") && properties.getProperty(key)==null) {
-                    String name = key.substring(0, key.length()-6);
-                    try {
-                        Level configLevel = Level.parse(value);
-                        Logger configLogger = Logger.getLogger(name);
-                        configLogger.setLevel(configLevel);
-                    } catch (IllegalArgumentException iae) {
-                        // ignore invalid level
-                        logger.log(Level.CONFIG, "Ignoring invalid level ''{0}'', for logger ''{1}''.",
-                                new Object[]{value, name});
-                    }
-                }
-            }
-
-            // reset removed levels (so parent or original config level is used)
-            LogManager manager = LogManager.getLogManager();
-            for ( Object KeyObj : oldProps.keySet() ) {
-                String key = (String) KeyObj;
-
-                if ( key.endsWith(".level") &&
-                        levelProps.getProperty(key)==null ) {
-                    String name = key.substring(0, key.length()-6);
-                    Logger configLogger = Logger.getLogger(name);
-                    boolean levelSet = false;
-                    String levelStr = manager.getProperty(key);
-                    if ( levelStr != null ) {
+                    if ( key.endsWith(".level") && properties.getProperty(key)==null) {
+                        String name = key.substring(0, key.length()-6);
                         try {
-                            configLogger.setLevel( Level.parse(levelStr) );
-                            levelSet = true;
+                            Level configLevel = Level.parse(value);
+                            Logger configLogger = Logger.getLogger(name);
+                            configLogger.setLevel(configLevel);
+                            configuredLoggers.add( configLogger ); // Hold a reference to prevent GC
                         } catch (IllegalArgumentException iae) {
-                            // ignore invalid level from logging config file
+                            // ignore invalid level
+                            logger.log(Level.CONFIG, "Ignoring invalid level ''{0}'', for logger ''{1}''.",
+                                    new Object[]{value, name});
                         }
                     }
-                    if (!levelSet) {
-                        configLogger.setLevel(null);
+                }
+
+                // reset removed levels (so parent or original config level is used)
+                LogManager manager = LogManager.getLogManager();
+                for ( Object KeyObj : oldProps.keySet() ) {
+                    String key = (String) KeyObj;
+
+                    if ( key.endsWith(".level") &&
+                            levelProps.getProperty(key)==null ) {
+                        String name = key.substring(0, key.length()-6);
+                        Logger configLogger = Logger.getLogger(name);
+                        boolean levelSet = false;
+                        String levelStr = manager.getProperty(key);
+                        if ( levelStr != null ) {
+                            try {
+                                configLogger.setLevel( Level.parse(levelStr) );
+                                levelSet = true;
+                            } catch (IllegalArgumentException iae) {
+                                // ignore invalid level from logging config file
+                            }
+                        }
+                        if (!levelSet) {
+                            configLogger.setLevel(null);
+                        }
                     }
                 }
+            } catch (IOException ioe) {
+                logger.log(Level.WARNING, "Unexpected error processing logging levels.", ioe);
             }
-        } catch (IOException ioe) {
-            logger.log(Level.WARNING, "Unexpected error processing logging levels.", ioe);
         }
     }
 
@@ -685,7 +692,7 @@ public class SinkManagerImpl
      * The configuration should be validated before calling this method.
      */
     private long getReservedSpace( final SinkConfiguration configuration ) {
-        long space = 0;
+        long space = 0L;
 
         SinkConfiguration.SinkType type = configuration.getType();
         if ( type != null ) {
