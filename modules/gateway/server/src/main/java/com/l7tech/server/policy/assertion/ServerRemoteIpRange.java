@@ -60,9 +60,7 @@ public class ServerRemoteIpRange extends AbstractServerAssertion<RemoteIpRange> 
             }
         }
 
-        if (remoteAddress != null && remoteAddress.startsWith("[") && remoteAddress.endsWith("]")) {
-            remoteAddress = remoteAddress.substring(1, remoteAddress.length()-1);
-        }
+        remoteAddress = InetAddressUtil.stripIpv6Brackets(remoteAddress);
         InetAddress addr = InetAddressUtil.getAddress(remoteAddress);
 
         if (addr == null) {

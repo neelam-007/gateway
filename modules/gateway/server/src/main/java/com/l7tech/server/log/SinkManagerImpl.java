@@ -14,7 +14,9 @@ import com.l7tech.server.log.syslog.SyslogProtocol;
 import com.l7tech.server.log.syslog.TestingSyslogManager;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.util.JdkLoggerConfigurator;
+import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.ValidationUtils;
 import org.springframework.context.ApplicationContext;
@@ -634,16 +636,14 @@ public class SinkManagerImpl
 
                     break;
                 case SYSLOG:
-                    String host = "syslog.l7tech.com"; // configuration.getProperty( SinkConfiguration.PROP_SYSLOG_HOST );
-                    String port = "1999"; //configuration.getProperty( SinkConfiguration.PROP_SYSLOG_PORT );
+                    List<String> hostList = configuration.syslogHostList();
                     String prot = configuration.getProperty( SinkConfiguration.PROP_SYSLOG_PROTOCOL );
                     String facility = configuration.getProperty( SinkConfiguration.PROP_SYSLOG_FACILITY );
 
-                    valid = host != null && port != null && prot != null && facility != null &&
-                            ValidationUtils.isValidDomain( host ) &&
-                            ValidationUtils.isValidInteger( port, false, 1, 0xFFFF ) &&
+                    valid = prot != null && facility != null &&
                             ValidationUtils.isValidInteger( facility, false, 0, 124) &&
-                            isValidProtocol( prot );
+                            isValidProtocol( prot ) &&
+                            isValidHostList( hostList );
 
                     if ( valid ) {
                         String charset = configuration.getProperty( SinkConfiguration.PROP_SYSLOG_CHAR_SET );
@@ -719,6 +719,29 @@ public class SinkManagerImpl
             valid = true;
         } catch ( IllegalArgumentException iae ) {
             valid = false;
+        }
+
+        return valid;
+    }
+
+    /**
+     * Check if the given string is a valid list of host/port pairs.
+     */
+    private boolean isValidHostList( final List<String> hostList ) {
+        boolean valid = true;
+
+        if ( hostList == null || hostList.isEmpty() ) {
+            valid = false;
+        } else {
+            for ( final String hostPort : hostList ) {
+                final Pair<String,String> hostAndPort = InetAddressUtil.getHostAndPort( hostPort, null );
+
+                if ( !ValidationUtils.isValidDomain( InetAddressUtil.stripIpv6Brackets( hostAndPort.left ) ) ||
+                     !ValidationUtils.isValidInteger( hostAndPort.right, false, 1, 0xFFFF ) ) {
+                    valid = false;
+                    break;
+                }
+            }
         }
 
         return valid;

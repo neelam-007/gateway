@@ -40,7 +40,6 @@ public class SinkConfiguration extends NamedEntityImp {
         SYSLOG(
                 new String[] {
                         PROP_SYSLOG_PROTOCOL,
-                        PROP_SYSLOG_HOSTLIST,
                         PROP_SYSLOG_FACILITY,
                         PROP_SYSLOG_LOG_HOSTNAME,
                         PROP_SYSLOG_CHAR_SET,
@@ -105,8 +104,6 @@ public class SinkConfiguration extends NamedEntityImp {
     // Syslog sink property names
     /** The property name for the syslog protocol to use */
     public static final String PROP_SYSLOG_PROTOCOL = "syslog.protocol";
-    /** The property name for the list of syslog host to log to */
-    public static final String PROP_SYSLOG_HOSTLIST = "syslog.hostList";
     /** The property name for the facility name to use */
     public static final String PROP_SYSLOG_FACILITY = "syslog.facility";
     /** The property name for the hostname to use in log messages */

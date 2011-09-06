@@ -10,6 +10,8 @@ import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.gui.widgets.TextEntryPanel;
+import com.l7tech.util.InetAddressUtil;
+import com.l7tech.util.Pair;
 import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
@@ -696,25 +698,17 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         @Override
         protected String getSyntaxError(String model) {
             if (model == null || model.length() == 0) return null;
-            // if the URL contains context variable, you just can't check syntax
 
-            StringTokenizer stok = new StringTokenizer(model, ":");
-            if (stok.countTokens() != 2) {
+            final Pair<String,String> hostAndPort = InetAddressUtil.getHostAndPort( model, null );
 
-                return "Expected format is &lt;host&gt;:&lt;port number&gt;";
-
-            } else {
-                // check for valid hostname or IP address
-                String h = stok.nextToken();
-                if( !ValidationUtils.isValidDomain(h) ) {
-                    return "Invalid host value";
-                }
-
-                String p = stok.nextToken();
-                if( !ValidationUtils.isValidInteger(p, false, 1, 65535) ) {
-                    return "Port number must be from 1 to 65535";
-                }
+            if ( !ValidationUtils.isValidDomain( InetAddressUtil.stripIpv6Brackets( hostAndPort.left ) ) ) {
+                return "Invalid host value";
             }
+
+            if ( !ValidationUtils.isValidInteger( hostAndPort.right, false, 1, 0xFFFF ) ) {
+                return "Port number must be from 1 to 65535";
+            }
+
             return null;
         }
 

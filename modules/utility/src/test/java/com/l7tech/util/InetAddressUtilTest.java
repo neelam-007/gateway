@@ -164,4 +164,12 @@ public class InetAddressUtilTest {
         assertFalse( "::1", InetAddressUtil.isAnyHostAddress("::1") );
         assertFalse( "0000:0000:0000:0000:0000:0000:0000:0001", InetAddressUtil.isAnyHostAddress("0000:0000:0000:0000:0000:0000:0000:0001") );
     }
+
+    @Test
+    public void testStripIPv6Brackets() {
+        assertNull( "Null address", InetAddressUtil.stripIpv6Brackets( null ) );
+        assertEquals( "Localhost address", "::1", InetAddressUtil.stripIpv6Brackets( "::1" ) );
+        assertEquals( "Localhost address with brackets", "::1", InetAddressUtil.stripIpv6Brackets( "[::1]" ) );
+        assertEquals( "Full address with brackets", "2001:0db8:85a3:08d3:1319:8a2e:0370:7348", InetAddressUtil.stripIpv6Brackets( "[2001:0db8:85a3:08d3:1319:8a2e:0370:7348]" ) );
+    }
 }

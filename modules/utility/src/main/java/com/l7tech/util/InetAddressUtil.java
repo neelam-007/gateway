@@ -188,6 +188,24 @@ public class InetAddressUtil {
     }
 
     /**
+     * Strip brackets from around an IPv6 address [...].
+     *
+     * @param address The address to process.
+     * @return The address with brackets removed, or null if given null
+     */
+    public static String stripIpv6Brackets( final String address ) {
+        final String literalAddress;
+
+        if ( address != null && address.startsWith("[") && address.endsWith("]") ) {
+            literalAddress = address.substring( 1, address.length()-1 );
+        } else {
+            literalAddress = address;
+        }
+
+        return literalAddress;
+    }
+
+    /**
      * @param address an IPv6 address to be tested, in string literal representation, without brackets 
      * @return true if the provided string is a valid IPv6 address, false otherwise
      */
