@@ -1,10 +1,7 @@
 package com.l7tech.external.assertions.ssh.server;
 
-import com.l7tech.external.assertions.ssh.keyprovider.SshKeyUtil;
 import com.l7tech.message.SshKnob;
 import com.l7tech.util.Pair;
-import com.l7tech.util.SyspropUtil;
-import org.apache.commons.lang.StringUtils;
 
 import java.net.PasswordAuthentication;
 import java.net.SocketAddress;
@@ -15,12 +12,28 @@ import java.net.SocketAddress;
 public class MessageProcessingSshUtil {
 
     /*
+     * Create an SshKnob for SCP and SFTP using public key credentials.
+     */
+    public static SshKnob buildSshKnob(final SocketAddress localSocketAddress, final SocketAddress remoteSocketAddress,
+                                       final String file, final String path, final SshKnob.PublicKeyAuthentication publicKeyCredential) {
+        return buildSshKnob(localSocketAddress, remoteSocketAddress, file, path, publicKeyCredential, null);
+    }
+
+    /*
+     * Create an SshKnob for SCP and SFTP using password credentials.
+     */
+    public static SshKnob buildSshKnob(final SocketAddress localSocketAddress, final SocketAddress remoteSocketAddress,
+                                       final String file, final String path, final PasswordAuthentication passwordCredential) {
+        return buildSshKnob(localSocketAddress, remoteSocketAddress, file, path, null, passwordCredential);
+    }
+
+    /*
      * Create an SshKnob for SCP and SFTP.
      */
-    public static SshKnob buildSshKnob(final String protocol, final SocketAddress localSocketAddress,
-                                              final SocketAddress remoteSocketAddress, final String file, final String path,
-                                              final boolean secure, final boolean unique, final MessageProcessingPasswordAuthenticator user,
-                                              final MessageProcessingPublicKeyAuthenticator userPublicKey) {
+    public static SshKnob buildSshKnob(final SocketAddress localSocketAddress, final SocketAddress remoteSocketAddress,
+                                       final String file, final String path,
+                                       final SshKnob.PublicKeyAuthentication publicKeyCredential,
+                                       final PasswordAuthentication passwordCredential) {
 
         // SocketAddress requires us to parse for host and port (e.g. /127.0.0.1:22)
         Pair<String,String> localHostPortPair = MessageProcessingSshUtil.getHostAndPort(localSocketAddress.toString());
@@ -74,24 +87,11 @@ public class MessageProcessingSshUtil {
             }
             @Override
             public PasswordAuthentication getPasswordAuthentication() {
-                if (user != null) {
-                    return new PasswordAuthentication(user.getUserName(),
-                        user.getPassword() !=null ? user.getPassword().toCharArray() : null);
-                } else {
-                    return null;
-                }
+                    return passwordCredential;
             }
             @Override
             public PublicKeyAuthentication getPublicKeyAuthentication() {
-                if (userPublicKey != null && userPublicKey.getPublicKey() != null) {
-                    String userPublicKeyStr = SshKeyUtil.writeKey(userPublicKey.getPublicKey());
-                    if (!StringUtils.isEmpty(userPublicKeyStr)) {
-                        userPublicKeyStr = userPublicKeyStr.replace(SyspropUtil.getProperty("line.separator"), "");
-                    }
-                    return new PublicKeyAuthentication(userPublicKey.getUserName(), userPublicKeyStr);
-                } else {
-                    return null;
-                }
+                    return publicKeyCredential;
             }
         };
     }

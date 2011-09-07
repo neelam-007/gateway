@@ -91,7 +91,7 @@ public class InternalIdentityProviderImpl
         } else if ( format == CredentialFormat.SESSIONTOKEN ) {
             ar = sessionAuthenticator.authenticateSessionCredentials( pc, dbUser );
         } else if (pc.getSecurityToken() != null && pc.getSecurityToken() instanceof SshSecurityToken) {
-            ar = authenticateSshCredentials((SshSecurityToken) pc.getSecurityToken(), pc, dbUser, allowUserUpgrade);
+            ar = authenticateSshCredentials(pc, dbUser);
         } else {
             ar = authenticatePasswordCredentials(pc, dbUser, allowUserUpgrade);
         }
@@ -145,38 +145,44 @@ public class InternalIdentityProviderImpl
         return user;
     }
 
-    private AuthenticationResult authenticateSshCredentials(SshSecurityToken sshSecurityToken, LoginCredentials pc,
-                                                            InternalUser dbUser, boolean allowUserUpgrade)
+    private AuthenticationResult authenticateSshCredentials(LoginCredentials pc, InternalUser dbUser)
             throws MissingCredentialsException, BadCredentialsException
     {
-
-        // make sure we have at least one: a public key or a password
+        // make sure we have a public key
+        SshSecurityToken sshSecurityToken = (SshSecurityToken) pc.getSecurityToken();
         String publicKey = sshSecurityToken.getPublicKey();
-        char[] password = pc.getCredentials();
-        if (StringUtils.isEmpty(publicKey) && (password == null || password.length <= 0)) {
-            throw new MissingCredentialsException("No SSH public key nor password provided");
-        }
-
-        // first try to authenticate with public key
-        String dbPublicKey = dbUser.getProperty(InternalUser.PROPERTIES_KEY_SSH_USER_PUBLIC_KEY);
-        if (!StringUtils.isEmpty(publicKey) && !StringUtils.isEmpty(dbPublicKey)) {
-            dbPublicKey = dbPublicKey.replace(SyspropUtil.getProperty("line.separator"), "");
-
-            // also strip Unix newline for Windows dev environments
-            dbPublicKey = dbPublicKey.replace("\n", "");
-
-            if (dbPublicKey.contains(publicKey)) {
-                return new AuthenticationResult(dbUser, pc.getSecurityTokens());
+        if (StringUtils.isEmpty(publicKey)) {
+            String msg = "No SSH public key provided for login " + sshSecurityToken.getUsername();
+            if(logger.isLoggable(Level.INFO)){
+                logger.info(msg);
             }
+            throw new MissingCredentialsException(msg);
         }
 
-        // make sure we have a password since public key authentication has failed
-        if (password == null || password.length <= 0) {
-            throw new BadCredentialsException("Invalid public key");
+        // make sure we have a public key from the database
+        String dbPublicKey = dbUser.getProperty(InternalUser.PROPERTIES_KEY_SSH_USER_PUBLIC_KEY);
+        if (StringUtils.isEmpty(dbPublicKey)) {
+            String msg = "No SSH public key found in database record for login " + sshSecurityToken.getUsername();
+            if(logger.isLoggable(Level.INFO)){
+                logger.info(msg);
+            }
+            throw new BadCredentialsException(msg);
         }
 
-        // if still required or possible, try to authenticate with password
-        return authenticatePasswordCredentials(pc, dbUser, allowUserUpgrade);
+        // strip newline characters, including Unix newline for Windows dev environments
+        dbPublicKey = dbPublicKey.replace(SyspropUtil.getProperty("line.separator"), "");
+        dbPublicKey = dbPublicKey.replace("\n", "");
+
+        // authenticate public key
+        if (!dbPublicKey.equals(publicKey)) {
+            String msg = "Incorrect public key for login " + sshSecurityToken.getUsername();
+            if(logger.isLoggable(Level.INFO)){
+                logger.info(msg);
+            }
+            throw new BadCredentialsException(msg);
+        }
+
+        return new AuthenticationResult(dbUser, pc.getSecurityTokens());
     }
 
     private AuthenticationResult authenticatePasswordCredentials(LoginCredentials pc,

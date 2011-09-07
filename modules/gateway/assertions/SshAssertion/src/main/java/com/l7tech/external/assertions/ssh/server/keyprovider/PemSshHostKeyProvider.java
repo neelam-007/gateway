@@ -1,4 +1,6 @@
-package com.l7tech.external.assertions.ssh.keyprovider;
+package com.l7tech.external.assertions.ssh.server.keyprovider;
+
+import com.l7tech.external.assertions.ssh.keyprovider.SshKeyUtil;
 
 import java.security.KeyPair;
 

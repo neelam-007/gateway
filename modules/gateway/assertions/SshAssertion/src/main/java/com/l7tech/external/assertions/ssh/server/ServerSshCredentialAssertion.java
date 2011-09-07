@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.SshSecurityToken;
+import com.l7tech.security.token.UsernamePasswordSecurityToken;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.credential.ServerCredentialSourceAssertion;
 
@@ -60,15 +61,22 @@ public class ServerSshCredentialAssertion extends ServerCredentialSourceAssertio
 
     private LoginCredentials findCredentials(PasswordAuthentication passwordAuthentication,
                                              SshKnob.PublicKeyAuthentication publicKeyAuthentication) throws IOException {
-        if ( passwordAuthentication == null ) {
-            logAndAudit(AssertionMessages.SSH_CREDENTIAL_NO_AUTH);
-            return null;
+        if (publicKeyAuthentication != null) {
+            logAndAudit(AssertionMessages.SSH_CREDENTIAL_AUTH_USER, publicKeyAuthentication.getUserName());
+            return LoginCredentials.makeLoginCredentials( new SshSecurityToken(
+                SecurityTokenType.SSH_CREDENTIAL, publicKeyAuthentication),
+                assertion.getClass());
         }
 
-        logAndAudit(AssertionMessages.SSH_CREDENTIAL_AUTH_USER, passwordAuthentication.getUserName());
-
-        return LoginCredentials.makeLoginCredentials( new SshSecurityToken(
-                SecurityTokenType.SSH_CREDENTIAL, passwordAuthentication, publicKeyAuthentication),
+        if (passwordAuthentication != null) {
+            logAndAudit(AssertionMessages.SSH_CREDENTIAL_AUTH_USER, passwordAuthentication.getUserName());
+             return LoginCredentials.makeLoginCredentials( new UsernamePasswordSecurityToken(
+                SecurityTokenType.SSH_CREDENTIAL, passwordAuthentication.getUserName(), passwordAuthentication.getPassword()),
                 assertion.getClass());
+        }
+
+        // no password nor public key
+        logAndAudit(AssertionMessages.SSH_CREDENTIAL_NO_AUTH);
+        return null;
     }
 }

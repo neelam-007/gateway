@@ -4,14 +4,8 @@
 package com.l7tech.policy.assertion.credential;
 
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
-import com.l7tech.security.token.SessionSecurityToken;
-import com.l7tech.security.token.SecurityTokenType;
-import com.l7tech.security.token.SecurityToken;
-import com.l7tech.security.token.HasUsernameAndPassword;
+import com.l7tech.security.token.*;
 import com.l7tech.security.token.http.HttpClientCertToken;
-import com.l7tech.security.token.X509SigningSecurityToken;
-import com.l7tech.security.token.OpaqueSecurityToken;
-import com.l7tech.security.token.KerberosSecurityToken;
 import com.l7tech.security.token.http.HttpDigestToken;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.kerberos.KerberosServiceTicket;
@@ -168,6 +162,18 @@ public final class LoginCredentials implements Disposable {
                     ist.getLogin(),
                     null,
                     CredentialFormat.SESSIONTOKEN,
+                    securityToken,
+                    isTokenPresent,
+                    supportingSecurityTokens,
+                    credentialSource,
+                    null,
+                    null );
+        } else if (securityToken instanceof SshSecurityToken) {
+            SshSecurityToken sshSecurityToken = (SshSecurityToken) securityToken;
+            loginCredentials = new LoginCredentials(
+                    sshSecurityToken.getUsername(),
+                    null,
+                    CredentialFormat.CLEARTEXT,
                     securityToken,
                     isTokenPresent,
                     supportingSecurityTokens,

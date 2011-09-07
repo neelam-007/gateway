@@ -1,7 +1,7 @@
 package com.l7tech.external.assertions.ssh.server;
 
 import com.l7tech.external.assertions.ssh.SshRouteAssertion;
-import com.l7tech.external.assertions.ssh.keyprovider.PemSshHostKeyProvider;
+import com.l7tech.external.assertions.ssh.server.keyprovider.PemSshHostKeyProvider;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.AuditFactory;
@@ -266,18 +266,22 @@ public class SshServerModule extends TransportModule implements ApplicationListe
             SshServer sshd = setUpSshServer();
 
             // undocumented support for authorized lists, Apache SSHD will callback and set user and public key
-            MessageProcessingPasswordAuthenticator user = new MessageProcessingPasswordAuthenticator();
-            String authorizedUserPasswordList = connector.getProperty(SshRouteAssertion.LISTEN_PROP_AUTHORIZED_USER_PASSWORD_LIST);
-            if (authorizedUserPasswordList != null) {
-                user.setAuthorizedUserPasswordKeys(authorizedUserPasswordList.split(SPLIT_DELIMITER));
-            }
-            sshd.setPasswordAuthenticator(user);
-            MessageProcessingPublicKeyAuthenticator userPublicKey = new MessageProcessingPublicKeyAuthenticator();
+            MessageProcessingPublicKeyAuthenticator userPublicKey;
             String authorizedUserPublicKeyList = connector.getProperty(SshRouteAssertion.LISTEN_PROP_AUTHORIZED_USER_PUBLIC_KEY_LIST);
             if (authorizedUserPublicKeyList != null) {
-                userPublicKey.setAuthorizedUserPublicKeys(authorizedUserPublicKeyList.split(SPLIT_DELIMITER));
+                userPublicKey = new MessageProcessingPublicKeyAuthenticator(authorizedUserPublicKeyList.split(SPLIT_DELIMITER));
+            } else {
+                userPublicKey = new MessageProcessingPublicKeyAuthenticator(null);
             }
             sshd.setPublickeyAuthenticator(userPublicKey);
+            MessageProcessingPasswordAuthenticator user;
+            String authorizedUserPasswordList = connector.getProperty(SshRouteAssertion.LISTEN_PROP_AUTHORIZED_USER_PASSWORD_LIST);
+            if (authorizedUserPasswordList != null) {
+                user = new MessageProcessingPasswordAuthenticator(authorizedUserPasswordList.split(SPLIT_DELIMITER));
+            } else {
+                user = new MessageProcessingPasswordAuthenticator(null);
+            }
+            sshd.setPasswordAuthenticator(user);
 
             // enable SCP, SFTP
             final boolean enableScp = Boolean.parseBoolean(connector.getProperty(SshRouteAssertion.LISTEN_PROP_ENABLE_SCP));

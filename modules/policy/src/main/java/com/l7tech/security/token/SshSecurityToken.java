@@ -2,20 +2,16 @@ package com.l7tech.security.token;
 
 import com.l7tech.message.SshKnob;
 
-import java.net.PasswordAuthentication;
-
 /**
  * SSH security token using user name, password and public key credential.
  */
-public class SshSecurityToken implements SecurityToken, HasUsernameAndPassword {
+public class SshSecurityToken implements SecurityToken, HasUsername {
 
     //- PUBLIC
 
     public SshSecurityToken(final SecurityTokenType securityTokenType,
-                            final PasswordAuthentication passwordAuth,
                             final SshKnob.PublicKeyAuthentication publicKeyAuth) {
         this.securityTokenType = securityTokenType;
-        this.passwordAuth = passwordAuth;
         this.publicKeyAuth = publicKeyAuth;
     }
 
@@ -26,18 +22,7 @@ public class SshSecurityToken implements SecurityToken, HasUsernameAndPassword {
 
     @Override
     public String getUsername() {
-        String userName = null;
-        if (publicKeyAuth != null) {
-            userName = publicKeyAuth.getUserName();
-        } else if (passwordAuth != null) {
-            userName = passwordAuth.getUserName();
-        }
-        return userName;
-    }
-
-    @Override
-    public char[] getPassword() {
-        return passwordAuth == null ? null : passwordAuth.getPassword();
+        return publicKeyAuth == null ? null : publicKeyAuth.getUserName();
     }
 
     public String getPublicKey() {
@@ -47,6 +32,5 @@ public class SshSecurityToken implements SecurityToken, HasUsernameAndPassword {
     //- PRIVATE
 
     private final SecurityTokenType securityTokenType;
-    private final PasswordAuthentication passwordAuth;
     private final SshKnob.PublicKeyAuthentication publicKeyAuth;
 }

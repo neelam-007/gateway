@@ -1,6 +1,6 @@
 package com.l7tech.external.assertions.ssh.server;
 
-import com.l7tech.external.assertions.ssh.keyprovider.PemSshHostKeyProvider;
+import com.l7tech.external.assertions.ssh.server.keyprovider.PemSshHostKeyProvider;
 import com.l7tech.external.assertions.ssh.keyprovider.SshKeyUtil;
 import com.l7tech.util.SyspropUtil;
 import org.apache.sshd.common.KeyPairProvider;

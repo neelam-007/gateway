@@ -17,6 +17,7 @@ import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ResourceUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.common.util.Buffer;
 import org.apache.sshd.common.util.SelectorUtils;
@@ -24,6 +25,7 @@ import org.apache.sshd.server.*;
 import org.apache.sshd.server.session.ServerSession;
 
 import java.io.*;
+import java.net.PasswordAuthentication;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
@@ -920,8 +922,24 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
             ContentTypeHeader ctype = ctypeStr == null ? ContentTypeHeader.XML_DEFAULT : ContentTypeHeader.create(ctypeStr);
 
             request.initialize(stashManagerFactory.createStashManager(), ctype, pis);
-            request.attachKnob(SshKnob.class, MessageProcessingSshUtil.buildSshKnob("sftp", session.getIoSession().getLocalAddress(),
-                    session.getIoSession().getRemoteAddress(), file.getName(), path, true, true, user, userPublicKey));
+
+            // attach ssh knob
+            String userName = (String) session.getIoSession().getAttribute(MessageProcessingPublicKeyAuthenticator.ATTR_CRED_USERNAME);
+            String userPublicKey = (String) session.getIoSession().getAttribute(MessageProcessingPublicKeyAuthenticator.ATTR_CRED_PUBLIC_KEY);
+            if (!StringUtils.isEmpty(userName) && !StringUtils.isEmpty(userPublicKey)) {
+                request.attachKnob(SshKnob.class, MessageProcessingSshUtil.buildSshKnob(session.getIoSession().getLocalAddress(),
+                        session.getIoSession().getRemoteAddress(), file.getName(), path, new SshKnob.PublicKeyAuthentication(userName, userPublicKey)));
+            } else {
+                userName = (String) session.getIoSession().getAttribute(MessageProcessingPasswordAuthenticator.ATTR_CRED_USERNAME);
+                String userPassword = (String) session.getIoSession().getAttribute(MessageProcessingPasswordAuthenticator.ATTR_CRED_PASSWORD);
+                if (!StringUtils.isEmpty(userName) && !StringUtils.isEmpty(userPassword)) {
+                    request.attachKnob(SshKnob.class, MessageProcessingSshUtil.buildSshKnob(session.getIoSession().getLocalAddress(),
+                        session.getIoSession().getRemoteAddress(), file.getName(), path, new PasswordAuthentication(userName, userPassword.toCharArray())));
+                } else {
+                    request.attachKnob(SshKnob.class, MessageProcessingSshUtil.buildSshKnob(session.getIoSession().getLocalAddress(),
+                        session.getIoSession().getRemoteAddress(), file.getName(), path, null, null));
+                }
+            }
 
             long hardwiredServiceOid = connector.getLongProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, -1);
             if (hardwiredServiceOid != -1) {

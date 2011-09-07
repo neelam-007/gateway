@@ -1,4 +1,4 @@
-package com.l7tech.external.assertions.ssh.keyprovider;
+package com.l7tech.external.assertions.ssh.server.keyprovider;
 
 import org.apache.sshd.common.keyprovider.AbstractKeyPairProvider;
 import org.slf4j.Logger;

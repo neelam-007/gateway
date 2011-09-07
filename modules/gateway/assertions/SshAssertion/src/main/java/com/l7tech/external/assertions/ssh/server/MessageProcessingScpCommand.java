@@ -23,6 +23,7 @@ import org.apache.sshd.server.*;
 import org.apache.sshd.server.session.ServerSession;
 
 import java.io.*;
+import java.net.PasswordAuthentication;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -381,40 +382,7 @@ public class MessageProcessingScpCommand implements Command, Runnable, SessionAw
     }
 
     protected void readFile(SshFile path) throws IOException {
-
-        // TODO SCP download (i.e. copy from sever)
         throw new IOException("Copy from server currently unsupported.");
-
-        /*if (logger.isLoggable(Level.FINER)) {
-            logger.log(Level.FINER, "Reading file {}", path);
-        }
-        StringBuffer buf = new StringBuffer();
-        buf.append("C");
-        buf.append("0644"); // what about perms
-        buf.append(" ");
-        buf.append(path.getSize()); // length
-        buf.append(" ");
-        buf.append(path.getName());
-        buf.append("\n");
-        out.write(buf.toString().getBytes());
-        out.flush();
-        readAck(false);
-
-        InputStream is = path.createInputStream(0);
-        try {
-            byte[] buffer = new byte[8192];
-            for (;;) {
-                int len = is.read(buffer, 0, buffer.length);
-                if (len == -1) {
-                    break;
-                }
-                out.write(buffer, 0, len);
-            }
-        } finally {
-            is.close();
-        }
-        ack();
-        readAck(false);*/
     }
 
     protected void readDir(SshFile path) throws IOException {
@@ -464,8 +432,24 @@ public class MessageProcessingScpCommand implements Command, Runnable, SessionAw
         ContentTypeHeader ctype = ctypeStr == null ? ContentTypeHeader.XML_DEFAULT : ContentTypeHeader.create(ctypeStr);
 
         request.initialize(stashManagerFactory.createStashManager(), ctype, getDataInputStream(inputStream, path, length));
-        request.attachKnob(SshKnob.class, MessageProcessingSshUtil.buildSshKnob("scp", session.getIoSession().getLocalAddress(),
-                session.getIoSession().getRemoteAddress(), file, path, true, true, user, userPublicKey));
+
+        // attach ssh knob
+        String userName = (String) session.getIoSession().getAttribute(MessageProcessingPublicKeyAuthenticator.ATTR_CRED_USERNAME);
+        String userPublicKey = (String) session.getIoSession().getAttribute(MessageProcessingPublicKeyAuthenticator.ATTR_CRED_PUBLIC_KEY);
+        if (!StringUtils.isEmpty(userName) && !StringUtils.isEmpty(userPublicKey)) {
+            request.attachKnob(SshKnob.class, MessageProcessingSshUtil.buildSshKnob(session.getIoSession().getLocalAddress(),
+                    session.getIoSession().getRemoteAddress(), file, path, new SshKnob.PublicKeyAuthentication(userName, userPublicKey)));
+        } else {
+            userName = (String) session.getIoSession().getAttribute(MessageProcessingPasswordAuthenticator.ATTR_CRED_USERNAME);
+            String userPassword = (String) session.getIoSession().getAttribute(MessageProcessingPasswordAuthenticator.ATTR_CRED_PASSWORD);
+            if (!StringUtils.isEmpty(userName) && !StringUtils.isEmpty(userPassword)) {
+                request.attachKnob(SshKnob.class, MessageProcessingSshUtil.buildSshKnob(session.getIoSession().getLocalAddress(),
+                        session.getIoSession().getRemoteAddress(), file, path, new PasswordAuthentication(userName, userPassword.toCharArray())));
+            } else {
+                request.attachKnob(SshKnob.class, MessageProcessingSshUtil.buildSshKnob(session.getIoSession().getLocalAddress(),
+                        session.getIoSession().getRemoteAddress(), file, path, null, null));
+            }
+        }
 
         long hardwiredServiceOid = connector.getLongProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, -1);
         if (hardwiredServiceOid != -1) {
