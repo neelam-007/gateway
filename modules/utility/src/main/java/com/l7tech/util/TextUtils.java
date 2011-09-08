@@ -2,6 +2,7 @@ package com.l7tech.util;
 
 import com.l7tech.util.Functions.Unary;
 import static com.l7tech.util.Functions.negate;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -702,6 +703,22 @@ public class TextUtils {
      */
     public static Unary<Boolean,CharSequence> isNotEmpty() {
         return FUNC_IS_NOT_EMPTY;
+    }
+
+    /**
+     * Function that splits a string using the given pattern.
+     *
+     * @param pattern The pattern to use
+     * @return The splitter function
+     */
+    @NotNull
+    public static Unary<String[],String> split( @NotNull final Pattern pattern ) {
+        return new Unary<String[],String>(){
+            @Override
+            public String[] call( final String text ) {
+                return pattern.split( text );
+            }
+        };
     }
 
     private static final Unary<String,CharSequence> FUNC_TRIM = new Unary<String,CharSequence>() {

@@ -1,9 +1,13 @@
 package com.l7tech.server.processcontroller;
 
+import static com.l7tech.common.io.SSLServerSocketFactoryWrapper.wrapAndSetTlsVersionAndCipherSuites;
+import com.l7tech.util.ArrayUtils;
+import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.SingleCertX509KeyManager;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.FileUtils;
+import com.l7tech.util.Option;
 import com.l7tech.util.Pair;
 import org.apache.cxf.transport.servlet.CXFServlet;
 import org.mortbay.jetty.Server;
@@ -96,15 +100,18 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
             }
         } }, null);
 
+        final Option<String[]> desiredProtocols = configService.getSslProtocols();
+        final Option<String[]> desiredCiphers = configService.getSslCiphers();
+
         if ( InetAddressUtil.isAnyHostAddress(httpIPAddress) ) {
             if ( InetAddressUtil.isIpv6Enabled() ) {
                 // This handles IPv4 traffic also
-                server.addConnector( new SimpleSslSocketConnector(InetAddressUtil.getAnyHostAddress6(), httpPort, ctx) );
+                server.addConnector( new SimpleSslSocketConnector(InetAddressUtil.getAnyHostAddress6(), httpPort, ctx, desiredProtocols, desiredCiphers) );
             } else if ( InetAddressUtil.isIpv4Enabled() ) {
-                server.addConnector( new SimpleSslSocketConnector(InetAddressUtil.getAnyHostAddress4(), httpPort, ctx) );
+                server.addConnector( new SimpleSslSocketConnector(InetAddressUtil.getAnyHostAddress4(), httpPort, ctx, desiredProtocols, desiredCiphers) );
             }
         } else {
-            server.addConnector( new SimpleSslSocketConnector(httpIPAddress, httpPort, ctx) );
+            server.addConnector( new SimpleSslSocketConnector(httpIPAddress, httpPort, ctx, desiredProtocols, desiredCiphers) );
         }
 
         InetAddress httpAddr = InetAddress.getByName(httpIPAddress);
@@ -114,7 +121,7 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
                 ! ( httpAddr instanceof Inet4Address || (httpAddr instanceof Inet6Address && httpAddr.isAnyLocalAddress() )) ||
                 ! ( httpAddr.isLoopbackAddress() || httpAddr.isAnyLocalAddress() )  ) {
 
-                server.addConnector( new SimpleSslSocketConnector(InetAddressUtil.getLocalHostAddress4(), DEFAULT_SSL_REMOTE_MANAGEMENT_PORT, ctx) );
+                server.addConnector( new SimpleSslSocketConnector(InetAddressUtil.getLocalHostAddress4(), DEFAULT_SSL_REMOTE_MANAGEMENT_PORT, ctx, desiredProtocols, desiredCiphers) );
                 logger.log(Level.INFO, "Added default IPv4 SSL connector.");
             }
         }
@@ -124,7 +131,7 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
                  ! ( httpAddr instanceof Inet6Address || (httpAddr instanceof Inet4Address && httpAddr.isAnyLocalAddress() )) ||
                  ! ( httpAddr.isLoopbackAddress() || httpAddr.isAnyLocalAddress() )  ) {
 
-                server.addConnector( new SimpleSslSocketConnector(InetAddressUtil.getLocalHostAddress6(), DEFAULT_SSL_REMOTE_MANAGEMENT_PORT, ctx) );
+                server.addConnector( new SimpleSslSocketConnector(InetAddressUtil.getLocalHostAddress6(), DEFAULT_SSL_REMOTE_MANAGEMENT_PORT, ctx, desiredProtocols, desiredCiphers) );
                 logger.log(Level.INFO, "Added default IPv6 SSL connector.");
             }
         }
@@ -223,11 +230,17 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
 
     private static final class SimpleSslSocketConnector extends SslSocketConnector {
         private final SSLContext sslContext;
+        private final Option<String[]> protocols;
+        private final Option<String[]> ciphers;
 
         private SimpleSslSocketConnector( final String host,
                                           final int port,
-                                          final SSLContext sslContext ) {
+                                          final SSLContext sslContext,
+                                          final Option<String[]> protocols,
+                                          final Option<String[]> ciphers ) {
             this.sslContext = sslContext;
+            this.protocols = protocols;
+            this.ciphers = ciphers;
             setHost(host);
             setPort(port);
             setWantClientAuth(true);
@@ -236,7 +249,17 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
 
         @Override
         protected SSLServerSocketFactory createFactory() throws Exception {
-            return sslContext.getServerSocketFactory();
+            final SSLServerSocketFactory sslServerSocketFactory = sslContext.getServerSocketFactory();
+            final Option<String[]> enabledCiphers = ciphers.map( new Unary<String[],String[]>(){
+                @Override
+                public String[] call( final String[] ciphers ) {
+                    return ArrayUtils.intersection( ciphers, sslServerSocketFactory.getSupportedCipherSuites() );
+                }
+            } );
+            return wrapAndSetTlsVersionAndCipherSuites(
+                    sslServerSocketFactory,
+                    protocols.toNull(),
+                    enabledCiphers.toNull() );
         }
     }
 }

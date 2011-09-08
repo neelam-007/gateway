@@ -11,6 +11,10 @@ import com.l7tech.server.management.config.monitoring.MonitoringConfiguration;
 import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.server.processcontroller.monitoring.MonitoringKernel;
 import com.l7tech.util.*;
+import static com.l7tech.util.Option.optional;
+import static com.l7tech.util.TextUtils.isNotEmpty;
+import static com.l7tech.util.TextUtils.split;
+import static com.l7tech.util.TextUtils.trim;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -26,6 +30,7 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * Top-level (possibly only) DAO for management of Process Controller configuration entities
@@ -36,6 +41,8 @@ public class ConfigServiceImpl implements ConfigService {
     private static final String SLASH = SyspropUtil.getProperty( "file.separator" );
     private static final String SERVICES_CONTEXT_BASE_PATH = "/services";
     private static final String PROCESSCONTROLLER_PROPERTIES = "com/l7tech/server/processcontroller/resources/processcontroller.properties";
+    private static final String DEFAULT_SSL_CIPHERS = "TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA,TLS_DHE_RSA_WITH_AES_128_CBC_SHA,TLS_DHE_RSA_WITH_AES_256_CBC_SHA";
+    private static final Pattern SPLITTER = Pattern.compile("\\s*,\\s*");
 
     private final File processControllerHomeDirectory;
     private final File nodeBaseDirectory;
@@ -50,6 +57,8 @@ public class ConfigServiceImpl implements ConfigService {
     private final String secret;
     private final int sslPort;
     private final String sslIPAddress;
+    private final Option<String[]> sslProtocols;
+    private final Option<String[]> sslCiphers;
     private final File configDirectory;
     private final File applianceLibexecDirectory;
     private final File javaBinary;
@@ -132,6 +141,8 @@ public class ConfigServiceImpl implements ConfigService {
         this.sslPort = Integer.valueOf(hostProps.getProperty(HOSTPROPERTIES_SSL_PORT, Integer.toString(DEFAULT_SSL_REMOTE_MANAGEMENT_PORT)));
         this.sslIPAddress = hostProps.getProperty( HOSTPROPERTIES_SSL_IPADDRESS, getDefaultSslIpAddress() );
         this.sslKeypair = readSslKeypair( hostProps );
+        this.sslProtocols = getStringArrayProperty( hostProps, HOSTPROPERTIES_SSL_PROTOCOLS, null );
+        this.sslCiphers = getStringArrayProperty( hostProps, HOSTPROPERTIES_SSL_CIPHERS, DEFAULT_SSL_CIPHERS );
         this.trustedRemoteNodeManagementCerts = readTrustedNodeManagementCerts( hostProps );
         this.trustedRemoteNodeManagementThumbprints = readTrustedNodeManagementThumbprints( hostProps );
         this.trustedPatchCerts = readTrustedPatchCerts(hostProps);
@@ -154,6 +165,15 @@ public class ConfigServiceImpl implements ConfigService {
         }
 
         this.host = hostConfig;
+    }
+
+    private Option<String[]> getStringArrayProperty( final Properties properties,
+                                                     final String property,
+                                                     final String defaultValue ) {
+        return optional( properties.getProperty( property, defaultValue ) )
+                .map( trim() )
+                .filter( isNotEmpty() )
+                .map( split( SPLITTER ) );
     }
 
     private Properties loadHostProperties() throws IOException {
@@ -464,7 +484,7 @@ public class ConfigServiceImpl implements ConfigService {
     }
 
     private String getLocalHostname(Properties hostProps) {
-        String hostname = (String)hostProps.get("host.hostname");
+        String hostname = hostProps.getProperty("host.hostname");
         if (hostname != null) {
             logger.info("hostname is " + hostname);
             return hostname;
@@ -564,6 +584,16 @@ public class ConfigServiceImpl implements ConfigService {
     @Override
     public String getSslIPAddress() {
         return sslIPAddress;
+    }
+
+    @Override
+    public Option<String[]> getSslProtocols() {
+        return sslProtocols;
+    }
+
+    @Override
+    public Option<String[]> getSslCiphers() {
+        return sslCiphers;
     }
 
     @Override

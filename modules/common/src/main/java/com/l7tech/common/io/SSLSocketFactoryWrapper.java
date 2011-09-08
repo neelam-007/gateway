@@ -1,7 +1,8 @@
 package com.l7tech.common.io;
 
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
+import com.l7tech.util.Functions.Nullary;
+import static com.l7tech.util.Functions.nullary;
 
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
@@ -17,15 +18,10 @@ public class SSLSocketFactoryWrapper extends SSLSocketFactory {
     //- PUBLIC
 
     public SSLSocketFactoryWrapper( final SSLSocketFactory delegate ) {
-        this (new Functions.Nullary<SSLSocketFactory>(){
-            @Override
-            public SSLSocketFactory call() {
-                return delegate;
-            }
-        });
+        this ( nullary ( delegate ) );
     }
 
-    public SSLSocketFactoryWrapper( final Functions.Nullary<SSLSocketFactory> delegate ) {
+    public SSLSocketFactoryWrapper( final Nullary<SSLSocketFactory> delegate ) {
         this.delegate = delegate;
     }
 
@@ -112,6 +108,6 @@ public class SSLSocketFactoryWrapper extends SSLSocketFactory {
 
     //- PRIVATE
 
-    private final Functions.Nullary<SSLSocketFactory> delegate;
+    private final Nullary<SSLSocketFactory> delegate;
 
 }

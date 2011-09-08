@@ -1,5 +1,7 @@
 package com.l7tech.server.ems.listener;
 
+import static com.l7tech.common.io.SSLServerSocketFactoryWrapper.wrapAndSetTlsVersionAndCipherSuites;
+import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.SystemMessages;
@@ -13,6 +15,10 @@ import com.l7tech.server.ems.ui.EsmSecurityFilter;
 import com.l7tech.server.ems.ui.EsmSessionServlet;
 import com.l7tech.server.util.FirewallUtils;
 import com.l7tech.util.*;
+import static com.l7tech.util.Option.optional;
+import static com.l7tech.util.TextUtils.isNotEmpty;
+import static com.l7tech.util.TextUtils.split;
+import static com.l7tech.util.TextUtils.trim;
 import org.apache.wicket.protocol.http.WicketFilter;
 import org.mortbay.jetty.*;
 import org.mortbay.jetty.bio.SocketConnector;
@@ -49,6 +55,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * An embedded servlet container that the ESM uses to host itself.
@@ -62,9 +69,13 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
     private static final AtomicLong nextInstanceId = new AtomicLong(1);
     private static final Map<Long, Reference<EsmServletContainer>> instancesById =
             new ConcurrentHashMap<Long, Reference<EsmServletContainer>>();
+    private static final Pattern SPLITTER = Pattern.compile("\\s*,\\s*");
 
-    private static final String SESSION_TIMEOUT_PROP = "em.server.session.timeout";
-    private static final int DEFAULT_SESSION_TIMEOUT = 1800000; // session idle timeout in ms
+    private static final long DEFAULT_SESSION_TIMEOUT = 1800000L; // session idle timeout in ms
+    private static final String DEFAULT_LISTENPORT_CIPHERS = "TLS_DHE_RSA_WITH_AES_256_CBC_SHA,TLS_DHE_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA,SSL_RSA_WITH_RC4_128_SHA,SSL_RSA_WITH_3DES_EDE_CBC_SHA,SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA";
+    private static final String PROP_SESSION_TIMEOUT = "em.server.session.timeout";
+    private static final String PROP_LISTENPORT_PROTOCOLS = "em.server.listenport.protocols";
+    private static final String PROP_LISTENPORT_CIPHERS = "em.server.listenport.ciphers";
 
     private final ServerConfig serverConfig;
     private final DefaultKey defaultKey;
@@ -98,9 +109,9 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        if ( evt != null && SESSION_TIMEOUT_PROP.equals(evt.getPropertyName()) ) {
+        if ( evt != null && PROP_SESSION_TIMEOUT.equals(evt.getPropertyName()) ) {
             if ( sessionManager != null ) {
-                int sessionTimeoutSeconds = (int)(serverConfig.getTimeUnitProperty( SESSION_TIMEOUT_PROP, DEFAULT_SESSION_TIMEOUT )/1000L);
+                int sessionTimeoutSeconds = (int)(serverConfig.getTimeUnitProperty( PROP_SESSION_TIMEOUT, DEFAULT_SESSION_TIMEOUT )/1000L);
                 logger.config( "Updated session timeout configuration, now " + sessionTimeoutSeconds + " seconds.");
                 sessionManager.setMaxInactiveInterval( sessionTimeoutSeconds );            
             }
@@ -188,7 +199,7 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
         final Context root = new Context(server, "/", Context.SESSIONS);
         AbstractSessionManager sessionManager = ((AbstractSessionManager)root.getSessionHandler().getSessionManager());
         sessionManager.setSecureCookies(true);
-        sessionManager.setMaxInactiveInterval((int)(serverConfig.getTimeUnitProperty( SESSION_TIMEOUT_PROP, DEFAULT_SESSION_TIMEOUT )/1000L));
+        sessionManager.setMaxInactiveInterval((int)(serverConfig.getTimeUnitProperty( PROP_SESSION_TIMEOUT, DEFAULT_SESSION_TIMEOUT )/1000L));
         this.sessionManager = sessionManager;
         root.setBaseResource(Resource.newClassPathResource("com/l7tech/server/ems/resources/web"));
         root.setDisplayName("Layer 7 Enterprise Service Manager Server");
@@ -331,7 +342,26 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
             SslSocketConnector sslConnector = new SslSocketConnector(){
                 @Override
                 protected SSLServerSocketFactory createFactory() throws Exception {
-                    return ctx.getServerSocketFactory();
+                    final Option<String[]> desiredProtocols = getStringArrayProperty( PROP_LISTENPORT_PROTOCOLS, null );
+                    final Option<String[]> desiredCiphers = getStringArrayProperty( PROP_LISTENPORT_CIPHERS, DEFAULT_LISTENPORT_CIPHERS );
+                    final SSLServerSocketFactory sslServerSocketFactory = ctx.getServerSocketFactory();
+                    final Option<String[]> enabledCiphers = desiredCiphers.map( new Unary<String[],String[]>(){
+                        @Override
+                        public String[] call( final String[] ciphers ) {
+                            return ArrayUtils.intersection(ciphers, sslServerSocketFactory.getSupportedCipherSuites());
+                        }
+                    } );
+                    return wrapAndSetTlsVersionAndCipherSuites(
+                            sslServerSocketFactory,
+                            desiredProtocols.toNull(),
+                            enabledCiphers.toNull() );
+                }
+                private Option<String[]> getStringArrayProperty( final String property, final String defaultValue ) {
+                    return optional( serverConfig.getProperty( property ) )
+                            .map( trim() )
+                            .filter( isNotEmpty() )
+                            .orElse( optional( defaultValue ) )
+                            .map( split( SPLITTER ) );
                 }
             };
             sslConnector.setPort( configuration.getHttpsPort() );

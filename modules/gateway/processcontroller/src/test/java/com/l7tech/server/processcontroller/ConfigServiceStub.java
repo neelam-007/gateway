@@ -3,6 +3,8 @@ package com.l7tech.server.processcontroller;
 import com.l7tech.server.management.config.host.HostConfig;
 import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.server.management.config.monitoring.MonitoringConfiguration;
+import com.l7tech.util.Option;
+import static com.l7tech.util.Option.none;
 import com.l7tech.util.Pair;
 import com.l7tech.util.FileUtils;
 import com.l7tech.objectmodel.DeleteException;
@@ -81,6 +83,16 @@ public class ConfigServiceStub implements ConfigService {
     @Override
     public String getSslIPAddress() {
         throw new UnsupportedOperationException("Not implemented.");
+    }
+
+    @Override
+    public Option<String[]> getSslProtocols() {
+        return none();
+    }
+
+    @Override
+    public Option<String[]> getSslCiphers() {
+        return none();
     }
 
     @Override
