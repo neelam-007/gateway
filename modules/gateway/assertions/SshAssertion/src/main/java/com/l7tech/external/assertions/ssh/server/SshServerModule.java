@@ -30,15 +30,12 @@ import org.apache.sshd.common.cipher.*;
 import org.apache.sshd.common.compression.CompressionDelayedZlib;
 import org.apache.sshd.common.compression.CompressionNone;
 import org.apache.sshd.common.compression.CompressionZlib;
-import org.apache.sshd.common.mac.HMACMD5;
-import org.apache.sshd.common.mac.HMACMD596;
 import org.apache.sshd.common.mac.HMACSHA1;
 import org.apache.sshd.common.mac.HMACSHA196;
 import org.apache.sshd.common.random.JceRandom;
 import org.apache.sshd.common.random.SingletonRandomFactory;
 import org.apache.sshd.common.signature.SignatureDSA;
 import org.apache.sshd.common.signature.SignatureRSA;
-import org.apache.sshd.common.util.OsUtils;
 import org.apache.sshd.common.util.SecurityUtils;
 import org.apache.sshd.server.Command;
 import org.apache.sshd.server.ForwardingFilter;
@@ -46,7 +43,6 @@ import org.apache.sshd.server.channel.ChannelDirectTcpip;
 import org.apache.sshd.server.channel.ChannelSession;
 import org.apache.sshd.server.kex.DHG1;
 import org.apache.sshd.server.session.ServerSession;
-import org.apache.sshd.server.shell.ProcessShellFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -385,11 +381,12 @@ public class SshServerModule extends TransportModule implements ApplicationListe
                 new CompressionDelayedZlib.Factory()));
         sshd.setCompressionFactories(Arrays.<NamedFactory<Compression>>asList(
                 new CompressionNone.Factory()));
+
+        // removed MD5 & MD596 for Gateway
         sshd.setMacFactories(Arrays.<NamedFactory<Mac>>asList(
-                new HMACMD5.Factory(),
                 new HMACSHA1.Factory(),
-                new HMACMD596.Factory(),
                 new HMACSHA196.Factory()));
+
         sshd.setChannelFactories(Arrays.<NamedFactory<Channel>>asList(
                 new ChannelSession.Factory(),
                 new ChannelDirectTcpip.Factory()));
@@ -398,33 +395,28 @@ public class SshServerModule extends TransportModule implements ApplicationListe
                 new SignatureRSA.Factory()));
         sshd.setFileSystemFactory(new VirtualFileSystemFactory());   // customized for Gateway
 
-        if (OsUtils.isUNIX()) {
-            sshd.setShellFactory(new ProcessShellFactory(new String[] { "/bin/sh", "-i", "-l" },
-                    EnumSet.of(ProcessShellFactory.TtyOptions.ONlCr)));
-        } else {
-            sshd.setShellFactory(new ProcessShellFactory(new String[] { "cmd.exe "},
-                    EnumSet.of(ProcessShellFactory.TtyOptions.Echo, ProcessShellFactory.TtyOptions.ICrNl, ProcessShellFactory.TtyOptions.ONlCr)));
-        }
+        // removed ShellFactory setup for Gateway
 
+        // set all forwards to false for Gateway
         sshd.setForwardingFilter(new ForwardingFilter() {
             @Override
             public boolean canForwardAgent(ServerSession session) {
-                return true;
+                return false;
             }
 
             @Override
             public boolean canForwardX11(ServerSession session) {
-                return true;
+                return false;
             }
 
             @Override
             public boolean canListen(InetSocketAddress address, ServerSession session) {
-                return true;
+                return false;
             }
 
             @Override
             public boolean canConnect(InetSocketAddress address, ServerSession session) {
-                return true;
+                return false;
             }
         });
 
