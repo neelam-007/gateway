@@ -46,6 +46,11 @@ public class CredentialFormat {
      */
     public static final CredentialFormat SESSIONTOKEN = new CredentialFormat("Session Token");
 
+   /**
+    * The credentials are an SSH public/private key pair
+    */
+    public static final CredentialFormat SSHTOKEN = new CredentialFormat("SSH Token");
+
     public String toString() {
         return "<CredentialFormat name='" + _name + "'/>";
     }

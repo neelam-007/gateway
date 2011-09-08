@@ -158,7 +158,7 @@ public class MessageProcessingScpCommand implements Command, Runnable, SessionAw
 
         name = Arrays.asList(args).toString();
         if (logger.isLoggable(Level.FINER)) {
-            logger.log(Level.FINER, "Executing command {}", name);
+            logger.log(Level.FINER, "Executing command {0}", name);
         }
         path = ".";
         for (int i = 1; i < args.length; i++) {
@@ -336,14 +336,14 @@ public class MessageProcessingScpCommand implements Command, Runnable, SessionAw
 
     protected void writeDir(String header, SshFile path) throws IOException {
         if (logger.isLoggable(Level.FINER)) {
-            logger.log(Level.FINER, "Recursively writing dir {} unsupported", path);
+            logger.log(Level.FINER, "Recursively writing dir {0} unsupported", path);
         }
         throw new IOException("Recursive directory write unsupported.");
     }
 
     protected void writeFile(String header, SshFile path) throws IOException {
         if (logger.isLoggable(Level.FINER)) {
-            logger.log(Level.FINER, "Writing file {}", path);
+            logger.log(Level.FINER, "Writing file {0}", path);
         }
         if (!header.startsWith("C")) {
             throw new IOException("Expected a C message but got '" + header + "'");
@@ -387,7 +387,7 @@ public class MessageProcessingScpCommand implements Command, Runnable, SessionAw
 
     protected void readDir(SshFile path) throws IOException {
         if (logger.isLoggable(Level.FINER)) {
-            logger.log(Level.FINER, "Recursively reading directory {} unsupported", path);
+            logger.log(Level.FINER, "Recursively reading directory {0} unsupported", path);
         }
         throw new IOException("Recursive directory read unsupported.");
     }

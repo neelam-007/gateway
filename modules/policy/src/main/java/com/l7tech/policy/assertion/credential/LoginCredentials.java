@@ -173,7 +173,7 @@ public final class LoginCredentials implements Disposable {
             loginCredentials = new LoginCredentials(
                     sshSecurityToken.getUsername(),
                     null,
-                    CredentialFormat.CLEARTEXT,
+                    CredentialFormat.SSHTOKEN,
                     securityToken,
                     isTokenPresent,
                     supportingSecurityTokens,
