@@ -416,6 +416,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             contentTypeComboBoxModel.addElement(offeredType.getFullValue());
         }
         contentTypeComboBox.setModel(contentTypeComboBoxModel);
+        serviceNameComboBox.setRenderer( TextListCellRenderer.<ServiceComboItem>basicComboBoxRenderer() );
 
         threadPoolSizeSpinner.setModel( new SpinnerNumberModel( DEFAULT_POOL_SIZE, 1, 10000, 1 ) );
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(threadPoolSizeSpinner, "Thread Pool Size"));
