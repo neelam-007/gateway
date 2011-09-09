@@ -95,6 +95,28 @@ public final class BeanUtils {
     }
 
     /**
+     * Copy properties from the given Map to the destination bean.
+     *
+     * @param source The source map (required)
+     * @param sourcePrefix The source property prefix (optional)
+     * @param destination The target bean (required)
+     * @param props  the properties to copy.  Only these properties will be copied (required)
+     * @throws IllegalAccessException if Java access control prevents a setter from being invoked
+     * @throws java.lang.reflect.InvocationTargetException if a setter throws an exception
+     */
+    public static void copyProperties( final Map<String,?> source,
+                                       final String sourcePrefix,
+                                       final Object destination,
+                                       final Iterable<PropertyDescriptor> props ) throws IllegalAccessException, InvocationTargetException {
+        final String prefix = sourcePrefix == null ? "" : sourcePrefix;
+        for ( final PropertyDescriptor prop : props) {
+            final Method setter = prop.getWriteMethod();
+            final Object value = source.get( prefix + prop.getName() );
+            setter.invoke(destination, value);
+        }
+    }
+
+    /**
      * Returns a new mutable set of PropertyDescriptor instances for all BeanInfo properties of the specified class
      * that have both getters and setters.
      *

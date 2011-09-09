@@ -338,7 +338,7 @@ public class IdentityProviderResourceFactory extends EntityManagerResourceFactor
                                 final Map<String,Object> properties,
                                 final Set<PropertyDescriptor> propertyDescriptors ) {
         try {
-            BeanUtils.copyProperties( properties, bean, propertyDescriptors );
+            BeanUtils.copyProperties( properties, null, bean, propertyDescriptors );
         } catch ( IllegalAccessException e ) {
             throw new ResourceAccessException(e);
         } catch ( InvocationTargetException e ) {

@@ -441,7 +441,7 @@ public class ServerGatewayManagementAssertionTest {
     }
 
     @Test
-    public void testCreateLDAPIdentityProvider() throws Exception {
+    public void testCreateLDAPIdentityProviderFromTemplate() throws Exception {
         String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/identityProviders";
         String payload = "<IdentityProvider xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\" version=\"33\" id=\"147226624\" extendedAttribute=\"extension\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
                 "    <Name other:extendedAttribute=\"extension\" xmlns:other=\"urn:othernamespace\">LDAP1</Name>\n" +
@@ -464,7 +464,112 @@ public class ServerGatewayManagementAssertionTest {
                 "        </LdapIdentityProviderDetail>\n" +
                 "    </Extension>\n" +
                 "</IdentityProvider>";
-        String[] expectedIds = new String[]{"1","2"};
+        String[] expectedIds = new String[]{"1","2","3"};
+        doCreate( resourceUri, payload, expectedIds );
+    }
+
+    @BugNumber(10920)
+    @Test
+    public void testCreateLdapIdentityProviderFull() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/identityProviders";
+        String payload = "<IdentityProvider xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                "    <Name>LDAP Example</Name>\n" +
+                "    <IdentityProviderType>LDAP</IdentityProviderType>\n" +
+                "    <Properties>\n" +
+                "        <Property key=\"groupCacheMaximumAge\">\n" +
+                "            <LongValue>60000</LongValue>\n" +
+                "        </Property>\n" +
+                "        <Property key=\"groupMembershipCaseInsensitive\">\n" +
+                "            <BooleanValue>false</BooleanValue>\n" +
+                "        </Property>\n" +
+                "        <Property key=\"groupMaximumNesting\">\n" +
+                "            <IntegerValue>0</IntegerValue>\n" +
+                "        </Property>\n" +
+                "        <Property key=\"certificateValidation\">\n" +
+                "            <StringValue>Revocation Checking</StringValue>\n" +
+                "        </Property>\n" +
+                "        <Property key=\"groupCacheSize\">\n" +
+                "            <IntegerValue>100</IntegerValue>\n" +
+                "        </Property>\n" +
+                "        <Property key=\"userCertificateUsage\">\n" +
+                "            <StringValue>None</StringValue>\n" +
+                "        </Property>\n" +
+                "        <Property key=\"adminEnabled\">\n" +
+                "            <BooleanValue>true</BooleanValue>\n" +
+                "        </Property>\n" +
+                "    </Properties>\n" +
+                "    <Extension>\n" +
+                "        <LdapIdentityProviderDetail>\n" +
+                "            <SourceType>MicrosoftActiveDirectory</SourceType>\n" +
+                "            <ServerUrls>\n" +
+                "                <StringValue>ldap://example.layer7tech.com</StringValue>\n" +
+                "            </ServerUrls>\n" +
+                "            <UseSslClientAuthentication>false</UseSslClientAuthentication>\n" +
+                "            <SearchBase>ou= Users,DC=layer7tech,dc=com</SearchBase>\n" +
+                "            <BindDn>browse</BindDn>\n" +
+                "            <UserMappings>\n" +
+                "                <Mapping>\n" +
+                "                    <ObjectClass>user</ObjectClass>\n" +
+                "                    <Mappings>\n" +
+                "                        <Property key=\"kerberosEnterpriseAttrName\">\n" +
+                "                            <StringValue>userPrincipalName</StringValue>\n" +
+                "                        </Property>\n" +
+                "                        <Property key=\"userCertAttrName\">\n" +
+                "                            <StringValue>userCertificate</StringValue>\n" +
+                "                        </Property>\n" +
+                "                        <Property key=\"loginAttrName\">\n" +
+                "                            <StringValue>sAMAccountName</StringValue>\n" +
+                "                        </Property>\n" +
+                "                        <Property key=\"nameAttrName\">\n" +
+                "                            <StringValue>cn</StringValue>\n" +
+                "                        </Property>\n" +
+                "                        <Property key=\"passwdAttrName\">\n" +
+                "                            <StringValue>userPassword</StringValue>\n" +
+                "                        </Property>\n" +
+                "                        <Property key=\"kerberosAttrName\">\n" +
+                "                            <StringValue>sAMAccountName</StringValue>\n" +
+                "                        </Property>\n" +
+                "                        <Property key=\"emailNameAttrName\">\n" +
+                "                            <StringValue>mail</StringValue>\n" +
+                "                        </Property>\n" +
+                "                        <Property key=\"firstNameAttrName\">\n" +
+                "                            <StringValue>givenName</StringValue>\n" +
+                "                        </Property>\n" +
+                "                        <Property key=\"objClass\">\n" +
+                "                            <StringValue>user</StringValue>\n" +
+                "                        </Property>\n" +
+                "                        <Property key=\"lastNameAttrName\">\n" +
+                "                            <StringValue>sn</StringValue>\n" +
+                "                        </Property>\n" +
+                "                    </Mappings>\n" +
+                "                </Mapping>\n" +
+                "            </UserMappings>\n" +
+                "            <GroupMappings>\n" +
+                "                <Mapping>\n" +
+                "                    <ObjectClass>group</ObjectClass>\n" +
+                "                    <Mappings>\n" +
+                "                        <Property key=\"nameAttrName\">\n" +
+                "                            <StringValue>cn</StringValue>\n" +
+                "                        </Property>\n" +
+                "                        <Property key=\"memberAttrName\">\n" +
+                "                            <StringValue>member</StringValue>\n" +
+                "                        </Property>\n" +
+                "                        <Property key=\"objClass\">\n" +
+                "                            <StringValue>group</StringValue>\n" +
+                "                        </Property>\n" +
+                "                    </Mappings>\n" +
+                "                    <Properties>\n" +
+                "                        <Property key=\"memberStrategy\">\n" +
+                "                            <StringValue>Member is User DN</StringValue>\n" +
+                "                        </Property>\n" +
+                "                    </Properties>\n" +
+                "                </Mapping>\n" +
+                "            </GroupMappings>\n" +
+                "            <SpecifiedAttributes/>\n" +
+                "        </LdapIdentityProviderDetail>\n" +
+                "    </Extension>\n" +
+                "</IdentityProvider>";
+        String[] expectedIds = new String[]{"1","2","3"};
         doCreate( resourceUri, payload, expectedIds );
     }
 

@@ -78,7 +78,7 @@ public class BeanUtilsTest {
         BeanUtils.copyProperties(b, b2);
 
         assertEquals(b.str1, b2.str1);
-        assertEquals(b.int1, b2.int1);
+        assertEquals( (long) b.int1, (long) b2.int1 );
         assertEquals(b.bool1, b2.bool1);
         assertEquals(b.table1, b2.table1);
         assertEquals(Color.PINK, b2.table1.getBackground());
@@ -95,7 +95,7 @@ public class BeanUtilsTest {
         source.put( "bool1", true );
 
         BeanUtils.copyProperties( source, null, target );
-        assertEquals( "int1", 1, target.getInt1() );
+        assertEquals( "int1", 1L, (long) target.getInt1() );
         assertEquals( "str1", "text", target.getStr1() );
         assertEquals( "bool1", true, target.isBool1() );
 
@@ -107,18 +107,46 @@ public class BeanUtilsTest {
         source2.put( "prefix.bool1", true );
 
         BeanUtils.copyProperties( source2, "prefix.", target2 );
-        assertEquals( "int1", 1, target2.getInt1() );
+        assertEquals( "int1", 1L, (long) target2.getInt1() );
         assertEquals( "str1", "text", target2.getStr1() );
+        assertEquals( "bool1", true, target2.isBool1() );
+    }
+
+    @Test
+    public void testCopySpecifedFromMap() throws Exception {
+        TestBean target = new TestBean();
+
+        Map<String,Object> source = new HashMap<String,Object>();
+        source.put( "int1", 1 );
+        source.put( "str1", "text" );
+        source.put( "bool1", true );
+
+        final Set<PropertyDescriptor> propertyDescriptors = BeanUtils.omitProperties(BeanUtils.getProperties(TestBean.class), "str1");
+        BeanUtils.copyProperties( source, null, target, propertyDescriptors );
+        assertEquals( "int1", 1L, (long) target.getInt1() );
+        assertNull( "str1", target.getStr1() );
+        assertEquals( "bool1", true, target.isBool1() );
+
+        TestBean target2 = new TestBean();
+
+        Map<String,Object> source2 = new HashMap<String,Object>();
+        source2.put( "prefix.int1", 1 );
+        source2.put( "prefix.str1", "text" );
+        source2.put( "prefix.bool1", true );
+
+        BeanUtils.copyProperties( source2, "prefix.", target2, propertyDescriptors );
+        assertEquals( "int1", 1L, (long) target2.getInt1() );
+        assertNull( "str1", target.getStr1() );
         assertEquals( "bool1", true, target2.isBool1() );
     }
 
     @Test
     public void testFiltering() throws Exception {
         Set<PropertyDescriptor> props = BeanUtils.getProperties(TestBean.class);
-        assertEquals(4, props.size());
+        assertEquals( 4L, (long) props.size() );
 
         Set<PropertyDescriptor> omitted = BeanUtils.omitProperties(props, "bool1", "table1");
-        assertEquals(2, omitted.size());
+        assertEquals( 2L, (long) omitted.size() );
 
         Set<PropertyDescriptor> allowed = BeanUtils.includeProperties(props, "int1", "str1");
         assertEquals("must reach same result whether omitting one set or including only its complement", omitted, allowed);
@@ -135,7 +163,7 @@ public class BeanUtilsTest {
 
         BeanUtils.copyProperties(b1, b2, allowed);
         assertEquals("included property must be copied", "testb1", b2.str1);
-        assertEquals("included property must be copied", 1, b2.int1);
+        assertEquals("included property must be copied", 1L, (long) b2.int1 );
         assertTrue("omitted property must not be copied", b2.table1 != b1.table1);
     }
 }
