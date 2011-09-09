@@ -514,6 +514,62 @@ else
 		exit 1
 	fi
 	
+	# pam_login_attribute field
+	if [ "X$PAM_LOGIN_ATTR" != "X" ]; then
+		sed -i "s|\(^# The user ID attribute.*$\)|\1\n# Added by $0 on $DATE_TIME:\npam_login_attribute $PAM_LOGIN_ATTR\n|" $NSS_LDAP_CONF_FILE
+		if [ $? -ne 0 ] || [ "X$(grep "^pam_login_attribute" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$PAM_LOGIN_ATTR" ]; then
+			toLog "    ERROR - Configuring 'pam_login_attribute' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
+			exit 1
+		else
+			toLog "    Success - 'pam_login_attribute' field set to $PAM_LOGIN_ATTR in $NSS_LDAP_CONF_FILE."
+		fi
+	else
+		toLog "    ERROR - PAM_LOGIN_ATTR cannot be empty! Exiting..."
+		exit 1
+	fi
+	
+	# pam_filter field
+	if [ "X$PAM_FILTER" != "X" ]; then
+		sed -i "s|\(^# Filter to AND with.*$\)|\1\n# Added by $0 on $DATE_TIME:\npam_filter $PAM_FILTER\n|" $NSS_LDAP_CONF_FILE
+		if [ $? -ne 0 ] || [ "X$(grep "^pam_filter" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$PAM_FILTER" ]; then
+			toLog "    ERROR - Configuring 'pam_filter' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
+			exit 1
+		else
+			toLog "    Success - 'pam_filter' field set to $PAM_FILTER in $NSS_LDAP_CONF_FILE."
+		fi
+	else
+		toLog "    ERROR - PAM_FILTER cannot be empty! Exiting..."
+		exit 1
+	fi
+		
+	# pam_groupdn field
+	if [ "X$PAM_GROUPDN" != "X" ]; then
+		sed -i "s|\(^#pam_groupdn cn=PAM.*$\)|\1\n# Added by $0 on $DATE_TIME:\npam_groupdn $PAM_GROUPDN\n|" $NSS_LDAP_CONF_FILE
+		if [ $? -ne 0 ] || [ "X$(grep "^pam_groupdn" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$PAM_GROUPDN" ]; then
+			toLog "    ERROR - Configuring 'pam_groupdn' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
+			exit 1
+		else
+			toLog "    Success - 'pam_groupdn' field set to $PAM_GROUPDN in $NSS_LDAP_CONF_FILE."
+		fi
+	else
+		toLog "    ERROR - PAM_GROUPDN cannot be empty! Exiting..."
+		exit 1
+	fi
+	
+	# pam_member_attribute field
+	if [ "X$PAM_MEMBER_ATTR" != "X" ]; then
+		sed -i "s|\(^#pam_member_attribute uniquemember.*$\)|\1\n# Added by $0 on $DATE_TIME:\npam_member_attribute $PAM_MEMBER_ATTR\n|" $NSS_LDAP_CONF_FILE
+		if [ $? -ne 0 ] || [ "X$(grep "^pam_member_attribute" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$PAM_MEMBER_ATTR" ]; then
+			toLog "    ERROR - Configuring 'pam_member_attribute' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
+			exit 1
+		else
+			toLog "    Success - 'pam_member_attribute' field set to $PAM_MEMBER_ATTR in $NSS_LDAP_CONF_FILE."
+		fi
+	else
+		toLog "    ERROR - PAM_MEMBER_ATTR cannot be empty! Exiting..."
+		exit 1
+	fi
+	
 	# Decide if LDAP or LDAPS (defined by $LDAP_TYPE):
 	if [ "X$LDAP_TYPE" == "Xldaps" ]; then
 		toLog "   Info - '$LDAP_TYPE' will be configured."
