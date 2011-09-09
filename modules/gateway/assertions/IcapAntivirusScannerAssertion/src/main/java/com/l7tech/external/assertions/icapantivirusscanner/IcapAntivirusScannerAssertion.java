@@ -1,6 +1,5 @@
 package com.l7tech.external.assertions.icapantivirusscanner;
 
-import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.AssertionMetadata;
@@ -9,12 +8,12 @@ import com.l7tech.policy.assertion.MessageTargetableAssertion;
 import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.policy.validator.AssertionValidator;
 import com.l7tech.policy.validator.PolicyValidationContext;
-import com.l7tech.policy.wsp.BeanTypeMapping;
 import com.l7tech.policy.wsp.CollectionTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 
 import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * <p>The ICAP Antivirus modular assertion.</p>
@@ -22,51 +21,41 @@ import java.util.*;
  * @author Ken Diep
  */
 public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion implements UsesVariables {
+    public static final Pattern ICAP_URI = Pattern.compile("(?i)icap://(.*):(.*)/(.*)");
 
     private static final String META_INITIALIZED = IcapAntivirusScannerAssertion.class.getName() + ".metadataInitialized";
 
-    private String failoverStrategy = FailoverStrategyFactory.ORDERED.getName();
+    private String failoverStrategy = null;
 
-    private List<IcapConnectionDetail> connectionDetails = new ArrayList<IcapConnectionDetail>();
+    private List<String> icapServers = new ArrayList<String>();
 
     private Map<String, String> serviceParameters = new HashMap<String, String>();
 
     private boolean continueOnVirusFound = false;
+
+    private int maxMimeDepth = 1;
+
+    private String readTimeout = "30";
+
+    private String connectionTimeout = "30";
 
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
-        // Cluster properties used by this assertion
-        Map<String, String[]> props = new HashMap<String, String[]>();
-
-        meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
-
-        // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, "Icap Anti-Virus Scanner");
         meta.put(AssertionMetadata.LONG_NAME, "Scan virus using the ICAP protocol against an ICAP capable anti-virus server.");
-
-        // Add to palette folder(s) 
-        //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing, 
-        //   misc, audit, policyLogic, threatProtection 
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"threatProtection"});
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/Properties16.gif");
-
-        // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
-
-        // Set up smart Getter for nice, informative policy node name, for GUI
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/Properties16.gif");
-
-        // request default feature set name for our class name, since we are a known optional module
-        // that is, we want our required feature set to be "assertion:IcapAntivirusScanner" rather than "set:modularAssertions"
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
 
         //add custom type mapping
         Collection<TypeMapping> othermappings = new ArrayList<TypeMapping>();
-        othermappings.add(new CollectionTypeMapping(List.class, IcapConnectionDetail.class, ArrayList.class, "icapConnections"));
-        othermappings.add(new BeanTypeMapping(IcapConnectionDetail.class, "connection"));
+        othermappings.add(new CollectionTypeMapping(List.class, String.class, ArrayList.class, "icapConnections"));
+
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(othermappings));
 
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, IcapAntivirusScannerAssertion.Validator.class.getName());
@@ -104,17 +93,17 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
     }
 
     /**
-     * @return a list of configured servers to the antivirus server.
+     * @return all the configured ICAP servers.
      */
-    public List<IcapConnectionDetail> getConnectionDetails() {
-        return connectionDetails;
+    public List<String> getIcapServers() {
+        return icapServers;
     }
 
     /**
-     * @param connectionDetails the list of configured servers to use.
+     * @param icapServers the list of ICAP servers.
      */
-    public void setConnectionDetails(final List<IcapConnectionDetail> connectionDetails) {
-        this.connectionDetails = connectionDetails;
+    public void setIcapServers(final List<String> icapServers) {
+        this.icapServers = icapServers;
     }
 
     /**
@@ -129,6 +118,63 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
      */
     public void setServiceParameters(final Map<String, String> serviceParameters) {
         this.serviceParameters = serviceParameters;
+    }
+
+    /**
+     * @return the read timeout in term of seconds.
+     */
+    public String getReadTimeout() {
+        return readTimeout;
+    }
+
+    /**
+     * @param readTimeout the read timeout value in term of seconds.
+     */
+    public void setReadTimeout(final String readTimeout) {
+        this.readTimeout = readTimeout;
+    }
+
+    /**
+     * @return the connection timeout in term of seconds.
+     */
+    public String getConnectionTimeout() {
+        return connectionTimeout;
+    }
+
+    /**
+     * @param connectionTimeout the connection timeout in term of seconds.
+     */
+    public void setConnectionTimeout(final String connectionTimeout) {
+        this.connectionTimeout = connectionTimeout;
+    }
+
+    @Override
+    public IcapAntivirusScannerAssertion clone() {
+        IcapAntivirusScannerAssertion copy = (IcapAntivirusScannerAssertion) super.clone();
+        copy.setFailoverStrategy(failoverStrategy);
+        copy.setContinueOnVirusFound(continueOnVirusFound);
+        copy.setIcapServers(new ArrayList<String>(icapServers));
+        copy.setServiceParameters(new HashMap<String, String>(serviceParameters));
+        copy.setMaxMimeDepth(maxMimeDepth);
+        copy.setReadTimeout(readTimeout);
+        copy.setConnectionTimeout(connectionTimeout);
+        return copy;
+    }
+
+    /**
+     *
+     * @return the max number of MIME parts to scan.
+     */
+    public int getMaxMimeDepth() {
+        return maxMimeDepth;
+    }
+
+    /**
+     *
+     * @param maxMimeDepth the max number of MIME parts to scan.
+     */
+    public void setMaxMimeDepth(final int maxMimeDepth) {
+        this.maxMimeDepth = maxMimeDepth;
     }
 
     /**
@@ -150,7 +196,7 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
 
         @Override
         public void validate(final AssertionPath path, final PolicyValidationContext pvc, final PolicyValidatorResult result) {
-            if (assertion.getConnectionDetails().isEmpty()) {
+            if (assertion.getIcapServers().isEmpty()) {
                 result.addError(new PolicyValidatorResult.Error(assertion,
                         "Require at least one valid connection to an ICAP anti-virus server.", null));
             }

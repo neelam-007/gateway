@@ -3,8 +3,7 @@ package com.l7tech.external.assertions.icapantivirusscanner.server;
 import ch.mimo.netty.handler.codec.icap.*;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
-import com.l7tech.external.assertions.icapantivirusscanner.IcapConnectionDetail;
-import com.l7tech.util.IOUtils;
+import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.*;
 import org.jboss.netty.handler.codec.http.*;
@@ -17,13 +16,13 @@ import java.util.logging.Logger;
 
 /**
  * <p>
- * A simple implementation of the {@link org.jboss.netty.channel.SimpleChannelUpstreamHandler} to deal with sending an
+ * A simple implementation of the {@link AbstractIcapResponseHandler} to deal with sending an
  * ICAP request and receiving the server's response.
  * </p>
  *
  * @author Ken Diep
  */
-public final class IcapResponseHandler extends SimpleChannelUpstreamHandler {
+public final class IcapResponseHandler extends AbstractIcapResponseHandler {
 
     private static final Logger LOGGER = Logger.getLogger(IcapResponseHandler.class.getName());
 
@@ -31,10 +30,15 @@ public final class IcapResponseHandler extends SimpleChannelUpstreamHandler {
 
     private final BlockingQueue<IcapResponse> responses = new LinkedBlockingQueue<IcapResponse>();
 
-    public IcapResponse sendOptionsCommand(IcapConnectionDetail connectionDetail) {
+    @Override
+    public IcapResponse sendOptionsCommand(final String icapUri, final String host) {
         IcapRequest request = new DefaultIcapRequest(IcapVersion.ICAP_1_0, IcapMethod.OPTIONS,
-                connectionDetail.toString(),
-                connectionDetail.getHostname());
+                icapUri,
+                host);
+        //tell the server to close the connection
+        //if we explicitly close the channel, the exceptionCaught will be executed
+        //and raise many ClosedChannelException
+        request.addHeader(HttpHeaders.Names.CONNECTION, "Close");
         channel.write(request);
         IcapResponse response = null;
         boolean interrupted = false;
@@ -49,22 +53,21 @@ public final class IcapResponseHandler extends SimpleChannelUpstreamHandler {
         return response;
     }
 
-    /**
-     * Scan the content as found in the {@link com.l7tech.common.mime.PartInfo} using the pre-build {@link ch.mimo.netty.handler.codec.icap.IcapRequest}.
-     *
-     * @param partInfo the content to be scanned.
-     * @return an {@link ch.mimo.netty.handler.codec.icap.IcapResponse}.
-     * @throws NoSuchPartException if the content of the given <tt>partInfo</tt> can not be retrieved for any reason.
-     * @throws IOException         if any IO errors occur while reading the <tt>partInfo</tt>.
-     */
-    public IcapResponse scan(IcapConnectionDetail connectionDetail, PartInfo partInfo) throws NoSuchPartException, IOException {
+    @Override
+    public IcapResponse scan(final String icapUri, final String host, PartInfo partInfo) throws NoSuchPartException, IOException {
 
         IcapRequest request = new DefaultIcapRequest(IcapVersion.ICAP_1_0, IcapMethod.RESPMOD,
-                connectionDetail.toString(),
-                connectionDetail.getHostname());
+                icapUri,
+                host);
         request.addHeader(HttpHeaders.Names.ALLOW, "204");
+        //tell the server to close the connection
+        //if we explicitly close the channel, the exceptionCaught will be executed
+        //and raise many ClosedChannelException
+        request.addHeader(HttpHeaders.Names.CONNECTION, "Close");
         HttpResponse httpResponse = new DefaultHttpResponse(HttpVersion.HTTP_1_0, HttpResponseStatus.OK);
-        httpResponse.setContent(ChannelBuffers.wrappedBuffer(IOUtils.slurpStream(partInfo.getInputStream(false))));
+        ChannelBuffer cb = ChannelBuffers.dynamicBuffer();
+        cb.writeBytes(partInfo.getInputStream(false), (int) partInfo.getActualContentLength());
+        httpResponse.setContent(cb);
         httpResponse.addHeader(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.CLOSE);
         request.setHttpResponse(httpResponse);
 
@@ -87,7 +90,6 @@ public final class IcapResponseHandler extends SimpleChannelUpstreamHandler {
     @Override
     public void channelOpen(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
         channel = e.getChannel();
-        super.channelOpen(ctx, e);
     }
 
     @Override

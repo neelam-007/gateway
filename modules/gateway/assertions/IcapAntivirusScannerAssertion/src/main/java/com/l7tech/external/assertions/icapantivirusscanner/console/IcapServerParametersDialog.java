@@ -1,5 +1,7 @@
 package com.l7tech.external.assertions.icapantivirusscanner.console;
 
+import com.l7tech.gui.util.Utilities;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -22,17 +24,19 @@ public class IcapServerParametersDialog extends JDialog {
 
     private boolean confirmed;
 
-    public IcapServerParametersDialog(Frame owner, String title) {
-        super(owner, title, true);
+    public IcapServerParametersDialog(final Window owner, final String title) {
+        super(owner, title);
         initializeComponents();
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
         setTitle(title);
         confirmed = false;
+
     }
 
     private void initializeComponents() {
+        Utilities.setEscKeyStrokeDisposes(this);
         buttonOK.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 onOK();

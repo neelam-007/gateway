@@ -4,20 +4,24 @@ import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAssertion;
-import com.l7tech.external.assertions.icapantivirusscanner.IcapConnectionDetail;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.policy.variable.Syntax;
+import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
+import javax.validation.constraints.NotNull;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
 
 /**
  * <p>
@@ -28,14 +32,15 @@ import java.util.Map;
  */
 public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropertiesOkCancelSupport<IcapAntivirusScannerAssertion> {
 
-    private static final String DIALOG_TITLE = "ICAP Anti-Virus Servers";
+    private static final String DIALOG_TITLE = "ICAP Anti-Virus Properties";
     private static final String DIALOG_TITLE_NEW_SERVER = "Add New Server";
     private static final String DIALOG_TITLE_EDIT_SERVER_PROPERTIES = "Edit Server Properties";
 
     private static final String DIALOG_TITLE_NEW_PARAMETER = "Add New Service Parameter";
     private static final String DIALOG_TITLE_EDIT_PARAMETER = "Edit Service Parameter";
 
-    private static final int DOUBLE_CLICK = 2;
+    private static final String PARAMETER_NAME = "Parameter Name";
+    private static final String PARAMETER_VALUE = "Parameter Value";
 
     private JPanel contentPane;
     private JButton addServer;
@@ -48,6 +53,9 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
     private JButton removeParam;
     private JButton editParam;
     private JTable serviceParams;
+    private JTextField connectionTimeoutField;
+    private JTextField readTimeoutField;
+    private JSpinner maxMimeDepth;
 
     private DefaultListModel serverListModel;
     private DefaultTableModel serviceParamTableModel;
@@ -58,6 +66,7 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
         intializeServerListSection(owner);
         intializeServiceParametersSection(owner);
         cbStrategy.setModel(new DefaultComboBoxModel(FailoverStrategyFactory.getFailoverStrategyNames()));
+        maxMimeDepth.setModel(new SpinnerNumberModel(1, 1, 100, 1));    // max of a 100 is a bit excessive
         setData(assertion);
     }
 
@@ -66,13 +75,6 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
         removeServer.setEnabled(false);
 
         serverList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        serverList.addMouseListener(new MouseAdapter() {
-            public void mouseClicked(final MouseEvent e) {
-                if (e.getButton() == MouseEvent.BUTTON1 && e.getClickCount() == DOUBLE_CLICK) {
-                    editSelectedServer(owner);
-                }
-            }
-        });
         serverList.addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(final ListSelectionEvent e) {
@@ -84,15 +86,14 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
         addServer.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
-                IcapServerPropertiesDialog ispd = new IcapServerPropertiesDialog((Frame) owner, DIALOG_TITLE_NEW_SERVER);
+                IcapServerPropertiesDialog ispd = new IcapServerPropertiesDialog(owner, DIALOG_TITLE_NEW_SERVER);
+                ispd.setPort("1344");
+                ispd.setServiceName("avscan");
                 ispd.pack();
                 Utilities.centerOnScreen(ispd);
-                IcapConnectionDetail conn = new IcapConnectionDetail();
-                ispd.setViewData(conn);
                 ispd.setVisible(true);
                 if (ispd.isConfirmed()) {
-                    conn = ispd.getConnectionDetail();
-                    serverListModel.addElement(conn);
+                    addToServerList(ispd.getIcapUri());
                 }
             }
         });
@@ -102,6 +103,7 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
                 editSelectedServer(owner);
             }
         });
+        Utilities.setDoubleClickAction(serverList, editServer);
         removeServer.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
@@ -110,14 +112,19 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
                 }
             }
         });
+        connectionTimeoutField.setText("30");
+        readTimeoutField.setText("30");
     }
 
+
     private void intializeServiceParametersSection(final Window owner) {
+        serviceParams.getTableHeader().setReorderingAllowed(false);
         removeParam.setEnabled(false);
         editParam.setEnabled(false);
 
         serviceParams.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
         serviceParams.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
         serviceParams.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(final ListSelectionEvent e) {
@@ -126,26 +133,20 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
                 editParam.setEnabled(enabled);
             }
         });
-        serviceParams.addMouseListener(new MouseAdapter() {
-            public void mouseClicked(final MouseEvent e) {
-                if (e.getButton() == MouseEvent.BUTTON1 && e.getClickCount() == DOUBLE_CLICK) {
-                    editServerParameter(owner);
-                }
-            }
-        });
 
         addParam.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
-                IcapServerParametersDialog dspd = new IcapServerParametersDialog((Frame) owner, DIALOG_TITLE_NEW_PARAMETER);
+                IcapServerParametersDialog dspd = new IcapServerParametersDialog(owner, DIALOG_TITLE_NEW_PARAMETER);
                 dspd.pack();
                 Utilities.centerOnScreen(dspd);
                 dspd.setVisible(true);
                 if (dspd.isConfirmed()) {
-                    serviceParamTableModel.addRow(new String[]{dspd.getParameterName(), dspd.getParameterValue()});
+                    addRowToTable(dspd.getParameterName(), dspd.getParameterValue());
                 }
             }
         });
+
         editParam.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
@@ -153,54 +154,88 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
             }
         });
 
+        Utilities.setDoubleClickAction(serviceParams, editParam);
         removeParam.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
                 int selectedIndex = serviceParams.getSelectedRow();
                 if (selectedIndex >= 0) {
-                    serviceParamTableModel.removeRow(selectedIndex);
+                    int index = serviceParams.getRowSorter().convertRowIndexToModel(selectedIndex);
+                    serviceParamTableModel.removeRow(index);
                 }
             }
         });
     }
 
-    private void editSelectedServer(Window owner) {
-        int selectedIndex = serverList.getSelectedIndex();
+    private void editSelectedServer(final Window owner) {
+        final int selectedIndex = serverList.getSelectedIndex();
         if (selectedIndex >= 0) {
-            IcapConnectionDetail connectionDetail = (IcapConnectionDetail) serverListModel.get(selectedIndex);
-            IcapServerPropertiesDialog ispd = new IcapServerPropertiesDialog((Frame) owner,
-                    DIALOG_TITLE_EDIT_SERVER_PROPERTIES);
-            ispd.setViewData(connectionDetail);
-            ispd.pack();
-            Utilities.centerOnScreen(ispd);
-            ispd.setVisible(true);
-            if (ispd.isConfirmed()) {
-                connectionDetail = ispd.getConnectionDetail();
-                serverListModel.set(selectedIndex, connectionDetail);
+            String icapUri = (String) serverListModel.get(selectedIndex);
+            Matcher matcher = IcapAntivirusScannerAssertion.ICAP_URI.matcher(icapUri);
+            if (matcher.matches()) {
+                IcapServerPropertiesDialog ispd = new IcapServerPropertiesDialog(owner,
+                        DIALOG_TITLE_EDIT_SERVER_PROPERTIES);
+                ispd.setHostname(matcher.group(1).trim());
+                ispd.setPort(matcher.group(2).trim());
+                ispd.setServiceName(matcher.group(3));
+                ispd.pack();
+                Utilities.centerOnScreen(ispd);
+                ispd.setVisible(true);
+                if (ispd.isConfirmed()) {
+                    addToServerList(ispd.getIcapUri());
+                }
             }
         }
     }
 
-    private void editServerParameter(Window owner) {
-        int selectedIndex = serviceParams.getSelectedRow();
+    private void addToServerList(@NotNull final String uri) {
+        boolean found = false;
+        for (int i = 0; i < serverListModel.getSize(); ++i) {
+            String conn = (String) serverListModel.get(i);
+            if (conn.equalsIgnoreCase(uri)) {
+                serverListModel.set(i, uri);
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            serverListModel.addElement(uri);
+        }
+    }
+
+    private void editServerParameter(final Window owner) {
+        final int selectedIndex = serviceParams.getSelectedRow();
         if (selectedIndex >= 0) {
-            String name = serviceParamTableModel.getValueAt(selectedIndex, 0).toString();
-            String value = serviceParamTableModel.getValueAt(selectedIndex, 1).toString();
-            IcapServerParametersDialog dspd = new IcapServerParametersDialog((Frame) owner, DIALOG_TITLE_EDIT_PARAMETER);
+            int index = serviceParams.getRowSorter().convertRowIndexToModel(selectedIndex);
+            String name = serviceParamTableModel.getValueAt(index, 0).toString();
+            String value = serviceParamTableModel.getValueAt(index, 1).toString();
+            IcapServerParametersDialog dspd = new IcapServerParametersDialog(owner, DIALOG_TITLE_EDIT_PARAMETER);
             dspd.pack();
             Utilities.centerOnScreen(dspd);
             dspd.setParameterName(name);
             dspd.setParameterValue(value);
             dspd.setVisible(true);
             if (dspd.isConfirmed()) {
-                serviceParamTableModel.setValueAt(dspd.getParameterName(), selectedIndex, 0);
-                serviceParamTableModel.setValueAt(dspd.getParameterValue(), selectedIndex, 1);
+                addRowToTable(dspd.getParameterName(), dspd.getParameterValue());
             }
         }
     }
 
-    private static final String PARAMETER_NAME = "Parameter Name";
-    private static final String PARAMETER_VALUE = "Parameter Value";
+    private void addRowToTable(@NotNull final String name, final String value) {
+        boolean found = false;
+        for (int i = 0; i < serviceParamTableModel.getRowCount(); ++i) {
+            String tableValue = (String) serviceParamTableModel.getValueAt(i, 0); //0 is the Parameter Name column
+            if (name.equalsIgnoreCase(tableValue)) {
+                serviceParamTableModel.setValueAt(name, i, 0);
+                serviceParamTableModel.setValueAt(value, i, 1);
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            serviceParamTableModel.addRow(new String[]{name, value});
+        }
+    }
 
     @Override
     public void setData(IcapAntivirusScannerAssertion assertion) {
@@ -214,7 +249,7 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
         }
         serverListModel = new DefaultListModel();
         serverList.setModel(serverListModel);
-        for (IcapConnectionDetail icd : assertion.getConnectionDetails()) {
+        for (String icd : assertion.getIcapServers()) {
             serverListModel.addElement(icd);
         }
         serviceParamTableModel = new DefaultTableModel() {
@@ -224,21 +259,46 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
             }
         };
         serviceParamTableModel.setColumnIdentifiers(new String[]{PARAMETER_NAME, PARAMETER_VALUE});
+        TableRowSorter sorter = new TableRowSorter<TableModel>(serviceParamTableModel);
+        sorter.setSortsOnUpdates(true);
+        sorter.setComparator(0, new Comparator<String>() {
+            @Override
+            public int compare(final String o1, final String o2) {
+                //should we consider the Locale?
+                return o1.toLowerCase().compareTo(o2.toLowerCase());
+            }
+        });
+
+
+        serviceParams.setModel(serviceParamTableModel);
+        sorter.setSortable(0, true);
+        sorter.toggleSortOrder(0);
+        serviceParams.setRowSorter(sorter);
+        connectionTimeoutField.setText(assertion.getConnectionTimeout());
+        readTimeoutField.setText(assertion.getReadTimeout());
+        maxMimeDepth.setValue(assertion.getMaxMimeDepth());
+
         for (Map.Entry<String, String> ent : assertion.getServiceParameters().entrySet()) {
             serviceParamTableModel.addRow(new String[]{ent.getKey(), ent.getValue()});
         }
-        serviceParams.setModel(serviceParamTableModel);
     }
 
     @Override
     public IcapAntivirusScannerAssertion getData(IcapAntivirusScannerAssertion assertion) throws ValidationException {
+        String timeoutText = connectionTimeoutField.getText().trim();
+        if (Syntax.getReferencedNames(timeoutText).length == 0 && !ValidationUtils.isValidInteger(timeoutText, false, 1, Integer.MAX_VALUE)) {
+            throw new ValidationException("Connection timeout value must be greater than zero (0)");
+        }
+        timeoutText = readTimeoutField.getText().trim();
+        if (Syntax.getReferencedNames(timeoutText).length == 0 && !ValidationUtils.isValidInteger(timeoutText, false, 1, Integer.MAX_VALUE)) {
+            throw new ValidationException("Read timeout value must be greater than zero (0)");
+        }
         assertion.setContinueOnVirusFound(continueIfVirusFound.isSelected());
         assertion.setFailoverStrategy(((FailoverStrategy) cbStrategy.getSelectedItem()).getName());
-        assertion.getConnectionDetails().clear();
+        assertion.getIcapServers().clear();
         for (int i = 0; i < serverListModel.size(); ++i) {
-            assertion.getConnectionDetails().add((IcapConnectionDetail) serverListModel.get(i));
+            assertion.getIcapServers().add((String) serverListModel.get(i));
         }
-
         Map<String, String> serviceParams = new HashMap<String, String>();
         for (int i = 0; i < serviceParamTableModel.getRowCount(); ++i) {
             String key = (String) serviceParamTableModel.getValueAt(i, 0);
@@ -246,6 +306,9 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
             serviceParams.put(key, value);
         }
         assertion.setServiceParameters(serviceParams);
+        assertion.setConnectionTimeout(connectionTimeoutField.getText());
+        assertion.setReadTimeout(readTimeoutField.getText());
+        assertion.setMaxMimeDepth(Integer.valueOf(maxMimeDepth.getModel().getValue().toString()));
         return assertion;
     }
 
