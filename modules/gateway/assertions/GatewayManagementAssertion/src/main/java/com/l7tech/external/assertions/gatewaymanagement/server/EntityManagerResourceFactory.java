@@ -215,10 +215,10 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
                     checkPermitted( OperationType.DELETE, null, entityBag.getEntity() );
 
                     beforeDeleteEntity( entityBag );
-                    manager.delete( entityBag.getEntity() );
                     if ( manager instanceof RoleAwareEntityManager ) {
                         ((RoleAwareEntityManager<E>) manager).deleteRoles( entityBag.getEntity().getOid() );
                     }
+                    manager.delete( entityBag.getEntity() );
                     afterDeleteEntity( entityBag );
 
                     return right( entityBag.getEntity().getId() );
