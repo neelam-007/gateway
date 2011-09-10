@@ -98,10 +98,6 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     private ServiceDocumentManager serviceDocumentManager;
     private PolicyPathBuilder policyPathBuilder;
 
-    public void setServerConfig(Config config ) {
-        this.config = config;
-    }
-
     @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
