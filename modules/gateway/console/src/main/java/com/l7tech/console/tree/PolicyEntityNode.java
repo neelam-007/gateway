@@ -66,6 +66,8 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
         PolicyHeader newEh = new PolicyHeader(updatedPolicy);
         newEh.setAliasOid(eh.getAliasOid());
         newEh.setFolderOid(eh.getFolderOid());
+        newEh.setPolicyDisabled(updatedPolicy.isDisabled());
+
         setUserObject(newEh);
         firePropertyChange(this, "UserObject", eh, newEh);
 
@@ -128,14 +130,8 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
         if ( getEntityHeader().isAlias() ) {
             image = getAliasDecoratedImage(OVERLAY_ALIAS, iconResource(false), image );
         }
-        else {
-            try {
-                if(!getPolicy().isVersionActive()){
-                    image = getAliasDecoratedImage(OVERLAY_DISABLED, iconResource(false), image );
-                }
-            } catch (FindException e) {
-                //supress
-            }
+        else if(getEntityHeader().isPolicyDisabled()){
+            image = getAliasDecoratedImage(OVERLAY_DISABLED, iconResource(false), image );
         }
         return image;
     }

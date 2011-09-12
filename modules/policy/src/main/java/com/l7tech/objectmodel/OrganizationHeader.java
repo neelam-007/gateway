@@ -40,7 +40,17 @@ public abstract class OrganizationHeader extends GuidEntityHeader implements Ali
         this.aliasOid = aliasOid;
     }
 
+    public boolean isPolicyDisabled() {
+        return isPolicyDisabled;
+    }
+
+    public void setPolicyDisabled(final boolean isPolicyDisabled) {
+        this.isPolicyDisabled = isPolicyDisabled;
+    }
+
     //PRIVATE
     protected Long folderOid;
     protected Long aliasOid;
+
+    protected boolean isPolicyDisabled;
 }

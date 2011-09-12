@@ -81,6 +81,7 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
         this.svc = new SoftReference<PublishedService>(svc);
 
         ServiceHeader newEh = new ServiceHeader(svc);
+        newEh.setPolicyDisabled(svc.getPolicy() == null ? false : svc.getPolicy().isDisabled());
         newEh.setAliasOid(serviceHeader.getAliasOid());
         newEh.setFolderOid(serviceHeader.getFolderOid());
         setUserObject(newEh);
@@ -253,17 +254,10 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
     protected String iconResource(boolean open) {
         ServiceHeader header = getEntityHeader();
 
-        boolean isActive = false;
-        try {
-            isActive = getPolicy().isVersionActive();
-        } catch (FindException e) {
-            //suppress
-        }
-
-        if (header == null || !isActive) {
+        if (header == null || header.isPolicyDisabled()) {
             return "com/l7tech/console/resources/services_disabled16.png";
         }
-        else if (!isActive || header.isDisabled()) {
+        else if (header.isPolicyDisabled() || header.isDisabled()) {
             if (!header.isSoap()) {
                 if(header.isAlias()){
                     return "com/l7tech/console/resources/xmlObject_disabled16Alias.png";                    

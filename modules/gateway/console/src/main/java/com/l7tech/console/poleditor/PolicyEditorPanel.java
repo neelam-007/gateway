@@ -1865,6 +1865,9 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                                     log.log(Level.SEVERE, "Cannot update policy with new fragment OIDs", e);
                                 }
                             }
+                            if(activateAsWell){
+                                PolicyEditorPanel.this.topComponents.refreshPoliciesFolderNode();
+                            }
                         }
                     } finally {
                         validating = false;

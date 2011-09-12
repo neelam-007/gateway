@@ -24,7 +24,8 @@ public class ServiceHeader extends OrganizationHeader {
               svc.getPolicy() == null ? 0L : svc.getPolicy().getVersionOrdinal(),
               svc.getVersion(),
               svc.getRoutingUri(),
-              svc.isTracingEnabled() );
+              svc.isTracingEnabled(),
+              svc.getPolicy() == null ? false : svc.getPolicy().isDisabled());
     }
 
     public ServiceHeader(final ServiceHeader serviceHeader){
@@ -39,7 +40,8 @@ public class ServiceHeader extends OrganizationHeader {
              serviceHeader.getPolicyRevision(),
              serviceHeader.getVersion(),
              serviceHeader.getRoutingUri(),
-             serviceHeader.isTracingEnabled() );
+             serviceHeader.isTracingEnabled(),
+             serviceHeader.isPolicyDisabled());
     }
     
     public ServiceHeader(final boolean isSoap,
@@ -53,7 +55,8 @@ public class ServiceHeader extends OrganizationHeader {
                          final long policyRevision,
                          final int version,
                          final String routingUri,
-                         final boolean tracingEnabled) {
+                         final boolean tracingEnabled,
+                         final boolean isPolicyDisabled) {
         super(serviceOid == null ? -1 : serviceOid, EntityType.SERVICE, name, description, version);
         this.isSoap = isSoap;
         this.isDisabled = isDisabled;
@@ -63,6 +66,7 @@ public class ServiceHeader extends OrganizationHeader {
         this.policyRevision = policyRevision;
         this.routingUri = routingUri;
         this.tracingEnabled = tracingEnabled;
+        this.isPolicyDisabled = isPolicyDisabled;
     }
 
     public boolean isSoap() {

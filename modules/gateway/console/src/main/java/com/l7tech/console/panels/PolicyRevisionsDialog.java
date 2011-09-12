@@ -3,17 +3,12 @@ package com.l7tech.console.panels;
 import com.l7tech.console.action.EditPolicyAction;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.EntityWithPolicyNode;
-import com.l7tech.console.tree.policy.LeafAssertionTreeNode;
-import com.l7tech.console.tree.policy.PolicyTreeCellRenderer;
-import com.l7tech.console.tree.policy.PolicyTreeModel;
-import com.l7tech.console.tree.policy.PolicyTreeUtils;
-import com.l7tech.console.tree.policy.AssertionTreeNode;
+import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
-import static com.l7tech.gui.util.TableUtil.column;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
@@ -39,10 +34,12 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.gui.util.TableUtil.column;
 
 /**
  * Dialog that allows admin to view versions of a policy, to name them, and to
@@ -201,7 +198,7 @@ public class PolicyRevisionsDialog extends JDialog {
 
             info.right.setActive(true);
             tableModel.fireTableRowsUpdated(info.left, info.left);
-
+            TopComponents.getInstance().refreshPoliciesFolderNode();
             doEdit(evt);
         } catch (Exception e) {
             showErrorMessage("Unable to Set Active Version", "Unable to set active version: " + ExceptionUtils.getMessage(e), e);
@@ -239,7 +236,6 @@ public class PolicyRevisionsDialog extends JDialog {
                 try {
                     Registry.getDefault().getPolicyAdmin().clearActivePolicyVersion(policyOid);
                     policyNode.clearCachedEntities();
-
                     for (Integer row : tableModel.findRows(IS_ACTIVE)) {
                         tableModel.getRowObject(row).setActive(false);
                         tableModel.fireTableCellUpdated(row, COLUMN_IDX_ACTIVE);
@@ -247,9 +243,9 @@ public class PolicyRevisionsDialog extends JDialog {
 
                     versionTable.clearSelection();
                     showSelectedPolicyXml(true);
-
+                    TopComponents topComponents = TopComponents.getInstance();
                     // If currently this policy, make sure we don't misleadingly imply that it's active (Bug #4554)
-                    WorkSpacePanel workspace = TopComponents.getInstance().getCurrentWorkspace();
+                    WorkSpacePanel workspace = topComponents.getCurrentWorkspace();
                     if (workspace.getComponent() instanceof PolicyEditorPanel) {
                         PolicyEditorPanel pep = (PolicyEditorPanel)workspace.getComponent();
                         if (pep.getPolicyNode().getPolicy().getOid() == policyOid) {
@@ -257,6 +253,7 @@ public class PolicyRevisionsDialog extends JDialog {
                             pep.updateHeadings();
                         }
                     }
+                    topComponents.refreshPoliciesFolderNode();
                 } catch (Exception e) {
                     showErrorMessage("Unable to Clear Active Version", "Unable to clear active version: " + ExceptionUtils.getMessage(e), e);
                 }
