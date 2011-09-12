@@ -1,9 +1,3 @@
-/**
- * Copyright (C) 2008, Layer 7 Technologies Inc.
- * User: darmstrong
- * Date: Mar 20, 2009
- * Time: 3:03:34 PM
- */
 package com.l7tech.gateway.standardreports;
 
 import java.sql.*;
@@ -782,6 +776,14 @@ public class MockResultSet implements ResultSet {
     }
 
     public <T> T unwrap(Class<T> iface) throws SQLException {
+        return null;
+    }
+
+    public <T> T getObject( final int columnIndex, final Class<T> type ) throws SQLException {
+        return null;
+    }
+
+    public <T> T getObject( final String columnLabel, final Class<T> type ) throws SQLException {
         return null;
     }
 }

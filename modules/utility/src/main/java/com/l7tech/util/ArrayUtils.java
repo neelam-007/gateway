@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2005-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.util;
 
 import java.lang.reflect.Array;
@@ -435,7 +432,7 @@ public class ArrayUtils {
         return result;
     }
 
-    public static char[] unbox(List<Character> cs) {
+    public static char[] unboxChars(List<Character> cs) {
         return unbox(cs.toArray(new Character[cs.size()]));
     }
 

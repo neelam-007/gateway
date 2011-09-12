@@ -55,11 +55,12 @@ public class ConversionUtils {
     //- PRIVATE
 
     private static abstract class TextConverter<T> implements Serializable, Unary<Option<T>,String> {}
+    private static abstract class Converter<T> implements Serializable, Unary<Option<T>,T> {}
 
-    private static final TextConverter<?> identityConverter = new TextConverter() {
+    private static final Converter<?> identityConverter = new Converter() {
         @Override
-        public Option<Object> call( final Object text ) {
-            return some( text );
+        public Option<Object> call( final Object value ) {
+            return some( value );
         }
     };
 

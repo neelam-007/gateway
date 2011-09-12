@@ -1,14 +1,9 @@
-/**
- * Copyright (C) 2008, Layer 7 Technologies Inc.
- * User: darmstrong
- * Date: Mar 20, 2009
- * Time: 1:10:25 PM
- */
 package com.l7tech.gateway.standardreports;
 
 import java.sql.*;
 import java.util.Properties;
 import java.util.Map;
+import java.util.concurrent.Executor;
 
 interface TestCounts {
     int getIntCounts();
@@ -232,5 +227,22 @@ public class MockConnection implements Connection {
 
     public void setTypeMap(Map<String, Class<?>> map) throws SQLException {
 
+    }
+
+    public void abort( final Executor executor ) throws SQLException {
+    }
+
+    public void setSchema( final String schema ) throws SQLException {
+    }
+
+    public String getSchema() throws SQLException {
+        return null;
+    }
+
+    public void setNetworkTimeout( final Executor executor, final int milliseconds ) throws SQLException {
+    }
+
+    public int getNetworkTimeout() throws SQLException {
+        return 0;
     }
 }

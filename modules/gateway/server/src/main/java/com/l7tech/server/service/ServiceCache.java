@@ -583,7 +583,7 @@ public class ServiceCache
 
                 if (!oids.isEmpty()) {
                     logger.log(Level.INFO, "Created/Updated/Deleted: " + oids);
-                    getApplicationContext().publishEvent(new EntityInvalidationEvent(ServiceCache.this, PublishedService.class, ArrayUtils.unbox(oids), ArrayUtils.unbox(ops)));
+                    getApplicationContext().publishEvent(new EntityInvalidationEvent(ServiceCache.this, PublishedService.class, ArrayUtils.unbox(oids), ArrayUtils.unboxChars(ops)));
                 }
                 
                 if (!enabled.isEmpty()) notifyEnablements(enabled, true);
