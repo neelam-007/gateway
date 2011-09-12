@@ -3,6 +3,7 @@ package com.l7tech.server.policy;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyVersion;
 import com.l7tech.server.ServerConfigParams;
+import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.Config;
 import com.l7tech.util.Functions;
 import com.l7tech.objectmodel.*;
@@ -110,9 +111,9 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
     }
 
     private PolicyVersion findLatestRevisionForPolicy( final long policyOid ) {
-        return getHibernateTemplate().execute( new HibernateCallback<PolicyVersion>() {
+        return getHibernateTemplate().execute( new ReadOnlyHibernateCallback<PolicyVersion>() {
             @Override
-            public PolicyVersion doInHibernate( final Session session ) throws HibernateException, SQLException {
+            public PolicyVersion doInHibernateReadOnly( final Session session ) throws HibernateException, SQLException {
                 final DetachedCriteria detachedCriteria = DetachedCriteria.forClass( getImpClass() );
                 detachedCriteria.add( Property.forName( "policyOid" ).eq( policyOid ) );
                 detachedCriteria.setProjection( Property.forName( "ordinal" ).max() );
