@@ -49,70 +49,72 @@
         <path refid="project.classpath"/>
     </path>
 
-    <!--
-      Task definition for Pack 200
-    -->
-    <taskdef name="pack200"
-             classname="org.jdesktop.deployment.ant.pack200.Pack200Task"
-    	     classpath="lib/tools/deployment-ant-pack200-1.0beta.jar"/>
+    <target name="task-init">
+        <!--
+          Task definition for Pack 200
+        -->
+        <taskdef name="pack200"
+                 classname="org.jdesktop.deployment.ant.pack200.Pack200Task"
+                 classpath="lib/tools/deployment-ant-pack200-1.0beta.jar"/>
 
-    <!--
-      Task definition for JDepend
-    -->
-    <taskdef name="jdepend"
-             classname="org.apache.tools.ant.taskdefs.optional.jdepend.JDependTask"
-             classpath="lib/tools/ant-jdepend.jar:lib/tools/jdepend-2.9.jar"/>
+        <!--
+          Task definition for JDepend
+        -->
+        <taskdef name="jdepend"
+                 classname="org.apache.tools.ant.taskdefs.optional.jdepend.JDependTask"
+                 classpath="lib/tools/ant-jdepend.jar:lib/tools/jdepend-2.9.jar"/>
 
-    <!--
-      Task definition for FindBugs
-    -->
-    <taskdef name="findbugs"
-             classname="edu.umd.cs.findbugs.anttask.FindBugsTask"
-             classpath="lib/tools/findbugs-ant.jar"/>
+        <!--
+          Task definition for FindBugs
+        -->
+        <taskdef name="findbugs"
+                 classname="edu.umd.cs.findbugs.anttask.FindBugsTask"
+                 classpath="lib/tools/findbugs-ant.jar"/>
 
-    <!--
-      Task definition for XmlBeans
-    -->
-    <taskdef name="xmlbeancompiler"
-             classname="org.apache.xmlbeans.impl.tool.XMLBean"
-             classpath="lib/xbean.jar:lib/jsr173_1.0_api.jar"/>
+        <!--
+          Task definition for XmlBeans
+        -->
+        <taskdef name="xmlbeancompiler"
+                 classname="org.apache.xmlbeans.impl.tool.XMLBean"
+                 classpath="lib/xbean.jar:lib/jsr173_1.0_api.jar"/>
 
-    <!--
-      Classpath for obfuscation
-    -->
-    <path id="zelix.classpath">
-        <fileset dir="lib/tools">
-            <include name="ZKM.jar"/>
-        </fileset>
-    </path>
+        <!--
+          Classpath for obfuscation
+        -->
+        <path id="zelix.classpath">
+            <fileset dir="lib/tools">
+                <include name="ZKM.jar"/>
+            </fileset>
+        </path>
 
-    <!--
-      Task definition for class file obfuscation
-    -->
-    <taskdef name="Zelix" classname="ZKMTask" classpathref="zelix.classpath"/>
+        <!--
+          Task definition for class file obfuscation
+        -->
+        <taskdef name="Zelix" classname="ZKMTask" classpathref="zelix.classpath"/>
 
-    <!--
-      Classpath for svn
-    -->
-    <path id= "svnant.classpath"  >
-        <fileset dir= "lib/tools" >
-            <include name= "svn*.jar" />
-        </fileset>
-    </path>
+        <!--
+          Classpath for svn
+        -->
+        <path id= "svnant.classpath"  >
+            <fileset dir= "lib/tools" >
+                <include name= "svn*.jar" />
+            </fileset>
+        </path>
 
-    <!--
-      Taskdef for svn
-    -->
-    <taskdef name="svn" classname="org.tigris.subversion.svnant.SvnTask" classpathref="svnant.classpath" />
+        <!--
+          Taskdef for svn
+        -->
+        <taskdef name="svn" classname="org.tigris.subversion.svnant.SvnTask" classpathref="svnant.classpath" />
 
-    <!--
-      Various bolt-on task definitions
-    -->
-    <taskdef resource="net/sf/antcontrib/antcontrib.properties">
-        <classpath>
-            <pathelement location="lib/ant-contrib-1.0b3.jar"/>
-        </classpath>
-    </taskdef>
+        <!--
+          Various bolt-on task definitions
+        -->
+        <taskdef resource="net/sf/antcontrib/antcontrib.properties">
+            <classpath>
+                <pathelement location="lib/ant-contrib-1.0b3.jar"/>
+            </classpath>
+        </taskdef>
+    </target>
 
     <!--
       Patternset used for Bridge API javadoc
@@ -166,7 +168,7 @@
     <!--
       Initialize build properties
     -->
-    <target name="init" depends="init-full"/>
+    <target name="init" depends="task-init,init-full"/>
     <target name="init-full" depends="package.readversion,init-core"/>
     <target name="init-core">
         <echo level="info">
@@ -423,6 +425,7 @@
                 <propertyref name="build.vendor.id"/>
                 <propertyref name="ivy.settings.filepath"/>
                 <propertyref name="module.official.build"/>
+                <propertyref prefix="idea"/>
             </propertyset>
         </subant>
     </presetdef>
@@ -516,6 +519,14 @@
         <!-- Clean cache -->
         <delete dir="${build.dir}/ivy"/>
 
+        <!-- detect scala version -->
+        <pathconvert property="idea.scala.version">
+            <mapper type="regexp" from=".*[/\\]scala-library-(.*)\.jar" to="\1"/>
+            <fileset dir="${src.root}/lib/repository/org.scala-lang">
+                <include name="scala-library-*.jar"/>
+            </fileset>
+        </pathconvert>
+
         <echo level="info">Building IDEA modules.</echo>
         <modules target="idea" buildpathref="module-build-all-path"/>
 
@@ -557,6 +568,8 @@
             <param name="idea.ant.integration" expression="${idea.ant.integration}" if="idea.ant.integration"/>
             <param name="idea.javac.out" expression="${idea.javac.out}" if="idea.javac.out"/>
             <param name="idea.jdk" expression="${idea.jdk}" if="idea.jdk"/>
+            <param name="idea.scala" expression="${idea.scala}" if="idea.scala"/>
+            <param name="idea.scala.version" expression="${idea.scala.version}" if="idea.scala.version"/>
         </xslt>
         <move file="UneasyRooster.ipr.tmp" tofile="UneasyRooster.ipr" overwrite="true"/>
 

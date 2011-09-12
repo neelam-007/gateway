@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.identity.cert;
 
 import com.l7tech.identity.User;
@@ -26,27 +23,31 @@ public class ClientCertManagerStub implements ClientCertManager {
      * @throws com.l7tech.objectmodel.UpdateException
      *
      */
-    public void forbidCertReset(User user) throws UpdateException {
-        throw new RuntimeException("Not implemented");
-    }
-
-    public List findByThumbprint(String thumbprint) throws FindException {
-        throw new RuntimeException("Not implemented");
-    }
-
-    public List findBySki(String ski) throws FindException {
+    @Override
+    public void forbidCertReset( final User user) throws UpdateException {
         throw new RuntimeException("Not implemented");
     }
 
     @Override
-    public List<CertEntryRow> findByIssuerAndSerial(X500Principal issuer, BigInteger serial) throws FindException {
+    public List<CertEntryRow> findByThumbprint( final String thumbprint) throws FindException {
+        throw new RuntimeException("Not implemented");
+    }
+
+    @Override
+    public List<CertEntryRow> findBySki( final String ski) throws FindException {
+        throw new RuntimeException("Not implemented");
+    }
+
+    @Override
+    public List<CertEntryRow> findByIssuerAndSerial( final X500Principal issuer, final BigInteger serial) throws FindException {
         throw new RuntimeException("Not implemented");
     }
 
     /**
      * retrieves existing cert for this user
      */
-    public Certificate getUserCert(User user) throws FindException {
+    @Override
+    public Certificate getUserCert( final User user) throws FindException {
         throw new RuntimeException("Not implemented");
     }
 
@@ -58,21 +59,25 @@ public class ClientCertManagerStub implements ClientCertManager {
      *          if user was not in a state that allowes the creation
      *          of a cert or if an internal error occurs
      */
-    public void recordNewUserCert(User user, Certificate cert, boolean blah) throws UpdateException {
+    @Override
+    public void recordNewUserCert( final User user, final Certificate cert, final boolean blah) throws UpdateException {
         throw new RuntimeException("Not implemented");
     }
 
     /**
      * revokes the cert (if applicable) for this user
      */
-    public void revokeUserCert(User user) throws UpdateException, ObjectNotFoundException {
+    @Override
+    public void revokeUserCert( final User user) throws UpdateException, ObjectNotFoundException {
         throw new RuntimeException("Not implemented");
     }
 
-    public boolean revokeUserCertIfIssuerMatches(User user, X500Principal issuer) throws UpdateException, ObjectNotFoundException {
+    @Override
+    public boolean revokeUserCertIfIssuerMatches( final User user, final X500Principal issuer) throws UpdateException, ObjectNotFoundException {
         throw new RuntimeException("Not implemented");
     }
 
+    @Override
     public List<CertInfo> findAll() {
         return Collections.emptyList();
     }
@@ -86,11 +91,13 @@ public class ClientCertManagerStub implements ClientCertManager {
      * if the user has no current cert or a cert that has not been used, this will
      * return true
      */
-    public boolean userCanGenCert(User user, Certificate existingCert) {
+    @Override
+    public boolean userCanGenCert( final User user, final Certificate existingCert) {
         throw new RuntimeException("Not implemented");
     }
 
-    public boolean isCertPossiblyStale(X509Certificate userCert) {
+    @Override
+    public boolean isCertPossiblyStale( final X509Certificate userCert) {
         return false;
     }
 }

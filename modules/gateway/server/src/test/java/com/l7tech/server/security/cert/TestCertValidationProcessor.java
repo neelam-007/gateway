@@ -17,7 +17,7 @@ import com.l7tech.security.cert.TrustedCert;
 public class TestCertValidationProcessor implements CertValidationProcessor {
 
     @Override
-    public CertificateValidationResult check(X509Certificate[] certificatePath, CertificateValidationType minimumValidationType, CertificateValidationType requestedValidationType, Facility facility, Audit auditor) throws CertificateException, SignatureException {
+    public CertificateValidationResult check(X509Certificate[] certificatePath, CertificateValidationType minimumValidationType, CertificateValidationType requestedValidationType, CertValidationProcessor.Facility facility, Audit auditor) throws CertificateException, SignatureException {
         return CertificateValidationResult.OK;
     }
 

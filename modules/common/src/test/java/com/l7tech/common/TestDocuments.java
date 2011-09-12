@@ -270,6 +270,11 @@ public final class TestDocuments {
         return wssInteropBobChain;
     }
 
+    public static X509Certificate getWssInteropIpCert() throws Exception {
+        initWssInteropCerts();
+        return wssInteropWssIpCert;
+    }
+
     private static Properties ettkKeystoreProperties = null;
     private static synchronized Properties getEttkKeystoreProperties() throws IOException {
         if (ettkKeystoreProperties != null) return ettkKeystoreProperties;

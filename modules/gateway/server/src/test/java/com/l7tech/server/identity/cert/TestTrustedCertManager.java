@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.identity.cert;
 
 import com.l7tech.objectmodel.EntityHeader;
@@ -9,6 +6,8 @@ import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.EntityManagerStub;
 import com.l7tech.server.DefaultKey;
+import com.l7tech.util.Functions;
+import com.l7tech.util.Functions.Unary;
 
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
@@ -33,32 +32,49 @@ public class TestTrustedCertManager extends EntityManagerStub<TrustedCert,Entity
     }
 
     @Override
-    public Collection<TrustedCert> findBySubjectDn(String dn) throws FindException {
-        throw new UnsupportedOperationException();
+    public Collection<TrustedCert> findBySubjectDn( final String dn ) throws FindException {
+        return Functions.grep( new ArrayList<TrustedCert>(), entities.values(), new Unary<Boolean, TrustedCert>() {
+            @Override
+            public Boolean call( final TrustedCert trustedCert ) {
+                return dn.equals( trustedCert.getSubjectDn() ) ;
+            }
+        } );
     }
 
     @Override
-    public List<TrustedCert> findByIssuerAndSerial(X500Principal issuer, BigInteger serial) throws FindException {
-        List<TrustedCert> tcs = new ArrayList<TrustedCert>();
-        for (TrustedCert trustedCert : entities.values()) {
-            X509Certificate cert = trustedCert.getCertificate();
-            if (cert.getIssuerDN().equals(issuer) && cert.getSerialNumber().equals(serial)) tcs.add(trustedCert);
-        }
-        return tcs;
+    public List<TrustedCert> findByIssuerAndSerial( final X500Principal issuer,
+                                                    final BigInteger serial) throws FindException {
+        return Functions.grep( new ArrayList<TrustedCert>(), entities.values(), new Unary<Boolean, TrustedCert>() {
+            @Override
+            public Boolean call( final TrustedCert trustedCert ) {
+                final X509Certificate cert = trustedCert.getCertificate();
+                return cert.getIssuerDN().equals(issuer) && cert.getSerialNumber().equals(serial);
+            }
+        } );
     }
 
     @Override
-    public List<TrustedCert> findByThumbprint(String thumbprint) throws FindException {
-        throw new UnsupportedOperationException();
+    public List<TrustedCert> findByThumbprint( final String thumbprint ) throws FindException {
+        return Functions.grep( new ArrayList<TrustedCert>(), entities.values(), new Unary<Boolean, TrustedCert>() {
+            @Override
+            public Boolean call( final TrustedCert trustedCert ) {
+                return thumbprint.equals( trustedCert.getThumbprintSha1() );
+            }
+        } );
     }
 
     @Override
-    public List<TrustedCert> findBySki(String ski) throws FindException {
-        throw new UnsupportedOperationException();
+    public List<TrustedCert> findBySki( final String ski ) throws FindException {
+        return Functions.grep( new ArrayList<TrustedCert>(), entities.values(), new Unary<Boolean, TrustedCert>() {
+            @Override
+            public Boolean call( final TrustedCert trustedCert ) {
+                return ski.equals( trustedCert.getSki() );
+            }
+        } );
     }
 
     @Override
-    public Collection<TrustedCert> findByName(String name) throws FindException {
+    public Collection<TrustedCert> findByName( final String name ) throws FindException {
         if ( "defaultkey".equalsIgnoreCase(name) ) {
             try {
                 TrustedCert tc = new TrustedCert();
@@ -68,13 +84,23 @@ public class TestTrustedCertManager extends EntityManagerStub<TrustedCert,Entity
                 throw new FindException("Error finding default key",e);
             }
         } else {
-            return Collections.emptyList();
+            return Functions.grep( new ArrayList<TrustedCert>(), entities.values(), new Unary<Boolean, TrustedCert>() {
+                @Override
+                public Boolean call( final TrustedCert trustedCert ) {
+                    return name.equalsIgnoreCase( trustedCert.getName() );
+                }
+            } );
         }
     }
 
     @Override
-    public Collection<TrustedCert> findByTrustFlag(TrustedCert.TrustedFor trustFlag) throws FindException {
-        throw new UnsupportedOperationException();
+    public Collection<TrustedCert> findByTrustFlag( final TrustedCert.TrustedFor trustFlag ) throws FindException {
+        return Functions.grep( new ArrayList<TrustedCert>(), entities.values(), new Unary<Boolean, TrustedCert>() {
+            @Override
+            public Boolean call( final TrustedCert trustedCert ) {
+                return trustedCert.isTrustedFor( trustFlag );
+            }
+        } );
     }
 
     @Override

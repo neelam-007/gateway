@@ -1,11 +1,6 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.server.identity.cert;
 
-import com.l7tech.server.audit.Auditor;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.security.types.CertificateValidationType;
 import com.l7tech.security.types.CertificateValidationResult;
 import com.l7tech.common.io.CertUtils;
@@ -49,7 +44,7 @@ public class CertificateAuthenticator {
      */
     public AuthenticationResult authenticateX509Credentials(LoginCredentials pc, X509Certificate validCert,
                                                             User user, CertificateValidationType validationType,
-                                                            Auditor auditor, boolean internalCert)
+                                                            Audit auditor, boolean internalCert)
             throws BadCredentialsException, MissingCredentialsException, InvalidClientCertificateException {
         CredentialFormat format = pc.getFormat();
         X509Certificate requestCert = null;
@@ -126,7 +121,7 @@ public class CertificateAuthenticator {
      * @param validationType may be null, indicating that the {@link CertValidationProcessor} should use whatever type
      *        is the default for this facility
      */
-    public AuthenticationResult authenticateX509Credentials(LoginCredentials pc, User user, CertificateValidationType validationType, Auditor auditor)
+    public AuthenticationResult authenticateX509Credentials(LoginCredentials pc, User user, CertificateValidationType validationType, Audit auditor)
             throws BadCredentialsException, MissingCredentialsException, InvalidClientCertificateException
     {
         X509Certificate validCert;

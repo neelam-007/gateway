@@ -49,6 +49,8 @@
         <dependency org="jasperreports" name="jasperreports" rev="3.1.2-p1" force="true" conf="core"/>
         <dependency org="mysql" name="mysql-connector-java" rev="5.1.15" force="true" conf="core"/>
         <dependency org="commons-codec" name="commons-codec" rev="1.4" force="true" conf="core"/>
+        <dependency org="org.scala-lang" name="scala-library" rev="2.9.1" force="true" conf="core"/>
+        <dependency org="org.specs2" name="specs2_2.9.1" rev="1.5" force="true" conf="test"/>
 
         <exclude org="asm" module="asm" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="asm" module="asm-attrs" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
