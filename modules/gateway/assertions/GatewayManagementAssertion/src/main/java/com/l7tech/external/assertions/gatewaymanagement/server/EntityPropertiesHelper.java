@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
+import com.l7tech.identity.ldap.BindOnlyLdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.policy.Policy;
@@ -166,9 +167,12 @@ class EntityPropertiesHelper {
             .put( "userCertificateUseType", "userCertificateUsage" )
             .put( "userLookupByCertMode", null )
             .unmodifiableMap() )
-        .put( IdentityProviderConfig.class, MapBuilder.<String,String>builder()
+        .put( BindOnlyLdapIdentityProviderConfig.class, MapBuilder.<String,String>builder()
             .put( "adminEnabled", null )
             .unmodifiableMap() )
+        .put(IdentityProviderConfig.class, MapBuilder.<String, String>builder()
+                .put("adminEnabled", null)
+                .unmodifiableMap())
         .put( JdbcConnection.class, MapBuilder.<String,String>builder()
             .put( "minPoolSize", "minimumPoolSize" )
             .put( "maxPoolSize", "maximumPoolSize" )

@@ -13,6 +13,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.util.ExceptionUtils;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -74,7 +75,7 @@ public class IdentityNode extends AbstractLeafPaletteNode {
             }
             return (Assertion[])assertions.toArray(new Assertion[]{});
         } catch (Exception e) {
-            throw new RuntimeException("Couldn't retrieve user or group", e);
+            throw new RuntimeException("Couldn't retrieve user or group: " + ExceptionUtils.getMessage(e), e);
         }
     }
 

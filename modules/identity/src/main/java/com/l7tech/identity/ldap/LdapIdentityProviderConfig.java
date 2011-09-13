@@ -29,7 +29,7 @@ import java.util.*;
 @Entity
 @Proxy(lazy=false)
 @DiscriminatorValue("2")
-public class LdapIdentityProviderConfig extends IdentityProviderConfig implements Serializable {
+public class LdapIdentityProviderConfig extends LdapUrlBasedIdentityProviderConfig implements Serializable {
     public LdapIdentityProviderConfig(IdentityProviderConfig toto) {
         super(IdentityProviderType.LDAP);
         this._version = toto.getVersion();
@@ -57,27 +57,6 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
     @Transient
     public boolean isWritable() {
         return false;
-    }
-
-    /**
-     * the ldap url for connecting to the directory.
-     */
-    @Transient
-    public String[] getLdapUrl() {
-        Object prop = getProperty(URL);
-        // Backward compatibility
-        if (prop instanceof String) {
-            return new String[]{(String)prop};
-        } else {
-            return (String[])prop;
-        }
-    }
-
-    /**
-     * the ldap url for connecting to the directory.
-     */
-    public void setLdapUrl(String[] ldapUrl) {
-        setProperty(URL, ldapUrl);
     }
 
     /**
@@ -234,43 +213,6 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
      */
     public void setBindPasswd(String bindpasswd) {
         setProperty(BIND_PASS, bindpasswd);
-    }
-
-    /**
-     * @return  TRUE if using client authentication or if no client auth was found (backward compatiblity) otherwise FALSE.
-     */
-    @Transient
-    public boolean isClientAuthEnabled() {
-        Boolean b = (Boolean) getProperty(CLIENT_AUTH_ENABLED);
-        return b == null || b;
-    }
-
-    public void setClientAuthEnabled(boolean clientAuthEnabled) {
-        setProperty(CLIENT_AUTH_ENABLED, clientAuthEnabled);
-    }
-
-    /**
-     * @return  Keystore Id used for client auth or NULL for default key.
-     */
-    @Transient
-    public Long getKeystoreId() {
-        return (Long) getProperty(KEYSTORE_ID);
-    }
-
-    public void setKeystoreId(Long keystoreId) {
-        setProperty(KEYSTORE_ID, keystoreId);
-    }
-
-    /**
-     * @return  Key alias used for client auth or NULL for default key.
-     */
-    @Transient
-    public String getKeyAlias() {
-        return (String) getProperty(KEY_ALIAS);
-    }
-
-    public void setKeyAlias(String keyAlias) {
-        setProperty(KEY_ALIAS, keyAlias);
     }
 
     /**
@@ -539,16 +481,12 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
         @XmlEnumValue("Entire Certificate") CERT
     }
 
-    public static final String URL = "ldapurl";
     public static final String SEARCH_BASE = "ldapsearchbase";
     private static final String GROUP_MAPPINGS = "grpmappings";
     private static final String USER_MAPPINGS = "usrmappings";
     private static final String BIND_DN = "ldapBindDN";
     private static final String BIND_PASS = "ldapBindPass";
     private static final String BASE_TEMPLATE = "originalTemplateName";
-    private static final String CLIENT_AUTH_ENABLED = "clientAuth";
-    private static final String KEYSTORE_ID = "keystoreId";
-    private static final String KEY_ALIAS = "keyAlias";
     private static final String USERCERTS_ENABLED = "userCertsEnabled"; // deprecated
     private static final String USER_CERT_USE_TYPE = "userCertUseType";
     private static final String USER_CERT_CUSTOM_INDEX = "userCertIndex";

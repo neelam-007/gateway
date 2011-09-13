@@ -3,23 +3,23 @@
  */
 package com.l7tech.server.identity.ldap;
 
-import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.identity.ldap.LdapGroup;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
+import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.identity.ldap.MemberStrategy;
 import com.l7tech.objectmodel.IdentityHeader;
-import com.l7tech.server.identity.AuthenticatingIdentityProvider;
+import com.l7tech.server.identity.ListableIdentityProvider;
 
+import javax.naming.NamingException;
+import javax.naming.directory.Attributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.SearchResult;
-import javax.naming.directory.Attributes;
-import javax.naming.NamingException;
 import java.util.Collection;
 
 /**
  * @author alex
  */
-public interface LdapIdentityProvider extends AuthenticatingIdentityProvider<LdapUser, LdapGroup, LdapUserManager, LdapGroupManager> {
+public interface LdapIdentityProvider extends ListableIdentityProvider<LdapUser, LdapGroup, LdapUserManager, LdapGroupManager>, LdapUrlProvider {
     /**
      * LDAP connection attempts will fail after 5 seconds' wait
      */
@@ -52,7 +52,4 @@ public interface LdapIdentityProvider extends AuthenticatingIdentityProvider<Lda
 
     boolean checkExpiredMSADAccount(String userDn, Attributes attributes);
 
-    String getLastWorkingLdapUrl();
-
-    String markCurrentUrlFailureAndGetFirstAvailableOne(String ldapurl);
 }

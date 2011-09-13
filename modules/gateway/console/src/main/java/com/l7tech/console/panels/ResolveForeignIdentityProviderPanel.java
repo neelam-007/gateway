@@ -1,20 +1,22 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.action.NewBindOnlyLdapProviderAction;
 import com.l7tech.console.action.NewFederatedIdentityProviderAction;
 import com.l7tech.console.action.NewLdapProviderAction;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
-import com.l7tech.policy.exporter.IdProviderReference;
-import com.l7tech.policy.exporter.FederatedIdProviderReference;
 import com.l7tech.console.util.Registry;
-import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.gateway.common.admin.IdentityAdmin;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
+import com.l7tech.identity.ldap.BindOnlyLdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.policy.exporter.FederatedIdProviderReference;
+import com.l7tech.policy.exporter.IdProviderReference;
 import com.l7tech.util.HexUtils;
-import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.util.Resolver;
 import com.l7tech.util.ResolvingComparator;
 
@@ -25,9 +27,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.ByteArrayInputStream;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -208,13 +210,20 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
             NewFederatedIdentityProviderAction action = new NewFederatedIdentityProviderAction(null, fipConfig, userUpdateMap, groupUpdateMap);
             action.addEntityListener(updateProviderListCallback);
             action.invoke();
+        } else if (IdentityProviderType.BIND_ONLY_LDAP.toVal() == unresolvedRef.getIdProviderTypeVal()) {
+            BindOnlyLdapIdentityProviderConfig ldapConfig = new BindOnlyLdapIdentityProviderConfig();
+            ldapConfig.setName(unresolvedRef.getProviderName());
+            ldapConfig.setSerializedProps(unresolvedRef.getIdProviderConfProps());
+            NewBindOnlyLdapProviderAction action = new NewBindOnlyLdapProviderAction(ldapConfig);
+            action.addEntityListener(updateProviderListCallback);
+            action.invoke();
         } else {
             DialogDisplayer.showInputDialog(this,
                     "Select type:",
                     "Select Identity Provider Type",
                     JOptionPane.QUESTION_MESSAGE,
                     null,
-                    new Object[] { IdentityProviderType.FEDERATED.description(), IdentityProviderType.LDAP.description() },
+                    new Object[] { IdentityProviderType.FEDERATED.description(), IdentityProviderType.LDAP.description(), IdentityProviderType.BIND_ONLY_LDAP.description() },
                     "",
                     new DialogDisplayer.InputListener(){
                         @Override
@@ -222,6 +231,10 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
                             if ( option != null ) {
                                 if ( IdentityProviderType.FEDERATED.description().equals(option) ) {
                                     NewFederatedIdentityProviderAction action = new NewFederatedIdentityProviderAction(null);
+                                    action.addEntityListener(updateProviderListCallback);
+                                    action.invoke();
+                                } else if (IdentityProviderType.BIND_ONLY_LDAP.description().equals(option)) {
+                                    NewBindOnlyLdapProviderAction action = new NewBindOnlyLdapProviderAction();
                                     action.addEntityListener(updateProviderListCallback);
                                     action.invoke();
                                 } else {

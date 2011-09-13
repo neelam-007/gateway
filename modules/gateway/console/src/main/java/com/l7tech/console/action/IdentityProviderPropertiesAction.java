@@ -1,49 +1,32 @@
 package com.l7tech.console.action;
 
-import java.awt.Frame;
-import java.util.EventListener;
-import java.util.logging.Level;
-import javax.swing.*;
-import javax.swing.event.EventListenerList;
-import javax.swing.tree.DefaultTreeModel;
-
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.Utilities;
-import static com.l7tech.objectmodel.EntityType.ID_PROVIDER_CONFIG;
-import com.l7tech.gateway.common.admin.IdentityAdmin;
-import com.l7tech.console.event.EntityEvent;
-import com.l7tech.console.event.EntityListener;
-import com.l7tech.console.event.EntityListenerAdapter;
-import com.l7tech.console.event.WizardAdapter;
-import com.l7tech.console.event.WizardEvent;
-import com.l7tech.console.event.WizardListener;
+import com.l7tech.console.event.*;
 import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.console.panels.EditFederatedIPWizard;
-import com.l7tech.console.panels.EditIdentityProviderWizard;
-import com.l7tech.console.panels.FederatedIPGeneralPanel;
-import com.l7tech.console.panels.FederatedIPTrustedCertsPanel;
-import com.l7tech.console.panels.IdentityProviderCertificateValidationConfigPanel;
-import com.l7tech.console.panels.InternalIdentityProviderConfigPanel;
-import com.l7tech.console.panels.LdapGroupMappingPanel;
-import com.l7tech.console.panels.LdapIdentityProviderConfigPanel;
-import com.l7tech.console.panels.LdapUserMappingPanel;
-import com.l7tech.console.panels.PermissionFlags;
-import com.l7tech.console.panels.Wizard;
-import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.console.panels.LdapCertificateSettingsPanel;
-import com.l7tech.console.panels.LdapAdvancedConfigurationPanel;
+import com.l7tech.console.panels.*;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.IdentityProviderNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.admin.IdentityAdmin;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
+import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TextUtils;
+
+import javax.swing.*;
+import javax.swing.event.EventListenerList;
+import javax.swing.tree.DefaultTreeModel;
+import java.awt.*;
+import java.util.EventListener;
+import java.util.logging.Level;
+
+import static com.l7tech.objectmodel.EntityType.ID_PROVIDER_CONFIG;
 
 /**
  * The <code>IdentityProviderPropertiesAction</code> edits the
@@ -125,6 +108,9 @@ public class IdentityProviderPropertiesAction extends NodeAction {
                                 configPanel = new FederatedIPGeneralPanel(new FederatedIPTrustedCertsPanel(cvPanel, readOnly), readOnly);
 
                                 w = new EditFederatedIPWizard(f, configPanel, (FederatedIdentityProviderConfig)iProvider, readOnly);
+                            } else if (iProvider.type() == IdentityProviderType.BIND_ONLY_LDAP) {
+                                boolean readOnly = !PermissionFlags.get(ID_PROVIDER_CONFIG).canUpdateSome();
+                                w = new EditIdentityProviderWizard(f, new BindOnlyLdapGeneralPanel(null, readOnly), iProvider);
                             } else {
                                 throw new RuntimeException("Unsupported Identity Provider Type: " + iProvider.type().toString());
                             }

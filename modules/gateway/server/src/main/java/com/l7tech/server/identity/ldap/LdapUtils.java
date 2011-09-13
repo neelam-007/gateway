@@ -1,23 +1,19 @@
 package com.l7tech.server.identity.ldap;
 
+import com.l7tech.identity.ldap.LdapUrlBasedIdentityProviderConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.sun.jndi.ldap.LdapURL;
 import com.l7tech.util.ResourceUtils;
 
-import javax.naming.CompositeName;
-import javax.naming.InvalidNameException;
-import javax.naming.Name;
+import javax.naming.*;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.SearchResult;
 import javax.naming.directory.SearchControls;
-import javax.naming.NamingException;
-import javax.naming.Context;
-import javax.naming.NamingEnumeration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -285,6 +281,54 @@ public final class LdapUtils {
         } finally {
             Thread.currentThread().setContextClassLoader( originalContextClassLoader );
         }
+    }
+
+    /**
+     * Attempt simple password-based authentication by attempting to bind the specified DN using the specified LDAP
+     * settings.
+     *
+     * @param urlProvider        Object that keeps track of which LDAP(S) URL was last reported to work.  Required.
+     * @param providerConfig     Provider of configuration information such as all LDAP(S) URLs and any TLS client cert settings.  Required.
+     * @param ldapRuntimeConfig  LDAP runtime properties to use for connection.  Required.
+     * @param logger             Logger to use for logging authentication failures and successes.  Required.
+     * @param dn                 full DN to attempt to bind.  Required.
+     * @param passwd             password to use for bind attempt.  Authentication will automatically fail if this is null or empty.
+     * @return true if we were able to successfully bind the specified DN using the specified password.
+     */
+    public static boolean authenticateBasic(LdapUrlProvider urlProvider, LdapUrlBasedIdentityProviderConfig providerConfig, LdapRuntimeConfig ldapRuntimeConfig, Logger logger, String dn, String passwd) {
+        if (passwd == null || passwd.length() < 1) {
+            logger.info("User: " + dn + " refused authentication because empty password provided.");
+            return false;
+        }
+        String ldapurl = urlProvider.getLastWorkingLdapUrl();
+        if (ldapurl == null) {
+            ldapurl = urlProvider.markCurrentUrlFailureAndGetFirstAvailableOne(null);
+        }
+        while (ldapurl != null) {
+            DirContext userCtx = null;
+            try {
+                boolean clientAuth = providerConfig.isClientAuthEnabled();
+                Long keystoreId = providerConfig.getKeystoreId();
+                String keyAlias = providerConfig.getKeyAlias();
+                userCtx = getLdapContext(ldapurl, clientAuth, keystoreId, keyAlias, dn, passwd, ldapRuntimeConfig.getLdapConnectionTimeout(), ldapRuntimeConfig.getLdapReadTimeout(), false);
+                logger.info("User: " + dn + " authenticated successfully in provider " + providerConfig.getName());
+                return true;
+            } catch (CommunicationException e) {
+                logger.log(Level.INFO, "Could not establish context using LDAP URL " + ldapurl, e);
+                ldapurl = urlProvider.markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
+            } catch (AuthenticationException e) {
+                // when you get bad credentials
+                logger.info("User failed to authenticate: " + dn + " in provider " + providerConfig.getName());
+                return false;
+            } catch (NamingException e) {
+                logger.log(Level.WARNING, "General naming failure for user: " + dn + " in provider " + providerConfig.getName(), e);
+                return false;
+            } finally {
+                ResourceUtils.closeQuietly(userCtx);
+            }
+        }
+        logger.warning("Could not establish context on any of the ldap urls.");
+        return false;
     }
 
     //- PACKAGE

@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.policy.PolicyHeader;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Enumeration;
 import java.util.Comparator;
@@ -30,10 +31,11 @@ public class TreeNodeFactory {
      * an directory <code>Entry</code>
      * If a comparator has been specified, any subclasses supporting a comparator in their constructor
      * is supplied
-     * @param comparator The default comparator to use for nodes of the specific EntityHeader type in a tree
+     * @param entity entity to convert to a tree node.  Required.
+     * @param comparator The default comparator to use for nodes of the specific EntityHeader type in a tree, or null.
      * @return the TreeNode for a given Entry
      */
-    public static AbstractTreeNode asTreeNode(EntityHeader entity, Comparator comparator) {
+    public static AbstractTreeNode asTreeNode(EntityHeader entity, @Nullable Comparator comparator) {
         if (entity == null) {
             throw new NullPointerException("entity");
         }

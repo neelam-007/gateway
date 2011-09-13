@@ -20,19 +20,11 @@ import com.l7tech.util.BeanUtils;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
-import javax.xml.bind.annotation.XmlEnum;
-import javax.xml.bind.annotation.XmlEnumValue;
-import javax.xml.bind.annotation.XmlType;
 import java.beans.PropertyDescriptor;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.EnumSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
+
+import static org.junit.Assert.*;
 
 /**
  * 
@@ -110,7 +102,8 @@ public class EntityPropertiesHelperTest {
         testXmlEnumValueAnnotations( IdentityProviderType.class,
                 "Internal",
                 "LDAP",
-                "Federated" );
+                "Federated",
+                "Simple LDAP");
 
         testXmlEnumValueAnnotations( JMSProviderType.class,
                 "TIBCO EMS",

@@ -28,6 +28,7 @@ public class SchemaUpdater {
         config.addAnnotatedClass(com.l7tech.identity.internal.InternalUser.class);
         config.addAnnotatedClass(com.l7tech.identity.internal.InternalGroupMembership.class);
         config.addAnnotatedClass(com.l7tech.identity.ldap.LdapIdentityProviderConfig.class);
+        config.addAnnotatedClass(com.l7tech.identity.ldap.BindOnlyLdapIdentityProviderConfig.class);
         config.addAnnotatedClass(com.l7tech.identity.fed.FederatedIdentityProviderConfig.class);
         config.addAnnotatedClass(com.l7tech.identity.fed.FederatedUser.class);
         config.addAnnotatedClass(com.l7tech.identity.fed.FederatedGroup.class);

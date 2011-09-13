@@ -171,6 +171,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private HomeAction homeAction = new HomeAction();
     private NewGroupAction newInernalGroupAction;
     private NewLdapProviderAction newLDAPProviderAction;
+    private NewBindOnlyLdapProviderAction newBindOnlyLdapProviderAction;
     private NewFederatedIdentityProviderAction newPKIProviderAction;
     private ManageCertificatesAction manageCertificatesAction = null;
     private ManagePrivateKeysAction managePrivateKeysAction = null;
@@ -1036,6 +1037,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
             newProviderSubMenu.add(getNewProviderAction());
             newProviderSubMenu.add(getNewFederatedIdentityProviderAction());
+            newProviderSubMenu.add(getNewBindOnlyLdapProviderAction());
         }
         return newProviderSubMenu;
     }
@@ -1411,6 +1413,23 @@ public class MainWindow extends JFrame implements SheetHolder {
         newLDAPProviderAction.setEnabled(false);
         addPermissionRefreshListener(newLDAPProviderAction);
         return newLDAPProviderAction;
+    }
+
+    private NewBindOnlyLdapProviderAction getNewBindOnlyLdapProviderAction() {
+        if (newBindOnlyLdapProviderAction != null) return newBindOnlyLdapProviderAction;
+        newBindOnlyLdapProviderAction = new NewBindOnlyLdapProviderAction() {
+            @Override
+            public void onLogon(LogonEvent e) {
+                super.onLogon(e);
+                final DefaultMutableTreeNode root =
+                        (DefaultMutableTreeNode) getIdentitiesTree().getModel().getRoot();
+                node = (AbstractTreeNode) root;
+            }
+        };
+        MainWindow.this.addLogonListener(newBindOnlyLdapProviderAction);
+        newBindOnlyLdapProviderAction.setEnabled(false);
+        addPermissionRefreshListener(newBindOnlyLdapProviderAction);
+        return newBindOnlyLdapProviderAction;
     }
 
     /**

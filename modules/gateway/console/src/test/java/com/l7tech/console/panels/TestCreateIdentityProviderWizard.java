@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.util.SyspropUtil;
 
 /**
@@ -19,7 +20,7 @@ public class TestCreateIdentityProviderWizard {
         //
         LdapIdentityProviderConfigPanel configPanel = (
                   new LdapIdentityProviderConfigPanel(new LdapGroupMappingPanel(new LdapUserMappingPanel(null)), true));
-        Wizard w = new CreateIdentityProviderWizard(null, configPanel, null);
+        Wizard w = new CreateIdentityProviderWizard(null, configPanel, LdapIdentityProviderConfig.newLdapIdentityProviderConfig(), false);
         w.pack();
         w.setSize(780, 560);
         Utilities.centerOnScreen(w);

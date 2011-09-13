@@ -9,12 +9,16 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.ResourceUtils;
 
-import javax.naming.*;
-import javax.naming.directory.*;
-import java.util.Set;
+import javax.naming.AuthenticationException;
+import javax.naming.NameNotFoundException;
+import javax.naming.NamingException;
+import javax.naming.directory.Attribute;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.DirContext;
+import javax.naming.directory.SearchResult;
 import java.util.Collection;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -267,41 +271,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
 
     @Override
     public boolean authenticateBasic(String dn, String passwd) {
-        if (passwd == null || passwd.length() < 1) {
-            logger.info("User: " + dn + " refused authentication because empty password provided.");
-            return false;
-        }
-        LdapIdentityProvider identityProvider = getIdentityProvider();
-        LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
-        String ldapurl = identityProvider.getLastWorkingLdapUrl();
-        if (ldapurl == null) {
-            ldapurl = identityProvider.markCurrentUrlFailureAndGetFirstAvailableOne(null);
-        }
-        while (ldapurl != null) {
-            DirContext userCtx = null;
-            try {
-                boolean clientAuth = ldapIdentityProviderConfig.isClientAuthEnabled();
-                Long keystoreId = ldapIdentityProviderConfig.getKeystoreId();
-                String keyAlias = ldapIdentityProviderConfig.getKeyAlias();
-                userCtx = LdapUtils.getLdapContext(ldapurl, clientAuth, keystoreId, keyAlias, dn, passwd, ldapRuntimeConfig.getLdapConnectionTimeout(), ldapRuntimeConfig.getLdapReadTimeout(), false );
-                logger.info("User: " + dn + " authenticated successfully in provider " + ldapIdentityProviderConfig.getName());
-                return true;
-            } catch (CommunicationException e) {
-                logger.log(Level.INFO, "Could not establish context using LDAP URL " + ldapurl, e);
-                ldapurl = identityProvider.markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
-            } catch (AuthenticationException e) {
-                // when you get bad credentials
-                logger.info("User failed to authenticate: " + dn + " in provider " + ldapIdentityProviderConfig.getName());
-                return false;
-            } catch (NamingException e) {
-                logger.log(Level.WARNING, "General naming failure for user: " + dn + " in provider " + ldapIdentityProviderConfig.getName(), e);
-                return false;
-            } finally {
-                ResourceUtils.closeQuietly( userCtx );
-            }
-        }
-        logger.warning("Could not establish context on any of the ldap urls.");
-        return false;
+        return LdapUtils.authenticateBasic(getIdentityProvider(), getIdentityProviderConfig(), this.ldapRuntimeConfig, this.logger, dn, passwd);
     }
 
     private String[] getReturningAttributes() {

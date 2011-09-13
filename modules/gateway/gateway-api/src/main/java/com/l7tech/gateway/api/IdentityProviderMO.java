@@ -9,6 +9,7 @@ import com.l7tech.gateway.api.impl.PropertiesMapType;
 import com.l7tech.util.Functions;
 
 import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
+import static com.l7tech.gateway.api.impl.AttributeExtensibleType.set;
 
 import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlElement;
@@ -155,6 +156,16 @@ public class IdentityProviderMO extends AccessibleObject {
     }
 
     /**
+     * Get the details for a simple Bind-only LDAP identity provider.
+     *
+     * @return The details or null
+     * @see #getIdentityProviderType
+     */
+    public BindOnlyLdapIdentityProviderDetail getBindOnlyLdapIdentityProviderDetail() {
+        return getIdentityProviderOptions( BindOnlyLdapIdentityProviderDetail.class );
+    }
+
+    /**
      * Get the details for a Federated identity provider.
      *
      * @return The details or null
@@ -183,7 +194,12 @@ public class IdentityProviderMO extends AccessibleObject {
         /**
          * Federated identity provider.
          */
-        @XmlEnumValue("Federated") FEDERATED
+        @XmlEnumValue("Federated") FEDERATED,
+
+        /**
+         * Simple bind-only LDAP based provider.
+         */
+        @XmlEnumValue("Simple LDAP") BIND_ONLY_LDAP
     }
 
     /**
@@ -235,6 +251,194 @@ public class IdentityProviderMO extends AccessibleObject {
         }
 
         protected FederatedIdentityProviderDetail() {
+        }
+    }
+
+    /**
+     * Details for a simple BIND-only LDAP identity provider.
+     */
+    @XmlType(name="BindOnlyLdapIdentityProviderDetailType", propOrder={"serverUrlValues", "useSslClientAuthenticationValue", "sslKeyReferenceValue", 
+            "bindPatternPrefixValue", "bindPatternSuffixValue", "specifiedAttributeValues"})
+    public static class BindOnlyLdapIdentityProviderDetail extends IdentityProviderDetail {
+        private AttributeExtensibleStringList serverUrls;
+        private AttributeExtensibleBoolean useSslClientAuthentication;
+        private ManagedObjectReference sslKeyReference;
+        private AttributeExtensibleString bindPatternPrefix;
+        private AttributeExtensibleString bindPatternSuffix;
+
+        private AttributeExtensibleStringList specifiedAttributes;
+
+        /**
+         * Get the LDAP server URLs.
+         *
+         * @return The list of LDAP servers (never null)
+         */
+        public List<String> getServerUrls() {
+            return unwrap(get( serverUrls, new ArrayList<AttributeExtensibleString>() ));
+        }
+
+        /**
+         * Set the LDAP server URLs.
+         *
+         * @param serverUrls The list of LDAP servers to use
+         */
+        public void setServerUrls( final List<String> serverUrls ) {
+            this.serverUrls = set( this.serverUrls, wrap(serverUrls,AttributeExtensibleStringBuilder) );
+        }
+
+        /**
+         * SSL/TLS client authentication flag.
+         *
+         * @return True if client authentication should be used
+         */
+        public boolean isUseSslClientClientAuthentication() {
+            return get( useSslClientAuthentication, Boolean.FALSE );
+        }
+
+        /**
+         * Set SSL/TLS client authentication flag.
+         *
+          * @param useSslClientAuthentication True to use client authentication
+         */
+        public void setUseSslClientAuthentication( final boolean useSslClientAuthentication ) {
+            this.useSslClientAuthentication = set(this.useSslClientAuthentication,useSslClientAuthentication);
+        }
+
+        /**
+         * Get the TLS/SSL client key identifier.
+         *
+         * @return The key identifier or null
+         */
+        public String getSslKeyId() {
+            return sslKeyReference==null ? null : sslKeyReference.getId();
+        }
+
+        /**
+         * Set the TLS/SSL client key identifier.
+         *
+         * @param keyId The key identifier to use
+         */
+        public void setSslKeyId( final String keyId ) {
+            if ( keyId != null ) {
+                if ( sslKeyReference==null ) {
+                    sslKeyReference = new ManagedObjectReference();
+                }
+                sslKeyReference.setId( keyId );
+                sslKeyReference.setResourceType( PrivateKeyMO.class );
+            } else {
+                sslKeyReference = null;
+            }
+        }
+                
+        /**
+         * Get the prefix to prepend to the username for building a bind DN.
+         *
+         * @return The bind DN prefix or null.
+         */
+        public String getBindPatternPrefix() {
+            return get( bindPatternPrefix );
+        }
+
+        /**
+         * Set the bind "DN" for the LDAP (required)
+         *
+         * @param bindPatternPrefix The bind DN prefix or null.
+         */
+        public void setBindPatternPrefix( final String bindPatternPrefix ) {
+            this.bindPatternPrefix = set(this.bindPatternPrefix,bindPatternPrefix);
+        }
+        
+        /**
+         * Get the suffix to prepend to the username for building a bind DN.
+         *
+         * @return The bind DN suffix or null.
+         */
+        public String getBindPatternSuffix() {
+            return get( bindPatternSuffix );
+        }
+
+        /**
+         * Set the bind "DN" for the LDAP (required)
+         *
+         * @param bindPatternSuffix The bind DN suffix or null.
+         */
+        public void setBindPatternSuffix( final String bindPatternSuffix ) {
+            this.bindPatternSuffix = set(this.bindPatternSuffix,bindPatternSuffix);
+        }
+
+        /**
+         * Get the list of specified attributes for this LDAP.
+         *
+         * @return The list of specified attributes (never null)
+         */
+        public List<String> getSpecifiedAttributes() {
+            return unwrap(get( specifiedAttributes, new ArrayList<AttributeExtensibleString>() ));
+        }
+
+        /**
+         * Set the list of specified attributes for this LDAP.
+         *
+         * @param specifiedAttributes The specified attributes to use
+         */
+        public void setSpecifiedAttributes( List<String> specifiedAttributes ) {
+            this.specifiedAttributes = set( this.specifiedAttributes, wrap(specifiedAttributes,AttributeExtensibleStringBuilder) );
+        }
+
+        protected BindOnlyLdapIdentityProviderDetail() {
+        }
+
+        @XmlElement(name="ServerUrls", required=true)
+        protected AttributeExtensibleStringList getServerUrlValues() {
+            return serverUrls;
+        }
+
+        protected void setServerUrlValues( final AttributeExtensibleStringList serverUrls ) {
+            this.serverUrls = serverUrls;
+        }
+
+        @XmlElement(name="UseSslClientAuthentication")
+        protected AttributeExtensibleBoolean getUseSslClientAuthenticationValue() {
+            return useSslClientAuthentication;
+        }
+
+        protected void setUseSslClientAuthenticationValue( final AttributeExtensibleBoolean useSslClientAuthentication ) {
+            this.useSslClientAuthentication = useSslClientAuthentication;
+        }
+
+        @XmlElement(name="SslKeyReference")
+        protected ManagedObjectReference getSslKeyReferenceValue() {
+            return sslKeyReference;
+        }
+
+        protected void setSslKeyReferenceValue( final ManagedObjectReference sslKeyReference ) {
+            this.sslKeyReference = sslKeyReference;
+        }
+
+        @XmlElement(name="BindPatternPrefix",required=true)
+        protected AttributeExtensibleString getBindPatternPrefixValue() {
+            return bindPatternPrefix;
+        }
+
+        protected void setBindPatternPrefixValue( final AttributeExtensibleString bindPatternPrefix ) {
+            this.bindPatternPrefix = bindPatternPrefix;
+        }
+
+        @XmlElement(name="BindPatternSuffix",required=true)
+        protected AttributeExtensibleString getBindPatternSuffixValue() {
+            return bindPatternSuffix;
+        }
+
+        protected void setBindPatternSuffixValue( final AttributeExtensibleString bindPatternSuffix ) {
+            this.bindPatternSuffix = bindPatternSuffix;
+        }
+        
+        @XmlElement(name="SpecifiedAttributes")
+        protected AttributeExtensibleStringList getSpecifiedAttributeValues() {
+            return specifiedAttributes;
+        }
+
+        protected void setSpecifiedAttributeValues( final AttributeExtensibleStringList specifiedAttributes ) {
+            this.specifiedAttributes = specifiedAttributes;
         }
     }
 
@@ -707,7 +911,8 @@ public class IdentityProviderMO extends AccessibleObject {
 
         @XmlElements({
              @XmlElement(name="FederatedIdentityProviderDetail",type=FederatedIdentityProviderDetail.class),
-             @XmlElement(name="LdapIdentityProviderDetail",type=LdapIdentityProviderDetail.class)
+             @XmlElement(name="LdapIdentityProviderDetail",type=LdapIdentityProviderDetail.class),
+             @XmlElement(name="BindOnlyLdapIdentityProviderDetail",type=BindOnlyLdapIdentityProviderDetail.class)
          })
         protected IdentityProviderDetail getIdentityProviderDetail() {
             return identityProviderDetail;

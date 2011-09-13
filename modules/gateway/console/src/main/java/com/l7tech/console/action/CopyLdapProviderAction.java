@@ -87,7 +87,7 @@ public class CopyLdapProviderAction extends NewProviderAction {
 
 
                 Frame f = TopComponents.getInstance().getTopParent();
-                Wizard w = new CreateIdentityProviderWizard(f, configPanel, newLdap);
+                Wizard w = new CreateIdentityProviderWizard(f, configPanel, newLdap, true);
                 w.addWizardListener(wizardListener);
 
                 // register itself to listen to the addEvent

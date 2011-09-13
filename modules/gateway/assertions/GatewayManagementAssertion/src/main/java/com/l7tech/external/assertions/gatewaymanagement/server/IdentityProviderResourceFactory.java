@@ -5,10 +5,7 @@ import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
-import com.l7tech.identity.ldap.GroupMappingConfig;
-import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
-import com.l7tech.identity.ldap.MemberStrategy;
-import com.l7tech.identity.ldap.UserMappingConfig;
+import com.l7tech.identity.ldap.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.security.types.CertificateValidationType;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
@@ -60,6 +57,10 @@ public class IdentityProviderResourceFactory extends EntityManagerResourceFactor
                 identityProvider.setIdentityProviderType( IdentityProviderMO.IdentityProviderType.FEDERATED );
                 asResource( identityProvider, (FederatedIdentityProviderConfig) identityProviderConfig );
                 break;
+            case 4:
+                identityProvider.setIdentityProviderType( IdentityProviderMO.IdentityProviderType.BIND_ONLY_LDAP );
+                asResource( identityProvider, (BindOnlyLdapIdentityProviderConfig) identityProviderConfig );
+                break;
             default:
                 throw new ResourceAccessException("Unknown identity provider type '"+identityProviderConfig.getTypeVal()+"'.");
         }
@@ -92,6 +93,9 @@ public class IdentityProviderResourceFactory extends EntityManagerResourceFactor
                 break;
             case FEDERATED:
                 identityProvider = fromResource( identityProviderResource, new FederatedIdentityProviderConfig() );
+                break;
+            case BIND_ONLY_LDAP:
+                identityProvider = fromResource( identityProviderResource, new BindOnlyLdapIdentityProviderConfig() );
                 break;
             default:
                 throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "identity provider type unknown");
@@ -197,6 +201,21 @@ public class IdentityProviderResourceFactory extends EntityManagerResourceFactor
             detail.setUserMappings( buildMappings( ldapIdentityProviderConfig.getUserMappings() ) );
             detail.setGroupMappings( buildMappings( ldapIdentityProviderConfig.getGroupMappings() ) );
             detail.setSpecifiedAttributes( ldapIdentityProviderConfig.getReturningAttributes()==null ? null : Arrays.asList(ldapIdentityProviderConfig.getReturningAttributes()) );
+        }
+    }
+
+    private void asResource( final IdentityProviderMO identityProvider,
+                             final BindOnlyLdapIdentityProviderConfig bindOnlyProviderConfig ) {
+        identityProvider.setProperties( getProperties( bindOnlyProviderConfig, BindOnlyLdapIdentityProviderConfig.class ) );
+        final BindOnlyLdapIdentityProviderDetail detail = identityProvider.getBindOnlyLdapIdentityProviderDetail();
+        if ( detail != null ) {
+            detail.setServerUrls( bindOnlyProviderConfig.getLdapUrl()==null ? null : Arrays.asList(bindOnlyProviderConfig.getLdapUrl()) );
+            detail.setUseSslClientAuthentication( bindOnlyProviderConfig.isClientAuthEnabled() );
+            if ( bindOnlyProviderConfig.getKeystoreId()!=null && bindOnlyProviderConfig.getKeyAlias()!=null ) {
+                detail.setSslKeyId( bindOnlyProviderConfig.getKeystoreId() + ":" + bindOnlyProviderConfig.getKeyAlias() );
+            }
+            detail.setBindPatternPrefix( bindOnlyProviderConfig.getBindPatternPrefix() );
+            detail.setBindPatternSuffix( bindOnlyProviderConfig.getBindPatternSuffix() );
         }
     }
 
@@ -382,6 +401,29 @@ public class IdentityProviderResourceFactory extends EntityManagerResourceFactor
         }
 
         return ldapIdentityProviderConfig;
+    }
+
+    private BindOnlyLdapIdentityProviderConfig fromResource( final IdentityProviderMO identityProviderResource,
+                                                     final BindOnlyLdapIdentityProviderConfig bindOnlyProviderConfig) throws InvalidResourceException {
+        final BindOnlyLdapIdentityProviderDetail detail = identityProviderResource.getBindOnlyLdapIdentityProviderDetail();
+        if ( detail != null ) {
+            // set properties from resource, overrides template values
+            bindOnlyProviderConfig.setLdapUrl(detail.getServerUrls() == null ? null : detail.getServerUrls().toArray(new String[detail.getServerUrls().size()]));
+            bindOnlyProviderConfig.setClientAuthEnabled(detail.isUseSslClientClientAuthentication());
+            if ( detail.getSslKeyId() != null ) {
+                final String[] values = detail.getSslKeyId().split( ":", 2 );
+                if ( values.length != 2 ) {
+                    throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "Invalid SSL key identifier" );
+                }
+                bindOnlyProviderConfig.setKeystoreId(toInternalId(values[0], "SSL key identifier"));
+                bindOnlyProviderConfig.setKeyAlias(values[1]);
+            }
+
+            bindOnlyProviderConfig.setBindPatternPrefix(detail.getBindPatternPrefix());
+            bindOnlyProviderConfig.setBindPatternSuffix(detail.getBindPatternSuffix());
+        }
+
+        return bindOnlyProviderConfig;
     }
 
     private void updateEntity( final LdapIdentityProviderConfig oldConfig,

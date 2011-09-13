@@ -9,6 +9,6 @@ import com.l7tech.identity.*;
  * @author alex
  */
 public interface PersistentIdentityProvider<UT extends PersistentUser, GT extends PersistentGroup, UMT extends PersistentUserManager<UT>, GMT extends PersistentGroupManager<UT, GT>>
-        extends AuthenticatingIdentityProvider<UT, GT, UMT, GMT>
+        extends ListableIdentityProvider<UT, GT, UMT, GMT>
 {
 }

@@ -1,5 +1,6 @@
 package com.l7tech.console.tree.identity;
 
+import com.l7tech.console.action.NewBindOnlyLdapProviderAction;
 import com.l7tech.console.action.NewFederatedIdentityProviderAction;
 import com.l7tech.console.action.NewLdapProviderAction;
 import com.l7tech.console.action.RevokeCertificatesAction;
@@ -101,6 +102,7 @@ public class IdentitiesRootNode extends AbstractTreeNode {
         return new Action[]{
             new NewFederatedIdentityProviderAction(this),
             new NewLdapProviderAction(this),
+            new NewBindOnlyLdapProviderAction(this),
             new RevokeCertificatesAction(),
             //     new NewSamlProviderAction(this),
             new RefreshTreeNodeAction(this)};

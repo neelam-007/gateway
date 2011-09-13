@@ -4,20 +4,18 @@ import com.l7tech.console.util.PasswordGuiUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
-import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
-import javax.swing.event.ListDataListener;
-import javax.swing.event.ListDataEvent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
@@ -36,23 +34,18 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
     static final Logger log = Logger.getLogger(LdapIdentityProviderConfigPanel.class.getName());
 
     private JPanel mainPanel;
-    private JButton moveUpButton;
-    private JButton moveDownButton;
-    private JButton addButton;
-    private JButton editButton;
-    private JButton removeButton;
     private JTextField providerNameTextField;
     private JPasswordField ldapBindPasswordField;
     private JTextField ldapBindDNTextField;
     private JTextField ldapSearchBaseTextField;
     private JComboBox providerTypesCombo;
     private JPanel configPanel;
-    private JList ldapUrlList;
-    private PrivateKeysComboBox privateKeyComboBox;
     private JCheckBox showPasswordCheckBox;
     private JLabel plaintextPasswordWarningLabel;
     private JCheckBox adminEnabledCheckbox;
-    private JCheckBox clientAuthenticationCheckbox;
+    private JPanel hostUrlPanel;
+
+    private LdapUrlListPanel ldapUrlListPanel;
 
     private boolean providerTypeSelectable;
     private boolean finishAllowed = false;
@@ -70,134 +63,20 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
     }
 
     private void initGui() {
-        privateKeyComboBox.selectDefaultSsl();
-        privateKeyComboBox.setRenderer( TextListCellRenderer.<Object>basicComboBoxRenderer() );
-        privateKeyComboBox.setMinimumSize( new Dimension( 100, privateKeyComboBox.getPreferredSize().height  ) );
-        privateKeyComboBox.setPreferredSize( new Dimension( 100, privateKeyComboBox.getPreferredSize().height ) );
+        ldapUrlListPanel = new LdapUrlListPanel();
+        hostUrlPanel.setLayout(new BorderLayout());
+        hostUrlPanel.add(ldapUrlListPanel, BorderLayout.CENTER);
+        ldapUrlListPanel.addPropertyChangeListener(LdapUrlListPanel.PROP_DATA, new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt) {
+                updateControlButtonState();
+            }
+        });
 
         providerNameTextField.addKeyListener(keyListener);
 
-        DefaultComboBoxModel urlListModel = new DefaultComboBoxModel();
-        // To update buttons if there are any changes in the Ldap Host List,
-        // add a ListDataListener for the list.
-        urlListModel.addListDataListener(new ListDataListener() {
-            @Override
-            public void intervalAdded(ListDataEvent e) {
-                updateControlButtonState();
-            }
-
-            @Override
-            public void intervalRemoved(ListDataEvent e) {
-                updateControlButtonState();
-            }
-
-            @Override
-            public void contentsChanged(ListDataEvent e) {
-                updateControlButtonState();
-            }
-        });
-        ldapUrlList.setModel(urlListModel);
-
-        Utilities.equalizeButtonSizes(new JButton[]{moveUpButton, moveDownButton});
-
-        moveUpButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                int currentPos = ldapUrlList.getSelectedIndex();
-                if (currentPos >= 0) {
-                    // make sure not already in last position
-                    Object selected = ldapUrlList.getSelectedValue();
-                    if (currentPos > 0) {
-                        DefaultComboBoxModel model = (DefaultComboBoxModel)ldapUrlList.getModel();
-                        model.removeElementAt(currentPos);
-                        model.insertElementAt(selected, currentPos-1);
-                    }
-                }
-            }
-        });
-
-        moveDownButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                int currentPos = ldapUrlList.getSelectedIndex();
-                if (currentPos >= 0) {
-                    // make sure not already in last position
-                    DefaultComboBoxModel model = (DefaultComboBoxModel)ldapUrlList.getModel();
-                    if (model.getSize() > (currentPos+1)) {
-                        Object selected = ldapUrlList.getSelectedValue();
-                        model.removeElementAt(currentPos);
-                        model.insertElementAt(selected, currentPos+1);
-                    }
-                }
-            }
-        });
-
-        addButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String newUrl = (String)JOptionPane.showInputDialog(addButton,
-                                                            "Enter the LDAP URL:",
-                                                            "Add LDAP Host URL  ",
-                                                            JOptionPane.PLAIN_MESSAGE,
-                                                            null, null,
-                                                            "ldap://host:port");
-                DefaultComboBoxModel model = (DefaultComboBoxModel)ldapUrlList.getModel();
-                if (newUrl != null && newUrl.trim().length()>0) {
-                    if (model.getIndexOf(newUrl) < 0) {
-                        model.insertElementAt(newUrl, model.getSize());
-                    }
-                    if(model.getSize() > 0) {
-                        updateControlButtonState();
-                    }
-                }
-            }
-        });
-
-        editButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                int selected = ldapUrlList.getSelectedIndex();
-                if (selected < 0) return;
-                DefaultComboBoxModel model = (DefaultComboBoxModel)ldapUrlList.getModel();
-                String currentUrl = (String)model.getElementAt(selected);
-                String newUrl = (String)JOptionPane.showInputDialog(editButton, "Change the LDAP URL:", "Edit LDAP Host URL",
-                                                                    JOptionPane.PLAIN_MESSAGE, null, null, currentUrl);
-                if (newUrl != null && newUrl.trim().length()>0) {
-                    // Check if the modified url exists in the list.
-                    if (model.getIndexOf(newUrl) < 0) {
-                        model.removeElementAt(selected);
-                        model.insertElementAt(newUrl, selected);
-                    }
-                }
-            }
-        });
-
-        removeButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                int selected = ldapUrlList.getSelectedIndex();
-                if (selected > -1) {
-                    ((DefaultComboBoxModel)ldapUrlList.getModel()).removeElementAt(selected);
-                    if(ldapUrlList.getModel().getSize() == 0) {
-                        updateControlButtonState();
-                    }
-                }
-            }
-        });
-
-        Utilities.equalizeButtonSizes(addButton, editButton, removeButton);
-
         ldapSearchBaseTextField.addKeyListener(keyListener);
         PasswordGuiUtils.configureOptionalSecurePasswordField(this, ldapBindPasswordField, showPasswordCheckBox, plaintextPasswordWarningLabel);
-
-        clientAuthenticationCheckbox.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                privateKeyComboBox.setEnabled(clientAuthenticationCheckbox.isSelected());
-            }
-        });
-
-        privateKeyComboBox.setEnabled(clientAuthenticationCheckbox.isSelected());
 
         providerTypesCombo.setEnabled(providerTypeSelectable);
         LdapIdentityProviderConfig[] templates;
@@ -295,7 +174,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
     private void updateControlButtonState() {
         if (providerNameTextField.getText().length() > 0 &&
                 //getLdapHostTextField().getText().length() > 0 &&
-                ldapUrlList.getModel().getSize() > 0 &&
+                !ldapUrlListPanel.isUrlListEmpty() &&
                 ldapSearchBaseTextField.getText().length() > 0) {
             // can advance to next panel only when the above three fields are not empty
             advanceAllowed = true;
@@ -331,28 +210,13 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                     ldapBindDNTextField.setText(iProviderConfig.getBindDN());
                     ldapSearchBaseTextField.setText(iProviderConfig.getSearchBase());
                     adminEnabledCheckbox.setSelected(iProviderConfig.isAdminEnabled());
-                    clientAuthenticationCheckbox.setSelected(iProviderConfig.isClientAuthEnabled());
-                    if (clientAuthenticationCheckbox.isSelected()) {
-                        if ( iProviderConfig.getKeystoreId() != null && iProviderConfig.getKeyAlias() != null ) {
-                            privateKeyComboBox.select(iProviderConfig.getKeystoreId(), iProviderConfig.getKeyAlias());
-                        }
-                        if (privateKeyComboBox.getSelectedItem() == null) {
-                            //the selected key doesnt exists
-                            JOptionPane.showMessageDialog(this, 
-                                    "Keystore alias not found, will use default SSL key.",
-                                    "Keystore alias not found",
-                                    JOptionPane.WARNING_MESSAGE);
-                            privateKeyComboBox.selectDefaultSsl();
-                        }
-                    }
-                    privateKeyComboBox.setEnabled(clientAuthenticationCheckbox.isSelected());
+                    final boolean clientAuthEnabled = iProviderConfig.isClientAuthEnabled();
+                    ldapUrlListPanel.setClientAuthEnabled(clientAuthEnabled);
+                    ldapUrlListPanel.selectPrivateKey(iProviderConfig.getKeystoreId(), iProviderConfig.getKeyAlias());
 
                     // populate host list based on what is in the iProviderConfig
-                    ((DefaultComboBoxModel)ldapUrlList.getModel()).removeAllElements();
                     String[] ldapUrls = iProviderConfig.getLdapUrl();
-                    for ( String ldapUrl : ldapUrls ) {
-                        ( (DefaultComboBoxModel) ldapUrlList.getModel() ).addElement( ldapUrl );
-                    }
+                    ldapUrlListPanel.setUrlList(ldapUrls);
 
                 }
                 for (int i = providerTypesCombo.getModel().getSize() - 1; i >= 0; i--) {
@@ -400,23 +264,21 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                 }
 
                 ldapSettings.setTemplateName(ldapType.getTemplateName());
-                DefaultComboBoxModel model = (DefaultComboBoxModel)ldapUrlList.getModel();
-                String[] newlist = new String[model.getSize()];
-                for (int i = 0; i < newlist.length; i++) {
-                    newlist[i] = (String)model.getElementAt(i);
-                }
+                String[] newlist = ldapUrlListPanel.getUrlList();
                 ldapSettings.setLdapUrl(newlist);
                 ldapSettings.setName(providerNameTextField.getText());
                 ldapSettings.setSearchBase(ldapSearchBaseTextField.getText());
                 ldapSettings.setBindDN(ldapBindDNTextField.getText());
                 ldapSettings.setBindPasswd(String.valueOf(ldapBindPasswordField.getPassword()));
                 ldapSettings.setAdminEnabled(adminEnabledCheckbox.isSelected());
-                ldapSettings.setClientAuthEnabled(clientAuthenticationCheckbox.isSelected());
-                if ( clientAuthenticationCheckbox.isSelected() && !privateKeyComboBox.isSelectedDefaultSsl() ) {
-                    ldapSettings.setKeystoreId(privateKeyComboBox.getSelectedKeystoreId());
-                    ldapSettings.setKeyAlias(privateKeyComboBox.getSelectedKeyAlias());
+
+                boolean clientAuth = ldapUrlListPanel.isClientAuthEnabled();
+                ldapSettings.setClientAuthEnabled(clientAuth);
+                if (clientAuth) {
+                    ldapSettings.setKeystoreId(ldapUrlListPanel.getSelectedKeystoreId());
+                    ldapSettings.setKeyAlias(ldapUrlListPanel.getSelectedKeyAlias());
                 } else {
-                    ldapSettings.setKeystoreId(null);    
+                    ldapSettings.setKeystoreId(null);
                     ldapSettings.setKeyAlias(null);
                 }
             }
@@ -496,8 +358,4 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                 }
 
             };
-
-    private void createUIComponents() {
-        privateKeyComboBox = new PrivateKeysComboBox(false, true, false);
-    }
 }
