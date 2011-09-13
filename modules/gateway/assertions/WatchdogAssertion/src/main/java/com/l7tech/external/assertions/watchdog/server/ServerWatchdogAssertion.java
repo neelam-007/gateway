@@ -5,7 +5,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ConfigFactory;
 
 import java.io.IOException;
 import java.util.Timer;
@@ -13,7 +13,6 @@ import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Server side implementation of the WatchdogAssertion.
@@ -21,24 +20,20 @@ import java.util.logging.Logger;
  * @see com.l7tech.external.assertions.watchdog.WatchdogAssertion
  */
 public class ServerWatchdogAssertion extends AbstractServerAssertion<WatchdogAssertion> {
-    private static final Logger logger = Logger.getLogger(ServerWatchdogAssertion.class.getName());
+    private static final Timer timer = new Timer("WatchdogAssertion", true);
 
-    private static final Timer timer = new Timer();
-
-    private final WatchdogAssertion assertion;
     private final long milliseconds;
     private final boolean interruptRequest;
     private final boolean logStackTrace;
 
     public ServerWatchdogAssertion(WatchdogAssertion assertion) throws PolicyAssertionException {
         super(assertion);
-
-        this.assertion = assertion;
         this.milliseconds = assertion.getMilliseconds();
-        this.interruptRequest = SyspropUtil.getBoolean("com.l7tech.watchdog.interruptRequest", false);
-        this.logStackTrace = SyspropUtil.getBoolean("com.l7tech.watchdog.logStackTrace", true);
+        this.interruptRequest = ConfigFactory.getBooleanProperty("com.l7tech.watchdog.interruptRequest", false);
+        this.logStackTrace = ConfigFactory.getBooleanProperty("com.l7tech.watchdog.logStackTrace", true);
     }
 
+    @Override
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         final AtomicBoolean timerExpired = new AtomicBoolean();
         final AtomicReference<StackTraceElement[]> stackTrace = new AtomicReference<StackTraceElement[]>();
