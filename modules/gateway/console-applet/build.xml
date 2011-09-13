@@ -35,6 +35,10 @@
         <property name="jar.file.nopack" value="${jar.file}.nopack.jar"/>
         <move file="${jar.file}" tofile="${jar.file.nopack}"/>
 
+        <taskdef name="pack200"
+                 classname="org.jdesktop.deployment.ant.pack200.Pack200Task"
+                 classpath="../../../lib/tools/deployment-ant-pack200-1.0beta.jar"/>
+
         <pack200 src="${jar.file.nopack}"
                  destfile="${jar.file}"
                  segmentlimit="-1"
