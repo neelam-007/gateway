@@ -419,25 +419,24 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
         "        resolution=? AND\n" +
         "        period_start=?\n" +
         "    ) as id,\n" +
-        "    mapping_values_oid,\n" +
-        "    coalesce(sum(attempted),0),\n" +
-        "    coalesce(sum(authorized),0),\n" +
-        "    coalesce(sum(completed),0),\n" +
-        "    IF(min(coalesce(back_min, 2147483647))=2147483647,NULL,min(coalesce(back_min, 2147483647))),\n" +
-        "    IF(max(coalesce(back_max, -1))=-1,NULL,max(coalesce(back_max, -1))),\n" +
-        "    IF(coalesce(sum(back_sum),0)>2147483647,2147483647,coalesce(sum(back_sum),0)),\n" +
-        "    IF(min(coalesce(front_min, 2147483647))=2147483647,NULL,min(coalesce(front_min, 2147483647))),\n" +
-        "    IF(max(coalesce(front_max, -1))=-1,NULL,max(coalesce(front_max, -1))),\n" +
-        "    IF(coalesce(sum(front_sum),0)>2147483647,2147483647,coalesce(sum(front_sum),0))\n" +
-        "FROM service_metrics_details WHERE service_metrics_oid IN\n" +
-        "(\n" +
-        "    SELECT objectid FROM service_metrics WHERE\n" +
-        "    nodeid=? AND\n" +
-        "    published_service_oid=? AND\n" +
-        "    resolution=? AND\n" +
-        "    period_start>=?  AND\n" +
-        "    period_start+interval_size<=?\n" +
-        ")\n" +
+        "    smd.mapping_values_oid,\n" +
+        "    coalesce(sum(smd.attempted),0),\n" +
+        "    coalesce(sum(smd.authorized),0),\n" +
+        "    coalesce(sum(smd.completed),0),\n" +
+        "    IF(min(coalesce(smd.back_min, 2147483647))=2147483647,NULL,min(coalesce(smd.back_min, 2147483647))),\n" +
+        "    IF(max(coalesce(smd.back_max, -1))=-1,NULL,max(coalesce(smd.back_max, -1))),\n" +
+        "    IF(coalesce(sum(smd.back_sum),0)>2147483647,2147483647,coalesce(sum(smd.back_sum),0)),\n" +
+        "    IF(min(coalesce(smd.front_min, 2147483647))=2147483647,NULL,min(coalesce(smd.front_min, 2147483647))),\n" +
+        "    IF(max(coalesce(smd.front_max, -1))=-1,NULL,max(coalesce(smd.front_max, -1))),\n" +
+        "    IF(coalesce(sum(smd.front_sum),0)>2147483647,2147483647,coalesce(sum(smd.front_sum),0))\n" +
+        "FROM service_metrics sm, service_metrics_details smd\n"+
+        "WHERE " +
+        "    sm.objectid = smd.service_metrics_oid AND\n"+
+        "    sm.nodeid=? AND\n" +
+        "    sm.published_service_oid=? AND\n" +
+        "    sm.resolution=? AND\n" +
+        "    sm.period_start>=?  AND\n" +
+        "    sm.period_start+sm.interval_size<=?\n" +
         "GROUP BY id, mapping_values_oid\n" +
         "ON DUPLICATE KEY UPDATE\n" +
         "    attempted=values(attempted),\n" +
@@ -449,7 +448,6 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
         "    front_min=values(front_min),\n" +
         "    front_max=values(front_max),\n" +
         "    front_sum=values(front_sum);";
-
 
     private static final Logger _logger = Logger.getLogger(ServiceMetricsManagerImpl.class.getName());
 
