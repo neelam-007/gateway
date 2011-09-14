@@ -25,9 +25,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
  * <p> @author fpang </p>
- * $Id$
  */
 abstract public class NewProviderAction extends NodeAction {
     private static final Logger log = Logger.getLogger(NewProviderAction.class.getName());
@@ -39,6 +37,10 @@ abstract public class NewProviderAction extends NodeAction {
     }
 
     protected WizardAdapter makeWizardAdapter(final EntityListener listener) {
+        return makeWizardAdapter( listener, null );
+    }
+    protected WizardAdapter makeWizardAdapter( final EntityListener listener,
+                                               final Runnable duplicateCallback ) {
         return new WizardAdapter() {
             @Override
             public void wizardCanceled(WizardEvent e) {
@@ -58,7 +60,6 @@ abstract public class NewProviderAction extends NodeAction {
                 final IdentityProviderConfig iProvider = (IdentityProviderConfig)w.getWizardInput();
 
                 if (iProvider != null) {
-
                     SwingUtilities.invokeLater(new Runnable() {
                         @Override
                         public void run() {
@@ -70,11 +71,15 @@ abstract public class NewProviderAction extends NodeAction {
                                 // Refresh permission cache so that newly created IdP is usable
                                 Registry.getDefault().getSecurityProvider().refreshPermissionCache();
                             } catch (DuplicateObjectException doe) {
-                                String msg = "An Identity Provider with the same name already exists.\nThe new Identity Provider has not been saved.";
-                                JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                                        msg,
-                                        "Error Saving Identity Provider",
-                                        JOptionPane.WARNING_MESSAGE);
+                                if ( duplicateCallback != null ) {
+                                    duplicateCallback.run();
+                                } else {
+                                    String msg = "An Identity Provider with the same name already exists.\nThe new Identity Provider has not been saved.";
+                                    JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                                            msg,
+                                            "Error Saving Identity Provider",
+                                            JOptionPane.WARNING_MESSAGE);
+                                }
                                 header = null;
                             } catch (Exception e) {
                                 ErrorManager.getDefault().notify(Level.WARNING, e, "Error saving the new identity provider: " + header.getName());
@@ -94,15 +99,18 @@ abstract public class NewProviderAction extends NodeAction {
     }
 
     protected EntityListenerAdapter makeEntityListener() {
-        final EntityListenerAdapter listener[] = { null };
-        listener[0] = new EntityListenerAdapter() {
+        return makeEntityListener(false);
+    }
+    protected EntityListenerAdapter makeEntityListener( final boolean useRoot ) {
+        return new EntityListenerAdapter() {
             /**
              * Fired when an new entity is added.
              *
              * @param ev event describing the action
              */
             @Override
-            public void entityAdded(final EntityEvent ev) {
+            public void entityAdded( final EntityEvent ev ) {
+                final EntityListenerAdapter listener = this;
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
@@ -112,7 +120,7 @@ abstract public class NewProviderAction extends NodeAction {
                             log.log(Level.WARNING, "Unable to reach the identity tree.");
                             return;
                         }
-                        AbstractTreeNode targetNode = node != null ? node : tree.getRootNode();
+                        AbstractTreeNode targetNode = node != null && !useRoot ? node : tree.getRootNode();
                         if (tree.hasBeenExpanded(new TreePath(targetNode.getPath()))) {
                             DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
 
@@ -123,12 +131,11 @@ abstract public class NewProviderAction extends NodeAction {
                                 tree.setSelectionPath(new TreePath(nodePath));
                             }
                         }
-                        removeEntityListener(listener[0]);
+                        removeEntityListener( listener );
                     }
                 });
             }
         };
-        return listener[0];
     }
 
     /**

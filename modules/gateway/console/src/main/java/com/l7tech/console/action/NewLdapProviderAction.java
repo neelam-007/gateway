@@ -1,8 +1,8 @@
 package com.l7tech.console.action;
 
 
+import static com.l7tech.console.action.IdentityProviderPropertiesAction.showDuplicateProviderWarning;
 import com.l7tech.console.event.EntityListener;
-import com.l7tech.console.event.WizardListener;
 import com.l7tech.console.panels.*;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.util.TopComponents;
@@ -19,8 +19,7 @@ import java.util.logging.Logger;
 /**
  * The <code>NewLdapProviderAction</code> action adds the new provider.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.0
+ * @author Emil Marceta
  */
 public class NewLdapProviderAction extends NewProviderAction {
     static final Logger log = Logger.getLogger(NewLdapProviderAction.class.getName());
@@ -73,39 +72,55 @@ public class NewLdapProviderAction extends NewProviderAction {
      */
     @Override
     protected void performAction() {
+        final boolean readSettings;
+        final LdapIdentityProviderConfig ldapConfig;
+        if ( this.ldapConfig == null) {
+            ldapConfig = LdapIdentityProviderConfig.newLdapIdentityProviderConfig();
+            readSettings = false;
+        } else {
+            ldapConfig = this.ldapConfig;
+            ldapConfig.setTypeVal(IdentityProviderType.LDAP.toVal());
+            readSettings = false;
+        }
 
-        SwingUtilities.invokeLater(new Runnable() {
+        final Runnable duplicateCallback = new Runnable() {
             @Override
             public void run() {
-
-                LdapIdentityProviderConfigPanel configPanel = (
-                  new LdapIdentityProviderConfigPanel(new LdapGroupMappingPanel(new LdapUserMappingPanel(new LdapAdvancedConfigurationPanel(new LdapCertificateSettingsPanel(null)))), true));
-
-
-                Frame f = TopComponents.getInstance().getTopParent();
-
-                boolean readSettings = true;
-                if (ldapConfig == null) {
-                    ldapConfig = LdapIdentityProviderConfig.newLdapIdentityProviderConfig();
-                    readSettings = false;
-                } else {
-                    ldapConfig.setTypeVal(IdentityProviderType.LDAP.toVal());
-                }
-
-                Wizard w = new CreateIdentityProviderWizard(f, configPanel, ldapConfig, readSettings);
-                w.addWizardListener(wizardListener);
-
-                // register itself to listen to the addEvent
-                addEntityListener(listener);
-
-                w.pack();
-                Utilities.centerOnScreen(w);
-                DialogDisplayer.display(w);
+                showDuplicateProviderWarning();
+                edit( ldapConfig, this, true );
             }
-        });
+        };
 
+        SwingUtilities.invokeLater( new Runnable() {
+            @Override
+            public void run() {
+                edit( ldapConfig, duplicateCallback, readSettings );
+            }
+        } );
+    }
+
+    static LdapIdentityProviderConfigPanel buildPanels( final boolean typeSelectable ) {
+        return new LdapIdentityProviderConfigPanel(
+                new LdapGroupMappingPanel(
+                        new LdapUserMappingPanel(
+                                new LdapAdvancedConfigurationPanel(
+                                        new LdapCertificateSettingsPanel(null)))), typeSelectable);
+    }
+
+    private void edit( final LdapIdentityProviderConfig config,
+                       final Runnable duplicateCallback,
+                       final boolean readSettings ) {
+        final Frame f = TopComponents.getInstance().getTopParent();
+        final Wizard w = new CreateIdentityProviderWizard(f, buildPanels(true), config, readSettings);
+        w.addWizardListener( makeWizardAdapter(listener, duplicateCallback) );
+        w.pack();
+
+        // register itself to listen to the addEvent
+        addEntityListener( listener );
+
+        Utilities.centerOnParentWindow(w);
+        DialogDisplayer.display(w);
     }
 
     private EntityListener listener = makeEntityListener();
-    private WizardListener wizardListener = makeWizardAdapter(listener);
 }

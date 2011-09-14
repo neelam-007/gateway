@@ -1,23 +1,23 @@
 package com.l7tech.console.action;
 
-
+import com.l7tech.console.panels.BindOnlyLdapGeneralPanel;
 import com.l7tech.console.panels.CreateIdentityProviderWizard;
 import com.l7tech.console.panels.Wizard;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.IdentityProviderNode;
+import com.l7tech.identity.ldap.BindOnlyLdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 
 import javax.swing.*;
 import java.awt.*;
 
 /**
- * The <code>CopyLdapProviderAction</code> action copies an LDAP provider
+ * Action to copy a bind-only LDAP identity provider
  */
-public class CopyLdapProviderAction extends CopyIdentityProviderAction<LdapIdentityProviderConfig> {
+public class CopyBindOnlyLdapProviderAction extends CopyIdentityProviderAction<BindOnlyLdapIdentityProviderConfig> {
 
-    public CopyLdapProviderAction(IdentityProviderNode nodeIdentity) {
+    public CopyBindOnlyLdapProviderAction( final  IdentityProviderNode nodeIdentity ) {
         super(nodeIdentity);
-
     }
 
     /**
@@ -29,7 +29,7 @@ public class CopyLdapProviderAction extends CopyIdentityProviderAction<LdapIdent
      */
     @Override
     protected void performAction() {
-        final LdapIdentityProviderConfig newLdap = new LdapIdentityProviderConfig( getIdentityProviderConfig((EntityHeaderNode) node) );
+        final BindOnlyLdapIdentityProviderConfig newLdap = new BindOnlyLdapIdentityProviderConfig( getIdentityProviderConfig((EntityHeaderNode) node) );
         newLdap.setOid( LdapIdentityProviderConfig.DEFAULT_OID );
         newLdap.setVersion( 0 );
         SwingUtilities.invokeLater( new Runnable() {
@@ -42,11 +42,11 @@ public class CopyLdapProviderAction extends CopyIdentityProviderAction<LdapIdent
 
     @Override
     protected Wizard newWizard( final Frame parent,
-                                final LdapIdentityProviderConfig config,
+                                final BindOnlyLdapIdentityProviderConfig config,
                                 final boolean readSettings ) {
         return  new CreateIdentityProviderWizard(
                 parent,
-                NewLdapProviderAction.buildPanels( false ),
+                new BindOnlyLdapGeneralPanel(null, false),
                 config,
                 readSettings );
     }

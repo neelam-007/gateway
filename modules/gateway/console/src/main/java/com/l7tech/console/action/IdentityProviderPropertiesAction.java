@@ -77,52 +77,16 @@ public class IdentityProviderPropertiesAction extends NodeAction {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-
-                Frame f = TopComponents.getInstance().getTopParent();
                 EntityHeader header = ((EntityHeaderNode)node).getEntityHeader();
                 IdentityProviderConfig iProvider;
-                if (header.getOid() != -1) {
-
+                if (header.getOid() != -1L ) {
                     try {
-                        iProvider =
-                          getIdentityAdmin().findIdentityProviderConfigByID(header.getOid());
+                        iProvider = getIdentityAdmin().findIdentityProviderConfigByID(header.getOid());
 
                         if ( iProvider == null ) {
                             handleProviderDeleted(header);
                         } else {
-                            WizardStepPanel configPanel;
-                            Wizard w;
-
-                            if (iProvider.type() == IdentityProviderType.INTERNAL || iProvider.type() == IdentityProviderType.LDAP) {
-                                if (iProvider.type() == IdentityProviderType.LDAP) {
-                                    configPanel = new LdapIdentityProviderConfigPanel(new LdapGroupMappingPanel(new LdapUserMappingPanel(new LdapAdvancedConfigurationPanel(new LdapCertificateSettingsPanel(null)))), false);
-                                } else {
-                                    configPanel = new InternalIdentityProviderConfigPanel(new IdentityProviderCertificateValidationConfigPanel(null), false);
-                                }
-
-                                w = new EditIdentityProviderWizard(f, configPanel, iProvider);
-
-                            } else if (iProvider.type() == IdentityProviderType.FEDERATED) {
-                                boolean readOnly = !PermissionFlags.get(ID_PROVIDER_CONFIG).canUpdateSome();
-                                IdentityProviderCertificateValidationConfigPanel cvPanel = new IdentityProviderCertificateValidationConfigPanel(null,readOnly);
-                                configPanel = new FederatedIPGeneralPanel(new FederatedIPTrustedCertsPanel(cvPanel, readOnly), readOnly);
-
-                                w = new EditFederatedIPWizard(f, configPanel, (FederatedIdentityProviderConfig)iProvider, readOnly);
-                            } else if (iProvider.type() == IdentityProviderType.BIND_ONLY_LDAP) {
-                                boolean readOnly = !PermissionFlags.get(ID_PROVIDER_CONFIG).canUpdateSome();
-                                w = new EditIdentityProviderWizard(f, new BindOnlyLdapGeneralPanel(null, readOnly), iProvider);
-                            } else {
-                                throw new RuntimeException("Unsupported Identity Provider Type: " + iProvider.type().toString());
-                            }
-
-                            w.addWizardListener(wizardListener);
-
-                            // register itself to listen to the updateEvent
-                            addEntityListener(entityListener);
-
-                            w.pack();
-                            Utilities.centerOnScreen(w);
-                            DialogDisplayer.display(w);
+                            edit( iProvider );
                         }
 
                     } catch (Exception e1) {
@@ -132,6 +96,43 @@ public class IdentityProviderPropertiesAction extends NodeAction {
                 }
             }
         });
+    }
+
+    private void edit( final IdentityProviderConfig iProvider ) {
+        final Frame f = TopComponents.getInstance().getTopParent();
+        final WizardStepPanel configPanel;
+        final Wizard w;
+
+        if (iProvider.type() == IdentityProviderType.INTERNAL || iProvider.type() == IdentityProviderType.LDAP) {
+            if (iProvider.type() == IdentityProviderType.LDAP) {
+                configPanel = NewLdapProviderAction.buildPanels( false );
+            } else {
+                configPanel = new InternalIdentityProviderConfigPanel(new IdentityProviderCertificateValidationConfigPanel(null), false);
+            }
+
+            w = new EditIdentityProviderWizard(f, configPanel, iProvider);
+
+        } else if (iProvider.type() == IdentityProviderType.FEDERATED) {
+            boolean readOnly = !PermissionFlags.get( ID_PROVIDER_CONFIG ).canUpdateSome();
+            IdentityProviderCertificateValidationConfigPanel cvPanel = new IdentityProviderCertificateValidationConfigPanel(null,readOnly);
+            configPanel = new FederatedIPGeneralPanel(new FederatedIPTrustedCertsPanel(cvPanel, readOnly), readOnly);
+
+            w = new EditFederatedIPWizard(f, configPanel, (FederatedIdentityProviderConfig)iProvider, readOnly);
+        } else if (iProvider.type() == IdentityProviderType.BIND_ONLY_LDAP) {
+            boolean readOnly = !PermissionFlags.get(ID_PROVIDER_CONFIG).canUpdateSome();
+            w = new EditIdentityProviderWizard(f, new BindOnlyLdapGeneralPanel(null, readOnly), iProvider);
+        } else {
+            throw new RuntimeException("Unsupported Identity Provider Type: " + iProvider.type().toString());
+        }
+
+        w.addWizardListener(wizardListener);
+
+        // register itself to listen to the updateEvent
+        addEntityListener(entityListener);
+
+        w.pack();
+        Utilities.centerOnScreen( w );
+        DialogDisplayer.display( w );
     }
 
     private void handleProviderDeleted( final EntityHeader header ) {
@@ -190,7 +191,16 @@ public class IdentityProviderPropertiesAction extends NodeAction {
         listenerList.remove(EntityListener.class, listener);
     }
 
-    private WizardListener wizardListener = new WizardAdapter() {
+    static void showDuplicateProviderWarning() {
+        String msg = "An Identity Provider with the same name already exists.";
+        JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                msg,
+                "Error Saving Identity Provider",
+                JOptionPane.WARNING_MESSAGE);
+
+    }
+
+    private  WizardListener wizardListener = new WizardAdapter() {
         /**
          * Invoked when the wizard has finished.
          *
@@ -198,16 +208,14 @@ public class IdentityProviderPropertiesAction extends NodeAction {
          */
         @Override
         public void wizardFinished(WizardEvent we) {
-
             // update the provider
-            Wizard w = (Wizard)we.getSource();
+            final Wizard w = (Wizard)we.getSource();
             final IdentityProviderConfig iProvider = (IdentityProviderConfig)w.getWizardInput();
 
             if (iProvider != null) {
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
-
                         try {
                             getIdentityAdmin().saveIdentityProviderConfig(iProvider);
 
@@ -219,11 +227,8 @@ public class IdentityProviderPropertiesAction extends NodeAction {
 
                         } catch (Exception e) {
                             if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
-                                String msg = "An Identity Provider with the same name already exists.\nThe Identity Provider has not been saved.";
-                                JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                                    msg,
-                                    "Error Saving Identity Provider",
-                                    JOptionPane.WARNING_MESSAGE);
+                                showDuplicateProviderWarning();
+                                edit( iProvider );
                             } else {
                                 ErrorManager.getDefault().notify(Level.WARNING, e, "Error updating the identity provider.");
                             }
@@ -239,7 +244,7 @@ public class IdentityProviderPropertiesAction extends NodeAction {
         return Registry.getDefault().getIdentityAdmin();
     }
 
-    EntityListener entityListener = new EntityListenerAdapter() {
+    private EntityListener entityListener = new EntityListenerAdapter() {
         @Override
         public void entityUpdated(EntityEvent ev) {
             if (tree == null) {

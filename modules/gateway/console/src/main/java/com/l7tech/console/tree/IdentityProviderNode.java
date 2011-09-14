@@ -83,7 +83,11 @@ public class IdentityProviderNode extends EntityHeaderNode<EntityHeader> {
                 newUserAction.setEnabled(false);
                 newGroupAction.setEnabled(false);
                 newVirtualGroupAction.setEnabled(false);
-                list.add(new CopyLdapProviderAction(this));
+                if ( config.type() == IdentityProviderType.LDAP ) {
+                    list.add(new CopyLdapProviderAction(this));
+                } else if ( config.type() == IdentityProviderType.BIND_ONLY_LDAP  ) {
+                    list.add(new CopyBindOnlyLdapProviderAction(this));
+                }
             }
 
             list.add(newUserAction);

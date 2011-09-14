@@ -1,5 +1,6 @@
 package com.l7tech.console.action;
 
+import static com.l7tech.console.action.IdentityProviderPropertiesAction.showDuplicateProviderWarning;
 import com.l7tech.gateway.common.audit.LogonEvent;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
@@ -7,8 +8,6 @@ import com.l7tech.console.event.*;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.panels.*;
 import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.tree.TreeNodeFactory;
-import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
@@ -20,11 +19,9 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.util.ExceptionUtils;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreeNode;
-import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,11 +30,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
  * <p> @author fpang </p>
- * $Id$
  */
-
 public class NewFederatedIdentityProviderAction extends NewProviderAction {
     static final Logger log = Logger.getLogger(NewFederatedIdentityProviderAction.class.getName());
 
@@ -100,35 +94,36 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
      */
     @Override
     protected void performAction() {
-
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-
-                Frame f = TopComponents.getInstance().getTopParent();
-
-                WizardStepPanel importUsersStepPanel = null;
-                if(fipConfig != null && ((fipConfig.getImportedGroups() != null && fipConfig.getImportedGroups().size() > 0) ||
-                        (fipConfig.getImportedUsers() != null && fipConfig.getImportedUsers().size() > 0)))
-                {
-                    importUsersStepPanel = new FederatedIPImportUsersPanel(null);
-                }
-                FederatedIPGeneralPanel configPanel = new FederatedIPGeneralPanel(new FederatedIPTrustedCertsPanel(new IdentityProviderCertificateValidationConfigPanel(importUsersStepPanel)));
-                CreateFederatedIPWizard w = new CreateFederatedIPWizard(f, configPanel, fipConfig); //pass federated identity provider config
-                //FederatedIdentityProviderWindow w = new FederatedIdentityProviderWindow(f);
-
-                // register itself to listen to the addEvent
-                w.addWizardListener(wizardListener);
-
-                // register itself to listen to the addEvent
-                addEntityListener(listener);
-
-                w.pack();
-                Utilities.centerOnScreen(w);
-                DialogDisplayer.display(w);
+                edit( fipConfig );
             }
         });
 
+    }
+
+    private void edit( @Nullable final FederatedIdentityProviderConfig fipConfig ) {
+        final Frame f = TopComponents.getInstance().getTopParent();
+
+        WizardStepPanel importUsersStepPanel = null;
+        if(fipConfig != null && ((fipConfig.getImportedGroups() != null && fipConfig.getImportedGroups().size() > 0) ||
+                (fipConfig.getImportedUsers() != null && fipConfig.getImportedUsers().size() > 0)))
+        {
+            importUsersStepPanel = new FederatedIPImportUsersPanel(null);
+        }
+        final FederatedIPGeneralPanel configPanel = new FederatedIPGeneralPanel(new FederatedIPTrustedCertsPanel(new IdentityProviderCertificateValidationConfigPanel(importUsersStepPanel)));
+        final CreateFederatedIPWizard w = new CreateFederatedIPWizard(f, configPanel, fipConfig);
+
+        // register itself to listen to the addEvent
+        w.addWizardListener(wizardListener);
+
+        // register itself to listen to the addEvent
+        addEntityListener(listener);
+
+        w.pack();
+        Utilities.centerOnScreen(w);
+        DialogDisplayer.display(w);
     }
 
     private WizardListener wizardListener = new WizardAdapter() {
@@ -162,11 +157,8 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
                             // Refresh permission cache so that newly created IdP is usable
                             Registry.getDefault().getSecurityProvider().refreshPermissionCache();
                         } catch (DuplicateObjectException doe) {
-                            String msg = "An Identity Provider with the same name already exists.\nThe new Identity Provider has not been saved.";
-                            JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                                                          msg,
-                                                          "Error Saving Identity Provider",
-                                                          JOptionPane.WARNING_MESSAGE);
+                            showDuplicateProviderWarning();
+                            edit( iProvider );
                             header = null;
                         } catch (Exception e) {
                             ErrorManager.getDefault().notify(Level.WARNING, e, "Error saving the new identity provider: " + header.getName());
@@ -247,41 +239,7 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
             user.setLogin("");        
     }
 
-    private EntityListener listener = new EntityListenerAdapter() {
-        /**
-         * Fired when an new entity is added.
-         *
-         * @param ev event describing the action
-         */
-        @Override
-        public void entityAdded(final EntityEvent ev) {
-            SwingUtilities.invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    EntityHeader eh = (EntityHeader)ev.getEntity();
-                    IdentityProvidersTree tree = (IdentityProvidersTree)TopComponents.getInstance().getComponent(IdentityProvidersTree.NAME);
-                    if (tree == null) {
-                        log.log(Level.WARNING, "Unable to reach the identity tree.");
-                        return;
-                    }
-                    if (node == null) {
-                        node = tree.getRootNode();
-                    }
-                    if (tree.hasBeenExpanded(new TreePath(node.getPath()))) {
-                        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-
-                        final AbstractTreeNode newChildNode = TreeNodeFactory.asTreeNode(eh, null);
-                        model.insertNodeInto(newChildNode, node, node.getInsertPosition(newChildNode));
-                        TreeNode[] nodePath = model.getPathToRoot(newChildNode);
-                        if (nodePath != null) {
-                            tree.setSelectionPath(new TreePath(nodePath));
-                        }
-                    }
-                    removeEntityListener(listener);
-                }
-            });
-        }
-    };
+    private EntityListener listener = makeEntityListener();
 
     @Override
     public void onLogoff(LogonEvent e) {
