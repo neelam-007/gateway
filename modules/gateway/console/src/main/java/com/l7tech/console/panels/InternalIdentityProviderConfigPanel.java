@@ -133,7 +133,7 @@ public class InternalIdentityProviderConfigPanel extends WizardStepPanel {
         // Provider ID label
         JLabel providerNameLabel = new JLabel();
         providerNameLabel.setToolTipText(resources.getString("providerNameTextField.tooltip"));
-        providerNameLabel.setText(resources.getString("providerNameTextField.label"));
+        providerNameLabel.setText(resources.getString("providerNameTextField.plain-label"));
 
         constraints = new GridBagConstraints();
         constraints.gridx = 0;
