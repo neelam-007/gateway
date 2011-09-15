@@ -9,6 +9,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
+import com.l7tech.identity.User;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.variable.Syntax;
@@ -29,6 +30,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * Extracts values by name from {@link Message}s.
@@ -100,6 +102,8 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
         put(SSL_KEY_SIZE, "javax.servlet.request.key_size");
     }});
 
+    private static final Pattern PATTERN_PERIOD = Pattern.compile("\\.");
+
     @Override
     public Class<Message> getContextObjectClass() {
         return Message.class;
@@ -150,7 +154,24 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
         } else if (lname.startsWith(AUTH_USER_USERS)) {
             selector = select(new AuthenticatedUserGetter(AUTH_USER_USERS, true, AuthenticatedUserGetter.USER_TO_NAME, message));
         } else if (lname.startsWith(AUTH_USER_USER)) {
-            selector = select(new AuthenticatedUserGetter(AUTH_USER_USER, false, AuthenticatedUserGetter.USER_TO_NAME, message));
+            String[] names = PATTERN_PERIOD.split(name, 2);
+            String remainingName = names.length > 1 ? names[1] : null;
+
+            if (remainingName == null) {
+                selector = select(new AuthenticatedUserGetter(AUTH_USER_USER, false, AuthenticatedUserGetter.USER_TO_NAME, message));
+            } else {
+                // Check if the suffix (remainingName) is an index or an attribute of User object.
+                try {
+                    Integer.parseInt(remainingName);
+                    // Case 1: No exception thrown means the suffix is an index (integer).
+                    selector = select(new AuthenticatedUserGetter(AUTH_USER_USER, false, AuthenticatedUserGetter.USER_TO_NAME, message));
+                } catch (NumberFormatException e) {
+                    // Case 2: An exception thrown means the suffix is an attribute.
+                    final AuthenticatedUserGetter userGetter = new AuthenticatedUserGetter(AUTH_USER_USER, false, AuthenticatedUserGetter.USER_TO_ITSELF, message);
+                    final User user = (User) userGetter.get(names[0], PolicyEnforcementContextFactory.getCurrent());
+                    return new Selection(user, remainingName);
+                }
+            }
         } else if (lname.startsWith(AUTH_USER_DNS)) {
             selector = select(new AuthenticatedUserGetter(AUTH_USER_DNS, true, AuthenticatedUserGetter.USER_TO_DN, message));
         } else if (lname.startsWith(AUTH_USER_DN)) {

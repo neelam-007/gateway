@@ -58,6 +58,12 @@ INSERT INTO cluster_properties
 ALTER TABLE internal_user ADD COLUMN properties mediumtext default NULL;
 
 --
+-- Bug 9860: "Throughput Quota Enhancement" Feature Request
+--
+UPDATE counters SET countername = CONCAT(countername, '-', userid, '-', providerid) WHERE userid != '*' AND providerid != -1;
+ALTER TABLE counters DROP userid, DROP providerid;
+
+--
 --
 -- Reenable FK at very end of script
 --

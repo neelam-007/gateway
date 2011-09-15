@@ -49,7 +49,11 @@ public class UserSelector implements ExpandVariables.Selector<User> {
         } else if ("department".equalsIgnoreCase(name)) {
             return new Selection(user.getDepartment());
         } else if ("subjectDn".equalsIgnoreCase(name)) {
-            return new Selection(user.getSubjectDn());
+            if (user instanceof LdapUser) {
+                return new Selection(((LdapUser)user).getDn());
+            } else {
+                return new Selection(user.getSubjectDn());
+            }
         } else {
             return null;
         }

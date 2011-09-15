@@ -595,7 +595,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     @Override
     public String[] listExistingCounterNames() throws FindException {
         // get all the names for the counters
-        return counterIDManager.getDistinctCounterNames();
+        return counterIDManager.getAllCounterNames();
     }
 
     @Override

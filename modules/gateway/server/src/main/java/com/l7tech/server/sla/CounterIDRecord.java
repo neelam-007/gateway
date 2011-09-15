@@ -21,10 +21,7 @@ import java.io.Serializable;
 @Proxy(lazy=false)
 @Table(name="counters")
 public class CounterIDRecord implements Serializable {
-    public static final String UNIDENTIFIED_USER = "*";
     public long counterId = -1L;
-    public String userId = UNIDENTIFIED_USER;
-    public long providerId = -1L;
     public String counterName;
 
     @Id
@@ -36,25 +33,6 @@ public class CounterIDRecord implements Serializable {
 
     public void setCounterId(long counterId) {
         this.counterId = counterId;
-    }
-
-    @Column(name="userid", nullable=false, length=128)
-    public String getUserId() {
-        return userId;
-    }
-
-    public void setUserId(String userId) {
-        if (userId == null) this.userId = UNIDENTIFIED_USER;
-        else this.userId = userId;
-    }
-
-    @Column(name="providerid", nullable=false)
-    public long getProviderId() {
-        return providerId;
-    }
-
-    public void setProviderId(long providerId) {
-        this.providerId = providerId;
     }
 
     @Column(name="countername", nullable=false, length=128)

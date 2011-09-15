@@ -7,12 +7,9 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.action.Actions;
-import com.l7tech.console.util.Registry;
-import com.l7tech.gateway.common.service.ServiceAdmin;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
+import com.l7tech.util.CounterPresetInfoUtils;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -20,11 +17,7 @@ import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.Vector;
 
 /**
  * A dialog for editing a ThroughputQuota dialog.
@@ -38,21 +31,21 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
     private JButton helpButton;
     private JTextField quotaValueField;
     private JComboBox quotaUnitCombo;
-    private JComboBox counterNameCombo;
-    private JRadioButton perRequestorRadio;
-    private JRadioButton globalRadio;
+    private JComboBox quotaOptionsComboBox;
+    private JTextField counterNameTextField;
 
     private static final String[] TIME_UNITS = {"second", "minute", "hour", "day", "month"};
-    private static final ArrayList<String> counterNameInSessionOnly = new ArrayList<String>();
 
     private ThroughputQuota subject;
     private boolean oked = false;
-    private final Logger logger = Logger.getLogger(ThroughputQuotaForm.class.getName());
     private JRadioButton alwaysIncrementRadio;
     private JRadioButton decrementRadio;
     private JRadioButton incrementOnSuccessRadio;
     private JPanel varPrefixFieldPanel;
     private TargetVariablePanel varPrefixField;
+
+    private String uuid[] = {CounterPresetInfoUtils.makeUuid()};
+    private String expr = "";
 
     public ThroughputQuotaForm(Frame owner, ThroughputQuota subject) {
         super(owner, subject, true);
@@ -63,13 +56,10 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
     protected void initComponents() {
         getContentPane().add(mainPanel);
 
-        // initial values
-
         DefaultComboBoxModel model = (DefaultComboBoxModel)quotaUnitCombo.getModel();
         for (String TIME_UNIT : TIME_UNITS) {
             model.addElement(TIME_UNIT);
         }
-        counterNameCombo.setEditable(true);
 
         varPrefixField = new TargetVariablePanel();
         varPrefixFieldPanel.setLayout(new BorderLayout());
@@ -85,15 +75,13 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
         varPrefixField.setSuffixes(subject.getVariableSuffixes());
         varPrefixField.setAcceptEmpty(true);
 
-        ButtonGroup bg = new ButtonGroup();
-        bg.add(perRequestorRadio);
-        bg.add(globalRadio);
-
-
-        bg = new ButtonGroup();
-        bg.add(alwaysIncrementRadio);
-        bg.add(decrementRadio);
-        bg.add(incrementOnSuccessRadio);
+        quotaOptionsComboBox.setModel(new DefaultComboBoxModel(new Vector<String>(ThroughputQuota.COUNTER_NAME_TYPES.keySet())));
+        quotaOptionsComboBox.addActionListener(new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                updateCounterName();
+            }
+        }));
 
         decrementRadio.addActionListener(new ActionListener() {
             @Override
@@ -139,20 +127,23 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
         });
     }
 
-    private void populateExistingCounterNamesFromPolicy(Assertion toInspect, java.util.List container) {
-        if (toInspect == subject) {
-            return; // skip us
-        } else if (toInspect instanceof CompositeAssertion) {
-            CompositeAssertion ca = (CompositeAssertion)toInspect;
-            for (Iterator i = ca.children(); i.hasNext();) {
-                Assertion a = (Assertion)i.next();
-                populateExistingCounterNamesFromPolicy(a, container);
+    /**
+     * When switching quota options, the counter name should be updated automatically.
+     */
+    private void updateCounterName() {
+        final String quotaOption = (String)quotaOptionsComboBox.getSelectedItem();
+        final String counterName = counterNameTextField.getText().trim();
+
+        counterNameTextField.setEditable(ThroughputQuota.PRESET_CUSTOM.equals(quotaOption));
+
+        if (ThroughputQuota.PRESET_CUSTOM.equals(quotaOption)) {
+            if (counterName == null || counterName.length() < 1) {
+                counterNameTextField.setText(CounterPresetInfoUtils.makeDefaultCustomExpr(uuid[0], expr));
             }
-        } else if (toInspect instanceof ThroughputQuota) {
-            ThroughputQuota tq = (ThroughputQuota)toInspect;
-            String maybenew = tq.getCounterName();
-            if (maybenew != null && !container.contains(maybenew)) {
-                container.add(maybenew);
+        } else {
+            expr = ThroughputQuota.COUNTER_NAME_TYPES.get(quotaOption);
+            if (CounterPresetInfoUtils.isDefaultCustomExpr(counterName, ThroughputQuota.COUNTER_NAME_TYPES)) {
+                counterNameTextField.setText(CounterPresetInfoUtils.makeDefaultCustomExpr(uuid[0], expr));
             }
         }
     }
@@ -185,28 +176,29 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
         System.exit(0);
     }
 
-    public ThroughputQuota getData(ThroughputQuota assertion){
+    public ThroughputQuota getData(ThroughputQuota assertion) {
         String quota = quotaValueField.getText();
         String error = ThroughputQuota.validateQuota(quota);
         if (error != null) {
-            JOptionPane.showMessageDialog(okButton,
-                                          error,
-                                          "Invalid value", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(okButton, error, "Invalid value", JOptionPane.ERROR_MESSAGE);
             return null;
         }
 
-        String counter = (String)counterNameCombo.getSelectedItem();
+        String quotaOption = (String) quotaOptionsComboBox.getSelectedItem();
+        String counter = CounterPresetInfoUtils.findRawCounterName(
+            quotaOption, uuid[0], counterNameTextField.getText().trim(),
+            ThroughputQuota.PRESET_CUSTOM, ThroughputQuota.COUNTER_NAME_TYPES
+        );
         if (counter == null || counter.length() < 1) {
             JOptionPane.showMessageDialog(okButton,
                               "Please enter a counter name",
                               "Invalid value", JOptionPane.ERROR_MESSAGE);
             return null;
         }
-        
-        boolean newCounterName = counterNameCombo.getSelectedIndex() == -1;
+
         assertion.setCounterName(counter);
         assertion.setQuota(quota);
-        assertion.setGlobal(globalRadio.isSelected());
+        assertion.setGlobal(true); // Note: do NOT remove this line.  Setting global as true is for backwards compatibility.  For more details, please check the definition of the variable, "global".
         assertion.setTimeUnit(quotaUnitCombo.getSelectedIndex()+1);
         assertion.setVariablePrefix(varPrefixField.getVariable());
 
@@ -217,10 +209,7 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
             counterStrategy = ThroughputQuota.DECREMENT;
         }
         assertion.setCounterStrategy(counterStrategy);
-        if (newCounterName) {
-            // remember this as part of this admin session
-            counterNameInSessionOnly.add(counter);
-        }
+
         return assertion;
     }
 
@@ -232,51 +221,30 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
         model.setSelectedItem(TIME_UNITS[subject.getTimeUnit()-1]);
 
         varPrefixField.setAssertion(subject,getPreviousAssertion());
-        // add the counters that are not on gateway but are in the policy
-        Assertion root = subject.getParent();
-        Assertion prevRoot = getPreviousAssertion()!=null ? getPreviousAssertion().getParent(): null;
-        if (root == null && prevRoot != null) {
-            root = prevRoot;
-        } else {
-            if (root != null){
-                while (root.getParent() != null) {
-                    root = root.getParent();
-                }
+
+        String rawCounterName = subject.getCounterName();
+
+        // Check if the assertion is in pre-6.2 version.  If so, set Custom option and display the counter name in Counter ID text field.
+        if (subject.isGlobal() || ThroughputQuota.DEFAULT_COUNTER_NAME.equals(rawCounterName)) {
+            if (new ThroughputQuota().getCounterName().equals(rawCounterName)) {
+                rawCounterName = CounterPresetInfoUtils.findRawCounterName(ThroughputQuota.PRESET_DEFAULT, uuid[0] = CounterPresetInfoUtils.makeUuid(),
+                    null, ThroughputQuota.PRESET_CUSTOM, ThroughputQuota.COUNTER_NAME_TYPES);
             }
-        }
 
-        // get counter names from other sla assertions here
-        ArrayList<String> listofexistingcounternames = new ArrayList<String>();
-        // start by the counters that are already defined on gateway
-        ServiceAdmin serviceAdmin = Registry.getDefault().getServiceManager();
-        try {
-            String[] gatewayCounter = serviceAdmin.listExistingCounterNames();
-            listofexistingcounternames.addAll(Arrays.asList(gatewayCounter));
-        } catch (FindException e) {
-            logger.log(Level.WARNING, "cannot get counters from gateway", e);
-        }
-        // add session counternames
-        for (String counterName : counterNameInSessionOnly) {
-            if (!listofexistingcounternames.contains(counterName)) listofexistingcounternames.add(counterName);
-
-        }
-        populateExistingCounterNamesFromPolicy(root, listofexistingcounternames);
-        String thisValue = subject.getCounterName();
-        if (thisValue != null && !listofexistingcounternames.contains(thisValue)) {
-            listofexistingcounternames.add(thisValue);
-        }
-        model = (DefaultComboBoxModel)counterNameCombo.getModel();
-        for (String listofexistingcountername : listofexistingcounternames) {
-            model.addElement(listofexistingcountername);
-        }
-        if (thisValue != null) {
-            model.setSelectedItem(thisValue);
-        }
-        if (subject.isGlobal()) {
-            globalRadio.setSelected(true);
+            String quotaOption = CounterPresetInfoUtils.findCounterNameKey(rawCounterName, uuid, ThroughputQuota.PRESET_CUSTOM, ThroughputQuota.COUNTER_NAME_TYPES);
+            if (quotaOption == null) {
+                quotaOptionsComboBox.setSelectedItem(ThroughputQuota.PRESET_CUSTOM);
+                counterNameTextField.setText(rawCounterName);
+            } else {
+                quotaOptionsComboBox.setSelectedItem(quotaOption);
+                expr = ThroughputQuota.COUNTER_NAME_TYPES.get(quotaOption);
+                counterNameTextField.setText(CounterPresetInfoUtils.makeDefaultCustomExpr(uuid[0], expr));
+            }
         } else {
-            perRequestorRadio.setSelected(true);
+            quotaOptionsComboBox.setSelectedItem(ThroughputQuota.PRESET_CUSTOM);
+            counterNameTextField.setText(rawCounterName);
         }
+
         switch (subject.getCounterStrategy()) {
             case ThroughputQuota.ALWAYS_INCREMENT:
                 alwaysIncrementRadio.setSelected(true);
@@ -291,5 +259,4 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
                 break;
         }
     }
-
 }

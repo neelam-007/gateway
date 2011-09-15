@@ -171,8 +171,8 @@ public class BuiltinVariables {
         new VariableMetadata("request.wss", true, false, null, false),
         new VariableMetadata("request.username", false, false, null, false),
         new VariableMetadata("request.password", false, false, null, false),
-        new VariableMetadata("request.authenticateduser", true, false, null, false),
-        new VariableMetadata("request.authenticatedusers", true, false, null, false),
+        new VariableMetadata("request.authenticateduser", true, false, null, false, DataType.UNKNOWN),
+        new VariableMetadata("request.authenticatedusers", true, true, null, false, DataType.UNKNOWN),
         new VariableMetadata("request.authenticateddn", true, false, null, false),
         new VariableMetadata("request.authenticateddns", true, false, null, false),
 

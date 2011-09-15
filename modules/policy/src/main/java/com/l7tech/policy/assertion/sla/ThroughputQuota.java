@@ -14,7 +14,11 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.util.CounterPresetInfoUtils;
+import com.l7tech.util.TextUtils;
 import com.l7tech.util.ValidationUtils;
+
+import java.util.*;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
@@ -28,6 +32,19 @@ import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
  * @author flascelles@layer7-tech.com
  */
 public class ThroughputQuota extends Assertion implements UsesVariables, SetsVariables {
+    public static final String PRESET_DEFAULT = "Authenticated user";
+    public static final String PRESET_GLOBAL = "Gateway cluster";
+    public static final String PRESET_CUSTOM = "Custom";
+    public static final Map<String, String> COUNTER_NAME_TYPES = new LinkedHashMap<String, String>() {{
+        put(PRESET_DEFAULT, "${request.authenticateduser.id}-${request.authenticateduser.providerid}");
+        put("Client IP", "${request.tcp.remoteAddress}");
+        put("SOAP operation", "${request.soap.operation}");
+        put("SOAP namespace", "${request.soap.namespace}");
+        put(PRESET_GLOBAL, "");
+        put(PRESET_CUSTOM, CounterPresetInfoUtils.makeUuid());
+    }};
+    public static final String DEFAULT_COUNTER_NAME = "ThroughputQuota-${request.authenticateduser.id}-${request.authenticateduser.providerid}";
+
     public static final int MAX_THROUGHPUT_QUOTA = 100000;
     public static final int PER_SECOND = 1;
     public static final int PER_MINUTE = 2;
@@ -47,9 +64,16 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
     private String maxVariable;
     private String variablePrefix = "";
     private String quota = "200";
+
+    @SuppressWarnings({"UnusedDeclaration"})
+    @Deprecated
+    // Keeping this variable is for backwards compatibility with previous versions of Throughput Quota Assertion.
+    // When a new assertion is created, global is always set to true.  There is only one case, in which "global" has a false value.
+    // This case is a pre-6.2 Throughput Quota assertion with a Requestor quota option chosen.
     private boolean global = false;
+
     private int timeUnit = PER_MONTH;
-    private String counterName = "";
+    private String counterName = DEFAULT_COUNTER_NAME;
     public static final int ALWAYS_INCREMENT = 1;
     public static final int INCREMENT_ON_SUCCESS = 2;
     public static final int DECREMENT = 3;
@@ -183,6 +207,12 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
      * @return the name for this counter
      */
     public String getCounterName() {
+        // First check if the assertion is pre-6.2 version.  If so, update the counter name.
+        if (!isGlobal() && !ThroughputQuota.DEFAULT_COUNTER_NAME.equals(counterName)) {
+            setCounterName(counterName + "-" + COUNTER_NAME_TYPES.get(PRESET_DEFAULT));
+            setGlobal(true);
+        }
+
         return counterName;
     }
 
@@ -208,7 +238,8 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(counterName, getQuota());
+        // If the assertion is a previous version, then update the counter name by calling the method getCounterName().
+        return Syntax.getReferencedNames(getCounterName(), getQuota());
     }
 
     @Override
@@ -242,10 +273,11 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
             if(!decorate) return baseName;
 
             final StringBuilder buffer = new StringBuilder( baseName );
+            final String readableCounterName = getReadableCounterName(assertion.getCounterName());
             if (assertion.getCounterStrategy() == ThroughputQuota.DECREMENT) {
-                buffer.append(": Decrement counter ").append(assertion.getCounterName());
+                buffer.append(": Decrement counter ").append(readableCounterName);
             } else {
-                buffer.append(": ").append(assertion.getCounterName()).append(": ").append(assertion.getQuota()).append(" per ").append(timeUnitStr(assertion.getTimeUnit()));
+                buffer.append(": ").append(readableCounterName).append(": ").append(assertion.getQuota()).append(" per ").append(timeUnitStr(assertion.getTimeUnit()));
             }
             return buffer.toString();
         }
@@ -277,5 +309,23 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
             error = "Throughput quota must be an integer between 1 and " + MAX_THROUGHPUT_QUOTA;
         }
         return error;
+    }
+
+    /**
+     * Generate a user-experienced readable counter name to be displayed in UI.
+     * @param rawCounterName: the raw counter name with a format PRESET(<uuid>)-${<context variable>}, if the raw counter name is well-formatted.
+     * @return a readable counter name in a format, "<8-digit of uuid>-${<context variable>}.
+     */
+    private static String getReadableCounterName(final String rawCounterName) {
+        final String[] uuidOut = new String[]{null};
+        final String quotaOption = CounterPresetInfoUtils.findCounterNameKey(rawCounterName, uuidOut, PRESET_CUSTOM, COUNTER_NAME_TYPES);
+
+        String readableCounterName = quotaOption == null?
+            rawCounterName : CounterPresetInfoUtils.makeDefaultCustomExpr(uuidOut[0], COUNTER_NAME_TYPES.get(quotaOption));
+
+        if (readableCounterName == null) readableCounterName = rawCounterName;
+        if (readableCounterName.length() > 128) readableCounterName = TextUtils.truncateStringAtEnd(readableCounterName, 128);
+
+        return readableCounterName;
     }
 }

@@ -26,8 +26,8 @@ class AuthenticatedUserGetter extends Getter {
         final List<AuthenticationResult> authResults = authenticationContext.getAllAuthenticationResults();
         if (multivalued) {
             if ( !name.equalsIgnoreCase(prefix) ) return null; // suffix not supported
-            final List<String> strings = Functions.map(authResults, userToValue);
-            return strings.toArray(new String[strings.size()]);
+            final List<Object> objects = Functions.map(authResults, userToValue);
+            return objects.toArray(new Object[objects.size()]);
         }
 
         final int prefixLength = prefix.length();
@@ -57,7 +57,15 @@ class AuthenticatedUserGetter extends Getter {
 
     //- PACKAGE
 
-   static final Functions.Unary<String,AuthenticationResult> USER_TO_NAME = new Functions.Unary<String, AuthenticationResult>() {
+    static final Functions.Unary<Object,AuthenticationResult> USER_TO_ITSELF = new Functions.Unary<Object, AuthenticationResult>() {
+        @Override
+        public User call(final AuthenticationResult authResult) {
+            if (authResult == null) return null;
+            return authResult.getUser();
+        }
+    };
+
+   static final Functions.Unary<Object,AuthenticationResult> USER_TO_NAME = new Functions.Unary<Object, AuthenticationResult>() {
         @Override
         public String call(final AuthenticationResult authResult) {
             if (authResult == null) return null;
@@ -71,7 +79,7 @@ class AuthenticatedUserGetter extends Getter {
         }
     };
 
-    static final Functions.Unary<String,AuthenticationResult> USER_TO_DN = new Functions.Unary<String, AuthenticationResult>() {
+    static final Functions.Unary<Object,AuthenticationResult> USER_TO_DN = new Functions.Unary<Object, AuthenticationResult>() {
         @Override
         public String call(final AuthenticationResult authResult) {
             if (authResult == null) return null;
@@ -86,13 +94,13 @@ class AuthenticatedUserGetter extends Getter {
 
     AuthenticatedUserGetter( final String prefix,
                              final boolean multivalued,
-                             final Functions.Unary<String,AuthenticationResult> property ) {
+                             final Functions.Unary<Object,AuthenticationResult> property ) {
         this(prefix, multivalued, property, null);
     }
 
     AuthenticatedUserGetter( final String prefix,
                              final boolean multivalued,
-                             final Functions.Unary<String,AuthenticationResult> property,
+                             final Functions.Unary<Object, AuthenticationResult> property,
                              final Message message ) {
         this.prefix = prefix;
         this.multivalued = multivalued;
@@ -107,6 +115,5 @@ class AuthenticatedUserGetter extends Getter {
     private final String prefix;
     private final boolean multivalued;
     private final Message message;
-    private final Functions.Unary<String, AuthenticationResult> userToValue;
-
+    private final Functions.Unary<Object, AuthenticationResult> userToValue;
 }

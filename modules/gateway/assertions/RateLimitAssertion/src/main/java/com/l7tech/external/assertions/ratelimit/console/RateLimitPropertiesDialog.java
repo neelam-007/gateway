@@ -6,6 +6,7 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.util.CounterPresetInfoUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -37,7 +38,7 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
     private JCheckBox splitRateAcrossNodes;
 
     private boolean confirmed = false;
-    private String uuid[] = {RateLimitAssertion.PresetInfo.makeUuid()};
+    private String uuid[] = {CounterPresetInfoUtils.makeUuid()};
     private String expr = "";
 
 
@@ -59,7 +60,7 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
             }
         }));
 
-        concurrencyLimitField.setText(String.valueOf(RateLimitAssertion.PresetInfo.DEFAULT_CONCURRENCY_LIMIT));
+        concurrencyLimitField.setText(String.valueOf(RateLimitAssertion.DEFAULT_CONCURRENCY_LIMIT));
 
         ActionListener concListener = new ActionListener() {
             @Override
@@ -75,7 +76,7 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
         concurrencyLimitOnRb.addActionListener(concListener);
         concurrencyLimitOffRb.addActionListener(concListener);
 
-        counterCb.setModel(new DefaultComboBoxModel(new Vector<String>(RateLimitAssertion.PresetInfo.counterNameTypes.keySet())));
+        counterCb.setModel(new DefaultComboBoxModel(new Vector<String>(RateLimitAssertion.COUNTER_NAME_TYPES.keySet())));
         counterCb.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -133,7 +134,7 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
         }
 
         if (selected && concurrency < 1 && referencedVars.length == 0) //set to 10 if value is enabled for the first time e.g. it's previous value was 0, which is the default
-            concurrencyLimitField.setText(String.valueOf(RateLimitAssertion.PresetInfo.DEFAULT_CONCURRENCY_LIMIT));
+            concurrencyLimitField.setText(String.valueOf(RateLimitAssertion.DEFAULT_CONCURRENCY_LIMIT));
         if (selected) {
             concurrencyLimitField.selectAll();
             concurrencyLimitField.requestFocusInWindow();
@@ -143,20 +144,20 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
     private void updateCounterNameEnableState() {
         String counterNameKey = (String)counterCb.getSelectedItem();
         String nameField = counterNameField.getText().trim();
-        if (RateLimitAssertion.PresetInfo.PRESET_CUSTOM.equals(counterNameKey)) {
+        if (RateLimitAssertion.PRESET_CUSTOM.equals(counterNameKey)) {
             counterNameField.setVisible(true);
             counterNameField.setEnabled(true);
             if (nameField == null || nameField.length() < 1)
-                counterNameField.setText(RateLimitAssertion.PresetInfo.makeDefaultCustomExpr(uuid[0], expr));
+                counterNameField.setText(CounterPresetInfoUtils.makeDefaultCustomExpr(uuid[0], expr));
             counterNameField.selectAll();
             counterNameField.requestFocusInWindow();
         } else {
             counterNameField.setEnabled(false);
-            expr = RateLimitAssertion.PresetInfo.counterNameTypes.get(counterNameKey);
+            expr = RateLimitAssertion.COUNTER_NAME_TYPES.get(counterNameKey);
             if (nameField == null || nameField.length() < 1)
                 counterNameField.setVisible(false);
-            else if (RateLimitAssertion.PresetInfo.isDefaultCustomExpr(nameField))
-                counterNameField.setText(RateLimitAssertion.PresetInfo.makeDefaultCustomExpr(uuid[0], expr));
+            else if (CounterPresetInfoUtils.isDefaultCustomExpr(nameField, RateLimitAssertion.COUNTER_NAME_TYPES))
+                counterNameField.setText(CounterPresetInfoUtils.makeDefaultCustomExpr(uuid[0], expr));
         }
     }
 
@@ -168,7 +169,7 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
     private boolean checkValidity() {
         String err = null;
 
-        if (RateLimitAssertion.PresetInfo.PRESET_CUSTOM.equals(counterCb.getSelectedItem()) && counterNameField.getText().trim().length() < 1)
+        if (RateLimitAssertion.PRESET_CUSTOM.equals(counterCb.getSelectedItem()) && counterNameField.getText().trim().length() < 1)
             err = "Custom rate limiter name must not be empty.";
 
         if(err == null && concurrencyLimitOnRb.isSelected()) err = RateLimitAssertion.validateMaxConcurrency(concurrencyLimitField.getText());
@@ -207,11 +208,12 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
 
         /** Freely overwrite the default counter name with a better one. */
         if (new RateLimitAssertion().getCounterName().equals(rawCounterName))
-            rawCounterName = RateLimitAssertion.PresetInfo.findRawCounterName(RateLimitAssertion.PresetInfo.PRESET_DEFAULT, uuid[0] = RateLimitAssertion.PresetInfo.makeUuid(), null);
+            rawCounterName = CounterPresetInfoUtils.findRawCounterName(RateLimitAssertion.PRESET_DEFAULT, uuid[0] = CounterPresetInfoUtils.makeUuid(),
+                null, RateLimitAssertion.PRESET_CUSTOM, RateLimitAssertion.COUNTER_NAME_TYPES);
 
-        String cnk = RateLimitAssertion.PresetInfo.findCounterNameKey(rawCounterName, uuid);
+        String cnk = CounterPresetInfoUtils.findCounterNameKey(rawCounterName, uuid, RateLimitAssertion.PRESET_CUSTOM, RateLimitAssertion.COUNTER_NAME_TYPES);
         if (cnk == null) {
-            counterCb.setSelectedItem(RateLimitAssertion.PresetInfo.PRESET_CUSTOM);
+            counterCb.setSelectedItem(RateLimitAssertion.PRESET_CUSTOM);
             counterNameField.setText(rawCounterName);
         } else {
             counterCb.setSelectedItem(cnk);
@@ -255,7 +257,8 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
     @Override
     public RateLimitAssertion getData(RateLimitAssertion rla) {
         String counterNameKey = (String)counterCb.getSelectedItem();
-        String rawCounterName = RateLimitAssertion.PresetInfo.findRawCounterName(counterNameKey, uuid[0], counterNameField.getText().trim());
+        String rawCounterName = CounterPresetInfoUtils.findRawCounterName(counterNameKey, uuid[0],
+            counterNameField.getText().trim(), RateLimitAssertion.PRESET_CUSTOM, RateLimitAssertion.COUNTER_NAME_TYPES);
         rla.setCounterName(rawCounterName);
         rla.setMaxRequestsPerSecond(maxRequestsPerSecondField.getText());
         rla.setShapeRequests(shapingOnRb.isSelected());

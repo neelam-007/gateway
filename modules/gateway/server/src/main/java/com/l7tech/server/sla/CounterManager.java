@@ -11,37 +11,37 @@ public interface CounterManager {
      * Increment the counter identified by counterId only if the resulting value of the counter for
      * the passed fieldOfInterest will not exceed the passed limit.
      *
-     * @param counterId the id of the counter as provided by CounterIDManager
+     * @param counterName the name of the counter used for counter lookup
      * @param timestamp the time for which this increment should be recorded at
      * @param fieldOfInterest ThroughputQuota.PER_SECOND, ThroughputQuota.PER_HOUR, ThroughputQuota.PER_DAY or
      * ThroughputQuota.PER_MONTH
      * @return the counter value of interest if incremented. if the limit is already reached, an exceptio is thrown
      * @throws com.l7tech.server.sla.CounterManager.LimitAlreadyReachedException if the limit was already reached
      */
-    public long incrementOnlyWithinLimitAndReturnValue(long counterId,
+    public long incrementOnlyWithinLimitAndReturnValue(String counterName,
                                                        long timestamp,
                                                        int fieldOfInterest,
                                                        long limit) throws CounterManager.LimitAlreadyReachedException;
 
     /**
      * Increment this counter, and return the specific value of interest
-     * @param counterId the id of the counter as provided by CounterIDManager
+     * @param counterName the name of the counter used for counter lookup
      * @param timestamp the time for which this increment should be recorded at
      * @param fieldOfInterest ThroughputQuota.PER_SECOND, ThroughputQuota.PER_HOUR, ThroughputQuota.PER_DAY or
      * ThroughputQuota.PER_MONTH
      * @return the counter value of interest
      */
-    public long incrementAndReturnValue(long counterId, long timestamp, int fieldOfInterest);
+    public long incrementAndReturnValue(String counterName, long timestamp, int fieldOfInterest);
 
     /**
      * get a current counter value without incrementing anything
      */ 
-    public long getCounterValue(long counterId, int fieldOfInterest);
+    public long getCounterValue(String counterName, int fieldOfInterest);
 
     /**
      * Decrement the counter.
      */
-    public void decrement(long counterId);
+    public void decrement(String counterName);
 
     public class LimitAlreadyReachedException extends Exception {
         public LimitAlreadyReachedException(String msg) {

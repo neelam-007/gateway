@@ -30,9 +30,9 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
 
     private final Logger logger = Logger.getLogger(DBCounterManager.class.getName());
 
-    private Counter getLockedCounter(Connection conn, long counterId) throws SQLException {
+    private Counter getLockedCounter(Connection conn, String counterName) throws SQLException {
         PreparedStatement ps = conn.prepareStatement("SELECT cnt_sec, cnt_min, cnt_hr, cnt_day, cnt_mnt, last_update" +
-                                                                 " FROM counters WHERE counterid=" + counterId +
+                                                                 " FROM counters WHERE countername='" + counterName + "'" +
                                                                  " FOR UPDATE");
         ResultSet rs = ps.executeQuery();
         Counter output = null;
@@ -51,10 +51,10 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
         return output;
     }
 
-    private void recordNewCounterValue(Connection conn, long counterId, Counter newValues) throws SQLException {
+    private void recordNewCounterValue(Connection conn, String counterName, Counter newValues) throws SQLException {
         PreparedStatement ps = conn.prepareStatement("UPDATE counters " +
                                                      "SET cnt_sec=?, cnt_min=?, cnt_hr=?, cnt_day=?, cnt_mnt=?, last_update=? " +
-                                                     "WHERE counterid=?");
+                                                     "WHERE countername=?");
         ps.clearParameters();
         ps.setLong(1, newValues.getCurrentSecondCounter());
         ps.setLong(2, newValues.getCurrentMinuteCounter());
@@ -62,21 +62,22 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
         ps.setLong(4, newValues.getCurrentDayCounter());
         ps.setLong(5, newValues.getCurrentMonthCounter());
         ps.setLong(6, newValues.getLastUpdate());
-        ps.setLong(7, counterId);
+        ps.setString(7, counterName);
         ps.executeUpdate();
         ps.close();
     }
 
-    public long incrementOnlyWithinLimitAndReturnValue(final long counterId,
+    @Override
+    public long incrementOnlyWithinLimitAndReturnValue(final String counterName,
                                                        final long timestamp,
                                                        final int fieldOfInterest,
                                                        final long limit) throws LimitAlreadyReachedException {
-        Object result = getHibernateTemplate().execute(new HibernateCallback() {
+         Object result = getHibernateTemplate().execute(new HibernateCallback() {
             public Object doInHibernate(Session session) {
                 try {
                     Object output = null;
                     Connection conn = session.connection();
-                    Counter dbcnt = getLockedCounter(conn, counterId);
+                    Counter dbcnt = getLockedCounter(conn, counterName);
                     if (dbcnt == null) {
                         throw new RuntimeException("the counter could not be fetched from db table"); // not supposed to happen
                     }
@@ -119,7 +120,7 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
                         conn = null;
                     } else {
                         // put new value in database
-                        recordNewCounterValue(conn, counterId, dbcnt);
+                        recordNewCounterValue(conn, counterName, dbcnt);
                         conn.commit();
                         conn = null;
 
@@ -162,20 +163,22 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
         throw new RuntimeException("unexpected result type " + result);
     }
 
-    public long incrementAndReturnValue(final long counterId, final long timestamp, final int fieldOfInterest) {
+    @Override
+    public long incrementAndReturnValue(final String counterName, final long timestamp, final int fieldOfInterest) {
         Object result = getHibernateTemplate().execute(new HibernateCallback() {
+            @Override
             public Object doInHibernate(Session session) {
                 try {
                     Object output = null;
                     Connection conn = session.connection();
-                    Counter dbcnt = getLockedCounter(conn, counterId);
+                    Counter dbcnt = getLockedCounter(conn, counterName);
                     if (dbcnt == null) {
                         throw new RuntimeException("the counter could not be fetched from db table"); // not supposed to happen
                     }
 
                     incrementCounter(dbcnt, timestamp);
                     // put new value in database
-                    recordNewCounterValue(conn, counterId, dbcnt);
+                    recordNewCounterValue(conn, counterName, dbcnt);
                     conn.commit();
                     conn = null;
 
@@ -216,8 +219,10 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
         throw new RuntimeException("unexpected result type " + result);
     }
 
-    public long getCounterValue(final long counterId, final int fieldOfInterest) {
+    @Override
+    public long getCounterValue(final String counterName, final int fieldOfInterest) {
         Object result = getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+            @Override
             public Object doInHibernateReadOnly(Session session) {
                 try {
                     String fieldstr = null;
@@ -241,7 +246,7 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
 
                     Connection conn = session.connection();
                     PreparedStatement ps = conn.prepareStatement("SELECT " + fieldstr +
-                                                                 " FROM counters WHERE counterid=" + counterId);
+                                                                 " FROM counters WHERE countername='" + counterName + "'");
                     ResultSet rs = ps.executeQuery();
                     long desiredval = -1;
                     while (rs.next()) {
@@ -274,12 +279,13 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
         throw new RuntimeException("unexpected result type " + result);
     }
 
-    public void decrement(final long counterId) {
+    @Override
+    public void decrement(final String counterName) {
         getHibernateTemplate().execute(new HibernateCallback() {
             public Object doInHibernate(Session session) {
                 try {
                     Connection conn = session.connection();
-                    Counter dbcnt = getLockedCounter(conn, counterId);
+                    Counter dbcnt = getLockedCounter(conn, counterName);
                     if (dbcnt == null) {
                         throw new RuntimeException("the counter could not be fetched from db table"); // not supposed to happen
                     }
@@ -291,7 +297,7 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
                     dbcnt.setCurrentMonthCounter(dbcnt.getCurrentMonthCounter()-1);
 
                     // put new value in database
-                    recordNewCounterValue(conn, counterId, dbcnt);
+                    recordNewCounterValue(conn, counterName, dbcnt);
                     conn.commit();
                     conn = null;
 

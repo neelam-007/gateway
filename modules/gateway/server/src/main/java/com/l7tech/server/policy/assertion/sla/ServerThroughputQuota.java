@@ -7,9 +7,9 @@
 package com.l7tech.server.policy.assertion.sla;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
@@ -17,8 +17,8 @@ import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.server.sla.CounterManager;
 import com.l7tech.server.sla.CounterIDManager;
+import com.l7tech.server.sla.CounterManager;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -37,6 +37,8 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
     private final String periodVariable;
     private final String userVariable;
     private final String maxVariable;
+
+    private String counterName;
 
     public ServerThroughputQuota(ThroughputQuota assertion, ApplicationContext ctx) {
         super(assertion);
@@ -78,13 +80,13 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
     private AssertionStatus doIncrementOnSuccess( final PolicyEnforcementContext context,
                                                   final long quota ) throws IOException {
         boolean requiresIncrement = !alreadyIncrementedInThisContext(context);
-        long counterid = getCounterId(context);
         long now = System.currentTimeMillis();
         long val;
-        CounterManager counter = (CounterManager)applicationContext.getBean("counterManager");
+
+        final CounterManager counterManager = applicationContext.getBean("counterManager", CounterManager.class);
         if (requiresIncrement) {
             try {
-                val = counter.incrementOnlyWithinLimitAndReturnValue(counterid,
+                val = counterManager.incrementOnlyWithinLimitAndReturnValue(getCounterName(context),
                                                                      now,
                                                                      assertion.getTimeUnit(),
                                                                      quota);
@@ -103,7 +105,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
                 context.getIncrementedCounters().add(assertion.getCounterName());
             }
         } else {
-            val = counter.getCounterValue(counterid, assertion.getTimeUnit());
+            val = counterManager.getCounterValue(getCounterName(context), assertion.getTimeUnit());
             this.setValue(context, val);
             if (val <= quota) {
                 logger.fine("the quota was not exceeded. " + val + " smaller than " + quota);
@@ -120,11 +122,11 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
     }
 
     private AssertionStatus doDecrement(PolicyEnforcementContext context) throws IOException {
+        final CounterManager counterManager = applicationContext.getBean("counterManager", CounterManager.class);
+
         if (alreadyIncrementedInThisContext(context)) {
-            long counterid = getCounterId(context);
-            CounterManager counter = (CounterManager)applicationContext.getBean("counterManager");
-            counter.decrement(counterid);
-            logger.fine("counter decremented " + counterid);
+            counterManager.decrement(getCounterName(context));
+            logger.fine("counter decremented " + getCounterName(context));
             forgetIncrementInThisContext(context); // to prevent double decrement and enable re-increment
         } else {
             logger.info("assertion was asked to decrement a counter but the " +
@@ -137,17 +139,17 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
 
     private AssertionStatus doIncrementAlways( final PolicyEnforcementContext context,
                                                final long quota ) throws IOException {
+        final CounterManager counterManager = applicationContext.getBean("counterManager", CounterManager.class);
+
         boolean requiresIncrement = !alreadyIncrementedInThisContext(context);
-        long counterid = getCounterId(context);
         long now = System.currentTimeMillis();
         long val;
-        CounterManager counter = (CounterManager)applicationContext.getBean("counterManager");
         if (requiresIncrement) {
-            val = counter.incrementAndReturnValue(counterid, now, assertion.getTimeUnit());
+            val = counterManager.incrementAndReturnValue(getCounterName(context), now, assertion.getTimeUnit());
             // no sync issue here: this flag array belongs to the context which lives inside one thread only
             context.getIncrementedCounters().add(assertion.getCounterName());
         } else {
-            val = counter.getCounterValue(counterid, assertion.getTimeUnit());
+            val = counterManager.getCounterValue(getCounterName(context), assertion.getTimeUnit());
         }
         this.setValue(context, val);
         if (val <= quota) {
@@ -160,29 +162,25 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
         }
     }
 
-    private long getCounterId(PolicyEnforcementContext context) throws IOException {
-        User user = null;
-        if (assertion.isGlobal()) {
-            logger.finest("checking counter against null user");
-        } else {
-            user = context.getDefaultAuthenticationContext().getLastAuthenticatedUser();
-            logger.finest("checking counter against user " + user);
+    private String getCounterName(final PolicyEnforcementContext context) throws IOException {
+        if (counterName == null) {
+            String resolvedCounterName = assertion.getCounterName();
+            if (varsUsed.length > 0) {
+                resolvedCounterName = ExpandVariables.process(resolvedCounterName, context.getVariableMap(varsUsed, getAudit()), getAudit());
+            }
+
+            final CounterIDManager counterIDManager = (CounterIDManager)applicationContext.getBean("counterIDManager");
+            try {
+                counterIDManager.checkOrCreateCounter(resolvedCounterName);
+            } catch (ObjectModelException e) {
+                // should not happen
+                throw new IOException("Could not get counter, " + resolvedCounterName + ": " + e.getMessage());
+            }
+
+            counterName = resolvedCounterName;
         }
 
-        long counterid;
-        CounterIDManager counterIDManager = (CounterIDManager)applicationContext.getBean("counterIDManager");
-        String resolvedCounterName = assertion.getCounterName();
-        if (varsUsed.length > 0) {
-            resolvedCounterName = ExpandVariables.process(resolvedCounterName, context.getVariableMap(varsUsed, getAudit()), getAudit());
-        }
-        try {
-            counterid = counterIDManager.getCounterId(resolvedCounterName, user);
-        } catch (ObjectModelException e) {
-            // should not happen
-            throw new IOException("could not get counter id " + e.getMessage());
-        }
-        logger.finest("Counter id is " + counterid);
-        return counterid;
+        return counterName;
     }
 
     private boolean alreadyIncrementedInThisContext(PolicyEnforcementContext context) {
