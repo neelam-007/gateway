@@ -33,6 +33,8 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
     private boolean hardLimit = false;
     private String windowSizeInSeconds = "1"; // When hardLimit is false, this is how many seconds of points that are permitted to accumulate in the token bucket during idle periods.
     private String blackoutPeriodInSeconds = null; // When the assertion fails, for the next N seconds all further attempts to use the same counter will immediately fail.
+    private boolean splitRateLimitAcrossNodes = true;
+    private boolean splitConcurrencyLimitAcrossNodes = true;
 
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
@@ -162,6 +164,46 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
      */
     public void setBlackoutPeriodInSeconds(String blackoutPeriodInSeconds) {
         this.blackoutPeriodInSeconds = blackoutPeriodInSeconds;
+    }
+
+    /**
+     * @return true if the rate limit should be divided by the number of "up" nodes, when used on a multi-node Gateway cluster.
+     *         false if the limit should be enforced per-node.  See {@link #setSplitRateLimitAcrossNodes(boolean)} for an example.
+     */
+    public boolean isSplitRateLimitAcrossNodes() {
+        return splitRateLimitAcrossNodes;
+    }
+
+    /**
+     * @param splitRateLimitAcrossNodes true if the rate limit should be divided by the number of "up" nodes, when used on a multi-node Gateway cluster.
+     *         false if the limit should be enforced per-node.<p/>
+     *         For example, on a cluster with 3 nodes, 2 of which are up, and a limit of 100 requests per second:
+     *         <ul><li>If this is true, a limit of 50 requests per second will be enforced by the server assertion.  The server assertion will assume that the
+     *         other 50 requests per second will be handled by the other "up" node.</li>
+     *         <li>Otherwise, a limit of 100 requests per second will be enforced.  The server assertion will make no assumptions about what other nodes might be allowing.</li></ul>
+     */
+    public void setSplitRateLimitAcrossNodes(boolean splitRateLimitAcrossNodes) {
+        this.splitRateLimitAcrossNodes = splitRateLimitAcrossNodes;
+    }
+
+    /**
+     * @return true if the concurrency limit should be divided by the number of "up" nodes, when used on a multi-node Gateway cluster.
+     *         false if the limit should be enforced per-node.  See {@link #setSplitConcurrencyLimitAcrossNodes(boolean)} for an example.
+     */
+    public boolean isSplitConcurrencyLimitAcrossNodes() {
+        return splitConcurrencyLimitAcrossNodes;
+    }
+
+    /**
+     * @param splitConcurrencyLimitAcrossNodes true if the concurrency limit should be divided by the number of "up" nodes, when used on a multi-node Gateway cluster.
+     *         false if the limit should be enforced per-node.<p/>
+     *         For example, on a cluster with 3 nodes, 2 of which are up, and a limit of 10 concurrent requests through a counter:
+     *         <ul><li>If this is true, a limit of 5 concurrent requests will be enforced by the server assertion.  The server assertion will assume that the
+     *         other 5 concurrent requests will be handled by the other "up" node.</li>
+     *         <li>Otherwise, a limit of 10 concurrent requests will be enforced.  The server assertion will make no assumptions about what other nodes might be allowing.</li></ul>
+     */
+    public void setSplitConcurrencyLimitAcrossNodes(boolean splitConcurrencyLimitAcrossNodes) {
+        this.splitConcurrencyLimitAcrossNodes = splitConcurrencyLimitAcrossNodes;
     }
 
     public static String validateMaxRequestsPerSecond(String maxRequestsPerSecond) {

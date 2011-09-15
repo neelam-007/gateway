@@ -2,12 +2,14 @@ package com.l7tech.external.assertions.ratelimit.server;
 
 import com.l7tech.common.TestDocuments;
 import com.l7tech.external.assertions.ratelimit.RateLimitAssertion;
+import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.message.Message;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.server.ClusterInfoManagerStub;
 import com.l7tech.server.ServerConfigStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -15,11 +17,7 @@ import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.test.BenchmarkRunner;
 import com.l7tech.test.BugNumber;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
-import com.l7tech.util.TestTimeSource;
-import com.l7tech.util.TimeSource;
-import com.l7tech.util.TimeoutExecutor;
+import com.l7tech.util.*;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -820,6 +818,55 @@ public class ServerRateLimitAssertionTest {
         final RateLimitAssertion rla = (RateLimitAssertion) wspReader.parseStrictly(xml, WspReader.INCLUDE_DISABLED);
         assertTrue("Invalid maxConcurrency value expected '23' got '" + rla.getMaxConcurrency()+"'", rla.getMaxConcurrency().equals("23"));
         assertTrue("Invalid maxRequestsPerSecond expected '10076' got '" + rla.getMaxRequestsPerSecond()+"'", rla.getMaxRequestsPerSecond().equals("10076"));
+    }
+
+    @Test
+    @BugNumber(9924)
+    public void testSplitLimitsAcrossCluster() throws Exception {
+        testSplit("200", true, "10", true, 2, 3);
+        testSplit("200", true, "10", true, 3, 3);
+        testSplit("200", true, "10", true, 2, 2);
+        testSplit("200", false, "10", true, 2, 3);
+        testSplit("200", true, "10", false, 2, 3);
+        testSplit("10", false, "5", false, 2, 3);
+        testSplit("1", true, "1", true, 10, 20);
+        testSplit("1", true, "1", true, 1, 1);
+        testSplit("150", true, "20", true, 1, 1);
+    }
+
+    private void testSplit(String maxRate, boolean splitRate, String maxConc, boolean splitConc, int upnodes, int totalnodes) throws Exception {
+        RateLimitAssertion ass = new RateLimitAssertion();
+        ass.setCounterName(String.format("testSplitLimitsAcrossCluster-%s-%b-%s-%b-%d-%d", maxRate, splitRate, maxConc, splitConc, upnodes, totalnodes));
+        ass.setMaxConcurrency(maxConc);
+        ass.setSplitConcurrencyLimitAcrossNodes(splitConc);
+        ass.setMaxRequestsPerSecond(maxRate);
+        ass.setSplitRateLimitAcrossNodes(splitRate);
+
+        long expectedConc = splitConc ? (Long.valueOf(maxConc) / upnodes) : Long.valueOf(maxConc);
+        long expectedRate = splitRate ? (Long.valueOf(maxRate) / upnodes) : Long.valueOf(maxRate);
+
+        setClusterSize(upnodes, totalnodes);
+        ServerRateLimitAssertion sass = (ServerRateLimitAssertion) makePolicy(ass);
+        assertEquals("Max concurrency should be " + expectedConc + " for "  + ass.getCounterName(),
+                expectedConc, sass.findMaxConcurrency(makeContext()));
+        assertEquals("Max rate should be " + expectedRate + " for" + ass.getCounterName(),
+                expectedRate, sass.findPointsPerSecond(makeContext()).divide(ServerRateLimitAssertion.POINTS_PER_REQUEST).longValue());
+    }
+
+    private void setClusterSize(int upnodes, int totalnodes) {
+        ClusterInfoManagerStub clusterInfoManager = applicationContext.getBean("clusterInfoManager", ClusterInfoManagerStub.class);
+        ArrayList<ClusterNodeInfo> nodes = new ArrayList<ClusterNodeInfo>();
+        nodes.add(clusterInfoManager.getSelfNodeInf());
+        upnodes--;  // always count ourself as an up node
+        for (int i = 1; i < totalnodes; ++i) {
+            final ClusterNodeInfo info = new ClusterNodeInfo();
+            info.setName("Fake node #" + i);
+            info.setNodeIdentifier("fakenodeid" + i);
+            info.setLastUpdateTimeStamp(upnodes-- > 0 ? clock.currentTimeMillis() : 0);
+            nodes.add(info);
+        }
+        clusterInfoManager.setClusterStatus(nodes);
+        ServerRateLimitAssertion.lastClusterCheck.set(0);
     }
 
 

@@ -33,6 +33,8 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
     private JComboBox counterCb;
     private JCheckBox blackoutForCheckBox;
     private JTextField blackoutSecField;
+    private JCheckBox splitConcurrencyAcrossNodes;
+    private JCheckBox splitRateAcrossNodes;
 
     private boolean confirmed = false;
     private String uuid[] = {RateLimitAssertion.PresetInfo.makeUuid()};
@@ -117,6 +119,7 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
     private void updateConcurrencyEnableState() {
         boolean selected = concurrencyLimitOnRb.isSelected();
         concurrencyLimitField.setEnabled(selected);
+        splitConcurrencyAcrossNodes.setEnabled(selected);
 
         final String stringConcurrency = concurrencyLimitField.getText();
         final String[] referencedVars = Syntax.getReferencedNames(stringConcurrency);
@@ -228,6 +231,9 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
         blackoutSecField.setText(useBlackout ? blackoutSec : "1");
         blackoutForCheckBox.setSelected(useBlackout);
 
+        splitRateAcrossNodes.setSelected(rla.isSplitRateLimitAcrossNodes());
+        splitConcurrencyAcrossNodes.setSelected(rla.isSplitConcurrencyLimitAcrossNodes());
+
         String maxConc = rla.getMaxConcurrency();
         boolean concLimit = true;
         if( Syntax.getReferencedNames(maxConc).length == 0){
@@ -257,6 +263,8 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
         rla.setHardLimit(!burstTrafficCb.isSelected());
         rla.setWindowSizeInSeconds(burstWindowSizeField.getText());
         rla.setBlackoutPeriodInSeconds(blackoutForCheckBox.isSelected() ? blackoutSecField.getText() : null);
+        rla.setSplitConcurrencyLimitAcrossNodes(splitConcurrencyAcrossNodes.isSelected());
+        rla.setSplitRateLimitAcrossNodes(splitRateAcrossNodes.isSelected());
         return rla;
     }
 

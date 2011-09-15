@@ -1,10 +1,10 @@
 package com.l7tech.server;
 
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.cluster.ClusterInfoManager;
-import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
@@ -16,6 +16,8 @@ import java.util.Collections;
 public class ClusterInfoManagerStub implements ClusterInfoManager {
 
     final ClusterNodeInfo cnf = new ClusterNodeInfo();
+    Collection<ClusterNodeInfo> clusterStatus = Collections.emptyList();
+
     {
         cnf.setNodeIdentifier("TestNode-main");
         cnf.setMac("00:0c:11:f0:43:01");
@@ -55,7 +57,11 @@ public class ClusterInfoManagerStub implements ClusterInfoManager {
     @Override
     @Transactional(readOnly = true)
     public Collection<ClusterNodeInfo> retrieveClusterStatus() throws FindException {
-        return Collections.emptyList();
+        return clusterStatus;
+    }
+
+    public void setClusterStatus(Collection<ClusterNodeInfo> status) {
+        clusterStatus = status;
     }
 
     @Override

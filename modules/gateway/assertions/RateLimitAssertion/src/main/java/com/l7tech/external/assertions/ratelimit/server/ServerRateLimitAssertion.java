@@ -48,14 +48,14 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     private static final int DEFAULT_CLEANER_PERIOD = 13613;
     private static final int DEFAULT_MAX_NAP_TIME = 4703;
     private static final int DEFAULT_MAX_TOTAL_SLEEP_TIME = 18371;
-    private static final BigInteger POINTS_PER_REQUEST = BigInteger.valueOf(0x8000L); // cost in points to send a single request
+    static final BigInteger POINTS_PER_REQUEST = BigInteger.valueOf(0x8000L); // cost in points to send a single request
     private static final Level SUBINFO_LEVEL =
             ConfigFactory.getBooleanProperty( "com.l7tech.external.server.ratelimit.logAtInfo", false ) ? Level.INFO : Level.FINE;
 
     static final AtomicInteger maxSleepThreads = new AtomicInteger(DEFAULT_MAX_QUEUED_THREADS);
 
     private static final ConcurrentHashMap<String, Counter> counters = new ConcurrentHashMap<String, Counter>();
-    private static final AtomicLong lastClusterCheck = new AtomicLong();
+    static final AtomicLong lastClusterCheck = new AtomicLong();
     private static final AtomicReference<BigInteger> clusterSize = new AtomicReference<BigInteger>();
     private static final Lock clusterCheckLock = new ReentrantLock();
     private static final AtomicInteger curSleepThreads = new AtomicInteger();
@@ -433,14 +433,18 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
         }
     }
 
-    private int findMaxConcurrency(PolicyEnforcementContext context) throws NoSuchVariableException, NumberFormatException {
-        return maxConcurrencyFinder.call(context).divide(getClusterSize()).intValue();
+    int findMaxConcurrency(PolicyEnforcementContext context) throws NoSuchVariableException, NumberFormatException {
+        final BigInteger conc = maxConcurrencyFinder.call(context);
+        return assertion.isSplitConcurrencyLimitAcrossNodes()
+                ? conc.divide(getClusterSize()).intValue()
+                : conc.intValue();
     }
 
-    private BigInteger findPointsPerSecond(PolicyEnforcementContext context) throws NoSuchVariableException, NumberFormatException {
+    BigInteger findPointsPerSecond(PolicyEnforcementContext context) throws NoSuchVariableException, NumberFormatException {
         BigInteger rps = maxRequestsPerSecondFinder.call(context);
         if (rps.compareTo(BigInteger.ONE) < 0) throw new IllegalStateException("Max requests per second cannot be less than 1");
-        return POINTS_PER_REQUEST.multiply(rps).divide(getClusterSize());
+        final BigInteger pps = POINTS_PER_REQUEST.multiply(rps);
+        return assertion.isSplitRateLimitAcrossNodes() ? pps.divide(getClusterSize()) : pps;
     }
 
     // @return the cluster size. always positive
