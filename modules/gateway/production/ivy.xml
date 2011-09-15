@@ -6,14 +6,15 @@
     <info organisation="com.l7tech"
           module="layer7-gateway-production"
           status="integration"
-          >
+            >
     </info>
     <configurations
-             defaultconfmapping="compile->default; core->default; runtime->default; test->default; optional->default; module->default; module-optional->default; module-client->default">
+            defaultconfmapping="compile->default; core->default; runtime->default; test->default; optional->default; module->default; module-optional->default; module-client->default">
         <conf name="core" description="Core dependencies for all configurations" visibility="private"/>
         <conf name="default" description="Runtime dependencies and master artifact can be used with this conf"
               extends="runtime,master"/>
-        <conf name="master" description="Contains only the artifact published by this module itself, with no transitive dependencies"/>
+        <conf name="master"
+              description="Contains only the artifact published by this module itself, with no transitive dependencies"/>
         <conf name="compile" description="The dependency is required at compile time." extends="core,optional"/>
         <conf name="runtime" description="The dependency is required at runtime." extends="core"/>
         <conf name="test" description="The dependency required for building/running tests only."
@@ -64,6 +65,8 @@
         <dependency name="Api3ScaleAssertion" rev="latest.integration" conf="module"/>
         <dependency name="JsonTransformationAssertion" rev="latest.integration" conf="module"/>
         <dependency name="IcapAntivirusScannerAssertion" rev="latest.integration" conf="module"/>
+        <dependency name="UUIDGeneratorAssertion" rev="latest.integration" conf="module"/>
+
         <!-- Optional Modular Assertions are copied to "dist" but not packaged -->
         <dependency name="CaWsdmAssertion" rev="latest.integration" conf="module-optional"/>
     </dependencies>

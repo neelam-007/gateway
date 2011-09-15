@@ -31,7 +31,6 @@ import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
-import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -54,8 +53,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 
 /**
  *
@@ -75,7 +73,7 @@ public class ServerVariablesTest {
    * to retrieve the value of service.name which should equal the name of the service created.
    * */
     @Test
-    public void testServiceNameContextVariable() throws Exception{
+    public void testServiceNameContextVariable() throws Exception {
         PolicyEnforcementContext pec = context();
         PublishedService ps = new PublishedService();
         String serviceName = "testServiceNameContextVariable";
@@ -84,8 +82,8 @@ public class ServerVariablesTest {
         //Now the pec has a service so the variable service.name should be available
         String variableName = "service.name";
         String variableValue = ServerVariables.get(variableName, pec).toString();
-        Assert.assertEquals("ServerVariable should equal service name",serviceName,variableValue);
-        
+        Assert.assertEquals("ServerVariable should equal service name", serviceName, variableValue);
+
     }
 
     /*
@@ -94,7 +92,7 @@ public class ServerVariablesTest {
     * to retrieve the value of service.oid which should equal the oid of the service created.
     * */
     @Test
-    public void testServiceOidContextVariable() throws Exception{
+    public void testServiceOidContextVariable() throws Exception {
         PolicyEnforcementContext pec = context();
         PublishedService ps = new PublishedService();
         Long l = 123456L;
@@ -105,9 +103,9 @@ public class ServerVariablesTest {
         //Now the pec has a service so the variable service.oid should be available
         String variableName = "service.oid";
         String variableValue = ServerVariables.get(variableName, pec).toString();
-        Assert.assertEquals("ServerVariable should equal service oid",l.toString(),variableValue);
+        Assert.assertEquals("ServerVariable should equal service oid", l.toString(), variableValue);
 
-    }    
+    }
 
     @Test
     public void testRequest() throws Exception {
@@ -121,10 +119,11 @@ public class ServerVariablesTest {
 
     /**
      * Test support for .mainpart on Message variables of type 'application/json'.
+     *
      * @throws Exception
      */
     @Test
-    public void testJsonMainPart() throws Exception{
+    public void testJsonMainPart() throws Exception {
         ApplicationContext applicationContext = ApplicationContexts.getTestApplicationContext();
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
 
@@ -379,8 +378,8 @@ public class ServerVariablesTest {
     @Test
     public void testUsernamePassword() throws Exception {
         PolicyEnforcementContext context = context();
-        context.getAuthenticationContext( context.getRequest() ).addCredentials( LoginCredentials.makeLoginCredentials( new HttpBasicToken("Alice", "password".toCharArray()), HttpBasic.class ));
-        context.getAuthenticationContext( context.getResponse() ).addCredentials( LoginCredentials.makeLoginCredentials( new UsernameTokenImpl("Bob", "secret".toCharArray()), WssBasic.class ));
+        context.getAuthenticationContext(context.getRequest()).addCredentials(LoginCredentials.makeLoginCredentials(new HttpBasicToken("Alice", "password".toCharArray()), HttpBasic.class));
+        context.getAuthenticationContext(context.getResponse()).addCredentials(LoginCredentials.makeLoginCredentials(new UsernameTokenImpl("Bob", "secret".toCharArray()), WssBasic.class));
         expandAndCheck(context, "${request.username}", "Alice");
         expandAndCheck(context, "${request.password}", "password");
         expandAndCheck(context, "${response.username}", "Bob");
@@ -412,14 +411,14 @@ public class ServerVariablesTest {
     public void testHttpHeader() throws Exception {
         PolicyEnforcementContext context = contextHttp();
 
-        expandAndCheck(context,"${request.http.headernames}" ,
-               HttpConstants.HEADER_CONTENT_TYPE +", "+  HttpConstants.HEADER_CONNECTION +", "+  HttpConstants.HEADER_COOKIE);
+        expandAndCheck(context, "${request.http.headernames}",
+                HttpConstants.HEADER_CONTENT_TYPE + ", " + HttpConstants.HEADER_CONNECTION + ", " + HttpConstants.HEADER_COOKIE);
 
-        expandAndCheck(context,"${request.http.allheadervalues[0]}" ,
-               HttpConstants.HEADER_CONTENT_TYPE +':'+ ContentTypeHeader.XML_DEFAULT.getFullValue());
+        expandAndCheck(context, "${request.http.allheadervalues[0]}",
+                HttpConstants.HEADER_CONTENT_TYPE + ':' + ContentTypeHeader.XML_DEFAULT.getFullValue());
 
-        expandAndCheck(context,"${request.http.allheadervalues[1]}" ,
-               HttpConstants.HEADER_CONNECTION +':'+ ContentTypeHeader.XML_DEFAULT.getFullValue()+", "+ ContentTypeHeader.TEXT_DEFAULT.getFullValue());
+        expandAndCheck(context, "${request.http.allheadervalues[1]}",
+                HttpConstants.HEADER_CONNECTION + ':' + ContentTypeHeader.XML_DEFAULT.getFullValue() + ", " + ContentTypeHeader.TEXT_DEFAULT.getFullValue());
 
 
     }
@@ -446,7 +445,7 @@ public class ServerVariablesTest {
     * */
     @Test
     @SuppressWarnings({"deprecation"})
-    public void testServiceUrlContextVariables() throws Exception{
+    public void testServiceUrlContextVariables() throws Exception {
         ApplicationContext applicationContext = ApplicationContexts.getTestApplicationContext();
         Message request = new Message();
         request.initialize(XmlUtil.stringAsDocument(REQUEST_BODY));
@@ -459,12 +458,12 @@ public class ServerVariablesTest {
         String port = "8080";
         String filePath = "/HelloTestService";
         String query = "?query";
-        String url = protocol+"://"+host+":"+port+filePath+query;
+        String url = protocol + "://" + host + ":" + port + filePath + query;
         HttpRoutingAssertion hRA = new HttpRoutingAssertion(url);
-        ServerHttpRoutingAssertion sHRA  = new ServerHttpRoutingAssertion(hRA, applicationContext);
-        try{
+        ServerHttpRoutingAssertion sHRA = new ServerHttpRoutingAssertion(hRA, applicationContext);
+        try {
             sHRA.checkRequest(pec);
-        }catch(Exception ex){
+        } catch (Exception ex) {
             //This is expected, we don't expect to rouet to the url, just want
             //tryUrl to get called so that it sets the routed url property
         }
@@ -477,21 +476,21 @@ public class ServerVariablesTest {
         Assert.assertEquals("ServerVariable should equal httpRouting url", url, variableValue);
         // Test the new context variable httpRouting.url
         variableName = HttpRoutingAssertion.VAR_HTTP_ROUTING_URL;
-        variableValue = (String)pec.getVariable(variableName);
+        variableValue = (String) pec.getVariable(variableName);
         Assert.assertEquals("ServerVariable should equal httpRouting url", url, variableValue);
 
         variableName = serviceurl + "." + BuiltinVariables.SERVICE_SUFFIX_HOST;
         variableValue = ServerVariables.get(variableName, pec).toString();
         Assert.assertEquals("ServerVariable should equal httpRouting url host", host, variableValue);
         variableName = HttpRoutingAssertion.getVarHttpRoutingUrlHost();
-        variableValue = (String)pec.getVariable(variableName);
+        variableValue = (String) pec.getVariable(variableName);
         Assert.assertEquals("ServerVariable should equal httpRouting url host", host, variableValue);
 
         variableName = serviceurl + "." + BuiltinVariables.SERVICE_SUFFIX_PROTOCOL;
         variableValue = ServerVariables.get(variableName, pec).toString();
         Assert.assertEquals("ServerVariable should equal httpRouting url protocol", protocol, variableValue);
         variableName = HttpRoutingAssertion.getVarHttpRoutingUrlProtocol();
-        variableValue = (String)pec.getVariable(variableName);
+        variableValue = (String) pec.getVariable(variableName);
         Assert.assertEquals("ServerVariable should equal httpRouting url protocol", protocol, variableValue);
 
         variableName = serviceurl + "." + BuiltinVariables.SERVICE_SUFFIX_PORT;
@@ -504,24 +503,24 @@ public class ServerVariablesTest {
         //file expects the query string
         variableName = serviceurl + "." + BuiltinVariables.SERVICE_SUFFIX_FILE;
         variableValue = ServerVariables.get(variableName, pec).toString();
-        Assert.assertEquals("ServerVariable should equal httpRouting url file", filePath+query, variableValue);
+        Assert.assertEquals("ServerVariable should equal httpRouting url file", filePath + query, variableValue);
         variableName = HttpRoutingAssertion.getVarHttpRoutingUrlFile();
-        variableValue = (String)pec.getVariable(variableName);
-        Assert.assertEquals("ServerVariable should equal httpRouting url file", filePath+query, variableValue);
+        variableValue = (String) pec.getVariable(variableName);
+        Assert.assertEquals("ServerVariable should equal httpRouting url file", filePath + query, variableValue);
 
         //path doesn't expect the query string
         variableName = serviceurl + "." + BuiltinVariables.SERVICE_SUFFIX_PATH;
         variableValue = ServerVariables.get(variableName, pec).toString();
         Assert.assertEquals("ServerVariable should equal httpRouting url path", filePath, variableValue);
         variableName = HttpRoutingAssertion.getVarHttpRoutingUrlPath();
-        variableValue = (String)pec.getVariable(variableName);
+        variableValue = (String) pec.getVariable(variableName);
         Assert.assertEquals("ServerVariable should equal httpRouting url path", filePath, variableValue);
 
         variableName = serviceurl + "." + BuiltinVariables.SERVICE_SUFFIX_QUERY;
         variableValue = ServerVariables.get(variableName, pec).toString();
         Assert.assertEquals("ServerVariable should equal httpRouting url query", query, variableValue);
         variableName = HttpRoutingAssertion.getVarHttpRoutingUrlQuery();
-        variableValue = (String)pec.getVariable(variableName);
+        variableValue = (String) pec.getVariable(variableName);
         Assert.assertEquals("ServerVariable should equal httpRouting url query", query, variableValue);
     }
 
@@ -682,7 +681,7 @@ public class ServerVariablesTest {
         expandAndCheck(c, "${audit.details[0]}", details[0].toString());
         expandAndCheck(c, "${audit.details[1]}", details[1].toString());
         expandAndCheck(c, "${audit.details.1}", details[1].toString());
-        expandAndCheck(c, "${audit.details.1.}",details[1].toString());
+        expandAndCheck(c, "${audit.details.1.}", details[1].toString());
         expandAndCheck(c, "${audit.details.0.ordinal}", "0");
         expandAndCheck(c, "${audit.details.0.exception}", details[0].getException());
         expandAndCheck(c, "${audit.details.1.exception}", details[1].getException());
@@ -707,7 +706,7 @@ public class ServerVariablesTest {
         expandAndCheck(c, "${audit.details[0]}", "");
         expandAndCheck(c, "${audit.details[1]}", "");
         expandAndCheck(c, "${audit.details.1}", "");
-        expandAndCheck(c, "${audit.details.1.}","");
+        expandAndCheck(c, "${audit.details.1.}", "");
         expandAndCheck(c, "${audit.details.0.ordinal}", "");
         expandAndCheck(c, "${audit.details.0.exception}", "");
         expandAndCheck(c, "${audit.details.1.exception}", "");
@@ -736,7 +735,7 @@ public class ServerVariablesTest {
         c.getOriginalContext().setPolicyExecutionAttempted(true);
         expandAndCheck(c, "${audit.policyExecutionAttempted}", "true");
     }
-    
+
     @Test
     public void testSecurePasswordSelector() throws Exception {
         SecurePassword test1 = new SecurePassword("test1");
@@ -783,11 +782,36 @@ public class ServerVariablesTest {
 
 
         SecurePasswordManager spm = new SecurePasswordManagerStub(
-                new SecurePassword("test1"){{ setOid(1); setEncodedPassword("TEST-PASSWORD1"); setUsageFromVariable(true);} },
-                new SecurePassword("test2"){{ setOid(2); setEncodedPassword("TEST-PASSWORD2"); setUsageFromVariable(true);} },
-                new SecurePassword("emptypass"){{ setOid(3); setEncodedPassword(""); setUsageFromVariable(true);} },
-                new SecurePassword("nullpass"){{ setOid(4); setEncodedPassword(null); setUsageFromVariable(true);} },
-                new SecurePassword("nocontext"){{ setOid(5); setEncodedPassword("TEST-PASSWORD3"); setUsageFromVariable(false); } }
+                new SecurePassword("test1") {
+                    {
+                        setOid(1);
+                        setEncodedPassword("TEST-PASSWORD1");
+                        setUsageFromVariable(true);
+                    } },
+                new SecurePassword("test2") {
+                    {
+                        setOid(2);
+                        setEncodedPassword("TEST-PASSWORD2");
+                        setUsageFromVariable(true);
+                    } },
+                new SecurePassword("emptypass") {
+                    {
+                        setOid(3);
+                        setEncodedPassword("");
+                        setUsageFromVariable(true);
+                    } },
+                new SecurePassword("nullpass") {
+                    {
+                        setOid(4);
+                        setEncodedPassword(null);
+                        setUsageFromVariable(true);
+                    } },
+                new SecurePassword("nocontext") {
+                    {
+                        setOid(5);
+                        setEncodedPassword("TEST-PASSWORD3");
+                        setUsageFromVariable(false);
+                    } }
         );
         ServerVariables.setSecurePasswordManager(spm);
 
@@ -806,7 +830,7 @@ public class ServerVariablesTest {
         assertEquals("template using an array deref 1 shall fail as expected, expanding to empty string (lax mode)", "BEFOREAFTER", ServerVariables.expandPasswordOnlyVariable(audit, "BEFORE${secpass.test1.plaintext[1]}AFTER"));
         assertEquals("multiple references shall be expanded", "BEFOREtest-password1MIDDLEtest-password2AFTER", ServerVariables.expandPasswordOnlyVariable(audit, "BEFORE${secpass.test1.plaintext}MIDDLE${secpass.test2.plaintext}AFTER"));
     }
-    
+
     @Test
     public void testExpandSinglePasswordOnlyVariable() throws Exception {
         final Audit audit = new LoggingAudit(logger);
@@ -815,11 +839,36 @@ public class ServerVariablesTest {
 
 
         SecurePasswordManager spm = new SecurePasswordManagerStub(
-                new SecurePassword("test1"){{ setOid(1); setEncodedPassword("TEST-PASSWORD1"); setUsageFromVariable(true);} },
-                new SecurePassword("test2"){{ setOid(2); setEncodedPassword("TEST-PASSWORD2"); setUsageFromVariable(true);} },
-                new SecurePassword("emptypass"){{ setOid(3); setEncodedPassword(""); setUsageFromVariable(true);} },
-                new SecurePassword("nullpass"){{ setOid(4); setEncodedPassword(null); setUsageFromVariable(true);} },
-                new SecurePassword("nocontext"){{ setOid(5); setEncodedPassword("TEST-PASSWORD3"); setUsageFromVariable(false); } }
+                new SecurePassword("test1") {
+                    {
+                        setOid(1);
+                        setEncodedPassword("TEST-PASSWORD1");
+                        setUsageFromVariable(true);
+                    } },
+                new SecurePassword("test2") {
+                    {
+                        setOid(2);
+                        setEncodedPassword("TEST-PASSWORD2");
+                        setUsageFromVariable(true);
+                    } },
+                new SecurePassword("emptypass") {
+                    {
+                        setOid(3);
+                        setEncodedPassword("");
+                        setUsageFromVariable(true);
+                    } },
+                new SecurePassword("nullpass") {
+                    {
+                        setOid(4);
+                        setEncodedPassword(null);
+                        setUsageFromVariable(true);
+                    } },
+                new SecurePassword("nocontext") {
+                    {
+                        setOid(5);
+                        setEncodedPassword("TEST-PASSWORD3");
+                        setUsageFromVariable(false);
+                    } }
         );
         ServerVariables.setSecurePasswordManager(spm);
 
@@ -855,7 +904,16 @@ public class ServerVariablesTest {
         expandAndCheck(c, "${response.soap.envElopeNs}", SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE);
     }
 
-    private PolicyEnforcementContext context(){
+    @Test
+    public void testUUIDGenerated() throws Exception {
+        final PolicyEnforcementContext context = context();
+        String[] usedVars = Syntax.getReferencedNames("${uuid}");
+        Map<String, Object> vars = context.getVariableMap(usedVars, auditor);
+        String expanded = ExpandVariables.process("${uuid}", vars, auditor);
+        assertNotNull(expanded);
+    }
+
+    private PolicyEnforcementContext context() {
         Message request = new Message();
         request.initialize(XmlUtil.stringAsDocument(REQUEST_BODY));
         Message response = new Message();
@@ -863,16 +921,16 @@ public class ServerVariablesTest {
         return PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
     }
 
-    private PolicyEnforcementContext contextHttp(){
+    private PolicyEnforcementContext contextHttp() {
         PolicyEnforcementContext context = context();
 
         MockHttpServletRequest mockRequest = new MockHttpServletRequest();
         mockRequest.setMethod("POST");
         mockRequest.setContentType(ContentTypeHeader.XML_DEFAULT.getFullValue());
         mockRequest.addHeader(HttpConstants.HEADER_CONTENT_TYPE, ContentTypeHeader.XML_DEFAULT.getFullValue());
-        mockRequest.setParameter( "single", "1" );
-        mockRequest.setParameter( "multi", new String[]{"1","2","3","4","5"} );
-        mockRequest.setQueryString( "single=1&multi=1&multi=2&multi=3&multi=4&multi=5" );
+        mockRequest.setParameter("single", "1");
+        mockRequest.setParameter("multi", new String[]{"1", "2", "3", "4", "5"});
+        mockRequest.setQueryString("single=1&multi=1&multi=2&multi=3&multi=4&multi=5");
 
 
         mockRequest.addHeader(HttpConstants.HEADER_CONNECTION, ContentTypeHeader.XML_DEFAULT.getFullValue());
@@ -880,13 +938,13 @@ public class ServerVariablesTest {
         mockRequest.addHeader(HttpConstants.HEADER_COOKIE, ContentTypeHeader.XML_DEFAULT.getFullValue());
 
 
-        context.getRequest().attachHttpRequestKnob( new HttpServletRequestKnob( mockRequest ) );
+        context.getRequest().attachHttpRequestKnob(new HttpServletRequestKnob(mockRequest));
 
         return context;
     }
 
     private PolicyEnforcementContext delegate() {
-        return PolicyEnforcementContextFactory.createPolicyEnforcementContext( null, null );
+        return PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null);
     }
 
     private AuditSinkPolicyEnforcementContext sinkcontext() {
@@ -919,7 +977,7 @@ public class ServerVariablesTest {
 
     private void expandAndCheck(PolicyEnforcementContext context, String expression, String expectedValue) throws IOException, PolicyAssertionException {
         String[] usedVars = Syntax.getReferencedNames(expression);
-        Map<String,Object> vars = context.getVariableMap(usedVars, auditor);
+        Map<String, Object> vars = context.getVariableMap(usedVars, auditor);
         String expanded = ExpandVariables.process(expression, vars, auditor);
         assertEquals(expression, expectedValue, expanded);
     }

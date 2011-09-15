@@ -67,7 +67,7 @@ public class ServerVariables {
             String tryname = lname.substring(0, pos);
             var = varsByPrefix.get(tryname);
             if (var != null && var.isValidForContext(targetContext)) return var;
-            pos = lname.lastIndexOf(".", pos-1);
+            pos = lname.lastIndexOf(".", pos - 1);
         } while (pos > 0);
 
         return null;
@@ -77,20 +77,21 @@ public class ServerVariables {
         HttpRequestKnob hrk = context.getRequest().getKnob(HttpRequestKnob.class);
         if (hrk == null) return new String[0];
 
-        if (!name.startsWith(prefix)) throw new IllegalArgumentException("HTTP Param Getter can't handle variable named '" + name + "'!");
+        if (!name.startsWith(prefix))
+            throw new IllegalArgumentException("HTTP Param Getter can't handle variable named '" + name + "'!");
         String suffix = name.substring(prefix.length());
-        if (!suffix.startsWith(".")){
+        if (!suffix.startsWith(".")) {
             logger.warning("Variable '" + name + "' does not have a period before the parameter name.");
             return null;
         }
-        String hname = name.substring(prefix.length()+1);
+        String hname = name.substring(prefix.length() + 1);
         return hrk.getParameterValues(hname);
     }
 
     public static void set(String name, Object value, PolicyEnforcementContext context) throws VariableNotSettableException, NoSuchVariableException {
         Variable var = getVariable(name, context);
         if (var instanceof SettableVariable) {
-            SettableVariable sv = (SettableVariable)var;
+            SettableVariable sv = (SettableVariable) var;
             sv.set(name, value, context);
         } else if (var == null) {
             throw new NoSuchVariableException(name);
@@ -112,490 +113,495 @@ public class ServerVariables {
     }
 
     private static final Variable[] VARS = {
-        new Variable("request", new RequestGetter("request")),
-        new Variable("response", new ResponseGetter("response")),
+            new Variable("request", new RequestGetter("request")),
+            new Variable("response", new ResponseGetter("response")),
 
-        new Variable("request.tcp.remoteAddress", remoteIpGetter),
-        new Variable("request.tcp.remoteip", remoteIpGetter),
-        new Variable("request.tcp.remoteHost", new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                TcpKnob tk = context.getRequest().getKnob(TcpKnob.class);
-                return tk == null ? null : tk.getRemoteHost();
-            }
-        }),
-        new Variable("request.clientid", new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                User user = context.getAuthenticationContext(context.getRequest()).getLastAuthenticatedUser();
-                String dat = user == null ? null : user.getProviderId() + ":" + user.getId();
-                if (dat != null) return "AuthUser:" + dat;
-
-                final Message request = context.getRequest();
-                dat = getRequestRemoteIp(request);
-                if (dat != null) return "ClientIp:" + dat;
-
-                dat = getRequestProtocolId(request);
-                if (dat != null) return "ProtocolId:" + dat;
-
-                dat = getRequestProtocol(request);
-                if (dat != null) return "Protocol:" + dat;
-
-                return CLIENT_ID_UNKNOWN;
-            }
-        }),
-        new Variable("request.tcp.localPort", new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                TcpKnob tk = context.getRequest().getKnob(TcpKnob.class);
-                return tk == null ? null : String.valueOf(tk.getLocalPort());
-            }
-        }),
-        new Variable("request.http.method", new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                HttpRequestKnob hrk = context.getRequest().getKnob(HttpRequestKnob.class);
-                return hrk == null ? null : hrk.getMethod().name();
-            }
-        }),
-        new Variable("request.http.uri", new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                HttpRequestKnob hrk = context.getRequest().getKnob(HttpRequestKnob.class);
-                return hrk == null ? null : hrk.getRequestUri();
-            }
-        }),
-        new Variable(BuiltinVariables.PREFIX_REQUEST_URL, new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                HttpRequestKnob hrk = context.getRequest().getKnob(HttpRequestKnob.class);
-                if (hrk == null) {
-                    FtpRequestKnob frk = context.getRequest().getKnob(FtpRequestKnob.class);
-                    if (frk == null)
-                        return null;
-                    final String fullUrl = frk.getRequestUrl();
-                    return getUrlValue(BuiltinVariables.PREFIX_REQUEST_URL, name, fullUrl);
-                }
-                final String fullUrl = hrk.getQueryString() == null ? hrk.getRequestUrl() : hrk.getRequestUrl() + "?" + hrk.getQueryString();
-                return getUrlValue(BuiltinVariables.PREFIX_REQUEST_URL, name, fullUrl);
-            }
-        }),
-        new Variable("request.http.secure", new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                HttpRequestKnob hrk = context.getRequest().getKnob(HttpRequestKnob.class);
-                return hrk == null ? null : String.valueOf(hrk.isSecure());
-            }
-        }),
-        new Variable("request.http.queryString", new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                HttpRequestKnob hrk = context.getRequest().getKnob(HttpRequestKnob.class);
-                return hrk == null ? null : hrk.getQueryString();
-            }
-        }),
-        new Variable("request.ftp.path", new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                FtpRequestKnob frk = context.getRequest().getKnob(FtpRequestKnob.class);
-                return frk == null ? null : frk.getPath();
-            }
-        }),
-        new Variable("request.ftp.file", new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                FtpRequestKnob frk = context.getRequest().getKnob(FtpRequestKnob.class);
-                return frk == null ? null : frk.getFile();
-            }
-        }),
-        new Variable("request.ftp.unique", new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                FtpRequestKnob frk = context.getRequest().getKnob(FtpRequestKnob.class);
-                return frk == null ? null : String.valueOf(frk.isUnique());
-            }
-        }),
-        new Variable("request.ftp.secure", new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                FtpRequestKnob frk = context.getRequest().getKnob(FtpRequestKnob.class);
-                return frk == null ? null : String.valueOf(frk.isSecure());
-            }
-        }),
-        new Variable("request.ssh.path", new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                SshKnob sk = context.getRequest().getKnob(SshKnob.class);
-                return sk == null ? null : sk.getPath();
-            }
-        }),
-        new Variable("request.ssh.file", new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                SshKnob sk = context.getRequest().getKnob(SshKnob.class);
-                return sk == null ? null : sk.getFile();
-            }
-        }),
-        new Variable("request.elapsedTime", new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                return Long.toString(System.currentTimeMillis() - context.getStartTime());
-            }
-        }),
-        new SettableVariable("auditLevel",
-            new Getter() {
+            new Variable("request.tcp.remoteAddress", remoteIpGetter),
+            new Variable("request.tcp.remoteip", remoteIpGetter),
+            new Variable("request.tcp.remoteHost", new Getter() {
                 @Override
                 public Object get(String name, PolicyEnforcementContext context) {
-                    Level level = context.getAuditLevel();
-                    return level == null ? null : level.getName();
+                    TcpKnob tk = context.getRequest().getKnob(TcpKnob.class);
+                    return tk == null ? null : tk.getRemoteHost();
                 }
-            },
-            new Setter() {
+            }),
+            new Variable("request.clientid", new Getter() {
                 @Override
-                public void set(String name, Object value, PolicyEnforcementContext context) {
-                    Level level = Level.parse(value.toString());
-                    if (level.equals(Level.SEVERE)) {
-                        throw new IllegalArgumentException("SEVERE is reserved for audit system events");
+                public Object get(String name, PolicyEnforcementContext context) {
+                    User user = context.getAuthenticationContext(context.getRequest()).getLastAuthenticatedUser();
+                    String dat = user == null ? null : user.getProviderId() + ":" + user.getId();
+                    if (dat != null) return "AuthUser:" + dat;
+
+                    final Message request = context.getRequest();
+                    dat = getRequestRemoteIp(request);
+                    if (dat != null) return "ClientIp:" + dat;
+
+                    dat = getRequestProtocolId(request);
+                    if (dat != null) return "ProtocolId:" + dat;
+
+                    dat = getRequestProtocol(request);
+                    if (dat != null) return "Protocol:" + dat;
+
+                    return CLIENT_ID_UNKNOWN;
+                }
+            }),
+            new Variable("request.tcp.localPort", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    TcpKnob tk = context.getRequest().getKnob(TcpKnob.class);
+                    return tk == null ? null : String.valueOf(tk.getLocalPort());
+                }
+            }),
+            new Variable("request.http.method", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    HttpRequestKnob hrk = context.getRequest().getKnob(HttpRequestKnob.class);
+                    return hrk == null ? null : hrk.getMethod().name();
+                }
+            }),
+            new Variable("request.http.uri", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    HttpRequestKnob hrk = context.getRequest().getKnob(HttpRequestKnob.class);
+                    return hrk == null ? null : hrk.getRequestUri();
+                }
+            }),
+            new Variable(BuiltinVariables.PREFIX_REQUEST_URL, new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    HttpRequestKnob hrk = context.getRequest().getKnob(HttpRequestKnob.class);
+                    if (hrk == null) {
+                        FtpRequestKnob frk = context.getRequest().getKnob(FtpRequestKnob.class);
+                        if (frk == null)
+                            return null;
+                        final String fullUrl = frk.getRequestUrl();
+                        return getUrlValue(BuiltinVariables.PREFIX_REQUEST_URL, name, fullUrl);
                     }
-                    context.setAuditLevel(level);
+                    final String fullUrl = hrk.getQueryString() == null ? hrk.getRequestUrl() : hrk.getRequestUrl() + "?" + hrk.getQueryString();
+                    return getUrlValue(BuiltinVariables.PREFIX_REQUEST_URL, name, fullUrl);
                 }
-            }
-        ),
-        new Variable("request.soap.operation", soapOperationGetter),
-        new Variable("request.soap.operationname", soapOperationGetter),
-        new Variable("request.soap.namespace", soapNamespaceGetter),
-        new Variable("request.soap.urn", soapNamespaceGetter),
-        new Variable("requestId", new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                RequestId id = context.getRequestId();
-                return id == null ? null : id.toString();
-            }
-        }),
-        new Variable("routingStatus", new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                return context.getRoutingStatus().getName();
-            }
-        }),
+            }),
+            new Variable("request.http.secure", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    HttpRequestKnob hrk = context.getRequest().getKnob(HttpRequestKnob.class);
+                    return hrk == null ? null : String.valueOf(hrk.isSecure());
+                }
+            }),
+            new Variable("request.http.queryString", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    HttpRequestKnob hrk = context.getRequest().getKnob(HttpRequestKnob.class);
+                    return hrk == null ? null : hrk.getQueryString();
+                }
+            }),
+            new Variable("request.ftp.path", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    FtpRequestKnob frk = context.getRequest().getKnob(FtpRequestKnob.class);
+                    return frk == null ? null : frk.getPath();
+                }
+            }),
+            new Variable("request.ftp.file", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    FtpRequestKnob frk = context.getRequest().getKnob(FtpRequestKnob.class);
+                    return frk == null ? null : frk.getFile();
+                }
+            }),
+            new Variable("request.ftp.unique", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    FtpRequestKnob frk = context.getRequest().getKnob(FtpRequestKnob.class);
+                    return frk == null ? null : String.valueOf(frk.isUnique());
+                }
+            }),
+            new Variable("request.ftp.secure", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    FtpRequestKnob frk = context.getRequest().getKnob(FtpRequestKnob.class);
+                    return frk == null ? null : String.valueOf(frk.isSecure());
+                }
+            }),
+            new Variable("request.ssh.path", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    SshKnob sk = context.getRequest().getKnob(SshKnob.class);
+                    return sk == null ? null : sk.getPath();
+                }
+            }),
+            new Variable("request.ssh.file", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    SshKnob sk = context.getRequest().getKnob(SshKnob.class);
+                    return sk == null ? null : sk.getFile();
+                }
+            }),
+            new Variable("request.elapsedTime", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    return Long.toString(System.currentTimeMillis() - context.getStartTime());
+                }
+            }),
+            new SettableVariable("auditLevel",
+                    new Getter() {
+                        @Override
+                        public Object get(String name, PolicyEnforcementContext context) {
+                            Level level = context.getAuditLevel();
+                            return level == null ? null : level.getName();
+                        }
+                    },
+                    new Setter() {
+                        @Override
+                        public void set(String name, Object value, PolicyEnforcementContext context) {
+                            Level level = Level.parse(value.toString());
+                            if (level.equals(Level.SEVERE)) {
+                                throw new IllegalArgumentException("SEVERE is reserved for audit system events");
+                            }
+                            context.setAuditLevel(level);
+                        }
+                    }
+            ),
+            new Variable("request.soap.operation", soapOperationGetter),
+            new Variable("request.soap.operationname", soapOperationGetter),
+            new Variable("request.soap.namespace", soapNamespaceGetter),
+            new Variable("request.soap.urn", soapNamespaceGetter),
+            new Variable("requestId", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    RequestId id = context.getRequestId();
+                    return id == null ? null : id.toString();
+                }
+            }),
+            new Variable("routingStatus", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    return context.getRoutingStatus().getName();
+                }
+            }),
 
-        new Variable(BuiltinVariables.PREFIX_REQUEST_HTTP_PARAMS, new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                String[] vals = null;
-                try {
-                    vals = getParamValues(BuiltinVariables.PREFIX_REQUEST_HTTP_PARAMS, name, context);
-                } catch (IOException e) {
-                    logger.log(Level.WARNING, "Couldn't get HTTP parameters: " + name, e);
+            new Variable(BuiltinVariables.PREFIX_REQUEST_HTTP_PARAMS, new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    String[] vals = null;
+                    try {
+                        vals = getParamValues(BuiltinVariables.PREFIX_REQUEST_HTTP_PARAMS, name, context);
+                    } catch (IOException e) {
+                        logger.log(Level.WARNING, "Couldn't get HTTP parameters: " + name, e);
+                    }
+                    return vals;
                 }
-                return vals;
-            }
-        }),
-        new Variable(BuiltinVariables.PREFIX_REQUEST_HTTP_PARAM, new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                try {
-                    String[] vals = getParamValues(BuiltinVariables.PREFIX_REQUEST_HTTP_PARAM, name, context);
-                    if (vals != null && vals.length > 0) return vals[0];
-                } catch (IOException e) {
-                    logger.log(Level.WARNING, "Couldn't get HTTP parameter: " + name, e);
-                }
-                return null;
-            }
-        }),
-
-        new Variable(BuiltinVariables.PREFIX_REQUEST_JMS_MSG_PROP, new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                final JmsKnob jmsKnob = context.getRequest().getKnob(JmsKnob.class);
-                if (jmsKnob == null) return null;
-                final String prefix = BuiltinVariables.PREFIX_REQUEST_JMS_MSG_PROP + ".";
-                if (!name.startsWith(prefix)) {
-                    logger.warning("Context variable for request JMS message property does not start with the correct prefix (" + prefix + "): " + name);
+            }),
+            new Variable(BuiltinVariables.PREFIX_REQUEST_HTTP_PARAM, new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    try {
+                        String[] vals = getParamValues(BuiltinVariables.PREFIX_REQUEST_HTTP_PARAM, name, context);
+                        if (vals != null && vals.length > 0) return vals[0];
+                    } catch (IOException e) {
+                        logger.log(Level.WARNING, "Couldn't get HTTP parameter: " + name, e);
+                    }
                     return null;
                 }
-                final String propName = name.substring(prefix.length());
-                return jmsKnob.getJmsMsgPropMap().get(propName);
-            }
-        }),
+            }),
 
-        new Variable(BuiltinVariables.PREFIX_RESPONSE_JMS_MSG_PROP, new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                final JmsKnob jmsKnob = context.getResponse().getKnob(JmsKnob.class);
-                if (jmsKnob == null) return null;
-                final String prefix = BuiltinVariables.PREFIX_RESPONSE_JMS_MSG_PROP + ".";
-                if (!name.startsWith(prefix)) {
-                    logger.warning("Context variable for response JMS message property does not start with the correct prefix (" + prefix + "): " + name);
-                    return null;
+            new Variable(BuiltinVariables.PREFIX_REQUEST_JMS_MSG_PROP, new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    final JmsKnob jmsKnob = context.getRequest().getKnob(JmsKnob.class);
+                    if (jmsKnob == null) return null;
+                    final String prefix = BuiltinVariables.PREFIX_REQUEST_JMS_MSG_PROP + ".";
+                    if (!name.startsWith(prefix)) {
+                        logger.warning("Context variable for request JMS message property does not start with the correct prefix (" + prefix + "): " + name);
+                        return null;
+                    }
+                    final String propName = name.substring(prefix.length());
+                    return jmsKnob.getJmsMsgPropMap().get(propName);
                 }
-                final String propName = name.substring(prefix.length());
-                return jmsKnob.getJmsMsgPropMap().get(propName);
-            }
-        }),
+            }),
 
-        new Variable(BuiltinVariables.REQUEST_JMS_MSG_PROP_NAMES, new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                final JmsKnob jmsKnob = context.getRequest().getKnob(JmsKnob.class);
-                if (jmsKnob == null) return null;
-                final String prefix = BuiltinVariables.REQUEST_JMS_MSG_PROP_NAMES;
-                if (!name.startsWith(prefix)) {
-                    logger.warning("Context variable for request JMS message property does not start with the correct prefix (" + prefix + "): " + name);
-                    return null;
+            new Variable(BuiltinVariables.PREFIX_RESPONSE_JMS_MSG_PROP, new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    final JmsKnob jmsKnob = context.getResponse().getKnob(JmsKnob.class);
+                    if (jmsKnob == null) return null;
+                    final String prefix = BuiltinVariables.PREFIX_RESPONSE_JMS_MSG_PROP + ".";
+                    if (!name.startsWith(prefix)) {
+                        logger.warning("Context variable for response JMS message property does not start with the correct prefix (" + prefix + "): " + name);
+                        return null;
+                    }
+                    final String propName = name.substring(prefix.length());
+                    return jmsKnob.getJmsMsgPropMap().get(propName);
                 }
-                Object[] keys = jmsKnob.getJmsMsgPropMap().keySet().toArray();
-                return keys;
-            }
-        }),
+            }),
 
-        new Variable(BuiltinVariables.RESPONSE_JMS_MSG_PROP_NAMES, new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                final JmsKnob jmsKnob = context.getResponse().getKnob(JmsKnob.class);
-                if (jmsKnob == null) return null;
-                final String prefix = BuiltinVariables.RESPONSE_JMS_MSG_PROP_NAMES;
-                if (!name.startsWith(prefix)) {
-                    logger.warning("Context variable for response JMS message property does not start with the correct prefix (" + prefix + "): " + name);
-                    return null;
+            new Variable(BuiltinVariables.REQUEST_JMS_MSG_PROP_NAMES, new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    final JmsKnob jmsKnob = context.getRequest().getKnob(JmsKnob.class);
+                    if (jmsKnob == null) return null;
+                    final String prefix = BuiltinVariables.REQUEST_JMS_MSG_PROP_NAMES;
+                    if (!name.startsWith(prefix)) {
+                        logger.warning("Context variable for request JMS message property does not start with the correct prefix (" + prefix + "): " + name);
+                        return null;
+                    }
+                    Object[] keys = jmsKnob.getJmsMsgPropMap().keySet().toArray();
+                    return keys;
                 }
-                Object[] keys = jmsKnob.getJmsMsgPropMap().keySet().toArray();
-                return keys;
-            }
-        }),
+            }),
 
-        new Variable(BuiltinVariables.REQUEST_JMS_MSG_ALL_PROP_VALS, new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                final JmsKnob jmsKnob = context.getRequest().getKnob(JmsKnob.class);
-                if (jmsKnob == null) return null;
-                ArrayList<String> values = new ArrayList<String> ();
-                final Syntax syntax = Syntax.parse(name, Syntax.DEFAULT_MV_DELIMITER);
-                final char delimiter = ':';
-                for(String key :jmsKnob.getJmsMsgPropMap().keySet())
-                {
-                    values.add(key + delimiter + jmsKnob.getJmsMsgPropMap().get(key).toString() );
+            new Variable(BuiltinVariables.RESPONSE_JMS_MSG_PROP_NAMES, new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    final JmsKnob jmsKnob = context.getResponse().getKnob(JmsKnob.class);
+                    if (jmsKnob == null) return null;
+                    final String prefix = BuiltinVariables.RESPONSE_JMS_MSG_PROP_NAMES;
+                    if (!name.startsWith(prefix)) {
+                        logger.warning("Context variable for response JMS message property does not start with the correct prefix (" + prefix + "): " + name);
+                        return null;
+                    }
+                    Object[] keys = jmsKnob.getJmsMsgPropMap().keySet().toArray();
+                    return keys;
                 }
-                return values.toArray();
-            }
-        }), 
-        new Variable(BuiltinVariables.RESPONSE_JMS_MSG_ALL_PROP_VALS, new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                final JmsKnob jmsKnob = context.getResponse().getKnob(JmsKnob.class);
-                if (jmsKnob == null) return null;
-                ArrayList<String> values = new ArrayList<String> ();
-                final Syntax syntax = Syntax.parse(name, Syntax.DEFAULT_MV_DELIMITER);
-                final char delimiter = ':';
-                for(String key :jmsKnob.getJmsMsgPropMap().keySet())
-                {
-                    values.add(key + delimiter + jmsKnob.getJmsMsgPropMap().get(key).toString() );
+            }),
+
+            new Variable(BuiltinVariables.REQUEST_JMS_MSG_ALL_PROP_VALS, new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    final JmsKnob jmsKnob = context.getRequest().getKnob(JmsKnob.class);
+                    if (jmsKnob == null) return null;
+                    ArrayList<String> values = new ArrayList<String>();
+                    final Syntax syntax = Syntax.parse(name, Syntax.DEFAULT_MV_DELIMITER);
+                    final char delimiter = ':';
+                    for (String key : jmsKnob.getJmsMsgPropMap().keySet()) {
+                        values.add(key + delimiter + jmsKnob.getJmsMsgPropMap().get(key).toString());
+                    }
+                    return values.toArray();
                 }
-                return values.toArray();
-            }
-        }),
+            }),
+            new Variable(BuiltinVariables.RESPONSE_JMS_MSG_ALL_PROP_VALS, new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    final JmsKnob jmsKnob = context.getResponse().getKnob(JmsKnob.class);
+                    if (jmsKnob == null) return null;
+                    ArrayList<String> values = new ArrayList<String>();
+                    final Syntax syntax = Syntax.parse(name, Syntax.DEFAULT_MV_DELIMITER);
+                    final char delimiter = ':';
+                    for (String key : jmsKnob.getJmsMsgPropMap().keySet()) {
+                        values.add(key + delimiter + jmsKnob.getJmsMsgPropMap().get(key).toString());
+                    }
+                    return values.toArray();
+                }
+            }),
 
 
-        new Variable(BuiltinVariables.PREFIX_SERVICE+"."+BuiltinVariables.SERVICE_SUFFIX_URL, new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                return getUrlValue(BuiltinVariables.PREFIX_SERVICE+"."+BuiltinVariables.SERVICE_SUFFIX_URL, name, context.getRoutedServiceUrl());
-            }
-        }),
+            new Variable(BuiltinVariables.PREFIX_SERVICE + "." + BuiltinVariables.SERVICE_SUFFIX_URL, new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    return getUrlValue(BuiltinVariables.PREFIX_SERVICE + "." + BuiltinVariables.SERVICE_SUFFIX_URL, name, context.getRoutedServiceUrl());
+                }
+            }),
 
-        new Variable(BuiltinVariables.PREFIX_SERVICE+"."+BuiltinVariables.SERVICE_SUFFIX_NAME, new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                final PublishedService service = context.getService();
-                return service == null ? null : service.getName();
-            }
-        }),
-
-        new Variable(BuiltinVariables.PREFIX_SERVICE+"."+BuiltinVariables.SERVICE_SUFFIX_OID, new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                final PublishedService service = context.getService();
-                return service == null ? null : service.getId();
-            }
-        }),
-
-        new Variable(BuiltinVariables.PREFIX_SERVICE+"."+BuiltinVariables.SERVICE_SUFFIX_ROUTINGURL, new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                String routingUrl = null;
-
-                try {
+            new Variable(BuiltinVariables.PREFIX_SERVICE + "." + BuiltinVariables.SERVICE_SUFFIX_NAME, new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
                     final PublishedService service = context.getService();
-                    if (service == null)
-                        return null;
-                    final URL url = service.serviceUrl();
-                    routingUrl = url==null ? null : url.toString();
-                } catch (WSDLException e) {
-                    logger.log(
-                            Level.WARNING,
-                            "Could not access default routing URL for service '"+context.getService().displayName()+"', due to '"+ExceptionUtils.getMessage(e)+"'.",
-                            ExceptionUtils.getDebugException(e));
-                } catch (MalformedURLException e) {
-                    logger.log(
-                            Level.WARNING,
-                            "Could not access default routing URL for service '"+context.getService().displayName()+"', due to '"+ExceptionUtils.getMessage(e)+"'.",
-                            ExceptionUtils.getDebugException(e));
+                    return service == null ? null : service.getName();
                 }
+            }),
 
-                return routingUrl;
-            }
-        }),
-
-        new Variable(BuiltinVariables.SSGNODE_ID, new Getter() {
-            @Override
-            Object get(String name, PolicyEnforcementContext context) {
-                ClusterNodeInfo inf = clusterInfoManager == null ? null : clusterInfoManager.getSelfNodeInf();
-                return inf == null ? null : inf.getNodeIdentifier();
-            }
-        }),
-
-        new Variable(BuiltinVariables.SSGNODE_NAME, new Getter() {
-            @Override
-            Object get(String name, PolicyEnforcementContext context) {
-                ClusterNodeInfo inf = clusterInfoManager == null ? null : clusterInfoManager.getSelfNodeInf();
-                return inf == null ? null : inf.getName();
-            }
-        }),
-
-        new Variable(BuiltinVariables.PREFIX_GATEWAY_TIME, new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                try {
-                    return TimeVariableUtils.getTimeValue(BuiltinVariables.PREFIX_GATEWAY_TIME, name, new TimeVariableUtils.LazyLong() {
-                        @Override
-                        public long get() {
-                            return System.currentTimeMillis();
-                        }
-                    });
-                } catch ( TimeVariableUtils.TimeFormatException e ) {
-                    logger.warning("Variable name '" + name + "' uses an invalid date format: " + ExceptionUtils.getMessage(e.getCause()));
-                    return null;
+            new Variable(BuiltinVariables.PREFIX_SERVICE + "." + BuiltinVariables.SERVICE_SUFFIX_OID, new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    final PublishedService service = context.getService();
+                    return service == null ? null : service.getId();
                 }
-            }
-        }),
-        new Variable(BuiltinVariables.PREFIX_REQUEST_TIME, new Getter() {
-            @Override
-            public Object get(String name, final PolicyEnforcementContext context) {
-                try {
-                    return TimeVariableUtils.getTimeValue(BuiltinVariables.PREFIX_REQUEST_TIME, name, new TimeVariableUtils.LazyLong() {
-                        @Override
-                        public long get() {
-                            return context.getStartTime();
-                        }
-                    });
-                } catch ( TimeVariableUtils.TimeFormatException e ) {
-                    logger.warning("Variable name '" + name + "' uses an invalid date format: " + ExceptionUtils.getMessage(e.getCause()));
-                    return null;
+            }),
+
+            new Variable(BuiltinVariables.PREFIX_SERVICE + "." + BuiltinVariables.SERVICE_SUFFIX_ROUTINGURL, new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    String routingUrl = null;
+
+                    try {
+                        final PublishedService service = context.getService();
+                        if (service == null)
+                            return null;
+                        final URL url = service.serviceUrl();
+                        routingUrl = url == null ? null : url.toString();
+                    } catch (WSDLException e) {
+                        logger.log(
+                                Level.WARNING,
+                                "Could not access default routing URL for service '" + context.getService().displayName() + "', due to '" + ExceptionUtils.getMessage(e) + "'.",
+                                ExceptionUtils.getDebugException(e));
+                    } catch (MalformedURLException e) {
+                        logger.log(
+                                Level.WARNING,
+                                "Could not access default routing URL for service '" + context.getService().displayName() + "', due to '" + ExceptionUtils.getMessage(e) + "'.",
+                                ExceptionUtils.getDebugException(e));
+                    }
+
+                    return routingUrl;
                 }
-            }
-        }),
-        new Variable("response.http.status", new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                HttpResponseKnob hrk = context.getResponse().getKnob(HttpResponseKnob.class);
-                return hrk == null ? null : Integer.toString(hrk.getStatus());
-            }
-        }),
-        new Variable(BuiltinVariables.PREFIX_CLUSTER_PROPERTY, new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                if (name.length() < (BuiltinVariables.PREFIX_CLUSTER_PROPERTY.length() + 2)) {
-                    logger.warning("variable name " + name + " cannot be resolved to a cluster property");
-                    return null;
+            }),
+
+            new Variable(BuiltinVariables.SSGNODE_ID, new Getter() {
+                @Override
+                Object get(String name, PolicyEnforcementContext context) {
+                    ClusterNodeInfo inf = clusterInfoManager == null ? null : clusterInfoManager.getSelfNodeInf();
+                    return inf == null ? null : inf.getNodeIdentifier();
                 }
-                name = name.substring(BuiltinVariables.PREFIX_CLUSTER_PROPERTY.length() + 1);
-                final ServerConfig serverConfig = ServerConfig.getInstance();
-                final String configName = serverConfig.getNameFromClusterName( name );
-                if ( configName != null ) {
-                    return serverConfig.getProperty( configName );
-                } else {
-                    if (getClusterPropertyCache() != null) {
-                        ClusterProperty cp = getClusterPropertyCache().getCachedEntityByName(name);
-                        if (cp != null && cp.isHiddenProperty()) return null;
-                        return cp != null ? cp.getValue() : null;
-                    } else {
-                        logger.severe("cannot get ClusterPropertyCache context");
+            }),
+
+            new Variable(BuiltinVariables.SSGNODE_NAME, new Getter() {
+                @Override
+                Object get(String name, PolicyEnforcementContext context) {
+                    ClusterNodeInfo inf = clusterInfoManager == null ? null : clusterInfoManager.getSelfNodeInf();
+                    return inf == null ? null : inf.getName();
+                }
+            }),
+
+            new Variable(BuiltinVariables.PREFIX_GATEWAY_TIME, new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    try {
+                        return TimeVariableUtils.getTimeValue(BuiltinVariables.PREFIX_GATEWAY_TIME, name, new TimeVariableUtils.LazyLong() {
+                            @Override
+                            public long get() {
+                                return System.currentTimeMillis();
+                            }
+                        });
+                    } catch (TimeVariableUtils.TimeFormatException e) {
+                        logger.warning("Variable name '" + name + "' uses an invalid date format: " + ExceptionUtils.getMessage(e.getCause()));
                         return null;
                     }
                 }
-            }
-        }),
-        new Variable("request.ssl.clientCertificate", new SelectingGetter("request.ssl.clientCertificate"){
-            @Override
-            public Object getBaseObject(PolicyEnforcementContext context){
-                return getOnlyOneClientCertificateForSource(
-                        context.getAuthenticationContext(context.getRequest()).getCredentials(),
-                        SslAssertion.class );
-            }
-        }),
-        new Variable("request.wss.signingcertificate", new SelectingGetter("request.wss.signingcertificate"){
-            @Override
-            public Object getBaseObject(PolicyEnforcementContext context) {
-                return getOnlyOneClientCertificateForSource(
-                        context.getAuthenticationContext(context.getRequest()).getCredentials(),
-                        RequireWssX509Cert.class );
-            }
-        }),
-        new MultiVariable("request", MessageSelector.getPrefixes(), new SelectingGetter("request") {
-            @Override
-            protected Object getBaseObject( PolicyEnforcementContext context ) {
-                return context.getRequest();
-            }
+            }),
+            new Variable(BuiltinVariables.PREFIX_REQUEST_TIME, new Getter() {
+                @Override
+                public Object get(String name, final PolicyEnforcementContext context) {
+                    try {
+                        return TimeVariableUtils.getTimeValue(BuiltinVariables.PREFIX_REQUEST_TIME, name, new TimeVariableUtils.LazyLong() {
+                            @Override
+                            public long get() {
+                                return context.getStartTime();
+                            }
+                        });
+                    } catch (TimeVariableUtils.TimeFormatException e) {
+                        logger.warning("Variable name '" + name + "' uses an invalid date format: " + ExceptionUtils.getMessage(e.getCause()));
+                        return null;
+                    }
+                }
+            }),
+            new Variable("response.http.status", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    HttpResponseKnob hrk = context.getResponse().getKnob(HttpResponseKnob.class);
+                    return hrk == null ? null : Integer.toString(hrk.getStatus());
+                }
+            }),
+            new Variable(BuiltinVariables.PREFIX_CLUSTER_PROPERTY, new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    if (name.length() < (BuiltinVariables.PREFIX_CLUSTER_PROPERTY.length() + 2)) {
+                        logger.warning("variable name " + name + " cannot be resolved to a cluster property");
+                        return null;
+                    }
+                    name = name.substring(BuiltinVariables.PREFIX_CLUSTER_PROPERTY.length() + 1);
+                    final ServerConfig serverConfig = ServerConfig.getInstance();
+                    final String configName = serverConfig.getNameFromClusterName(name);
+                    if (configName != null) {
+                        return serverConfig.getProperty(configName);
+                    } else {
+                        if (getClusterPropertyCache() != null) {
+                            ClusterProperty cp = getClusterPropertyCache().getCachedEntityByName(name);
+                            if (cp != null && cp.isHiddenProperty()) return null;
+                            return cp != null ? cp.getValue() : null;
+                        } else {
+                            logger.severe("cannot get ClusterPropertyCache context");
+                            return null;
+                        }
+                    }
+                }
+            }),
+            new Variable("request.ssl.clientCertificate", new SelectingGetter("request.ssl.clientCertificate") {
+                @Override
+                public Object getBaseObject(PolicyEnforcementContext context) {
+                    return getOnlyOneClientCertificateForSource(
+                            context.getAuthenticationContext(context.getRequest()).getCredentials(),
+                            SslAssertion.class);
+                }
+            }),
+            new Variable("request.wss.signingcertificate", new SelectingGetter("request.wss.signingcertificate") {
+                @Override
+                public Object getBaseObject(PolicyEnforcementContext context) {
+                    return getOnlyOneClientCertificateForSource(
+                            context.getAuthenticationContext(context.getRequest()).getCredentials(),
+                            RequireWssX509Cert.class);
+                }
+            }),
+            new MultiVariable("request", MessageSelector.getPrefixes(), new SelectingGetter("request") {
+                @Override
+                protected Object getBaseObject(PolicyEnforcementContext context) {
+                    return context.getRequest();
+                }
 
-        }),
-        new MultiVariable("response", MessageSelector.getPrefixes(), new SelectingGetter("response") {
-            @Override
-            protected Object getBaseObject( PolicyEnforcementContext context ) {
-                return context.getResponse();
-            }
-        }),
-        new Variable("request.compression.gzip.found", new Getter() {
-            @Override
-            public Object get(String name, PolicyEnforcementContext context) {
-                return context.isRequestWasCompressed();
-            }
-        }),
+            }),
+            new MultiVariable("response", MessageSelector.getPrefixes(), new SelectingGetter("response") {
+                @Override
+                protected Object getBaseObject(PolicyEnforcementContext context) {
+                    return context.getResponse();
+                }
+            }),
+            new Variable("request.compression.gzip.found", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    return context.isRequestWasCompressed();
+                }
+            }),
 
-        new Variable("audit", new AuditContextGetter("audit")),
-        new Variable("audit.request", new AuditOriginalMessageGetter("audit.request", false, false)),
-        new Variable("audit.requestContentLength", new AuditOriginalMessageSizeGetter(false)),
-        new Variable("audit.response", new AuditOriginalMessageGetter("audit.response", true, false)),
-        new Variable("audit.filteredrequest", new AuditOriginalMessageGetter("audit.filteredrequest", false, true)),
-        new Variable("audit.filteredresponse", new AuditOriginalMessageGetter("audit.filteredresponse", true, true)),
-        new Variable("audit.responseContentLength", new AuditOriginalMessageSizeGetter(true)),
-        new Variable("audit.var", new AuditOriginalContextVariableGetter("audit.var")),
-        new Variable("audit.policyExecutionAttempted", new AbstractAuditGetter() {
-            @Override
-            Object get(String name, PolicyEnforcementContext context) {
-                final PolicyEnforcementContext originalContext = ((AuditSinkPolicyEnforcementContext) context).getOriginalContext();
-                return originalContext == null ? null : originalContext.isPolicyExecutionAttempted();
-            }
-        }),
+            new Variable("audit", new AuditContextGetter("audit")),
+            new Variable("audit.request", new AuditOriginalMessageGetter("audit.request", false, false)),
+            new Variable("audit.requestContentLength", new AuditOriginalMessageSizeGetter(false)),
+            new Variable("audit.response", new AuditOriginalMessageGetter("audit.response", true, false)),
+            new Variable("audit.filteredrequest", new AuditOriginalMessageGetter("audit.filteredrequest", false, true)),
+            new Variable("audit.filteredresponse", new AuditOriginalMessageGetter("audit.filteredresponse", true, true)),
+            new Variable("audit.responseContentLength", new AuditOriginalMessageSizeGetter(true)),
+            new Variable("audit.var", new AuditOriginalContextVariableGetter("audit.var")),
+            new Variable("audit.policyExecutionAttempted", new AbstractAuditGetter() {
+                @Override
+                Object get(String name, PolicyEnforcementContext context) {
+                    final PolicyEnforcementContext originalContext = ((AuditSinkPolicyEnforcementContext) context).getOriginalContext();
+                    return originalContext == null ? null : originalContext.isPolicyExecutionAttempted();
+                }
+            }),
 
-        new Variable("trace", new DebugTraceGetter("trace")),
-        new SettableVariable("trace.out", new DebugTraceGetter("trace"), new DebugTraceGetter("trace")),
+            new Variable("trace", new DebugTraceGetter("trace")),
+            new SettableVariable("trace.out", new DebugTraceGetter("trace"), new DebugTraceGetter("trace")),
 
-        new Variable(BuiltinVariables.PREFIX_SECURE_PASSWORD, new SelectingGetter(BuiltinVariables.PREFIX_SECURE_PASSWORD) {
-            @Override
-            protected Object getBaseObject(PolicyEnforcementContext context) {
-                // Return a placeholder so the correct selector can fire up.  (The PEC will not be required further and is not relevant.)
-                return new SecurePasswordLocatorContext();
-            }
-        }),
+            new Variable(BuiltinVariables.PREFIX_SECURE_PASSWORD, new SelectingGetter(BuiltinVariables.PREFIX_SECURE_PASSWORD) {
+                @Override
+                protected Object getBaseObject(PolicyEnforcementContext context) {
+                    // Return a placeholder so the correct selector can fire up.  (The PEC will not be required further and is not relevant.)
+                    return new SecurePasswordLocatorContext();
+                }
+            }),
+            new Variable("uuid", new Getter() {
+                @Override
+                public Object get(String name, PolicyEnforcementContext context) {
+                    UUID id = UUID.randomUUID();
+                    return id == null ? null : id.toString();
+                }
+            }),
     };
 
-    private static X509Certificate getOnlyOneClientCertificateForSource( final List<LoginCredentials> credentials,
-                                                                         final Class<? extends Assertion> assertionClass ) {
+    private static X509Certificate getOnlyOneClientCertificateForSource(final List<LoginCredentials> credentials,
+                                                                        final Class<? extends Assertion> assertionClass) {
         X509Certificate certificate = null;
 
-        for ( LoginCredentials credential : credentials ) {
-            if ( credential != null && credential.getFormat().isClientCert() && credential.getCredentialSourceAssertion() == assertionClass ) {
-                if ( certificate != null ) {
+        for (LoginCredentials credential : credentials) {
+            if (credential != null && credential.getFormat().isClientCert() && credential.getCredentialSourceAssertion() == assertionClass) {
+                if (certificate != null) {
                     certificate = null; // multiple certificates not supported here
                     break;
                 }
@@ -679,14 +685,14 @@ public class ServerVariables {
         return clusterPropertyCache;
     }
 
-    public static void setClusterPropertyCache( final ClusterPropertyCache cache ) {
-        if ( clusterPropertyCache == null ) {
+    public static void setClusterPropertyCache(final ClusterPropertyCache cache) {
+        if (clusterPropertyCache == null) {
             clusterPropertyCache = cache;
         }
     }
 
     public static void setClusterInfoManager(ClusterInfoManager clusterInfoManager) {
-        if ( ServerVariables.clusterInfoManager == null ) {
+        if (ServerVariables.clusterInfoManager == null) {
             ServerVariables.clusterInfoManager = clusterInfoManager;
         }
     }
@@ -696,7 +702,7 @@ public class ServerVariables {
     }
 
     public static void setAuditContext(final AuditContext auditContext) {
-        if ( ServerVariables.auditContext == null ) {
+        if (ServerVariables.auditContext == null) {
             ServerVariables.auditContext = auditContext;
         }
     }
@@ -704,15 +710,15 @@ public class ServerVariables {
     static {
         for (Variable var : VARS) {
             List<String> names = new ArrayList<String>();
-            if ( var instanceof MultiVariable ) {
-                for ( String subName : ((MultiVariable)var).getSubNames() ) {
-                    names.add( var.getName().toLowerCase() + "." + subName.toLowerCase() );
+            if (var instanceof MultiVariable) {
+                for (String subName : ((MultiVariable) var).getSubNames()) {
+                    names.add(var.getName().toLowerCase() + "." + subName.toLowerCase());
                 }
             } else {
-                names.add( var.getName() );
+                names.add(var.getName());
             }
 
-            for ( String name : names ) {
+            for (String name : names) {
                 VariableMetadata meta = BuiltinVariables.getMetadata(name);
 
                 if (meta == null)
@@ -730,8 +736,8 @@ public class ServerVariables {
     private static class MultiVariable extends Variable {
         private final String[] subNames;
 
-        MultiVariable( final String name, final String[] subNames, final Getter getter ) {
-            super( name, getter );
+        MultiVariable(final String name, final String[] subNames, final Getter getter) {
+            super(name, getter);
             this.subNames = subNames;
         }
 
@@ -778,7 +784,7 @@ public class ServerVariables {
                     return null;
                 }
                 if (context.getService().isSoap()) {
-                    final Pair<Binding,Operation> pair = context.getBindingAndOperation();
+                    final Pair<Binding, Operation> pair = context.getBindingAndOperation();
                     if (pair != null) {
                         Operation operation = pair.right;
                         return operation.getName();
@@ -962,23 +968,23 @@ public class ServerVariables {
     private static abstract class SelectingGetter extends Getter {
         private final String baseName;
 
-        private SelectingGetter( final String baseName ) {
+        private SelectingGetter(final String baseName) {
             this.baseName = baseName;
         }
 
         @Override
         public final Object get(final String name, final PolicyEnforcementContext context) {
             Object object = getBaseObject(context);
-            if ( object != null && !baseName.equalsIgnoreCase(name) ) {
+            if (object != null && !baseName.equalsIgnoreCase(name)) {
                 object = ExpandVariables.processSingleVariableAsObject(
-                        "${"+name+"}",
+                        "${" + name + "}",
                         Collections.singletonMap(baseName.toLowerCase(), object),
-                        new LoggingAudit(logger) );
+                        new LoggingAudit(logger));
             }
             return object;
         }
 
-        protected abstract Object getBaseObject( PolicyEnforcementContext context );
+        protected abstract Object getBaseObject(PolicyEnforcementContext context);
     }
 
 
@@ -998,9 +1004,9 @@ public class ServerVariables {
      * (before the first PolicyEnforcementContext is available), but only as a last resort if there is no reasonable
      * alternative.
      *
-     * @param audit auditor to use for logging.  Required.
+     * @param audit    auditor to use for logging.  Required.
      * @param template the template to examine.  If null, this method will always return null.  May contain variable
-     *        references but only those of the form ${secpass.*.plaintext}.
+     *                 references but only those of the form ${secpass.*.plaintext}.
      * @return the expansion of the template, or the original string unmodified.  May be null only if template was null.
      * @throws FindException if there is an error looking up a secure password instance.
      */
@@ -1022,7 +1028,7 @@ public class ServerVariables {
             }
 
             // Build variable map, permitting only secpass refs
-            Map<String,Object> map = new HashMap<String,Object>();
+            Map<String, Object> map = new HashMap<String, Object>();
             for (String var : vars) {
                 Matcher matcher = SECPASS_PATTERN.matcher(var);
                 if (!matcher.matches()) {
@@ -1078,7 +1084,7 @@ public class ServerVariables {
      * <p/>
      * This method should never be used from a server policy assertion.
      *
-     * @param audit auditor to use for logging.  Required.
+     * @param audit             auditor to use for logging.  Required.
      * @param passwordOrSecPass a string to examine.  If null or empty or does not strictly match the format of a single ${secpass.*.plaintext} reference then this method will return the original argument unchanged.
      * @return the corresponding secure password plaintext, if the input was a secpass reference; otherwise, the input unchanged.  May be null only if the input is null.
      * @throws FindException if there is an error looking up a secure password instance.
