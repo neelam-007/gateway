@@ -2,10 +2,7 @@ package com.l7tech.console.tree;
 
 import com.l7tech.console.action.*;
 import com.l7tech.console.security.SecurityProvider;
-import com.l7tech.console.tree.servicesAndPolicies.RootNode;
-import com.l7tech.console.tree.servicesAndPolicies.ServicesAndPoliciesTreeTransferHandler;
-import com.l7tech.console.tree.servicesAndPolicies.SortComponents;
-import com.l7tech.console.tree.servicesAndPolicies.FolderNode;
+import com.l7tech.console.tree.servicesAndPolicies.*;
 import com.l7tech.console.util.Refreshable;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -19,9 +16,14 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.OrganizationHeader;
 import com.l7tech.policy.PolicyHeader;
+import com.l7tech.util.ArrayUtils;
 
 import javax.swing.*;
 import javax.swing.tree.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.FlavorEvent;
+import java.awt.datatransfer.FlavorListener;
 import java.awt.event.*;
 import java.awt.*;
 import java.util.*;
@@ -35,7 +37,7 @@ import java.util.logging.Logger;
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class ServicesAndPoliciesTree extends JTree implements Refreshable, FocusListener{
+public class ServicesAndPoliciesTree extends JTree implements Refreshable{
     static Logger log = Logger.getLogger(ServicesAndPoliciesTree.class.getName());
     private boolean ignoreCurrentClipboard = false;
     private SortComponents sortComponents;
@@ -53,7 +55,6 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
     public ServicesAndPoliciesTree(DefaultTreeModel newModel) {
         super(newModel);
         initialize();
-        addFocusListener(this);
         getSelectionModel().setSelectionMode(TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);
     }
 
@@ -89,12 +90,25 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
         addKeyListener(new TreeKeyListener());
         addMouseListener(new TreeMouseListener());
         setCellRenderer(new EntityTreeCellRenderer());
+        Toolkit.getDefaultToolkit().getSystemClipboard().addFlavorListener(new FlavorListener() {
+            @Override
+            public void flavorsChanged(FlavorEvent e) {
+                if(e.getSource() instanceof Clipboard){
+                    Clipboard clip = (Clipboard)e.getSource();
+                    DataFlavor[] flavours = clip.getAvailableDataFlavors();
+                    if(!ArrayUtils.contains(flavours, FolderAndNodeTransferable.ALLOWED_DATA_FLAVOR)){
+                        setAllChildrenUnCut();
+                        setIgnoreCurrentClipboard(true);
+                    }
+                }
+            }
+        });
 
         setDragEnabled(true);
         setTransferHandler(new ServicesAndPoliciesTreeTransferHandler());
 
         // disable Edit menu actions
-        putClientProperty(ClipboardActions.COPY_HINT, "false");
+        putClientProperty(ClipboardActions.COPY_HINT, "true");
         putClientProperty(ClipboardActions.CUT_HINT, "true");
         putClientProperty(ClipboardActions.PASTE_HINT, "true");
 
@@ -147,16 +161,6 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
         return true;
     }
 
-    @Override
-    public void focusGained(FocusEvent e) {
-    }
-
-    @Override
-    public void focusLost(FocusEvent e) {
-        //let user see that all cut nodes have been undone
-        setAllChildrenUnCut();
-        setIgnoreCurrentClipboard(true);
-    }
 
     /**
      * KeyAdapter for the policy trees
@@ -417,10 +421,11 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
     public static enum ClipboardActionType{
         CUT("Cut"),
         PASTE("Paste"),
+        COPY("Copy")
         ;
         private final String actionName;
 
-        public static final EnumSet<ClipboardActionType> ALL_ACTIONS = EnumSet.of(CUT, PASTE);
+        public static final EnumSet<ClipboardActionType> ALL_ACTIONS = EnumSet.of(CUT, PASTE, COPY);
 
         private ClipboardActionType(String name) {
             this.actionName = name;
@@ -458,6 +463,8 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
                 return ClipboardActions.getGlobalCutAction();
             case PASTE:
                 return ClipboardActions.getGlobalPasteAction();
+            case COPY:
+                return ClipboardActions.getGlobalCopyAction();
             default:
                 throw new IllegalArgumentException();
         }

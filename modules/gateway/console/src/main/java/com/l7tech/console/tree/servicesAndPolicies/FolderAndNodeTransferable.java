@@ -15,7 +15,7 @@ import java.util.List;
  * To change this template use File | Settings | File Templates.
  */
 public class FolderAndNodeTransferable implements Transferable {
-    protected static final DataFlavor ALLOWED_DATA_FLAVOR;
+    public static final DataFlavor ALLOWED_DATA_FLAVOR;
     static {
         DataFlavor df = null;
         try {
