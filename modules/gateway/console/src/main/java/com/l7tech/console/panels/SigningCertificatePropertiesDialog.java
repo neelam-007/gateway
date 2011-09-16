@@ -14,6 +14,7 @@ import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
 
+import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -25,6 +26,7 @@ import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
+import java.text.MessageFormat;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
@@ -123,8 +125,10 @@ public class SigningCertificatePropertiesDialog extends JDialog {
         inputValidator.attachToButton(okButton, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                confirmed = true;
-                dispose();
+                if (validatePropertiesAndReportErrors()) {
+                    confirmed = true;
+                    dispose();
+                }
             }
         });
 
@@ -149,6 +153,23 @@ public class SigningCertificatePropertiesDialog extends JDialog {
         });
 
         pack();
+    }
+
+    private boolean validatePropertiesAndReportErrors() {
+        try {
+            new X500Principal(getSubjectDn());
+            return true;
+        } catch (IllegalArgumentException e) {
+            showErrorMessage(
+                resources.getString("error.dialog.title"),
+                MessageFormat.format(resources.getString("error.message.invalid.subject.dn"), ExceptionUtils.getMessage(e)));
+            return false;
+        }
+    }
+
+    private void showErrorMessage(String title, String msg) {
+        logger.log(Level.WARNING, msg);
+        DialogDisplayer.showMessageDialog(this, msg, title, JOptionPane.ERROR_MESSAGE, null);
     }
 
     private String getDefaultExpiryAge() {
