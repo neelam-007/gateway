@@ -1,6 +1,6 @@
-package com.l7tech.external.assertions.uuidgenerator;
+package com.l7tech.external.assertions.uuidgenerator.server;
 
-import com.l7tech.external.assertions.uuidgenerator.server.ServerUUIDGeneratorAssertion;
+import com.l7tech.external.assertions.uuidgenerator.UUIDGeneratorAssertion;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;

@@ -4,15 +4,10 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.logging.Logger;
-
 /**
  * Assertion which generates UUIDs and sets them to a context variable.
  */
 public class UUIDGeneratorAssertion extends Assertion implements UsesVariables, SetsVariables {
-    private static final Logger LOGGER = Logger.getLogger(UUIDGeneratorAssertion.class.getName());
     public static final String DEFAULT_AMOUNT = "1";
 
     /**
@@ -62,17 +57,9 @@ public class UUIDGeneratorAssertion extends Assertion implements UsesVariables, 
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
-        // Cluster properties used by this assertion
-        Map<String, String[]> props = new HashMap<String, String[]>();
-        //props.put(NAME, new String[] {
-        //        DESCRIPTION,
-        //        DEFAULT
-        //});
-        meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
-
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, "Generate UUID");
-        meta.put(AssertionMetadata.DESCRIPTION, "Generates UUIDs and stores in");
+        meta.put(AssertionMetadata.DESCRIPTION, "Generates UUIDs and stores in"); //TODO fix description
 
         // Add to palette folder(s) 
         //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing, 
@@ -88,7 +75,7 @@ public class UUIDGeneratorAssertion extends Assertion implements UsesVariables, 
 
         // request default feature set name for our class name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:UUIDGenerator" rather than "set:modularAssertions"
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");  //TODO licensing
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
