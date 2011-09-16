@@ -92,10 +92,13 @@ public class ServerSimpleRawTransportAssertion extends AbstractServerAssertion<S
             //noinspection ThrowableResultOfMethodCallIgnored
             logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{ "Raw transport failed: " + ExceptionUtils.getMessage( e ) }, ExceptionUtils.getDebugException( e ) );
             return AssertionStatus.SERVER_ERROR;
+        }  catch (NumberFormatException e){
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{ "Raw transport failed. Invalid response size limit. " + ExceptionUtils.getMessage( e ) }, ExceptionUtils.getDebugException(e) );
+            return AssertionStatus.SERVER_ERROR;
         }
     }
 
-    private void transmitOverTcp(PolicyEnforcementContext context, Message request, Message response, Map<String, ?> vars) throws IOException, NoSuchPartException {
+    private void transmitOverTcp(PolicyEnforcementContext context, Message request, Message response, Map<String, ?> vars) throws IOException, NoSuchPartException, NumberFormatException {
         Socket sock = null;
         OutputStream outputStream;
         InputStream inputStream = null;
