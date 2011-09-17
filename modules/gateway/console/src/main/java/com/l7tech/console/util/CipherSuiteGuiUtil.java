@@ -42,6 +42,10 @@ public final class CipherSuiteGuiUtil {
         String[] allCiphers = getCipherSuiteNames();
         Set<String> defaultCiphers = new LinkedHashSet<String>(Arrays.asList(
                 Registry.getDefault().getTransportAdmin().getDefaultCipherSuiteNames()));
+        for (String cipher : new ArrayList<String>(defaultCiphers)) {
+            if (!CipherSuiteGuiUtil.cipherSuiteShouldBeCheckedByDefault(cipher))
+                defaultCiphers.remove(cipher);
+        }
         final CipherSuiteListModel cipherSuiteListModel = new CipherSuiteListModel(allCiphers, defaultCiphers);
         cipherSuiteListModel.attachToJList(cipherSuiteList);
         cipherSuiteList.addListSelectionListener(new ListSelectionListener() {
