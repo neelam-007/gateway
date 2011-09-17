@@ -74,6 +74,7 @@ public class CipherSuiteListModel extends JCheckBoxListModel {
         Set<String> enabled = new LinkedHashSet<String>(Arrays.asList(WS_COMMA_WS.split(cipherList)));
         Set<String> all = new LinkedHashSet<String>(Arrays.asList(allCiphers));
         List<JCheckBox> entries = getEntries();
+        int oldsize = entries.size();
         entries.clear();
         for (String cipher : enabled) {
             entries.add(new JCheckBox(cipher, true));
@@ -82,6 +83,7 @@ public class CipherSuiteListModel extends JCheckBoxListModel {
             if (!enabled.contains(cipher))
                 entries.add(new JCheckBox(cipher, false));
         }
+        fireContentsChanged(this, 0, Math.max(oldsize, entries.size()));
     }
 
     /**
