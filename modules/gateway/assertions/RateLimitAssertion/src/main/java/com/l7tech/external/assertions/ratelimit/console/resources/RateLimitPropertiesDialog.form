@@ -3,7 +3,7 @@
   <grid id="27dc6" binding="topPanel" layout-manager="GridLayoutManager" row-count="5" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="6" left="6" bottom="6" right="6"/>
     <constraints>
-      <xy x="20" y="20" width="645" height="296"/>
+      <xy x="20" y="20" width="664" height="331"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -172,13 +172,6 @@
                   <text value="&amp;Shape"/>
                 </properties>
               </component>
-              <vspacer id="5ecf4">
-                <constraints>
-                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
-                    <preferred-size width="-1" height="8"/>
-                  </grid>
-                </constraints>
-              </vspacer>
               <grid id="31826" layout-manager="GridLayoutManager" row-count="1" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                 <margin top="0" left="0" bottom="0" right="0"/>
                 <constraints>
@@ -223,6 +216,14 @@
                   <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
                 </constraints>
               </vspacer>
+              <component id="5f3b1" class="javax.swing.JRadioButton" binding="logOnly">
+                <constraints>
+                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="2" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text value="&amp;Log Only"/>
+                </properties>
+              </component>
             </children>
           </grid>
           <hspacer id="4388a">
@@ -338,6 +339,7 @@
     <group name="shapeRbGroup">
       <member id="ac2e5"/>
       <member id="4d679"/>
+      <member id="5f3b1"/>
     </group>
     <group name="concurrentRbGroup">
       <member id="324a3"/>

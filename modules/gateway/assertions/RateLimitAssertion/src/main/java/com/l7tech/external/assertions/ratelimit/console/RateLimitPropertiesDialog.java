@@ -9,6 +9,8 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.CounterPresetInfoUtils;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -36,6 +38,7 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
     private JTextField blackoutSecField;
     private JCheckBox splitConcurrencyAcrossNodes;
     private JCheckBox splitRateAcrossNodes;
+    private JRadioButton logOnly;
 
     private boolean confirmed = false;
     private String uuid[] = {CounterPresetInfoUtils.makeUuid()};
@@ -98,6 +101,17 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
         blackoutSecField.setText("1");
         Utilities.enableGrayOnDisabled(blackoutSecField);
         blackoutForCheckBox.addActionListener(updateBlackoutAndWindowListener);
+
+        logOnly.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(final ChangeEvent changeEvent) {
+                blackoutForCheckBox.setEnabled(!logOnly.isSelected());
+                if(logOnly.isSelected()){
+                    blackoutForCheckBox.setSelected(false);
+                    blackoutSecField.setEnabled(false);
+                }
+            }
+        });
 
         Utilities.enableGrayOnDisabled(concurrencyLimitField);
         Utilities.setEscKeyStrokeDisposes(this);
@@ -252,6 +266,7 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
         updateConcurrencyEnableState();
         updateCounterNameEnableState();
         updateBlackoutAndWindowSizeFieldEnableState();
+        logOnly.setSelected(rla.isLogOnly());
     }
 
     @Override
@@ -268,6 +283,7 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
         rla.setBlackoutPeriodInSeconds(blackoutForCheckBox.isSelected() ? blackoutSecField.getText() : null);
         rla.setSplitConcurrencyLimitAcrossNodes(splitConcurrencyAcrossNodes.isSelected());
         rla.setSplitRateLimitAcrossNodes(splitRateAcrossNodes.isSelected());
+        rla.setLogOnly(logOnly.isSelected());
         return rla;
     }
 

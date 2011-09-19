@@ -323,7 +323,6 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
             }
         }
 
-        boolean canSleep = assertion.isShapeRequests();
         final BigInteger pps;
         try {
             pps = findPointsPerSecond(context);
@@ -339,9 +338,14 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
                 ? (POINTS_PER_REQUEST.add(POINTS_PER_REQUEST.divide(BigInteger.valueOf( 2L ))))
                 : pps.multiply(windowSizeInSecondsFinder.call(context));
 
-        AssertionStatus ret = !canSleep
-               ? checkNoSleep(pps, counter, counterName, maxPoints)
-               : checkWithSleep(pps, counter, counterName, maxPoints);
+        final boolean logOnly = assertion.isLogOnly();
+        final boolean canSleep = assertion.isShapeRequests();
+        AssertionStatus ret;
+        if(logOnly || !canSleep){
+            ret = checkNoSleep(pps, counter, counterName, maxPoints);
+        }else{
+            ret = checkWithSleep(pps, counter, counterName, maxPoints);
+        }
 
         if (ret != AssertionStatus.NONE && assertion.getBlackoutPeriodInSeconds() != null) {
             long blackoutMillis = blackoutSecondsFinder.call(context).longValue() * 1000L;
@@ -359,6 +363,10 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
         }
 
         logAndAudit( AssertionMessages.RATELIMIT_RATE_EXCEEDED, counterName );
+        if(assertion.isLogOnly()){
+            return AssertionStatus.NONE;
+        }
+
         return AssertionStatus.SERVICE_UNAVAILABLE;
     }
 

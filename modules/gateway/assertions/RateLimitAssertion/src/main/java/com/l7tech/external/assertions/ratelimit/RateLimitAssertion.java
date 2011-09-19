@@ -43,6 +43,7 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
     private String blackoutPeriodInSeconds = null; // When the assertion fails, for the next N seconds all further attempts to use the same counter will immediately fail.
     private boolean splitRateLimitAcrossNodes = true;
     private boolean splitConcurrencyLimitAcrossNodes = true;
+    private boolean logOnly = false;
 
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
@@ -212,6 +213,21 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
      */
     public void setSplitConcurrencyLimitAcrossNodes(boolean splitConcurrencyLimitAcrossNodes) {
         this.splitConcurrencyLimitAcrossNodes = splitConcurrencyLimitAcrossNodes;
+    }
+
+    /**
+     * @return true if exceeding the rate limit should only log or false if the assertion should fail.
+     */
+    public boolean isLogOnly() {
+        return logOnly;
+    }
+
+    /**
+     *
+     * @param logOnly set to true if exceeding the rate limit should log only as opposed to failing the assertion.
+     */
+    public void setLogOnly(final boolean logOnly) {
+        this.logOnly = logOnly;
     }
 
     public static String validateMaxRequestsPerSecond(String maxRequestsPerSecond) {

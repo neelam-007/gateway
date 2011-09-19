@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.ratelimit.server;
 
 import com.l7tech.common.TestDocuments;
 import com.l7tech.external.assertions.ratelimit.RateLimitAssertion;
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.message.Message;
 import com.l7tech.policy.AssertionRegistry;
@@ -23,6 +24,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+import scala.reflect.New;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -33,11 +35,14 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Handler;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static junit.framework.Assert.*;
+import static junit.framework.Assert.assertEquals;
 
 /**
  * Test the RateLimitAssertion.
@@ -198,6 +203,63 @@ public class ServerRateLimitAssertionTest {
     static final AtomicInteger nextId = new AtomicInteger(1);
 
     static final ConcurrentHashMap<Treq, Object> running = new ConcurrentHashMap<Treq, Object>();
+
+    /**
+     * Ensure if logOnly is true, assertion should only log that the rate was exceeded and not fail.
+     */
+    @Test
+    @BugNumber(10495)
+    public void testLogOnly() throws Exception{
+        doLogOnlyTest(false);
+    }
+
+    /**
+     * If logOnly and shapeRequests are both true, logOnly takes precedence.
+     */
+    @Test
+    @BugNumber(10495)
+    public void testLogOnlySupersedesShapeRequest() throws Exception{
+        doLogOnlyTest(true);
+    }
+
+    private void doLogOnlyTest(final boolean shapeRequests) throws Exception {
+        final RateLimitAssertion rla = new RateLimitAssertion();
+        rla.setMaxRequestsPerSecond("1");
+        rla.setLogOnly(true);
+        rla.setShapeRequests(shapeRequests);
+        final ServerAssertion serverAssertion = makePolicy(rla);
+
+
+        clock.sync();
+        for (int i = 0; i < 5; ++i) {
+            final List<String> logMessages = new ArrayList<String>();
+            final Logger logger = Logger.getLogger(ServerRateLimitAssertion.class.getName());
+            logger.addHandler(new Handler() {
+                @Override
+                public void publish(final LogRecord logRecord) {
+                    logMessages.add(logRecord.getMessage());
+                }
+
+                @Override
+                public void flush() {
+                    //do nothing
+                }
+
+                @Override
+                public void close() throws SecurityException {
+                    //do nothing
+                }
+            });
+            logger.setUseParentHandlers(false);
+            logger.setLevel(Level.INFO);
+            assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(makeContext()));
+            assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(makeContext()));
+            assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(makeContext()));
+            assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(makeContext()));
+            assertTrue(logMessages.contains(AssertionMessages.RATELIMIT_RATE_EXCEEDED.getMessage()));
+            clock.advanceByNanos(ServerRateLimitAssertion.NANOS_PER_SECOND / 5);
+        }
+    }
 
     @Test
     @BugNumber(8090)
