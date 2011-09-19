@@ -1,5 +1,6 @@
 package com.l7tech.console.tree.policy.advice;
 
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.wsdl.BindingInfo;
 import com.l7tech.wsdl.BindingOperationInfo;
 import com.l7tech.wsdl.MimePartInfo;
@@ -13,6 +14,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RequestSwAAssertion;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gui.util.DialogDisplayer;
+import org.jaxen.saxpath.SAXPathException;
 import org.xml.sax.SAXException;
 
 import javax.wsdl.Binding;
@@ -34,7 +36,7 @@ import java.util.logging.Logger;
  * the assertion (is soap).
  * <p/>
  *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
+ * @author Emil Marceta
  */
 public class AddRequestSwAAssertionAdvice implements Advice {
     private static final Logger logger = Logger.getLogger(AddRequestSwAAssertionAdvice.class.getName());
@@ -200,12 +202,18 @@ public class AddRequestSwAAssertionAdvice implements Advice {
                         ":" + soapBodyLocalName +
                         "/" + operationQName;
 
+                final Map<String,String> namespaces = XpathUtil.getNamespaces(soapRequest.getSOAPMessage());
                 if (bo != null) {
-                    bo.setXpath(xpathExpression);
+                    try {
+                        XpathUtil.validate( xpathExpression, namespaces );
+                        bo.setXpath(xpathExpression);
+                    } catch ( SAXPathException e ) {
+                        logger.warning("Ignoring invalid XPath expression '"+xpathExpression+"': " + ExceptionUtils.getMessage( e ));
+                    }
                 }
 
                 logger.finest("Xpath for the operation " + "\"" + soapRequest.getOperation() + "\" is " + xpathExpression);
-                swaAssertion.getNamespaceMap().putAll(XpathUtil.getNamespaces(soapRequest.getSOAPMessage()));
+                swaAssertion.getNamespaceMap().putAll(namespaces);
             }
         } catch (SOAPException e) {
             logger.log(Level.WARNING, "Caught SAXException when retrieving xml document from the generated request", e);

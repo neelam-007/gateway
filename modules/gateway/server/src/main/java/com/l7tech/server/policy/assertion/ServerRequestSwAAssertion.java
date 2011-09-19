@@ -7,6 +7,9 @@ import com.l7tech.common.mime.PartIterator;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.Option;
+import static com.l7tech.util.Option.none;
+import static com.l7tech.util.Option.optional;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.wsdl.BindingInfo;
 import com.l7tech.wsdl.BindingOperationInfo;
@@ -196,8 +199,15 @@ public class ServerRequestSwAAssertion extends AbstractServerAssertion<RequestSw
         for (String parameterName : (Set<String>) bo.getMultipart().keySet()) {
             MimePartInfo part = (MimePartInfo)bo.getMultipart().get(parameterName);
 
-            DOMXPath parameterXPath = getDOMXpath(bo.getXpath() + "/" + part.getName());
-            List result = parameterXPath.selectNodes(doc);
+            Option<DOMXPath> parameterXPath = none();
+            try {
+                parameterXPath = optional(getDOMXpath(bo.getXpath() + "/" + part.getName()));
+            } catch ( JaxenException je ) {
+                // Fails due to nothing found for part, the audit detail below includes the XPath and name
+            }
+            final List result = parameterXPath.isSome() ?
+                    parameterXPath.some().selectNodes( doc ) :
+                    null ;
 
             if (result == null || result.size() == 0) {
                 logAndAudit( AssertionMessages.SWA_PART_NOT_FOUND, bo.getXpath(), part.getName() );
