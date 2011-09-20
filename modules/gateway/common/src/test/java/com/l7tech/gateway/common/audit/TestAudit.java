@@ -16,7 +16,6 @@ public class TestAudit implements Audit, AuditHaver {
     //- PUBLIC
 
     public TestAudit() {
-
     }
 
     @Override
@@ -71,6 +70,13 @@ public class TestAudit implements Audit, AuditHaver {
                 return TestAudit.this;
             }
         };
+    }
+
+    /**
+     * Reset to the original (empty) state
+     */
+    public void reset() {
+        audits.clear();
     }
 
     //- PROTECTED
