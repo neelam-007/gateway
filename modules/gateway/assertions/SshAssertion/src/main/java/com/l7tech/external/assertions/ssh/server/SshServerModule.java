@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.ssh.server;
 
+import com.l7tech.external.assertions.ssh.SshCredentialAssertion;
 import com.l7tech.external.assertions.ssh.SshRouteAssertion;
 import com.l7tech.external.assertions.ssh.server.keyprovider.PemSshHostKeyProvider;
 import com.l7tech.gateway.common.LicenseManager;
@@ -263,7 +264,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
 
             // undocumented support for authorized lists, Apache SSHD will callback and set user and public key
             MessageProcessingPublicKeyAuthenticator userPublicKey;
-            String authorizedUserPublicKeyList = connector.getProperty(SshRouteAssertion.LISTEN_PROP_AUTHORIZED_USER_PUBLIC_KEY_LIST);
+            String authorizedUserPublicKeyList = connector.getProperty(SshCredentialAssertion.LISTEN_PROP_AUTHORIZED_USER_PUBLIC_KEY_LIST);
             if (authorizedUserPublicKeyList != null) {
                 userPublicKey = new MessageProcessingPublicKeyAuthenticator(authorizedUserPublicKeyList.split(SPLIT_DELIMITER));
             } else {
@@ -271,7 +272,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
             }
             sshd.setPublickeyAuthenticator(userPublicKey);
             MessageProcessingPasswordAuthenticator user;
-            String authorizedUserPasswordList = connector.getProperty(SshRouteAssertion.LISTEN_PROP_AUTHORIZED_USER_PASSWORD_LIST);
+            String authorizedUserPasswordList = connector.getProperty(SshCredentialAssertion.LISTEN_PROP_AUTHORIZED_USER_PASSWORD_LIST);
             if (authorizedUserPasswordList != null) {
                 user = new MessageProcessingPasswordAuthenticator(authorizedUserPasswordList.split(SPLIT_DELIMITER));
             } else {
@@ -280,12 +281,12 @@ public class SshServerModule extends TransportModule implements ApplicationListe
             sshd.setPasswordAuthenticator(user);
 
             // enable SCP, SFTP
-            final boolean enableScp = Boolean.parseBoolean(connector.getProperty(SshRouteAssertion.LISTEN_PROP_ENABLE_SCP));
+            final boolean enableScp = Boolean.parseBoolean(connector.getProperty(SshCredentialAssertion.LISTEN_PROP_ENABLE_SCP));
             if (enableScp) {
                 sshd.setCommandFactory(new MessageProcessingScpCommand.Factory(
                         connector, messageProcessor, stashManagerFactory, soapFaultManager, messageProcessingEventChannel, user, userPublicKey));
             }
-            final boolean enableSftp = Boolean.parseBoolean(connector.getProperty(SshRouteAssertion.LISTEN_PROP_ENABLE_SFTP));
+            final boolean enableSftp = Boolean.parseBoolean(connector.getProperty(SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP));
             if (enableSftp) {
                 sshd.setSubsystemFactories(Arrays.<NamedFactory<Command>>asList(new MessageProcessingSftpSubsystem.Factory(
                         connector, messageProcessor, stashManagerFactory, soapFaultManager, messageProcessingEventChannel, user, userPublicKey)));
@@ -293,11 +294,11 @@ public class SshServerModule extends TransportModule implements ApplicationListe
             sshd.setPort(connector.getPort());
 
             // set server host private key
-            String hostPrivateKey = connector.getProperty(SshRouteAssertion.LISTEN_PROP_HOST_PRIVATE_KEY);
+            String hostPrivateKey = connector.getProperty(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY);
             sshd.setKeyPairProvider(new PemSshHostKeyProvider(hostPrivateKey));
 
             // configure connection idle timeout in ms (min=60sec*1000ms)
-            String idleTimeoutMins = connector.getProperty(SshRouteAssertion.LISTEN_PROP_IDLE_TIMEOUT_MINUTES);
+            String idleTimeoutMins = connector.getProperty(SshCredentialAssertion.LISTEN_PROP_IDLE_TIMEOUT_MINUTES);
             if (!StringUtils.isEmpty(idleTimeoutMins)) {
                 long idleTimeoutMs = Long.parseLong(idleTimeoutMins) * 60 * 1000;
                 sshd.getProperties().put(SshServer.IDLE_TIMEOUT, String.valueOf(idleTimeoutMs));
@@ -305,7 +306,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
 
             // configure maximum concurrent open session count per user
             // 2011/08/03 TL: Apache SSHD does not currently support configurable max total connections
-            String maxConcurrentSessionsPerUser = connector.getProperty(SshRouteAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER);
+            String maxConcurrentSessionsPerUser = connector.getProperty(SshCredentialAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER);
             if (!StringUtils.isEmpty(maxConcurrentSessionsPerUser)) {
                 sshd.getProperties().put(SshServer.MAX_CONCURRENT_SESSIONS, maxConcurrentSessionsPerUser);
             }

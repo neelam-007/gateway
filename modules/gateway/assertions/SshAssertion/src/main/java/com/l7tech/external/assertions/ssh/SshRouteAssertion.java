@@ -1,8 +1,13 @@
 package com.l7tech.external.assertions.ssh;
 
+import com.l7tech.console.util.TopComponents;
+import com.l7tech.external.assertions.ssh.console.SftpPollingListenersWindow;
 import com.l7tech.gateway.common.transport.ftp.FtpCredentialsSource;
 import com.l7tech.gateway.common.transport.ftp.FtpFileNameSource;
 import com.l7tech.gateway.common.transport.ftp.FtpSecurity;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.ImageCache;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -12,6 +17,8 @@ import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.WspEnumTypeMapping;
 
+import javax.swing.*;
+import java.awt.event.ActionEvent;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -24,13 +31,6 @@ import static com.l7tech.policy.assertion.AssertionMetadata.WSP_TYPE_MAPPING_INS
  */
 public class SshRouteAssertion extends RoutingAssertion implements UsesVariables, SetsVariables {
 
-    public static final String LISTEN_PROP_AUTHORIZED_USER_PUBLIC_KEY_LIST = "l7.ssh.authorizedUserPublicKeyList";
-    public static final String LISTEN_PROP_AUTHORIZED_USER_PASSWORD_LIST = "l7.ssh.authorizedUserPasswordList";
-    public static final String LISTEN_PROP_ENABLE_SCP = "l7.ssh.enableScp";
-    public static final String LISTEN_PROP_ENABLE_SFTP = "l7.ssh.enableSftp";
-    public static final String LISTEN_PROP_HOST_PRIVATE_KEY = "l7.ssh.hostPrivateKey";
-    public static final String LISTEN_PROP_IDLE_TIMEOUT_MINUTES = "l7.ssh.idleTimeoutMinutes";
-    public static final String LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER = "l7.ssh.maxConcurrentSessionsPerUser";
     public static final int DEFAULT_CONNECT_TIMEOUT = 10000;  // Timeout (in milliseconds) when opening SSH Connection.
     public static final int DEFAULT_READ_TIMEOUT = 1000 * 60;   // Timeout (in milliseconds) when reading a remote file.
     public static final int DEFAULT_SSH_PORT = 22;   // Default port for SSH
@@ -71,8 +71,9 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
-        // ensure inbound transport gets wired up
-        meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.ssh.server.SshServerModuleLoadListener");
+        // wire up the SFTP Polling Listener here as well (to avoid using a dummy assertion)
+        meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.ssh.server.sftppollinglistener.SftpPollingListenerModuleLoadListener");
+        meta.put(AssertionMetadata.GLOBAL_ACTION_CLASSNAMES, new String[] { getClass().getName() + "$SftpPollingListenerCustomAction" });
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
@@ -290,5 +291,20 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
             username,
             fileName
         ).asArray();
+    }
+
+    @SuppressWarnings({"UnusedDeclaration"})
+    public static class SftpPollingListenerCustomAction extends AbstractAction {
+        public SftpPollingListenerCustomAction() {
+            super("Manage SFTP Polling Listeners", ImageCache.getInstance().getIconAsIcon("com/l7tech/console/resources/Bean16.gif"));
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            SftpPollingListenersWindow splw = new SftpPollingListenersWindow(TopComponents.getInstance().getTopParent());
+            splw.pack();
+            Utilities.centerOnScreen(splw);
+            DialogDisplayer.display(splw);
+        }
     }
 }

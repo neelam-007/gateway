@@ -94,7 +94,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
             @Override
             public void actionPerformed(ActionEvent e) {
                 final HostKeyDialog dialog = new HostKeyDialog(SshRouteAssertionPropertiesPanel.this, hostKey,
-                        HostKeyDialog.HostKeyValidationType.VALIDATE_SSH_PUBLIC_KEY_FORMAT);
+                        HostKeyDialog.HostKeyValidationType.VALIDATE_SSH_PUBLIC_KEY_FINGERPRINT_FORMAT);
                 Utilities.centerOnScreen(dialog);
                 DialogDisplayer.display(dialog, new Runnable() {
                     @Override

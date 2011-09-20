@@ -44,14 +44,27 @@ public class MessageProcessingSshUtil {
         final String remoteHostFinal = remoteHostPortPair.getKey();
         final int remotePortFinal = Integer.parseInt(remoteHostPortPair.getValue());
 
+        return buildSshKnob(localHostFinal, localPortFinal, remoteHostFinal, remotePortFinal, file, path,
+                publicKeyCredential, passwordCredential);
+    }
+
+    /*
+     * Create an SshKnob for SCP and SFTP.
+     */
+    public static SshKnob buildSshKnob(final String localHost, final int localPort,
+                                       final String remoteHost, final int remotePort,
+                                       final String file, final String path,
+                                       final SshKnob.PublicKeyAuthentication publicKeyCredential,
+                                       final PasswordAuthentication passwordCredential) {
+
         return new SshKnob(){
             @Override
             public String getLocalAddress() {
-                return localHostFinal;
+                return localHost;
             }
             @Override
             public String getLocalHost() {
-                return localHostFinal;
+                return localHost;
             }
             @Override
             public int getLocalPort() {
@@ -59,19 +72,19 @@ public class MessageProcessingSshUtil {
             }
             @Override
             public int getLocalListenerPort() {
-                return localPortFinal;
+                return localPort;
             }
             @Override
             public String getRemoteAddress() {
-                return remoteHostFinal;
+                return remoteHost;
             }
             @Override
             public String getRemoteHost() {
-                return remoteHostFinal;
+                return remoteHost;
             }
             @Override
             public int getRemotePort() {
-                return remotePortFinal;
+                return remotePort;
             }
             @Override
             public String getFile() {

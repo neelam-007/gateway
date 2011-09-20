@@ -1,7 +1,7 @@
 package com.l7tech.external.assertions.ssh.console;
 
 import com.l7tech.console.panels.CustomTransportPropertiesPanel;
-import com.l7tech.external.assertions.ssh.SshRouteAssertion;
+import com.l7tech.external.assertions.ssh.SshCredentialAssertion;
 import com.l7tech.external.assertions.ssh.keyprovider.SshKeyUtil;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
@@ -51,16 +51,16 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
 
     @Override
     public void setData(Map<String, String> props) {
-        scpCheckBox.setSelected(getBooleanProp(props, SshRouteAssertion.LISTEN_PROP_ENABLE_SCP,
+        scpCheckBox.setSelected(getBooleanProp(props, SshCredentialAssertion.LISTEN_PROP_ENABLE_SCP,
                 ConfigFactory.getBooleanProperty("com.l7tech.external.assertions.ssh.defaultEnableScp", true)));
-        sftpCheckBox.setSelected(getBooleanProp(props, SshRouteAssertion.LISTEN_PROP_ENABLE_SFTP,
+        sftpCheckBox.setSelected(getBooleanProp(props, SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP,
                 ConfigFactory.getBooleanProperty("com.l7tech.external.assertions.ssh.defaultEnableSftp", true)));
-        idleTimeoutMinsField.setText(getStringProp(props, SshRouteAssertion.LISTEN_PROP_IDLE_TIMEOUT_MINUTES,
+        idleTimeoutMinsField.setText(getStringProp(props, SshCredentialAssertion.LISTEN_PROP_IDLE_TIMEOUT_MINUTES,
                 ConfigFactory.getProperty("com.l7tech.external.assertions.ssh.idleTimeoutMinutes", "10")));
-        maxConcurrentSessionsPerUserField.setText(getStringProp(props, SshRouteAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER,
+        maxConcurrentSessionsPerUserField.setText(getStringProp(props, SshCredentialAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER,
                 ConfigFactory.getProperty("com.l7tech.external.assertions.ssh.defaultMaxConcurrentSessionsPerUser", "10")));
 
-        hostPrivateKey = props.get(SshRouteAssertion.LISTEN_PROP_HOST_PRIVATE_KEY);
+        hostPrivateKey = props.get(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY);
         if (!StringUtils.isEmpty(hostPrivateKey)) {
             String determinedAlgorithm = SshKeyUtil.getPemPrivateKeyAlgorithm(hostPrivateKey);
             if (determinedAlgorithm != null) {
@@ -74,11 +74,11 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
     @Override
     public Map<String, String> getData() {
         Map<String, String> data = new HashMap<String, String>();
-        data.put(SshRouteAssertion.LISTEN_PROP_ENABLE_SCP, String.valueOf(scpCheckBox.isSelected()));
-        data.put(SshRouteAssertion.LISTEN_PROP_ENABLE_SFTP, String.valueOf(sftpCheckBox.isSelected()));
-        data.put(SshRouteAssertion.LISTEN_PROP_IDLE_TIMEOUT_MINUTES, idleTimeoutMinsField.getText());
-        data.put(SshRouteAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER, maxConcurrentSessionsPerUserField.getText());
-        data.put(SshRouteAssertion.LISTEN_PROP_HOST_PRIVATE_KEY, hostPrivateKey);
+        data.put(SshCredentialAssertion.LISTEN_PROP_ENABLE_SCP, String.valueOf(scpCheckBox.isSelected()));
+        data.put(SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP, String.valueOf(sftpCheckBox.isSelected()));
+        data.put(SshCredentialAssertion.LISTEN_PROP_IDLE_TIMEOUT_MINUTES, idleTimeoutMinsField.getText());
+        data.put(SshCredentialAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER, maxConcurrentSessionsPerUserField.getText());
+        data.put(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY, hostPrivateKey);
         return data;
     }
 
@@ -94,11 +94,11 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
     @Override
     public String[] getAdvancedPropertyNamesUsedByGui() {
         return new String[] {
-            SshRouteAssertion.LISTEN_PROP_ENABLE_SCP,
-            SshRouteAssertion.LISTEN_PROP_ENABLE_SFTP,
-            SshRouteAssertion.LISTEN_PROP_IDLE_TIMEOUT_MINUTES,
-            SshRouteAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER,
-            SshRouteAssertion.LISTEN_PROP_HOST_PRIVATE_KEY,
+            SshCredentialAssertion.LISTEN_PROP_ENABLE_SCP,
+            SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP,
+            SshCredentialAssertion.LISTEN_PROP_IDLE_TIMEOUT_MINUTES,
+            SshCredentialAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER,
+            SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY,
         };
     }
 

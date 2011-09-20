@@ -11,6 +11,9 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.external.assertions.ssh.SshRouteAssertion;
 import com.l7tech.external.assertions.ssh.keyprovider.SshKeyUtil;
+import com.l7tech.external.assertions.ssh.server.client.ScpClient;
+import com.l7tech.external.assertions.ssh.server.client.SftpClient;
+import com.l7tech.external.assertions.ssh.server.client.SshClient;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Messages;
 import com.l7tech.message.Message;
@@ -123,7 +126,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             port = 22;
         }
 
-        ServerSshRouteClient sshClient = null;
+        SshClient sshClient = null;
         try {
             SshParameters sshParams = new SshParameters(host, port, username, password);
 
@@ -151,14 +154,12 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                 } else {
                     sshParams.setPrivateKey(privateKeyText, password);
                 }
-            } else {
-                sshParams = new SshParameters(host, port, username, password);
             }
 
             if (assertion.isScpProtocol()) {
-                sshClient = new ServerSshRouteClient(new Scp(sshParams));
+                sshClient = new ScpClient(new Scp(sshParams));
             } else {
-                sshClient = new ServerSshRouteClient(new Sftp(sshParams));
+                sshClient = new SftpClient(new Sftp(sshParams));
             }
 
             sshClient.setTimeout(assertion.getConnectTimeout());   // connect timeout value from assertion UI
@@ -259,7 +260,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
     /*
      * Download the given file on a new thread.
      */
-    private static Thread sshDownloadOnNewThread(final ServerSshRouteClient sshClient, final String directory,
+    private static Thread sshDownloadOnNewThread(final SshClient sshClient, final String directory,
                                                  final String fileName, final PipedOutputStream pos, final Logger logger) throws IOException {
         final CountDownLatch startedSignal = new CountDownLatch(1);
         logger.log(Level.INFO, "Start new thread for downloading");

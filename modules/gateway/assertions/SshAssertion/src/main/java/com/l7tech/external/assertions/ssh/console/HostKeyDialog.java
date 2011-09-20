@@ -24,7 +24,7 @@ import java.util.ResourceBundle;
 public class HostKeyDialog extends JDialog {
 
     public enum HostKeyValidationType {
-        VALIDATE_PEM_PRIVATE_KEY_FORMAT, VALIDATE_SSH_PUBLIC_KEY_FORMAT
+        VALIDATE_PEM_PRIVATE_KEY_FORMAT, VALIDATE_SSH_PUBLIC_KEY_FINGERPRINT_FORMAT
     }
 
     private JPanel mainPanel;
@@ -64,7 +64,7 @@ public class HostKeyDialog extends JDialog {
             case VALIDATE_PEM_PRIVATE_KEY_FORMAT:
                 borderTitle = getResourceString("privateKeyLabel");
                 break;
-            case VALIDATE_SSH_PUBLIC_KEY_FORMAT:
+            case VALIDATE_SSH_PUBLIC_KEY_FINGERPRINT_FORMAT:
                 borderTitle = getResourceString("sshPublicKeyFingerprintLabel");
                 break;
             default:
@@ -102,7 +102,7 @@ public class HostKeyDialog extends JDialog {
                             return;
                         }
                         break;
-                    case VALIDATE_SSH_PUBLIC_KEY_FORMAT:
+                    case VALIDATE_SSH_PUBLIC_KEY_FINGERPRINT_FORMAT:
                         Pair<Boolean, String> hostKeyFormatIsValid;
                         if (hostKeyField == null || hostKeyField.getText().equalsIgnoreCase("")){
                             hostKeyFormatIsValid = new Pair<Boolean, String>(false, "Server key cannot be blank, please enter a value or cancel");
