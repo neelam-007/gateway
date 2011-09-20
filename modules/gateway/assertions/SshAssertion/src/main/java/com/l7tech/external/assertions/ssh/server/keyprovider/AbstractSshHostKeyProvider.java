@@ -1,10 +1,11 @@
 package com.l7tech.external.assertions.ssh.server.keyprovider;
 
+import com.l7tech.util.ExceptionUtils;
 import org.apache.sshd.common.keyprovider.AbstractKeyPairProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.security.KeyPair;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * L7 customized abstract SSH host key provider class for use by Apache SSHD.
@@ -12,7 +13,7 @@ import java.security.KeyPair;
  */
 public abstract class AbstractSshHostKeyProvider extends AbstractKeyPairProvider {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AbstractSshHostKeyProvider.class);
+    private static final Logger LOG = Logger.getLogger(AbstractSshHostKeyProvider.class.getName());
 
     private String privateKey;
     private String algorithm = "DSA";
@@ -79,7 +80,7 @@ public abstract class AbstractSshHostKeyProvider extends AbstractKeyPairProvider
         try {
             return doReadKeyPair(privateKey);
         } catch (Exception e) {
-            LOG.info("Unable to read key {}: {}", privateKey, e);
+            LOG.log(Level.INFO, "Unable to read key " + privateKey + ": ", ExceptionUtils.getDebugException(e));
         }
         return null;
     }

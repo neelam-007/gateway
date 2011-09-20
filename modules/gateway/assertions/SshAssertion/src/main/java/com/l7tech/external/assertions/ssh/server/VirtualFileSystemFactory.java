@@ -3,18 +3,12 @@ package com.l7tech.external.assertions.ssh.server;
 import org.apache.sshd.server.FileSystemFactory;
 import org.apache.sshd.server.FileSystemView;
 import org.apache.sshd.server.session.ServerSession;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Virtual file system factory.
  */
 public class VirtualFileSystemFactory implements FileSystemFactory {
-
-    private final Logger LOG = LoggerFactory.getLogger(VirtualFileSystemFactory.class);
-
     private boolean createHome;
-
     private boolean caseInsensitive;
 
     /**

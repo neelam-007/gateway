@@ -2,16 +2,18 @@ package com.l7tech.external.assertions.ssh.keyprovider;
 
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.prov.JceProvider;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
+import com.l7tech.util.ResourceUtils;
 import org.bouncycastle.openssl.PEMReader;
 import org.bouncycastle.openssl.PEMWriter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import java.io.*;
 import java.security.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -21,7 +23,7 @@ import java.util.regex.Pattern;
 public class SshKeyUtil extends JceProvider {
     public static final String PEM = "PEM";
 
-    private static final Logger LOG = LoggerFactory.getLogger(SshKeyUtil.class);
+    private static final Logger LOG = Logger.getLogger(SshKeyUtil.class.getName());
     private static final String ALGORITHM_DSA = "DSA";
     private static final String ALGORITHM_RSA = "RSA";
     private static final String PEM_BEGIN = "-----BEGIN ";
@@ -75,21 +77,11 @@ public class SshKeyUtil extends JceProvider {
             w.flush();
             return os.toString();
         } catch (Exception e) {
-            LOG.info("Unable to write key: {}", e);
+            LOG.log(Level.INFO, "Unable to write key: ", ExceptionUtils.getDebugException(e));
         } finally {
-            close(os);
+            ResourceUtils.closeQuietly(os);
         }
         return pemPublicKey;
-    }
-
-    private static void close(Closeable c) {
-        try {
-            if (c != null) {
-                c.close();
-            }
-        } catch (IOException e) {
-            // Ignore
-        }
     }
 
     @Override

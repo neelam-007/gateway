@@ -3,8 +3,6 @@ package com.l7tech.external.assertions.ssh.server;
 import com.l7tech.policy.assertion.AssertionStatus;
 import org.apache.sshd.server.SshFile;
 import org.apache.sshd.server.filesystem.NameEqualsFileFilter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.Arrays;
@@ -16,9 +14,6 @@ import java.util.StringTokenizer;
  * Represents a virtual file or directory.
  */
 public class VirtualSshFile implements SshFile {
-
-    private final Logger LOG = LoggerFactory.getLogger(VirtualSshFile.class);
-
     private static final long date = System.currentTimeMillis();
     private String fileName;
     private boolean file;

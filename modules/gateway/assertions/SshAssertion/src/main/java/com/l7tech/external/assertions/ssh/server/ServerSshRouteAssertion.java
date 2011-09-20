@@ -124,6 +124,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
         } catch (Exception e){
             //use default port
             port = 22;
+            logger.log(Level.INFO, "Unable to parse given port number, using default port 22.", ExceptionUtils.getDebugException(e));
         }
 
         SshClient sshClient = null;

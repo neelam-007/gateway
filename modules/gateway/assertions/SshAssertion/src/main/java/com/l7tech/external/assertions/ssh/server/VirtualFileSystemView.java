@@ -2,15 +2,11 @@ package com.l7tech.external.assertions.ssh.server;
 
 import org.apache.sshd.server.FileSystemView;
 import org.apache.sshd.server.SshFile;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * File system view based on virtual file system. Here the root directory will be user virtual root (/).
  */
 public class VirtualFileSystemView implements FileSystemView {
-
-    private final Logger LOG = LoggerFactory.getLogger(VirtualFileSystemView.class);
 
     // the first and the last character will always be '/'
     // It is always with respect to the root directory.
