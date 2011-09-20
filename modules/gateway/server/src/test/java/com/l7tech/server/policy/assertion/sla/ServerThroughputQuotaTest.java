@@ -1,16 +1,61 @@
 package com.l7tech.server.policy.assertion.sla;
 
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.TestAudit;
+import com.l7tech.identity.internal.InternalUser;
+import com.l7tech.message.Message;
 import com.l7tech.policy.AssertionRegistry;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspReader;
+
+import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.*;
+
+import com.l7tech.security.token.OpaqueSecurityToken;
+import com.l7tech.server.ApplicationContexts;
+import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.sla.CounterManager;
+import com.l7tech.server.sla.CounterManagerStub;
+import com.l7tech.test.BugNumber;
+import com.l7tech.util.TimeUnit;
+import com.ncipher.nfast.connect.utils.EasyConnection;
+import org.junit.Before;
 import org.junit.Test;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+import java.util.Collections;
 
 /**
  * @author jbufu
  */
 public class ServerThroughputQuotaTest {
+    private static final long DEFAULT_QUOTA = 5L;
+    private ThroughputQuota assertion;
+    private ApplicationContext applicationContext;
+    private PolicyEnforcementContext context;
+    private CounterManagerStub counterManager;
+    private ServerThroughputQuota serverAssertion;
+    private TestAudit testAudit;
+
+    @Before
+    public void setup(){
+        assertion = new ThroughputQuota();
+        assertion.setQuota(DEFAULT_QUOTA);
+        assertion.setTimeUnit(ThroughputQuota.PER_SECOND);
+        assertion.setCounterName("quotaCounter");
+        applicationContext = ApplicationContexts.getTestApplicationContext();
+        counterManager = (CounterManagerStub)applicationContext.getBean("counterManager");
+        testAudit = new TestAudit();
+        context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+        context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(new InternalUser("testUser"), new OpaqueSecurityToken()));
+    }
+
 
     @Test
     public void testCompatibilityBug5043Format() throws Exception {
@@ -30,6 +75,55 @@ public class ServerThroughputQuotaTest {
 
         final ThroughputQuota assertion = (ThroughputQuota) wspReader.parseStrictly(policyXml, WspReader.INCLUDE_DISABLED);
         assertTrue("Expected throughput quota 202, got '" + assertion.getQuota(), assertion.getQuota().equals("202"));
+    }
+
+    @Test
+    @BugNumber(10495)
+    public void testLogOnlyIncrementOnSuccessLimitMet() throws Exception{
+        assertion.setLogOnly(true);
+        assertion.setCounterStrategy(ThroughputQuota.INCREMENT_ON_SUCCESS);
+        serverAssertion = new ServerThroughputQuota(assertion, applicationContext);
+        ApplicationContexts.inject( serverAssertion, Collections.singletonMap( "auditFactory", testAudit.factory() ) );
+        //limit has been met
+        counterManager.setThrowException(true);
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        assertTrue( testAudit.isAuditPresent( AssertionMessages.THROUGHPUT_QUOTA_ALREADY_MET ) );
+    }
+
+    @Test
+    @BugNumber(10495)
+    public void testLogOnlyIncrementOnSuccessLimitExceeded() throws Exception{
+        assertion.setLogOnly(true);
+        assertion.setCounterStrategy(ThroughputQuota.INCREMENT_ON_SUCCESS);
+        serverAssertion = new ServerThroughputQuota(assertion, applicationContext);
+        ApplicationContexts.inject( serverAssertion, Collections.singletonMap( "auditFactory", testAudit.factory() ) );
+        //limit has been exceeded
+        counterManager.setCounterValue(DEFAULT_QUOTA + 1);
+        context.getIncrementedCounters().add(assertion.getCounterName());
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        assertTrue( testAudit.isAuditPresent( AssertionMessages.THROUGHPUT_QUOTA_EXCEEDED ) );
+    }
+
+    @Test
+    @BugNumber(10495)
+    public void testLogOnlyIncrementAlwaysLimitExceeded() throws Exception{
+        assertion.setLogOnly(true);
+        assertion.setCounterStrategy(ThroughputQuota.ALWAYS_INCREMENT);
+        serverAssertion = new ServerThroughputQuota(assertion, applicationContext);
+        ApplicationContexts.inject( serverAssertion, Collections.singletonMap( "auditFactory", testAudit.factory() ) );
+        //limit has been exceeded
+        counterManager.setCounterValue(DEFAULT_QUOTA + 1);
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        assertTrue( testAudit.isAuditPresent( AssertionMessages.THROUGHPUT_QUOTA_EXCEEDED ) );
     }
     
 }

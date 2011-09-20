@@ -95,7 +95,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
                 String msg = "throughput quota limit is already reached.";
                 logger.info(msg);
                 logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_ALREADY_MET, assertion.getCounterName());
-                return AssertionStatus.FALSIFIED;
+                return assertion.isLogOnly() ? AssertionStatus.NONE : AssertionStatus.FALSIFIED;
             } finally {
                 // no sync issue here: this flag array belongs to the context which lives inside one thread only
                 // no need to resolve external variables here
@@ -113,7 +113,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
                              "] was exceeded " + "(current value is " + val + ")";
                 logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_EXCEEDED, assertion.getCounterName(), limit, Long.toString(val));
                 logger.info(msg);
-                return AssertionStatus.FALSIFIED;
+                return assertion.isLogOnly() ? AssertionStatus.NONE : AssertionStatus.FALSIFIED;
             }
         }
     }
@@ -156,7 +156,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
         } else {
             String limit = "max " + quota + " per " + TIME_UNITS[assertion.getTimeUnit()-1];
             logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_EXCEEDED, assertion.getCounterName(), limit, Long.toString(val));
-            return AssertionStatus.FALSIFIED;
+            return assertion.isLogOnly() ? AssertionStatus.NONE : AssertionStatus.FALSIFIED;
         }
     }
 

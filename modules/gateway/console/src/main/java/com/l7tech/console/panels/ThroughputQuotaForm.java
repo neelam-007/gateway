@@ -43,6 +43,7 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
     private JRadioButton decrementRadio;
     private JRadioButton incrementOnSuccessRadio;
     private JPanel varPrefixFieldPanel;
+    private JCheckBox logOnlyCheckBox;
     private TargetVariablePanel varPrefixField;
 
     private String uuid[] = {CounterPresetInfo.makeUuid()};
@@ -212,6 +213,7 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
             counterStrategy = ThroughputQuota.DECREMENT;
         }
         assertion.setCounterStrategy(counterStrategy);
+        assertion.setLogOnly(logOnlyCheckBox.isSelected());
 
         return assertion;
     }
@@ -219,6 +221,7 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
     public void setData(ThroughputQuota assertion) {
         this.subject = assertion;
         quotaValueField.setText(subject.getQuota());
+        logOnlyCheckBox.setSelected(subject.isLogOnly());
 
         DefaultComboBoxModel model = (DefaultComboBoxModel)quotaUnitCombo.getModel();
         model.setSelectedItem(TIME_UNITS[subject.getTimeUnit()-1]);

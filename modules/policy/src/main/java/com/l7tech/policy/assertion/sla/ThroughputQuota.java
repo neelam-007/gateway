@@ -78,6 +78,7 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
     public static final int INCREMENT_ON_SUCCESS = 2;
     public static final int DECREMENT = 3;
     private int counterStrategy = INCREMENT_ON_SUCCESS;
+    private boolean logOnly = false;
 
     public ThroughputQuota() {}
 
@@ -233,6 +234,20 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
 
     public void setCounterStrategy(int counterStrategy) {
         this.counterStrategy = counterStrategy;
+    }
+
+    /**
+     * @return true if this assertion will only log if quota or false if the assertion will fail instead.
+     */
+    public boolean isLogOnly() {
+        return logOnly;
+    }
+
+    /**
+     * @param logOnly set to true if the assertion should only log if quota is exceeded or false if the assertion should fail instead.
+     */
+    public void setLogOnly(final boolean logOnly) {
+        this.logOnly = logOnly;
     }
 
     @Override

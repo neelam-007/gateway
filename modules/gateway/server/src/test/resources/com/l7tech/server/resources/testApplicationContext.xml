@@ -407,4 +407,6 @@
 
     <bean id="injector" class="com.l7tech.server.util.ApplicationContextInjector"/>
 
+    <bean id="counterManager" class="com.l7tech.server.sla.CounterManagerStub"/>
+
 </beans>
