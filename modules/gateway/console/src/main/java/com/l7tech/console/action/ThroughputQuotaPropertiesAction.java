@@ -18,6 +18,7 @@ import java.util.logging.Logger;
 /**
  * Action to edit the properties of an ThroughputQuota assertion
  */
+@SuppressWarnings({"UnusedDeclaration"})
 public class ThroughputQuotaPropertiesAction extends NodeActionWithMetaSupport {
 
     public ThroughputQuotaPropertiesAction(AssertionTreeNode<ThroughputQuota> subject) {
@@ -28,7 +29,7 @@ public class ThroughputQuotaPropertiesAction extends NodeActionWithMetaSupport {
     @Override
     protected void performAction() {
         final ThroughputQuota ass = subject.asAssertion();
-        final ThroughputQuotaForm dlg = new ThroughputQuotaForm(TopComponents.getInstance().getTopParent(),ass);
+        final ThroughputQuotaForm dlg = new ThroughputQuotaForm(TopComponents.getInstance().getTopParent(),ass, !subject.canEdit());
         dlg.setData(ass);
         dlg.pack();
         Utilities.centerOnScreen(dlg);

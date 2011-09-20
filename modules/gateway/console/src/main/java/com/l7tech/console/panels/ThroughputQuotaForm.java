@@ -49,13 +49,13 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
     private String uuid[] = {CounterPresetInfo.makeUuid()};
     private String expr = "";
 
-    public ThroughputQuotaForm(Frame owner, ThroughputQuota subject) {
+    public ThroughputQuotaForm(Frame owner, ThroughputQuota subject, boolean readOnly) {
         super(owner, subject, true);
         this.subject = subject;
-        initComponents();
+        initComponents(readOnly);
     }
 
-    protected void initComponents() {
+    protected void initComponents(final boolean readOnly) {
         getContentPane().add(mainPanel);
 
         DefaultComboBoxModel model = (DefaultComboBoxModel)quotaUnitCombo.getModel();
@@ -69,7 +69,7 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
         varPrefixField.addChangeListener(new ChangeListener(){
             @Override
             public void stateChanged(ChangeEvent e) {
-                okButton.setEnabled(varPrefixField .isEntryValid());
+                okButton.setEnabled(!readOnly && varPrefixField.isEntryValid());
             }
         });
 
@@ -109,6 +109,7 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
             }
         });
 
+        okButton.setEnabled(!readOnly);
         okButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -173,7 +174,7 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
     public static void main(String[] args) throws Exception {
         ThroughputQuota ass = new ThroughputQuota();
         for (int i = 0; i < 5; i++) {
-            ThroughputQuotaForm me = new ThroughputQuotaForm(null, ass);
+            ThroughputQuotaForm me = new ThroughputQuotaForm(null, ass, false);
             me.pack();
             me.setVisible(true);
         }
