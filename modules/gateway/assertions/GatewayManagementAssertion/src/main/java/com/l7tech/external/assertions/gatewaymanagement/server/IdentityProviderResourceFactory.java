@@ -119,7 +119,11 @@ public class IdentityProviderResourceFactory extends EntityManagerResourceFactor
                 case 3:
                     updateEntity( (FederatedIdentityProviderConfig)oldEntity, (FederatedIdentityProviderConfig)newEntity );
                     break;
+                case 4:
+                    updateEntity( (BindOnlyLdapIdentityProviderConfig)oldEntity, (BindOnlyLdapIdentityProviderConfig)newEntity );
+                    break;
             }
+            // Update common configuration, only one property is currently updatable for internal providers
             oldEntity.setCertificateValidationType( newEntity.getCertificateValidationType() );
         } else {
             throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "cannot change provider type");
@@ -404,7 +408,7 @@ public class IdentityProviderResourceFactory extends EntityManagerResourceFactor
     }
 
     private BindOnlyLdapIdentityProviderConfig fromResource( final IdentityProviderMO identityProviderResource,
-                                                     final BindOnlyLdapIdentityProviderConfig bindOnlyProviderConfig) throws InvalidResourceException {
+                                                             final BindOnlyLdapIdentityProviderConfig bindOnlyProviderConfig) throws InvalidResourceException {
         final BindOnlyLdapIdentityProviderDetail detail = identityProviderResource.getBindOnlyLdapIdentityProviderDetail();
         if ( detail != null ) {
             // set properties from resource, overrides template values
@@ -428,10 +432,7 @@ public class IdentityProviderResourceFactory extends EntityManagerResourceFactor
 
     private void updateEntity( final LdapIdentityProviderConfig oldConfig,
                                final LdapIdentityProviderConfig newConfig ) {
-        oldConfig.setLdapUrl( newConfig.getLdapUrl() );
-        oldConfig.setClientAuthEnabled( newConfig.isClientAuthEnabled() );
-        oldConfig.setKeyAlias( newConfig.getKeyAlias() );
-        oldConfig.setKeystoreId( newConfig.getKeystoreId() );
+        updateLdapBaseConfig( oldConfig, newConfig );
         oldConfig.setSearchBase( newConfig.getSearchBase() );
         oldConfig.setBindDN( newConfig.getBindDN() );
         oldConfig.setBindPasswd( newConfig.getBindPasswd() );
@@ -464,10 +465,35 @@ public class IdentityProviderResourceFactory extends EntityManagerResourceFactor
         oldConfig.setUserLookupByCertMode( newConfig.getUserLookupByCertMode() );
     }
 
+    private void updateEntity( final BindOnlyLdapIdentityProviderConfig oldConfig,
+                               final BindOnlyLdapIdentityProviderConfig newConfig ) {
+        updateLdapBaseConfig( oldConfig, newConfig );
+        oldConfig.setBindPatternPrefix( newConfig.getBindPatternPrefix() );
+        oldConfig.setBindPatternSuffix( newConfig.getBindPatternSuffix() );
+    }
+
     private void updateEntity( final FederatedIdentityProviderConfig oldConfig,
                                final FederatedIdentityProviderConfig newConfig ) {
+        updateBaseConfig( oldConfig, newConfig );
         oldConfig.setSamlSupported( newConfig.isSamlSupported() );
         oldConfig.setX509Supported( newConfig.isX509Supported() );
         oldConfig.setTrustedCertOids( newConfig.getTrustedCertOids() );
+    }
+
+    private void updateLdapBaseConfig( final LdapUrlBasedIdentityProviderConfig oldConfig,
+                                       final LdapUrlBasedIdentityProviderConfig newConfig ) {
+        updateBaseConfig( oldConfig, newConfig );
+        oldConfig.setLdapUrl( newConfig.getLdapUrl() );
+        oldConfig.setClientAuthEnabled( newConfig.isClientAuthEnabled() );
+        oldConfig.setKeyAlias( newConfig.getKeyAlias() );
+        oldConfig.setKeystoreId( newConfig.getKeystoreId() );
+    }
+
+    /**
+     * For optionally updated base configuration.
+     */
+    private void updateBaseConfig( final IdentityProviderConfig oldConfig,
+                                   final IdentityProviderConfig newConfig ) {
+        oldConfig.setName( newConfig.getName() );
     }
 }

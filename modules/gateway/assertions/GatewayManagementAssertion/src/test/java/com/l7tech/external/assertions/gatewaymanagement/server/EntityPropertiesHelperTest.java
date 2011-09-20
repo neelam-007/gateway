@@ -11,6 +11,7 @@ import com.l7tech.gateway.common.security.SpecialKeyType;
 import com.l7tech.gateway.common.transport.SsgConnector.Endpoint;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
+import com.l7tech.identity.ldap.BindOnlyLdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig.UserCertificateUseType;
 import com.l7tech.objectmodel.Entity;
@@ -37,7 +38,7 @@ public class EntityPropertiesHelperTest {
 
         for ( final EntityType baseType : EntityType.values() ) {
             for ( final Class<? extends Entity> entityClass : explode(baseType) ) {
-                if ( entityClass != null && !helper.getPropertiesMap( entityClass ).isEmpty() ) {
+                if ( entityClass != null && (!helper.getPropertiesMap( entityClass ).isEmpty() || !helper.getIgnoredProperties( entityClass ).isEmpty()) ) {
                     System.out.println("Testing properties for : " + entityClass.getName());
                     final Collection<String> ignoredProperties = helper.getIgnoredProperties(entityClass);
                     final Collection<String> writeOnlyProperties = helper.getWriteOnlyProperties(entityClass);
@@ -167,7 +168,8 @@ public class EntityPropertiesHelperTest {
             return CollectionUtils.<Class<? extends Entity>>list(
                     FederatedIdentityProviderConfig.class,
                     IdentityProviderConfig.class,
-                    LdapIdentityProviderConfig.class
+                    LdapIdentityProviderConfig.class,
+                    BindOnlyLdapIdentityProviderConfig.class
             );
         } else {
             return Collections.<Class<? extends Entity>>singleton( type.getEntityClass() );

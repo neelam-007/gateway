@@ -15,6 +15,7 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.CollectionUtils.MapBuilder;
+import static com.l7tech.util.CollectionUtils.list;
 import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Option;
 
@@ -167,12 +168,9 @@ class EntityPropertiesHelper {
             .put( "userCertificateUseType", "userCertificateUsage" )
             .put( "userLookupByCertMode", null )
             .unmodifiableMap() )
-        .put( BindOnlyLdapIdentityProviderConfig.class, MapBuilder.<String,String>builder()
-            .put( "adminEnabled", null )
-            .unmodifiableMap() )
         .put(IdentityProviderConfig.class, MapBuilder.<String, String>builder()
-                .put("adminEnabled", null)
-                .unmodifiableMap())
+             .put("adminEnabled", null)
+             .unmodifiableMap())
         .put( JdbcConnection.class, MapBuilder.<String,String>builder()
             .put( "minPoolSize", "minimumPoolSize" )
             .put( "maxPoolSize", "maximumPoolSize" )
@@ -292,7 +290,7 @@ class EntityPropertiesHelper {
         .unmodifiableMap();
 
     private static final Map<Class<? extends Entity>,Collection<String>> IGNORE_PROPERTIES = MapBuilder.<Class<? extends Entity>,Collection<String>>builder()
-        .put( FederatedIdentityProviderConfig.class, Collections.unmodifiableCollection( Arrays.asList(
+        .put( FederatedIdentityProviderConfig.class, list(
             "adminEnabled",
             "certificateValidationType",
             "description",
@@ -306,8 +304,8 @@ class EntityPropertiesHelper {
             "trustedCertOids",
             "typeVal",
             "version"
-        ) ) )
-        .put( LdapIdentityProviderConfig.class, Collections.unmodifiableCollection( Arrays.asList(
+        ) )
+        .put( LdapIdentityProviderConfig.class, list(
             "bindDN",
             "bindPasswd",
             "certificateValidationType",
@@ -328,8 +326,25 @@ class EntityPropertiesHelper {
             "typeVal",
             "userMappings",
             "version"
-        ) ) )
-        .put( IdentityProviderConfig.class, Collections.unmodifiableCollection( Arrays.asList(
+        ) )
+        .put( BindOnlyLdapIdentityProviderConfig.class, list(
+            "adminEnabled",
+            "bindPatternPrefix",
+            "bindPatternSuffix",
+            "certificateValidationType",
+            "clientAuthEnabled",
+            "description",
+            "id",
+            "keyAlias",
+            "keystoreId",
+            "ldapUrl",
+            "name",
+            "oid",
+            "serializedProps",
+            "typeVal",
+            "version"
+        ) )
+        .put( IdentityProviderConfig.class, list(
             "certificateValidationType",
             "description",
             "id",
@@ -338,8 +353,8 @@ class EntityPropertiesHelper {
             "serializedProps",
             "typeVal",
             "version"
-        ) ) )
-        .put( JdbcConnection.class, Collections.unmodifiableCollection( Arrays.asList(
+        ) )
+        .put( JdbcConnection.class, list(
             "driverClass",
             "enabled",
             "id",
@@ -350,8 +365,8 @@ class EntityPropertiesHelper {
             "serializedProps",
             "userName",            
             "version"
-        ) ) )
-        .put( JmsConnection.class, Collections.unmodifiableCollection( Arrays.asList(
+        ) )
+        .put( JmsConnection.class, list(
             "version",
             "id",
             "name",
@@ -359,8 +374,8 @@ class EntityPropertiesHelper {
             "properties",
             "providerType",
             "template"
-        ) ) )
-        .put( JmsEndpoint.class, Collections.unmodifiableCollection( Arrays.asList(
+        ) )
+        .put( JmsEndpoint.class, list(
             "oid",
             "id",
             "name",
@@ -372,8 +387,8 @@ class EntityPropertiesHelper {
             "messageSource",
             "template",
             "queue"
-        ) ) )
-        .put( Policy.class, Collections.unmodifiableCollection( Arrays.asList(
+        ) )
+        .put( Policy.class, list(
             "xml",
             "oid",
             "guid",
@@ -383,8 +398,8 @@ class EntityPropertiesHelper {
             "type",
             "version",
             "name"
-        ) ) )
-        .put( PublishedService.class, Collections.unmodifiableCollection( Arrays.asList(
+        ) )
+        .put( PublishedService.class, list(
             "wsdlUrl",
             "id",
             "policy",
@@ -399,8 +414,8 @@ class EntityPropertiesHelper {
             "oid",
             "disabled",
             "soapVersion"
-        ) ) )
-        .put( ResourceEntry.class, Collections.unmodifiableCollection( Arrays.asList(
+        ) )
+        .put( ResourceEntry.class, list(
             "content",
             "contentType",
             "id",
@@ -413,16 +428,16 @@ class EntityPropertiesHelper {
             "uri",
             "uriHash",
             "version"
-        )))
-        .put( SecurePassword.class, Collections.unmodifiableCollection( Arrays.asList(
+        ))
+        .put( SecurePassword.class, list(
             "encodedPassword",
             "id",
             "lastUpdate",
             "name",
             "oid",
             "version"
-        )))
-        .put( TrustedCert.class, Collections.unmodifiableCollection( Arrays.asList(
+        ))
+        .put( TrustedCert.class, list(
             "ski",
             "certBase64",
             "version",
@@ -436,6 +451,6 @@ class EntityPropertiesHelper {
             "revocationCheckPolicyOid",
             "revocationCheckPolicyType",
             "certificate"
-        ) ) )
+        ) )
         .unmodifiableMap();
 }

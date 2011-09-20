@@ -9,7 +9,6 @@ import com.l7tech.gateway.api.impl.PropertiesMapType;
 import com.l7tech.util.Functions;
 
 import static com.l7tech.gateway.api.impl.AttributeExtensibleType.*;
-import static com.l7tech.gateway.api.impl.AttributeExtensibleType.set;
 
 import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlElement;
@@ -258,15 +257,13 @@ public class IdentityProviderMO extends AccessibleObject {
      * Details for a simple BIND-only LDAP identity provider.
      */
     @XmlType(name="BindOnlyLdapIdentityProviderDetailType", propOrder={"serverUrlValues", "useSslClientAuthenticationValue", "sslKeyReferenceValue", 
-            "bindPatternPrefixValue", "bindPatternSuffixValue", "specifiedAttributeValues"})
+            "bindPatternPrefixValue", "bindPatternSuffixValue"})
     public static class BindOnlyLdapIdentityProviderDetail extends IdentityProviderDetail {
         private AttributeExtensibleStringList serverUrls;
         private AttributeExtensibleBoolean useSslClientAuthentication;
         private ManagedObjectReference sslKeyReference;
         private AttributeExtensibleString bindPatternPrefix;
         private AttributeExtensibleString bindPatternSuffix;
-
-        private AttributeExtensibleStringList specifiedAttributes;
 
         /**
          * Get the LDAP server URLs.
@@ -366,24 +363,6 @@ public class IdentityProviderMO extends AccessibleObject {
             this.bindPatternSuffix = set(this.bindPatternSuffix,bindPatternSuffix);
         }
 
-        /**
-         * Get the list of specified attributes for this LDAP.
-         *
-         * @return The list of specified attributes (never null)
-         */
-        public List<String> getSpecifiedAttributes() {
-            return unwrap(get( specifiedAttributes, new ArrayList<AttributeExtensibleString>() ));
-        }
-
-        /**
-         * Set the list of specified attributes for this LDAP.
-         *
-         * @param specifiedAttributes The specified attributes to use
-         */
-        public void setSpecifiedAttributes( List<String> specifiedAttributes ) {
-            this.specifiedAttributes = set( this.specifiedAttributes, wrap(specifiedAttributes,AttributeExtensibleStringBuilder) );
-        }
-
         protected BindOnlyLdapIdentityProviderDetail() {
         }
 
@@ -430,15 +409,6 @@ public class IdentityProviderMO extends AccessibleObject {
 
         protected void setBindPatternSuffixValue( final AttributeExtensibleString bindPatternSuffix ) {
             this.bindPatternSuffix = bindPatternSuffix;
-        }
-        
-        @XmlElement(name="SpecifiedAttributes")
-        protected AttributeExtensibleStringList getSpecifiedAttributeValues() {
-            return specifiedAttributes;
-        }
-
-        protected void setSpecifiedAttributeValues( final AttributeExtensibleStringList specifiedAttributes ) {
-            this.specifiedAttributes = specifiedAttributes;
         }
     }
 

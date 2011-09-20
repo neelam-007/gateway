@@ -420,7 +420,7 @@ public class ServerGatewayManagementAssertionTest {
     @Test
     public void testCreateFederatedIdentityProvider() throws Exception {
         String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/identityProviders";
-        String payload = "<IdentityProvider xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\" version=\"33\" id=\"147226624\" extendedAttribute=\"extension\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
+        String payload = "<IdentityProvider xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\" extendedAttribute=\"extension\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
                 "    <Name other:extendedAttribute=\"extension\" xmlns:other=\"urn:othernamespace\">QAAD4</Name>\n" +
                 "    <IdentityProviderType other:extendedAttribute=\"extension\" xmlns:other=\"urn:othernamespace\">Federated</IdentityProviderType>\n" +
                 "    <Properties extendedAttribute=\"extension\">\n" +
@@ -436,14 +436,32 @@ public class ServerGatewayManagementAssertionTest {
                 "        </FederatedIdentityProviderDetail>\n" +
                 "    </Extension>\n" +
                 "</IdentityProvider>";
-        String[] expectedIds = new String[]{"1","2"};
+        String[] expectedIds = new String[]{"1","2","3","4"};
+        doCreate( resourceUri, payload, expectedIds );
+    }
+
+    @Test
+    public void testCreateBindOnlyLDAPIdentityProvider() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/identityProviders";
+        String payload = "<IdentityProvider xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\" extendedAttribute=\"extension\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
+                "    <Name other:extendedAttribute=\"extension\" xmlns:other=\"urn:othernamespace\">Simple Bind LDAP</Name>\n" +
+                "    <IdentityProviderType other:extendedAttribute=\"extension\" xmlns:other=\"urn:othernamespace\">Simple LDAP</IdentityProviderType>\n" +
+                "    <Extension other:extendedAttribute=\"extension\" xmlns:other=\"urn:othernamespace\">\n" +
+                "        <BindOnlyLdapIdentityProviderDetail other:extendedAttribute=\"extension\" xmlns:other=\"urn:othernamespace\">\n" +
+                "            <ServerUrls><StringValue>ldap://10.7.2.1</StringValue></ServerUrls>\n" +
+                "            <BindPatternPrefix>CN=</BindPatternPrefix>\n" +
+                "            <BindPatternSuffix>,DC=test,DC=com</BindPatternSuffix>\n" +
+                "        </BindOnlyLdapIdentityProviderDetail>\n" +
+                "    </Extension>\n" +
+                "</IdentityProvider>";
+        String[] expectedIds = new String[]{"1","2","3","4"};
         doCreate( resourceUri, payload, expectedIds );
     }
 
     @Test
     public void testCreateLDAPIdentityProviderFromTemplate() throws Exception {
         String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/identityProviders";
-        String payload = "<IdentityProvider xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\" version=\"33\" id=\"147226624\" extendedAttribute=\"extension\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
+        String payload = "<IdentityProvider xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\" extendedAttribute=\"extension\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
                 "    <Name other:extendedAttribute=\"extension\" xmlns:other=\"urn:othernamespace\">LDAP1</Name>\n" +
                 "    <IdentityProviderType other:extendedAttribute=\"extension\" xmlns:other=\"urn:othernamespace\">LDAP</IdentityProviderType>\n" +
                 "    <Properties extendedAttribute=\"extension\">\n" +
@@ -464,7 +482,7 @@ public class ServerGatewayManagementAssertionTest {
                 "        </LdapIdentityProviderDetail>\n" +
                 "    </Extension>\n" +
                 "</IdentityProvider>";
-        String[] expectedIds = new String[]{"1","2","3"};
+        String[] expectedIds = new String[]{"1","2","3","4"};
         doCreate( resourceUri, payload, expectedIds );
     }
 
@@ -569,7 +587,7 @@ public class ServerGatewayManagementAssertionTest {
                 "        </LdapIdentityProviderDetail>\n" +
                 "    </Extension>\n" +
                 "</IdentityProvider>";
-        String[] expectedIds = new String[]{"1","2","3"};
+        String[] expectedIds = new String[]{"1","2","3","4"};
         doCreate( resourceUri, payload, expectedIds );
     }
 
@@ -841,6 +859,50 @@ public class ServerGatewayManagementAssertionTest {
         final Element name = XmlUtil.findExactlyOneChildElementByName(folder, NS_GATEWAY_MANAGEMENT, "Name");
 
         assertEquals("Name", "Test Folder (updated)", XmlUtil.getTextValue(name));
+    }
+
+    @BugNumber(10947)
+    @Test
+    public void testPutIdentityProvider() throws Exception {
+        String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/identityProviders</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">-3</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body> " +
+                    "<l7:IdentityProvider id=\"-3\" version=\"0\">\n" +
+                    "    <l7:Name>LDAP (updated)</l7:Name>\n" +
+                    "    <l7:IdentityProviderType>LDAP</l7:IdentityProviderType>\n" +
+                    "    <l7:Properties>\n" +
+                    "        <l7:Property key=\"groupMembershipCaseInsensitive\">\n" +
+                    "            <l7:BooleanValue>false</l7:BooleanValue>\n" +
+                    "        </l7:Property>\n" +
+                    "        <l7:Property key=\"userLookupByCertMode\">\n" +
+                    "            <l7:StringValue>Entire Certificate</l7:StringValue>\n" +
+                    "        </l7:Property>\n" +
+                    "        <l7:Property key=\"userCertificateUsage\">\n" +
+                    "            <l7:StringValue>None</l7:StringValue>\n" +
+                    "        </l7:Property>\n" +
+                    "        <l7:Property key=\"adminEnabled\">\n" +
+                    "            <l7:BooleanValue>false</l7:BooleanValue>\n" +
+                    "        </l7:Property>\n" +
+                    "    </l7:Properties>\n" +
+                    "    <l7:Extension>\n" +
+                    "        <l7:LdapIdentityProviderDetail>\n" +
+                    "            <l7:SourceType>MicrosoftActiveDirectory</l7:SourceType>\n" +
+                    "            <l7:ServerUrls><l7:StringValue>ldap://10.7.2.1</l7:StringValue></l7:ServerUrls>\n" +
+                    "            <l7:UseSslClientAuthentication>true</l7:UseSslClientAuthentication>\n" +
+                    "            <l7:SearchBase>cn=something</l7:SearchBase>\n" +
+                    "            <l7:BindDn>browse</l7:BindDn>\n" +
+                    "            <l7:UserMappings/>\n" +
+                    "            <l7:GroupMappings/>\n" +
+                    "        </l7:LdapIdentityProviderDetail>\n" +
+                    "    </l7:Extension>\n" +
+                    "</l7:IdentityProvider>\n" +
+                    "</s:Body></s:Envelope>";
+
+        final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Put", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element folder = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "IdentityProvider");
+        final Element name = XmlUtil.findExactlyOneChildElementByName(folder, NS_GATEWAY_MANAGEMENT, "Name");
+
+        assertEquals("Name", "LDAP (updated)", XmlUtil.getTextValue(name));
     }
 
     @Test
