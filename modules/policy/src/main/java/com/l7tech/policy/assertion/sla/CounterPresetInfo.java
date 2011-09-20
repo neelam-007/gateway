@@ -1,6 +1,8 @@
 package com.l7tech.policy.assertion.sla;
 
 import com.l7tech.util.HexUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 import java.util.Random;
@@ -29,9 +31,12 @@ public class CounterPresetInfo {
 
     /**
      * Generate a new counter name corresponding to the default preset (clientid).
+     * @param presetDefault Label for the default counter name.  Required.
+     * @param presetCustom prefix for a custom counter name.  Required.
+     * @param counterNameTypes the counter names and patterns to be recognized.  Required.
      * @return a counter name similar to "PRESET(deadbeefcafebabe)${request.clientid}".  Never null or empty.
      */
-    public static String makeDefaultCounterName(String presetDefault, String presetCustom, Map<String, String> counterNameTypes) {
+    public static String makeDefaultCounterName(@NotNull String presetDefault, @NotNull String presetCustom, @NotNull Map<String, String> counterNameTypes) {
         return findRawCounterName(presetDefault, makeUuid(), null, presetCustom, counterNameTypes);
     }
 
@@ -39,15 +44,17 @@ public class CounterPresetInfo {
      * See if the specified raw counter name happens to match any of the user friendly presets we provide.
      * If a counter key is matched, this updates uuidOut[0] as a side effect.
      *
-     * @param rawCounterName  raw counter name ot look up, ie "foo bar blatz ${mumble}"
+     * @param rawCounterName  raw counter name to look up, ie "foo bar blatz ${mumble}", or null to produce a default.
      * @param uuidOut  An optional single-element String array to receive the UUID.
      *                 Any UUID found will be copied into the first element of this array, if present.
+     * @param presetCustom prefix for a custom counter name.  Required.
+     * @param counterNameTypes the counter names and patterns to be recognized.  Required.
      * @return the key in counterNameTypes corresponding to the given raw counter name, or null for presetCustom.
      * for example given "PRESET(deadbeefcafebabe)${request.clientid}" this will return "User or client IP";
      * when given        "PRESET(abcdefabcdefabcd)" this will return "Gateway node (global)"; and
      * when given        "RateLimit-${request.clientid}" this will return null.
      */
-    public static String findCounterNameKey(String rawCounterName, String[] uuidOut, String presetCustom, Map<String, String> counterNameTypes) {
+    public static String findCounterNameKey(@Nullable String rawCounterName, @Nullable String[] uuidOut, @NotNull String presetCustom, @NotNull Map<String, String> counterNameTypes) {
         String foundKey = null;
         String foundUuid = null;
 
@@ -83,9 +90,11 @@ public class CounterPresetInfo {
      * @param uuid  the UUID to use to create unique counters.  Should be an 8-digit hex string.  Mustn't be null.
      * @param customExpr the custom string to use if counterNameKey is CUSTOM or null or can't be found in the map.
      *                    May be empty.  May only be null if counterNameKey is in the map and isn't CUSTOM.
+     * @param presetCustom prefix for a custom counter name.  Required.
+     * @param counterNameTypes the counter names and patterns to be recognized.  Required.
      * @return the raw counter name to store into the assertion.  Never null or otherwise invalid.
      */
-    public static String findRawCounterName(String counterNameKey, String uuid, String customExpr, String presetCustom, Map<String, String> counterNameTypes) {
+    public static String findRawCounterName(String counterNameKey, String uuid, @Nullable String customExpr, @NotNull String presetCustom, @NotNull Map<String, String> counterNameTypes) {
         // If it claims to be custom, but looks just like a generated example, use whatever preset it was generated from
         if (counterNameKey == null || presetCustom.equals(counterNameKey))
             if (isDefaultCustomExpr(customExpr, counterNameTypes))
