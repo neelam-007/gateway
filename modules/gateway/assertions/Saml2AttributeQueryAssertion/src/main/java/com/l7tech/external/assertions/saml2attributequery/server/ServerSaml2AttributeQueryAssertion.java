@@ -19,6 +19,7 @@ import com.l7tech.server.identity.ldap.LdapIdentityProvider;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.xml.soap.SoapUtil;
 import com.sun.xml.bind.marshaller.NamespacePrefixMapper;
 import org.springframework.context.ApplicationContext;
@@ -43,6 +44,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 
 /**
@@ -51,6 +53,9 @@ import java.util.logging.Level;
  * @see com.l7tech.external.assertions.saml2attributequery.Saml2AttributeQueryAssertion
  */
 public class ServerSaml2AttributeQueryAssertion extends AbstractServerAssertion<Saml2AttributeQueryAssertion> {
+    private static final AtomicReference<JAXBContext> jaxbContext = new AtomicReference<JAXBContext>();
+    private static final boolean useStaticContext = ConfigFactory.getBooleanProperty("com.l7tech.external.assertions.samlpassertion.useStaticContext", true);
+
     private final IdentityProviderFactory identityProviderFactory;
     private final ClusterPropertyCache clusterPropertyCache;
     private Saml2AttributeQueryResponseGenerator responseGenerator;
@@ -299,13 +304,31 @@ public class ServerSaml2AttributeQueryAssertion extends AbstractServerAssertion<
         Element body = doc.createElementNS(SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, SOAP_ENV_PREFIX + ":Body");
         envelope.appendChild(body);
 
-        JAXBContext ctx = JAXBContext.newInstance("saml.v2.protocol:saml.v2.assertion:saml.support.ds", Saml2AttributeQuery.class.getClassLoader());
+        JAXBContext ctx = getContext();
         Marshaller m = ctx.createMarshaller();
         m.setProperty(Marshaller.JAXB_FRAGMENT, Boolean.TRUE);
         m.setProperty("com.sun.xml.bind.namespacePrefixMapper", NAMESPACE_PREFIX_MAPPER);
         m.marshal(responseGenerator.createSuccessMesage(attributeQuery, assertion.getIssuer(), map, values, conditions), body);
 
         return doc;
+    }
+
+    private JAXBContext getContext() throws JAXBException {
+        JAXBContext context = null;
+
+        if ( useStaticContext ) {
+            context = jaxbContext.get();
+        }
+
+        if ( context == null ) {
+            context = JAXBContext.newInstance( "saml.v2.protocol:saml.v2.assertion:saml.support.ds", Saml2AttributeQuery.class.getClassLoader());
+
+            if ( useStaticContext ) {
+                jaxbContext.compareAndSet( null, context );
+            }
+        }
+
+        return context;
     }
 
     private Document createErrorResponse(String queryId, List<Saml2AttributeQuery.QueriedAttribute> queriedAttributes)
@@ -326,7 +349,7 @@ public class ServerSaml2AttributeQueryAssertion extends AbstractServerAssertion<
         Element body = doc.createElementNS(SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, SOAP_ENV_PREFIX + ":Body");
         envelope.appendChild(body);
 
-        JAXBContext ctx = JAXBContext.newInstance("saml.v2.protocol:saml.v2.assertion:saml.support.ds", Saml2AttributeQuery.class.getClassLoader());
+        JAXBContext ctx = getContext();
         Marshaller m = ctx.createMarshaller();
         m.setProperty(Marshaller.JAXB_FRAGMENT, Boolean.TRUE);
         m.setProperty("com.sun.xml.bind.namespacePrefixMapper", NAMESPACE_PREFIX_MAPPER);

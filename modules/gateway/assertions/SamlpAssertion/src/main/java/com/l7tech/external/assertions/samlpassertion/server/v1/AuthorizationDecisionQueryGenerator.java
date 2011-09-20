@@ -72,7 +72,7 @@ public final class AuthorizationDecisionQueryGenerator extends AbstractSamlp1Mes
         if (assertion.getEvidence() == SAMLP_AUTHZ_EVIDENCE_FROM_VAR) {
             if (evidenceBlockResolver != null) {
                 try {
-                    Unmarshaller um = JaxbUtil.getUnmarshallerV1(evidenceBlockResolver.getKey());
+                    Unmarshaller um = JaxbUtil.getUnmarshallerV1();
                     JAXBElement<EvidenceType> evid =
                             um.unmarshal(evidenceBlockResolver.getValue(), EvidenceType.class);
 
@@ -81,8 +81,6 @@ public final class AuthorizationDecisionQueryGenerator extends AbstractSamlp1Mes
 
                 } catch (JAXBException jaxEx) {
                     logger.log(Level.WARNING, "Bad Authorization evidence from context variable, could not be unmarshalled: {0}", ExceptionUtils.getMessage(jaxEx));
-                } finally {
-                    JaxbUtil.releaseJaxbResources(evidenceBlockResolver.getKey());
                 }
             }
         } else {

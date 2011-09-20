@@ -26,7 +26,6 @@ import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathResult;
 import com.l7tech.xml.xpath.XpathResultIterator;
 import junit.framework.Assert;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
@@ -43,7 +42,6 @@ import saml.v2.assertion.NameIDType;
 
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
@@ -65,31 +63,14 @@ import java.util.List;
 
 public class ServerSamlpResponseBuilderAssertionTest {
 
-    private Marshaller v1Marshaller;
     private Unmarshaller v1Unmarshaller;
     private Unmarshaller v2Unmarshaller;
-    private Marshaller v2Marshaller;
-    private String lockIdV1 = "lockIdSamlPV1";
-    private String lockIdV2 = "lockIdSamlPV2";
-    private String unMarLockV1 = lockIdV1+"UnMarshall";
-    private String unMarLockV2 = lockIdV2+"UnMarshall";
 
     @Before
     public void setUp() throws JAXBException {
-        v1Unmarshaller = JaxbUtil.getUnmarshallerV1(unMarLockV1);
-        v1Marshaller = JaxbUtil.getMarshallerV1(lockIdV1);
+        v1Unmarshaller = JaxbUtil.getUnmarshallerV1();
 
-        v2Unmarshaller = JaxbUtil.getUnmarshallerV2(unMarLockV2);
-        v2Marshaller = JaxbUtil.getMarshallerV2(lockIdV2);
-    }
-
-    @After
-    public void tearDown(){
-        JaxbUtil.releaseJaxbResources(lockIdV1);
-        JaxbUtil.releaseJaxbResources(unMarLockV1);
-
-        JaxbUtil.releaseJaxbResources(lockIdV2);
-        JaxbUtil.releaseJaxbResources(unMarLockV2);
+        v2Unmarshaller = JaxbUtil.getUnmarshallerV2();
     }
 
     /**

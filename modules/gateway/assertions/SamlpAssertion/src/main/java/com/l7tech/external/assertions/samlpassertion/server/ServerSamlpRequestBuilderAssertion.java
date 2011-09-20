@@ -131,7 +131,7 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
             /*
              * 3) Set the SAMLP request msg into the target message
              */
-            setRequestToTarget(context, bContext, msg, samlpRequest);
+            setRequestToTarget(bContext, msg, samlpRequest);
 
         } catch (SamlpAssertionException samlEx) {
 //            logAndAudit(AssertionMessages.SAMLP_BUILDER_ERROR, new String[] { ExceptionUtils.getMessage(samlEx) });
@@ -381,8 +381,7 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
     }
 
 
-    private void setRequestToTarget( final PolicyEnforcementContext context,
-                                     final BuilderContext bContext,
+    private void setRequestToTarget( final BuilderContext bContext,
                                      final Message target,
                                      final JAXBElement<?> request)
         throws SamlpAssertionException
@@ -392,13 +391,13 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
 
             // marshal into Document and sign the request
             Document samlpDoc = XmlUtil.createEmptyDocument();
-            marshal(context, request, samlpDoc);
+            marshal(request, samlpDoc);
             msgXmlString = signAndSerialize(samlpDoc);
 
         } else {
             // marshal int XML string
             StringWriter msgWriter = new StringWriter();
-            marshal(context, request, msgWriter);
+            marshal(request, msgWriter);
 
             // create SOAP message
             msgXmlString = msgWriter.getBuffer().toString();
@@ -413,16 +412,15 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
         target.initialize( soapify(msgXmlString, bContext) );
     }
 
-    private void marshal(final PolicyEnforcementContext context, final JAXBElement<?> request, final Object marshalTo)
+    private void marshal(final JAXBElement<?> request, final Object marshalTo)
         throws SamlpAssertionException
     {
-        final String key = context.getRequestId().toString();
         try {
-            Marshaller m;
+            final Marshaller m;
             if (assertion.getSamlVersion() == 1)
-                m = JaxbUtil.getMarshallerV1(key);
+                m = JaxbUtil.getMarshallerV1();
             else
-                m = JaxbUtil.getMarshallerV2(key);
+                m = JaxbUtil.getMarshallerV2();
 
             if (marshalTo instanceof Document)
                 m.marshal(request, (Document) marshalTo);
@@ -435,8 +433,6 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
         } catch (JAXBException jxbEx) {
             logger.log(Level.INFO, "Failed to marshal JAXB message: {0}", jxbEx);
             throw new SamlpAssertionException("Failed to marshal JAXB target message", jxbEx);
-        } finally {
-            JaxbUtil.releaseJaxbResources(key);
         }
     }
 
@@ -600,7 +596,6 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
                     @Override
                     protected void parse() {
                         this.value = doc;
-                        this.key = context.getRequestId().toString();
                     }
                 };
 

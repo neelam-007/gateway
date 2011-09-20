@@ -52,7 +52,6 @@ import saml.v2.assertion.SubjectConfirmationType;
 import saml.v2.assertion.SubjectType;
 import saml.v2.protocol.AuthnRequestType;
 
-import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
@@ -67,7 +66,6 @@ import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
@@ -150,8 +148,6 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
     
     private static final String ELEMENT_AUTHN_REQUEST = "AuthnRequest";
 
-    private static final AtomicReference<JAXBContext> jaxbContext = new AtomicReference<JAXBContext>();
-    private static final boolean useStaticContext = ConfigFactory.getBooleanProperty( "com.l7tech.external.assertions.samlpassertion.useStaticContext", true );
     private static final boolean allowMultipleCertificates = ConfigFactory.getBooleanProperty( "com.l7tech.external.assertions.samlpassertion.allowMultipleCertificates", false );
     private static final boolean validateSSOProfileDetails = ConfigFactory.getBooleanProperty( "com.l7tech.external.assertions.samlpassertion.validateSSOProfile", true );
 
@@ -235,8 +231,7 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
         if ( ELEMENT_AUTHN_REQUEST.equals(authnRequestElement.getLocalName()) &&
              SamlConstants.NS_SAMLP2.equals(authnRequestElement.getNamespaceURI())) {
             try {
-                final JAXBContext context = getContext();
-                final Unmarshaller um = context.createUnmarshaller();
+                final Unmarshaller um = JaxbUtil.getUnmarshallerV2();
                 um.setEventHandler( new ValidationEventHandler(){
                     @Override
                     public boolean handleEvent( final ValidationEvent event ) {
@@ -257,32 +252,10 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
                         ExceptionUtils.getDebugException( e ) );
             }
         } else {
-            logAndAudit( AssertionMessages.SAMLP_PROCREQ_INVALID_REQUEST, "Not an AuthnRequest" );
+            logAndAudit(AssertionMessages.SAMLP_PROCREQ_INVALID_REQUEST, "Not an AuthnRequest");
         }
 
         return result;
-    }
-
-    /**
-     * Could have used JaxbUtil, but this is simpler and should be fine in our
-     * environment (Suns JAXB implementation has a thread safe context)
-     */
-    private JAXBContext getContext() throws JAXBException {
-        JAXBContext context = null;
-
-        if ( useStaticContext ) {
-            context = jaxbContext.get();
-        }
-
-        if ( context == null ) {
-            context = JAXBContext.newInstance( "saml.v2.protocol", ServerProcessSamlAuthnRequestAssertion.class.getClassLoader());
-        }
-
-        if ( useStaticContext ) {
-            jaxbContext.compareAndSet( null, context );
-        }
-
-        return context;
     }
 
     /**

@@ -6,7 +6,6 @@ import com.l7tech.external.assertions.samlpassertion.SamlpAuthorizationStatement
 import com.l7tech.external.assertions.samlpassertion.SamlProtocolAssertion;
 import org.w3c.dom.Node;
 
-import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
@@ -65,18 +64,16 @@ public abstract class AbstractSamlpResponseEvaluator<RSP_TYPE> {
 
         JAXBElement<RSP_TYPE> result = null;
         try {
-            JAXBContext jxbContext;
-            Unmarshaller um;
+            final Unmarshaller um;
 
             // --- move to common utility ---
             if (samlVersion == 2) {
-                jxbContext = JAXBContext.newInstance("saml.v2.protocol:saml.v2.assertion:saml.support.ds", AbstractSamlpResponseEvaluator.class.getClassLoader());
+                um = JaxbUtil.getUnmarshallerV2();
             } else {
-                jxbContext = JAXBContext.newInstance("saml.v1.protocol:saml.v1.assertion:saml.support.ds", AbstractSamlpResponseEvaluator.class.getClassLoader());
+                um = JaxbUtil.getUnmarshallerV1();
             }
             // --- move to common utility ---
 
-            um = jxbContext.createUnmarshaller();
             result = um.unmarshal(response, getResponseClass());
 
             if (result == null) {

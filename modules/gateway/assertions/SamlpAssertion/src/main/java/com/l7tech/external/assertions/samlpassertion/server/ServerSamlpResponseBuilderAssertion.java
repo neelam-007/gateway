@@ -112,10 +112,10 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
         try {
             switch (assertion.getSamlVersion()) {
                 case SAML2:
-                    marshaller = JaxbUtil.getMarshallerV2(responseContext.requestId);
+                    marshaller = JaxbUtil.getMarshallerV2();
                     break;
                 case SAML1_1:
-                    marshaller = JaxbUtil.getMarshallerV1(responseContext.requestId);
+                    marshaller = JaxbUtil.getMarshallerV1();
                     break;
                 default:
                     throw new RuntimeException("Unknown SAML Version found");//cannot happen due to constructor.
@@ -134,8 +134,6 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
                     new String[]{"create", ExceptionUtils.getMessage(e)},
                     ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
-        } finally {
-            JaxbUtil.releaseJaxbResources(responseContext.requestId);
         }
 
         if (assertion.isSignResponse()) {
@@ -466,26 +464,15 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
     private JAXBElement<?> createResponse(final ResponseContext responseContext)
             throws JAXBException, InvalidRuntimeValueException {
 
-        final String extraLockId = HexUtils.generateRandomHexId(16) + responseContext.requestId;
         switch (assertion.getSamlVersion()) {
             case SAML2:
-                try {
-                    final String caDn = signer.getCertificateChain()[0].getSubjectDN().getName();
-                    final Map caMap = CertUtils.dnToAttributeMap(caDn);
-                    final String caCn = (String)((List)caMap.get("CN")).get(0);
-                    
-                    final Unmarshaller um = JaxbUtil.getUnmarshallerV2(extraLockId);
-                    return createV2Response(responseContext, um, caCn);
-                } finally {
-                    JaxbUtil.releaseJaxbResources(extraLockId);
-                }
+                final String caDn = signer.getCertificateChain()[0].getSubjectDN().getName();
+                final Map caMap = CertUtils.dnToAttributeMap(caDn);
+                final String caCn = (String)((List)caMap.get("CN")).get(0);
+
+                return createV2Response(responseContext, JaxbUtil.getUnmarshallerV2(), caCn);
             case SAML1_1:
-                try {
-                    final Unmarshaller um = JaxbUtil.getUnmarshallerV1(extraLockId);
-                    return createV1Response(responseContext, um);
-                } finally {
-                    JaxbUtil.releaseJaxbResources(extraLockId);
-                }
+                return createV1Response(responseContext, JaxbUtil.getUnmarshallerV1());
             default:
                 throw new RuntimeException("Unknown SAML Version");//can't happen.
         }

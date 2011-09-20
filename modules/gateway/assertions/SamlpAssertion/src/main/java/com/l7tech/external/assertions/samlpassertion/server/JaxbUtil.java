@@ -1,43 +1,58 @@
 package com.l7tech.external.assertions.samlpassertion.server;
 
 import com.l7tech.security.saml.SamlConstants;
+import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.Functions;
 import com.sun.xml.bind.marshaller.NamespacePrefixMapper;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Caching mechanism for JAXBContext instances (to improve performance).
+ * Get access to Marshaller and Unmarshaller objects configured for SAML and SAML Protocol Version 1 or 2 and
+ * saml.support.ds (http://www.w3.org/2000/09/xmldsig#)
  *
- * @author : vchan
+ * This class will either create a new underlying JAXBContext per usage or use a static JAXBContext depending
+ * on the value of system property com.l7tech.external.assertions.samlpassertion.useStaticContext.
+ * While the JAXB implementation used is thread safe a static context can be used.
+ *
+ * @author : vchan, sjones, darmstrong
  */
 public class JaxbUtil {
     private static final Logger logger = Logger.getLogger(JaxbUtil.class.getName());
 
-    private static final int UNUSED_CACHE_LIMIT = 10;
-    private static final int MAX_TOTAL_CACHE_LIMIT = 100;
     private static final String SAML_V1_CTX_PACKAGES = "saml.v1.protocol:saml.v1.assertion:saml.support.ds";
     private static final String SAML_V2_CTX_PACKAGES = "saml.v2.protocol:saml.v2.assertion:saml.v2.authn.context:saml.support.ds";
-
-    private static final List<JAXBContextWrapper> jxbContextCacheV1;
-    private static final List<JAXBContextWrapper> jxbContextCacheV2;
-    private static final Map<String, JAXBContextWrapper> contextInUse;
+    private static final boolean useStaticContext = ConfigFactory.getBooleanProperty("com.l7tech.external.assertions.samlpassertion.useStaticContext", true);
     private static final Map<String, String> NS_PREFIXES;
-    private static final Object syncLock = new Object();
+    private static final AtomicReference<JAXBContext> jaxbContextV1 = new AtomicReference<JAXBContext>();
+    private static final AtomicReference<JAXBContext> jaxbContextV2 = new AtomicReference<JAXBContext>();
+
+    private static Functions.NullaryThrows<JAXBContext, JAXBException> ctxFactoryV1 = new Functions.NullaryThrows<JAXBContext, JAXBException>() {
+        @Override
+        public JAXBContext call() throws JAXBException {
+            logger.log(Level.FINE, "Creating JAXBContext (V1)");
+            return JAXBContext.newInstance(SAML_V1_CTX_PACKAGES, JaxbUtil.class.getClassLoader());
+        }
+    };
+
+    private static Functions.NullaryThrows<JAXBContext, JAXBException> ctxFactoryV2 = new Functions.NullaryThrows<JAXBContext, JAXBException>() {
+        @Override
+        public JAXBContext call() throws JAXBException {
+            logger.log(Level.FINE, "Creating JAXBContext (V2)");
+            return JAXBContext.newInstance(SAML_V2_CTX_PACKAGES, JaxbUtil.class.getClassLoader());
+        }
+    };
 
     static {
         // initialize the map
-        jxbContextCacheV1 = new ArrayList<JAXBContextWrapper>();
-        jxbContextCacheV2 = new ArrayList<JAXBContextWrapper>();
-        contextInUse = new ConcurrentHashMap<String, JAXBContextWrapper>();
 
         NS_PREFIXES = new HashMap<String, String>();
         NS_PREFIXES.put(SamlConstants.NS_SAML,  SamlConstants.NS_SAML_PREFIX);
@@ -52,126 +67,68 @@ public class JaxbUtil {
         NS_PREFIXES.put("urn:oasis:names:tc:SAML:2.0:ac", "ac");
     }
 
-    public static Marshaller getMarshallerV1(final String lockId) throws JAXBException {
-        JAXBContext ctx = getContext(PackageVersion.V1, lockId).ctx;
+    public static Marshaller getMarshallerV1() throws JAXBException {
+        JAXBContext ctx = getContext(PackageVersion.V1);
         Marshaller m = ctx.createMarshaller();
         m.setProperty(Marshaller.JAXB_FRAGMENT, Boolean.TRUE);
         m.setProperty("com.sun.xml.bind.namespacePrefixMapper", new SamlpNamespacePrefixMapper());
         return m;
     }
 
-    public static Marshaller getMarshallerV2(final String lockId) throws JAXBException {
-        JAXBContext ctx = getContext(PackageVersion.V2, lockId).ctx;
+    public static Marshaller getMarshallerV2() throws JAXBException {
+        JAXBContext ctx = getContext(PackageVersion.V2);
         Marshaller m = ctx.createMarshaller();
         m.setProperty(Marshaller.JAXB_FRAGMENT, Boolean.TRUE);
         m.setProperty("com.sun.xml.bind.namespacePrefixMapper", new SamlpNamespacePrefixMapper());
         return m;
     }
 
-    public static Unmarshaller getUnmarshallerV1(final String lockId) throws JAXBException  {
-        JAXBContext ctx = getContext(PackageVersion.V1, lockId).ctx;
+    public static Unmarshaller getUnmarshallerV1() throws JAXBException  {
+        JAXBContext ctx = getContext(PackageVersion.V1);
         return ctx.createUnmarshaller();
     }
 
-    public static Unmarshaller getUnmarshallerV2(final String lockId) throws JAXBException {
-        JAXBContext ctx = getContext(PackageVersion.V2, lockId).ctx;
+    public static Unmarshaller getUnmarshallerV2() throws JAXBException {
+        JAXBContext ctx = getContext(PackageVersion.V2);
         return ctx.createUnmarshaller();
     }
 
-    public static void releaseJaxbResources(final String lockId) {
-        if (contextInUse.containsKey(lockId)) {
-            synchronized (syncLock) {
-                JAXBContextWrapper wrpr = contextInUse.get(lockId);
-                contextInUse.remove(lockId);
-                if (wrpr.returnTo.size() > UNUSED_CACHE_LIMIT) {
-                    wrpr.dispose();
-                } else {
-                    wrpr.unlock();
-                }
+    private static JAXBContext getContext(PackageVersion ver) throws JAXBException {
+        JAXBContext context = null;
+
+        final AtomicReference<JAXBContext> contextForVersion;
+        final Functions.NullaryThrows<JAXBContext, JAXBException> contextFactory;
+        switch (ver) {
+            case V1:
+                contextForVersion = jaxbContextV1;
+                contextFactory = ctxFactoryV1;
+                break;
+            case V2:
+                contextForVersion = jaxbContextV2;
+                contextFactory = ctxFactoryV2;
+                break;
+            default:
+                throw new IllegalStateException("Unknown JAXB version");//Can't happen
+        }
+
+        if (useStaticContext) {
+            context = contextForVersion.get();
+        }
+
+        if ( context == null ) {
+            context = contextFactory.call();
+
+            if (useStaticContext) {
+                contextForVersion.compareAndSet(null, context);
             }
         }
+
+        return context;
     }
-
-    private static JAXBContextWrapper getContext(PackageVersion ver, final String lockId) throws JAXBException {
-
-        JAXBContextWrapper wrapper = null;
-        synchronized (syncLock) {
-            switch(ver) {
-                case V1:
-                    if (!jxbContextCacheV1.isEmpty())
-                        wrapper = jxbContextCacheV1.remove(0);
-                    break;
-                case V2:
-                    if (!jxbContextCacheV2.isEmpty())
-                        wrapper = jxbContextCacheV2.remove(0);
-                    break;
-            }
-
-            if (wrapper == null && contextInUse.size() < MAX_TOTAL_CACHE_LIMIT) {
-                // create a new instance if no cached instance is found
-                wrapper = new JAXBContextWrapper(ver, lockId);
-            }
-
-            if (wrapper != null) {
-                wrapper.lock(lockId);
-                contextInUse.put(lockId, wrapper);
-            }
-        }
-
-        // no more caching, create per-request-use instance
-        if (wrapper == null) {
-            wrapper = new JAXBContextWrapper(ver, lockId);
-        }
-        return wrapper;
-    }
-
 
     enum PackageVersion {
         V1,
         V2
-    }
-
-    protected static class JAXBContextWrapper {
-
-        final PackageVersion version;
-        String ctxLock;
-        JAXBContext ctx;
-        List<JAXBContextWrapper> returnTo;
-
-        JAXBContextWrapper(PackageVersion version, String ctxLock)
-            throws JAXBException
-        {
-            this.version = version;
-            this.ctxLock = ctxLock;
-
-            switch(version) {
-                case V1:
-                    this.ctx = JAXBContext.newInstance(SAML_V1_CTX_PACKAGES, JaxbUtil.class.getClassLoader());
-                    this.returnTo = jxbContextCacheV1;
-                    break;
-                case V2:
-                    this.ctx = JAXBContext.newInstance(SAML_V2_CTX_PACKAGES, JaxbUtil.class.getClassLoader());
-                    this.returnTo = jxbContextCacheV2;
-                    break;
-            }
-        }
-
-        public void lock(String lockValue) {
-            // remove from "returnTo" list before calling lock!!
-            this.ctxLock = lockValue;
-        }
-
-        public void unlock() {
-            this.ctxLock = null;
-
-            synchronized (syncLock) {
-                returnTo.add(this);
-            }
-        }
-
-        public void dispose() {
-            ctx = null;
-        }
     }
 
     protected static class SamlpNamespacePrefixMapper extends NamespacePrefixMapper {
