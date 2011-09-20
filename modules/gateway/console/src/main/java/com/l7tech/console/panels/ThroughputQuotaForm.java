@@ -92,6 +92,8 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
             public void actionPerformed(ActionEvent e) {
                 quotaValueField.setEnabled(false);
                 quotaUnitCombo.setEnabled(false);
+                logOnlyCheckBox.setSelected(false);
+                logOnlyCheckBox.setEnabled(false);
             }
         });
         alwaysIncrementRadio.addActionListener(new ActionListener() {
@@ -99,6 +101,7 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
             public void actionPerformed(ActionEvent e) {
                 quotaValueField.setEnabled(true);
                 quotaUnitCombo.setEnabled(true);
+                logOnlyCheckBox.setEnabled(true);
             }
         });
         incrementOnSuccessRadio.addActionListener(new ActionListener() {
@@ -106,6 +109,7 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
             public void actionPerformed(ActionEvent e) {
                 quotaValueField.setEnabled(true);
                 quotaUnitCombo.setEnabled(true);
+                logOnlyCheckBox.setEnabled(true);
             }
         });
 
