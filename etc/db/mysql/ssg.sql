@@ -150,7 +150,7 @@ CREATE TABLE folder (
   name varchar(128) NOT NULL,
   parent_folder_oid bigint(20),
   PRIMARY KEY  (objectid),
-  FOREIGN KEY (parent_folder_oid) REFERENCES folder (objectid) ON DELETE SET NULL,
+  CONSTRAINT folder_parent_folder FOREIGN KEY (parent_folder_oid) REFERENCES folder (objectid),
   UNIQUE KEY `i_name_parent` (`name`,`parent_folder_oid`)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
@@ -214,7 +214,7 @@ CREATE TABLE published_service (
   soap_version VARCHAR(20) DEFAULT 'UNKNOWN',
   PRIMARY KEY (objectid),
   FOREIGN KEY (policy_oid) REFERENCES policy (objectid),
-  FOREIGN KEY (folder_oid) REFERENCES folder (objectid) ON DELETE SET NULL
+  CONSTRAINT published_service_folder FOREIGN KEY (folder_oid) REFERENCES folder (objectid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
@@ -249,7 +249,7 @@ CREATE TABLE policy (
   PRIMARY KEY (objectid),
   UNIQUE KEY i_name (name),
   UNIQUE KEY i_guid (guid),
-  FOREIGN KEY (folder_oid) REFERENCES folder (objectid) ON DELETE SET NULL,
+  CONSTRAINT policy_folder FOREIGN KEY (folder_oid) REFERENCES folder (objectid),
   INDEX (policy_type)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 

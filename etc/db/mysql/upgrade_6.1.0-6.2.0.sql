@@ -66,6 +66,16 @@ ALTER TABLE counters DROP userid, DROP providerid;
 ALTER TABLE counters CHANGE counterid objectid bigint(20) NOT NULL;
 
 --
+-- Bug 10943: Prevent deletion of non-empty folder
+--
+ALTER TABLE published_service DROP FOREIGN KEY published_service_ibfk_2;
+ALTER TABLE policy DROP FOREIGN KEY policy_ibfk_1;
+ALTER TABLE folder DROP FOREIGN KEY folder_ibfk_1;
+ALTER TABLE published_service ADD CONSTRAINT published_service_folder FOREIGN KEY (folder_oid) REFERENCES folder (objectid);
+ALTER TABLE policy ADD CONSTRAINT policy_folder FOREIGN KEY (folder_oid) REFERENCES folder (objectid);
+ALTER TABLE folder ADD CONSTRAINT folder_parent_folder FOREIGN KEY (parent_folder_oid) REFERENCES folder (objectid);
+
+--
 --
 -- Reenable FK at very end of script
 --
