@@ -308,7 +308,6 @@
         <constructor-arg ref="serverPolicyValidator"/>
         <constructor-arg ref="sampleMessageManager"/>
         <constructor-arg ref="serviceDocumentManager"/>
-        <constructor-arg ref="counterIDManager"/>
         <constructor-arg ref="wspReader"/>
         <constructor-arg ref="uddiTemplateManager"/>
         <constructor-arg ref="policyVersionManager"/>

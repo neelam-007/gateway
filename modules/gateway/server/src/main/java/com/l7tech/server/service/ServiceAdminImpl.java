@@ -19,7 +19,6 @@ import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.service.resolution.NonUniqueServiceResolutionException;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
-import com.l7tech.server.sla.CounterIDManager;
 import com.l7tech.server.tokenservice.SecurityTokenServiceTemplateRegistry;
 import com.l7tech.server.transport.ResolutionConfigurationManager;
 import com.l7tech.server.uddi.ServiceWsdlUpdateChecker;
@@ -56,7 +55,6 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     private final PolicyValidator policyValidator;
     private final SampleMessageManager sampleMessageManager;
     private final ServiceDocumentManager serviceDocumentManager;
-    private final CounterIDManager counterIDManager;
     private final WspReader wspReader;
     private final UDDITemplateManager uddiTemplateManager;
     private final PolicyVersionManager policyVersionManager;
@@ -87,7 +85,6 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
                             PolicyValidator policyValidator,
                             SampleMessageManager sampleMessageManager,
                             ServiceDocumentManager serviceDocumentManager,
-                            CounterIDManager counterIDManager,
                             WspReader wspReader,
                             UDDITemplateManager uddiTemplateManager,
                             PolicyVersionManager policyVersionManager,
@@ -107,7 +104,6 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
         this.policyValidator = policyValidator;
         this.sampleMessageManager = sampleMessageManager;
         this.serviceDocumentManager = serviceDocumentManager;
-        this.counterIDManager = counterIDManager;
         this.wspReader = wspReader;
         this.uddiTemplateManager = uddiTemplateManager;
         this.policyVersionManager = policyVersionManager;
@@ -590,12 +586,6 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
         } finally {
             ResourceUtils.closeQuietly( client );
         }
-    }
-
-    @Override
-    public String[] listExistingCounterNames() throws FindException {
-        // get all the names for the counters
-        return counterIDManager.getAllCounterNames();
     }
 
     @Override

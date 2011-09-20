@@ -1,4 +1,6 @@
-package com.l7tech.util;
+package com.l7tech.policy.assertion.sla;
+
+import com.l7tech.util.HexUtils;
 
 import java.util.Map;
 import java.util.Random;
@@ -9,7 +11,7 @@ import java.util.regex.Pattern;
  * This class was migrated from a previous static class PresetInfo in RateLimitAssertion.
  * Now it is shared by RateLimitAssertion and ThroughputQuota.
  */
-public class CounterPresetInfoUtils {
+public class CounterPresetInfo {
     public static final Pattern presetFinder = Pattern.compile("^PRESET\\(([a-fA-F0-9]{16})\\)(.*)$");
     public static final Pattern defaultCustomExprFinder = Pattern.compile("^([a-fA-F0-9]{8})-?(.*)$");
 

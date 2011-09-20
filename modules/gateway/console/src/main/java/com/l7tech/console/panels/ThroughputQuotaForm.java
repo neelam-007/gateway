@@ -7,9 +7,10 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.action.Actions;
+import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.policy.assertion.sla.CounterPresetInfo;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
-import com.l7tech.util.CounterPresetInfoUtils;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -44,7 +45,7 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
     private JPanel varPrefixFieldPanel;
     private TargetVariablePanel varPrefixField;
 
-    private String uuid[] = {CounterPresetInfoUtils.makeUuid()};
+    private String uuid[] = {CounterPresetInfo.makeUuid()};
     private String expr = "";
 
     public ThroughputQuotaForm(Frame owner, ThroughputQuota subject) {
@@ -82,6 +83,8 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
                 updateCounterName();
             }
         }));
+
+        counterNameTextField.setDocument(new MaxLengthDocument(255));
 
         decrementRadio.addActionListener(new ActionListener() {
             @Override
@@ -138,12 +141,12 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
 
         if (ThroughputQuota.PRESET_CUSTOM.equals(quotaOption)) {
             if (counterName == null || counterName.length() < 1) {
-                counterNameTextField.setText(CounterPresetInfoUtils.makeDefaultCustomExpr(uuid[0], expr));
+                counterNameTextField.setText(CounterPresetInfo.makeDefaultCustomExpr(uuid[0], expr));
             }
         } else {
             expr = ThroughputQuota.COUNTER_NAME_TYPES.get(quotaOption);
-            if (CounterPresetInfoUtils.isDefaultCustomExpr(counterName, ThroughputQuota.COUNTER_NAME_TYPES)) {
-                counterNameTextField.setText(CounterPresetInfoUtils.makeDefaultCustomExpr(uuid[0], expr));
+            if (CounterPresetInfo.isDefaultCustomExpr(counterName, ThroughputQuota.COUNTER_NAME_TYPES)) {
+                counterNameTextField.setText(CounterPresetInfo.makeDefaultCustomExpr(uuid[0], expr));
             }
         }
     }
@@ -185,7 +188,7 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
         }
 
         String quotaOption = (String) quotaOptionsComboBox.getSelectedItem();
-        String counter = CounterPresetInfoUtils.findRawCounterName(
+        String counter = CounterPresetInfo.findRawCounterName(
             quotaOption, uuid[0], counterNameTextField.getText().trim(),
             ThroughputQuota.PRESET_CUSTOM, ThroughputQuota.COUNTER_NAME_TYPES
         );
@@ -227,18 +230,18 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
         // Check if the assertion is in pre-6.2 version.  If so, set Custom option and display the counter name in Counter ID text field.
         if (subject.isGlobal() || ThroughputQuota.DEFAULT_COUNTER_NAME.equals(rawCounterName)) {
             if (new ThroughputQuota().getCounterName().equals(rawCounterName)) {
-                rawCounterName = CounterPresetInfoUtils.findRawCounterName(ThroughputQuota.PRESET_DEFAULT, uuid[0] = CounterPresetInfoUtils.makeUuid(),
+                rawCounterName = CounterPresetInfo.findRawCounterName(ThroughputQuota.PRESET_DEFAULT, uuid[0] = CounterPresetInfo.makeUuid(),
                     null, ThroughputQuota.PRESET_CUSTOM, ThroughputQuota.COUNTER_NAME_TYPES);
             }
 
-            String quotaOption = CounterPresetInfoUtils.findCounterNameKey(rawCounterName, uuid, ThroughputQuota.PRESET_CUSTOM, ThroughputQuota.COUNTER_NAME_TYPES);
+            String quotaOption = CounterPresetInfo.findCounterNameKey(rawCounterName, uuid, ThroughputQuota.PRESET_CUSTOM, ThroughputQuota.COUNTER_NAME_TYPES);
             if (quotaOption == null) {
                 quotaOptionsComboBox.setSelectedItem(ThroughputQuota.PRESET_CUSTOM);
                 counterNameTextField.setText(rawCounterName);
             } else {
                 quotaOptionsComboBox.setSelectedItem(quotaOption);
                 expr = ThroughputQuota.COUNTER_NAME_TYPES.get(quotaOption);
-                counterNameTextField.setText(CounterPresetInfoUtils.makeDefaultCustomExpr(uuid[0], expr));
+                counterNameTextField.setText(CounterPresetInfo.makeDefaultCustomExpr(uuid[0], expr));
             }
         } else {
             quotaOptionsComboBox.setSelectedItem(ThroughputQuota.PRESET_CUSTOM);

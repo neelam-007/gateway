@@ -698,7 +698,7 @@
         <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
 
-    <bean id="counterManager" class="com.l7tech.server.sla.DBCounterManager">
+    <bean id="counterManager" class="com.l7tech.server.sla.CounterManagerImpl">
         <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
 
@@ -1417,10 +1417,6 @@
     <bean id="systemAuditListener" class="com.l7tech.server.audit.SystemAuditListener">
         <constructor-arg ref="clusterNodeId"/>
         <constructor-arg ref="auditContext"/>
-    </bean>
-
-    <bean id="counterIDManager" class="com.l7tech.server.sla.CounterIDManagerImpl">
-        <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
 
     <bean id="schemaConfiguration" class="com.l7tech.server.communityschemas.SchemaConfiguration"

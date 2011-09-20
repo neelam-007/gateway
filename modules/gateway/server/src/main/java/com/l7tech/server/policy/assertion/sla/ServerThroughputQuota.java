@@ -17,7 +17,6 @@ import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.server.sla.CounterIDManager;
 import com.l7tech.server.sla.CounterManager;
 import org.springframework.context.ApplicationContext;
 
@@ -37,8 +36,6 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
     private final String periodVariable;
     private final String userVariable;
     private final String maxVariable;
-
-    private String counterName;
 
     public ServerThroughputQuota(ThroughputQuota assertion, ApplicationContext ctx) {
         super(assertion);
@@ -125,8 +122,9 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
         final CounterManager counterManager = applicationContext.getBean("counterManager", CounterManager.class);
 
         if (alreadyIncrementedInThisContext(context)) {
-            counterManager.decrement(getCounterName(context));
-            logger.fine("counter decremented " + getCounterName(context));
+            final String counterName = getCounterName(context);
+            counterManager.decrement(counterName);
+            logger.fine("counter decremented " + counterName);
             forgetIncrementInThisContext(context); // to prevent double decrement and enable re-increment
         } else {
             logger.info("assertion was asked to decrement a counter but the " +
@@ -163,24 +161,20 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
     }
 
     private String getCounterName(final PolicyEnforcementContext context) throws IOException {
-        if (counterName == null) {
-            String resolvedCounterName = assertion.getCounterName();
-            if (varsUsed.length > 0) {
-                resolvedCounterName = ExpandVariables.process(resolvedCounterName, context.getVariableMap(varsUsed, getAudit()), getAudit());
-            }
-
-            final CounterIDManager counterIDManager = (CounterIDManager)applicationContext.getBean("counterIDManager");
-            try {
-                counterIDManager.checkOrCreateCounter(resolvedCounterName);
-            } catch (ObjectModelException e) {
-                // should not happen
-                throw new IOException("Could not get counter, " + resolvedCounterName + ": " + e.getMessage());
-            }
-
-            counterName = resolvedCounterName;
+        String resolvedCounterName = assertion.getCounterName();
+        if (varsUsed.length > 0) {
+            resolvedCounterName = ExpandVariables.process(resolvedCounterName, context.getVariableMap(varsUsed, getAudit()), getAudit());
         }
 
-        return counterName;
+        final CounterManager counterManager = (CounterManager)applicationContext.getBean("counterManager");
+        try {
+            counterManager.checkOrCreateCounter(resolvedCounterName);
+        } catch (ObjectModelException e) {
+            // should not happen
+            throw new IOException("Could not get counter, " + resolvedCounterName + ": " + e.getMessage());
+        }
+
+        return resolvedCounterName;
     }
 
     private boolean alreadyIncrementedInThisContext(PolicyEnforcementContext context) {

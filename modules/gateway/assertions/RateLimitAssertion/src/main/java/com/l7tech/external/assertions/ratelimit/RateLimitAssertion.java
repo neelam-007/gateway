@@ -1,11 +1,11 @@
 package com.l7tech.external.assertions.ratelimit;
 
+import com.l7tech.policy.assertion.sla.CounterPresetInfo;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.Syntax;
-import com.l7tech.util.CounterPresetInfoUtils;
 import com.l7tech.util.Functions;
 
 import java.util.HashMap;
@@ -31,7 +31,7 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
         put("SOAP operation", "${request.soap.operation}");
         put("SOAP namespace", "${request.soap.namespace}");
         put(PRESET_GLOBAL, "");
-        put(PRESET_CUSTOM, CounterPresetInfoUtils.makeUuid());
+        put(PRESET_CUSTOM, CounterPresetInfo.makeUuid());
     }};
 
     private String counterName = "RateLimit-${request.clientid}";
@@ -308,7 +308,7 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
             if (assertion.isShapeRequests()) sb.append(", shaped,");
 
             final String counterName = assertion.getCounterName();
-            String prettyName = CounterPresetInfoUtils.findCounterNameKey(counterName, null, PRESET_CUSTOM, COUNTER_NAME_TYPES);
+            String prettyName = CounterPresetInfo.findCounterNameKey(counterName, null, PRESET_CUSTOM, COUNTER_NAME_TYPES);
 
             sb.append(" per ").append(prettyName != null ? prettyName : ("\"" + counterName + "\""));
             if(Syntax.getReferencedNames(concurrency).length > 0){
@@ -351,7 +351,7 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
             @Override
             public RateLimitAssertion call(RateLimitAssertion rlaVariantPrototype) {
                 RateLimitAssertion rla = new RateLimitAssertion();
-                rla.setCounterName(CounterPresetInfoUtils.makeDefaultCounterName(PRESET_DEFAULT, PRESET_CUSTOM, COUNTER_NAME_TYPES));
+                rla.setCounterName(CounterPresetInfo.makeDefaultCounterName(PRESET_DEFAULT, PRESET_CUSTOM, COUNTER_NAME_TYPES));
                 return rla;
             }
         });

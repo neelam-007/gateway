@@ -1,14 +1,27 @@
 package com.l7tech.server.sla;
 
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectModelException;
+import org.springframework.transaction.annotation.Transactional;
+
 /**
  * An interface for managers that provides access to counters used at runtime by ServerThroughputQuota assertions.
  *
  * @author flascelles@layer7-tech.com
  */
 public interface CounterManager {
+    /**
+     * Check if a counter exists or not.  If it does not exist, then create a new counter with a given counter name.
+     * @param counterName: used to check if the database has such counter whose name is counterName.
+     * @throws com.l7tech.objectmodel.ObjectModelException : thrown when data access errors occur.
+     */
+    void checkOrCreateCounter(String counterName) throws ObjectModelException;
+
+    @Transactional(readOnly=true)
+    String[] getAllCounterNames() throws FindException;
 
     /**
-     * Increment the counter identified by counterId only if the resulting value of the counter for
+     * Increment the counter identified by objectId only if the resulting value of the counter for
      * the passed fieldOfInterest will not exceed the passed limit.
      *
      * @param counterName the name of the counter used for counter lookup

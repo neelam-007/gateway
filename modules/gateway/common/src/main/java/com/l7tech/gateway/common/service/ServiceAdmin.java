@@ -319,15 +319,6 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
     UDDINamedEntity[] findPoliciesFromUDDIRegistry(long registryOid, String namePattern) throws FindException;
 
     /**
-     * Gets the ThroughputQuota counter names already defined on this gateway. This is used by the ThroughputQuota assertion
-     * properties dialog to populate a combo box to choose the counters from.
-     * @return a string array with one item for each different counter name for this gateway
-     */
-    @Transactional(readOnly=true)
-    @Administrative(licensed=false)
-    String[] listExistingCounterNames() throws FindException;
-
-    /**
      * Finds the {@link SampleMessage} instance with the specified OID, or null if it does not exist.
      * @return the {@link SampleMessage} instance with the specified OID.  May be null if not present.
      */

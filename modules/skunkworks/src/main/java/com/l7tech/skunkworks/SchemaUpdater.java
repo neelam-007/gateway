@@ -63,7 +63,7 @@ public class SchemaUpdater {
         config.addAnnotatedClass(com.l7tech.server.security.keystore.KeystoreFile.class);
         config.addAnnotatedClass(com.l7tech.server.security.sharedkey.SharedKeyRecord.class);
 
-        config.addAnnotatedClass(com.l7tech.server.sla.CounterIDRecord.class);
+        config.addAnnotatedClass(com.l7tech.server.sla.CounterRecord.class);
     }
 
     public static void main(String[] args) {

@@ -5,8 +5,8 @@ import com.l7tech.external.assertions.ratelimit.RateLimitAssertion;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.policy.assertion.sla.CounterPresetInfo;
 import com.l7tech.policy.variable.Syntax;
-import com.l7tech.util.CounterPresetInfoUtils;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -41,7 +41,7 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
     private JRadioButton logOnly;
 
     private boolean confirmed = false;
-    private String uuid[] = {CounterPresetInfoUtils.makeUuid()};
+    private String uuid[] = {CounterPresetInfo.makeUuid()};
     private String expr = "";
 
 
@@ -162,7 +162,7 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
             counterNameField.setVisible(true);
             counterNameField.setEnabled(true);
             if (nameField == null || nameField.length() < 1)
-                counterNameField.setText(CounterPresetInfoUtils.makeDefaultCustomExpr(uuid[0], expr));
+                counterNameField.setText(CounterPresetInfo.makeDefaultCustomExpr(uuid[0], expr));
             counterNameField.selectAll();
             counterNameField.requestFocusInWindow();
         } else {
@@ -170,8 +170,8 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
             expr = RateLimitAssertion.COUNTER_NAME_TYPES.get(counterNameKey);
             if (nameField == null || nameField.length() < 1)
                 counterNameField.setVisible(false);
-            else if (CounterPresetInfoUtils.isDefaultCustomExpr(nameField, RateLimitAssertion.COUNTER_NAME_TYPES))
-                counterNameField.setText(CounterPresetInfoUtils.makeDefaultCustomExpr(uuid[0], expr));
+            else if (CounterPresetInfo.isDefaultCustomExpr(nameField, RateLimitAssertion.COUNTER_NAME_TYPES))
+                counterNameField.setText(CounterPresetInfo.makeDefaultCustomExpr(uuid[0], expr));
         }
     }
 
@@ -222,10 +222,10 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
 
         /** Freely overwrite the default counter name with a better one. */
         if (new RateLimitAssertion().getCounterName().equals(rawCounterName))
-            rawCounterName = CounterPresetInfoUtils.findRawCounterName(RateLimitAssertion.PRESET_DEFAULT, uuid[0] = CounterPresetInfoUtils.makeUuid(),
+            rawCounterName = CounterPresetInfo.findRawCounterName(RateLimitAssertion.PRESET_DEFAULT, uuid[0] = CounterPresetInfo.makeUuid(),
                 null, RateLimitAssertion.PRESET_CUSTOM, RateLimitAssertion.COUNTER_NAME_TYPES);
 
-        String cnk = CounterPresetInfoUtils.findCounterNameKey(rawCounterName, uuid, RateLimitAssertion.PRESET_CUSTOM, RateLimitAssertion.COUNTER_NAME_TYPES);
+        String cnk = CounterPresetInfo.findCounterNameKey(rawCounterName, uuid, RateLimitAssertion.PRESET_CUSTOM, RateLimitAssertion.COUNTER_NAME_TYPES);
         if (cnk == null) {
             counterCb.setSelectedItem(RateLimitAssertion.PRESET_CUSTOM);
             counterNameField.setText(rawCounterName);
@@ -272,7 +272,7 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
     @Override
     public RateLimitAssertion getData(RateLimitAssertion rla) {
         String counterNameKey = (String)counterCb.getSelectedItem();
-        String rawCounterName = CounterPresetInfoUtils.findRawCounterName(counterNameKey, uuid[0],
+        String rawCounterName = CounterPresetInfo.findRawCounterName(counterNameKey, uuid[0],
             counterNameField.getText().trim(), RateLimitAssertion.PRESET_CUSTOM, RateLimitAssertion.COUNTER_NAME_TYPES);
         rla.setCounterName(rawCounterName);
         rla.setMaxRequestsPerSecond(maxRequestsPerSecondField.getText());

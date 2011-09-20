@@ -8,13 +8,13 @@ package com.l7tech.policy.assertion.sla;
 
 import com.l7tech.policy.assertion.*;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
+
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
-import com.l7tech.util.CounterPresetInfoUtils;
 import com.l7tech.util.TextUtils;
 import com.l7tech.util.ValidationUtils;
 
@@ -41,7 +41,7 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
         put("SOAP operation", "${request.soap.operation}");
         put("SOAP namespace", "${request.soap.namespace}");
         put(PRESET_GLOBAL, "");
-        put(PRESET_CUSTOM, CounterPresetInfoUtils.makeUuid());
+        put(PRESET_CUSTOM, CounterPresetInfo.makeUuid());
     }};
     public static final String DEFAULT_COUNTER_NAME = "ThroughputQuota-${request.authenticateduser.id}-${request.authenticateduser.providerid}";
 
@@ -318,10 +318,10 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
      */
     private static String getReadableCounterName(final String rawCounterName) {
         final String[] uuidOut = new String[]{null};
-        final String quotaOption = CounterPresetInfoUtils.findCounterNameKey(rawCounterName, uuidOut, PRESET_CUSTOM, COUNTER_NAME_TYPES);
+        final String quotaOption = CounterPresetInfo.findCounterNameKey(rawCounterName, uuidOut, PRESET_CUSTOM, COUNTER_NAME_TYPES);
 
         String readableCounterName = quotaOption == null?
-            rawCounterName : CounterPresetInfoUtils.makeDefaultCustomExpr(uuidOut[0], COUNTER_NAME_TYPES.get(quotaOption));
+            rawCounterName : CounterPresetInfo.makeDefaultCustomExpr(uuidOut[0], COUNTER_NAME_TYPES.get(quotaOption));
 
         if (readableCounterName == null) readableCounterName = rawCounterName;
         if (readableCounterName.length() > 128) readableCounterName = TextUtils.truncateStringAtEnd(readableCounterName, 128);

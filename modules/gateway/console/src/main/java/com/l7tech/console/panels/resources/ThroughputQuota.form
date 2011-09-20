@@ -243,4 +243,11 @@
       </grid>
     </children>
   </grid>
+  <buttonGroups>
+    <group name="counterStrategyButtonGroup">
+      <member id="5ccac"/>
+      <member id="85a38"/>
+      <member id="3e4d0"/>
+    </group>
+  </buttonGroups>
 </form>

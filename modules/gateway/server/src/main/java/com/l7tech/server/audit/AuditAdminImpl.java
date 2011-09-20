@@ -19,7 +19,7 @@ import com.l7tech.server.event.admin.AdminEvent;
 import com.l7tech.server.event.admin.AuditViewGatewayAuditsData;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.security.sharedkey.SharedKeyRecord;
-import com.l7tech.server.sla.CounterIDRecord;
+import com.l7tech.server.sla.CounterRecord;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.*;
 import org.apache.commons.collections.map.LRUMap;
@@ -51,7 +51,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
     private static final Collection<String> ignoredEntityClassNames = Arrays.asList(new String[] {
         // If any entity is found as not relevant for auditing, add it into this list.
         AuditRecord.class.getName(),
-        CounterIDRecord.class.getName(),
+        CounterRecord.class.getName(),
         SharedKeyRecord.class.getName(),
         UDDIPublishStatus.class.getName(),
         UDDIServiceControlRuntime.class.getName(),

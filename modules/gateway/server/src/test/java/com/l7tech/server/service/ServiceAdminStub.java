@@ -264,11 +264,6 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     }
 
     @Override
-    public String[] listExistingCounterNames() throws FindException {
-        return new String[0];
-    }
-
-    @Override
     public SampleMessage findSampleMessageById(long oid) throws FindException {
         return null;
     }

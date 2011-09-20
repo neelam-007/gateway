@@ -195,7 +195,7 @@
                 <value>com.l7tech.gateway.common.uddi.UDDIServiceControlRuntime</value>
 
                 <!-- Policy Assertion Related Entities -->
-                <value>com.l7tech.server.sla.CounterIDRecord</value>
+                <value>com.l7tech.server.sla.CounterRecord</value>
 
                 <!-- EMS Support -->
                 <value>com.l7tech.gateway.common.esmtrust.TrustedEsm</value>

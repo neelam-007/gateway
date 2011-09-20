@@ -6,29 +6,44 @@
  */
 package com.l7tech.server.sla;
 
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
+import org.hibernate.criterion.Restrictions;
+import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * CounterManager implementation that uses a database table instead of a cache.
+ * CounterManager implementation that create a new counter, find counters, increment or decrement counter values, etc.
+ *
+ * Note: CounterIDManagerImpl has been removed and merged into this implementation.
  *
  * @author flascelles@layer7-tech.com
  */
-public class DBCounterManager extends HibernateDaoSupport implements CounterManager {
-
-    private final Logger logger = Logger.getLogger(DBCounterManager.class.getName());
+@Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
+public class CounterManagerImpl extends HibernateDaoSupport implements CounterManager {
+    private final Logger logger = Logger.getLogger(CounterManagerImpl.class.getName());
+    private static final String TABLE_NAME = "counters";
+    private final Collection<String> counterCache = new ArrayList<String>();
 
     private Counter getLockedCounter(Connection conn, String counterName) throws SQLException {
         PreparedStatement ps = conn.prepareStatement("SELECT cnt_sec, cnt_min, cnt_hr, cnt_day, cnt_mnt, last_update" +
@@ -161,6 +176,57 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
         }
 
         throw new RuntimeException("unexpected result type " + result);
+    }
+
+    @Override
+    public void checkOrCreateCounter(String counterName) throws ObjectModelException {
+        synchronized (counterCache) {
+            if (counterCache.contains(counterName)) return;
+
+            final CounterRecord data = new CounterRecord();
+            data.setCounterName(counterName);
+
+            try {
+                final List res;
+
+                res = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+                    protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                        final Criteria criteria = session.createCriteria(CounterRecord.class);
+                        criteria.add(Restrictions.eq("counterName", data.getCounterName()));
+                        return criteria.list();
+                    }
+                });
+
+                // check whether this is already in the db
+                if (res == null || res.isEmpty()) {
+                    getHibernateTemplate().save(data);
+                }
+
+                counterCache.add(counterName);
+            } catch (DataAccessException e) {
+                String msg = "problem getting existing counter name from db or creating new one. possible race condition";
+                logger.log(Level.WARNING, msg, e);
+                throw new FindException(msg, e);
+            }
+        }
+    }
+
+    @Transactional(readOnly=true)
+    public String[] getAllCounterNames() throws FindException {
+        try {
+            List<String> res = getHibernateTemplate().find(MessageFormat.format("SELECT {0}.counterName FROM {0} IN CLASS {1}", TABLE_NAME, CounterRecord.class.getName()));
+            String[] output = new String[res.size()];
+            int i = 0;
+            for (String re : res) {
+                output[i] = re;
+                i++;
+            }
+            return output;
+        } catch (DataAccessException e) {
+            String msg = "problem getting distinct counter names";
+            logger.log(Level.WARNING, msg, e);
+            throw new FindException(msg, e);
+        }
     }
 
     @Override
