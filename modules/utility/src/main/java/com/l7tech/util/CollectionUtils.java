@@ -1,5 +1,7 @@
 package com.l7tech.util;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -174,6 +176,21 @@ public final class CollectionUtils {
                 };
             }
         };
+    }
+
+    /**
+     * Get a list containing the values from the given iterable.
+     *
+     * @param iterable The iterable (may be null)
+     * @param <T> The value type
+     * @return The list (never null)
+     */
+    @NotNull
+    public static <T> List<T> toList( final Iterable<T> iterable ) {
+        final List<T> ret = new ArrayList<T>();
+        if ( iterable != null )
+            for ( final T t : iterable ) ret.add( t );
+        return ret;
     }
 
     /**

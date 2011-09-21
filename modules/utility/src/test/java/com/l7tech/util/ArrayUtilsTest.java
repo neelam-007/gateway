@@ -1,8 +1,12 @@
 package com.l7tech.util;
 
 import static com.l7tech.util.ArrayUtils.*;
+import static com.l7tech.util.CollectionUtils.list;
+import static com.l7tech.util.CollectionUtils.toList;
 import org.junit.*;
 import static org.junit.Assert.*;
+
+import java.util.Collections;
 
 /**
  *
@@ -151,5 +155,35 @@ public class ArrayUtilsTest {
         assertArrayEquals( "Unbox longs", new long[]{ 1L, 2L, 3L }, unbox( new Long[]{ 1L, 2L, 3L } ) );
         assertArrayEquals( "Boxed chars", new Character[]{ 'a' }, box( new char[]{ 'a' } ) );
         assertArrayEquals( "Unbox chars", new char[]{ 'a' }, unbox( new Character[]{ 'a' } ) );
+    }
+
+    @Test
+    public void testZipI() {
+        final Iterable<Pair<String,String>> zipNull = zipI( (String[]) null, (String[]) null );
+        assertEquals( "zipNull", Collections.<Pair<String,String>>emptyList(), toList( zipNull ) );
+
+        final Iterable<Pair<String,String>> zipLeftNull = zipI( (String[])null, new String[]{ "a" } );
+        assertEquals( "zipLeftNull", list( new Pair<String, String>( null, "a" ) ), toList( zipLeftNull ) );
+
+        final Iterable<Pair<String,String>> zipRightNull = zipI( new String[]{ "a" }, (String[]) null );
+        assertEquals( "zipRightNull", list( new Pair<String, String>( "a", null ) ), toList( zipRightNull ) );
+
+        final Iterable<Pair<String,String>> zip1 = zipI( new String[]{ "1" }, new String[]{ "a" } );
+        assertEquals( "zip1", list( new Pair<String, String>( "1", "a" ) ), toList( zip1 ) );
+
+        final Iterable<Pair<String,String>> zip1_2 = zipI( new String[]{ "1" }, new String[]{ "a", "b" } );
+        assertEquals( "zip1_2", list(
+                new Pair<String, String>( "1", "a" ),
+                new Pair<String, String>( null, "b" )
+        ), toList( zip1_2 ) );
+
+        final Iterable<Pair<String,String>> zip5_3 = zipI( new String[]{ "1" , "2", "3", "4", "5" }, new String[]{"a", "b", "c"} );
+        assertEquals( "zip5_3", list(
+                new Pair<String, String>( "1", "a" ),
+                new Pair<String, String>( "2", "b" ),
+                new Pair<String, String>( "3", "c" ),
+                new Pair<String, String>( "4", null ),
+                new Pair<String, String>( "5", null )
+        ), toList( zip5_3 ) );
     }
 }

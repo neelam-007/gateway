@@ -150,6 +150,16 @@ public class CollectionUtilsTest {
     }
 
     @Test
+    public void testToList() {
+        final List<String> list1 = list( "a", "b", "c" );
+        assertEquals( "list1", list1, toList( list1 ) );
+
+        final List<String> list2 = Collections.emptyList();
+        assertEquals( "list2", list2, toList( list2 ) );
+        assertEquals( "list3", list2, toList( (Iterable<String>)null ) );
+    }
+
+    @Test
     public void testForeach() throws Exception {
         final List<String> result1 = new ArrayList<String>();
         foreach( list( "1", "2", null ), true, new Functions.UnaryVoid<String>() {
