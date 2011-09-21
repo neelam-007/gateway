@@ -18,6 +18,8 @@ import com.l7tech.server.event.system.Started;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import static com.l7tech.util.ArrayUtils.box;
+import static com.l7tech.util.ArrayUtils.zipI;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
@@ -81,11 +83,12 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         this.policyFactory = policyFactory;
     }
 
-    /**
-     *
-     */
     public void setPolicyManager( final PolicyManager policyManager ) {
         this.policyManager = policyManager;
+    }
+
+    public void setPolicyVersionManager( final PolicyVersionManager policyVersionManager ) {
+        this.policyVersionManager = policyVersionManager;
     }
 
     /**
@@ -496,27 +499,60 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
                 }
             });
         } else if( applicationEvent instanceof EntityInvalidationEvent ) {
-            EntityInvalidationEvent event = (EntityInvalidationEvent) applicationEvent;
+            final EntityInvalidationEvent event = (EntityInvalidationEvent) applicationEvent;
+            final PolicyVersionManager policyVersionManager = this.policyVersionManager;
 
-            if( !Policy.class.isAssignableFrom( event.getEntityClass() ) ) return;
-
-            ensureCacheValid();
-            long policyOid = -1L;
-            try {
-                for( long oid : event.getEntityIds() ) {
-                    policyOid = oid;
-                    Policy policy = policyManager.findByPrimaryKey( oid );
-                    if( policy == null ) {
-                        notifyDelete( oid );
-                    } else {
-                        notifyUpdate( new Policy(policy, true) );
+            if( Policy.class.isAssignableFrom( event.getEntityClass() ) ) {
+                ensureCacheValid();
+                long policyOid = -1L;
+                try {
+                    for( long oid : event.getEntityIds() ) {
+                        policyOid = oid;
+                        Policy policy = policyManager.findByPrimaryKey( oid );
+                        if( policy == null ) {
+                            notifyDelete( oid );
+                        } else {
+                            notifyUpdate( new Policy(policy, true) );
+                        }
                     }
+                } catch( FindException fe ) {
+                    markDirty();
+                    logAndAudit( MessageProcessingMessages.POLICY_CACHE_STORAGE_ERROR, new String[] { Long.toString(policyOid) }, fe );
                 }
-            } catch( FindException fe ) {
-                markDirty();
-                logAndAudit( MessageProcessingMessages.POLICY_CACHE_STORAGE_ERROR, new String[] { Long.toString(policyOid) }, fe );
+                publishReload();
+            } else if ( policyVersionManager!=null && PolicyVersion.class.isAssignableFrom( event.getEntityClass() ) ) {
+                // If an old policy version is activated or if an old policy version was active and is
+                // edited then the version can change without any change to the policy entity. In this
+                // case we reload the policy to pick up the updated version (revision) information.
+                ensureCacheValid();
+
+                long policyOid = -1L;
+                try {
+                    for( final Pair<Long,Character> entityInfo : zipI( box(event.getEntityIds()), box( event.getEntityOperations() )) ) {
+                        if ( ((int) EntityInvalidationEvent.CREATE) != entityInfo.right &&
+                             ((int) EntityInvalidationEvent.UPDATE) != entityInfo.right) continue;
+                        final long oid = entityInfo.left;
+                        final PolicyVersion version = policyVersionManager.findByPrimaryKey( oid );
+                        if ( version == null || !version.isActive() ) continue;
+
+                        final PolicyCacheEntry pce = cacheGetWithLock( version.getPolicyOid() );
+                        final PolicyMetadata policyMetadata = pce==null ? null : pce.getPolicyMetadata();
+                        final PolicyHeader policyHeader = policyMetadata==null ? null : policyMetadata.getPolicyHeader();
+                        if ( policyHeader != null &&
+                             policyHeader.getPolicyRevision() != version.getOrdinal() ) {
+                            final Policy policy = policyManager.findByPrimaryKey( version.getPolicyOid() );
+                            if( policy == null ) {
+                                notifyDelete( version.getPolicyOid() );
+                            } else {
+                                notifyUpdate( new Policy(policy, true) );
+                            }
+                        }
+                    }
+                } catch( FindException fe ) {
+                    markDirty();
+                    logAndAudit( MessageProcessingMessages.POLICY_CACHE_STORAGE_ERROR, new String[] { Long.toString(policyOid) }, fe );
+                }
             }
-            publishReload();
         } else if ( applicationEvent instanceof Started ) {
             transactionIfAvailable( new Runnable() {
                 @Override
@@ -582,18 +618,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
      *
      */
     protected boolean isInCache( final Long policyOid ) {
-        boolean cached = false;
-
-        final Lock read = lock.readLock();
-        read.lock();
-        try {
-            PolicyCacheEntry pce = cacheGet( policyOid );
-            cached = pce != null;
-        } finally {
-            read.unlock();
-        }
-
-        return cached;
+        return cacheGetWithLock( policyOid ) != null;
     }
 
     /**
@@ -658,6 +683,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
     private Auditor auditor;
     private ApplicationEventPublisher eventSink;
     private PolicyManager policyManager;
+    private PolicyVersionManager policyVersionManager;
     private final ServerPolicyFactory policyFactory;
 
 
@@ -785,6 +811,23 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
      */
     private PolicyCacheEntry cacheGet( final Long policyId ) {
         return policyCache.get( policyId );
+    }
+
+    /**
+     * Get an item from the cache with a read lock
+     */
+    private PolicyCacheEntry cacheGetWithLock( final Long policyOid ) {
+        PolicyCacheEntry pce;
+
+        final Lock read = lock.readLock();
+        read.lock();
+        try {
+            pce = cacheGet( policyOid );
+        } finally {
+            read.unlock();
+        }
+
+        return pce;
     }
 
     /**
@@ -949,7 +992,8 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         if ( logger.isLoggable( Level.FINE ) )
             logger.log( Level.FINE, "Processing Policy #{0} ({1})", new Object[]{ thisPolicyId, thisPolicy.getName() } );
 
-        Assertion assertion = null;
+        Assertion assertion;
+        PolicyMetadata meta = null;
         ServerAssertion serverAssertion = null;
         Exception exception = null;
         Long usedInvalidPolicyId = null;
@@ -1024,7 +1068,8 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
                     }
                 }
 
-                // construct server policy
+                // construct server policy and related metadata
+                meta = collectMetadata( thisPolicy, assertion, descendentPolicies );
                 serverAssertion = buildServerPolicy( thisPolicy );
             } catch ( ServerPolicyException spe ) {
                 boolean alwaysAuditException = true;
@@ -1053,7 +1098,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
 
             PolicyCacheEntry pce;
             if ( serverAssertion != null ) {
-                ServerPolicy ServerPolicy = new ServerPolicy( thisPolicy, collectMetadata( thisPolicy, assertion, descendentPolicies ), descendentPolicies, dependentVersions, serverAssertion );
+                ServerPolicy ServerPolicy = new ServerPolicy( thisPolicy, meta, descendentPolicies, dependentVersions, serverAssertion );
                 pce = new PolicyCacheEntry( thisPolicy, ServerPolicy, null );
             } else {
                 pce = new PolicyCacheEntry( thisPolicy, usedInvalidPolicyId );
@@ -1137,7 +1182,18 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
      *
      * Used policies must be in cache.
      */
-    private PolicyMetadata collectMetadata( final Policy policy, final Assertion rootAssertion, final Set<Long> usedPolicyOids ) {
+    private PolicyMetadata collectMetadata( final Policy policy, final Assertion rootAssertion, final Set<Long> usedPolicyOids ) throws FindException {
+        // find policy revision
+        long policyRevision = 0L;
+        final PolicyVersionManager policyVersionManager = this.policyVersionManager;
+        if ( policyVersionManager != null ) {
+            final PolicyVersion activeVersion = policyVersionManager.findActiveVersionForPolicy(policy.getOid());
+            if ( activeVersion != null ) {
+                policyRevision = activeVersion.getOrdinal();
+            }
+        }
+
+        // determine other metadata
         boolean tarariWanted = false;
         boolean wssInPolicy = false;
         boolean multipartInPolicy = false;
@@ -1186,7 +1242,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         final boolean metaMultipartInPolicy = multipartInPolicy;
         final String[] metaVariablesUsed = allVarsUsed.toArray(new String[allVarsUsed.size()]);
         final VariableMetadata[] metaVariablesSet = allVarsSet.values().toArray(new VariableMetadata[allVarsSet.values().size()]);
-        final PolicyHeader policyHeader = new PolicyHeader(policy);
+        final PolicyHeader policyHeader = new PolicyHeader(policy, policyRevision);
         return new PolicyMetadata() {
             @Override
             public boolean isTarariWanted() {

@@ -1599,6 +1599,7 @@
                 <ref bean="httpConfigurationManager"/>
                 <ref bean="resolutionConfigurationManager"/>
                 <ref bean="passwordPolicyManger"/>
+                <ref bean="policyVersionManager"/>
             </list>
         </property>
         <property name="timer" ref="entityVersionCheckerTimer"/>
@@ -1833,6 +1834,7 @@
         <constructor-arg ref="transactionManager"/>
         <constructor-arg ref="policyFactory"/>
         <property name="policyManager" ref="policyManager"/>
+        <property name="policyVersionManager" ref="policyVersionManager"/>
     </bean>
 
     <bean id="policyManager" class="com.l7tech.server.policy.PolicyManagerImpl" parent="hibernateBean">

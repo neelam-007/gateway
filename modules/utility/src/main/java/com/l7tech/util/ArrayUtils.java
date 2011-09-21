@@ -1,6 +1,9 @@
 package com.l7tech.util;
 
-import java.lang.reflect.Array;
+import static java.lang.reflect.Array.get;
+import static java.lang.reflect.Array.getLength;
+import static java.lang.reflect.Array.newInstance;
+import static java.lang.reflect.Array.set;
 import java.util.*;
 
 /**
@@ -54,19 +57,17 @@ public class ArrayUtils {
      * @return The boxed array (never null)
      */
     public static Long[] box(final long[] data) {
-        Long[] boxedData;
+        return (Long[]) bconvert( data, Long.class );
+    }
 
-        if ( data != null ) {
-            boxedData = new Long[data.length];
-            //noinspection ManualArrayCopy
-            for ( int i=0; i<data.length; i++ ) {
-                boxedData[i] = data[i];
-            }
-        } else {
-            boxedData = new Long[0];
-        }
-
-        return boxedData;
+    /**
+     * Convert a long array to a Long array
+     *
+     * @param data The array to box
+     * @return The boxed array (never null)
+     */
+    public static Character[] box(final char[] data) {
+        return (Character[]) bconvert( data, Character.class );
     }
 
     /**
@@ -76,19 +77,36 @@ public class ArrayUtils {
      * @return The unboxed array (never null)
      */
     public static long[] unbox(final Long[] data) {
-        long[] unboxedData;
+        return (long[]) bconvert( data, Long.TYPE );
+    }
+
+    /**
+     * Convert a Character array to a char array
+     *
+     * @param data The array to unbox
+     * @return The unboxed array (never null)
+     */
+    public static char[] unbox(final Character[] data) {
+        return (char[]) bconvert( data, Character.TYPE );
+    }
+
+    /**
+     * Box/Unbox conversions for arrays
+     */
+    private static Object bconvert( final Object data, final Class<?> resultType ) {
+        Object bData;
 
         if ( data != null ) {
-            unboxedData = new long[data.length];
-            //noinspection ManualArrayCopy
-            for ( int i=0; i<data.length; i++ ) {
-                unboxedData[i] = data[i];
+            final int length = getLength( data );
+            bData = newInstance( resultType, length );
+            for ( int i=0; i < length; i++ ) {
+                set(bData, i, get( data, i ) );
             }
         } else {
-            unboxedData = new long[0];
+            bData = newInstance( resultType, 0 );
         }
 
-        return unboxedData;
+        return bData;
     }
 
     /** @return true if the target Object is contained in the list. */
@@ -328,7 +346,7 @@ public class ArrayUtils {
         T[] copy = null;
 
         if (data != null) {
-            copy = (T[]) Array.newInstance(data.getClass().getComponentType(), data.length);
+            copy = (T[]) newInstance( data.getClass().getComponentType(), data.length );
             System.arraycopy(data, 0, copy, 0, data.length);
         }
 
@@ -345,7 +363,7 @@ public class ArrayUtils {
      * @return The copy or null if data is null
      */
     public static <T> T[] copy(final T[] data1, final T[] data2) {
-        T[] copy = (T[]) Array.newInstance(data1.getClass().getComponentType(), data1.length + data2.length);
+        T[] copy = (T[]) newInstance( data1.getClass().getComponentType(), data1.length + data2.length );
         System.arraycopy(data1, 0, copy, 0, data1.length);
         System.arraycopy(data2, 0, copy, data1.length, data2.length);
 
@@ -423,17 +441,44 @@ public class ArrayUtils {
         return unbox(oids.toArray(new Long[oids.size()]));
     }
 
-    private static char[] unbox(Character[] cs) {
-        if (cs == null || cs.length == 0) throw new IllegalArgumentException("ls must be a non-empty array of chars");
-        char[] result = new char[cs.length];
-        for (int i = 0; i < cs.length; i++) {
-            result[i] = cs[i];
-        }
-        return result;
-    }
-
     public static char[] unboxChars(List<Character> cs) {
         return unbox(cs.toArray(new Character[cs.size()]));
+    }
+
+    public static <L,R> Iterable<Pair<L,R>> zipI( final L[] left, final R[] right  ) {
+        return new Iterable<Pair<L,R>>() {
+            @Override
+            public Iterator<Pair<L, R>> iterator() {
+                return new Iterator<Pair<L, R>>(){
+                    private int index = 0;
+
+                    @Override
+                    public boolean hasNext() {
+                        return (left != null && left.length > index) ||
+                               (right != null && right.length > index);
+                    }
+
+                    @Override
+                    public Pair<L, R> next() {
+                        if ( !hasNext() ) throw new NoSuchElementException();
+
+                        final Pair<L,R> next = new Pair<L,R>(
+                            left != null && left.length > index ? left[index] : null,
+                            right != null && right.length > index ? right[index] : null
+                        );
+
+                        index++;
+
+                        return next;
+                    }
+
+                    @Override
+                    public void remove() {
+                        throw new UnsupportedOperationException();
+                    }
+                };
+            }
+        };
     }
 
     /**

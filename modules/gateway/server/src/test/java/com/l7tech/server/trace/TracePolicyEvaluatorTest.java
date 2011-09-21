@@ -5,9 +5,11 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.Message;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.PolicyVersion;
 import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.assertion.SetVariableAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
@@ -94,6 +96,16 @@ public class TracePolicyEvaluatorTest {
         spf.setApplicationContext(applicationContext);
         policyCache = new PolicyCacheImpl(null, spf);
         policyCache.setPolicyManager(policyManager);
+        policyCache.setPolicyVersionManager( new PolicyVersionManagerStub(){
+            @Override
+            public PolicyVersion findActiveVersionForPolicy( final long policyOid ) throws FindException {
+                final PolicyVersion policyVersion = new PolicyVersion();
+                policyVersion.setActive( true );
+                policyVersion.setOrdinal( 7575L );
+                policyVersion.setPolicyOid( policyOid );
+                return policyVersion;
+            }
+        } );
         policyCache.setApplicationContext(applicationContext);
         policyCache.onApplicationEvent(new Started(new Object(), Component.GATEWAY, "127.0.0.1"));
     }
@@ -116,7 +128,7 @@ public class TracePolicyEvaluatorTest {
         assertEquals(String.valueOf(TEST_SERVICE_OID), traceContext.getVariable("t.service.oid"));
         assertEquals("guid" + TEST_POLICY_OID, traceContext.getVariable("t.policy.guid"));
         assertEquals(TEST_POLICY_NAME, traceContext.getVariable("t.policy.name"));
-        assertEquals("1", traceContext.getVariable("t.policy.version"));
+        assertEquals("7575", traceContext.getVariable("t.policy.version"));
         assertEquals(TEST_SERVICE_NAME, traceContext.getVariable("t.service.name"));
         assertEquals("Howdy there!", traceContext.getVariable("t.request.mainpart"));
         assertEquals("Howdy yourself!", traceContext.getVariable("t.response.mainpart"));

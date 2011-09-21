@@ -18,6 +18,10 @@ public class PolicyHeader extends OrganizationHeader {
     //- PUBLIC
 
     public PolicyHeader(final Policy policy) {
+        this( policy, policy.getVersionOrdinal() );
+    }
+
+    public PolicyHeader(final Policy policy, final long policyRevision) {
         this(policy.getOid(),
              policy.isSoap(),
              policy.getType(),
@@ -26,7 +30,7 @@ public class PolicyHeader extends OrganizationHeader {
              policy.getGuid(),
              policy.getFolder() == null ? null : policy.getFolder().getOid(),
              null,
-             policy.getVersionOrdinal(),
+             policyRevision,
              policy.getVersion(),
              policy.isDisabled());
     }

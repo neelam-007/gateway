@@ -131,7 +131,7 @@ public class DebugTraceVariableContextSelector implements ExpandVariables.Select
             public Selection call(DebugTraceVariableContext ctx) {
                 PolicyMetadata meta = ctx.getContext().getOriginalContext().getCurrentPolicyMetadata();
                 PolicyHeader head = meta == null ? null : meta.getPolicyHeader();
-                return new Selection(head == null ? null : (head.getVersion() + 1));
+                return new Selection(head == null || head.getPolicyRevision()==0L ? null : head.getPolicyRevision());
             }
         });
 

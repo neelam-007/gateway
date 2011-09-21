@@ -1,9 +1,8 @@
 package com.l7tech.util;
 
+import static com.l7tech.util.ArrayUtils.*;
 import org.junit.*;
 import static org.junit.Assert.*;
-import static com.l7tech.util.ArrayUtils.compareArrays;
-import static com.l7tech.util.ArrayUtils.compareArraysUnsigned;
 
 /**
  *
@@ -144,5 +143,13 @@ public class ArrayUtilsTest {
     static void assertNegativeUnsigned(byte[] left, byte[] right) {
         assertTrue(compareArraysUnsigned(left, right) < 0);
         assertTrue(compareArraysUnsigned(right, left) > 0);
+    }
+
+    @Test
+    public void testBox() {
+        assertArrayEquals( "Boxed longs", new Long[]{ 1L, 2L, 3L }, box( new long[]{ 1L, 2L, 3L } ) );
+        assertArrayEquals( "Unbox longs", new long[]{ 1L, 2L, 3L }, unbox( new Long[]{ 1L, 2L, 3L } ) );
+        assertArrayEquals( "Boxed chars", new Character[]{ 'a' }, box( new char[]{ 'a' } ) );
+        assertArrayEquals( "Unbox chars", new char[]{ 'a' }, unbox( new Character[]{ 'a' } ) );
     }
 }
