@@ -21,19 +21,18 @@ import java.io.Serializable;
 @Proxy(lazy=false)
 @Table(name="counters")
 public class CounterRecord implements Serializable {
-    public long objectId = -1L;
+    public long counterId = -1L;
     public String counterName;
 
     @Id
-    @Column(name="objectid", nullable=false, updatable=false)
     @GeneratedValue(strategy= GenerationType.SEQUENCE, generator="generator")
     @GenericGenerator( name="generator", strategy = "seqhilo", parameters = @Parameter(name="max_lo", value="32767") )
-    public long getObjectId() {
-        return objectId;
+    public long getCounterId() {
+        return counterId;
     }
 
-    public void setObjectId(long objectId) {
-        this.objectId = objectId;
+    public void setCounterId(long counterId) {
+        this.counterId = counterId;
     }
 
     @Column(name="countername", nullable=false, length=255)

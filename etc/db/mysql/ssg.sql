@@ -719,7 +719,7 @@ CREATE TABLE message_id (
 
 DROP TABLE IF EXISTS counters;
 CREATE TABLE counters (
-  objectid bigint(20) NOT NULL,
+  counterid bigint(20) NOT NULL,
   countername varchar(255) NOT NULL,
   cnt_sec bigint(20) default 0,
   cnt_min bigint(20) default 0,
@@ -727,7 +727,7 @@ CREATE TABLE counters (
   cnt_day bigint(20) default 0,
   cnt_mnt bigint(20) default 0,
   last_update bigint(20) default 0,
-  PRIMARY KEY (objectid),
+  PRIMARY KEY (counterid),
   UNIQUE (countername)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 

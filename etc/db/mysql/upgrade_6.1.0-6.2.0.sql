@@ -63,7 +63,6 @@ ALTER TABLE internal_user ADD COLUMN properties mediumtext default NULL;
 ALTER TABLE counters MODIFY countername varchar(255) NOT NULL;
 UPDATE counters SET countername = CONCAT(countername, '-', userid, '-', providerid) WHERE userid != '*' AND providerid != -1;
 ALTER TABLE counters DROP userid, DROP providerid;
-ALTER TABLE counters CHANGE counterid objectid bigint(20) NOT NULL;
 
 --
 -- Bug 10943: Prevent deletion of non-empty folder
