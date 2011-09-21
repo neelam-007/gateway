@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.ratelimit.server;
 
 import com.l7tech.common.TestDocuments;
 import com.l7tech.external.assertions.ratelimit.RateLimitAssertion;
+import com.l7tech.external.assertions.ratelimit.RateLimitQueryAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
@@ -20,7 +21,10 @@ import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.test.BenchmarkRunner;
 import com.l7tech.test.BugNumber;
-import com.l7tech.util.*;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.TestTimeSource;
+import com.l7tech.util.TimeSource;
+import com.l7tech.util.TimeoutExecutor;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -48,7 +52,7 @@ import static junit.framework.Assert.*;
  */
 public class ServerRateLimitAssertionTest {
     static {
-        SyspropUtil.setProperty( "com.l7tech.external.server.ratelimit.logAtInfo", "true" );
+        //SyspropUtil.setProperty( "com.l7tech.external.server.ratelimit.logAtInfo", "true" );
     }
 
     private static final Logger log = Logger.getLogger(ServerRateLimitAssertionTest.class.getName());
@@ -240,6 +244,64 @@ public class ServerRateLimitAssertionTest {
             clock.advanceByNanos(ServerRateLimitAssertion.NANOS_PER_SECOND / 5);
             testAudit.reset();
         }
+    }
+
+    @Test
+    @BugNumber(9997)
+    public void testRateLimitQuerySimple() throws Exception {
+        RateLimitAssertion rla = new RateLimitAssertion();
+        rla.setMaxRequestsPerSecond("25");
+        rla.setShapeRequests(false);
+        rla.setHardLimit(true);
+        rla.setCounterName("testRateLimitQuerySimple-5252421246");
+        rla.setMaxConcurrency("0");
+        ServerAssertion ass = makePolicy(rla);
+
+        RateLimitQueryAssertion rlqa = new RateLimitQueryAssertion();
+        rlqa.setCounterName(rla.getCounterName());
+        ServerAssertion qass = new ServerRateLimitQueryAssertion(rlqa);
+
+        PolicyEnforcementContext context = makeContext();
+        assertEquals(AssertionStatus.NONE, qass.checkRequest(context));
+
+        clock.sync();
+        assertEquals(AssertionStatus.NONE, ass.checkRequest(makeContext()));
+
+        context = makeContext();
+        assertEquals(AssertionStatus.NONE, qass.checkRequest(context));
+        assertEquals("0", context.getVariable("counter.requestsremaining").toString());
+
+        assertEquals(AssertionStatus.SERVICE_UNAVAILABLE, ass.checkRequest(makeContext()));
+        assertEquals(AssertionStatus.SERVICE_UNAVAILABLE, ass.checkRequest(makeContext()));
+        assertEquals(AssertionStatus.SERVICE_UNAVAILABLE, ass.checkRequest(makeContext()));
+        assertEquals(AssertionStatus.SERVICE_UNAVAILABLE, ass.checkRequest(makeContext()));
+
+        context = makeContext();
+        assertEquals(AssertionStatus.NONE, qass.checkRequest(context));
+        assertEquals("0", context.getVariable("counter.requestsremaining").toString());
+
+        clock.advanceByNanos(ServerRateLimitAssertion.NANOS_PER_SECOND / 100);
+
+        context = makeContext();
+        assertEquals(AssertionStatus.NONE, qass.checkRequest(context));
+        assertEquals("0", context.getVariable("counter.requestsremaining").toString());
+
+        clock.advanceByNanos(ServerRateLimitAssertion.NANOS_PER_SECOND / 100);
+
+        clock.advanceByNanos(ServerRateLimitAssertion.NANOS_PER_SECOND / 100);
+
+        clock.advanceByNanos(ServerRateLimitAssertion.NANOS_PER_SECOND / 100);
+
+        context = makeContext();
+        assertEquals(AssertionStatus.NONE, qass.checkRequest(context));
+        assertEquals("1", context.getVariable("counter.requestsremaining").toString());
+
+        // Should be maxed out now -- test by waiting another second
+        clock.advanceByNanos(ServerRateLimitAssertion.NANOS_PER_SECOND);
+
+        context = makeContext();
+        assertEquals(AssertionStatus.NONE, qass.checkRequest(context));
+        assertEquals("1", context.getVariable("counter.requestsremaining").toString());
     }
 
     @Test

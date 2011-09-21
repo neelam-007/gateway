@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -36,12 +35,12 @@ import java.util.logging.Logger;
  */
 public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitAssertion> {
     private static final Logger logger = Logger.getLogger(ServerRateLimitAssertion.class.getName());
-    private static final long NANOS_PER_MILLI = 1000000L;  // Number of nanoseconds in one millisecond
+    static final long NANOS_PER_MILLI = 1000000L;  // Number of nanoseconds in one millisecond
     private static final BigInteger NANOS_PER_MILLI_BIG = BigInteger.valueOf(NANOS_PER_MILLI);
     private static final long MILLIS_PER_SECOND = 1000L;
-    private static final BigInteger MILLIS_PER_SECOND_BIG = BigInteger.valueOf(MILLIS_PER_SECOND);
+    static final BigInteger MILLIS_PER_SECOND_BIG = BigInteger.valueOf(MILLIS_PER_SECOND);
     static final long NANOS_PER_SECOND = MILLIS_PER_SECOND * NANOS_PER_MILLI;
-    private static final BigInteger NANOS_PER_SECOND_BIG = BigInteger.valueOf(NANOS_PER_SECOND);
+    static final BigInteger NANOS_PER_SECOND_BIG = BigInteger.valueOf(NANOS_PER_SECOND);
     private static final long DEFAULT_CLUSTER_POLL_INTERVAL = 43L * MILLIS_PER_SECOND; // Check every 43 seconds to see if cluster size has changed
     private static final long DEFAULT_CLUSTER_STATUS_INTERVAL = 8L * MILLIS_PER_SECOND; // Nodes are considered "up" if they are the current node or if they have updated their status row within the last 8 seconds
     private static final int DEFAULT_MAX_QUEUED_THREADS = 20;
@@ -49,18 +48,19 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     private static final int DEFAULT_MAX_NAP_TIME = 4703;
     private static final int DEFAULT_MAX_TOTAL_SLEEP_TIME = 18371;
     static final BigInteger POINTS_PER_REQUEST = BigInteger.valueOf(0x8000L); // cost in points to send a single request
-    private static final Level SUBINFO_LEVEL =
+    static final BigInteger DEFAULT_MAX_POINTS = (POINTS_PER_REQUEST.add(POINTS_PER_REQUEST.divide(BigInteger.valueOf(2L))));
+    static final Level SUBINFO_LEVEL =
             ConfigFactory.getBooleanProperty( "com.l7tech.external.server.ratelimit.logAtInfo", false ) ? Level.INFO : Level.FINE;
 
     static final AtomicInteger maxSleepThreads = new AtomicInteger(DEFAULT_MAX_QUEUED_THREADS);
 
-    private static final ConcurrentHashMap<String, Counter> counters = new ConcurrentHashMap<String, Counter>();
+    private static final ConcurrentHashMap<String, RateLimitCounter> counters = new ConcurrentHashMap<String, RateLimitCounter>();
     static final AtomicLong lastClusterCheck = new AtomicLong();
     private static final AtomicReference<BigInteger> clusterSize = new AtomicReference<BigInteger>();
     private static final Lock clusterCheckLock = new ReentrantLock();
-    private static final AtomicInteger curSleepThreads = new AtomicInteger();
-    private static final AtomicLong cleanerPeriod = new AtomicLong( (long) DEFAULT_CLEANER_PERIOD );
-    private static final AtomicLong maxNapTime = new AtomicLong( (long) DEFAULT_MAX_NAP_TIME );
+    static final AtomicInteger curSleepThreads = new AtomicInteger();
+    static final AtomicLong cleanerPeriod = new AtomicLong( (long) DEFAULT_CLEANER_PERIOD );
+    static final AtomicLong maxNapTime = new AtomicLong( (long) DEFAULT_MAX_NAP_TIME );
     private static final AtomicLong maxTotalSleepTime = new AtomicLong( (long) DEFAULT_MAX_TOTAL_SLEEP_TIME );
     private static final AtomicLong clusterPollInterval = new AtomicLong( DEFAULT_CLUSTER_POLL_INTERVAL );
     private static final AtomicLong clusterStatusInteval = new AtomicLong( DEFAULT_CLUSTER_STATUS_INTERVAL );
@@ -112,184 +112,10 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
         this.blackoutSecondsFinder = blackout == null ? null : makeBigIntFinder(blackout, "blackoutPeriodInSeconds", getAudit(), 1L );
     }
 
-    private static class ThreadToken {
-        private boolean notified = false;
-
-        private synchronized boolean waitIfPossible() throws CausedIOException {
-            // Check for pending notification
-            if (notified)
-                return true;
-            notified = false;
-
-            try {
-                int sleepers = curSleepThreads.incrementAndGet();
-                if ( (long) sleepers > (long)maxSleepThreads.get())
-                    return false;
-
-                if (logger.isLoggable(SUBINFO_LEVEL))
-                    logger.log(SUBINFO_LEVEL, "Thread " + Thread.currentThread().getName() + ": WAIT to be notified by previous in line");
-                wait(maxNapTime.get());
-                return true;
-            } catch (InterruptedException e) {
-                throw new CausedIOException("Thread interrupted", e);
-            } finally {
-                curSleepThreads.decrementAndGet();
-            }
-        }
-
-        public synchronized void doNotify() {
-            notified = true;
-            super.notify();
-        }
-    }
-
-    private static class Counter {
-        private final AtomicInteger concurrency = new AtomicInteger();  // total not-yet-closed request threads that have passed through an RLA with this counter
-        private final ConcurrentLinkedQueue<ThreadToken> tokenQueue = new ConcurrentLinkedQueue<ThreadToken>();
-        private BigInteger points = BigInteger.valueOf( 0L );
-        private long lastUsed = 0L;
-        private long lastSpentMillis = 0L;
-        private long lastSpentNanos = Long.MIN_VALUE;
-        private final AtomicLong blackoutUntil = new AtomicLong( 0L );
-
-        // Attempt to spend enough points to send a request.
-        // @param now the current time of day
-        // @param pointsPerSecond  the number of points given for each 1000ms since the last spend
-        // @param maxPoints   maximum number of points this counter should be allowed to accumulate
-        // @return 0 if the spend was successful; otherwise, the number of points still needed
-        private synchronized BigInteger spend(long now, BigInteger pointsPerSecond, BigInteger maxPoints) {
-            return useNanos
-                    ? spendNano(now, pointsPerSecond, maxPoints)
-                    : spendMilli(now, pointsPerSecond, maxPoints);
-        }
-
-        private synchronized BigInteger spendMilli(long now, BigInteger pointsPerSecond, BigInteger maxPoints) {
-            // First add points for time passed
-            long idleMs;
-            if (lastSpentMillis > now) {
-                // Millisecond clock changed -- ntp adjustment?  shouldn't happen
-                idleMs = 0L;
-            } else {
-                idleMs = now - lastSpentMillis;
-            }
-
-            BigInteger newPoints = points.add((pointsPerSecond.multiply(BigInteger.valueOf(idleMs))).divide(MILLIS_PER_SECOND_BIG));
-            if (newPoints.compareTo(maxPoints) > 0)
-                newPoints = maxPoints;
-
-            if (newPoints.compareTo(POINTS_PER_REQUEST) >= 0) {
-                // Spend-n-send
-                newPoints = newPoints.subtract(POINTS_PER_REQUEST);
-                points = newPoints;
-                lastSpentMillis = now;
-                lastUsed = now;
-                return BigInteger.ZERO;
-            }
-
-            // Needs more points
-            return POINTS_PER_REQUEST.subtract(newPoints);
-        }
-
-        private synchronized BigInteger spendNano(long now, BigInteger pointsPerSecond, BigInteger maxPoints) {
-            // First add points for time passed
-            final long nanoNow = clock.nanoTime();
-            BigInteger newPoints;
-            if (lastSpentNanos == Long.MIN_VALUE) {
-                newPoints = maxPoints;
-            } else if (lastSpentNanos > nanoNow) {
-                // Nano jump backwards in time detected (Sun Java bug 6458294)
-                if (autoFallbackFromNanos && Math.abs(nanoNow - lastSpentNanos) > 10L * NANOS_PER_MILLI) {
-                    synchronized (ServerRateLimitAssertion.class) {
-                        if (useNanos) {
-                            logger.severe("Nanosecond timer is too unreliable on this system; will use millisecond timer instead from now on");
-                            useNanos = false;
-                        }
-                    }
-                }
-                newPoints = points;
-            } else {
-                long idleNanos = nanoNow - lastSpentNanos;
-                newPoints = points.add((pointsPerSecond.multiply(BigInteger.valueOf(idleNanos))).divide(NANOS_PER_SECOND_BIG));
-            }
-
-            if (newPoints.compareTo(maxPoints) > 0)
-                newPoints = maxPoints;
-
-            if (newPoints.compareTo(POINTS_PER_REQUEST) >= 0) {
-                // Spend-n-send
-                newPoints = newPoints.subtract(POINTS_PER_REQUEST);
-                points = newPoints;
-                lastUsed = now;
-                lastSpentNanos = nanoNow;
-                return BigInteger.ZERO;
-            }
-
-            // Needs more points
-            return POINTS_PER_REQUEST.subtract(newPoints);
-        }
-
-        private synchronized boolean isStale(long now) {
-            return concurrency.get() < 1 && tokenQueue.isEmpty() && (now - lastUsed) > cleanerPeriod.get();
-        }
-
-        private void removeToken(ThreadToken token) {
-            tokenQueue.remove(token);
-            ThreadToken wake = tokenQueue.peek();
-            if (wake != null) wake.doNotify();
-        }
-
-        public void blackoutFor(long now, long millis) {
-            long when = now + millis;
-            blackoutUntil.set(when);
-        }
-
-        public boolean checkBlackedOut(long now) {
-            long until = blackoutUntil.get();
-
-            if (until < 1L )
-                return false; // No blackout in effect
-
-            if (now < until)
-                return true; // Currently blacked out
-
-            // Blackout just expired
-            blackoutUntil.compareAndSet(until, 0L );
-            return false;
-        }
-
-        // Unconditionally add the specified token to the end of the queue, and then
-        // wait until it is in first place (or the maximum wait time or concurrency limit has been hit).
-        //
-        // @return 0 if the given token is now in first place
-        //         1 if the sleep concurrency limit was hit
-        //         2 if the maximum total sleep time was hit
-        private int pushTokenAndWaitUntilFirst(long startTime, ThreadToken token) throws IOException {
-            synchronized (token) {
-                token.notified = false;
-                tokenQueue.offer(token);
-                if (token.equals(tokenQueue.peek()))
-                    return 0;
-            }
-
-            for (;;) {
-                synchronized (token) {
-                    if (!token.waitIfPossible())
-                        return 1;
-                    if (token.equals(tokenQueue.peek()))
-                        return 0;
-                    token.notified = false;
-                }
-
-                if (isOverslept(startTime, clock.currentTimeMillis()))
-                    return 2;
-            }
-        }
-    }
-
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         final String counterName = getConterName(context);
-        final Counter counter = findCounter(counterName);
+        final RateLimitCounter counter = findCounter(counterName);
 
         if (counter.checkBlackedOut(clock.currentTimeMillis())) {
             logAndAudit( AssertionMessages.RATELIMIT_BLACKED_OUT );
@@ -335,7 +161,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
         }
 
         final BigInteger maxPoints = assertion.isHardLimit()
-                ? (POINTS_PER_REQUEST.add(POINTS_PER_REQUEST.divide(BigInteger.valueOf( 2L ))))
+                ? DEFAULT_MAX_POINTS
                 : pps.multiply(windowSizeInSecondsFinder.call(context));
 
         final boolean logOnly = assertion.isLogOnly();
@@ -356,7 +182,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     }
 
 
-    private AssertionStatus checkNoSleep(BigInteger pps, Counter counter, String counterName, BigInteger maxPoints) throws IOException {
+    private AssertionStatus checkNoSleep(BigInteger pps, RateLimitCounter counter, String counterName, BigInteger maxPoints) throws IOException {
         if (BigInteger.ZERO.equals(counter.spend(clock.currentTimeMillis(), pps, maxPoints))) {
             // Successful spend.
             return AssertionStatus.NONE;
@@ -371,8 +197,8 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     }
 
 
-    private AssertionStatus checkWithSleep(BigInteger pps, Counter counter, String counterName, BigInteger maxPoints) throws IOException {
-        final ThreadToken token = new ThreadToken();
+    private AssertionStatus checkWithSleep(BigInteger pps, RateLimitCounter counter, String counterName, BigInteger maxPoints) throws IOException {
+        final RateLimitThreadToken token = new RateLimitThreadToken();
         final BigInteger maxnap = BigInteger.valueOf(maxNapTime.get());
         long startTime = clock.currentTimeMillis();
 
@@ -420,7 +246,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     }
 
 
-    private static boolean isOverslept(long startTime, long now) {
+    static boolean isOverslept(long startTime, long now) {
         return now - startTime > maxTotalSleepTime.get();
     }
 
@@ -536,12 +362,23 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     }
 
     // @return the existing counter with this name, creating a new one if necessary.
-    private static Counter findCounter(String counterName) {
-        Counter counter = counters.get(counterName);
+    private static RateLimitCounter findCounter(String counterName) {
+        RateLimitCounter counter = findExistingCounter(counterName);
         if (counter != null)
             return counter;
-        Counter prev = counters.putIfAbsent(counterName, counter = new Counter());
+        RateLimitCounter prev = counters.putIfAbsent(counterName, counter = new RateLimitCounter(counterName));
         return prev != null ? prev : counter;
+    }
+
+    /**
+     * Find an existing counter, without creating it if it doesn't already exist.
+     *
+     * @param counterName the counter name to look up.
+     * @return the counter, or null if no such counter currently exists.
+     * Note that counters that have not been used recently will be deleted, as part of normal operation.
+     */
+    public static RateLimitCounter findExistingCounter(String counterName) {
+        return counters.get(counterName);
     }
 
     private String getConterName(PolicyEnforcementContext context) {
@@ -550,11 +387,11 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
 
     // Caller should ensure that only one thread at a time ever calls this.
     private static void cleanOldCounters(long now) {
-        Set<Map.Entry<String,Counter>> entries = counters.entrySet();
-        final Iterator<Map.Entry<String,Counter>> it = entries.iterator();
+        Set<Map.Entry<String,RateLimitCounter>> entries = counters.entrySet();
+        final Iterator<Map.Entry<String,RateLimitCounter>> it = entries.iterator();
         while (it.hasNext()) {
-            Map.Entry<String, Counter> entry = it.next();
-            Counter counter = entry.getValue();
+            Map.Entry<String, RateLimitCounter> entry = it.next();
+            RateLimitCounter counter = entry.getValue();
             if (counter == null) {
                 it.remove();
             } else {

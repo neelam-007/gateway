@@ -460,7 +460,8 @@ public class GatewayFeatureSets {
             ass(RemoteIpRange.class),
             mass("assertion:CacheLookup"),
             mass("assertion:CacheStorage"),
-            mass("assertion:RateLimit"));
+            mass("assertion:RateLimit"),
+            mass("assertion:RateLimitQuery"));
 
         GatewayFeatureSet availabilityFw =
         fsr("set:Availability:Firewall", "SecureSpan Firewall service availability",
