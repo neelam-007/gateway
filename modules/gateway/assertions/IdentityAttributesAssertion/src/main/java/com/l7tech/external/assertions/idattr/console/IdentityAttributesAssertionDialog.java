@@ -126,6 +126,11 @@ public class IdentityAttributesAssertionDialog extends AssertionPropertiesEditor
                     im = new LdapAttributeMapping(ac, previousProvider.getOid(), uog);
                 } else if (previousProvider.type() == IdentityProviderType.FEDERATED) {
                     im = new FederatedAttributeMapping(ac, previousProvider.getOid(), uog);
+                } else if (previousProvider.type() == IdentityProviderType.BIND_ONLY_LDAP) {
+                    DialogDisplayer.showMessageDialog(addButton,
+                            MessageFormat.format("Identity Provider #{0} ({1}) is of type \"{2}\" and does not support attribute mappings.",
+                                    previousProvider.getOid(), previousProvider.getName(), previousProvider.type().description()), null);
+                    return;
                 } else {
                     throw new IllegalStateException(MessageFormat.format("Identity Provider #{0} ({1}) is of an unsupported type \"{2}\"", previousProvider.getOid(), previousProvider.getName(), previousProvider.type().description()));
                 }
@@ -311,18 +316,23 @@ public class IdentityAttributesAssertionDialog extends AssertionPropertiesEditor
         variablePrefixField.setAssertion(assertion,getPreviousAssertion());
         variablePrefixField.setSuffixes(getSuffixes());
 
-        EntityHeader[] tempHeaders;
+        List<EntityHeader> tempHeaders = new ArrayList<EntityHeader>();
 
         try {
-            tempHeaders = Registry.getDefault().getIdentityAdmin().findAllIdentityProviderConfig();
-            for (EntityHeader header : tempHeaders) {
+            EntityHeader[] allHeaders = Registry.getDefault().getIdentityAdmin().findAllIdentityProviderConfig();
+            for (EntityHeader header : allHeaders) {
                 final IdentityProviderConfig config = Registry.getDefault().getIdentityAdmin().findIdentityProviderConfigByID(header.getOid());
                 IdentityProviderType type = config.type();
+                if (builtinAttributes.get(type) == null) {
+                    // Provider type does not support attributes (eg Simple LDAP)
+                    continue;
+                }
                 if (type != IdentityProviderType.INTERNAL) {
                     header.setName(header.getName() + " [" + type.description() + "]");
                 }
                 this.configs.put(header.getOid(), config);
                 this.headers.put(header.getOid(), header);
+                tempHeaders.add(header);
             }
         } catch (FindException e) {
             throw new RuntimeException("Unable to load identity provider(s)", e);
@@ -334,11 +344,11 @@ public class IdentityAttributesAssertionDialog extends AssertionPropertiesEditor
             this.previousProvider = initialConfig;
         } else {
             // Select the first one
-            initialOid = tempHeaders[0].getOid();
+            initialOid = tempHeaders.iterator().next().getOid();
             this.previousProvider = configs.get(initialOid);
         }
 
-        identityProviderComboBox.setModel(new DefaultComboBoxModel(tempHeaders));
+        identityProviderComboBox.setModel(new DefaultComboBoxModel(tempHeaders.toArray()));
         final EntityHeader header = headers.get(initialOid);
         if (header == null) {
             identityProviderComboBox.setSelectedIndex(0);
