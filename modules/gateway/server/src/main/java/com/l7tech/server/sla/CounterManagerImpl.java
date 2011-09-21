@@ -24,7 +24,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -42,7 +41,6 @@ import java.util.logging.Logger;
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class CounterManagerImpl extends HibernateDaoSupport implements CounterManager {
     private final Logger logger = Logger.getLogger(CounterManagerImpl.class.getName());
-    private static final String TABLE_NAME = "counters";
     private final Collection<String> counterCache = new ArrayList<String>();
 
     private Counter getLockedCounter(Connection conn, String counterName) throws SQLException {
@@ -208,24 +206,6 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
                 logger.log(Level.WARNING, msg, e);
                 throw new FindException(msg, e);
             }
-        }
-    }
-
-    @Transactional(readOnly=true)
-    public String[] getAllCounterNames() throws FindException {
-        try {
-            List<String> res = getHibernateTemplate().find(MessageFormat.format("SELECT {0}.counterName FROM {0} IN CLASS {1}", TABLE_NAME, CounterRecord.class.getName()));
-            String[] output = new String[res.size()];
-            int i = 0;
-            for (String re : res) {
-                output[i] = re;
-                i++;
-            }
-            return output;
-        } catch (DataAccessException e) {
-            String msg = "problem getting distinct counter names";
-            logger.log(Level.WARNING, msg, e);
-            throw new FindException(msg, e);
         }
     }
 

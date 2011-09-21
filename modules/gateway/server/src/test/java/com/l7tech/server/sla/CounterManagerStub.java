@@ -35,11 +35,6 @@ public class CounterManagerStub implements CounterManager{
     }
 
     @Override
-    public String[] getAllCounterNames() throws FindException {
-        return new String[0];  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    @Override
     public long incrementOnlyWithinLimitAndReturnValue(String counterName, long timestamp, int fieldOfInterest, long limit) throws LimitAlreadyReachedException {
         if(throwException){
             throw new LimitAlreadyReachedException("Throwing exception from stub.");
