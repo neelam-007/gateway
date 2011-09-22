@@ -58,10 +58,7 @@ public class SshCredentialAssertion extends Assertion {
             meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "none");
 
             meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/authentication.gif");
-
-            // request default feature set name for our class name, since we are a known optional module
-            // that is, we want our required feature set to be "assertion:SshCredential" rather than "set:modularAssertions"
-            meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
+            meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
 
             meta.put(META_INITIALIZED, Boolean.TRUE);
         }

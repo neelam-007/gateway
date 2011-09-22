@@ -251,13 +251,6 @@ public class SshServerModule extends TransportModule implements ApplicationListe
         if (!isLicensed())
             return;
 
-        String bindAddress = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
-        if ( ! InetAddressUtil.isAnyHostAddress(bindAddress) ) {
-            bindAddress = ssgConnectorManager.translateBindAddress(bindAddress, connector.getPort());
-        } else {
-            bindAddress = InetAddressUtil.getAnyHostAddress();
-        }
-
         // configure and start sshd
         try {
             SshServer sshd = setUpSshServer();
@@ -281,16 +274,25 @@ public class SshServerModule extends TransportModule implements ApplicationListe
             sshd.setPasswordAuthenticator(user);
 
             // enable SCP, SFTP
-            final boolean enableScp = Boolean.parseBoolean(connector.getProperty(SshCredentialAssertion.LISTEN_PROP_ENABLE_SCP));
+            final boolean enableScp = connector.getBooleanProperty(SshCredentialAssertion.LISTEN_PROP_ENABLE_SCP);
             if (enableScp) {
                 sshd.setCommandFactory(new MessageProcessingScpCommand.Factory(
                         connector, messageProcessor, stashManagerFactory, soapFaultManager, messageProcessingEventChannel, user, userPublicKey));
             }
-            final boolean enableSftp = Boolean.parseBoolean(connector.getProperty(SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP));
+            final boolean enableSftp = connector.getBooleanProperty(SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP);
             if (enableSftp) {
                 sshd.setSubsystemFactories(Arrays.<NamedFactory<Command>>asList(new MessageProcessingSftpSubsystem.Factory(
                         connector, messageProcessor, stashManagerFactory, soapFaultManager, messageProcessingEventChannel, user, userPublicKey)));
             }
+
+            // set host and port
+            String bindAddress = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
+            if ( ! InetAddressUtil.isAnyHostAddress(bindAddress) ) {
+                bindAddress = ssgConnectorManager.translateBindAddress(bindAddress, connector.getPort());
+            } else {
+                bindAddress = InetAddressUtil.getAnyHostAddress();
+            }
+            sshd.setHost(bindAddress);
             sshd.setPort(connector.getPort());
 
             // set server host private key

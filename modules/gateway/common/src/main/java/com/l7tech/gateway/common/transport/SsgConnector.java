@@ -436,6 +436,16 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     }
 
     /**
+     * Convenience method to get a property as a boolean.
+     *
+     * @param key the name of the property to get
+     * @return boolean represented by the requested property value
+     */
+    public boolean getBooleanProperty(String key) {
+        return Boolean.parseBoolean(getProperty(key));
+    }
+
+    /**
      * Convenience method to get a property as an int.
      *
      * @param key  the name of the property to get

@@ -586,7 +586,7 @@ public class SsgConnectorSslHelper {
         if ((protos.contains("SSLv3") || protos.contains("TLSv1")) && !protos.contains("SSLv2Hello")) {
             // Always allow clients to use SSL 2.0 Client Hello encapsulation with SSL 3.0 and TLS 1.0,
             // unless it is explicitly disabled using an advanced setting
-            if (!Boolean.valueOf(c.getProperty(SsgConnector.PROP_TLS_NO_SSLV2_HELLO)))
+            if (!c.getBooleanProperty(SsgConnector.PROP_TLS_NO_SSLV2_HELLO))
                 protos.add("SSLv2Hello");
         }
 

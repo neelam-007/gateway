@@ -258,7 +258,7 @@ public abstract class TransportModule extends LifecycleBean {
      */
     public X509Certificate[] getAcceptedIssuersForConnector(SsgConnector connector) throws FindException {
         // Suppress inclusion of accepted issuers list if so configured for this connector
-        if (Boolean.valueOf(connector.getProperty("noAcceptedIssuers")))
+        if (connector.getBooleanProperty("noAcceptedIssuers"))
             return new X509Certificate[0];
 
         // There's no point worrying about the accepted issuers list if we don't plan to ever send a client challenge.
@@ -270,7 +270,7 @@ public abstract class TransportModule extends LifecycleBean {
 
         // If only TLS 1.0 is enabled, behave as we did pre-5.3, unless "acceptedIssuers" is forced to "true" (Bug #8727)
         // "acceptedIssuers" connector property not to be documented -- will be removed in future release
-        if (onlyTls10 && !Boolean.valueOf(connector.getProperty("acceptedIssuers")))
+        if (onlyTls10 && !connector.getBooleanProperty("acceptedIssuers"))
             return new X509Certificate[0];
 
         Collection<TrustedCert> trustedCerts = trustedCertServices.getAllCertsByTrustFlags(EnumSet.of(TrustedCert.TrustedFor.SIGNING_CLIENT_CERTS));

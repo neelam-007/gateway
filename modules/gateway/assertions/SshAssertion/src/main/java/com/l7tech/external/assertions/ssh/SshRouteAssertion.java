@@ -114,9 +114,7 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
             new WspEnumTypeMapping(FtpCredentialsSource.class, "credentialsSource")
         )));
 
-        // request default feature set name for our class name, since we are a known optional module
-        // that is, we want our required feature set to be "assertion:SshRouting" rather than "set:modularAssertions"
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
