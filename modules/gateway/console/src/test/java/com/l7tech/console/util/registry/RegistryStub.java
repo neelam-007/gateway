@@ -447,6 +447,11 @@ public class RegistryStub extends Registry {
             }
 
             @Override
+            public long getXmlMaxBytes() {
+                return 0;
+            }
+
+            @Override
             public void testSendEmail(String toAddr, String ccAddr, String bccAddr, String fromAddr, String subject,
                                       String host, int port, String base64Message, EmailAlertAssertion.Protocol protocol,
                                       boolean authenticate, String authUsername, String authPassword) throws EmailTestException {

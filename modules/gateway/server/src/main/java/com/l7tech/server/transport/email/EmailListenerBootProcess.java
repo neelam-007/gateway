@@ -22,7 +22,7 @@ import java.util.logging.Logger;
  * Starts up the email listeners and periodically checks for new, removed or modified email listeners.
  * This class is started during startup of the SSG.
  */
-public class EmailListenerBootProcess extends LifecycleBean implements PropertyChangeListener {
+public class EmailListenerBootProcess extends LifecycleBean{
     private static final Logger logger = Logger.getLogger(EmailListenerBootProcess.class.getName());
 
     //Thread pool for email tasks. Managed by this boot process.
@@ -86,19 +86,6 @@ public class EmailListenerBootProcess extends LifecycleBean implements PropertyC
         }, 60 * 1000, 60 * 1000);
     }
 
-    /**
-     * For handling cluster property changes to the following properties.
-     *
-     * @param evt the change event
-     */
-    @Override
-    public void propertyChange(PropertyChangeEvent evt) {
-        synchronized(listenerLock) {
-            for (PollingEmailListener listener : activeListeners) {
-                listener.propertyChange(evt);
-            }
-        }
-    }
 
     @Override
     protected void init() {

@@ -39,7 +39,6 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
     /*
      * Is there a better place for these properties?
      */
-    protected static final String PROPERTY_MAX_SIZE = "ioEmailMessageMaxBytes";
     protected static final int MAXIMUM_OOPSES = 5;
     protected static final long RECEIVE_TIMEOUT = 5000L;
     protected static final long SHUTDOWN_TIMEOUT = 7000L;
@@ -48,11 +47,9 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
     protected static final int MIN_OOPS_SLEEP = 10 * 1000; // 10 seconds
     protected static final int MAX_OOPS_SLEEP = TimeUnit.DAYS.getMultiplier(); // 24 hours
     protected static final int OOPS_AUDIT = 15 * 60 * 1000; // 15 mins;
-    public static final long DEFAULT_MAX_SIZE = 5242880L;
 
     private EmailListenerConfig emailListenerCfg;
     private final ThreadPoolBean threadPoolBean;
-    private final Config config;
 
     private EmailListenerManager emailListenerManager;
 
@@ -110,12 +107,6 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
             }
             emailSession = Session.getInstance(props);
         }
-
-        config = emailListenerCfg.getApplicationContext().getBean("serverConfig", ServerConfig.class);
-        emailListenerCfg.setMessageMaxSize(config.getLongProperty(PROPERTY_MAX_SIZE, DEFAULT_MAX_SIZE));
-
-        _logger.log(Level.CONFIG, "Using email message max size " + emailListenerCfg.getMaxMessageSize() + ".");
-
         // create the ListenerThread
         this._listener = new ListenerThread();
     }
@@ -300,16 +291,6 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
     protected EmailTask newEmailTask(MimeMessage message) {
         // create the work task
         return new EmailTask(getEmailListenerConfig(), message);
-    }
-
-    @Override
-    public void propertyChange( final PropertyChangeEvent evt )
-    {
-        if ( PROPERTY_MAX_SIZE.equals(evt.getPropertyName()) ) {
-            final long newMaxSize = config.getLongProperty(PROPERTY_MAX_SIZE, DEFAULT_MAX_SIZE);
-            emailListenerCfg.setMessageMaxSize( newMaxSize );
-            _logger.log(Level.CONFIG, "Updated email message max size to {0}.", newMaxSize);
-        }
     }
 
     /**

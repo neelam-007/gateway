@@ -8,6 +8,8 @@ import com.l7tech.message.MimeKnob;
 import com.l7tech.message.XmlKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -78,7 +80,8 @@ public class EmailHandlerImpl implements EmailHandler {
             requestStream = message.getInputStream();
 
             // enforce size restriction
-            long sizeLimit = emailListenerCfg.getMaxMessageSize()<0 ?com.l7tech.message.Message.getMaxBytes():emailListenerCfg.getMaxMessageSize();
+            String sizeLimitStr = (String)emailListenerCfg.getEmailListener().properties().get(EmailListener.PROP_REQUEST_SIZE_LIMIT);
+            long sizeLimit =  sizeLimitStr == null ?  ServerConfig.getInstance().getLongProperty(ServerConfigParams.PARAM_EMAIL_MESSAGE_MAX_BYTES,com.l7tech.message.Message.getMaxBytes()):Long.parseLong(sizeLimitStr);
             if ( sizeLimit > 0 && size > sizeLimit ) {
                 messageTooLarge = true;
             }

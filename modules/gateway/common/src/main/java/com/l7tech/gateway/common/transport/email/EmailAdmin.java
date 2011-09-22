@@ -46,4 +46,12 @@ public interface EmailAdmin {
      */
     public void testSendEmail(EmailAlertAssertion eaa) throws EmailTestException;
 
+
+    /**
+     * Get the xml part max bytes value set in the io.xmlPartMaxBytes cluster property
+     * @return the xml part max bytes value set in the io.xmlPartMaxBytes cluster property
+     */
+    @Transactional(readOnly=true)
+    long getXmlMaxBytes();
+
 }

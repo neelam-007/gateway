@@ -48,6 +48,9 @@ public class EmailListener extends NamedEntityImp {
     public static final String PROP_IS_HARDWIRED_SERVICE = "com.l7tech.server.jms.prop.hardwired.service.bool";
     public static final String PROP_HARDWIRED_SERVICE_ID = "com.l7tech.server.jms.prop.hardwired.service.id";
 
+    /**If specified, the request xml size limit is overridden */
+    public static final String PROP_REQUEST_SIZE_LIMIT = PREFIX + ".request.sizeLimit";
+
     public EmailListener() {
         super();
         emailListenerState = new EmailListenerState(this);

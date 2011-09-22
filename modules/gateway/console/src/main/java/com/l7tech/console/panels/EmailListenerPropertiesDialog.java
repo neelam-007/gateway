@@ -58,6 +58,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
     private JCheckBox associateWithPublishedService;
     private JLabel serviceNameLabel;
     private JComboBox serviceNameCombo;
+    private ByteLimitPanel byteLimit;
 
     private EmailListener emailListener;
     private InputValidator inputValidator;
@@ -321,6 +322,15 @@ public class EmailListenerPropertiesDialog extends JDialog {
             }
         });
 
+
+        inputValidator.addRule( new InputValidator.ValidationRule()
+        {
+            @Override
+            public String getValidationError() {
+                return byteLimit.validateFields();
+            }
+        });
+
         // Interval must be an integer between greater than or equal to 1
         checkInterval.setModel(new SpinnerNumberModel(5, 1, Integer.MAX_VALUE, 1));
         JSpinner.NumberEditor jsne = new JSpinner.NumberEditor(checkInterval,"#");  //number format for parse and display 
@@ -479,6 +489,9 @@ public class EmailListenerPropertiesDialog extends JDialog {
             }
  	 	}
 
+        String maxResponseSize = props.getProperty(EmailListener.PROP_REQUEST_SIZE_LIMIT);
+        byteLimit.setValue(maxResponseSize,Registry.getDefault().getEmailAdmin().getXmlMaxBytes());
+
         if (allServices != null) {
  	 	    ComboItem[] comboitems = new ComboItem[allServices.length];
  	 	    Object selectMe = null;
@@ -537,6 +550,9 @@ public class EmailListenerPropertiesDialog extends JDialog {
  	 	} else {
  	 	    properties.setProperty(EmailListener.PROP_IS_HARDWIRED_SERVICE, (Boolean.FALSE).toString());
  	 	}
+        if(byteLimit.isSelected()){
+            properties.setProperty(EmailListener.PROP_REQUEST_SIZE_LIMIT, byteLimit.getValue());
+        }
 
         emailListener.properties(properties);
     }

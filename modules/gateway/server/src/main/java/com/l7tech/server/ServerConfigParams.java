@@ -125,6 +125,7 @@ public interface ServerConfigParams {
     String PARAM_SNMP_QUERY_SERVICE_ENABLED = "builtinService.snmpQuery.enabled";
     String PARAM_EMAIL_LISTENER_CONNECTION_TIMEOUT = "ioMailInConnectTimeout";
     String PARAM_EMAIL_LISTENER_TIMEOUT = "ioMailInTimeout";
+    String PARAM_EMAIL_MESSAGE_MAX_BYTES= "ioEmailMessageMaxBytes";
     String PARAM_LOG_DIRECTORY = "logDirectory";
     String PARAM_MAX_LDAP_SEARCH_RESULT_SIZE = "maxLdapSearchResultSize";
     String PARAM_MAX_LDAP_GROUP_SEARCH_RESULT_SIZE = "ldap.group.searchMaxResults";

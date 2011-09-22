@@ -13,8 +13,6 @@ public class EmailListenerConfig {
     private final EmailListener emailListener;
     /** Spring application context */
     private final ApplicationContext appContext;
-    /** Maximum email message size allowed */
-    private final AtomicLong maxMessageSize = new AtomicLong(PooledPollingEmailListenerImpl.DEFAULT_MAX_SIZE);
 
     /**
      * Constructor.
@@ -36,21 +34,5 @@ public class EmailListenerConfig {
 
     public EmailListener getEmailListener() {
         return emailListener;
-    }
-
-    /**
-     * Returns the max message size.
-     * @return int value
-     */
-    public long getMaxMessageSize() {
-        return maxMessageSize.get();
-    }
-
-    /**
-     * Sets the max message size property.
-      * @param newValue the new value to set
-     */
-    public void setMessageMaxSize(long newValue) {
-        maxMessageSize.set(newValue);
     }
 }

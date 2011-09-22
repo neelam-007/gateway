@@ -4,11 +4,20 @@ import com.l7tech.gateway.common.transport.email.EmailAdmin;
 import com.l7tech.gateway.common.transport.email.EmailMessage;
 import com.l7tech.gateway.common.transport.email.EmailTestException;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
+import com.l7tech.util.Config;
 
 /**
  * Implementation of the Email Admin interface
  */
 public class EmailAdminImpl implements EmailAdmin {
+
+    private Config config;
+
+    public EmailAdminImpl(ServerConfig config) {
+        this.config = config;
+    }
 
     @Override
     public void testSendEmail(String toAddr, String ccAddr, String bccAddr, String fromAddr, String subject, String host,
@@ -42,5 +51,12 @@ public class EmailAdminImpl implements EmailAdmin {
                 eaa.getSourceEmailAddress(), eaa.getTargetEmailAddress(), eaa.messageString(), eaa.getSubject());
 
         EmailUtils.sendTestMessage(emailMessage, emailConfig);
+    }
+
+    private static final long DEFAULT_MAX_SIZE = 5242880L;
+
+    @Override
+    public long getXmlMaxBytes() {
+        return config.getLongProperty(ServerConfigParams.PARAM_EMAIL_MESSAGE_MAX_BYTES, DEFAULT_MAX_SIZE);
     }
 }

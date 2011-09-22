@@ -7,7 +7,7 @@ import java.beans.PropertyChangeListener;
 /**
  * An interface for objects that can poll an email account to retrieve messages to process.
  */
-public interface PollingEmailListener extends PropertyChangeListener {
+public interface PollingEmailListener{
     /**
      * Starts the listener thread.
      *
