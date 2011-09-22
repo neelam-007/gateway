@@ -8,13 +8,14 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.ldap.LdapIdentity;
 import com.l7tech.message.Message;
 
+import java.lang.reflect.Array;
 import java.util.List;
 import java.util.logging.Logger;
 
 /**
- * 
+ *
  */
-class AuthenticatedUserGetter extends Getter {
+class AuthenticatedUserGetter<VT> extends Getter {
 
     //- PUBLIC
 
@@ -26,8 +27,10 @@ class AuthenticatedUserGetter extends Getter {
         final List<AuthenticationResult> authResults = authenticationContext.getAllAuthenticationResults();
         if (multivalued) {
             if ( !name.equalsIgnoreCase(prefix) ) return null; // suffix not supported
-            final List<Object> objects = Functions.map(authResults, userToValue);
-            return objects.toArray(new Object[objects.size()]);
+            final List<VT> objects = Functions.map(authResults, userToValue);
+            @SuppressWarnings({ "unchecked" })
+            final VT[] array = (VT[])Array.newInstance( valueClass, objects.size() );
+            return objects.toArray(array);
         }
 
         final int prefixLength = prefix.length();
@@ -57,7 +60,7 @@ class AuthenticatedUserGetter extends Getter {
 
     //- PACKAGE
 
-    static final Functions.Unary<Object,AuthenticationResult> USER_TO_ITSELF = new Functions.Unary<Object, AuthenticationResult>() {
+    static final Functions.Unary<User,AuthenticationResult> USER_TO_ITSELF = new Functions.Unary<User, AuthenticationResult>() {
         @Override
         public User call(final AuthenticationResult authResult) {
             if (authResult == null) return null;
@@ -65,7 +68,7 @@ class AuthenticatedUserGetter extends Getter {
         }
     };
 
-   static final Functions.Unary<Object,AuthenticationResult> USER_TO_NAME = new Functions.Unary<Object, AuthenticationResult>() {
+   static final Functions.Unary<String,AuthenticationResult> USER_TO_NAME = new Functions.Unary<String, AuthenticationResult>() {
         @Override
         public String call(final AuthenticationResult authResult) {
             if (authResult == null) return null;
@@ -79,7 +82,7 @@ class AuthenticatedUserGetter extends Getter {
         }
     };
 
-    static final Functions.Unary<Object,AuthenticationResult> USER_TO_DN = new Functions.Unary<Object, AuthenticationResult>() {
+    static final Functions.Unary<String,AuthenticationResult> USER_TO_DN = new Functions.Unary<String, AuthenticationResult>() {
         @Override
         public String call(final AuthenticationResult authResult) {
             if (authResult == null) return null;
@@ -94,17 +97,13 @@ class AuthenticatedUserGetter extends Getter {
 
     AuthenticatedUserGetter( final String prefix,
                              final boolean multivalued,
-                             final Functions.Unary<Object,AuthenticationResult> property ) {
-        this(prefix, multivalued, property, null);
-    }
-
-    AuthenticatedUserGetter( final String prefix,
-                             final boolean multivalued,
-                             final Functions.Unary<Object, AuthenticationResult> property,
+                             final Class<VT> valueClass,
+                             final Functions.Unary<VT, AuthenticationResult> property,
                              final Message message ) {
         this.prefix = prefix;
         this.multivalued = multivalued;
         this.message = message;
+        this.valueClass = valueClass;
         this.userToValue = property;
     }
 
@@ -115,5 +114,6 @@ class AuthenticatedUserGetter extends Getter {
     private final String prefix;
     private final boolean multivalued;
     private final Message message;
-    private final Functions.Unary<Object, AuthenticationResult> userToValue;
+    private final Class<VT> valueClass;
+    private final Functions.Unary<VT, AuthenticationResult> userToValue;
 }
