@@ -1,7 +1,11 @@
 package com.l7tech.external.assertions.jsontransformation;
 
 import com.l7tech.external.assertions.jsontransformation.server.JsonTransformationAdminImpl;
+import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.validator.AssertionValidator;
+import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
@@ -53,12 +57,12 @@ public class JsonTransformationAssertion extends MessageTargetableAssertion {
 
     @Override
     protected VariablesUsed doGetVariablesUsed() {
-        return super.doGetVariablesUsed().withExpressions( rootTagString );
+        return super.doGetVariablesUsed().withExpressions(rootTagString);
     }
 
     @Override
     protected VariablesSet doGetVariablesSet() {
-        return super.doGetVariablesSet().with( destinationMessageTarget==null ? null : destinationMessageTarget.getMessageTargetVariablesSet() );
+        return super.doGetVariablesSet().with(destinationMessageTarget == null ? null : destinationMessageTarget.getMessageTargetVariablesSet());
     }
 
     //
@@ -74,17 +78,17 @@ public class JsonTransformationAssertion extends MessageTargetableAssertion {
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, "Apply JSON Transformation");
-        meta.put(AssertionMetadata.LONG_NAME, "Transform messages from XML to JSON, or from JSON to XML." );
+        meta.put(AssertionMetadata.LONG_NAME, "Transform messages from XML to JSON, or from JSON to XML.");
 
         // Add to palette folder(s)
         //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing,
         //   misc, audit, policyLogic, threatProtection
-        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "xml" });
+        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xml"});
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/Properties16.gif");
 
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
-        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME,"JSON Transformation Properties");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "JSON Transformation Properties");
 
         // Set up smart Getter for nice, informative policy node name, for GUI
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/Properties16.gif");
@@ -92,15 +96,17 @@ public class JsonTransformationAssertion extends MessageTargetableAssertion {
 
         // request default feature set name for our class name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:JsonTransformation" rather than "set:modularAssertions"   "(fromClass)"
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
+
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, JsonTransformationAssertion.Validator.class.getName());
 
         Collection<TypeMapping> otherMappings = new ArrayList<TypeMapping>();
         otherMappings.add(new Java5EnumTypeMapping(JsonTransformationAssertion.Transformation.class, "transformation"));
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(otherMappings));
 
-        meta.put(AssertionMetadata.EXTENSION_INTERFACES_FACTORY, new Functions.Unary< Collection<ExtensionInterfaceBinding>, ApplicationContext>() {
+        meta.put(AssertionMetadata.EXTENSION_INTERFACES_FACTORY, new Functions.Unary<Collection<ExtensionInterfaceBinding>, ApplicationContext>() {
             @Override
             public Collection<ExtensionInterfaceBinding> call(ApplicationContext appContext) {
                 final ExtensionInterfaceBinding<JsonTransformationAdmin> binding = new ExtensionInterfaceBinding<JsonTransformationAdmin>(
@@ -114,5 +120,25 @@ public class JsonTransformationAssertion extends MessageTargetableAssertion {
         return meta;
     }
 
+    /**
+     * The assertion validator.
+     */
+    public static class Validator implements AssertionValidator {
+        private final JsonTransformationAssertion assertion;
 
+        public Validator(final JsonTransformationAssertion assertion) {
+            if (assertion == null) {
+                throw new IllegalArgumentException("assertion is required");
+            }
+            this.assertion = assertion;
+        }
+
+        @Override
+        public void validate(final AssertionPath path, final PolicyValidationContext pvc, final PolicyValidatorResult result) {
+            if(assertion.getTarget() == TargetMessageType.RESPONSE && assertion.getDestinationMessageTarget().getTarget() == TargetMessageType.REQUEST){
+                result.addError(new PolicyValidatorResult.Error(assertion,
+                    "Destination can not be Request when Response is selected as Source.", null));
+            }
+        }
+    }
 }

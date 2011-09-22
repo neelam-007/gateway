@@ -600,7 +600,11 @@ public class GatewayFeatureSets {
             mass("assertion:Saml2AttributeQuery"),
             mass("assertion:SignResponseElement"),
             mass("assertion:ValidateSignature"));
-        
+
+        GatewayFeatureSet jsonTransformationAssertion =
+        fsr("set:JsonTransformation:Assertions", "The necessary assertions to enable JSON transformation functionality",
+            mass("assertion:JsonTransformation"));
+
         // US (NCES)
         GatewayFeatureSet usAssertions =
         fsr("set:US:Assertions", "US decoration and validation assertions",
@@ -725,7 +729,8 @@ public class GatewayFeatureSets {
             fs(api3scaleAssertions),
             fs(esmAssertions),
             fs(wssp),
-            fs(icapAntivirusScannerAssertions));
+            fs(icapAntivirusScannerAssertions),
+            fs(jsonTransformationAssertion));
 
         fsp("set:Profile:CloudControl", "CloudSpan CloudControl",
             "Same features as Gateway for now.",
