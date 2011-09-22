@@ -4,6 +4,8 @@ import com.l7tech.external.assertions.uuidgenerator.UUIDGeneratorAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
@@ -18,6 +20,7 @@ import java.util.UUID;
  */
 public class ServerUUIDGeneratorAssertion extends AbstractServerAssertion<UUIDGeneratorAssertion> {
     public static final int MINIMUM_AMOUNT = 1;
+    public static final int MAXIMUM_AMOUNT = 100;
 
     public ServerUUIDGeneratorAssertion(final UUIDGeneratorAssertion assertion) throws PolicyAssertionException {
         super(assertion);
@@ -28,6 +31,7 @@ public class ServerUUIDGeneratorAssertion extends AbstractServerAssertion<UUIDGe
             logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "The amount is not set." );
             return AssertionStatus.FAILED;
         }
+
 
         if (assertion.getTargetVariable() == null || assertion.getTargetVariable().isEmpty()) {
             logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "The target variable is not set." );
@@ -45,6 +49,12 @@ public class ServerUUIDGeneratorAssertion extends AbstractServerAssertion<UUIDGe
 
         if (amount < MINIMUM_AMOUNT) {
             logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "No UUID generated. Amount less than minimum: " + amount );
+            return AssertionStatus.FAILED;
+        }
+
+        int maxAmount = ServerConfig.getInstance().getIntProperty(ServerConfigParams.PARAM_UUID_AMOUNT_MAX, MAXIMUM_AMOUNT);
+        if (amount > maxAmount) {
+            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "No UUID generated. Amount more than maximum: " + amount );
             return AssertionStatus.FAILED;
         }
 

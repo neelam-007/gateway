@@ -165,4 +165,5 @@ public interface ServerConfigParams {
     String PARAM_AUDIT_EXPORT_GROUP_CONCAT_MAX_LEN = "audit.export.group_concat_max_len";
     String PARAM_AUDIT_MESSAGE_LIMIT_SIZE = "audit.messageSizeLimit";
     String PARAM_MAX_FOLDER_DEPTH = "policyorganization.maxFolderDepth";
+    String PARAM_UUID_AMOUNT_MAX = "uuid.amount.max";
 }

@@ -69,6 +69,16 @@ public class ServerUUIDGeneratorAssertionTest {
     }
 
     @Test
+    public void checkRequestAmountOverMax() throws Exception {
+        assertion.setAmount(String.valueOf(ServerUUIDGeneratorAssertion.MAXIMUM_AMOUNT + 1));
+        assertion.setTargetVariable(TARGET_VARIABLE);
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        assertEquals(AssertionStatus.FAILED, assertionStatus);
+    }
+
+    @Test
     public void checkRequestAmountInvalid() throws Exception {
         assertion.setAmount("invalid");
         assertion.setTargetVariable(TARGET_VARIABLE);
