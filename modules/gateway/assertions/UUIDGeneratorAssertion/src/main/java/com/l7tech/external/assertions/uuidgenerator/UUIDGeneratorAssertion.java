@@ -59,7 +59,7 @@ public class UUIDGeneratorAssertion extends Assertion implements UsesVariables, 
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, "Generate UUID");
-        meta.put(AssertionMetadata.DESCRIPTION, "Generates UUIDs and stores in"); //TODO fix description
+        meta.put(AssertionMetadata.DESCRIPTION, "Generates and stores UUIDs in a single or multivalued context variable.");
 
         // Add to palette folder(s) 
         //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing, 
@@ -75,7 +75,7 @@ public class UUIDGeneratorAssertion extends Assertion implements UsesVariables, 
 
         // request default feature set name for our class name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:UUIDGenerator" rather than "set:modularAssertions"
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");  //TODO licensing
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
