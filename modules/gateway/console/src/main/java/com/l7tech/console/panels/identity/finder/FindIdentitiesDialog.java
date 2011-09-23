@@ -612,14 +612,14 @@ public class FindIdentitiesDialog extends JDialog {
         selectButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
                 int rows[] = searchResultTable.getSelectedRows();
-                List<EntityHeader> principals = new ArrayList<EntityHeader>();
+                List<IdentityHeader> principals = new ArrayList<IdentityHeader>();
                 for (int i = 0; rows != null && i < rows.length; i++) {
                     int row = rows[i];
-                    EntityHeader eh = (EntityHeader)searchResultTable.getModel().getValueAt(row, 0);
+                    IdentityHeader eh = (IdentityHeader)searchResultTable.getModel().getValueAt(row, 0);
                     principals.add(eh);
                 }
                 if (options.isDisposeOnSelect()) {
-                    selections = principals.toArray(new IdentityHeader[]{});
+                    selections = principals.toArray(new IdentityHeader[principals.size()]);
                     FindIdentitiesDialog.this.dispose();
                 } else {
                     int row = searchResultTable.getSelectedRow();

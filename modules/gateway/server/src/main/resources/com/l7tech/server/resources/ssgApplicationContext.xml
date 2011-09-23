@@ -660,12 +660,12 @@
     <bean id="bindOnlyLdapIdentityProvider" class="com.l7tech.server.identity.ldap.BindOnlyLdapIdentityProviderImpl" scope="prototype">
         <property name="ldapRuntimeConfig" ref="ldapRuntimeConfig"/>
         <property name="userManager">
-            <bean class="com.l7tech.server.identity.ldap.BindOnlyLdapUserManager" scope="prototype">
+            <bean class="com.l7tech.server.identity.ldap.BindOnlyLdapUserManagerImpl" scope="prototype">
                 <property name="ldapRuntimeConfig" ref="ldapRuntimeConfig"/>
             </bean>
         </property>
         <property name="groupManager">
-            <bean class="com.l7tech.server.identity.ldap.BindOnlyLdapGroupManager" scope="prototype"/>
+            <bean class="com.l7tech.server.identity.ldap.BindOnlyLdapGroupManagerImpl" scope="prototype"/>
         </property>
     </bean>
 

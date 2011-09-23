@@ -166,4 +166,5 @@ public interface ServerConfigParams {
     String PARAM_AUDIT_MESSAGE_LIMIT_SIZE = "audit.messageSizeLimit";
     String PARAM_MAX_FOLDER_DEPTH = "policyorganization.maxFolderDepth";
     String PARAM_UUID_AMOUNT_MAX = "uuid.amount.max";
+    String PARAM_BIND_ONLY_LDAP_USERNAME_PATTERN = "ldapSimpleUsernamePattern";
 }

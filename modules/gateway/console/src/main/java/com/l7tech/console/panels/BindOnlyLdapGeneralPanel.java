@@ -29,8 +29,8 @@ public class BindOnlyLdapGeneralPanel extends IdentityProviderStepPanel {
     @Override
     public String getDescription() {
         return
-            "<html>This Wizard allows you to configure a Simplified LDAP Identity Provider. Fields \\\n" +
-            "marked with an asterisk \"*\" are required.\\\n" +
+            "<html>This Wizard allows you to configure a Simplified LDAP Identity Provider. Fields \n" +
+            "marked with an asterisk \"*\" are required.\n" +
             "<p>Click [Test] at any time to test the LDAP configuration.</p></html>";
     }
 

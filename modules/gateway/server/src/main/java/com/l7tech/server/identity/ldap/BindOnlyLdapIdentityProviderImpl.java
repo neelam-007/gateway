@@ -1,8 +1,12 @@
 package com.l7tech.server.identity.ldap;
 
-import com.l7tech.identity.*;
+import com.l7tech.identity.AuthenticationException;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.InvalidIdProviderCfgException;
+import com.l7tech.identity.ValidationException;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.ldap.BindOnlyLdapIdentityProviderConfig;
+import com.l7tech.identity.ldap.BindOnlyLdapUser;
 import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.objectmodel.EntityHeaderSet;
 import com.l7tech.objectmodel.EntityType;
@@ -17,7 +21,6 @@ import com.l7tech.server.identity.ConfigurableIdentityProvider;
 import com.l7tech.util.HexUtils;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
@@ -32,7 +35,8 @@ import java.util.logging.Logger;
 /**
  *
  */
-public class BindOnlyLdapIdentityProviderImpl implements BindOnlyLdapIdentityProvider, InitializingBean, ApplicationContextAware, ConfigurableIdentityProvider, Lifecycle {
+@LdapClassLoaderRequired
+public class BindOnlyLdapIdentityProviderImpl implements BindOnlyLdapIdentityProvider, ApplicationContextAware, ConfigurableIdentityProvider, Lifecycle {
     private static final Logger logger = Logger.getLogger(BindOnlyLdapIdentityProviderImpl.class.getName());
 
     @Override
@@ -57,7 +61,7 @@ public class BindOnlyLdapIdentityProviderImpl implements BindOnlyLdapIdentityPro
     }
 
     @Override
-    public LdapUser findUserByCredential(LoginCredentials lc) throws FindException {
+    public BindOnlyLdapUser findUserByCredential(LoginCredentials lc) throws FindException {
         return null;
     }
 
@@ -108,7 +112,7 @@ public class BindOnlyLdapIdentityProviderImpl implements BindOnlyLdapIdentityPro
         if (searchString != null) {
             String login = searchString.trim().replace("*", "");
             if (login.length() > 0 && typeset.contains(EntityType.USER)) {
-                ret.add(new IdentityHeader(config.getOid(), userManager.makeDn(login), EntityType.USER, login, "Template username \"" + login + "\"", login, null));
+                ret.add(new IdentityHeader(config.getOid(), login, EntityType.USER, login, "Template username \"" + login + "\"", login, null));
             }
         }
 
@@ -136,7 +140,7 @@ public class BindOnlyLdapIdentityProviderImpl implements BindOnlyLdapIdentityPro
     }
 
     @Override
-    public void preSaveClientCert(LdapUser user, X509Certificate[] certChain) throws ClientCertManager.VetoSave {
+    public void preSaveClientCert(BindOnlyLdapUser user, X509Certificate[] certChain) throws ClientCertManager.VetoSave {
         throw new ClientCertManager.VetoSave("Feature not supported for bind-only LDAP provider");
     }
 
@@ -151,18 +155,13 @@ public class BindOnlyLdapIdentityProviderImpl implements BindOnlyLdapIdentityPro
     }
 
     @Override
-    public void validate(LdapUser user) throws ValidationException {
-        // TODO consider implementing
+    public void validate(BindOnlyLdapUser user) throws ValidationException {
         throw new ValidationException("Validation not supported for bind-only LDAP");
     }
 
     @Override
     public boolean hasClientCert(String login) throws AuthenticationException {
         return false;
-    }
-
-    @Override
-    public void afterPropertiesSet() throws Exception {
     }
 
     @Override
