@@ -3,6 +3,8 @@ package com.l7tech.external.assertions.uuidgenerator.server;
 import com.l7tech.external.assertions.uuidgenerator.UUIDGeneratorAssertion;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import org.junit.Before;
@@ -15,6 +17,7 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * User: alee
@@ -28,15 +31,38 @@ public class ServerUUIDGeneratorAssertionTest {
     @Before
     public void setup() throws Exception {
         assertion = new UUIDGeneratorAssertion();
+        assertion.setAmount(UUIDGeneratorAssertion.DEFAULT_AMOUNT);
+        assertion.setTargetVariable(TARGET_VARIABLE);
         serverAssertion = new ServerUUIDGeneratorAssertion(assertion);
         policyContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
     }
 
+    @Test(expected= PolicyAssertionException.class)
+    public void constructorNullTargetVariable() throws Exception{
+        assertion.setTargetVariable(null);
+        new ServerUUIDGeneratorAssertion(assertion);
+    }
+
+    @Test(expected= PolicyAssertionException.class)
+    public void constructorEmptyTargetVariable() throws Exception{
+        assertion.setTargetVariable("");
+        new ServerUUIDGeneratorAssertion(assertion);
+    }
+
+    @Test(expected= PolicyAssertionException.class)
+    public void constructorNullAmount() throws Exception{
+        assertion.setAmount(null);
+        new ServerUUIDGeneratorAssertion(assertion);
+    }
+
+    @Test(expected= PolicyAssertionException.class)
+    public void constructorEmptyAmount() throws Exception{
+        assertion.setAmount("");
+        new ServerUUIDGeneratorAssertion(assertion);
+    }
+
     @Test
     public void checkRequestHappyPath() throws Exception {
-        assertion.setAmount(UUIDGeneratorAssertion.DEFAULT_AMOUNT);
-        assertion.setTargetVariable(TARGET_VARIABLE);
-
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 
         assertEquals(AssertionStatus.NONE, assertionStatus);
@@ -48,7 +74,6 @@ public class ServerUUIDGeneratorAssertionTest {
     @Test
     public void checkRequestMultipleAmount() throws Exception {
         assertion.setAmount("2");
-        assertion.setTargetVariable(TARGET_VARIABLE);
 
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 
@@ -60,22 +85,22 @@ public class ServerUUIDGeneratorAssertionTest {
 
     @Test
     public void checkRequestAmountLessThanMin() throws Exception {
-        assertion.setAmount("0");
-        assertion.setTargetVariable(TARGET_VARIABLE);
+        assertion.setAmount(String.valueOf(ServerUUIDGeneratorAssertion.MINIMUM_AMOUNT - 1));
 
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 
         assertEquals(AssertionStatus.FAILED, assertionStatus);
+        checkContextVariableDoesNotExist();
     }
 
     @Test
     public void checkRequestAmountOverMax() throws Exception {
         assertion.setAmount(String.valueOf(ServerUUIDGeneratorAssertion.MAXIMUM_AMOUNT + 1));
-        assertion.setTargetVariable(TARGET_VARIABLE);
 
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 
         assertEquals(AssertionStatus.FAILED, assertionStatus);
+        checkContextVariableDoesNotExist();
     }
 
     @Test
@@ -86,24 +111,13 @@ public class ServerUUIDGeneratorAssertionTest {
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 
         assertEquals(AssertionStatus.FAILED, assertionStatus);
-    }
-
-    @Test
-    public void checkRequestAmountNull() throws Exception {
-        assertion.setAmount(null);
-        assertion.setTargetVariable(TARGET_VARIABLE);
-
-        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
-
-        assertEquals(AssertionStatus.FAILED, assertionStatus);
+        checkContextVariableDoesNotExist();
     }
 
     @Test
     public void checkRequestAmountAsContextVariable() throws Exception {
         policyContext.setVariable("amount", 2);
         assertion.setAmount("${amount}");
-        assertion.setTargetVariable(TARGET_VARIABLE);
-        serverAssertion = new ServerUUIDGeneratorAssertion(assertion);
 
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 
@@ -111,26 +125,6 @@ public class ServerUUIDGeneratorAssertionTest {
         final String[] contextVariable = (String[]) policyContext.getVariable(TARGET_VARIABLE);
         assertEquals(2, contextVariable.length);
         assertTrue(allUnique(contextVariable));
-    }
-
-    @Test
-    public void checkRequestTargetVariableNull() throws Exception {
-        assertion.setAmount(UUIDGeneratorAssertion.DEFAULT_AMOUNT);
-        assertion.setTargetVariable(null);
-
-        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
-
-        assertEquals(AssertionStatus.FAILED, assertionStatus);
-    }
-
-    @Test
-    public void checkRequestTargetVariableEmpty() throws Exception {
-        assertion.setAmount(UUIDGeneratorAssertion.DEFAULT_AMOUNT);
-        assertion.setTargetVariable("");
-
-        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
-
-        assertEquals(AssertionStatus.FAILED, assertionStatus);
     }
 
     private boolean allUnique(final String[] items) {
@@ -141,5 +135,14 @@ public class ServerUUIDGeneratorAssertionTest {
             allUnique = false;
         }
         return allUnique;
+    }
+
+    private void checkContextVariableDoesNotExist() throws NoSuchVariableException{
+        try{
+            policyContext.getVariable(TARGET_VARIABLE);
+            fail("Expected NoSuchVariableException");
+        }catch(final NoSuchVariableException e){
+            //pass
+        }
     }
 }

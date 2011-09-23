@@ -19,25 +19,15 @@ import java.util.UUID;
  * @see com.l7tech.external.assertions.uuidgenerator.UUIDGeneratorAssertion
  */
 public class ServerUUIDGeneratorAssertion extends AbstractServerAssertion<UUIDGeneratorAssertion> {
-    public static final int MINIMUM_AMOUNT = 1;
-    public static final int MAXIMUM_AMOUNT = 100;
+    static final int MINIMUM_AMOUNT = 1;
+    static final int MAXIMUM_AMOUNT = 100;
 
     public ServerUUIDGeneratorAssertion(final UUIDGeneratorAssertion assertion) throws PolicyAssertionException {
         super(assertion);
+        validateAssertion(assertion);
     }
 
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        if (assertion.getAmount() == null) {
-            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "The amount is not set." );
-            return AssertionStatus.FAILED;
-        }
-
-
-        if (assertion.getTargetVariable() == null || assertion.getTargetVariable().isEmpty()) {
-            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "The target variable is not set." );
-            return AssertionStatus.FAILED;
-        }
-
         int amount;
         final String amountStr = ExpandVariables.process(assertion.getAmount(), context.getVariableMap(assertion.getVariablesUsed(), getAudit()), getAudit());
         try {
@@ -68,5 +58,17 @@ public class ServerUUIDGeneratorAssertion extends AbstractServerAssertion<UUIDGe
         context.setVariable(assertion.getTargetVariable(), uuids);
 
         return AssertionStatus.NONE;
+    }
+
+    private void validateAssertion(UUIDGeneratorAssertion assertion) throws PolicyAssertionException {
+        if (assertion.getAmount() == null || assertion.getAmount().isEmpty()) {
+            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "The amount is not set." );
+            throw new PolicyAssertionException(assertion, "Amount is not set.");
+        }
+
+        if (assertion.getTargetVariable() == null || assertion.getTargetVariable().isEmpty()) {
+            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "The target variable is not set." );
+            throw new PolicyAssertionException(assertion, "Target Variable is not set.");
+        }
     }
 }
