@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.ssh.keyprovider;
 
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.prov.JceProvider;
+import com.l7tech.security.prov.generic.GenericJceProviderEngine;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
@@ -20,7 +21,7 @@ import java.util.regex.Pattern;
 /**
  * SSH key utility class.
  */
-public class SshKeyUtil extends JceProvider {
+public class SshKeyUtil {
     public static final String PEM = "PEM";
 
     private static final Logger LOG = Logger.getLogger(SshKeyUtil.class.getName());
@@ -59,7 +60,7 @@ public class SshKeyUtil extends JceProvider {
      */
     public static String getAsymProvider() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
         Provider ap = JceProvider.getInstance().getProviderFor("Cipher.RSA");
-        return ap != null ? ap.getName() : Cipher.getInstance(new SshKeyUtil().getRsaNoPaddingCipherName()).getProvider().getName();
+        return ap != null ? ap.getName() : Cipher.getInstance((new GenericJceProviderEngine()).getRsaNoPaddingCipherName()).getProvider().getName();
     }
 
     public static KeyPair doReadKeyPair(String privateKey) throws Exception {
@@ -82,11 +83,6 @@ public class SshKeyUtil extends JceProvider {
             ResourceUtils.closeQuietly(os);
         }
         return pemPublicKey;
-    }
-
-    @Override
-    public String getDisplayName() {
-        return null;
     }
 
     /**
