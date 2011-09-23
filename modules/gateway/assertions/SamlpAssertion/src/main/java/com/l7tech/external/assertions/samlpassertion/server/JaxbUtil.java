@@ -20,7 +20,7 @@ import java.util.logging.Logger;
  * saml.support.ds (http://www.w3.org/2000/09/xmldsig#)
  *
  * This class will either create a new underlying JAXBContext per usage or use a static JAXBContext depending
- * on the value of system property com.l7tech.external.assertions.samlpassertion.useStaticContext.
+ * on the value of system property com.l7tech.external.assertions.samlpassertion.useStaticContext
  * While the JAXB implementation used is thread safe a static context can be used.
  *
  * @author : vchan, sjones, darmstrong
@@ -35,7 +35,7 @@ public class JaxbUtil {
     private static final AtomicReference<JAXBContext> jaxbContextV1 = new AtomicReference<JAXBContext>();
     private static final AtomicReference<JAXBContext> jaxbContextV2 = new AtomicReference<JAXBContext>();
 
-    private static Functions.NullaryThrows<JAXBContext, JAXBException> ctxFactoryV1 = new Functions.NullaryThrows<JAXBContext, JAXBException>() {
+    private static final Functions.NullaryThrows<JAXBContext, JAXBException> ctxFactoryV1 = new Functions.NullaryThrows<JAXBContext, JAXBException>() {
         @Override
         public JAXBContext call() throws JAXBException {
             logger.log(Level.FINE, "Creating JAXBContext (V1)");
@@ -43,7 +43,7 @@ public class JaxbUtil {
         }
     };
 
-    private static Functions.NullaryThrows<JAXBContext, JAXBException> ctxFactoryV2 = new Functions.NullaryThrows<JAXBContext, JAXBException>() {
+    private static final Functions.NullaryThrows<JAXBContext, JAXBException> ctxFactoryV2 = new Functions.NullaryThrows<JAXBContext, JAXBException>() {
         @Override
         public JAXBContext call() throws JAXBException {
             logger.log(Level.FINE, "Creating JAXBContext (V2)");
@@ -133,6 +133,7 @@ public class JaxbUtil {
 
     protected static class SamlpNamespacePrefixMapper extends NamespacePrefixMapper {
 
+        @Override
         public String getPreferredPrefix(String namespaceUri, String suggestion, boolean requirePrefix) {
             if (NS_PREFIXES.containsKey(namespaceUri))
                 return NS_PREFIXES.get(namespaceUri);
