@@ -221,6 +221,14 @@ public class IdentityProviderConfig extends NamedEntityImp {
         return true;
     }
 
+    /**
+     * @return true if a valid example username and password must be provided in order to test this identity provider.
+     */
+    @Transient
+    public boolean isCredentialsRequiredForTest() {
+        return false;
+    }
+
     @Transient
     public CertificateValidationType getCertificateValidationType() {
         CertificateValidationType validationType = null;

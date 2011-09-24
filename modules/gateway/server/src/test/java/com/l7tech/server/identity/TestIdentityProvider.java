@@ -187,7 +187,7 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
     }
 
     @Override
-    public void test(boolean fast) throws InvalidIdProviderCfgException {
+    public void test(boolean fast, String testUser, char[] testPassword) throws InvalidIdProviderCfgException {
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.identity.ldap.BindOnlyLdapIdentityProviderConfig;
 
 import javax.swing.*;
@@ -15,6 +16,8 @@ public class BindOnlyLdapGeneralPanel extends IdentityProviderStepPanel {
     private JTextField dnSuffixField;
     private JTextField providerNameField;
 
+    private boolean finishAllowed = false;
+
     public BindOnlyLdapGeneralPanel(WizardStepPanel next, boolean readOnly) {
         super(next, readOnly);
         setLayout(new BorderLayout());
@@ -23,7 +26,15 @@ public class BindOnlyLdapGeneralPanel extends IdentityProviderStepPanel {
     }
 
     private void initGui() {
-        // TODO wire up listeners, activate Finish button only when valid state
+        RunOnChangeListener listener = new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                updateControlButtonState();
+            }
+        });
+
+        ldapUrlListPanel.addPropertyChangeListener(LdapUrlListPanel.PROP_DATA, listener);
+        providerNameField.getDocument().addDocumentListener(listener);
     }
 
     @Override
@@ -41,12 +52,17 @@ public class BindOnlyLdapGeneralPanel extends IdentityProviderStepPanel {
 
     @Override
     public boolean canFinish() {
-        return true;
+        return finishAllowed;
     }
 
     @Override
     public boolean canAdvance() {
-        return true;
+        return canFinish();
+    }
+
+    @Override
+    public boolean canTest() {
+        return canFinish();
     }
 
     @Override
@@ -74,5 +90,12 @@ public class BindOnlyLdapGeneralPanel extends IdentityProviderStepPanel {
             config.setBindPatternPrefix(dnPrefixField.getText());
             config.setBindPatternSuffix(dnSuffixField.getText());
         }
+    }
+
+    private void updateControlButtonState() {
+        finishAllowed = providerNameField.getText().length() > 0 && !ldapUrlListPanel.isUrlListEmpty();
+
+        // notify the wizard to update the state of the control buttons
+        notifyListeners();
     }
 }

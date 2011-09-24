@@ -53,6 +53,23 @@ public class BindOnlyLdapIdentityProviderConfig extends LdapUrlBasedIdentityProv
         return false;
     }
 
+    @Override
+    public boolean canIssueCertificates() {
+        return false;
+    }
+
+    @Override
+    @Transient
+    public boolean isCredentialsRequiredForTest() {
+        return true;
+    }
+
+    @Override
+    @Transient
+    public boolean isAdminEnabled() {
+        return false;
+    }
+
     public static final String BIND_PATTERN_PREFIX = "bindPatternPrefix";
     public static final String BIND_PATTERN_SUFFIX = "bindPatternSuffix";
 }

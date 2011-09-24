@@ -5,7 +5,7 @@ import com.l7tech.objectmodel.EntityHeaderSet;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.IdentityHeader;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
+import org.jetbrains.annotations.Nullable;
 
 import java.security.cert.X509Certificate;
 
@@ -40,10 +40,13 @@ public interface IdentityProvider<UT extends User, GT extends Group, UMT extends
     /**
      * Test this identity provider.
      *
+     *
      * @param fast True for a quick test, false for a full test
-     * @throws InvalidIdProviderCfgException
+     * @param testUser example username to use for testing, or null if not required.
+     * @param testPassword exmaple password to use for testing, or null if not required.
+     * @throws InvalidIdProviderCfgException if the test fails
      */
-    void test(boolean fast) throws InvalidIdProviderCfgException;
+    void test(boolean fast, @Nullable String testUser, @Nullable char[] testPassword) throws InvalidIdProviderCfgException;
 
     /**
      * Allows an IdentityProvider to veto the saving of a client cert.

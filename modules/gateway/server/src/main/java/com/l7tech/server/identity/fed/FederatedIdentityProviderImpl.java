@@ -112,7 +112,7 @@ public class FederatedIdentityProviderImpl
     }
 
     @Override
-    public void test(boolean quick) {
+    public void test(boolean quick, String testUser, char[] testPassword) {
         // TODO
     }
 

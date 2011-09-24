@@ -93,10 +93,13 @@ public class IdentityProviderFactory implements ApplicationContextAware, Applica
      * If the IPC is not valid an InvalidIdProviderCfgException is thrown
      *
      * @param identityProviderConfig the new config object (not yet saved)
+     * @param testUser  example username if required by this provider type, or null
+     * @param testPassword example password if required by this provider type, or null
+     * @throws InvalidIdProviderCfgException if the test fails
      */
-    public void test(final IdentityProviderConfig identityProviderConfig) throws InvalidIdProviderCfgException {
+    public void test(final IdentityProviderConfig identityProviderConfig, String testUser, char[] testPassword) throws InvalidIdProviderCfgException {
         IdentityProvider provider = makeProvider(identityProviderConfig, false);
-        provider.test(false);
+        provider.test(false, testUser, testPassword);
     }
 
     @Override

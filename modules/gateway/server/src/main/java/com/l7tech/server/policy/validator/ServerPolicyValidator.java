@@ -627,7 +627,7 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                 } else if (identityAssertion instanceof AuthenticationAssertion) {
                     idexists = true; // We don't care who you are
                     try {
-                        prov.test(true);
+                        prov.test(true, null, null);
                     } catch (InvalidIdProviderCfgException iipce) {
                         throw new FindException("Error testing provider.", iipce);
                     }

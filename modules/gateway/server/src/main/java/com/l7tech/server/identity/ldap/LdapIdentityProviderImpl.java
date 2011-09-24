@@ -676,7 +676,7 @@ public class LdapIdentityProviderImpl
     }
 
     @Override
-    public void test(final boolean quick) throws InvalidIdProviderCfgException {
+    public void test(final boolean quick, String testUser, char[] testPassword) throws InvalidIdProviderCfgException {
         DirContext context = null;
         try {
             // make sure we can connect

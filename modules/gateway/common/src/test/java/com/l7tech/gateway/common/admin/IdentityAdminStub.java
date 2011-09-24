@@ -213,7 +213,7 @@ public class IdentityAdminStub implements IdentityAdmin {
     }
 
     @Override
-    public void testIdProviderConfig(IdentityProviderConfig cfg) throws InvalidIdProviderCfgException {
+    public void testIdProviderConfig(IdentityProviderConfig cfg, String testUser, char[] testPassword) throws InvalidIdProviderCfgException {
     }
 
     @Override

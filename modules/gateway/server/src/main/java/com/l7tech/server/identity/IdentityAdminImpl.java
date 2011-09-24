@@ -739,13 +739,13 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     }
 
     @Override
-    public void testIdProviderConfig(IdentityProviderConfig identityProviderConfig)
+    public void testIdProviderConfig(IdentityProviderConfig identityProviderConfig, String testUser, char[] testPassword)
             throws InvalidIdProviderCfgException
     {
         if (identityProviderConfig == null)
             throw new NullPointerException("non-null identityProviderConfig is required for test");
         try {
-            identityProviderFactory.test(identityProviderConfig);
+            identityProviderFactory.test(identityProviderConfig, testUser, testPassword);
         } catch (InvalidIdProviderCfgException e) {
             throw e;
         } catch (Throwable t) {

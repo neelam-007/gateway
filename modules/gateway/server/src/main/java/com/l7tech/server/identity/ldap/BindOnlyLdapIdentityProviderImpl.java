@@ -1,19 +1,17 @@
 package com.l7tech.server.identity.ldap;
 
-import com.l7tech.identity.AuthenticationException;
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.InvalidIdProviderCfgException;
-import com.l7tech.identity.ValidationException;
+import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.ldap.BindOnlyLdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.BindOnlyLdapUser;
-import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.objectmodel.EntityHeaderSet;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.server.Lifecycle;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -33,7 +31,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
+ * Gateway implementation of Simple LDAP identity provider.
  */
 @LdapClassLoaderRequired
 public class BindOnlyLdapIdentityProviderImpl implements BindOnlyLdapIdentityProvider, ApplicationContextAware, ConfigurableIdentityProvider, Lifecycle {
@@ -135,8 +133,23 @@ public class BindOnlyLdapIdentityProviderImpl implements BindOnlyLdapIdentityPro
     }
 
     @Override
-    public void test(boolean fast) throws InvalidIdProviderCfgException {
-        throw new InvalidIdProviderCfgException("Unable to test basic provider");
+    public void test(boolean fast, String testUser, char[] testPassword) throws InvalidIdProviderCfgException {
+        if (fast)
+            return;
+
+        if (testUser == null)
+            throw new InvalidIdProviderCfgException("A test username must be provided in order to test a Simple LDAP provider.");
+
+        if (testPassword == null)
+            throw new InvalidIdProviderCfgException("A test password must be provided in order to test a Simple LDAP provider.");
+
+        try {
+            getUserManager().authenticatePasswordCredentials(LoginCredentials.makeLoginCredentials(new HttpBasicToken(testUser, testPassword), HttpBasic.class));
+            // We don't care about the AuthenticationResult, just that it succeeded
+
+        } catch (BadCredentialsException e) {
+            throw new InvalidIdProviderCfgException("Test credentials failed to authenticate.", e);
+        }
     }
 
     @Override

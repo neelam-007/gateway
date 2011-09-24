@@ -398,10 +398,12 @@ public interface IdentityAdmin {
      * should not be tested.
      *
      * @param cfg the {@link IdentityProviderConfig} to test.  Does not need to have been saved yet.  Must not be null.
+     * @param testUsername test username if required by this ID provider config, otherwise null.
+     * @param testPassword test password if required by this ID provider config, otherwise null.
      * @throws com.l7tech.identity.InvalidIdProviderCfgException
      *          if the test fails
      */
-    void testIdProviderConfig(IdentityProviderConfig cfg)
+    void testIdProviderConfig(IdentityProviderConfig cfg, String testUsername, char[] testPassword)
             throws InvalidIdProviderCfgException;
 
     /**

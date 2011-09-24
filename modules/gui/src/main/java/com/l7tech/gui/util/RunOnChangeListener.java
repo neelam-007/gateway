@@ -1,22 +1,17 @@
 package com.l7tech.gui.util;
 
-import java.awt.event.ItemListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ActionListener;
+import javax.swing.event.*;
 import java.awt.event.ActionEvent;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.DocumentListener;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.ChangeListener;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 
 /**
  * Utility listener that runs the given Runnable whenever it receives a change event.
  */
-public class RunOnChangeListener implements ActionListener, ChangeListener, DocumentListener, ItemListener, ListSelectionListener, TableModelListener {
+public class RunOnChangeListener implements ActionListener, ChangeListener, DocumentListener, ItemListener, ListSelectionListener, TableModelListener, PropertyChangeListener {
 
     //- PUBLIC
 
@@ -93,6 +88,14 @@ public class RunOnChangeListener implements ActionListener, ChangeListener, Docu
      */
     @Override
     public void tableChanged( final TableModelEvent e ) {
+        run();
+    }
+
+    /**
+     * @see PropertyChangeListener
+     */
+    @Override
+    public void propertyChange( PropertyChangeEvent e ) {
         run();
     }
 

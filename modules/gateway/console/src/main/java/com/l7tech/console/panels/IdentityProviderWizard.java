@@ -2,15 +2,17 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.InvalidIdProviderCfgException;
 
+import javax.naming.CommunicationException;
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
-import javax.naming.CommunicationException;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
@@ -88,10 +90,24 @@ public class IdentityProviderWizard extends Wizard {
     }
 
     private void testSettings() {
-
+        char[] testPassword = null;
+        String testUsername = null;
         String errorMsg = null;
         try {
-            getIdentityAdmin().testIdProviderConfig((IdentityProviderConfig) wizardInput);
+            final IdentityProviderConfig providerConfig = (IdentityProviderConfig) wizardInput;
+
+            if (providerConfig.isCredentialsRequiredForTest()) {
+                UsernamePasswordDialog dlg = new UsernamePasswordDialog(this, resources.getString("test.password.title"), resources.getString("test.password.prompt"));
+                dlg.pack();
+                Utilities.centerOnParent(dlg);
+                dlg.setVisible(true);
+                if (!dlg.isConfirmed())
+                    return;
+                testUsername = dlg.getUsername();
+                testPassword = dlg.getPassword();
+            }
+
+            getIdentityAdmin().testIdProviderConfig(providerConfig, testUsername, testPassword);
         } catch (InvalidIdProviderCfgException e) {
             errorMsg = e.getMessage();
         } catch (Exception e) {
@@ -100,6 +116,8 @@ public class IdentityProviderWizard extends Wizard {
             if (comex != null && comex.getMessage() != null && comex.getMessage().length() > 0) {
                 errorMsg += "\n(" + comex.getMessage() +")";
             }
+        } finally {
+            if (testPassword != null) Arrays.fill(testPassword, '\0');
         }
         if (errorMsg == null) {
             JOptionPane.showMessageDialog(this, resources.getString("test.res.ok"),

@@ -1,22 +1,23 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.GuiCertUtil;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.util.HexUtils;
 import com.l7tech.console.event.*;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
-import com.l7tech.identity.User;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.GuiCertUtil;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.User;
+import com.l7tech.identity.ldap.BindOnlyLdapUser;
 import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.util.HexUtils;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -26,10 +27,10 @@ import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.AccessControlException;
+import java.security.AccessController;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivilegedAction;
 import java.security.cert.*;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -265,7 +266,10 @@ public abstract class UserCertPanel extends JPanel {
             if (user == null) {
                 user = userPanel.getUser();
             }
-            if (user instanceof LdapUser) {
+            if (user instanceof BindOnlyLdapUser) {
+                cert = null;
+                canUpdate = false;
+            } else if (user instanceof LdapUser) {
                 LdapUser luser = (LdapUser)user;
                 try {
                     cert = getCertForLdapUser(luser);
