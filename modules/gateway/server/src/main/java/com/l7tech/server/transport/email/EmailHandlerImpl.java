@@ -8,7 +8,6 @@ import com.l7tech.message.MimeKnob;
 import com.l7tech.message.XmlKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.event.FaultProcessed;
@@ -16,7 +15,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.util.EventChannel;
-import com.l7tech.util.Charsets;
+import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.xml.soap.SoapFaultUtils;
@@ -40,9 +39,10 @@ import java.util.logging.Logger;
  * currently not possible to return a response. The message is passed off to the message handler.
  */
 public class EmailHandlerImpl implements EmailHandler {
-    private MessageProcessor messageProcessor;
-    private StashManagerFactory stashManagerFactory;
-    private EventChannel messageProcessingEventChannel;
+    private final MessageProcessor messageProcessor;
+    private final StashManagerFactory stashManagerFactory;
+    private final EventChannel messageProcessingEventChannel;
+    private final Config config;
 
     public EmailHandlerImpl(ApplicationContext ctx) {
         if (ctx == null) {
@@ -51,6 +51,7 @@ public class EmailHandlerImpl implements EmailHandler {
         messageProcessor = ctx.getBean("messageProcessor", MessageProcessor.class);
         stashManagerFactory = ctx.getBean("stashManagerFactory", StashManagerFactory.class);
         messageProcessingEventChannel = ctx.getBean("messageProcessingEventChannel", EventChannel.class);
+        config = ctx.getBean("serverConfig", Config.class);
     }
 
     @Override
@@ -58,31 +59,29 @@ public class EmailHandlerImpl implements EmailHandler {
                            final MimeMessage message )
             throws EmailListenerRuntimeException
     {
-        final MimeMessage emailResponse;
         final InputStream requestStream;
         final ContentTypeHeader ctype;
         final Map<String, Object> reqEmailMsgProps;
         final String soapAction;
 
         AssertionStatus status = AssertionStatus.UNDEFINED;
-        boolean responseSuccess = false;
         boolean messageTooLarge = false;
         try {
             // Init content and type
-            long size = 0;
+            long size;
             String contentTypeValue = message.getContentType();
             if(contentTypeValue == null) {
                 ctype = ContentTypeHeader.XML_DEFAULT;
             } else {
                 ctype = ContentTypeHeader.create(contentTypeValue);
             }
-            size = message.getSize();
+            size = (long) message.getSize();
             requestStream = message.getInputStream();
 
             // enforce size restriction
-            String sizeLimitStr = (String)emailListenerCfg.getEmailListener().properties().get(EmailListener.PROP_REQUEST_SIZE_LIMIT);
-            long sizeLimit =  sizeLimitStr == null ?  ServerConfig.getInstance().getLongProperty(ServerConfigParams.PARAM_EMAIL_MESSAGE_MAX_BYTES,com.l7tech.message.Message.getMaxBytes()):Long.parseLong(sizeLimitStr);
-            if ( sizeLimit > 0 && size > sizeLimit ) {
+            String sizeLimitStr = emailListenerCfg.getEmailListener().properties().getProperty(EmailListener.PROP_REQUEST_SIZE_LIMIT);
+            long sizeLimit =  sizeLimitStr == null ?  config.getLongProperty(ServerConfigParams.PARAM_EMAIL_MESSAGE_MAX_BYTES,com.l7tech.message.Message.getMaxBytes()):Long.parseLong(sizeLimitStr);
+            if ( sizeLimit > 0L && size > sizeLimit ) {
                 messageTooLarge = true;
             }
 
@@ -95,7 +94,7 @@ public class EmailHandlerImpl implements EmailHandler {
             reqEmailMsgProps = Collections.unmodifiableMap(msgProps);
 
             // Gets the JMS message property to use as SOAPAction, if present.
-            String soapActionValue = null;
+            String soapActionValue;
             soapActionValue = (String)msgProps.get(SoapUtil.SOAPACTION);
             if(soapActionValue == null) {
                 soapActionValue = ctype.getParam("action");
@@ -112,10 +111,8 @@ public class EmailHandlerImpl implements EmailHandler {
             throw new EmailListenerRuntimeException("Error processing request message", me);
         }
 
-        emailResponse = buildMessageFromTemplate(emailListenerCfg, message);
-
         try {
-            final long[] hardWiredServiceOidHolder = new long[]{0};
+            final long[] hardWiredServiceOidHolder = new long[]{ 0L };
             try {
                 Properties props = emailListenerCfg.getEmailListener().properties();
                 String tmp = props.getProperty(EmailListener.PROP_IS_HARDWIRED_SERVICE);
@@ -130,7 +127,7 @@ public class EmailHandlerImpl implements EmailHandler {
             }
 
             com.l7tech.message.Message request = new com.l7tech.message.Message();
-            request.initialize(stashManagerFactory.createStashManager(), ctype, requestStream,0);
+            request.initialize(stashManagerFactory.createStashManager(), ctype, requestStream, 0L );
             request.attachEmailKnob(new EmailKnob() {
                 @Override
                 public Map<String, Object> getEmailMsgPropMap() {
@@ -153,7 +150,6 @@ public class EmailHandlerImpl implements EmailHandler {
             String faultCode = null;
 
             try {
-                boolean stealthMode = false;
                 InputStream responseStream = null;
                 if ( !messageTooLarge ) {
                     try {
@@ -166,13 +162,11 @@ public class EmailHandlerImpl implements EmailHandler {
                             if (status != AssertionStatus.NONE && context.isStealthResponseMode()) {
                                 _logger.info("Policy returned error and stealth mode is set. " +
                                         "Not sending response message.");
-                                stealthMode = true;
                             } else {
                                 responseStream = new ByteArrayInputStream(XmlUtil.nodeToString(context.getResponse().getXmlKnob().getDocumentReadOnly()).getBytes());
                             }
                         } else {
                             _logger.finer("No response received");
-                            responseStream = null;
                         }
                     } catch ( PolicyVersionException pve ) {
                         String msg1 = "Request referred to an outdated version of policy";
@@ -195,17 +189,13 @@ public class EmailHandlerImpl implements EmailHandler {
                     if (context.isStealthResponseMode()) {
                         _logger.info("No response data available and stealth mode is set. " +
                                 "Not sending response message.");
-                        stealthMode = true;
                     } else {
                         if ( faultMessage == null ) faultMessage = status.getMessage();
                         try {
-                            String faultXml = SoapFaultUtils.generateSoapFaultXml(
+                            final String faultXml = SoapFaultUtils.generateSoapFaultXml(
                                     (context.getService() != null) ? context.getService().getSoapVersion() : SoapVersion.UNKNOWN,
                                     faultCode == null ? "Server" : faultCode,
                                     faultMessage, null, "");
-
-                            responseStream = new ByteArrayInputStream(faultXml.getBytes(Charsets.UTF8));
-
                             if (faultXml != null) {
                                 messageProcessingEventChannel.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
                             }
@@ -214,8 +204,6 @@ public class EmailHandlerImpl implements EmailHandler {
                         }
                     }
                 }
-
-                responseSuccess = true;
             } catch (IOException e) {
                 throw new EmailListenerRuntimeException(e);
             } finally {
@@ -224,10 +212,6 @@ public class EmailHandlerImpl implements EmailHandler {
         } catch (IOException e) {
             throw new RuntimeException(e); // can't happen
         }
-    }
-
-    private MimeMessage buildMessageFromTemplate(EmailListenerConfig emailListenerCfg, MimeMessage template) {
-        return null;
     }
 
     private static final Logger _logger = Logger.getLogger(EmailHandlerImpl.class.getName());

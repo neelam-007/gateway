@@ -4,7 +4,6 @@ import com.l7tech.gateway.common.transport.email.EmailAdmin;
 import com.l7tech.gateway.common.transport.email.EmailMessage;
 import com.l7tech.gateway.common.transport.email.EmailTestException;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.Config;
 
@@ -15,7 +14,7 @@ public class EmailAdminImpl implements EmailAdmin {
 
     private Config config;
 
-    public EmailAdminImpl(ServerConfig config) {
+    public EmailAdminImpl( final Config config ) {
         this.config = config;
     }
 
@@ -24,8 +23,8 @@ public class EmailAdminImpl implements EmailAdmin {
                                  int port, String base64Message, EmailAlertAssertion.Protocol protocol, boolean authenticate,
                                  String authUsername, String authPassword) throws EmailTestException {
 
-        long connectTimeout = 25000;
-        long readTimeout = 25000;
+        long connectTimeout = 25000L;
+        long readTimeout = 25000L;
 
         EmailConfig emailConfig = new EmailConfig(authenticate, authUsername, authPassword, host, port, protocol, connectTimeout, readTimeout);
         EmailMessage emailMessage = new EmailMessage(bccAddr, ccAddr, fromAddr, toAddr, base64Message, subject);
@@ -34,9 +33,9 @@ public class EmailAdminImpl implements EmailAdmin {
 
     @Override
     public void testSendEmail(EmailAlertAssertion eaa) throws EmailTestException {
-        long connectTimeout = 25000;
-        long readTimeout = 25000;
-        int port = EmailAlertAssertion.DEFAULT_PORT;
+        long connectTimeout = 25000L;
+        long readTimeout = 25000L;
+        int port;
 
         try{
             port = Integer.parseInt(eaa.getSmtpPort());
