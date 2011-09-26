@@ -10,6 +10,15 @@ public interface PrivateKeyMOAccessor extends Accessor<PrivateKeyMO> {
     /**
      * Set the special purposes for a private key.
      *
+     * <p>The special purposes can be any of:
+     * <ul>
+     *   <li><code>Default SSL Key</code></li>
+     *   <li><code>Default CA Key</code></li>
+     *   <li><code>Audit Viewer Key</code></li>
+     *   <li><code>Audit Signing Key</code></li>
+     * </ul>
+     * </p>
+     *
      * @param identifier The identifier for the private key (required)
      * @param specialPurposes The special purposes to set (required)
      * @return The resource representing the updated private key
