@@ -22,17 +22,17 @@
         <artifact name="layer7-gateway-console-applet" type="jar" ext="jar" conf="master"/>
     </publications>
     <dependencies>
-        <dependency name="layer7-gateway-console" rev="latest.integration" force="true" conf="core"/>
-        <dependency name="layer7-gateway-common" rev="latest.integration" force="true" conf="core"/>
-        <dependency name="layer7-kerberos" rev="latest.integration" force="true" conf="core"/>
-        <dependency name="layer7-policy" rev="latest.integration" force="true" conf="core"/>
-        <dependency name="layer7-identity" rev="latest.integration" force="true" conf="core"/>
-        <dependency name="layer7-common" rev="latest.integration" force="true" conf="core"/>
-        <dependency name="layer7-gui" rev="latest.integration" force="true" conf="core"/>
-        <dependency name="layer7-uddi" rev="latest.integration" force="true" conf="core"/>
-        <dependency name="layer7-utility" rev="latest.integration" force="true" conf="core"/>
-        <dependency name="layer7-wsdl" rev="latest.integration" force="true" conf="core"/>
-        <dependency name="layer7-json" rev="latest.integration" force="true" conf="core"/>
+        <dependency name="layer7-gateway-console" rev="latest.integration" conf="core"/>
+        <dependency name="layer7-gateway-common" rev="latest.integration" conf="core"/>
+        <dependency name="layer7-kerberos" rev="latest.integration" conf="core"/>
+        <dependency name="layer7-policy" rev="latest.integration" conf="core"/>
+        <dependency name="layer7-identity" rev="latest.integration" conf="core"/>
+        <dependency name="layer7-common" rev="latest.integration" conf="core"/>
+        <dependency name="layer7-gui" rev="latest.integration" conf="core"/>
+        <dependency name="layer7-uddi" rev="latest.integration" conf="core"/>
+        <dependency name="layer7-utility" rev="latest.integration" conf="core"/>
+        <dependency name="layer7-wsdl" rev="latest.integration" conf="core"/>
+        <dependency name="layer7-json" rev="latest.integration" conf="core"/>
         <dependency org="bouncycastle" name="bcprov-unsigned-jdk16" rev="1.46" force="true" conf="runtime"/> <!-- use unsigned BC jar to be same as applet -->
         <exclude org="bouncycastle" module="bcprov-jdk16" artifact="*" type="*" ext="jar" conf="*" matcher="exact" />  <!-- exclude signed BC jar -->
         <exclude org="commons-logging" module="commons-logging" artifact="*" type="*" ext="*" conf="" matcher="exact"/>

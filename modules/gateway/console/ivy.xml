@@ -5,30 +5,20 @@
           status="integration"
             >
     </info>
-    <configurations
-            defaultconfmapping="compile->default; core->default; runtime->default; test->default; optional->default">
-        <conf name="core" description="Core dependencies for all configurations" visibility="private"/>
-        <conf name="default" description="Runtime dependencies and master artifact can be used with this conf"
-              extends="runtime,master"/>
-        <conf name="master"
-              description="Contains only the artifact published by this module itself, with no transitive dependencies"/>
-        <conf name="compile" description="The dependency is required at compile time." extends="core,optional"/>
-        <conf name="runtime" description="The dependency is required at runtime." extends="core"/>
-        <conf name="test" description="The dependency required for building/running tests only."
-              extends="runtime,compile"/>
-        <conf name="optional" description="Contains all optional dependencies"/>
+    <configurations>
+        <include file="../../../etc/build/ivyconfigurations.xml"/>
     </configurations>
     <publications>
         <artifact name="layer7-gateway-console" type="jar" ext="jar" conf="master"/>
     </publications>
     <dependencies>
-        <dependency name="layer7-gateway-common" rev="latest.integration" force="true" conf="core; test->default,test"/>
-        <dependency name="layer7-common" rev="latest.integration" force="true" conf="core"/>
-        <dependency name="layer7-gui" rev="latest.integration" force="true" conf="core"/>
-        <dependency name="layer7-utility" rev="latest.integration" force="true" conf="core"/>
-        <dependency name="layer7-wsdl" rev="latest.integration" force="true" conf="core"/>
-        <dependency name="layer7-policy-exporter" rev="latest.integration" force="true" conf="core"/>
-        <dependency name="layer7-test" rev="latest.integration" force="true" conf="test"/>
+        <dependency name="layer7-gateway-common" rev="latest.integration" conf="core; test->default,test"/>
+        <dependency name="layer7-common" rev="latest.integration" conf="core"/>
+        <dependency name="layer7-gui" rev="latest.integration" conf="core"/>
+        <dependency name="layer7-utility" rev="latest.integration" conf="core"/>
+        <dependency name="layer7-wsdl" rev="latest.integration" conf="core"/>
+        <dependency name="layer7-policy-exporter" rev="latest.integration" conf="core"/>
+        <dependency name="layer7-test" rev="latest.integration" conf="test"/>
         <dependency org="antlr" name="antlr" rev="2.7.7-l7p1" force="true" conf="core"/>
         <!-- This is included for handling of runtime exceptions and at compile time for annotations -->
         <dependency org="org.hibernate" name="hibernate-core" rev="3.6.1.Final" force="true" conf="core->master"/>
@@ -54,7 +44,6 @@
         <dependency org="org.slf4j" name="jcl-over-slf4j" rev="1.6.1" force="true" conf="core"/>
         <dependency org="org.slf4j" name="log4j-over-slf4j" rev="1.6.1" force="true" conf="core"/>
 
-        <dependency org="junit" name="junit" rev="4.8.2" force="true" conf="test"/>
         <dependency org="bouncycastle" name="bcprov-unsigned-jdk16" rev="1.46" force="true" conf="core"/> <!-- use unsigned BC jar to avoid applet trusted issues -->
 
         <exclude org="bouncycastle" module="bcprov-jdk16" artifact="*" type="*" ext="jar" conf="*" matcher="exact" />  <!-- exclude signed BC jar -->

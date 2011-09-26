@@ -19,5 +19,5 @@
         </chain>
     </resolvers>
     
-    <caches useOrigin="true" defaultCacheDir="${src.root}/build/ivy/cache"/>
+    <caches useOrigin="true" defaultCacheDir="${src.root}/build/ivy/cache" memorySize="25000"/>
 </ivysettings>

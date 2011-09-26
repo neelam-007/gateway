@@ -5,20 +5,9 @@
           status="integration"
             >
     </info>
-    <configurations
-            defaultconfmapping="compile->default; core->default; runtime->default; test->default; optional->default">
-        <conf name="core" description="Core dependencies for all configurations" visibility="private"/>
-        <conf name="default" description="Runtime dependencies and master artifact can be used with this conf"
-              extends="runtime,master"/>
-        <conf name="master"
-              description="Contains only the artifact published by this module itself, with no transitive dependencies"/>
-        <conf name="compile" description="The dependency is required at compile time." extends="core,optional"/>
-        <conf name="runtime" description="The dependency is required at runtime." extends="core"/>
-        <conf name="test" description="The dependency required for building/running tests only."
-              extends="runtime,compile"/>
-        <conf name="optional" description="Contains all optional dependencies"/>
-        <conf name="client" description="Client assertion"/>
-    </configurations>
+    <configurations>
+        <include file="../assertion-ivyconfiguration.xml"/>
+    </configurations>	
     <publications>
         <artifact name="CaWsdmAssertion" type="aar" ext="aar" conf="master"/>
     </publications>
@@ -29,7 +18,7 @@
         <dependency org="com.ca.wsdm" name="ca_wsdm_handler_common" rev="3.50" force="true" conf="core"/>
         <dependency org="com.ca.wsdm" name="ca_wsdm_wsdm35mmi_axis_stubskel" rev="3.50" force="true" conf="core"/>
         <dependency org="com.netegrity" name="tmxmltoolkit" rev="6.0-281-0003" force="true" conf="core"/>
-        <dependency name="layer7-modular-assertions" rev="latest.integration" force="true"
+        <dependency name="layer7-modular-assertions" rev="latest.integration"
                     conf="compile->compile;runtime->runtime;test->test"/>
 
         <override org="wsdl4j" module="wsdl4j" rev="1.6.2-l7p3"/>

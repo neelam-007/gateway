@@ -20,14 +20,14 @@
     </configurations>
     <publications/>
     <dependencies>
-        <dependency name="layer7-utility" rev="latest.integration" force="true" conf="optional"/>
-        <dependency name="layer7-common" rev="latest.integration" force="true" conf="optional; test->default,test"/>
-        <dependency name="layer7-policy" rev="latest.integration" force="true" conf="optional; test->default,test"/>
-        <dependency name="layer7-gui" rev="latest.integration" force="true" conf="optional"/>
-        <dependency name="layer7-gateway-common" rev="latest.integration" force="true" conf="optional"/>
-        <dependency name="layer7-gateway-server" rev="latest.integration" force="true"
+        <dependency name="layer7-utility" rev="latest.integration" conf="optional"/>
+        <dependency name="layer7-common" rev="latest.integration" conf="optional; test->default,test"/>
+        <dependency name="layer7-policy" rev="latest.integration" conf="optional; test->default,test"/>
+        <dependency name="layer7-gui" rev="latest.integration" conf="optional"/>
+        <dependency name="layer7-gateway-common" rev="latest.integration" conf="optional"/>
+        <dependency name="layer7-gateway-server" rev="latest.integration"
                     conf="optional; test->default,test"/>
-        <dependency name="layer7-gateway-console" rev="latest.integration" force="true" conf="optional"/>
+        <dependency name="layer7-gateway-console" rev="latest.integration" conf="optional"/>
         <dependency org="com.intellij" name="forms_rt" rev="10.0.2" force="true" conf="optional"/>
         <dependency org="org.springframework" name="spring-test" rev="3.0.5.RELEASE" force="true" conf="test"/>
         <dependency org="junit" name="junit" rev="4.8.2" force="true" conf="test"/>
