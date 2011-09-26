@@ -494,7 +494,8 @@ public class GatewayFeatureSets {
             ass(Include.class),
             ass(ExportVariablesAssertion.class),
             mass("assertion:EchoRouting"),
-            mass("assertion:HardcodedResponse"));
+            mass("assertion:HardcodedResponse"),
+            mass("assertion:UUIDGenerator"));
 
         GatewayFeatureSet threatIps =
         fsr("set:Threats:IPS", "SecureSpan XML IPS threat protection",

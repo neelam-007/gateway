@@ -1,16 +1,21 @@
 package com.l7tech.external.assertions.uuidgenerator.server;
 
 import com.l7tech.external.assertions.uuidgenerator.UUIDGeneratorAssertion;
+import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.MockConfig;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -34,6 +39,7 @@ public class ServerUUIDGeneratorAssertionTest {
         assertion.setAmount(UUIDGeneratorAssertion.DEFAULT_AMOUNT);
         assertion.setTargetVariable(TARGET_VARIABLE);
         serverAssertion = new ServerUUIDGeneratorAssertion(assertion);
+        inject( serverAssertion );
         policyContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
     }
 
@@ -145,4 +151,12 @@ public class ServerUUIDGeneratorAssertionTest {
             //pass
         }
     }
+
+    private void inject( final ServerUUIDGeneratorAssertion serverAssertion ) {
+        ApplicationContexts.inject( serverAssertion, CollectionUtils.<String, Object>mapBuilder()
+                .put( "serverConfig", new MockConfig( Collections.<String, String>emptyMap() ) )
+                .put( "auditFactory", new TestAudit().factory() )
+                .unmodifiableMap()
+        );
+    }    
 }
