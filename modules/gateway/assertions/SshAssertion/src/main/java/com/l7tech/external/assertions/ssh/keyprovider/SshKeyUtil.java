@@ -2,14 +2,13 @@ package com.l7tech.external.assertions.ssh.keyprovider;
 
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.prov.JceProvider;
-import com.l7tech.security.prov.generic.GenericJceProviderEngine;
 import com.l7tech.util.ExceptionUtils;
+import static com.l7tech.util.Option.optional;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
 import org.bouncycastle.openssl.PEMReader;
 import org.bouncycastle.openssl.PEMWriter;
 
-import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import java.io.*;
 import java.security.*;
@@ -35,9 +34,9 @@ public class SshKeyUtil {
      * @return an algorithm string for RSA or DSA
      */
     public static String getPemPrivateKeyAlgorithm(String pemPrivateKey) {
-        if (pemPrivateKey.indexOf(PEM_BEGIN + ALGORITHM_RSA) >= 0) {
+        if ( pemPrivateKey.contains( PEM_BEGIN + ALGORITHM_RSA ) ) {
             return ALGORITHM_RSA;
-        } else if (pemPrivateKey.indexOf(PEM_BEGIN + ALGORITHM_DSA) >= 0) {
+        } else if ( pemPrivateKey.contains( PEM_BEGIN + ALGORITHM_DSA ) ) {
             return ALGORITHM_DSA;
         } else {
             return null;
@@ -49,8 +48,7 @@ public class SshKeyUtil {
      * @return a String for the provider name
      */
     public static String getSymProvider() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
-        Provider sp = JceProvider.getInstance().getProviderFor("Cipher.AES");
-        return sp != null ? sp.getName() : Cipher.getInstance("AES").getProvider().getName();
+        return getProviderNameForService( "Cipher.AES" );
     }
 
     /**
@@ -59,8 +57,7 @@ public class SshKeyUtil {
      * @return a String for the provider name
      */
     public static String getAsymProvider() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
-        Provider ap = JceProvider.getInstance().getProviderFor("Cipher.RSA");
-        return ap != null ? ap.getName() : Cipher.getInstance((new GenericJceProviderEngine()).getRsaNoPaddingCipherName()).getProvider().getName();
+        return getProviderNameForService( "Cipher." + optional(JceProvider.getInstance().getRsaNoPaddingCipherName()).orSome( "RSA/NONE/NoPadding" ) );
     }
 
     public static KeyPair doReadKeyPair(String privateKey) throws Exception {
@@ -112,5 +109,10 @@ public class SshKeyUtil {
             }
         }
         return new Pair<Boolean, String>(isValid, errorText);
+    }
+
+    private static String getProviderNameForService( final String service ) {
+        final Provider provider = JceProvider.getInstance().getPreferredProvider( service );
+        return provider == null ? null : provider.getName();
     }
 }

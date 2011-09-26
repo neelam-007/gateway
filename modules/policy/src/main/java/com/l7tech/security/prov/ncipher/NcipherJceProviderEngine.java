@@ -38,7 +38,7 @@ public class NcipherJceProviderEngine extends JceProvider {
     }
 
     @Override
-    protected String getRsaNoPaddingCipherName() {
+    public String getRsaNoPaddingCipherName() {
         return "RSA/ECB/NoPadding";
     }
 

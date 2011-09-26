@@ -5,6 +5,7 @@ import com.l7tech.security.prov.bc.BouncyCastleRsaSignerEngine;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.JceUtil;
+import static com.l7tech.util.Option.first;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
@@ -300,7 +301,7 @@ public abstract class JceProvider {
     }
 
     /** @return name to request to get RSA in ECB mode with no padding, or null to disable. */
-    protected String getRsaNoPaddingCipherName() {
+    public String getRsaNoPaddingCipherName() {
         return "RSA/NONE/NoPadding";
     }
 
@@ -439,6 +440,20 @@ public abstract class JceProvider {
      */
     public Provider getProviderFor(String service) {
         return null;
+    }
+
+    /**
+     * Get the preferred Provider for the specified service.
+     *
+     * @param service the service to get. This should be the name of a "real" service, to get the provider
+     *          for a JceProvider "service" name use <code>getProviderFor</code>.
+     * @return The preferred provider for the service, or null if no provider is registered for the service.
+     * @see #getProviderFor(String)
+     */
+    public final Provider getPreferredProvider( final String service ) {
+        //NOTE: We may want to pre-process the name here, e.g. Ciper.RSA/NONE/NoPadding -> Cipher.RSA
+        final Provider sp = getProviderFor( service );
+        return sp != null ? sp : first( Security.getProviders( service ) ).toNull();
     }
 
     /**

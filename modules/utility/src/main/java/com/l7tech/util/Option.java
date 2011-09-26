@@ -6,6 +6,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -48,6 +49,41 @@ public class Option<T> implements Serializable {
     @NotNull
     public static <T> Option<T> none() {
         return new Option<T>( null );
+    }
+
+    /**
+     * Create an option from the first value in the given iterable.
+     *
+     * @param iterable The iterable (may be null)
+     * @param <T> The iterable type
+     * @return the optional value.
+     */
+    @NotNull
+    public static <T> Option<T> first( @Nullable final Iterable<T> iterable ) {
+        T value = null;
+
+        if ( iterable != null ) {
+            final Iterator<T> iterator = iterable.iterator();
+            if ( iterator.hasNext() ) {
+                value = iterator.next();
+            }
+        }
+
+        return optional( value );
+    }
+
+    /**
+     * Create an option from the first value in the given array.
+     *
+     * @param array The array (may be null)
+     * @param <T> The array type
+     * @return the optional value.
+     */
+    @NotNull
+    public static <T> Option<T> first( @Nullable final T[] array ) {
+        return array==null || array.length < 1 ?
+                Option.<T>none() :
+                optional( array[0] );
     }
 
     /**

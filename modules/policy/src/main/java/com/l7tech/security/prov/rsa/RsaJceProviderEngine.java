@@ -223,7 +223,7 @@ public class RsaJceProviderEngine extends JceProvider {
     }
 
     @Override
-    protected String getRsaNoPaddingCipherName() {
+    public String getRsaNoPaddingCipherName() {
         return "RSA/ECB/NoPadding";
     }
 

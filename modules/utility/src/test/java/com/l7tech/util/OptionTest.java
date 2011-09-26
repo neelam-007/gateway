@@ -1,5 +1,6 @@
 package com.l7tech.util;
 
+import static com.l7tech.util.CollectionUtils.list;
 import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Functions.UnaryThrows;
 import com.l7tech.util.Functions.UnaryVoid;
@@ -15,6 +16,7 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 
 import java.util.Collections;
+import java.util.List;
 
 /**
  * Unit tests for optional values.
@@ -34,6 +36,30 @@ public class OptionTest {
 
         final Option<String> option4 = Option.optional( "value" );
         assertTrue( "Option with value", option4.isSome() );
+
+        final Option<String> option5 = Option.first( (String[]) null );
+        assertFalse( "Empty option from null array", option5.isSome() );
+
+        final Option<String> option6 = Option.first( new String[]{ null } );
+        assertFalse( "Empty option from array null entry", option6.isSome() );
+
+        final Option<String> option6a = Option.first( new String[]{} );
+        assertFalse( "Empty option from empty array", option6a.isSome() );
+
+        final Option<String> option7 = Option.first( new String[]{ "value1", "value2" } );
+        assertEquals( "Option value from first array entry", "value1", option7.some() );
+
+        final Option<String> option8 = Option.first( (List<String>) null );
+        assertFalse( "Empty option from null iterable", option8.isSome() );
+
+        final Option<String> option9 = Option.first( list( (String)null ) );
+        assertFalse( "Empty option from iterable null entry", option9.isSome() );
+
+        final Option<String> option10 = Option.first( Collections.<String>emptyList() );
+        assertFalse( "Empty option from empty iterable", option10.isSome() );
+
+        final Option<String> option11 = Option.first( list( "value" ) );
+        assertEquals( "Option value from first array entry", "value", option11.some() );
     }
 
     @SuppressWarnings({ "ConstantConditions" })

@@ -64,6 +64,7 @@ public abstract class AbstractSshHostKeyProvider extends AbstractKeyPairProvider
 
     protected abstract KeyPair doReadKeyPair(String privateKey) throws Exception;
 
+    @Override
     public synchronized KeyPair[] loadKeys() {
         if (keyPair == null) {
             if (privateKey != null) {
@@ -80,7 +81,7 @@ public abstract class AbstractSshHostKeyProvider extends AbstractKeyPairProvider
         try {
             return doReadKeyPair(privateKey);
         } catch (Exception e) {
-            LOG.log(Level.INFO, "Unable to read key " + privateKey + ": ", ExceptionUtils.getDebugException(e));
+            LOG.log(Level.INFO, "Unable to read key " + privateKey + ": " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException(e));
         }
         return null;
     }

@@ -73,7 +73,7 @@ public class DelegatingJceProvider extends JceProvider {
     }
 
     @Override
-    protected String getRsaNoPaddingCipherName() {
+    public String getRsaNoPaddingCipherName() {
         return delegate.getRsaNoPaddingCipherName();
     }
 
