@@ -170,7 +170,7 @@
     -->
     <target name="init" depends="task-init,init-full"/>
     <target name="init-full" depends="package.readversion,init-core"/>
-    <target name="init-core">
+    <target name="init-core" depends="task-init">
         <echo level="info">
         java.specification.name=${java.specification.name}
         java.specification.vendor=${java.specification.vendor}
