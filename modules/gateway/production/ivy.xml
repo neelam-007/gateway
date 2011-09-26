@@ -66,6 +66,7 @@
         <dependency name="JsonTransformationAssertion" rev="latest.integration" conf="module"/>
         <dependency name="IcapAntivirusScannerAssertion" rev="latest.integration" conf="module"/>
         <dependency name="UUIDGeneratorAssertion" rev="latest.integration" conf="module"/>
+        <dependency name="SshAssertion" rev="latest.integration" conf="module"/>
 
         <!-- Optional Modular Assertions are copied to "dist" but not packaged -->
         <dependency name="CaWsdmAssertion" rev="latest.integration" conf="module-optional"/>
