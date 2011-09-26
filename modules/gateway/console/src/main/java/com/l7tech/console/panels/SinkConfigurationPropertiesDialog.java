@@ -684,7 +684,10 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
     private void createUIComponents() {
     }
 
-
+    public void selectNameField() {
+        nameField.requestFocus();
+        nameField.selectAll();
+    }
 
     public static class SyslogHostPanel extends TextEntryPanel {
         public SyslogHostPanel() {

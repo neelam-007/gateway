@@ -30,6 +30,7 @@ public class CopyFederatedIdentityProviderAction extends CopyIdentityProviderAct
                 new FederatedIdentityProviderConfig(getIdentityProviderConfig((EntityHeaderNode) node));
         fipConfig.setOid(FederatedIdentityProviderConfig.DEFAULT_OID);
         fipConfig.setVersion( 0 );
+        fipConfig.setName("Copy of "+ fipConfig.getName());
 
         SwingUtilities.invokeLater(new Runnable() {
             @Override

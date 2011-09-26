@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
+import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 
 import javax.swing.*;
 import java.awt.*;
@@ -101,6 +102,13 @@ public class FederatedIPGeneralPanel extends IdentityProviderStepPanel {
 
         x509CertCheckbox.setSelected(iProviderConfig.isX509Supported());
         samlCheckbox.setSelected(iProviderConfig.isSamlSupported());
+
+        // select name field for clone
+        if( iProviderConfig.getOid() == LdapIdentityProviderConfig.DEFAULT_OID)
+        {
+            providerNameTextField.requestFocus();
+            providerNameTextField.selectAll();
+        }
     }
 
 

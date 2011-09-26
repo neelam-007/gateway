@@ -98,6 +98,10 @@ public class UddiRegistryPropertiesDialog extends JDialog {
         initialize();
     }
 
+    public void selectNameField() {
+        registryNameTextField.selectAll();
+    }
+
     enum UDDI_URL_TYPE {INQUIRY, PUBLISH, SECURITY, SUBSCRIPTION}
 
     /**

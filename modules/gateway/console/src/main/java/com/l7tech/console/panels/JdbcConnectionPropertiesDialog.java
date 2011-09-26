@@ -284,6 +284,11 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
         enableOrDisableTableButtons();
     }
 
+    public void selectName() {
+        connectionNameTextField.requestFocus();
+        connectionNameTextField.selectAll();
+    }
+
     private class AdditionalPropertyTableModel extends AbstractTableModel {
         @Override
         public int getColumnCount() {

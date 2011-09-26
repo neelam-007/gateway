@@ -217,8 +217,8 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                     // populate host list based on what is in the iProviderConfig
                     String[] ldapUrls = iProviderConfig.getLdapUrl();
                     ldapUrlListPanel.setUrlList(ldapUrls);
-
                 }
+
                 for (int i = providerTypesCombo.getModel().getSize() - 1; i >= 0; i--) {
                     Object toto = providerTypesCombo.getModel().getElementAt(i);
                     if (toto instanceof LdapIdentityProviderConfig) {
@@ -230,6 +230,13 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                 }
 
                 updateControlButtonState();
+
+                // select name field for clone
+                if( iProviderConfig.getOid() == LdapIdentityProviderConfig.DEFAULT_OID)
+                {
+                    providerNameTextField.requestFocus();
+                    providerNameTextField.selectAll();
+                }
             }
         }
     }

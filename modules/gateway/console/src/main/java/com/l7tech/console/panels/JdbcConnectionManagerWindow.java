@@ -41,7 +41,7 @@ public class JdbcConnectionManagerWindow extends JDialog {
     private JButton removeButton;
     private JButton closeButton;
     private JTable connectionTable;
-    private JButton copyButton;
+    private JButton cloneButton;
 
     private java.util.List<JdbcConnection> connectionList = new ArrayList<JdbcConnection>();
     private AbstractTableModel connectionTableModel;
@@ -76,10 +76,10 @@ public class JdbcConnectionManagerWindow extends JDialog {
             }
         });
 
-        copyButton.addActionListener(new ActionListener() {
+        cloneButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                doCopy();
+                doClone();
             }
         });
 
@@ -210,30 +210,33 @@ public class JdbcConnectionManagerWindow extends JDialog {
             connection.setMaxPoolSize(admin.getPropertyDefaultMaxPoolSize());
         }
 
-        editAndSave(connection);
+        editAndSave(connection,true);
     }
 
-    private void doCopy() {
+    private void doClone() {
         int selectedRow = connectionTable.getSelectedRow();
         if (selectedRow < 0) return;
 
         JdbcConnection newConnection = new JdbcConnection();
         newConnection.copyFrom(connectionList.get(selectedRow));
         newConnection.setOid(JdbcConnection.DEFAULT_OID);
-        editAndSave(newConnection);
+        newConnection.setName("Copy of "+ newConnection.getName());
+        editAndSave(newConnection, true);
     }
 
     private void doEdit() {
         int selectedRow = connectionTable.getSelectedRow();
         if (selectedRow < 0) return;
 
-        editAndSave(connectionList.get(selectedRow));
+        editAndSave(connectionList.get(selectedRow), false);
     }
 
-    private void editAndSave(final JdbcConnection connection) {
+    private void editAndSave(final JdbcConnection connection, final boolean selectName) {
         final JdbcConnectionPropertiesDialog dlg = new JdbcConnectionPropertiesDialog(JdbcConnectionManagerWindow.this, connection);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
+        if(selectName)
+            dlg.selectName();
         DialogDisplayer.display(dlg, new Runnable() {
             @Override
             public void run() {
@@ -241,7 +244,7 @@ public class JdbcConnectionManagerWindow extends JDialog {
                     Runnable reedit = new Runnable() {
                         public void run() {
                             loadJdbcConnectionList();
-                            editAndSave(connection);
+                            editAndSave(connection,selectName);
                         }
                     };
 
@@ -336,6 +339,6 @@ public class JdbcConnectionManagerWindow extends JDialog {
         addButton.setEnabled(flags.canCreateSome() && addEnabled);
         editButton.setEnabled(editEnabled);  // Not using flags.canUpdateSome(), since we still allow users to view the properties.
         removeButton.setEnabled(flags.canDeleteSome() && removeEnabled);
-        copyButton.setEnabled(flags.canCreateSome() && copyEnabled);
+        cloneButton.setEnabled(flags.canCreateSome() && copyEnabled);
     }
 }

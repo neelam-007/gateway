@@ -64,6 +64,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
     private InputValidator inputValidator;
     private boolean confirmed = false;
 
+
     private static class ComboItem {
         ComboItem(String name, long id) {
             serviceName = name;
@@ -144,6 +145,12 @@ public class EmailListenerPropertiesDialog extends JDialog {
         initialize();
     }
 
+    /**
+     * Selects the text of the name field
+     */
+    public void selectNameField() {
+        name.selectAll();
+    }
     /**
      * Loads locale-specific resources: strings, images, etc
      */

@@ -32,6 +32,7 @@ public class CopyLdapProviderAction extends CopyIdentityProviderAction<LdapIdent
         final LdapIdentityProviderConfig newLdap = new LdapIdentityProviderConfig( getIdentityProviderConfig((EntityHeaderNode) node) );
         newLdap.setOid( LdapIdentityProviderConfig.DEFAULT_OID );
         newLdap.setVersion( 0 );
+        newLdap.setName("Copy of "+newLdap.getName());
         SwingUtilities.invokeLater( new Runnable() {
             @Override
             public void run() {

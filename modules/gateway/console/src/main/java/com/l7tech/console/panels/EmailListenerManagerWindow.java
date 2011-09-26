@@ -41,7 +41,7 @@ public class EmailListenerManagerWindow extends JDialog {
     private JButton closeButton;
     private JScrollPane mainScrollPane;
     private JPanel contentPane;
-    private JButton copyButton;
+    private JButton cloneButton;
     private EmailListenerTable emailListenerTable;
 
     private PermissionFlags flags;
@@ -122,9 +122,9 @@ public class EmailListenerManagerWindow extends JDialog {
             }
         });
 
-        copyButton.addActionListener(new ActionListener() {
+        cloneButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                doCopy();
+                doClone();
             }
         });
 
@@ -174,34 +174,37 @@ public class EmailListenerManagerWindow extends JDialog {
     }
 
     private void doCreate() {
-        editAndSave(new EmailListener(EmailServerType.POP3));
+        editAndSave(new EmailListener(EmailServerType.POP3), true);
     }
 
-    private void doCopy() {
+    private void doClone() {
         EmailListener emailListener = emailListenerTable.getSelectedEmailListener();
         EmailListener newEmailListener = new EmailListener(emailListener);
         newEmailListener.setOid(EmailListener.DEFAULT_OID);
-        editAndSave(newEmailListener);
+        newEmailListener.setName("Copy of "+emailListener.getName());
+        editAndSave(newEmailListener, true);
     }
 
     private void doProperties() {
         EmailListener sinkConfiguration = emailListenerTable.getSelectedEmailListener();
         if (sinkConfiguration != null) {
-            editAndSave(sinkConfiguration);
+            editAndSave(sinkConfiguration, false);
         }
     }
 
-    private void editAndSave(final EmailListener emailListener) {
+    private void editAndSave(final EmailListener emailListener, final boolean selectNameField) {
         final EmailListenerPropertiesDialog dlg = new EmailListenerPropertiesDialog(this, emailListener);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
+        if(selectNameField)
+            dlg.selectNameField();
         DialogDisplayer.display(dlg, new Runnable() {
             public void run() {
                 if (dlg.isConfirmed()) {
                     Runnable reedit = new Runnable() {
                         public void run() {
                             loadEmailListeners();
-                            editAndSave(emailListener);
+                            editAndSave(emailListener, selectNameField);
                         }
                     };
 
@@ -214,12 +217,12 @@ public class EmailListenerManagerWindow extends JDialog {
                     } catch (SaveException e) {
                         showErrorMessage(resources.getString("errors.saveFailed.title"),
                                 resources.getString("errors.saveFailed.message") + " " + ExceptionUtils.getMessage(e),
-                                e,
+                                ExceptionUtils.getDebugException(e),
                                 reedit);
                     } catch (UpdateException e) {
                         showErrorMessage(resources.getString("errors.saveFailed.title"),
                                 resources.getString("errors.saveFailed.message") + " " + ExceptionUtils.getMessage(e),
-                                e,
+                                ExceptionUtils.getDebugException(e),
                                 reedit);
                     }
                 }
@@ -234,7 +237,7 @@ public class EmailListenerManagerWindow extends JDialog {
         createButton.setEnabled(flags.canCreateSome());
         propertiesButton.setEnabled(haveSel);
         removeButton.setEnabled(haveSel && flags.canDeleteSome());
-        copyButton.setEnabled(haveSel && flags.canCreateSome());
+        cloneButton.setEnabled(haveSel && flags.canCreateSome());
     }
 
     private void showErrorMessage(String title, String msg, Throwable e) {

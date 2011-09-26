@@ -38,7 +38,7 @@ public class SsgConnectorManagerWindow extends JDialog {
     private JLabel conflictLabel;
     private JButton interfacesButton;
     private JButton serviceResolutionButton;
-    private JButton copyButton;
+    private JButton cloneButton;
     private ConnectorTable connectorTable;
 
     private PermissionFlags flags;
@@ -99,10 +99,10 @@ public class SsgConnectorManagerWindow extends JDialog {
             }
         });
 
-        copyButton.addActionListener(new ActionListener() {
+        cloneButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                doCopy();
+                doClone();
             }
         });
 
@@ -182,32 +182,35 @@ public class SsgConnectorManagerWindow extends JDialog {
         }
         connector.putProperty(SsgConnector.PROP_TLS_CIPHERLIST, cipherlist.toString());
 
-        editAndSave(connector, connector.getReadOnlyCopy());
+        editAndSave(connector, connector.getReadOnlyCopy(), true);
     }
 
 
-    private void doCopy() {
+    private void doClone() {
         final SsgConnector connector = connectorTable.getSelectedConnector();
         if (connector == null)
             return;
 
         SsgConnector newConnector = connector.getCopy();
         newConnector.setOid(SsgConnector.DEFAULT_OID);
-        editAndSave(newConnector, newConnector.getReadOnlyCopy());
+        newConnector.setName("Copy of " + connector.getName());
+        editAndSave(newConnector, newConnector.getReadOnlyCopy(), true);
 
     }
 
     private void doProperties() {
         SsgConnector connector = connectorTable.getSelectedConnector();
         if (connector != null) {
-            editAndSave(connector, connector.getReadOnlyCopy());
+            editAndSave(connector, connector.getReadOnlyCopy(),false);
         }
     }
 
-    private void editAndSave(final SsgConnector connector, final SsgConnector originalConnector) {
+    private void editAndSave(final SsgConnector connector, final SsgConnector originalConnector, final boolean selectName) {
         final SsgConnectorPropertiesDialog dlg = new SsgConnectorPropertiesDialog(this, connector, Registry.getDefault().getClusterStatusAdmin().isCluster());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
+        if(selectName)
+            dlg.selectName();
         DialogDisplayer.display(dlg, new Runnable() {
             @Override
             public void run() {
@@ -216,7 +219,7 @@ public class SsgConnectorManagerWindow extends JDialog {
                         @Override
                         public void run() {
                             loadConnectors();
-                            editAndSave(connector, originalConnector);
+                            editAndSave(connector, originalConnector, selectName);
                         }
                     };
 
@@ -237,9 +240,9 @@ public class SsgConnectorManagerWindow extends JDialog {
                         loadConnectors();
                         connectorTable.setSelectedConnector(connector);
                     } catch (SaveException e) {
-                        showErrorMessage("Save Failed", "Failed to save listen port: " + ExceptionUtils.getMessage(e), e, reedit);
+                        showErrorMessage("Save Failed", "Failed to save listen port: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e), reedit);
                     } catch (UpdateException e) {
-                        showErrorMessage("Save Failed", "Failed to save listen port: " + ExceptionUtils.getMessage(e), e, reedit);
+                        showErrorMessage("Save Failed", "Failed to save listen port: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e), reedit);
                     } catch (TransportAdmin.CurrentAdminConnectionException e) {
                         showErrorMessage("Save Failed", "Unable to modify the listen port for the current admin connection.", null,
                             new Runnable() {
@@ -353,7 +356,7 @@ public class SsgConnectorManagerWindow extends JDialog {
         createButton.setEnabled(flags.canCreateSome());
         propertiesButton.setEnabled(haveSel);
         removeButton.setEnabled(haveSel && flags.canDeleteSome());
-        copyButton.setEnabled(haveSel && flags.canCreateSome());
+        cloneButton.setEnabled(haveSel && flags.canCreateSome());
     }
 
     /** @return the TransportAdmin interface, or null if not connected or it's unavailable for some other reason */

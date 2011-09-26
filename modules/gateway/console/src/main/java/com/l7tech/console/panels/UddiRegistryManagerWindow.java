@@ -31,7 +31,7 @@ public class UddiRegistryManagerWindow extends JDialog {
     private JButton propertiesButton;
     private JButton closeButton;
     private JScrollPane mainScrollPane;
-    private JButton copyButton;
+    private JButton cloneButton;
     private UddiRegistryTable uddiRegistryTable;
 
     private PermissionFlags flags;
@@ -94,7 +94,7 @@ public class UddiRegistryManagerWindow extends JDialog {
             }
         });
 
-        copyButton.addActionListener(new ActionListener() {
+        cloneButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 doCopy();
@@ -118,13 +118,13 @@ public class UddiRegistryManagerWindow extends JDialog {
     private void doProperties() {
         UDDIRegistry uddiRegistry = uddiRegistryTable.getSelectedUddiRegistry();
         if (uddiRegistry != null) {
-            editAndSave(uddiRegistry);
+            editAndSave(uddiRegistry, false);
         }
     }
 
     private void doCreate() {
         final UDDIRegistry uddiRegistry = new UDDIRegistry();
-        editAndSave(uddiRegistry);
+        editAndSave(uddiRegistry, true);
     }
 
     private void doCopy() {
@@ -132,7 +132,8 @@ public class UddiRegistryManagerWindow extends JDialog {
         UDDIRegistry newUddiRegistry = new UDDIRegistry();
         newUddiRegistry.copyFrom(uddiRegistry);
         newUddiRegistry.setOid(UDDIRegistry.DEFAULT_OID);
-        editAndSave(newUddiRegistry);
+        newUddiRegistry.setName("Copy of "+ uddiRegistry.getName());
+        editAndSave(newUddiRegistry, true);
     }
 
     private void doRemove() {
@@ -200,7 +201,7 @@ public class UddiRegistryManagerWindow extends JDialog {
                 });
     }
 
-    private void editAndSave(final UDDIRegistry uddiRegistry) {
+    private void editAndSave(final UDDIRegistry uddiRegistry, final boolean selectNameField) {
         //Safely check for UDDIRegistry existence when it has a non default OID.
         if(uddiRegistry.getOid() != UDDIRegistry.DEFAULT_OID){
             final Runnable errorFunction = new Runnable() {
@@ -228,6 +229,8 @@ public class UddiRegistryManagerWindow extends JDialog {
         final UddiRegistryPropertiesDialog dlg = new UddiRegistryPropertiesDialog(this, uddiRegistry, flags.canUpdateAll());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
+        if(selectNameField)
+            dlg.selectNameField();
         DialogDisplayer.display(dlg, new Runnable() {
             @Override
             public void run() {
@@ -236,7 +239,7 @@ public class UddiRegistryManagerWindow extends JDialog {
                         @Override
                         public void run() {
                             loadUddiRegistries();
-                            editAndSave(uddiRegistry);
+                            editAndSave(uddiRegistry,selectNameField);
                         }
                     };
 
@@ -247,11 +250,11 @@ public class UddiRegistryManagerWindow extends JDialog {
                         loadUddiRegistries();
                         uddiRegistryTable.setSelectedUddiRegistry(uddiRegistry);
                     } catch (UpdateException e) {
-                        showErrorMessage("Update Failed", "Failed to update UDDI Registry: " + ExceptionUtils.getMessage(e), e, reedit);
+                        showErrorMessage("Update Failed", "Failed to update UDDI Registry: " + ExceptionUtils.getMessage(e),ExceptionUtils.getDebugException(e), reedit);
                     } catch (SaveException e) {
-                        showErrorMessage("Save Failed", "Failed to save UDDI Registry: " + ExceptionUtils.getMessage(e), e, reedit);
+                        showErrorMessage("Save Failed", "Failed to save UDDI Registry: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e), reedit);
                     } catch (FindException e) {
-                        showErrorMessage("Save / Update Failed", "Failed to save UDDI Registry: " + ExceptionUtils.getMessage(e), e, reedit);
+                        showErrorMessage("Save / Update Failed", "Failed to save UDDI Registry: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e), reedit);
                     }
                 }
             }
@@ -301,7 +304,7 @@ public class UddiRegistryManagerWindow extends JDialog {
         createButton.setEnabled(flags.canCreateSome());
         propertiesButton.setEnabled(haveSel);
         removeButton.setEnabled(haveSel && flags.canDeleteSome());
-        copyButton.setEnabled(haveSel && flags.canCreateSome());
+        cloneButton.setEnabled(haveSel && flags.canCreateSome());
     }
 
     private static class UddiRegistryTable extends JTable {

@@ -25,7 +25,7 @@ public abstract class CopyIdentityProviderAction<CT extends IdentityProviderConf
      */
     @Override
     public String getName() {
-        return "Copy Identity Provider";
+        return "Clone Identity Provider";
     }
 
     /**
@@ -33,7 +33,7 @@ public abstract class CopyIdentityProviderAction<CT extends IdentityProviderConf
      */
     @Override
     public String getDescription() {
-        return "Copy Identity Provider";
+        return "Clone Identity Provider";
     }
 
     /**

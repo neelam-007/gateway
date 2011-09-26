@@ -1423,6 +1423,11 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         super.setVisible(b);
     }
 
+    public void selectName(){
+        nameField.requestFocus();
+        nameField.selectAll();
+    }
+
     private void onOk() {
         viewToModel();
         confirmed = true;

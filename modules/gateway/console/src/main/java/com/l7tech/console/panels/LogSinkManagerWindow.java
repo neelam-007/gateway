@@ -37,7 +37,7 @@ public class LogSinkManagerWindow extends JDialog {
     private JButton propertiesButton;
     private JButton closeButton;
     private JButton auditSinkButton;
-    private JButton copyButton;
+    private JButton cloneButton;
     private LogSinkTable logSinkTable;
 
     private PermissionFlags flags;
@@ -118,9 +118,9 @@ public class LogSinkManagerWindow extends JDialog {
             }
         });
 
-        copyButton.addActionListener(new ActionListener() {
+        cloneButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                doCopy();
+                doClone();
             }
         });
 
@@ -190,35 +190,38 @@ public class LogSinkManagerWindow extends JDialog {
     }
 
     private void doCreate() {
-        editAndSave(new SinkConfiguration());
+        editAndSave(new SinkConfiguration(), true);
     }
 
-    private void doCopy() {
+    private void doClone() {
         SinkConfiguration sinkConfiguration = logSinkTable.getSelectedConnector();
         SinkConfiguration newSinkConfiguration = new SinkConfiguration();
         newSinkConfiguration.copyFrom(sinkConfiguration);
         newSinkConfiguration.setOid(SinkConfiguration.DEFAULT_OID);
-        editAndSave(newSinkConfiguration);
+        newSinkConfiguration.setName("Copy of "+sinkConfiguration.getName());
+        editAndSave(newSinkConfiguration, true);
     }
 
     private void doProperties() {
         SinkConfiguration sinkConfiguration = logSinkTable.getSelectedConnector();
         if (sinkConfiguration != null) {
-            editAndSave(sinkConfiguration);
+            editAndSave(sinkConfiguration, false);
         }
     }
 
-    private void editAndSave(final SinkConfiguration sinkConfiguration) {
+    private void editAndSave(final SinkConfiguration sinkConfiguration, final boolean selectNameField) {
         final SinkConfigurationPropertiesDialog dlg = new SinkConfigurationPropertiesDialog(this, sinkConfiguration);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
+        if(selectNameField)
+            dlg.selectNameField();
         DialogDisplayer.display(dlg, new Runnable() {
             public void run() {
                 if (dlg.isConfirmed()) {
                     Runnable reedit = new Runnable() {
                         public void run() {
                             loadSinkConfigurations();
-                            editAndSave(sinkConfiguration);
+                            editAndSave(sinkConfiguration,selectNameField);
                         }
                     };
 
@@ -231,12 +234,12 @@ public class LogSinkManagerWindow extends JDialog {
                     } catch (SaveException e) {
                         showErrorMessage(resources.getString("errors.saveFailed.title"),
                                 resources.getString("errors.saveFailed.message") + " " + ExceptionUtils.getMessage(e),
-                                e,
+                                ExceptionUtils.getDebugException(e),
                                 reedit);
                     } catch (UpdateException e) {
                         showErrorMessage(resources.getString("errors.saveFailed.title"),
                                 resources.getString("errors.saveFailed.message") + " " + ExceptionUtils.getMessage(e),
-                                e,
+                                ExceptionUtils.getDebugException(e),
                                 reedit);
                     }
                 }
@@ -251,7 +254,7 @@ public class LogSinkManagerWindow extends JDialog {
         createButton.setEnabled(flags.canCreateSome());
         propertiesButton.setEnabled(haveSel);
         removeButton.setEnabled(haveSel && flags.canDeleteSome());
-        copyButton.setEnabled(haveSel && flags.canCreateSome());
+        cloneButton.setEnabled(haveSel && flags.canCreateSome());
     }
 
     private void showErrorMessage(String title, String msg, Throwable e) {
