@@ -886,14 +886,17 @@ public class ServicePropertiesDialog extends JDialog {
         //attempt to save the changes
         try {
             Collection<ServiceDocument> documents = getServiceDocuments();
+            long newOid = subject.getOid();
             if (documents == null)
-                Registry.getDefault().getServiceManager().savePublishedService(subject);
+                newOid = Registry.getDefault().getServiceManager().savePublishedService(subject);
             else
-                Registry.getDefault().getServiceManager().savePublishedServiceWithDocuments(subject, documents);
+                newOid = Registry.getDefault().getServiceManager().savePublishedServiceWithDocuments(subject, documents);
+            subject.setOid(newOid);
 
             // Update tracing flag if indicated
             if (wasTracingEnabled != subject.isTracingEnabled())
                 Registry.getDefault().getServiceManager().setTracingEnabled(subject.getOid(), subject.isTracingEnabled());
+
 
             //uddi settings
             if(uddiServiceControl != null){
@@ -947,6 +950,10 @@ public class ServicePropertiesDialog extends JDialog {
             if (errorMessage != null) msg += ":\n" + errorMessage;
             JOptionPane.showMessageDialog(this, msg);
         }
+    }
+
+    public PublishedService getService(){
+            return subject;
     }
 
     public static String validateResolutionPath( final String path, final boolean soap, final boolean internal ) {
@@ -1095,5 +1102,10 @@ public class ServicePropertiesDialog extends JDialog {
                 }
             }
         });
+    }
+
+    public void selectNameField() {
+        nameField.requestFocus();
+        nameField.selectAll();
     }
 }

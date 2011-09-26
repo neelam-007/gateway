@@ -23,6 +23,7 @@ import com.l7tech.objectmodel.folder.*;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyAlias;
 import com.l7tech.policy.PolicyHeader;
+import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.util.ExceptionUtils;
 import org.apache.commons.lang.mutable.*;
@@ -317,7 +318,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
         Policy newPolicy = new Policy(policy);
         newPolicy.setGuid(null);
         newPolicy.setOid(Policy.DEFAULT_OID);
-        newPolicy.setName("Clone of "+policy.getName());
+        newPolicy.setName("Copy of "+policy.getName());
         newPolicy.setFolder(newParentFolder);
 
         final Frame mw = TopComponents.getInstance().getTopParent();
@@ -340,6 +341,21 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                         rootNode.addEntity(oid, policyNode);
                         tree.setSelectionPath(new TreePath(policyNode.getPath()));
                         model.nodeChanged(policyNode);
+                    } catch ( DuplicateObjectException doe) {
+                        String message = "Unable to save the policy '" + returnedPolicy.getName() + "'.\n";
+                        if ( returnedPolicy.getType() == PolicyType.GLOBAL_FRAGMENT ) {
+                            message += "The policy name is already in use or there is an existing\n" +
+                                       "Global Policy Fragment with the '"+returnedPolicy.getInternalTag()+"' tag.";
+                        } else if (returnedPolicy.getType() == PolicyType.INTERNAL && PolicyType.getAuditMessageFilterTags().contains(returnedPolicy.getInternalTag())){
+                            message += "The policy name is already in use or there is an existing\n" +
+                                       "Internal Policy with the '"+returnedPolicy.getInternalTag()+"' tag.";
+                        }
+                        else {
+                            message += "The policy name is already used, please choose a different\n name and try again.";
+
+                        }
+                        DialogDisplayer.showMessageDialog(mw, "Duplicate policy", message, null);
+                        copyPolicy(  parentNode,   tree,  newParentFolder,returnedPolicy);
                     } catch (SaveException e) {
                         String msg = "Error creating policy:" + e.getMessage();
                         DialogDisplayer.showMessageDialog(mw, null, msg, null);
@@ -358,12 +374,12 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
 
     private boolean copyService(final AbstractTreeNode parentNode, final ServicesAndPoliciesTree tree, Folder newParentFolder, PublishedService service) {
 
-        final PublishedService newService = new PublishedService(service);
+        PublishedService newService = new PublishedService(service);
 
         newService.setOid(PublishedService.DEFAULT_OID);
         newService.getPolicy().setGuid(null);
         newService.getPolicy().setOid(Policy.DEFAULT_OID);
-        newService.setName("Clone of " + service.getName());
+        newService.setName("Copy of " + service.getName());
         newService.setFolder(newParentFolder);
 
         boolean hasTracePermission = Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdateAll(EntityType.SERVICE));
@@ -371,14 +387,16 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
         final ServicePropertiesDialog dlg = new ServicePropertiesDialog(mw, newService, true, hasTracePermission);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
+        dlg.selectNameField();
         DialogDisplayer.display(dlg, new Runnable() {
             public void run() {
                 if (dlg.wasOKed()) {
-                    final AbstractTreeNode serviceNode = TreeNodeFactory.asTreeNode(new ServiceHeader(newService), RootNode.getComparator());
+                    PublishedService savedService = dlg.getService();
+                    final AbstractTreeNode serviceNode = TreeNodeFactory.asTreeNode(new ServiceHeader(savedService), RootNode.getComparator());
                     DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
                     model.insertNodeInto(serviceNode, parentNode, parentNode.getInsertPosition(serviceNode, RootNode.getComparator()));
                     RootNode rootNode = (RootNode) model.getRoot();
-                    rootNode.addEntity(newService.getOid(), serviceNode);
+                    rootNode.addEntity(savedService.getOid(), serviceNode);
                     tree.setSelectionPath(new TreePath(serviceNode.getPath()));
                     model.nodeChanged(serviceNode);
 

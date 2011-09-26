@@ -179,6 +179,12 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
             }
         });
         enableDisable();
+
+        // select name field for create
+        if(policy.getOid() == Policy.DEFAULT_OID){
+            nameField.selectAll();
+        }
+
         add(mainPanel, BorderLayout.CENTER);
     }
 
