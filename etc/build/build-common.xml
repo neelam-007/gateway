@@ -41,6 +41,8 @@
     <property name="module.compile.source" value="1.6"/>
     <property name="module.compile.target" value="1.6"/>
     <property name="module.compile.optimize" value="off"/>
+    <property name="module.compile.verbose" value="no"/>
+    <property name="module.compile.xlint" value=":none"/> <!-- redefine as "" if you want to enable warnings -->
     <property name="module.compile.excludes" value=""/>
     <property name="module.forms.excludes" value=""/>
     <property name="module.jar.index" value="false"/>
@@ -76,244 +78,244 @@
         <file file="${src.root}/lib/repository/commons-beanutils/commons-beanutils-1.8.3.jar"/>
     </path>
 
-    <!--
-      Task definition defaults for ivy resolve
-    -->
-    <presetdef name="ivy-resolve">
-        <ivy:resolve file="${ivy.file}"
-                     showprogress="false"
-                     log="quiet"
-                     checkIfChanged="false"/>
-    </presetdef>
+    <target name="task-init">
+        <!--
+          Task definition defaults for ivy resolve
+        -->
+        <presetdef name="ivy-resolve">
+            <ivy:resolve file="${ivy.file}"
+                         showprogress="false"
+                         log="quiet"
+                         checkIfChanged="false"/>
+        </presetdef>
 
-    <!--
-      Task definition for Idea form compiler
-    -->
-    <taskdef name="javac2t"
-             classname="com.intellij.ant.Javac2"
-             classpathref="uidesigner.classpath"/>
+        <!--
+          Task definition for Idea form compiler
+        -->
+        <taskdef name="javac2t"
+                 classname="com.intellij.ant.Javac2"
+                 classpathref="uidesigner.classpath"/>
 
-    <!--
-      Modules JAVAC definition with some presets
-    -->
-    <presetdef name="module-javac">
-        <javac debug="on"
-               optimize="${module.compile.optimize}"
-               deprecation="on"
-               verbose="no"
-               source="${module.compile.source}"
-               target="${module.compile.target}"
-               excludes="${module.compile.excludes}"
-               includeAntRuntime="no"
-                >
-            <compilerarg value="-Xlint" compiler="modern"/>
-            <compilerarg value="-Xlint:-serial" compiler="modern"/>
-            <compilerarg value="-Xlint:-path" compiler="modern"/>
-            <compilerarg value="-Xlint:-unchecked" compiler="modern"/>
-            <classpath refid="lib.path.id"/>
-        </javac>
-    </presetdef>
+        <!--
+          Modules JAVAC definition with some presets
+        -->
+        <presetdef name="module-javac">
+            <javac debug="on"
+                   optimize="${module.compile.optimize}"
+                   verbose="${module.compile.verbose}"
+                   source="${module.compile.source}"
+                   target="${module.compile.target}"
+                   excludes="${module.compile.excludes}"
+                   includeAntRuntime="no"
+                    >
+                <compilerarg value="-Xlint${module.compile.xlint}" compiler="modern"/>
+                <compilerarg value="-Xlint:-serial" compiler="modern"/>
+                <compilerarg value="-Xlint:-path" compiler="modern"/>
+                <classpath refid="lib.path.id"/>
+            </javac>
+        </presetdef>
 
-    <!--
-      Task definition for scalac
-    -->
-    <taskdef resource="scala/tools/ant/antlib.xml">
-        <classpath>
-            <pathelement location="${src.root}/lib/tools/scala-compiler.jar"/>
-            <fileset dir="${src.root}/lib/repository/org.scala-lang">
-                <include name="scala-library-*.jar"/>
-            </fileset>
-        </classpath>
-    </taskdef>
-
-    <!--
-      Modules SCALAC definition with some presets
-    -->
-    <presetdef name="module-scalac">
-        <scalac
-               deprecation="on"
-               logging="none"
-               target="jvm-1.5"
-               excludes="${module.compile.excludes}"
-                >
-            <classpath refid="lib.path.id"/>
-        </scalac>
-    </presetdef>
-
-    <!--
-      Task definition for Jasper Report compiler
-    -->
-    <taskdef name="jrc" classname="net.sf.jasperreports.ant.JRAntCompileTask">
-        <classpath refid="jasperreports.classpath"/>
-    </taskdef>
-
-    <!--
-      Modules Jasper Reports compiler definition with presets
-    -->
-    <macrodef name="module-jrc">
-        <attribute name="srcdir"/>
-        <attribute name="destdir"/>
-        <attribute name="classpathref"/>
-        <sequential>
-            <jrc destdir="@{destdir}">
-                <src>
-                    <fileset dir="@{srcdir}">
-                        <include name="**/*.jrxml"/>
-                    </fileset>
-                </src>
-                <classpath>
-                    <pathelement path="@{destdir}"/>
-                    <path refid="@{classpathref}"/>
-                </classpath>
-            </jrc>
-        </sequential>
-    </macrodef>
-
-    <!--
-      Modules IDEA form compiler definition with some presets
-    -->
-    <presetdef name="module-javac2">
-        <javac2t
-                debug="on"
-                source="${module.compile.source}"
-                target="${module.compile.target}"
-                failonerror="true"
-                optimize="on"
-                includeAntRuntime="no"
-                >
-            <include name="**/*.form"/>
-            <exclude name="${module.forms.excludes}"/> 
-        </javac2t>
-    </presetdef>
-
-    <!--
-      Task to run a ZKM with convention for subdirs, library names, etc
-    -->
-    <macrodef name="obfuscate-classes">
-        <attribute name="zkmFilePath" default="${src.root}/etc/obfuscation/genjarobf.zkm"/>
-        <sequential>
-            <echo>Generating script for ${ant.project.name} obfuscation.</echo>
-            <ivy-resolve conf="optional,runtime,compile"/>
-            <ivy:cachepath pathid="lib.obfuscate.path.id" conf="compile"/>
-            <path id="full.obfuscate.path.id">
-                <pathelement path="${sun.boot.class.path}"/>
-                <fileset dir="${java.home}/lib/ext">
-                    <include name="*.jar"/>                    
+        <!--
+          Task definition for scalac
+        -->
+        <taskdef resource="scala/tools/ant/antlib.xml">
+            <classpath>
+                <pathelement location="${src.root}/lib/tools/scala-compiler.jar"/>
+                <fileset dir="${src.root}/lib/repository/org.scala-lang">
+                    <include name="scala-library-*.jar"/>
                 </fileset>
-                <path refid="lib.obfuscate.path.id"/>
-            </path>
-            <pathconvert property="lib.obfuscate.path.text" targetos="unix" pathsep="&quot;${line.separator}&quot;" refid="full.obfuscate.path.id"/>
-            <copy file="@{zkmFilePath}" tofile="${build.dir}/etc/obfuscation.zkm" overwrite="true">
-                <filterset>
-                    <filter token="CP" value="${lib.obfuscate.path.text}"/>
-                    <filter token="JAR" value="${classes.main.dir}/*"/>
-                    <filter token="CHANGELOG" value="${build.dir}/obfuscation/change.log"/>
-                    <filter token="OUT" value="${classes.obf.dir}"/>
-                </filterset>
-            </copy>
+            </classpath>
+        </taskdef>
 
-            <echo>Obfuscating ${ant.project.name}.</echo>
-            <Zelix scriptFileName="${build.dir}/etc/obfuscation.zkm"
-                   logFileName="${build.dir}/obfuscation/obfuscation.log"
-                   trimLogFileName="${build.dir}/obfuscation/obfuscation_trim.log"
-                   isParseOnly="false"
-                   isVerbose="true"/>
+        <!--
+          Modules SCALAC definition with some presets
+        -->
+        <presetdef name="module-scalac">
+            <scalac
+                   deprecation="on"
+                   logging="none"
+                   target="jvm-1.5"
+                   excludes="${module.compile.excludes}"
+                    >
+                <classpath refid="lib.path.id"/>
+            </scalac>
+        </presetdef>
 
-            <echo>Copying resources for obfuscated classes.</echo>
-            <copy todir="${classes.obf.dir}">
-                <fileset dir="${classes.main.dir}" excludes="**/*.class"/>
-            </copy>
+        <!--
+          Task definition for Jasper Report compiler
+        -->
+        <taskdef name="jrc" classname="net.sf.jasperreports.ant.JRAntCompileTask">
+            <classpath refid="jasperreports.classpath"/>
+        </taskdef>
 
-            <echo>Obfuscation completed for ${ant.project.name}.</echo>
-        </sequential>
-    </macrodef>    
+        <!--
+          Modules Jasper Reports compiler definition with presets
+        -->
+        <macrodef name="module-jrc">
+            <attribute name="srcdir"/>
+            <attribute name="destdir"/>
+            <attribute name="classpathref"/>
+            <sequential>
+                <jrc destdir="@{destdir}">
+                    <src>
+                        <fileset dir="@{srcdir}">
+                            <include name="**/*.jrxml"/>
+                        </fileset>
+                    </src>
+                    <classpath>
+                        <pathelement path="@{destdir}"/>
+                        <path refid="@{classpathref}"/>
+                    </classpath>
+                </jrc>
+            </sequential>
+        </macrodef>
 
-    <!--
-      Modules JAR signing task with presets
-    -->
-    <presetdef name="sign-jar">
-        <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer4" storepass="password" jar="${jar.file}">
-            <path>
-                <fileset dir="${build.dir}" includes="${jar.sign.pattern}" />
-            </path>
-        </signjar>
-    </presetdef>
+        <!--
+          Modules IDEA form compiler definition with some presets
+        -->
+        <presetdef name="module-javac2">
+            <javac2t
+                    debug="on"
+                    source="${module.compile.source}"
+                    target="${module.compile.target}"
+                    failonerror="true"
+                    optimize="on"
+                    includeAntRuntime="no"
+                    >
+                <include name="**/*.form"/>
+                <exclude name="${module.forms.excludes}"/>
+            </javac2t>
+        </presetdef>
 
-    <!--
-      Module task to unpack an artifact into this modules classes directory (useful to combine JARs for Applets, etc)
-    -->
-    <macrodef name="jar-include">
-        <attribute name="name"/>
-        <attribute name="conf" default="master"/>
-        <attribute name="organisation" default="com.l7tech"/>
-        <attribute name="dir" default="${classes.main.dir}"/>
-        <sequential>
-            <ivy:cachepath
-                    pathid="jar.include.@{name}.classpath"
-                    inline="true"
-                    organisation="@{organisation}"
-                    module="@{name}"
-                    conf="@{conf}"
-                    transitive="false"
-                    log="quiet"/>
+        <!--
+          Task to run a ZKM with convention for subdirs, library names, etc
+        -->
+        <macrodef name="obfuscate-classes">
+            <attribute name="zkmFilePath" default="${src.root}/etc/obfuscation/genjarobf.zkm"/>
+            <sequential>
+                <echo>Generating script for ${ant.project.name} obfuscation.</echo>
+                <ivy-resolve conf="optional,runtime,compile"/>
+                <ivy:cachepath pathid="lib.obfuscate.path.id" conf="compile"/>
+                <path id="full.obfuscate.path.id">
+                    <pathelement path="${sun.boot.class.path}"/>
+                    <fileset dir="${java.home}/lib/ext">
+                        <include name="*.jar"/>
+                    </fileset>
+                    <path refid="lib.obfuscate.path.id"/>
+                </path>
+                <pathconvert property="lib.obfuscate.path.text" targetos="unix" pathsep="&quot;${line.separator}&quot;" refid="full.obfuscate.path.id"/>
+                <copy file="@{zkmFilePath}" tofile="${build.dir}/etc/obfuscation.zkm" overwrite="true">
+                    <filterset>
+                        <filter token="CP" value="${lib.obfuscate.path.text}"/>
+                        <filter token="JAR" value="${classes.main.dir}/*"/>
+                        <filter token="CHANGELOG" value="${build.dir}/obfuscation/change.log"/>
+                        <filter token="OUT" value="${classes.obf.dir}"/>
+                    </filterset>
+                </copy>
 
-            <pathconvert property="jar.include.@{name}.text" targetos="unix" pathsep=":" refid="jar.include.@{name}.classpath"/>
-            <echo level="info">Including JAR: ${jar.include.@{name}.text}</echo>
+                <echo>Obfuscating ${ant.project.name}.</echo>
+                <Zelix scriptFileName="${build.dir}/etc/obfuscation.zkm"
+                       logFileName="${build.dir}/obfuscation/obfuscation.log"
+                       trimLogFileName="${build.dir}/obfuscation/obfuscation_trim.log"
+                       isParseOnly="false"
+                       isVerbose="true"/>
 
-            <mkdir dir="${classes.main.dir}"/>
-            <unjar src="${jar.include.@{name}.text}" dest="@{dir}">
-                <patternset>
-                    <exclude name="META-INF/*"/>
-                    <exclude name="META-INF"/>
-                    <exclude name="com/l7tech/config.properties"/>
-                    <exclude name="com/l7tech/EntityTypes.properties"/>
-                </patternset>
-            </unjar>
-            <delete file="@{dir}/config.properties" quiet="true"/>
-            <delete file="@{dir}/EntityTypes.properties" quiet="true"/>
-            <unjar src="${jar.include.@{name}.text}" dest="@{dir}">
-                <patternset>
-                    <include name="com/l7tech/config.properties"/>
-                    <include name="com/l7tech/EntityTypes.properties"/>
-                </patternset>
-                <mapper type="flatten"/>
-            </unjar>
-            <concat destfile="@{dir}/com/l7tech/config.properties" append="yes">
-                <fileset dir="@{dir}" includes="config.properties"/>
-            </concat>
-            <delete file="@{dir}/config.properties" quiet="true"/>
-            <concat destfile="@{dir}/com/l7tech/EntityTypes.properties" append="yes">
-                <fileset dir="@{dir}" includes="EntityTypes.properties"/>
-            </concat>
-            <delete file="@{dir}/EntityTypes.properties" quiet="true"/>
-        </sequential>
-    </macrodef>
+                <echo>Copying resources for obfuscated classes.</echo>
+                <copy todir="${classes.obf.dir}">
+                    <fileset dir="${classes.main.dir}" excludes="**/*.class"/>
+                </copy>
 
-    <!--
-      Module task to verify dependencies against a whitelist.
-    -->
-    <macrodef name="jar-include-verify">
-        <attribute name="file"/>
-        <attribute name="module"/>
-        <attribute name="whitelist"/>
-        <sequential>
-            <ivy:resolve file="@{file}" conf="runtime" showprogress="false" log="quiet"/>
-            <ivy:cachepath
-                    pathid="@{module}.layer7.dependency.path"
-                    organisation="com.l7tech"
-                    module="@{module}"
-                    conf="runtime"
-                    log="quiet"/>
-            <pathconvert property="@{module}.layer7.dependency.path.text" pathsep=" " refid="@{module}.layer7.dependency.path">
-                <mapper type="regexp" from=".*[/\\](layer7-.*${module.version.target}.*)?\.jar" to="\1"/>
-            </pathconvert>
-            <condition property="@{module}.included.dependencies">
-                <!-- Whitelist of modules that are included below -->
-                <matches pattern="^((@{whitelist})-${module.version.target} ?){1,1000}$" string="${@{module}.layer7.dependency.path.text}"/>
-            </condition>
-            <fail unless="@{module}.included.dependencies" message="Missing included module JAR(s) for applet ${@{module}.layer7.dependency.path.text}"/>
-        </sequential>
-    </macrodef>
+                <echo>Obfuscation completed for ${ant.project.name}.</echo>
+            </sequential>
+        </macrodef>
+
+        <!--
+          Modules JAR signing task with presets
+        -->
+        <presetdef name="sign-jar">
+            <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer4" storepass="password" jar="${jar.file}">
+                <path>
+                    <fileset dir="${build.dir}" includes="${jar.sign.pattern}" />
+                </path>
+            </signjar>
+        </presetdef>
+
+        <!--
+          Module task to unpack an artifact into this modules classes directory (useful to combine JARs for Applets, etc)
+        -->
+        <macrodef name="jar-include">
+            <attribute name="name"/>
+            <attribute name="conf" default="master"/>
+            <attribute name="organisation" default="com.l7tech"/>
+            <attribute name="dir" default="${classes.main.dir}"/>
+            <sequential>
+                <ivy:cachepath
+                        pathid="jar.include.@{name}.classpath"
+                        inline="true"
+                        organisation="@{organisation}"
+                        module="@{name}"
+                        conf="@{conf}"
+                        transitive="false"
+                        log="quiet"/>
+
+                <pathconvert property="jar.include.@{name}.text" targetos="unix" pathsep=":" refid="jar.include.@{name}.classpath"/>
+                <echo level="info">Including JAR: ${jar.include.@{name}.text}</echo>
+
+                <mkdir dir="${classes.main.dir}"/>
+                <unjar src="${jar.include.@{name}.text}" dest="@{dir}">
+                    <patternset>
+                        <exclude name="META-INF/*"/>
+                        <exclude name="META-INF"/>
+                        <exclude name="com/l7tech/config.properties"/>
+                        <exclude name="com/l7tech/EntityTypes.properties"/>
+                    </patternset>
+                </unjar>
+                <delete file="@{dir}/config.properties" quiet="true"/>
+                <delete file="@{dir}/EntityTypes.properties" quiet="true"/>
+                <unjar src="${jar.include.@{name}.text}" dest="@{dir}">
+                    <patternset>
+                        <include name="com/l7tech/config.properties"/>
+                        <include name="com/l7tech/EntityTypes.properties"/>
+                    </patternset>
+                    <mapper type="flatten"/>
+                </unjar>
+                <concat destfile="@{dir}/com/l7tech/config.properties" append="yes">
+                    <fileset dir="@{dir}" includes="config.properties"/>
+                </concat>
+                <delete file="@{dir}/config.properties" quiet="true"/>
+                <concat destfile="@{dir}/com/l7tech/EntityTypes.properties" append="yes">
+                    <fileset dir="@{dir}" includes="EntityTypes.properties"/>
+                </concat>
+                <delete file="@{dir}/EntityTypes.properties" quiet="true"/>
+            </sequential>
+        </macrodef>
+
+        <!--
+          Module task to verify dependencies against a whitelist.
+        -->
+        <macrodef name="jar-include-verify">
+            <attribute name="file"/>
+            <attribute name="module"/>
+            <attribute name="whitelist"/>
+            <sequential>
+                <ivy:resolve file="@{file}" conf="runtime" showprogress="false" log="quiet"/>
+                <ivy:cachepath
+                        pathid="@{module}.layer7.dependency.path"
+                        organisation="com.l7tech"
+                        module="@{module}"
+                        conf="runtime"
+                        log="quiet"/>
+                <pathconvert property="@{module}.layer7.dependency.path.text" pathsep=" " refid="@{module}.layer7.dependency.path">
+                    <mapper type="regexp" from=".*[/\\](layer7-.*${module.version.target}.*)?\.jar" to="\1"/>
+                </pathconvert>
+                <condition property="@{module}.included.dependencies">
+                    <!-- Whitelist of modules that are included below -->
+                    <matches pattern="^((@{whitelist})-${module.version.target} ?){1,1000}$" string="${@{module}.layer7.dependency.path.text}"/>
+                </condition>
+                <fail unless="@{module}.included.dependencies" message="Missing included module JAR(s) for applet ${@{module}.layer7.dependency.path.text}"/>
+            </sequential>
+        </macrodef>
+    </target>
 
     <!--
       Show build info for the module
@@ -339,7 +341,7 @@
     <!--
       Common initialization
     -->
-    <target name="init">
+    <target name="init" depends="task-init">
         <ivy:settings file="${ivy.settings.filepath}"/>
 
         <!-- Determine available sources -->

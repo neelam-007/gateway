@@ -114,6 +114,184 @@
                 <pathelement location="lib/ant-contrib-1.0b3.jar"/>
             </classpath>
         </taskdef>
+
+        <macrodef name="pack-mac">
+            <attribute name="jarfile"/>
+            <attribute name="packfile" default="@{jarfile}.pack.gz"/>
+            <sequential>
+                <condition property="pack-mac.fail">
+                    <not>
+                        <available file="@{jarfile}"/>
+                    </not>
+                </condition>
+                <pack200 src="@{jarfile}" destfile="@{packfile}" segmentlimit="-1" gzipoutput="true"/>
+            </sequential>
+        </macrodef>
+
+        <macrodef name="ivyinstall">
+            <attribute name="file"/>
+            <sequential>
+                <ivy:resolve file="@{file}"/>
+
+                <ivy:publish
+                   artifactspattern=""
+                   srcivypattern="[module]-ivy-[revision].xml"
+                   resolver="localfile"
+                   status="release"
+                   haltonmissing="false"
+                   overwrite="true"/>
+            </sequential>
+        </macrodef>
+
+        <macrodef name="ivy-echo-build-plan">
+            <attribute name="refid"/>
+            <attribute name="pathid"/>
+            <sequential>
+                <pathconvert property="@{pathid}" pathsep="${line.separator}            " dirsep="/" refid="@{refid}">
+                    <mapper type="regexp" from=".*[/\\](modules.*)/build.xml" to="\1"/>
+                </pathconvert>
+                <echo level="info">
+            ===============================================================
+              Ivy Modules (in dependency order)
+            ===============================================================
+                ${@{pathid}}
+            ===============================================================
+                </echo>
+            </sequential>
+        </macrodef>
+
+        <macrodef name="xslt-update">
+            <attribute name="style"/>
+            <attribute name="file"/>
+            <attribute name="data" default=""/>
+            <sequential>
+                <xslt in="@{file}"
+                      out="@{file}.tmp"
+                      style="@{style}"
+                      force="true">
+                    <param name="data" expression="@{data}"/>
+                 </xslt>
+
+                <move file="@{file}.tmp" tofile="@{file}" overwrite="true"/>
+            </sequential>
+        </macrodef>
+
+        <!--
+          Task to generate JAR file manifests with classpaths.
+        -->
+        <macrodef name="generate-manifest">
+            <attribute name="propertyPrefix"/>
+            <attribute name="filename"/>
+            <attribute name="pathPrefix" default=""/>
+            <element name="section" optional="yes"/>
+            <sequential>
+                <fileset id="@{propertyPrefix}.lib.fileset" dir="${src.root}/lib" casesensitive="yes">
+                    <patternset refid="@{propertyPrefix}.libs"/>
+                </fileset>
+                <pathconvert property="@{propertyPrefix}.libs.path" pathsep=" " dirsep="/" refid="@{propertyPrefix}.lib.fileset">
+                    <mapper type="regexp" from=".*[/\\](.*)\.jar" to="lib/\1.jar"/>
+                </pathconvert>
+                <copy todir="${build.etc}">
+                    <fileset dir="${src.root}/etc" includes="@{filename}"/>
+                </copy>
+                <manifest file="${build.etc}/@{filename}" mode="update">
+                    <attribute name="Implementation-Title" value="${app.name}"/>
+                    <attribute name="Implementation-Version" value="${build.version.major}.${build.version.minor}"/>
+                    <attribute name="Implementation-Vendor" value="${vendor.name}"/>
+                    <attribute name="Class-Path" value="@{pathPrefix} ${@{propertyPrefix}.libs.path}"/>
+                    <section/>
+                </manifest>
+            </sequential>
+        </macrodef>
+
+        <macrodef name="checkdeps">
+            <attribute name="libfilesetref"/>
+            <attribute name="jarfile"/>
+            <attribute name="resultproperty"/>
+            <attribute name="ignoreclasses" default=""/>
+            <attribute name="failpackages" default=""/>
+            <sequential>
+                <java classname="com.l7tech.tools.JarChecker" fork="true" resultproperty="@{resultproperty}">
+                    <classpath>
+                        <pathelement path="tools"/>
+                        <fileset refid="@{libfilesetref}"/>
+                        <pathelement location="@{jarfile}"/>
+                    </classpath>
+                    <sysproperty key="java.awt.headless" value="true"/>
+                    <sysproperty key="com.l7tech.tools.JarChecker.failpackages" value="@{failpackages}"/>
+                    <arg value="@{jarfile}"/>
+                    <arg line="@{ignoreclasses}"/>
+                </java>
+            </sequential>
+        </macrodef>
+
+        <!--
+          Task to check if the build should be failed
+        -->
+        <macrodef name="checkfail">
+            <sequential>
+                <fail if="fail">Exiting due to build failures.</fail>
+            </sequential>
+        </macrodef>
+
+        <macrodef name="set-db-properties">
+            <attribute name="driver"/>
+            <attribute name="url"/>
+            <attribute name="user"/>
+            <attribute name="password"/>
+            <attribute name="pingstmt"/>
+            <sequential>
+                <property name="database.driver" value="@{driver}"/>
+                <property name="database.url" value="@{url}"/>
+                <property name="database.user" value="@{user}"/>
+                <property name="database.password" value="@{password}"/>
+                <property name="database.pingstmt" value="@{pingstmt}"/>
+            </sequential>
+        </macrodef>
+
+        <!--
+          Task to update ZKM files with classpaths, jars, etc.
+        -->
+        <macrodef name="build-zkm">
+            <attribute name="name"/>
+            <attribute name="zkmFilePath" default="${src.root}/etc/obfuscation/genjarobf.zkm"/>
+            <attribute name="out" default="./build/obfuscation"/>
+            <attribute name="jarFileset"/>
+            <attribute name="libFileset"/>
+            <sequential>
+                <pathconvert property="obfuscate.@{name}.zkm.jars.path" pathsep="&quot;${line.separator}&quot;" dirsep="/" refid="@{jarFileset}"/>
+                <pathconvert property="obfuscate.@{name}.zkm.libs.path" pathsep="&quot;${line.separator}&quot;" dirsep="/" refid="@{libFileset}"/>
+                <copy file="@{zkmFilePath}" tofile="build/etc/@{name}.zkm" overwrite="true">
+                    <filterset>
+                        <filter token="CP" value="${obfuscate.@{name}.zkm.libs.path}"/>
+                        <filter token="JAR" value="${obfuscate.@{name}.zkm.jars.path}"/>
+                        <filter token="CHANGELOG" value="${build.dir}/obfuscation/@{name}_change.log"/>
+                        <filter token="OUT" value="@{out}"/>
+                    </filterset>
+                </copy>
+            </sequential>
+        </macrodef>
+
+        <!--
+          Macro for using the wsimport JAX-WS utility
+        -->
+        <macrodef name="wsimport">
+            <attribute name="wsdl"/>
+            <sequential>
+              <exec executable="wsimport">
+                <arg value="-keep"/>
+                <arg value="-s"/>
+                <arg value="build/uddisources"/>
+                <arg value="-d"/>
+                <arg value="build/uddiclasses"/>
+                <arg value="-p"/>
+                <arg value="com.l7tech.common.uddi.guddiv3"/>
+                <arg value="-wsdllocation"/>
+                <arg value="resources/@{wsdl}"/>
+                <arg value="etc/schema/uddiv3/@{wsdl}"/>
+              </exec>
+            </sequential>
+        </macrodef>
     </target>
 
     <!--
@@ -282,21 +460,6 @@
             description="Developer build (does not package)"
             depends="init-dev, compile-tests"/>
 
-    <macrodef name="ivyinstall">
-        <attribute name="file"/>
-        <sequential>
-            <ivy:resolve file="@{file}"/>
-
-            <ivy:publish 
-               artifactspattern=""
-               srcivypattern="[module]-ivy-[revision].xml"
-               resolver="localfile"
-               status="release"
-               haltonmissing="false"
-               overwrite="true"/>
-        </sequential>
-    </macrodef>
-
     <target name="build-module-list" unless="build-path.text" depends="init-core">
         <ivy:buildlist reference="module-build-path" onMissingDescriptor="skip">
             <fileset dir="modules" includes="${project.module.includes}" excludes="${project.module.excludes}"/>
@@ -324,23 +487,6 @@
         </ivy:buildlist>
         <ivy-echo-build-plan refid="module-build-all-path" pathid="build-all-path.text"/>
     </target>
-
-    <macrodef name="ivy-echo-build-plan">
-        <attribute name="refid"/>
-        <attribute name="pathid"/>
-        <sequential>
-            <pathconvert property="@{pathid}" pathsep="${line.separator}            " dirsep="/" refid="@{refid}">
-                <mapper type="regexp" from=".*[/\\](modules.*)/build.xml" to="\1"/>
-            </pathconvert>
-            <echo level="info">
-        ===============================================================
-          Ivy Modules (in dependency order)
-        ===============================================================
-            ${@{pathid}}
-        ===============================================================
-            </echo>
-        </sequential>
-    </macrodef>
 
     <target name="repository-install" description="Install an artifact to the build repository." depends="prepare.base">
         <fail unless="art">art is a required property (the artifact to install)</fail>
@@ -449,22 +595,6 @@
     <target name="clean-modules" depends="build-module-list-all">
         <modules target="clean" buildpathref="module-build-all-path"/>
     </target>
-
-    <macrodef name="xslt-update">
-        <attribute name="style"/>
-        <attribute name="file"/>
-        <attribute name="data" default=""/>
-        <sequential>
-            <xslt in="@{file}"
-                  out="@{file}.tmp"
-                  style="@{style}"
-                  force="true">
-                <param name="data" expression="@{data}"/>
-             </xslt>
-
-            <move file="@{file}.tmp" tofile="@{file}" overwrite="true"/>
-        </sequential>
-    </macrodef>
 
     <!--
       Publish the latest dependency / artifact information to the build repository
@@ -1378,7 +1508,7 @@
       Deploy SSG configuration files for development (to run with classes from IDE)
       This will not deploy the Manager Applet or any modular assertions
     -->
-    <target name="deployconfig" description="Deploy configuration files for a development SSG (run from IDE)" depends="init,db.properties">
+    <target name="deployconfig" description="Deploy configuration files for a development SSG (run from IDE)" depends="init,db.properties,init-install-macros">
         <property name="dev.deploy.ssg.dir" value="${dev.deploy.dir}/Gateway"/>
         <echo level="info">Creating deployment directories</echo>
         <mkdir dir="${dev.deploy.ssg.dir}/node/default/etc/conf"/>
@@ -1432,7 +1562,7 @@
     <!--
       Deploy Process Controller for development
     -->
-    <target name="deploy-controller-init" depends="init">
+    <target name="deploy-controller-init" depends="init, init-install-macros">
         <property name="dev.deploy.pc.dir" value="${dev.deploy.dir}/Controller"/>
         <install-ssg-processcontroller dir="${dev.deploy.pc.dir}"/>
     </target>
@@ -1458,24 +1588,11 @@
     <!--
       Deploy ESM for development
     -->
-    <target name="deploy-esm" description="Deploy a development ESM (run with ./run.sh esm)" depends="package.gateway.ifrequired">
+    <target name="deploy-esm" description="Deploy a development ESM (run with ./run.sh esm)" depends="package.gateway.ifrequired, init-install-macros">
         <install-esm-software dir="${dev.deploy.dir}/EnterpriseManager"/>
     </target>
 
     <target name="pack.manager" depends="pack.manager.compress"/>
-
-    <macrodef name="pack-mac">
-        <attribute name="jarfile"/>
-        <attribute name="packfile" default="@{jarfile}.pack.gz"/>
-        <sequential>
-            <condition property="pack-mac.fail">
-                <not>
-                    <available file="@{jarfile}"/>
-                </not>
-            </condition>
-            <pack200 src="@{jarfile}" destfile="@{packfile}" segmentlimit="-1" gzipoutput="true"/>
-        </sequential>
-    </macrodef>
 
     <target name="pack.manager.compress" depends="package.manager" if="pack200">
         <pack-mac jarfile="${build.dir}/managerapplet/layer7-gateway-console-applet.jar"/>
@@ -1651,34 +1768,6 @@
         <mkdir dir="${build.dir}/modules-optional"/>
         <ivy:retrieve conf="module-optional" pattern="${build.dir}/modules-optional/[artifact]-[revision].[ext]"/>
     </target>
-
-    <!--
-      Task to generate JAR file manifests with classpaths.
-    -->
-    <macrodef name="generate-manifest">
-        <attribute name="propertyPrefix"/>
-        <attribute name="filename"/>
-        <attribute name="pathPrefix" default=""/>
-        <element name="section" optional="yes"/>
-        <sequential>
-            <fileset id="@{propertyPrefix}.lib.fileset" dir="${src.root}/lib" casesensitive="yes">
-                <patternset refid="@{propertyPrefix}.libs"/>
-            </fileset>
-            <pathconvert property="@{propertyPrefix}.libs.path" pathsep=" " dirsep="/" refid="@{propertyPrefix}.lib.fileset">
-                <mapper type="regexp" from=".*[/\\](.*)\.jar" to="lib/\1.jar"/>
-            </pathconvert>
-            <copy todir="${build.etc}">
-                <fileset dir="${src.root}/etc" includes="@{filename}"/>
-            </copy>
-            <manifest file="${build.etc}/@{filename}" mode="update">
-                <attribute name="Implementation-Title" value="${app.name}"/>
-                <attribute name="Implementation-Version" value="${build.version.major}.${build.version.minor}"/>
-                <attribute name="Implementation-Vendor" value="${vendor.name}"/>
-                <attribute name="Class-Path" value="@{pathPrefix} ${@{propertyPrefix}.libs.path}"/>
-                <section/>
-            </manifest>
-        </sequential>
-    </macrodef>
 
     <!--
       Package the SSB (JAR)
@@ -2735,36 +2824,6 @@
 
     <target name="zip.api" depends="package.clientapi,package.managerapi,zip.api.customassertion,zip.api.gatewaymanagement"/>
 
-    <macrodef name="checkdeps">
-        <attribute name="libfilesetref"/>
-        <attribute name="jarfile"/>
-        <attribute name="resultproperty"/>
-        <attribute name="ignoreclasses" default=""/>
-        <attribute name="failpackages" default=""/>
-        <sequential>
-            <java classname="com.l7tech.tools.JarChecker" fork="true" resultproperty="@{resultproperty}">
-                <classpath>
-                    <pathelement path="tools"/>
-                    <fileset refid="@{libfilesetref}"/>
-                    <pathelement location="@{jarfile}"/>
-                </classpath>
-                <sysproperty key="java.awt.headless" value="true"/>
-                <sysproperty key="com.l7tech.tools.JarChecker.failpackages" value="@{failpackages}"/>
-                <arg value="@{jarfile}"/>
-                <arg line="@{ignoreclasses}"/>
-            </java>
-        </sequential>
-    </macrodef>
-
-    <!--
-      Task to check if the build should be failed
-    -->
-    <macrodef name="checkfail">
-        <sequential>
-            <fail if="fail">Exiting due to build failures.</fail>
-        </sequential>
-    </macrodef>
-
     <!--
       Core prepare target
     -->
@@ -2802,21 +2861,6 @@
     -->
     <target name="db.properties"
             depends="db.properties.mysql"/>
-
-    <macrodef name="set-db-properties">
-        <attribute name="driver"/>
-        <attribute name="url"/>
-        <attribute name="user"/>
-        <attribute name="password"/>
-        <attribute name="pingstmt"/>
-        <sequential>
-            <property name="database.driver" value="@{driver}"/>
-            <property name="database.url" value="@{url}"/>
-            <property name="database.user" value="@{user}"/>
-            <property name="database.password" value="@{password}"/>
-            <property name="database.pingstmt" value="@{pingstmt}"/>
-        </sequential>
-    </macrodef>
 
     <target name="db.properties.mysql" if="db.mysql">
         <echo>Setting database properties for MySQL...</echo>
@@ -2965,7 +3009,7 @@
     <!--
       Full install main work
     -->
-    <target name="INTERNAL-ssg-install-main" if="ssg.install.enabled">
+    <target name="INTERNAL-ssg-install-main" if="ssg.install.enabled" depends="init-install-macros">
         <install-ssg-appliance/>
 
         <install-ssg-processcontroller/>
@@ -2973,351 +3017,352 @@
         <install-ssg-software/>
     </target>
 
-    <!--
-      Macro to install SSG appliance files under the given directory
-    -->
-    <macrodef name="install-ssg-appliance">
-        <attribute name="dir" default="${install.src.app}"/>
-        <sequential>
-            <echo>Making Appliance directories...</echo>
+    <target name="init-install-macros">
+        <!--
+          Macro to install SSG appliance files under the given directory
+        -->
+        <macrodef name="install-ssg-appliance">
+            <attribute name="dir" default="${install.src.app}"/>
+            <sequential>
+                <echo>Making Appliance directories...</echo>
 
-            <!-- Appliance directories -->
-            <mkdir dir="@{dir}/etc/init.d"/>
-            <mkdir dir="@{dir}/etc/profile.d"/>
-            <mkdir dir="@{dir}/etc/snmp"/>
-            <mkdir dir="@{dir}/etc/sysconfig"/>
-            <mkdir dir="@{dir}/${install.src.app.bin}" />
-            <mkdir dir="@{dir}/${install.src.app.etc}" />
-            <mkdir dir="@{dir}/${install.src.app.firewall}" />
-            <mkdir dir="@{dir}/${install.src.app.firewall6}" />
-            <mkdir dir="@{dir}/${install.src.app.backuprestore.cfg}"/>
-            <mkdir dir="@{dir}/${install.src.app.libexec}"/>
-            <mkdir dir="@{dir}/${install.src.app.ssgconfig}"/>
-            <mkdir dir="@{dir}/${install.src.app.ssgprofile}"/>
-            <mkdir dir="@{dir}/${install.src.app.configdir}"/>
-            <mkdir dir="@{dir}/${install.src.app.configlogs}"/>
-            <!--<mkdir dir="@{dir}/${install.src.app.scaconfig}"/>-->
+                <!-- Appliance directories -->
+                <mkdir dir="@{dir}/etc/init.d"/>
+                <mkdir dir="@{dir}/etc/profile.d"/>
+                <mkdir dir="@{dir}/etc/snmp"/>
+                <mkdir dir="@{dir}/etc/sysconfig"/>
+                <mkdir dir="@{dir}/${install.src.app.bin}" />
+                <mkdir dir="@{dir}/${install.src.app.etc}" />
+                <mkdir dir="@{dir}/${install.src.app.firewall}" />
+                <mkdir dir="@{dir}/${install.src.app.firewall6}" />
+                <mkdir dir="@{dir}/${install.src.app.backuprestore.cfg}"/>
+                <mkdir dir="@{dir}/${install.src.app.libexec}"/>
+                <mkdir dir="@{dir}/${install.src.app.ssgconfig}"/>
+                <mkdir dir="@{dir}/${install.src.app.ssgprofile}"/>
+                <mkdir dir="@{dir}/${install.src.app.configdir}"/>
+                <mkdir dir="@{dir}/${install.src.app.configlogs}"/>
+                <!--<mkdir dir="@{dir}/${install.src.app.scaconfig}"/>-->
 
-            <!--copy the system config wizard -->
-            <copy todir="@{dir}/${install.src.app.configdir}">
-                <fileset dir="${build.dir}/sysconfigwizard">
-                    <include name="**/*"/>
-                </fileset>
-            </copy>
+                <!--copy the system config wizard -->
+                <copy todir="@{dir}/${install.src.app.configdir}">
+                    <fileset dir="${build.dir}/sysconfigwizard">
+                        <include name="**/*"/>
+                    </fileset>
+                </copy>
 
-            <!--copy the sca config tool -->
-            <copy todir="@{dir}/${install.src.app.configdir}">
-                <fileset dir="${build.dir}/scaconfig">
-                    <include name="**/*"/>
-                </fileset>
-            </copy>
+                <!--copy the sca config tool -->
+                <copy todir="@{dir}/${install.src.app.configdir}">
+                    <fileset dir="${build.dir}/scaconfig">
+                        <include name="**/*"/>
+                    </fileset>
+                </copy>
 
-            <copy file="${src.root}/etc/db/mysql/my.cnf" tofile="@{dir}/etc/my.cnf.ssg"/>
-            <copy file="${src.root}/etc/processcontroller/sspc-initd" tofile="@{dir}/etc/init.d/ssg"/>
-            <copy file="${src.root}/etc/appliance/sysconfigscript-initd" tofile="@{dir}/etc/init.d/ssgsysconfig"/>
-            <copy file="${src.root}/etc/appliance/ssg-dbstatus-initd" tofile="@{dir}/etc/init.d/ssg-dbstatus"/>
-            <copy file="${src.root}/etc/appliance/tcp_tune.sh" tofile="@{dir}/etc/init.d/tcp_tune"/>
-            <copy file="${src.root}/etc/appliance/ssgenv.sh" tofile="@{dir}/etc/profile.d/ssgenv.sh"/>
-            <copy file="${src.root}/etc/appliance/snmpd.conf" tofile="@{dir}/etc/snmp/snmpd.conf_example"/>
-            <copy file="${src.root}/etc/appliance/iptables" tofile="@{dir}/etc/sysconfig/iptables"/>
-            <copy file="${src.root}/etc/appliance/ip6tables" tofile="@{dir}/etc/sysconfig/ip6tables"/>
-            <copy file="${src.root}/etc/appliance/configuser_profile" tofile="@{dir}/${install.src.app.ssgconfig}/.bash_profile"/>
+                <copy file="${src.root}/etc/db/mysql/my.cnf" tofile="@{dir}/etc/my.cnf.ssg"/>
+                <copy file="${src.root}/etc/processcontroller/sspc-initd" tofile="@{dir}/etc/init.d/ssg"/>
+                <copy file="${src.root}/etc/appliance/sysconfigscript-initd" tofile="@{dir}/etc/init.d/ssgsysconfig"/>
+                <copy file="${src.root}/etc/appliance/ssg-dbstatus-initd" tofile="@{dir}/etc/init.d/ssg-dbstatus"/>
+                <copy file="${src.root}/etc/appliance/tcp_tune.sh" tofile="@{dir}/etc/init.d/tcp_tune"/>
+                <copy file="${src.root}/etc/appliance/ssgenv.sh" tofile="@{dir}/etc/profile.d/ssgenv.sh"/>
+                <copy file="${src.root}/etc/appliance/snmpd.conf" tofile="@{dir}/etc/snmp/snmpd.conf_example"/>
+                <copy file="${src.root}/etc/appliance/iptables" tofile="@{dir}/etc/sysconfig/iptables"/>
+                <copy file="${src.root}/etc/appliance/ip6tables" tofile="@{dir}/etc/sysconfig/ip6tables"/>
+                <copy file="${src.root}/etc/appliance/configuser_profile" tofile="@{dir}/${install.src.app.ssgconfig}/.bash_profile"/>
 
-            <copy todir="@{dir}/${install.src.app.libexec}">
-                <fileset dir="${src.root}/etc/appliance">
-                    <include name="envclean"/>
-                    <include name="scadiag_wrapper"/>
-                    <include name="scakiod_load_wrapper"/>
-                    <include name="load_keydata"/>
-                    <include name="save_keydata"/>
-                    <include name="wipe_keydata"/>
-                    <include name="zerohsm.sh"/>
-                    <include name="masterkey-manage.pl"/>
-                    <include name="update_firewall"/>
-                    <include name="gateway_control"/>
-                    <include name="hardware-stats.pl"/>
-                    <include name="ssgconfig_launch"/>
-                    <include name="systeminfo.sh"/>
-                    <include name="patch_launcher"/>
-                    <include name="patchcli_launch"/>
-                </fileset>
-                <fileset dir="${src.root}/etc/appliance/crypto">
-                    <include name="ncipherconfig.pl"/>
-                </fileset>
-            </copy>
-            <copy file="${build.dir}/patchverifier/layer7-gateway-patchverifier.jar" tofile="@{dir}/${install.src.app.libexec}/patchVerifier.jar"/>
+                <copy todir="@{dir}/${install.src.app.libexec}">
+                    <fileset dir="${src.root}/etc/appliance">
+                        <include name="envclean"/>
+                        <include name="scadiag_wrapper"/>
+                        <include name="scakiod_load_wrapper"/>
+                        <include name="load_keydata"/>
+                        <include name="save_keydata"/>
+                        <include name="wipe_keydata"/>
+                        <include name="zerohsm.sh"/>
+                        <include name="masterkey-manage.pl"/>
+                        <include name="update_firewall"/>
+                        <include name="gateway_control"/>
+                        <include name="hardware-stats.pl"/>
+                        <include name="ssgconfig_launch"/>
+                        <include name="systeminfo.sh"/>
+                        <include name="patch_launcher"/>
+                        <include name="patchcli_launch"/>
+                    </fileset>
+                    <fileset dir="${src.root}/etc/appliance/crypto">
+                        <include name="ncipherconfig.pl"/>
+                    </fileset>
+                </copy>
+                <copy file="${build.dir}/patchverifier/layer7-gateway-patchverifier.jar" tofile="@{dir}/${install.src.app.libexec}/patchVerifier.jar"/>
 
-            <copy todir="@{dir}/${install.src.app.bin}">
-                <fileset dir="${src.root}/etc/appliance">
-                    <include name="resetAdmin.sh"/>
-                    <include name="passServiceUsage.sh"/>
-                    <include name="ssg_appliance_startup_config.sh"/>
-                    <include name="firewall_control.sh"/>
-                    <include name="upgrade-appliance.sh"/>
-                </fileset>
-                <fileset dir="${src.root}/etc/appliance/db/mysql">
-                    <include name="add_slave_user.sh"/>
-                    <include name="create_slave.sh"/>
-                    <include name="restart_replication.sh"/>
+                <copy todir="@{dir}/${install.src.app.bin}">
+                    <fileset dir="${src.root}/etc/appliance">
+                        <include name="resetAdmin.sh"/>
+                        <include name="passServiceUsage.sh"/>
+                        <include name="ssg_appliance_startup_config.sh"/>
+                        <include name="firewall_control.sh"/>
+                        <include name="upgrade-appliance.sh"/>
+                    </fileset>
+                    <fileset dir="${src.root}/etc/appliance/db/mysql">
+                        <include name="add_slave_user.sh"/>
+                        <include name="create_slave.sh"/>
+                        <include name="restart_replication.sh"/>
 
-                </fileset>
+                    </fileset>
 
-            </copy>
+                </copy>
 
-            <copy todir="@{dir}/${install.src.app.etc}">
-                <fileset dir="${src.root}/etc/appliance">
-                    <include name="pkcs11_linux.cfg"/>
-                </fileset>
-            </copy>
+                <copy todir="@{dir}/${install.src.app.etc}">
+                    <fileset dir="${src.root}/etc/appliance">
+                        <include name="pkcs11_linux.cfg"/>
+                    </fileset>
+                </copy>
 
-            <!-- Appliance SSG configuration extras -->
-            <copy file="${src.root}/etc/backup_manifest" todir="@{dir}/${install.src.app.backuprestore.cfg}"/>
-            <copy file="${src.root}/etc/appliance/appliancedefs.sh" todir="@{dir}/${install.src.app.ssgprofile}"/>
-        </sequential>
-    </macrodef>
+                <!-- Appliance SSG configuration extras -->
+                <copy file="${src.root}/etc/backup_manifest" todir="@{dir}/${install.src.app.backuprestore.cfg}"/>
+                <copy file="${src.root}/etc/appliance/appliancedefs.sh" todir="@{dir}/${install.src.app.ssgprofile}"/>
+            </sequential>
+        </macrodef>
 
-    <!--
-      Macro to install Process Controller software files under the given directory
-    -->
-    <macrodef name="install-ssg-processcontroller">
-        <attribute name="dir" default="${install.src.pc}"/>
-        <sequential>
-            <echo>Making Process Controller directories...</echo>
+        <!--
+          Macro to install Process Controller software files under the given directory
+        -->
+        <macrodef name="install-ssg-processcontroller">
+            <attribute name="dir" default="${install.src.pc}"/>
+            <sequential>
+                <echo>Making Process Controller directories...</echo>
 
-            <!-- Process Controller directories -->
-            <mkdir dir="@{dir}/${install.src.pc.control}"/>
-            <mkdir dir="@{dir}/${install.src.pc.controlbin}"/>
-            <mkdir dir="@{dir}/${install.src.pc.controletc}"/>
-            <mkdir dir="@{dir}/${install.src.pc.controletc}/conf"/>
-            <mkdir dir="@{dir}/${install.src.pc.controllib}"/>
-            <mkdir dir="@{dir}/${install.src.pc.controlvar}"/>
-            <mkdir dir="@{dir}/${install.src.pc.controllogs}"/>
-            <mkdir dir="@{dir}/${install.src.pc.controlrun}"/>
-            <mkdir dir="@{dir}/${install.src.pc.controlpatches}"/>
+                <!-- Process Controller directories -->
+                <mkdir dir="@{dir}/${install.src.pc.control}"/>
+                <mkdir dir="@{dir}/${install.src.pc.controlbin}"/>
+                <mkdir dir="@{dir}/${install.src.pc.controletc}"/>
+                <mkdir dir="@{dir}/${install.src.pc.controletc}/conf"/>
+                <mkdir dir="@{dir}/${install.src.pc.controllib}"/>
+                <mkdir dir="@{dir}/${install.src.pc.controlvar}"/>
+                <mkdir dir="@{dir}/${install.src.pc.controllogs}"/>
+                <mkdir dir="@{dir}/${install.src.pc.controlrun}"/>
+                <mkdir dir="@{dir}/${install.src.pc.controlpatches}"/>
 
-            <copy file="${src.root}/etc/processcontroller/pc.sh" tofile="@{dir}/${install.src.pc.controlbin}/pc.sh"/>
-            <chmod file="@{dir}/${install.src.pc.controlbin}/pc.sh" perm="755"/>
+                <copy file="${src.root}/etc/processcontroller/pc.sh" tofile="@{dir}/${install.src.pc.controlbin}/pc.sh"/>
+                <chmod file="@{dir}/${install.src.pc.controlbin}/pc.sh" perm="755"/>
 
-            <copy file="${src.root}/etc/processcontroller/patch.sh" tofile="@{dir}/${install.src.pc.controlbin}/patch.sh"/>
-            <chmod file="@{dir}/${install.src.pc.controlbin}/patch.sh" perm="755"/>
+                <copy file="${src.root}/etc/processcontroller/patch.sh" tofile="@{dir}/${install.src.pc.controlbin}/patch.sh"/>
+                <chmod file="@{dir}/${install.src.pc.controlbin}/patch.sh" perm="755"/>
 
-            <!-- Copy Controller.jar -->
-            <copy todir="@{dir}/${install.src.pc.control}">
-                <fileset dir="${build.dir}/processcontroller" includes="Controller.jar"/>
-            </copy>
+                <!-- Copy Controller.jar -->
+                <copy todir="@{dir}/${install.src.pc.control}">
+                    <fileset dir="${build.dir}/processcontroller" includes="Controller.jar"/>
+                </copy>
 
-            <!-- Copy Controller libs -->
-            <copy todir="@{dir}/${install.src.pc.controllib}" flatten="true">
-                <fileset dir="${build.dir}/processcontroller/lib" casesensitive="yes">
-                    <include name="*.jar"/>
-                </fileset>
-            </copy>
+                <!-- Copy Controller libs -->
+                <copy todir="@{dir}/${install.src.pc.controllib}" flatten="true">
+                    <fileset dir="${build.dir}/processcontroller/lib" casesensitive="yes">
+                        <include name="*.jar"/>
+                    </fileset>
+                </copy>
 
-            <!-- Copy Controller bin -->
-            <copy todir="@{dir}/${install.src.pc.controlbin}">
-                <fileset dir="${src.root}/etc/processcontroller" includes="processcontroller.sh"/>
-            </copy>
+                <!-- Copy Controller bin -->
+                <copy todir="@{dir}/${install.src.pc.controlbin}">
+                    <fileset dir="${src.root}/etc/processcontroller" includes="processcontroller.sh"/>
+                </copy>
 
-            <copy file="${src.root}/etc/omp.dat" tofile="@{dir}/${install.src.pc.controletc}/conf/omp.dat"/>
-       </sequential>
-    </macrodef>
+                <copy file="${src.root}/etc/omp.dat" tofile="@{dir}/${install.src.pc.controletc}/conf/omp.dat"/>
+           </sequential>
+        </macrodef>
 
-    <!--
-      Macro to install SSG software files under the given directory
-    -->
-    <macrodef name="install-ssg-software">
-        <attribute name="dir" default="${install.src.ssg}"/>
-        <sequential>
-            <echo>Making Gateway directories...</echo>
+        <!--
+          Macro to install SSG software files under the given directory
+        -->
+        <macrodef name="install-ssg-software">
+            <attribute name="dir" default="${install.src.ssg}"/>
+            <sequential>
+                <echo>Making Gateway directories...</echo>
 
-            <!-- Gateway directories -->
-            <mkdir dir="@{dir}/${install.src.ssg.applet}"/>
-            <mkdir dir="@{dir}/${install.src.ssg.appletlib}"/>
-            <mkdir dir="@{dir}/${install.src.ssg.attachment}"/>
-            <mkdir dir="@{dir}/${install.src.ssg.messagecache}"/>
-            <mkdir dir="@{dir}/${install.src.ssg.base}"/>
-            <mkdir dir="@{dir}/${install.src.ssg.bin}"/>
-            <mkdir dir="@{dir}/${install.src.ssg.samples}"/>
-            <mkdir dir="@{dir}/${install.src.ssg.conf}"/>
-            <mkdir dir="@{dir}/${install.src.ssg.configwizard}"/>
-            <mkdir dir="@{dir}/${install.src.ssg.configwizard.logs}"/>
-            <mkdir dir="@{dir}/${install.src.ssg.etc}"/>
-            <mkdir dir="@{dir}/${install.src.ssg.backuprestore}"/>
-            <mkdir dir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
-            <mkdir dir="@{dir}/${install.src.ssg.backuprestore.images}"/>
-            <mkdir dir="@{dir}/${install.src.ssg.backuprestore.logs}"/>
-            <mkdir dir="@{dir}/${install.src.ssg.help}"/>
-            <mkdir dir="@{dir}/${install.src.ssg.lib}"/>
-            <mkdir dir="@{dir}/${install.src.ssg.libalt}"/>
-            <mkdir dir="@{dir}/${install.src.ssg.libext}"/>
-            <mkdir dir="@{dir}/${install.src.ssg.logs}"/>
-            <mkdir dir="@{dir}/${install.src.ssg.profile}"/>
-            <mkdir dir="@{dir}/${install.src.ssg.profilebase}"/>
-            <mkdir dir="@{dir}/${install.src.ssg.aarmods}"/>
-            <mkdir dir="@{dir}/${install.src.ssg.calibs}"/>
-            <mkdir dir="@{dir}/${install.src.ssg.caconf}"/>
-            <mkdir dir="@{dir}/${install.src.ssg.sql}"/>
-            <mkdir dir="@{dir}/${install.src.ssg.web}"/>
-            <mkdir dir="@{dir}/${install.src.ssg.web}/ssg"/>
+                <!-- Gateway directories -->
+                <mkdir dir="@{dir}/${install.src.ssg.applet}"/>
+                <mkdir dir="@{dir}/${install.src.ssg.appletlib}"/>
+                <mkdir dir="@{dir}/${install.src.ssg.attachment}"/>
+                <mkdir dir="@{dir}/${install.src.ssg.messagecache}"/>
+                <mkdir dir="@{dir}/${install.src.ssg.base}"/>
+                <mkdir dir="@{dir}/${install.src.ssg.bin}"/>
+                <mkdir dir="@{dir}/${install.src.ssg.samples}"/>
+                <mkdir dir="@{dir}/${install.src.ssg.conf}"/>
+                <mkdir dir="@{dir}/${install.src.ssg.configwizard}"/>
+                <mkdir dir="@{dir}/${install.src.ssg.configwizard.logs}"/>
+                <mkdir dir="@{dir}/${install.src.ssg.etc}"/>
+                <mkdir dir="@{dir}/${install.src.ssg.backuprestore}"/>
+                <mkdir dir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
+                <mkdir dir="@{dir}/${install.src.ssg.backuprestore.images}"/>
+                <mkdir dir="@{dir}/${install.src.ssg.backuprestore.logs}"/>
+                <mkdir dir="@{dir}/${install.src.ssg.help}"/>
+                <mkdir dir="@{dir}/${install.src.ssg.lib}"/>
+                <mkdir dir="@{dir}/${install.src.ssg.libalt}"/>
+                <mkdir dir="@{dir}/${install.src.ssg.libext}"/>
+                <mkdir dir="@{dir}/${install.src.ssg.logs}"/>
+                <mkdir dir="@{dir}/${install.src.ssg.profile}"/>
+                <mkdir dir="@{dir}/${install.src.ssg.profilebase}"/>
+                <mkdir dir="@{dir}/${install.src.ssg.aarmods}"/>
+                <mkdir dir="@{dir}/${install.src.ssg.calibs}"/>
+                <mkdir dir="@{dir}/${install.src.ssg.caconf}"/>
+                <mkdir dir="@{dir}/${install.src.ssg.sql}"/>
+                <mkdir dir="@{dir}/${install.src.ssg.web}"/>
+                <mkdir dir="@{dir}/${install.src.ssg.web}/ssg"/>
 
-            <!--copy the config wizard -->
-            <copy todir="@{dir}/${install.src.ssg.configwizard}">
-                <fileset dir="${build.dir}/configwizard">
-                    <include name="**/*"/>
-                    <exclude name="lib"/>
-                    <exclude name="lib/**"/>
-                </fileset>
-            </copy>
+                <!--copy the config wizard -->
+                <copy todir="@{dir}/${install.src.ssg.configwizard}">
+                    <fileset dir="${build.dir}/configwizard">
+                        <include name="**/*"/>
+                        <exclude name="lib"/>
+                        <exclude name="lib/**"/>
+                    </fileset>
+                </copy>
 
-            <!--copy the ssg backuprestore -->
-            <copy todir="@{dir}/${install.src.ssg.backuprestore}">
-                <fileset dir="${build.dir}/backup">
-                    <include name="**/*"/>
-                </fileset>
-            </copy>
+                <!--copy the ssg backuprestore -->
+                <copy todir="@{dir}/${install.src.ssg.backuprestore}">
+                    <fileset dir="${build.dir}/backup">
+                        <include name="**/*"/>
+                    </fileset>
+                </copy>
 
-            <!-- Copy bundled modular assertions -->
-            <copy todir="@{dir}/${install.src.ssg.aarmods}">
-                <fileset dir="${build.dir}/modules" includes="*.aar" excludes="*-client-*.aar"/>
-            </copy>
+                <!-- Copy bundled modular assertions -->
+                <copy todir="@{dir}/${install.src.ssg.aarmods}">
+                    <fileset dir="${build.dir}/modules" includes="*.aar" excludes="*-client-*.aar"/>
+                </copy>
 
-            <!-- Copy modified / new files -->
-            <copy file="${src.root}/etc/omp.dat" tofile="@{dir}/${install.src.ssg.conf}/omp.dat"/>
+                <!-- Copy modified / new files -->
+                <copy file="${src.root}/etc/omp.dat" tofile="@{dir}/${install.src.ssg.conf}/omp.dat"/>
 
-            <!-- Copy Gateway.jar -->
-            <copy todir="@{dir}/${install.src.ssg.base}">
-                <fileset dir="${build.dir}/gateway" includes="Gateway.jar"/>
-            </copy>
+                <!-- Copy Gateway.jar -->
+                <copy todir="@{dir}/${install.src.ssg.base}">
+                    <fileset dir="${build.dir}/gateway" includes="Gateway.jar"/>
+                </copy>
 
-            <!-- Copy Gateway libs -->
-            <copy todir="@{dir}/${install.src.ssg.lib}" flatten="true">
-                <fileset dir="${build.dir}/gateway/lib" casesensitive="yes">
-                    <include name="*.jar"/>
-                </fileset>
-            </copy>
-            <copy todir="@{dir}/${install.src.ssg.libalt}" flatten="true">
-                <fileset dir="${build.dir}/gateway/lib/alt" casesensitive="yes">
-                    <include name="*.jar"/>
-                </fileset>
-            </copy>
+                <!-- Copy Gateway libs -->
+                <copy todir="@{dir}/${install.src.ssg.lib}" flatten="true">
+                    <fileset dir="${build.dir}/gateway/lib" casesensitive="yes">
+                        <include name="*.jar"/>
+                    </fileset>
+                </copy>
+                <copy todir="@{dir}/${install.src.ssg.libalt}" flatten="true">
+                    <fileset dir="${build.dir}/gateway/lib/alt" casesensitive="yes">
+                        <include name="*.jar"/>
+                    </fileset>
+                </copy>
 
-            <!-- Copy config libs to runtime/libs to avoid duplication -->
-            <copy todir="@{dir}/${install.src.ssg.lib}" flatten="true">
-                <fileset dir="${build.dir}/configwizard/lib" casesensitive="yes">
-                    <include name="*.jar"/>
-                </fileset>
-            </copy>
+                <!-- Copy config libs to runtime/libs to avoid duplication -->
+                <copy todir="@{dir}/${install.src.ssg.lib}" flatten="true">
+                    <fileset dir="${build.dir}/configwizard/lib" casesensitive="yes">
+                        <include name="*.jar"/>
+                    </fileset>
+                </copy>
 
-            <!-- Copy JMS lib -->
-            <copy todir="@{dir}/${install.src.ssg.libext}" flatten="true">
-                <fileset dir="${src.root}/lib/repository/javax.jms" casesensitive="yes">
-                    <include name="jms-1.1.jar"/>
-                </fileset>
-            </copy>
+                <!-- Copy JMS lib -->
+                <copy todir="@{dir}/${install.src.ssg.libext}" flatten="true">
+                    <fileset dir="${src.root}/lib/repository/javax.jms" casesensitive="yes">
+                        <include name="jms-1.1.jar"/>
+                    </fileset>
+                </copy>
 
-            <!-- Copy misc. stuff -->
-            <copy todir="@{dir}/${install.src.ssg.sql}">
-                <fileset dir="${src.root}/etc/db/${database.type}">
-                    <include name="ssg.sql"/>
-                    <include name="upgrade*.sql"/>
-                </fileset>
-            </copy>
+                <!-- Copy misc. stuff -->
+                <copy todir="@{dir}/${install.src.ssg.sql}">
+                    <fileset dir="${src.root}/etc/db/${database.type}">
+                        <include name="ssg.sql"/>
+                        <include name="upgrade*.sql"/>
+                    </fileset>
+                </copy>
 
-            <!-- profile files -->
-            <copy todir="@{dir}/${install.src.ssg.profilebase}">
-                <fileset dir="${src.root}/etc">
-                    <include name="profile"/>
-                </fileset>
-            </copy>
-            <copy todir="@{dir}/${install.src.ssg.profile}">
-                <fileset dir="${src.root}/etc">
-                    <include name="ssgnodedefs.sh"/>
-                    <include name="ssgruntimedefs.sh"/>
-                    <include name="ssg-utilities.sh"/>
-                    <include name="xlocaldefs.sh"/>
-                </fileset>
-            </copy>
+                <!-- profile files -->
+                <copy todir="@{dir}/${install.src.ssg.profilebase}">
+                    <fileset dir="${src.root}/etc">
+                        <include name="profile"/>
+                    </fileset>
+                </copy>
+                <copy todir="@{dir}/${install.src.ssg.profile}">
+                    <fileset dir="${src.root}/etc">
+                        <include name="ssgnodedefs.sh"/>
+                        <include name="ssgruntimedefs.sh"/>
+                        <include name="ssg-utilities.sh"/>
+                        <include name="xlocaldefs.sh"/>
+                    </fileset>
+                </copy>
 
-            <!-- conf files -->
-            <copy file="${src.root}/etc/system.properties" todir="@{dir}/${install.src.ssg.conf}"/>
-            <copy file="${src.root}/etc/ssglog.template.properties" tofile="@{dir}/${install.src.ssg.conf}/ssglog.properties"/>
+                <!-- conf files -->
+                <copy file="${src.root}/etc/system.properties" todir="@{dir}/${install.src.ssg.conf}"/>
+                <copy file="${src.root}/etc/ssglog.template.properties" tofile="@{dir}/${install.src.ssg.conf}/ssglog.properties"/>
 
-            <!-- bin files -->
-            <copy todir="@{dir}/${install.src.ssg.bin}">
-                <fileset dir="${src.root}/etc">
-                    <include name="gateway.sh"/>
-                    <include name="setup.sh"/>
-                    <include name="upgrade.sh"/>
-                </fileset>
-            </copy>
+                <!-- bin files -->
+                <copy todir="@{dir}/${install.src.ssg.bin}">
+                    <fileset dir="${src.root}/etc">
+                        <include name="gateway.sh"/>
+                        <include name="setup.sh"/>
+                        <include name="upgrade.sh"/>
+                    </fileset>
+                </copy>
 
-            <!-- sample files -->
-            <copy todir="@{dir}/${install.src.ssg.samples}">
-                <fileset dir="${src.root}/etc/appliance">
-                    <include name="fix_banner.sh"/>
-                </fileset>
-            </copy>
+                <!-- sample files -->
+                <copy todir="@{dir}/${install.src.ssg.samples}">
+                    <fileset dir="${src.root}/etc/appliance">
+                        <include name="fix_banner.sh"/>
+                    </fileset>
+                </copy>
 
-            <copy todir="@{dir}/${install.src.ssg.web}/ssg">
-                <fileset dir="${src.root}/web" includes="*"/>
-                <fileset dir="${src.root}/modules/common/src/main/resources/com/l7tech/common/resources" includes="wsil2xhtml.xml"/>
-            </copy>
+                <copy todir="@{dir}/${install.src.ssg.web}/ssg">
+                    <fileset dir="${src.root}/web" includes="*"/>
+                    <fileset dir="${src.root}/modules/common/src/main/resources/com/l7tech/common/resources" includes="wsil2xhtml.xml"/>
+                </copy>
 
-            <copy todir="@{dir}/${install.src.ssg.applet}">
-                <fileset dir="${build.dir}/managerapplet" includes="layer7-gateway-console-applet.jar*"/>
-            </copy>
+                <copy todir="@{dir}/${install.src.ssg.applet}">
+                    <fileset dir="${build.dir}/managerapplet" includes="layer7-gateway-console-applet.jar*"/>
+                </copy>
 
-            <unzip src="${src.root}/webhelp/ssm/help.zip" dest="@{dir}/${install.src.ssg.help}"/>
+                <unzip src="${src.root}/webhelp/ssm/help.zip" dest="@{dir}/${install.src.ssg.help}"/>
 
-            <copy todir="@{dir}/${install.src.ssg.appletlib}">
-                <fileset dir="${build.dir}/managerapplet/lib"/>
-            </copy>
+                <copy todir="@{dir}/${install.src.ssg.appletlib}">
+                    <fileset dir="${build.dir}/managerapplet/lib"/>
+                </copy>
 
-            <copy file="${src.root}/etc/backup_tables_audit" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
-            <copy file="${src.root}/etc/exclude_tables" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
-            <copy file="${src.root}/etc/exclude_files" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
-        </sequential>
-    </macrodef>
+                <copy file="${src.root}/etc/backup_tables_audit" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
+                <copy file="${src.root}/etc/exclude_tables" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
+                <copy file="${src.root}/etc/exclude_files" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
+            </sequential>
+        </macrodef>
 
-    <!--
-      Macro to install ESM software files under the given directory
-    -->
-    <macrodef name="install-esm-software">
-        <attribute name="dir" default="${install.src.esm}"/>
-        <sequential>
-            <echo>Making ESM directories...</echo>
+        <!--
+          Macro to install ESM software files under the given directory
+        -->
+        <macrodef name="install-esm-software">
+            <attribute name="dir" default="${install.src.esm}"/>
+            <sequential>
+                <echo>Making ESM directories...</echo>
 
-            <!-- create directory structure for tar -->
-            <mkdir dir="@{dir}/${install.src.esm.base}"/>
-            <mkdir dir="@{dir}/${install.src.esm.bin}"/>
-            <mkdir dir="@{dir}/${install.src.esm.etc}"/>
-            <mkdir dir="@{dir}/${install.src.esm.lib}"/>
-            <mkdir dir="@{dir}/${install.src.esm.logs}"/>
-            <mkdir dir="@{dir}/${install.src.esm.db}"/>
-            <mkdir dir="@{dir}/${install.src.esm.web}"/>
-            <mkdir dir="@{dir}/${install.src.esm.config}"/>
+                <!-- create directory structure for tar -->
+                <mkdir dir="@{dir}/${install.src.esm.base}"/>
+                <mkdir dir="@{dir}/${install.src.esm.bin}"/>
+                <mkdir dir="@{dir}/${install.src.esm.etc}"/>
+                <mkdir dir="@{dir}/${install.src.esm.lib}"/>
+                <mkdir dir="@{dir}/${install.src.esm.logs}"/>
+                <mkdir dir="@{dir}/${install.src.esm.db}"/>
+                <mkdir dir="@{dir}/${install.src.esm.web}"/>
+                <mkdir dir="@{dir}/${install.src.esm.config}"/>
 
-            <!-- copy files to install locations -->
-            <copy file="${src.root}/etc/enterprisemanager/enterprisemanager.sh" todir="@{dir}/${install.src.esm.bin}"/>
-            <copy file="${build.dir}/enterprisemanager/EnterpriseManager.jar" todir="@{dir}/${install.src.esm.base}"/>
-            <copy todir="@{dir}/${install.src.esm.lib}">
-                <fileset dir="${build.dir}/enterprisemanager/lib"/>
-            </copy>
-            <copy todir="@{dir}/${install.src.esm.config}">
-                <fileset dir="${build.dir}/emsconfigwizard"/>
-            </copy>
-            <copy file="${src.root}/etc/enterprisemanager/logging.template.properties" tofile="@{dir}/${install.src.esm.etc}/logging.properties"/>
-            <copy file="${src.root}/etc/omp.dat" tofile="@{dir}/${install.src.esm.etc}/omp.dat"/>
+                <!-- copy files to install locations -->
+                <copy file="${src.root}/etc/enterprisemanager/enterprisemanager.sh" todir="@{dir}/${install.src.esm.bin}"/>
+                <copy file="${build.dir}/enterprisemanager/EnterpriseManager.jar" todir="@{dir}/${install.src.esm.base}"/>
+                <copy todir="@{dir}/${install.src.esm.lib}">
+                    <fileset dir="${build.dir}/enterprisemanager/lib"/>
+                </copy>
+                <copy todir="@{dir}/${install.src.esm.config}">
+                    <fileset dir="${build.dir}/emsconfigwizard"/>
+                </copy>
+                <copy file="${src.root}/etc/enterprisemanager/logging.template.properties" tofile="@{dir}/${install.src.esm.etc}/logging.properties"/>
+                <copy file="${src.root}/etc/omp.dat" tofile="@{dir}/${install.src.esm.etc}/omp.dat"/>
 
-            <!-- help files -->
-            <unzip src="${src.root}/webhelp/esm/help.zip"
-                   dest="@{dir}/${install.src.esm.web}"/>
-            <!-- allow for inconsistently named ESM help directory -->
-            <move file="@{dir}/${install.src.esm.web}/WebHelp"
-                  tofile="@{dir}/${install.src.esm.web}/help" failonerror="false"/>
-        </sequential>
-    </macrodef>
-
+                <!-- help files -->
+                <unzip src="${src.root}/webhelp/esm/help.zip"
+                       dest="@{dir}/${install.src.esm.web}"/>
+                <!-- allow for inconsistently named ESM help directory -->
+                <move file="@{dir}/${install.src.esm.web}/WebHelp"
+                      tofile="@{dir}/${install.src.esm.web}/help" failonerror="false"/>
+            </sequential>
+        </macrodef>
+    </target>
 
     <!--
       Top level work target for official builds
@@ -3462,7 +3507,7 @@
         </tar>
     </target>
 
-    <target name="package.em.config" unless="ssg.only" depends="package.jars">
+    <target name="package.em.config" unless="ssg.only" depends="package.jars, init-install-macros">
         <echo level="info">Packaging Enterprise Manager Configuration Client</echo>
         <mkdir dir="${build.dir}/emsconfigwizard/lib"/>
 
@@ -3552,29 +3597,6 @@
     </target>
 
     <!--
-      Task to update ZKM files with classpaths, jars, etc.
-    -->
-    <macrodef name="build-zkm">
-        <attribute name="name"/>
-        <attribute name="zkmFilePath" default="${src.root}/etc/obfuscation/genjarobf.zkm"/>
-        <attribute name="out" default="./build/obfuscation"/>        
-        <attribute name="jarFileset"/>
-        <attribute name="libFileset"/>
-        <sequential>
-            <pathconvert property="obfuscate.@{name}.zkm.jars.path" pathsep="&quot;${line.separator}&quot;" dirsep="/" refid="@{jarFileset}"/>
-            <pathconvert property="obfuscate.@{name}.zkm.libs.path" pathsep="&quot;${line.separator}&quot;" dirsep="/" refid="@{libFileset}"/>            
-            <copy file="@{zkmFilePath}" tofile="build/etc/@{name}.zkm" overwrite="true">
-                <filterset>
-                    <filter token="CP" value="${obfuscate.@{name}.zkm.libs.path}"/>
-                    <filter token="JAR" value="${obfuscate.@{name}.zkm.jars.path}"/>
-                    <filter token="CHANGELOG" value="${build.dir}/obfuscation/@{name}_change.log"/>
-                    <filter token="OUT" value="@{out}"/>
-                </filterset>
-            </copy>
-        </sequential>
-    </macrodef>
-
-    <!--
        Enable installer build but don't require dependencies to be built
     -->
     <target name="makensis-unsafe">
@@ -3616,27 +3638,6 @@
         </xmlbeancompiler>
         <echo level="info">Output JARs (build/ xbean-xenc-xmldsig.jar, xbean-saml1_1.jar, xbean-saml2_0.jar)  should be installed to lib/repository/com.l7tech.lib/ for use in build.</echo>
     </target>
-
-    <!--
-      Macro for using the wsimport JAX-WS utility
-    -->
-    <macrodef name="wsimport">
-        <attribute name="wsdl"/>
-        <sequential>
-          <exec executable="wsimport">
-            <arg value="-keep"/>
-            <arg value="-s"/>
-            <arg value="build/uddisources"/>
-            <arg value="-d"/>
-            <arg value="build/uddiclasses"/>
-            <arg value="-p"/>
-            <arg value="com.l7tech.common.uddi.guddiv3"/>
-            <arg value="-wsdllocation"/>
-            <arg value="resources/@{wsdl}"/>
-            <arg value="etc/schema/uddiv3/@{wsdl}"/>
-          </exec>
-        </sequential>
-    </macrodef>
 
     <!--
       Generate the JAX-WS classes for UDDI v3.0.2.
