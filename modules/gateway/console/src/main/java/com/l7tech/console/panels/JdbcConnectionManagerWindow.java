@@ -221,6 +221,7 @@ public class JdbcConnectionManagerWindow extends JDialog {
         newConnection.copyFrom(connectionList.get(selectedRow));
         newConnection.setOid(JdbcConnection.DEFAULT_OID);
         newConnection.setName("Copy of "+ newConnection.getName());
+        newConnection.setVersion(0);
         editAndSave(newConnection, true);
     }
 

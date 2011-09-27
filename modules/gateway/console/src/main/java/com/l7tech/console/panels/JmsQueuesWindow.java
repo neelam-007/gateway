@@ -358,8 +358,7 @@ public class JmsQueuesWindow extends JDialog {
 
     private JButton getCloneButton() {
         if (cloneButton == null) {
-            // In the QA function specification review, everyone liked the word, "Copy" instead of "Clone".
-            cloneButton = new JButton("Copy");
+            cloneButton = new JButton("Clone");
             cloneButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent event) {
@@ -371,15 +370,19 @@ public class JmsQueuesWindow extends JDialog {
                             JmsConnection newConnection = new JmsConnection();
                             newConnection.copyFrom(currJmsTuple.getConnection());
                             newConnection.setOid(JmsConnection.DEFAULT_OID);
+                            newConnection.setVersion(0);
 
                             JmsEndpoint newEndpoint = new JmsEndpoint();
                             newEndpoint.copyFrom(currJmsTuple.getEndpoint());
                             newEndpoint.setOid(JmsConnection.DEFAULT_OID);
+                            newEndpoint.setName("Copy of " +currJmsTuple.getEndpoint().getName());
+                            newEndpoint.setVersion(0);
 
                             final JmsQueuePropertiesDialog pd = JmsQueuePropertiesDialog.createInstance(
                                     JmsQueuesWindow.this, newConnection, newEndpoint, false);
                             pd.pack();
                             Utilities.centerOnParentWindow(pd);
+                            pd.selectNameField();
                             DialogDisplayer.display(pd, new Runnable() {
                                 @Override
                                 public void run() {

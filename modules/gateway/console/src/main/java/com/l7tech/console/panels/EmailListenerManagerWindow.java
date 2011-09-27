@@ -182,6 +182,7 @@ public class EmailListenerManagerWindow extends JDialog {
         EmailListener newEmailListener = new EmailListener(emailListener);
         newEmailListener.setOid(EmailListener.DEFAULT_OID);
         newEmailListener.setName("Copy of "+emailListener.getName());
+        newEmailListener.setVersion(0);
         editAndSave(newEmailListener, true);
     }
 

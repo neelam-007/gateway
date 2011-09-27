@@ -97,7 +97,7 @@ public class UddiRegistryManagerWindow extends JDialog {
         cloneButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                doCopy();
+                doClone();
             }
         });
 
@@ -127,12 +127,13 @@ public class UddiRegistryManagerWindow extends JDialog {
         editAndSave(uddiRegistry, true);
     }
 
-    private void doCopy() {
+    private void doClone() {
         UDDIRegistry uddiRegistry = uddiRegistryTable.getSelectedUddiRegistry();
         UDDIRegistry newUddiRegistry = new UDDIRegistry();
         newUddiRegistry.copyFrom(uddiRegistry);
         newUddiRegistry.setOid(UDDIRegistry.DEFAULT_OID);
         newUddiRegistry.setName("Copy of "+ uddiRegistry.getName());
+        newUddiRegistry.setVersion(0);
         editAndSave(newUddiRegistry, true);
     }
 

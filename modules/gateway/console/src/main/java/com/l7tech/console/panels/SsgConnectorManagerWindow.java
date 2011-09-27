@@ -194,6 +194,7 @@ public class SsgConnectorManagerWindow extends JDialog {
         SsgConnector newConnector = connector.getCopy();
         newConnector.setOid(SsgConnector.DEFAULT_OID);
         newConnector.setName("Copy of " + connector.getName());
+        newConnector.setVersion(0);
         editAndSave(newConnector, newConnector.getReadOnlyCopy(), true);
 
     }

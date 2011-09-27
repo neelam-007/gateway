@@ -135,6 +135,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         return Registry.getDefault().getServiceManager();
     }
 
+
     private static class ContentTypeComboBoxItem {
         private final ContentTypeHeader cType;
 
@@ -269,6 +270,12 @@ public class JmsQueuePropertiesDialog extends JDialog {
      */
     public JmsEndpoint getEndpoint() {
         return endpoint;
+    }
+
+
+    public void selectNameField() {
+        jmsEndpointDescriptiveName.requestFocus();
+        jmsEndpointDescriptiveName.selectAll();
     }
 
     private void init() {

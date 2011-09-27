@@ -199,6 +199,7 @@ public class LogSinkManagerWindow extends JDialog {
         newSinkConfiguration.copyFrom(sinkConfiguration);
         newSinkConfiguration.setOid(SinkConfiguration.DEFAULT_OID);
         newSinkConfiguration.setName("Copy of "+sinkConfiguration.getName());
+        newSinkConfiguration.setVersion(0);
         editAndSave(newSinkConfiguration, true);
     }
 
