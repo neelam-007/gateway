@@ -426,12 +426,15 @@ public class MessageProcessingScpCommand implements Command, Runnable, SessionAw
                                                            InputStream inputStream, long length) throws IOException {
         boolean success = false;
         Message request = new Message();
-        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, null, true);
+
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, null, true);
+        final long requestSizeLimit = connector.getLongProperty(SsgConnector.PROP_REQUEST_SIZE_LIMIT, Message.getMaxBytes());
+        final InputStream pis = getDataInputStream(inputStream, path, length);
 
         String ctypeStr = connector.getProperty(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE);
         ContentTypeHeader ctype = ctypeStr == null ? ContentTypeHeader.XML_DEFAULT : ContentTypeHeader.create(ctypeStr);
 
-        request.initialize(stashManagerFactory.createStashManager(), ctype, getDataInputStream(inputStream, path, length));
+        request.initialize(stashManagerFactory.createStashManager(), ctype, pis, requestSizeLimit);
 
         // attach ssh knob
         String userName = (String) session.getIoSession().getAttribute(MessageProcessingPublicKeyAuthenticator.ATTR_CRED_USERNAME);
@@ -484,6 +487,7 @@ public class MessageProcessingScpCommand implements Command, Runnable, SessionAw
                 }
             } finally {
                 ResourceUtils.closeQuietly(context);
+                ResourceUtils.closeQuietly(pis);
             }
         return success;
     }

@@ -38,12 +38,14 @@ public class ServerSshCredentialAssertion extends ServerCredentialSourceAssertio
 
     @Override
     protected LoginCredentials findCredentials(Message request, Map authParams) throws IOException, CredentialFinderException {
+        LoginCredentials loginCredentials = null;
         SshKnob sshRequestKnob = request.getKnob(SshKnob.class);
         if (sshRequestKnob == null) {
             logAndAudit(AssertionMessages.SSH_CREDENTIAL_NOT_SSH);
-            throw new CredentialFinderException("Request is not SSH.", AssertionStatus.NOT_APPLICABLE);
+        } else {
+            loginCredentials = findCredentials(sshRequestKnob.getPasswordAuthentication(), sshRequestKnob.getPublicKeyAuthentication());
         }
-        return findCredentials(sshRequestKnob.getPasswordAuthentication(), sshRequestKnob.getPublicKeyAuthentication());
+        return loginCredentials;
     }
 
     @Override

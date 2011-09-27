@@ -112,7 +112,7 @@ public class ServerSshCredentialAssertionTest {
         PolicyEnforcementContext pec = makeContext(false, false);
         AssertionStatus result = ass.checkRequest(pec);
 
-        assertEquals("Incorrect assertion status", AssertionStatus.NOT_APPLICABLE, result);
+        assertEquals("Incorrect assertion status", AssertionStatus.AUTH_REQUIRED, result);
     }
 
     @Test

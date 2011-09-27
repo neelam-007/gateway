@@ -4,6 +4,7 @@ import com.l7tech.console.panels.CustomTransportPropertiesPanel;
 import com.l7tech.external.assertions.ssh.SshCredentialAssertion;
 import com.l7tech.external.assertions.ssh.keyprovider.SshKeyUtil;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.ConfigFactory;
 import org.apache.commons.lang.StringUtils;
@@ -28,6 +29,7 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
     private JTextField idleTimeoutMinsField;
 
     private String hostPrivateKey;
+    private InputValidator validator;
 
     public SshTransportPropertiesPanel() {
         setLayout(new BorderLayout());
@@ -86,9 +88,14 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
     public String getValidationError() {
         if (StringUtils.isEmpty(hostPrivateKey)) {
             return "The Host private key field must not be empty.";
-        } else {
-            return null;
         }
+
+        String validationError = validator.validate();
+        if(validationError != null){
+            return validationError;
+        }
+
+        return null;
     }
 
     @Override
@@ -103,6 +110,12 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
     }
 
     protected void initComponents() {
+        validator = new InputValidator(this, "SSH Transport Properties Validation");
+        validator.addRule(validator.constrainTextFieldToNumberRange(
+                "Max. concurrent session(s) per user", idleTimeoutMinsField, 0, Integer.MAX_VALUE));
+        validator.addRule(validator.constrainTextFieldToNumberRange(
+                "Idle timeout (in minutes)", maxConcurrentSessionsPerUserField, 0, Integer.MAX_VALUE));
+
         setHostPrivateKeyButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {

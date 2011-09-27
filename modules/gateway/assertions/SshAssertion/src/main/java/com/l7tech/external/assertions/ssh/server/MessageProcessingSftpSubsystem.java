@@ -918,10 +918,11 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
 
             Message request = new Message();
             final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, null, true);
+            final long requestSizeLimit = connector.getLongProperty(SsgConnector.PROP_REQUEST_SIZE_LIMIT, Message.getMaxBytes());
             String ctypeStr = connector.getProperty(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE);
             ContentTypeHeader ctype = ctypeStr == null ? ContentTypeHeader.XML_DEFAULT : ContentTypeHeader.create(ctypeStr);
 
-            request.initialize(stashManagerFactory.createStashManager(), ctype, pis);
+            request.initialize(stashManagerFactory.createStashManager(), ctype, pis, requestSizeLimit);
 
             // attach ssh knob
             String userName = (String) session.getIoSession().getAttribute(MessageProcessingPublicKeyAuthenticator.ATTR_CRED_USERNAME);
