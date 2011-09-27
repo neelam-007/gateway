@@ -197,9 +197,8 @@ public class RsaJceProviderEngine extends JceProvider {
     }
 
     private static boolean isCompatibleWithSslJ51(String ver) {
-        // SSL-J 5.1 ships with Crypto-J 4.1, but appears to also work with Crypto-J 4.1.0.1.
-        // It is known NOT to be compatible with available earlier FIPS-certified versions (4.0 and 4.01).
-        return "4.101".equals(ver) || "4.1".equals(ver);
+        // SSL-J 5.1.1.2 ships with Crypto-J 4.1.0.1, but "has been tested with" Crypto-J 5.0.
+        return "4.101".equals(ver) || "5.0".equals(ver);
     }
 
     @Override

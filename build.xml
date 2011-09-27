@@ -1513,7 +1513,7 @@
         <!--
           Skip signed JAR
         -->
-        <!-- <pack-mac jarfile="${build.dir}/managerapplet/lib/jsafe-jce-fips-4.1.jar"/> -->
+        <!-- <pack-mac jarfile="${build.dir}/managerapplet/lib/cryptojFIPS-5.0.jar"/> -->
         <pack-mac jarfile="${build.dir}/managerapplet/lib/json-schema-validator-0.0.1-SNAPSHOT.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/kunststoff-2.0.2.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/layer7-uddi-lib-1.1.0.jar"/>
@@ -1539,7 +1539,7 @@
         <pack-mac jarfile="${build.dir}/managerapplet/lib/spring-orm-3.0.5.RELEASE.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/spring-tx-3.0.5.RELEASE.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/spring-web-3.0.5.RELEASE.jar"/>
-        <pack-mac jarfile="${build.dir}/managerapplet/lib/sslj-5.1.1.jar"/>
+        <pack-mac jarfile="${build.dir}/managerapplet/lib/sslj-5.1.1.2.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/stax-ex-1.2.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/streambuffer-0.8.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/validation-api-1.0.0.GA.jar"/>

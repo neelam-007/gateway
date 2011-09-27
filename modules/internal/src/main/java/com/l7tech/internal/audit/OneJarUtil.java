@@ -20,7 +20,7 @@ import java.security.Signature;
  * using the embedded version of the jarfile.
  */
 public class OneJarUtil {
-    private static final String EMBEDDED_PROVIDER_JAR = "lib/jsafe-jce-fips-4.1.jar";
+    private static final String EMBEDDED_PROVIDER_JAR = "lib/cryptojFIPS-5.0.jar";
     private static final String EMBEDDED_PROVIDER_CLASNAME = "com.rsa.jsafe.provider.JsafeJCE";
 
     private static boolean isEcdsaSupportAvailable() {

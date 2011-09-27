@@ -31,6 +31,6 @@
         <dependency org="org.springframework" name="spring-web" rev="3.0.5.RELEASE" force="true" conf="optional"/>
 
         <!-- RSA needed for running tests (since alternatives jarfiles are not deployed) -->
-        <dependency org="com.rsa" name="jsafe-jce" rev="4.1.0.1" force="true" conf="test"/>
+        <dependency org="com.rsa" name="cryptoj" rev="5.0" force="true" conf="test"/>
     </dependencies>
 </ivy-module>
