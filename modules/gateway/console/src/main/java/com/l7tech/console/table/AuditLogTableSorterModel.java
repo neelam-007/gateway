@@ -126,7 +126,19 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
      * Creating a SimpleDateFormat shows up as largest hotspot in JProfiler. Instead just reuse instance.
      */
     private SimpleDateFormat sdf;
+    /**
+     * This flag is required to wrap the worker's cancel flag so that we can be notified to stop creating new workers even if the current worker has finished.
+     */
+    private boolean refreshCancelled = false;
 
+    /**
+     * Cancels log refresh.
+     */
+    public void cancelRefresh(){
+        //flag refreshCancelled so no more workers will be constructed
+        refreshCancelled = true;
+        cancelWorker();
+    }
 
     /**
      * Constructor taking <CODE>DefaultTableModel</CODE> as the input parameter.
@@ -793,105 +805,113 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
             displayingFromFile = false;
             clearLogCache();
         }
+        if(!refreshCancelled){
+            try {
+                // create a worker thread to retrieve the cluster info
+                //Record current row before model is potentially modified
+                //row is based on audit record identity and not position number
+                final String msgNumSelected = logPane.getSelectedMsgNumber();
+                final ClusterLogWorker infoWorker = new ClusterLogWorker(
+                        clusterStatusAdmin,
+                        auditAdmin,
+                        logType,
+                        //currentNodeList,
+                        logRequest) {
+                    @Override
+                    public void finished() {
+                        //todo finished() is called on the UI thread. No expensive tasks should be done here. Sorting in particular should be moved into construct().
 
-        try {            
-            // create a worker thread to retrieve the cluster info
-            //Record current row before model is potentially modified
-            //row is based on audit record identity and not position number
-            final String msgNumSelected = logPane.getSelectedMsgNumber();
-            final ClusterLogWorker infoWorker = new ClusterLogWorker(
-                    clusterStatusAdmin,
-                    auditAdmin,
-                    logType,
-                    //currentNodeList,
-                    logRequest) {
-                @Override
-                public void finished() {
-                    //todo finished() is called on the UI thread. No expensive tasks should be done here. Sorting in particular should be moved into construct().
+                        if ( !isCancelled() ) {
+                            // Note: the get() operation is a blocking operation.
+                            // get() will never block based on construct()'s implementation.
 
-                    if ( !isCancelled() ) {
-                        // Note: the get() operation is a blocking operation.
-                        // get() will never block based on construct()'s implementation.
+                            if (this.get() != null) {
+                                Map<Long, LogMessage> newLogs = getNewLogs();
+                                int logCount = newLogs.size();
+                                boolean updated = logCount > 0;
 
-                        if (this.get() != null) {
-                            Map<Long, LogMessage> newLogs = getNewLogs();
-                            int logCount = newLogs.size();
-                            boolean updated = logCount > 0;
-
-                            if (count==0) {
-                                Map<String, GatewayStatus> newNodeList = getNewNodeList();
-                                removeLogsOfNonExistNodes(newNodeList);
-                                updated = updated || currentNodeList==null || !currentNodeList.keySet().equals(newNodeList.keySet());
-                                currentNodeList = newNodeList;
-                            }
-
-                            addLogs(newLogs);
-
-                            if (updated) {
-
-                                // filter the logs
-                                if(logType == GenericLogAdmin.TYPE_LOG){
-                                    filterData(logPane.getMsgFilterLevel(),
-                                        logPane.getMsgFilterThreadId(),
-                                        logPane.getMsgFilterMessage());
+                                if (count==0) {
+                                    Map<String, GatewayStatus> newNodeList = getNewNodeList();
+                                    removeLogsOfNonExistNodes(newNodeList);
+                                    updated = updated || currentNodeList==null || !currentNodeList.keySet().equals(newNodeList.keySet());
+                                    currentNodeList = newNodeList;
                                 }
 
-                                // sort the logs
-                                sortData(columnToSort, false);
+                                addLogs(newLogs);
 
-                                // populate the change to the display
+                                if (updated) {
 
-                                // The line "realModel.fireTableDataChanged()" has been deleted to fix bug 10085.
-                                // If the table content is changed, then the index of the audit in the table associated with msgNumSelected will be changed.
-                                // Then, the line below, "logPane.setSelectedRow(msgNumSelected)" wil eventually invoke DefaultListSelectionModel.fireValueChanged().
-                                // Thus, there is no need to call realModel.fireTableDataChanged() again.  The table change event now really depends on the table content change.
-                                // If no content change, then no event dispatched.  It turns out ListSelectionListener in LogPanel will not make unnecessary calls on updateMsgDetails()
-                                // to frequently update the details pane.  This fix will probably improve the performance of the audit viewer a bit.
+                                    // filter the logs
+                                    if(logType == GenericLogAdmin.TYPE_LOG){
+                                        filterData(logPane.getMsgFilterLevel(),
+                                            logPane.getMsgFilterThreadId(),
+                                            logPane.getMsgFilterMessage());
+                                    }
 
-                                logPane.updateMsgTotal();
-                                logPane.setSelectedRow(msgNumSelected);
-                            }
+                                    // sort the logs
+                                    sortData(columnToSort, false);
 
-                            logPane.updateTimeStamp(getCurrentClusterSystemTime());
+                                    // populate the change to the display
 
-                            final LogRequest unfilledRequest = getUnfilledRequest();
+                                    // The line "realModel.fireTableDataChanged()" has been deleted to fix bug 10085.
+                                    // If the table content is changed, then the index of the audit in the table associated with msgNumSelected will be changed.
+                                    // Then, the line below, "logPane.setSelectedRow(msgNumSelected)" wil eventually invoke DefaultListSelectionModel.fireValueChanged().
+                                    // Thus, there is no need to call realModel.fireTableDataChanged() again.  The table change event now really depends on the table content change.
+                                    // If no content change, then no event dispatched.  It turns out ListSelectionListener in LogPanel will not make unnecessary calls on updateMsgDetails()
+                                    // to frequently update the details pane.  This fix will probably improve the performance of the audit viewer a bit.
 
-                            // if there unfilled requests
-                            final int total = count + logCount;
-                            if (unfilledRequest != null && total < MAX_NUMBER_OF_LOG_MESSAGES) {
-                                logPane.getMsgProgressBar().setVisible(true);
-                                SwingUtilities.invokeLater(
-                                        new Runnable() {
-                                            @Override
-                                            public void run() {
-                                                doRefreshLogs(logPane, unfilledRequest, restartTimer, total);
-                                            }
-                                        });
+                                    logPane.updateMsgTotal();
+                                    logPane.setSelectedRow(msgNumSelected);
+                                }
 
+                                logPane.updateTimeStamp(getCurrentClusterSystemTime());
+
+                                final LogRequest unfilledRequest = getUnfilledRequest();
+
+                                // if there unfilled requests
+                                final int total = count + logCount;
+                                if (unfilledRequest != null && total < MAX_NUMBER_OF_LOG_MESSAGES) {
+                                    logPane.getMsgProgressBar().setVisible(true);
+                                    logPane.getCancelButton().setVisible(true);
+                                    SwingUtilities.invokeLater(
+                                            new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                    doRefreshLogs(logPane, unfilledRequest, restartTimer, total);
+                                                }
+                                            });
+
+                                } else {
+                                    hideProgressAndRestart(logPane, restartTimer);
+                                }
                             } else {
-                                logPane.getMsgProgressBar().setVisible(false);
-                                if (restartTimer) {
-                                    logPane.getLogsRefreshTimer().start();
-                                }
+                                hideProgressAndRestart(logPane, restartTimer);
                             }
-
                         } else {
-                            logPane.getMsgProgressBar().setVisible(false);
-                            if (restartTimer) {
-                                logPane.getLogsRefreshTimer().start();
-                            }
+                            hideProgressAndRestart(logPane, restartTimer);
                         }
                     }
-                }
-            };
+                };
 
-            workerReference.set( infoWorker );
-            infoWorker.start();
+                workerReference.set( infoWorker );
+                infoWorker.start();
+            }
+            catch(IllegalArgumentException iae) {
+                //can happen on disconnect when auto refresh is on.
+                logPane.getMsgProgressBar().setVisible(false);
+            }
+        }else{
+            hideProgressAndRestart(logPane, restartTimer);
         }
-        catch(IllegalArgumentException iae) {
-            //can happen on disconnect when auto refresh is on.
-            logPane.getMsgProgressBar().setVisible(false);
+    }
+
+    private void hideProgressAndRestart(final LogPanel logPane, final boolean restartTimer) {
+        logPane.getMsgProgressBar().setVisible(false);
+        logPane.getCancelButton().setVisible(false);
+        if (restartTimer) {
+            logPane.getLogsRefreshTimer().start();
         }
+        refreshCancelled = false;
     }
 
     private DigitalSignatureUIState compareSignatureDigests( LogMessage msg ) throws IOException {

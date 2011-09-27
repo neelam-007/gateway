@@ -122,6 +122,7 @@ public class LogPanel extends JPanel {
     private AuditLogTableSorterModel auditLogTableSorterModel;
     private JLabel msgTotal;
     private JProgressBar msgProgressBar;
+    private JButton cancelButton;
     private JLabel lastUpdateTimeLabel;
     private Icon upArrowIcon = new ArrowIcon(0);
     private Icon downArrowIcon = new ArrowIcon(1);
@@ -1711,6 +1712,20 @@ public class LogPanel extends JPanel {
         return msgProgressBar;
     }
 
+    public JButton getCancelButton() {
+        if (cancelButton == null){
+            cancelButton = new JButton("Cancel");
+            cancelButton.setVisible(false);
+            cancelButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(final ActionEvent actionEvent) {
+                    auditLogTableSorterModel.cancelRefresh();
+                }
+            });
+        }
+        return cancelButton;
+    }
+
     /**
      * Return MsgTable property value
      *
@@ -2049,6 +2064,8 @@ public class LogPanel extends JPanel {
             msgTotalPanel.add(getMsgTotal());
             msgTotalPanel.add(Box.createHorizontalStrut(10));
             msgTotalPanel.add(getMsgProgressBar());
+            msgTotalPanel.add(Box.createHorizontalStrut(10));
+            msgTotalPanel.add(getCancelButton());
             msgTotalPanel.add(Box.createHorizontalGlue());
 
             msgTotalPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
