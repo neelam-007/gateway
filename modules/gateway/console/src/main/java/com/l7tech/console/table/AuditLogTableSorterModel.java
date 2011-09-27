@@ -872,7 +872,7 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
                                 final int total = count + logCount;
                                 if (unfilledRequest != null && total < MAX_NUMBER_OF_LOG_MESSAGES) {
                                     logPane.getMsgProgressBar().setVisible(true);
-                                    logPane.getCancelButton().setVisible(true);
+                                    logPane.getCancelButton().setEnabled(true);
                                     SwingUtilities.invokeLater(
                                             new Runnable() {
                                                 @Override
@@ -907,7 +907,7 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
 
     private void hideProgressAndRestart(final LogPanel logPane, final boolean restartTimer) {
         logPane.getMsgProgressBar().setVisible(false);
-        logPane.getCancelButton().setVisible(false);
+        logPane.getCancelButton().setEnabled(false);
         if (restartTimer) {
             logPane.getLogsRefreshTimer().start();
         }
