@@ -144,6 +144,8 @@ public final class CollectionUtils {
     /**
      * Get an iterable for all the given iterables.
      *
+     * TODO [jdk7] @SafeVarargs
+     *
      * @param iterables The iterables to iterate
      * @return An iterable that iterates all the given iterables.
      */

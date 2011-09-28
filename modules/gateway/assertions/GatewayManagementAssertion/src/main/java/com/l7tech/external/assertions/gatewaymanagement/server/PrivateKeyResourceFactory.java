@@ -4,6 +4,7 @@ import com.l7tech.common.io.AliasNotFoundException;
 import com.l7tech.common.io.CertGenParams;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.KeyGenParams;
+import static com.l7tech.external.assertions.gatewaymanagement.server.EntityPropertiesHelper.getEnumText;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.InvalidResourceException.ExceptionType;
 import com.l7tech.gateway.api.CertificateData;
 import com.l7tech.gateway.api.ManagedObjectFactory;
@@ -29,6 +30,7 @@ import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.security.cert.KeyUsageUtils;
 import com.l7tech.security.prov.CertificateRequest;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.admin.PrivateKeyAdminHelper;
@@ -40,6 +42,7 @@ import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import static com.l7tech.util.CollectionUtils.foreach;
+import static com.l7tech.util.CollectionUtils.iterable;
 import com.l7tech.util.Config;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Either;
@@ -59,12 +62,15 @@ import com.l7tech.util.Functions.Nullary;
 import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Functions.UnaryVoid;
 import com.l7tech.util.Functions.UnaryVoidThrows;
+import static com.l7tech.util.Functions.exists;
 import static com.l7tech.util.Functions.map;
 import com.l7tech.util.Option;
 import static com.l7tech.util.Option.optional;
 import static com.l7tech.util.Option.some;
 import com.l7tech.util.Pair;
 import static com.l7tech.util.TextUtils.join;
+import com.l7tech.util.Triple;
+import static java.util.EnumSet.allOf;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -87,6 +93,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -263,19 +270,52 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                         throw new InvalidResourceException( ExceptionType.INVALID_VALUES, "Invalid special purpose(s): " + invalidSpecialPurposes );
                     }
                     final Collection<SpecialKeyType> assignedTypes = rights( processedPurposes );
-                    foreach( assignedTypes, false, new UnaryVoidThrows<SpecialKeyType, ObjectModelException>() {
+                    foreach( assignedTypes, false, new UnaryVoidThrows<SpecialKeyType, InvalidResourceException>() {
                         @Override
-                        public void call( final SpecialKeyType specialKeyType ) throws ObjectModelException {
-                            final String clusterPropertyName =
-                                    PrivateKeyAdminHelper.getClusterPropertyForSpecialKeyType( specialKeyType );
-                            final Option<ClusterProperty> propertyOption = optional( clusterPropertyManager.findByUniqueName( clusterPropertyName ) );
-                            final ClusterProperty property = propertyOption.orSome( new Nullary<ClusterProperty>() {
-                                @Override
-                                public ClusterProperty call() {
-                                    return new ClusterProperty( clusterPropertyName, null );
-                                }
-                            } );
-                            saveOrUpdateClusterProperty( property, toClusterPropertyValue( entry.getKeystoreId(), entry.getAlias() ) );
+                        public void call( final SpecialKeyType specialKeyType ) throws InvalidResourceException {
+                            if ( specialKeyType == SpecialKeyType.SSL && !KeyUsageUtils.isCertSslCapable( entry.getCertificate() ) ) {
+                                throw new InvalidResourceException( ExceptionType.INVALID_VALUES, "Invalid special purpose, Key not SSL capable: " + getEnumText( specialKeyType ) );
+                            }
+                        }
+                    } );
+                    final Collection<SpecialKeyType> currentTypes = new ArrayList<SpecialKeyType>();
+                    final String externalId = toClusterPropertyValue( entry.getKeystoreId(), entry.getAlias() );
+                    final Unary<Boolean,ClusterProperty> forThisKey = clusterPropertyValueMatchPredicate( externalId );
+                    final Collection<ClusterProperty> forUpdate = new ArrayList<ClusterProperty>();
+                    foreach( speciaKeysAndProperties(forUpdateLookup()), false, new UnaryVoidThrows<Triple<SpecialKeyType,String,Either<FindException,Option<ClusterProperty>>>, ObjectModelException>() {
+                        @Override
+                        public void call( final Triple<SpecialKeyType,String,Either<FindException,Option<ClusterProperty>>> keyAndProperty ) throws ObjectModelException {
+                            final SpecialKeyType specialKeyType = keyAndProperty.left;
+                            final Option<ClusterProperty> propertyOption = extract( keyAndProperty.right );
+                            if ( propertyOption.exists( forThisKey ) ) {
+                                currentTypes.add( specialKeyType );
+                            } else if ( assignedTypes.contains( specialKeyType ) ) {
+                                forUpdate.add( propertyOption.orSome( new Nullary<ClusterProperty>() {
+                                    @Override
+                                    public ClusterProperty call() {
+                                        return new ClusterProperty( keyAndProperty.middle, null );
+                                    }
+                                } ) );
+                            }
+                        }
+                    } );
+                    @SuppressWarnings({ "unchecked" }) //TODO [jdk7] @SafeVarargs (remove unchecked)
+                    final Iterable<SpecialKeyType> combinedSpecialKeyTypes = iterable( assignedTypes, currentTypes );
+                    final boolean hasRestrictedKeyType = exists( combinedSpecialKeyTypes, new Unary<Boolean, SpecialKeyType>() {
+                        @Override
+                        public Boolean call( final SpecialKeyType specialKeyType ) {
+                            return specialKeyType.isRestrictedAccess();
+                        }
+                    } );
+                    if ( hasRestrictedKeyType && (assignedTypes.size()+currentTypes.size()) > 1 ) {
+                        throw new InvalidResourceException(
+                                ExceptionType.INVALID_VALUES,
+                                "Invalid special purpose(s), incompatible assignments: " + map( combinedSpecialKeyTypes, getEnumText() ) );
+                    }
+                    foreach( forUpdate, false, new UnaryVoidThrows<ClusterProperty, ObjectModelException>() {
+                        @Override
+                        public void call( final ClusterProperty property ) throws ObjectModelException {
+                            saveOrUpdateClusterProperty( property, externalId );
                         }
                     } );
                     return right2( getResourceInternal( selectorMap, some(assignedTypes) ) );
@@ -703,6 +743,15 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
         return toExternalId( keystoreId, alias );
     }
 
+    private Unary<Boolean,ClusterProperty> clusterPropertyValueMatchPredicate( final String value ) {
+        return new Unary<Boolean,ClusterProperty>(){
+            @Override
+            public Boolean call( final ClusterProperty clusterProperty ) {
+                return value.equalsIgnoreCase( clusterProperty.getValue() );
+            }
+        };
+    }
+
     /**
      * Persist the cluster property with the given value with permission enforcement.
      */
@@ -736,19 +785,13 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
             }
         } );
 
-        final List<SpecialKeyType> types = new ArrayList<SpecialKeyType>();
-        for ( final SpecialKeyType keyType : SpecialKeyType.values() ) {
-            final String propertyName = PrivateKeyAdminHelper.getClusterPropertyForSpecialKeyType( keyType );
-            final Option<ClusterProperty> clusterProperty = optional( clusterPropertyCache.getCachedEntityByName( propertyName ) );
-            final String externalId = toClusterPropertyValue( ssgKeyEntry.getKeystoreId(), ssgKeyEntry.getAlias() );
-            clusterProperty.foreach( new UnaryVoid<ClusterProperty>() {
-                @Override
-                public void call( final ClusterProperty clusterProperty ) {
-                    if( externalId.equalsIgnoreCase( clusterProperty.getValue() ) ) {
-                        types.add( keyType );
-                    }
-                }
-            } );
+        final Collection<SpecialKeyType> types = new LinkedHashSet<SpecialKeyType>();
+        final String externalId = toClusterPropertyValue( ssgKeyEntry.getKeystoreId(), ssgKeyEntry.getAlias() );
+        final Unary<Boolean,ClusterProperty> forThisKey = clusterPropertyValueMatchPredicate( externalId );
+        for ( final Triple<SpecialKeyType,String,Option<ClusterProperty>> keyAndProperty : speciaKeysAndProperties(cacheLookup()) ) {
+            if ( keyAndProperty.right.exists( forThisKey ) ) {
+                types.add( keyAndProperty.left );
+            }
         }
 
         if ( keyTypes.isSome() ) {
@@ -760,6 +803,42 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
         }
 
         return properties;
+    }
+
+    private Unary<Either<FindException,Option<ClusterProperty>>,String> forUpdateLookup() {
+        return new Unary<Either<FindException,Option<ClusterProperty>>,String>(){
+            @Override
+            public Either<FindException,Option<ClusterProperty>> call( final String propertyName ) {
+                try {
+                    return right( optional( clusterPropertyManager.findByUniqueName( propertyName ) ) );
+                } catch ( FindException e ) {
+                    return left( e );
+                }
+            }
+        };
+    }
+
+    private Unary<Option<ClusterProperty>,String> cacheLookup() {
+        return new Unary<Option<ClusterProperty>,String>(){
+            @Override
+            public Option<ClusterProperty> call( final String propertyName ) {
+                return optional( clusterPropertyCache.getCachedEntityByName( propertyName ) );
+            }
+        };
+    }
+
+    private <T> Collection<Triple<SpecialKeyType,String,T>> speciaKeysAndProperties( final Unary<T,String> lookup ) {
+        return map( allOf( SpecialKeyType.class ), new Unary<Triple<SpecialKeyType,String,T>,SpecialKeyType>(){
+            @Override
+            public Triple<SpecialKeyType, String,T> call( final SpecialKeyType specialKeyType ) {
+                final String propertyName = PrivateKeyAdminHelper.getClusterPropertyForSpecialKeyType( specialKeyType );
+                return new Triple<SpecialKeyType, String, T>(
+                        specialKeyType,
+                        propertyName,
+                        lookup.call( propertyName )
+                );
+            }
+        } );
     }
 
 }

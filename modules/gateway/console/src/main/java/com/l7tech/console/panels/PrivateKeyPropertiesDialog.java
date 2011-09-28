@@ -39,7 +39,6 @@ import java.io.File;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.UnrecoverableKeyException;
-import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Level;
@@ -322,7 +321,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
     }
 
     class ListEntry {
-        public ListEntry(String subjectDn, X509Certificate cert) {
+        ListEntry(String subjectDn, X509Certificate cert) {
             this.subjectDn = subjectDn;
             this.cert = cert;
         }
@@ -535,22 +534,8 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         return ret;
     }
 
-    private KeyUsagePolicy makeRsaSslServerKeyUsagePolicy() {
-        HashMap<KeyUsageActivity, List<KeyUsagePermitRule>> kuPermits = new HashMap<KeyUsageActivity, List<KeyUsagePermitRule>>();
-        KeyUsagePermitRule permitRule = new KeyUsagePermitRule(KeyUsageActivity.sslServerRemote, CertUtils.KEY_USAGE_BITS_BY_NAME.get("keyEncipherment"));
-        kuPermits.put(KeyUsageActivity.sslServerRemote, Arrays.<KeyUsagePermitRule>asList(permitRule));
-        return KeyUsagePolicy.fromRules(null, kuPermits, null);
-    }
-
     private boolean isCertChainSslCapable(PrivateKeyManagerWindow.KeyTableRow subject) {
-        try {
-            return new KeyUsageChecker(makeRsaSslServerKeyUsagePolicy(), KeyUsageChecker.ENFORCEMENT_MODE_ALWAYS).permitsActivity(KeyUsageActivity.sslServerRemote, subject.getCertificate());
-        } catch (CertificateParsingException e) {
-            // Can't happen by this point
-            //noinspection ThrowableResultOfMethodCallIgnored
-            logger.log(Level.WARNING, "Unable to parse certificate: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            return false;
-        }
+        return KeyUsageUtils.isCertSslCapable( subject.getCertificate() );
     }
 
     private void getCSR() {
