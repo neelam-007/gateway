@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.ssh.server;
 
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.external.assertions.ssh.SshCredentialAssertion;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.message.HasServiceOid;
 import com.l7tech.message.HasServiceOidImpl;
@@ -878,7 +879,8 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
                 SshFile sshFile = ((FileHandle) h).getFile();
                 flushAndCloseQuietly(sshFile);
 
-                AssertionStatus status = getStatusFromGatewayMessageProcess(sshFile, 3000);  // TODO make wait time configurable (manage listen port dialog)
+                AssertionStatus status = getStatusFromGatewayMessageProcess(sshFile,
+                        connector.getIntProperty(SshCredentialAssertion.LISTEN_PROP_MESSAGE_PROCESSOR_THREAD_WAIT_SECONDS, 3));
                 if (status == null || status == AssertionStatus.UNDEFINED) {
                     sendStatus(id, SSH_FX_FAILURE, "No status returned from Gateway message processing.");
                 } else if (status == AssertionStatus.NONE) {
@@ -1030,14 +1032,14 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
     /*
      * Get status set by Gateway Message Processing
      */
-    private AssertionStatus getStatusFromGatewayMessageProcess(SshFile file, long waitMillis)
+    private AssertionStatus getStatusFromGatewayMessageProcess(SshFile file, long waitSeconds)
             throws InterruptedException, ExecutionException, TimeoutException {
         AssertionStatus status = null;
         if (file instanceof VirtualSshFile) {
             VirtualSshFile virtualSshFile = (VirtualSshFile) file;
             Future<AssertionStatus> future = virtualSshFile.getMessageProcessStatus();
             if (future != null) {
-                status = future.get(waitMillis, TimeUnit.MILLISECONDS);
+                status = future.get(waitSeconds, TimeUnit.SECONDS);
             }
         }
         return status;

@@ -19,6 +19,7 @@ public class SshCredentialAssertion extends Assertion {
     public static final String LISTEN_PROP_HOST_PRIVATE_KEY = "l7.ssh.hostPrivateKey";
     public static final String LISTEN_PROP_IDLE_TIMEOUT_MINUTES = "l7.ssh.idleTimeoutMinutes";
     public static final String LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER = "l7.ssh.maxConcurrentSessionsPerUser";
+    public static final String LISTEN_PROP_MESSAGE_PROCESSOR_THREAD_WAIT_SECONDS = "l7.ssh.messageProcessorThreadWaitSeconds";
 
     /**
      * The SSH Credential assertion is always a credential source

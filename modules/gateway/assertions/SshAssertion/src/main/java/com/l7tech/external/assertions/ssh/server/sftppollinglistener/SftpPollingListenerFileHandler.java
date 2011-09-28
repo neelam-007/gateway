@@ -134,7 +134,8 @@ public class SftpPollingListenerFileHandler {
                     }
 
                     _logger.log(Level.INFO, "Waiting for read thread join().");
-                    thread.join(10 * 1000L);   // TODO make timeout configurable
+                    int waitSeconds = serverConfig.getIntProperty(SftpPollingListenerConstants.SFTP_POLLING_DOWNLOAD_THREAD_WAIT_SECONDS_PROPERTY, 3);
+                    thread.join(waitSeconds * 1000L);
                     _logger.log(Level.INFO, "Done read thread join().");
                 } catch ( PolicyVersionException pve ) {
                     String msg1 = "Request referred to an outdated version of policy";
