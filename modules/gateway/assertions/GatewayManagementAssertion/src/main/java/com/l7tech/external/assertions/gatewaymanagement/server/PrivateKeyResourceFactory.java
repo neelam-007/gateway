@@ -76,6 +76,7 @@ import java.security.InvalidKeyException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.PublicKey;
 import java.security.SignatureException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
@@ -720,11 +721,12 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
 
     private Map<String, Object> buildProperties( final SsgKeyEntry ssgKeyEntry ) {
         final Map<String,Object> properties = new HashMap<String,Object>();
-        try {
-            properties.put( "keyAlgorithm", ssgKeyEntry.getPrivateKey().getAlgorithm() );
-        } catch ( UnrecoverableKeyException e ) {
-            logger.log( Level.WARNING, "Error accessing private key '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e) );           
-        }
+        optional( ssgKeyEntry.getPublic() ).foreach( new UnaryVoid<PublicKey>() {
+            @Override
+            public void call( final PublicKey publicKey ) {
+                properties.put( "keyAlgorithm", publicKey.getAlgorithm() );
+            }
+        } );
 
         final List<SpecialKeyType> types = new ArrayList<SpecialKeyType>();
         for ( final SpecialKeyType keyType : SpecialKeyType.values() ) {
