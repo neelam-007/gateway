@@ -27,7 +27,7 @@ import org.apache.sshd.server.session.ServerSession;
 import java.io.*;
 import java.net.PasswordAuthentication;
 import java.util.*;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -879,23 +879,25 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
                 flushAndCloseQuietly(sshFile);
 
                 AssertionStatus status = getStatusFromGatewayMessageProcess(sshFile, 3000);  // TODO make wait time configurable (manage listen port dialog)
-                if (status == null) {
+                if (status == null || status == AssertionStatus.UNDEFINED) {
                     sendStatus(id, SSH_FX_FAILURE, "No status returned from Gateway message processing.");
+                } else if (status == AssertionStatus.NONE) {
+                    sendStatus(id, SSH_FX_OK, "", "");
+                } else if (status == AssertionStatus.AUTH_FAILED) {
+                    sendStatus(id, SSH_FX_PERMISSION_DENIED, status.toString());
+                } else if (status == AssertionStatus.FAILED) {
+                    sendStatus(id, SSH_FX_FAILURE, status.toString());
                 } else {
-                     if (status == AssertionStatus.NONE) {
-                         sendStatus(id, SSH_FX_OK, "", "");
-                     } else if (status == AssertionStatus.AUTH_FAILED) {
-                         sendStatus(id, SSH_FX_PERMISSION_DENIED, status.toString());
-                     } else if (status == AssertionStatus.FAILED) {
-                         sendStatus(id, SSH_FX_FAILURE, status.toString());
-                     } else {
-                         sendStatus(id, SSH_FX_BAD_MESSAGE, status.toString());
-                     }
+                    sendStatus(id, SSH_FX_BAD_MESSAGE, status.toString());
                 }
             }
         } catch (IOException e) {
             sendStatus(id, SSH_FX_FAILURE, e.getMessage());
         } catch (InterruptedException e) {
+            sendStatus(id, SSH_FX_FAILURE, e.getMessage());
+        } catch (ExecutionException e) {
+            sendStatus(id, SSH_FX_FAILURE, e.getMessage());
+        } catch (TimeoutException e) {
             sendStatus(id, SSH_FX_FAILURE, e.getMessage());
         }
     }
@@ -948,9 +950,17 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
             }
 
             final CountDownLatch startedSignal = new CountDownLatch(1);
-            Thread thread = new Thread(new Runnable(){
-                @Override
-                public void run() {
+            final ExecutorService executorService = Executors.newSingleThreadExecutor(new ThreadFactory() {
+                public Thread newThread(Runnable r) {
+                    Thread thread = new Thread(r, "GatewayMessageProcessThread-" + System.currentTimeMillis());
+                    thread.setDaemon(true);
+                    return thread;
+                }
+            });
+
+            Future<AssertionStatus> future = executorService.submit(new Callable<AssertionStatus>()
+            {
+                public AssertionStatus call() throws Exception {
                     AssertionStatus status = AssertionStatus.UNDEFINED;
                     String faultXml = null;
                     try {
@@ -958,9 +968,9 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
                             startedSignal.countDown();
                             status = messageProcessor.processMessage(context);
 
-                            if (logger.isLoggable(Level.FINER))
+                            if (logger.isLoggable(Level.FINER)) {
                                 logger.log(Level.FINER, "Policy resulted in status ''{0}''.", status);
-
+                            }
                         } catch ( PolicyVersionException pve ) {
                             logger.log( Level.INFO, "Request referred to an outdated version of policy" );
                             faultXml = soapFaultManager.constructExceptionFault(pve, context.getFaultlevel(), context).getContent();
@@ -969,7 +979,6 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
                             faultXml = soapFaultManager.constructExceptionFault(t, context.getFaultlevel(), context).getContent();
                         }
 
-                        virtualSshFile.setMessageProcessStatus(status);
                         if ( status != AssertionStatus.NONE ) {
                             faultXml = soapFaultManager.constructReturningFault(context.getFaultlevel(), context).getContent();
                         }
@@ -981,12 +990,10 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
                         ResourceUtils.closeQuietly(context);
                         ResourceUtils.closeQuietly(pis);
                     }
+                    return status;
                 }
-            }, "SftpServer-GatewayMessageProcessThread-" + System.currentTimeMillis());
-
-            virtualSshFile.setMessageProcessThread(thread);
-            thread.setDaemon(true);
-            thread.start();
+            });
+            virtualSshFile.setMessageProcessStatus(future);
 
             try {
                 startedSignal.await();
@@ -1023,15 +1030,15 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
     /*
      * Get status set by Gateway Message Processing
      */
-    private AssertionStatus getStatusFromGatewayMessageProcess(SshFile file, long waitMillis) throws InterruptedException {
+    private AssertionStatus getStatusFromGatewayMessageProcess(SshFile file, long waitMillis)
+            throws InterruptedException, ExecutionException, TimeoutException {
         AssertionStatus status = null;
         if (file instanceof VirtualSshFile) {
             VirtualSshFile virtualSshFile = (VirtualSshFile) file;
-            status = virtualSshFile.getMessageProcessStatus();
-            if (status == null && virtualSshFile.getMessageProcessThread() != null) {
-                virtualSshFile.getMessageProcessThread().join(waitMillis);
+            Future<AssertionStatus> future = virtualSshFile.getMessageProcessStatus();
+            if (future != null) {
+                status = future.get(waitMillis, TimeUnit.MILLISECONDS);
             }
-            status = virtualSshFile.getMessageProcessStatus();
         }
         return status;
     }

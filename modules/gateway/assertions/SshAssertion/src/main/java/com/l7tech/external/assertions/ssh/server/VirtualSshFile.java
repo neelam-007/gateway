@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.concurrent.Future;
 
 /**
  * Represents a virtual file or directory.
@@ -18,8 +19,7 @@ public class VirtualSshFile implements SshFile {
     private String fileName;
     private boolean file;
     private PipedOutputStream pipedOutputStream;
-    private AssertionStatus messageProcessStatus;
-    private Thread messageProcessThread;
+    private Future<AssertionStatus> messageProcessStatus;
 
     /**
      * Constructor, internal do not use directly.
@@ -317,17 +317,10 @@ public class VirtualSshFile implements SshFile {
         this.pipedOutputStream = pipedOutputStream;
     }
 
-    public AssertionStatus getMessageProcessStatus() {
+    public Future<AssertionStatus> getMessageProcessStatus() {
         return messageProcessStatus;
     }
-    public void setMessageProcessStatus(AssertionStatus messageProcessStatus) {
+    public void setMessageProcessStatus(Future<AssertionStatus> messageProcessStatus) {
         this.messageProcessStatus = messageProcessStatus;
-    }
-
-    public Thread getMessageProcessThread() {
-        return messageProcessThread;
-    }
-    public void setMessageProcessThread(Thread messageProcessThread) {
-        this.messageProcessThread = messageProcessThread;
     }
 }
