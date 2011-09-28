@@ -147,21 +147,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
 
     @Override
     public PrivateKeyMO getResource( final Map<String, String> selectorMap ) throws ResourceNotFoundException {
-        return extract( transactional( new TransactionalCallback<Either<ResourceNotFoundException,PrivateKeyMO>>(){
-            @Override
-            public Either<ResourceNotFoundException,PrivateKeyMO> execute() throws ObjectModelException {
-                try {
-                    final Pair<Long,String> keyId = getKeyId( selectorMap );
-                    final SsgKeyEntry ssgKeyEntry = getSsgKeyEntry( keyId );
-
-                    checkPermitted( OperationType.READ, null, ssgKeyEntry );
-
-                    return right( buildPrivateKeyResource( ssgKeyEntry ) );
-                } catch ( ResourceNotFoundException e ) {
-                    return left( e );
-                }
-            }
-        }, true ) );
+        return getResourceInternal( selectorMap, Option.<Collection<SpecialKeyType>>none() );
     }
 
     @Override
@@ -211,7 +197,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                         throw new UpdateException( "Error setting new cert: " + ExceptionUtils.getMessage( e ), e );
                     }
 
-                    return right2( buildPrivateKeyResource( getSsgKeyEntry( keyId ) ) );
+                    return right2( buildPrivateKeyResource( getSsgKeyEntry( keyId ), Option.<Collection<SpecialKeyType>>none() ) );
                 } catch ( ResourceNotFoundException e ) {
                     return left2_1( e );
                 } catch ( InvalidResourceException e ) {
@@ -254,9 +240,9 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
     @ResourceMethod(name="SetSpecialPurposes", resource=true, selectors=true)
     public PrivateKeyMO setSpecialPurposes( final Map<String,String> selectorMap,
                                             final PrivateKeySpecialPurposeContext resource ) throws ResourceNotFoundException, InvalidResourceException {
-        extract2( transactional( new TransactionalCallback<E2<ResourceNotFoundException, InvalidResourceException, Option<Void>>>() {
+        return extract2( transactional( new TransactionalCallback<E2<ResourceNotFoundException, InvalidResourceException, PrivateKeyMO>>() {
             @Override
-            public E2<ResourceNotFoundException, InvalidResourceException, Option<Void>> execute() throws ObjectModelException {
+            public E2<ResourceNotFoundException, InvalidResourceException, PrivateKeyMO> execute() throws ObjectModelException {
                 try {
                     final SsgKeyEntry entry = getSsgKeyEntry( getKeyId( selectorMap ) );
                     checkPermitted( OperationType.READ, null, entry );
@@ -276,7 +262,8 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                     if ( !invalidSpecialPurposes.isEmpty() ) {
                         throw new InvalidResourceException( ExceptionType.INVALID_VALUES, "Invalid special purpose(s): " + invalidSpecialPurposes );
                     }
-                    foreach( rights( processedPurposes ), false, new UnaryVoidThrows<SpecialKeyType, ObjectModelException>() {
+                    final Collection<SpecialKeyType> assignedTypes = rights( processedPurposes );
+                    foreach( assignedTypes, false, new UnaryVoidThrows<SpecialKeyType, ObjectModelException>() {
                         @Override
                         public void call( final SpecialKeyType specialKeyType ) throws ObjectModelException {
                             final String clusterPropertyName =
@@ -291,16 +278,14 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                             saveOrUpdateClusterProperty( property, toClusterPropertyValue( entry.getKeystoreId(), entry.getAlias() ) );
                         }
                     } );
-                    return right2( Option.<Void>none() );
+                    return right2( getResourceInternal( selectorMap, some(assignedTypes) ) );
                 } catch ( ResourceNotFoundException e ) {
                     return left2_1( e );
                 } catch ( InvalidResourceException e ) {
                     return left2_2( e );
                 }
             }
-        }, false ) ).isSome(); // Call isSome to ensure fully extracted
-
-        return getResource( selectorMap ); // get in new transaction to see updates
+        }, false ) );
     }
 
     @ResourceMethod(name="GenerateCSR", resource=true, selectors=true)
@@ -395,7 +380,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                         throw new ResourceAccessException( ExceptionUtils.getMessage(e), e );
                     }
 
-                    return right( buildPrivateKeyResource( getSsgKeyEntry( keyId ) ) );
+                    return right( buildPrivateKeyResource( getSsgKeyEntry( keyId ), Option.<Collection<SpecialKeyType>>none() ) );
                 } catch ( ResourceNotFoundException e ) {
                     throw new ResourceAccessException( e ); // error since we just created the resource
                 } catch ( InvalidResourceException e ) {
@@ -422,7 +407,9 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
 
                 try {
                     final PrivateKeyAdminHelper helper = getPrivateKeyAdminHelper();
-                    return right( buildPrivateKeyResource( helper.doImportKeyFromPkcs12( keystoreId, alias, pkcs12bytes, pkcs12pass, pkcs12alias ) ) );
+                    return right( buildPrivateKeyResource(
+                            helper.doImportKeyFromPkcs12( keystoreId, alias, pkcs12bytes, pkcs12pass, pkcs12alias ),
+                            Option.<Collection<SpecialKeyType>>none() ) );
                 } catch ( AliasNotFoundException e ) {
                     return left( new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "Aliases not found : " + pkcs12alias ) );
                 } catch ( MultipleAliasesException e ) {
@@ -565,6 +552,25 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
         return toInternalId( selectorMap.get( IDENTITY_SELECTOR ), SELECTOR_THROWER );
     }
 
+    private PrivateKeyMO getResourceInternal( final Map<String, String> selectorMap,
+                                              final Option<Collection<SpecialKeyType>> keyTypes ) throws ResourceNotFoundException {
+        return extract( transactional( new TransactionalCallback<Either<ResourceNotFoundException,PrivateKeyMO>>(){
+            @Override
+            public Either<ResourceNotFoundException,PrivateKeyMO> execute() throws ObjectModelException {
+                try {
+                    final Pair<Long,String> keyId = getKeyId( selectorMap );
+                    final SsgKeyEntry ssgKeyEntry = getSsgKeyEntry( keyId );
+
+                    checkPermitted( OperationType.READ, null, ssgKeyEntry );
+
+                    return right( buildPrivateKeyResource( ssgKeyEntry, keyTypes ) );
+                } catch ( ResourceNotFoundException e ) {
+                    return left( e );
+                }
+            }
+        }, true ) );
+    }
+
     private Collection<SsgKeyHeader> getEntityHeaders() throws FindException {
         final Collection<SsgKeyHeader> headers = new ArrayList<SsgKeyHeader>();
 
@@ -583,14 +589,15 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
         return accessFilter(headers, EntityType.SSG_KEY_ENTRY, OperationType.READ, null);
     }
 
-    private PrivateKeyMO buildPrivateKeyResource( final SsgKeyEntry ssgKeyEntry ) {
+    private PrivateKeyMO buildPrivateKeyResource( final SsgKeyEntry ssgKeyEntry,
+                                                  final Option<Collection<SpecialKeyType>> keyTypes ) {
         final PrivateKeyMO privateKey = ManagedObjectFactory.createPrivateKey();
 
         privateKey.setId( toExternalId( ssgKeyEntry.getKeystoreId(), ssgKeyEntry.getAlias() ) );
         privateKey.setKeystoreId( Long.toString( ssgKeyEntry.getKeystoreId() ) );
         privateKey.setAlias( ssgKeyEntry.getAlias() );
         privateKey.setCertificateChain( buildCertificateChain( ssgKeyEntry ) );
-        privateKey.setProperties( buildProperties( ssgKeyEntry ) );
+        privateKey.setProperties( buildProperties( ssgKeyEntry, keyTypes ) );
 
         return privateKey;
     }
@@ -719,7 +726,8 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
         }
     }
 
-    private Map<String, Object> buildProperties( final SsgKeyEntry ssgKeyEntry ) {
+    private Map<String, Object> buildProperties( final SsgKeyEntry ssgKeyEntry,
+                                                 final Option<Collection<SpecialKeyType>> keyTypes ) {
         final Map<String,Object> properties = new HashMap<String,Object>();
         optional( ssgKeyEntry.getPublic() ).foreach( new UnaryVoid<PublicKey>() {
             @Override
@@ -741,6 +749,10 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                     }
                 }
             } );
+        }
+
+        if ( keyTypes.isSome() ) {
+            types.addAll( keyTypes.some() );
         }
 
         if ( !types.isEmpty() ) {

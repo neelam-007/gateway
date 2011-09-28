@@ -75,4 +75,10 @@ public class DeveloperClientTest {
         GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ gateway, "export", "-type", "service", "-id", serviceId, "-username", username, "-password", password }, System.in, System.out, System.out );
         gmc.run();
     }
+
+    @Test
+    public void testSetSpecialPurposes() throws Exception {
+        GatewayManagementClient gmc = new GatewayManagementClient( new String[]{ gateway, "keypurposes", "-type", "privateKey", "-id", "2:test", "-keyPurpose", "Audit Signing Key", "-username", username, "-password", password }, System.in, System.out, System.out );
+        gmc.run();
+    }
 }
