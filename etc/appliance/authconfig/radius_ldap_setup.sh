@@ -185,8 +185,7 @@ getOriginalFiles () {
 if [ $# -eq 1 ]; then
 	# making sure the directory exists and it is readable
 	if [ ! -d $ORIG_CONF_FILES_DIR ]; then
-		toLog "    ERROR - $ORIG_CONF_FILES_DIR does not exists. Exiting..."
-		exit 1
+		RETVAL=1
 	fi
 	if [ "X$1" == "Xradius_only" ]; then
 		for F in $RADIUS_CFG_FILES; do
@@ -219,7 +218,7 @@ if [ $# -eq 1 ]; then
 	fi
 else
 	toLog "    ERROR - Function 'getOriginalFiles' should be called with one parameter only! Exiting..."
-	exit 1
+	RETVAL=1
 fi
 
 # END of 'getOriginalFiles' function
@@ -344,8 +343,7 @@ else
 			exit 1
 		fi
 	else
-		sed -i "s|\(^#%PAM.*$\)|\1\n# Added by $0 on $DATE_TIME:\nauth\tsufficient\tpam_radius_auth.so conf=$PAM_RADIUS_CONF_FILE retry=2 localifdown\n /
-		auth\trequisite\tpam_listfile.so item=user sense=allow file=\/etc\/ssh\/ssh_allowed_users onerr=succeed|" $PAM_SSHD_CONF_FILE
+		sed -i "s|\(^#%PAM.*$\)|\1\n# Added by $0 on $DATE_TIME:\nauth\tsufficient\tpam_radius_auth.so conf=$PAM_RADIUS_CONF_FILE retry=2 localifdown\nauth\trequisite\tpam_listfile.so item=user sense=allow file=\/etc\/ssh\/ssh_allowed_users onerr=succeed|" $PAM_SSHD_CONF_FILE
 		if [ $(grep "$PAM_RADIUS_CONF_FILE" $PAM_SSHD_CONF_FILE | awk '{print $4}' | cut -d"=" -f2) != "$PAM_RADIUS_CONF_FILE" ]; then
 			toLog "    ERROR - Inserting the pam_radius module line in the $PAM_SSHD_CONF_FILE file failed! Exiting..."
 			exit 1
@@ -568,6 +566,141 @@ else
 	else
 		toLog "    ERROR - PAM_MEMBER_ATTR cannot be empty! Exiting..."
 		exit 1
+	fi
+	
+	# pam_min_uid field
+	if [ "X$PAM_MIN_UID" != "X" ]; then
+		sed -i "s|\(^#pam_min_uid.*$\)|\1\n# Added by $0 on $DATE_TIME:\npam_min_uid $PAM_MIN_UID|" $NSS_LDAP_CONF_FILE
+		if [ $? -ne 0 ] || [ "X$(grep "^pam_min_uid" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$PAM_MIN_UID" ]; then
+			toLog "    ERROR - Configuring 'pam_min_uid' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
+			exit 1
+		else
+			toLog "    Success - 'pam_min_uid' field set to $PAM_MIN_UID in $NSS_LDAP_CONF_FILE."
+		fi
+	else
+		toLog "    ERROR - PAM_MIN_UID cannot be empty! Exiting..."
+		exit 1
+	fi
+	
+	# pam_max_uid field
+	if [ "X$PAM_MAX_UID" != "X" ]; then
+		sed -i "s|\(^#pam_max_uid.*$\)|\1\n# Added by $0 on $DATE_TIME:\npam_max_uid $PAM_MAX_UID\n|" $NSS_LDAP_CONF_FILE
+		if [ $? -ne 0 ] || [ "X$(grep "^pam_max_uid" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$PAM_MAX_UID" ]; then
+			toLog "    ERROR - Configuring 'pam_max_uid' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
+			exit 1
+		else
+			toLog "    Success - 'pam_max_uid' field set to $PAM_MAX_UID in $NSS_LDAP_CONF_FILE."
+		fi
+	else
+		toLog "    ERROR - PAM_MAX_UID cannot be empty! Exiting..."
+		exit 1
+	fi
+	
+	# timelimit field
+	if [ "X$NSS_TIMELIMIT" != "X" ]; then
+		sed -i "s|\(^#timelimit.*$\)|\1\n# Added by $0 on $DATE_TIME:\ntimelimit $NSS_TIMELIMIT\n|" $NSS_LDAP_CONF_FILE
+		if [ $? -ne 0 ] || [ "X$(grep "^timelimit" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$NSS_TIMELIMIT" ]; then
+			toLog "    ERROR - Configuring 'timelimit' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
+			exit 1
+		else
+			toLog "    Success - 'timelimit' field set to $NSS_TIMELIMIT in $NSS_LDAP_CONF_FILE."
+		fi
+	else
+		toLog "    ERROR - NSS_TIMELIMIT cannot be empty! Exiting..."
+		exit 1
+	fi
+	
+	# bind_timelimit
+	if [ "X$NSS_BIND_TIMELIMIT" != "X" ]; then
+		sed -i "s|\(^#bind_timelimit.*$\)|\1\n# Added by $0 on $DATE_TIME:\nbind_timelimit $NSS_BIND_TIMELIMIT\n|" $NSS_LDAP_CONF_FILE
+		if [ $? -ne 0 ] || [ "X$(grep "^bind_timelimit" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$NSS_BIND_TIMELIMIT" ]; then
+			toLog "    ERROR - Configuring 'bind_timelimit' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
+			exit 1
+		else
+			toLog "    Success - 'bind_timelimit' field set to $NSS_BIND_TIMELIMIT in $NSS_LDAP_CONF_FILE."
+		fi
+	else
+		toLog "    ERROR - NSS_BIND_TIMELIMIT cannot be empty! Exiting..."
+		exit 1
+	fi
+	
+	# idle_timelimit
+	if [ "X$NSS_IDLE_TIMELIMIT" != "X" ]; then
+		sed -i "s|\(^#idle_timelimit.*$\)|\1\n# Added by $0 on $DATE_TIME:\nidle_timelimit $NSS_IDLE_TIMELIMIT\n|" $NSS_LDAP_CONF_FILE
+		if [ $? -ne 0 ] || [ "X$(grep "^idle_timelimit" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$NSS_IDLE_TIMELIMIT" ]; then
+			toLog "    ERROR - Configuring 'idle_timelimit' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
+			exit 1
+		else
+			toLog "    Success - 'idle_timelimit' field set to $NSS_IDLE_TIMELIMIT in $NSS_LDAP_CONF_FILE."
+		fi
+	else
+		toLog "    ERROR - NSS_IDLE_TIMELIMIT cannot be empty! Exiting..."
+		exit 1
+	fi
+	
+	# bind_policy
+	if [ "X$NSS_BIND_POLICY" != "X" ]; then
+		sed -i "s|\(^#bind_policy.*$\)|\1\n# Added by $0 on $DATE_TIME:\nbind_policy $NSS_BIND_POLICY\n|" $NSS_LDAP_CONF_FILE
+		if [ $? -ne 0 ] || [ "X$(grep "^bind_policy" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$NSS_BIND_POLICY" ]; then
+			toLog "    ERROR - Configuring 'bind_policy' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
+			exit 1
+		else
+			toLog "    Success - 'bind_policy' field set to $NSS_BIND_POLICY in $NSS_LDAP_CONF_FILE."
+		fi
+	else
+		toLog "    ERROR - NSS_BIND_POLICY cannot be empty! Exiting..."
+		exit 1
+	fi
+	
+	# nss_base_passwd
+	if [ "X$NSS_BASE_PASSWD" != "X" ]; then
+		sed -i "s|\(^#nss_base_passwd.*$\)|\1\n# Added by $0 on $DATE_TIME:\nnss_base_passwd $NSS_BASE_PASSWD?one\n|" $NSS_LDAP_CONF_FILE
+		if [ $? -ne 0 ] || [ "X$(grep "^nss_base_passwd" $NSS_LDAP_CONF_FILE | cut -d" " -f2)?one" != "X$NSS_BASE_PASSWD" ]; then
+			toLog "    ERROR - Configuring 'nss_base_passwd' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
+			exit 1
+		else
+			toLog "    Success - 'nss_base_passwd' field set to $NSS_BASE_PASSWD in $NSS_LDAP_CONF_FILE."
+		fi
+	else
+		toLog "    ERROR - NSS_BASE_PASSWD cannot be empty! Exiting..."
+		exit 1
+	fi
+	
+	# nss_base_group
+	if [ "X$NSS_BASE_GROUP" != "X" ]; then
+		sed -i "s|\(^#nss_base_group.*$\)|\1\n# Added by $0 on $DATE_TIME:\nnss_base_group $NSS_BASE_GROUP?one\n|" $NSS_LDAP_CONF_FILE
+		if [ $? -ne 0 ] || [ "X$(grep "^nss_base_group" $NSS_LDAP_CONF_FILE | cut -d" " -f2)?one" != "X$NSS_BASE_GROUP" ]; then
+			toLog "    ERROR - Configuring 'nss_base_group' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
+			exit 1
+		else
+			toLog "    Success - 'nss_base_group' field set to $NSS_BASE_GROUP in $NSS_LDAP_CONF_FILE."
+		fi
+	else
+		toLog "    ERROR - NSS_BASE_GROUP cannot be empty! Exiting..."
+		exit 1
+	fi
+	
+	# nss_base_shadow
+	if [ "X$NSS_BASE_SHADOW" != "X" ]; then
+		sed -i "s|\(^#nss_base_shadow.*$\)|\1\n# Added by $0 on $DATE_TIME:\nnss_base_shadow $NSS_BASE_SHADOW?one\n|" $NSS_LDAP_CONF_FILE
+		if [ $? -ne 0 ] || [ "X$(grep "^nss_base_shadow" $NSS_LDAP_CONF_FILE | cut -d" " -f2)?one" != "X$NSS_BASE_SHADOW" ]; then
+			toLog "    ERROR - Configuring 'nss_base_shadow' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
+			exit 1
+		else
+			toLog "    Success - 'nss_base_shadow' field set to $NSS_BASE_SHADOW in $NSS_LDAP_CONF_FILE."
+		fi
+	else
+		toLog "    ERROR - NSS_BASE_SHADOW cannot be empty! Exiting..."
+		exit 1
+	fi
+	
+	# scope filed (this will be just activated with the "sub" value - no variable exists in the configuration file for this)
+	sed -i "s|\(^#scope sub.*$\)|\1\n# Added by $0 on $DATE_TIME:\nscope sub|" $NSS_LDAP_CONF_FILE
+	if [ $? -ne 0 ] || [ "X$(grep "^scope sub" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "Xsub" ]; then
+		toLog "    ERROR - Configuring 'scope' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
+		exit 1
+	else
+		toLog "    Success - 'scope' field set to sub in $NSS_LDAP_CONF_FILE."
 	fi
 	
 	# Decide if LDAP or LDAPS (defined by $LDAP_TYPE):
@@ -996,7 +1129,7 @@ elif [ $# -eq 2 ]; then
 							doBackup /etc/sysconfig/authconfig
 							# bring back the original files
 							toLog "Info - ===== Restoring original configuration files. ====="
-							getOriginalFiles
+							getOriginalFiles radius_with_ldap
 							if [ $RETVAL -eq 0 ]; then
 								toLog "Success - System re-configuration for local authentication completed."
 							else
