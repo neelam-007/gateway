@@ -90,7 +90,7 @@ public class ConversionUtils {
         @Override
         public Option<Long> call( final String text ) {
             try {
-                return some( TimeUnit.parse( trim( text ), TimeUnit.MINUTES ) );
+                return some( TimeUnit.parse( trim( text ), TimeUnit.MINUTES, true ) );
             } catch ( final NumberFormatException e ) {
                 return none();
             }

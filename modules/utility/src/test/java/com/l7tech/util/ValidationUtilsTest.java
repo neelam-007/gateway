@@ -149,6 +149,11 @@ public class ValidationUtilsTest {
         assertFalse( "Invalid string empty timeunit", validatorSTU.isValid( null ) );
         assertFalse( "Invalid string syntax timeunit", validatorSTU.isValid( "asdf" ) );
 
+        assertTrue( "Valid time unit 100 d", validatorSTU.isValid( "100  d" ) );
+        assertTrue( "Valid time unit 1,0,0 d", validatorSTU.isValid( "1,0,0 d" ) );
+        assertFalse( "Invalid time unit 100de", validatorSTU.isValid( "100de" ) );
+        assertFalse( "Invalid time unit 100X", validatorSTU.isValid( "100X" ) );
+
         assertTrue( some( "10000000000" ).filter( validatorS ).isSome() );
         assertFalse( some( "10000000001" ).filter( validatorS ).isSome() );
         assertFalse( some( "1L" ).filter( validatorS ).isSome() );

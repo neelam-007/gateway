@@ -113,6 +113,20 @@ public final class TimeUnit implements Serializable, Comparable {
      * @return the equivalent duration in milliseconds
      */
     public static long parse(String value, TimeUnit unsuffixedUnit) throws NumberFormatException {
+        return parse( value, unsuffixedUnit, false );
+    }
+
+    /**
+     * Parses a time duration expressed as a number (which may contain periods, commas or spaces) followed by a one- or
+     * two-letter, case-insensitive unit abbreviation, e.g. "60s" is 60 seconds, resulting in 60000.
+     * @param value the string to be parsed
+     * @param unsuffixedUnit the TimeUnit to assume is in use when no unit suffix is present
+     * @param strict True to parse strictly (fails if unit is not recognized rather than using the default)
+     * @return the equivalent duration in milliseconds
+     */
+    public static long parse( final String value,
+                              final TimeUnit unsuffixedUnit,
+                              final boolean strict ) throws NumberFormatException {
         if (value == null) throw new NullPointerException();
         if (value.length() == 0) throw new NumberFormatException("Empty strings are not supported");
         if (value.length() > 20) throw new NumberFormatException("Strings with more than 20 characters are not supported");
@@ -127,7 +141,12 @@ public final class TimeUnit implements Serializable, Comparable {
             final TimeUnit unit;
             String maybeUnit = mat.group(2);
             TimeUnit tu = valuesByAbbrev.get(maybeUnit);
-            if (tu == null) tu = unsuffixedUnit;
+            if (tu == null) {
+                if ( strict && maybeUnit!=null && !maybeUnit.isEmpty() ) {
+                    throw new NumberFormatException( "Unknown suffix '"+maybeUnit+"' in ''"+value+"''.");
+                }
+                tu = unsuffixedUnit;
+            }
             unit = tu;
 
             BigDecimal bd = new BigDecimal(snum); // OK to throw NFE
