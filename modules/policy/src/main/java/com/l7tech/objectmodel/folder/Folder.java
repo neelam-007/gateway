@@ -45,7 +45,7 @@ public class Folder extends NamedEntityImp implements HasFolder {
     }
 
     public void reParent(Folder parentFolder) throws InvalidParentFolderException {
-        if (isParentOf(parentFolder))
+        if (parentFolder.getOid()==getOid() || isParentOf(parentFolder))
             throw new InvalidParentFolderException("The destination folder is a subfolder of the source folder");
         this.parentFolder = parentFolder;
     }

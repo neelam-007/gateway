@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
+import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.InvalidResourceException.ExceptionType;
 import com.l7tech.gateway.api.FolderMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.common.security.rbac.OperationType;
@@ -9,6 +10,7 @@ import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
+import com.l7tech.objectmodel.folder.InvalidParentFolderException;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
@@ -72,6 +74,13 @@ public class FolderResourceFactory extends EntityManagerResourceFactory<FolderMO
 
     @Override
     protected void updateEntity( final Folder oldEntity, final Folder newEntity ) throws InvalidResourceException {
+        if ( newEntity.getFolder() != null ) {
+            try {
+                oldEntity.reParent( checkMovePermitted( oldEntity.getFolder(), newEntity.getFolder() ) );
+            } catch ( InvalidParentFolderException e ) {
+                throw new InvalidResourceException( ExceptionType.INVALID_VALUES, "invalid parent folder");
+            }
+        }
         oldEntity.setName( newEntity.getName() );
     }
 

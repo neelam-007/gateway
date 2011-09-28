@@ -400,7 +400,7 @@ public class ServerGatewayManagementAssertionTest {
     public void testCreateFolder() throws Exception {
         String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/folders";
         String payload = "<n1:Folder xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\" folderId=\"1\"><n1:Name>test</n1:Name></n1:Folder>";
-        doCreate( resourceUri, payload, "2" );
+        doCreate( resourceUri, payload, "3" );
     }
 
     @Test
@@ -775,7 +775,7 @@ public class ServerGatewayManagementAssertionTest {
                 "    &lt;/wsp:All&gt;\n" +
                 "&lt;/wsp:Policy&gt;\n" +
                 "</Resource></ResourceSet></Resources></Policy>";
-        String expectedId = "2";
+        String expectedId = "3";
         doCreate( resourceUri, payload, expectedId );
     }
 
@@ -1737,6 +1737,117 @@ public class ServerGatewayManagementAssertionTest {
         }
     }
 
+    @BugNumber(11005)
+    @Test
+    public void testMoveFolder() throws Exception {
+        // move from "Test Folder" to the root
+        String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/folders</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">2</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body> <n1:Folder xmlns:n1=\"http://ns.l7tech.com/2010/04/gateway-management\" folderId=\"-5002\" id=\"2\" version=\"0\"><n1:Name>Nested Test Folder</n1:Name></n1:Folder> </s:Body></s:Envelope>";
+
+        final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Put", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element folder = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "Folder");
+        final Element name = XmlUtil.findExactlyOneChildElementByName(folder, NS_GATEWAY_MANAGEMENT, "Name");
+
+        assertEquals("FolderId", "-5002", folder.getAttributeNS( null, "folderId" ));
+        assertEquals("Name", "Nested Test Folder", XmlUtil.getTextValue(name));
+    }
+
+    @Test
+    public void testMovePolicy() throws Exception {
+        // move policy from the root to "Test Folder"
+        String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/policies</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">2</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>" +
+                "<l7:Policy guid=\"c81e728d-9d4c-3f63-af06-7f89cc14862c\"\n" +
+                "    id=\"2\" version=\"0\">\n" +
+                "    <l7:PolicyDetail\n" +
+                "        guid=\"c81e728d-9d4c-3f63-af06-7f89cc14862c\"\n" +
+                "        id=\"2\" folderId=\"1\" version=\"0\">\n" +
+                "        <l7:Name>Test Policy For Move</l7:Name>\n" +
+                "        <l7:PolicyType>Include</l7:PolicyType>\n" +
+                "        <l7:Properties>\n" +
+                "            <l7:Property key=\"revision\">\n" +
+                "                <l7:LongValue>0</l7:LongValue>\n" +
+                "            </l7:Property>\n" +
+                "            <l7:Property key=\"soap\">\n" +
+                "                <l7:BooleanValue>true</l7:BooleanValue>\n" +
+                "            </l7:Property>\n" +
+                "        </l7:Properties>\n" +
+                "    </l7:PolicyDetail>\n" +
+                "    <l7:Resources>\n" +
+                "        <l7:ResourceSet tag=\"policy\">\n" +
+                "            <l7:Resource type=\"policy\">&lt;wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"&gt;&lt;wsp:All wsp:Usage=\"Required\"&gt;&lt;L7p:AuditAssertion/&gt;&lt;/wsp:All&gt;&lt;/wsp:Policy&gt;</l7:Resource>\n" +
+                "        </l7:ResourceSet>\n" +
+                "    </l7:Resources>\n" +
+                "</l7:Policy>\n" +
+                "</s:Body></s:Envelope>";
+
+        final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Put", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element policy = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "Policy");
+        final Element policyDetail = XmlUtil.findExactlyOneChildElementByName(policy, NS_GATEWAY_MANAGEMENT, "PolicyDetail");
+        final Element policyDetailName = XmlUtil.findExactlyOneChildElementByName(policyDetail, NS_GATEWAY_MANAGEMENT, "Name");
+
+        assertEquals("Policy id", "2", policy.getAttribute( "id" ));
+        assertEquals("Policy version", "0", policy.getAttribute( "version" ));
+        assertEquals("Policy detail id", "2", policyDetail.getAttribute( "id" ));
+        assertEquals("Policy detail version", "0", policyDetail.getAttribute( "version" ));
+        assertEquals("Policy detail name", "Test Policy For Move", XmlUtil.getTextValue(policyDetailName));
+        assertEquals("Policy detail folder", "1", policyDetail.getAttributeNS( null, "folderId" ));
+    }
+
+    @Test
+    public void testMoveService() throws Exception {
+        String message = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" xmlns:wsman=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\" xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\"><s:Header><wsa:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Put</wsa:Action><wsa:To s:mustUnderstand=\"true\">http://127.0.0.1:8080/wsman</wsa:To><wsman:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/services</wsman:ResourceURI><wsa:MessageID s:mustUnderstand=\"true\">uuid:afad2993-7d39-1d39-8002-481688002100</wsa:MessageID><wsa:ReplyTo><wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo><wsman:SelectorSet><wsman:Selector Name=\"id\">1</wsman:Selector></wsman:SelectorSet><wsman:RequestEPR/></s:Header><s:Body>" +
+                "<l7:Service id=\"1\" version=\"1\">\n" +
+                "     <l7:ServiceDetail id=\"1\" folderId=\"1\" version=\"1\">\n" +
+                "         <l7:Name>Test Service 1</l7:Name>\n" +
+                "         <l7:Enabled>true</l7:Enabled>\n" +
+                "         <l7:ServiceMappings>\n" +
+                "             <l7:HttpMapping>\n" +
+                "                 <l7:Verbs>\n" +
+                "                     <l7:Verb>POST</l7:Verb>\n" +
+                "                 </l7:Verbs>\n" +
+                "             </l7:HttpMapping>\n" +
+                "         </l7:ServiceMappings>\n" +
+                "         <l7:Properties>\n" +
+                "             <l7:Property key=\"policyRevision\">\n" +
+                "                 <l7:LongValue>0</l7:LongValue>\n" +
+                "             </l7:Property>\n" +
+                "             <l7:Property key=\"wssProcessingEnabled\">\n" +
+                "                 <l7:BooleanValue>true</l7:BooleanValue>\n" +
+                "             </l7:Property>\n" +
+                "             <l7:Property key=\"soap\">\n" +
+                "                 <l7:BooleanValue>false</l7:BooleanValue>\n" +
+                "             </l7:Property>\n" +
+                "             <l7:Property key=\"internal\">\n" +
+                "                 <l7:BooleanValue>false</l7:BooleanValue>\n" +
+                "             </l7:Property>\n" +
+                "         </l7:Properties>\n" +
+                "     </l7:ServiceDetail>\n" +
+                "     <l7:Resources>\n" +
+                "         <l7:ResourceSet tag=\"policy\">\n" +
+                "             <l7:Resource type=\"policy\" version=\"0\">&lt;wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"&gt;&lt;wsp:All wsp:Usage=\"Required\"&gt;&lt;L7p:AuditAssertion/&gt;&lt;/wsp:All&gt;&lt;/wsp:Policy&gt;</l7:Resource>\n" +
+                "         </l7:ResourceSet>\n" +
+                "     </l7:Resources>\n" +
+                " </l7:Service>" +
+                "</s:Body></s:Envelope>";
+
+        final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Put", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element service = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "Service");
+        final Element serviceDetail = XmlUtil.findExactlyOneChildElementByName(service, NS_GATEWAY_MANAGEMENT, "ServiceDetail");
+        final Element serviceDetailName = XmlUtil.findExactlyOneChildElementByName(serviceDetail, NS_GATEWAY_MANAGEMENT, "Name");
+
+        assertEquals("Service id", "1", service.getAttribute( "id" ));
+        assertEquals("Service version", "1", service.getAttribute( "version" ));
+        assertEquals("Service detail id", "1", serviceDetail.getAttribute( "id" ));
+        assertEquals("Service detail version", "1", serviceDetail.getAttribute( "version" ));
+        assertEquals("Service detail name", "Test Service 1", XmlUtil.getTextValue(serviceDetailName));
+        assertEquals("Service detail folder", "1", serviceDetail.getAttributeNS( null, "folderId" ));
+    }
+
     @Test
     public void testServicePolicyExport() throws Exception {
         final String message =
@@ -1917,6 +2028,7 @@ public class ServerGatewayManagementAssertionTest {
     private static final String NS_WS_MANAGEMENT_IDENTITY = "http://schemas.dmtf.org/wbem/wsman/identity/1/wsmanidentity.xsd";
     private static final String NS_GATEWAY_MANAGEMENT = "http://ns.l7tech.com/2010/04/gateway-management";
     private static final String WSDL = "<wsdl:definitions xmlns:wsdl=\"http://schemas.xmlsoap.org/wsdl/\" targetNamespace=\"http://warehouse.acme.com/ws\"/>";
+    private static final String POLICY = "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"><wsp:All wsp:Usage=\"Required\"><L7p:AuditAssertion/></wsp:All></wsp:Policy>";
 
     private static final String[] RESOURCE_URIS = new String[]{
         "http://ns.l7tech.com/2010/04/gateway-management/clusterProperties",
@@ -1937,6 +2049,7 @@ public class ServerGatewayManagementAssertionTest {
     public static void init() throws Exception {
         new AssertionRegistry(); // causes type mappings to be installed for assertions
         final Folder rootFolder = folder( -5002L, null, "Root Node");
+        final Folder testFolder = folder( 1L, rootFolder, "Test Folder");
         final ClusterPropertyManager clusterPropertyManager = new MockClusterPropertyManager(
                 prop( 1L, "testProp1", "testValue1"),
                 prop( 2L, "testProp2", "testValue2"),
@@ -1955,7 +2068,8 @@ public class ServerGatewayManagementAssertionTest {
                 resource( 3L,"books.dtd", ResourceType.DTD, "books", "<!ELEMENT book ANY>", "The books DTD.")) );
         beanFactory.addBean( "folderManager", new FolderManagerStub(
                 rootFolder,
-                folder( 1L, rootFolder, "Test Folder") ) );
+                testFolder,
+                folder( 2L, testFolder, "Nested Test Folder") ) );
         beanFactory.addBean( "identityProviderConfigManager", new TestIdentityProviderConfigManager(
                 provider( -2L, IdentityProviderType.INTERNAL, "Internal Identity Provider"),
                 provider( -3L, IdentityProviderType.LDAP, "LDAP", "userLookupByCertMode", "CERT")));
@@ -1967,7 +2081,8 @@ public class ServerGatewayManagementAssertionTest {
                 connection( 1L, "A Test Connection"),
                 connection( 2L, "Test Connection") ) );
         beanFactory.addBean( "policyManager",  new PolicyManagerStub(
-                policy( 1L, PolicyType.INCLUDE_FRAGMENT, "Test Policy", true, "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\"><wsp:All wsp:Usage=\"Required\"><L7p:AuditAssertion/></wsp:All></wsp:Policy>") ));
+                policy( 1L, PolicyType.INCLUDE_FRAGMENT, "Test Policy", true, POLICY),
+                policy( 2L, PolicyType.INCLUDE_FRAGMENT, "Test Policy For Move", true, POLICY) ));
         beanFactory.addBean( "ssgKeyStoreManager", new SsgKeyStoreManagerStub( new SsgKeyFinderStub( Arrays.asList(
                 key( 0L, "bob", TestDocuments.getWssInteropBobCert(), TestDocuments.getWssInteropBobKey()) ) )) );
         beanFactory.addBean( "rbacServices", new RbacServicesStub() );
@@ -2095,6 +2210,7 @@ public class ServerGatewayManagementAssertionTest {
         service.setName( name );
         service.getPolicy().setName( "Policy for " + name + " (#" + oid + ")" );
         service.getPolicy().setGuid( UUID.randomUUID().toString() );
+        service.getPolicy().setXml( POLICY );
         service.setDisabled( disabled );
         service.setSoap( soap );
         try {
