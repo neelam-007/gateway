@@ -579,7 +579,6 @@ public class LogPanel extends JPanel {
         });
 
 
-        getCancelButton().setEnabled(false);
         getCancelButton().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent actionEvent) {
@@ -721,6 +720,8 @@ public class LogPanel extends JPanel {
     private void enableOrDisableComponents() {
         Utilities.setEnabled( getControlPane(), connected);
         if (connected) {
+            //don't want cancel button enabled when radio buttons are selected
+            getCancelButton().setEnabled(false);
             controlPanel.hoursTextField.setEnabled(controlPanel.durationButton.isSelected());
             controlPanel.minutesTextField.setEnabled(controlPanel.durationButton.isSelected());
             controlPanel.autoRefreshCheckBox.setEnabled(controlPanel.durationButton.isSelected());
@@ -1070,7 +1071,7 @@ public class LogPanel extends JPanel {
         clearLogCache();
         if (retrievalMode == RetrievalMode.DURATION) {
             getFilteredLogTableSorter().setTimeZone(null);
-            refreshLogs();
+            refreshLogs(true);
         } else if (retrievalMode == RetrievalMode.TIME_RANGE) {
             auditLogTableSorterModel.setTimeZone( timeRangeTimeZone );
             updateLogAutoRefresh();
@@ -1167,7 +1168,7 @@ public class LogPanel extends JPanel {
     }
 
     private void updateViewSelection() {
-        refreshLogs(timeRangeStart, timeRangeEnd);
+        refreshLogs(timeRangeStart, timeRangeEnd, true);
     }
 
     private AuditLogMessage getCachedLogMessage( final LogMessage logMessage ) {
@@ -2283,7 +2284,7 @@ public class LogPanel extends JPanel {
     public void refreshView() {
         if (connected) {
             if (retrievalMode == RetrievalMode.DURATION) {
-                refreshLogs();
+                refreshLogs(true);
             } else {
                 updateViewSelection();
             }
@@ -2292,9 +2293,13 @@ public class LogPanel extends JPanel {
 
     /**
      * Performs the log retrieval. This function is called when the refresh timer is expired.
+     * @param disableSearch whether the search button should be disabled and cancel enabled
      */
-    public void refreshLogs() {
+    public void refreshLogs(final boolean disableSearch) {
         getLogsRefreshTimer().stop();
+        if(disableSearch){
+            disableSearch();
+        }
 
         final long duration = isAuditType ? durationMillis : System.currentTimeMillis() /* i.e., unlimited */;
 
@@ -2337,10 +2342,22 @@ public class LogPanel extends JPanel {
     }
 
     /**
-     * Performs the log retrieval.
+     * Disable search button and enable cancel button.
      */
-    public void refreshLogs( final Date first, final Date last ) {
+    private void disableSearch() {
+        getSearchButton().setEnabled(false);
+        getCancelButton().setEnabled(true);
+    }
+
+    /**
+     * Performs the log retrieval.
+     * @param disableSearch whether the search button should be disabled and cancel enabled
+     */
+    public void refreshLogs( final Date first, final Date last, final boolean disableSearch ) {
         getLogsRefreshTimer().stop();
+        if(disableSearch){
+            disableSearch();
+        }
 
         if (isAuditType) {
             isSignAudits(true); // updates cached value
@@ -2529,7 +2546,7 @@ public class LogPanel extends JPanel {
             logsRefreshTimer = new javax.swing.Timer(logsRefreshInterval, new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent evt) {
-                    refreshLogs();
+                    refreshLogs(false);
                 }
             });
         }
