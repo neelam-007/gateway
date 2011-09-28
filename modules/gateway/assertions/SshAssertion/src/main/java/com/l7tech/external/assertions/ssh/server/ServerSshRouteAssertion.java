@@ -196,24 +196,36 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                     sshClient.upload(mimeKnob.getEntireMessageBodyAsInputStream(), expandVariables(context, assertion.getDirectory()),  expandVariables(context, assertion.getFileName()));
                 }
             } catch (NoSuchPartException e) {
-                logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {SshAssertionMessages.SSH_NO_SUCH_PART_ERROR + ",server:" + getHostName(context, assertion)+ ",error:" + e.getMessage()}, e);
+                logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                        new String[] {SshAssertionMessages.SSH_NO_SUCH_PART_ERROR + ",server:" + getHostName(context, assertion)+ ",error:" + ExceptionUtils.getMessage(e)},
+                        ExceptionUtils.getDebugException(e));
                 return AssertionStatus.FAILED;
             } catch (ScpException e) {
                 if (ExceptionUtils.getMessage(e).contains("SSH_FX_NO_SUCH_FILE")){
-                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { SshAssertionMessages.SSH_DIR_DOESNT_EXIST_ERROR + ",server:" + getHostName(context, assertion)+ ",error:" + e.getMessage()}, e);
+                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                            new String[] { SshAssertionMessages.SSH_DIR_DOESNT_EXIST_ERROR + ",server:" + getHostName(context, assertion)+ ",error:" + ExceptionUtils.getMessage(e)},
+                            ExceptionUtils.getDebugException(e));
                 } else{
-                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { SshAssertionMessages.SSH_EXCEPTION_ERROR + ",server:" + getHostName(context, assertion)+ ",error:"  + e.getMessage()}, e);
+                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                            new String[] { SshAssertionMessages.SSH_EXCEPTION_ERROR + ",server:" + getHostName(context, assertion)+ ",error:"  + ExceptionUtils.getMessage(e)},
+                            ExceptionUtils.getDebugException(e));
                 }
                 return AssertionStatus.FAILED;
             } catch (SftpException e) {
                 if (ExceptionUtils.getMessage(e).contains("SSH_FX_NO_SUCH_FILE")){
-                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { SshAssertionMessages.SSH_DIR_DOESNT_EXIST_ERROR + ",server:" + getHostName(context, assertion)+ ",error:" + e.getMessage()}, e);
+                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                            new String[] { SshAssertionMessages.SSH_DIR_DOESNT_EXIST_ERROR + ",server:" + getHostName(context, assertion)+ ",error:" + ExceptionUtils.getMessage(e)},
+                            ExceptionUtils.getDebugException(e));
                 } else{
-                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { SshAssertionMessages.SSH_EXCEPTION_ERROR + ",server:" + getHostName(context, assertion)+ ",error:"  + e.getMessage()}, e);
+                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                            new String[] { SshAssertionMessages.SSH_EXCEPTION_ERROR + ",server:" + getHostName(context, assertion)+ ",error:"  + ExceptionUtils.getMessage(e)},
+                            ExceptionUtils.getDebugException(e));
                 }
                 return AssertionStatus.FAILED;
             } catch (IOException e) {
-                logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { SshAssertionMessages.SSH_IO_EXCEPTION + ",server:" + getHostName(context, assertion) + ",error:" + e.getMessage()}, e);
+                logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                        new String[] { SshAssertionMessages.SSH_IO_EXCEPTION + ",server:" + getHostName(context, assertion) + ",error:" + ExceptionUtils.getMessage(e)},
+                        ExceptionUtils.getDebugException(e));
                 logger.log(Level.WARNING, "SFTP Route Assertion IO error: " + e, ExceptionUtils.getDebugException(e));
                 return AssertionStatus.FAILED;
             } finally {
@@ -226,20 +238,26 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             return AssertionStatus.NONE;
         } catch(IOException ioe) {
             if (ExceptionUtils.getMessage(ioe).startsWith("Malformed SSH")){
-                logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {SshAssertionMessages.SSH_CERT_ISSUE_EXCEPTION, ioe.getMessage()}, ioe);
+                logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                        new String[] {SshAssertionMessages.SSH_CERT_ISSUE_EXCEPTION, ExceptionUtils.getMessage(ioe)},
+                        ExceptionUtils.getDebugException(ioe));
                 logger.log(Level.WARNING, SshAssertionMessages.SSH_CERT_ISSUE_EXCEPTION);
             } else if ( ioe instanceof SocketException ){
-                logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Socket Exception for SFTP connection. Ensure the timeout entered is valid" + ioe.getMessage()}, ioe);
-                logger.log(Level.WARNING, SshAssertionMessages.SSH_SOCKET_EXCEPTION +ioe,new String[] {host, String.valueOf(port), username});
+                logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                        new String[] {"Socket Exception for SSH connection. Ensure the timeout entered is valid: " + ExceptionUtils.getMessage(ioe)},
+                        ExceptionUtils.getDebugException(ioe));
+                logger.log(Level.WARNING, SshAssertionMessages.SSH_SOCKET_EXCEPTION  + ioe, new String[] {host, String.valueOf(port), username});
             } else {
-                logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"IO Exception... SFTP connection establishment failed. Ensure the server trusted cert is valid" + ioe.getMessage()}, ioe);
-                logger.log(Level.WARNING, SshAssertionMessages.SSH_CONNECTION_EXCEPTION +ioe,new String[] {host, String.valueOf(port), username});
+                logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                        new String[] {"IO Exception: SSH connection establishment failed. Ensure the server trusted cert is valid: " + ExceptionUtils.getMessage(ioe)},
+                        ExceptionUtils.getDebugException(ioe));
+                logger.log(Level.WARNING, SshAssertionMessages.SSH_CONNECTION_EXCEPTION + ioe, new String[] {host, String.valueOf(port), username});
             }
             return AssertionStatus.FAILED;
         } catch(Exception e) {
-            logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {e.getMessage()}, e);
+            logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             logger.log(Level.WARNING, SshAssertionMessages.SSH_CONNECTION_EXCEPTION, new String[] {host, String.valueOf(port), username});
-            logger.log(Level.WARNING, "SFTP Route Assertion error: " + e, ExceptionUtils.getDebugException(e));
+            logger.log(Level.WARNING, "SSH2 Route Assertion error: " + e, ExceptionUtils.getDebugException(e));
             return AssertionStatus.FAILED;
         } finally {
             if(sshClient != null) {
