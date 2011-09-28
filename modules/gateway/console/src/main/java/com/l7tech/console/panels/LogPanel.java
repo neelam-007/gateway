@@ -743,6 +743,13 @@ public class LogPanel extends JPanel {
 
             controlPanel.requestIdLabel.setEnabled(messageAuditSearchEnabled);
             controlPanel.requestIdTextField.setEnabled(messageAuditSearchEnabled);
+
+            // prevent auto refresh from happening if user switches to time range instead of duration
+            if(controlPanel.durationButton.isSelected()){
+                getLogsRefreshTimer().restart();
+            }else if (getLogsRefreshTimer().isRunning()){
+                getLogsRefreshTimer().stop();
+            }
         }
     }
 
