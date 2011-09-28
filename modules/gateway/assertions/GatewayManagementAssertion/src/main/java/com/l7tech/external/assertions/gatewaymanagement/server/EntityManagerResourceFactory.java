@@ -10,7 +10,6 @@ import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.RoleAwareEntityManager;
-import com.l7tech.objectmodel.StaleUpdateException;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.util.Either;
@@ -80,6 +79,10 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
                 try {
                     final EntityBag<E> entityBag = fromResourceAsBag( resource );
                     for ( PersistentEntity entity : entityBag ) {
+                        if ( entity.getVersion() == VERSION_NOT_PRESENT ) {
+                            entity.setVersion( 0 );
+                        }
+
                         if ( entity.getOid() != PersistentEntity.DEFAULT_OID ||
                              (entity.getVersion() != 0 && entity.getVersion() != 1) ) { // some entities initialize the version to 1
                             throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid identity or version");
@@ -163,20 +166,17 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
 
                     if ( resource instanceof ManagedObject ) {
                         final ManagedObject managedResource = (ManagedObject) resource;
-                        setIdentifier( newEntityBag.getEntity(), managedResource.getId() );
+                        setIdentifier( newEntityBag.getEntity(), managedResource.getId(), false );
                         setVersion( newEntityBag.getEntity(), managedResource.getVersion() );
                     }
 
                     updateEntityBag( oldEntityBag, newEntityBag );
 
-                    if ( oldEntityBag.getEntity().getOid() != PersistentEntity.DEFAULT_OID &&
-                            oldEntityBag.getEntity().getOid() != newEntityBag.getEntity().getOid() ) {
-                        throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "identifier mismatch" );
-                    }
+                    verifyIdentifier( oldEntityBag.getEntity().getOid(),
+                                      newEntityBag.getEntity().getOid() );
 
-                    if ( oldEntityBag.getEntity().getVersion() != newEntityBag.getEntity().getVersion() ) {
-                        throw new StaleUpdateException();
-                    }
+                    verifyVersion( oldEntityBag.getEntity().getVersion(),
+                                   newEntityBag.getEntity().getVersion() );
 
                     checkPermitted( OperationType.UPDATE, null, newEntityBag.getEntity() );
 
@@ -230,6 +230,8 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
     }
 
     //- PROTECTED
+
+    protected static final int VERSION_NOT_PRESENT = Integer.MIN_VALUE;
 
     /**
      * Convert the given entity to a resource.
@@ -640,32 +642,47 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
     }
 
     /**
-     * Set the version for then entity from the given resource version.
+     * Verify that the incoming identifier matches the expected value (if present)
      *
-     * @param entity The target entity
-     * @param version The resource identifier
-     * @throws InvalidResourceException If the given identifier is not valid
+     * @param currentId The current identifier for the resource
+     * @param updateId The incoming identifier for the resource (may be PersistentEntity.DEFAULT_OID)
+     * @throws InvalidResourceException If the identifier is present and does not match
+     * @see PersistentEntity#DEFAULT_OID
      */
-    protected final void setVersion( final PersistentEntity entity,
-                                     final Integer version ) throws InvalidResourceException {
-        setVersion( entity, version, true );
+    protected final void verifyIdentifier( final long currentId,
+                                           final long updateId ) throws InvalidResourceException {
+        if ( currentId != PersistentEntity.DEFAULT_OID &&
+             updateId != PersistentEntity.DEFAULT_OID &&
+             currentId != updateId ) {
+            throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "identifier mismatch" );
+        }
     }
 
     /**
-     * Set the version for then entity from the given resource version.
+     * Set the version for the entity from the given resource version (if present)
      *
      * @param entity The target entity
-     * @param version The resource identifier
-     * @param required Is the identifier required
-     * @throws InvalidResourceException If the given identifier is not valid
+     * @param version The resource identifier (may be null)
+     * @see #VERSION_NOT_PRESENT
      */
     protected final void setVersion( final PersistentEntity entity,
-                                     final Integer version,
-                                     final boolean required ) throws InvalidResourceException {
-        if ( version != null ) {
-            entity.setVersion( version );
-        } else if ( required ) {
-            throw new InvalidResourceException(InvalidResourceException.ExceptionType.MISSING_VALUES, "missing version");
+                                     final Integer version ) {
+        entity.setVersion( optional(version).orSome(VERSION_NOT_PRESENT) );
+    }
+
+    /**
+     * Verify that the incoming version matches the expected value (if present)
+     *
+     * @param currentVersion The current version for the resource
+     * @param updateVersion The incoming version for the resource (may be VERSION_NOT_PRESENT)
+     * @throws InvalidResourceException If the version is present and does not match
+     * @see #VERSION_NOT_PRESENT
+     */
+    protected final void verifyVersion( final int currentVersion,
+                                        final int updateVersion ) throws InvalidResourceException {
+        if ( updateVersion != VERSION_NOT_PRESENT &&
+             currentVersion != updateVersion ) {
+            throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid version");
         }
     }
 

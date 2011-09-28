@@ -58,6 +58,7 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
     @Override
     public synchronized void update(ET entity) throws UpdateException {
         if (entity.getOid() == PersistentEntity.DEFAULT_OID || entity.getId() == null) throw new IllegalArgumentException();
+        entity.setVersion( entity.getVersion() + 1 );
         entities.put(entity.getOid(), entity);
         headers.put(entity.getOid(), header(entity));
     }

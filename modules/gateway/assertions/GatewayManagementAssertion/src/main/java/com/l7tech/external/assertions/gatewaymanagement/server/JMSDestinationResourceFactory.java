@@ -124,7 +124,7 @@ public class JMSDestinationResourceFactory extends EntityManagerResourceFactory<
             jmsConnection.setTemplate( jmsConnectionMO.isTemplate() );
         }
         setIdentifier( jmsConnection, jmsConnectionMO.getId(), false );
-        setVersion( jmsConnection, jmsConnectionMO.getVersion(), false );
+        setVersion( jmsConnection, jmsConnectionMO.getVersion() );
         jmsConnection.properties( asProperties( jmsConnectionMO.getContextPropertiesTemplate() ) );
         setProperties( jmsConnection, jmsConnectionMO.getProperties(), JmsConnection.class );
 
@@ -141,15 +141,9 @@ public class JMSDestinationResourceFactory extends EntityManagerResourceFactory<
         final JmsEndpoint newJmsEndpoint = newJmsEntityBag.getJmsEndpoint();
         final JmsConnection newJmsConnection = newJmsEntityBag.getJmsConnection();
 
-        // Validate identity and version
-        if ( oldJmsConnection.getOid() != PersistentEntity.DEFAULT_OID &&
-             oldJmsConnection.getOid() != newJmsConnection.getOid() ) {
-            throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "identifier mismatch");
-        }
-
-        if ( oldJmsConnection.getVersion() != newJmsConnection.getVersion() ) {
-            throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid version");
-        }
+        // Validate identity and version (the endpoint is validated as the main entity)
+        verifyIdentifier( oldJmsConnection.getOid(), newJmsConnection.getOid() );
+        verifyVersion( oldJmsConnection.getVersion(), newJmsConnection.getVersion() );
 
         // Copy endpoint properties that allow update
         oldJmsEndpoint.setName( newJmsEndpoint.getName() );
