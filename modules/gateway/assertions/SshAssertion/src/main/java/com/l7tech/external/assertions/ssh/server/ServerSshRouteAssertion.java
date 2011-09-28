@@ -197,34 +197,34 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                 }
             } catch (NoSuchPartException e) {
                 logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                        new String[] {SshAssertionMessages.SSH_NO_SUCH_PART_ERROR + ",server:" + getHostName(context, assertion)+ ",error:" + ExceptionUtils.getMessage(e)},
+                        new String[] {SshAssertionMessages.SSH_NO_SUCH_PART_ERROR + ", server: " + getHostName(context, assertion)+ ", error: " + ExceptionUtils.getMessage(e)},
                         ExceptionUtils.getDebugException(e));
                 return AssertionStatus.FAILED;
             } catch (ScpException e) {
-                if (ExceptionUtils.getMessage(e).contains("SSH_FX_NO_SUCH_FILE")){
+                if (ExceptionUtils.getMessage(e).contains("No such file")){
                     logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                            new String[] { SshAssertionMessages.SSH_DIR_DOESNT_EXIST_ERROR + ",server:" + getHostName(context, assertion)+ ",error:" + ExceptionUtils.getMessage(e)},
+                            new String[] { SshAssertionMessages.SSH_DIR_DOESNT_EXIST_ERROR + ", server: " + getHostName(context, assertion)+ ", error: " + ExceptionUtils.getMessage(e)},
                             ExceptionUtils.getDebugException(e));
                 } else{
                     logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                            new String[] { SshAssertionMessages.SSH_EXCEPTION_ERROR + ",server:" + getHostName(context, assertion)+ ",error:"  + ExceptionUtils.getMessage(e)},
+                            new String[] { SshAssertionMessages.SSH_EXCEPTION_ERROR + ", server: " + getHostName(context, assertion)+ ", error: "  + ExceptionUtils.getMessage(e)},
                             ExceptionUtils.getDebugException(e));
                 }
                 return AssertionStatus.FAILED;
             } catch (SftpException e) {
-                if (ExceptionUtils.getMessage(e).contains("SSH_FX_NO_SUCH_FILE")){
+                if (ExceptionUtils.getMessage(e).contains("No such file")){
                     logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                            new String[] { SshAssertionMessages.SSH_DIR_DOESNT_EXIST_ERROR + ",server:" + getHostName(context, assertion)+ ",error:" + ExceptionUtils.getMessage(e)},
+                            new String[] { SshAssertionMessages.SSH_DIR_DOESNT_EXIST_ERROR + ", server: " + getHostName(context, assertion)+ ", error: " + ExceptionUtils.getMessage(e)},
                             ExceptionUtils.getDebugException(e));
                 } else{
                     logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                            new String[] { SshAssertionMessages.SSH_EXCEPTION_ERROR + ",server:" + getHostName(context, assertion)+ ",error:"  + ExceptionUtils.getMessage(e)},
+                            new String[] { SshAssertionMessages.SSH_EXCEPTION_ERROR + ", server: " + getHostName(context, assertion)+ ", error: "  + ExceptionUtils.getMessage(e)},
                             ExceptionUtils.getDebugException(e));
                 }
                 return AssertionStatus.FAILED;
             } catch (IOException e) {
                 logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                        new String[] { SshAssertionMessages.SSH_IO_EXCEPTION + ",server:" + getHostName(context, assertion) + ",error:" + ExceptionUtils.getMessage(e)},
+                        new String[] { SshAssertionMessages.SSH_IO_EXCEPTION + ", server: " + getHostName(context, assertion) + ", error: " + ExceptionUtils.getMessage(e)},
                         ExceptionUtils.getDebugException(e));
                 logger.log(Level.WARNING, "SFTP Route Assertion IO error: " + e, ExceptionUtils.getDebugException(e));
                 return AssertionStatus.FAILED;
