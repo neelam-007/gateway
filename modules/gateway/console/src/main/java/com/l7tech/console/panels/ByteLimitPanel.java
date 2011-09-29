@@ -9,6 +9,7 @@ import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
+import java.text.MessageFormat;
 import java.util.EventListener;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
@@ -65,10 +66,22 @@ public class ByteLimitPanel extends JPanel {
 
         validator = new InputValidator(this,setMaxCheckbox.getText());
 
-
-        textBoxRule = validator.buildTextFieldNumberRangeValidationRule(resources.getString("max.bytes"),bytesTextBox,1,Integer.MAX_VALUE, false);
-        validator.addRule(textBoxRule);
         validator.constrainTextFieldToBeNonEmpty(resources.getString("max.bytes"),bytesTextBox,null);
+        validator.addRule(new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                try{
+                    long val = Long.parseLong(bytesTextBox.getText());
+                    if (val >= 1 && val <= Integer.MAX_VALUE){
+                        return null;
+                    }
+                }catch (NumberFormatException e){
+                    if (allowContextVars)
+                        return null;
+                }
+                return MessageFormat.format(resources.getString("override.value.error"),resources.getString("max.bytes"),1,Integer.MAX_VALUE);
+            }
+        });
 
         enableDisableComponents();
 
@@ -87,11 +100,6 @@ public class ByteLimitPanel extends JPanel {
         if(this.allowContextVars == allowContextVars)
             return;
         this.allowContextVars = allowContextVars;
-        validator.removeRule(textBoxRule);
-        if(!allowContextVars){
-            textBoxRule = validator.buildTextFieldNumberRangeValidationRule(resources.getString("max.bytes"),bytesTextBox,1,Integer.MAX_VALUE, false);
-            validator.addRule(textBoxRule);
-        }
     }
     /**
      *
