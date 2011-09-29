@@ -271,7 +271,7 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
     private void setData() {
         nameField.setText(configuration.getName() == null ? "" : configuration.getName().trim());
 
-        enabledCheckBox.setSelected(configuration.isActive());
+        enabledCheckBox.setSelected(configuration.getVersion() <=0 ? true : configuration.isActive());
 
         if(configuration.getPrivateKey() != null) {
             privateKeyRadioButton.setSelected(true);
