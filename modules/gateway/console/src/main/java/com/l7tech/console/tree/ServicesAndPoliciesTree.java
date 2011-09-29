@@ -6,6 +6,9 @@ import com.l7tech.console.tree.servicesAndPolicies.*;
 import com.l7tech.console.util.Refreshable;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
+import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdateAny;
 import com.l7tech.gateway.common.service.ServiceHeader;
@@ -17,6 +20,12 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.OrganizationHeader;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.util.ArrayUtils;
+import com.l7tech.util.Functions.Binary;
+import com.l7tech.util.Functions.Unary;
+import static com.l7tech.util.Functions.reduce;
+import com.l7tech.util.Option;
+import static com.l7tech.util.Option.optional;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.tree.*;
@@ -35,7 +44,7 @@ import java.util.logging.Logger;
  * Class ServiceTree is the specialized <code>JTree</code> that
  * handles services and policies
  *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
+ * @author Emil Marceta
  */
 public class ServicesAndPoliciesTree extends JTree implements Refreshable{
     static Logger log = Logger.getLogger(ServicesAndPoliciesTree.class.getName());
@@ -315,7 +324,7 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
                 new DeleteServiceAction((ServiceNode)node, confirmationEnabled).actionPerformed(null);
             } else if (node instanceof PolicyEntityNodeAlias) {
                 new DeletePolicyAliasAction((PolicyEntityNodeAlias)node, confirmationEnabled).actionPerformed(null);
-            } else if (node instanceof EntityWithPolicyNode) {
+            } else if (node instanceof PolicyEntityNode) {
                 new DeletePolicyAction((PolicyEntityNode)node, confirmationEnabled).actionPerformed(null);
             } else if (node instanceof FolderNode) {
                 FolderNode folderNode = (FolderNode) node;
@@ -449,38 +458,66 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
      * If a client uses this method in a once off initialization for cut and paste actions there is the chance that
      * the clipboard is not yet ready, in which case null will be returned.
      *
-     * @param clipboardActionType Specify whether you want to 'Cut' or 'Paste'. Currently all that is supported
+     * @param clipboardActionType Specify whether you want to 'Copy', 'Cut', or 'Paste'.
      * @return Action if the current user has the correct permissions, otherwise null
      */
-    public static Action getSecuredAction( final ClipboardActionType clipboardActionType ) {
+    public static Action getSecuredAction( @NotNull final ClipboardActionType clipboardActionType ) {
+        return getSecuredAction( clipboardActionType, EntityType.FOLDER );
+    }
+
+    /**
+     * Get the standard global cut or paste action, but only if the current user has permissions to carry out
+     * the supplied operationType on the supplied entityType.
+     * Currently only supports FOLDER and UPDATE
+     * Use this method when you need a secured Action which is not part of the SecureAction hierarchy
+     * If a client uses this method in a once off initialization for cut and paste actions there is the chance that
+     * the clipboard is not yet ready, in which case null will be returned.
+     *
+     * <p>The entity type for a cut or paste must be FOLDER, since these actions only affect folders</p>
+     *
+     * @param clipboardActionType Specify whether you want to 'Copy', 'Cut', or 'Paste'.
+     * @param entityType The applicable entity type.
+     * @return Action if the current user has the correct permissions, otherwise null
+     */
+    public static Action getSecuredAction( @NotNull final ClipboardActionType clipboardActionType,
+                                           @NotNull final EntityType entityType ) {
+        assert clipboardActionType==ClipboardActionType.COPY || entityType==EntityType.FOLDER : "Entity type must Folder for Cut/Paste";
         if (!ClipboardActions.isSystemClipboardAvailable()) return null;
         if (!Registry.getDefault().isAdminContextPresent()) return null;
 
-        if ( !isUserAuthorizedToUpdateFolders() ) return null;
-
         switch(clipboardActionType) {
             case CUT:
+                if (!isUserAuthorizedForEntityClipboardUse( EntityType.FOLDER )) return null;
                 return ClipboardActions.getGlobalCutAction();
             case PASTE:
+                if ( !isUserAuthorizedForEntityClipboardUse( EntityType.FOLDER ) &&
+                     !isUserAuthorizedForEntityClipboardUse( EntityType.SERVICE ) &&
+                     !isUserAuthorizedForEntityClipboardUse( EntityType.POLICY ) ) return null;
                 return ClipboardActions.getGlobalPasteAction();
             case COPY:
+                if (!isUserAuthorizedForEntityClipboardUse( entityType )) return null;
                 return ClipboardActions.getGlobalCopyAction();
             default:
                 throw new IllegalArgumentException();
         }
     }
 
-    /**
-     * The user can update folders if they have the permission to update any entity of type folder
-     * 
-     * @return true if authorized, false otherwise
-     */
-    public static boolean isUserAuthorizedToUpdateFolders(){
-        if (!Registry.getDefault().isAdminContextPresent()) return false;
-        
-        SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
-        AttemptedUpdateAny attemptedUpdate = new AttemptedUpdateAny(EntityType.FOLDER);
-        return securityProvider.hasPermission(attemptedUpdate);
+    private static boolean isUserAuthorizedForEntityClipboardUse( final EntityType entityType ) {
+        final Registry registry = Registry.getDefault();
+        if ( registry==null || !registry.isAdminContextPresent()) return false;
+
+        final AttemptedOperation operation;
+        switch( entityType ) {
+            case FOLDER:
+                operation = new AttemptedUpdateAny(entityType);
+                break;
+            default:
+                operation = new AttemptedCreate(entityType);
+                break;
+        }
+
+        final SecurityProvider securityProvider = registry.getSecurityProvider();
+        return securityProvider.hasPermission( operation );
     }
 
     public void setIgnoreCurrentClipboard(boolean set){
@@ -489,6 +526,51 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
 
     public boolean getIgnoreCurrentclipboard(){
         return ignoreCurrentClipboard;
+    }
+
+    /**
+     * Get smart selected nodes if permitted.
+     *
+     * @see #getSmartSelectedNodes
+     */
+    public List<AbstractTreeNode> getSmartSelectedNodesForClipboard() {
+        final List<AbstractTreeNode> nodes = getSmartSelectedNodes();
+
+        final Unary<Boolean,EntityHeader> cutOrCopyPermission = new Unary<Boolean,EntityHeader>(){
+            @Override
+            public Boolean call( final EntityHeader entityHeader ) {
+                return entityHeader.getType()!=null && isUserAuthorizedForEntityClipboardUse( entityHeader.getType() );
+            }
+        };
+
+        return reduce(
+                nodes,
+                new ArrayList<AbstractTreeNode>(),
+                new Binary<List<AbstractTreeNode>,List<AbstractTreeNode>,AbstractTreeNode>() {
+            @Override
+            public List<AbstractTreeNode> call( final List<AbstractTreeNode> abstractTreeNodes,
+                                                final AbstractTreeNode abstractTreeNode ) {
+                if ( abstractTreeNode instanceof EntityHeaderNode ) {
+                    final EntityHeaderNode<?> headerNode = (EntityHeaderNode<?>) abstractTreeNode;
+                    final Option<EntityHeader> entityHeader = optional( headerNode.getEntityHeader() );
+                    if ( !entityHeader.exists( cutOrCopyPermission ) ) {
+                        return Collections.emptyList();
+                    } else {
+                        abstractTreeNodes.add( abstractTreeNode );
+                    }
+                } else if ( abstractTreeNode instanceof FolderNodeBase ) {
+                    if ( !isUserAuthorizedForEntityClipboardUse( EntityType.FOLDER ) ) {
+                        return Collections.emptyList();
+                    } else {
+                        abstractTreeNodes.add( abstractTreeNode );
+                    }
+                } else if ( abstractTreeNode != null ) {
+                    assert false : "Unexpected tree node type " + abstractTreeNode.getClass();
+                }
+
+                return abstractTreeNodes;
+            }
+        } );
     }
 
     /**
@@ -503,7 +585,7 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
         if (selectedPaths == null) return new ArrayList<AbstractTreeNode>(0);
         else selectedNodes = new ArrayList<AbstractTreeNode>(selectedPaths.length);
 
-        HashSet<Object> nodesToTransfer = new HashSet<Object>(selectedPaths.length);
+        Set<Object> nodesToTransfer = new HashSet<Object>(selectedPaths.length);
         for(TreePath path : selectedPaths) {
             nodesToTransfer.add(path.getLastPathComponent());
         }

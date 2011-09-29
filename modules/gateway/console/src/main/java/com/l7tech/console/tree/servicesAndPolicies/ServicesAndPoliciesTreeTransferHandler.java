@@ -57,14 +57,15 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
     @Override
     protected Transferable createTransferable(JComponent c) {
         if(c instanceof ServicesAndPoliciesTree) {
-            //Can only drag and drop if the user is admin or has 'Manage Webservices' role
-            if(!ServicesAndPoliciesTree.isUserAuthorizedToUpdateFolders()) return null;
+            final ServicesAndPoliciesTree servicesAndPoliciesTree = (ServicesAndPoliciesTree) c;
 
-            ServicesAndPoliciesTree servicesAndPoliciesTree = (ServicesAndPoliciesTree) c;            
-            List<AbstractTreeNode> transferNodes = servicesAndPoliciesTree.getSmartSelectedNodes();
+            //get selections with permission check
+            final List<AbstractTreeNode> transferNodes =
+                    servicesAndPoliciesTree.getSmartSelectedNodesForClipboard();
+
             //don't let the rootnode be dragged or appear to be draggable
-            for(AbstractTreeNode atn : transferNodes){
-                if(atn instanceof RootNode){
+            for( final AbstractTreeNode atn : transferNodes ){
+                if( atn instanceof RootNode ){
                     return null;
                 } else if ( atn instanceof PolicyEntityNode &&
                         !((PolicyEntityNode)atn).getEntityHeader().isAlias() &&

@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.console.tree;
 
 import com.l7tech.console.MainWindow;
@@ -8,6 +5,7 @@ import com.l7tech.console.action.*;
 import com.l7tech.console.tree.servicesAndPolicies.PolicyNodeFilter;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gui.util.ImageCache;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
@@ -102,7 +100,7 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
         actions.add(new RefreshTreeNodeAction(this));
 
         Action secureCut = ServicesAndPoliciesTree.getSecuredAction(ServicesAndPoliciesTree.ClipboardActionType.CUT);
-        Action secureCopy = ServicesAndPoliciesTree.getSecuredAction(ServicesAndPoliciesTree.ClipboardActionType.COPY);
+        Action secureCopy = ServicesAndPoliciesTree.getSecuredAction(ServicesAndPoliciesTree.ClipboardActionType.COPY, EntityType.POLICY);
         if(secureCut != null){
             actions.add(secureCut);
         }

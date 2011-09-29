@@ -1,10 +1,7 @@
-/**
- * Copyright (C) 2008, Layer 7 Technologies Inc.
- */
 package com.l7tech.console.tree;
 
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.PolicyHeader;
-import com.l7tech.policy.PolicyType;
 import com.l7tech.console.action.*;
 
 import javax.swing.*;
@@ -12,7 +9,6 @@ import java.util.Comparator;
 import java.util.Collection;
 import java.util.ArrayList;
 
-@SuppressWarnings( { "serial" } )
 public class PolicyEntityNodeAlias extends PolicyEntityNode{
     public PolicyEntityNodeAlias(PolicyHeader e) {
         super(e);
@@ -31,7 +27,7 @@ public class PolicyEntityNodeAlias extends PolicyEntityNode{
         actions.add(new RefreshTreeNodeAction(this));
 
         Action secureCut = ServicesAndPoliciesTree.getSecuredAction(ServicesAndPoliciesTree.ClipboardActionType.CUT);
-        Action secureCopy = ServicesAndPoliciesTree.getSecuredAction(ServicesAndPoliciesTree.ClipboardActionType.COPY);
+        Action secureCopy = ServicesAndPoliciesTree.getSecuredAction(ServicesAndPoliciesTree.ClipboardActionType.COPY, EntityType.POLICY_ALIAS);
         if(secureCut != null){
             actions.add(secureCut);
         }
