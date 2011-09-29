@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.EntityUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.log.SinkConfiguration;
@@ -197,9 +198,7 @@ public class LogSinkManagerWindow extends JDialog {
         SinkConfiguration sinkConfiguration = logSinkTable.getSelectedConnector();
         SinkConfiguration newSinkConfiguration = new SinkConfiguration();
         newSinkConfiguration.copyFrom(sinkConfiguration);
-        newSinkConfiguration.setOid(SinkConfiguration.DEFAULT_OID);
-        newSinkConfiguration.setName("Copy of "+sinkConfiguration.getName());
-        newSinkConfiguration.setVersion(0);
+        EntityUtils.updateCopy( newSinkConfiguration );
         editAndSave(newSinkConfiguration, true);
     }
 

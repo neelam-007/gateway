@@ -3,6 +3,7 @@ package com.l7tech.console.action;
 import com.l7tech.console.panels.*;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.IdentityProviderNode;
+import com.l7tech.console.util.EntityUtils;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 
 import javax.swing.*;
@@ -28,10 +29,7 @@ public class CopyFederatedIdentityProviderAction extends CopyIdentityProviderAct
     protected void performAction() {
         final FederatedIdentityProviderConfig fipConfig =
                 new FederatedIdentityProviderConfig(getIdentityProviderConfig((EntityHeaderNode) node));
-        fipConfig.setOid(FederatedIdentityProviderConfig.DEFAULT_OID);
-        fipConfig.setVersion( 0 );
-        fipConfig.setName("Copy of "+ fipConfig.getName());
-
+        EntityUtils.updateCopy( fipConfig );
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {

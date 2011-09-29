@@ -78,6 +78,12 @@ public class BindOnlyLdapGeneralPanel extends IdentityProviderStepPanel {
             ldapUrlListPanel.setUrlList(config.getLdapUrl());
             dnPrefixField.setText(config.getBindPatternPrefix());
             dnSuffixField.setText(config.getBindPatternSuffix());
+
+            // select name field for clone
+            if( config.getOid() == BindOnlyLdapIdentityProviderConfig.DEFAULT_OID) {
+                providerNameField.requestFocus();
+                providerNameField.selectAll();
+            }
         }
     }
 

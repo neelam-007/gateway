@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.EntityUtils;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
@@ -180,9 +181,7 @@ public class EmailListenerManagerWindow extends JDialog {
     private void doClone() {
         EmailListener emailListener = emailListenerTable.getSelectedEmailListener();
         EmailListener newEmailListener = new EmailListener(emailListener);
-        newEmailListener.setOid(EmailListener.DEFAULT_OID);
-        newEmailListener.setName("Copy of "+emailListener.getName());
-        newEmailListener.setVersion(0);
+        EntityUtils.updateCopy( newEmailListener );
         editAndSave(newEmailListener, true);
     }
 

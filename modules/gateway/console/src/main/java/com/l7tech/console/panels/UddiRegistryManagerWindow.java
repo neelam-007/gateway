@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.EntityUtils;
 import com.l7tech.objectmodel.*;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -130,10 +131,8 @@ public class UddiRegistryManagerWindow extends JDialog {
     private void doClone() {
         UDDIRegistry uddiRegistry = uddiRegistryTable.getSelectedUddiRegistry();
         UDDIRegistry newUddiRegistry = new UDDIRegistry();
-        newUddiRegistry.copyFrom(uddiRegistry);
-        newUddiRegistry.setOid(UDDIRegistry.DEFAULT_OID);
-        newUddiRegistry.setName("Copy of "+ uddiRegistry.getName());
-        newUddiRegistry.setVersion(0);
+        newUddiRegistry.copyFrom( uddiRegistry );
+        EntityUtils.updateCopy( newUddiRegistry );
         editAndSave(newUddiRegistry, true);
     }
 

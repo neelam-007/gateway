@@ -5,6 +5,7 @@ import com.l7tech.console.panels.CreateIdentityProviderWizard;
 import com.l7tech.console.panels.Wizard;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.IdentityProviderNode;
+import com.l7tech.console.util.EntityUtils;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 
 import javax.swing.*;
@@ -30,9 +31,7 @@ public class CopyLdapProviderAction extends CopyIdentityProviderAction<LdapIdent
     @Override
     protected void performAction() {
         final LdapIdentityProviderConfig newLdap = new LdapIdentityProviderConfig( getIdentityProviderConfig((EntityHeaderNode) node) );
-        newLdap.setOid( LdapIdentityProviderConfig.DEFAULT_OID );
-        newLdap.setVersion( 0 );
-        newLdap.setName("Copy of "+newLdap.getName());
+        EntityUtils.updateCopy( newLdap );
         SwingUtilities.invokeLater( new Runnable() {
             @Override
             public void run() {

@@ -4,6 +4,7 @@ import com.l7tech.common.io.PortRange;
 import com.l7tech.common.io.PortRanges;
 import com.l7tech.console.action.ManageResolutionConfigurationAction;
 import com.l7tech.console.util.CipherSuiteGuiUtil;
+import com.l7tech.console.util.EntityUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.transport.SsgConnector;
@@ -192,10 +193,8 @@ public class SsgConnectorManagerWindow extends JDialog {
             return;
 
         SsgConnector newConnector = connector.getCopy();
-        newConnector.setOid(SsgConnector.DEFAULT_OID);
-        newConnector.setName("Copy of " + connector.getName());
-        newConnector.setVersion(0);
-        editAndSave(newConnector, newConnector.getReadOnlyCopy(), true);
+        EntityUtils.updateCopy( newConnector );
+        editAndSave( newConnector, newConnector.getReadOnlyCopy(), true );
 
     }
 

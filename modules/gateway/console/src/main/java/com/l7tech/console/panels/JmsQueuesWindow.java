@@ -1,9 +1,6 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- */
-
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.EntityUtils;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import static com.l7tech.objectmodel.EntityType.JMS_ENDPOINT;
@@ -369,14 +366,11 @@ public class JmsQueuesWindow extends JDialog {
                         if (currJmsTuple != null) {
                             JmsConnection newConnection = new JmsConnection();
                             newConnection.copyFrom(currJmsTuple.getConnection());
-                            newConnection.setOid(JmsConnection.DEFAULT_OID);
-                            newConnection.setVersion(0);
+                            EntityUtils.updateCopy( newConnection );
 
                             JmsEndpoint newEndpoint = new JmsEndpoint();
                             newEndpoint.copyFrom(currJmsTuple.getEndpoint());
-                            newEndpoint.setOid(JmsConnection.DEFAULT_OID);
-                            newEndpoint.setName("Copy of " +currJmsTuple.getEndpoint().getName());
-                            newEndpoint.setVersion(0);
+                            EntityUtils.updateCopy( newEndpoint );
 
                             final JmsQueuePropertiesDialog pd = JmsQueuePropertiesDialog.createInstance(
                                     JmsQueuesWindow.this, newConnection, newEndpoint, false);

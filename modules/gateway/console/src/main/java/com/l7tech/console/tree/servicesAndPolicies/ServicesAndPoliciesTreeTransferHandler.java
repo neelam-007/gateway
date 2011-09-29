@@ -1,42 +1,40 @@
 package com.l7tech.console.tree.servicesAndPolicies;
 
-import com.l7tech.console.action.EditPolicyAction;
-import com.l7tech.console.action.EditPolicyProperties;
-import com.l7tech.console.action.EditServiceProperties;
-import com.l7tech.console.action.PasteAsAliasAction;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.panels.PolicyPropertiesPanel;
 import com.l7tech.console.panels.ServicePropertiesDialog;
 import com.l7tech.console.tree.*;
+import com.l7tech.console.util.EntityUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.admin.AliasAdmin;
-import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdateAll;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
+import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.*;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyAlias;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.util.ExceptionUtils;
-import org.apache.commons.lang.mutable.*;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import java.awt.*;
-import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Vector;
@@ -67,6 +65,10 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
             //don't let the rootnode be dragged or appear to be draggable
             for(AbstractTreeNode atn : transferNodes){
                 if(atn instanceof RootNode){
+                    return null;
+                } else if ( atn instanceof PolicyEntityNode &&
+                        !((PolicyEntityNode)atn).getEntityHeader().isAlias() &&
+                        ((PolicyEntityNode)atn).getEntityHeader().getPolicyType()!=PolicyType.INCLUDE_FRAGMENT) {
                     return null;
                 }
             }
@@ -171,7 +173,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                         else{
                             // copy node
                             boolean success = copyNode(transferNode, newParent, tree);
-                            return success;
+                            if(!success)return success;
                         }
                     }
                 }
@@ -223,32 +225,42 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
         final Folder newParentFolder = newParent.getFolder();
         final OrganizationHeader oH = (OrganizationHeader) childObj;
         final FolderNode oldParent = (FolderNode)transferNode.getParent();
-        if(oH.isAlias()){
-            return copyAlias(newParent, tree, entity, oldParent);
-        }else if(entity instanceof PublishedService){
-            return copyService(newParent, tree, newParentFolder, (PublishedService) entity);
-        }else if(entity instanceof Policy){
-            return copyPolicy(newParent, tree, newParentFolder, (Policy) entity);
+        if (entity instanceof PublishedService){
+            if ( oH.isAlias() ) {
+                return copyAlias(newParent, tree, (PublishedService)entity, oldParent);
+            } else {
+                return copyService(newParent, tree, newParentFolder, (PublishedService) entity);
+            }
+        } else if(entity instanceof Policy){
+            if ( oH.isAlias() ) {
+                return copyAlias(newParent, tree, (Policy)entity, oldParent);
+            } else {
+                return copyPolicy( newParent, tree, newParentFolder, (Policy) entity );
+            }
         }
         return false;
     }
 
-    private boolean copyAlias(FolderNode newParent, ServicesAndPoliciesTree tree, Entity entity, FolderNode oldParent) {
+    private <FE extends NamedEntityImp & HasFolder> boolean copyAlias( final FolderNode newParent,
+                                                                       final ServicesAndPoliciesTree tree,
+                                                                       final FE entity,
+                                                                       final FolderNode oldParent) {
 
         //Make sure the folder in which they are being created is not the same the folder they original entities are in
         //this constraint is also enforced in MarkEntityToAliasAction and also in db
-
-        FolderHeader oldParentHeader = (FolderHeader) oldParent.getUserObject();
-        FolderHeader newParentHeader = (FolderHeader) newParent.getUserObject();
-        if(oldParentHeader.getOid() == newParentHeader.getOid()){
+        //entity.getFolder()
+        final Folder entityFolder = entity.getFolder();
+        final FolderHeader oldParentHeader = (FolderHeader) oldParent.getUserObject();
+        final FolderHeader newParentHeader = (FolderHeader) newParent.getUserObject();
+        if( entityFolder != null && entityFolder.getOid()==newParentHeader.getOid() ){
             DialogDisplayer.showMessageDialog(tree, "Cannot create alias in the same folder as original", "Create Error", JOptionPane.ERROR_MESSAGE, null);
             return false;
         }
 
-        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-        RootNode rootNode = (RootNode) model.getRoot();
-        long parentFolderOid = newParentHeader.getOid();
-        Folder parentFolder = ((FolderNode) newParent).getFolder();
+        final DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+        final RootNode rootNode = (RootNode) model.getRoot();
+        final long parentFolderOid = newParentHeader.getOid();
+        final Folder parentFolder = newParent.getFolder();
         //Create an alias of each node selected
 
         final OrganizationHeader header;
@@ -316,9 +328,8 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
 
     private boolean copyPolicy(final AbstractTreeNode parentNode, final ServicesAndPoliciesTree tree, final Folder newParentFolder, Policy policy) {
         Policy newPolicy = new Policy(policy);
-        newPolicy.setGuid(null);
-        newPolicy.setOid(Policy.DEFAULT_OID);
-        newPolicy.setName("Copy of "+policy.getName());
+        EntityUtils.updateCopy( newPolicy );
+        newPolicy.setGuid( null );
         newPolicy.setFolder(newParentFolder);
 
         final Frame mw = TopComponents.getInstance().getTopParent();
@@ -331,7 +342,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
             public void run() {
                 if (dlg.wasOKed()) {
                     Policy returnedPolicy = dlg.getValue();
-                    long oid = 0;
+                    long oid;
                     try {
                         oid = Registry.getDefault().getPolicyAdmin().savePolicy(returnedPolicy);
                         final AbstractTreeNode policyNode = TreeNodeFactory.asTreeNode(new PolicyHeader(returnedPolicy), RootNode.getComparator());
@@ -374,37 +385,48 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
 
     private boolean copyService(final AbstractTreeNode parentNode, final ServicesAndPoliciesTree tree, Folder newParentFolder, PublishedService service) {
 
-        PublishedService newService = new PublishedService(service);
-
-        newService.setOid(PublishedService.DEFAULT_OID);
-        newService.getPolicy().setGuid(null);
-        newService.getPolicy().setOid(Policy.DEFAULT_OID);
-        newService.setName("Copy of " + service.getName());
+        final PublishedService newService = new PublishedService(service);
+        EntityUtils.updateCopy( newService );
+        EntityUtils.updateCopy( newService.getPolicy() );
+        newService.getPolicy().setGuid( null );
         newService.setFolder(newParentFolder);
 
-        boolean hasTracePermission = Registry.getDefault().getSecurityProvider().hasPermission(new AttemptedUpdateAll(EntityType.SERVICE));
-        final Frame mw = TopComponents.getInstance().getTopParent();
-        final ServicePropertiesDialog dlg = new ServicePropertiesDialog(mw, newService, true, hasTracePermission);
-        dlg.pack();
-        Utilities.centerOnScreen(dlg);
-        dlg.selectNameField();
-        DialogDisplayer.display(dlg, new Runnable() {
-            public void run() {
-                if (dlg.wasOKed()) {
-                    PublishedService savedService = dlg.getService();
-                    final AbstractTreeNode serviceNode = TreeNodeFactory.asTreeNode(new ServiceHeader(savedService), RootNode.getComparator());
-                    DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
-                    model.insertNodeInto(serviceNode, parentNode, parentNode.getInsertPosition(serviceNode, RootNode.getComparator()));
-                    RootNode rootNode = (RootNode) model.getRoot();
-                    rootNode.addEntity(savedService.getOid(), serviceNode);
-                    tree.setSelectionPath(new TreePath(serviceNode.getPath()));
-                    model.nodeChanged(serviceNode);
-
-                    tree.filterTreeToDefault();
+        try {
+            final Registry registry = Registry.getDefault();
+            final boolean hasTracePermission = registry.getSecurityProvider().hasPermission(new AttemptedUpdateAll(EntityType.SERVICE));
+            final Frame mw = TopComponents.getInstance().getTopParent();
+            final Collection<ServiceDocument> documents = registry.getServiceManager().findServiceDocumentsByServiceID( service.getId() );
+            if ( documents != null ) {
+                for ( final ServiceDocument document : documents ) {
+                    EntityUtils.resetIdentity( document );
                 }
             }
-        });
-        return dlg.wasOKed();
+            final ServicePropertiesDialog dlg = new ServicePropertiesDialog(mw, newService, documents, true, hasTracePermission);
+            dlg.pack();
+            Utilities.centerOnParentWindow(dlg);
+            dlg.selectNameField();
+            DialogDisplayer.display(dlg, new Runnable() {
+                @Override
+                public void run() {
+                    if (dlg.wasOKed()) {
+                        PublishedService savedService = dlg.getService();
+                        final AbstractTreeNode serviceNode = TreeNodeFactory.asTreeNode(new ServiceHeader(savedService), RootNode.getComparator());
+                        DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
+                        model.insertNodeInto(serviceNode, parentNode, parentNode.getInsertPosition(serviceNode, RootNode.getComparator()));
+                        RootNode rootNode = (RootNode) model.getRoot();
+                        rootNode.addEntity(savedService.getOid(), serviceNode);
+                        tree.setSelectionPath(new TreePath(serviceNode.getPath()));
+                        model.nodeChanged(serviceNode);
+
+                        tree.filterTreeToDefault();
+                    }
+                }
+            });
+            return dlg.wasOKed();
+        } catch ( FindException e ) {
+            ErrorManager.getDefault().notify( Level.WARNING, e, "Error accessing service for copy." );
+            return false;
+        }
     }
 
 

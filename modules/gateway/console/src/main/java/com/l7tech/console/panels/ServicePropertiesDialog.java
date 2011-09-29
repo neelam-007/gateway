@@ -121,9 +121,21 @@ public class ServicePropertiesDialog extends JDialog {
     private Long lastModifiedTimeStamp;
     private String accessPointURL;
 
-    public ServicePropertiesDialog(Frame owner, PublishedService svc, boolean hasUpdatePermission, boolean hasTracePermission) {
-        super(owner, true);
+    public ServicePropertiesDialog( final Window owner,
+                                    final PublishedService svc,
+                                    final boolean hasUpdatePermission,
+                                    final boolean hasTracePermission ) {
+        this( owner, svc, null, hasUpdatePermission, hasTracePermission );
+    }
+
+    public ServicePropertiesDialog( final Window owner,
+                                    final PublishedService svc,
+                                    final Collection<ServiceDocument> serviceDocuments,
+                                    final boolean hasUpdatePermission,
+                                    final boolean hasTracePermission) {
+        super(owner, DEFAULT_MODALITY_TYPE);
         subject = svc;
+        newWsdlDocuments = serviceDocuments;
         wasTracingEnabled = subject.isTracingEnabled();
 
         if (areUnsavedChangesToThisPolicy(svc)) {
@@ -131,7 +143,7 @@ public class ServicePropertiesDialog extends JDialog {
             this.canUpdate = false;
             this.canTrace = false;
         } else {
-            if (hasResolutionConflict(svc, null)) {
+            if (hasResolutionConflict(svc, newWsdlDocuments)) {
                 resolutionConflictWarningLabel.setText("Service has resolution conflict");
             }
             this.canUpdate = hasUpdatePermission;
@@ -156,7 +168,7 @@ public class ServicePropertiesDialog extends JDialog {
 
         // set initial data
         nameField.setText(subject.getName());
-        oidField.setText(subject.getId());
+        if (subject.getOid()!=PublishedService.DEFAULT_OID) oidField.setText(subject.getId());
         oidField.putClientProperty(Utilities.PROPERTY_CONTEXT_MENU_AUTO_SELECT_ALL, "true");
         Utilities.attachDefaultContextMenu(oidField);
         Policy policy = subject.getPolicy();
@@ -886,7 +898,7 @@ public class ServicePropertiesDialog extends JDialog {
         //attempt to save the changes
         try {
             Collection<ServiceDocument> documents = getServiceDocuments();
-            long newOid = subject.getOid();
+            long newOid;
             if (documents == null)
                 newOid = Registry.getDefault().getServiceManager().savePublishedService(subject);
             else

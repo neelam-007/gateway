@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.EntityUtils;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
@@ -218,10 +219,8 @@ public class JdbcConnectionManagerWindow extends JDialog {
         if (selectedRow < 0) return;
 
         JdbcConnection newConnection = new JdbcConnection();
-        newConnection.copyFrom(connectionList.get(selectedRow));
-        newConnection.setOid(JdbcConnection.DEFAULT_OID);
-        newConnection.setName("Copy of "+ newConnection.getName());
-        newConnection.setVersion(0);
+        newConnection.copyFrom( connectionList.get( selectedRow ) );
+        EntityUtils.updateCopy( newConnection );
         editAndSave(newConnection, true);
     }
 

@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.console.panels;
 
 import com.l7tech.console.action.EditServiceProperties;
@@ -184,6 +181,8 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
         if(policy.getOid() == Policy.DEFAULT_OID){
             nameField.selectAll();
         }
+
+        checkSyntax();
 
         add(mainPanel, BorderLayout.CENTER);
     }
