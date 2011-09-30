@@ -64,6 +64,7 @@ import java.util.logging.Logger;
 public class SshServerModule extends TransportModule implements ApplicationListener {
     private static final String LISTEN_PROP_AUTHORIZED_USER_PASSWORD_LIST = "l7.ssh.authorizedUserPasswordList";
     private static final String LISTEN_PROP_AUTHORIZED_USER_PUBLIC_KEY_LIST = "l7.ssh.authorizedUserPublicKeyList";
+    private static final String LISTEN_PROP_ENABLED_CIPHER_LIST = "l7.ssh.enabledCipherList";
     private static final String LISTEN_PROP_IS_PASSWORD_CREDENTIAL_FORBIDDEN = "l7.ssh.isPasswordCredentialForbidden";
     private static final String LISTEN_PROP_IS_PUBLIC_KEY_CREDENTIAL_REQUIRED = "l7.ssh.isPublicKeyCredentialRequired";
     public static final String LISTEN_PROP_MESSAGE_PROCESSOR_THREAD_WAIT_SECONDS = "l7.ssh.messageProcessorThreadWaitSeconds";
@@ -78,6 +79,8 @@ public class SshServerModule extends TransportModule implements ApplicationListe
     static {
         SUPPORTED_SCHEMES.addAll(Arrays.asList(SCHEME_SSH));
     }
+
+    private enum SupportedCiphers {AES128CBC, TripleDESCBC, BlowfishCBC, AES192CBC, AES256CBC};
 
     private final ApplicationEventProxy applicationEventProxy;
     private final GatewayState gatewayState;
@@ -324,7 +327,6 @@ public class SshServerModule extends TransportModule implements ApplicationListe
         SshServer sshd = new SshServer();
         sshd.setKeyExchangeFactories(Arrays.<NamedFactory<KeyExchange>>asList(new DHG1.Factory()));
         sshd.setRandomFactory(new SingletonRandomFactory(new JceRandom.Factory()));
-        setUpSshCiphers(sshd);
 
         sshd.setCompressionFactories(Arrays.<NamedFactory<Compression>>asList(
                 new CompressionNone.Factory(),
@@ -375,75 +377,110 @@ public class SshServerModule extends TransportModule implements ApplicationListe
     }
 
     /*
-     * This method is based on org.apache.sshd.SshServer.setUpDefaultCiphers(...)
-     */
-    private void setUpSshCiphers(SshServer sshd) {
-        List<NamedFactory<Cipher>> avail = new LinkedList<NamedFactory<Cipher>>();
-        avail.add(new AES128CBC.Factory());
-        avail.add(new TripleDESCBC.Factory());
-        avail.add(new BlowfishCBC.Factory());
-        avail.add(new AES192CBC.Factory());
-        avail.add(new AES256CBC.Factory());
-
-        for (Iterator<NamedFactory<Cipher>> i = avail.iterator(); i.hasNext();) {
-            final NamedFactory<Cipher> f = i.next();
-            try {
-                final Cipher c = f.create();
-                final byte[] key = new byte[c.getBlockSize()];
-                final byte[] iv = new byte[c.getIVSize()];
-                c.init(Cipher.Mode.Encrypt, key, iv);
-            } catch (InvalidKeyException e) {
-                i.remove();
-            } catch (Exception e) {
-                i.remove();
-            }
-        }
-        sshd.setCipherFactories(avail);
-    }
-
-    /*
      * configure SSH server using listener properties
      */
     private void configureSshServer(SshServer sshd, final SsgConnector connector) throws ListenerException {
-            // configure authentication
-            sshd.setPublickeyAuthenticator(configurePublicKeyAuthentication(connector));
-            sshd.setPasswordAuthenticator(configurePasswordAuthentication(connector));
+        // configure ciphers to enable
+        setUpSshCiphers(sshd, connector);
 
-            // enable SCP, SFTP
-            if (connector.getBooleanProperty(SshCredentialAssertion.LISTEN_PROP_ENABLE_SCP)) {
-                sshd.setCommandFactory(configureMessageProcessingScpCommand(connector));
-            }
-            if (connector.getBooleanProperty(SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP)) {
-                sshd.setSubsystemFactories(Arrays.<NamedFactory<Command>>asList(configureMessageProcessingSftpSubsystem(connector)));
-            }
+        // configure authentication
+        sshd.setPublickeyAuthenticator(configurePublicKeyAuthentication(connector));
+        sshd.setPasswordAuthenticator(configurePasswordAuthentication(connector));
 
-            // set host and port
-            String bindAddress = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
-            if ( ! InetAddressUtil.isAnyHostAddress(bindAddress) ) {
-                bindAddress = ssgConnectorManager.translateBindAddress(bindAddress, connector.getPort());
-            } else {
-                bindAddress = InetAddressUtil.getAnyHostAddress();
-            }
-            sshd.setHost(bindAddress);
-            sshd.setPort(connector.getPort());
+        // enable SCP, SFTP
+        if (connector.getBooleanProperty(SshCredentialAssertion.LISTEN_PROP_ENABLE_SCP)) {
+            sshd.setCommandFactory(configureMessageProcessingScpCommand(connector));
+        }
+        if (connector.getBooleanProperty(SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP)) {
+            sshd.setSubsystemFactories(Arrays.<NamedFactory<Command>>asList(configureMessageProcessingSftpSubsystem(connector)));
+        }
 
-            // set server host private key
-            String hostPrivateKey = connector.getProperty(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY);
-            sshd.setKeyPairProvider(new PemSshHostKeyProvider(hostPrivateKey));
+        // set host and port
+        String bindAddress = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
+        if ( ! InetAddressUtil.isAnyHostAddress(bindAddress) ) {
+            bindAddress = ssgConnectorManager.translateBindAddress(bindAddress, connector.getPort());
+        } else {
+            bindAddress = InetAddressUtil.getAnyHostAddress();
+        }
+        sshd.setHost(bindAddress);
+        sshd.setPort(connector.getPort());
 
-            // configure connection idle timeout in ms (min=60sec*1000ms)
-            String idleTimeoutMins = connector.getProperty(SshCredentialAssertion.LISTEN_PROP_IDLE_TIMEOUT_MINUTES);
-            if (!StringUtils.isEmpty(idleTimeoutMins)) {
-                long idleTimeoutMs = Long.parseLong(idleTimeoutMins) * 60 * 1000;
-                sshd.getProperties().put(SshServer.IDLE_TIMEOUT, String.valueOf(idleTimeoutMs));
-            }
+        // set server host private key
+        String hostPrivateKey = connector.getProperty(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY);
+        sshd.setKeyPairProvider(new PemSshHostKeyProvider(hostPrivateKey));
 
-            // configure maximum concurrent open session count per user
-            // 2011/08/03 TL: Apache SSHD does not currently support configurable max total connections
-            String maxConcurrentSessionsPerUser = connector.getProperty(SshCredentialAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER);
-            if (!StringUtils.isEmpty(maxConcurrentSessionsPerUser)) {
-                sshd.getProperties().put(SshServer.MAX_CONCURRENT_SESSIONS, maxConcurrentSessionsPerUser);
+        // configure connection idle timeout in ms (min=60sec*1000ms)
+        String idleTimeoutMins = connector.getProperty(SshCredentialAssertion.LISTEN_PROP_IDLE_TIMEOUT_MINUTES);
+        if (!StringUtils.isEmpty(idleTimeoutMins)) {
+            long idleTimeoutMs = Long.parseLong(idleTimeoutMins) * 60 * 1000;
+            sshd.getProperties().put(SshServer.IDLE_TIMEOUT, String.valueOf(idleTimeoutMs));
+        }
+
+        // configure maximum concurrent open session count per user
+        // 2011/08/03 TL: Apache SSHD does not currently support configurable max total connections
+        String maxConcurrentSessionsPerUser = connector.getProperty(SshCredentialAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER);
+        if (!StringUtils.isEmpty(maxConcurrentSessionsPerUser)) {
+            sshd.getProperties().put(SshServer.MAX_CONCURRENT_SESSIONS, maxConcurrentSessionsPerUser);
+        }
+    }
+
+    /*
+     * This method is based on org.apache.sshd.SshServer.setUpDefaultCiphers(...)
+     */
+    private void setUpSshCiphers(SshServer sshd, final SsgConnector connector) {
+        List<NamedFactory<Cipher>> namedFactoryCipherList = new LinkedList<NamedFactory<Cipher>>();
+
+        // if enabledCiphers list exists, enable accordingly, otherwise enable all supported ciphers
+        String enabledCipherList = connector.getProperty(LISTEN_PROP_ENABLED_CIPHER_LIST);
+        if (enabledCipherList != null) {
+            String[] enabledCiphers = enabledCipherList.split(SPLIT_DELIMITER);
+             if (enabledCiphers != null && enabledCiphers.length > 0) {
+                 for (String enabledCipher : enabledCiphers) {
+                     try {
+                         namedFactoryCipherList.add(createNamedFactoryCipher(SupportedCiphers.valueOf(enabledCipher)));
+                     } catch (IllegalArgumentException iae) {
+                         LOGGER.log(Level.WARNING, "Unrecognized cipher: " + ExceptionUtils.getMessage(iae), ExceptionUtils.getDebugException(iae));
+                     }
+                 }
+             }
+        } else {
+            for (SupportedCiphers enabledCipher : SupportedCiphers.values()) {
+                namedFactoryCipherList.add(createNamedFactoryCipher(enabledCipher));
             }
+        }
+
+        if (namedFactoryCipherList != null && !namedFactoryCipherList.isEmpty()) {
+            for (Iterator<NamedFactory<Cipher>> i = namedFactoryCipherList.iterator(); i.hasNext();) {
+                final NamedFactory<Cipher> f = i.next();
+                try {
+                    final Cipher c = f.create();
+                    final byte[] key = new byte[c.getBlockSize()];
+                    final byte[] iv = new byte[c.getIVSize()];
+                    c.init(Cipher.Mode.Encrypt, key, iv);
+                } catch (InvalidKeyException e) {
+                    i.remove();
+                } catch (Exception e) {
+                    i.remove();
+                }
+            }
+            sshd.setCipherFactories(namedFactoryCipherList);
+        }
+    }
+
+    private NamedFactory<Cipher> createNamedFactoryCipher(SupportedCiphers cipher) {
+        switch(cipher) {
+            case AES128CBC:
+                return new AES128CBC.Factory();
+            case BlowfishCBC:
+                return new BlowfishCBC.Factory();
+            case TripleDESCBC:
+                return new TripleDESCBC.Factory();
+            case AES192CBC:
+                return new AES192CBC.Factory();
+            case AES256CBC:
+                return new AES256CBC.Factory();
+        }
+        throw new IllegalArgumentException(cipher.name());
     }
 
     /*
