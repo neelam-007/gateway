@@ -89,6 +89,7 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     private Deque<Integer> assertionOrdinalPath = null; // null by default, rather than an empty LinkedList, so we don't pay for it unless at least one Include is used
     private AssertionTraceListener traceListener = null;
     private PolicyMetadata policyMetadata = null;
+    private PolicyMetadata servicePolicyMetadata = null;
 
     protected PolicyEnforcementContextImpl(Message request, Message response) {
         super(request, response);
@@ -248,13 +249,23 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     }
 
     @Override
+    public PublishedService getService() {
+        return service;
+    }
+
+    @Override
     public void setService(PublishedService service) {
         this.service = service;
     }
 
     @Override
-    public PublishedService getService() {
-        return service;
+    public PolicyMetadata getServicePolicyMetadata() {
+        return servicePolicyMetadata;
+    }
+
+    @Override
+    public void setServicePolicyMetadata( final PolicyMetadata servicePolicyMetadata ) {
+        this.servicePolicyMetadata = servicePolicyMetadata;
     }
 
     @Override
@@ -498,7 +509,7 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
 
     @Override
     public void setEndTime() {
-        if (endTime != 0) throw new IllegalStateException("Can't call setEndTime() twice");
+        if (endTime != 0L ) throw new IllegalStateException("Can't call setEndTime() twice");
         endTime = System.currentTimeMillis();
     }
 
@@ -523,6 +534,7 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     }
 
     private final Map<ServerAssertion, AssertionStatus> assertionStatuses = new LinkedHashMap<ServerAssertion, AssertionStatus>();
+    @SuppressWarnings({ "CollectionDeclaredAsConcreteClass" })
     private LinkedList<AssertionResult> assertionResultList;
 
     /**

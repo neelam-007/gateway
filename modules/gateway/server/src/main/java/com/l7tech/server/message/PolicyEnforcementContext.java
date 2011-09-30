@@ -133,6 +133,23 @@ public interface PolicyEnforcementContext extends Closeable {
      */
     PublishedService getService();
 
+    void setService(PublishedService service);
+
+    /**
+     * Get the metadata for the service policy for this context.
+     *
+     * @return The service policies metatdata, or null if not available.
+     */
+    PolicyMetadata getServicePolicyMetadata();
+
+    /**
+     * Set the metadata for the service policy for this context.
+     *
+     * @param policyMetadata
+     * @see #setService(PublishedService)
+     */
+    void setServicePolicyMetadata( PolicyMetadata policyMetadata );
+
     /**
      * Get the metadata for the policy (service or include) currently executing on this context.
      * <p/>
@@ -152,8 +169,6 @@ public interface PolicyEnforcementContext extends Closeable {
      * @param policyMetadata the policy metadata to register, or null to clear any registered policy metadata.
      */
     void setCurrentPolicyMetadata(PolicyMetadata policyMetadata);
-
-    void setService(PublishedService service);
 
     PolicyContextCache getCache();
 

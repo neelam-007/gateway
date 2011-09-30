@@ -132,7 +132,7 @@ public final class ExpandVariables {
         Class<T> getContextObjectClass();
     }
 
-    private static final String[] selectors = {
+    private static final String[] selectorClassnames = {
         "com.l7tech.server.policy.variable.MessageSelector",
         "com.l7tech.server.policy.variable.X509CertificateSelector",
         "com.l7tech.server.policy.variable.UserSelector",
@@ -146,22 +146,21 @@ public final class ExpandVariables {
         "com.l7tech.server.policy.variable.SecurePasswordLocatorContextSelector",
         "com.l7tech.server.policy.variable.SecurePasswordSelector",
         "com.l7tech.server.policy.variable.SecureConversationSessionSelector",
+        "com.l7tech.server.policy.variable.BuildVersionContext$BuildVersionContextSelector",
     };
 
-    private static final Map<Class, Selector<Object>> selectorMap = Collections.unmodifiableMap(new HashMap<Class, Selector<Object>>() {{
-        //noinspection ForLoopReplaceableByForEach
-        for (int i = 0; i < selectors.length; i++) {
-            String selectorClassname = selectors[i];
+    private static final List<Selector<?>> selectors = Collections.unmodifiableList(new ArrayList<Selector<?>>() {{
+        for ( final String selectorClassname : selectorClassnames ) {
             try {
-                Class clazz = Class.forName(selectorClassname);
-                @SuppressWarnings({"unchecked"}) Selector<Object> sel = (Selector<Object>) clazz.newInstance();
-                put(sel.getContextObjectClass(), sel);
-            } catch (InstantiationException e) {
-                throw new RuntimeException(e); // Can't happen
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException(e); // Can't happen
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e); // Can't happen
+                final Class clazz = Class.forName( selectorClassname );
+                final Selector<?> sel = (Selector<?>) clazz.newInstance();
+                add( sel );
+            } catch ( InstantiationException e ) {
+                throw new RuntimeException( e ); // Can't happen
+            } catch ( IllegalAccessException e ) {
+                throw new RuntimeException( e ); // Can't happen
+            } catch ( ClassNotFoundException e ) {
+                throw new RuntimeException( e ); // Can't happen
             }
         }
     }});
@@ -234,11 +233,9 @@ public final class ExpandVariables {
 
         while (remainingName != null && remainingName.length() > 0) {
             // Try to find a Selector for values of this type
-            Selector<Object> selector = null;
-            for (Map.Entry<Class,Selector<Object>> entry : selectorMap.entrySet()) {
-                Class clazz = entry.getKey();
-                Selector<Object> sel = entry.getValue();
-                if (clazz.isAssignableFrom(contextValue.getClass())) {
+            Selector selector = null;
+            for ( Selector<?> sel : selectors ) {
+                if (sel.getContextObjectClass().isAssignableFrom( contextValue.getClass() )) {
                     selector = sel;
                     break;
                 }
@@ -249,6 +246,7 @@ public final class ExpandVariables {
                 return new Selector.Selection(contextValue, remainingName);
             }
 
+            @SuppressWarnings({ "unchecked" })
             final Selector.Selection selection = selector.select(contextName, contextValue, remainingName, handler, strict);
             if (selection == null) {
                 // This name is unknown to the selector

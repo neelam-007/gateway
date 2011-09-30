@@ -197,18 +197,28 @@ public class PolicyEnforcementContextWrapper implements PolicyEnforcementContext
     }
 
     @Override
+    public void setService( final PublishedService service ) {
+        delegate.setService( service );
+    }
+
+    @Override
+    public PolicyMetadata getServicePolicyMetadata() {
+        return delegate.getServicePolicyMetadata();
+    }
+
+    @Override
+    public void setServicePolicyMetadata( final PolicyMetadata policyMetadata ) {
+        delegate.setServicePolicyMetadata( policyMetadata );
+    }
+
+    @Override
     public PolicyMetadata getCurrentPolicyMetadata() {
         return delegate.getCurrentPolicyMetadata();
     }
 
     @Override
     public void setCurrentPolicyMetadata(PolicyMetadata policyMetadata) {
-        delegate.setCurrentPolicyMetadata(policyMetadata);
-    }
-
-    @Override
-    public void setService( final PublishedService service ) {
-        delegate.setService( service );
+        delegate.setCurrentPolicyMetadata( policyMetadata );
     }
 
     @Override

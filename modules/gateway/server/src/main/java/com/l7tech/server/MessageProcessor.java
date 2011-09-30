@@ -1016,6 +1016,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             serverPolicy = serviceCache.getServerPolicy(context.getService().getOid());
             if (serverPolicy == null)
                 throw new ServiceResolutionException("service is resolved but the corresponding policy is invalid");
+            context.setServicePolicyMetadata( serverPolicy.getPolicyMetadata() );
         }
 
         @Override

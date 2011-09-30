@@ -11,6 +11,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.User;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -22,6 +23,8 @@ import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.PolicyMetadata;
+import static com.l7tech.server.policy.variable.BuildVersionContext.BUILD_VERSION_CONTEXT;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.trace.TracePolicyEnforcementContext;
 import com.l7tech.util.ExceptionUtils;
@@ -445,6 +448,52 @@ public class ServerVariables {
                 }
             }),
 
+            new Variable(BuiltinVariables.PREFIX_SERVICE + "." + BuiltinVariables.SERVICE_SUFFIX_POLICY_GUID, new Getter() {
+                @Override
+                public Object get( final String name, final PolicyEnforcementContext context) {
+                    final PublishedService service = context.getService();
+                    return service == null || service.getPolicy()==null ?
+                            null : service.getPolicy().getGuid();
+                }
+            }),
+
+            new Variable(BuiltinVariables.PREFIX_SERVICE + "." + BuiltinVariables.SERVICE_SUFFIX_POLICY_VERSION, new Getter() {
+                @Override
+                public Object get( final String name, final PolicyEnforcementContext context) {
+                    final PolicyMetadata meta = context.getServicePolicyMetadata();
+                    final PolicyHeader head = meta == null ? null : meta.getPolicyHeader();
+                    return head == null || head.getPolicyRevision()==0L ? null : head.getPolicyRevision();
+                }
+            }),
+
+            new Variable(BuiltinVariables.PREFIX_POLICY + "." + BuiltinVariables.POLICY_SUFFIX_NAME, new CurrentPolicyGetter() {
+                @Override
+                protected Object get( final PolicyHeader policyHeader ) {
+                    return policyHeader.getName();
+                }
+            }),
+
+            new Variable(BuiltinVariables.PREFIX_POLICY + "." + BuiltinVariables.POLICY_SUFFIX_OID, new CurrentPolicyGetter() {
+                @Override
+                protected Object get( final PolicyHeader policyHeader ) {
+                    return policyHeader.getOid();
+                }
+            }),
+
+            new Variable(BuiltinVariables.PREFIX_POLICY + "." + BuiltinVariables.POLICY_SUFFIX_GUID, new CurrentPolicyGetter() {
+                @Override
+                protected Object get( final PolicyHeader policyHeader ) {
+                    return policyHeader.getGuid();
+                }
+            }),
+
+            new Variable(BuiltinVariables.PREFIX_POLICY + "." + BuiltinVariables.POLICY_SUFFIX_VERSION, new CurrentPolicyGetter() {
+                @Override
+                protected Object get( final PolicyHeader policyHeader ) {
+                    return policyHeader.getPolicyRevision()==0L ? null : policyHeader.getPolicyRevision();
+                }
+            }),
+
             new Variable(BuiltinVariables.SSGNODE_ID, new Getter() {
                 @Override
                 Object get(String name, PolicyEnforcementContext context) {
@@ -460,6 +509,9 @@ public class ServerVariables {
                     return inf == null ? null : inf.getName();
                 }
             }),
+
+            new Variable(BuiltinVariables.SSGNODE_BUILD,
+                    SelectingGetter.selectingGetter( BuiltinVariables.SSGNODE_BUILD, BUILD_VERSION_CONTEXT )),
 
             new Variable(BuiltinVariables.PREFIX_GATEWAY_TIME, new Getter() {
                 @Override
@@ -965,6 +1017,17 @@ public class ServerVariables {
         }
     }
 
+    private static abstract class CurrentPolicyGetter extends Getter {
+        @Override
+        public Object get( final String name, final PolicyEnforcementContext context) {
+            final PolicyMetadata meta = context.getCurrentPolicyMetadata();
+            final PolicyHeader head = meta == null ? null : meta.getPolicyHeader();
+            return head == null ? null : get( head );
+        }
+
+        protected abstract Object get( final PolicyHeader policyHeader );
+    }
+
     private static abstract class SelectingGetter extends Getter {
         private final String baseName;
 
@@ -985,6 +1048,18 @@ public class ServerVariables {
         }
 
         protected abstract Object getBaseObject(PolicyEnforcementContext context);
+
+        /**
+         * Create a selecting getter with the given base object.
+         */
+        static SelectingGetter selectingGetter( final String name, final Object value ) {
+            return new SelectingGetter( name ) {
+                @Override
+                protected Object getBaseObject( final PolicyEnforcementContext context ) {
+                    return value;
+                }
+            };
+        }
     }
 
 

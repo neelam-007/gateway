@@ -15,6 +15,9 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.Message;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyHeader;
+import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -34,10 +37,12 @@ import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.policy.PolicyMetadataStub;
 import com.l7tech.server.policy.assertion.ServerHttpRoutingAssertion;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.security.password.SecurePasswordManagerStub;
 import com.l7tech.test.BugNumber;
+import com.l7tech.util.BuildInfo;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
 import org.junit.Assert;
@@ -67,44 +72,58 @@ public class ServerVariablesTest {
     private static final String AUDITED_REQUEST_XML = "<auditRecordRequestXml/>";
     private static final String AUDITED_RESPONSE_XML = "<auditRecordResponseXml/>";
 
-    /*
-   * testServiceNameContextVariable creates a PolicyEncofcementContext and gives it a
-   * PublishedService. The static ServerVariabes(String, PolicyEncorcementContext) is used
-   * to retrieve the value of service.name which should equal the name of the service created.
-   * */
     @Test
-    public void testServiceNameContextVariable() throws Exception {
-        PolicyEnforcementContext pec = context();
-        PublishedService ps = new PublishedService();
-        String serviceName = "testServiceNameContextVariable";
-        ps.setName(serviceName);
-        pec.setService(ps);
-        //Now the pec has a service so the variable service.name should be available
-        String variableName = "service.name";
-        String variableValue = ServerVariables.get(variableName, pec).toString();
-        Assert.assertEquals("ServerVariable should equal service name", serviceName, variableValue);
+    public void testBasicServiceContextVariables() throws Exception {
+        final PolicyEnforcementContext pec = context();
+        final PublishedService ps = new PublishedService();
+        ps.setOid(123456L);
+        ps.setName( "testServiceNameContextVariable" );
+        ps.getPolicy().setGuid( "8ca3ff80-eaf5-11e0-9572-0800200c9a66" );
+        pec.setService( ps );
+        pec.setServicePolicyMetadata( new PolicyMetadataStub() {
+            @Override
+            public PolicyHeader getPolicyHeader() {
+                return new PolicyHeader( ps.getPolicy(), 123L );
+            }
+        } );
 
+        final String nameValue = ServerVariables.get("service.name", pec).toString();
+        assertEquals("service name variable ", "testServiceNameContextVariable", nameValue);
+
+        final String oidValue = ServerVariables.get("service.oid", pec).toString();
+        assertEquals("service oid variable", "123456", oidValue);
+
+        final String policyGuidValue = ServerVariables.get("service.policy.guid", pec).toString();
+        assertEquals("service policy guid variable", "8ca3ff80-eaf5-11e0-9572-0800200c9a66", policyGuidValue);
+
+        final String policyVersionValue = ServerVariables.get("service.policy.version", pec).toString();
+        assertEquals("service policy guid variable", "123", policyVersionValue);
     }
 
-    /*
-    * testServiceNameContextVariable creates a PolicyEncofcementContext and gives it a
-    * PublishedService. The static ServerVariabes(String, PolicyEncorcementContext) is used
-    * to retrieve the value of service.oid which should equal the oid of the service created.
-    * */
     @Test
-    public void testServiceOidContextVariable() throws Exception {
-        PolicyEnforcementContext pec = context();
-        PublishedService ps = new PublishedService();
-        Long l = 123456L;
-        ps.setOid(l);
-        String serviceName = "testServiceOidContextVariable";
-        ps.setName(serviceName);
-        pec.setService(ps);
-        //Now the pec has a service so the variable service.oid should be available
-        String variableName = "service.oid";
-        String variableValue = ServerVariables.get(variableName, pec).toString();
-        Assert.assertEquals("ServerVariable should equal service oid", l.toString(), variableValue);
+    public void testPolicyContextVariables() throws Exception {
+        final PolicyEnforcementContext pec = context();
+        final Policy policy = new Policy( PolicyType.INCLUDE_FRAGMENT, "testPolicyNameContextVariable", null, false );
+        policy.setOid( 1234567L );
+        policy.setGuid( "8ca3ff80-eaf5-11e0-9572-0800200c9a67" );
+        pec.setCurrentPolicyMetadata( new PolicyMetadataStub() {
+            @Override
+            public PolicyHeader getPolicyHeader() {
+                return new PolicyHeader( policy, 1234321L );
+            }
+        } );
 
+        final String nameValue = ServerVariables.get("policy.name", pec).toString();
+        assertEquals("service name variable ", "testPolicyNameContextVariable", nameValue);
+
+        final String oidValue = ServerVariables.get("policy.oid", pec).toString();
+        assertEquals("service oid variable", "1234567", oidValue);
+
+        final String policyGuidValue = ServerVariables.get("policy.guid", pec).toString();
+        assertEquals("service policy guid variable", "8ca3ff80-eaf5-11e0-9572-0800200c9a67", policyGuidValue);
+
+        final String policyVersionValue = ServerVariables.get("policy.version", pec).toString();
+        assertEquals("service policy guid variable", "1234321", policyVersionValue);
     }
 
     @Test
@@ -913,6 +932,18 @@ public class ServerVariablesTest {
         assertNotNull(expanded);
     }
 
+    @Test
+    public void testBuildVariables() throws Exception {
+        final PolicyEnforcementContext context = context();
+        expandAndCheck(context, "${ssgnode.build.label}", BuildInfo.getProductVersion());
+        expandAndCheck(context, "${ssgnode.build.detail}", BuildInfo.getLongBuildString());
+        expandAndCheck(context, "${ssgnode.build.number}", BuildInfo.getBuildNumber());
+        expandAndCheck(context, "${ssgnode.build.version}", BuildInfo.getFormalProductVersion());
+        expandAndCheck(context, "${ssgnode.build.version.major}", BuildInfo.getProductVersionMajor());
+        expandAndCheck(context, "${ssgnode.build.version.minor}", BuildInfo.getProductVersionMinor());
+        expandAndCheck(context, "${ssgnode.build.version.subminor}", BuildInfo.getProductVersionSubMinor());
+    }
+
     private PolicyEnforcementContext context() {
         Message request = new Message();
         request.initialize(XmlUtil.stringAsDocument(REQUEST_BODY));
@@ -968,11 +999,6 @@ public class ServerVariablesTest {
         detail2.setComponentId(8712);
         auditRecord.getDetails().add(detail2);
         return auditRecord;
-    }
-
-    private void populateAndCheck(PolicyEnforcementContext context, String variable, String value) throws IOException, PolicyAssertionException {
-        context.setVariable(variable, value);
-        expandAndCheck(context, "${" + variable + "}", value);
     }
 
     private void expandAndCheck(PolicyEnforcementContext context, String expression, String expectedValue) throws IOException, PolicyAssertionException {

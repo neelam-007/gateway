@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2006-2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.policy.variable;
 
 import java.util.Collections;
@@ -28,10 +25,12 @@ public class BuiltinVariables {
 
     public static final String SSGNODE_NAME = "ssgnode.name";
     public static final String SSGNODE_ID = "ssgnode.id";
+    public static final String SSGNODE_BUILD = "ssgnode.build";
 
     public static final String PREFIX_GATEWAY_TIME = "gateway.time";
     public static final String PREFIX_REQUEST_TIME = "request.time";
     public static final String PREFIX_SERVICE = "service";
+    public static final String PREFIX_POLICY = "policy";
 
     public static final String PREFIX_REQUEST_URL = "request.url";
     public static final String PREFIX_CLUSTER_PROPERTY = "gateway"; // value of a variable in the cluster property table
@@ -53,6 +52,13 @@ public class BuiltinVariables {
     public static final String SERVICE_SUFFIX_NAME = "name";
     public static final String SERVICE_SUFFIX_OID = "oid";
     public static final String SERVICE_SUFFIX_ROUTINGURL = "defaultRoutingURL";
+    public static final String SERVICE_SUFFIX_POLICY_GUID = "policy.guid";
+    public static final String SERVICE_SUFFIX_POLICY_VERSION = "policy.version";
+
+    public static final String POLICY_SUFFIX_NAME = SERVICE_SUFFIX_NAME;
+    public static final String POLICY_SUFFIX_OID = SERVICE_SUFFIX_OID;
+    public static final String POLICY_SUFFIX_GUID = "guid";
+    public static final String POLICY_SUFFIX_VERSION = "version";
 
     @Deprecated
     public static final String SERVICE_SUFFIX_URL = "url";
@@ -144,8 +150,17 @@ public class BuiltinVariables {
             new VariableMetadata(PREFIX_SERVICE + "." + SERVICE_SUFFIX_NAME, false, false, null, false),
             new VariableMetadata(PREFIX_SERVICE + "." + SERVICE_SUFFIX_OID, false, false, null, false),
             new VariableMetadata(PREFIX_SERVICE + "." + SERVICE_SUFFIX_ROUTINGURL, false, false, null, false),
+            new VariableMetadata(PREFIX_SERVICE + "." + SERVICE_SUFFIX_POLICY_GUID, false, false, null, false),
+            new VariableMetadata(PREFIX_SERVICE + "." + SERVICE_SUFFIX_POLICY_VERSION, false, false, null, false, DataType.INTEGER),
+
+            new VariableMetadata(PREFIX_POLICY + "." + POLICY_SUFFIX_NAME, false, false, null, false),
+            new VariableMetadata(PREFIX_POLICY + "." + POLICY_SUFFIX_OID, false, false, null, false),
+            new VariableMetadata(PREFIX_POLICY + "." + POLICY_SUFFIX_GUID, false, false, null, false),
+            new VariableMetadata(PREFIX_POLICY + "." + POLICY_SUFFIX_VERSION, false, false, null, false, DataType.INTEGER),
+
             new VariableMetadata(SSGNODE_NAME, false, false, null, false),
             new VariableMetadata(SSGNODE_ID, false, false, null, false),
+            new VariableMetadata(SSGNODE_BUILD, true, false, null, false, DataType.UNKNOWN),
 
             new VariableMetadata(BuiltinVariables.PREFIX_REQUEST, true, false, null, true, DataType.MESSAGE),
             new VariableMetadata(BuiltinVariables.PREFIX_RESPONSE, true, false, null, true, DataType.MESSAGE),
