@@ -9,7 +9,6 @@ import org.jboss.netty.channel.*;
 import org.jboss.netty.handler.codec.http.*;
 
 import java.io.IOException;
-import java.net.SocketException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Logger;
@@ -38,11 +37,22 @@ public final class IcapResponseHandler extends AbstractIcapResponseHandler {
         //tell the server to close the connection
         //if we explicitly close the channel, the exceptionCaught will be executed
         //and raise many ClosedChannelException
-        request.addHeader(HttpHeaders.Names.CONNECTION, "Close");
-        channel.write(request);
+        request.addHeader(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.CLOSE);
+        return sendRequest(request);
+    }
+
+    private IcapResponse sendRequest(IcapRequest request){
         IcapResponse response = null;
         boolean interrupted = false;
         try {
+            ChannelFuture fut = channel.write(request);
+            //short pause to detect channel status as channel.write will attempt to return as quickly as possible
+            //due to it's async nature.
+            //if the channel is closed then we'll be able to detect it and handle the error accordingly.
+            Thread.sleep(100);
+            if(!fut.getChannel().isConnected()){
+                responses.offer(new DefaultIcapResponse(IcapVersion.ICAP_1_0, IcapResponseStatus.SERVICE_UNAVAILABLE));
+            }
             response = responses.take();
         } catch (InterruptedException e) {
             interrupted = true;
@@ -63,28 +73,14 @@ public final class IcapResponseHandler extends AbstractIcapResponseHandler {
         //tell the server to close the connection
         //if we explicitly close the channel, the exceptionCaught will be executed
         //and raise many ClosedChannelException
-        request.addHeader(HttpHeaders.Names.CONNECTION, "Close");
+        request.addHeader(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.CLOSE);
         HttpResponse httpResponse = new DefaultHttpResponse(HttpVersion.HTTP_1_0, HttpResponseStatus.OK);
         ChannelBuffer cb = ChannelBuffers.dynamicBuffer();
         cb.writeBytes(partInfo.getInputStream(false), (int) partInfo.getActualContentLength());
         httpResponse.setContent(cb);
         httpResponse.addHeader(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.CLOSE);
         request.setHttpResponse(httpResponse);
-
-        channel.write(request);
-
-        IcapResponse response = null;
-
-        boolean interrupted = false;
-        try {
-            response = responses.take();
-        } catch (InterruptedException e) {
-            interrupted = true;
-        }
-        if (interrupted) {
-            Thread.currentThread().interrupt();
-        }
-        return response;
+        return sendRequest(request);
     }
 
     @Override
@@ -100,15 +96,7 @@ public final class IcapResponseHandler extends AbstractIcapResponseHandler {
     @Override
     public void exceptionCaught(final ChannelHandlerContext ctx, final ExceptionEvent e) throws Exception {
         LOGGER.warning(e.toString());
-        IcapResponseStatus status = IcapResponseStatus.BAD_REQUEST;
-        //when to attempt to connect to an invalid service name, the icap server will return a service nto found error
-        //and closes the connection.  the icap client api that we use doesn't return this error, but instead
-        //will throw these 2 exception.
-        if (e.getCause() instanceof SocketException || e.getCause() instanceof IcapDecodingError) {
-            status = IcapResponseStatus.ICAP_SERVICE_NOT_FOUND;
-        }
-        IcapResponse response = new DefaultIcapResponse(IcapVersion.ICAP_1_0, status);
-        responses.offer(response);
         e.getChannel().close();
+        responses.offer(new DefaultIcapResponse(IcapVersion.ICAP_1_0, IcapResponseStatus.SERVICE_UNAVAILABLE));
     }
 }

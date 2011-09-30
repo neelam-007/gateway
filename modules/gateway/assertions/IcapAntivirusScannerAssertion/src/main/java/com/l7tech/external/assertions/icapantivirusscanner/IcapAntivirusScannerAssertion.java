@@ -1,16 +1,17 @@
 package com.l7tech.external.assertions.icapantivirusscanner;
 
+import com.l7tech.external.assertions.icapantivirusscanner.server.IcapAntivirusScannerAdminImpl;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.MessageTargetableAssertion;
-import com.l7tech.policy.assertion.UsesVariables;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.validator.AssertionValidator;
 import com.l7tech.policy.validator.PolicyValidationContext;
+import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.CollectionTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
+import com.l7tech.util.Functions;
+import org.springframework.context.ApplicationContext;
 
 import java.util.*;
 import java.util.regex.Pattern;
@@ -20,7 +21,32 @@ import java.util.regex.Pattern;
  *
  * @author Ken Diep
  */
-public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion implements UsesVariables {
+public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion implements UsesVariables, SetsVariables {
+    private static final String VARIABLE_PREFIX = "icap.response.";
+
+    /**
+     * The variable name to retrieve the infected file(s)/part(s) name.
+     */
+    public static final String INFECTED_PARTS = VARIABLE_PREFIX + "infected";
+
+    /**
+     * The variable prefix to retrieve all the header names.
+     */
+    public static final String VARIABLE_NAMES = VARIABLE_PREFIX + "header.names";
+
+    /**
+     * The variable prefix to retrieve all the header values.
+     */
+    public static final String VARIABLE_VALUES = VARIABLE_PREFIX + "header.values";
+
+    /**
+     * The variable prefix to retrieve a single header value.
+     */
+    public static final String VARIABLE_NAME = VARIABLE_PREFIX + "header.value";
+
+    /**
+     * The pattern to match and extract various parts of the ICAP uri.
+     */
     public static final Pattern ICAP_URI = Pattern.compile("(?i)icap://(.*):(.*)/(.*)");
 
     private static final String META_INITIALIZED = IcapAntivirusScannerAssertion.class.getName() + ".metadataInitialized";
@@ -50,7 +76,7 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/Properties16.gif");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/Properties16.gif");
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
         //add custom type mapping
         Collection<TypeMapping> othermappings = new ArrayList<TypeMapping>();
@@ -59,6 +85,18 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(othermappings));
 
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, IcapAntivirusScannerAssertion.Validator.class.getName());
+
+        meta.put(AssertionMetadata.EXTENSION_INTERFACES_FACTORY, new Functions.Unary<Collection<ExtensionInterfaceBinding>, ApplicationContext>() {
+            @Override
+            public Collection<ExtensionInterfaceBinding> call(ApplicationContext appContext) {
+                final ExtensionInterfaceBinding<IcapAntivirusScannerAdmin> binding = new ExtensionInterfaceBinding<IcapAntivirusScannerAdmin>(
+                        IcapAntivirusScannerAdmin.class,
+                        null,
+                        new IcapAntivirusScannerAdminImpl());
+                return Collections.<ExtensionInterfaceBinding>singletonList(binding);
+            }
+        });
+
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
@@ -201,5 +239,15 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
                         "Require at least one valid connection to an ICAP anti-virus server.", null));
             }
         }
+    }
+
+    @Override
+    protected VariablesSet doGetVariablesSet() {
+        return super.doGetVariablesSet().withVariables(
+                new VariableMetadata(INFECTED_PARTS, false, true, null, false),
+                new VariableMetadata(VARIABLE_NAMES, true, true, null, false),
+                new VariableMetadata(VARIABLE_VALUES, true, true, null, false),
+                new VariableMetadata(VARIABLE_NAME, true, false, null, false)
+        );
     }
 }

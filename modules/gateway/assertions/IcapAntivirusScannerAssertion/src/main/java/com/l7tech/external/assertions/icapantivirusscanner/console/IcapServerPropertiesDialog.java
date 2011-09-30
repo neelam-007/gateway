@@ -1,5 +1,7 @@
 package com.l7tech.external.assertions.icapantivirusscanner.console;
 
+import com.l7tech.console.util.Registry;
+import com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAdmin;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.ValidationUtils;
@@ -8,14 +10,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * <p>The GUI for adding/modifying the server connection information.</p>
@@ -23,7 +17,7 @@ import java.util.regex.Pattern;
  * @author Ken Diep
  */
 public final class IcapServerPropertiesDialog extends JDialog {
-    private static final Pattern STATUS_LINE = Pattern.compile("(?i)ICAP/1\\.0\\s(\\d+)\\s(.*)");
+
 
     private JPanel contentPane;
 
@@ -90,43 +84,16 @@ public final class IcapServerPropertiesDialog extends JDialog {
     }
 
     private void testServerEntry() {
-        Socket sock = new Socket();
-        OutputStream out = null;
-        BufferedReader br = null;
+        boolean enableSave = false;
         try {
-            //testing the server is trivial enough that we can do it by hand.
-            //using the netty & icap framework is rather expensive
-            sock.connect(new InetSocketAddress(serverHostnameField.getText(), Integer.parseInt(serverPortNumberField.getText().trim())), 30000);
-            out = sock.getOutputStream();
-            out.write(String.format("OPTIONS %1$s %2$s %3$s%3$s", getIcapUri(), "ICAP/1.0", "\r\n").getBytes());
-            br = new BufferedReader(new InputStreamReader(sock.getInputStream()));
-            String line = br.readLine();
-            Matcher matcher = STATUS_LINE.matcher(line);
-            if (matcher.matches() && "200".equals(matcher.group(1))) {
-                btnOk.setEnabled(true);
-            } else {
-                //unknown error, icap says first line must be status line
-                JOptionPane.showMessageDialog(this, "ICAP server error: " + line,
-                        "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error connecting to server: " + ex, "Error", JOptionPane.ERROR_MESSAGE);
-            btnOk.setEnabled(false);
-        } finally {
-            try {
-                if (out != null) {
-                    out.close();
-                }
-                if (sock.isConnected()) {
-                    sock.close();
-                }
-                if (br != null) {
-                    br.close();
-                }
-            } catch (IOException ex) {
-                //ignore
-            }
+            IcapAntivirusScannerAdmin admin = Registry.getDefault().getExtensionInterface(IcapAntivirusScannerAdmin.class, null);
+            admin.testConnection(serverHostnameField.getText().trim(), Integer.parseInt(serverPortNumberField.getText().trim()), serverServiceNameField.getText().trim());
+            JOptionPane.showMessageDialog(this, "Connection is successful.", "Success", JOptionPane.INFORMATION_MESSAGE);
+            enableSave = true;
+        } catch (IcapAntivirusScannerAdmin.IcapAntivirusScannerTestException e) {
+            JOptionPane.showMessageDialog(this, e.getMessage(), "Connection failed.", JOptionPane.ERROR_MESSAGE);
         }
+        btnOk.setEnabled(enableSave);
     }
 
     public String getIcapUri() {

@@ -5,15 +5,13 @@ import ch.mimo.netty.handler.codec.icap.IcapResponseStatus;
 import com.l7tech.common.io.failover.AbstractFailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
-import com.l7tech.common.mime.MimeBody;
-import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.common.mime.PartInfo;
-import com.l7tech.common.mime.PartIterator;
+import com.l7tech.common.mime.*;
 import com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.AuthenticationContext;
@@ -28,14 +26,14 @@ import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.socket.oio.OioClientSocketChannelFactory;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * <p>Server side implementation of the IcapAntivirusScannerAssertion.</p>
@@ -45,26 +43,20 @@ import java.util.regex.Pattern;
  */
 public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetableServerAssertion<IcapAntivirusScannerAssertion> {
 
-    private static final Map<String, String> RESOLUTION_MAPPING;
-
-    static {
-        Map<String, String> m = new HashMap<String, String>();
-        m.put("0", "was not fixed.");
-        m.put("1", "was repaired.");
-        m.put("2", "was blocked");
-        RESOLUTION_MAPPING = Collections.unmodifiableMap(m);
-    }
-
-    private static final Pattern MULTI_VALUE_HEADER = Pattern.compile("(.*?)=(.*?);");
-
     private ClientBootstrap client = null;
 
     private FailoverStrategy<String> failoverStrategy;
 
-    @Inject
+    @Inject @Named("stashManagerFactory")
     private StashManagerFactory stashManagerFactory;
 
     private IcapAntivirusScannerAssertion assertion;
+
+    private String currentIcapUri = null;
+    private String currentHost = null;
+    private String selectedService = null;
+
+    private List<String> infectedParts = new ArrayList<String>();
 
     public ServerIcapAntivirusScannerAssertion(final IcapAntivirusScannerAssertion assertion) throws PolicyAssertionException {
         super(assertion);
@@ -100,83 +92,57 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
         return retVal;
     }
 
-    @Override
-    public AssertionStatus doCheckRequest(final PolicyEnforcementContext context, final Message message,
-                                          final String messageDescription, final AuthenticationContext authContext)
-            throws IOException, PolicyAssertionException {
-        AssertionStatus status = AssertionStatus.NONE;
-
+    private Channel getChannel(PolicyEnforcementContext context) {
         Channel channel = null;
-        String hostname = null;
-        int port = 1344;
-        AbstractIcapResponseHandler handler = null;
-        String currentService = null;
-        try {
-            for (int i = 0; i < assertion.getIcapServers().size(); ++i) {
-                String selectedService = failoverStrategy.selectService();
-                if (selectedService == null) {
-                    continue;
-                }
-                Matcher matcher = IcapAntivirusScannerAssertion.ICAP_URI.matcher(selectedService);
-                if (matcher.matches()) {
-                    hostname = getContextVariable(context, matcher.group(1).trim());
-                    String portText = getContextVariable(context, matcher.group(2).trim());
-                    if (ValidationUtils.isValidInteger(portText, false, 1, 65535)) {
-                        port = Integer.parseInt(portText);
-                    }
-                    String serviceName = getContextVariable(context, matcher.group(3).trim());
-                    currentService = String.format("icap://%s:%s/%s", hostname, port, serviceName);
-                } else {
-                    logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Invalid ICAP URI: " + selectedService);
+        for (int i = 0; i < assertion.getIcapServers().size(); ++i) {
+            selectedService = failoverStrategy.selectService();
+            if (selectedService == null) {
+                continue;
+            }
+            Matcher matcher = IcapAntivirusScannerAssertion.ICAP_URI.matcher(selectedService);
+            if (matcher.matches()) {
+                String hostname = getContextVariable(context, matcher.group(1).trim());
+                String portText = getContextVariable(context, matcher.group(2).trim());
+                if (!ValidationUtils.isValidInteger(portText, false, 1, 65535)) {
+                    logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Invalid port specified, port must be between 1 and 65535: " + selectedService);
                     failoverStrategy.reportFailure(selectedService);
-                    continue;
                 }
-                intializeClient(context);
-                ChannelFuture future = client.connect(new InetSocketAddress(hostname, port));
-
-                //open the channel to see if it's valid
+                String serviceName = getContextVariable(context, matcher.group(3).trim());
+                String currentService = String.format("icap://%s:%s/%s", hostname, Integer.parseInt(portText), serviceName);
+                ChannelFuture future = client.connect(new InetSocketAddress(hostname, Integer.parseInt(portText)));
                 channel = future.awaitUninterruptibly().getChannel();
-
                 if (!future.isSuccess()) {
                     logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Unable to connect to the specified server: "
                             + selectedService);
                     failoverStrategy.reportFailure(selectedService);
-                } else {
-                    //here we don't need to attach the service params.
-                    handler = channel.getPipeline().get(IcapResponseHandler.class);
-                    IcapResponse response = handler.sendOptionsCommand(currentService, hostname);
-                    if (response.getStatus() == IcapResponseStatus.OK) {
-                        failoverStrategy.reportSuccess(selectedService);
-                        break;
-                    } else {
-                        logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Unable to connect to the specified ICAP service: "
-                                + currentService);
-                        failoverStrategy.reportFailure(selectedService);
-                        handler = null;
-                    }
+                    channel = null;
+                    continue;
                 }
-            }
-            if (handler != null) {
-                String fullUri = currentService + getServiceQueryString(context);
-                status = scanMessage(handler, fullUri, hostname, message);
+                currentHost = hostname;
+                currentIcapUri = currentService + getServiceQueryString(context);
+                break;
             } else {
-                logAndAudit(AssertionMessages.USERDETAIL_WARNING, "No valid ICAP server entries found");
-                status = AssertionStatus.FAILED;
-            }
-        } finally {
-            if (channel != null) {
-                channel.close();
+                logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Invalid ICAP URI: " + selectedService);
+                failoverStrategy.reportFailure(selectedService);
             }
         }
-        return status;
+        return channel;
+    }
+
+    @Override
+    public AssertionStatus doCheckRequest(final PolicyEnforcementContext context, final Message message,
+                                          final String messageDescription, final AuthenticationContext authContext)
+            throws IOException, PolicyAssertionException {
+        intializeClient(context);
+        return scanMessage(context, message);
     }
 
     //making this package default so that it can be tested in the test class
-    AssertionStatus scanMessage(final AbstractIcapResponseHandler handler, final String icapUri, final String hostname, final Message message) {
+    AssertionStatus scanMessage(final PolicyEnforcementContext context, final Message message) {
         AssertionStatus status = AssertionStatus.NONE;
         try {
             for (PartIterator pi = message.getMimeKnob().getParts(); pi.hasNext(); ) {
-                status = scan(handler, icapUri, hostname, pi.next(), 0);
+                status = scan(context, pi.next(), 0);
                 if (status != AssertionStatus.NONE) {
                     break;
                 }
@@ -186,44 +152,70 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
                     + assertion.getTargetName());
             status = AssertionStatus.FAILED;
         }
+        if(!infectedParts.isEmpty()){
+            context.setVariable(IcapAntivirusScannerAssertion.INFECTED_PARTS,
+                    infectedParts.toArray(new String[infectedParts.size()]));
+        }
         return status;
     }
 
-    private AssertionStatus scan(AbstractIcapResponseHandler handler, String icapUri, String hostname, PartInfo partInfo, int currentDepth) {
+    private AssertionStatus scan(final PolicyEnforcementContext context, PartInfo partInfo, int currentDepth) {
         try {
             if (currentDepth != assertion.getMaxMimeDepth() && partInfo.getContentType().isMultipart()) {
                 try {
                     MimeBody mimeBody = new MimeBody(stashManagerFactory.createStashManager(),
-                            partInfo.getContentType(), partInfo.getInputStream(false), 0);
+                            ContentTypeHeader.OCTET_STREAM_DEFAULT, partInfo.getInputStream(false), Message.getMaxBytes());
                     for (PartIterator pit = mimeBody.iterator(); pit.hasNext(); ) {
                         PartInfo pi = pit.next();
                         //recursively traverse all the multiparts
                         //break when it failed
-                        AssertionStatus status = scan(handler, icapUri, hostname, pi, currentDepth++);
+                        AssertionStatus status = scan(context, pi, currentDepth++);
                         if (status == AssertionStatus.FAILED) {
                             return status;
                         }
                     }
                 } catch (IOException e) {
-                    logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Error reading MIME content from " + assertion.getTargetName());
+                    logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Error reading MIME content from " + assertion.getTargetName() + " : " + e.getMessage());
                     return AssertionStatus.FAILED;
                 }
             } else {
+                Channel channel = null;
                 try {
-                    IcapResponse response = handler.scan(icapUri, hostname, partInfo);
-                    if (response.getStatus() == IcapResponseStatus.OK) {
-                        String partName = partInfo.getContentId(true);
-                        Map<String, String> infectionInfo = parseMultivalueHeader(response.getHeader("X-Infection-Found"));
-                        String service = response.getHeader("Service");
-                        logAndAudit(AssertionMessages.ICAP_RESPONSE_WARNING, service, infectionInfo.get("Threat"),
-                                partName, RESOLUTION_MAPPING.get(infectionInfo.get("Resolution")));
+                    channel = getChannel(context);
+                    if (channel == null) {
+                        logAndAudit(AssertionMessages.USERDETAIL_WARNING, "No valid ICAP server entries found");
+                        return AssertionStatus.FAILED;
+                    }
+                    AbstractIcapResponseHandler handler = (AbstractIcapResponseHandler) channel.getPipeline().get("handler");
+                    IcapResponse response = handler.scan(currentIcapUri, currentHost, partInfo);
+                    if (response == null) {
+                        logAndAudit(AssertionMessages.USERDETAIL_WARNING, "No ICAP response received - please check ICAP connection.");
+                        failoverStrategy.reportFailure(selectedService);
+                        return AssertionStatus.FAILED;
+                    }
+                    //204 - NO CONTENT signify no virus found
+                    //Symantec return 200 if a virus is found when using the avscan service
+                    //         return 201 if a virus is found when using the SYMCScanResp-AV service
+                    //other virus engines return 200 if a virus is found, 204 when there's no virus.
+                    if (response.getStatus() == IcapResponseStatus.OK || response.getStatus() == IcapResponseStatus.CREATED) {
+                        logVirusInformation(context, response, partInfo.getContentId(true));
                         if (!assertion.isContinueOnVirusFound()) {
                             return AssertionStatus.FAILED;
                         }
+                    } else if (response.getStatus() == IcapResponseStatus.SERVICE_UNAVAILABLE){
+                        logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Service not available " + currentIcapUri);
+                        failoverStrategy.reportFailure(selectedService);
+                        return AssertionStatus.FAILED;
                     }
+                    failoverStrategy.reportSuccess(selectedService);
                 } catch (IOException e) {
-                    logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Error occurred while scanning content " + assertion.getTargetName());
+                    logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Error occurred while scanning content " + assertion.getTargetName() + " : " + e.getMessage());
                     return AssertionStatus.FAILED;
+                }
+                finally {
+                    if (channel != null) {
+                        channel.close();
+                    }
                 }
             }
         } catch (NoSuchPartException e) {
@@ -234,15 +226,31 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
         return AssertionStatus.NONE;
     }
 
-    private Map<String, String> parseMultivalueHeader(String header) {
-        Map<String, String> ret = new HashMap<String, String>();
-        if (header != null && !header.trim().isEmpty()) {
-            Matcher matcher = MULTI_VALUE_HEADER.matcher(header);
-            while (matcher.find()) {
-                ret.put(matcher.group(1).trim(), matcher.group(2).trim());
-            }
+    private void logVirusInformation(PolicyEnforcementContext context, IcapResponse response, String contentId) {
+        String partName = assertion.getTarget() == TargetMessageType.OTHER ? assertion.getOtherTargetMessageVariable() : contentId;
+        if (partName == null) {
+            partName = "Unknown";
         }
-        return ret;
+        infectedParts.add(partName);
+        List<String> headerNames = new ArrayList<String>();
+        List<String> headerValues = new ArrayList<String>();
+
+        logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Virus detected in " + assertion.getTargetName() + " (" + partName + ")");
+        logAndAudit(AssertionMessages.USERDETAIL_WARNING, "ICAP Status: (" + response.getStatus().getCode() + ": " + response.getStatus() + ")");
+        StringBuilder sb = new StringBuilder("Headers returned from ICAP service:\r\n");
+        for (Map.Entry<String, String> ent : response.getHeaders()) {
+            headerNames.add(ent.getKey());
+            headerValues.add(ent.getValue());
+            sb.append("  ").append(ent.getKey()).append(": ").append(ent.getValue()).append("\r\n");
+        }
+        context.setVariable(IcapAntivirusScannerAssertion.VARIABLE_NAMES + "." + (infectedParts.size() - 1), headerNames.toArray(new String[headerNames.size()]));
+        context.setVariable(IcapAntivirusScannerAssertion.VARIABLE_VALUES + "."  + (infectedParts.size() - 1), headerValues.toArray(new String[headerValues.size()]));
+
+        String prefix = IcapAntivirusScannerAssertion.VARIABLE_NAME + "."  + (infectedParts.size() - 1) + ".";
+        for(int i = 0; i < Math.max(headerNames.size(), headerValues.size()); ++i){
+            context.setVariable(prefix + headerNames.get(i), headerValues.get(i));
+        }
+        logAndAudit(AssertionMessages.USERDETAIL_WARNING, sb.toString());
     }
 
     @Override
@@ -258,11 +266,16 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
         for (Map.Entry<String, String> ent : assertion.getServiceParameters().entrySet()) {
             String key = getContextVariable(context, ent.getKey());
             String value = getContextVariable(context, ent.getValue());
-
             sb.append(key).append("=").append(value).append("&");
         }
         sb = sb.delete(sb.length() - 1, sb.length());
         return sb.toString();
     }
+
+    void setClient(final ClientBootstrap client) {
+        this.client = client;
+    }
+
+
 }
 

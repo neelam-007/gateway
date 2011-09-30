@@ -570,8 +570,8 @@ public class GatewayFeatureSets {
             mass("assertion:JdbcQuery"));
 
         GatewayFeatureSet icapAntivirusScannerAssertions =
-        fsr("set:icapAntivirusScanner:Assertions", "The necessary assertions to enable ICAP Antivirus scanning functionality",
-            mass("assertion:icapAntivirusScanner"));
+        fsr("set:IcapAntivirusScanner:Assertions", "The necessary assertions to enable ICAP Antivirus scanning functionality",
+            mass("assertion:IcapAntivirusScanner"));
 
         GatewayFeatureSet uddiNotificationAssertions =
         fsr("set:UDDINotification:Assertions", "The necessary assertions to enable UDDI Notification functionality",
@@ -692,8 +692,7 @@ public class GatewayFeatureSets {
             fs(mtomValidateAssertions),
             fs(customFw),
             fs(esmAssertions),
-            fs(samlpSsoAssertions),
-            fs(icapAntivirusScannerAssertions));
+            fs(samlpSsoAssertions));
 
         fsp("set:Profile:CloudConnect", "CloudSpan CloudConnect",
             "Same features as XML Firewall for now.",
@@ -774,8 +773,7 @@ public class GatewayFeatureSets {
             fs(mtomEncodeAssertions),
             fs(mtomValidateAssertions),
             fs(esmAssertions),
-            fs(uiFw),
-            fs(icapAntivirusScannerAssertions));
+            fs(uiFw));
 
         PROFILE_ALL =
         fsp("set:Profile:Development", "Development Mode",

@@ -182,7 +182,8 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
                 Utilities.centerOnScreen(ispd);
                 ispd.setVisible(true);
                 if (ispd.isConfirmed()) {
-                    addToServerList(ispd.getIcapUri());
+                    serverListModel.removeElement(icapUri);
+                    serverListModel.addElement(ispd.getIcapUri());
                 }
             }
         }
