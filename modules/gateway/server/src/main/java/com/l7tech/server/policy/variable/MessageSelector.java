@@ -169,7 +169,11 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
                     // Case 2: An exception thrown means the suffix is an attribute.
                     final AuthenticatedUserGetter userGetter = new AuthenticatedUserGetter<User>(AUTH_USER_USER, false, User.class,AuthenticatedUserGetter.USER_TO_ITSELF, message);
                     final User user = (User) userGetter.get(names[0], PolicyEnforcementContextFactory.getCurrent());
-                    return new Selection(user, remainingName);
+                    if (user == null) {
+                        return new Selection("");
+                    } else {
+                        return new Selection(user, remainingName);
+                    }
                 }
             }
         } else if (lname.startsWith(AUTH_USER_DNS)) {
