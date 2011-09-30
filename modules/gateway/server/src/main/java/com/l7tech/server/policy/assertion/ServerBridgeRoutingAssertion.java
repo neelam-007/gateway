@@ -370,8 +370,10 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                     }
                 } else if (ExceptionUtils.causedBy(ioe, ByteLimitInputStream.DataSizeLimitExceededException.class)) {
                     logAndAudit(AssertionMessages.HTTPROUTE_ERROR_READING_RESPONSE,null, ExceptionUtils.getDebugException(ioe));
+                } else if (ExceptionUtils.causedBy(ioe, CausedIOException.class)) {
+                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Policy download error: " + ExceptionUtils.getMessage(ioe));
                 } else {
-                    String errmsg = ioe.getMessage();
+                    String errmsg = ExceptionUtils.getMessage(ioe);
 
                     if (errmsg != null && errmsg.startsWith(CertificateDownloader.GATEWAY_CERT_DISCOVERY_ERROR)) {
                         String detail = "Gateway certificate discovery service error: ";

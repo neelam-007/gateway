@@ -331,8 +331,7 @@ public class PolicyServiceClient {
                 log.info("Auth failed from policy service: " + faultXml);
                 throw new BadCredentialsException(s);
             }
-            log.severe("Unexpected SOAP fault from policy service: " + faultXml);
-            throw new InvalidDocumentFormatException("Unexpected SOAP fault from policy service");
+            throw new InvalidDocumentFormatException("Unexpected SOAP fault from policy service\n" + faultXml);
         } catch (IOException e) {
             throw new InvalidDocumentFormatException(e);
         }
