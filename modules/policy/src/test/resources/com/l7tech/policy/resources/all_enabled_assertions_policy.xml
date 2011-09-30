@@ -115,6 +115,7 @@
         <L7p:Regex/>
         <L7p:UnknownAssertion/>
         <L7p:ThroughputQuota/>
+        <L7p:ThroughputQuotaQuery/>
         <L7p:EmailAlert/>
         <L7p:CommentAssertion/>
         <L7p:SqlAttackProtection/>

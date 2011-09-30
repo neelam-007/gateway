@@ -1,7 +1,7 @@
 package com.l7tech.server.sla;
 
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
+import org.jetbrains.annotations.NotNull;
 
 public class CounterManagerStub implements CounterManager{
     /**
@@ -31,7 +31,8 @@ public class CounterManagerStub implements CounterManager{
     }
 
     @Override
-    public void checkOrCreateCounter(String counterName) throws ObjectModelException {
+    public boolean checkOrCreateCounter(@NotNull String counterName, boolean create) throws ObjectModelException {
+        return true;
     }
 
     @Override
@@ -50,6 +51,11 @@ public class CounterManagerStub implements CounterManager{
     @Override
     public long getCounterValue(String counterName, int fieldOfInterest) {
         return counterValue;
+    }
+
+    @Override
+    public CounterInfo getCounterInfo(@NotNull String counterName) {
+        return null;
     }
 
     @Override

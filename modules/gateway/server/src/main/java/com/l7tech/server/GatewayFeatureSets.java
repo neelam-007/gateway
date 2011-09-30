@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.ForEachLoopAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.policy.assertion.sla.ThroughputQuotaQueryAssertion;
 import com.l7tech.policy.assertion.transport.PreemptiveCompression;
 import com.l7tech.policy.assertion.transport.RemoteDomainIdentityInjection;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
@@ -467,7 +468,8 @@ public class GatewayFeatureSets {
         fsr("set:Availability:Firewall", "SecureSpan Firewall service availability",
             "Adds throughput qutoa",
             fs(availabilityAccel),
-            ass(ThroughputQuota.class));
+            ass(ThroughputQuota.class),
+            ass(ThroughputQuotaQueryAssertion.class));
 
         // Logging/auditing and alerts
         GatewayFeatureSet auditAccel =

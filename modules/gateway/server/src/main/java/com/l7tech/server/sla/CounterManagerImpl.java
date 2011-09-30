@@ -10,20 +10,19 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import com.l7tech.util.ResourceUtils;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -45,8 +44,8 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
 
     private Counter getLockedCounter(Connection conn, String counterName) throws SQLException {
         PreparedStatement ps = conn.prepareStatement("SELECT cnt_sec, cnt_min, cnt_hr, cnt_day, cnt_mnt, last_update" +
-                                                                 " FROM counters WHERE countername='" + counterName + "'" +
-                                                                 " FOR UPDATE");
+                " FROM counters WHERE countername='" + counterName + "'" +
+                " FOR UPDATE");
         ResultSet rs = ps.executeQuery();
         Counter output = null;
         while (rs.next()) {
@@ -66,8 +65,8 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
 
     private void recordNewCounterValue(Connection conn, String counterName, Counter newValues) throws SQLException {
         PreparedStatement ps = conn.prepareStatement("UPDATE counters " +
-                                                     "SET cnt_sec=?, cnt_min=?, cnt_hr=?, cnt_day=?, cnt_mnt=?, last_update=? " +
-                                                     "WHERE countername=?");
+                "SET cnt_sec=?, cnt_min=?, cnt_hr=?, cnt_day=?, cnt_mnt=?, last_update=? " +
+                "WHERE countername=?");
         ps.clearParameters();
         ps.setLong(1, newValues.getCurrentSecondCounter());
         ps.setLong(2, newValues.getCurrentMinuteCounter());
@@ -177,9 +176,9 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
     }
 
     @Override
-    public void checkOrCreateCounter(String counterName) throws ObjectModelException {
+    public boolean checkOrCreateCounter(@NotNull String counterName, boolean create) throws ObjectModelException {
         synchronized (counterCache) {
-            if (counterCache.contains(counterName)) return;
+            if (counterCache.contains(counterName)) return true;
 
             final CounterRecord data = new CounterRecord();
             data.setCounterName(counterName);
@@ -196,11 +195,15 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
                 });
 
                 // check whether this is already in the db
-                if (res == null || res.isEmpty()) {
-                    getHibernateTemplate().save(data);
-                }
+                final boolean alreadyExists = res != null && !res.isEmpty();
+                if (create) {
+                    if (!alreadyExists) {
+                        getHibernateTemplate().save(data);
+                    }
 
-                counterCache.add(counterName);
+                    counterCache.add(counterName);
+                }
+                return alreadyExists;
             } catch (DataAccessException e) {
                 String msg = "problem getting existing counter name from db or creating new one. possible race condition";
                 logger.log(Level.WARNING, msg, e);
@@ -323,6 +326,48 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
             return (Long) result;
         }
         throw new RuntimeException("unexpected result type " + result);
+    }
+
+    @Override
+    public CounterInfo getCounterInfo(final @NotNull String counterName) {
+        return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<CounterInfo>() {
+            @Override
+            public CounterInfo doInHibernateReadOnly(Session session) {
+                PreparedStatement ps = null;
+                ResultSet rs = null;
+                try {
+                    Connection conn = session.connection();
+                    ps = conn.prepareStatement("SELECT counterid,countername,cnt_sec,cnt_min,cnt_hr,cnt_day,cnt_mnt,last_update" +
+                            " FROM counters WHERE countername='" + counterName + "'");
+                    rs = ps.executeQuery();
+                    CounterInfo info = null;
+                    if (rs.next()) {
+                        long oid = rs.getLong(1);
+                        String name = rs.getString(2);
+                        long sec = rs.getLong(3);
+                        long min = rs.getLong(4);
+                        long hr = rs.getLong(5);
+                        long day = rs.getLong(6);
+                        long mnt = rs.getLong(7);
+                        Date lastUpdate = rs.getDate(8);
+                        info = new CounterInfo(oid, name, sec, min, hr, day, mnt, lastUpdate);
+                    }
+                    rs.close();
+                    ps.close();
+                    conn.commit();
+                    //noinspection UnusedAssignment
+                    conn = null;
+                    rs = null;
+                    ps = null;
+                    return info;
+                } catch (SQLException e) {
+                    throw new HibernateException(e);
+                } finally {
+                    ResourceUtils.closeQuietly(rs);
+                    ResourceUtils.closeQuietly(ps);
+                }
+            }
+        });
     }
 
     @Override

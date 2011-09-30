@@ -81,7 +81,7 @@ public class ServerRateLimitQueryAssertion extends AbstractServerAssertion<RateL
     }
 
     private String prefix(String name) {
-        final String prefix = assertion.getVariblePrefix();
+        final String prefix = assertion.getVariablePrefix();
         return prefix == null ? name : prefix + "." + name;
     }
 }

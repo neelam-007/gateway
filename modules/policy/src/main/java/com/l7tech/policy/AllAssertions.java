@@ -25,6 +25,7 @@ import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
+import com.l7tech.policy.assertion.sla.ThroughputQuotaQueryAssertion;
 import com.l7tech.policy.assertion.transport.PreemptiveCompression;
 import com.l7tech.policy.assertion.transport.RemoteDomainIdentityInjection;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
@@ -83,6 +84,7 @@ public class AllAssertions {
         new Regex(),
         new UnknownAssertion(),
         new ThroughputQuota(),
+        new ThroughputQuotaQueryAssertion(),
         new EmailAlertAssertion(),
         new CommentAssertion(),
         new SqlAttackAssertion(),
@@ -160,6 +162,7 @@ public class AllAssertions {
         new Regex(),
         new UnknownAssertion(),
         new ThroughputQuota(),
+        new ThroughputQuotaQueryAssertion(),
         new EmailAlertAssertion(),
         new CommentAssertion(),
         new SqlAttackAssertion(),

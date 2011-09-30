@@ -3,6 +3,7 @@ package com.l7tech.policy.variable;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Element;
 
 import java.io.IOException;
@@ -124,7 +125,7 @@ public abstract class Syntax {
      * @return all the variable names which are contained within our variable reference syntax of ${...} in String s.  May be empty but never null.
      * @throws VariableNameSyntaxException If an error occurs
      */
-    public static String[] getReferencedNames(final String s) {
+    public static String[] getReferencedNames(final @Nullable String s) {
         if (s == null) return new String[0];
         return getReferencedNames( s, true );
     }
@@ -141,7 +142,7 @@ public abstract class Syntax {
      * @return all the variable names which are contained within our variable reference syntax of ${...} in String s
      * @throws VariableNameSyntaxException If strict and an error occurs
      */
-    public static String[] getReferencedNames(final String s, final boolean strict) {
+    public static String[] getReferencedNames(final @Nullable String s, final boolean strict) {
         final List<String> vars = new ArrayList<String>();
         if ( s != null ) {
             final Matcher matcher = regexPattern.matcher(s);
@@ -192,7 +193,7 @@ public abstract class Syntax {
      * @param name The name (may be null)
      * @return The expression or null if the name was null
      */
-    public static String getVariableExpression( final String name ) {
+    public static String getVariableExpression( final @Nullable String name ) {
         return name == null ? null : SYNTAX_PREFIX + name + SYNTAX_SUFFIX;        
     }
 

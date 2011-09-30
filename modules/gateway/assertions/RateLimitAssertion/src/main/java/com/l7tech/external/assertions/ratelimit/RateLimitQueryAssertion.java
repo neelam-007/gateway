@@ -1,12 +1,17 @@
 package com.l7tech.external.assertions.ratelimit;
 
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.sla.CounterPresetInfo;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 
 import java.util.ArrayList;
 import java.util.Collection;
 
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
@@ -44,20 +49,21 @@ public class RateLimitQueryAssertion extends Assertion implements UsesVariables,
     /**
      * @return variable prefix for querying counter state, or null to avoid setting any variables.
      */
-    public String getVariblePrefix() {
+    public String getVariablePrefix() {
         return variablePrefix;
     }
 
     /**
-     * @param variblePrefix variable prefxi for querying counter state, or null to avoid setting any variables.
+     * @param variablePrefix variable prefxi for querying counter state, or null to avoid setting any variables.
      */
-    public void setVariblePrefix(String variblePrefix) {
-        this.variablePrefix = variblePrefix;
+    public void setVariablePrefix(String variablePrefix) {
+        this.variablePrefix = variablePrefix;
     }
 
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
-        return new String[0];  //To change body of implemented methods use File | Settings | File Templates.
+        return Syntax.getReferencedNames(counterName);
     }
 
     @Override

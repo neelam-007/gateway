@@ -1,6 +1,7 @@
 package com.l7tech.server.sla;
 
 import com.l7tech.objectmodel.ObjectModelException;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * An interface for managers that provides access to counters used at runtime by ServerThroughputQuota assertions.
@@ -9,11 +10,13 @@ import com.l7tech.objectmodel.ObjectModelException;
  */
 public interface CounterManager {
     /**
-     * Check if a counter exists or not.  If it does not exist, then create a new counter with a given counter name.
+     * Check if a counter exists or not.  If it does not exist, then optionally create a new counter with a given counter name.
      * @param counterName: used to check if the database has such counter whose name is counterName.
+     * @param create true if counter should be created if it doesn't already exist.
      * @throws com.l7tech.objectmodel.ObjectModelException : thrown when data access errors occur.
+     * @return true iff. the counter already existed when this method was called.
      */
-    void checkOrCreateCounter(String counterName) throws ObjectModelException;
+    boolean checkOrCreateCounter(@NotNull String counterName, boolean create) throws ObjectModelException;
 
     /**
      * Increment the counter identified by objectId only if the resulting value of the counter for
@@ -45,6 +48,14 @@ public interface CounterManager {
      * get a current counter value without incrementing anything
      */ 
     public long getCounterValue(String counterName, int fieldOfInterest);
+
+    /**
+     * Get a snapshot of all current counter values without incrementing anything.
+     *
+     * @param counterName the counter name to query.  Required.
+     * @return a CounterInfo describing the current state (in the database) of the specified counter, or null if information was not found.
+     */
+    public CounterInfo getCounterInfo(final @NotNull String counterName);
 
     /**
      * Decrement the counter.

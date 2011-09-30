@@ -6,21 +6,21 @@
  */
 package com.l7tech.policy.assertion.sla;
 
-import com.l7tech.policy.assertion.*;
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
-
-import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.TextUtils;
 import com.l7tech.util.ValidationUtils;
 
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * An assertion that enforce the number of requests that can be made to a particular resource per time unit.
@@ -331,7 +331,7 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
      * @param rawCounterName: the raw counter name with a format PRESET(<uuid>)-${<context variable>}, if the raw counter name is well-formatted.
      * @return a readable counter name in a format, "<8-digit of uuid>-${<context variable>}.
      */
-    private static String getReadableCounterName(final String rawCounterName) {
+    static String getReadableCounterName(final String rawCounterName) {
         final String[] uuidOut = new String[]{null};
         final String quotaOption = CounterPresetInfo.findCounterNameKey(rawCounterName, uuidOut, PRESET_CUSTOM, COUNTER_NAME_TYPES);
 

@@ -1,17 +1,16 @@
-package com.l7tech.external.assertions.ratelimit.console;
+package com.l7tech.console.panels;
 
-import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
-import com.l7tech.external.assertions.ratelimit.RateLimitQueryAssertion;
+import com.l7tech.policy.assertion.sla.ThroughputQuotaQueryAssertion;
 
 import javax.swing.*;
 import java.awt.*;
 
-public class RateLimitQueryPropertiesDialog extends AssertionPropertiesOkCancelSupport<RateLimitQueryAssertion> {
+public class ThroughputQuotaQueryPropertiesDialog extends AssertionPropertiesOkCancelSupport<ThroughputQuotaQueryAssertion> {
     private JPanel contentPane;
     private JTextField counterNameField;
     private JTextField variablePrefixField;
 
-    public RateLimitQueryPropertiesDialog(Window owner, RateLimitQueryAssertion assertion) {
+    public ThroughputQuotaQueryPropertiesDialog(Window owner, ThroughputQuotaQueryAssertion assertion) {
         super(assertion.getClass(), owner, assertion, true);
         initComponents();
         setData(assertion);
@@ -23,7 +22,7 @@ public class RateLimitQueryPropertiesDialog extends AssertionPropertiesOkCancelS
     }
 
     @Override
-    public void setData(RateLimitQueryAssertion assertion) {
+    public void setData(ThroughputQuotaQueryAssertion assertion) {
         String name = assertion.getCounterName();
         counterNameField.setText(name == null ? "" : name);
 
@@ -32,7 +31,7 @@ public class RateLimitQueryPropertiesDialog extends AssertionPropertiesOkCancelS
     }
 
     @Override
-    public RateLimitQueryAssertion getData(RateLimitQueryAssertion assertion) throws ValidationException {
+    public ThroughputQuotaQueryAssertion getData(ThroughputQuotaQueryAssertion assertion) throws ValidationException {
         String name = counterNameField.getText();
         if (name == null || name.trim().length() < 1)
             throw new ValidationException("A counter name must be provided.");
@@ -43,5 +42,5 @@ public class RateLimitQueryPropertiesDialog extends AssertionPropertiesOkCancelS
 
         return assertion;
     }
-
 }
+

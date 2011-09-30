@@ -168,7 +168,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
 
         final CounterManager counterManager = (CounterManager)applicationContext.getBean("counterManager");
         try {
-            counterManager.checkOrCreateCounter(resolvedCounterName);
+            counterManager.checkOrCreateCounter(resolvedCounterName, true);
         } catch (ObjectModelException e) {
             // should not happen
             throw new IOException("Could not get counter, " + resolvedCounterName + ": " + e.getMessage());
