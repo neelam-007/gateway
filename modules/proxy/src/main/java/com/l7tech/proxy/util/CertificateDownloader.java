@@ -22,6 +22,8 @@ import java.util.logging.Logger;
  * Download a certificate from the SSG and check it for validity, if possible.
  */
 public class CertificateDownloader {
+    public static final String GATEWAY_CERT_DISCOVERY_ERROR = "Gateway certificate discovery service returned an unexpected error: ";
+
     private static final Logger logger = Logger.getLogger(CertificateDownloader.class.getName());
     private static final boolean ENABLE_PRE60 = ConfigFactory.getBooleanProperty( "com.l7tech.proxy.util.enablePre60CertDisco", true );
 
@@ -81,7 +83,7 @@ public class CertificateDownloader {
 
         if (result.getStatus() != 200) {
             String msg = new String(certBytes, 0, Math.min(certBytes.length, 900), ctype == null ? Charsets.UTF8 : ctype.getEncoding());
-            throw new IOException("Gateway certificate discovery service returned an unexpected error: " + msg);
+            throw new IOException(GATEWAY_CERT_DISCOVERY_ERROR + msg);
         }
         X509Certificate cert = CertUtils.decodeCert(certBytes);
 

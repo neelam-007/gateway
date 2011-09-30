@@ -45,11 +45,11 @@ public class Messages {
     // NOTE: *_SEVERE is the same as *_WARNING since you should never log at SEVERE anything except "audits flushed"
     // and other events that must be recorded indelibly FOREVER
     public static final M EXCEPTION_SEVERE                  = m(1, Level.WARNING, "Exception caught! ");
-    public static final M EXCEPTION_SEVERE_WITH_MORE_INFO   = m(2, Level.WARNING, "{0}. Exception caught! ");
+    public static final M EXCEPTION_SEVERE_WITH_MORE_INFO   = m(2, Level.WARNING, "{0}.  Exception caught! ");
     public static final M EXCEPTION_WARNING                 = m(3, Level.WARNING, "Exception caught! ");
-    public static final M EXCEPTION_WARNING_WITH_MORE_INFO  = m(4, Level.WARNING, "{0}. Exception caught! ");
+    public static final M EXCEPTION_WARNING_WITH_MORE_INFO  = m(4, Level.WARNING, "{0}.  Exception caught! ");
     public static final M EXCEPTION_INFO                    = m(5, Level.INFO, "Exception caught! ");
-    public static final M EXCEPTION_INFO_WITH_MORE_INFO     = m(6, Level.INFO, "{0}. Exception caught! ");
+    public static final M EXCEPTION_INFO_WITH_MORE_INFO     = m(6, Level.INFO, "{0}.  Exception caught! ");
     // MAX -                                                  m(0099)
 
     static AuditDetailMessage getAuditDetailMessageById(int id) {

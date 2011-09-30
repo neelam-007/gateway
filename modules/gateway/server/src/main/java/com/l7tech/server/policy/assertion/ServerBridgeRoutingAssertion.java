@@ -30,6 +30,7 @@ import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.proxy.ssl.SslPeer;
 import com.l7tech.proxy.ssl.SslPeerHttpClient;
 import com.l7tech.proxy.ssl.SslPeerLazyDelegateSocketFactory;
+import com.l7tech.proxy.util.CertificateDownloader;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.security.xml.SignerInfo;
@@ -370,8 +371,22 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                 } else if (ExceptionUtils.causedBy(ioe, ByteLimitInputStream.DataSizeLimitExceededException.class)) {
                     logAndAudit(AssertionMessages.HTTPROUTE_ERROR_READING_RESPONSE,null, ExceptionUtils.getDebugException(ioe));
                 } else {
-                    // TODO: Worry about what kinds of exceptions indicate failed routing, and which are "unrecoverable"
-                    logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, ExceptionUtils.getDebugException(ioe));
+                    String errmsg = ioe.getMessage();
+
+                    if (errmsg != null && errmsg.startsWith(CertificateDownloader.GATEWAY_CERT_DISCOVERY_ERROR)) {
+                        String detail = "Gateway certificate discovery service error: ";
+
+                        if (errmsg.contains(AssertionStatus.SERVICE_NOT_FOUND.getMessage())) {
+                            detail = detail + AssertionStatus.SERVICE_NOT_FOUND.getMessage();
+                            if (detail.lastIndexOf('.') == detail.length() - 1) detail = detail.substring(0, detail.length() - 1); // Remove the last extra '.'
+                        } else if (errmsg.contains("404 Not Found")) {
+                            detail = detail + "The requested resource is not available";
+                        }
+                        logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, detail);
+                    } else {
+                        // TODO: Worry about what kinds of exceptions indicate failed routing, and which are "unrecoverable"
+                        logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, ExceptionUtils.getDebugException(ioe));
+                    }
                 }
             } catch (SAXException e) {
                 thrown = e;
