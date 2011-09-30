@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.policy;
 
 import com.l7tech.policy.Policy;
@@ -54,6 +51,10 @@ public class ServerPolicy extends AbstractReferenceCounted<ServerPolicyHandle> {
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
         AssertionStatus result;
+
+        if (context != null)
+            context.assertionStarting(rootAssertion);
+
         try {
             result = rootAssertion.checkRequest(context);
         } catch (AssertionStatusException e) {
@@ -116,14 +117,17 @@ public class ServerPolicy extends AbstractReferenceCounted<ServerPolicyHandle> {
             this.usedPolicyIds = usedPolicyIds;
         }
 
+        @Override
         public String getPolicyUniqueIdentifier() {
             return policyUVID.getPolicyUniqueIdentifer();
         }
         
+        @Override
         public Policy getPolicy() {
             return policy;
         }
 
+        @Override
         public Set<Long> getUsedPolicyIds( final boolean includeSelf ) {
             if ( !includeSelf) {
                 return usedPolicyIds;
@@ -134,6 +138,7 @@ public class ServerPolicy extends AbstractReferenceCounted<ServerPolicyHandle> {
             }
         }
 
+        @Override
         public Map<Long,Integer> getDependentVersions( final boolean includeSelf ) {
             return policyUVID.getUsedPoliciesAndVersions( includeSelf );
         }

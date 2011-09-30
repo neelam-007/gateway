@@ -46,6 +46,8 @@ public class ServerForEachLoopAssertion extends ServerCompositeAssertion<ForEach
         final List<ServerAssertion> kids = getChildren();
         AssertionStatus result;
         for (ServerAssertion kid : kids) {
+            context.assertionStarting(kid);
+
             try {
                 result = kid.checkRequest(context);
             } catch (AssertionStatusException e) {
@@ -61,6 +63,7 @@ public class ServerForEachLoopAssertion extends ServerCompositeAssertion<ForEach
         return AssertionStatus.NONE;
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         final Object values = findValues(context);
         final Iterator iterator = makeIterator(values);

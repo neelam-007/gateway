@@ -42,7 +42,7 @@ public abstract class Syntax {
      * @param names the set of names to search within
      * @return the longest subset of the provided Name that matches one of the Set members, or null if no match is found
      */
-    public static String getMatchingName(String name, Set names) {
+    public static String getMatchingName(String name, Set<String> names) {
         return getMatchingName(name, names, false, true);
     }
 
@@ -61,7 +61,7 @@ public abstract class Syntax {
      * @return the longest subset of the provided Name that matches one of the Set members, or null if no match is found
      */
     public static String getMatchingName( final String name,
-                                          final Set names,
+                                          final Set<String> names,
                                           final boolean preserveCase,
                                           final boolean trim) {
         String mutateName = preserveCase ? name : name.toLowerCase();

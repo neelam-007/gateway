@@ -8,6 +8,7 @@ import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableNotSettableException;
+import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.util.InvalidDocumentFormatException;
@@ -215,6 +216,11 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper {
     }
 
     @Override
+    public void assertionStarting( final ServerAssertion assertion ) {
+        context.assertionStarting( assertion );
+    }
+
+    @Override
     public void assertionFinished( final ServerAssertion assertion, final AssertionStatus status ) {
         context.assertionFinished( assertion, status );
     }
@@ -245,8 +251,23 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper {
     }
 
     @Override
+    public Collection<Integer> getAssertionNumber() {
+        return context.getAssertionNumber();
+    }
+
+    @Override
     public int popAssertionOrdinal() throws NoSuchElementException {
         return context.popAssertionOrdinal();
+    }
+
+    @Override
+    public PolicyMetadata getCurrentPolicyMetadata() {
+        return context.getCurrentPolicyMetadata();
+    }
+
+    @Override
+    public void setCurrentPolicyMetadata( final PolicyMetadata policyMetadata ) {
+        context.setCurrentPolicyMetadata( policyMetadata );
     }
 
     @Override

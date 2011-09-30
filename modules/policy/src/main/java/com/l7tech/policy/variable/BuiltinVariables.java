@@ -31,6 +31,7 @@ public class BuiltinVariables {
     public static final String PREFIX_REQUEST_TIME = "request.time";
     public static final String PREFIX_SERVICE = "service";
     public static final String PREFIX_POLICY = "policy";
+    public static final String PREFIX_ASSERTION = "assertion";
 
     public static final String PREFIX_REQUEST_URL = "request.url";
     public static final String PREFIX_CLUSTER_PROPERTY = "gateway"; // value of a variable in the cluster property table
@@ -42,8 +43,8 @@ public class BuiltinVariables {
     public static final String PREFIX_TRACE = "trace"; // Only actually available at runtime when running a debug trace policy
     public static final String TRACE_OUT = "trace.out";// Only actually available at runtime when running a debug trace policy
 
-    private static final Map metadataByName = new HashMap();
-    private static final Map metadataPresetByName = new HashMap();
+    private static final Map<String,VariableMetadata> metadataByName = new HashMap<String,VariableMetadata>();
+    private static final Map<String,VariableMetadata> metadataPresetByName = new HashMap<String,VariableMetadata>();
 
     public static final String TIMESUFFIX_FORMAT_ISO8601 = "iso8601";
     public static final String TIMESUFFIX_ZONE_UTC = "utc";
@@ -54,12 +55,6 @@ public class BuiltinVariables {
     public static final String SERVICE_SUFFIX_ROUTINGURL = "defaultRoutingURL";
     public static final String SERVICE_SUFFIX_POLICY_GUID = "policy.guid";
     public static final String SERVICE_SUFFIX_POLICY_VERSION = "policy.version";
-
-    public static final String POLICY_SUFFIX_NAME = SERVICE_SUFFIX_NAME;
-    public static final String POLICY_SUFFIX_OID = SERVICE_SUFFIX_OID;
-    public static final String POLICY_SUFFIX_GUID = "guid";
-    public static final String POLICY_SUFFIX_VERSION = "version";
-
     @Deprecated
     public static final String SERVICE_SUFFIX_URL = "url";
     @Deprecated
@@ -76,6 +71,14 @@ public class BuiltinVariables {
     public static final String SERVICE_SUFFIX_QUERY = "query";
     @Deprecated
     public static final String SERVICE_SUFFIX_FRAGMENT = "fragment";
+
+    public static final String POLICY_SUFFIX_NAME = SERVICE_SUFFIX_NAME;
+    public static final String POLICY_SUFFIX_OID = SERVICE_SUFFIX_OID;
+    public static final String POLICY_SUFFIX_GUID = "guid";
+    public static final String POLICY_SUFFIX_VERSION = "version";
+
+    public static final String ASSERTION_SUFFIX_NUMBER = "number";
+    public static final String ASSERTION_SUFFIX_NUMBERSTR = "numberstr";
 
     public static boolean isSupported(String name) {
         return getMetadata(name) != null;
@@ -119,6 +122,7 @@ public class BuiltinVariables {
         return Collections.unmodifiableMap(metadataByName);
     }
 
+    @SuppressWarnings({ "deprecation" })
     private static final VariableMetadata[] VARS = {
             new VariableMetadata("request.clientid", false, false, null, false),
             new VariableMetadata("request.http.method", false, false, null, false),
@@ -157,6 +161,9 @@ public class BuiltinVariables {
             new VariableMetadata(PREFIX_POLICY + "." + POLICY_SUFFIX_OID, false, false, null, false),
             new VariableMetadata(PREFIX_POLICY + "." + POLICY_SUFFIX_GUID, false, false, null, false),
             new VariableMetadata(PREFIX_POLICY + "." + POLICY_SUFFIX_VERSION, false, false, null, false, DataType.INTEGER),
+
+            new VariableMetadata(PREFIX_ASSERTION + "." + ASSERTION_SUFFIX_NUMBER, false, true, null, false, DataType.INTEGER),
+            new VariableMetadata(PREFIX_ASSERTION + "." + ASSERTION_SUFFIX_NUMBERSTR, false, false, null, false),
 
             new VariableMetadata(SSGNODE_NAME, false, false, null, false),
             new VariableMetadata(SSGNODE_ID, false, false, null, false),
@@ -215,11 +222,12 @@ public class BuiltinVariables {
     };
 
     static {
-        for (int i = 0; i < VARS.length; i++) {
-            metadataByName.put(VARS[i].getName().toLowerCase(), VARS[i]);
+        for ( final VariableMetadata variableMetadata : VARS ) {
+            metadataByName.put( variableMetadata.getName().toLowerCase(), variableMetadata );
             // builtin variables that are not set at beginning of context
-            if (!VARS[i].getName().equals(PREFIX_SERVICE + "." + SERVICE_SUFFIX_URL)) { // bugzilla 3208, add other non-preset variables as needed
-                metadataPresetByName.put(VARS[i].getName().toLowerCase(), VARS[i]);
+            //noinspection deprecation
+            if ( !variableMetadata.getName().equals( PREFIX_SERVICE + "." + SERVICE_SUFFIX_URL ) ) { // bugzilla 3208, add other non-preset variables as needed
+                metadataPresetByName.put( variableMetadata.getName().toLowerCase(), variableMetadata );
             }
         }
     }
@@ -233,6 +241,6 @@ public class BuiltinVariables {
     public static VariableMetadata getMetadata(String name) {
         String newname = Syntax.getMatchingName(name, metadataByName.keySet());
         if (newname == null) return null;
-        return (VariableMetadata) metadataByName.get(newname);
+        return metadataByName.get(newname);
     }
 }

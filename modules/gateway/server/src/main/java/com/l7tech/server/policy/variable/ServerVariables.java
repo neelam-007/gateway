@@ -29,6 +29,7 @@ import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.trace.TracePolicyEnforcementContext;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
+import com.l7tech.util.TextUtils;
 
 import javax.wsdl.Binding;
 import javax.wsdl.Operation;
@@ -115,6 +116,7 @@ public class ServerVariables {
         return getVariable(name, context) != null;
     }
 
+    @SuppressWarnings({ "deprecation" })
     private static final Variable[] VARS = {
             new Variable("request", new RequestGetter("request")),
             new Variable("response", new ResponseGetter("response")),
@@ -348,8 +350,7 @@ public class ServerVariables {
                         logger.warning("Context variable for request JMS message property does not start with the correct prefix (" + prefix + "): " + name);
                         return null;
                     }
-                    Object[] keys = jmsKnob.getJmsMsgPropMap().keySet().toArray();
-                    return keys;
+                    return jmsKnob.getJmsMsgPropMap().keySet().toArray();
                 }
             }),
 
@@ -363,8 +364,7 @@ public class ServerVariables {
                         logger.warning("Context variable for response JMS message property does not start with the correct prefix (" + prefix + "): " + name);
                         return null;
                     }
-                    Object[] keys = jmsKnob.getJmsMsgPropMap().keySet().toArray();
-                    return keys;
+                    return jmsKnob.getJmsMsgPropMap().keySet().toArray();
                 }
             }),
 
@@ -374,7 +374,6 @@ public class ServerVariables {
                     final JmsKnob jmsKnob = context.getRequest().getKnob(JmsKnob.class);
                     if (jmsKnob == null) return null;
                     ArrayList<String> values = new ArrayList<String>();
-                    final Syntax syntax = Syntax.parse(name, Syntax.DEFAULT_MV_DELIMITER);
                     final char delimiter = ':';
                     for (String key : jmsKnob.getJmsMsgPropMap().keySet()) {
                         values.add(key + delimiter + jmsKnob.getJmsMsgPropMap().get(key).toString());
@@ -388,7 +387,6 @@ public class ServerVariables {
                     final JmsKnob jmsKnob = context.getResponse().getKnob(JmsKnob.class);
                     if (jmsKnob == null) return null;
                     ArrayList<String> values = new ArrayList<String>();
-                    final Syntax syntax = Syntax.parse(name, Syntax.DEFAULT_MV_DELIMITER);
                     final char delimiter = ':';
                     for (String key : jmsKnob.getJmsMsgPropMap().keySet()) {
                         values.add(key + delimiter + jmsKnob.getJmsMsgPropMap().get(key).toString());
@@ -396,7 +394,6 @@ public class ServerVariables {
                     return values.toArray();
                 }
             }),
-
 
             new Variable(BuiltinVariables.PREFIX_SERVICE + "." + BuiltinVariables.SERVICE_SUFFIX_URL, new Getter() {
                 @Override
@@ -491,6 +488,22 @@ public class ServerVariables {
                 @Override
                 protected Object get( final PolicyHeader policyHeader ) {
                     return policyHeader.getPolicyRevision()==0L ? null : policyHeader.getPolicyRevision();
+                }
+            }),
+
+            new Variable(BuiltinVariables.PREFIX_ASSERTION + "." + BuiltinVariables.ASSERTION_SUFFIX_NUMBER, new Getter() {
+                @Override
+                Object get( final String name, final PolicyEnforcementContext context ) {
+                    final Collection<Integer> assertionNumber = context.getAssertionNumber();
+                    return assertionNumber.toArray(new Integer[assertionNumber.size()]);
+                }
+            }),
+
+            new Variable(BuiltinVariables.PREFIX_ASSERTION + "." + BuiltinVariables.ASSERTION_SUFFIX_NUMBERSTR, new Getter() {
+                @Override
+                Object get( final String name, final PolicyEnforcementContext context ) {
+                    final Collection<Integer> assertionNumber = context.getAssertionNumber();
+                    return TextUtils.join(".", assertionNumber).toString();
                 }
             }),
 
@@ -680,6 +693,7 @@ public class ServerVariables {
         return request.getKnob(JmsKnob.class) != null ? "Protocol:JMS" : null;
     }
 
+    @SuppressWarnings({ "deprecation" })
     private static Object getUrlValue(String prefix, String name, Object u) {
         if (u == null) return null;
         String suffix = name.substring(prefix.length());

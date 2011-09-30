@@ -14,6 +14,7 @@ import com.l7tech.gateway.common.mapping.MessageContextMapping;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.Message;
 import com.l7tech.message.ProcessingContext;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.RoutingStatus;
@@ -536,6 +537,12 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     private final Map<ServerAssertion, AssertionStatus> assertionStatuses = new LinkedHashMap<ServerAssertion, AssertionStatus>();
     @SuppressWarnings({ "CollectionDeclaredAsConcreteClass" })
     private LinkedList<AssertionResult> assertionResultList;
+    private ServerAssertion currentAssertion; // the assertion currently being evaluated
+
+    @Override
+    public void assertionStarting( final ServerAssertion assertion ) {
+        currentAssertion = assertion;
+    }
 
     /**
      * @param assertion the ServerAssertion that just finished. Must not be null.
@@ -547,6 +554,7 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
         assertionStatuses.put(assertion, status);
         if (traceListener != null)
             traceListener.assertionFinished(assertion, status);
+        currentAssertion = null; // we don't currently keep a stack since composites are not interesting
     }
 
     /**
@@ -564,6 +572,17 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
             }
         }
         return assertionResultList;
+    }
+
+    @Override
+    public Collection<Integer> getAssertionNumber() {
+        final List<Integer> number = new ArrayList<Integer>( getAssertionOrdinalPath() );
+        final ServerAssertion sass = currentAssertion;
+        final Assertion ass = sass == null ? null : sass.getAssertion();
+        if ( ass != null ) {
+            number.add(ass.getOrdinal());
+        }
+        return number;
     }
 
     @Override
@@ -766,6 +785,7 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
         if (assertionOrdinalPath == null)
             assertionOrdinalPath = new LinkedList<Integer>();
         assertionOrdinalPath.addLast(ordinal);
+        currentAssertion = null;
     }
 
     @Override

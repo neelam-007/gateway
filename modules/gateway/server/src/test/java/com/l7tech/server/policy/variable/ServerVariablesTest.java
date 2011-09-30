@@ -21,6 +21,7 @@ import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
@@ -39,6 +40,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyMetadataStub;
 import com.l7tech.server.policy.assertion.ServerHttpRoutingAssertion;
+import com.l7tech.server.policy.assertion.ServerTrueAssertion;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.security.password.SecurePasswordManagerStub;
 import com.l7tech.test.BugNumber;
@@ -124,6 +126,30 @@ public class ServerVariablesTest {
 
         final String policyVersionValue = ServerVariables.get("policy.version", pec).toString();
         assertEquals("service policy guid variable", "1234321", policyVersionValue);
+    }
+
+    @Test
+    public void testAssertionContextVariables() throws Exception {
+        final PolicyEnforcementContext pec = context();
+        pec.pushAssertionOrdinal( 1 );
+        pec.pushAssertionOrdinal( 2 );
+        pec.pushAssertionOrdinal( 3 );
+
+        {
+            final Integer[] numberValue = (Integer[])ServerVariables.get("assertion.number", pec);
+            assertArrayEquals("assertion number", new Integer[]{ 1,2,3 }, numberValue);
+
+            final String numberStrValue = ServerVariables.get("assertion.numberstr", pec).toString();
+            assertEquals("assertion number str variable", "1.2.3", numberStrValue);
+        }
+
+        pec.assertionStarting( new ServerTrueAssertion<TrueAssertion>( new TrueAssertion() ) );
+
+        final Integer[] numberValue = (Integer[])ServerVariables.get("assertion.number", pec);
+        assertArrayEquals("assertion number (with assertion)", new Integer[]{ 1,2,3,1 }, numberValue);
+
+        final String numberStrValue = ServerVariables.get("assertion.numberstr", pec).toString();
+        assertEquals("assertion number str variable (with assertion)", "1.2.3.1", numberStrValue);
     }
 
     @Test

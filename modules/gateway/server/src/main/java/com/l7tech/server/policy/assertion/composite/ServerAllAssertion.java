@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.policy.assertion.composite;
 
 import com.l7tech.gateway.common.LicenseException;
@@ -26,9 +23,8 @@ public final class ServerAllAssertion extends ServerCompositeAssertion<AllAssert
         AssertionStatus result = AssertionStatus.NONE;
 
         for ( final ServerAssertion kid : kids ) {
-            // If the assertion is disabled, then ignore it and continue to check the next assertion.
-            if (! kid.getAssertion().isEnabled())
-                continue;
+
+            context.assertionStarting(kid);
 
             try {
                 result = kid.checkRequest(context);

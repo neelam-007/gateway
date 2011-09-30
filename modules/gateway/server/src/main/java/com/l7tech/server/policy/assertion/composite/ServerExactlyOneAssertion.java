@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.policy.assertion.composite;
 
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -20,11 +17,14 @@ public final class ServerExactlyOneAssertion extends ServerCompositeAssertion<Ex
         super( data, applicationContext );
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         final List<ServerAssertion> kids = getChildren();
         AssertionStatus result;
         int numSucceeded = 0;
         for (ServerAssertion kid : kids) {
+            context.assertionStarting(kid);
+
             try {
                 result = kid.checkRequest(context);
             } catch (AssertionStatusException e) {

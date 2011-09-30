@@ -8,10 +8,13 @@ import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.audit.LoggingAudit;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.Message;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.InvalidPolicyException;
 import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyHeader;
+import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
@@ -283,7 +286,7 @@ public class ServerConcurrentAllAssertionTest {
 
         // Ensure all audit details from concurrent subpolicies got collected.  Note that the order they get saved in is undefined.
         List<AuditDetail> details = auditContext.getCurrentThreadDetails();
-        assertEquals(3, details.size());
+        assertEquals(3L, (long)details.size());
         Set<String> msgs = new HashSet<String>();
         msgs.add(details.get(0).getParams()[0]);
         msgs.add(details.get(1).getParams()[0]);
@@ -350,5 +353,69 @@ public class ServerConcurrentAllAssertionTest {
         assertEquals(AssertionStatus.NONE, status);
 
         assertEquals(String.valueOf(Calendar.getInstance().get(Calendar.YEAR)), context.getVariable("date").toString().substring(0, 4));
+    }
+
+    /**
+     * Ensure that variables requiring copied context information are correct
+     */
+    @Test
+    public void testServicePolicyAndAssertionVariables() throws Exception {
+        final ConcurrentAllAssertion ass = new ConcurrentAllAssertion(Arrays.asList(
+            new SetVariableAssertion("concurrent.service.name", "${service.name}"),
+            new SetVariableAssertion("concurrent.service.oid", "${service.oid}"),
+            new SetVariableAssertion("concurrent.service.policy.guid", "${service.policy.guid}"),
+            new SetVariableAssertion("concurrent.service.policy.version", "${service.policy.version}"),
+            new SetVariableAssertion("concurrent.policy.name", "${policy.name}"),
+            new SetVariableAssertion("concurrent.policy.oid", "${policy.oid}"),
+            new SetVariableAssertion("concurrent.policy.guid", "${policy.guid}"),
+            new SetVariableAssertion("concurrent.policy.version", "${policy.version}"),
+            new SetVariableAssertion("concurrent.assertion.number", "${assertion.number||}"),
+            new SetVariableAssertion("concurrent.assertion.numberstr", "${assertion.numberstr}")
+        ));
+        final ServerAssertion sass = serverPolicyFactory.compilePolicy(ass, false);
+
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+
+        // Set context info for service
+        final PublishedService ps = new PublishedService();
+        ps.setOid(123456L);
+        ps.setName( "testServiceNameContextVariable" );
+        ps.getPolicy().setGuid( "8ca3ff80-eaf5-11e0-9572-0800200c9a66" );
+        context.setService( ps );
+        context.setServicePolicyMetadata( new PolicyMetadataStub() {
+            @Override
+            public PolicyHeader getPolicyHeader() {
+                return new PolicyHeader( ps.getPolicy(), 123L );
+            }
+        } );
+        // Set context info for current policy
+        final Policy policy = new Policy( PolicyType.INCLUDE_FRAGMENT, "testPolicyNameContextVariable", null, false );
+        policy.setOid( 1234567L );
+        policy.setGuid( "8ca3ff80-eaf5-11e0-9572-0800200c9a67" );
+        context.setCurrentPolicyMetadata( new PolicyMetadataStub() {
+            @Override
+            public PolicyHeader getPolicyHeader() {
+                return new PolicyHeader( policy, 1234321L );
+            }
+        } );
+        // Set context info for assertion number
+        context.pushAssertionOrdinal( 1 );
+        context.pushAssertionOrdinal( 2 );
+        context.pushAssertionOrdinal( 3 );
+
+        // Run all requests concurrently
+        final AssertionStatus status = sass.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, status);
+
+        assertEquals("concurrent.service.name", "testServiceNameContextVariable", context.getVariable("concurrent.service.name").toString());
+        assertEquals("concurrent.service.oid", "123456", context.getVariable("concurrent.service.oid").toString());
+        assertEquals("concurrent.service.policy.guid", "8ca3ff80-eaf5-11e0-9572-0800200c9a66", context.getVariable("concurrent.service.policy.guid").toString());
+        assertEquals("concurrent.service.policy.version", "123", context.getVariable("concurrent.service.policy.version").toString());
+        assertEquals("concurrent.policy.name", "testPolicyNameContextVariable", context.getVariable("concurrent.policy.name").toString());
+        assertEquals("concurrent.policy.oid", "1234567", context.getVariable("concurrent.policy.oid").toString());
+        assertEquals("concurrent.policy.guid", "8ca3ff80-eaf5-11e0-9572-0800200c9a67", context.getVariable("concurrent.policy.guid").toString());
+        assertEquals("concurrent.policy.version", "1234321", context.getVariable("concurrent.policy.version").toString());
+        assertEquals("concurrent.assertion.number", "1|2|3|10", context.getVariable("concurrent.assertion.number").toString());
+        assertEquals("concurrent.assertion.numberstr", "1.2.3.11", context.getVariable("concurrent.assertion.numberstr").toString());
     }
 }

@@ -277,6 +277,13 @@ public interface PolicyEnforcementContext extends Closeable {
     void setFaultlevel(SoapFaultLevel faultlevel);
 
     /**
+     * Notify the context that an assertion is about to begin evaluation.
+     *
+     * @param assertion The ServerAssertion that is to be evaluated. Must not be null.
+     */
+    void assertionStarting(ServerAssertion assertion);
+
+    /**
      * @param assertion the ServerAssertion that just finished. Must not be null.
      * @param status the AssertionStatus that was returned from the ServerAssertion's checkRequest() method. Must not be null.
      */
@@ -286,6 +293,15 @@ public interface PolicyEnforcementContext extends Closeable {
      * A linear log of the results of processing each assertion that was run in the policy.
      */
     List<AssertionResult> getAssertionResults();
+
+    /**
+     * Get the assertion number for the currently evaluating assertion.
+     *
+     * <p>This is only valid during policy evaluation</p>
+     *
+     * @return The assertion number
+     */
+    Collection<Integer> getAssertionNumber();
 
     Message getTargetMessage( MessageTargetable targetable) throws NoSuchVariableException;
 

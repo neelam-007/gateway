@@ -367,6 +367,11 @@ public class PolicyEnforcementContextWrapper implements PolicyEnforcementContext
     }
 
     @Override
+    public void assertionStarting( final ServerAssertion assertion ) {
+        delegate.assertionStarting( assertion );
+    }
+
+    @Override
     public void assertionFinished( final ServerAssertion assertion, final AssertionStatus status ) {
         delegate.assertionFinished( assertion, status );
     }
@@ -374,6 +379,11 @@ public class PolicyEnforcementContextWrapper implements PolicyEnforcementContext
     @Override
     public List<AssertionResult> getAssertionResults() {
         return delegate.getAssertionResults();
+    }
+
+    @Override
+    public Collection<Integer> getAssertionNumber() {
+        return delegate.getAssertionNumber();
     }
 
     @Override

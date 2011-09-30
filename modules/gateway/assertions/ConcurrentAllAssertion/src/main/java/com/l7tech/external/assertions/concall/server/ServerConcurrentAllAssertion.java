@@ -42,6 +42,7 @@ import java.util.logging.Logger;
  * @see com.l7tech.external.assertions.concall.ConcurrentAllAssertion
  */
 public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<ConcurrentAllAssertion> {
+    @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
     private static final Logger logger = Logger.getLogger(ServerConcurrentAllAssertion.class.getName());
 
     private static final Object assertionExecutorInitLock = new Object();
@@ -86,7 +87,7 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
 
     private static ThreadPoolExecutor createAssertionExecutor(int globalMaxConcurrency, int globalCoreConcurrency, int globalMaxWorkQueue) {
         BlockingQueue<Runnable> assertionQueue = new ArrayBlockingQueue<Runnable>(globalMaxWorkQueue, true);
-        return new ThreadPoolExecutor(globalCoreConcurrency, globalMaxConcurrency, 5 * 60, TimeUnit.SECONDS, assertionQueue, new ThreadPoolExecutor.CallerRunsPolicy());
+        return new ThreadPoolExecutor(globalCoreConcurrency, globalMaxConcurrency, 5L * 60L, TimeUnit.SECONDS, assertionQueue, new ThreadPoolExecutor.CallerRunsPolicy());
     }
 
     /**
@@ -208,6 +209,7 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
                 }
 
                 AssertionStatus doCall() throws Exception {
+                    kidPec.assertionStarting( kid );
                     try {
                         return kid.checkRequest(kidPec);
                     } catch (AssertionStatusException e) {
@@ -294,6 +296,8 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
 
         ret.setRequestWasCompressed(source.isRequestWasCompressed());
         ret.setService(source.getService());
+        ret.setServicePolicyMetadata(source.getServicePolicyMetadata());
+        ret.setCurrentPolicyMetadata(source.getCurrentPolicyMetadata());
         ret.setAuditLevel(source.getAuditLevel());
         ret.setPolicyExecutionAttempted(true);
 
@@ -302,6 +306,10 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
             Object value = entry.getValue();
 
             copyValue(ret, name, value);
+        }
+
+        for ( final Integer ordinal : source.getAssertionOrdinalPath() ) {
+            ret.pushAssertionOrdinal( ordinal );
         }
 
         return ret;
