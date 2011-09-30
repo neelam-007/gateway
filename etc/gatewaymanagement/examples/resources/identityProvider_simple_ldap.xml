@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<IdentityProvider xmlns="http://ns.l7tech.com/2010/04/gateway-management" version="1" id="283803648">
+    <Name>Simple LDAP Example</Name>
+    <IdentityProviderType>Simple LDAP</IdentityProviderType>
+    <Extension>
+        <BindOnlyLdapIdentityProviderDetail>
+            <ServerUrls>
+                <StringValue>ldap://example.layer7tech.com</StringValue>
+            </ServerUrls>
+            <UseSslClientAuthentication>false</UseSslClientAuthentication>
+            <BindPatternPrefix>CN=</BindPatternPrefix>
+            <BindPatternSuffix>OU=Users,DC=Example,DC=Layer7Tech,DC=com</BindPatternSuffix>
+        </BindOnlyLdapIdentityProviderDetail>
+    </Extension>
+</IdentityProvider>

@@ -66,7 +66,6 @@ public class IdentityProviderResourceFactory extends EntityManagerResourceFactor
         }
 
         // add common properties
-        identityProvider.setProperties( getProperties( identityProvider.getProperties(), identityProviderConfig, IdentityProviderConfig.class ) );
         if ( identityProviderConfig.getCertificateValidationType() != null ) {
             identityProvider.getProperties().put(
                     PROP_CERTIFICATE_VALIDATION,
