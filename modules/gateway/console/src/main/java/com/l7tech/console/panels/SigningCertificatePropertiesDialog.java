@@ -156,8 +156,10 @@ public class SigningCertificatePropertiesDialog extends JDialog {
     }
 
     private boolean validatePropertiesAndReportErrors() {
+        final String subjectDn = getSubjectDn();
         try {
-            new X500Principal(getSubjectDn());
+            if (subjectDn.isEmpty()) throw new IllegalArgumentException(resources.getString("error.message.empty.subject.dn"));
+            new X500Principal(subjectDn);
             return true;
         } catch (IllegalArgumentException e) {
             showErrorMessage(
