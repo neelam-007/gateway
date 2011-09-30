@@ -1,7 +1,6 @@
 package com.l7tech.external.assertions.ssh.server;
 
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.external.assertions.ssh.SshCredentialAssertion;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.message.HasServiceOid;
 import com.l7tech.message.HasServiceOidImpl;
@@ -19,7 +18,6 @@ import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ResourceUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.common.util.Buffer;
 import org.apache.sshd.common.util.SelectorUtils;
 import org.apache.sshd.server.*;
@@ -551,54 +549,19 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
 
     // *** CUSTOMIZED CODE STARTS BELOW ***
 
-    public static class Factory implements NamedFactory<Command> {
-        private static SsgConnector connector;
-        private static MessageProcessor messageProcessor;
-        private static EventChannel messageProcessingEventChannel;
-        private static SoapFaultManager soapFaultManager;
-        private static StashManagerFactory stashManagerFactory;
-        private static MessageProcessingPasswordAuthenticator user;
-        private static MessageProcessingPublicKeyAuthenticator userPublicKey;
-
-        public Factory(SsgConnector c, MessageProcessor mp, StashManagerFactory smf, SoapFaultManager sfm,
-                       EventChannel mpec, MessageProcessingPasswordAuthenticator u, MessageProcessingPublicKeyAuthenticator upk) {
-            connector = c;
-            messageProcessor = mp;
-            messageProcessingEventChannel = mpec;
-            soapFaultManager = sfm;
-            stashManagerFactory = smf;
-            user = u;
-            userPublicKey = upk;
-        }
-
-        public Command create() {
-            return new MessageProcessingSftpSubsystem(connector, messageProcessor, stashManagerFactory, soapFaultManager,
-                    messageProcessingEventChannel, user, userPublicKey);
-        }
-
-        public String getName() {
-            return "sftp";
-        }
-    }
-
     private SsgConnector connector;
     private MessageProcessor messageProcessor;
     private EventChannel messageProcessingEventChannel;
     private SoapFaultManager soapFaultManager;
     private StashManagerFactory stashManagerFactory;
-    private MessageProcessingPasswordAuthenticator user;
-    private MessageProcessingPublicKeyAuthenticator userPublicKey;
 
     public MessageProcessingSftpSubsystem(SsgConnector c, MessageProcessor mp, StashManagerFactory smf,
-                                          SoapFaultManager sfm, EventChannel mpec, MessageProcessingPasswordAuthenticator u,
-                                          MessageProcessingPublicKeyAuthenticator upk) {
+                                          SoapFaultManager sfm, EventChannel mpec) {
         connector = c;
         messageProcessor = mp;
         messageProcessingEventChannel = mpec;
         soapFaultManager = sfm;
         stashManagerFactory = smf;
-        user = u;
-        userPublicKey = upk;
     }
 
     public void run() {
@@ -880,7 +843,7 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
                 flushAndCloseQuietly(sshFile);
 
                 AssertionStatus status = getStatusFromGatewayMessageProcess(sshFile,
-                        connector.getIntProperty(SshCredentialAssertion.LISTEN_PROP_MESSAGE_PROCESSOR_THREAD_WAIT_SECONDS, 3));
+                        connector.getIntProperty(SshServerModule.LISTEN_PROP_MESSAGE_PROCESSOR_THREAD_WAIT_SECONDS, 3));
                 if (status == null || status == AssertionStatus.UNDEFINED) {
                     sendStatus(id, SSH_FX_FAILURE, "No status returned from Gateway message processing.");
                 } else if (status == AssertionStatus.NONE) {
@@ -929,14 +892,14 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
             request.initialize(stashManagerFactory.createStashManager(), ctype, pis, requestSizeLimit);
 
             // attach ssh knob
-            String userName = (String) session.getIoSession().getAttribute(MessageProcessingPublicKeyAuthenticator.ATTR_CRED_USERNAME);
-            String userPublicKey = (String) session.getIoSession().getAttribute(MessageProcessingPublicKeyAuthenticator.ATTR_CRED_PUBLIC_KEY);
+            String userName = (String) session.getIoSession().getAttribute(SshServerModule.MINA_SESSION_ATTR_CRED_USERNAME);
+            String userPublicKey = (String) session.getIoSession().getAttribute(SshServerModule.MINA_SESSION_ATTR_CRED_PUBLIC_KEY);
             if (!StringUtils.isEmpty(userName) && !StringUtils.isEmpty(userPublicKey)) {
                 request.attachKnob(SshKnob.class, MessageProcessingSshUtil.buildSshKnob(session.getIoSession().getLocalAddress(),
                         session.getIoSession().getRemoteAddress(), file.getName(), path, new SshKnob.PublicKeyAuthentication(userName, userPublicKey)));
             } else {
-                userName = (String) session.getIoSession().getAttribute(MessageProcessingPasswordAuthenticator.ATTR_CRED_USERNAME);
-                String userPassword = (String) session.getIoSession().getAttribute(MessageProcessingPasswordAuthenticator.ATTR_CRED_PASSWORD);
+                userName = (String) session.getIoSession().getAttribute(SshServerModule.MINA_SESSION_ATTR_CRED_USERNAME);
+                String userPassword = (String) session.getIoSession().getAttribute(SshServerModule.MINA_SESSION_ATTR_CRED_PASSWORD);
                 if (!StringUtils.isEmpty(userName) && !StringUtils.isEmpty(userPassword)) {
                     request.attachKnob(SshKnob.class, MessageProcessingSshUtil.buildSshKnob(session.getIoSession().getLocalAddress(),
                         session.getIoSession().getRemoteAddress(), file.getName(), path, new PasswordAuthentication(userName, userPassword.toCharArray())));

@@ -24,9 +24,7 @@ import org.apache.sshd.server.session.ServerSession;
 
 import java.io.*;
 import java.net.PasswordAuthentication;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -35,83 +33,6 @@ import java.util.logging.Logger;
  * Message processing for SCP support (heavily borrowed from org.apache.sshd.server.command.ScpCommand).
  */
 public class MessageProcessingScpCommand implements Command, Runnable, SessionAware, FileSystemAware {
-
-    /**
-     * Message processing command factory for SCP support (heavily borrowed from org.apache.sshd.server.command.ScpCommandFactory).
-     */
-    public static class Factory implements CommandFactory {
-
-        // customized for Gateway
-        private CommandFactory delegate;
-        private static SsgConnector connector;
-        private static MessageProcessor messageProcessor;
-        private EventChannel messageProcessingEventChannel;
-        private SoapFaultManager soapFaultManager;
-        private static StashManagerFactory stashManagerFactory;
-        private static MessageProcessingPasswordAuthenticator user;
-        private static MessageProcessingPublicKeyAuthenticator userPublicKey;
-
-        public Factory(SsgConnector c, MessageProcessor mp, StashManagerFactory smf, SoapFaultManager sfm, EventChannel mpec,
-                       MessageProcessingPasswordAuthenticator u, MessageProcessingPublicKeyAuthenticator upk) {
-            connector = c;
-            messageProcessor = mp;
-            messageProcessingEventChannel = mpec;
-            soapFaultManager = sfm;
-            stashManagerFactory = smf;
-            user = u;
-            userPublicKey = upk;
-        }
-
-        /**
-         * Parses a command string and verifies that the basic syntax is
-         * correct. If parsing fails the responsibility is delegated to
-         * the configured {@link org.apache.sshd.server.CommandFactory} instance; if one exist.
-         *
-         * @param command command to parse
-         * @return configured {@link org.apache.sshd.server.Command} instance
-         * @throws IllegalArgumentException
-         */
-        public Command createCommand(String command) {
-            try {
-                return new MessageProcessingScpCommand(splitCommandString(command), connector, messageProcessor,
-                        stashManagerFactory, soapFaultManager, messageProcessingEventChannel, user, userPublicKey);
-            } catch (IllegalArgumentException iae) {
-                if (delegate != null) {
-                    return delegate.createCommand(command);
-                }
-                throw iae;
-            }
-        }
-
-        private String[] splitCommandString(String command) {
-            if (!command.trim().startsWith("scp")) {
-                throw new IllegalArgumentException("Unknown command, does not begin with 'scp'");
-            }
-
-            String[] args = command.split(" ");
-            List<String> parts = new ArrayList<String>();
-            parts.add(args[0]);
-            for (int i = 1; i < args.length; i++) {
-                if (!args[i].trim().startsWith("-")) {
-                    parts.add(concatenateWithSpace(args, i));
-                    break;
-                } else {
-                    parts.add(args[i]);
-                }
-            }
-            return parts.toArray(new String[parts.size()]);
-        }
-
-        private String concatenateWithSpace(String[] args, int from) {
-            StringBuilder sb = new StringBuilder();
-
-            for (int i = from; i < args.length; i++) {
-                sb.append(args[i] + " ");
-            }
-            return sb.toString().trim();
-        }
-    }
-
     protected static final Logger logger = Logger.getLogger(MessageProcessingScpCommand.class.getName());
 
     protected static final int OK = 0;
@@ -142,19 +63,14 @@ public class MessageProcessingScpCommand implements Command, Runnable, SessionAw
     private EventChannel messageProcessingEventChannel;
     private SoapFaultManager soapFaultManager;
     private StashManagerFactory stashManagerFactory;
-    private MessageProcessingPasswordAuthenticator user;
-    private MessageProcessingPublicKeyAuthenticator userPublicKey;
 
     public MessageProcessingScpCommand(String[] args, SsgConnector c, MessageProcessor mp, StashManagerFactory smf,
-                                       SoapFaultManager sfm, EventChannel mpec, MessageProcessingPasswordAuthenticator u,
-                                       MessageProcessingPublicKeyAuthenticator upk) {
+                                       SoapFaultManager sfm, EventChannel mpec) {
         connector = c;
         messageProcessor = mp;
         messageProcessingEventChannel = mpec;
         soapFaultManager = sfm;
         stashManagerFactory = smf;
-        user = u;
-        userPublicKey = upk;
 
         name = Arrays.asList(args).toString();
         if (logger.isLoggable(Level.FINER)) {
@@ -437,14 +353,14 @@ public class MessageProcessingScpCommand implements Command, Runnable, SessionAw
         request.initialize(stashManagerFactory.createStashManager(), ctype, pis, requestSizeLimit);
 
         // attach ssh knob
-        String userName = (String) session.getIoSession().getAttribute(MessageProcessingPublicKeyAuthenticator.ATTR_CRED_USERNAME);
-        String userPublicKey = (String) session.getIoSession().getAttribute(MessageProcessingPublicKeyAuthenticator.ATTR_CRED_PUBLIC_KEY);
+        String userName = (String) session.getIoSession().getAttribute(SshServerModule.MINA_SESSION_ATTR_CRED_USERNAME);
+        String userPublicKey = (String) session.getIoSession().getAttribute(SshServerModule.MINA_SESSION_ATTR_CRED_PUBLIC_KEY);
         if (!StringUtils.isEmpty(userName) && !StringUtils.isEmpty(userPublicKey)) {
             request.attachKnob(SshKnob.class, MessageProcessingSshUtil.buildSshKnob(session.getIoSession().getLocalAddress(),
                     session.getIoSession().getRemoteAddress(), file, path, new SshKnob.PublicKeyAuthentication(userName, userPublicKey)));
         } else {
-            userName = (String) session.getIoSession().getAttribute(MessageProcessingPasswordAuthenticator.ATTR_CRED_USERNAME);
-            String userPassword = (String) session.getIoSession().getAttribute(MessageProcessingPasswordAuthenticator.ATTR_CRED_PASSWORD);
+            userName = (String) session.getIoSession().getAttribute(SshServerModule.MINA_SESSION_ATTR_CRED_USERNAME);
+            String userPassword = (String) session.getIoSession().getAttribute(SshServerModule.MINA_SESSION_ATTR_CRED_PASSWORD);
             if (!StringUtils.isEmpty(userName) && !StringUtils.isEmpty(userPassword)) {
                 request.attachKnob(SshKnob.class, MessageProcessingSshUtil.buildSshKnob(session.getIoSession().getLocalAddress(),
                         session.getIoSession().getRemoteAddress(), file, path, new PasswordAuthentication(userName, userPassword.toCharArray())));

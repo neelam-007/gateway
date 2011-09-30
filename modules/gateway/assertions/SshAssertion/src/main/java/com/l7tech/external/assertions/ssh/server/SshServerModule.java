@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.ssh.server;
 
 import com.l7tech.external.assertions.ssh.SshCredentialAssertion;
 import com.l7tech.external.assertions.ssh.SshRouteAssertion;
+import com.l7tech.external.assertions.ssh.keyprovider.SshKeyUtil;
 import com.l7tech.external.assertions.ssh.server.keyprovider.PemSshHostKeyProvider;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.audit.Audit;
@@ -20,10 +21,7 @@ import com.l7tech.server.transport.TransportModule;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.SoapFaultManager;
-import com.l7tech.util.Config;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.InetAddressUtil;
-import com.l7tech.util.Pair;
+import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
 import org.apache.sshd.SshServer;
 import org.apache.sshd.common.*;
@@ -38,8 +36,7 @@ import org.apache.sshd.common.random.SingletonRandomFactory;
 import org.apache.sshd.common.signature.SignatureDSA;
 import org.apache.sshd.common.signature.SignatureRSA;
 import org.apache.sshd.common.util.SecurityUtils;
-import org.apache.sshd.server.Command;
-import org.apache.sshd.server.ForwardingFilter;
+import org.apache.sshd.server.*;
 import org.apache.sshd.server.channel.ChannelDirectTcpip;
 import org.apache.sshd.server.channel.ChannelSession;
 import org.apache.sshd.server.kex.DHG1;
@@ -53,6 +50,7 @@ import org.springframework.context.ApplicationListener;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.InvalidKeyException;
+import java.security.PublicKey;
 import java.security.Security;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -64,7 +62,15 @@ import java.util.logging.Logger;
  * Supports SCP and SFTP over SSH2.
  */
 public class SshServerModule extends TransportModule implements ApplicationListener {
-    private static final Logger logger = Logger.getLogger(SshServerModule.class.getName());
+    private static final String LISTEN_PROP_AUTHORIZED_USER_PASSWORD_LIST = "l7.ssh.authorizedUserPasswordList";
+    private static final String LISTEN_PROP_AUTHORIZED_USER_PUBLIC_KEY_LIST = "l7.ssh.authorizedUserPublicKeyList";
+    private static final String LISTEN_PROP_IS_PASSWORD_CREDENTIAL_FORBIDDEN = "l7.ssh.isPasswordCredentialForbidden";
+    private static final String LISTEN_PROP_IS_PUBLIC_KEY_CREDENTIAL_REQUIRED = "l7.ssh.isPublicKeyCredentialRequired";
+    public static final String LISTEN_PROP_MESSAGE_PROCESSOR_THREAD_WAIT_SECONDS = "l7.ssh.messageProcessorThreadWaitSeconds";
+    private static final Logger LOGGER = Logger.getLogger(SshServerModule.class.getName());
+    public static final String MINA_SESSION_ATTR_CRED_USERNAME = "com.l7tech.server.ssh.credential.username";
+    public static final String MINA_SESSION_ATTR_CRED_PASSWORD = "com.l7tech.server.ssh.credential.password";
+    public static final String MINA_SESSION_ATTR_CRED_PUBLIC_KEY = "com.l7tech.server.ssh.credential.key";
     private static final String SCHEME_SSH = "SSH2";
     private static final String SPLIT_DELIMITER = "<split>";
 
@@ -97,14 +103,14 @@ public class SshServerModule extends TransportModule implements ApplicationListe
                            EventChannel messageProcessingEventChannel,
                            AuditFactory auditFactory)
     {
-        super("SSH server module", logger, GatewayFeatureSets.SERVICE_SSH_MESSAGE_INPUT, licenseManager, ssgConnectorManager, trustedCertServices, defaultKey, config );
+        super("SSH server module", LOGGER, GatewayFeatureSets.SERVICE_SSH_MESSAGE_INPUT, licenseManager, ssgConnectorManager, trustedCertServices, defaultKey, config );
         this.applicationEventProxy = applicationEventProxy;
         this.gatewayState = gatewayState;
         this.messageProcessor = messageProcessor;
         this.messageProcessingEventChannel = messageProcessingEventChannel;
         this.soapFaultManager = soapFaultManager;
         this.stashManagerFactory = stashManagerFactory;
-        this.auditor = auditFactory.newInstance( this, logger );
+        this.auditor = auditFactory.newInstance( this, LOGGER);
     }
 
     private static <T> T getBean(BeanFactory beanFactory, String beanName, Class<T> beanClass) {
@@ -141,7 +147,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
             try {
                 startInitialConnectors();
             } catch (FindException e) {
-                logger.log(Level.SEVERE, "Unable to access initial SSH connectors: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                LOGGER.log(Level.SEVERE, "Unable to access initial SSH connectors: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
         }
     }
@@ -157,10 +163,10 @@ public class SshServerModule extends TransportModule implements ApplicationListe
                         addConnector(connector);
                     } catch ( Exception e ) {
                         if ( ExceptionUtils.getMessage(e).contains("java.net.BindException: ") ) { // The exception cause is not chained ...
-                            logger.log(Level.WARNING, "Unable to start " + connector.getScheme() + " connector on port " + connector.getPort() +
+                            LOGGER.log(Level.WARNING, "Unable to start " + connector.getScheme() + " connector on port " + connector.getPort() +
                                         ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                         } else {
-                            logger.log(Level.WARNING, "Unable to start " + connector.getScheme() + " connector on port " + connector.getPort() +
+                            LOGGER.log(Level.WARNING, "Unable to start " + connector.getScheme() + " connector on port " + connector.getPort() +
                                         ": " + ExceptionUtils.getMessage(e), e);
                         }
                     }
@@ -180,7 +186,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
             try {
                 startInitialConnectors();
             } catch (FindException e) {
-                logger.log(Level.SEVERE, "Unable to access initial SSH connectors: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                LOGGER.log(Level.SEVERE, "Unable to access initial SSH connectors: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
         }
     }
@@ -243,7 +249,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
             addSshConnector(connector);
         } else {
             // Can't happen
-            logger.log(Level.WARNING, "ignoring connector with unrecognized scheme " + scheme);
+            LOGGER.log(Level.WARNING, "ignoring connector with unrecognized scheme " + scheme);
         }
     }
 
@@ -253,66 +259,8 @@ public class SshServerModule extends TransportModule implements ApplicationListe
 
         // configure and start sshd
         try {
-            SshServer sshd = setUpSshServer();
-
-            // undocumented support for authorized lists, Apache SSHD will callback and set user and public key
-            MessageProcessingPublicKeyAuthenticator userPublicKey;
-            String authorizedUserPublicKeyList = connector.getProperty(SshCredentialAssertion.LISTEN_PROP_AUTHORIZED_USER_PUBLIC_KEY_LIST);
-            if (authorizedUserPublicKeyList != null) {
-                userPublicKey = new MessageProcessingPublicKeyAuthenticator(authorizedUserPublicKeyList.split(SPLIT_DELIMITER));
-            } else {
-                userPublicKey = new MessageProcessingPublicKeyAuthenticator(null);
-            }
-            sshd.setPublickeyAuthenticator(userPublicKey);
-            MessageProcessingPasswordAuthenticator user;
-            String authorizedUserPasswordList = connector.getProperty(SshCredentialAssertion.LISTEN_PROP_AUTHORIZED_USER_PASSWORD_LIST);
-            if (authorizedUserPasswordList != null) {
-                user = new MessageProcessingPasswordAuthenticator(authorizedUserPasswordList.split(SPLIT_DELIMITER));
-            } else {
-                user = new MessageProcessingPasswordAuthenticator(null);
-            }
-            sshd.setPasswordAuthenticator(user);
-
-            // enable SCP, SFTP
-            final boolean enableScp = connector.getBooleanProperty(SshCredentialAssertion.LISTEN_PROP_ENABLE_SCP);
-            if (enableScp) {
-                sshd.setCommandFactory(new MessageProcessingScpCommand.Factory(
-                        connector, messageProcessor, stashManagerFactory, soapFaultManager, messageProcessingEventChannel, user, userPublicKey));
-            }
-            final boolean enableSftp = connector.getBooleanProperty(SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP);
-            if (enableSftp) {
-                sshd.setSubsystemFactories(Arrays.<NamedFactory<Command>>asList(new MessageProcessingSftpSubsystem.Factory(
-                        connector, messageProcessor, stashManagerFactory, soapFaultManager, messageProcessingEventChannel, user, userPublicKey)));
-            }
-
-            // set host and port
-            String bindAddress = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
-            if ( ! InetAddressUtil.isAnyHostAddress(bindAddress) ) {
-                bindAddress = ssgConnectorManager.translateBindAddress(bindAddress, connector.getPort());
-            } else {
-                bindAddress = InetAddressUtil.getAnyHostAddress();
-            }
-            sshd.setHost(bindAddress);
-            sshd.setPort(connector.getPort());
-
-            // set server host private key
-            String hostPrivateKey = connector.getProperty(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY);
-            sshd.setKeyPairProvider(new PemSshHostKeyProvider(hostPrivateKey));
-
-            // configure connection idle timeout in ms (min=60sec*1000ms)
-            String idleTimeoutMins = connector.getProperty(SshCredentialAssertion.LISTEN_PROP_IDLE_TIMEOUT_MINUTES);
-            if (!StringUtils.isEmpty(idleTimeoutMins)) {
-                long idleTimeoutMs = Long.parseLong(idleTimeoutMins) * 60 * 1000;
-                sshd.getProperties().put(SshServer.IDLE_TIMEOUT, String.valueOf(idleTimeoutMs));
-            }
-
-            // configure maximum concurrent open session count per user
-            // 2011/08/03 TL: Apache SSHD does not currently support configurable max total connections
-            String maxConcurrentSessionsPerUser = connector.getProperty(SshCredentialAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER);
-            if (!StringUtils.isEmpty(maxConcurrentSessionsPerUser)) {
-                sshd.getProperties().put(SshServer.MAX_CONCURRENT_SESSIONS, maxConcurrentSessionsPerUser);
-            }
-
+            SshServer sshd = createSshServer();
+            configureSshServer(sshd, connector);
             auditStart("connector OID " + connector.getOid() + ", on port " + connector.getPort());
             sshd.start();
             activeConnectors.put(connector.getOid(), new Pair<SsgConnector, SshServer>(connector, sshd));
@@ -333,7 +281,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
                 auditStop("connector OID " + oid + ", on port " + entry.left.getPort());
                 sshd.stop();
             } catch (InterruptedException e) {
-                logger.log(Level.SEVERE, "Unable to remove sshd: " + ExceptionUtils.getMessage(e), e);
+                LOGGER.log(Level.SEVERE, "Unable to remove sshd: " + ExceptionUtils.getMessage(e), e);
                 auditError("Error while shutting down, unable to remove sshd.", e);
             }
         }
@@ -363,7 +311,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
     /*
      * This method is based on org.apache.sshd.SshServer.setUpDefaultServer(...).
      */
-    private SshServer setUpSshServer() {
+    private SshServer createSshServer() {
         // customized for Gateway, we don't want Apache's SecurityUtils to explicitly register BouncyCastle, let the Gateway decide
         if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) != null) {
             SecurityUtils.setRegisterBouncyCastle(true);
@@ -451,5 +399,216 @@ public class SshServerModule extends TransportModule implements ApplicationListe
             }
         }
         sshd.setCipherFactories(avail);
+    }
+
+    /*
+     * configure SSH server using listener properties
+     */
+    private void configureSshServer(SshServer sshd, final SsgConnector connector) throws ListenerException {
+            // configure authentication
+            sshd.setPublickeyAuthenticator(configurePublicKeyAuthentication(connector));
+            sshd.setPasswordAuthenticator(configurePasswordAuthentication(connector));
+
+            // enable SCP, SFTP
+            if (connector.getBooleanProperty(SshCredentialAssertion.LISTEN_PROP_ENABLE_SCP)) {
+                sshd.setCommandFactory(configureMessageProcessingScpCommand(connector));
+            }
+            if (connector.getBooleanProperty(SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP)) {
+                sshd.setSubsystemFactories(Arrays.<NamedFactory<Command>>asList(configureMessageProcessingSftpSubsystem(connector)));
+            }
+
+            // set host and port
+            String bindAddress = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
+            if ( ! InetAddressUtil.isAnyHostAddress(bindAddress) ) {
+                bindAddress = ssgConnectorManager.translateBindAddress(bindAddress, connector.getPort());
+            } else {
+                bindAddress = InetAddressUtil.getAnyHostAddress();
+            }
+            sshd.setHost(bindAddress);
+            sshd.setPort(connector.getPort());
+
+            // set server host private key
+            String hostPrivateKey = connector.getProperty(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY);
+            sshd.setKeyPairProvider(new PemSshHostKeyProvider(hostPrivateKey));
+
+            // configure connection idle timeout in ms (min=60sec*1000ms)
+            String idleTimeoutMins = connector.getProperty(SshCredentialAssertion.LISTEN_PROP_IDLE_TIMEOUT_MINUTES);
+            if (!StringUtils.isEmpty(idleTimeoutMins)) {
+                long idleTimeoutMs = Long.parseLong(idleTimeoutMins) * 60 * 1000;
+                sshd.getProperties().put(SshServer.IDLE_TIMEOUT, String.valueOf(idleTimeoutMs));
+            }
+
+            // configure maximum concurrent open session count per user
+            // 2011/08/03 TL: Apache SSHD does not currently support configurable max total connections
+            String maxConcurrentSessionsPerUser = connector.getProperty(SshCredentialAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER);
+            if (!StringUtils.isEmpty(maxConcurrentSessionsPerUser)) {
+                sshd.getProperties().put(SshServer.MAX_CONCURRENT_SESSIONS, maxConcurrentSessionsPerUser);
+            }
+    }
+
+    /*
+     * public key authentication logic
+     */
+    private PublickeyAuthenticator configurePublicKeyAuthentication(final SsgConnector connector) {
+        return new PublickeyAuthenticator() {
+                public boolean authenticate(String userName, PublicKey publicKey, ServerSession session) {
+                    // if public key authentication is required and public key is empty, don't allow access
+                    if (connector.getBooleanProperty(LISTEN_PROP_IS_PUBLIC_KEY_CREDENTIAL_REQUIRED) &&
+                            (publicKey == null || StringUtils.isEmpty(publicKey.toString()))) {
+                        return false;
+                    }
+
+                    // by default allow all access, defer authentication to Gateway policy assertion
+                    boolean isAllowedAccess = true;
+
+                    // if authorizedUserPublicKeys list exists, perform authentication against it
+                    String authorizedUserPublicKeyList = connector.getProperty(LISTEN_PROP_AUTHORIZED_USER_PUBLIC_KEY_LIST);
+                    if (authorizedUserPublicKeyList != null) {
+                        String[] authorizedUserPublicKeys = authorizedUserPublicKeyList.split(SPLIT_DELIMITER);
+                        if (authorizedUserPublicKeys != null && authorizedUserPublicKeys.length > 0 && publicKey != null) {
+                            isAllowedAccess = false;
+                            String publicKeyString = SshKeyUtil.writeKey(publicKey);
+                            if (!StringUtils.isEmpty(publicKeyString)) {
+                                publicKeyString = publicKeyString.replace( SyspropUtil.getProperty("line.separator"), "" );
+                                for (String authorizedUserPublicKey : authorizedUserPublicKeys) {
+                                    if (publicKeyString.equals(authorizedUserPublicKey)) {
+                                        isAllowedAccess = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if (isAllowedAccess) {
+                        session.getIoSession().setAttribute(MINA_SESSION_ATTR_CRED_USERNAME, userName);
+
+                        String publicKeyStr = SshKeyUtil.writeKey(publicKey);
+                        if (!StringUtils.isEmpty(publicKeyStr)) {
+                            publicKeyStr = publicKeyStr.replace(SyspropUtil.getProperty("line.separator"), "");
+                        }
+                        session.getIoSession().setAttribute(MINA_SESSION_ATTR_CRED_PUBLIC_KEY, publicKeyStr);
+                    } else {
+                        session.getIoSession().removeAttribute(MINA_SESSION_ATTR_CRED_USERNAME);
+                        session.getIoSession().removeAttribute(MINA_SESSION_ATTR_CRED_PUBLIC_KEY);
+                    }
+                    return isAllowedAccess;
+                }
+            };
+    }
+
+    /*
+     * password authentication logic
+     */
+    private PasswordAuthenticator configurePasswordAuthentication(final SsgConnector connector) {
+        return new PasswordAuthenticator() {
+                public boolean authenticate(String userName, String password, ServerSession session) {
+                    // if password authentication is forbidden or public key authentication is required, don't allow access
+                    if (connector.getBooleanProperty(LISTEN_PROP_IS_PASSWORD_CREDENTIAL_FORBIDDEN)
+                            || connector.getBooleanProperty(LISTEN_PROP_IS_PUBLIC_KEY_CREDENTIAL_REQUIRED)) {
+                        return false;
+                    }
+
+                    // by default allow all access, defer authentication to Gateway policy assertion
+                    boolean isAllowedAccess = true;
+
+                    // if authorizedUserPasswords list exists, perform authentication against it
+                    String authorizedUserPasswordList = connector.getProperty(LISTEN_PROP_AUTHORIZED_USER_PASSWORD_LIST);
+                    if (authorizedUserPasswordList != null) {
+                        String[] authorizedUserPasswords = authorizedUserPasswordList.split(SPLIT_DELIMITER);
+                        if (authorizedUserPasswords != null && authorizedUserPasswords.length > 0) {
+                            isAllowedAccess = false;
+                            for (String authorizedUserPassword : authorizedUserPasswords) {
+                                if (!StringUtils.isEmpty(authorizedUserPassword) && authorizedUserPassword.equals(password)) {
+                                    isAllowedAccess = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if (isAllowedAccess) {
+                        session.getIoSession().setAttribute(MINA_SESSION_ATTR_CRED_USERNAME, userName);
+                        session.getIoSession().setAttribute(MINA_SESSION_ATTR_CRED_PASSWORD, password);
+                    } else {
+                        session.getIoSession().removeAttribute(MINA_SESSION_ATTR_CRED_USERNAME);
+                        session.getIoSession().removeAttribute(MINA_SESSION_ATTR_CRED_PASSWORD);
+                    }
+                    return isAllowedAccess;
+                }
+            };
+    }
+
+    /*
+     * configure SCP
+     */
+    private CommandFactory configureMessageProcessingScpCommand(final SsgConnector connector) {
+        return new CommandFactory() {
+            private CommandFactory delegate;
+
+            /**
+             * Parses a command string and verifies that the basic syntax is
+             * correct. If parsing fails the responsibility is delegated to
+             * the configured {@link org.apache.sshd.server.CommandFactory} instance; if one exist.
+             *
+             * @param command command to parse
+             * @return configured {@link org.apache.sshd.server.Command} instance
+             * @throws IllegalArgumentException
+             */
+            public Command createCommand(String command) {
+                try {
+                    return new MessageProcessingScpCommand(splitCommandString(command), connector, messageProcessor,
+                            stashManagerFactory, soapFaultManager, messageProcessingEventChannel);
+                } catch (IllegalArgumentException iae) {
+                    if (delegate != null) {
+                        return delegate.createCommand(command);
+                    }
+                    throw iae;
+                }
+            }
+
+            private String[] splitCommandString(String command) {
+                if (!command.trim().startsWith("scp")) {
+                    throw new IllegalArgumentException("Unknown command, does not begin with 'scp'");
+                }
+
+                String[] args = command.split(" ");
+                List<String> parts = new ArrayList<String>();
+                parts.add(args[0]);
+                for (int i = 1; i < args.length; i++) {
+                    if (!args[i].trim().startsWith("-")) {
+                        parts.add(concatenateWithSpace(args, i));
+                        break;
+                    } else {
+                        parts.add(args[i]);
+                    }
+                }
+                return parts.toArray(new String[parts.size()]);
+            }
+
+            private String concatenateWithSpace(String[] args, int from) {
+                StringBuilder sb = new StringBuilder();
+
+                for (int i = from; i < args.length; i++) {
+                    sb.append(args[i] + " ");
+                }
+                return sb.toString().trim();
+            }
+        };
+    }
+
+    /*
+     * configure SFTP
+     */
+    private NamedFactory<Command> configureMessageProcessingSftpSubsystem(final SsgConnector connector) {
+        return new NamedFactory<Command>(){
+            public Command create() {
+                return new MessageProcessingSftpSubsystem(connector, messageProcessor, stashManagerFactory, soapFaultManager, messageProcessingEventChannel);
+            }
+
+            public String getName() {
+                return "sftp";
+            }
+        };
     }
 }

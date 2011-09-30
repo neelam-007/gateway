@@ -12,14 +12,11 @@ import java.util.logging.Logger;
 public class SshCredentialAssertion extends Assertion {
     protected static final Logger logger = Logger.getLogger(SshCredentialAssertion.class.getName());
 
-    public static final String LISTEN_PROP_AUTHORIZED_USER_PUBLIC_KEY_LIST = "l7.ssh.authorizedUserPublicKeyList";
-    public static final String LISTEN_PROP_AUTHORIZED_USER_PASSWORD_LIST = "l7.ssh.authorizedUserPasswordList";
     public static final String LISTEN_PROP_ENABLE_SCP = "l7.ssh.enableScp";
     public static final String LISTEN_PROP_ENABLE_SFTP = "l7.ssh.enableSftp";
     public static final String LISTEN_PROP_HOST_PRIVATE_KEY = "l7.ssh.hostPrivateKey";
     public static final String LISTEN_PROP_IDLE_TIMEOUT_MINUTES = "l7.ssh.idleTimeoutMinutes";
     public static final String LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER = "l7.ssh.maxConcurrentSessionsPerUser";
-    public static final String LISTEN_PROP_MESSAGE_PROCESSOR_THREAD_WAIT_SECONDS = "l7.ssh.messageProcessorThreadWaitSeconds";
 
     /**
      * The SSH Credential assertion is always a credential source
