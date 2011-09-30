@@ -50,7 +50,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
 
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        context.setVariable(idVariable, assertion.getCounterName());
+        context.setVariable(idVariable, getCounterName(context));
         context.setVariable(periodVariable, TIME_UNITS[assertion.getTimeUnit() - 1]);
         final User user = context.getDefaultAuthenticationContext().getLastAuthenticatedUser();
         if (user != null) {
