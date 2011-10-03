@@ -9,6 +9,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.Config;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -38,7 +39,7 @@ public class ServerUUIDGeneratorAssertion extends AbstractServerAssertion<UUIDGe
         try {
             amount = Integer.parseInt(amountStr);
         } catch (final NumberFormatException e) {
-            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{ "The amount cannot be resolved: " + e.getMessage() }, e );
+            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{ "The amount cannot be resolved: " + e.getMessage() }, ExceptionUtils.getDebugException(e));
             return AssertionStatus.FAILED;
         }
 
