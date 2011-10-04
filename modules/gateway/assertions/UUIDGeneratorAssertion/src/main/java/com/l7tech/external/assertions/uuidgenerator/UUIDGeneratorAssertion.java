@@ -8,7 +8,8 @@ import com.l7tech.policy.variable.VariableMetadata;
  * Assertion which generates UUIDs and sets them to a context variable.
  */
 public class UUIDGeneratorAssertion extends Assertion implements UsesVariables, SetsVariables {
-    public static final String DEFAULT_AMOUNT = "1";
+    public static final int MINIMUM_AMOUNT = 1;
+    public static final int MAXIMUM_AMOUNT = 100;
 
     /**
      * Name of the context variable.
@@ -18,7 +19,7 @@ public class UUIDGeneratorAssertion extends Assertion implements UsesVariables, 
     /**
      * Amount of UUIDs to generate.
      */
-    private String amount = DEFAULT_AMOUNT;
+    private String amount = String.valueOf(MINIMUM_AMOUNT);
 
     public String getAmount() {
         return amount;

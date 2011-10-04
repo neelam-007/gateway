@@ -36,7 +36,7 @@ public class ServerUUIDGeneratorAssertionTest {
     @Before
     public void setup() throws Exception {
         assertion = new UUIDGeneratorAssertion();
-        assertion.setAmount(UUIDGeneratorAssertion.DEFAULT_AMOUNT);
+        assertion.setAmount(String.valueOf(UUIDGeneratorAssertion.MINIMUM_AMOUNT));
         assertion.setTargetVariable(TARGET_VARIABLE);
         serverAssertion = new ServerUUIDGeneratorAssertion(assertion);
         inject( serverAssertion );
@@ -91,7 +91,7 @@ public class ServerUUIDGeneratorAssertionTest {
 
     @Test
     public void checkRequestAmountLessThanMin() throws Exception {
-        assertion.setAmount(String.valueOf(ServerUUIDGeneratorAssertion.MINIMUM_AMOUNT - 1));
+        assertion.setAmount(String.valueOf(UUIDGeneratorAssertion.MINIMUM_AMOUNT - 1));
 
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 
@@ -101,7 +101,7 @@ public class ServerUUIDGeneratorAssertionTest {
 
     @Test
     public void checkRequestAmountOverMax() throws Exception {
-        assertion.setAmount(String.valueOf(ServerUUIDGeneratorAssertion.MAXIMUM_AMOUNT + 1));
+        assertion.setAmount(String.valueOf(UUIDGeneratorAssertion.MAXIMUM_AMOUNT + 1));
 
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 

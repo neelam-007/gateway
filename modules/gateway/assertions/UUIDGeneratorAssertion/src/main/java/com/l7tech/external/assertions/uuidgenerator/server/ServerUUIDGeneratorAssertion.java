@@ -21,9 +21,6 @@ import java.util.UUID;
  * @see com.l7tech.external.assertions.uuidgenerator.UUIDGeneratorAssertion
  */
 public class ServerUUIDGeneratorAssertion extends AbstractServerAssertion<UUIDGeneratorAssertion> {
-    static final int MINIMUM_AMOUNT = 1;
-    static final int MAXIMUM_AMOUNT = 100;
-
     @Inject
     private Config config;
 
@@ -43,12 +40,12 @@ public class ServerUUIDGeneratorAssertion extends AbstractServerAssertion<UUIDGe
             return AssertionStatus.FAILED;
         }
 
-        if (amount < MINIMUM_AMOUNT) {
+        if (amount < UUIDGeneratorAssertion.MINIMUM_AMOUNT) {
             logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "No UUID generated. Amount less than minimum: " + amount );
             return AssertionStatus.FAILED;
         }
 
-        int maxAmount = config.getIntProperty(ServerConfigParams.PARAM_UUID_AMOUNT_MAX, MAXIMUM_AMOUNT);
+        final int maxAmount = config.getIntProperty(ServerConfigParams.PARAM_UUID_AMOUNT_MAX, UUIDGeneratorAssertion.MAXIMUM_AMOUNT);
         if (amount > maxAmount) {
             logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "No UUID generated. Amount more than maximum: " + amount );
             return AssertionStatus.FAILED;
