@@ -51,16 +51,29 @@ public class ServerUUIDGeneratorAssertion extends AbstractServerAssertion<UUIDGe
             return AssertionStatus.FAILED;
         }
 
-        // generate UUIDs
-        final String[] uuids = new String[amount];
-        for (int i = 0; i < amount; ++i) {
-            final UUID uuid = UUID.randomUUID();
-            uuids[i] = uuid.toString();
-        }
-
-        context.setVariable(assertion.getTargetVariable(), uuids);
+        context.setVariable(assertion.getTargetVariable(), generateUUIDs(amount));
 
         return AssertionStatus.NONE;
+    }
+
+    /**
+     * @param amount the amount of UUIDs to generate.
+     * @return a uuid String if amount is equal to one or an array of UUID Strings if amount is more than one.
+     */
+    private Object generateUUIDs(int amount) {
+        Object value = null;
+        if(amount == UUIDGeneratorAssertion.MINIMUM_AMOUNT){
+            //if we only need one uuid, store it in a string instead of an array
+            value = UUID.randomUUID().toString();
+        }else{
+            final String[] uuids = new String[amount];
+            for (int i = 0; i < amount; ++i) {
+                final UUID uuid = UUID.randomUUID();
+                uuids[i] = uuid.toString();
+            }
+            value = uuids;
+        }
+        return value;
     }
 
     private void validateAssertion(UUIDGeneratorAssertion assertion) throws PolicyAssertionException {

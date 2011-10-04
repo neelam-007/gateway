@@ -14,11 +14,7 @@ import com.l7tech.util.MockConfig;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -72,9 +68,8 @@ public class ServerUUIDGeneratorAssertionTest {
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 
         assertEquals(AssertionStatus.NONE, assertionStatus);
-        final String[] contextVariable = (String[]) policyContext.getVariable(TARGET_VARIABLE);
-        assertEquals(1, contextVariable.length);
-        assertTrue(allUnique(contextVariable));
+        final String contextVariable = (String) policyContext.getVariable(TARGET_VARIABLE);
+        assertTrue(isValidUUID(contextVariable));
     }
 
     @Test
@@ -87,6 +82,7 @@ public class ServerUUIDGeneratorAssertionTest {
         final String[] contextVariable = (String[]) policyContext.getVariable(TARGET_VARIABLE);
         assertEquals(2, contextVariable.length);
         assertTrue(allUnique(contextVariable));
+        assertTrue(allValid(contextVariable));
     }
 
     @Test
@@ -141,6 +137,26 @@ public class ServerUUIDGeneratorAssertionTest {
             allUnique = false;
         }
         return allUnique;
+    }
+
+    private boolean allValid(final String[] items){
+        boolean allValid = true;
+        for (final String item : items){
+            if (!isValidUUID(item)){
+                allValid = false;
+                break;
+            }
+        }
+        return allValid;
+    }
+
+    private boolean isValidUUID(final String toCheck){
+        try{
+            UUID.fromString(toCheck);
+        }catch (final IllegalArgumentException e){
+            return false;
+        }
+        return true;
     }
 
     private void checkContextVariableDoesNotExist() throws NoSuchVariableException{
