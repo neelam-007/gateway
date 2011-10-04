@@ -65,14 +65,17 @@ public class HttpNamespaceFilter implements Filter {
 
         String uri = request.getRequestURI();
 
-        // If nothing is enabled on the current connector except MESSAGE_INPUT, forward directly to router servlet.
-        SsgConnector connector = HttpTransportModule.getConnector(request);
-        if (connector != null) {
-            Set<SsgConnector.Endpoint> endpointSet = connector.endpointSet();
-            if (endpointSet.equals(EnumSet.of(SsgConnector.Endpoint.MESSAGE_INPUT))) {
-                RequestDispatcher rd = config.getServletContext().getNamedDispatcher(routerServlet);
-                rd.forward(request, response);
-                return;
+        // Ping service is independent on any enabled endpoints.
+        if (! uri.startsWith("/ssg/ping")) {
+            // If nothing is enabled on the current connector except MESSAGE_INPUT, forward directly to router servlet.
+            SsgConnector connector = HttpTransportModule.getConnector(request);
+            if (connector != null) {
+                Set<SsgConnector.Endpoint> endpointSet = connector.endpointSet();
+                if (endpointSet.equals(EnumSet.of(SsgConnector.Endpoint.MESSAGE_INPUT))) {
+                    RequestDispatcher rd = config.getServletContext().getNamedDispatcher(routerServlet);
+                    rd.forward(request, response);
+                    return;
+                }
             }
         }
 
