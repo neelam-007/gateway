@@ -192,7 +192,7 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
         //
 
         _variableNameVarPanel.setVariable(assertion.getVariableToSet());
-        selectDataType(assertion.getDataType());
+        selectDataType(assertion.getDataType(), true);
         if ( assertion.getContentType() != null ) {
             _contentTypeComboBox.setSelectedItem( assertion.getContentType() );
         } else {
@@ -223,9 +223,10 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
     /**
      * Sets which data type is selected in {@link #_dataTypeComboBox}.
      * @param dataType  the data type to select
+     * @param requireSelection True if it is an error if the given type cannot be selected
      * @throws RuntimeException if <code>dataType</code> is not avaiable in the combo box
      */
-    private void selectDataType(final DataType dataType) {
+    private void selectDataType(final DataType dataType, final boolean requireSelection ) {
         if (dataType == null) return;
 
         for (int i = 0; i < _dataTypeComboBox.getItemCount(); ++i) {
@@ -234,6 +235,8 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
                 return;
             }
         }
+
+        if ( !requireSelection ) return;
 
         throw new RuntimeException("Data type \"" + dataType.getName() + "\" not available in combobox.");
     }
@@ -270,7 +273,7 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
         if (meta == null) {
             _dataTypeComboBox.setEnabled(true);
         } else {
-            selectDataType(meta.getType());
+            selectDataType(meta.getType(), false);
             _dataTypeComboBox.setEnabled(false);
         }
 
