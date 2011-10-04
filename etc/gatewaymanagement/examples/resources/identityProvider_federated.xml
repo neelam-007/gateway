@@ -9,9 +9,6 @@
         <Property key="enableCredentialType.x509">
             <BooleanValue>true</BooleanValue>
         </Property>
-        <Property key="adminEnabled">
-            <BooleanValue>false</BooleanValue>
-        </Property>
     </Properties>
     <Extension>
         <FederatedIdentityProviderDetail>
