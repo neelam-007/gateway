@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ivy-module version="2.0">
-	<info organisation="org.apache.sshd"
-		module="sshd-core"
-		revision="0.5.0"
+	<info organisation="org.apache.mina"
+		module="mina-core"
+		revision="2.0.2"
 		status="release"
-		publication="20110720160607"
+		publication="20111003103219"
 		default="true"
 	/>
 	<configurations>
 		<conf name="default" visibility="public"/>
 	</configurations>
 	<publications>
-		<artifact name="sshd-core" type="jar" ext="jar" conf="default"/>
+		<artifact name="mina-core" type="jar" ext="jar" conf="default"/>
 	</publications>
 </ivy-module>

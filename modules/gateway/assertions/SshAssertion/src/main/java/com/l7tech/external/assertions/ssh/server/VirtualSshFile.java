@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.ssh.server;
 
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.util.ResourceUtils;
 import org.apache.sshd.server.SshFile;
 import org.apache.sshd.server.filesystem.NameEqualsFileFilter;
 
@@ -107,6 +108,13 @@ public class VirtualSshFile implements SshFile {
     }
 
     /**
+     * Check file exec permission.
+     */
+    public boolean isExecutable() {
+        return false;
+    }
+
+    /**
      * Has delete permission.
      */
     public boolean isRemovable() {
@@ -130,6 +138,13 @@ public class VirtualSshFile implements SshFile {
      * Delete file.
      */
     public boolean delete() {
+        return true;
+    }
+
+    /**
+     * Create a new file
+     */
+    public boolean create() throws IOException {
         return true;
     }
 
@@ -177,7 +192,8 @@ public class VirtualSshFile implements SshFile {
     }
 
     public void handleClose() {
-        // Noop
+        ResourceUtils.flushQuietly(pipedOutputStream);
+        ResourceUtils.closeQuietly(pipedOutputStream);
     }
 
     /**

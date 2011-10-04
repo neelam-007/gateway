@@ -18,13 +18,13 @@ import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ResourceUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.sshd.common.util.DirectoryScanner;
-import org.apache.sshd.server.*;
+import org.apache.sshd.server.SessionAware;
+import org.apache.sshd.server.SshFile;
+import org.apache.sshd.server.command.ScpCommand;
 import org.apache.sshd.server.session.ServerSession;
 
 import java.io.*;
 import java.net.PasswordAuthentication;
-import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,31 +32,9 @@ import java.util.logging.Logger;
 /**
  * Message processing for SCP support (heavily borrowed from org.apache.sshd.server.command.ScpCommand).
  */
-public class MessageProcessingScpCommand implements Command, Runnable, SessionAware, FileSystemAware {
+public class MessageProcessingScpCommand extends ScpCommand implements SessionAware {
     protected static final Logger logger = Logger.getLogger(MessageProcessingScpCommand.class.getName());
 
-    protected static final int OK = 0;
-    protected static final int WARNING = 1;
-    protected static final int ERROR = 2;
-
-    protected String name;
-    protected boolean optR;
-    protected boolean optT;
-    protected boolean optF;
-    protected boolean optV;
-    protected boolean optD;
-    protected boolean optP;
-
-    protected FileSystemView root;
-    protected String path;
-    
-    protected InputStream in;
-    protected OutputStream out;
-    protected OutputStream err;
-    protected ExitCallback callback;
-    protected IOException error;
-
-    // customized for Gateway
     private ServerSession session;
     private SsgConnector connector;
     private MessageProcessor messageProcessor;
@@ -66,190 +44,19 @@ public class MessageProcessingScpCommand implements Command, Runnable, SessionAw
 
     public MessageProcessingScpCommand(String[] args, SsgConnector c, MessageProcessor mp, StashManagerFactory smf,
                                        SoapFaultManager sfm, EventChannel mpec) {
+        super(args);
         connector = c;
         messageProcessor = mp;
         messageProcessingEventChannel = mpec;
         soapFaultManager = sfm;
         stashManagerFactory = smf;
-
-        name = Arrays.asList(args).toString();
-        if (logger.isLoggable(Level.FINER)) {
-            logger.log(Level.FINER, "Executing command {0}", name);
-        }
-        path = ".";
-        for (int i = 1; i < args.length; i++) {
-            if (args[i].charAt(0) == '-') {
-                for (int j = 1; j < args[i].length(); j++) {
-                    switch (args[i].charAt(j)) {
-                        case 'f':
-                            optF = true;
-                            break;
-                        case 'p':
-                            optP = true;
-                            break;
-                        case 'r':
-                            optR = true;
-                            break;
-                        case 't':
-                            optT = true;
-                            break;
-                        case 'v':
-                            optV = true;
-                            break;
-                        case 'd':
-                            optD = true;
-                            break;
-//                          default:
-//                            error = new IOException("Unsupported option: " + args[i].charAt(j));
-//                            return;
-                    }
-                }
-            } else if (i == args.length - 1) {
-                path = args[args.length - 1];
-            }
-        }
-        if (!optF && !optT) {
-            error = new IOException("Either -f or -t option should be set");
-        }
     }
 
     public void setSession(ServerSession session) {
         this.session = session;
     }
 
-    public void setInputStream(InputStream in) {
-        this.in = in;
-    }
-
-    public void setOutputStream(OutputStream out) {
-        this.out = out;
-    }
-
-    public void setErrorStream(OutputStream err) {
-        this.err = err;
-    }
-
-    public void setExitCallback(ExitCallback callback) {
-        this.callback = callback;
-    }
-
-    public void start(Environment env) throws IOException {
-        if (error != null) {
-            throw error;
-        }
-        new Thread(this, "MessageProcessingScpCommand: " + name).start();
-    }
-
-    public void destroy() {
-    }
-
-    public void run() {
-        int exitValue = OK;
-        String exitMessage = null;
-        
-        try {
-            if (optT)
-            {
-                ack();
-                for (; ;)
-                {
-                    String line;
-                    boolean isDir = false;
-                    int c = readAck(true);
-                    switch (c)
-                    {
-                        case -1:
-                            return;
-                        case 'D':
-                            isDir = true;
-                        case 'C':
-                            line = ((char) c) + readLine();
-                            break;
-                        case 'E':
-                            line = ((char) c) + readLine();
-                            break;
-                        default:
-                            //a real ack that has been acted upon already
-                            continue;
-                    }
-
-                    if (optR && isDir)
-                    {
-                        writeDir(line, root.getFile(path));
-                    }
-                    else
-                    {
-                        writeFile(line, root.getFile(path));
-                    }
-                }
-            } else if (optF) {
-                String pattern = path;
-                int idx = pattern.indexOf('*');
-                if (idx >= 0) {
-                    String basedir = "";
-                    int lastSep = pattern.substring(0, idx).lastIndexOf('/');
-                    if (lastSep >= 0) {
-                        basedir = pattern.substring(0, lastSep);
-                        pattern = pattern.substring(lastSep + 1);
-                    }
-                    String[] included = new DirectoryScanner(basedir, pattern).scan();
-                    for (String path : included) {
-                        SshFile file = root.getFile(basedir + "/" + path);
-                        if (file.isFile()) {
-                            readFile(file);
-                        } else if (file.isDirectory()) {
-                            if (!optR) {
-                                out.write(WARNING);
-                                out.write((path + " not a regular file\n").getBytes());
-                            } else {
-                                readDir(file);
-                            }
-                        } else {
-                            out.write(WARNING);
-                            out.write((path + " unknown file type\n").getBytes());
-                        }
-                    }
-                } else {
-                    String basedir = "";
-                    int lastSep = pattern.lastIndexOf('/');
-                    if (lastSep >= 0) {
-                        basedir = pattern.substring(0, lastSep);
-                        pattern = pattern.substring(lastSep + 1);
-                    }
-                    SshFile file = root.getFile(basedir + "/" + pattern);
-                    if (!file.doesExist()) {
-                        throw new IOException(file + ": no such file or directory");
-                    }
-
-                    // customized for Gateway
-                    if (!optR) {
-                        readFile(file);
-                    } else {
-                        readDir(file);
-                    }
-                }
-            } else {
-                throw new IOException("Unsupported mode");
-            }
-        } catch (IOException e) {
-            try {
-                exitValue = ERROR;
-                exitMessage = e.getMessage();
-                out.write(exitValue);
-                out.write(exitMessage.getBytes());
-                out.write('\n');
-                out.flush();
-            } catch (IOException e2) {
-                // Ignore
-            }
-            logger.log(Level.INFO, "Error in scp command", e);
-        } finally {
-            if (callback != null) {
-                callback.onExit(exitValue, exitMessage);
-            }
-        }
-    }
-
+    @Override
     protected void writeDir(String header, SshFile path) throws IOException {
         if (logger.isLoggable(Level.FINER)) {
             logger.log(Level.FINER, "Recursively writing dir {0} unsupported", path);
@@ -257,6 +64,7 @@ public class MessageProcessingScpCommand implements Command, Runnable, SessionAw
         throw new IOException("Recursive directory write unsupported.");
     }
 
+    @Override
     protected void writeFile(String header, SshFile path) throws IOException {
         if (logger.isLoggable(Level.FINER)) {
             logger.log(Level.FINER, "Writing file {0}", path);
@@ -283,60 +91,18 @@ public class MessageProcessingScpCommand implements Command, Runnable, SessionAw
         readAck(false);
     }
 
-    protected String readLine() throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        for (;;) {
-            int c = in.read();
-            if (c == '\n') {
-                return baos.toString();
-            } else if (c == -1) {
-                throw new IOException("End of stream");
-            } else {
-                baos.write(c);
-            }
-        }
-    }
-
+    @Override
     protected void readFile(SshFile path) throws IOException {
         throw new IOException("Copy from server currently unsupported.");
     }
 
+    @Override
     protected void readDir(SshFile path) throws IOException {
         if (logger.isLoggable(Level.FINER)) {
             logger.log(Level.FINER, "Recursively reading directory {0} unsupported", path);
         }
         throw new IOException("Recursive directory read unsupported.");
     }
-
-    protected void ack() throws IOException {
-        out.write(0);
-        out.flush();
-    }
-
-    protected int readAck(boolean canEof) throws IOException {
-        int c = in.read();
-        switch (c) {
-            case -1:
-                if (!canEof) {
-                    throw new EOFException();
-                }
-                break;
-            case OK:
-                break;
-            case WARNING:
-                logger.log(Level.WARNING, "Received warning: " + readLine());
-                break;
-            case ERROR:
-                throw new IOException("Received nack: " + readLine());
-            default:
-                break;
-        }
-        return c;
-    }
-
-	public void setFileSystemView(FileSystemView view) {
-		this.root = view;	
-	}
 
     private boolean pipeInputStreamToGatewayRequestMessage(SsgConnector connector, String path, String file,
                                                            InputStream inputStream, long length) throws IOException {

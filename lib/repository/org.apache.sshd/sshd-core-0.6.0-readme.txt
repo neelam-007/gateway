@@ -1,0 +1,6 @@
+l7p1
+	Sep 30, 2011
+	    Layer 7 patch:
+	     - make SftpSubsystem extensible for customization
+	     - don't disclose SSH server implementation (e.g. don't display Apache SSHD's "SSHD-0.6.0" when client use -v option)
+	    Use Maven to build and package: mvn package -Dmaven.test.skip=true

@@ -1,8 +1,8 @@
 package com.l7tech.external.assertions.ssh.server;
 
+import org.apache.sshd.common.Session;
 import org.apache.sshd.server.FileSystemFactory;
 import org.apache.sshd.server.FileSystemView;
-import org.apache.sshd.server.session.ServerSession;
 
 /**
  * Virtual file system factory.
@@ -49,7 +49,7 @@ public class VirtualFileSystemFactory implements FileSystemFactory {
     /**
      * Create the appropriate user file system view (user name ignored).
      */
-    public FileSystemView createFileSystemView(ServerSession session) {
+    public FileSystemView createFileSystemView(Session session) {
         return new VirtualFileSystemView(caseInsensitive);
     }
 }

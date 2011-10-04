@@ -1,0 +1,64 @@
+Index: sshd-core/src/main/filtered-resources/org/apache/sshd/sshd-version.properties
+===================================================================
+--- sshd-core/src/main/filtered-resources/org/apache/sshd/sshd-version.properties	(revision 1177421)
++++ sshd-core/src/main/filtered-resources/org/apache/sshd/sshd-version.properties	(revision )
+@@ -17,4 +17,4 @@
+ ## under the License.
+ ##
+
+-version=${pom.artifactId}-${pom.version}
++version=SSH
+Index: sshd-core/src/main/java/org/apache/sshd/server/sftp/SftpSubsystem.java
+===================================================================
+--- sshd-core/src/main/java/org/apache/sshd/server/sftp/SftpSubsystem.java	(revision 1177421)
++++ sshd-core/src/main/java/org/apache/sshd/server/sftp/SftpSubsystem.java	(revision )
+@@ -18,20 +18,18 @@
+  */
+ package org.apache.sshd.server.sftp;
+
+-import java.io.*;
+-import java.util.*;
+-
+ import org.apache.sshd.common.NamedFactory;
+ import org.apache.sshd.common.util.Buffer;
+ import org.apache.sshd.common.util.IoUtils;
+ import org.apache.sshd.common.util.SelectorUtils;
+ import org.apache.sshd.server.*;
+-import org.apache.sshd.server.FileSystemView;
+-import org.apache.sshd.server.SshFile;
+ import org.apache.sshd.server.session.ServerSession;
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
+
++import java.io.*;
++import java.util.*;
++
+ /**
+  * SFTP subsystem
+  *
+@@ -223,13 +221,13 @@
+     private OutputStream out;
+     private OutputStream err;
+     private Environment env;
+-    private ServerSession session;
++    protected ServerSession session;
+     private boolean closed = false;
+
+     private FileSystemView root;
+
+-    private int version;
+-    private Map<String, Handle> handles = new HashMap<String, Handle>();
++    protected int version;
++    protected Map<String, Handle> handles = new HashMap<String, Handle>();
+
+
+     protected static abstract class Handle {
+@@ -997,7 +995,7 @@
+         closed = true;
+     }
+
+-    private SshFile resolveFile(String path) {
++    protected SshFile resolveFile(String path) {
+     	return this.root.getFile(path);
+     }
+
