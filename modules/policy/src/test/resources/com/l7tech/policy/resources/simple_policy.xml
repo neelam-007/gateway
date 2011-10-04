@@ -187,6 +187,7 @@
                 </L7p:ExportVariables>
                 <L7p:CustomizeErrorResponse/>
                 <L7p:ContentType/>
+                <L7p:AddHeader/>
             </wsp:OneOrMore>
         </wsp:All>
         <wsp:ExactlyOne wsp:Usage="Required">

@@ -340,5 +340,8 @@
         <L7p:ContentType>
             <L7p:Enabled booleanValue="false"/>
         </L7p:ContentType>
+        <L7p:AddHeader>
+            <L7p:Enabled booleanValue="false"/>
+        </L7p:AddHeader>
     </wsp:OneOrMore>
 </wsp:Policy>

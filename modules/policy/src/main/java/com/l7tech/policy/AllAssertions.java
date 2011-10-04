@@ -116,6 +116,7 @@ public class AllAssertions {
         new ExportVariablesAssertion(),
         new CustomizeErrorResponseAssertion(),
         new ContentTypeAssertion(),
+        new AddHeaderAssertion(),
     };
 
 
@@ -211,5 +212,6 @@ public class AllAssertions {
         new ExportVariablesAssertion(),
         new CustomizeErrorResponseAssertion(),
         new ContentTypeAssertion(),
+        new AddHeaderAssertion(),
     };
 }

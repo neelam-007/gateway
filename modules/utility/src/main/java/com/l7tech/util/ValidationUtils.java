@@ -1,18 +1,19 @@
 package com.l7tech.util;
 
 import com.l7tech.util.Functions.Unary;
-import static com.l7tech.util.Option.join;
-import static com.l7tech.util.Option.optional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
-import java.net.URL;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Collection;
 import java.util.regex.Pattern;
+
+import static com.l7tech.util.Option.join;
+import static com.l7tech.util.Option.optional;
 
 /**
  * Input validation methods.
@@ -428,6 +429,37 @@ public class ValidationUtils {
         return new PredicatedValidator<String,String>(
                 ConversionUtils.<String>getIdentityConverter(),
                 regexPredicate(pattern) );
+    }
+
+    public static boolean isValidMimeHeaderName(String name) {
+        return getMimeHeaderNameMessage(name) == null;
+    }
+
+    private static final Pattern WHITESPACE = Pattern.compile("\\s");
+
+    public static String getMimeHeaderNameMessage(final String name) {
+        if (name == null)
+            return "name is null";
+
+        if (WHITESPACE.matcher(name).find())
+            return "name contains whitespace";
+
+        // TODO additional validation
+
+        return null;
+    }
+
+    public static boolean isValidMimeHeaderValue(String value) {
+        return getMimeHeaderValueMessage(value) == null;
+    }
+
+    public static String getMimeHeaderValueMessage(final String name) {
+        if (name == null)
+            return "value is null";
+
+        // TODO additional validation
+
+        return null;
     }
 
     /**
