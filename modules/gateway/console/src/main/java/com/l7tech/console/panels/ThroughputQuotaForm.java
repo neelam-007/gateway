@@ -153,6 +153,14 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
             expr = ThroughputQuota.COUNTER_NAME_TYPES.get(quotaOption);
             if (CounterPresetInfo.isDefaultCustomExpr(counterName, ThroughputQuota.COUNTER_NAME_TYPES)) {
                 counterNameTextField.setText(CounterPresetInfo.makeDefaultCustomExpr(uuid[0], expr));
+            } else {
+                String rawCounterName = CounterPresetInfo.findRawCounterName(
+                    quotaOption, uuid[0], counterNameTextField.getText().trim(),
+                    ThroughputQuota.PRESET_CUSTOM, ThroughputQuota.COUNTER_NAME_TYPES
+                );
+
+                CounterPresetInfo.findCounterNameKey(rawCounterName, uuid, ThroughputQuota.PRESET_CUSTOM, ThroughputQuota.COUNTER_NAME_TYPES);
+                counterNameTextField.setText(CounterPresetInfo.makeDefaultCustomExpr(uuid[0], expr));
             }
         }
     }
