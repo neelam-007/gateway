@@ -20,12 +20,7 @@ public class AddCertificateWizard extends CertificateWizard {
      * @param parent The parent frame object reference.
      * @param panel  The panel attached to this wizard. This is the panel to be displayed when the wizard is shown.
      */
-    public AddCertificateWizard(Frame parent, final WizardStepPanel panel) {
-        super(parent, panel);
-        init();
-    }
-
-    public AddCertificateWizard(Dialog parent, final WizardStepPanel panel) {
+    public AddCertificateWizard(Window parent, final WizardStepPanel panel) {
         super(parent, panel);
         init();
     }

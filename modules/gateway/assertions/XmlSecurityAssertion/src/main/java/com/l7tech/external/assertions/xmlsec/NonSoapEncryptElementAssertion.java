@@ -3,7 +3,7 @@ package com.l7tech.external.assertions.xmlsec;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.TargetMessageType;
-import com.l7tech.security.xml.XencUtil;
+import com.l7tech.security.xml.XmlElementEncryptionConfig;
 import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.xml.xpath.XpathExpression;
 
@@ -13,23 +13,7 @@ import com.l7tech.xml.xpath.XpathExpression;
 public class NonSoapEncryptElementAssertion extends NonSoapSecurityAssertionBase {
     private static final String META_INITIALIZED = NonSoapEncryptElementAssertion.class.getName() + ".metadataInitialized";
 
-    // EncryptedKey properties
-
-    /**
-     * The recipient's certificate, if generating an EncryptedKey.
-     */
-    private String recipientCertificateBase64 = null;
-
-    // Symmetric encryption properties
-
-    /**
-     * If true, replace all contents of the element with a single EncryptedData element, but leave the open and close tags unencrypted.
-     * If false, replace the entire element with an EncryptedData element.
-     */
-    private boolean encryptContentsOnly = false;
-
-    /** Symmetric encryption algorithm. */
-    private String xencAlgorithm = XencUtil.AES_128_CBC;
+    private XmlElementEncryptionConfig config = new XmlElementEncryptionConfig();
 
     public NonSoapEncryptElementAssertion() {
         super(TargetMessageType.RESPONSE, true);
@@ -79,26 +63,34 @@ public class NonSoapEncryptElementAssertion extends NonSoapSecurityAssertionBase
     }
 
     public boolean isEncryptContentsOnly() {
-        return encryptContentsOnly;
+        return config.isEncryptContentsOnly();
     }
 
     public void setEncryptContentsOnly(boolean encryptContentsOnly) {
-        this.encryptContentsOnly = encryptContentsOnly;
+        config.setEncryptContentsOnly(encryptContentsOnly);
     }
 
     public String getXencAlgorithm() {
-        return xencAlgorithm;
+        return config.getXencAlgorithm();
     }
 
     public void setXencAlgorithm(String xencAlgorithm) {
-        this.xencAlgorithm = xencAlgorithm;
+        config.setXencAlgorithm(xencAlgorithm);
     }
 
     public String getRecipientCertificateBase64() {
-        return recipientCertificateBase64;
+        return config.getRecipientCertificateBase64();
     }
 
     public void setRecipientCertificateBase64(String recipientCertificateBase64) {
-        this.recipientCertificateBase64 = recipientCertificateBase64;
+        config.setRecipientCertificateBase64(recipientCertificateBase64);
+    }
+
+    public XmlElementEncryptionConfig config() {
+        return config;
+    }
+
+    public void config(XmlElementEncryptionConfig config) {
+        this.config = config;
     }
 }

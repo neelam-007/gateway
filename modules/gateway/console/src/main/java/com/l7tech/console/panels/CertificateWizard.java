@@ -15,12 +15,7 @@ public class CertificateWizard extends Wizard {
 
     private ResourceBundle resources = null;
 
-    public CertificateWizard(Frame parent, final WizardStepPanel panel) {
-        super(parent, panel);
-        initResources();
-    }
-
-    public CertificateWizard(Dialog parent, final WizardStepPanel panel) {
+    public CertificateWizard(Window parent, final WizardStepPanel panel) {
         super(parent, panel);
         initResources();
     }

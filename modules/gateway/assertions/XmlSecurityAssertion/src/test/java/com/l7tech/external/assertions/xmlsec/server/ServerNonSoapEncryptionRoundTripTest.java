@@ -12,23 +12,26 @@ import com.l7tech.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
-import com.l7tech.util.Pair;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.Pair;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.xpath.XpathExpression;
-import static org.junit.Assert.*;
-import org.junit.*;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.springframework.beans.factory.BeanFactory;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.logging.Logger;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  *
@@ -68,7 +71,7 @@ public class ServerNonSoapEncryptionRoundTripTest {
 
     }
 
-    private String makeEncryptedMessage() throws PolicyAssertionException, InvalidXpathException, IOException, CertificateException, SAXException {
+    private String makeEncryptedMessage() throws PolicyAssertionException, InvalidXpathException, IOException, CertificateException, SAXException, NoSuchAlgorithmException {
         Message req = ServerNonSoapEncryptElementAssertionTest.makeReq();
         NonSoapEncryptElementAssertion ass = ServerNonSoapEncryptElementAssertionTest.makeAss();
         ass.setRecipientCertificateBase64(recipb64);
