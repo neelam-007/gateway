@@ -5,11 +5,11 @@
     <Protocol>HTTPS</Protocol>
     <Port>8443</Port>
     <EnabledFeatures>
-        <StringValue>MESSAGE_INPUT</StringValue>
-        <StringValue>ADMIN_REMOTE_SSM</StringValue>
-        <StringValue>ADMIN_REMOTE_ESM</StringValue>
-        <StringValue>ADMIN_APPLET</StringValue>
-        <StringValue>OTHER_SERVLETS</StringValue>
+        <StringValue>Published service message input</StringValue>
+        <StringValue>Policy Manager access</StringValue>
+        <StringValue>Enterprise Manager access</StringValue>
+        <StringValue>Browser-based administration</StringValue>
+        <StringValue>Built-in services</StringValue>
     </EnabledFeatures>
     <TlsSettings>
         <ClientAuthentication>Optional</ClientAuthentication>

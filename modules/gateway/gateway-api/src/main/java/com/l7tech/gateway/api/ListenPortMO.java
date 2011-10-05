@@ -152,6 +152,32 @@ public class ListenPortMO extends ElementExtendableAccessibleObject {
     /**
      * Set the enabled features for this listen port.
      *
+     * <p>Recognised features are:
+     * <ul>
+     *   <li><code>Published service message input</code></li>
+     *   <li><code>Policy download service</code></li>
+     *   <li><code>WS-Trust security token service</code></li>
+     *   <li><code>Certificate signing service</code></li>
+     *   <li><code>Password changing service</code></li>
+     *   <li><code>WSDL download service</code></li>
+     *   <li><code>SNMP Query service</code></li>
+     *   <li><code>Policy Manager access</code></li>
+     *   <li><code>Browser-based administration</code></li>
+     *   <li><code>Enterprise Manager access</code></li>
+     *   <li><code>Inter-Node Communication</code></li>
+     *   <li><code>Node Control</code></li>
+     * </ul>
+     * </p>
+     * <p>
+     * The additional feature <code>Built-in services</code> is equivalent to all of
+     * <code>Policy download service</code>,
+     * <code>WS-Trust security token service</code>,
+     * <code>Certificate signing service</code>,
+     * <code>Password changing service</code>,
+     * <code>WSDL download service</code>,
+     * <code>SNMP Query service</code>.
+     * </p>
+     *
      * @param enabledFeatures The features to enable
      */
     public void setEnabledFeatures( final List<String> enabledFeatures ) {
