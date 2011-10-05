@@ -294,7 +294,7 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
     @SuppressWarnings({"UnusedDeclaration"})
     public static class SftpPollingListenerCustomAction extends AbstractAction {
         public SftpPollingListenerCustomAction() {
-            super("Manage SFTP Polling Listeners", ImageCache.getInstance().getIconAsIcon("com/l7tech/console/resources/Bean16.gif"));
+            super("Manage SFTP Polling Listeners", ImageCache.getInstance().getIconAsIcon("com/l7tech/console/resources/interface.gif"));
         }
 
         @Override
