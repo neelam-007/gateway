@@ -342,6 +342,19 @@ public class ListenPortMO extends ElementExtendableAccessibleObject {
         /**
          * Set the list of enabled cipher suites.
          *
+         * <p>The available cipher suites depend on the Gateway version and
+         * configuration, commonly available cipher suites are:
+         * <ul>
+         *   <li><code>TLS_DHE_RSA_WITH_AES_256_CBC_SHA</code></li>
+         *   <li><code>TLS_RSA_WITH_AES_256_CBC_SHA</code></li>
+         *   <li><code>TLS_DHE_RSA_WITH_AES_128_CBC_SHA</code></li>
+         *   <li><code>TLS_RSA_WITH_AES_128_CBC_SHA</code></li>
+         *   <li><code>SSL_RSA_WITH_RC4_128_SHA</code></li>
+         *   <li><code>SSL_RSA_WITH_3DES_EDE_CBC_SHA</code></li>
+         *   <li><code>SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA</code></li>
+         * </ul>
+         * </p>
+         *
          * @param enabledCipherSuites The cipher suites to enable
          */
         public void setEnabledCipherSuites( final List<String> enabledCipherSuites ) {
