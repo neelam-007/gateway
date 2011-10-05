@@ -473,6 +473,7 @@ public class SsgConnectorManagerWindow extends JDialog {
 
         public void setSelectedConnector(SsgConnector connector) {
             int rowNum = model.findRowByConnectorOid(connector.getOid());
+            rowNum = rowNum>=0 ? convertRowIndexToView( rowNum ) : rowNum;
             if (rowNum >= 0)
                 getSelectionModel().setSelectionInterval(rowNum, rowNum);
             else
