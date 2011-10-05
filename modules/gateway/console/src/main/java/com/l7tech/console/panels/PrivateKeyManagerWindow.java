@@ -982,8 +982,7 @@ public class PrivateKeyManagerWindow extends JDialog {
                 if (model.isConColumn(i)) col.setCellRenderer(new JTable().getDefaultRenderer(Icon.class));
             }
             setRowHeight(19);
-            Utilities.setRowSorter(this, model, new int[]{1,2}, new boolean[]{true, true},
-                    new Comparator[]{null, null});
+            Utilities.setRowSorter(this, model, new int[]{1,2}, new boolean[]{true, true}, null);
             this.setDefaultRenderer( Date.class,  new DefaultTableCellRenderer(){
                 @Override
                 protected void setValue(Object value) {

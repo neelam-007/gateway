@@ -490,7 +490,7 @@ public class JmsQueuesWindow extends JDialog {
 
         // Reset the sorter
         Utilities.setRowSorter(getJmsQueueTable(), getJmsQueueTableModel(),
-            new int[] {0, 1, 2, 3}, new boolean[] {true, true, true, true}, new Comparator[] {null, null, null, null});
+            new int[] {0, 1, 2, 3}, new boolean[] {true, true, true, true}, null);
         TableRowSorter<JmsQueueTableModel> sorter = (TableRowSorter<JmsQueueTableModel>) getJmsQueueTable().getRowSorter();
 
         // Reset the filter

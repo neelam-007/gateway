@@ -1583,7 +1583,7 @@ public class Utilities {
      * the index of cols array. Length must be the same.
      * @param comparators The comparator to use for sorting the cols in the param cols. The comparator in comparators
      * at index i matches the column at index i in cols. Null values are allowed if a column does not need a comparator.
-     * Must supply an array the length of cols
+     * If supplied the array length must match the length of the cols array.
      * @throws IllegalArgumentException if the length of the comparators array, if specified, and the order array
      * does not match the length of the cols array
      * @throws NullPointerException if one of the cols or order arrays are null 

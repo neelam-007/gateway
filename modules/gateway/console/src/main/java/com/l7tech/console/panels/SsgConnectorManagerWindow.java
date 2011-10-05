@@ -442,12 +442,17 @@ public class SsgConnectorManagerWindow extends JDialog {
                 col.setMinWidth(model.getColumnMinWidth(i));
                 col.setPreferredWidth(model.getColumnPrefWidth(i));
                 col.setMaxWidth(model.getColumnMaxWidth(i));
-                TableCellRenderer cr = model.getCellRenderer(i, getDefaultRenderer(String.class));
+                TableCellRenderer cr = model.getCellRenderer(i, getDefaultRenderer(model.getColumnClass(i)));
                 if (cr != null) col.setCellRenderer(cr);
             }
+            Utilities.setRowSorter( this, model, new int[]{1,2,4}, new boolean[]{true, true, true}, null );
         }
 
+        /**
+         * Get a connector by view row
+         */
         public ConnectorTableRow getRowAt(int row) {
+            row = convertRowIndexToModel( row );
             return model.getRowAt(row);
         }
 
@@ -479,16 +484,22 @@ public class SsgConnectorManagerWindow extends JDialog {
         private Map<Long, Integer> rowMap;
 
         private abstract class Col {
-            final String name;
-            final int minWidth;
-            final int prefWidth;
-            final int maxWidth;
+            private final String name;
+            private final int minWidth;
+            private final int prefWidth;
+            private final int maxWidth;
+            private final Class clazz;
 
-            protected Col(String name, int minWidth, int prefWidth, int maxWidth) {
+            protected Col( final String name,
+                           final int minWidth,
+                           final int prefWidth,
+                           final int maxWidth,
+                           final Class clazz) {
                 this.name = name;
                 this.minWidth = minWidth;
                 this.prefWidth = prefWidth;
                 this.maxWidth = maxWidth;
+                this.clazz = clazz;
             }
 
             abstract Object getValueForRow(ConnectorTableRow row);
@@ -519,35 +530,35 @@ public class SsgConnectorManagerWindow extends JDialog {
         }
 
         public final Col[] columns = new Col[] {
-                new Col("Enabled", 60, 90, 90) {
+                new Col("Enabled", 60, 90, 90, String.class) {
                     @Override
                     Object getValueForRow(ConnectorTableRow row) {
                         return row.getEnabled();
                     }
                 },
 
-                new Col("Name", 60, 90, 999999) {
+                new Col("Name", 60, 90, 999999, String.class) {
                     @Override
                     Object getValueForRow(ConnectorTableRow row) {
                         return row.getName();
                     }
                 },
 
-                new Col("Protocol", 3, 100, 999999) {
+                new Col("Protocol", 3, 100, 999999, String.class) {
                     @Override
                     Object getValueForRow(ConnectorTableRow row) {
                         return row.getProtocol();
                     }
                 },
 
-                new Col("Interface", 3, 88, 999999) {
+                new Col("Interface", 3, 88, 999999, String.class) {
                     @Override
                     Object getValueForRow(ConnectorTableRow row) {
                         return row.getInterface();
                     }
                 },
 
-                new Col("Port", 3, 85, 85) {
+                new Col("Port", 3, 85, 85, Integer.class) {
                     @Override
                     Object getValueForRow(ConnectorTableRow row) {
                         return row.getPort();
@@ -572,6 +583,11 @@ public class SsgConnectorManagerWindow extends JDialog {
         @Override
         public String getColumnName(int column) {
             return columns[column].name;
+        }
+
+        @Override
+        public Class<?> getColumnClass( final int column ) {
+            return columns[column].clazz;
         }
 
         public TableCellRenderer getCellRenderer(int column, final TableCellRenderer current) {

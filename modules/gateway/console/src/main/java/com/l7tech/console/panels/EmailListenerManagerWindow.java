@@ -313,7 +313,7 @@ public class EmailListenerManagerWindow extends JDialog {
             setModel(model);
 
             // sort by name on default
-            Utilities.setRowSorter(this, model, new int[]{0}, new boolean[]{true},new Comparator[]{null});
+            Utilities.setRowSorter(this, model, new int[]{0}, new boolean[]{true}, null);
             getTableHeader().setReorderingAllowed(false);
             getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
             TableColumnModel cols = getColumnModel();

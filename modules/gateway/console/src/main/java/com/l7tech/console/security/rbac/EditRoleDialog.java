@@ -91,7 +91,7 @@ public class EditRoleDialog extends JDialog {
         this.tableModel = new PermissionTableModel();
         permissionsTable.setModel(tableModel);
         permissionsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        Utilities.setRowSorter(permissionsTable, tableModel, new int[] {0}, new boolean[] {true}, new Comparator[] {null});
+        Utilities.setRowSorter(permissionsTable, tableModel, new int[] {0}, new boolean[] {true}, null);
 
         setContentPane(contentPane);
         getRootPane().setDefaultButton(buttonOK);
