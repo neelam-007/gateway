@@ -32,7 +32,7 @@ import java.util.regex.Matcher;
  */
 public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropertiesOkCancelSupport<IcapAntivirusScannerAssertion> {
 
-    private static final String DIALOG_TITLE = "ICAP Anti-Virus Properties";
+    private static final String DIALOG_TITLE = "ICAP Antivirus Scanner Properties";
     private static final String DIALOG_TITLE_NEW_SERVER = "Add New Server";
     private static final String DIALOG_TITLE_EDIT_SERVER_PROPERTIES = "Edit Server Properties";
 

@@ -70,8 +70,9 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
-        meta.put(AssertionMetadata.SHORT_NAME, "Icap Anti-Virus Scanner");
-        meta.put(AssertionMetadata.LONG_NAME, "Scan virus using the ICAP protocol against an ICAP capable anti-virus server.");
+        meta.put(AssertionMetadata.SHORT_NAME, "Scan Using ICAP-Enabled Antivirus");
+        meta.put(AssertionMetadata.LONG_NAME, "Scan for viruses using any antivirus server that supports the ICAP protocol.");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "ICAP Antivirus Scanner Properties");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"threatProtection"});
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/Properties16.gif");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
