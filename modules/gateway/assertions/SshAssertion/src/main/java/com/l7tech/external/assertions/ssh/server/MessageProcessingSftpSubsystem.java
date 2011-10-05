@@ -323,8 +323,11 @@ public class MessageProcessingSftpSubsystem extends SftpSubsystem {
             virtualSshFile.setPipedOutputStream(pos);
 
             String path = virtualSshFile.getAbsolutePath();
-            if (path.indexOf('/') > -1) {
-                path = path.substring(0, path.lastIndexOf('/'));
+            int pathLastIndex = path.lastIndexOf('/');
+            if (pathLastIndex > 0) {
+                path = path.substring(0, pathLastIndex);
+            } else if (pathLastIndex == 0) {
+                path = "/";
             }
 
             Message request = new Message();
