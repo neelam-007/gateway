@@ -17,12 +17,28 @@ import java.util.*;
 public class JsonTransformationAssertion extends MessageTargetableAssertion {
 
     public enum Transformation {
-        XML_to_JSON, JSON_to_XML
+        XML_to_JSON,
+        JSON_to_XML
+    }
+
+    public enum TransformationConvention {
+        /**
+         * The standard convention for converting XML to JSON.  The resulting JSON will not contain attributes and namespaces.
+         *
+         */
+        STANDARD,
+
+        /**
+         * The JSONML convention, this allows for a full round trip of XML to JSON back to XML losslessly.
+         */
+        JSONML
     }
 
     private String rootTagString;
     private MessageTargetableSupport destinationMessageTarget;
     private Transformation transform = JsonTransformationAssertion.Transformation.XML_to_JSON;
+
+    private TransformationConvention convention = TransformationConvention.STANDARD;
 
     public JsonTransformationAssertion() {
         super(TargetMessageType.RESPONSE, false);
@@ -53,6 +69,14 @@ public class JsonTransformationAssertion extends MessageTargetableAssertion {
 
     public void setTransformation(Transformation transform) {
         this.transform = transform;
+    }
+
+    public TransformationConvention getConvention() {
+        return convention;
+    }
+
+    public void setConvention(final TransformationConvention convention) {
+        this.convention = convention;
     }
 
     @Override
@@ -104,6 +128,7 @@ public class JsonTransformationAssertion extends MessageTargetableAssertion {
 
         Collection<TypeMapping> otherMappings = new ArrayList<TypeMapping>();
         otherMappings.add(new Java5EnumTypeMapping(JsonTransformationAssertion.Transformation.class, "transformation"));
+        otherMappings.add(new Java5EnumTypeMapping(JsonTransformationAssertion.TransformationConvention.class, "convention"));
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(otherMappings));
 
         meta.put(AssertionMetadata.EXTENSION_INTERFACES_FACTORY, new Functions.Unary<Collection<ExtensionInterfaceBinding>, ApplicationContext>() {

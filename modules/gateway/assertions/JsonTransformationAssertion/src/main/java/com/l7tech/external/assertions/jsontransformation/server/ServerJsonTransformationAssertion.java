@@ -1,12 +1,7 @@
 package com.l7tech.external.assertions.jsontransformation.server;
 
 
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.Map;
-
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
@@ -23,10 +18,14 @@ import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.XML;
+import org.json.*;
 import org.springframework.context.ApplicationContext;
+import org.xml.sax.SAXException;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.Map;
 
 public class ServerJsonTransformationAssertion extends AbstractServerAssertion<JsonTransformationAssertion> {
 
@@ -61,28 +60,29 @@ public class ServerJsonTransformationAssertion extends AbstractServerAssertion<J
             JSONObject jsonObject;
 
             if (assertion.getTransformation().equals(JsonTransformationAssertion.Transformation.XML_to_JSON)) {
-                String sourceString =  getFirstPartString(sourceMessage);
-
-                jsonObject = XML.toJSONObject(sourceString);
-                targetValue = jsonObject.toString(JsonStringIndent);
-
+                String sourceString = getFirstPartString(sourceMessage);
+                targetValue = doTransformation(sourceString, assertion.getTransformation(),
+                        assertion.getConvention(), assertion.getRootTagString());
             } else {
 
                 Map<String, Object> vars = context.getVariableMap(assertion.getVariablesUsed(), getAudit());
                 String rootTag = ExpandVariables.process(assertion.getRootTagString(), vars, getAudit(), true);
 
                 // try to use JSON map, less processing
-                Object jsonObj =  sourceMessage.getJsonKnob().getJsonData().getJsonObject();
-                if(jsonObj instanceof Map ){
-                    Map<Object, Object>  data = (Map<Object, Object>)jsonObj;
+                Object jsonObj = sourceMessage.getJsonKnob().getJsonData().getJsonObject();
+                if (jsonObj instanceof Map) {
+                    Map<Object, Object> data = (Map<Object, Object>) jsonObj;
                     jsonObject = new JSONObject(data);
-                }else{
-                    String sourceString =  getFirstPartString(sourceMessage);
-                    jsonObject = new JSONObject(sourceString);
+                    targetValue = assertion.getConvention() == JsonTransformationAssertion.TransformationConvention.STANDARD ?
+                            XML.toString(jsonObject, rootTag.trim().isEmpty() ? null : rootTag) :
+                            JSONML.toString(jsonObject);
+                } else {
+                    String source = getFirstPartString(sourceMessage);
+                    targetValue = doTransformation(source, assertion.getTransformation(),
+                            assertion.getConvention(), assertion.getRootTagString());
                 }
-                targetValue = XML.toString(jsonObject, rootTag.isEmpty()? null: rootTag);
+                targetValue = XmlUtil.nodeToFormattedString(XmlUtil.stringToDocument(targetValue));
             }
-
             setOutput(targetValue, context, assertion.getTransformation().equals(JsonTransformationAssertion.Transformation.XML_to_JSON));
 
         } catch (JSONException ex) {
@@ -98,7 +98,10 @@ public class ServerJsonTransformationAssertion extends AbstractServerAssertion<J
             logAndAudit( AssertionMessages.JSON_INVALID_JSON, new String[]{assertion.getTargetName()}, ExceptionUtils.getDebugException(ex) );
             return AssertionStatus.FAILED;
         } catch (IOException ex){
-            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{ex.getMessage()}, ExceptionUtils.getDebugException(ex) );
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{ex.getMessage()}, ExceptionUtils.getDebugException(ex));
+            return AssertionStatus.FAILED;
+        } catch (SAXException e) {
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Converted XML is invalid.", e.getMessage()}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.FAILED;
         }
 
@@ -117,21 +120,40 @@ public class ServerJsonTransformationAssertion extends AbstractServerAssertion<J
 
     }
 
-    public static String doTransformation(String sourceString, JsonTransformationAssertion.Transformation transformation, String rootTag) throws JSONException {
+    public static String doTransformation(String sourceString, JsonTransformationAssertion.Transformation transformation,
+                                          JsonTransformationAssertion.TransformationConvention convention,
+                                          String rootTag) throws JSONException {
         JSONObject jsonObject;
-    	String targetValue;
-
+    	String targetValue = "";
+        String source = sourceString == null ? "" : sourceString.trim();
+        //empty string - nothing to do
+        if(source.isEmpty()){
+            return "";
+        }
     	if (transformation.equals(JsonTransformationAssertion.Transformation.XML_to_JSON)) {
             // Source is XML, so get a JSONObject from XML class
-            jsonObject = XML.toJSONObject(sourceString);
+            jsonObject = convention == JsonTransformationAssertion.TransformationConvention.STANDARD ?
+                    XML.toJSONObject(source) :
+                    JSONML.toJSONObject(source);
             // Set target variable to JSON string with indentation
             targetValue = jsonObject.toString(JsonStringIndent);
 
     	} else {
-            // Source is JSON, so construct a JSONObject
-            jsonObject = new JSONObject(sourceString);
-            // Set target variable to XML using XML class
-            targetValue = XML.toString(jsonObject, rootTag.isEmpty()? null: rootTag);
+            if('{' == source.charAt(0)){
+                jsonObject = new JSONObject(source);
+                targetValue = convention == JsonTransformationAssertion.TransformationConvention.STANDARD ?
+                        XML.toString(jsonObject, rootTag.trim().isEmpty()? null: rootTag) :
+                        JSONML.toString(jsonObject);
+            }
+            else if('[' == source.charAt(0)){
+                JSONArray jsonArray = new JSONArray(source);
+                targetValue = convention == JsonTransformationAssertion.TransformationConvention.STANDARD ?
+                        XML.toString(jsonArray, rootTag.trim().isEmpty() ? null: rootTag) :
+                        JSONML.toString(jsonArray);
+            }
+            else {
+                throw new JSONException("Source is not a valid JSON string.");
+            }
     	}
         return targetValue;
     }

@@ -8,7 +8,6 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.jsontransformation.JsonTransformationAdmin;
 import com.l7tech.external.assertions.jsontransformation.JsonTransformationAssertion;
 import com.l7tech.gui.util.InputValidator;
-import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.variable.Syntax;
@@ -17,9 +16,11 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.*;
+import java.util.Map;
+import java.util.ResourceBundle;
 
-import static com.l7tech.external.assertions.jsontransformation.JsonTransformationAssertion.Transformation.*;
+import static com.l7tech.external.assertions.jsontransformation.JsonTransformationAssertion.Transformation.JSON_to_XML;
+import static com.l7tech.external.assertions.jsontransformation.JsonTransformationAssertion.Transformation.XML_to_JSON;
 
 public class JsonTransformationPropertiesDialog extends AssertionPropertiesOkCancelSupport<JsonTransformationAssertion> {
 
@@ -33,6 +34,7 @@ public class JsonTransformationPropertiesDialog extends AssertionPropertiesOkCan
     private JPanel destinationPanelHolder;
     private JSplitPane testSplitPane;
     private JTabbedPane tabPane;
+    private JComboBox transformationConvention;
     private TargetMessagePanel sourcePanel = new TargetMessagePanel() ;
     private TargetMessagePanel destinationPanel = new TargetMessagePanel();
 
@@ -42,11 +44,10 @@ public class JsonTransformationPropertiesDialog extends AssertionPropertiesOkCan
 
     public JsonTransformationPropertiesDialog(final Window parent, final JsonTransformationAssertion assertion) {
         super(JsonTransformationAssertion.class, parent, assertion, true);
-        initComponents();
+        initComponents(parent);
     }
 
-    @Override
-    protected void initComponents() {
+    private void initComponents(final Window parent) {
         super.initComponents();
 
         getCancelButton().addActionListener(new ActionListener() {
@@ -56,22 +57,34 @@ public class JsonTransformationPropertiesDialog extends AssertionPropertiesOkCan
             }
         });
 
-        testButton.addActionListener(new RunOnChangeListener(new Runnable() {
+        testButton.addActionListener(new ActionListener() {
             @Override
-            public void run() {
+            public void actionPerformed(final ActionEvent e) {
+                if(rootTagTextField.isEnabled() && rootTagTextField.getText().trim().isEmpty()){
+                    JOptionPane.showMessageDialog(parent, "Root tag is required.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
                 doTest();
             }
-        }));
+        });
 
         transformationComboBox.addItem(getPropertyValue("xml.json"));
         transformationComboBox.addItem(getPropertyValue("json.xml"));
         transformationComboBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                rootTagTextField.setEnabled(transformationComboBox.getSelectedIndex()==1);
+                toggleRootTagField();
             }
         });
 
+        transformationConvention.addItem(getPropertyValue("convention.standard"));
+        transformationConvention.addItem(getPropertyValue("convention.jsonml"));
+        transformationConvention.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                toggleRootTagField();
+            }
+        });
         sourcePanel.setAllowNonMessageVariables(false);
         sourcePanelHolder.setLayout(new BorderLayout());
         sourcePanelHolder.add(sourcePanel,BorderLayout.CENTER);
@@ -100,12 +113,26 @@ public class JsonTransformationPropertiesDialog extends AssertionPropertiesOkCan
                 return destinationPanel.check();
             }
         });
+
+        validators.addRule(new InputValidator.ComponentValidationRule(rootTagTextField) {
+            @Override
+            public String getValidationError() {
+                if (rootTagTextField.isEnabled() && rootTagTextField.getText().trim().isEmpty()) {
+                    return "Root tag text is required";
+                }
+                return null;
+            }
+        });
+
+
     }
 
     private void doTest() {
         String rootTag, input;
         JsonTransformationAssertion.Transformation transformation;
+        JsonTransformationAssertion.TransformationConvention convention;
         try{
+            convention = getConvention();
             transformation = getTransformation();
             rootTag = rootTagTextField.getText();
             input = testInputTextArea.getText();
@@ -127,19 +154,18 @@ public class JsonTransformationPropertiesDialog extends AssertionPropertiesOkCan
             contextVars = dlg.getValues();
             rootTag = (String)contextVars.get(refTag[0]);
         }
-
+        String strResponse = null;
         try {
             JsonTransformationAdmin admin = Registry.getDefault().getExtensionInterface(JsonTransformationAdmin.class, null);
-            String strResponse = admin.testTransform(input, transformation, rootTag);
+            strResponse = admin.testTransform(input, transformation, convention, rootTag);
             if(transformation.equals(JsonTransformationAssertion.Transformation.JSON_to_XML))
             {
                 strResponse = XmlUtil.nodeToFormattedString(XmlUtil.stringToDocument(strResponse));
             }
             testOutputTextArea.setText(strResponse);
         } catch (Exception e) {
-            testOutputTextArea.setText( e.getMessage());
+            testOutputTextArea.setText("Converted XML is invalid.  " + e.getMessage());
         }
-
     }
 
     @Override
@@ -155,6 +181,7 @@ public class JsonTransformationPropertiesDialog extends AssertionPropertiesOkCan
         assertion.setDestinationMessageTarget(destTarget);
 
         assertion.setTransformation(getTransformation());
+        assertion.setConvention(getConvention());
         return assertion;
     }
 
@@ -166,6 +193,21 @@ public class JsonTransformationPropertiesDialog extends AssertionPropertiesOkCan
             default: throw new ValidationException(getPropertyValue("invalid.transformation"));
         }
         return trans;
+    }
+
+    private JsonTransformationAssertion.TransformationConvention getConvention() throws ValidationException{
+        JsonTransformationAssertion.TransformationConvention convention;
+        Object obj = transformationConvention.getSelectedItem();
+        if("Standard".equals(obj)){
+            convention = JsonTransformationAssertion.TransformationConvention.STANDARD;
+        }
+        else if("JSONML".equals(obj)){
+            convention = JsonTransformationAssertion.TransformationConvention.JSONML;
+        }
+        else {
+            throw new ValidationException(getPropertyValue("invalid.transformation.convention"));
+        }
+        return convention;
     }
 
     @Override
@@ -182,13 +224,26 @@ public class JsonTransformationPropertiesDialog extends AssertionPropertiesOkCan
             case JSON_to_XML: transformationComboBox.setSelectedIndex(1); break;
             default: throw new ValidationException(getPropertyValue("invalid.transformation"));
         }
+
+        String convention = "";
+        switch (assertion.getConvention()){
+            case STANDARD:
+                convention = getPropertyValue("convention.standard");
+                break;
+            case JSONML:
+                convention = getPropertyValue("convention.jsonml");
+                break;
+            default:
+                throw new ValidationException(getPropertyValue("invalid.transformation.convention"));
+        }
+        transformationConvention.setSelectedItem(convention);
+        toggleRootTagField();
     }
 
     @Override
     protected JPanel createPropertyPanel() {
         return propertyPanel;
     }
-
 
     private String getPropertyValue(String propKey){
         String propertyName = resourceBundle.getString(propKey);
@@ -198,4 +253,12 @@ public class JsonTransformationPropertiesDialog extends AssertionPropertiesOkCan
         return propertyName;
     }
 
+    private void toggleRootTagField() {
+        Object target = transformationComboBox.getSelectedItem();
+        Object convention = transformationConvention.getSelectedItem();
+        //jsonml notation does not allow us to specify a root node in the converted xml output
+        //we should disable this if it's the case.
+        boolean enabled = "JSON To XML".equals(target) && "Standard".equals(convention);
+        rootTagTextField.setEnabled(enabled);
+    }
 }

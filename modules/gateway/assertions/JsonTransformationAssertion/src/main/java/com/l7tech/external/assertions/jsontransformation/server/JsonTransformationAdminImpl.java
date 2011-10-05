@@ -10,9 +10,11 @@ import org.json.JSONException;
  */
 public class JsonTransformationAdminImpl implements JsonTransformationAdmin{
     @Override
-    public String testTransform(String input, JsonTransformationAssertion.Transformation transformation, String rootTag) throws JsonTransformationTestException {
+    public String testTransform(String input, JsonTransformationAssertion.Transformation transformation,
+                                JsonTransformationAssertion.TransformationConvention convention,
+                                String rootTag) throws JsonTransformationTestException {
         try{
-            return ServerJsonTransformationAssertion.doTransformation(input, transformation, rootTag);
+            return ServerJsonTransformationAssertion.doTransformation(input, transformation, convention, rootTag);
         }catch (JSONException ex){
             throw new JsonTransformationTestException(ex.getMessage(), ExceptionUtils.getDebugException(ex));
         }
