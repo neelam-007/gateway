@@ -1,0 +1,31 @@
+diff -crB douglascrockford-JSON-java-3e3951f/XML.java l7p1/XML.java
+*** douglascrockford-JSON-java-3e3951f/XML.java	2011-10-06 15:12:48.964019800 -0700
+--- l7p1/XML.java	2011-10-06 15:31:25.890360400 -0700
+***************
+*** 493,501 ****
+              if (object instanceof JSONArray) {
+                  ja = (JSONArray)object;
+                  length = ja.length();
+                  for (i = 0; i < length; i += 1) {
+!                     sb.append(toString(ja.opt(i), tagName == null ? "array" : tagName));
+                  }
+                  return sb.toString();
+              } else {
+                  string = (object == null) ? "null" : escape(object.toString());
+--- 493,508 ----
+              if (object instanceof JSONArray) {
+                  ja = (JSONArray)object;
+                  length = ja.length();
++                 String tag = tagName == null ? "array" : tagName;
++                 if(length == 0){
++                     sb.append("<").append(tag).append("/>");
++                     return sb.toString();
++                 }
++                 sb.append("<").append(tag).append(">");				
+                  for (i = 0; i < length; i += 1) {
+!                     sb.append(toString(ja.opt(i), "value"));
+                  }
++ 				sb.append("</").append(tag).append(">");
+                  return sb.toString();
+              } else {
+                  string = (object == null) ? "null" : escape(object.toString());
