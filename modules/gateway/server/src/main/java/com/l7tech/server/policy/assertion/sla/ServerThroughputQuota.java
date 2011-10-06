@@ -98,8 +98,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
                 return assertion.isLogOnly() ? AssertionStatus.NONE : AssertionStatus.FALSIFIED;
             } finally {
                 // no sync issue here: this flag array belongs to the context which lives inside one thread only
-                // no need to resolve external variables here
-                context.getIncrementedCounters().add(assertion.getCounterName());
+                context.getIncrementedCounters().add(getCounterName(context));
             }
         } else {
             val = counterManager.getCounterValue(getCounterName(context), assertion.getTimeUnit());
@@ -145,7 +144,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
         if (requiresIncrement) {
             val = counterManager.incrementAndReturnValue(getCounterName(context), now, assertion.getTimeUnit());
             // no sync issue here: this flag array belongs to the context which lives inside one thread only
-            context.getIncrementedCounters().add(assertion.getCounterName());
+            context.getIncrementedCounters().add(getCounterName(context));
         } else {
             val = counterManager.getCounterValue(getCounterName(context), assertion.getTimeUnit());
         }
@@ -177,12 +176,12 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
         return resolvedCounterName;
     }
 
-    private boolean alreadyIncrementedInThisContext(PolicyEnforcementContext context) {
-        return context.getIncrementedCounters().contains(assertion.getCounterName());
+    private boolean alreadyIncrementedInThisContext(PolicyEnforcementContext context) throws IOException {
+        return context.getIncrementedCounters().contains(getCounterName(context));
     }
 
-    private void forgetIncrementInThisContext(PolicyEnforcementContext context) {
-        int res = context.getIncrementedCounters().indexOf(assertion.getCounterName());
+    private void forgetIncrementInThisContext(PolicyEnforcementContext context) throws IOException {
+        int res = context.getIncrementedCounters().indexOf(getCounterName(context));
         if (res >= 0) {
             context.getIncrementedCounters().remove(res);
         } else {
