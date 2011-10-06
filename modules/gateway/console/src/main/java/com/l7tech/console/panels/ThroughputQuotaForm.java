@@ -207,7 +207,7 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
             ThroughputQuota.PRESET_CUSTOM, ThroughputQuota.COUNTER_NAME_TYPES
         );
         if (counter == null || counter.length() < 1) {
-            JOptionPane.showMessageDialog(okButton,
+            JOptionPane.showMessageDialog(this,
                               "Please enter a counter name",
                               "Invalid value", JOptionPane.ERROR_MESSAGE);
             return null;
