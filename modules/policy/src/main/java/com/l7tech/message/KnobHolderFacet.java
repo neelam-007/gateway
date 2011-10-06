@@ -2,6 +2,7 @@ package com.l7tech.message;
 
 import com.l7tech.util.ResourceUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.Closeable;
 
@@ -12,7 +13,7 @@ public class KnobHolderFacet extends MessageFacet {
     private final @NotNull Class[] knobClasses;
     private final @NotNull MessageKnob knob;
 
-    public KnobHolderFacet(@NotNull Message message, MessageFacet delegate, @NotNull Class knobClass, @NotNull MessageKnob knob) {
+    public KnobHolderFacet(@NotNull Message message, @Nullable MessageFacet delegate, @NotNull Class knobClass, @NotNull MessageKnob knob) {
         super(message, delegate);
         if (knob == null || knobClass == null)
             throw new NullPointerException();
@@ -22,7 +23,7 @@ public class KnobHolderFacet extends MessageFacet {
         this.knobClasses = new Class[] { knobClass };
     }
 
-    public KnobHolderFacet(@NotNull Message message, @NotNull MessageFacet delegate, @NotNull MessageKnob knob, @NotNull Class... knobClasses) {
+    public KnobHolderFacet(@NotNull Message message, @Nullable MessageFacet delegate, @NotNull MessageKnob knob, @NotNull Class... knobClasses) {
         super(message, delegate);
         if (knob == null || knobClasses == null)
             throw new NullPointerException();
