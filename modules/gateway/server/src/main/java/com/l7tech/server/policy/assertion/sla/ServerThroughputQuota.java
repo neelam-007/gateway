@@ -159,7 +159,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
         }
     }
 
-    private String getCounterName(final PolicyEnforcementContext context) throws IOException {
+    public String getCounterName(final PolicyEnforcementContext context) throws IOException {
         String resolvedCounterName = assertion.getCounterName();
         if (varsUsed.length > 0) {
             resolvedCounterName = ExpandVariables.process(resolvedCounterName, context.getVariableMap(varsUsed, getAudit()), getAudit());

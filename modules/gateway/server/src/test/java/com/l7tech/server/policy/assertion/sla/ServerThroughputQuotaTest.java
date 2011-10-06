@@ -102,7 +102,7 @@ public class ServerThroughputQuotaTest {
         ApplicationContexts.inject( serverAssertion, Collections.singletonMap( "auditFactory", testAudit.factory() ) );
         //limit has been exceeded
         counterManager.setCounterValue(DEFAULT_QUOTA + 1);
-        context.getIncrementedCounters().add(assertion.getCounterName());
+        context.getIncrementedCounters().add(serverAssertion.getCounterName(context));
 
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
 
