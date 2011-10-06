@@ -8,6 +8,7 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -363,6 +364,21 @@ public final class Functions {
     }
 
     /**
+     * Return an identity transform.
+     *
+     * @param <T> The type
+     * @return An identity transform
+     */
+    public static <T> Unary<T,T> identity() {
+        return new Unary<T, T>() {
+            @Override
+            public T call( final T t ) {
+                return t;
+            }
+        };
+    }
+
+    /**
      * Transforms a collection of items by applying a map function to each input item
      * to obtain a corresponding output item.
      *
@@ -414,13 +430,43 @@ public final class Functions {
     }
 
     /**
+     * Transforms a Map by applying a map function to each value.
+     *
+     * @param map The map the transform
+     * @param outputMap The output map (optional)
+     * @param keyTransformation The transformation for keys
+     * @param valueTransformation The transformation for values
+     * @param <KI> The input key type
+     * @param <KO> The output key type
+     * @param <VI> The input value type
+     * @param <VO> The output value type
+     * @return A transformed map
+     */
+    public static <KI,KO,VI,VO> Map<KO,VO> map( final Map<KI,VI> map,
+                                                final Map<KO,VO> outputMap,
+                                                final Unary<KO,? super KI> keyTransformation,
+                                                final Unary<VO,? super VI> valueTransformation ) {
+        final Map<KO,VO> out = outputMap == null ? new HashMap<KO, VO>() : outputMap;
+
+        if ( map != null ) {
+            for ( final Entry<KI, VI> entry : map.entrySet() ) {
+                out.put(
+                        keyTransformation.call( entry.getKey() ),
+                        valueTransformation.call( entry.getValue() ) );
+            }
+        }
+
+        return out;
+    }
+
+    /**
      * Search the specified collection for the first object matching predicate.
      *
      * @param in the collection to search
      * @param predicate the predicate to match
      * @return the first matching object, or null if no match was found
      */
-    public static <I> I grepFirst(Iterable<I> in, Unary<Boolean, I> predicate) {
+    public static <I> I grepFirst(Iterable<? extends I> in, Unary<Boolean, I> predicate) {
         for (I i : in) {
             if (predicate.call(i))
                 return i;
@@ -588,7 +634,7 @@ public final class Functions {
      * @param reduction the reduction to apply
      * @return the result of applying the reduction to each item in the collection
      */
-    public static <I,O> O reduce(Iterable<I> in, O initial, Binary<O, O, I> reduction) {
+    public static <I,O> O reduce(Iterable<? extends I> in, O initial, Binary<O, O, I> reduction) {
         O ret = initial;
         for (I i : in)
             ret = reduction.call(ret, i);

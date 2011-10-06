@@ -5,6 +5,9 @@
 
 package com.l7tech.util;
 
+import com.l7tech.util.Functions.Unary;
+import sun.java2d.SunGraphicsEnvironment.T1Filter; //TODO [steve] remove this
+
 import java.net.URL;
 import java.util.Collection;
 import java.util.List;
@@ -162,5 +165,21 @@ public class ClassUtils {
         }
 
         return resourceUrls;
+    }
+
+    /**
+     * Get a function that casts to the given type.
+     *
+     * @param clazz The class for the type
+     * @param <T> The target type
+     * @return The function
+     */
+    public static <T> Unary<T,Object> cast( final Class<T> clazz ) {
+        return new Unary<T,Object>() {
+            @Override
+            public T call( final Object o ) {
+                return clazz.cast( o );
+            }
+        };
     }
 }

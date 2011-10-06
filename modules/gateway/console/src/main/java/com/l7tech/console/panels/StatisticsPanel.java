@@ -1,13 +1,9 @@
-/*
- * Copyright (C) 2006-2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.console.panels;
 
 import com.l7tech.gateway.common.cluster.ServiceUsage;
 import com.l7tech.console.table.StatisticsTableSorter;
 import com.l7tech.console.util.ArrowIcon;
 import com.l7tech.console.util.ColumnHeaderTooltips;
-import com.l7tech.gateway.common.logging.GenericLogAdmin;
 import com.l7tech.gateway.common.logging.StatisticsRecord;
 
 import javax.swing.*;
@@ -29,15 +25,12 @@ import java.util.logging.Logger;
  */
 public class StatisticsPanel extends JPanel {
 
-    GenericLogAdmin logService = null;
-//    private ServiceAdmin serviceManager = null;
     private Vector<StatisticsRecord> statsList = new Vector<StatisticsRecord>();
 
     // IMPORTANT NOTE:
     // 1. need to make sure that NUMBER_OF_SAMPLE_PER_MINUTE has no fraction when REFRESH_INTERVAL is changed
     // 2. REFRESH_INTERVAL must be <= 60
     private static final int REFRESH_INTERVAL = 5;
-    private static final int STAT_REFRESH_TIMER = 1000 * REFRESH_INTERVAL;
     private static final int NUMBER_OF_SAMPLE_PER_MINUTE = 60 / REFRESH_INTERVAL;
 
     private JTable statTable = null;

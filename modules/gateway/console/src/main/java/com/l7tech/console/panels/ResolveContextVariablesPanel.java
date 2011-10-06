@@ -1,10 +1,8 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.gui.util.InputValidator;
-import com.l7tech.gui.util.PauseListener;
+import com.l7tech.gui.util.PauseListenerAdapter;
 import com.l7tech.gui.util.TextComponentPauseListenerManager;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.util.Pair;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -15,8 +13,6 @@ import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -78,7 +74,7 @@ public class ResolveContextVariablesPanel extends JDialog {
 
         TextComponentPauseListenerManager.registerPauseListener(
             textPane,
-            new PauseListener() {
+            new PauseListenerAdapter() {
                 @Override
                 public void textEntryPaused(JTextComponent component, long msecs) {
                     int row = table.getSelectedRow();
@@ -86,9 +82,6 @@ public class ResolveContextVariablesPanel extends JDialog {
                         values[row] = textPane.getText();
                         table.tableChanged(new TableModelEvent(table.getModel(),row));
                     }
-                }
-                @Override
-                public void textEntryResumed(JTextComponent component) {
                 }
             },
             300);

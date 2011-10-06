@@ -172,7 +172,7 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
 
         testResultTextPane.setEditable(false);
         testResultTextPane.setFont(testInputTextArea.getFont());
-        TextComponentPauseListenerManager.registerPauseListener(regexTextArea, new PauseListener() {
+        TextComponentPauseListenerManager.registerPauseListener(regexTextArea, new PauseListenerAdapter() {
             @Override
             public void textEntryPaused(JTextComponent component, long msecs) {
                 updatePattern();
@@ -188,11 +188,6 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
                 } else {
                     regexTextArea.setNone();
                 }
-            }
-
-            @Override
-            public void textEntryResumed(JTextComponent component) {
-
             }
         }, 700);
 

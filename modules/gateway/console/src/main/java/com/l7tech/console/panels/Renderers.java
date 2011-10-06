@@ -97,4 +97,46 @@ public class Renderers {
             return this;
         }
     }
+
+    /**
+     * Renderer for custom defining the label value.
+     */
+    public static abstract class CustomNameRenderer extends JLabel implements ListCellRenderer {
+
+        public CustomNameRenderer( ) {}
+
+        public abstract String getLabelText(Object value);
+
+        @Override
+        public Component getListCellRendererComponent( JList list,
+                                                       Object value,
+                                                       int index,
+                                                       boolean isSelected,
+                                                       boolean cellHasFocus)
+        {
+            Object[] keyFormatArgs = new Object[]{ value };
+
+            String label = "";
+            if ( value != null ) {
+                label = getLabelText(value);
+            }
+
+            setText(label);
+
+            if (isSelected) {
+                setBackground(list.getSelectionBackground());
+                setForeground(list.getSelectionForeground());
+                setOpaque(true);
+            } else {
+                setBackground(list.getBackground());
+                setForeground(list.getForeground());
+                setOpaque(false);
+            }
+
+            setEnabled(list.isEnabled());
+            setFont(list.getFont());
+
+            return this;
+        }
+    }
 }

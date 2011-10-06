@@ -21,6 +21,7 @@ import com.l7tech.gateway.common.service.SampleMessage;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.PauseListener;
+import com.l7tech.gui.util.PauseListenerAdapter;
 import com.l7tech.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.SpeedIndicator;
@@ -1327,16 +1328,12 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
     }
 
 
-    final PauseListener xpathFieldPauseListener = new PauseListener() {
+    final PauseListener xpathFieldPauseListener = new PauseListenerAdapter() {
         @Override
         public void textEntryPaused(JTextComponent component, long msecs) {
             final JTextField xpathField = (JTextField)component;
             XpathFeedBack feedBack = getFeedBackMessage(getNamespacesWithOperationNamespaces(), xpathField);
             processFeedBack(feedBack, xpathField);
-        }
-
-        @Override
-        public void textEntryResumed(JTextComponent component) {
         }
 
         private void processHardwareFeedBack(XpathFeedBack hardwareFeedBack, JTextField xpathField) {

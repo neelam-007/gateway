@@ -1,6 +1,7 @@
 package com.l7tech.gui.util;
 
 import com.l7tech.util.ArrayUtils;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -873,6 +874,21 @@ public class Utilities {
     }
 
     /**
+     * Set the minimum size appropriately for a JDialog or JFrame.
+     *
+     * <p>The minimum size is determined from the minimum size of the content
+     * pane plus any insets.</p>
+     *
+     * @param window The JDialog or JFrame to update
+     * @param <W> The common type for JDialog and JFrame
+     */
+    public static <W extends Window & RootPaneContainer> void setMinimumSize( final W window ) {
+        final Insets insets = window.getInsets();
+        final Dimension content = window.getContentPane().getMinimumSize();
+        window.setMinimumSize( new Dimension( content.width + insets.left + insets.right, content.height + insets.top + insets.bottom ) );
+    }
+
+    /**
      * Creates pop-up menus for text components.
      */
     public static interface ContextMenuFactory {
@@ -1399,6 +1415,40 @@ public class Utilities {
         }
 
         return panel;
+    }
+
+    /**
+     * Create a combobox model with the contents of the given iterable.
+     *
+     * @param iterable The iterable (may be null)
+     * @return The combobox model
+     */
+    @NotNull
+    public static ComboBoxModel comboBoxModel( final Iterable<?> iterable ) {
+        final DefaultComboBoxModel model = new DefaultComboBoxModel();
+        if ( iterable != null ) {
+            for ( final Object item : iterable ) {
+                model.addElement( item );
+            }
+        }
+        return model;
+    }
+
+    /**
+     * Create a list model with the contents of the given iterable.
+     *
+     * @param iterable The iterable (may be null)
+     * @return The list model
+     */
+    @NotNull
+    public static ListModel listModel( final Iterable<?> iterable ) {
+        final DefaultListModel model = new DefaultListModel();
+        if ( iterable != null ) {
+            for ( final Object item : iterable ) {
+                model.addElement( item );
+            }
+        }
+        return model;
     }
 
     /**

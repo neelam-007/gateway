@@ -1,5 +1,7 @@
 package com.l7tech.util;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.Serializable;
 import java.util.Map;
 
@@ -11,8 +13,24 @@ import java.util.Map;
  * The {@link #setValue} method will thorw {@link UnsupportedOperationException}.
  */
 public class Pair<L,R> implements Serializable, Map.Entry<L, R> {
+    private static final long serialVersionUID = -7013311213463979067L;
+
     public final L left;
     public final R right;
+
+    /**
+     * Convenience constructor for pairs.
+     *
+     * @param left The left value
+     * @param right The right value
+     * @param <L> The left type
+     * @param <R> The right type
+     * @return A new pair
+     */
+    @NotNull
+    public static <L,R> Pair<L,R> pair( final L left, final R right ) {
+        return new Pair<L,R>( left, right );
+    }
 
     public Pair(L left, R right) {
         this.left = left;

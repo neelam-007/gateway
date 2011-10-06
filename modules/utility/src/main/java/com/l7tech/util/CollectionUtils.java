@@ -1,14 +1,15 @@
 package com.l7tech.util;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -33,8 +34,21 @@ public final class CollectionUtils {
      * @return The read-only list
      */
     //TODO [jdk7] @SafeVarargs
-    public static <T> List<T> list( T... items ) {
+    public static <T> List<T> list( final T... items ) {
         return Collections.unmodifiableList( Arrays.asList( items ) );
+    }
+
+    /**
+     * Create an unmodifiable list with the given contents.
+     *
+     * <p>This will create a copy of the given collection.</p>
+     *
+     * @param items The items for the list (must not be null)
+     * @param <T> The type of the list
+     * @return The read-only list
+     */
+    public static <T> List<T> toList( final Collection<? extends T> items ) {
+        return Collections.unmodifiableList( new ArrayList<T>( items ) );
     }
 
     /**
@@ -45,8 +59,109 @@ public final class CollectionUtils {
      * @return The read-only set
      */
     //TODO [jdk7] @SafeVarargs
-    public static <T> Set<T> set( T... items ) {
-        return Collections.unmodifiableSet( new HashSet<T>( Arrays.asList( items ) ) );
+    public static <T> Set<T> set( final T... items ) {
+        return Collections.unmodifiableSet( new LinkedHashSet<T>( Arrays.asList( items ) ) );
+    }
+
+    /**
+     * Create an unmodifiable case insensitive set with the given contents.
+     *
+     * @param items The items for the set (must not be null)
+     * @return The read-only case insensitive set
+     */
+    public static Set<String> caseInsensitiveSet( String... items ) {
+        final Set<String> set = new TreeSet<String>( String.CASE_INSENSITIVE_ORDER );
+        set.addAll( Arrays.asList( items ) );
+        return Collections.unmodifiableSet( set );
+    }
+
+    /**
+     * Somewhat safely cast the given collection.
+     *
+     * <p>This will check the erased type of each item in the collection.</p>
+     *
+     * @param collection The collection to cast
+     * @param type The (erased) item type
+     * @param collectionType The (erased) collection type
+     * @param fallback The fallback value
+     * @param <EIT> The erased item type
+     * @param <IT> The item type
+     * @param <CT> The collection type
+     * @param <C> The result type
+     * @return The collection or the fallback value
+     */
+    @SuppressWarnings({ "unchecked" })
+    public static <EIT, IT extends EIT,CT extends Collection<?>, C extends Collection<IT>> C cast(
+                                                      final Object collection,
+                                                      final Class<CT> collectionType,
+                                                      final Class<EIT> type,
+                                                      final C fallback ) {
+        final C result;
+        if ( collectionType.isInstance( collection ) ) {
+            boolean itemTypesValid = true;
+            for ( final Object item : (CT) collection ) {
+                if ( item != null && !type.isInstance( item ) ) {
+                    itemTypesValid = false;
+                    break;
+                }
+            }
+            if ( itemTypesValid ) {
+                result = (C) collection;
+            } else {
+                result = fallback;
+            }
+        } else {
+            result = fallback;
+        }
+
+        return result;
+    }
+
+    /**
+     * Somewhat safely cast the given map.
+     *
+     * <p>This will check the erased types for the keys/values in the map.</p>
+     *
+     * @param map The map to cast
+     * @param mapType The (erased) type for the map
+     * @param keyType The (erased) type for the keys
+     * @param valueType The (erased) type for the values
+     * @param fallback The fallback map
+     * @param <EKT> The erased key type
+     * @param <EVT> The erased value type
+     * @param <KT> The actual key type
+     * @param <VT> The actual value type
+     * @param <MT> The erased map type
+     * @param <M> The actual map type
+     * @return The map or the fallback value
+     */
+    @SuppressWarnings({ "unchecked" })
+    public static <EKT,EVT, KT extends EKT,VT extends EVT,MT extends Map<?,?>,M extends Map<KT,VT>> M cast(
+                                                        final Object map,
+                                                        final Class<MT> mapType,
+                                                        final Class<EKT> keyType,
+                                                        final Class<EVT> valueType,
+                                                        final M fallback ) {
+        final M result;
+        if ( mapType.isInstance( map ) ) {
+            boolean entryTypesValid = true;
+            for ( final Map.Entry<?,?> entry : ((MT) map).entrySet() ) {
+                if ( (entry.getKey()!=null && !keyType.isInstance( entry.getKey() ) ) ||
+                     (entry.getValue()!=null && !valueType.isInstance( entry.getValue() )) ) {
+                    entryTypesValid = false;
+                    break;
+                }
+            }
+            if ( entryTypesValid ) {
+                result = (M) map;
+            } else {
+                result = fallback;
+            }
+        } else {
+            result = fallback;
+        }
+
+        return result;
     }
 
     /**
@@ -118,12 +233,6 @@ public final class CollectionUtils {
         return mkString(iterable, prefix, delimiter, suffix, defaultStringer);
     }
 
-    public static Set<String> caseInsensitiveSet( String... values ) {
-        final Set<String> set = new TreeSet<String>( String.CASE_INSENSITIVE_ORDER );
-        set.addAll( Arrays.asList( values ) );
-        return set;
-    }
-
     /**
      * Join sublists into a list.
      *
@@ -180,8 +289,31 @@ public final class CollectionUtils {
         };
     }
 
+    /** @return true if any of the target Objects are contained in the collection. */
+    public static boolean containsAny( @Nullable final Collection<?> collection,
+                                       @Nullable final Collection<?> targets ) {
+        if (collection != null && targets != null) {
+            for (final Object t : targets) {
+                if (collection.contains( t ))
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    /** @return true if all of the target Objects are contained in the collection. */
+    public static boolean containsAll( @Nullable final Collection<?> collection,
+                                       @Nullable final Collection<?> targets ) {
+        if ( collection != null && targets != null ) {
+            return collection.containsAll( targets );
+        }
+        return false;
+    }
+
     /**
      * Get a list containing the values from the given iterable.
+     *
+     * TODO [steve] renaming to make it clear if the result of a toList call is mutable
      *
      * @param iterable The iterable (may be null)
      * @param <T> The value type

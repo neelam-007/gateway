@@ -127,7 +127,7 @@ public class FindIdentitiesDialog extends JDialog {
      *               same time
      * @see javax.swing.JDialog
      */
-    public FindIdentitiesDialog(Frame parent, boolean modal) {
+    public FindIdentitiesDialog(Window parent, boolean modal) {
         this(parent, modal, new Options());
     }
 
@@ -140,8 +140,8 @@ public class FindIdentitiesDialog extends JDialog {
      *               same time
      * @see javax.swing.JDialog
      */
-    public FindIdentitiesDialog(Frame parent, boolean modal, Options options) {
-        super(parent, modal);
+    public FindIdentitiesDialog(Window parent, boolean modal, Options options) {
+        super(parent, modal ? ModalityType.APPLICATION_MODAL : ModalityType.MODELESS);
         if (options == null) {
             throw new IllegalArgumentException();
         }

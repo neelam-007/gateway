@@ -24,6 +24,7 @@ import com.l7tech.gateway.common.service.SampleMessage;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.PauseListener;
+import com.l7tech.gui.util.PauseListenerAdapter;
 import com.l7tech.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.SpeedIndicator;
@@ -915,41 +916,12 @@ public class SignResponseElementAssertionPropertiesDialog extends JDialog {
     }
 
 
-    final PauseListener xpathFieldPauseListener = new PauseListener() {
+    final PauseListener xpathFieldPauseListener = new PauseListenerAdapter() {
         public void textEntryPaused(JTextComponent component, long msecs) {
             final JTextField xpathField = (JTextField)component;
             XpathFeedBack feedBack = getFeedBackMessage(namespaces, xpathField);
             processFeedBack(feedBack, xpathField);
         }
-
-        public void textEntryResumed(JTextComponent component) {
-//                final JTextField xpathField = (JTextField)component;
-//                XpathFeedBack feedBack = getFeedBackMessage(xpathField);
-//                processFeedBack(feedBack, xpathField);
-        }
-
-        /*private XpathFeedBack getFeedBackMessage(JTextField xpathField) {
-            String xpath = xpathField.getText();
-            if (xpath == null) return XpathFeedBack.EMPTY;
-            xpath = xpath.trim();
-            if (xpath.length() < 1) return XpathFeedBack.EMPTY;
-            if (isEncryption && xpath.equals("/soapenv:Envelope")) {
-                return new XpathFeedBack(-1, xpath, "The path " + xpath + " is not valid for XML encryption", null);
-            }
-            try {
-                testEvaluator.evaluate(xpath);
-                return XpathFeedBack.OK;
-            } catch (XPathSyntaxException e) {
-                log.log(Level.FINE, e.getMessage(), e);
-                return new XpathFeedBack(e.getPosition(), xpath, e.getMessage(), e.getMultilineMessage());
-            } catch (JaxenException e) {
-                log.log(Level.FINE, e.getMessage(), e);
-                return new XpathFeedBack(-1, xpath, e.getMessage(), e.getMessage());
-            } catch (RuntimeException e) { // sometimes NPE, sometimes NFE
-                log.log(Level.WARNING, e.getMessage(), e);
-                return new XpathFeedBack(-1, xpath, "XPath expression error '" + xpath + "'", null);
-            }
-        }*/
 
         private void processHardwareFeedBack(XpathFeedBack hardwareFeedBack, JTextField xpathField) {
             if (!showHardwareAccelStatus) {
@@ -973,10 +945,6 @@ public class SignResponseElementAssertionPropertiesDialog extends JDialog {
                 speedIndicator.setSpeed(SpeedIndicator.SPEED_FASTEST);
                 speedIndicator.setToolTipText("Expression will be hardware accelerated in parallel at full speed");
             } else {
-//                hardwareAccelStatusLabel.setText("This expression cannot be hardware accelerated (reason: " +
-//                  hardwareFeedBack.getShortMessage() + "); it  will be " +
-//                  "processed in the software layer instead.");
-//                hardwareAccelStatusLabel.setToolTipText(hardwareFeedBack.getDetailedMessage());
                 hardwareAccelStatusLabel.setText("");
                 hardwareAccelStatusLabel.setToolTipText(null);
                 speedIndicator.setSpeed(SpeedIndicator.SPEED_FASTER);
@@ -1140,17 +1108,5 @@ public class SignResponseElementAssertionPropertiesDialog extends JDialog {
         public boolean isEmpty() {
             return EMPTY_MSG.equals(shortMessage);
         }
-    }
-
-    private static class MsgSrcComboBoxItem {
-        private final String _variableName;
-        private final String _displayName;
-                public MsgSrcComboBoxItem(String variableName, String displayName) {
-            _variableName = variableName;
-            _displayName = displayName;
-        }
-        public String getVariableName() { return _variableName; }
-        @Override
-        public String toString() { return _displayName; }
     }
 }
