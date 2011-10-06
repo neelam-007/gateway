@@ -94,7 +94,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
             } catch (CounterManager.LimitAlreadyReachedException e) {
                 String msg = "throughput quota limit is already reached.";
                 logger.info(msg);
-                logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_ALREADY_MET, assertion.getCounterName());
+                logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_ALREADY_MET, getCounterName(context));
                 return assertion.isLogOnly() ? AssertionStatus.NONE : AssertionStatus.FALSIFIED;
             } finally {
                 // no sync issue here: this flag array belongs to the context which lives inside one thread only
@@ -109,9 +109,9 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
                 return AssertionStatus.NONE;
             } else {
                 String limit = "max " + quota + " per " + TIME_UNITS[assertion.getTimeUnit()-1];
-                String msg = "the quota " + assertion.getCounterName() + " [" + limit +
+                String msg = "the quota " + getCounterName(context) + " [" + limit +
                              "] was exceeded " + "(current value is " + val + ")";
-                logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_EXCEEDED, assertion.getCounterName(), limit, Long.toString(val));
+                logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_EXCEEDED, getCounterName(context), limit, Long.toString(val));
                 logger.info(msg);
                 return assertion.isLogOnly() ? AssertionStatus.NONE : AssertionStatus.FALSIFIED;
             }
@@ -155,7 +155,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
             return AssertionStatus.NONE;
         } else {
             String limit = "max " + quota + " per " + TIME_UNITS[assertion.getTimeUnit()-1];
-            logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_EXCEEDED, assertion.getCounterName(), limit, Long.toString(val));
+            logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_EXCEEDED, getCounterName(context), limit, Long.toString(val));
             return assertion.isLogOnly() ? AssertionStatus.NONE : AssertionStatus.FALSIFIED;
         }
     }
