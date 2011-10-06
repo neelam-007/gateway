@@ -501,4 +501,14 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @return a map containing CSR properties.
      */
     Map<String, String> getCsrProperties(byte[] csrBytes);
+
+    /**
+     * Check if the private key is too short key for signature algorithm
+     * @param keystoreId: the ID of the key store in which the private key can be found.  Required.
+     * @param alias: the alias of the private key to use the key for processing this CSR.  Required.
+     * @return  true if the private key uses a short key
+     * @throws FindException: thrown if there is a problem getting info from the database
+     * @throws KeyStoreException: thrown if there is a problem reading the underlying key store.
+     */
+    boolean isShortSigningKey(long keystoreId, String alias) throws FindException, KeyStoreException;
 }

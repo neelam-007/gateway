@@ -192,6 +192,11 @@ public class TrustedCertAdminStub implements TrustedCertAdmin {
     }
 
     @Override
+    public boolean isShortSigningKey(long keystoreId, String alias) throws FindException, KeyStoreException {
+        return false;
+    }
+
+    @Override
     public <OUT extends Serializable> String getJobStatus(JobId<OUT> jobId) {
         return null;
     }

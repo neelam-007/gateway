@@ -299,7 +299,7 @@ public class ParamsCertificateGenerator {
         return sigAlg;
     }
 
-    private static boolean isShortKey(PublicKey publicKey) {
+    public static boolean isShortKey(PublicKey publicKey) {
         if (publicKey instanceof ECPublicKey) {
             ECPublicKey ecPublicKey = (ECPublicKey) publicKey;
             int keySize = ecPublicKey.getParams().getCurve().getField().getFieldSize();

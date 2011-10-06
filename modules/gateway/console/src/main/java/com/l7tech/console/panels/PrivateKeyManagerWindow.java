@@ -19,10 +19,7 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.FileUtils;
-import com.l7tech.util.IOUtils;
+import com.l7tech.util.*;
 
 import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
@@ -317,6 +314,19 @@ public class PrivateKeyManagerWindow extends JDialog {
         if (csrBytes[0] == null)
             return;
 
+        final long keystoreId = subject.getKeyEntry().getKeystoreId();
+        final String keyAlias = subject.getKeyEntry().getAlias();
+        Functions.Nullary<Boolean> precheckingShortKeyFunc = new Functions.Nullary<Boolean>() {
+            @Override
+            public Boolean call() {
+                try {
+                    return getTrustedCertAdmin().isShortSigningKey(keystoreId, keyAlias);
+                } catch (Exception e) {
+                    return false;
+                }
+            }
+        };
+
         // Display the contents of the CSR and allow user to set/modify some settings before signing certificate.
         final SigningCertificatePropertiesDialog signingCertPropertiesDialog;
 
@@ -325,14 +335,16 @@ public class PrivateKeyManagerWindow extends JDialog {
             if(TopComponents.getInstance().isApplet()) {
                 signingCertPropertiesDialog = new SigningCertificatePropertiesDialog(
                     TopComponents.getInstance().getTopParent(),
-                    getTrustedCertAdmin().getCsrProperties(csrBytes[0])  // Call Remote Admin API to process the task
+                    getTrustedCertAdmin().getCsrProperties(csrBytes[0]),  // Call Remote Admin API to process the task
+                    precheckingShortKeyFunc
                 );
             }
             // If the client is a standalone application,, the client side will directly process the task without the server involved.
             else {
                 signingCertPropertiesDialog = new SigningCertificatePropertiesDialog(
                     TopComponents.getInstance().getTopParent(),
-                    csrBytes[0]
+                    csrBytes[0],
+                    precheckingShortKeyFunc
                 );
             }
         } catch (Exception e) {
@@ -349,8 +361,8 @@ public class PrivateKeyManagerWindow extends JDialog {
                     final String[] pemCertChain;
                     try {
                         pemCertChain = getTrustedCertAdmin().signCSR(
-                            subject.getKeyEntry().getKeystoreId(),
-                            subject.getKeyEntry().getAlias(),
+                            keystoreId,
+                            keyAlias,
                             csrBytes[0],
                             new X500Principal(signingCertPropertiesDialog.getSubjectDn()),
                             signingCertPropertiesDialog.getExpiryAge(),

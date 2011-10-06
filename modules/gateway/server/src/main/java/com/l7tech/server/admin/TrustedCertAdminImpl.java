@@ -1,9 +1,6 @@
 package com.l7tech.server.admin;
 
-import com.l7tech.common.io.AliasNotFoundException;
-import com.l7tech.common.io.CertGenParams;
-import com.l7tech.common.io.CertUtils;
-import com.l7tech.common.io.KeyGenParams;
+import com.l7tech.common.io.*;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.admin.LicenseRuntimeException;
@@ -120,7 +117,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
 
     @Override
     public TrustedCert findCertByPrimaryKey(final long oid) throws FindException {
-        return getManager().findByPrimaryKey( oid );
+        return getManager().findByPrimaryKey(oid);
     }
 
     @Override
@@ -637,6 +634,32 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         }
 
         return csrProps;
+    }
+
+    @Override
+    public boolean isShortSigningKey(long keystoreId, String alias) throws FindException, KeyStoreException {
+        checkLicenseKeyStore();
+        SsgKeyFinder keyFinder;
+        try {
+            keyFinder = ssgKeyStoreManager.findByPrimaryKey(keystoreId);
+        } catch (KeyStoreException e) {
+            logger.log(Level.WARNING, "error getting keystore", e);
+            throw new FindException("error getting keystore", e);
+        } catch (ObjectNotFoundException e) {
+            throw new FindException("error getting keystore", e);
+        }
+        SsgKeyStore keystore;
+        if (keyFinder != null) {
+            keystore = keyFinder.getKeyStore();
+        } else {
+            logger.log(Level.WARNING, "error getting keystore");
+            throw new FindException("cannot find keystore");
+        }
+
+        final SsgKeyEntry entry = keystore.getCertificateChain(alias);
+        final X509Certificate cert = entry.getCertificateChain()[0];
+        final PublicKey publicKey = cert.getPublicKey();
+        return ParamsCertificateGenerator.isShortKey(publicKey);
     }
 
     private TrustedCertManager getManager() {

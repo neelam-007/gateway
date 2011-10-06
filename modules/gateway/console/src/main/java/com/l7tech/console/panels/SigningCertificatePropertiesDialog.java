@@ -10,6 +10,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.security.prov.bc.BouncyCastleRsaSignerEngine;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
@@ -60,33 +61,35 @@ public class SigningCertificatePropertiesDialog extends JDialog {
     private JButton fullDetailsButton;
     private JTextField publicKeyDetailsTextField;
 
+    private Functions.Nullary<Boolean> precheckingShortKeyFunc;
     private String publicKeyDetails;
     private boolean confirmed;
 
-    public SigningCertificatePropertiesDialog(Frame owner) {
+    public SigningCertificatePropertiesDialog(Frame owner, Functions.Nullary<Boolean> precheckingShortKeyFunc) {
         super(owner, resources.getString("dialog.title"));
+        this.precheckingShortKeyFunc = precheckingShortKeyFunc;
         initialize();
     }
 
     /**
      * The constructor will process the given raw CSR bytes given and get the contents of the CSR.
-     *
      * @param owner parent of this dialog
      * @param csrBytes raw CSR bytes
+     * @param precheckingShortKeyFunc: the function to check if the CA key is a short key for signature alorightm
      */
-    public SigningCertificatePropertiesDialog(Frame owner, byte[] csrBytes) {
-        this(owner);
+    public SigningCertificatePropertiesDialog(Frame owner, byte[] csrBytes, Functions.Nullary<Boolean> precheckingShortKeyFunc) {
+        this(owner, precheckingShortKeyFunc);
         modelToView(csrBytes);
     }
 
     /**
      * The constructor will be given the contents of the CSR.
-     *
      * @param owner parent of this dialog
      * @param csrProps CSR properties
+     * @param precheckingShortKeyFunc: the function to check if the CA key is a short key for signature alorightm
      */
-    public SigningCertificatePropertiesDialog(Frame owner, Map<String, String> csrProps) {
-        this(owner);
+    public SigningCertificatePropertiesDialog(Frame owner, Map<String, String> csrProps, Functions.Nullary<Boolean> precheckingShortKeyFunc) {
+        this(owner, precheckingShortKeyFunc);
         modelToView(csrProps);
     }
 
@@ -156,17 +159,46 @@ public class SigningCertificatePropertiesDialog extends JDialog {
     }
 
     private boolean validatePropertiesAndReportErrors() {
+        boolean valid = false;
+
+        // Check Subject DN
         final String subjectDn = getSubjectDn();
         try {
             if (subjectDn.isEmpty()) throw new IllegalArgumentException(resources.getString("error.message.empty.subject.dn"));
             new X500Principal(subjectDn);
-            return true;
+            valid = true;
         } catch (IllegalArgumentException e) {
             showErrorMessage(
                 resources.getString("error.dialog.title"),
                 MessageFormat.format(resources.getString("error.message.invalid.subject.dn"), ExceptionUtils.getMessage(e)));
-            return false;
         }
+        if (!valid) return valid;
+
+        // The CA Key is short or not
+        final boolean[] isShort = {false};
+        final String hashAlg = getHashAlg();
+        if (precheckingShortKeyFunc.call() && hashAlg != null && !hashAlg.startsWith("SHA1") && !hashAlg.equals("Automatic")) {
+            final String[] options = {"Yes", "No"};
+            DialogDisplayer.showOptionDialog(
+                SigningCertificatePropertiesDialog.this,
+                MessageFormat.format(resources.getString("short.key.warning.message"), hashAlgComboBox.getSelectedItem()),
+                resources.getString("warning.dialog.title"),
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE,
+                null,
+                options,
+                options[1],
+                new  DialogDisplayer.OptionListener(){
+                    @Override
+                    public void reportResult( final int option ) {
+                        if (option == JOptionPane.NO_OPTION) {
+                            isShort[0] = true;
+                        }
+                    }
+                }
+            );
+        }
+        return !isShort[0];
     }
 
     private void showErrorMessage(String title, String msg) {
@@ -206,6 +238,7 @@ public class SigningCertificatePropertiesDialog extends JDialog {
         PKCS10CertificationRequest pkcs10 = new PKCS10CertificationRequest(decodedCsrBytes);
         CertificationRequestInfo certReqInfo = pkcs10.getCertificationRequestInfo();
 
+        @SuppressWarnings({"deprecation"})
         String subjectDn = certReqInfo.getSubject().toString(true, X509Name.DefaultSymbols);
         subjectDnTextField.setText(subjectDn);
 
