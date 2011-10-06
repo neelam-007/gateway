@@ -12,9 +12,9 @@ public class JsonTransformationAdminImpl implements JsonTransformationAdmin{
     @Override
     public String testTransform(String input, JsonTransformationAssertion.Transformation transformation,
                                 JsonTransformationAssertion.TransformationConvention convention,
-                                String rootTag) throws JsonTransformationTestException {
+                                String rootTag, boolean prettyPrint) throws JsonTransformationTestException {
         try{
-            return ServerJsonTransformationAssertion.doTransformation(input, transformation, convention, rootTag);
+            return ServerJsonTransformationAssertion.doTransformation(input, transformation, convention, rootTag, prettyPrint);
         }catch (JSONException ex){
             throw new JsonTransformationTestException(ex.getMessage(), ExceptionUtils.getDebugException(ex));
         }

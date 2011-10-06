@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import org.json.JSONException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,11 +28,22 @@ import java.util.Map;
 
 /**
  * Test the JsonTransformationAssertion.
+ *
  * @noinspection FieldCanBeLocal
  */
 public class ServerJsonTransformationTest {
+    private static final String EXPECTED_UGLY_JSON = "{\"menu\":{\"id\":\"file\",\"popup\":{\"menuitem\":" +
+            "[{\"value\":\"New\",\"onclick\":\"CreateNewDoc()\"},{\"value\":\"Open\",\"onclick\":\"OpenDoc()\"}," +
+            "{\"value\":\"Close\",\"onclick\":\"CloseDoc()\"}]},\"value\":\"File\"}}";
 
-    private static final String SOAP_XML = "<soapenv:Envelope xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:urn=\"http://hugh:8081/axis/services/urn:EchoAttachmentsService\">\n" +
+    private static final String EXPECTED_UGLY_XML = "<test><menu><id>file</id><popup><menuitem><value>New</value" +
+            "><onclick>CreateNewDoc()</onclick></menuitem><menuitem><value>Open</value><onclick>OpenDoc()</onclick>" +
+            "</menuitem><menuitem><value>Close</value><onclick>CloseDoc()</onclick></menuitem></popup><value>File" +
+            "</value></menu></test>";
+
+    private static final String SOAP_XML = "<soapenv:Envelope xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" " +
+            "xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" " +
+            "xmlns:urn=\"http://hugh:8081/axis/services/urn:EchoAttachmentsService\">\n" +
             "   <soapenv:Header/>\n" +
             "   <soapenv:Body>\n" +
             "      <urn:echoOne soapenv:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n" +
@@ -76,7 +88,7 @@ public class ServerJsonTransformationTest {
 
     private String xmlStr;
     private String jsonStr;
-    private Map<Object,Object> objectMap;
+    private Map<Object, Object> objectMap;
     private StashManager stashManager;
 
 
@@ -109,15 +121,15 @@ public class ServerJsonTransformationTest {
         return PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
     }
 
-    private ServerJsonTransformationAssertion buildServerAssertion( final JsonTransformationAssertion ass ) {
+    private ServerJsonTransformationAssertion buildServerAssertion(final JsonTransformationAssertion ass) {
         return new ServerJsonTransformationAssertion(
-            ass,
-            new StashManagerFactory(){
-                @Override
-                public StashManager createStashManager() {
-                    return new ByteArrayStashManager();
+                ass,
+                new StashManagerFactory() {
+                    @Override
+                    public StashManager createStashManager() {
+                        return new ByteArrayStashManager();
+                    }
                 }
-            }
         );
     }
 
@@ -131,7 +143,7 @@ public class ServerJsonTransformationTest {
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setTransformation(JsonTransformationAssertion.Transformation.XML_to_JSON);
         assertion.setConvention(JsonTransformationAssertion.TransformationConvention.STANDARD);
-        Message xmlMessage = context.getOrCreateTargetMessage(new MessageTargetableSupport("xml"),false);
+        Message xmlMessage = context.getOrCreateTargetMessage(new MessageTargetableSupport("xml"), false);
         xmlMessage.initialize(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(xmlStr.getBytes()));
 
         ServerJsonTransformationAssertion sjta = buildServerAssertion(assertion);
@@ -141,7 +153,7 @@ public class ServerJsonTransformationTest {
         Assert.assertEquals(result, AssertionStatus.NONE);
         Object outputObj = context.getVariable("target");
         Assert.assertTrue(outputObj instanceof Message);
-        Map mapObj = (Map) ((Message)outputObj).getJsonKnob().getJsonData().getJsonObject();
+        Map mapObj = (Map) ((Message) outputObj).getJsonKnob().getJsonData().getJsonObject();
         assertJsonData(mapObj);
     }
 
@@ -159,7 +171,7 @@ public class ServerJsonTransformationTest {
         assertion.setTransformation(JsonTransformationAssertion.Transformation.JSON_to_XML);
         assertion.setConvention(JsonTransformationAssertion.TransformationConvention.STANDARD);
 
-        Message xmlMessage = context.getOrCreateTargetMessage(new MessageTargetableSupport("json"),false);
+        Message xmlMessage = context.getOrCreateTargetMessage(new MessageTargetableSupport("json"), false);
         xmlMessage.initialize(new ByteArrayStashManager(), ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(jsonStr.getBytes()));
 
         ServerJsonTransformationAssertion sjta = buildServerAssertion(assertion);
@@ -176,21 +188,21 @@ public class ServerJsonTransformationTest {
         Assert.assertEquals(result, AssertionStatus.NONE);
 
         Object outputObj = context.getVariable("target");
-        Map mapObj = (Map) ((Message)outputObj).getJsonKnob().getJsonData().getJsonObject();
+        Map mapObj = (Map) ((Message) outputObj).getJsonKnob().getJsonData().getJsonObject();
         assertJsonData(mapObj);
     }
 
-    private void assertJsonData (Map jsonMap){
-        Assert.assertTrue( jsonMap.containsKey("menu"));
-        Assert.assertTrue( ((Map)jsonMap.get("menu")).containsKey("value"));
-        Assert.assertTrue( ((Map)jsonMap.get("menu")).containsKey("id"));
-        Assert.assertTrue( ((Map)jsonMap.get("menu")).containsKey("popup"));
-        Assert.assertTrue( ((Map)((Map)jsonMap.get("menu")).get("popup")).containsKey("menuitem"));
-        Assert.assertTrue( ((Map)((Map)jsonMap.get("menu")).get("popup")).get("menuitem") instanceof ArrayList);
+    private void assertJsonData(Map jsonMap) {
+        Assert.assertTrue(jsonMap.containsKey("menu"));
+        Assert.assertTrue(((Map) jsonMap.get("menu")).containsKey("value"));
+        Assert.assertTrue(((Map) jsonMap.get("menu")).containsKey("id"));
+        Assert.assertTrue(((Map) jsonMap.get("menu")).containsKey("popup"));
+        Assert.assertTrue(((Map) ((Map) jsonMap.get("menu")).get("popup")).containsKey("menuitem"));
+        Assert.assertTrue(((Map) ((Map) jsonMap.get("menu")).get("popup")).get("menuitem") instanceof ArrayList);
     }
 
     @Test
-    public void testXmlToJsonml() throws Exception{
+    public void testXmlToJsonml() throws Exception {
         PolicyEnforcementContext context = getContext();
         JsonTransformationAssertion assertion = new JsonTransformationAssertion();
         assertion.setDestinationMessageTarget(new MessageTargetableSupport("target"));
@@ -198,7 +210,7 @@ public class ServerJsonTransformationTest {
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setTransformation(JsonTransformationAssertion.Transformation.XML_to_JSON);
         assertion.setConvention(JsonTransformationAssertion.TransformationConvention.JSONML);
-        Message xmlMessage = context.getOrCreateTargetMessage(new MessageTargetableSupport("xml"),false);
+        Message xmlMessage = context.getOrCreateTargetMessage(new MessageTargetableSupport("xml"), false);
         xmlMessage.initialize(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(SOAP_XML.getBytes()));
 
         ServerJsonTransformationAssertion sjta = buildServerAssertion(assertion);
@@ -208,18 +220,18 @@ public class ServerJsonTransformationTest {
         Assert.assertEquals(result, AssertionStatus.NONE);
         Object outputObj = context.getVariable("target");
         Assert.assertTrue(outputObj instanceof Message);
-        Map mapObj = (Map) ((Message)outputObj).getJsonKnob().getJsonData().getJsonObject();
+        Map mapObj = (Map) ((Message) outputObj).getJsonKnob().getJsonData().getJsonObject();
         assertJsonmlData(mapObj);
     }
 
-    private void assertJsonmlData(Map jsonMap){
-        Assert.assertTrue( jsonMap.containsKey("xmlns:urn"));
-        Assert.assertTrue( jsonMap.containsKey("xmlns:soapenv"));
+    private void assertJsonmlData(Map jsonMap) {
+        Assert.assertTrue(jsonMap.containsKey("xmlns:urn"));
+        Assert.assertTrue(jsonMap.containsKey("xmlns:soapenv"));
         Object childNodes = jsonMap.get("childNodes");
         Assert.assertTrue(childNodes instanceof ArrayList);
-        Object o = ((ArrayList)childNodes).get(0);
+        Object o = ((ArrayList) childNodes).get(0);
         Assert.assertTrue(o instanceof Map);
-        Map m = (Map)o;
+        Map m = (Map) o;
         Assert.assertEquals("soapenv:Header", m.get("tagName"));
     }
 
@@ -236,7 +248,7 @@ public class ServerJsonTransformationTest {
         assertion.setTransformation(JsonTransformationAssertion.Transformation.JSON_to_XML);
         assertion.setConvention(JsonTransformationAssertion.TransformationConvention.JSONML);
 
-        Message xmlMessage = context.getOrCreateTargetMessage(new MessageTargetableSupport("json"),false);
+        Message xmlMessage = context.getOrCreateTargetMessage(new MessageTargetableSupport("json"), false);
         xmlMessage.initialize(new ByteArrayStashManager(), ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(JSONML.getBytes()));
 
         ServerJsonTransformationAssertion sjta = buildServerAssertion(assertion);
@@ -254,7 +266,7 @@ public class ServerJsonTransformationTest {
         Assert.assertEquals(result, AssertionStatus.NONE);
 
         Object outputObj = context.getVariable("target");
-        Map mapObj = (Map) ((Message)outputObj).getJsonKnob().getJsonData().getJsonObject();
+        Map mapObj = (Map) ((Message) outputObj).getJsonKnob().getJsonData().getJsonObject();
         assertJsonmlData(mapObj);
     }
 
@@ -271,7 +283,7 @@ public class ServerJsonTransformationTest {
         assertion.setTransformation(JsonTransformationAssertion.Transformation.XML_to_JSON);
         assertion.setConvention(JsonTransformationAssertion.TransformationConvention.JSONML);
 
-        Message xmlMessage = context.getOrCreateTargetMessage(new MessageTargetableSupport("xml"),false);
+        Message xmlMessage = context.getOrCreateTargetMessage(new MessageTargetableSupport("xml"), false);
         xmlMessage.initialize(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(SOAP_XML.getBytes()));
 
         ServerJsonTransformationAssertion sjta = buildServerAssertion(assertion);
@@ -297,7 +309,7 @@ public class ServerJsonTransformationTest {
         Assert.assertEquals("soapenv:Envelope", document.getDocumentElement().getTagName());
         //soap env namespaces...
         NamedNodeMap envAttrs = document.getDocumentElement().getAttributes();
-        for(int i = 0; i < envAttrs.getLength(); ++i){
+        for (int i = 0; i < envAttrs.getLength(); ++i) {
             Node attr = envAttrs.item(i);
             String nodeName = attr.getNodeName();
             String nodeValue = attr.getNodeValue();
@@ -321,7 +333,7 @@ public class ServerJsonTransformationTest {
         assertion.setTransformation(JsonTransformationAssertion.Transformation.XML_to_JSON);
         assertion.setConvention(JsonTransformationAssertion.TransformationConvention.JSONML);
 
-        Message xmlMessage = context.getOrCreateTargetMessage(new MessageTargetableSupport("xml"),false);
+        Message xmlMessage = context.getOrCreateTargetMessage(new MessageTargetableSupport("xml"), false);
         //test by giving it a JSON (or anything other than a well-formed xml) and it should fail
         xmlMessage.initialize(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(JSONML.getBytes()));
 
@@ -341,7 +353,7 @@ public class ServerJsonTransformationTest {
         assertion.setTransformation(JsonTransformationAssertion.Transformation.JSON_to_XML);
         assertion.setConvention(JsonTransformationAssertion.TransformationConvention.JSONML);
 
-        Message xmlMessage = context.getOrCreateTargetMessage(new MessageTargetableSupport("testJSON"),false);
+        Message xmlMessage = context.getOrCreateTargetMessage(new MessageTargetableSupport("testJSON"), false);
         //source is supposed to be a JSON string, give it a xml string or anything else and it should fail
         xmlMessage.initialize(new ByteArrayStashManager(), ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(SOAP_XML.getBytes()));
 
@@ -349,4 +361,18 @@ public class ServerJsonTransformationTest {
         AssertionStatus result = sjta.checkRequest(context);
         Assert.assertEquals(result, AssertionStatus.FAILED);
     }
+
+    @Test
+    public void testJsonPrettyPrintFalse() {
+        try {
+            String uglyJSON = ServerJsonTransformationAssertion.doTransformation(xmlStr,
+                    JsonTransformationAssertion.Transformation.XML_to_JSON,
+                    JsonTransformationAssertion.TransformationConvention.STANDARD,
+                    "test", false);
+            Assert.assertEquals(uglyJSON, EXPECTED_UGLY_JSON);
+        } catch (JSONException e) {
+            Assert.fail("Error testing testJsonPrettyPrint(): " + e.getMessage());
+        }
+    }
+
 }

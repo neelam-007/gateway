@@ -11,6 +11,7 @@ import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.variable.Syntax;
+import org.w3c.dom.Document;
 
 import javax.swing.*;
 import java.awt.*;
@@ -35,6 +36,7 @@ public class JsonTransformationPropertiesDialog extends AssertionPropertiesOkCan
     private JSplitPane testSplitPane;
     private JTabbedPane tabPane;
     private JComboBox transformationConvention;
+    private JCheckBox prettyPrint;
     private TargetMessagePanel sourcePanel = new TargetMessagePanel() ;
     private TargetMessagePanel destinationPanel = new TargetMessagePanel();
 
@@ -157,10 +159,11 @@ public class JsonTransformationPropertiesDialog extends AssertionPropertiesOkCan
         String strResponse = null;
         try {
             JsonTransformationAdmin admin = Registry.getDefault().getExtensionInterface(JsonTransformationAdmin.class, null);
-            strResponse = admin.testTransform(input, transformation, convention, rootTag);
+            strResponse = admin.testTransform(input, transformation, convention, rootTag, prettyPrint.isSelected());
             if(transformation.equals(JsonTransformationAssertion.Transformation.JSON_to_XML))
             {
-                strResponse = XmlUtil.nodeToFormattedString(XmlUtil.stringToDocument(strResponse));
+                Document document = XmlUtil.stringToDocument(strResponse);
+                strResponse = prettyPrint.isSelected() ? XmlUtil.nodeToFormattedString(document) : XmlUtil.nodeToString(document);
             }
             testOutputTextArea.setText(strResponse);
         } catch (Exception e) {
@@ -182,6 +185,7 @@ public class JsonTransformationPropertiesDialog extends AssertionPropertiesOkCan
 
         assertion.setTransformation(getTransformation());
         assertion.setConvention(getConvention());
+        assertion.setPrettyPrint(prettyPrint.isSelected());
         return assertion;
     }
 
@@ -237,6 +241,7 @@ public class JsonTransformationPropertiesDialog extends AssertionPropertiesOkCan
                 throw new ValidationException(getPropertyValue("invalid.transformation.convention"));
         }
         transformationConvention.setSelectedItem(convention);
+        prettyPrint.setSelected(assertion.isPrettyPrint());
         toggleRootTagField();
     }
 

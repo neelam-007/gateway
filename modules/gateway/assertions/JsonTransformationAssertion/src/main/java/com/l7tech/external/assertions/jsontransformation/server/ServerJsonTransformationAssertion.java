@@ -20,6 +20,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import org.json.*;
 import org.springframework.context.ApplicationContext;
+import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.ByteArrayInputStream;
@@ -37,7 +38,6 @@ public class ServerJsonTransformationAssertion extends AbstractServerAssertion<J
         super(assertion);
         stashManagerFactory = springContext.getBean("stashManagerFactory", StashManagerFactory.class);
     }
-
 
     protected ServerJsonTransformationAssertion( final JsonTransformationAssertion assertion,
                                          final StashManagerFactory stashManagerFactory){
@@ -62,7 +62,7 @@ public class ServerJsonTransformationAssertion extends AbstractServerAssertion<J
             if (assertion.getTransformation().equals(JsonTransformationAssertion.Transformation.XML_to_JSON)) {
                 String sourceString = getFirstPartString(sourceMessage);
                 targetValue = doTransformation(sourceString, assertion.getTransformation(),
-                        assertion.getConvention(), assertion.getRootTagString());
+                        assertion.getConvention(), assertion.getRootTagString(), assertion.isPrettyPrint());
             } else {
 
                 Map<String, Object> vars = context.getVariableMap(assertion.getVariablesUsed(), getAudit());
@@ -79,12 +79,12 @@ public class ServerJsonTransformationAssertion extends AbstractServerAssertion<J
                 } else {
                     String source = getFirstPartString(sourceMessage);
                     targetValue = doTransformation(source, assertion.getTransformation(),
-                            assertion.getConvention(), assertion.getRootTagString());
+                            assertion.getConvention(), assertion.getRootTagString(), assertion.isPrettyPrint());
                 }
-                targetValue = XmlUtil.nodeToFormattedString(XmlUtil.stringToDocument(targetValue));
+                Document document = XmlUtil.stringToDocument(targetValue);
+                targetValue = assertion.isPrettyPrint() ? XmlUtil.nodeToFormattedString(document) : XmlUtil.nodeToString(document);
             }
             setOutput(targetValue, context, assertion.getTransformation().equals(JsonTransformationAssertion.Transformation.XML_to_JSON));
-
         } catch (JSONException ex) {
             logAndAudit( AssertionMessages.JSON_TRANSFORMATION_FAILED, new String[]{}, ExceptionUtils.getDebugException(ex) );
             return AssertionStatus.FAILED;
@@ -104,7 +104,6 @@ public class ServerJsonTransformationAssertion extends AbstractServerAssertion<J
             logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Converted XML is invalid.", e.getMessage()}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.FAILED;
         }
-
         return AssertionStatus.NONE;
     }
 
@@ -117,12 +116,11 @@ public class ServerJsonTransformationAssertion extends AbstractServerAssertion<J
     private void setOutput(String targetValue, PolicyEnforcementContext context, boolean isJson) throws IOException, NoSuchVariableException {
         Message target = context.getOrCreateTargetMessage(assertion.getDestinationMessageTarget(),false);
         target.initialize(stashManagerFactory.createStashManager(), isJson ? ContentTypeHeader.APPLICATION_JSON : ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(targetValue.getBytes()));
-
     }
 
     public static String doTransformation(String sourceString, JsonTransformationAssertion.Transformation transformation,
                                           JsonTransformationAssertion.TransformationConvention convention,
-                                          String rootTag) throws JSONException {
+                                          String rootTag, boolean prettyPrint) throws JSONException {
         JSONObject jsonObject;
     	String targetValue = "";
         String source = sourceString == null ? "" : sourceString.trim();
@@ -135,9 +133,7 @@ public class ServerJsonTransformationAssertion extends AbstractServerAssertion<J
             jsonObject = convention == JsonTransformationAssertion.TransformationConvention.STANDARD ?
                     XML.toJSONObject(source) :
                     JSONML.toJSONObject(source);
-            // Set target variable to JSON string with indentation
-            targetValue = jsonObject.toString(JsonStringIndent);
-
+            targetValue = prettyPrint ? jsonObject.toString(JsonStringIndent) : jsonObject.toString();
     	} else {
             if('{' == source.charAt(0)){
                 jsonObject = new JSONObject(source);

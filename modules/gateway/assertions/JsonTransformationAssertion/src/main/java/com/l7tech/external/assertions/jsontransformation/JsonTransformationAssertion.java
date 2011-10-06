@@ -38,6 +38,8 @@ public class JsonTransformationAssertion extends MessageTargetableAssertion {
     private MessageTargetableSupport destinationMessageTarget;
     private Transformation transform = JsonTransformationAssertion.Transformation.XML_to_JSON;
 
+    private boolean prettyPrint;
+
     private TransformationConvention convention = TransformationConvention.STANDARD;
 
     public JsonTransformationAssertion() {
@@ -77,6 +79,14 @@ public class JsonTransformationAssertion extends MessageTargetableAssertion {
 
     public void setConvention(final TransformationConvention convention) {
         this.convention = convention;
+    }
+
+    public boolean isPrettyPrint() {
+        return prettyPrint;
+    }
+
+    public void setPrettyPrint(final boolean prettyPrint) {
+        this.prettyPrint = prettyPrint;
     }
 
     @Override
