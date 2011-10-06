@@ -2,6 +2,7 @@ package com.l7tech.console.util;
 
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.util.ValidationUtils;
 import org.apache.commons.lang.StringUtils;
 
 import java.text.MessageFormat;
@@ -31,15 +32,10 @@ public class IntegerOrContextVariableValidationRule implements InputValidator.Va
     public String getValidationError() {
         String errorMessage = null;
         if(textToValidate != null && !textToValidate.isEmpty()){
-            try{
-                final long val = Long.parseLong(textToValidate);
-                if (val < minimum || val > maximum){
-                    errorMessage = MessageFormat.format("The {0} must be between {1} and {2}.", fieldName, minimum, maximum);
-                }
-            }catch (final NumberFormatException e){
-                if(!Syntax.validateStringOnlyReferencesVariables(textToValidate)){
-                    errorMessage = MessageFormat.format("Invalid syntax used for {0}.", fieldName);
-                }
+            if(StringUtils.isNumeric(textToValidate) && !ValidationUtils.isValidInteger(textToValidate, false, minimum, maximum)){
+                errorMessage = MessageFormat.format("The {0} must be between {1} and {2}.", fieldName, minimum, maximum);
+            } else if(!StringUtils.isNumeric(textToValidate) && !Syntax.validateStringOnlyReferencesVariables(textToValidate)){
+                errorMessage = MessageFormat.format("Invalid syntax used for {0}.", fieldName);
             }
         }else{
             errorMessage = MessageFormat.format("The {0} must not be empty.", fieldName);

@@ -90,4 +90,22 @@ public class IntegerOrContextVariableValidationRuleTest {
 
         assertEquals("Invalid syntax used for " + FIELD_NAME + ".", error);
     }
+
+    @Test
+    public void decimalInvalid(){
+        rule.setTextToValidate("1.1");
+
+        final String error = rule.getValidationError();
+
+        assertEquals("Invalid syntax used for " + FIELD_NAME + ".", error);
+    }
+
+    @Test
+    public void spacesInvalid(){
+        rule.setTextToValidate("   1   ");
+
+        final String error = rule.getValidationError();
+
+        assertEquals("Invalid syntax used for " + FIELD_NAME + ".", error);
+    }
 }
