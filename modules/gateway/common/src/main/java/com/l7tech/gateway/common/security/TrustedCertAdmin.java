@@ -510,5 +510,6 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @throws FindException: thrown if there is a problem getting info from the database
      * @throws KeyStoreException: thrown if there is a problem reading the underlying key store.
      */
+    @Secured(stereotype= SET_PROPERTY_BY_UNIQUE_ATTRIBUTE, types=SSG_KEY_ENTRY)
     boolean isShortSigningKey(long keystoreId, String alias) throws FindException, KeyStoreException;
 }
