@@ -1,21 +1,13 @@
 package com.l7tech.server.hpsoam;
 
-import com.l7tech.server.cluster.ClusterInfoManager;
-import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.ISO8601Date;
-import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.*;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.common.logging.SSGLogRecord;
 import com.l7tech.server.MessageProcessor;
-import com.l7tech.server.audit.LogRecordManager;
 import com.l7tech.server.service.ServiceManager;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.servlet.http.HttpServletRequest;
@@ -24,7 +16,6 @@ import java.net.URL;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -145,68 +136,10 @@ public class WSMFService implements ApplicationContextAware {
             return containerMO.handlePerformanceWindowRequest(context);
         } else if (methodInvoked == WSMFMethod.GET_CANCEL_SUBSCRIPTION) {
             return cancelSubscription();
-        } else if (methodInvoked == WSMFMethod.GET_TRAILINGLOGS) {
-            return getTrailingLogs();
-        } else if (methodInvoked == WSMFMethod.SET_LOGLEVEL) {
-            return setLogLevel();
         }
 
         logger.severe("Method not supported in container mo " + methodInvoked);
         throw new RuntimeException("Missing handling for " + methodInvoked);
-    }
-
-    private String setLogLevel() {
-        // todo, something
-        // whatever...
-        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:hpmip=\"http://openview.hp.com/xmlns/mip/2005/03/Wsee\">\n" +
-                "    <soapenv:Body>\n" +
-                "        <hpmip:setLogLevelResponse/>\n" +
-                "    </soapenv:Body>\n" +
-                "</soapenv:Envelope>";
-    }
-
-    private String getTrailingLogs() {
-        String output;
-        try {
-            Document soapdoc = XmlUtil.stringToDocument("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-               "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:hpmip=\"http://openview.hp.com/xmlns/mip/2005/03/Wsee\">\n" +
-               "    <soapenv:Body>\n" +
-               "        <hpmip:getTrailingLogMessagesResponse>\n" +
-               "        </hpmip:getTrailingLogMessagesResponse>\n" +
-               "    </soapenv:Body>\n" +
-               "</soapenv:Envelope>");
-            Element body = SoapUtil.getBodyElement(soapdoc);
-            Element responseel = DomUtils.findFirstChildElementByName(body, "http://openview.hp.com/xmlns/mip/2005/03/Wsee", "getTrailingLogMessagesResponse");
-            LogRecordManager lrm = (LogRecordManager)applicationContext.getBean("logRecordManager");
-            ClusterInfoManager cim = (ClusterInfoManager)applicationContext.getBean("clusterInfoManager");
-            SSGLogRecord[] records = lrm.find(cim.thisNodeId(), 0, 100);
-            StringBuffer buf = new StringBuffer();
-            SimpleFormatter simpleformatter = new SimpleFormatter();
-            for (SSGLogRecord logrec : records) {
-                buf.append(simpleformatter.format(logrec) + "\n");
-            }
-            /*
-            String logstext = "Sep 20, 2007 3:11:31 PM org.springframework.core.io.support.PropertiesLoaderSupport loadProperties\n" +
-                              "INFO: Loading properties file from class path resource [hibernate_default.properties]\n" +
-                              "Sep 20, 2007 3:11:31 PM org.springframework.core.io.support.PropertiesLoaderSupport loadProperties\n" +
-                              "INFO: Loading properties file from URL [file:/ssg/./etc/conf/partitions/default_/hibernate.properties]\n" +
-                              "Sep 20, 2007 3:11:31 PM org.springframework.core.io.support.PropertiesLoaderSupport loadProperties\n" +
-                              "INFO: Loading properties file from class path resource [hibernate.properties]\n" +
-                              "Sep 20, 2007 3:11:31 PM org.springframework.core.io.support.PropertiesLoaderSupport loadProperties\n" +
-                              "WARNING: Could not load properties from class path resource [hibernate.properties]: class path resource [hibernate.properties] cannot be opened because it does not exist";*/
-            DomUtils.setTextContent(responseel, buf.toString());
-            output = XmlUtil.nodeToString(soapdoc);
-        } catch (Exception e) {
-            logger.log(Level.SEVERE, "cannot parse logs into response", e);
-            return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-               "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:hpmip=\"http://openview.hp.com/xmlns/mip/2005/03/Wsee\">\n" +
-               "  <soapenv:Body>\n" +
-               "    <hpmip:getTrailingLogMessagesResponse/>\n" +
-               "  </soapenv:Body>\n" +
-               "</soapenv:Envelope>";
-        }
-        return output;
     }
 
     private String getSupportedEventTypes() {

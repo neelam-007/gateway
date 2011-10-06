@@ -35,9 +35,6 @@ public class WSMFMethod {
     public static final WSMFMethod GET                              = new WSMFMethod(116, "Get");
     public static final WSMFMethod GET_OP_WSDLURL                   = new WSMFMethod(117, "GetOperationalWsdlUrl");
     public static final WSMFMethod GET_CANCEL_SUBSCRIPTION          = new WSMFMethod(118, "CancelSubscription");
-    public static final WSMFMethod GET_TRAILINGLOGS                 = new WSMFMethod(119, "getTrailingLogMessages");
-    public static final WSMFMethod SET_LOGLEVEL                     = new WSMFMethod(120, "setLogLevel");
-    // setLogLevelForCategory?
 
     public static final String FOUNDATION_NS   = WSMFService.FOUNDATION_NS;
     public static final String OPENVIEWMIP_NS  = "http://openview.hp.com/xmlns/mip/2005/03/Wsee";
@@ -106,10 +103,6 @@ public class WSMFMethod {
             return GET_OP_WSDLURL;
         } else if (bodyNS.equals(WSMF_EVENTS_NS) && nodeName.equals(GET_CANCEL_SUBSCRIPTION.getName())) {
             return GET_CANCEL_SUBSCRIPTION;
-        } else if (bodyNS.equals(OPENVIEWMIP_NS) && nodeName.equals(GET_TRAILINGLOGS.getName())) {
-            return GET_TRAILINGLOGS;
-        } else if (bodyNS.equals(OPENVIEWMIP_NS) && nodeName.equals(SET_LOGLEVEL.getName())) {
-            return SET_LOGLEVEL;
         }
 
         throw new UnsupportedMethodException("Unsupported or unknown method: " + bodyNS + ":" + nodeName);
