@@ -4,7 +4,6 @@ import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.token.SecurityTokenType;
-import com.l7tech.util.ExceptionUtils;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -207,8 +206,11 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
         baseFields.put("thrown", new FieldGetter<AuditRecord>() {
             @Override
             public Selection getFieldValue(AuditRecord rec, String baseAndRemainingName) {
-                final Throwable thrown = rec.getThrown();
-                return new Selection(thrown == null ? null : ExceptionUtils.getStackTraceAsString(thrown));
+                // Exceptions were never used with audit records, the "thrown"
+                // variable is left in place in case of any backwards
+                // compatibility issues. It will be removed from the
+                // documentation as of 6.2 / Escolar.
+                return new Selection(null);
             }
         });
 

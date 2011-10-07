@@ -6,7 +6,7 @@ import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.DeleteException;
 
 import java.util.Collection;
-import java.util.Vector;
+import java.util.Collections;
 
 /**
  * This is a stub that can be used in place of a LogSinkAdminImpl object.
@@ -14,7 +14,7 @@ import java.util.Vector;
 public class LogSinkAdminStub implements LogSinkAdmin {
     @Override
     public Collection<SinkConfiguration> findAllSinkConfigurations() throws FindException {
-        return new Vector<SinkConfiguration>();
+        return Collections.emptyList();
     }
 
     @Override
@@ -43,6 +43,16 @@ public class LogSinkAdminStub implements LogSinkAdmin {
 
     @Override
     public long getReservedFileSize() {
-        return 0;
+        return 0L;
+    }
+
+    @Override
+    public Collection<LogFileInfo> findAllFilesForSinkByNode(String nodeId, long sinkId) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public LogSinkData getSinkLogs(String nodeId, long sinkId, String file, long startPosition) {
+        return null;
     }
 }

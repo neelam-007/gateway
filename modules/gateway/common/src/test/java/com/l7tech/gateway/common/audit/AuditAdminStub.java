@@ -3,7 +3,6 @@ package com.l7tech.gateway.common.audit;
 import com.l7tech.util.OpaqueId;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.gateway.common.logging.SSGLogRecord;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 
 import java.util.Collection;
@@ -76,12 +75,7 @@ public class AuditAdminStub implements AuditAdmin {
     }
 
     @Override
-    public SSGLogRecord[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, Date startMsgDate, Date endMsgDate, int size) {
-        return new SSGLogRecord[0];
-    }
-
-    @Override
-    public int getSystemLogRefresh(int typeId) {
+    public int getSystemLogRefresh() {
         return 5;
     }
 

@@ -31,7 +31,6 @@ public class AuditRecordDomMarshallerTest {
         Document d = XmlUtil.stringAsDocument("<a/>");
         AuditRecordDomMarshaller m = new AuditRecordDomMarshaller();
         AuditRecord auditRecord = AuditRecordTest.makeAdminAuditRecord();
-        auditRecord.setThrown(null);
         //noinspection deprecation
         auditRecord.getDetails().iterator().next().setException(null);
         Element got = m.marshal(d, auditRecord);
@@ -52,7 +51,6 @@ public class AuditRecordDomMarshallerTest {
         Document d = XmlUtil.stringAsDocument("<a/>");
         AuditRecordDomMarshaller m = new AuditRecordDomMarshaller();
         AuditRecord auditRecord = AuditRecordTest.makeMessageAuditRecord();
-        auditRecord.setThrown(null);
         //noinspection deprecation
         auditRecord.setOid(232);
         //noinspection deprecation

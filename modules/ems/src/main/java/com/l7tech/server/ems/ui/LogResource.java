@@ -27,7 +27,7 @@ public class LogResource extends SecureResource {
      *
      */
     public LogResource() {
-        super( new AttemptedReadAll(EntityType.LOG_RECORD) );
+        super( new AttemptedReadAll(EntityType.ESM_LOG ) );
     }
 
     /**

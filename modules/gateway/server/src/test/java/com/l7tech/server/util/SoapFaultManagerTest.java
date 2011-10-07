@@ -48,8 +48,6 @@ import java.util.HashMap;
 import java.util.Properties;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  *
@@ -824,9 +822,9 @@ public class SoapFaultManagerTest {
     // *** Bug 9402 additional error detail for SOAP
     private void addAuditInfoExtraDetail( final AuditContextStub stub ) {
         // second AuditDetail param as null so that the message is not associated with an assertion result but instead an l7 information detail result
-        stub.addDetail( new AuditDetail( MessageProcessingMessages.INVALID_REQUEST_WITH_DETAIL, "XML document structures must start and end within the same entity."), null );
-        stub.addDetail( new AuditDetail( MessageProcessingMessages.ERROR_WSS_SIGNATURE, "Signature not valid."), null );
-        stub.addDetail( new AuditDetail( MessageProcessingMessages.POLICY_EVALUATION_RESULT, "Warehouse [1769472]", "400", "Bad Request" ), null );
+        stub.addDetail( new AuditDetail( MessageProcessingMessages.INVALID_REQUEST_WITH_DETAIL, "XML document structures must start and end within the same entity."), this );
+        stub.addDetail( new AuditDetail( MessageProcessingMessages.ERROR_WSS_SIGNATURE, "Signature not valid."), this );
+        stub.addDetail( new AuditDetail( MessageProcessingMessages.POLICY_EVALUATION_RESULT, "Warehouse [1769472]", "400", "Bad Request" ), this );
     }
 
     private static final class TestServerAssertion implements ServerAssertion {

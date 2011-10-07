@@ -14,7 +14,8 @@ package com.l7tech.gateway.common.security.rbac;
 public enum OtherOperationName {
 
     /**Operation which allows the internal audit viewer policy to be invoked.*/
-    AUDIT_VIEWER_POLICY("audit-viewer policy");
+    AUDIT_VIEWER_POLICY("audit-viewer policy"),
+    LOG_VIEWER("log-viewer");
 
     private OtherOperationName(String name) {
         this.name = name;

@@ -31,16 +31,6 @@ public class AuditHeaderLogMessage extends LogMessage {
     }
 
     @Override
-    public String getMsgClass() {
-        return null;
-    }
-
-    @Override
-    public String getMsgMethod() {
-        return null;
-    }
-
-    @Override
     public String getMsgDetails(){
         return header.getMessage() == null ? "" : header.getMessage();
     }

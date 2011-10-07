@@ -8,21 +8,22 @@ import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 
 import com.l7tech.console.GatewayAuditWindow;
-import com.l7tech.console.GatewayLogWindow;
 import com.l7tech.console.SsmApplication;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
 
 /**
  * Action to load saved audit or log records.
+ *
+ * TODO [steve] rename after development in logging branch completed
  */
 public class ViewAuditsOrLogsFromFileAction extends BaseAction {
 
     /**
      * @return the action name
      */
+    @Override
     public String getName() {
         return "Saved Events ...";
     }
@@ -30,8 +31,9 @@ public class ViewAuditsOrLogsFromFileAction extends BaseAction {
     /**
      * @return the aciton description
      */
+    @Override
     public String getDescription() {
-        return "View saved audit or log events";
+        return "View saved audit events";
     }
 
     /**
@@ -56,18 +58,6 @@ public class ViewAuditsOrLogsFromFileAction extends BaseAction {
                         gaw.dispose();
                     }
                 }
-                else if(file.getName().endsWith(".ssgl")) {
-                    GatewayLogWindow gal = new GatewayLogWindow();
-                    gal.pack();
-                    gal.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-                    Utilities.centerOnScreen(gal);
-                    if(gal.displayLogs(file)){
-                        gal.setVisible(true);
-                    }
-                    else {
-                        gal.dispose();
-                    }
-                }
             }
             catch(IOException ioe) {
                 log.log(Level.WARNING, "Error reading file.", ioe);
@@ -81,6 +71,7 @@ public class ViewAuditsOrLogsFromFileAction extends BaseAction {
     /**
      * subclasses override this method specifying the resource name
      */
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/AnalyzeGatewayLog16x16.gif";
     }
@@ -91,8 +82,10 @@ public class ViewAuditsOrLogsFromFileAction extends BaseAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
+    @Override
     protected void performAction() {
         SsmApplication.doWithJFileChooser(new FileChooserUtil.FileChooserUser() {
+            @Override
             public void useFileChooser(JFileChooser fc) {
                 doView(fc);
             }
@@ -103,13 +96,14 @@ public class ViewAuditsOrLogsFromFileAction extends BaseAction {
         fc.setDialogTitle("Analyze saved events ...");
         fc.setDialogType(JFileChooser.OPEN_DIALOG);
         FileFilter fileFilter = new FileFilter() {
+            @Override
             public boolean accept(File f) {
                 return  f.isDirectory() ||
-                        f.getName().toLowerCase().endsWith(".ssga") ||
-                        f.getName().toLowerCase().endsWith(".ssgl");
+                        f.getName().toLowerCase().endsWith(".ssga") ;
             }
+            @Override
             public String getDescription() {
-                return "(*.ssga/*.ssgl) Gateway event data files.";
+                return "(*.ssga) Gateway event data files.";
             }
         };
         fc.addChoosableFileFilter(fileFilter);

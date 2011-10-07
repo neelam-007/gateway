@@ -77,7 +77,6 @@ public class ServerAuditRecordToXmlAssertionTest {
             auditDetails.add( makeAuditDetail( MessageProcessingMessages.MESSAGE_NO_SIG_CONFIRMATION, ordinal++ ) );
             auditDetails.add( makeAuditDetail( MessageProcessingMessages.ERROR_RETRIEVE_XML, ordinal ) );
         } else {
-            auditRecord.setThrown(new RuntimeException("main record throwable"));
             final AuditDetail detail1 = new AuditDetail(Messages.EXCEPTION_INFO_WITH_MORE_INFO, new String[]{"foomp"}, new IllegalArgumentException("Exception for foomp detail"));
             auditRecord.getDetails().add(detail1);
         }

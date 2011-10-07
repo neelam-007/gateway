@@ -47,8 +47,6 @@ public enum EntityType implements Comparable<EntityType> {
     AUDIT_SYSTEM("Audit Record (System)", "System Audit Records", true),
     AUDIT_RECORD("Audit Record <any type>", "Audit Records", true),
 
-    LOG_RECORD("Log Record", true),
-
     SSG_CONNECTOR("Listen Port", true),
 
     UDDI_REGISTRY("UDDI Registry", true),
@@ -74,6 +72,7 @@ public enum EntityType implements Comparable<EntityType> {
     ESM_STANDARD_REPORT("Report", false),
     ESM_MIGRATION_RECORD("Migration Record", false),
     ESM_NOTIFICATION_RULE("Notification Rule", false),
+    ESM_LOG("Log Record", false), // used for ESM log RBAC
     VALUE_REFERENCE("Value Reference", true), // todo: better way to deal with mappable properties
 
     SECURE_PASSWORD("Secure Password", true),

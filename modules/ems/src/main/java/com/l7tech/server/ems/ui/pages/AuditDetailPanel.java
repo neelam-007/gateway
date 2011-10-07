@@ -80,8 +80,6 @@ public class AuditDetailPanel extends Panel {
         nonull(details, "Time", session.buildDateFormat().format( new Date(record.getMillis()) ));
         nonull(details, "Severity", record.getLevel());
         nonule(details, "Request Id", record.getReqId());
-        nonull(details, "Class", record.getSourceClassName());
-        nonull(details, "Method", record.getSourceMethodName());
         nonull(details, "Message", record.getMessage());
 
         details.add( new Pair<String,String>("","") );

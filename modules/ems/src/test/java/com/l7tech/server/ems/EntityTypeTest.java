@@ -4,8 +4,8 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Entity;
 
 import java.util.Set;
-import java.util.HashSet;
 
+import static com.l7tech.util.CollectionUtils.set;
 import org.junit.Test;
 import org.junit.Assert;
 
@@ -14,10 +14,10 @@ import org.junit.Assert;
  */
 public class EntityTypeTest {
 
-    @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"})
-    private static final Set<EntityType> IGNORE_ENTITY_TYPES = new HashSet<EntityType>(  ) {{
-      add(EntityType.VALUE_REFERENCE);  
-    }};
+    private static final Set<EntityType> IGNORE_ENTITY_TYPES = set(
+        EntityType.ESM_LOG,
+        EntityType.VALUE_REFERENCE
+    );
 
     @Test
     public void testEntityTypesDeclarations() throws Exception {

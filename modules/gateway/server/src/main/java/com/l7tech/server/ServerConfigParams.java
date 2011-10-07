@@ -37,7 +37,6 @@ public interface ServerConfigParams {
     String PARAM_AUDIT_SYSTEM_CLIENT_THRESHOLD = "auditClientSystemLogsThreshold";
     String PARAM_AUDIT_PURGE_MINIMUM_AGE = "auditPurgeMinimumAge";
     String PARAM_AUDIT_REFRESH_PERIOD_SECS = "auditViewerRefreshSeconds";
-    String PARAM_AUDIT_LOG_REFRESH_PERIOD_SECS = "auditLogViewerRefreshSeconds";
     String PARAM_AUDIT_HINTING_ENABLED = "auditHintingEnabled";
     String PARAM_AUDIT_ASSERTION_STATUS_ENABLED = "auditAssertionStatusEnabled";
     String PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD = "auditAssociatedLogsThreshold";

@@ -19,8 +19,8 @@ class LogUtils {
     private static final Logger logger = Logger.getLogger( LogUtils.class.getName() );
 
     static final String DEFAULT_FILE_PATTERN_TEMPLATE = "{1}_%g_%u.log";
-    static final String DEFAULT_LOG_FORMAT_STANDARD = "%1$tb %1$te, %1$tY %1$tl:%1$tM:%1$tS %1$Tp %5$d %3$s%n%2$s: %4$s%n";
-    static final String DEFAULT_LOG_FORMAT_VERBOSE = "%1$tb %1$te, %1$tY %1$tl:%1$tM:%1$tS %1$Tp %5$d %3$s %6$s%n%2$s: %4$s%n";
+    static final String DEFAULT_LOG_FORMAT_STANDARD = "%1$tY-%1$tm-%1$tdT%1$tH:%1$tM:%1$tS.%1$tL%1$tz %2$-7s %5$d %3$s: %4$s%n";
+    static final String DEFAULT_LOG_FORMAT_VERBOSE = "%1$tY-%1$tm-%1$tdT%1$tH:%1$tM:%1$tS.%1$tL%1$tz %2$-7s %5$d %3$s %6$s: %4$s%n";
     static final String DEFAULT_LOG_FORMAT_RAW = "%4$s%n";
     static final String LOG_SER_FILE = "logs_local.dat";
 

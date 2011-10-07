@@ -69,7 +69,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                     return null;
                 } else if ( atn instanceof PolicyEntityNode &&
                         !((PolicyEntityNode)atn).getEntityHeader().isAlias() &&
-                        ((PolicyEntityNode)atn).getEntityHeader().getPolicyType()!=PolicyType.INCLUDE_FRAGMENT) {
+                         ((PolicyEntityNode)atn).getEntityHeader().getPolicyType()!=PolicyType.INCLUDE_FRAGMENT) {
                     return null;
                 }
             }

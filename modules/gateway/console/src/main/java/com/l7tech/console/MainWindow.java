@@ -123,6 +123,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private JMenuItem exitMenuItem = null;
     private JMenuItem menuItemPref = null;
     private JMenuItem auditMenuItem = null;
+    private JMenuItem viewLogMenuItem = null;
     private JMenuItem fromFileMenuItem = null;
     private JMenuItem manageJmsEndpointsMenuItem = null;
     private JMenuItem manageKerberosMenuItem = null;
@@ -164,6 +165,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private CreatePolicyAction createPolicyAction;
     private ViewGatewayAuditsAction viewGatewayAuditsWindowAction;
     private ViewAuditsOrLogsFromFileAction auditOrLogFromFileAction;
+    private ViewLogsAction viewLogsAction;
     private ManageJmsEndpointsAction manageJmsEndpointsAction = null;
     private ManageKerberosAction manageKerberosAction = null;
     private ManageRolesAction manageRolesAction = null;
@@ -1100,6 +1102,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
         menu.add(getDashboardMenuItem());
         menu.add(getAuditMenuItem());
+        menu.add(getViewLogMenuItem());
         menu.add(getFromFileMenuItem());
 
         //Add tree filter menu items
@@ -2230,6 +2233,13 @@ public class MainWindow extends JFrame implements SheetHolder {
         return viewGatewayAuditsWindowAction;
     }
 
+    private Action getViewLogsAction() {
+        if (viewLogsAction != null) return viewLogsAction;
+        viewLogsAction = new ViewLogsAction();
+        disableUntilLogin(viewLogsAction);
+        return viewLogsAction;
+    }
+
     private ViewAuditsOrLogsFromFileAction getAuditOrLogsFromFileAction() {
         if (auditOrLogFromFileAction != null) return auditOrLogFromFileAction;
         auditOrLogFromFileAction = new ViewAuditsOrLogsFromFileAction();
@@ -2455,6 +2465,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             JPopupMenu menu = new JPopupMenu("Monitor...");
             menu.add(getDashboardMenuItem());
             menu.add(getAuditMenuItem());
+            menu.add(getViewLogMenuItem());
             menu.add(getFromFileMenuItem());
             Utilities.removeToolTipsFromMenuItems(menu);
             tbadd(toolBarPane, menu, RESOURCE_PATH + "/AnalyzeGatewayLog16x16.gif");
@@ -3360,6 +3371,13 @@ public class MainWindow extends JFrame implements SheetHolder {
         auditMenuItem = new JMenuItem(getGatewayAuditWindowAction());
 
         return auditMenuItem;
+    }
+
+    public JMenuItem getViewLogMenuItem() {
+        if (viewLogMenuItem != null) return viewLogMenuItem;
+        viewLogMenuItem = new JMenuItem(getViewLogsAction());
+
+        return viewLogMenuItem;
     }
 
     public JMenuItem getFromFileMenuItem() {

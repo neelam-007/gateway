@@ -105,13 +105,6 @@ public class AuditRecordDomMarshaller {
             }
             e.appendChild(d);
         }
-
-        final Throwable exception = rec.getThrown();
-        if (exception != null) {
-            StringWriter sw = new StringWriter(4096);
-            exception.printStackTrace(new PrintWriter(sw));
-            elm(e, "thrown", sw.toString());
-        }
     }
 
     private void addDetailRecordFields(Element parent, AuditDetail detail) {

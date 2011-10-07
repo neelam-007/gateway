@@ -57,6 +57,28 @@ INSERT INTO cluster_properties
 --
 ALTER TABLE internal_user ADD COLUMN properties mediumtext default NULL;
 
+
+
+-- TODO [steve] update admin/operator roles for log viewing INSERT INTO rbac_permission VALUES (-105, 0, -100, 'OTHER', 'log-viewer', 'LOG_SINK');
+
+--
+-- New role for viewing the default log (oid = -810)
+--
+INSERT INTO rbac_role VALUES (-1300,0,'View Default Gateway Logs', null,null,null, 'Users assigned to the {0} role have the ability to view the default gateway logs.');
+INSERT INTO rbac_permission VALUES (-1301,0,-1300,'READ',NULL,'CLUSTER_INFO');
+INSERT INTO rbac_permission VALUES (-1302,0,-1300,'READ',NULL,'LOG_SINK');
+INSERT INTO rbac_predicate VALUES (-1303,0,-1302);
+INSERT INTO rbac_predicate_attribute VALUES (-1303,'oid','-810');
+INSERT INTO rbac_permission VALUES (-1304,0,-1300,'OTHER','log-viewer', 'LOG_SINK');
+
+--
+-- Register upgrade task for Log view role upgrades
+--
+INSERT INTO cluster_properties
+    (objectid, version, propkey, propvalue)
+    values (-600300, 0, "upgrade.task.600300", "com.l7tech.server.upgrade.Upgrade61To62AddRoles");  //TODO [steve] renumber
+
+
 --
 -- Bug 9860: "Throughput Quota Enhancement" Feature Request
 --

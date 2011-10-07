@@ -118,6 +118,10 @@ public class MessageSummaryAuditRecord extends AuditRecord {
         return super.getStrRequestId();
     }
 
+    /**
+     * @deprecated for serialization use only
+     */
+    @Deprecated
     @Override
     public void setStrRequestId(String requestId) {
         super.setStrRequestId(requestId);

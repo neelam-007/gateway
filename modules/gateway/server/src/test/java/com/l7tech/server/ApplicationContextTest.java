@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.BeanUtils;
+import static com.l7tech.util.CollectionUtils.set;
 import com.l7tech.util.Functions;
 import org.junit.Assert;
 import org.junit.Test;
@@ -43,20 +44,21 @@ public class ApplicationContextTest  {
         "com/l7tech/server/resources/admin-servlet.xml"
     };
 
-    private static final Set<String> NON_ADMIN_PROXY_BEANS = new HashSet<String>( Collections.<String>emptySet());
-    private static final Set<String> NON_ADMIN_BEANS = new HashSet<String>( Arrays.asList( "genericLogAdmin" ));
-    private static final Set<String> EXTRA_ADMIN_BEANS = new HashSet<String>( Arrays.asList( "adminLogin", "customAssertionRegistrar" ) );
-    private static final Set<String> NON_SECURED_BEANS = new HashSet<String>( Arrays.asList( "customAssertionRegistrar" ) );
-    private static final Set<String> TRANSACTIONAL_GETTER_BLACKLIST = new HashSet<String>( Arrays.asList( "auditAdmin", "serviceAdmin", "trustedCertAdmin", "emailListenerAdmin", "clusterStatusAdmin" ) );
-    private static final Set<String> TRANSACTION_ROLLBACK_WHITELIST = new HashSet<String>( Arrays.asList( "adminLogin", "clusterIDManager", "counterManager", "distributedMessageIdManager", "ftpAdmin", "kerberosAdmin", "schemaEntryManager" ) );
-    private static final Set<EntityType> IGNORE_ENTITY_TYPES = new HashSet<EntityType>( Arrays.asList(
+    private static final Set<String> NON_ADMIN_PROXY_BEANS = Collections.emptySet();
+    private static final Set<String> NON_ADMIN_BEANS = set( "logAccessAdmin", "clusterLogAccessAdmin" );
+    private static final Set<String> EXTRA_ADMIN_BEANS = set( "adminLogin", "customAssertionRegistrar" );
+    private static final Set<String> NON_SECURED_BEANS = set( "customAssertionRegistrar" );
+    private static final Set<String> TRANSACTIONAL_GETTER_BLACKLIST = set( "auditAdmin", "serviceAdmin", "trustedCertAdmin", "emailListenerAdmin", "clusterStatusAdmin" );
+    private static final Set<String> TRANSACTION_ROLLBACK_WHITELIST = set( "adminLogin", "clusterIDManager", "counterManager", "distributedMessageIdManager", "ftpAdmin", "kerberosAdmin", "schemaEntryManager" );
+    private static final Set<EntityType> IGNORE_ENTITY_TYPES = set(
         EntityType.ESM_ENTERPRISE_FOLDER,  
         EntityType.ESM_SSG_CLUSTER,
         EntityType.ESM_SSG_NODE,
         EntityType.ESM_STANDARD_REPORT,
         EntityType.ESM_MIGRATION_RECORD,
         EntityType.ESM_NOTIFICATION_RULE,
-        EntityType.VALUE_REFERENCE) );
+        EntityType.ESM_LOG,
+        EntityType.VALUE_REFERENCE);
 
     /**
      * Loading the definitions in this way will check the syntax and that all the

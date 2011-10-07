@@ -1,11 +1,21 @@
 package com.l7tech.gateway.common.log;
 
+import static com.l7tech.util.CollectionUtils.cast;
+import static com.l7tech.util.CollectionUtils.toList;
+import static com.l7tech.util.CollectionUtils.set;
+
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.util.Functions;
+import com.l7tech.util.Functions.Unary;
+import static com.l7tech.util.Functions.map;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.Pair;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.unmodifiableMap;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
@@ -24,6 +34,8 @@ import java.util.*;
 @Table(name="sink_config")
 @AttributeOverride(name="name", column=@Column(name="name", nullable=false, length=32))
 public class SinkConfiguration extends NamedEntityImp {
+
+    //- PUBLIC
 
     /** The character encoding to use for encoding the properties to XML */
     public static final Charset PROPERTIES_ENCODING = Charsets.UTF8;
@@ -72,14 +84,17 @@ public class SinkConfiguration extends NamedEntityImp {
     public static final String CATEGORY_GATEWAY_LOGS = "LOG";
     public static final String CATEGORY_TRAFFIC_LOGS = "TRAFFIC";
     public static final String CATEGORY_AUDITS = "AUDIT";
-    public static final Set<String> CATEGORIES_SET;
-    static {
-        Set<String> categories = new LinkedHashSet<String>();
-        categories.add(CATEGORY_GATEWAY_LOGS);
-        categories.add(CATEGORY_TRAFFIC_LOGS);
-        categories.add(CATEGORY_AUDITS);
-        CATEGORIES_SET = Collections.unmodifiableSet(categories);
-    }
+    public static final Set<String> CATEGORIES_SET = set(
+            CATEGORY_AUDITS,
+            CATEGORY_GATEWAY_LOGS,
+            CATEGORY_TRAFFIC_LOGS
+    );
+
+    public static final Set<EntityType> SUPPORTED_TRANSPORTS = set(
+            EntityType.EMAIL_LISTENER,
+            EntityType.JMS_CONNECTION,
+            EntityType.SSG_CONNECTOR
+    );
 
     // Log file sink property names
     /** The property name for the max file size */
@@ -92,14 +107,11 @@ public class SinkConfiguration extends NamedEntityImp {
     public static final String FILE_FORMAT_RAW = "RAW";
     public static final String FILE_FORMAT_STANDARD = "STANDARD";
     public static final String FILE_FORMAT_VERBOSE = "VERBOSE";
-    public static final Set<String> FILE_FORMAT_SET;
-    static {
-        Set<String> formats = new LinkedHashSet<String>();
-        formats.add(FILE_FORMAT_RAW);
-        formats.add(FILE_FORMAT_STANDARD);
-        formats.add(FILE_FORMAT_VERBOSE);
-        FILE_FORMAT_SET = Collections.unmodifiableSet(formats);
-    }
+    public static final Set<String> FILE_FORMAT_SET = set(
+            FILE_FORMAT_RAW,
+            FILE_FORMAT_STANDARD,
+            FILE_FORMAT_VERBOSE
+    );
 
     // Syslog sink property names
     /** The property name for the syslog protocol to use */
@@ -122,82 +134,11 @@ public class SinkConfiguration extends NamedEntityImp {
     public static final String SYSLOG_PROTOCOL_TCP = "TCP";
     public static final String SYSLOG_PROTOCOL_UDP = "UDP";
     public static final String SYSLOG_PROTOCOL_SSL = "SSL";
-    public static final Set<String> SYSLOG_PROTOCOL_SET;
-    static {
-        Set<String> protocols = new LinkedHashSet<String>();
-        protocols.add(SYSLOG_PROTOCOL_TCP);
-        protocols.add(SYSLOG_PROTOCOL_UDP);
-        protocols.add(SYSLOG_PROTOCOL_SSL);
-        SYSLOG_PROTOCOL_SET = Collections.unmodifiableSet(protocols);
-    }
-
-    private String description;
-    private SinkType type;
-    private boolean enabled;
-    private SeverityThreshold severity;
-    private String categories;
-    private transient String xmlProperties;
-    private Map<String, String> properties;
-    private List<String> syslogHosts;
-
-    /**
-     * Drops the existing set of properties and reads the new properties to use from the
-     * input XML string.
-     * <p/>
-     * This should not be called directly. Use the setProperty method instead.
-     *
-     * @param xml The XML string to parse containing the properties.
-     */
-    public void setXmlProperties(String xml) {
-        if (xml != null && xml.equals(xmlProperties)) return;
-        this.xmlProperties = xml;
-        if ( xml != null && xml.length() > 0 ) {
-            XMLDecoder xd = new XMLDecoder(new ByteArrayInputStream(xml.getBytes(PROPERTIES_ENCODING)));
-            //noinspection unchecked
-            Object parsedObject = xd.readObject();
-            if (parsedObject instanceof Object[]) {
-                Object[] readProperties = (Object[]) parsedObject;
-                this.properties = (Map<String, String>) readProperties[0];
-                this.syslogHosts = (List<String>) readProperties[1];
-            } else {
-                this.properties = (Map<String, String>) parsedObject;
-            }
-        }
-    }
-
-    /**
-     * Encodes the current list of properties as an XML string.
-     *
-     * @return An XML string that contains the current list of properties.
-     */
-    @Column(name="properties", length=Integer.MAX_VALUE)
-    @Lob
-    public String getXmlProperties() {
-        if ( xmlProperties == null ) {
-            Map<String, String> properties = this.properties;
-            List<String> hosts = this.syslogHosts;
-            if ( properties == null ) return null;
-            PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream();
-            try {
-                //noinspection IOResourceOpenedButNotSafelyClosed
-                XMLEncoder xe = new XMLEncoder(new NonCloseableOutputStream(baos));
-
-                Object writeObject;
-                if (hosts != null) {
-                    writeObject = new Object[] { properties, hosts };
-                } else {
-                    writeObject = properties;
-                }
-
-                xe.writeObject(writeObject);
-                xe.close();
-                xmlProperties = baos.toString(PROPERTIES_ENCODING);
-            } finally {
-                baos.close();
-            }
-        }
-        return xmlProperties;
-    }
+    public static final Set<String> SYSLOG_PROTOCOL_SET = set(
+            SYSLOG_PROTOCOL_TCP,
+            SYSLOG_PROTOCOL_UDP,
+            SYSLOG_PROTOCOL_SSL
+    );
 
     /**
      * Returns the description for this log sink.
@@ -371,6 +312,18 @@ public class SinkConfiguration extends NamedEntityImp {
         return syslogHosts;
     }
 
+    @Transient
+    public Map<String, List<String>> getFilters() {
+        return filters;
+    }
+
+    public void setFilters( final Map<String, List<String>> filters ) {
+        this.filters = immutable( filters );
+
+        // invalidate cached properties
+        xmlProperties = null;
+    }
+
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -383,6 +336,7 @@ public class SinkConfiguration extends NamedEntityImp {
         if(enabled != that.enabled) return false;
         if(severity != null ? severity != that.severity : that.severity != null) return false;
         if(categories != null ? !categories.equals(that.categories) : that.categories != null) return false;
+        if(filters != null ? !filters.equals(that.filters) : that.filters != null) return false;
 
         Map<String, String> thatProperties = that.properties;
         if(properties != null && thatProperties == null || properties == null && thatProperties != null) {
@@ -417,6 +371,7 @@ public class SinkConfiguration extends NamedEntityImp {
         result = 31 * result + (enabled ? 1 : 0);
         result = 31 * result + (severity != null ? severity.hashCode() : 0);
         result = 31 * result + (categories != null ? categories.hashCode() : 0);
+        result = 31 * result + (filters != null ? filters.hashCode() : 0);
 
         if(type != null && properties != null) {
             for(String propertyName : type.getPropertyNames()) {
@@ -481,6 +436,7 @@ public class SinkConfiguration extends NamedEntityImp {
             return new StringBuffer(hostName).append(HOST_ENTRY_DELIM).append(port).toString();
         }
 
+        @SuppressWarnings({ "RedundantIfStatement" })
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -500,5 +456,92 @@ public class SinkConfiguration extends NamedEntityImp {
             result = 31 * result + port.hashCode();
             return result;
         }
+    }
+
+    //- PROTECTED
+
+   /**
+     * Encodes the current list of properties as an XML string.
+     *
+     * @return An XML string that contains the current list of properties.
+     */
+    @Column(name="properties", length=Integer.MAX_VALUE)
+    @Lob
+    protected String getXmlProperties() {
+        if ( xmlProperties == null ) {
+            final Map<String, String> properties = this.properties;
+            final List<String> hosts = this.syslogHosts;
+            final Map<String,List<String>> filters = mutable( this.filters );
+            if ( properties == null && hosts == null && filters == null) return null;
+            PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream();
+            try {
+                //noinspection IOResourceOpenedButNotSafelyClosed
+                XMLEncoder xe = new XMLEncoder(new NonCloseableOutputStream(baos));
+                xe.writeObject( new Object[] { properties, hosts, filters } );
+                xe.close();
+                xmlProperties = baos.toString(PROPERTIES_ENCODING);
+            } finally {
+                baos.close();
+            }
+        }
+        return xmlProperties;
+    }
+
+    /**
+     * Drops the existing set of properties and reads the new properties to use from the
+     * input XML string.
+     * <p/>
+     * This should not be called directly. Use the setProperty method instead.
+     *
+     * @param xml The XML string to parse containing the properties.
+     */
+    protected void setXmlProperties(String xml) {
+        if (xml != null && xml.equals(xmlProperties)) return;
+        this.xmlProperties = xml;
+        if ( xml != null && xml.length() > 0 ) {
+            XMLDecoder xd = new XMLDecoder(new ByteArrayInputStream(xml.getBytes(PROPERTIES_ENCODING)));
+            final Object parsedObject = xd.readObject();
+            if ( parsedObject instanceof Object[] ) {
+                Object[] readProperties = (Object[]) parsedObject;
+                this.properties = cast( readProperties[0], Map.class, String.class, String.class, new HashMap<String, String>());
+                this.syslogHosts = cast( readProperties[1], List.class, String.class, new ArrayList<String>() );
+                if ( readProperties.length > 2 ) {
+                    this.filters = immutable( cast( readProperties[2], Map.class, String.class, List.class, new HashMap<String, List<String>>() ) );
+                }
+            } else {
+                this.properties = cast( parsedObject, Map.class, String.class, String.class, new HashMap<String, String>());
+            }
+        }
+    }
+
+    //- PRIVATE
+
+    private String description;
+    private SinkType type;
+    private boolean enabled;
+    private SeverityThreshold severity;
+    private String categories;
+    private transient String xmlProperties;
+    private Map<String, String> properties;
+    private List<String> syslogHosts;
+    private Map<String, List<String>> filters = emptyMap();
+
+
+    private Map<String, List<String>> immutable( final Map<String, List<String>> map ) {
+        return unmodifiableMap( map( map, null, Functions.<String>identity(), new Unary<List<String>, List<String>>() {
+            @Override
+            public List<String> call( final List<String> strings ) {
+                return toList( strings );
+            }
+        } ) );
+    }
+
+    private Map<String, List<String>> mutable( final Map<String, List<String>> map ) {
+        return map( map, null, Functions.<String>identity(), new Unary<List<String>, List<String>>() {
+            @Override
+            public List<String> call( final List<String> strings ) {
+                return new ArrayList<String>( strings );
+            }
+        } );
     }
 }

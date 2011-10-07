@@ -12,7 +12,6 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.Permission;
-import com.l7tech.console.GatewayLogWindow;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.action.BaseAction;
 import com.l7tech.console.action.SecureAction;
@@ -100,7 +99,6 @@ public class ClusterStatusPanel extends JPanel {
     private ServiceAdmin serviceManager;
     private Hashtable<String, GatewayStatus> currentNodeList;
     private Vector<Long> clusterRequestCounterCache;
-    private Vector<GatewayLogWindow> logWindows = new Vector<GatewayLogWindow>();
     private final AtomicBoolean cancelled = new AtomicBoolean(false);
 
     /**
@@ -216,7 +214,6 @@ public class ClusterStatusPanel extends JPanel {
                 boolean canDelete = false;
                 if (rowAtPoint >= 0) {
                     String nodeId = (String) clusterStatusTable.getValueAt(rowAtPoint, STATUS_TABLE_NODE_ID_COLUMN_INDEX);
-                    boolean logsBeingDisplayed = displayingLogsForNode(nodeId);
                     Object o = clusterStatusTable.getValueAt(rowAtPoint, STATUS_TABLE_NODE_STATUS_COLUMN_INDEX);
                     if (o instanceof Integer) {
                         Integer nodeStatus = (Integer) o;
@@ -226,8 +223,7 @@ public class ClusterStatusPanel extends JPanel {
                     }
 
                     List<BaseAction> actions = new ArrayList<BaseAction>();
-                    actions.add(new ViewLogsAction(rowAtPoint, !logsBeingDisplayed));
-                    SecureAction sa = new DeleteNodeEntryAction(rowAtPoint, canDelete && !logsBeingDisplayed);
+                    SecureAction sa = new DeleteNodeEntryAction(rowAtPoint, canDelete);
                     if (sa.isAuthorized()) {
                         actions.add(sa);
                     }
@@ -255,22 +251,17 @@ public class ClusterStatusPanel extends JPanel {
                 boolean canDelete = false;
                 if (row >= 0 && Registry.getDefault().isAdminContextPresent()) {
                     String nodeId = (String) clusterStatusTable.getValueAt(row, STATUS_TABLE_NODE_ID_COLUMN_INDEX);
-                    boolean logsBeingDisplayed = displayingLogsForNode(nodeId);
-
-                    getNodeLogViewMenuItem().setEnabled(!logsBeingDisplayed);
-
                     Object o = clusterStatusTable.getValueAt(row, STATUS_TABLE_NODE_STATUS_COLUMN_INDEX);
                     if (o instanceof Integer) {
                         Integer nodeStatus = (Integer) o;
                         canDelete = (nodeStatus == 0);
                     }
                     SecureAction sa1 = new DeleteNodeEntryAction(row, canDelete);
-                    getNodeDeleteMenuItem().setEnabled(sa1.isAuthorized() && canDelete && !logsBeingDisplayed);
+                    getNodeDeleteMenuItem().setEnabled(sa1.isAuthorized() && canDelete);
 
                     SecureAction sa2 = new RenameNodeAction(row);
                     getNodeRenameMenuItem().setEnabled(sa2.isAuthorized());
                 } else {
-                    getNodeLogViewMenuItem().setEnabled(false);
                     getNodeDeleteMenuItem().setEnabled(false);
                     getNodeRenameMenuItem().setEnabled(false);
                 }
@@ -329,25 +320,6 @@ public class ClusterStatusPanel extends JPanel {
 
         addMouseListenerToHeaderInTable(clusterStatusTable);
         clusterStatusTable.getTableHeader().setReorderingAllowed(false);
-    }
-
-    /**
-     * Return nodeLogViewMenuItem property value
-     *
-     * @return JMenuItem
-     */
-    private JMenuItem getNodeLogViewMenuItem() {
-        if (nodeLogViewMenuItem != null) return nodeLogViewMenuItem;
-
-        nodeLogViewMenuItem = buildMenuItem("Node_ViewLogsMenuItem_text_name", 'L', null,
-            new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    new ViewLogsAction(-1, true).performAction();
-                }
-        });
-        nodeLogViewMenuItem.setEnabled(false);
-
-        return nodeLogViewMenuItem;
     }
 
     /**
@@ -653,16 +625,6 @@ public class ClusterStatusPanel extends JPanel {
      * Clean up the resources of the cluster status window when the window is closed.
      */
     public void dispose() {
-        synchronized(logWindows) {
-            for (GatewayLogWindow window : logWindows) {
-                try {
-                    window.dispose();
-                } catch (Exception ex) {
-                }
-            }
-            logWindows.removeAllElements();
-        }
-
         getStatusRefreshTimer().stop();
         cancelled.set(true);
     }
@@ -675,15 +637,6 @@ public class ClusterStatusPanel extends JPanel {
         initCaches();
         getStatusRefreshTimer().start();
         cancelled.set(false);
-
-        synchronized(logWindows) {
-            for (GatewayLogWindow window : logWindows) {
-                try {
-                    window.onLogon(e);
-                } catch (Exception ex) {
-                }
-            }
-        }
     }
 
 
@@ -692,15 +645,6 @@ public class ClusterStatusPanel extends JPanel {
      */
     public void onLogoff(LogonEvent e) {
         cleanUp();
-
-        synchronized(logWindows) {
-            for (GatewayLogWindow window : logWindows) {
-                try {
-                    window.onLogoff(e);
-                } catch (Exception ex) {
-                }
-            }
-        }
     }
 
     private void cleanUp() {
@@ -768,20 +712,6 @@ public class ClusterStatusPanel extends JPanel {
                 }
             }
         }
-    }
-
-    private boolean displayingLogsForNode(String nodeId) {
-        boolean displayed = false;
-
-        synchronized(logWindows) {
-            for (GatewayLogWindow window : logWindows) {
-                if (nodeId.equals(window.getNodeId())) {
-                    displayed = true;
-                }
-            }
-        }
-
-        return displayed;
     }
 
     private void applyServiceNameFilter() {
@@ -980,65 +910,8 @@ public class ClusterStatusPanel extends JPanel {
                 nodeName = (String) clusterStatusTable.getValueAt(selectedRow, STATUS_TABLE_NODE_NAME_COLUMN_INDEX);
                 nodeId = (String) clusterStatusTable.getValueAt(selectedRow, STATUS_TABLE_NODE_ID_COLUMN_INDEX);
 
-                EditGatewayNameDialog dialog = new EditGatewayNameDialog(parentFrame, clusterStatusAdmin, nodeId, nodeName);                dialog.setVisible(true);
-            }
-        }
-    }
-
-    private class ViewLogsAction extends BaseAction {
-        private final int tableRow;
-
-        public ViewLogsAction(int row, boolean buttonEnabled) {
-            setEnabled(buttonEnabled);
-            tableRow = row;
-        }
-
-        public String getName() {
-            return "View Log";
-        }
-
-        protected String iconResource() {
-            return RESOURCE_PATH + "/AnalyzeGatewayLog16x16.gif";
-        }
-
-        protected void performAction() {
-            // get the selected row index
-            int selectedRow = tableRow;
-            if(selectedRow < 0) {
-                selectedRow = clusterStatusTable.getSelectedRow(); // when called from node menu
-            }
-
-            // save the number of selected message
-            if (selectedRow >= 0) {
-                final String nodeName = (String) clusterStatusTable.getValueAt(selectedRow, STATUS_TABLE_NODE_NAME_COLUMN_INDEX);
-                final String nodeId = (String) clusterStatusTable.getValueAt(selectedRow, STATUS_TABLE_NODE_ID_COLUMN_INDEX);
-
-                final GatewayLogWindow window = new GatewayLogWindow(nodeName, nodeId);
-                window.pack();
-
-                window.addWindowListener(new WindowAdapter() {
-                    boolean disposed = false;
-
-                    public void windowClosing(final WindowEvent e) {
-                        if (!disposed) {
-                            logWindows.remove(window);
-                            window.dispose();
-                        }
-                        disposed = true;
-
-                    }
-
-                    public void windowClosed(final WindowEvent e) {
-                        if (!disposed) {
-                            logWindows.remove(window);
-                            window.dispose();
-                        }
-                        disposed = true;
-                    }
-                });
-
-                logWindows.add(window);
-                window.setVisible(true);
+                EditGatewayNameDialog dialog = new EditGatewayNameDialog(parentFrame, clusterStatusAdmin, nodeId, nodeName);
+                dialog.setVisible(true);
             }
         }
     }

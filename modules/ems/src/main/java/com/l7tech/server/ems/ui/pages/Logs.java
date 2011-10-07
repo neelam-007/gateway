@@ -31,13 +31,13 @@ import java.util.*;
  * Log management
  */
 @RequiredPermissionSet(
-    requiredPermissions=@RequiredPermission(entityType=EntityType.LOG_RECORD, operationType= OperationType.READ)
+    requiredPermissions=@RequiredPermission(entityType=EntityType.ESM_LOG, operationType= OperationType.READ)
 )
 @NavigationPage(page="Logs",pageIndex=200,section="Tools",sectionIndex=100,sectionPage="Audits",pageUrl="Logs.html")
 public class Logs extends EsmStandardWebPage {
 
     public Logs() {
-        WebMarkupContainer secured = new SecureWebMarkupContainer( "secured", new AttemptedReadAny(EntityType.LOG_RECORD) );
+        WebMarkupContainer secured = new SecureWebMarkupContainer( "secured", new AttemptedReadAny(EntityType.ESM_LOG ) );
         
         final Form pageForm = new Form("form");
         secured.add ( pageForm );

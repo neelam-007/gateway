@@ -100,6 +100,19 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
     }
 
     /**
+     * Adds a new Permission granting the specified privilege with its scope set to an
+     * {@link ObjectIdentityPredicate} for the provided ID, or no scope (allowing any instance of the supplied type)
+     * if id == null.
+     */
+    public void addEntityOtherPermission( EntityType etype, String id, String operationName) {
+        Permission perm = new Permission(this, OperationType.OTHER, etype);
+        perm.setOtherOperationName(operationName);
+        if (id != null) perm.getScope().add(new ObjectIdentityPredicate(perm, id));
+        permissions.add(perm);
+    }
+
+
+    /**
      * Adds a new Permission granting the specified privilege with its scope set to a {@link FolderPredicate} for the
      * provided folder.
      *

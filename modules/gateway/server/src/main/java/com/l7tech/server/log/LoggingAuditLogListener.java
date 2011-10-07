@@ -51,17 +51,13 @@ public class LoggingAuditLogListener implements AuditLogListener {
             record = new AuditLogRecord(audit.getLevel(), formatter.format(audit, header));
 
         if ( record != null ) {
-            if (audit.getLoggerName() != null) {
-                record.setLoggerName(audit.getLoggerName());
+            // TODO move this to the AuditRecord subclasses
+            if ( audit instanceof MessageSummaryAuditRecord) {
+                record.setLoggerName("com.l7tech.server.message");
+            } else if ( audit instanceof AdminAuditRecord) {
+                record.setLoggerName("com.l7tech.server.admin");
             } else {
-                // TODO move this to the AuditRecord subclasses
-                if ( audit instanceof MessageSummaryAuditRecord) {
-                    record.setLoggerName("com.l7tech.server.message");
-                } else if ( audit instanceof AdminAuditRecord) {
-                    record.setLoggerName("com.l7tech.server.admin");
-                } else {
-                    record.setLoggerName("com.l7tech.server");
-                }
+                record.setLoggerName("com.l7tech.server");
             }
 
             logger.log( record );

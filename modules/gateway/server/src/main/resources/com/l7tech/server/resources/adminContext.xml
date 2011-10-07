@@ -50,11 +50,14 @@
         </property>
     </bean>
 
+    <!-- cluster service impls -->
+    <bean id="clusterLogAccessAdmin" class="com.l7tech.server.log.LogAccessAdminImpl"/>
+
     <!-- cluster context factory -->
     <bean id="clusterContextFactory" class="com.l7tech.server.cluster.ClusterContextFactory">
         <constructor-arg index="0">
             <list>
-                <ref bean="genericLogAdmin"/>
+                <ref bean="logAccessAdmin"/>
             </list>
         </constructor-arg>
         <constructor-arg index="1" ref="clusterHttpRequestExecutor"/>
@@ -62,9 +65,9 @@
     </bean>
 
     <!-- cluster remoting clients -->
-    <bean id="genericLogAdmin" parent="clusterInvokerCommon">
-        <property name="serviceUrl" value="https://securespangateway/ssg/cluster/GenericLogAdmin"/>
-        <property name="serviceInterface" value="com.l7tech.gateway.common.logging.GenericLogAdmin"/>
+    <bean id="logAccessAdmin" parent="clusterInvokerCommon">
+        <property name="serviceUrl" value="https://securespangateway/ssg/cluster/LogAccessAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.gateway.common.log.LogAccessAdmin"/>
     </bean>
 
     <bean id="remotingProvider" class="com.l7tech.server.admin.AdminRemotingProvider">
@@ -289,7 +292,6 @@
                 <property name="targetMethod" value="getSecurityFilter"/>
             </bean>
         </property>
-        <property name="logRecordManager" ref="logRecordManager"/>
         <property name="serverConfig" ref="serverConfig"/>
         <property name="clusterPropertyManager" ref="clusterPropertyManager"/>
         <property name="auditArchiver" ref="auditArchiver"/>

@@ -41,16 +41,6 @@ public class AuditLogMessage extends LogMessage {
     }
 
     @Override
-    public String getMsgClass() {
-        return auditRecord.getSourceClassName();
-    }
-
-    @Override
-    public String getMsgMethod() {
-        return auditRecord.getSourceMethodName();
-    }
-
-    @Override
     public String getMsgDetails(){
         return auditRecord.getMessage() == null ? "" : auditRecord.getMessage();
     }

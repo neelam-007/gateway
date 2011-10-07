@@ -617,7 +617,7 @@ public class ServerVariablesTest {
         expandAndCheck(c, "${audit.user.id}", "41123");
         expandAndCheck(c, "${audit.user.idProv}", "-2");
         expandAndCheck(c, "${audit.authType}", "HTTP Basic");
-        expandAndCheck(c, "${audit.thrown}", ExceptionUtils.getStackTraceAsString(c.getAuditRecord().getThrown()));
+        expandAndCheck(c, "${audit.thrown}", "");
         expandAndCheck(c, "${audit.entity.class}", ""); // only for admin records
         expandAndCheck(c, "${audit.entity.oid}", "");  // only for admin records
         expandAndCheck(c, "${audit.details[0]}", c.getAuditRecord().getDetailsInOrder()[0].toString());
@@ -698,7 +698,7 @@ public class ServerVariablesTest {
     @Test
     public void testAdminAuditRecordFields() throws Exception {
         AdminAuditRecord rec = new AdminAuditRecord(Level.WARNING, "node1", 31, "com.l7tech.MyEntity", "thename", 'U', "Updated thename", -2, "alice", "483", "1.4.2.1");
-        rec.setReqId(new RequestId("222-333"));
+        rec.setStrRequestId(new RequestId("222-333").toString());
         final AuditSinkPolicyEnforcementContext c = new AuditSinkPolicyEnforcementContext(rec, delegate(), context());
         expandAndCheck(c, "${audit.type}", "admin");
         expandAndCheck(c, "${audit.name}", "thename");
@@ -1014,8 +1014,7 @@ public class ServerVariablesTest {
                 "listProducts", true, SecurityTokenType.HTTP_BASIC, -2, "alice", "41123", 49585);
         //noinspection deprecation
         auditRecord.setOid(9777L);
-        auditRecord.setReqId(new RequestId("222-333"));
-        auditRecord.setThrown(new RuntimeException("main record throwable"));
+        auditRecord.setStrRequestId(new RequestId("222-333").toString());
         final AuditDetail detail1 = new AuditDetail(Messages.EXCEPTION_INFO_WITH_MORE_INFO, new String[]{"foomp"}, new IllegalArgumentException("Exception for foomp detail"));
         detail1.setOrdinal(0);
         detail1.setComponentId(8711);

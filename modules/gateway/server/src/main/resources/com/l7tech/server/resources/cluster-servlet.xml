@@ -12,9 +12,9 @@
         </property>
     </bean>
 
-    <bean name="/GenericLogAdmin" parent="clusterHttpInvokerParent">
-        <property name="service" ref="auditAdmin"/>
-        <property name="serviceInterface" value="com.l7tech.gateway.common.logging.GenericLogAdmin"/>
+    <bean name="/LogAccessAdmin" parent="clusterHttpInvokerParent">
+        <property name="service" ref="clusterLogAccessAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.gateway.common.log.LogAccessAdmin"/>
         <property name="permittedClassNames">
             <set>
                 <value>[Ljava.lang.Class;</value>
@@ -25,7 +25,6 @@
                 <value>java.lang.Long</value>
                 <value>java.lang.Number</value>
                 <value>java.lang.String</value>
-                <value>java.util.Date</value>
                 <value>long</value>
                 <value>org.springframework.remoting.support.RemoteInvocation</value>
             </set>

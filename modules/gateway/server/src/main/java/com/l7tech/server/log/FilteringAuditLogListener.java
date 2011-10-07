@@ -148,7 +148,6 @@ public class FilteringAuditLogListener implements AuditLogListener, PropertyChan
                                       final String[] params,
                                       final AuditLogFormatter formatter,
                                       final Throwable thrown) {
-//        AuditLogRecord record = new AuditLogRecord(message.getLevel(), message.getId() + ": " + message.getMessage());
         AuditLogRecord record = new AuditLogRecord(message.getLevel(), formatter.formatDetail(message));
 
         if (loggerName != null) {
@@ -203,17 +202,13 @@ public class FilteringAuditLogListener implements AuditLogListener, PropertyChan
             record = new AuditLogRecord(audit.getLevel(), formatter.format(audit, header));
 
         if ( record != null ) {
-            if (audit.getLoggerName() != null) {
-                record.setLoggerName(audit.getLoggerName());
+            // TODO move this to the AuditRecord subclasses
+            if ( audit instanceof MessageSummaryAuditRecord) {
+                record.setLoggerName("com.l7tech.server.message");
+            } else if ( audit instanceof AdminAuditRecord ) {
+                record.setLoggerName("com.l7tech.server.admin");
             } else {
-                // TODO move this to the AuditRecord subclasses
-                if ( audit instanceof MessageSummaryAuditRecord) {
-                    record.setLoggerName("com.l7tech.server.message");
-                } else if ( audit instanceof AdminAuditRecord ) {
-                    record.setLoggerName("com.l7tech.server.admin");
-                } else {
-                    record.setLoggerName("com.l7tech.server");
-                }
+                record.setLoggerName("com.l7tech.server");
             }
         }
 
@@ -224,7 +219,7 @@ public class FilteringAuditLogListener implements AuditLogListener, PropertyChan
      * Pass the given record to the sink as an audit message
      */
     private void processMessage(final LogRecord record) {
-        sink.message(MessageCategory.AUDIT, record);        
+        sink.message(MessageCategory.AUDIT, record);
     }
 
     /**

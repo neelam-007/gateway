@@ -1,24 +1,39 @@
 package com.l7tech.server.log;
 
+import com.l7tech.gateway.common.cluster.ClusterContext;
+import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
+import com.l7tech.gateway.common.log.LogAccessAdmin;
+import com.l7tech.gateway.common.log.LogFileInfo;
+import com.l7tech.gateway.common.log.LogSinkAdmin;
+import com.l7tech.gateway.common.log.LogSinkData;
 import com.l7tech.gateway.common.log.SinkConfiguration;
+import com.l7tech.gateway.common.security.rbac.OtherOperationName;
+import com.l7tech.gateway.common.security.rbac.RbacAdmin;
+import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
+import com.l7tech.server.cluster.ClusterContextFactory;
+import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.SyslogEvent;
 import com.l7tech.server.log.syslog.SyslogConnectionListener;
 import com.l7tech.server.log.syslog.SyslogManager;
 import com.l7tech.server.log.syslog.SyslogProtocol;
 import com.l7tech.server.log.syslog.TestingSyslogManager;
+import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.util.ApplicationEventProxy;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.InetAddressUtil;
-import com.l7tech.util.JdkLoggerConfigurator;
-import com.l7tech.util.Pair;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.ValidationUtils;
+import com.l7tech.util.*;
+import com.l7tech.util.Functions.Unary;
+import com.l7tech.util.Functions.UnaryThrows;
+import static com.l7tech.util.Functions.grepFirst;
+import static com.l7tech.util.Functions.map;
+import static com.l7tech.util.Option.none;
+import static com.l7tech.util.Option.optional;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
@@ -26,13 +41,25 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.security.auth.Subject;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.*;
+import java.net.ConnectException;
 import java.net.SocketAddress;
 import java.nio.charset.Charset;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.zip.GZIPOutputStream;
+
+import static com.l7tech.gateway.common.security.rbac.OperationType.READ;
+import static com.l7tech.objectmodel.EntityType.CLUSTER_INFO;
+import static com.l7tech.objectmodel.EntityType.LOG_SINK;
 
 /**
  *
@@ -47,13 +74,19 @@ public class SinkManagerImpl
     public SinkManagerImpl( final ServerConfig serverConfig,
                             final SyslogManager syslogManager,
                             final TrafficLogger trafficLogger,
-                            final ApplicationEventProxy eventProxy ) {
+                            final ApplicationEventProxy eventProxy,
+                            final ClusterInfoManager clusterInfoManager,
+                            final ClusterContextFactory clusterContextFactory,
+                            final RoleManager roleManager ) {
         if ( serverConfig == null ) throw new IllegalArgumentException("serverConfig must not be null");
         if ( syslogManager == null ) throw new IllegalArgumentException("syslogManager must not be null");
 
         this.serverConfig = serverConfig;
         this.syslogManager = syslogManager;
         this.trafficLogger = trafficLogger;
+        this.clusterInfoManager = clusterInfoManager;
+        this.clusterContextFactory = clusterContextFactory;
+        this.roleManager = roleManager;
 
         eventProxy.addApplicationListener(new ApplicationListener() {
             @Override
@@ -72,7 +105,7 @@ public class SinkManagerImpl
     public long getMaximumFileStorageSpace() {
         long storage = DEFAULT_FILE_SPACE_LIMIT;
 
-        String value = serverConfig.getProperty( SCPROP_FILE_LIMIT );
+        String value = serverConfig.getProperty(SCPROP_FILE_LIMIT);
         if ( value != null ) {
             try {
                 storage = Long.parseLong(value);
@@ -184,6 +217,145 @@ public class SinkManagerImpl
     }
 
     @Override
+    public void createRoles(SinkConfiguration entity) throws SaveException {
+
+        String nameForRole = TextUtils.truncStringMiddle( entity.getName(), 50 );
+        String name = MessageFormat.format(ROLE_READ_NAME_PATTERN, nameForRole, entity.getOid());
+
+        logger.info("Creating new Role: " + name);
+
+        Role role = new Role();
+        role.setName(name);
+
+        role.addEntityPermission(READ, LOG_SINK, entity.getId());
+        role.addEntityPermission(READ, CLUSTER_INFO, null);
+
+        role.addEntityOtherPermission(LOG_SINK, entity.getId(), OtherOperationName.LOG_VIEWER.name());
+
+        // Set role as entity-specific
+        role.setEntityType(LOG_SINK);
+        role.setEntityOid( entity.getOidAsLong());
+        role.setDescription("Users assigned to the {0} role have the ability to view the {1} logs and its configurations.");
+
+        roleManager.save(role);
+    }
+
+    @Override
+    public void deleteRoles(long entityOid) throws DeleteException {
+        roleManager.deleteEntitySpecificRoles(LOG_SINK, entityOid);
+    }
+
+    @Override
+    public long save(SinkConfiguration entity) throws SaveException {
+        long oid =  super.save(entity);
+        entity.setOid(oid);
+        createRoles(entity);
+        return oid;
+    }
+
+    @Override
+    public Collection<LogFileInfo> findAllFilesForSinkByNode(final String nodeId, final long sinkId) throws FindException {
+        final Collection<LogFileInfo> files = new ArrayList<LogFileInfo>();
+        if(isThisNodeMe(nodeId)){
+            final SinkConfiguration config = findByPrimaryKey(sinkId);
+            if( config != null && config.getType().equals(SinkConfiguration.SinkType.FILE) ){
+                try {
+                    String pattern = getSinkFilePattern(config);
+                    String folder = pattern.substring(0,pattern.lastIndexOf("/"));
+                    String filePattern = pattern.substring(pattern.lastIndexOf("/")+1);
+                    filePattern = filePattern.replace("%u","[0-9]");
+                    filePattern = filePattern.replace("%g","[0-9]");
+                    filePattern = filePattern.replace("%%","%");
+                    final Pattern p = Pattern.compile(filePattern);
+                    File f = new File(folder);
+                    if( f.isDirectory() ){
+                        final File[] fileList = f.listFiles(new FilenameFilter(){
+                            @Override
+                            public boolean accept(File dir, String name) {
+                                Matcher result = p.matcher(name);
+                                return result.matches();
+                            }
+                        });
+                        files.addAll( map( Arrays.asList(fileList), new Unary<LogFileInfo,File>(){
+                            @Override
+                            public LogFileInfo call( final File file ) {
+                                return new LogFileInfo( file );
+                            }
+                        } ) );
+                    }
+                } catch (IOException e) {
+                    logger.warning("Log sink files not found for sink:"+config.getName());
+                }
+            }
+            return files;
+
+        } else {
+            final Option<Collection<LogFileInfo>> result = doWithLogAccessAdmin( nodeId, new UnaryThrows<Collection<LogFileInfo>,LogAccessAdmin,FindException>(){
+                @Override
+                public Collection<LogFileInfo> call( final LogAccessAdmin logAccessAdmin ) throws FindException {
+                    return logAccessAdmin.findAllFilesForSinkByNode( nodeId, sinkId );
+                }
+            } );
+            if ( result.isSome() ) files.addAll( result.some() );
+        }
+
+        return files;
+    }
+
+    @Override
+    public LogSinkData getSinkLogs(final String nodeId, final long sinkId, final String file, final long startPosition) throws FindException {
+        LogSinkData data = null;
+        if(isThisNodeMe(nodeId))
+        {
+            SinkConfiguration sinkConfig;
+            FileInputStream fin = null;
+            TruncatingInputStream in = null;
+            ByteArrayOutputStream bs = null;
+            GZIPOutputStream out = null;
+            try {
+                sinkConfig = findByPrimaryKey(sinkId);
+                if(sinkConfig.getType().equals(SinkConfiguration.SinkType.FILE)){
+                    String filePattern = getSinkFilePattern(sinkConfig);
+                    String filePath = filePattern.substring(0,filePattern.lastIndexOf("/")+1)+file; //TODO [steve] verify file matches pattern (so user has permission to view the file)
+
+                    fin = new FileInputStream(filePath);
+                    in = new TruncatingInputStream(fin,startPosition);
+                    bs = new ByteArrayOutputStream();
+                    out = new GZIPOutputStream(bs);
+
+                    IOUtils.copyStream(in,out);
+
+                    long lastLocation = in.getLastRead();
+                    in.close();
+                    out.close();
+
+                    data = new LogSinkData(bs.toByteArray(),lastLocation);
+                }
+            } catch (FindException e) {
+                logger.warning("Log sink configuration not found: "+ e.getMessage());
+            } catch (FileNotFoundException e) {
+                logger.info("Log file not found: "+ e.getMessage());
+            } catch (IOException e) {
+                logger.warning("Error reading from log file: "+ e.getMessage());
+            }finally {
+                ResourceUtils.closeQuietly(fin);
+                ResourceUtils.closeQuietly(in);
+                ResourceUtils.closeQuietly(bs);
+                ResourceUtils.closeQuietly(out);
+            }
+        } else {
+            data = doWithLogAccessAdmin( nodeId, new UnaryThrows<LogSinkData,LogAccessAdmin,FindException>(){
+                @Override
+                public LogSinkData call( final LogAccessAdmin logAccessAdmin ) throws FindException {
+                    return logAccessAdmin.getSinkLogs( nodeId, sinkId, file, startPosition );
+                }
+            } ).toNull();
+        }
+        return data;
+
+    }
+
+    @Override
     public void setApplicationContext(final ApplicationContext applicationContext) {
         if ( this.applicationContext == null )
             this.applicationContext = applicationContext;
@@ -234,14 +406,21 @@ public class SinkManagerImpl
     private static final long ONE_GIGABYTE = 1024L * 1024L * 1024L;
     private static final long DEFAULT_FILE_SPACE_LIMIT = ONE_GIGABYTE * 5L; //5GB
 
+    private static final String ROLE_NAME_TYPE_SUFFIX = LogSinkAdmin.ROLE_NAME_TYPE_SUFFIX;
+    private static final String ROLE_READ_NAME_PATTERN = RbacAdmin.ROLE_NAME_PREFIX_READ + " {0} " + ROLE_NAME_TYPE_SUFFIX + RbacAdmin.ROLE_NAME_OID_SUFFIX;
+
     private final DispatchingMessageSink dispatchingSink = new DispatchingMessageSink();
     private final MessageSink publishingSink = new DelegatingMessageSink(dispatchingSink);
     private final ServerConfig serverConfig;
     private final SyslogManager syslogManager;
     private final TrafficLogger trafficLogger;
     private ApplicationContext applicationContext;
+    private final ClusterInfoManager clusterInfoManager;
+    private final ClusterContextFactory clusterContextFactory;
+    private final RoleManager roleManager;
     @SuppressWarnings({ "MismatchedQueryAndUpdateOfCollection" })
     private final Collection<Logger> configuredLoggers = new ArrayList<Logger>(); // hold a reference to prevent GC
+
 
     /**
      * Handle application event
@@ -283,6 +462,14 @@ public class SinkManagerImpl
                 handler.close();
             }
         }
+    }
+
+    private int getClusterPort() {
+        return ConfigFactory.getIntProperty(ServerConfigParams.PARAM_CLUSTER_PORT, 2124);
+    }
+
+    private boolean isThisNodeMe(final String nodeId) {
+        return clusterInfoManager == null || nodeId.equals(clusterInfoManager.thisNodeId());
     }
 
     /**
@@ -545,7 +732,7 @@ public class SinkManagerImpl
             if ( sink != null ) {
                 if ( logger.isLoggable(Level.CONFIG) )
                     logger.log(Level.CONFIG, "Installing traffic log sink for cluster properties settings.");
-                sinks.add( sink );
+                sinks.add(sink);
             }
         }
     }
@@ -558,7 +745,7 @@ public class SinkManagerImpl
     private FileMessageSink buildClusterPropertyConfiguredTrafficSink() {
         FileMessageSink sink = null;
 
-        boolean enabled = serverConfig.getBooleanProperty( "trafficLoggerEnabled", false );
+        boolean enabled = serverConfig.getBooleanProperty("trafficLoggerEnabled", false);
         String pattern = serverConfig.getProperty( "trafficLoggerPattern" );
         String limit = serverConfig.getProperty( "trafficLoggerLimit" );
         String count = serverConfig.getProperty( "trafficLoggerCount" );
@@ -698,8 +885,8 @@ public class SinkManagerImpl
         if ( type != null ) {
             switch ( type ) {
                 case FILE:
-                    long configCount = Long.parseLong( configuration.getProperty( SinkConfiguration.PROP_FILE_LOG_COUNT ) );
-                    long configLimit = Long.parseLong( configuration.getProperty( SinkConfiguration.PROP_FILE_MAX_SIZE ) );
+                    long configCount = Long.parseLong(configuration.getProperty(SinkConfiguration.PROP_FILE_LOG_COUNT));
+                    long configLimit = Long.parseLong(configuration.getProperty(SinkConfiguration.PROP_FILE_MAX_SIZE));
                     space += ( configCount * configLimit * 1024L );
                     break;
             }
@@ -788,6 +975,66 @@ public class SinkManagerImpl
         cleanup.setDaemon(true);
         cleanup.start();
     }
+
+    private String getSinkFilePattern( final SinkConfiguration sinkConfig ) throws IOException {
+        String filePattern;
+        if(sinkConfig.isEnabled()){
+            MessageSinkSupport sinkSupport = dispatchingSink.getMessageSink(sinkConfig);
+            FileMessageSink fileSink = (FileMessageSink)sinkSupport;
+            filePattern = fileSink.getFilePattern();
+        }else{
+            String filepath = sinkConfig.getProperty( "file.logPath" );
+            filePattern = LogUtils.getLogFilePattern(serverConfig, sinkConfig.getName(), filepath, false);
+        }
+        return filePattern;
+    }
+
+    private <R> Option<R> doWithLogAccessAdmin( final String nodeId,
+                                                final UnaryThrows<R,LogAccessAdmin,FindException> callback ) throws FindException {
+        Option<R> result = none();
+
+        final long startTime = System.currentTimeMillis();
+        final ClusterNodeInfo clusterNodeInfo = clusterInfoManager != null ? grepFirst(clusterInfoManager.retrieveClusterStatus(), new Unary<Boolean,ClusterNodeInfo>(){
+            @Override
+            public Boolean call( final ClusterNodeInfo clusterNodeInfo ) {
+                return nodeId.equals( clusterNodeInfo.getNodeIdentifier() );
+            }
+        }) : null;
+        if ( clusterContextFactory != null && clusterNodeInfo != null ) {
+            try {
+                 result = optional( Subject.doAs( null, new PrivilegedExceptionAction<R>() {
+                     @Override
+                     public R run() throws Exception {
+                         ClusterContext context = clusterContextFactory.buildClusterContext( clusterNodeInfo.getAddress(), getClusterPort() );
+                         LogAccessAdmin laa = context.getLogAccessAdmin();
+                         return callback.call( laa );
+                     }
+                 } ) );
+            }
+            catch(PrivilegedActionException e) {
+                Throwable cause = e.getCause();
+                if(cause instanceof FindException) {
+                    throw (FindException) cause;
+                }
+                if(ExceptionUtils.causedBy(cause, ConnectException.class)) {
+                    logger.log(Level.INFO, "Unable to connect to remote node '"+nodeId+"', to list/read logs.");
+                } else {
+                    logger.log(Level.WARNING, "Error during log list/read from remote node '"+nodeId+"'", cause);
+                }
+            }
+            catch(Exception e) {
+                logger.log(Level.WARNING, "Unexpected error during log list/read from remote node '"+nodeId+"':" + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            }
+        }
+
+        if(logger.isLoggable(Level.FINEST)) {
+            logger.finest("Getting sink configurations from NODE took "
+                    + (System.currentTimeMillis()-startTime) + "ms.");
+        }
+
+        return result;
+    }
+
 
     private static final class DelegatingMessageSink implements MessageSink {
         private final MessageSink sink;

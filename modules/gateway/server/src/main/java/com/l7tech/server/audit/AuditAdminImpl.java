@@ -2,7 +2,6 @@ package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.gateway.common.logging.SSGLogRecord;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.uddi.UDDIPublishStatus;
 import com.l7tech.gateway.common.uddi.UDDIServiceControlRuntime;
@@ -65,7 +64,6 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
     private AuditDownloadManager auditDownloadManager;
     private AuditRecordManager auditRecordManager;
     private SecurityFilter filter;
-    private LogRecordManager logRecordManager;
     private Config config;
     private ClusterPropertyManager clusterPropertyManager;
     private AuditArchiver auditArchiver;
@@ -95,10 +93,6 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
 
     public void setSecurityFilter(SecurityFilter filter) {
         this.filter = filter;
-    }
-
-    public void setLogRecordManager(LogRecordManager logRecordManager) {
-        this.logRecordManager = logRecordManager;
     }
 
     public void setServerConfig(Config config ) {
@@ -347,51 +341,24 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
         return date;
     }
 
-    @Override
-    public SSGLogRecord[] getSystemLog(final String nodeid,
-                                       final long startMsgNumber,
-                                       final long endMsgNumber,
-                                       final Date startMsgDate,
-                                       final Date endMsgDate,
-                                       final int size)
-                                throws FindException {
-        logger.finest("Get logs interval ["+startMsgNumber+", "+endMsgNumber+"] for node '"+nodeid+"'");
-        return logRecordManager.find(nodeid, startMsgNumber, size);
-    }
 
     @Override
-    public int getSystemLogRefresh(final int typeId) {
+    public int getSystemLogRefresh() {
         int refreshInterval = 0;
         int defaultRefreshInterval = 3;
-        String propertyName = null;
-
-        switch(typeId) {
-            case TYPE_AUDIT:
-                propertyName = ServerConfigParams.PARAM_AUDIT_REFRESH_PERIOD_SECS;
-                break;
-            case TYPE_LOG:
-                propertyName = ServerConfigParams.PARAM_AUDIT_LOG_REFRESH_PERIOD_SECS;
-                break;
-            default:
-                logger.warning("System logs refresh period requested for an unknown type '"+typeId+"'.");
-                break;
-        }
-
-        if(propertyName!=null) {
-            String valueInSecsStr = config.getProperty( propertyName );
-            if(valueInSecsStr!=null) {
-                try {
-                    refreshInterval = Integer.parseInt(valueInSecsStr);
-                }
-                catch(NumberFormatException nfe) {
-                    refreshInterval = defaultRefreshInterval;
-                    logger.warning("Property '"+propertyName+"' has invalid value '"+valueInSecsStr
-                            +"', using default '"+defaultRefreshInterval+"'.");
-                }
+        String valueInSecsStr = config.getProperty( ServerConfigParams.PARAM_AUDIT_REFRESH_PERIOD_SECS );
+        if(valueInSecsStr!=null) {
+            try {
+                refreshInterval = Integer.parseInt(valueInSecsStr);
             }
-            else {
+            catch(NumberFormatException nfe) {
                 refreshInterval = defaultRefreshInterval;
+                logger.warning("Property '"+ ServerConfigParams.PARAM_AUDIT_REFRESH_PERIOD_SECS +"' has invalid value '"+valueInSecsStr
+                        +"', using default '"+defaultRefreshInterval+"'.");
             }
+        }
+        else {
+            refreshInterval = defaultRefreshInterval;
         }
 
         return refreshInterval;

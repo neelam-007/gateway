@@ -1,5 +1,6 @@
 package com.l7tech.gateway.common.security.rbac;
 
+import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
@@ -38,6 +39,7 @@ public class RbacUtilities {
         patternMap.put(EntityType.FOLDER, Pattern.compile(MessageFormat.format(REGEX_PATTERN, FolderAdmin.ROLE_NAME_TYPE_SUFFIX)));
         patternMap.put(EntityType.ESM_SSG_CLUSTER, Pattern.compile(MessageFormat.format(REGEX_PATTERN, "Gateway Cluster Nodes")));
         patternMap.put(EntityType.ESM_STANDARD_REPORT, Pattern.compile(MessageFormat.format(REGEX_PATTERN, "Report")));
+        patternMap.put(EntityType.LOG_SINK, Pattern.compile(MessageFormat.format(REGEX_PATTERN, LogSinkAdmin.ROLE_NAME_TYPE_SUFFIX)));
     }
 
     public static boolean isEnableRoleEditing() {

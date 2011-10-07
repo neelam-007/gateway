@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.console.table;
 
 import com.l7tech.console.MainWindow;
@@ -11,7 +8,6 @@ import com.l7tech.gateway.common.audit.AuditRecordVerifier;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.cluster.GatewayStatus;
 import com.l7tech.gateway.common.cluster.LogRequest;
-import com.l7tech.gateway.common.logging.GenericLogAdmin;
 import com.l7tech.gui.util.ImageCache;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.ExceptionUtils;
@@ -33,7 +29,9 @@ import java.util.logging.Logger;
  * This class extends the <CODE>FilteredLogTableModel</CODE> class for providing the sorting functionality to the log display.
  */
 
-public class AuditLogTableSorterModel extends FilteredLogTableModel {
+public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
+    public static final int MAX_MESSAGE_BLOCK_SIZE = 1024;
+    public static final int MAX_NUMBER_OF_LOG_MESSAGES = 131072;//2^17
 
     /** Validity state of a digital signature. */
     public enum DigitalSignatureUIState {
@@ -117,15 +115,20 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
     private volatile Integer[] sortedData = null;
     private ClusterStatusAdmin clusterStatusAdmin = null;
     private AuditAdmin auditAdmin = null;
-    private final int logType;
     private boolean displayingFromFile;
     private boolean truncated;
     private final AtomicReference<ClusterLogWorker> workerReference = new AtomicReference<ClusterLogWorker>();
     private TimeZone timeZone;
+
+    private volatile Map<Long, LogMessage> rawLogCache = new HashMap<Long, LogMessage>();
+    private volatile List<LogMessage> filteredLogCache = new ArrayList<LogMessage>();
+    private Map<String, GatewayStatus> currentNodeList;
+
     /**
      * Creating a SimpleDateFormat shows up as largest hotspot in JProfiler. Instead just reuse instance.
      */
     private SimpleDateFormat sdf;
+
     /**
      * This flag is required to wrap the worker's cancel flag so that we can be notified to stop creating new workers even if the current worker has finished.
      */
@@ -140,16 +143,10 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
         cancelWorker();
     }
 
-    /**
-     * Constructor taking <CODE>DefaultTableModel</CODE> as the input parameter.
-     *
-     * @param model  A table model.
-     */
-    public AuditLogTableSorterModel(DefaultTableModel model, int logType) {
-        this.logType = logType;
+    public AuditLogTableSorterModel(DefaultTableModel model) {
         this.displayingFromFile = false;
 
-        setModel(model);
+        setRealModel(model);
 
         sigVerificationExecutor = Executors.newSingleThreadExecutor();
     }
@@ -158,15 +155,6 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
     public boolean isCellEditable(int row, int col) {
         // the table cells are not editable
         return false;
-    }
-
-    /**
-     * Set the table model.
-     *
-     * @param model  The table model to be set.
-     */
-    public void setModel(DefaultTableModel model) {
-        super.setRealModel(model);
     }
 
     /**
@@ -354,7 +342,7 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
      * then calling this will not cause signatures to be validated.
      */
     private void validateSignatures() {
-        if (!verifySignatures || logType != GenericLogAdmin.TYPE_AUDIT) {
+        if (!verifySignatures ) {
             return;
         }
 
@@ -420,19 +408,6 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
     }
 
     /**
-     * Apply the filter specified.
-     */
-    public void applyNewMsgFilter(LogPanel.LogLevelOption filterLevel,
-                                  String filterThreadId,
-                                  String filterMessage) {
-
-        filterData(filterLevel, filterThreadId, filterMessage);
-        sortData(columnToSort, false);
-
-        realModel.fireTableDataChanged();
-    }
-
-    /**
      * Perform the data sorting.
      * //todo This should not be done on the UI thread.
      *
@@ -490,18 +465,12 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
                 return msg.getSeverity();
             case LogPanel.LOG_MSG_DETAILS_COLUMN_INDEX:
                 return msg.getMsgDetails();
-            case LogPanel.LOG_JAVA_CLASS_COLUMN_INDEX:
-                return msg.getMsgClass();
-            case LogPanel.LOG_JAVA_METHOD_COLUMN_INDEX:
-                return msg.getMsgMethod();
             case LogPanel.LOG_REQUEST_ID_COLUMN_INDEX:
                 return msg.getReqId();
             case LogPanel.LOG_NODE_ID_COLUMN_INDEX:
                 return msg.getNodeId();
             case LogPanel.LOG_SERVICE_COLUMN_INDEX:
                 return msg.getServiceName();
-            case LogPanel.LOG_THREAD_COLUMN_INDEX:
-                return Integer.toString(msg.getThreadID());
             default:
                 throw new IllegalArgumentException("Bad Column");
         }
@@ -581,14 +550,6 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
                     elementA = logMsgA.getMsgDetails();
                     elementB = logMsgB.getMsgDetails();
                     break;
-                case LogPanel.LOG_JAVA_CLASS_COLUMN_INDEX:
-                    elementA = logMsgA.getMsgClass();
-                    elementB = logMsgB.getMsgClass();
-                    break;
-                case LogPanel.LOG_JAVA_METHOD_COLUMN_INDEX:
-                    elementA = logMsgA.getMsgMethod();
-                    elementB = logMsgB.getMsgMethod();
-                    break;
                 case LogPanel.LOG_REQUEST_ID_COLUMN_INDEX:
                     elementA = logMsgA.getReqId();
                     elementB = logMsgB.getReqId();
@@ -600,10 +561,6 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
                 case LogPanel.LOG_SERVICE_COLUMN_INDEX:
                     elementA = logMsgA.getServiceName();
                     elementB = logMsgB.getServiceName();
-                    break;
-                case LogPanel.LOG_THREAD_COLUMN_INDEX:
-                    elementA = logMsgA.getThreadID();
-                    elementB = logMsgB.getThreadID();
                     break;
                 default:
                     logger.warning("Bad Statistics Table Column: " + column);
@@ -681,7 +638,7 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
         int delay = 3;
 
         if (auditAdmin != null) {
-            delay = auditAdmin.getSystemLogRefresh(logType);
+            delay = auditAdmin.getSystemLogRefresh();
         }
 
         return delay;
@@ -775,7 +732,7 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
      * @param logs the data list.
      */
     public void setLogs(final LogPanel logPane, final Map<Long, ? extends LogMessage> logs) {
-        logger.info("Importing "+/*count*/logs.size()+" log/audit records.");
+        logger.info("Importing "+/*count*/logs.size()+"audit records.");
 
         // import
         clearLogCache();
@@ -805,102 +762,90 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
             displayingFromFile = false;
             clearLogCache();
         }
-        if(!refreshCancelled){
-            try {
-                // create a worker thread to retrieve the cluster info
-                //Record current row before model is potentially modified
-                //row is based on audit record identity and not position number
-                final String msgNumSelected = logPane.getSelectedMsgNumber();
-                final ClusterLogWorker infoWorker = new ClusterLogWorker(
-                        clusterStatusAdmin,
-                        auditAdmin,
-                        logType,
-                        //currentNodeList,
-                        logRequest) {
-                    @Override
-                    public void finished() {
-                        //todo finished() is called on the UI thread. No expensive tasks should be done here. Sorting in particular should be moved into construct().
 
-                        if ( !isCancelled() ) {
-                            // Note: the get() operation is a blocking operation.
-                            // get() will never block based on construct()'s implementation.
+        if( refreshCancelled ){
+            hideProgressAndRestart(logPane, restartTimer);
+            return;
+        }
 
-                            if (this.get() != null) {
-                                Map<Long, LogMessage> newLogs = getNewLogs();
-                                int logCount = newLogs.size();
-                                boolean updated = logCount > 0;
+        try {
+            // create a worker thread to retrieve the cluster info
+            //Record current row before model is potentially modified
+            //row is based on audit record identity and not position number
+            final String msgNumSelected = logPane.getSelectedMsgNumber();
+            final ClusterLogWorker infoWorker = new ClusterLogWorker(
+                    clusterStatusAdmin,
+                    auditAdmin,
+                    //currentNodeList,
+                    logRequest) {
+                @Override
+                public void finished() {
+                    //todo finished() is called on the UI thread. No expensive tasks should be done here. Sorting in particular should be moved into construct().
+                    // Note: the get() operation is a blocking operation.
+                    // get() will never block based on construct()'s implementation.
+                    if ( !isCancelled() && this.get() != null) {
+                        Map<Long, AuditHeaderLogMessage> newLogs = getNewLogs();
+                        int logCount = newLogs.size();
+                        boolean updated = logCount > 0;
 
-                                if (count==0) {
-                                    Map<String, GatewayStatus> newNodeList = getNewNodeList();
-                                    removeLogsOfNonExistNodes(newNodeList);
-                                    updated = updated || currentNodeList==null || !currentNodeList.keySet().equals(newNodeList.keySet());
-                                    currentNodeList = newNodeList;
-                                }
+                        if (count==0) {
+                            Map<String, GatewayStatus> newNodeList = getNewNodeList();
+                            removeLogsOfNonExistNodes(newNodeList);
+                            updated = updated || currentNodeList==null || !currentNodeList.keySet().equals(newNodeList.keySet());
+                            currentNodeList = newNodeList;
+                        }
 
-                                addLogs(newLogs);
+                        addLogs(newLogs);
 
-                                if (updated) {
+                        if (updated) {
+                            // sort the logs
+                            sortData(columnToSort, false);
 
-                                    // filter the logs
-                                    if(logType == GenericLogAdmin.TYPE_LOG){
-                                        filterData(logPane.getMsgFilterLevel(),
-                                            logPane.getMsgFilterThreadId(),
-                                            logPane.getMsgFilterMessage());
-                                    }
+                            // populate the change to the display
 
-                                    // sort the logs
-                                    sortData(columnToSort, false);
+                            // The line "realModel.fireTableDataChanged()" has been deleted to fix bug 10085.
+                            // If the table content is changed, then the index of the audit in the table associated with msgNumSelected will be changed.
+                            // Then, the line below, "logPane.setSelectedRow(msgNumSelected)" wil eventually invoke DefaultListSelectionModel.fireValueChanged().
+                            // Thus, there is no need to call realModel.fireTableDataChanged() again.  The table change event now really depends on the table content change.
+                            // If no content change, then no event dispatched.  It turns out ListSelectionListener in LogPanel will not make unnecessary calls on updateMsgDetails()
+                            // to frequently update the details pane.  This fix will probably improve the performance of the audit viewer a bit.
 
-                                    // populate the change to the display
+                            logPane.updateMsgTotal();
+                            logPane.setSelectedRow(msgNumSelected);
+                        }
 
-                                    // The line "realModel.fireTableDataChanged()" has been deleted to fix bug 10085.
-                                    // If the table content is changed, then the index of the audit in the table associated with msgNumSelected will be changed.
-                                    // Then, the line below, "logPane.setSelectedRow(msgNumSelected)" wil eventually invoke DefaultListSelectionModel.fireValueChanged().
-                                    // Thus, there is no need to call realModel.fireTableDataChanged() again.  The table change event now really depends on the table content change.
-                                    // If no content change, then no event dispatched.  It turns out ListSelectionListener in LogPanel will not make unnecessary calls on updateMsgDetails()
-                                    // to frequently update the details pane.  This fix will probably improve the performance of the audit viewer a bit.
+                        logPane.updateTimeStamp(getCurrentClusterSystemTime());
 
-                                    logPane.updateMsgTotal();
-                                    logPane.setSelectedRow(msgNumSelected);
-                                }
+                        final LogRequest unfilledRequest = getUnfilledRequest();
 
-                                logPane.updateTimeStamp(getCurrentClusterSystemTime());
+                        // if there unfilled requests
+                        final int total = count + logCount;
+                        if (unfilledRequest != null && total < MAX_NUMBER_OF_LOG_MESSAGES) {
+                            logPane.getMsgProgressBar().setVisible(true);
+                            logPane.getCancelButton().setEnabled(true);
+                            SwingUtilities.invokeLater(
+                                    new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            doRefreshLogs(logPane, unfilledRequest, restartTimer, total);
+                                        }
+                                    });
 
-                                final LogRequest unfilledRequest = getUnfilledRequest();
-
-                                // if there unfilled requests
-                                final int total = count + logCount;
-                                if (unfilledRequest != null && total < MAX_NUMBER_OF_LOG_MESSAGES) {
-                                    logPane.getMsgProgressBar().setVisible(true);
-                                    SwingUtilities.invokeLater(
-                                            new Runnable() {
-                                                @Override
-                                                public void run() {
-                                                    doRefreshLogs(logPane, unfilledRequest, restartTimer, total);
-                                                }
-                                            });
-
-                                } else {
-                                    hideProgressAndRestart(logPane, restartTimer);
-                                }
-                            } else {
-                                hideProgressAndRestart(logPane, restartTimer);
-                            }
                         } else {
                             hideProgressAndRestart(logPane, restartTimer);
                         }
+                    } else {
+                        hideProgressAndRestart(logPane, restartTimer);
                     }
-                };
+                }
+            };
 
-                workerReference.set( infoWorker );
-                infoWorker.start();
-            }
-            catch(IllegalArgumentException iae) {
-                //can happen on disconnect when auto refresh is on.
-                logPane.getMsgProgressBar().setVisible(false);
-            }
-        }else{
-            hideProgressAndRestart(logPane, restartTimer);
+            workerReference.set( infoWorker );
+            infoWorker.start();
+        }
+        catch(IllegalArgumentException iae) {
+            //can happen on disconnect when auto refresh is on.
+            logPane.getMsgProgressBar().setVisible(false);
         }
     }
 

@@ -1,5 +1,6 @@
 package com.l7tech.gateway.common.log;
 
+import static com.l7tech.gateway.common.security.rbac.MethodStereotype.ENTITY_OPERATION;
 import org.springframework.transaction.annotation.Transactional;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import com.l7tech.gateway.common.security.rbac.Secured;
@@ -24,7 +25,10 @@ import java.util.Collection;
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 @Administrative
 @Secured(types=LOG_SINK)
-public interface LogSinkAdmin {
+public interface LogSinkAdmin extends LogAccessAdmin {
+
+    String  ROLE_NAME_TYPE_SUFFIX = "Log Sink";
+
     /**
      * Download all log sink records.
      *
@@ -99,4 +103,14 @@ public interface LogSinkAdmin {
      */
     @Transactional(readOnly=true)
     long getMaximumFileSize();
+
+    @Override
+    @Transactional(readOnly=true)
+    @Secured(types=LOG_SINK, stereotype=ENTITY_OPERATION, relevantArg=1, otherOperation = "log-viewer")
+    Collection<LogFileInfo> findAllFilesForSinkByNode( String nodeId, long sinkId ) throws FindException;
+
+    @Override
+    @Transactional(readOnly=true)
+    @Secured(types=LOG_SINK, stereotype=ENTITY_OPERATION, relevantArg=1, otherOperation = "log-viewer")
+    LogSinkData getSinkLogs( String nodeId, long sinkId, String file, long startPosition ) throws FindException;
 }

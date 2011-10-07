@@ -3,7 +3,9 @@ package com.l7tech.console.util;
 import java.io.IOException;
 
 /**
- * LogMessages are displayed in the log and audit viewer.
+ * LogMessages are displayed in the audit viewer.
+ *
+ * TODO [steve] rename after development in logging branch completed
  */
 public abstract class LogMessage implements Comparable {
 
@@ -22,10 +24,6 @@ public abstract class LogMessage implements Comparable {
     public abstract long getTimestamp();
 
     public abstract String getSeverity();
-
-    public abstract String getMsgClass();
-
-    public abstract String getMsgMethod();
 
     public abstract String getMsgDetails();
 

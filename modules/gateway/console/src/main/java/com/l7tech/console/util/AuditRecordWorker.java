@@ -14,13 +14,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.Collection;
-import java.util.ArrayList;
 
 /**
  * This class performs retrieval of the actual audit records from the database.
  * <p/>
- * construct() is called when a row is clicked on in the LogPanel's table and the associated SSGLogRecord is retrieved
+ * construct() is called when a row is clicked on in the LogPanel's table and the associated data is retrieved
  * if it does not yet exist on the client.
  */
 public class AuditRecordWorker extends SwingWorker {

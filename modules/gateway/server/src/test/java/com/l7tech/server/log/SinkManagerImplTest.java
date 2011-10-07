@@ -4,7 +4,11 @@ import com.l7tech.gateway.common.log.SinkConfiguration;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.AuditContextStub;
+import com.l7tech.server.cluster.ClusterContextFactory;
+import com.l7tech.server.cluster.ClusterInfoManager;
+import com.l7tech.server.cluster.ClusterInfoManagerImpl;
 import com.l7tech.server.log.syslog.SyslogManager;
+import com.l7tech.server.security.rbac.RoleManagerImpl;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.util.SoapFaultManager;
 import static org.junit.Assert.*;
@@ -44,7 +48,10 @@ public class SinkManagerImplTest {
                                            new SyslogManager(),
                                            new TrafficLogger(_config,
                                            new SoapFaultManager(_config, new AuditContextStub(), null)),
-                                           new ApplicationEventProxy());
+                                           new ApplicationEventProxy(),
+                                           new ClusterInfoManagerImpl(null),
+                                           new ClusterContextFactory(null,null,null),
+                                           new RoleManagerImpl());
     }
 
     @Test

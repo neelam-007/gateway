@@ -6,7 +6,6 @@ import com.l7tech.gateway.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.gateway.common.audit.SystemAuditRecord;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.cluster.ServiceUsage;
-import com.l7tech.gateway.common.logging.SSGLogRecord;
 import com.l7tech.gateway.common.mapping.MessageContextMappingKeys;
 import com.l7tech.gateway.common.mapping.MessageContextMappingValues;
 import com.l7tech.gateway.common.security.rbac.*;
@@ -54,7 +53,6 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
     public PersistenceEventInterceptor() {
         // High traffic entities that should neither generate application events nor be audited
         ignoredClassNames = new HashSet<String>();
-        ignoredClassNames.add(SSGLogRecord.class.getName());
         ignoredClassNames.add(AdminAuditRecord.class.getName());
         ignoredClassNames.add(SystemAuditRecord.class.getName());
         ignoredClassNames.add(MessageSummaryAuditRecord.class.getName());

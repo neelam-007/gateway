@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.console.panels;
 
 import com.l7tech.common.io.XmlUtil;
@@ -13,8 +10,6 @@ import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.cluster.LogRequest;
-import com.l7tech.gateway.common.logging.GenericLogAdmin;
-import com.l7tech.gateway.common.logging.SSGLogRecord;
 import com.l7tech.gateway.common.mapping.MessageContextMapping;
 import com.l7tech.gateway.common.security.rbac.AttemptedOther;
 import com.l7tech.gateway.common.security.rbac.OtherOperationName;
@@ -54,7 +49,7 @@ import java.util.zip.GZIPOutputStream;
 import static com.l7tech.gateway.common.Component.fromId;
 
 /**
- * A panel for displaying either logs or audit events.
+ * A panel for displaying audit events.
  */
 public class LogPanel extends JPanel {
     private static final Logger logger = Logger.getLogger(LogPanel.class.getName());
@@ -65,12 +60,9 @@ public class LogPanel extends JPanel {
     public static final int LOG_TIMESTAMP_COLUMN_INDEX = 3;
     public static final int LOG_SEVERITY_COLUMN_INDEX = 4;
     public static final int LOG_MSG_DETAILS_COLUMN_INDEX = 5;
-    public static final int LOG_JAVA_CLASS_COLUMN_INDEX = 6;
-    public static final int LOG_JAVA_METHOD_COLUMN_INDEX = 7;
-    public static final int LOG_REQUEST_ID_COLUMN_INDEX = 8;
-    public static final int LOG_NODE_ID_COLUMN_INDEX = 9;
-    public static final int LOG_SERVICE_COLUMN_INDEX = 10;
-    public static final int LOG_THREAD_COLUMN_INDEX = 11;
+    public static final int LOG_REQUEST_ID_COLUMN_INDEX = 6;
+    public static final int LOG_NODE_ID_COLUMN_INDEX = 7;
+    public static final int LOG_SERVICE_COLUMN_INDEX = 8;
 
     private static final String DATE_FORMAT_PATTERN = "yyyyMMdd HH:mm:ss.SSS";
     private static final String DATE_FORMAT_ZONE_PATTERN = "yyyyMMdd HH:mm:ss.SSS z";
@@ -82,8 +74,6 @@ public class LogPanel extends JPanel {
             "Time",
             "Severity",
             "Message",
-            "Class",
-            "Method",
             "Request Id",
             "Node Id",
             "Service",
@@ -107,9 +97,7 @@ public class LogPanel extends JPanel {
 
     private LogPanelControlPanel controlPanel = new LogPanelControlPanel();
     private int[] tableColumnWidths = new int[20];
-    private boolean isAuditType;
     private boolean signAudits;
-    private String nodeId;
     private JPanel bottomPane;
     private JLabel filterLabel;
     private JScrollPane msgTablePane;
@@ -177,8 +165,6 @@ public class LogPanel extends JPanel {
          */
         NONE
     }
-
-    private String threadId = "";
 
     private RetrievalMode retrievalMode;
     /**
@@ -275,26 +261,15 @@ public class LogPanel extends JPanel {
         }
     }
 
-    private long autoRepeatTime = -1;
+    private long autoRepeatTime = -1L;
 
     /**
      * Constructor
      */
     public LogPanel() {
-        this(true, true, null);
-    }
-
-    /**
-     * Constructor.
-     *
-     * Note: This dialog is used off line. An admin connection cannot be required in construction.
-     */
-    public LogPanel(boolean includeDetailPane, final boolean isAuditType, String nodeId) {
         setLayout(new BorderLayout());
 
         this.logsRefreshInterval = LOG_REFRESH_TIMER;
-        this.nodeId = nodeId;
-        this.isAuditType = isAuditType;
 
         this.unformattedRequestXml = new StringBuffer();
         this.unformattedResponseXml = new StringBuffer();
@@ -307,7 +282,7 @@ public class LogPanel extends JPanel {
         selectionSplitPane.setOneTouchExpandable(true);
         selectionSplitPane.setDividerLocation((int) getControlPane().getPreferredSize().getHeight()); // init last pos
         selectionSplitPane.setDividerLocation(0);
-        selectionSplitPane.setResizeWeight(0);
+        selectionSplitPane.setResizeWeight(0.0);
 
         // this listener ensures that the control pane cannot be maximized
         // and hides itself when the divider is moved up
@@ -316,7 +291,7 @@ public class LogPanel extends JPanel {
         getControlPane().addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
-                if (getControlPane().getSize().getHeight() < (getControlPane().getPreferredSize().getHeight() - 50)) {
+                if (getControlPane().getSize().getHeight() < (getControlPane().getPreferredSize().getHeight() - 50.0)) {
                     setControlsExpanded(false);
                 } else {
                     setControlsExpanded(true);
@@ -329,23 +304,20 @@ public class LogPanel extends JPanel {
             }
         });
 
-        if (includeDetailPane) {
-            logSplitPane = new JSplitPane();
-            logSplitPane.setOrientation(JSplitPane.VERTICAL_SPLIT);
-            logSplitPane.setTopComponent(getMsgTablePane());
-            logSplitPane.setBottomComponent(getMsgDetailsPane());
-            logSplitPane.setOneTouchExpandable(true);
-            logSplitPane.setDividerLocation(300);
-            logSplitPane.setResizeWeight(1.0);
+        logSplitPane = new JSplitPane();
+        logSplitPane.setOrientation(JSplitPane.VERTICAL_SPLIT);
+        logSplitPane.setTopComponent(getMsgTablePane());
+        logSplitPane.setBottomComponent(getMsgDetailsPane());
+        logSplitPane.setOneTouchExpandable(true);
+        logSplitPane.setDividerLocation(300);
+        logSplitPane.setResizeWeight(1.0);
 
-            JPanel bottomSplitPanel = new JPanel();
-            bottomSplitPanel.setLayout(new BorderLayout());
-            bottomSplitPanel.add(logSplitPane, BorderLayout.CENTER);
+        JPanel bottomSplitPanel = new JPanel();
+        bottomSplitPanel.setLayout(new BorderLayout());
+        bottomSplitPanel.add(logSplitPane, BorderLayout.CENTER);
 
-            selectionSplitPane.setBottomComponent(bottomSplitPanel);
-        } else {
-            selectionSplitPane.setBottomComponent(getMsgTablePane());
-        }
+        selectionSplitPane.setBottomComponent(bottomSplitPanel);
+
 
         add(selectionSplitPane, BorderLayout.CENTER);
         add(getBottomPane(), BorderLayout.SOUTH);
@@ -354,7 +326,7 @@ public class LogPanel extends JPanel {
         getMsgTable().getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
-                if ((System.currentTimeMillis() - autoRepeatTime) > 250) {
+                if ((System.currentTimeMillis() - autoRepeatTime) > 250L ) {
                     updateMsgDetails();
                 }
                 autoRepeatTime = System.currentTimeMillis(); //hackery to get around the linux auto-repeat problem
@@ -391,9 +363,6 @@ public class LogPanel extends JPanel {
                 enableOrDisableComponents();
             }
         };
-
-        //only show the time range widgets if we are viewing audits
-        controlPanel.timeRangePane.setVisible(isAuditType);
 
         //initialize time range panel widets
         controlPanel.durationButton.addActionListener(l);
@@ -451,111 +420,72 @@ public class LogPanel extends JPanel {
             }
         }));
 
-        //enable/disable control panel widgets depending on whether or not we are viewing logs or audits
-        //always show logLevelOption combobox, node & message text fields
-        controlPanel.servicePane.setVisible(isAuditType);
-        controlPanel.threadIdPane.setVisible(!isAuditType);
-        controlPanel.auditTypePane.setVisible(isAuditType);
-        controlPanel.nodePane.setVisible(isAuditType);
-        controlPanel.requestIdPane.setVisible(isAuditType);
-        controlPanel.userNamePane.setVisible(isAuditType);
-        controlPanel.userIdPane.setVisible(isAuditType);
-        controlPanel.associatedLogsSearchingPane.setVisible(isAuditType);
-        controlPanel.entitySearchingPane.setVisible(isAuditType);
-        controlPanel.validateSignaturesCheckBox.setVisible(isAuditType);
 
-        //if its a logViewer add listeners to the filter fields
+        InputValidator inputValidator = new InputValidator(this, "LogPanel Control Panel");
+        inputValidator.constrainTextField(controlPanel.nodeTextField, new InputValidator.ComponentValidationRule(controlPanel.nodeTextField) {
+            @Override
+            public String getValidationError() {
+                String nodeName = controlPanel.nodeTextField.getText();
+                if(nodeName == null || nodeName.length() <= 0) return null;
 
-        if(!isAuditType){
-            controlPanel.levelComboBox.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent evt){
-                    updateMsgFilterLevel((LogLevelOption)controlPanel.levelComboBox.getSelectedItem());
-                }
-            });
+                Registry reg = Registry.getDefault();
+                if (!reg.isAdminContextPresent()) return null;
 
-            controlPanel.threadIdTextField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable(){
-                @Override
-                public void run(){
-                    updateMsgFilterThreadId(controlPanel.threadIdTextField.getText());
-                }
-            }));
+                ClusterStatusAdmin clusterStatusAdmin = reg.getClusterStatusAdmin();
+                ClusterNodeInfo[] clusterNodes;
+                try {
+                    clusterNodes = clusterStatusAdmin.getClusterStatus();
+                    if (clusterNodes == null) return null;
 
-            controlPanel.messageTextField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable(){
-                @Override
-                public void run(){
-                    updateMsgFilterMessage(controlPanel.messageTextField.getText());
-                }
-            }));
-        }
-
-        if (isAuditType) {
-            InputValidator inputValidator = new InputValidator(this, "LogPanel Control Panel");
-            inputValidator.constrainTextField(controlPanel.nodeTextField, new InputValidator.ComponentValidationRule(controlPanel.nodeTextField) {
-                @Override
-                public String getValidationError() {
-                    String nodeName = controlPanel.nodeTextField.getText();
-                    if(nodeName == null || nodeName.length() <= 0) return null;
-
-                    Registry reg = Registry.getDefault();
-                    if (!reg.isAdminContextPresent()) return null;
-
-                    ClusterStatusAdmin clusterStatusAdmin = reg.getClusterStatusAdmin();
-                    ClusterNodeInfo[] clusterNodes;
-                    try {
-                        clusterNodes = clusterStatusAdmin.getClusterStatus();
-                        if (clusterNodes == null) return null;
-
-                        for (ClusterNodeInfo nodeInfo : clusterNodes) {
-                            if (nodeInfo.getName().equals(nodeName)) {
-                                return null;
-                            }
+                    for (ClusterNodeInfo nodeInfo : clusterNodes) {
+                        if (nodeInfo.getName().equals(nodeName)) {
+                            return null;
                         }
-                    } catch (FindException e) {
-                        logger.log(Level.WARNING, "Unable to find cluster status from server.", e);
-                        return null;
                     }
-                    return "Node name does not exist in cluster and will be ignored.";
+                } catch (FindException e) {
+                    logger.log(Level.WARNING, "Unable to find cluster status from server.", e);
+                    return null;
                 }
-            });
-            inputValidator.validateWhenDocumentChanges(controlPanel.nodeTextField);
+                return "Node name does not exist in cluster and will be ignored.";
+            }
+        });
+        inputValidator.validateWhenDocumentChanges(controlPanel.nodeTextField);
 
-            controlPanel.validateSignaturesCheckBox.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    setSignatureValidationState(controlPanel.validateSignaturesCheckBox.isSelected());
+        controlPanel.validateSignaturesCheckBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                setSignatureValidationState(controlPanel.validateSignaturesCheckBox.isSelected());
+            }
+        });
+
+        getFilteredLogTableSorter().setValidationNoLongerRunningCallback(new Runnable() {
+            @Override
+            public void run() {
+                //we are on the UI thread
+                validationIsRunning = false;
+
+                // update currently displayed rows.
+                final Rectangle viewRect = getMsgTablePane().getViewport().getViewRect();
+                final int firstRow = getMsgTable().rowAtPoint(new Point(0, viewRect.y));
+                final int lastRow = getMsgTable().rowAtPoint(new Point(0, viewRect.y + viewRect.height - 1));
+                if (firstRow != -1 && lastRow != -1) {
+                    getFilteredLogTableSorter().fireTableRowsUpdated(firstRow, lastRow);
+                } else {
+                    //there is not a lot of data if there is no final row
+                    getFilteredLogTableSorter().fireTableDataChanged();
                 }
-            });
 
-            getFilteredLogTableSorter().setValidationNoLongerRunningCallback(new Runnable() {
-                @Override
-                public void run() {
-                    //we are on the UI thread
-                    validationIsRunning = false;
+                setSignatureStatusText();
+            }
+        });
 
-                    // update currently displayed rows.
-                    final Rectangle viewRect = getMsgTablePane().getViewport().getViewRect();
-                    final int firstRow = getMsgTable().rowAtPoint(new Point(0, viewRect.y));
-                    final int lastRow = getMsgTable().rowAtPoint(new Point(0, viewRect.y + viewRect.height - 1));
-                    if (firstRow != -1 && lastRow != -1) {
-                        getFilteredLogTableSorter().fireTableRowsUpdated(firstRow, lastRow);
-                    } else {
-                        //there is not a lot of data if there is no final row
-                        getFilteredLogTableSorter().fireTableDataChanged();
-                    }
-
-                    setSignatureStatusText();
-                }
-            });
-
-            getFilteredLogTableSorter().setValidationHasStartedCallback(new Runnable() {
-                @Override
-                public void run() {
-                    validationIsRunning = true;
-                    setSignatureStatusText();
-                }
-            });
-        }
+        getFilteredLogTableSorter().setValidationHasStartedCallback(new Runnable() {
+            @Override
+            public void run() {
+                validationIsRunning = true;
+                setSignatureStatusText();
+            }
+        });
 
         getSearchButton().addActionListener(new ActionListener() {
             @Override
@@ -603,7 +533,6 @@ public class LogPanel extends JPanel {
         controlPanel.messageTextField.setText("");
         controlPanel.requestIdTextField.setText("");
         controlPanel.userIdOrDnTextField.setText("");
-        controlPanel.threadIdTextField.setText("");
         controlPanel.userNameTextField.setText("");
         controlPanel.nodeTextField.setText("");
         controlPanel.levelComboBox.setSelectedItem(LogLevelOption.ALL);
@@ -633,7 +562,7 @@ public class LogPanel extends JPanel {
         // controlPanel.cautionIndicatorPanel.setVisible(isAuditType && hasSearchCriteriaApplied());  // Note: this indicator is not for Gateway Logs Events.
 
         final Color bgColor;
-        final boolean showWarning = isAuditType && hasSearchCriteriaApplied();
+        final boolean showWarning = hasSearchCriteriaApplied();
         if (showWarning) {
             bgColor = new Color(255, 255, 225);
             controlPanel.cautionTextField.setVisible(true);
@@ -649,8 +578,7 @@ public class LogPanel extends JPanel {
      * @return true if there is at least one search criterion applied.
      */
     private boolean hasSearchCriteriaApplied() {
-        //return
-            boolean abc =
+        return
             (! logLevelOption.getLevel().equals(Level.ALL)) ||
             (! auditType.equals(AuditType.ALL)) ||
             (! isNullOrEmpty(serviceName)) ||
@@ -662,8 +590,6 @@ public class LogPanel extends JPanel {
             (! "<any>".equals(entityTypeName)) ||
             (entityId != null) ||
             (messageId != null);
-
-        return abc;
     }
 
     /**
@@ -764,17 +690,17 @@ public class LogPanel extends JPanel {
         }
 
         try {
-            long hours = 0;
+            long hours = 0L;
             if (controlPanel.hoursTextField.getText().length() != 0) {
                 hours = Long.parseLong(controlPanel.hoursTextField.getText());
             }
-            long minutes = 0;
+            long minutes = 0L;
             if (controlPanel.minutesTextField.getText().length() != 0) {
                 minutes = Long.parseLong(controlPanel.minutesTextField.getText());
             }
             durationMillis = hours * MILLIS_IN_HOUR + minutes * MILLIS_IN_MINUTE;
         } catch (NumberFormatException e) {
-            durationMillis = 0;
+            durationMillis = 0L;
         }
 
         durationAutoRefresh = controlPanel.autoRefreshCheckBox.isSelected();
@@ -879,130 +805,123 @@ public class LogPanel extends JPanel {
      * </ul>
      */
     private void applyPreferences() {
-        if (isAuditType) {
-            retrievalMode = RetrievalMode.DURATION;
-            try {
-                retrievalMode = RetrievalMode.valueOf(preferences.getString(SsmPreferences.AUDIT_WINDOW_RETRIEVAL_MODE));
-            } catch (NullPointerException e) {
-            } catch (IllegalArgumentException e) {
-            }
+        retrievalMode = RetrievalMode.DURATION;
+        try {
+            retrievalMode = RetrievalMode.valueOf(preferences.getString(SsmPreferences.AUDIT_WINDOW_RETRIEVAL_MODE));
+        } catch (NullPointerException e) {
+        } catch (IllegalArgumentException e) {
+        }
 
-            durationMillis = 3 * MILLIS_IN_HOUR;
+        durationMillis = 3L * MILLIS_IN_HOUR;
+        try {
+            durationMillis = Long.parseLong(preferences.getString(SsmPreferences.AUDIT_WINDOW_DURATION_MILLIS));
+        } catch (NumberFormatException e) {
+        }
+
+        durationAutoRefresh = true;
+        String s = preferences.getString(SsmPreferences.AUDIT_WINDOW_DURATION_AUTO_REFRESH);
+        if (s != null) {
+            durationAutoRefresh = Boolean.parseBoolean(s);
+        }
+
+        final Date now = new Date();
+        timeRangeStart = now;
+        try {
+            timeRangeStart = new Date(Long.parseLong(preferences.getString(SsmPreferences.AUDIT_WINDOW_TIME_RANGE_START)));
+        } catch (NumberFormatException e) {
+        }
+
+        timeRangeEnd = now;
+        try {
+            timeRangeEnd = new Date(Long.parseLong(preferences.getString(SsmPreferences.AUDIT_WINDOW_TIME_RANGE_END)));
+        } catch (NumberFormatException e) {
+        }
+
+        timeRangeTimeZone = TimeZone.getDefault();
+        final String timeZoneId = preferences.getString(SsmPreferences.AUDIT_WINDOW_TIME_RANGE_TIMEZONE);
+        if (timeZoneId != null) {
+            if (Arrays.asList(TimeZone.getAvailableIDs()).contains(timeZoneId)) {
+                timeRangeTimeZone = TimeZone.getTimeZone(timeZoneId);
+            }
+        }
+
+        final String logLevelProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_LOG_LEVEL);
+        if (logLevelProperty != null) {
+            logLevelOption = LogLevelOption.valueOf(logLevelProperty);
+        } else {
+            logLevelOption = LogLevelOption.ALL;
+        }
+
+        final String serviceNameProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_SERVICE_NAME);
+        if (serviceNameProperty != null) {
+            serviceName = serviceNameProperty;
+        }
+
+        final String messageProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_MESSAGE);
+        if (messageProperty != null) {
+            message = messageProperty;
+        }
+
+        final String auditTypeProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_AUDIT_TYPE);
+        if (auditTypeProperty != null) {
+            auditType = AuditType.valueOf(auditTypeProperty);
+        } else {
+            auditType = AuditType.ALL;
+        }
+
+        final String nodeProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_NODE);
+        if (nodeProperty != null) {
+            node = nodeProperty;
+        }
+
+        final String requestIdProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_REQUEST_ID);
+        if (requestIdProperty != null) {
+            requestId = requestIdProperty;
+        }
+
+        final String userNameProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_USER_NAME);
+        if (userNameProperty != null) {
+            userName = userNameProperty;
+        }
+
+        final String userIdOrDnProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_USER_ID_OR_DN);
+        if (userIdOrDnProperty != null) {
+            userIdOrDn = userIdOrDnProperty;
+        }
+
+        final String messageIdProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_MESSAGE_ID);
+        if (messageIdProperty != null) {
             try {
-                durationMillis = Long.parseLong(preferences.getString(SsmPreferences.AUDIT_WINDOW_DURATION_MILLIS));
+                messageId = Integer.parseInt(messageIdProperty);
             } catch (NumberFormatException e) {
+                messageId = Integer.MIN_VALUE; // This case represents Invalid Message Id
             }
-
-            durationAutoRefresh = true;
-            String s = preferences.getString(SsmPreferences.AUDIT_WINDOW_DURATION_AUTO_REFRESH);
-            if (s != null) {
-                durationAutoRefresh = Boolean.parseBoolean(s);
-            }
-
-            final Date now = new Date();
-            timeRangeStart = now;
-            try {
-                timeRangeStart = new Date(Long.parseLong(preferences.getString(SsmPreferences.AUDIT_WINDOW_TIME_RANGE_START)));
-            } catch (NumberFormatException e) {
-            }
-
-            timeRangeEnd = now;
-            try {
-                timeRangeEnd = new Date(Long.parseLong(preferences.getString(SsmPreferences.AUDIT_WINDOW_TIME_RANGE_END)));
-            } catch (NumberFormatException e) {
-            }
-
-            timeRangeTimeZone = TimeZone.getDefault();
-            final String timeZoneId = preferences.getString(SsmPreferences.AUDIT_WINDOW_TIME_RANGE_TIMEZONE);
-            if (timeZoneId != null) {
-                if (Arrays.asList(TimeZone.getAvailableIDs()).contains(timeZoneId)) {
-                    timeRangeTimeZone = TimeZone.getTimeZone(timeZoneId);
-                }
-            }
-
-            final String logLevelProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_LOG_LEVEL);
-            if (logLevelProperty != null) {
-                logLevelOption = LogLevelOption.valueOf(logLevelProperty);
-            } else {
-                logLevelOption = LogLevelOption.ALL;
-            }
-
-            final String serviceNameProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_SERVICE_NAME);
-            if (serviceNameProperty != null) {
-                serviceName = serviceNameProperty;
-            }
-
-            final String messageProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_MESSAGE);
-            if (messageProperty != null) {
-                message = messageProperty;
-            }
-
-            final String auditTypeProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_AUDIT_TYPE);
-            if (auditTypeProperty != null) {
-                auditType = AuditType.valueOf(auditTypeProperty);
-            } else {
-                auditType = AuditType.ALL;
-            }
-
-            final String nodeProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_NODE);
-            if (nodeProperty != null) {
-                node = nodeProperty;
-            }
-
-            final String requestIdProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_REQUEST_ID);
-            if (requestIdProperty != null) {
-                requestId = requestIdProperty;
-            }
-
-            final String userNameProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_USER_NAME);
-            if (userNameProperty != null) {
-                userName = userNameProperty;
-            }
-
-            final String userIdOrDnProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_USER_ID_OR_DN);
-            if (userIdOrDnProperty != null) {
-                userIdOrDn = userIdOrDnProperty;
-            }
-
-            final String messageIdProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_MESSAGE_ID);
-            if (messageIdProperty != null) {
-                try {
-                    messageId = Integer.parseInt(messageIdProperty);
-                } catch (NumberFormatException e) {
-                    messageId = Integer.MIN_VALUE; // This case represents Invalid Message Id
-                }
-            } else {
-                messageId = null; // null = Any
-            }
+        } else {
+            messageId = null; // null = Any
+        }
 
 //            final String paramValueProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_PARAM_VALUE);
 //            if (paramValueProperty != null) {
 //                paramValue = paramValueProperty;
 //            }
 
-            final String entityTypeProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_ENTITY_TYPE);
-            if (entityTypeProperty != null) {
-                entityTypeName = entityTypeProperty;
-            } else {
-                entityTypeName = getAllEntities().keySet().toArray(new String[]{})[0];  // get the first item from the entity type list
-            }
-
-            final String entityIdProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_ENTITY_ID);
-            if (entityIdProperty != null) {
-                try {
-                    entityId = Long.parseLong(entityIdProperty);
-                } catch (NumberFormatException e) {
-                    entityId = Long.MIN_VALUE; // This case represents Invalid Entity Id
-                }
-            } else {
-                entityId = null; // null = Any
-            }
-        } else { // We are displaying logs.
-            retrievalMode = RetrievalMode.DURATION;
-            durationAutoRefresh = true;
-            logLevelOption = LogLevelOption.WARNING;
+        final String entityTypeProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_ENTITY_TYPE);
+        if (entityTypeProperty != null) {
+            entityTypeName = entityTypeProperty;
+        } else {
+            entityTypeName = getAllEntities().keySet().toArray(new String[]{})[0];  // get the first item from the entity type list
         }
 
+        final String entityIdProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_ENTITY_ID);
+        if (entityIdProperty != null) {
+            try {
+                entityId = Long.parseLong(entityIdProperty);
+            } catch (NumberFormatException e) {
+                entityId = Long.MIN_VALUE; // This case represents Invalid Entity Id
+            }
+        } else {
+            entityId = null; // null = Any
+        }
         setControlPanelFromData();
     }
 
@@ -1010,66 +929,64 @@ public class LogPanel extends JPanel {
      * Saves the current state to application preferences.
      */
     private void savePreferences() {
-        if (isAuditType) {
-            if (retrievalMode != null) {
-                preferences.putProperty(SsmPreferences.AUDIT_WINDOW_RETRIEVAL_MODE, retrievalMode.name());
-            }
-            preferences.putProperty(SsmPreferences.AUDIT_WINDOW_DURATION_MILLIS, Long.toString(durationMillis));
-            preferences.putProperty(SsmPreferences.AUDIT_WINDOW_DURATION_AUTO_REFRESH, Boolean.toString(durationAutoRefresh));
-            if (timeRangeStart != null) {
-                preferences.putProperty(SsmPreferences.AUDIT_WINDOW_TIME_RANGE_START, Long.toString(timeRangeStart.getTime()));
-            }
-            if (timeRangeEnd != null) {
-                preferences.putProperty(SsmPreferences.AUDIT_WINDOW_TIME_RANGE_END, Long.toString(timeRangeEnd.getTime()));
-            }
-            if (timeRangeTimeZone != null) {
-                preferences.putProperty(SsmPreferences.AUDIT_WINDOW_TIME_RANGE_TIMEZONE, timeRangeTimeZone.getID());
-            }
+        if (retrievalMode != null) {
+            preferences.putProperty(SsmPreferences.AUDIT_WINDOW_RETRIEVAL_MODE, retrievalMode.name());
+        }
+        preferences.putProperty(SsmPreferences.AUDIT_WINDOW_DURATION_MILLIS, Long.toString(durationMillis));
+        preferences.putProperty(SsmPreferences.AUDIT_WINDOW_DURATION_AUTO_REFRESH, Boolean.toString(durationAutoRefresh));
+        if (timeRangeStart != null) {
+            preferences.putProperty(SsmPreferences.AUDIT_WINDOW_TIME_RANGE_START, Long.toString(timeRangeStart.getTime()));
+        }
+        if (timeRangeEnd != null) {
+            preferences.putProperty(SsmPreferences.AUDIT_WINDOW_TIME_RANGE_END, Long.toString(timeRangeEnd.getTime()));
+        }
+        if (timeRangeTimeZone != null) {
+            preferences.putProperty(SsmPreferences.AUDIT_WINDOW_TIME_RANGE_TIMEZONE, timeRangeTimeZone.getID());
+        }
 
-            preferences.putProperty(SsmPreferences.AUDIT_WINDOW_LOG_LEVEL, logLevelOption.toString().toUpperCase());
-            preferences.putProperty(SsmPreferences.AUDIT_WINDOW_SERVICE_NAME, serviceName);
-            preferences.putProperty(SsmPreferences.AUDIT_WINDOW_MESSAGE, message);
-            preferences.putProperty(SsmPreferences.AUDIT_WINDOW_AUDIT_TYPE, auditType.toString().toUpperCase());
-            preferences.putProperty(SsmPreferences.AUDIT_WINDOW_NODE, node);
+        preferences.putProperty(SsmPreferences.AUDIT_WINDOW_LOG_LEVEL, logLevelOption.toString().toUpperCase());
+        preferences.putProperty(SsmPreferences.AUDIT_WINDOW_SERVICE_NAME, serviceName);
+        preferences.putProperty(SsmPreferences.AUDIT_WINDOW_MESSAGE, message);
+        preferences.putProperty(SsmPreferences.AUDIT_WINDOW_AUDIT_TYPE, auditType.toString().toUpperCase());
+        preferences.putProperty(SsmPreferences.AUDIT_WINDOW_NODE, node);
 
-            if (requestId != null) {
-                preferences.putProperty(SsmPreferences.AUDIT_WINDOW_REQUEST_ID, requestId);
-            } else {
-                preferences.remove(SsmPreferences.AUDIT_WINDOW_REQUEST_ID);
-            }
+        if (requestId != null) {
+            preferences.putProperty(SsmPreferences.AUDIT_WINDOW_REQUEST_ID, requestId);
+        } else {
+            preferences.remove(SsmPreferences.AUDIT_WINDOW_REQUEST_ID);
+        }
 
-            if (userName != null) {
-                preferences.putProperty(SsmPreferences.AUDIT_WINDOW_USER_NAME, userName);
-            } else {
-                preferences.remove(SsmPreferences.AUDIT_WINDOW_USER_NAME);
-            }
-            if (userIdOrDn != null) {
-                preferences.putProperty(SsmPreferences.AUDIT_WINDOW_USER_ID_OR_DN, userIdOrDn);
-            } else {
-                preferences.remove(SsmPreferences.AUDIT_WINDOW_USER_ID_OR_DN);
-            }
-            if (messageId != null) {
-                String msgIdPreference = messageId.equals(Integer.MIN_VALUE)? controlPanel.auditCodeTextField.getText() : messageId.toString();
-                preferences.putProperty(SsmPreferences.AUDIT_WINDOW_MESSAGE_ID, msgIdPreference);
-            } else {
-                preferences.remove(SsmPreferences.AUDIT_WINDOW_MESSAGE_ID);
-            }
-            if (paramValue != null) {
-                preferences.putProperty(SsmPreferences.AUDIT_WINDOW_PARAM_VALUE, paramValue);
-            } else {
-                preferences.remove(SsmPreferences.AUDIT_WINDOW_PARAM_VALUE);
-            }
-            if (entityTypeName != null) {
-                preferences.putProperty(SsmPreferences.AUDIT_WINDOW_ENTITY_TYPE, entityTypeName);
-            } else {
-                preferences.remove(SsmPreferences.AUDIT_WINDOW_ENTITY_TYPE);
-            }
-            if (entityId != null) {
-                String entityIdPreference = entityId.equals(Long.MIN_VALUE)? controlPanel.entityIdTextField.getText() : entityId.toString();
-                preferences.putProperty(SsmPreferences.AUDIT_WINDOW_ENTITY_ID, entityIdPreference);
-            } else {
-                preferences.remove(SsmPreferences.AUDIT_WINDOW_ENTITY_ID);
-            }
+        if (userName != null) {
+            preferences.putProperty(SsmPreferences.AUDIT_WINDOW_USER_NAME, userName);
+        } else {
+            preferences.remove(SsmPreferences.AUDIT_WINDOW_USER_NAME);
+        }
+        if (userIdOrDn != null) {
+            preferences.putProperty(SsmPreferences.AUDIT_WINDOW_USER_ID_OR_DN, userIdOrDn);
+        } else {
+            preferences.remove(SsmPreferences.AUDIT_WINDOW_USER_ID_OR_DN);
+        }
+        if (messageId != null) {
+            String msgIdPreference = messageId.equals(Integer.MIN_VALUE)? controlPanel.auditCodeTextField.getText() : messageId.toString();
+            preferences.putProperty(SsmPreferences.AUDIT_WINDOW_MESSAGE_ID, msgIdPreference);
+        } else {
+            preferences.remove(SsmPreferences.AUDIT_WINDOW_MESSAGE_ID);
+        }
+        if (paramValue != null) {
+            preferences.putProperty(SsmPreferences.AUDIT_WINDOW_PARAM_VALUE, paramValue);
+        } else {
+            preferences.remove(SsmPreferences.AUDIT_WINDOW_PARAM_VALUE);
+        }
+        if (entityTypeName != null) {
+            preferences.putProperty(SsmPreferences.AUDIT_WINDOW_ENTITY_TYPE, entityTypeName);
+        } else {
+            preferences.remove(SsmPreferences.AUDIT_WINDOW_ENTITY_TYPE);
+        }
+        if (entityId != null) {
+            String entityIdPreference = entityId.equals(Long.MIN_VALUE)? controlPanel.entityIdTextField.getText() : entityId.toString();
+            preferences.putProperty(SsmPreferences.AUDIT_WINDOW_ENTITY_ID, entityIdPreference);
+        } else {
+            preferences.remove(SsmPreferences.AUDIT_WINDOW_ENTITY_ID);
         }
     }
 
@@ -1140,7 +1057,7 @@ public class LogPanel extends JPanel {
         boolean expanded = false;
 
         if (logSplitPane != null) {
-            expanded = logSplitPane.getDividerLocation() <= (logSplitPane.getSize().getHeight() - 25);
+            expanded = (double) logSplitPane.getDividerLocation() <= (logSplitPane.getSize().getHeight() - 25.0);
         }
 
         return expanded;
@@ -1238,8 +1155,6 @@ public class LogPanel extends JPanel {
         msg += nonull(TextUtils.pad("Time", maxWidth) + ": ", sdf.format( lm.getTimestamp() ));
         msg += nonull(TextUtils.pad("Severity", maxWidth) + ": ", lm.getSeverity());
         msg += nonule(TextUtils.pad("Request Id", maxWidth) + ": ", lm.getReqId());
-        msg += nonull(TextUtils.pad("Class", maxWidth) + ": ", lm.getMsgClass());
-        msg += nonull(TextUtils.pad("Method", maxWidth) + ": ", lm.getMsgMethod());
         msg += nonull(TextUtils.pad("Message", maxWidth) + ": ", lm.getMsgDetails());
         if (lm instanceof AuditLogMessage) {
             msg += nonull(TextUtils.pad("Audit Record ID", maxWidth) + ": ", ((AuditLogMessage) lm).getAuditRecord().getId());
@@ -1262,8 +1177,8 @@ public class LogPanel extends JPanel {
                 msg += TextUtils.pad("Admin IP", maxWidth) + ": " + arec.getIpAddress() + "\n";
                 msg += "\n";
                 msg += TextUtils.pad("Action", maxWidth) + ": " + fixAction(aarec.getAction()) + "\n";
-                if (AdminAuditRecord.ACTION_LOGIN != aarec.getAction() &&
-                        AdminAuditRecord.ACTION_OTHER != aarec.getAction()) {
+                if ( (int) AdminAuditRecord.ACTION_LOGIN != (int) aarec.getAction() &&
+                        (int) AdminAuditRecord.ACTION_OTHER != (int) aarec.getAction() ) {
                     msg += TextUtils.pad("Entity Name", maxWidth) + ": " + arec.getName() + "\n";
                     msg += TextUtils.pad("Entity ID", maxWidth) + ": " + aarec.getEntityOid() + "\n";
                     msg += TextUtils.pad("Entity Type", maxWidth) + ": " + fixType(aarec.getEntityClassname()) + "\n";
@@ -1514,7 +1429,7 @@ public class LogPanel extends JPanel {
     private String fixComponent(int componentId) {
         com.l7tech.gateway.common.Component c = fromId(componentId);
         if (c == null) return "Unknown Component #" + componentId;
-        StringBuffer ret = new StringBuffer(c.getName());
+        StringBuilder ret = new StringBuilder(c.getName());
         while (c.getParent() != null && c.getParent() != c) {
             ret.insert(0, ": ");
             ret.insert(0, c.getParent().getName());
@@ -1559,22 +1474,6 @@ public class LogPanel extends JPanel {
             default:
                 return "Unknown Action '" + action + "'";
         }
-    }
-
-    /**
-     * Return the log message filter level.
-     * @return int msgFilterLevel - Message filter level.
-     */
-    public /*int*/LogLevelOption getMsgFilterLevel(){
-        return logLevelOption;
-    }
-
-    public String getMsgFilterThreadId() {
-        return threadId;
-    }
-
-    public String getMsgFilterMessage() {
-        return message;
     }
 
     /**
@@ -1627,46 +1526,14 @@ public class LogPanel extends JPanel {
         if (bottomPane == null) {
             bottomPane = new JPanel();
             bottomPane.setLayout(new BorderLayout());
-            if(!isAuditType){
-               bottomPane.add(getFilterLabel(), BorderLayout.NORTH);
-            }
             bottomPane.add(getStatusPane(), BorderLayout.WEST);
-
-            if (!isAuditType) bottomPane.add(getMicroControlPane(), BorderLayout.CENTER);
-
 
             JPanel buttonPanel = new JPanel();
             //buttonPanel.add(getSearchButton());
             bottomPane.add(buttonPanel, BorderLayout.EAST);
-            if(!isAuditType) getSearchButton().setEnabled(false);
         }
 
         return bottomPane;
-    }
-
-    private JLabel getFilterLabel() {
-        if(filterLabel == null) {
-            filterLabel = new JLabel("Caution! Constraint may exclude some events.");
-            filterLabel.setHorizontalAlignment(SwingConstants.CENTER);
-            filterLabel.setVisible(false);
-            filterLabel.setBackground(new Color(0xFF, 0xFF, 0xe1));
-            filterLabel.setOpaque(true);
-        }
-
-        return filterLabel;
-    }
-
-    /*
-     * Get the small control panel used for log viewing
-     */
-    private JPanel getMicroControlPane() {
-        JPanel microControlPane = new JPanel();
-        microControlPane.setLayout(new BorderLayout());
-
-        controlPanel.autoRefreshCheckBox.setSelected(true);
-        microControlPane.add(controlPanel.autoRefreshCheckBox, BorderLayout.EAST);
-
-        return microControlPane;
     }
 
     /**
@@ -1685,7 +1552,7 @@ public class LogPanel extends JPanel {
         if (msgTotal == null) {
             msgTotal = new JLabel(MSG_TOTAL_PREFIX + "0");
             msgTotal.setFont(new java.awt.Font("Dialog", 0, 12));
-            msgTotal.setAlignmentY(0);
+            msgTotal.setAlignmentY( 0.0F );
         }
         return msgTotal;
     }
@@ -1694,7 +1561,7 @@ public class LogPanel extends JPanel {
         if (sigStatusLabel == null) {
             sigStatusLabel = new JLabel();
             sigStatusLabel.setFont(new java.awt.Font("Dialog", 0, 12));
-            sigStatusLabel.setAlignmentY(0);
+            sigStatusLabel.setAlignmentY( 0.0F );
         }
 
         return sigStatusLabel;
@@ -1769,7 +1636,7 @@ public class LogPanel extends JPanel {
                     if (logSplitPane == null) {
                         return;
                     }
-                    double logSplitPaneSplitLocation = logSplitPane.getDividerLocation() / (double) (logSplitPane.getHeight() - logSplitPane.getDividerSize());
+                    double logSplitPaneSplitLocation = (double) logSplitPane.getDividerLocation() / (double) (logSplitPane.getHeight() - logSplitPane.getDividerSize());
                     preferences.putProperty(SPLIT_PROPERTY_NAME, String.valueOf(logSplitPaneSplitLocation));
                 }
             });
@@ -2113,7 +1980,7 @@ public class LogPanel extends JPanel {
             lastUpdateTimeLabel = new JLabel();
             lastUpdateTimeLabel.setFont(new java.awt.Font("Dialog", 0, 12));
             lastUpdateTimeLabel.setText("");
-            lastUpdateTimeLabel.setAlignmentY(0);
+            lastUpdateTimeLabel.setAlignmentY( 0.0F );
         }
 
         return lastUpdateTimeLabel;
@@ -2132,25 +1999,17 @@ public class LogPanel extends JPanel {
         tableColumnWidths[LOG_MSG_NUMBER_COLUMN_INDEX] = 75;
         tableColumnWidths[LOG_NODE_NAME_COLUMN_INDEX] = 50;
         tableColumnWidths[LOG_TIMESTAMP_COLUMN_INDEX] = 140;
-        tableColumnWidths[LOG_THREAD_COLUMN_INDEX] = 60;
         tableColumnWidths[LOG_SEVERITY_COLUMN_INDEX] = 60;
         tableColumnWidths[LOG_SERVICE_COLUMN_INDEX] = 100;
         tableColumnWidths[LOG_MSG_DETAILS_COLUMN_INDEX] = 500;
 
         // Add columns according to configuration
-        if (isAuditType) { // only audit record has digital signature
-            columnModel.addColumn(new TableColumn(LOG_SIGNATURE_COLUMN_INDEX, tableColumnWidths[LOG_SIGNATURE_COLUMN_INDEX]));
-            columnModel.addColumn(new TableColumn(LOG_MSG_NUMBER_COLUMN_INDEX, tableColumnWidths[LOG_MSG_NUMBER_COLUMN_INDEX]));
-        }
+        columnModel.addColumn(new TableColumn(LOG_SIGNATURE_COLUMN_INDEX, tableColumnWidths[LOG_SIGNATURE_COLUMN_INDEX]));
+        columnModel.addColumn(new TableColumn(LOG_MSG_NUMBER_COLUMN_INDEX, tableColumnWidths[LOG_MSG_NUMBER_COLUMN_INDEX]));
         columnModel.addColumn(new TableColumn(LOG_NODE_NAME_COLUMN_INDEX, tableColumnWidths[LOG_NODE_NAME_COLUMN_INDEX]));
         columnModel.addColumn(new TableColumn(LOG_TIMESTAMP_COLUMN_INDEX, tableColumnWidths[LOG_TIMESTAMP_COLUMN_INDEX]));
-        if (!isAuditType) {
-            columnModel.addColumn(new TableColumn(LOG_THREAD_COLUMN_INDEX, tableColumnWidths[LOG_THREAD_COLUMN_INDEX]));
-        }
         columnModel.addColumn(new TableColumn(LOG_SEVERITY_COLUMN_INDEX, tableColumnWidths[LOG_SEVERITY_COLUMN_INDEX]));
-        if (isAuditType) { // show the service name if we are displaying audit messages
-            columnModel.addColumn(new TableColumn(LOG_SERVICE_COLUMN_INDEX, tableColumnWidths[LOG_SERVICE_COLUMN_INDEX]));
-        }
+        columnModel.addColumn(new TableColumn(LOG_SERVICE_COLUMN_INDEX, tableColumnWidths[LOG_SERVICE_COLUMN_INDEX]));
         columnModel.addColumn(new TableColumn(LOG_MSG_DETAILS_COLUMN_INDEX, tableColumnWidths[LOG_MSG_DETAILS_COLUMN_INDEX]));
 
         // Set headers
@@ -2232,14 +2091,8 @@ public class LogPanel extends JPanel {
      */
     private AuditLogTableSorterModel getFilteredLogTableSorter() {
         if (auditLogTableSorterModel == null) {
-            //todo [Donal] add generics. The model should know what it holds.
-            if (isAuditType) {
-                auditLogTableSorterModel = new AuditLogTableSorterModel(getLogTableModel(), isAuditType ? GenericLogAdmin.TYPE_AUDIT : GenericLogAdmin.TYPE_LOG);
-            } else {
-                auditLogTableSorterModel = new AuditLogTableSorterModel(getLogTableModel(), isAuditType ? GenericLogAdmin.TYPE_AUDIT : GenericLogAdmin.TYPE_LOG);
-            }
+            auditLogTableSorterModel = new AuditLogTableSorterModel(getLogTableModel());
         }
-
         return auditLogTableSorterModel;
     }
 
@@ -2308,11 +2161,7 @@ public class LogPanel extends JPanel {
             disableSearch();
         }
 
-        final long duration = isAuditType ? durationMillis : System.currentTimeMillis() /* i.e., unlimited */;
-
-        if (isAuditType) {
-            isSignAudits(true); // updates cached value
-        }
+        isSignAudits(true); // updates cached value
 
         // retrieve the new logs
         Window window = SwingUtilities.getWindowAncestor(this);
@@ -2321,13 +2170,9 @@ public class LogPanel extends JPanel {
 
             String nodeToUse = node;
 
-            if (!isAuditType) {
-                nodeToUse = nodeId;
-
-            }
             //construct a LogRequest for the current search criteria
             LogRequest logRequest = new LogRequest.Builder().
-                startMsgDate(new Date(System.currentTimeMillis() - duration)).
+                startMsgDate(new Date(System.currentTimeMillis() - durationMillis)).
                 nodeName(nodeToUse).
                 auditType(auditType).
                 logLevel(logLevelOption.getLevel()).
@@ -2366,9 +2211,7 @@ public class LogPanel extends JPanel {
             disableSearch();
         }
 
-        if (isAuditType) {
-            isSignAudits(true); // updates cached value
-        }
+        isSignAudits(true); // updates cached value
 
         // retrieve the new logs
         Window window = SwingUtilities.getWindowAncestor(this);
@@ -2462,61 +2305,6 @@ public class LogPanel extends JPanel {
                 getAssociatedLogsTable().getTableSorter().clear();
                 displayedLogMessage = null;
             }
-        }
-    }
-
-    private void updateMsgFilter() {
-        // update filter warning
-        JLabel filterWarn = getFilterLabel();
-        if(threadId.trim().length() > 0 ||
-           message.trim().length() > 0) {
-            filterWarn.setVisible(true);
-        }
-        else {
-            filterWarn.setVisible(false);
-        }
-
-        // get the selected row index
-        int selectedRowIndexOld = getMsgTable().getSelectedRow();
-        String msgNumSelected = null;
-
-        // save the number of selected message
-        if (selectedRowIndexOld >= 0) {
-            msgNumSelected = getMsgTable().getModel().getValueAt(selectedRowIndexOld, LOG_MSG_NUMBER_COLUMN_INDEX).toString();
-        }
-
-        ((AuditLogTableSorterModel) getMsgTable().getModel()).applyNewMsgFilter(logLevelOption, threadId, message);
-
-        if (msgNumSelected != null) {
-            setSelectedRow(msgNumSelected);
-        }
-
-        updateMsgTotal();
-    }
-
-    /*
-     * Update the filter level.
-     *
-     * @param newFilterLevel  The new filter level to be applied.
-     */
-    private void updateMsgFilterLevel(LogLevelOption newFilterLevel) {
-        if (logLevelOption != newFilterLevel) {
-            logLevelOption = newFilterLevel;
-            if(!isAuditType) updateMsgFilter();
-        }
-    }
-
-    private void updateMsgFilterThreadId(String threadIdMatch) {
-        if (threadIdMatch!=null && !threadIdMatch.equals(threadId)) {
-            threadId = threadIdMatch;
-            if(!isAuditType) updateMsgFilter(); //probably don't need this since the thread id text field isn't shown in the Audit Window
-        }
-    }
-
-    private void updateMsgFilterMessage(String messageMatch) {
-        if (messageMatch!=null && !messageMatch.equals(message)) {
-            message = messageMatch;
-            if(!isAuditType) updateMsgFilter();
         }
     }
 
@@ -2687,9 +2475,7 @@ public class LogPanel extends JPanel {
             LogMessage logMessage = logTableSorterModel.getLogMessageAtRow(i);
             if ( logMessage instanceof AuditLogMessage) {
                 data.add(new WriteableLogMessage((AuditLogMessage)logMessage));
-            } else if ( logMessage instanceof LogRecordLogMessage) {
-                data.add(new WriteableLogMessage((LogRecordLogMessage)logMessage));
-            } else {
+            }  else {
                 data.add(new LazyWriteableLogMessage(logMessage));
             }
         }
@@ -2735,9 +2521,9 @@ public class LogPanel extends JPanel {
         Date endDate;
         if (range >= 0) {
             startDate = date;
-            endDate = new Date(date.getTime() + range * MILLIS_IN_HOUR);
+            endDate = new Date(date.getTime() + (long) range * MILLIS_IN_HOUR);
         } else {
-            startDate = new Date(date.getTime() + range * MILLIS_IN_HOUR);
+            startDate = new Date(date.getTime() + (long) range * MILLIS_IN_HOUR);
             endDate = date;
         }
         controlPanel.timeRangePicker.setStartTime(startDate);
@@ -2791,9 +2577,7 @@ public class LogPanel extends JPanel {
                 }
                 Map<Long, LogMessage> loadedLogs = new HashMap<Long, LogMessage>();
                 for (WriteableLogMessage message : data) {
-                    LogMessage lm = message.ssgLogRecord instanceof AuditRecord ?
-                            new AuditLogMessage((AuditRecord)message.ssgLogRecord) :
-                            new LogRecordLogMessage(message.ssgLogRecord);
+                    LogMessage lm =  new AuditLogMessage((AuditRecord)message.ssgLogRecord);
                     lm.setNodeName(message.nodeName);
                     loadedLogs.put(lm.getMsgNumber(), lm);
                 }
@@ -2822,17 +2606,13 @@ public class LogPanel extends JPanel {
 
     public static class WriteableLogMessage implements Comparable, Serializable {
         private String nodeName;
-        private SSGLogRecord ssgLogRecord;
+        private AuditRecord ssgLogRecord;
 
         public WriteableLogMessage( AuditLogMessage lm ) {
             nodeName = lm.getNodeName();
             ssgLogRecord = lm.getAuditRecord();
         }
 
-        public WriteableLogMessage( LogRecordLogMessage lm ) {
-            nodeName = lm.getNodeName();
-            ssgLogRecord = lm.getSSGLogRecord();
-        }
 
         protected WriteableLogMessage() {
         }
@@ -2881,10 +2661,8 @@ public class LogPanel extends JPanel {
         private JLabel requestIdLabel;
         private JTextField requestIdTextField;
         private SquigglyTextField nodeTextField;
-        private JTextField threadIdTextField;
         private JComboBox auditTypeComboBox;
         private JComboBox levelComboBox;
-        private JPanel threadIdPane;
         private JPanel requestIdPane;
         private JPanel servicePane;
         private JPanel auditTypePane;

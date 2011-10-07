@@ -34,15 +34,8 @@ public class AuditRecordTest {
             "version", 
 
             // inherited from LogRecord and probably not useful to include in sig
-            "sourceMethodName",
-            "sourceClassName",
-            "threadID",
-            "resourceBundle",
-            "resourceBundleName",
-            "loggerName",
             "sequenceNumber",
-            "thrown",
-            "parameters",  // TODO these should probably be included anyway
+            "thrown", //TODO [steve] remove this
 
             // TODO These should probably be included
             "mappingValuesEntity",
@@ -115,10 +108,6 @@ public class AuditRecordTest {
             newProp = "INFO".equals(prop) ? "WARNING" : "INFO";
         } else if ("level".equals(propName)) {
             newProp = Level.INFO.equals(prop) ? Level.WARNING : Level.INFO;
-        } else if ("parameters".equals(propName)) {
-            newProp = prop != null ? null : new Object[] { "yop" };
-        } else if ("thrown".equals(propName)) {
-            newProp = prop != null ? null : new RuntimeException("yop");
         } else if (pd.getPropertyType().isAssignableFrom(RequestId.class)) {
             newProp = new RequestId(gen++, seq++);
         } else if ("authenticationType".equals(propName)) {
@@ -194,8 +183,7 @@ public class AuditRecordTest {
 
     public static AuditRecord makeAdminAuditRecord() {
         AuditRecord auditRecord = new AdminAuditRecord(Level.INFO, "node1", 1234, User.class.getName(), "testuser", AdminAuditRecord.ACTION_UPDATED, "updated", -1, "admin", "1111", "2.3.4.5");
-        auditRecord.setReqId(new RequestId(3, 555));
-        auditRecord.setThrown(new RuntimeException("main record throwable"));
+        auditRecord.setStrRequestId(new RequestId(3, 555).toString());
         final AuditDetail detail1 = new AuditDetail(Messages.EXCEPTION_INFO_WITH_MORE_INFO, new String[]{"foomp"}, new IllegalArgumentException("Exception for foomp detail"));
         auditRecord.getDetails().add(detail1);
         return auditRecord;
@@ -203,7 +191,6 @@ public class AuditRecordTest {
 
     public static AuditRecord makeMessageAuditRecord() {
         AuditRecord auditRecord = new MessageSummaryAuditRecord(Level.INFO, "node1", "2342345-4545", AssertionStatus.NONE, "3.2.1.1", null, 4833, null, 9483, 200, 232, 8859, "ACMEWarehouse", "listProducts", true, SecurityTokenType.HTTP_BASIC, -2, "alice", "41123", 49585);
-        auditRecord.setThrown(new RuntimeException("main record throwable"));
         final AuditDetail detail1 = new AuditDetail(Messages.EXCEPTION_INFO_WITH_MORE_INFO, new String[]{"foomp"}, new IllegalArgumentException("Exception for foomp detail"));
         auditRecord.getDetails().add(detail1);
         return auditRecord;
@@ -211,7 +198,6 @@ public class AuditRecordTest {
 
     public static AuditRecord makeSystemAuditRecord() {
         AuditRecord auditRecord = new SystemAuditRecord(Level.INFO, "node1", Component.GW_TRUST_STORE, "One or more trusted certificates has expired or is expiring soon", false, -1, null, null, "Checking", "192.168.1.42");
-        auditRecord.setThrown(new RuntimeException("main record throwable"));
         return auditRecord;
     }
 }

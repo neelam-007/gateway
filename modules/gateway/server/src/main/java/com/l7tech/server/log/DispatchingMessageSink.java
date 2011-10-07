@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Collection;
 import java.util.ArrayList;
 
+import com.l7tech.gateway.common.log.SinkConfiguration;
 import com.l7tech.util.ResourceUtils;
 
 /**
@@ -94,5 +95,16 @@ public class DispatchingMessageSink implements MessageSink {
         for ( MessageSink sink : sinks ) {
             ResourceUtils.closeQuietly( sink );
         }
+    }
+
+    public final MessageSinkSupport getMessageSink(SinkConfiguration sinkConfig) {
+        for ( MessageSink sink : list.get() ) {
+            if(sink instanceof MessageSinkSupport){
+                MessageSinkSupport support = (MessageSinkSupport) sink;
+                if (support.getConfiguration().equals(sinkConfig))
+                    return support;
+            }
+        }
+        return null;
     }
 }

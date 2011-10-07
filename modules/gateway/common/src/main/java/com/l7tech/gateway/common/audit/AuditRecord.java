@@ -1,13 +1,7 @@
-/*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.gateway.common.audit;
 
+import com.l7tech.gateway.common.RequestId;
 import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.gateway.common.logging.SSGLogRecord;
 import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.util.TextUtils;
@@ -15,7 +9,9 @@ import com.l7tech.util.TextUtils;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.Serializable;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.security.MessageDigest;
@@ -29,12 +25,21 @@ import java.security.NoSuchAlgorithmException;
  * Note: instances are mostly treated as immutable apart from Details, which can be added after instance construction.
  *
  * @author alex
- * @version $Revision$
  */
-public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, PersistentEntity {
+public abstract class AuditRecord implements NamedEntity, PersistentEntity, Serializable {
+    private static Logger logger = Logger.getLogger(AuditRecord.class.getName());
+    private static AtomicLong globalSequenceNumber = new AtomicLong(0L);
+
+    public static final String SERSEP = ":";
+
     private long oid;
     private int version;
     private String signature;
+    private String nodeId;
+    private String message;
+    private Level level;
+    private long millis;
+    private final long sequenceNumber;
 
     /** OID of the IdentityProvider that the requesting user, if any, belongs to.  -1 indicates unknown. */
     protected long identityProviderOid = IdentityProviderConfig.DEFAULT_OID;
@@ -42,6 +47,14 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
     protected String userName;
     /** Unique ID of the user that is making the request (if known), or null otherwise. */
     protected String userId;
+    /** Unique ID for the request if any, or null otherwise */
+    protected String requestId;
+    /** the IP address of the entity that caused this AuditRecord to be created. */
+    protected String ipAddress;
+    /** the name of the service or system affected by event that generated the AuditRecord */
+    protected String name;
+    /** the list of {@link com.l7tech.gateway.common.audit.AuditDetail}s associated with this AuditRecord */
+    private Set<AuditDetail> details = new HashSet<AuditDetail>();
 
     private static final Comparator<AuditDetail> COMPARE_BY_ORDINAL = new Comparator<AuditDetail>() {
         @Override
@@ -55,28 +68,11 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
     /** @deprecated to be called only for serialization and persistence purposes! */
     @Deprecated
     protected AuditRecord() {
+        this.sequenceNumber = globalSequenceNumber.incrementAndGet();
+        this.level = Level.FINEST;
+        this.millis = System.currentTimeMillis();
     }
 
-    @Override
-    public String getMessage() {
-        return super.getMessage();
-    }
-
-    @Override
-    public String getStrLvl() {
-        return super.getStrLvl();
-    }
-
-    @Override
-    public String getNodeId() {
-        return super.getNodeId();
-    }
-
-    @Override
-    public long getMillis() {
-        return super.getMillis();
-    }
-   
     /**
      * Fills in the fields that are common to all types of AuditRecord
      * @param level the {@link Level} of this record.
@@ -89,7 +85,11 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
      * @param userId the OID or DN of the user who was authenticated, or null if the request was not authenticated.
      */
     protected AuditRecord(Level level, String nodeId, String ipAddress, long identityProviderOid, String userName, String userId, String name, String message) {
-        super(level, nodeId, TextUtils.truncStringMiddle(message, 254));
+        this.sequenceNumber = globalSequenceNumber.incrementAndGet();
+        this.level = level;
+        this.millis = System.currentTimeMillis();
+        this.message = TextUtils.truncStringMiddle(message, 254);
+        this.nodeId = nodeId;
         this.name = TextUtils.truncStringMiddle(name, 254);
         this.ipAddress = ipAddress;
         this.identityProviderOid = identityProviderOid;
@@ -97,10 +97,57 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
         this.userId = userId;
     }
 
-    @Override
+    /**
+     * Get the logging level of the log. For serialization purposes only.
+     * @return String the logging level.
+     */
+    public String getStrLvl() {
+        return getLevel().getName();
+    }
+
+    /**
+     * Set the logging level of the log. For serialization purposes only.
+     * @param arg  the logging level of the log.
+     * @deprecated for serialization use only
+     */
+    @Deprecated
+    public void setStrLvl(String arg) {
+        setLevel(Level.parse(arg));
+    }
+
+    public String getNodeId() {
+        return nodeId;
+    }
+
+    /**
+     * Set node Id. The node is the one on which this audit was generated.
+     *
+     * @param nodeId  the node id.
+     * @deprecated for serialization use only
+     */
+    @Deprecated
+    public void setNodeId(String nodeId) {
+        this.nodeId = nodeId;
+    }
+
+    public long getMillis() {
+        return millis;
+    }
+
+    /**
+     * @deprecated for serialization use only
+     */
+    @Deprecated
+    public void setMillis( final long millis ) {
+        this.millis = millis;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
     public void setMessage(String message) {
-        message = TextUtils.truncStringMiddle(message, 254);
-        super.setMessage(message);
+        this.message = TextUtils.truncStringMiddle(message, 254);
     }
 
     @Override
@@ -169,14 +216,13 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
         this.name = name;
     }
 
-    /** the IP address of the entity that caused this AuditRecord to be created. */
-    protected String ipAddress;
+    public Level getLevel() {
+        return level;
+    }
 
-    /** the name of the service or system affected by event that generated the AuditRecord */
-    protected String name;
-
-    /** the list of {@link com.l7tech.gateway.common.audit.AuditDetail}s associated with this AuditRecord */
-    private Set<AuditDetail> details = new HashSet<AuditDetail>();
+    public void setLevel( final Level level ) {
+        this.level = level;
+    }
 
     /**
      * Gets the OID of the {@link com.l7tech.identity.IdentityProviderConfig IdentityProvider} against which the user authenticated, or {@link com.l7tech.identity.IdentityProviderConfig#DEFAULT_OID} if the request was not authenticated.
@@ -235,6 +281,49 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
     }
 
     /**
+     * Get the id of the request being processed when this log record was generated.
+     *
+     * @return RequestId the id of the request associated with the log.
+     * @see RequestId
+     */
+    public RequestId getReqId() {
+        if (requestId == null || requestId.length() <= 0) return null;
+        return new RequestId(requestId);
+    }
+
+    /**
+     * Get the requestId of the log record. For serialization purposes only.
+     * @return String the request Id.
+     */
+    public String getStrRequestId() {
+        return requestId;
+    }
+
+    /**
+     * Set the requestId of the log record. For serialization purposes only.
+     * @param requestId the request Id.
+     * @deprecated for serialization use only
+     */
+    @Deprecated
+    public void setStrRequestId(String requestId) {
+        this.requestId = requestId;
+    }
+
+    /**
+     * Get the (transient) sequence number for this audit.
+     *
+     * <p>WARNING: This is not a persistent value, the value for an audit
+     * record will change each time the object is recreated. This value IS NOT
+     * unique across the cluster and the sequence will restart when the Gateway
+     * is restarted.</p>
+     *
+     * @return The transient sequence number.
+     */
+    public long getSequenceNumber() {
+        return sequenceNumber;
+    }
+
+    /**
      * Ensure we don't send any Hibernate implementation classes over the wire.
      *
      * @param out
@@ -247,8 +336,6 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
 
     public abstract void serializeOtherProperties(OutputStream out, boolean includeAllOthers) throws IOException;
     
-    public static final String SERSEP = ":";
-
     // NOTE: AuditExporterImpl must use the same columns and ordering as this method
     public final void serializeSignableProperties(OutputStream out) throws IOException {
         outputProperties(out, true);
@@ -300,7 +387,7 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
         serializeOtherProperties(out, includeAllOthers);
 
         if (details != null && details.size() > 0) {
-            ArrayList<AuditDetail> sorteddetails = new ArrayList<AuditDetail>(details);
+            List<AuditDetail> sorteddetails = new ArrayList<AuditDetail>(details);
             Collections.sort(sorteddetails);
 
             out.write("[".getBytes());
@@ -333,8 +420,6 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
         this.signature = signature;
     }
 
-    private static Logger logger = Logger.getLogger(AuditRecord.class.getName());
-
     public byte[] computeSignatureDigest() {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             MessageDigest digest;
@@ -358,5 +443,32 @@ public abstract class AuditRecord extends SSGLogRecord implements NamedEntity, P
             }
 
         return digestvalue;
+    }
+
+    /**
+     * Check if the two <CODE>AuditRecord</CODE> objects are the same.
+     *
+     * @param obj the object to be compared with.
+     * @return TRUE if the two objects are the same. FALSE otherwise.
+     */
+    public boolean equals(Object obj) {
+        AuditRecord theOtherOne;
+        if (obj instanceof AuditRecord) theOtherOne = (AuditRecord)obj;
+        else return false;
+        if (nodeId != null) {
+            if (!nodeId.equals(theOtherOne.getNodeId())) return false;
+        }
+        if (requestId != null) {
+            if (!requestId.equals(theOtherOne.getStrRequestId())) return false;
+        }
+        //return super.equals(obj);
+        return true;
+    }
+
+    public int hashCode() {
+        int result;
+        result = (requestId != null ? requestId.hashCode() : 0);
+        result = 31 * result + (nodeId != null ? nodeId.hashCode() : 0);
+        return result;
     }
 }

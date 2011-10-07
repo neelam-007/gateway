@@ -101,7 +101,7 @@ public abstract class Authorizer {
                 if ( perm.getScope().isEmpty() ) return true;
             } else if(attempted instanceof AttemptedOther){
                 AttemptedOther attemptedOther = (AttemptedOther) attempted;
-                if (perm.getOtherOperationName().equals(attemptedOther.getOtherOperationName())){
+                if (perm.getOtherOperationName()!=null && perm.getOtherOperationName().equals(attemptedOther.getOtherOperationName())){
                     return true;
                 }
             }

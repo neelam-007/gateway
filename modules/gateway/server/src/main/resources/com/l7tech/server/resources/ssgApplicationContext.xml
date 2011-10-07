@@ -412,12 +412,6 @@
                                 <value>logon.sessionExpiry</value>
                             </list>
                         </entry>
-                        <entry key="logRecordRingBuffer">
-                            <list>
-                                <value>logBuffer.paramSize</value>
-                                <value>logBuffer.messageSize</value>
-                            </list>
-                        </entry>
                         <entry key="messageCacheStashManagerFactory">
                             <list>
                                 <value>messageCacheDiskThreshold</value>
@@ -1209,21 +1203,6 @@
         <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
 
-    <!-- server side log ring buffer -->
-    <bean id="logRecordRingBuffer" class="com.l7tech.server.log.LogRecordRingBuffer" init-method="init">
-        <property name="loggerName" value="com.l7tech"/>
-        <property name="bufferSize" value="500"/>
-        <!-- NOTE that the max retrieval block size is 600, this should be less than that -->
-        <property name="config" ref="serverConfig"/>
-    </bean>
-
-    <!-- server side log manager -->
-    <bean id="logRecordManager" class="com.l7tech.server.audit.LogRecordManager">
-        <constructor-arg ref="clusterInfoManager"/>
-        <constructor-arg ref="logRecordRingBuffer"/>
-        <constructor-arg ref="clusterContextFactory"/>
-    </bean>
-
     <!-- server side audit archiver -->
     <bean id="auditArchiver" class="com.l7tech.server.audit.AuditArchiver">
         <constructor-arg index="0" ref="serverConfig"/>
@@ -1861,6 +1840,9 @@
         <constructor-arg ref="syslogManager"/>
         <constructor-arg ref="trafficLogger"/>
         <constructor-arg ref="applicationEventProxy"/>
+        <constructor-arg ref="clusterInfoManager"/>
+        <constructor-arg ref="clusterContextFactory"/>
+        <constructor-arg ref="roleManager"/>
     </bean>
 
     <bean id="auditLogListenerTarget" class="com.l7tech.server.log.FilteringAuditLogListener">
@@ -2069,6 +2051,7 @@
                     <constructor-arg index="0" value="com.l7tech.identity.Group"/>
                     <constructor-arg index="1" ref="identityProviderFactory"/>
                 </bean>
+                <ref bean="sinkManager"/>
             </list>
         </constructor-arg>
     </bean>

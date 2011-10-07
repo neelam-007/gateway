@@ -108,7 +108,6 @@ public class AuditPolicyEvaluatorTest {
 
     private AuditRecord makeSystemAuditRecord(int idx) {
         AuditRecord auditRecord = new SystemAuditRecord(Level.INFO, "node1", Component.GW_TRUST_STORE, "sysrec#" + idx, false, -1, null, null, "Checking", "192.168.1.42");
-        auditRecord.setThrown(new RuntimeException("main record throwable"));
         return auditRecord;
     }
 

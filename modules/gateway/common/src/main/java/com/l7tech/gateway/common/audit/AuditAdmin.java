@@ -1,18 +1,15 @@
-/*
- * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.gateway.common.audit;
 
 import static com.l7tech.objectmodel.EntityType.AUDIT_RECORD;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.util.OpaqueId;
-import com.l7tech.gateway.common.logging.GenericLogAdmin;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import org.springframework.transaction.annotation.Propagation;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +27,7 @@ import java.util.logging.Level;
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 @Secured(types=AUDIT_RECORD)
 @Administrative
-public interface AuditAdmin extends GenericLogAdmin {
+public interface AuditAdmin {
 
     /**
      * Retrieves the {@link AuditRecord} with the given oid, or null if no such record exists.
@@ -267,5 +264,13 @@ public interface AuditAdmin extends GenericLogAdmin {
      * @return: the list of entity class names.
      */
     @Transactional(readOnly=true)
-    Collection<String> getAllEntityClassNames();    
+    Collection<String> getAllEntityClassNames();
+
+    /**
+     * Get the configured refresh period for the log type.
+     *
+     * @return the configured refresh period (seconds).
+     */
+    @Transactional(propagation= Propagation.SUPPORTS)
+    int getSystemLogRefresh();
 }
