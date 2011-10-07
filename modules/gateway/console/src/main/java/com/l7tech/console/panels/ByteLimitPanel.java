@@ -3,7 +3,10 @@
  */
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.IntegerOrContextVariableValidationRule;
 import com.l7tech.gui.util.*;
+import com.l7tech.policy.variable.Syntax;
+import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -70,14 +73,13 @@ public class ByteLimitPanel extends JPanel {
         validator.addRule(new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
-                try{
-                    long val = Long.parseLong(bytesTextBox.getText());
-                    if (val >= 1 && val <= Integer.MAX_VALUE){
+                if(ValidationUtils.isValidInteger(bytesTextBox.getText(), false, 1,Integer.MAX_VALUE)) return null;
+
+                if (allowContextVars){
+                    if(Syntax.validateStringOnlyReferencesVariables(bytesTextBox.getText()))
                         return null;
-                    }
-                }catch (NumberFormatException e){
-                    if (allowContextVars)
-                        return null;
+                    else
+                         return MessageFormat.format(resources.getString("override.syntax.error"),resources.getString("max.bytes"));
                 }
                 return MessageFormat.format(resources.getString("override.value.error"),resources.getString("max.bytes"),1,Integer.MAX_VALUE);
             }
@@ -97,8 +99,6 @@ public class ByteLimitPanel extends JPanel {
     }
 
     public void setAllowContextVars(boolean allowContextVars){
-        if(this.allowContextVars == allowContextVars)
-            return;
         this.allowContextVars = allowContextVars;
     }
     /**
