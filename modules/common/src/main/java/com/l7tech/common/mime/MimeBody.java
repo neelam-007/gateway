@@ -33,7 +33,7 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
     private static final Logger logger = Logger.getLogger(MimeBody.class.getName());
     private static final int BLOCKSIZE = 4096;
 
-    private static final AtomicLong firstPartMaxBytes = new AtomicLong(0);
+    private static final AtomicLong propertyFirstPartMaxBytes = new AtomicLong(0);
 
     private static final long PREAMBLE_MAX_SIZE = ConfigFactory.getLongProperty( "com.l7tech.common.mime.preambleMaxSize", 1024 * 32 );
     private static final long HEADERS_MAX_SIZE = ConfigFactory.getLongProperty( "com.l7tech.common.mime.headersMaxSize", 1024 * 32 );
@@ -46,6 +46,7 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
 
     private final List partInfos = new ArrayList(); // our PartInfo instances.  current part is (partInfos.size() - 1)
     private final PartInfoImpl firstPart; // equivalent to (PartInfo)partInfos.get(0)
+    private long firstPartMaxBytes = 0 ; // actual limit set for this firstPart, 0 = unlimited
     private final Map partInfosByCid = new HashMap(); // our PartInfo-by-cid lookup.
 
     private final String boundaryStr; // multpart boundary not including initial dashses or any CRLFs; or null if singlepart
@@ -108,8 +109,7 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
                 firstPart = (PartInfoImpl)partInfos.get(0);
                 if (start != null && !(start.equals(firstPart.getContentId(false))))
                     throw new IOException("Multipart content type has a \"start\" parameter, but it doesn't match the cid of the first MIME part.");
-                if (firstPartMaxBytes > 0)
-                    this.mainInputStream.setSizeLimitNonFlagging(firstPartMaxBytes);
+                this.firstPartMaxBytes = firstPartMaxBytes;
             } else {
                 // Single-part message.  Configure first and only part accordingly.
                 boundaryStr = null;
@@ -144,6 +144,8 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
                 };
                 partInfos.add(mainPartInfo);
                 firstPart = mainPartInfo;
+                this.firstPartMaxBytes = firstPartMaxBytes;
+
 
                 final String mainContentId = mainPartInfo.getContentId(true);
                 if (mainContentId != null)
@@ -177,14 +179,18 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
     }
 
     /**
-    * @param firstPartMaxBytes  size limit to enforce for the first part for new MimeBody instances created from now on, or zero for no limit
+    * @param propertyFirstPartMaxBytes  size limit to enforce for the first part for new MimeBody instances created from now on, or zero for no limit
     */
-    public static void setFirstPartMaxBytes(long firstPartMaxBytes) {
-        MimeBody.firstPartMaxBytes.set(firstPartMaxBytes);
+    public static void setPropertyFirstPartMaxBytes(long propertyFirstPartMaxBytes) {
+        MimeBody.propertyFirstPartMaxBytes.set(propertyFirstPartMaxBytes);
     }
 
-    public static long getFirstPartMaxBytes(){
-        return MimeBody.firstPartMaxBytes.get();
+    /**
+     * Value from cluster property "io.xmlPartMaxBytes"
+     * @return size limit to enforce for the first part for new MimeBody instances created from now on, or zero for no limit
+     */
+    public static long getPropertyFirstPartMaxBytes(){
+        return MimeBody.propertyFirstPartMaxBytes.get();
     }
 
 
@@ -610,7 +616,8 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
 
         PartInfoImpl currentPart = (PartInfoImpl)partInfos.get(partInfos.size() - 1);
         final MimeBoundaryTerminatedInputStream in = new MimeBoundaryTerminatedInputStream(boundary, mainInputStream, pushbackSize);
-        currentPart.stashAndCheckContentLength(in);
+        final InputStream inputStream =  new ByteLimitInputStream(in, pushbackSize, currentPart.getPosition()==0 ? firstPartMaxBytes :0 );
+        currentPart.stashAndCheckContentLength(inputStream);
         currentPart.onBodyRead();
         if (in.isLastPartProcessed())
             moreParts = false;
@@ -908,8 +915,8 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
                 return decodeIfNecessary(is, true);
 
             // Prepare to read this Part's body
-            is = new MimeBoundaryTerminatedInputStream(boundary, mainInputStream, pushbackSize);
-            ((MimeBoundaryTerminatedInputStream)is).setEndOfStreamHook(new Runnable() {
+            MimeBoundaryTerminatedInputStream mbtIs = new MimeBoundaryTerminatedInputStream(boundary, mainInputStream, pushbackSize);
+            mbtIs.setEndOfStreamHook(new Runnable() {
                 @Override
                 public void run() {
                     try {
@@ -924,13 +931,14 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
                     }
                 }
             });
-            ((MimeBoundaryTerminatedInputStream)is).setFinalBoundaryHook(new Runnable() {
+            mbtIs.setFinalBoundaryHook(new Runnable() {
                 @Override
                 public void run() {
                     bodyRead = true;
                     moreParts = false;
                 }
             });
+            is = new ByteLimitInputStream(mbtIs, pushbackSize, this.getPosition()== 0 ? firstPartMaxBytes :0 );
 
             // We are ready to return an InputStream.  Do we need to stash the data first?
             if (destroyAsRead) {

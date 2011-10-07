@@ -551,7 +551,7 @@ public class MimeBodyTest {
     public void testSizeLimitMultiPartNonXml() throws Exception {
         final String body = MESS_NONXML;
         final String ctype = MESS_NONXML_CONTENT_TYPE;
-        doTestSizeLimit("Should enforce and fail limit", body, ctype, 512, true);
+        doTestSizeLimit("Should enforce and fail limit", body, ctype, 400, true);
         doTestSizeLimit("Should not fail limit; body too small", body, ctype, 8192, false);
         doTestSizeLimit("Should not fail limit; no limit", body, ctype, 0, false);
     }
@@ -561,7 +561,7 @@ public class MimeBodyTest {
     public void testSizeLimitMultiPartXml() throws Exception {
         final String body = MESS;
         final String ctype = MESS_CONTENT_TYPE;
-        doTestSizeLimit("Should enforce and fail limit", body, ctype, 512, true);
+        doTestSizeLimit("Should enforce and fail limit", body, ctype, 400, true);
         doTestSizeLimit("Should not fail limit; body too small", body, ctype, 8192, false);
         doTestSizeLimit("Should not fail limit; no limit", body, ctype, 0, false);
     }
