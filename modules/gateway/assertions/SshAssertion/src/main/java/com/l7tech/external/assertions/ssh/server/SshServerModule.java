@@ -517,6 +517,9 @@ public class SshServerModule extends TransportModule implements ApplicationListe
                         }
                     }
 
+                    // authenticating with public key, remove password (if any)
+                    session.getIoSession().removeAttribute(MINA_SESSION_ATTR_CRED_PASSWORD);
+
                     if (isAllowedAccess) {
                         session.getIoSession().setAttribute(MINA_SESSION_ATTR_CRED_USERNAME, userName);
 
@@ -563,6 +566,9 @@ public class SshServerModule extends TransportModule implements ApplicationListe
                             }
                         }
                     }
+
+                    // authenticating with password, remove public key (if any)
+                    session.getIoSession().removeAttribute(MINA_SESSION_ATTR_CRED_PUBLIC_KEY);
 
                     if (isAllowedAccess) {
                         session.getIoSession().setAttribute(MINA_SESSION_ATTR_CRED_USERNAME, userName);
