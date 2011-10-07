@@ -238,7 +238,11 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             }
             return AssertionStatus.FAILED;
         } catch(Exception e) {
-            logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"SSH2 Route Assertion error: " + ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+            if (ExceptionUtils.getMessage(e).contains("com.jscape.inet.ssh.util.keyreader.FormatException")) {
+                logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {SshAssertionMessages.SSH_CERT_ISSUE_EXCEPTION}, ExceptionUtils.getDebugException(e));
+            } else {
+                logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"SSH2 Route Assertion error: " + ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+            }
             return AssertionStatus.FAILED;
         } finally {
             if(sshClient != null) {
