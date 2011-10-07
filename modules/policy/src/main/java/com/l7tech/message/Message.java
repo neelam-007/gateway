@@ -57,7 +57,7 @@ public final class Message implements Closeable {
      * @return the xml part max bytes value set in the io.xmlPartMaxBytes cluster property
      */
     static public long getMaxBytes(){
-        return MimeBody.getFirstPartMaxBytes();
+        return MimeBody.getPropertyFirstPartMaxBytes();
     }
     /**
      * Create a Message with no facets.

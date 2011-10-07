@@ -168,7 +168,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
     private void updateSettings(int period) {
         long maxBytes = config.getLongProperty( ServerConfigParams.PARAM_IO_FIRST_PART_MAX_BYTES, 2621440 );
-        MimeBody.setFirstPartMaxBytes(maxBytes);
+        MimeBody.setPropertyFirstPartMaxBytes(maxBytes);
 
         wssSettingsReference.set( new WssSettings(
             config.getLongProperty( ServerConfigParams.PARAM_SIGNED_PART_MAX_BYTES, 0 ),
