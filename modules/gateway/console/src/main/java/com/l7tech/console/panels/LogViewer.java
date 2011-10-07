@@ -10,8 +10,10 @@ import com.l7tech.gui.util.*;
 import com.l7tech.gui.util.SwingWorker;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.SyspropUtil;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -73,9 +75,6 @@ public class LogViewer extends JFrame {
     private final String file;
     private SsmPreferences preferences = TopComponents.getInstance().getPreferences();
     private final AtomicReference<LogWorker> workerReference = new AtomicReference<LogWorker>();
-
-    //- PUBLIC
-
 
     /**
      * Create a log window for the given node.
@@ -202,6 +201,8 @@ public class LogViewer extends JFrame {
             }
         });
 
+        Utilities.setMinimumSize( this );
+
         // Load the last window status (size and location).
         Utilities.restoreWindowStatus(this, preferences.asProperties(), 800, 600);
     }
@@ -251,15 +252,12 @@ public class LogViewer extends JFrame {
         shownLabel.setText(MessageFormat.format(resources.getString("shownLabel.text"), filteredListModel.getSize(), cachedData.size()));
     }
 
-
-
     @Override
     public void dispose() {
         if(workerReference.get()!=null)
             workerReference.get().cancel();
         super.dispose();
     }
-
 
     /**
      * Save currently displayed logs records to file
@@ -309,25 +307,20 @@ public class LogViewer extends JFrame {
                 //
                 if ((!file.exists() && file.getParentFile() != null /*&& file.getParentFile().canWrite()*/) ||
                         (file.isFile() && file.canWrite())) {
+                    OutputStream out = null;
+                    byte[] newline = SyspropUtil.getString( "line.separator", "\n" ).getBytes( Charsets.UTF8 );
                     try {
-                        ObjectOutputStream oos = null;
-                        OutputStream out = null;
-                        try {
-                            out = new FileOutputStream(file);
-                            for(String data : cachedData){
-                                out.write(data.getBytes());
-                                out.write("\r".getBytes());
-                            }
-                        }
-                        finally {
-                            // necessary to get the closing object tag
-                            ResourceUtils.closeQuietly(oos);
-                            ResourceUtils.closeQuietly(out);
+                        out = new BufferedOutputStream( new FileOutputStream( file) );
+                        for( final String data : cachedData ){
+                            out.write(data.getBytes(Charsets.UTF8));
+                            out.write(newline);
                         }
                     } catch (IOException ioe) {
                         file.delete(); // attempt to clean up
                         DialogDisplayer.showMessageDialog(LogViewer.this, null,
                                 resources.getString("save.write.error")+"\n'" + file.getAbsolutePath() + "'.", null);
+                    } finally {
+                        ResourceUtils.flushAndCloseQuietly( out );
                     }
                 } else {
                     DialogDisplayer.showMessageDialog(LogViewer.this, null,
@@ -374,12 +367,12 @@ public class LogViewer extends JFrame {
     private JMenu getFileMenu() {
         if (fileMenu == null) {
             fileMenu = new JMenu();
-            fileMenu.setText(applicationResources.getString("File"));
+            fileMenu.setText( applicationResources.getString( "File" ) );
             fileMenu.add(getSaveMenuItem());
             fileMenu.addSeparator();
             fileMenu.add(getExitMenuItem());
             int mnemonic = fileMenu.getText().toCharArray()[0];
-            fileMenu.setMnemonic(mnemonic);
+            fileMenu.setMnemonic( mnemonic );
         }
         return fileMenu;
     }

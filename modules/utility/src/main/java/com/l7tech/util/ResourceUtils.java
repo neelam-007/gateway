@@ -348,6 +348,16 @@ public final class ResourceUtils {
     }
 
     /**
+     * Close and flush a {@link java.io.Closeable}/{@link java.io.Flushable} object.
+     *
+     * @param closeableFlushable The object to flush and close (may be null)
+     */
+    public static <CF extends Closeable & Flushable> void flushAndCloseQuietly( final CF closeableFlushable ) {
+        flushQuietly( closeableFlushable );
+        closeQuietly( closeableFlushable );
+    }
+
+    /**
      * Flush a {@link java.io.Flushable} without throwing any exceptions.
      *
      * @param flushable the object to close.
