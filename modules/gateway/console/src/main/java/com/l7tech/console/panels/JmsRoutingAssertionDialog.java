@@ -319,6 +319,14 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             }
         });
 
+        responseByteLimitPanel.setAllowContextVars(true);
+        inputValidator.addRule(new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                return responseByteLimitPanel.validateFields();
+            }
+        });
+
         saveAsContextVariableRadioButton.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
@@ -332,13 +340,6 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         responseTargetVariable.addChangeListener(new ChangeListener(){
             @Override
             public void stateChanged(ChangeEvent e) {
-                validateResMsgDest();
-            }
-        });
-
-        responseByteLimitPanel.addChangeListener(new RunOnChangeListener(){
-            @Override
-            protected void run(){
                 validateResMsgDest();
             }
         });
@@ -716,7 +717,6 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
      */
     private boolean validateResMsgDest() {
         boolean ok = (defaultResponseRadioButton.isSelected() || responseTargetVariable.isEntryValid());
-        ok = ok && responseByteLimitPanel.validateFields()==null;
         refreshDialog();
         return ok;
     }
