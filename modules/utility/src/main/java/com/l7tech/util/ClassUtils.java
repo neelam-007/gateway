@@ -1,12 +1,6 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.util;
 
 import com.l7tech.util.Functions.Unary;
-import sun.java2d.SunGraphicsEnvironment.T1Filter; //TODO [steve] remove this
 
 import java.net.URL;
 import java.util.Collection;

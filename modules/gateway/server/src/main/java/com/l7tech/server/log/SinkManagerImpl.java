@@ -234,7 +234,7 @@ public class SinkManagerImpl
 
         // Set role as entity-specific
         role.setEntityType(LOG_SINK);
-        role.setEntityOid( entity.getOidAsLong());
+        role.setEntityOid(entity.getOidAsLong());
         role.setDescription("Users assigned to the {0} role have the ability to view the {1} logs and its configurations.");
 
         roleManager.save(role);

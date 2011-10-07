@@ -245,6 +245,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
         clusterStatusScrollPane.getViewport().setBackground(getClusterStatusTable().getBackground());
 
         getClusterStatusTable().addMouseListener(new PopUpMouseListener() {
+            @Override
             protected void popUpMenuHandler(MouseEvent mouseEvent) {
                 JPopupMenu menu = new JPopupMenu();
 
@@ -282,6 +283,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
             }
         });
         getClusterStatusTable().getSelectionModel().addListSelectionListener(new ListSelectionListener(){
+            @Override
             public void valueChanged(ListSelectionEvent e) {
                 int row = getClusterStatusTable().getSelectedRow();
                 boolean canDelete = false;
@@ -430,6 +432,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
             private Icon unknownStatusIcon =
               new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/unknownstatus.gif"));
 
+            @Override
             public Component getTableCellRendererComponent(JTable table,
                                                            Object value,
                                                            boolean isSelected,
@@ -453,6 +456,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
 
         clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_SERVER_UPTIME_COLUMN_INDEX).setCellRenderer(new DefaultTableCellRenderer() {
 
+            @Override
             public Component getTableCellRendererComponent(JTable table,
                                                            Object value,
                                                            boolean isSelected,
@@ -490,6 +494,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
                                      'X',
                                      null,
             new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 exitMenuEventHandler();
             }
@@ -509,6 +514,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
 
         nodeDeleteMenuItem = buildMenuItem("Node_DeleteMenuItem_text_name", 'D', null,
             new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     new DeleteNodeEntryAction(-1, true).performAction();
                 }
@@ -528,6 +534,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
 
         nodeRenameMenuItem = buildMenuItem("Node_RenameMenuItem_text_name", 'R', null,
             new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     new RenameNodeAction(-1).performAction();
                 }
@@ -549,6 +556,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
                                           (char)0,
                                           KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0),
             new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     TopComponents.getInstance().showHelpTopics();
                 }
@@ -599,6 +607,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
         };
 
         clusterStatusTableSorter = new ClusterStatusTableSorter(new DefaultTableModel(rows, cols) {
+            @Override
             public boolean isCellEditable(int row, int col) {
                 // the table cells are not editable
                 return false;
@@ -626,6 +635,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
         final JTable tableView = table;
         tableView.setColumnSelectionAllowed(false);
         MouseAdapter listMouseListener = new MouseAdapter() {
+            @Override
             public void mouseClicked(MouseEvent e) {
                 TableColumnModel columnModel = tableView.getColumnModel();
                 int viewColumn = columnModel.getColumnIndexAtX(e.getX());
@@ -767,6 +777,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
 
         // Create a refresh timer.
         statusRefreshTimer = new javax.swing.Timer(GatewayStatus.STATUS_REFRESH_TIMER, new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 refreshStatus();
             }
@@ -795,6 +806,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
 
         // create a worker thread to retrieve the Service statistics
         final ClusterStatusWorker statsWorker = new ClusterStatusWorker(serviceManager, clusterStatusAdmin, currentNodeList, cancelled) {
+            @Override
             public void finished() {
 
                 if (isCanceled()) {
@@ -830,17 +842,28 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
         statsWorker.start();
     }
 
+    @Override
     public void setVisible(boolean vis) {
         if (!vis) {
             // Let inactivity timeout start counting after this window is closed.
             TopComponents.getInstance().updateLastActivityTime();
         }
-        super.setVisible(vis);
+        super.setVisible( vis );
     }
 
-    /** //TODO [steve] revert deletion of dispose method (stops refresh timer)
+    /**
+     * Clean up the resources of the cluster status window when the window is closed.
+     */
+    @Override
+    public void dispose() {
+        getStatusRefreshTimer().stop();
+        super.dispose();
+    }
+
+    /**
      * Initialize the resources when the connection to the cluster is established.
      */
+    @Override
     public void onLogon(LogonEvent e) {
         initAdminConnection();
         initCaches();
@@ -852,6 +875,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
     /**
      * Clean up the resources when the connection to the cluster went down.
      */
+    @Override
     public void onLogoff(LogonEvent e) {
         cleanUp();
     }
@@ -928,6 +952,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
      * This customized renderer can render objects of the type TextandIcon
      */
     TableCellRenderer iconHeaderRenderer = new DefaultTableCellRenderer() {
+        @Override
         public Component getTableCellRendererComponent(JTable table, Object value,
                                                        boolean isSelected, boolean hasFocus, int row, int column) {
             // Inherit the colors and font from the header component
@@ -960,6 +985,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
         }
     };
 
+    @Override
     public void showSheet(JInternalFrame sheet) {
         DialogDisplayer.showSheet(this, sheet);
     }
@@ -976,6 +1002,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
         /**
          * @return the aciton description
          */
+        @Override
         public String getDescription() {
             return "Delete the node entry in the database";
         }
@@ -983,6 +1010,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
         /**
          * @return the action name
          */
+        @Override
         public String getName() {
             return "Delete Node";
         }
@@ -990,6 +1018,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
         /**
          * subclasses override this method specifying the resource name
          */
+        @Override
         protected String iconResource() {
             return RESOURCE_PATH + "/delete.gif";
         }
@@ -997,6 +1026,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
         /**
          * Invoked when an action occurs.
          */
+        @Override
         public void performAction() {
 
             // get the selected row index
@@ -1016,9 +1046,11 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
                   nodeNameSelected + "?",
                   "Delete Stale Node",
                   JOptionPane.YES_NO_OPTION, new DialogDisplayer.OptionListener() {
+                    @Override
                     public void reportResult(int option) {
                         if (option == JOptionPane.YES_OPTION) {
                             SwingUtilities.invokeLater(new Runnable() {
+                                @Override
                                 public void run() {
 
                                     if (clusterStatusAdmin == null) {
@@ -1066,6 +1098,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
         /**
          * @return the aciton description
          */
+        @Override
         public String getDescription() {
             return "Change the node name";  //To change body of implemented methods use File | Settings | File Templates.
         }
@@ -1073,6 +1106,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
         /**
          * @return the action name
          */
+        @Override
         public String getName() {
             return "Rename Node";
         }
@@ -1080,6 +1114,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
         /**
          * subclasses override this method specifying the resource name
          */
+        @Override
         protected String iconResource() {
             return RESOURCE_PATH + "/Edit16.gif";
         }
@@ -1100,6 +1135,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener, SheetH
         /**
          * Invoked when an action occurs.
          */
+        @Override
         public void performAction() {
             // get the selected row index
             int selectedRow = tableRow;

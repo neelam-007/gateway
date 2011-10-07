@@ -8,6 +8,8 @@ import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.gateway.common.audit.BootMessages;
+import com.l7tech.util.CollectionUtils;
+import static com.l7tech.util.CollectionUtils.set;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.BuildInfo;
@@ -57,31 +59,29 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
      * {@link #afterPropertiesSet()}.
      * TODO this metadata should probably come from the UpgradeTasks themselves, and we should just whitelist the entire server.upgrade package
      */
-    private static final Map<Class<? extends SystemEvent>, Set<String>> whitelist =
-        Collections.unmodifiableMap(new HashMap<Class<? extends SystemEvent>, Set<String>>() {{
-            p(null,           "com.l7tech.server.upgrade.Upgrade45To46AddPasswordExpiry",
-                              "com.l7tech.server.upgrade.Upgrade44To45SwitchPolicyIncludesToGuids",
-                              "com.l7tech.server.upgrade.Upgrade42To43MigratePolicies",
-                              "com.l7tech.server.upgrade.Upgrade465To50UpgradeKeystores",
-                              "com.l7tech.server.upgrade.Upgrade51To52CanonicalizeDNs",
-                              "com.l7tech.server.upgrade.Upgrade51To52AddClusterProperties",
-                              "com.l7tech.server.upgrade.Upgrade51To52UpdateRoles",
-                              "com.l7tech.server.upgrade.Upgrade52To53UpdateRoles",
-                              "com.l7tech.server.upgrade.Upgrade52to53UpdateCommunitySchemas",
-                              "com.l7tech.server.upgrade.Upgrade52To53UpdateJmsProviderType",
-                              "com.l7tech.server.upgrade.Upgrade531To54UpdateRoles",
-                              "com.l7tech.server.upgrade.Upgrade61to62UpdateGatewayManagementWsdl");
-            p(Starting.class, "com.l7tech.server.upgrade.Upgrade365To37AddSampleMessagePermissions");
-            p(Started.class,  "com.l7tech.server.upgrade.Upgrade35To36AddRoles",
-                              "com.l7tech.server.upgrade.Upgrade42To43AddPolicyPermissions",
-                              "com.l7tech.server.upgrade.Upgrade42To43AddInitialPolicyVersions",
-                              "com.l7tech.server.upgrade.Upgrade465To50UpdateRoles");
-        }
-            
-        private void p(Class<? extends SystemEvent> clazz, String... strings) {
-            put(clazz, new HashSet<String>(Arrays.asList(strings)));
-        }
-    });
+    private static final Map<Class<? extends SystemEvent>, Set<String>> whitelist = CollectionUtils.<Class<? extends SystemEvent>, Set<String>>mapBuilder()
+            .put(null, set(
+                    "com.l7tech.server.upgrade.Upgrade45To46AddPasswordExpiry",
+                    "com.l7tech.server.upgrade.Upgrade44To45SwitchPolicyIncludesToGuids",
+                    "com.l7tech.server.upgrade.Upgrade42To43MigratePolicies",
+                    "com.l7tech.server.upgrade.Upgrade465To50UpgradeKeystores",
+                    "com.l7tech.server.upgrade.Upgrade51To52CanonicalizeDNs",
+                    "com.l7tech.server.upgrade.Upgrade51To52AddClusterProperties",
+                    "com.l7tech.server.upgrade.Upgrade51To52UpdateRoles",
+                    "com.l7tech.server.upgrade.Upgrade52To53UpdateRoles",
+                    "com.l7tech.server.upgrade.Upgrade52to53UpdateCommunitySchemas",
+                    "com.l7tech.server.upgrade.Upgrade52To53UpdateJmsProviderType",
+                    "com.l7tech.server.upgrade.Upgrade531To54UpdateRoles",
+                    "com.l7tech.server.upgrade.Upgrade61to62UpdateGatewayManagementWsdl",
+                    "com.l7tech.server.upgrade.Upgrade61To62AddRoles" ) )
+            .put(Starting.class, set(
+                    "com.l7tech.server.upgrade.Upgrade365To37AddSampleMessagePermissions" ))
+            .put(Started.class, set(
+                    "com.l7tech.server.upgrade.Upgrade35To36AddRoles",
+                    "com.l7tech.server.upgrade.Upgrade42To43AddPolicyPermissions",
+                    "com.l7tech.server.upgrade.Upgrade42To43AddInitialPolicyVersions",
+                    "com.l7tech.server.upgrade.Upgrade465To50UpdateRoles" ) )
+            .unmodifiableMap();
 
     private final ClusterPropertyManager clusterPropertyManager;
     private final PlatformTransactionManager transactionManager; // required for TransactionTemplate

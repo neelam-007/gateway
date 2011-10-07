@@ -35,14 +35,12 @@ public class AuditRecordTest {
 
             // inherited from LogRecord and probably not useful to include in sig
             "sequenceNumber",
-            "thrown", //TODO [steve] remove this
 
             // TODO These should probably be included
             "mappingValuesEntity",
             "mappingValuesOid",
 
             // This one apparently IS included but this test currently does not appear to permute it properly
-            "reqId",
             "strRequestId",
     };
 

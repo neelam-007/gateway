@@ -1,9 +1,6 @@
 package com.l7tech.gateway.common.log;
 
-import com.l7tech.util.Option;
-import com.l7tech.util.ValidationUtils.Validator; //TODO [steve] cleanup imports
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
 

@@ -1314,6 +1314,7 @@ INSERT INTO rbac_permission VALUES (-105, 0, -100, 'OTHER', 'log-viewer', 'LOG_S
 -- Create Operator role
 INSERT INTO rbac_role VALUES (-150,0,'Operator',null,null,null,'Users assigned to the {0} role have read only access to the gateway.');
 INSERT INTO rbac_permission VALUES (-151, 0, -150, 'READ', null, 'ANY');
+INSERT INTO rbac_permission VALUES (-152, 0, -150, 'OTHER', 'log-viewer', 'LOG_SINK');
 
 -- Create other canned roles
 INSERT INTO rbac_role VALUES (-200,0,'Manage Internal Users and Groups', null,null,null, 'Users assigned to the {0} role have the ability to create, read, update and delete users and groups in the internal identity provider.');
@@ -1465,18 +1466,13 @@ INSERT INTO rbac_permission VALUES (-753,0,-750,'UPDATE',NULL,'SSG_CONNECTOR');
 INSERT INTO rbac_permission VALUES (-754,0,-750,'DELETE',NULL,'SSG_CONNECTOR');
 INSERT INTO rbac_permission VALUES (-755,0,-750,'READ',NULL,'SERVICE');
 
--- TODO [steve] update Manage Log Sinks role with final permissions
 INSERT INTO rbac_role VALUES (-800,0,'Manage Log Sinks', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete log sinks.');
 INSERT INTO rbac_permission VALUES (-801,0,-800,'READ',NULL,'LOG_SINK');
 INSERT INTO rbac_permission VALUES (-802,0,-800,'CREATE',NULL,'LOG_SINK');
 INSERT INTO rbac_permission VALUES (-803,0,-800,'UPDATE',NULL,'LOG_SINK');
 INSERT INTO rbac_permission VALUES (-804,0,-800,'DELETE',NULL,'LOG_SINK');
-INSERT INTO rbac_permission VALUES (-805,0,-800,'READ',NULL,'SSG_CONNECTOR');
-INSERT INTO rbac_permission VALUES (-806,0,-800,'READ',NULL,'SERVICE');
-INSERT INTO rbac_permission VALUES (-807,0,-800,'READ',NULL,'FOLDER');
-INSERT INTO rbac_permission VALUES (-808,0,-800,'READ',NULL,'JMS_ENDPOINT');
-INSERT INTO rbac_permission VALUES (-809,0,-800,'READ',NULL,'USER');
-INSERT INTO rbac_permission VALUES (-810,0,-800,'READ',NULL,'ID_PROVIDER_CONFIG');
+INSERT INTO rbac_permission VALUES (-805,0,-800,'READ',NULL,'CLUSTER_INFO');
+INSERT INTO rbac_permission VALUES (-806,0,-800,'OTHER','log-viewer','LOG_SINK');
 
 INSERT INTO rbac_role VALUES (-850,0,'Gateway Maintenance', null,null,null, 'Users assigned to the {0} role have the ability to perform Gateway maintenance tasks.');
 INSERT INTO rbac_permission VALUES (-851,0,-850,'READ',NULL,'CLUSTER_PROPERTY');
@@ -1632,12 +1628,16 @@ INSERT INTO rbac_predicate_attribute VALUES (-1274,'name','logon.inactivityPerio
 --
 -- New role for viewing the default log (oid = -810)
 --
-INSERT INTO rbac_role VALUES (-1300,0,'View Default Gateway Logs', null,null,null, 'Users assigned to the {0} role have the ability to view the default gateway logs.');
-INSERT INTO rbac_permission VALUES (-1301,0,-1300,'READ',NULL,'CLUSTER_INFO');
-INSERT INTO rbac_permission VALUES (-1302,0,-1300,'READ',NULL,'LOG_SINK');
-INSERT INTO rbac_predicate VALUES (-1303,0,-1302);
-INSERT INTO rbac_predicate_attribute VALUES (-1303,'oid','-810');
-INSERT INTO rbac_permission VALUES (-1304,0,-1300,'OTHER','log-viewer', 'LOG_SINK');
+-- NOTE: This is an entity specific role and will be deleted if the default log
+-- sink is removed.
+--
+INSERT INTO rbac_role VALUES (-1300,0,'View ssg Log Sink',null,'LOG_SINK',-810, 'Users assigned to the {0} role have the ability to read the log sink and any associated log files.');
+INSERT INTO rbac_permission VALUES (-1301,0,-1300,'READ',NULL,'LOG_SINK');
+INSERT INTO rbac_predicate VALUES (-1301,0,-1301);
+INSERT INTO rbac_predicate_oid VALUES (-1301,'-810');
+INSERT INTO rbac_permission VALUES (-1302,0,-1300,'READ',NULL,'CLUSTER_INFO');
+
+INSERT INTO rbac_permission VALUES (-1303,0,-1300,'OTHER','log-viewer','LOG_SINK');
 
 -- Assign Administrator role to existing admin user
 INSERT INTO rbac_assignment VALUES (-105, -2, -100, '3', 'User');
