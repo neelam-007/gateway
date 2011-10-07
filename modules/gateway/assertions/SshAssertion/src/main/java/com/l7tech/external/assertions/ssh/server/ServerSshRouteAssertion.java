@@ -32,8 +32,7 @@ import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.assertion.ServerRoutingAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.security.password.SecurePasswordManager;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Pair;
+import com.l7tech.util.*;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -44,7 +43,8 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.text.ParseException;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.*;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -179,7 +179,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                     PipedOutputStream pos = new PipedOutputStream(pis);
 
                     // download file on a new thread
-                    Thread thread = sshDownloadOnNewThread(sshClient, expandVariables(context, assertion.getDirectory()),
+                    Future<Boolean> future = sshDownloadOnNewThread(sshClient, expandVariables(context, assertion.getDirectory()),
                             expandVariables(context, assertion.getFileName()), pos, logger);
 
                     Message response = context.getResponse();
@@ -189,44 +189,32 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                     // force all message parts to be initialized, it is by default lazy
                     response.getMimeKnob().getContentLength();
 
-                    logger.log(Level.INFO, "Waiting for read thread join().");
-                    thread.join(assertion.getConnectTimeout() * 1000L);
-                    logger.log(Level.INFO, "Done read thread join().");
+                    if (JdkLoggerConfigurator.debugState()) {
+                        logger.log(Level.INFO, "Waiting for read thread retrieve.");
+                    }
+                    future.get(assertion.getConnectTimeout(), TimeUnit.SECONDS);
+                    if (JdkLoggerConfigurator.debugState()) {
+                        logger.log(Level.INFO, "Done read thread retrieve.");
+                    }
                 } else {
                     sshClient.upload(mimeKnob.getEntireMessageBodyAsInputStream(), expandVariables(context, assertion.getDirectory()),  expandVariables(context, assertion.getFileName()));
                 }
             } catch (NoSuchPartException e) {
                 logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                        new String[] {SshAssertionMessages.SSH_NO_SUCH_PART_ERROR + ", server: " + getHostName(context, assertion)+ ", error: " + ExceptionUtils.getMessage(e)},
-                        ExceptionUtils.getDebugException(e));
+                        new String[] {SshAssertionMessages.SSH_NO_SUCH_PART_ERROR + ", server: " + getHostName(context, assertion)}, ExceptionUtils.getDebugException(e));
                 return AssertionStatus.FAILED;
+            } catch (ExecutionException e) {
+                if (ExceptionUtils.getMessage(e).contains("jscape")){
+                    return handleJscapeException(e, context, username);
+                }
+                throw e;
             } catch (ScpException e) {
-                if (ExceptionUtils.getMessage(e).contains("No such file")){
-                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                            new String[] { SshAssertionMessages.SSH_DIR_DOESNT_EXIST_ERROR + ", server: " + getHostName(context, assertion)+ ", error: " + ExceptionUtils.getMessage(e)},
-                            ExceptionUtils.getDebugException(e));
-                } else{
-                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                            new String[] { SshAssertionMessages.SSH_EXCEPTION_ERROR + ", server: " + getHostName(context, assertion)+ ", error: "  + ExceptionUtils.getMessage(e)},
-                            ExceptionUtils.getDebugException(e));
-                }
-                return AssertionStatus.FAILED;
+                return handleJscapeException(e, context, username);
             } catch (SftpException e) {
-                if (ExceptionUtils.getMessage(e).contains("No such file")){
-                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                            new String[] { SshAssertionMessages.SSH_DIR_DOESNT_EXIST_ERROR + ", server: " + getHostName(context, assertion)+ ", error: " + ExceptionUtils.getMessage(e)},
-                            ExceptionUtils.getDebugException(e));
-                } else{
-                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                            new String[] { SshAssertionMessages.SSH_EXCEPTION_ERROR + ", server: " + getHostName(context, assertion)+ ", error: "  + ExceptionUtils.getMessage(e)},
-                            ExceptionUtils.getDebugException(e));
-                }
-                return AssertionStatus.FAILED;
+                return handleJscapeException(e, context, username);
             } catch (IOException e) {
                 logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                        new String[] { SshAssertionMessages.SSH_IO_EXCEPTION + ", server: " + getHostName(context, assertion) + ", error: " + ExceptionUtils.getMessage(e)},
-                        ExceptionUtils.getDebugException(e));
-                logger.log(Level.WARNING, "SFTP Route Assertion IO error: " + e, ExceptionUtils.getDebugException(e));
+                        new String[]{SshAssertionMessages.SSH_IO_EXCEPTION + ", server: " + getHostName(context, assertion)}, ExceptionUtils.getDebugException(e));
                 return AssertionStatus.FAILED;
             } finally {
                 if (sshClient != null){
@@ -238,32 +226,37 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             return AssertionStatus.NONE;
         } catch(IOException ioe) {
             if (ExceptionUtils.getMessage(ioe).startsWith("Malformed SSH")){
-                logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                        new String[] {SshAssertionMessages.SSH_CERT_ISSUE_EXCEPTION, ExceptionUtils.getMessage(ioe)},
-                        ExceptionUtils.getDebugException(ioe));
-                logger.log(Level.WARNING, SshAssertionMessages.SSH_CERT_ISSUE_EXCEPTION);
+                logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {SshAssertionMessages.SSH_CERT_ISSUE_EXCEPTION + ": " + ExceptionUtils.getMessage(ioe)}, ExceptionUtils.getDebugException(ioe));
             } else if ( ioe instanceof SocketException ){
                 logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                        new String[] {"Socket Exception for SSH connection. Ensure the timeout entered is valid: " + ExceptionUtils.getMessage(ioe)},
+                        new String[] {SshAssertionMessages.SSH_SOCKET_EXCEPTION + ", server: " + getHostName(context, assertion) + ", port:" + port + ", username: " + username + ". Failing Assertion with socket exception"},
                         ExceptionUtils.getDebugException(ioe));
-                logger.log(Level.WARNING, SshAssertionMessages.SSH_SOCKET_EXCEPTION  + ioe, new String[] {host, String.valueOf(port), username});
             } else {
                 logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                        new String[] {"IO Exception: SSH connection establishment failed. Ensure the server trusted cert is valid: " + ExceptionUtils.getMessage(ioe)},
+                        new String[] {SshAssertionMessages.SSH_CONNECTION_EXCEPTION + ", server: " + getHostName(context, assertion) + ", port:" + port + ", username: " + username + ". Failing Assertion with exception"},
                         ExceptionUtils.getDebugException(ioe));
-                logger.log(Level.WARNING, SshAssertionMessages.SSH_CONNECTION_EXCEPTION + ioe, new String[] {host, String.valueOf(port), username});
             }
             return AssertionStatus.FAILED;
         } catch(Exception e) {
-            logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
-            logger.log(Level.WARNING, SshAssertionMessages.SSH_CONNECTION_EXCEPTION, new String[] {host, String.valueOf(port), username});
-            logger.log(Level.WARNING, "SSH2 Route Assertion error: " + e, ExceptionUtils.getDebugException(e));
+            logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"SSH2 Route Assertion error: " + ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.FAILED;
         } finally {
             if(sshClient != null) {
                 sshClient.disconnect();
             }
         }
+    }
+
+    AssertionStatus handleJscapeException(final Exception e, final PolicyEnforcementContext context, final String username) {
+        if (ExceptionUtils.getMessage(e).contains("No such file")){
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                    new String[] { SshAssertionMessages.SSH_DIR_DOESNT_EXIST_ERROR + ", directory: " + expandVariables(context, assertion.getDirectory())  + ", username: " + username},
+                    ExceptionUtils.getDebugException(e));
+        } else{
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                    new String[] { SshAssertionMessages.SSH_EXCEPTION_ERROR + ", server: " + getHostName(context, assertion)}, ExceptionUtils.getDebugException(e));
+        }
+        return AssertionStatus.FAILED;
     }
 
     private String expandVariables(PolicyEnforcementContext context, String pattern) {
@@ -279,44 +272,48 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
     /*
      * Download the given file on a new thread.
      */
-    private static Thread sshDownloadOnNewThread(final SshClient sshClient, final String directory,
-                                                 final String fileName, final PipedOutputStream pos, final Logger logger) throws IOException {
+    private static Future<Boolean> sshDownloadOnNewThread(final SshClient sshClient, final String directory, final String fileName,
+                                                 final PipedOutputStream pos, final Logger logger) throws IOException {
         final CountDownLatch startedSignal = new CountDownLatch(1);
-        logger.log(Level.INFO, "Start new thread for downloading");
-        Thread thread = new Thread(new Runnable(){
-            public void run() {
+        final ExecutorService executorService = Executors.newSingleThreadExecutor(new ThreadFactory() {
+            public Thread newThread(Runnable r) {
+                Thread thread = new Thread(r, "SshDownloadThread-" + System.currentTimeMillis());
+                thread.setDaemon(true);
+                return thread;
+            }
+        });
+
+        if (JdkLoggerConfigurator.debugState()) {
+            logger.log(Level.INFO, "Start new thread for downloading");
+        }
+
+        Future<Boolean> future = executorService.submit(new Callable<Boolean>()
+        {
+            public Boolean call() throws IOException {
                 try {
                     startedSignal.countDown();
                     sshClient.download(pos, directory, fileName);
-                }
-                catch (Exception e) {
-                    logger.log(Level.SEVERE, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                }
-                finally {
-                    logger.log(Level.INFO, "... downloading thread stopped.");
-                    try {
-                        pos.flush();
-                        pos.close();
-                    } catch(IOException ioe) {
-                        logger.log(Level.SEVERE, ExceptionUtils.getMessage(ioe), ExceptionUtils.getDebugException(ioe));
+                } finally {
+                    if (JdkLoggerConfigurator.debugState()) {
+                        logger.log(Level.INFO, "... downloading thread stopped.");
                     }
+                    ResourceUtils.closeQuietly(pos);
+                    ResourceUtils.closeQuietly(pos);
                     startedSignal.countDown();
                 }
+                return new Boolean(true);
             }
-        }, "SshDownloadThread-" + System.currentTimeMillis());
-
-        thread.setDaemon(true);
-        thread.start();
+        });
 
         try {
             startedSignal.await();
         }
         catch(InterruptedException ie) {
             Thread.currentThread().interrupt();
-            logger.log(Level.SEVERE, ExceptionUtils.getMessage(ie), ExceptionUtils.getDebugException(ie));
+            throw new CausedIOException("Interrupted waiting for download.", ie);
         }
 
-        return thread;
+        return future;
     }
 }
 
