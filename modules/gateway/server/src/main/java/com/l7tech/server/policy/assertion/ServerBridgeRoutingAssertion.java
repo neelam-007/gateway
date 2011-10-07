@@ -316,30 +316,30 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
 
                 } catch (ConfigurationException e) {
                     thrown = e;
-                    logAndAudit(AssertionMessages.HTTPROUTE_ACCESS_DENIED, null, ExceptionUtils.getDebugException(e));
+                    logAndAudit(AssertionMessages.HTTPROUTE_ACCESS_DENIED, null,e);
                     return AssertionStatus.SERVER_AUTH_FAILED;
                 } catch (OperationCanceledException e) {
                     thrown = e;
-                    logAndAudit(AssertionMessages.HTTPROUTE_ACCESS_DENIED, null, ExceptionUtils.getDebugException(e));
+                    logAndAudit(AssertionMessages.HTTPROUTE_ACCESS_DENIED, null, e);
                     return AssertionStatus.SERVER_AUTH_FAILED;
                 } catch (BadSecurityContextException e) {
                     thrown = e;
-                    logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, ExceptionUtils.getDebugException(e));
+                    logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{e.getMessage()}, ExceptionUtils.getDebugException(e));
                 } catch (InvalidDocumentFormatException e) {
                     thrown = e;
-                    logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, ExceptionUtils.getDebugException(e));
+                    logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{e.getMessage()}, ExceptionUtils.getDebugException(e));
                 } catch (GeneralSecurityException e) {
                     thrown = e;
-                    logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, ExceptionUtils.getDebugException(e));
+                    logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{e.getMessage()}, ExceptionUtils.getDebugException(e));
                 } catch ( HttpChallengeRequiredException e) {
                     thrown = e;
-                    logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e); // can't happen
+                    logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{e.getMessage()}, e); // can't happen
                 } catch ( ResponseValidationException e) {
                     thrown = e;
-                    logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, ExceptionUtils.getDebugException(e));
+                    logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{e.getMessage()}, ExceptionUtils.getDebugException(e));
                 } catch ( ClientCertificateException e) {
                     thrown = e;
-                    logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e); // can't happen
+                    logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{e.getMessage()}, e); // can't happen
                 } catch (ProcessorException e) {
                     thrown = e;
                     logAndAudit(AssertionMessages.BRIDGEROUTE_WSS_PROCESSING_RESP,
@@ -347,16 +347,16 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                             e.getCause() != null ? ExceptionUtils.getDebugException(e) : null );
                 } catch ( PolicyLockedException e) {
                     thrown = e;
-                    logAndAudit(AssertionMessages.EXCEPTION_WARNING, null, ExceptionUtils.getDebugException(e));
+                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{e.getMessage()}, ExceptionUtils.getDebugException(e));
                 } catch (NoSuchVariableException e) {
                     thrown = e;
-                    logAndAudit(AssertionMessages.EXCEPTION_WARNING, null, ExceptionUtils.getDebugException(e));
+                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{e.getMessage()}, ExceptionUtils.getDebugException(e));
                 }
             } catch (WSDLException we) {
-                logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, ExceptionUtils.getDebugException(we));
+                logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{we.getMessage()}, ExceptionUtils.getDebugException(we));
             } catch (MalformedURLException mfe) {
                 thrown = mfe;
-                logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, ExceptionUtils.getDebugException(mfe));
+                logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{mfe.getMessage()}, ExceptionUtils.getDebugException(mfe));
             } catch (IOException ioe) {
                 thrown = ioe;
                 if (ExceptionUtils.causedBy(ioe, SocketTimeoutException.class)) {
@@ -369,7 +369,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                         logAndAudit(AssertionMessages.HTTPROUTE_SSL_INIT_FAILED);
                     }
                 } else if (ExceptionUtils.causedBy(ioe, ByteLimitInputStream.DataSizeLimitExceededException.class)) {
-                    logAndAudit(AssertionMessages.HTTPROUTE_ERROR_READING_RESPONSE,null, ExceptionUtils.getDebugException(ioe));
+                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,new String[]{ioe.getMessage()}, ExceptionUtils.getDebugException(ioe));
                 } else if (ExceptionUtils.causedBy(ioe, CausedIOException.class)) {
                     logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Policy download error: " + ExceptionUtils.getMessage(ioe));
                 } else {
@@ -387,18 +387,18 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                         logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, detail);
                     } else {
                         // TODO: Worry about what kinds of exceptions indicate failed routing, and which are "unrecoverable"
-                        logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, ExceptionUtils.getDebugException(ioe));
+                        logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{ioe.getMessage()}, ExceptionUtils.getDebugException(ioe));
                     }
                 }
             } catch (SAXException e) {
                 thrown = e;
-                logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, ExceptionUtils.getDebugException(e));
+                logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{e.getMessage()}, ExceptionUtils.getDebugException(e));
             } catch (NoSuchPartException e) {
                 thrown = e;
-                logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, ExceptionUtils.getDebugException(e));
+                logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{e.getMessage()}, ExceptionUtils.getDebugException(e));
             } catch (GeneralSecurityException e) {
                 thrown = e;
-                logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, ExceptionUtils.getDebugException(e));
+                logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{e.getMessage()}, ExceptionUtils.getDebugException(e));
             } finally {
                 if(url!=null && thrown!=null) context.getRoutingResultListener().failed(url, thrown, context);
             }
