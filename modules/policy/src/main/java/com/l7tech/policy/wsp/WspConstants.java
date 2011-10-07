@@ -29,6 +29,7 @@ import com.l7tech.policy.variable.DataType;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.types.CertificateValidationType;
 import com.l7tech.util.FullQName;
+import com.l7tech.util.NameValuePair;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.wsdl.BindingInfo;
@@ -336,6 +337,8 @@ public class WspConstants {
         new BeanTypeMapping(JmsMessagePropertyRuleSet.class, "jmsMessagePropertyRuleSet"),
         new BeanTypeMapping(IdentityTarget.class, "IdentityTarget"),
         new BeanTypeMapping(MessageTargetableSupport.class, "MessageTarget"),
+        new BeanTypeMapping(NameValuePair.class, "nameValuePair"),
+        new ArrayTypeMapping(new NameValuePair[0], "nameValuePairArray"),
 
         new Java5EnumTypeMapping(TargetMessageType.class, "target"),
         new Java5EnumTypeMapping(CertificateValidationType.class, "certificateValidation"),

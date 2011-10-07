@@ -1,14 +1,18 @@
-package com.l7tech.console.util;
+package com.l7tech.util;
 
+import java.io.Serializable;
 import java.util.Map;
 
 /**
  * @author ghuang
  */
-public class MutablePair<L, R> implements Map.Entry<L, R> {
+public class MutablePair<L, R> implements Map.Entry<L, R>, Serializable {
 
     public L left;
     public R right;
+
+    public MutablePair() {
+    }
 
     public MutablePair(L left, R right) {
         this.left = left;

@@ -3,14 +3,13 @@ package com.l7tech.xml;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.assertion.PrivateKeyable;
 import com.l7tech.policy.assertion.PrivateKeyableSupport;
+import com.l7tech.policy.variable.Syntax;
+import com.l7tech.util.NameValuePair;
 
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 /**
  * Attached to a PolicyEnforcementContext and overridable through the FaultLevel assertion,
@@ -41,6 +40,7 @@ public class SoapFaultLevel implements PrivateKeyable, Serializable {
     private boolean alwaysReturnSoapFault = false;
     private PrivateKeyableSupport privatekeyableSupport = new PrivateKeyableSupport();
     private String[] variablesUsed = new String[0];
+    private NameValuePair[] extraHeaders = null;
 
     public SoapFaultLevel() {
     }
@@ -54,6 +54,7 @@ public class SoapFaultLevel implements PrivateKeyable, Serializable {
             this.variablesUsed = soapFaultLevel.variablesUsed;
             this.privatekeyableSupport = new PrivateKeyableSupport( soapFaultLevel.privatekeyableSupport );
             this.alwaysReturnSoapFault = soapFaultLevel.isAlwaysReturnSoapFault();
+            this.extraHeaders = copyHeaders(soapFaultLevel.extraHeaders);
         }
     }
 
@@ -88,6 +89,21 @@ public class SoapFaultLevel implements PrivateKeyable, Serializable {
      */
     public void setFaultTemplate(String faultTemplate) {
         this.faultTemplate = faultTemplate;
+        updateVariableUse();
+    }
+
+    /**
+     * @return extra headers to include in the response, or null.  May use variables in both header names and values.
+     */
+    public NameValuePair[] getExtraHeaders() {
+        return extraHeaders;
+    }
+
+    /**
+     * @param extraHeaders extra headers to include in the response, or null.  May use variables in both header names and values.
+     */
+    public void setExtraHeaders(NameValuePair[] extraHeaders) {
+        this.extraHeaders = extraHeaders;
         updateVariableUse();
     }
 
@@ -212,6 +228,10 @@ public class SoapFaultLevel implements PrivateKeyable, Serializable {
         addVariables( variables, faultTemplateHttpStatus );
         addVariables( variables, faultTemplateContentType );
         addVariables( variables, faultTemplate );
+        if (extraHeaders != null) for (NameValuePair extraHeader : extraHeaders) {
+            addVariables( variables, extraHeader.getKey() );
+            addVariables( variables, extraHeader.getValue() );
+        }
         variablesUsed = variables.toArray( new String[variables.size()] );
     }
 
@@ -222,5 +242,14 @@ public class SoapFaultLevel implements PrivateKeyable, Serializable {
                 variables.addAll( Arrays.asList( referencedNames ) );
             }
         }
+    }
+
+    private NameValuePair[] copyHeaders(NameValuePair[] headers) {
+        if (headers == null) return null;
+        List<NameValuePair> ret = new ArrayList<NameValuePair>();
+        for (NameValuePair header : headers) {
+            ret.add(new NameValuePair(header.getKey(), header.getValue()));
+        }
+        return ret.toArray(new NameValuePair[ret.size()]);
     }
 }

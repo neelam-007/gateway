@@ -12,6 +12,7 @@ import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.NameValuePair;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -21,7 +22,6 @@ import java.util.Set;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
-import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_VALIDATOR_CLASSNAME;
 
 /**
  * Policy assertion for customization of error response.
@@ -93,6 +93,22 @@ public class CustomizeErrorResponseAssertion extends Assertion implements UsesVa
         this.includePolicyDownloadURL = includePolicyDownloadURL;
     }
 
+    /**
+     * @return extra headers to include, or null.
+     */
+    public NameValuePair[] getExtraHeaders() {
+        return extraHeaders;
+    }
+
+    /**
+     * Set extra headers to include with the response.
+     *
+     * @param extraHeaders extra headers to include with error response, or null.  Values may use variables.
+     */
+    public void setExtraHeaders(NameValuePair[] extraHeaders) {
+        this.extraHeaders = extraHeaders;
+    }
+
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
@@ -100,6 +116,10 @@ public class CustomizeErrorResponseAssertion extends Assertion implements UsesVa
         collectVars( varNames, httpStatus );
         collectVars( varNames, contentType );
         collectVars( varNames, content );
+        if (extraHeaders != null) for (NameValuePair header : extraHeaders) {
+            collectVars( varNames,  header.getKey() );
+            collectVars( varNames,  header.getValue() );
+        }
         return varNames.toArray(new String[varNames.size()]);
     }
 
@@ -174,6 +194,7 @@ public class CustomizeErrorResponseAssertion extends Assertion implements UsesVa
     private String contentType = "text/plain; charset=UTF-8";
     private String content = "Internal Server Error";
     private boolean includePolicyDownloadURL = false;
+    private NameValuePair[] extraHeaders = null;
 
     private void collectVars( final Set<String> varNames,
                               final String text ) {

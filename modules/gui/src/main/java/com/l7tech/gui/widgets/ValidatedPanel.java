@@ -3,6 +3,8 @@
  */
 package com.l7tech.gui.widgets;
 
+import com.l7tech.gui.util.RunOnChangeListener;
+
 import javax.swing.*;
 import java.awt.*;
 import java.util.regex.Matcher;
@@ -19,6 +21,13 @@ public abstract class ValidatedPanel<V> extends JPanel {
     protected String propertyName;
     protected volatile boolean syntaxOk;
     protected JLabel statusLabel;
+
+    protected RunOnChangeListener syntaxListener = new RunOnChangeListener(new Runnable() {
+        @Override
+        public void run() {
+            checkSyntax();
+        }
+    });
 
     protected ValidatedPanel() {
         this("defaultPropertyName");
@@ -193,4 +202,12 @@ public abstract class ValidatedPanel<V> extends JPanel {
     }
 
     protected abstract void doUpdateModel();
+
+    /**
+     * @return a simple listener that just calls checkSyntax().  Can be added to various components to cause the value to update
+     *         whenever they are changed.
+     */
+    protected RunOnChangeListener syntaxListener() {
+        return syntaxListener;
+    }
 }

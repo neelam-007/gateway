@@ -7,6 +7,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.xml.SoapFaultLevel;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * Server implementation for CustomizeErrorResponseAssertion.
@@ -38,6 +39,7 @@ public class ServerCustomizeErrorResponseAssertion extends AbstractServerAsserti
             faultLevel.setFaultTemplateContentType( assertion.getContentType() );
             faultLevel.setFaultTemplate( assertion.getContent() );
             faultLevel.setIncludePolicyDownloadURL( assertion.isIncludePolicyDownloadURL() );
+            faultLevel.setExtraHeaders( assertion.getExtraHeaders() );
         }
 
         return faultLevel;

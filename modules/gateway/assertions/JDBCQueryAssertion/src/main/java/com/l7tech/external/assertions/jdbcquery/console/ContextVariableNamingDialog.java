@@ -1,7 +1,7 @@
 package com.l7tech.external.assertions.jdbcquery.console;
 
 import com.l7tech.console.panels.TargetVariablePanel;
-import com.l7tech.console.util.MutablePair;
+import com.l7tech.util.MutablePair;
 import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;

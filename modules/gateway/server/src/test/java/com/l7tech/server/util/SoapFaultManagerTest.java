@@ -32,6 +32,7 @@ import com.l7tech.server.security.keystore.SsgKeyFinderStub;
 import com.l7tech.server.security.keystore.SsgKeyStoreManagerStub;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.MockConfig;
+import com.l7tech.util.NameValuePair;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
@@ -91,6 +92,32 @@ public class SoapFaultManagerTest {
         assertEquals( "SOAP 1.2 Content Type", ContentTypeHeader.SOAP_1_2_DEFAULT, faultInfo.getContentType() );
         assertTrue( "Contains medium detail", fault.contains("No credentials found!") );
         assertFalse( "Contains full detail", fault.contains("Authorization header not applicable for this assertion") );
+    }
+
+    @Test
+    public void testSoap12MediumDetailExceptionFaultWithExtraHeaders() throws Exception {
+        AuditContextStub stub = new AuditContextStub();
+        PolicyEnforcementContext context = getSoap12PEC(false);
+        addAuditInfo( stub, context );
+        SoapFaultManager sfm = buildSoapFaultManager( stub );
+        SoapFaultLevel level = new SoapFaultLevel();
+        level.setLevel(SoapFaultLevel.MEDIUM_DETAIL_FAULT);
+        level.setExtraHeaders(new NameValuePair[] { new NameValuePair("Custom-Header-${hname}", "val-${hvalue}") } );
+        final SoapFaultManager.FaultResponse faultInfo = sfm.constructExceptionFault( constructException(), level, context );
+        String fault = faultInfo.getContent();
+        System.out.println(fault);
+        Document doc = XmlUtil.parse( fault );
+        assertEquals( "Http Status", 500, faultInfo.getHttpStatus() );
+        assertEquals( "SOAP 1.2", SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, doc.getDocumentElement().getNamespaceURI() );
+        assertFalse("Policy version fault", fault.contains("Incorrect policy version"));
+        assertTrue("Service URL in fault", fault.contains(SERVICE_URL));
+        assertNull("No SOAP header", SoapUtil.getHeaderElement(doc));
+        assertEquals("SOAP 1.2 Content Type", ContentTypeHeader.SOAP_1_2_DEFAULT, faultInfo.getContentType());
+        assertTrue("Contains medium detail", fault.contains("No credentials found!"));
+        assertFalse("Contains full detail", fault.contains("Authorization header not applicable for this assertion"));
+        assertEquals("Contains extra header", 1, faultInfo.getExtraHeaders().size());
+        assertEquals("Contains correct header name", "Custom-Header-HeadName", faultInfo.getExtraHeaders().get(0).getKey());
+        assertEquals("Contains correct header value", "val-HeadValue", faultInfo.getExtraHeaders().get(0).getValue());
     }
 
     @Test
@@ -174,6 +201,40 @@ public class SoapFaultManagerTest {
         assertEquals( "SOAP 1.1 Content Type", ContentTypeHeader.XML_DEFAULT, faultInfo.getContentType() );
         assertTrue( "Contains medium detail", fault.contains("No credentials found!") );
         assertTrue( "Contains full detail", fault.contains("Authorization header not applicable for this assertion") );
+    }
+
+    @Test
+    public void testSoap11DetailExceptionFaultWithExtraHeaders() throws Exception {
+        AuditContextStub stub = new AuditContextStub();
+        PolicyEnforcementContext context = getSoap11PEC(false);
+        SoapFaultManager sfm = buildSoapFaultManager(stub);
+        addAuditInfo( stub, context );
+        SoapFaultLevel level = new SoapFaultLevel();
+        level.setLevel(SoapFaultLevel.FULL_TRACE_FAULT);
+        level.setExtraHeaders(new NameValuePair[] {
+                new NameValuePair("Custom-Header-${hname}", "val-${hvalue}"),
+                new NameValuePair("Extra-Two", "blah"),
+                new NameValuePair("Extra-Two", "floo-${hvalue}")
+        });
+        final SoapFaultManager.FaultResponse faultInfo = sfm.constructExceptionFault( constructException(), level, context );
+        String fault = faultInfo.getContent();
+        System.out.println(fault);
+        Document doc = XmlUtil.parse( fault );
+        assertEquals( "Http Status", 500, faultInfo.getHttpStatus() );
+        assertEquals( "SOAP 1.1", SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, doc.getDocumentElement().getNamespaceURI() );
+        assertFalse( "Policy version fault", fault.contains("Incorrect policy version"));
+        assertTrue("Service URL in fault", fault.contains( SERVICE_URL ));
+        assertNull( "No SOAP header", SoapUtil.getHeaderElement(doc) );
+        assertEquals( "SOAP 1.1 Content Type", ContentTypeHeader.XML_DEFAULT, faultInfo.getContentType() );
+        assertTrue( "Contains medium detail", fault.contains("No credentials found!") );
+        assertTrue( "Contains full detail", fault.contains("Authorization header not applicable for this assertion") );
+        assertEquals("Contains extra headers", 3, faultInfo.getExtraHeaders().size());
+        assertEquals("Contains correct header name 0", "Custom-Header-HeadName", faultInfo.getExtraHeaders().get(0).getKey());
+        assertEquals("Contains correct header value 0", "val-HeadValue", faultInfo.getExtraHeaders().get(0).getValue());
+        assertEquals("Contains correct header name 1", "Extra-Two", faultInfo.getExtraHeaders().get(1).getKey());
+        assertEquals("Contains correct header value 1", "blah", faultInfo.getExtraHeaders().get(1).getValue());
+        assertEquals("Contains correct header name 2", "Extra-Two", faultInfo.getExtraHeaders().get(2).getKey());
+        assertEquals("Contains correct header value 2", "floo-HeadValue", faultInfo.getExtraHeaders().get(2).getValue());
     }
 
     @Test
@@ -733,17 +794,7 @@ public class SoapFaultManagerTest {
     }
 
     private PolicyEnforcementContext getSoap12PEC( final boolean wrongPolicyVersion ) {
-        PolicyEnforcementContext pec = new PolicyEnforcementContextWrapper( PolicyEnforcementContextFactory.createPolicyEnforcementContext( null, null ) ){
-            @Override
-            public Object getVariable(String name) throws NoSuchVariableException {
-                return SERVICE_URL;
-            }
-
-            @Override
-            public boolean isRequestClaimingWrongPolicyVersion() {
-                return wrongPolicyVersion;
-            }
-        };
+        PolicyEnforcementContext pec = getSoap11PEC(wrongPolicyVersion);
 
         PublishedService service = new PublishedService();
         service.parseWsdlStrategy( new ServiceDocumentWsdlStrategy(null) );
@@ -756,10 +807,13 @@ public class SoapFaultManagerTest {
     }
 
     private PolicyEnforcementContext getSoap11PEC( final boolean wrongPolicyVersion ) {
-        return new PolicyEnforcementContextWrapper( PolicyEnforcementContextFactory.createPolicyEnforcementContext( null, null ) ){
+        PolicyEnforcementContext pec = new PolicyEnforcementContextWrapper( PolicyEnforcementContextFactory.createPolicyEnforcementContext( null, null ) ){
             @Override
             public Object getVariable(String name) throws NoSuchVariableException {
-                return SERVICE_URL;
+                if ("request.url".equalsIgnoreCase(name))
+                    return SERVICE_URL;
+                else
+                    return super.getVariable(name);
             }
 
             @Override
@@ -767,6 +821,9 @@ public class SoapFaultManagerTest {
                 return wrongPolicyVersion;
             }
         };
+        pec.setVariable("hname", "HeadName");
+        pec.setVariable("hvalue", "HeadValue");
+        return pec;
     }
 
     private boolean isValidSignature( final Document document, final SsgKeyEntry key ) throws Exception {

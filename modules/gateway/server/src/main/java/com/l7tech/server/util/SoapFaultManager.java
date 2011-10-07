@@ -2,12 +2,7 @@ package com.l7tech.server.util;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.gateway.common.audit.Audit;
-import com.l7tech.gateway.common.audit.AuditDetail;
-import com.l7tech.gateway.common.audit.AuditDetailMessage;
-import com.l7tech.gateway.common.audit.AuditFactory;
-import com.l7tech.gateway.common.audit.Messages;
-import com.l7tech.gateway.common.audit.MessagesUtil;
+import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.message.Message;
 import com.l7tech.message.SecurityKnob;
@@ -38,6 +33,7 @@ import com.l7tech.xml.MessageNotSoapException;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -47,6 +43,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.xml.soap.SOAPConstants;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -133,6 +130,20 @@ public class SoapFaultManager implements ApplicationContextAware {
         }
     }
 
+    /**
+     * Convenience method that will pass any extra headers to the specified HTTP servlet response.
+     *
+     * @param fault fault response that may include HTTP headers.  Required.
+     * @param hresp HTTP servlet response that will be given zero or more additional headers.  Required.
+     */
+    public void sendExtraHeaders(@NotNull FaultResponse fault, @NotNull HttpServletResponse hresp) {
+        List<Pair<String, String>> heads = fault.getExtraHeaders();
+        if (heads == null) return;
+        for (Pair<String, String> head : heads) {
+            hresp.addHeader(head.getKey(), head.getValue());
+        }
+    }
+
     @Override
     public void setApplicationContext( ApplicationContext applicationContext ) {
         setBeanFactory( applicationContext );
@@ -158,13 +169,17 @@ public class SoapFaultManager implements ApplicationContextAware {
         private final int httpStatus;
         private final ContentTypeHeader contentType;
         private final String content;
+        private final List<Pair<String,String>> extraHeaders;
 
         FaultResponse( final int httpStatus,
                        final ContentTypeHeader contentType,
-                       final String content ) {
+                       final String content,
+                       final List<Pair<String,String>> extraHeaders) {
+            if (extraHeaders == null) throw new NullPointerException("extraHeaders may not be null");
             this.httpStatus = httpStatus;
             this.contentType = contentType;
             this.content = content;
+            this.extraHeaders = extraHeaders;
         }
 
         /**
@@ -207,6 +222,13 @@ public class SoapFaultManager implements ApplicationContextAware {
                 charset = Charsets.UTF8; // fallback to UTF-8 rather than fail
             }
             return content.getBytes( charset );
+        }
+
+        /**
+         * @return extra headers to add.  May be empty but never null.
+         */
+        public List<Pair<String, String>> getExtraHeaders() {
+            return extraHeaders;
         }
     }
 
@@ -282,6 +304,7 @@ public class SoapFaultManager implements ApplicationContextAware {
         final SoapFaultLevel faultLevelInfo = inFaultLevelInfo==null ? getDefaultBehaviorSettings() : inFaultLevelInfo;
         int httpStatus = 500;
         String output = "";
+        List<Pair<String, String>> extraHeaders = new ArrayList<Pair<String, String>>();
         AssertionStatus globalStatus = pec.getPolicyResult();
         ContentTypeHeader contentTypeHeader = ContentTypeHeader.XML_DEFAULT;
         if (globalStatus == null) {
@@ -289,11 +312,12 @@ public class SoapFaultManager implements ApplicationContextAware {
             globalStatus = AssertionStatus.UNDEFINED;
         }
         int level = faultLevelInfo.getLevel();
+        Map<String,Object> variables;
         switch ( level ) {
             case SoapFaultLevel.DROP_CONNECTION:
                 break;
             case SoapFaultLevel.TEMPLATE_FAULT:
-                Map<String,Object> variables = pec.getVariableMap(faultLevelInfo.getVariablesUsed(), auditor);
+                variables = pec.getVariableMap(faultLevelInfo.getVariablesUsed(), auditor);
                 if ( faultLevelInfo.getFaultTemplateHttpStatus() != null ) {
                     String httpStatusText = ExpandVariables.process( faultLevelInfo.getFaultTemplateHttpStatus(), variables, auditor );
                     try {
@@ -303,6 +327,7 @@ public class SoapFaultManager implements ApplicationContextAware {
                     }
                 }
                 output = ExpandVariables.process(faultLevelInfo.getFaultTemplate(), variables, auditor);
+                addExtraHeaders(extraHeaders, faultLevelInfo, variables, auditor);
                 if ( faultLevelInfo.getFaultTemplateContentType() != null ) {
                     String contentTypeText = ExpandVariables.process( faultLevelInfo.getFaultTemplateContentType(), variables, auditor );
                     try {
@@ -322,6 +347,8 @@ public class SoapFaultManager implements ApplicationContextAware {
                             buildGenericFault( pec, globalStatus, isClientFault, faultString, statusTextOverride, false );
                     output = XmlUtil.nodeToFormattedString(faultInfo.right);
                     contentTypeHeader = faultInfo.left;
+                    variables = pec.getVariableMap(faultLevelInfo.getVariablesUsed(), auditor);
+                    addExtraHeaders(extraHeaders, faultLevelInfo, variables, auditor);
                 } catch (Exception e) {
                     // should not happen
                     logger.log(Level.WARNING, "could not construct generic fault", e);
@@ -333,6 +360,8 @@ public class SoapFaultManager implements ApplicationContextAware {
                             buildDetailedFault(pec, globalStatus, isClientFault, faultString, statusTextOverride, false);
                     output = faultInfo.right;
                     contentTypeHeader = faultInfo.left;
+                    variables = pec.getVariableMap(faultLevelInfo.getVariablesUsed(), auditor);
+                    addExtraHeaders(extraHeaders, faultLevelInfo, variables, auditor);
                 }
                 break;
             case SoapFaultLevel.FULL_TRACE_FAULT:
@@ -341,6 +370,8 @@ public class SoapFaultManager implements ApplicationContextAware {
                             buildDetailedFault(pec, globalStatus, isClientFault, faultString, statusTextOverride, true);
                     output = faultInfo.right;
                     contentTypeHeader = faultInfo.left;
+                    variables = pec.getVariableMap(faultLevelInfo.getVariablesUsed(), auditor);
+                    addExtraHeaders(extraHeaders, faultLevelInfo, variables, auditor);
                 }
                 break;
         }
@@ -355,7 +386,17 @@ public class SoapFaultManager implements ApplicationContextAware {
             contentTypeHeader = ContentTypeHeader.TEXT_DEFAULT;
         }
 
-        return new FaultResponse(httpStatus, contentTypeHeader, output);
+        return new FaultResponse(httpStatus, contentTypeHeader, output, extraHeaders);
+    }
+
+    private void addExtraHeaders(List<Pair<String, String>> extraHeaders, SoapFaultLevel faultLevelInfo, Map<String, Object> variables, Audit auditor) {
+        NameValuePair[] toadd = faultLevelInfo.getExtraHeaders();
+        if (toadd == null) return;
+        for (NameValuePair nameValuePair : toadd) {
+            String name = ExpandVariables.process(nameValuePair.getKey(), variables, auditor);
+            String value = ExpandVariables.process(nameValuePair.getValue(), variables, auditor);
+            extraHeaders.add(new Pair<String, String>(name, value));
+        }
     }
 
     private synchronized SoapFaultLevel constructFaultLevelFromServerConfig() {

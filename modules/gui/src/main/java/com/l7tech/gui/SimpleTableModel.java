@@ -1,6 +1,7 @@
 package com.l7tech.gui;
 
 import com.l7tech.util.Functions;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.table.AbstractTableModel;
 import java.util.ArrayList;
@@ -67,6 +68,17 @@ public class SimpleTableModel<RT> extends AbstractTableModel {
      */
     public RT getRowObject(int rowIndex) {
         return rowIndex < 0 ? null : rows.get(rowIndex);
+    }
+
+    /**
+     * Set the backing object for the specified row.
+     *
+     * @param rowIndex the row index.  Must be nonnegative.
+     * @param newValue the new backing object for the row.  Required.
+     */
+    public void setRowObject(int rowIndex, @NotNull RT newValue) {
+        rows.set(rowIndex, newValue);
+        fireTableRowsUpdated(rowIndex, rowIndex);
     }
 
     /**

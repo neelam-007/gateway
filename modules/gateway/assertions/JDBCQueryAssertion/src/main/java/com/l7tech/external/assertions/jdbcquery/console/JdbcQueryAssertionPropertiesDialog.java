@@ -3,7 +3,7 @@ package com.l7tech.external.assertions.jdbcquery.console;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.console.panels.PermissionFlags;
 import com.l7tech.console.panels.TargetVariablePanel;
-import com.l7tech.console.util.MutablePair;
+import com.l7tech.util.MutablePair;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;

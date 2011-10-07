@@ -566,6 +566,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
             final SoapFaultLevel faultLevelInfo = context.getFaultlevel();
             final SoapFaultManager.FaultResponse fault = soapFaultManager.constructReturningFault(faultLevelInfo, context);
+            soapFaultManager.sendExtraHeaders(fault, hresp);
             hresp.setContentType(fault.getContentType().getFullValue());
             responseStream.write(fault.getContentBytes());
         } finally {
@@ -590,6 +591,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         OutputStream responseStream = null;
         try {
             final SoapFaultManager.FaultResponse faultInfo = soapFaultManager.constructExceptionFault(e, null, context);
+            soapFaultManager.sendExtraHeaders(faultInfo, hresp);
             responseStream = hresp.getOutputStream();
             hresp.setContentType(faultInfo.getContentType().getFullValue());
             hresp.setStatus(500); // soap faults "MUST" be sent with status 500 per Basic profile

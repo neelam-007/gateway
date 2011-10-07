@@ -460,6 +460,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             final SoapFaultManager.FaultResponse fault = soapFaultManager.constructReturningFault(faultLevelInfo, context);
             hresp.setStatus( fault.getHttpStatus() );
             if ( fault.getContentBytes() != null ) {
+                soapFaultManager.sendExtraHeaders(fault, hresp);
                 hresp.setContentType(fault.getContentType().getFullValue());
                 faultXml = fault.getContent();
                 responseStream.write(fault.getContentBytes());
@@ -474,6 +475,18 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     private void sendExceptionFault(PolicyEnforcementContext context, Throwable e,
                                     HttpServletRequest hreq, HttpServletResponse hresp) throws IOException, SAXException {
         final SoapFaultManager.FaultResponse faultInfo = soapFaultManager.constructExceptionFault(e, context.getFaultlevel(), context);
+        sendExceptionFault(context,
+                faultInfo,
+                hreq,
+                hresp);
+    }
+
+    private void sendExceptionFault( final PolicyEnforcementContext context,
+                                     final SoapFaultManager.FaultResponse faultInfo,
+                                     final HttpServletRequest hreq,
+                                     final HttpServletResponse hresp ) throws IOException, SAXException {
+        soapFaultManager.sendExtraHeaders(faultInfo, hresp);
+
         sendExceptionFault(context,
                 faultInfo.getContent(),
                 faultInfo.getContentType().getEncoding(),

@@ -2,7 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.RunOnChangeListener;
-import com.l7tech.console.util.MutablePair;
+import com.l7tech.util.MutablePair;
 
 import javax.swing.*;
 import javax.swing.event.DocumentListener;
