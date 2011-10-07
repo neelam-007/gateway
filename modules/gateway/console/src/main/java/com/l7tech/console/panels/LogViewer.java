@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.log.LogSinkData;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.util.SwingWorker;
 import com.l7tech.gui.widgets.SquigglyTextField;
+import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
@@ -75,6 +76,7 @@ public class LogViewer extends JFrame {
     private final String file;
     private SsmPreferences preferences = TopComponents.getInstance().getPreferences();
     private final AtomicReference<LogWorker> workerReference = new AtomicReference<LogWorker>();
+    private java.util.List<String> cachedData = new java.util.ArrayList<String>();
 
     /**
      * Create a log window for the given node.
@@ -114,6 +116,7 @@ public class LogViewer extends JFrame {
                 updateLogMessageText();
             }
         });
+        logList.setCellRenderer( new TextListCellRenderer<String>( TextListCellRenderer.<String>toStringAccessor() ) );
 
         Utilities.setEscKeyStrokeDisposes(this);
 
@@ -447,10 +450,6 @@ public class LogViewer extends JFrame {
         filteredListModel = new FilterListModel<String>(new LogModel());
         return filteredListModel;
     }
-
-
-
-    private java.util.List<String> cachedData = new java.util.ArrayList<String>();
 
     public boolean loadLogs()  {
         long tail  = -1 ;

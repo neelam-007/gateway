@@ -188,9 +188,10 @@ public class TextListCellRenderer<SO> extends JLabel implements ListCellRenderer
         if(icon != null) {
             setIcon(icon);
         }
-        
+
         setEnabled(list.isEnabled());
         setFont(list.getFont());
+        setMinimumSize(new Dimension(-1,getFontMetrics(getFont()).getHeight()));
 
         return this;
     }
