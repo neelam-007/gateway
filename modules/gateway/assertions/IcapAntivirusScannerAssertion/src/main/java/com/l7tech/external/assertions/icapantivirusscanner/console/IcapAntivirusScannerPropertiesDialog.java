@@ -288,11 +288,11 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
     public IcapAntivirusScannerAssertion getData(IcapAntivirusScannerAssertion assertion) throws ValidationException {
         String timeoutText = connectionTimeoutField.getText().trim();
         if (Syntax.getReferencedNames(timeoutText).length == 0 && !ValidationUtils.isValidInteger(timeoutText, false, 1, Integer.MAX_VALUE)) {
-            throw new ValidationException("Connection timeout value must be greater than zero (0)");
+            throw new ValidationException("Connection timeout value must be a valid integer greater than zero (0)");
         }
         timeoutText = readTimeoutField.getText().trim();
         if (Syntax.getReferencedNames(timeoutText).length == 0 && !ValidationUtils.isValidInteger(timeoutText, false, 1, Integer.MAX_VALUE)) {
-            throw new ValidationException("Read timeout value must be greater than zero (0)");
+            throw new ValidationException("Read timeout value must be a valid integer greater than zero (0)");
         }
         assertion.setContinueOnVirusFound(continueIfVirusFound.isSelected());
         assertion.setFailoverStrategy(((FailoverStrategy) cbStrategy.getSelectedItem()).getName());
