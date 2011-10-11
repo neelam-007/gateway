@@ -275,6 +275,7 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
                 decrementRadio.setSelected(true);
                 quotaValueField.setEnabled(false);
                 quotaUnitCombo.setEnabled(false);
+                logOnlyCheckBox.setEnabled(false);
                 break;
         }
     }
