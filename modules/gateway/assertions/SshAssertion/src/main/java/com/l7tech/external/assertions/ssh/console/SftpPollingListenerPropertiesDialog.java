@@ -314,6 +314,7 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
         } else {
             hardwiredServiceCheckBox.setSelected(false);
         }
+        serviceNameComboBox.setEnabled(hardwiredServiceCheckBox.isSelected());
 
         enableOrDisableComponents();
     }
