@@ -96,6 +96,8 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
     private void initialize() {
         setContentPane(mainPanel);
 
+        nameField.setDocument(new MaxLengthDocument(255));
+        nameField.getDocument().addDocumentListener(enableDisableListener);
         hostField.setDocument(new MaxLengthDocument(255));
         hostField.getDocument().addDocumentListener(enableDisableListener);
         portField.setDocument(new MaxLengthDocument(5));
