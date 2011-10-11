@@ -56,7 +56,7 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
     private String currentHost = null;
     private String selectedService = null;
 
-    private List<String> infectedParts = new ArrayList<String>();
+
 
     public ServerIcapAntivirusScannerAssertion(final IcapAntivirusScannerAssertion assertion) throws PolicyAssertionException {
         super(assertion);
@@ -140,9 +140,10 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
     //making this package default so that it can be tested in the test class
     AssertionStatus scanMessage(final PolicyEnforcementContext context, final Message message) {
         AssertionStatus status = AssertionStatus.NONE;
+        List<String> infectedParts = new ArrayList<String>();
         try {
             for (PartIterator pi = message.getMimeKnob().getParts(); pi.hasNext(); ) {
-                status = scan(context, pi.next(), 0);
+                status = scan(context, pi.next(), 0, infectedParts);
                 if (status != AssertionStatus.NONE) {
                     break;
                 }
@@ -159,7 +160,7 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
         return status;
     }
 
-    private AssertionStatus scan(final PolicyEnforcementContext context, PartInfo partInfo, int currentDepth) {
+    private AssertionStatus scan(final PolicyEnforcementContext context, PartInfo partInfo, int currentDepth, List<String> infectedParts) {
         try {
             if (currentDepth != assertion.getMaxMimeDepth() && partInfo.getContentType().isMultipart()) {
                 try {
@@ -169,7 +170,7 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
                         PartInfo pi = pit.next();
                         //recursively traverse all the multiparts
                         //break when it failed
-                        AssertionStatus status = scan(context, pi, currentDepth++);
+                        AssertionStatus status = scan(context, pi, currentDepth++, infectedParts);
                         if (status == AssertionStatus.FAILED) {
                             return status;
                         }
@@ -198,7 +199,7 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
                     //         return 201 if a virus is found when using the SYMCScanResp-AV service
                     //other virus engines return 200 if a virus is found, 204 when there's no virus.
                     if (response.getStatus() == IcapResponseStatus.OK || response.getStatus() == IcapResponseStatus.CREATED) {
-                        logVirusInformation(context, response, partInfo.getContentId(true));
+                        logVirusInformation(context, response, partInfo.getContentId(true), infectedParts);
                         if (!assertion.isContinueOnVirusFound()) {
                             return AssertionStatus.FAILED;
                         }
@@ -226,7 +227,7 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
         return AssertionStatus.NONE;
     }
 
-    private void logVirusInformation(PolicyEnforcementContext context, IcapResponse response, String contentId) {
+    private void logVirusInformation(PolicyEnforcementContext context, IcapResponse response, String contentId, List<String> infectedParts) {
         String partName = assertion.getTarget() == TargetMessageType.OTHER ? assertion.getOtherTargetMessageVariable() : contentId;
         if (partName == null) {
             partName = "Unknown";
