@@ -133,10 +133,10 @@ public class SftpPollingListenerFileHandler {
                         pis.close();
                     }
 
-                    _logger.log(Level.INFO, "Waiting for read thread join().");
+                    _logger.log(Level.FINE, "Waiting for read thread join().");
                     int waitSeconds = serverConfig.getIntProperty(SftpPollingListenerConstants.SFTP_POLLING_DOWNLOAD_THREAD_WAIT_SECONDS_PROPERTY, 3);
                     thread.join(waitSeconds * 1000L);
-                    _logger.log(Level.INFO, "Done read thread join().");
+                    _logger.log(Level.FINE, "Done read thread join().");
                 } catch ( PolicyVersionException pve ) {
                     String msg1 = "Request referred to an outdated version of policy";
                     _logger.log( Level.INFO, msg1 );
@@ -217,7 +217,7 @@ public class SftpPollingListenerFileHandler {
     private static Thread sshDownloadOnNewThread(final ThreadSafeSftpClient sftpClient, final String directory,
                                                  final String fileName, final PipedOutputStream pos, final Logger logger) throws IOException {
         final CountDownLatch startedSignal = new CountDownLatch(1);
-        logger.log(Level.INFO, "Start new thread for downloading ...");
+        logger.log(Level.FINE, "Start new thread for downloading ...");
         Thread thread = new Thread(new Runnable(){
             public void run() {
                 try {
@@ -229,7 +229,7 @@ public class SftpPollingListenerFileHandler {
                     logger.log(Level.SEVERE, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 }
                 finally {
-                    logger.log(Level.INFO, "... downloading thread stopped.");
+                    logger.log(Level.FINE, "... downloading thread stopped.");
                     try {
                         pos.flush();
                         pos.close();

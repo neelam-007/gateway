@@ -272,7 +272,7 @@ public abstract class SftpPollingListener implements PropertyChangeListener {
         while(dirListing.hasMoreElements()) {
             SftpFile file = (SftpFile) dirListing.nextElement();
             String fileName = file.getFilename();
-            if(!fileName.endsWith(PROCESSING_FILE_EXTENSION) && !fileName.endsWith(PROCESSED_FILE_EXTENSION)
+            if(!file.isDirectory() && file.exists() && !fileName.endsWith(PROCESSING_FILE_EXTENSION) && !fileName.endsWith(PROCESSED_FILE_EXTENSION)
                     && !fileName.endsWith(RESPONSE_FILE_EXTENSION) && !processedFiles.contains(fileName)) {
                 try {
                     sftpClient.renameFile(fileName, fileName + PROCESSING_FILE_EXTENSION);
