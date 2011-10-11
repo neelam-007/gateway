@@ -105,6 +105,7 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
         validateServerSHostCheckBox.addActionListener((enableDisableListener));
         usernameField.setDocument(new MaxLengthDocument(255));
         usernameField.getDocument().addDocumentListener(enableDisableListener);
+        passwordField.addActionListener(enableDisableListener);
         privateKeyField.getDocument().addDocumentListener(enableDisableListener);
         directoryField.getDocument().addDocumentListener( enableDisableListener );
         contentTypeField.getDocument().addDocumentListener( enableDisableListener );
@@ -153,6 +154,7 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
             }
         });
 
+        managePasswordsButton.addActionListener(enableDisableListener);
         managePasswordsButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
                 SecurePasswordManagerWindow dialog = new SecurePasswordManagerWindow(TopComponents.getInstance().getTopParent());
