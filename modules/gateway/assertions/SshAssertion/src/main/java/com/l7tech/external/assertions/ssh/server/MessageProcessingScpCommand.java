@@ -16,6 +16,7 @@ import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.CausedIOException;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.sshd.server.SessionAware;
@@ -74,7 +75,13 @@ public class MessageProcessingScpCommand extends ScpCommand implements SessionAw
         }
 
         String perms = header.substring(1, 5);
-        long length = Long.parseLong(header.substring(6, header.indexOf(' ', 6)));
+        long length = 0;
+        try {
+            length = Long.parseLong(header.substring(6, header.indexOf(' ', 6)));
+        } catch (NumberFormatException nfe) {
+            throw new CausedIOException("Error parsing header.", nfe);
+        }
+
         String name = header.substring(header.indexOf(' ', 6) + 1);
 
         // if required, remove filename from the absolute path (e.g. jscape scp client appends the file name to the path)
@@ -154,7 +161,7 @@ public class MessageProcessingScpCommand extends ScpCommand implements SessionAw
                     logger.log( Level.INFO, "Request referred to an outdated version of policy" );
                     faultXml = soapFaultManager.constructExceptionFault(pve, context.getFaultlevel(), context).getContent();
                 } catch ( Throwable t ) {
-                    logger.log( Level.WARNING, "Exception while processing SCP message", t );
+                    logger.log( Level.WARNING, "Exception while processing SCP message. " + ExceptionUtils.getMessage(t), ExceptionUtils.getDebugException(t));
                     faultXml = soapFaultManager.constructExceptionFault(t, context.getFaultlevel(), context).getContent();
                 }
 
@@ -198,7 +205,7 @@ public class MessageProcessingScpCommand extends ScpCommand implements SessionAw
                         logger.log(Level.FINE, "Completed data transfer for ''{0}''.", fullPath);
                 }
                 catch (IOException ioe) {
-                    logger.log(Level.WARNING, "Data transfer error for '"+fullPath+"'.", ioe);
+                    logger.log(Level.WARNING, "Data transfer error for '" + fullPath + "'.", ExceptionUtils.getDebugException(ioe));
                 }
                 finally {
                     ResourceUtils.closeQuietly(pos);

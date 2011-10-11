@@ -189,13 +189,9 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                     // force all message parts to be initialized, it is by default lazy
                     response.getMimeKnob().getContentLength();
 
-                    if (JdkLoggerConfigurator.debugState()) {
-                        logger.log(Level.INFO, "Waiting for read thread retrieve.");
-                    }
+                    logger.log(Level.FINE, "Waiting for read thread retrieve.");
                     future.get(assertion.getConnectTimeout(), TimeUnit.SECONDS);
-                    if (JdkLoggerConfigurator.debugState()) {
-                        logger.log(Level.INFO, "Done read thread retrieve.");
-                    }
+                    logger.log(Level.FINE, "Done read thread retrieve.");
                 } else {
                     sshClient.upload(mimeKnob.getEntireMessageBodyAsInputStream(), expandVariables(context, assertion.getDirectory()),  expandVariables(context, assertion.getFileName()));
                 }
@@ -287,9 +283,8 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             }
         });
 
-        if (JdkLoggerConfigurator.debugState()) {
-            logger.log(Level.INFO, "Start new thread for downloading");
-        }
+        logger.log(Level.FINE, "Start new thread for downloading");
+
 
         Future<Boolean> future = executorService.submit(new Callable<Boolean>()
         {
@@ -298,9 +293,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                     startedSignal.countDown();
                     sshClient.download(pos, directory, fileName);
                 } finally {
-                    if (JdkLoggerConfigurator.debugState()) {
-                        logger.log(Level.INFO, "... downloading thread stopped.");
-                    }
+                    logger.log(Level.FINE, "... downloading thread stopped.");
                     ResourceUtils.closeQuietly(pos);
                     ResourceUtils.closeQuietly(pos);
                     startedSignal.countDown();

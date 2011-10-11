@@ -16,6 +16,7 @@ import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.CausedIOException;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.sshd.common.util.Buffer;
@@ -387,7 +388,7 @@ public class MessageProcessingSftpSubsystem extends SftpSubsystem {
                             logger.log( Level.INFO, "Request referred to an outdated version of policy" );
                             faultXml = soapFaultManager.constructExceptionFault(pve, context.getFaultlevel(), context).getContent();
                         } catch ( Throwable t ) {
-                            logger.log( Level.WARNING, "Exception while processing SFTP message", t );
+                            logger.log( Level.WARNING, "Exception while processing SFTP message. " + ExceptionUtils.getMessage(t), ExceptionUtils.getDebugException(t));
                             faultXml = soapFaultManager.constructExceptionFault(t, context.getFaultlevel(), context).getContent();
                         }
 
