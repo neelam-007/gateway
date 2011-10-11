@@ -3,6 +3,8 @@ package com.l7tech.external.assertions.icapantivirusscanner.console;
 import com.l7tech.gui.util.Utilities;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import javax.validation.constraints.NotNull;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -24,7 +26,10 @@ public class IcapServerParametersDialog extends JDialog {
 
     private boolean confirmed;
 
-    public IcapServerParametersDialog(final Window owner, final String title) {
+    private String previousName = null;
+    private DefaultTableModel serviceParamTableModel;
+
+    public IcapServerParametersDialog(final Window owner, final String title, final DefaultTableModel serviceParamTableModel) {
         super(owner, title);
         initializeComponents();
         setContentPane(contentPane);
@@ -32,7 +37,7 @@ public class IcapServerParametersDialog extends JDialog {
         getRootPane().setDefaultButton(buttonOK);
         setTitle(title);
         confirmed = false;
-
+        this.serviceParamTableModel = serviceParamTableModel;
     }
 
     private void initializeComponents() {
@@ -55,10 +60,32 @@ public class IcapServerParametersDialog extends JDialog {
         });
     }
 
+    private boolean serviceParamExists(@NotNull final String name){
+        for (int i = 0; i < serviceParamTableModel.getRowCount(); ++i) {
+            String tableValue = (String) serviceParamTableModel.getValueAt(i, 0);
+            if (name.equalsIgnoreCase(tableValue)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void onOK() {
         if (paramNameField.getText().trim().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Please enter valid parameter name.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
+        }
+        if (serviceParamExists(getParameterName())) {
+            //adding a new param
+            if (previousName == null) {
+                JOptionPane.showMessageDialog(this, "The parameter name '" + getParameterName() + "' already exist.", "ERROR", JOptionPane.PLAIN_MESSAGE);
+                return;
+            }
+            //editting an existing param
+            else if (!previousName.equalsIgnoreCase(getParameterName())) {
+                JOptionPane.showMessageDialog(this, "The parameter name '" + getParameterName() + "' already exist.", "ERROR", JOptionPane.PLAIN_MESSAGE);
+                return;
+            }
         }
         confirmed = true;
         dispose();
@@ -95,6 +122,7 @@ public class IcapServerParametersDialog extends JDialog {
      */
     public void setParameterName(String parameterName) {
         this.paramNameField.setText(parameterName);
+        previousName = parameterName;
     }
 
     /**

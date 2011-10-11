@@ -137,12 +137,12 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
         addParam.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
-                IcapServerParametersDialog dspd = new IcapServerParametersDialog(owner, DIALOG_TITLE_NEW_PARAMETER);
+                IcapServerParametersDialog dspd = new IcapServerParametersDialog(owner, DIALOG_TITLE_NEW_PARAMETER, serviceParamTableModel);
                 dspd.pack();
                 Utilities.centerOnScreen(dspd);
                 dspd.setVisible(true);
                 if (dspd.isConfirmed()) {
-                    addRowToTable(dspd.getParameterName(), dspd.getParameterValue());
+                    serviceParamTableModel.addRow(new String[]{dspd.getParameterName(), dspd.getParameterValue()});
                 }
             }
         });
@@ -210,31 +210,16 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
             int index = serviceParams.getRowSorter().convertRowIndexToModel(selectedIndex);
             String name = serviceParamTableModel.getValueAt(index, 0).toString();
             String value = serviceParamTableModel.getValueAt(index, 1).toString();
-            IcapServerParametersDialog dspd = new IcapServerParametersDialog(owner, DIALOG_TITLE_EDIT_PARAMETER);
+            IcapServerParametersDialog dspd = new IcapServerParametersDialog(owner, DIALOG_TITLE_EDIT_PARAMETER, serviceParamTableModel);
             dspd.pack();
             Utilities.centerOnScreen(dspd);
             dspd.setParameterName(name);
             dspd.setParameterValue(value);
             dspd.setVisible(true);
             if (dspd.isConfirmed()) {
-                addRowToTable(dspd.getParameterName(), dspd.getParameterValue());
+                serviceParamTableModel.setValueAt(dspd.getParameterName(), index, 0);
+                serviceParamTableModel.setValueAt(dspd.getParameterValue(), index, 1);
             }
-        }
-    }
-
-    private void addRowToTable(@NotNull final String name, final String value) {
-        boolean found = false;
-        for (int i = 0; i < serviceParamTableModel.getRowCount(); ++i) {
-            String tableValue = (String) serviceParamTableModel.getValueAt(i, 0); //0 is the Parameter Name column
-            if (name.equalsIgnoreCase(tableValue)) {
-                serviceParamTableModel.setValueAt(name, i, 0);
-                serviceParamTableModel.setValueAt(value, i, 1);
-                found = true;
-                break;
-            }
-        }
-        if (!found) {
-            serviceParamTableModel.addRow(new String[]{name, value});
         }
     }
 
