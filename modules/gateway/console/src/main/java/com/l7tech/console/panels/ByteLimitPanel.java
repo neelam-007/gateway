@@ -76,7 +76,7 @@ public class ByteLimitPanel extends JPanel {
                 if(ValidationUtils.isValidInteger(bytesTextBox.getText(), false, 1,Integer.MAX_VALUE)) return null;
 
                 if (allowContextVars){
-                    if(Syntax.validateStringOnlyReferencesVariables(bytesTextBox.getText()))
+                    if(Syntax.getReferencedNames(bytesTextBox.getText()).length > 0)
                         return null;
                     else
                          return MessageFormat.format(resources.getString("override.syntax.error"),resources.getString("max.bytes"));
