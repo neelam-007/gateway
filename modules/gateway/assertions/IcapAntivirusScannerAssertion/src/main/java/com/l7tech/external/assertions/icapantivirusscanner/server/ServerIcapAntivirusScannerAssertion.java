@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.icapantivirusscanner.server;
 
 import ch.mimo.netty.handler.codec.icap.IcapResponse;
 import ch.mimo.netty.handler.codec.icap.IcapResponseStatus;
+import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.io.failover.AbstractFailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
@@ -174,7 +175,7 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
             if (currentDepth != assertion.getMaxMimeDepth() && partInfo.getContentType().isMultipart()) {
                 try {
                     MimeBody mimeBody = new MimeBody(stashManagerFactory.createStashManager(),
-                            ContentTypeHeader.OCTET_STREAM_DEFAULT, partInfo.getInputStream(false), Message.getMaxBytes());
+                            partInfo.getContentType(), partInfo.getInputStream(false), Message.getMaxBytes());
                     for (PartIterator pit = mimeBody.iterator(); pit.hasNext(); ) {
                         PartInfo pi = pit.next();
                         //recursively traverse all the multiparts
@@ -185,7 +186,13 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
                         }
                     }
                 } catch (IOException e) {
-                    logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Error reading MIME content from " + assertion.getTargetName() + " : " + e.getMessage());
+                    String msg = e.getMessage();
+                    if(msg != null && msg.contains(ByteLimitInputStream.SIZE_LIMIT_EXCEEDED)){
+                        logAndAudit(AssertionMessages.USERDETAIL_WARNING, "The " + assertion.getTargetName() + " message has exceeded the size limit of " + Message.getMaxBytes() + " bytes.");
+                    }
+                    else {
+                        logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Error reading MIME content from " + assertion.getTargetName() + " : " + msg);
+                    }
                     return AssertionStatus.FAILED;
                 }
             } else {
@@ -219,7 +226,13 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
                     }
                     failoverStrategy.reportSuccess(selectedService);
                 } catch (IOException e) {
-                    logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Error occurred while scanning content " + assertion.getTargetName() + " : " + e.getMessage());
+                    String msg = e.getMessage();
+                    if(msg != null && msg.contains(ByteLimitInputStream.SIZE_LIMIT_EXCEEDED)){
+                        logAndAudit(AssertionMessages.USERDETAIL_WARNING, "The " + assertion.getTargetName() + " message has exceeded the size limit of " + Message.getMaxBytes() + " bytes.");
+                    }
+                    else {
+                        logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Error occurred while scanning content " + assertion.getTargetName() + " : " + e.getMessage());
+                    }
                     return AssertionStatus.FAILED;
                 }
                 finally {
