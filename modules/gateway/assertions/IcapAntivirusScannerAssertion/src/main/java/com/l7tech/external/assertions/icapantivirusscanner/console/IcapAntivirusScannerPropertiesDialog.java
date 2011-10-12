@@ -4,6 +4,7 @@ import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAssertion;
+import com.l7tech.external.assertions.icapantivirusscanner.server.ServerIcapAntivirusScannerAssertion;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.ValidationUtils;
@@ -272,12 +273,12 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
     @Override
     public IcapAntivirusScannerAssertion getData(IcapAntivirusScannerAssertion assertion) throws ValidationException {
         String timeoutText = connectionTimeoutField.getText().trim();
-        if (Syntax.getReferencedNames(timeoutText).length == 0 && !ValidationUtils.isValidInteger(timeoutText, false, 1, Integer.MAX_VALUE)) {
-            throw new ValidationException("Connection timeout value must be a valid integer greater than zero (0)");
+        if (Syntax.getReferencedNames(timeoutText).length == 0 && !ValidationUtils.isValidInteger(timeoutText, false, 0, ServerIcapAntivirusScannerAssertion.MAX_TIMEOUT)) {
+            throw new ValidationException("Connection timeout value must be a valid integer between 1 and 3600 (0 for no limit)");
         }
         timeoutText = readTimeoutField.getText().trim();
-        if (Syntax.getReferencedNames(timeoutText).length == 0 && !ValidationUtils.isValidInteger(timeoutText, false, 1, Integer.MAX_VALUE)) {
-            throw new ValidationException("Read timeout value must be a valid integer greater than zero (0)");
+        if (Syntax.getReferencedNames(timeoutText).length == 0 && !ValidationUtils.isValidInteger(timeoutText, false, 0, ServerIcapAntivirusScannerAssertion.MAX_TIMEOUT)) {
+            throw new ValidationException("Read timeout value must be a valid integer between 1 and 3600 (0 for no limit)");
         }
         assertion.setContinueOnVirusFound(continueIfVirusFound.isSelected());
         assertion.setFailoverStrategy(((FailoverStrategy) cbStrategy.getSelectedItem()).getName());

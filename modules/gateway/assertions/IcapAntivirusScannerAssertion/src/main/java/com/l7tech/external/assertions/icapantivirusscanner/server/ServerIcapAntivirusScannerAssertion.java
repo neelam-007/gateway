@@ -45,6 +45,11 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
     private static final int MAX_PORT = 65535;
     private static final int DEFAULT_TIMEOUT = 30000;
 
+    /**
+     * The max timeout value in terms of seconds.  This is defined as 1 hour.
+     */
+    public static final int MAX_TIMEOUT = 3600;
+
     private ClientBootstrap client = null;
 
     private FailoverStrategy<String> failoverStrategy;
@@ -76,13 +81,13 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
         }
     }
 
-    private long getTimeoutValue(final PolicyEnforcementContext context, String value) {
-        long timeout = DEFAULT_TIMEOUT;
+    private int getTimeoutValue(final PolicyEnforcementContext context, String value) {
+        int timeout = DEFAULT_TIMEOUT;
         String timeoutStr = getContextVariable(context, value);
-        if (ValidationUtils.isValidInteger(timeoutStr, false, 1, Integer.MAX_VALUE)) {
+        if (ValidationUtils.isValidInteger(timeoutStr, false, 0, MAX_TIMEOUT)) {
             timeout = Integer.parseInt(timeoutStr) * 1000;
         } else {
-            logAndAudit(AssertionMessages.USERDETAIL_INFO, "Invalid timeout value from " + value + " (" + timeoutStr + ").");
+            logAndAudit(AssertionMessages.USERDETAIL_INFO, "Invalid timeout value from " + value + " (" + timeoutStr + ").  Must be between 1 and 3600 (0 for no limit).");
         }
         return timeout;
     }
