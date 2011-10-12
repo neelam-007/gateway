@@ -950,10 +950,10 @@
                 <pathelement location="modules/skunkworks/build/classes"/>
                 <fileset dir="lib">
                     <include name="ant.jar"/>
-                    <include name="**/jcommon-1.0.15.jar"/>
-                    <include name="**/jfreechart-1.0.12.jar"/>
+                    <include name="repository/jfree/jcommon-*.jar"/>
+                    <include name="repository/jfree/jfreechart-*.jar"/>
                     <include name="xercesImpl.jar"/>
-                    <include name="**/commons-lang-2.3.jar"/>
+                    <include name="repository/commons-lang/commons-lang-2.6.jar"/>
                     <include name="test/japex-1.1.jar"/>
                 </fileset>
                 <fileset dir="modules/gateway/server/build">
