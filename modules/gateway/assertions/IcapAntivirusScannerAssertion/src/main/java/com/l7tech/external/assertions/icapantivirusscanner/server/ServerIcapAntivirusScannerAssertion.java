@@ -42,6 +42,8 @@ import java.util.regex.Matcher;
  * @see com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAssertion
  */
 public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetableServerAssertion<IcapAntivirusScannerAssertion> {
+    private static final int MAX_PORT = 65535;
+    private static final int DEFAULT_TIMEOUT = 30000;
 
     private ClientBootstrap client = null;
 
@@ -57,7 +59,6 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
     private String selectedService = null;
 
 
-
     public ServerIcapAntivirusScannerAssertion(final IcapAntivirusScannerAssertion assertion) throws PolicyAssertionException {
         super(assertion);
         this.assertion = assertion;
@@ -70,17 +71,20 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
         if (client == null) {
             client = new ClientBootstrap(new OioClientSocketChannelFactory(Executors.newSingleThreadExecutor()));
             client.setPipelineFactory(new IcapClientChannelPipeline());
-            int connectTimeout = 30000;
-            int readTimeout = 30000;
-            if (ValidationUtils.isValidInteger(getContextVariable(context, assertion.getConnectionTimeout()), false, 1, 65535)) {
-                connectTimeout = Integer.parseInt(assertion.getConnectionTimeout());
-            }
-            if (ValidationUtils.isValidInteger(getContextVariable(context, assertion.getReadTimeout()), false, 1, 65535)) {
-                readTimeout = Integer.parseInt(assertion.getReadTimeout());
-            }
-            client.setOption("connectTimeoutMillis", connectTimeout);
-            client.setOption("readTimeoutMillis", readTimeout);
+            client.setOption("connectTimeoutMillis", getTimeoutValue(context, assertion.getConnectionTimeout()));
+            client.setOption("readTimeoutMillis", getTimeoutValue(context, assertion.getReadTimeout()));
         }
+    }
+
+    private long getTimeoutValue(final PolicyEnforcementContext context, String value) {
+        long timeout = DEFAULT_TIMEOUT;
+        String timeoutStr = getContextVariable(context, value);
+        if (ValidationUtils.isValidInteger(timeoutStr, false, 1, Integer.MAX_VALUE)) {
+            timeout = Integer.parseInt(timeoutStr) * 1000;
+        } else {
+            logAndAudit(AssertionMessages.USERDETAIL_INFO, "Invalid timeout value from " + value + " (" + timeoutStr + ").");
+        }
+        return timeout;
     }
 
     private String getContextVariable(final PolicyEnforcementContext context, final String conVar) {
@@ -103,7 +107,7 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
             if (matcher.matches()) {
                 String hostname = getContextVariable(context, matcher.group(1).trim());
                 String portText = getContextVariable(context, matcher.group(2).trim());
-                if (!ValidationUtils.isValidInteger(portText, false, 1, 65535)) {
+                if (!ValidationUtils.isValidInteger(portText, false, 1, MAX_PORT)) {
                     logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Invalid port specified, port must be between 1 and 65535: " + selectedService);
                     failoverStrategy.reportFailure(selectedService);
                 }
@@ -279,4 +283,5 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
 
 
 }
+
 
