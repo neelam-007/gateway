@@ -33,11 +33,6 @@ public class DelegatingJceProvider extends JceProvider {
     }
 
     @Override
-    public boolean isComponentCompatible(String componentName) {
-        return delegate.isComponentCompatible(componentName);
-    }
-
-    @Override
     public RsaSignerEngine createRsaSignerEngine(PrivateKey caKey, X509Certificate[] caCertChain) {
         return delegate.createRsaSignerEngine(caKey, caCertChain);
     }

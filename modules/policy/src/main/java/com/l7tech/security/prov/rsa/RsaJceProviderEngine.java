@@ -191,11 +191,6 @@ public class RsaJceProviderEngine extends JceProvider {
         }
     }
 
-    @Override
-    public boolean isComponentCompatible(String componentName) {
-        return COMPONENT_RSA_SSLJ_5_1_1.equals(componentName) ? isCompatibleWithSslJ51(cryptojVersion) : super.isComponentCompatible(componentName);
-    }
-
     private static boolean isCompatibleWithSslJ51(String ver) {
         // SSL-J 5.1.1.2 ships with Crypto-J 4.1.0.1, but "has been tested with" Crypto-J 5.0.
         return "4.101".equals(ver) || "5.0".equals(ver);

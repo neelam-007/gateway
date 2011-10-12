@@ -5,7 +5,6 @@ import com.l7tech.security.prov.bc.BouncyCastleRsaSignerEngine;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.JceUtil;
-import static com.l7tech.util.Option.first;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
@@ -19,6 +18,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.util.Option.first;
 
 /**
  * Provide a single point where our Security providers can be configured and queried,
@@ -64,17 +65,6 @@ public abstract class JceProvider {
     public static final String SERVICE_TLS12 = "SSLContext.TLSv1.2"; // SunJSSE from RsaJsse on the basis of which one (currently) support TLSv1.2
 
     /* Recognized component names to pass to {@link #isComponentCompatible(String)}. */
-
-    /**
-     * A component that can be queried to check whether it is safe to use RSA SSL-J 5.1 with the current
-     * JceProvider in its current configuration.
-     * <P/>
-     * If the provider claims compatibility with this component, it is safe to use SSL-J 5.1 as the TLS provider for
-     * outbound TLS, and as the default TLS provider (as long as TLS server sockets for incoming TLS will either always
-     * use a TrustManager that fully populates acceptedIssuers; or else will always use some other TLS provider for
-     * their SSL contexts).
-     */
-    public static final String COMPONENT_RSA_SSLJ_5_1_1 = "sslj-5.1.1";
 
     private static final Map<String,String> DRIVER_MAP;
 
@@ -183,21 +173,6 @@ public abstract class JceProvider {
      *         false if it is either not capable of a FIPS 140 compliant mode or is not operating in it.
      */
     public boolean isFips140ModeEnabled() {
-        return false;
-    }
-
-    /**
-     * Check whether the specified named component is compatible with the current JceProvider in its current
-     * configuration.
-     * <P/>
-     * This method currently always returns false.  Specific JceProvider subclasses may override this to claim
-     * compatibility with some component.
-     *
-     * @param componentName the name of a component to inquire about, ie "sslj-5.1.1".  Required.
-     * @return true if the specified component is known to be compatible with the current JceProvider in its current configuration.
-     * @see #COMPONENT_RSA_SSLJ_5_1_1
-     */
-    public boolean isComponentCompatible(String componentName) {
         return false;
     }
 
