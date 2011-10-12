@@ -28,12 +28,12 @@ public class MockGenericHttpClient implements GenericHttpClient {
      *
      */
     public MockGenericHttpClient( int status
-                                , HttpHeaders headers
+                                , HttpHeaders responseHeaders
                                 , ContentTypeHeader contentTypeHeader
                                 , Long contentLength
                                 , byte[] body) {
         this.responseStatus = status;
-        this.headers = headers;
+        this.responseHeaders = responseHeaders;
         this.contentTypeHeader = contentTypeHeader;
         this.contentLength = contentLength;
         this.responseBody = body;
@@ -50,7 +50,13 @@ public class MockGenericHttpClient implements GenericHttpClient {
     public GenericHttpRequest createRequest(HttpMethod method, GenericHttpRequestParams params) throws GenericHttpException {
         this.method = method;
         this.params = params;
-        return new MockGenericHttpRequest();
+        MockGenericHttpRequest req = new MockGenericHttpRequest();
+        if (createRequestListener != null) {
+            MockGenericHttpRequest replacementRequest = createRequestListener.onCreateRequest(method, params, req);
+            if (replacementRequest != null)
+                req = replacementRequest;
+        }
+        return req;
     }
 
     public byte[] getRequestBody() {
@@ -73,8 +79,8 @@ public class MockGenericHttpClient implements GenericHttpClient {
         this.responseStatus = responseStatus;
     }
 
-    public void setHeaders(HttpHeaders headers) {
-        this.headers = headers;
+    public void setResponseHeaders(HttpHeaders responseHeaders) {
+        this.responseHeaders = responseHeaders;
     }
 
     public void setContentTypeHeader(ContentTypeHeader contentTypeHeader) {
@@ -99,6 +105,14 @@ public class MockGenericHttpClient implements GenericHttpClient {
 
     public void setIdentity(Object identity) {
         this.identity = identity;
+    }
+
+    public CreateRequestListener getCreateRequestListener() {
+        return createRequestListener;
+    }
+
+    public void setCreateRequestListener(CreateRequestListener createRequestListener) {
+        this.createRequestListener = createRequestListener;
     }
 
     /**
@@ -129,6 +143,21 @@ public class MockGenericHttpClient implements GenericHttpClient {
         }
     }
 
+    public interface CreateRequestListener {
+        /**
+         * Notify that someone has called createRequest on a monitored mock client.
+         * <p/>
+         * The new (empty) MockGenericHttpRequest is provided.  The listener may optionally replace this with a different
+         * MockGenericHttpRequest to create instead.
+         *
+         * @param method the method that is being created.  Normally never null, but may be null in test code if null was passed (presumably for testing purposes).
+         * @param params the request parameters.  Normally never null, but may be null in test code if null was passed (presumably for testing).
+         * @param request a new empty default MockGenericHttpRequest that will be returned from createRequest, or null to return the one that was created (@{link #request}).
+         * @return
+         */
+        MockGenericHttpRequest onCreateRequest(HttpMethod method, GenericHttpRequestParams params, MockGenericHttpRequest request);
+    }
+
     //- PROTECTED
 
     protected byte[] getResponseBody() throws IOException {
@@ -141,15 +170,16 @@ public class MockGenericHttpClient implements GenericHttpClient {
     private byte[] requestBody;
     private byte[] responseBody;
     private int responseStatus;
-    private HttpHeaders headers;
+    private HttpHeaders responseHeaders;
     private ContentTypeHeader contentTypeHeader;
     private Long contentLength;
     private HttpMethod method;
     private GenericHttpRequestParams params;
     private int responseCount = 0;
     private Object identity;
+    private CreateRequestListener createRequestListener;
 
-    private class MockGenericHttpRequest implements RerunnableHttpRequest
+    public class MockGenericHttpRequest implements RerunnableHttpRequest
     {
         private InputStreamFactory inFac;
 
@@ -241,7 +271,7 @@ public class MockGenericHttpClient implements GenericHttpClient {
 
         @Override
         public HttpHeaders getHeaders() {
-            return headers;
+            return responseHeaders;
         }
 
         @Override

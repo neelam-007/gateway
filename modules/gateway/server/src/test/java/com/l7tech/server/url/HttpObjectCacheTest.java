@@ -4,17 +4,18 @@ import com.l7tech.common.http.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.LoggingAudit;
+import com.l7tech.security.MockGenericHttpClient;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.TestTimeSource;
-import com.l7tech.security.MockGenericHttpClient;
-import static com.l7tech.server.url.AbstractUrlObjectCache.*;
-import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.util.logging.Logger;
+
+import static com.l7tech.server.url.AbstractUrlObjectCache.*;
+import static org.junit.Assert.*;
 
 /**
  * Simple tests for HttpObjectCache.
@@ -110,8 +111,8 @@ public class HttpObjectCacheTest {
         final String url = "http://blat/";
 
         // Make sure we include a last modified header, although we'll just send garbage
-        hc.setHeaders(new GenericHttpHeaders(new HttpHeader[] {new GenericHttpHeader(HttpConstants.HEADER_LAST_MODIFIED,
-                                                                                     "blarglebliff")}));
+        hc.setResponseHeaders(new GenericHttpHeaders(new HttpHeader[]{new GenericHttpHeader(HttpConstants.HEADER_LAST_MODIFIED,
+                "blarglebliff")}));
 
         hc.clearResponseCount();
         UserObj result = httpObjectCache.resolveUrl( audit, url );
@@ -182,8 +183,8 @@ public class HttpObjectCacheTest {
         final String url = "http://blat/";
 
         // Make sure we include a last modified header, although we'll just send garbage
-        hc.setHeaders(new GenericHttpHeaders(new HttpHeader[] {new GenericHttpHeader(HttpConstants.HEADER_LAST_MODIFIED,
-                                                                                     "blarglebliff")}));
+        hc.setResponseHeaders(new GenericHttpHeaders(new HttpHeader[]{new GenericHttpHeader(HttpConstants.HEADER_LAST_MODIFIED,
+                "blarglebliff")}));
 
         hc.clearResponseCount();
         UserObj result = httpObjectCache.resolveUrl( audit, url );
@@ -254,8 +255,8 @@ public class HttpObjectCacheTest {
         final String url = "http://blat/";
 
         // Make sure we include a last modified header, although we'll just send garbage
-        hc.setHeaders(new GenericHttpHeaders(new HttpHeader[] {new GenericHttpHeader(HttpConstants.HEADER_LAST_MODIFIED,
-                                                                                     "blarglebliff")}));
+        hc.setResponseHeaders(new GenericHttpHeaders(new HttpHeader[]{new GenericHttpHeader(HttpConstants.HEADER_LAST_MODIFIED,
+                "blarglebliff")}));
 
         hc.clearResponseCount();
         HttpObjectCache.FetchResult result = httpObjectCache.fetchCached(url, WAIT_NEVER);
@@ -348,8 +349,8 @@ public class HttpObjectCacheTest {
         final String url = "http://blat/";
 
         // Make sure we include a last modified header, although we'll just send garbage
-        hc.setHeaders(new GenericHttpHeaders(new HttpHeader[] {new GenericHttpHeader(HttpConstants.HEADER_LAST_MODIFIED,
-                                                                                     "blarglebliff")}));
+        hc.setResponseHeaders(new GenericHttpHeaders(new HttpHeader[]{new GenericHttpHeader(HttpConstants.HEADER_LAST_MODIFIED,
+                "blarglebliff")}));
 
         hc.clearResponseCount();
         HttpObjectCache.FetchResult result = httpObjectCache.fetchCached(url, WAIT_NEVER);
@@ -520,8 +521,8 @@ public class HttpObjectCacheTest {
         final String url = "http://blatty44/";
 
         // Make sure we include a last modified header, although we'll just send garbage
-        hc.setHeaders(new GenericHttpHeaders(new HttpHeader[] {new GenericHttpHeader(HttpConstants.HEADER_LAST_MODIFIED,
-                                                                                     "blarglebliff")}));
+        hc.setResponseHeaders(new GenericHttpHeaders(new HttpHeader[]{new GenericHttpHeader(HttpConstants.HEADER_LAST_MODIFIED,
+                "blarglebliff")}));
 
         HttpObjectCache.UserObjectFactory<UserObj> factory = new HttpObjectCache.UserObjectFactory<UserObj>() {
             @Override
@@ -579,8 +580,8 @@ public class HttpObjectCacheTest {
         final String url = "http://blatty44/";
 
         // Make sure we include a last modified header, although we'll just send garbage
-        hc.setHeaders(new GenericHttpHeaders(new HttpHeader[] {new GenericHttpHeader(HttpConstants.HEADER_LAST_MODIFIED,
-                                                                                     "blarglebliff")}));
+        hc.setResponseHeaders(new GenericHttpHeaders(new HttpHeader[]{new GenericHttpHeader(HttpConstants.HEADER_LAST_MODIFIED,
+                "blarglebliff")}));
 
         HttpObjectCache.UserObjectFactory<UserObj> factory = new HttpObjectCache.UserObjectFactory<UserObj>() {
             @Override

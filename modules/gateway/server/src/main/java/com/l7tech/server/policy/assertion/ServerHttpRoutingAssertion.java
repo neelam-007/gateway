@@ -361,9 +361,14 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             } else if (assertion.isPassthroughHttpAuthentication() && httpRequestKnob != null) {
                 String[] authHeaders = httpRequestKnob.getHeaderValues(HttpConstants.HEADER_AUTHORIZATION);
                 boolean passed = false;
-                for (String authHeader : authHeaders) {
+                if (assertion.getRequestHeaderRules().isForwardAll()) {
+                    // We will pass it through later, along with all other application headers (Bug #10018)
                     passed = true;
-                    routedRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_AUTHORIZATION, authHeader));
+                } else {
+                    for (String authHeader : authHeaders) {
+                        passed = true;
+                        routedRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_AUTHORIZATION, authHeader));
+                    }
                 }
                 if (passed) {
                     logAndAudit(AssertionMessages.HTTPROUTE_PASSTHROUGH_REQUEST);
