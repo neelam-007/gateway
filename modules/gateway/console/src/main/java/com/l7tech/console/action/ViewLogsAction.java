@@ -1,15 +1,22 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.panels.LogChooserWindow;
+import com.l7tech.console.panels.dashboard.DashboardWindow;
 import com.l7tech.gateway.common.security.rbac.AttemptedOther;
 import com.l7tech.gateway.common.security.rbac.OtherOperationName;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityType;
 
+import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+
 /**
  * Action to load saved audit or log records.
  */
 public class ViewLogsAction extends SecureAction {
+
+    private LogChooserWindow chooserWindow;
 
     public ViewLogsAction() {
         super(new AttemptedOther(EntityType.LOG_SINK, OtherOperationName.LOG_VIEWER.toString()));
@@ -47,9 +54,28 @@ public class ViewLogsAction extends SecureAction {
      */
     @Override
     protected void performAction() {
-        LogChooserWindow chooserWindow = new LogChooserWindow();
-        chooserWindow.pack();
-        Utilities.centerOnScreen(chooserWindow);
-        chooserWindow.setVisible(true);
+        LogChooserWindow cw = chooserWindow;
+
+        if (cw == null) {
+            cw = new LogChooserWindow();
+            cw.addWindowListener(new WindowAdapter() {
+                public void windowClosed(final WindowEvent e) {
+                    chooserWindow = null;
+                }
+
+                public void windowClosing(final WindowEvent e) {
+                    chooserWindow = null;
+                }
+            });
+            cw.pack();
+            Utilities.centerOnScreen(cw);
+            cw.setVisible(true);
+            chooserWindow = cw;
+        }
+        else {
+            // ensure not minimized
+            cw.setState(Frame.NORMAL);
+            cw.toFront();
+        }
     }
 }
