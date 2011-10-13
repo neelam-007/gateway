@@ -1,10 +1,10 @@
 package com.l7tech.external.assertions.icapantivirusscanner.console;
 
 import com.l7tech.gui.util.Utilities;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import javax.validation.constraints.NotNull;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -43,17 +43,20 @@ public class IcapServerParametersDialog extends JDialog {
     private void initializeComponents() {
         Utilities.setEscKeyStrokeDisposes(this);
         buttonOK.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onOK();
             }
         });
 
         buttonCancel.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onCancel();
             }
         });
         addWindowListener(new WindowAdapter() {
+            @Override
             public void windowClosing(WindowEvent e) {
                 onCancel();
             }
@@ -78,12 +81,12 @@ public class IcapServerParametersDialog extends JDialog {
         if (serviceParamExists(getParameterName())) {
             //adding a new param
             if (previousName == null) {
-                JOptionPane.showMessageDialog(this, "The parameter name '" + getParameterName() + "' already exist.", "ERROR", JOptionPane.PLAIN_MESSAGE);
+                JOptionPane.showMessageDialog(this, "The parameter '" + getParameterName() + "' already exists.", "ERROR", JOptionPane.PLAIN_MESSAGE);
                 return;
             }
             //editting an existing param
             else if (!previousName.equalsIgnoreCase(getParameterName())) {
-                JOptionPane.showMessageDialog(this, "The parameter name '" + getParameterName() + "' already exist.", "ERROR", JOptionPane.PLAIN_MESSAGE);
+                JOptionPane.showMessageDialog(this, "The parameter '" + getParameterName() + "' already exists.", "ERROR", JOptionPane.PLAIN_MESSAGE);
                 return;
             }
         }
