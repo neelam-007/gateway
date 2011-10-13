@@ -1,8 +1,3 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.common.io;
 
 import java.io.PushbackInputStream;
@@ -77,11 +72,25 @@ public class ByteLimitInputStream extends PushbackInputStream {
         gotBytes(0);
     }
 
+    /**
+     * Get the current size limit for the stream.
+     *
+     * @return The size limit.
+     */
     public long getSizeLimit(){
         return sizeLimit;
     }
 
-    protected void gotBytes(long got) throws IOException {
+    /**
+     * Get the number of bytes read from the stream.
+     *
+     * @return The count of bytes read
+     */
+    public long getBytesRead() {
+        return bytesRead;
+    }
+
+    private void gotBytes(long got) throws IOException {
         bytesRead += got;
         if (sizeLimit > 0 && bytesRead >= sizeLimit) {
             close();

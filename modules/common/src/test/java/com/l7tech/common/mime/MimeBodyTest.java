@@ -1,7 +1,3 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- */
-
 package com.l7tech.common.mime;
 
 import com.l7tech.common.io.ByteLimitInputStream;
@@ -10,10 +6,10 @@ import com.l7tech.common.io.IOExceptionThrowingInputStream;
 import com.l7tech.common.io.NullOutputStream;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.Charsets;
+import static com.l7tech.util.CollectionUtils.list;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.io.*;
@@ -30,15 +26,15 @@ import static org.junit.Assert.*;
 public class MimeBodyTest {
     private static Logger log = Logger.getLogger(MimeBodyTest.class.getName());
 
-    private static long FIRST_PART_MAX_BYTE = 0;
+    private static long FIRST_PART_MAX_BYTE = 0L;
 
     @Test
     public void testEmptySinglePartMessage() throws Exception {
         MimeBody mm = new MimeBody(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new EmptyInputStream(),FIRST_PART_MAX_BYTE);
-        assertEquals(-1, mm.getFirstPart().getContentLength()); // size of part not yet known
+        assertEquals( -1L, mm.getFirstPart().getContentLength()); // size of part not yet known
         long len = mm.getEntireMessageBodyLength(); // force entire body to be read
-        assertEquals(0, len);
-        assertEquals(0, mm.getFirstPart().getContentLength()); // size now known
+        assertEquals( 0L, len);
+        assertEquals( 0L, mm.getFirstPart().getContentLength()); // size now known
     }
 
     @Test
@@ -242,7 +238,7 @@ public class MimeBodyTest {
 
         InputStream bodyStream = mm.getEntireMessageBodyAsInputStream(true);
         byte[] body = IOUtils.slurpStream(bodyStream);
-        assertEquals(body.length, mm.getEntireMessageBodyLength());
+        assertEquals( (long) body.length, mm.getEntireMessageBodyLength());
 
         // strip added content-length for the comparison
         String bodyStr = new String(body).replaceAll("Content-Length:\\s*\\d+\r\n", "");
@@ -333,14 +329,14 @@ public class MimeBodyTest {
             partInfo.getInputStream(false).close();
         }
 
-        assertEquals(2, parts.size());
+        assertEquals( 2L, (long) parts.size() );
         assertEquals(MESS_SOAPCID, ((PartInfo)parts.get(0)).getContentId(true));
         assertEquals(MESS_RUBYCID, ((PartInfo)parts.get(1)).getContentId(true));
     }
 
     @Test
     public void testIterator2() throws Exception {
-        SwaTestcaseFactory stfu = new SwaTestcaseFactory(23, 888, 29);
+        SwaTestcaseFactory stfu = new SwaTestcaseFactory(23, 888, 29L );
         byte[] testMsg = stfu.makeTestMessage();
         InputStream mess = new ByteArrayInputStream(testMsg);
         MimeBody mm = new MimeBody(new ByteArrayStashManager(),
@@ -360,7 +356,7 @@ public class MimeBodyTest {
             //partInfo.getInputStream(false).close();
         }
 
-        assertEquals(22, parts.size());
+        assertEquals( 22L, (long) parts.size() );
     }
 
     /**
@@ -371,7 +367,7 @@ public class MimeBodyTest {
      */
     @Test
     public void testIterationWithoutConsumption() throws Exception {
-        SwaTestcaseFactory stfu = new SwaTestcaseFactory(4, 1024*50, 33);
+        SwaTestcaseFactory stfu = new SwaTestcaseFactory(4, 1024*50, 33L );
         byte[] testMsg = stfu.makeTestMessage();
         InputStream mess = new ByteArrayInputStream(testMsg);
 
@@ -386,7 +382,7 @@ public class MimeBodyTest {
             parts.add(partInfo);
         }
 
-        assertEquals(4, parts.size());
+        assertEquals( 4L, (long) parts.size() );
     }
 
     @Test
@@ -448,12 +444,12 @@ public class MimeBodyTest {
         MimeBody rebuilt = new MimeBody(output, ContentTypeHeader.parseValue(MESS2_CONTENT_TYPE),FIRST_PART_MAX_BYTE);
         rebuilt.readAndStashEntireMessage();
 
-        assertEquals(1,rebuilt.getNumPartsKnown());
+        assertEquals( 1L, (long) rebuilt.getNumPartsKnown() );
     }
     
     @Test
     public void testGetBytesIfAlreadyAvailable() throws Exception {
-        SwaTestcaseFactory stfu = new SwaTestcaseFactory(1, 50000, 29);
+        SwaTestcaseFactory stfu = new SwaTestcaseFactory(1, 50000, 29L );
         InputStream in = new ByteArrayInputStream(stfu.makeTestMessage());
 
         final HybridStashManager stashManager = new HybridStashManager(2038, new File("."), "testGBIAA_1");
@@ -465,7 +461,7 @@ public class MimeBodyTest {
                     in,FIRST_PART_MAX_BYTE);
 
             byte[] firstPart = IOUtils.slurpStream(mm.getPart(0).getInputStream(false));
-            assertEquals(firstPart.length, 50000);
+            assertEquals( (long) firstPart.length, 50000L );
 
             // Fetch with high limit should succeed
             byte[] got = mm.getFirstPart().getBytesIfAvailableOrSmallerThan(99999);
@@ -531,9 +527,11 @@ public class MimeBodyTest {
     public void testSizeLimitSinglePartNonXml() throws Exception {
         final String body = "non-xml blah blah blah blah blah";
         final String ctype = "application/x-whatever";
-        doTestSizeLimit("Should enforce and fail limit", body, ctype, 12, true);
-        doTestSizeLimit("Should not fail limit; body too small", body, ctype, 64, false);
-        doTestSizeLimit("Should not fail limit; no limit", body, ctype, 0, false);
+        for ( final Boolean destroyAsRead : list( true, false ) ) {
+            doTestSizeLimit("Should enforce and fail limit", body, ctype, 12L, true, destroyAsRead);
+            doTestSizeLimit("Should not fail limit; body too small", body, ctype, 64L, false, destroyAsRead);
+            doTestSizeLimit("Should not fail limit; no limit", body, ctype, 0L, false, destroyAsRead);
+        }
     }
 
     @BugNumber(9505)
@@ -541,9 +539,11 @@ public class MimeBodyTest {
     public void testSizeLimitSinglePartXml() throws Exception {
         final String body = SOAP;
         final String ctype = "text/xml";
-        doTestSizeLimit("Should enforce and fail limit", body, ctype, 256, true);
-        doTestSizeLimit("Should not fail limit; body too small", body, ctype, 4096, false);
-        doTestSizeLimit("Should not fail limit; no limit", body, ctype, 0, false);
+        for ( final Boolean destroyAsRead : list( true, false ) ) {
+            doTestSizeLimit("Should enforce and fail limit", body, ctype, 256L, true, destroyAsRead);
+            doTestSizeLimit("Should not fail limit; body too small", body, ctype, 4096L, false, destroyAsRead);
+            doTestSizeLimit("Should not fail limit; no limit", body, ctype, 0L, false, destroyAsRead);
+        }
     }
 
     @BugNumber(9505)
@@ -551,9 +551,11 @@ public class MimeBodyTest {
     public void testSizeLimitMultiPartNonXml() throws Exception {
         final String body = MESS_NONXML;
         final String ctype = MESS_NONXML_CONTENT_TYPE;
-        doTestSizeLimit("Should enforce and fail limit", body, ctype, 400, true);
-        doTestSizeLimit("Should not fail limit; body too small", body, ctype, 8192, false);
-        doTestSizeLimit("Should not fail limit; no limit", body, ctype, 0, false);
+        for ( final Boolean destroyAsRead : list( true, false ) ) {
+            doTestSizeLimit("Should enforce and fail limit", body, ctype, 400L, true, destroyAsRead);
+            doTestSizeLimit("Should not fail limit; body too small", body, ctype, 8192L, false, destroyAsRead);
+            doTestSizeLimit("Should not fail limit; no limit", body, ctype, 0L, false, destroyAsRead);
+        }
     }
 
     @BugNumber(9505)
@@ -561,19 +563,37 @@ public class MimeBodyTest {
     public void testSizeLimitMultiPartXml() throws Exception {
         final String body = MESS;
         final String ctype = MESS_CONTENT_TYPE;
-        doTestSizeLimit("Should enforce and fail limit", body, ctype, 400, true);
-        doTestSizeLimit("Should not fail limit; body too small", body, ctype, 8192, false);
-        doTestSizeLimit("Should not fail limit; no limit", body, ctype, 0, false);
+        for ( final Boolean destroyAsRead : list( true, false ) ) {
+            doTestSizeLimit("Should enforce and fail limit", body, ctype, 400L, true, destroyAsRead);
+            doTestSizeLimit("Should not fail limit; body too small", body, ctype, destroyAsRead ? 514L : 2000L, false, destroyAsRead); //Size is 450 +  64 to ensure bounary can be read
+            doTestSizeLimit("Should not fail limit; no limit", body, ctype, 0L, false, destroyAsRead);
+        }
     }
 
-    private void doTestSizeLimit(String msg, String body, String ctype, int limit, boolean expectSizeFailure) throws IOException, NoSuchPartException {
+    private void doTestSizeLimit(String msg, String body, String ctype, long limit, boolean expectSizeFailure, boolean destroyAsRead) throws IOException, NoSuchPartException {
         MimeBody m = null;
         InputStream s = null;
         try {
-            m = makeMessage(body, ctype,limit);
-            IOUtils.copyStream(s = m.getPart(0).getInputStream(true), new NullOutputStream());
+            m = makeMessage(body, ctype, limit);
+            PartInfo part0 = m.getPart( 0 );
+            s = part0.getInputStream( destroyAsRead );
+            while ( s.read(new byte[64]) >= 0 ) {
+                // read some more ...
+            }
             if (expectSizeFailure)
                 fail(msg);
+            try {
+                for ( int i=1; i<1000; i++ ) {
+                    PartInfo part = m.getPart( i );
+                    ResourceUtils.closeQuietly( s );
+                    IOUtils.copyStream( s = part.getInputStream( destroyAsRead ), new NullOutputStream() );
+                }
+            } catch ( NoSuchPartException e ) {
+                // no more parts to check
+            } catch (ByteLimitInputStream.DataSizeLimitExceededException e) {
+                if (!expectSizeFailure)
+                    fail(msg + " (after reading first part)");
+            }
         } catch (ByteLimitInputStream.DataSizeLimitExceededException e) {
             if (!expectSizeFailure)
                 fail(msg);

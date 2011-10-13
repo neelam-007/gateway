@@ -33,7 +33,7 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
     private static final Logger logger = Logger.getLogger(MimeBody.class.getName());
     private static final int BLOCKSIZE = 4096;
 
-    private static final AtomicLong propertyFirstPartMaxBytes = new AtomicLong(0);
+    private static final AtomicLong firstPartMaxBytes = new AtomicLong(0);
 
     private static final long PREAMBLE_MAX_SIZE = ConfigFactory.getLongProperty( "com.l7tech.common.mime.preambleMaxSize", 1024 * 32 );
     private static final long HEADERS_MAX_SIZE = ConfigFactory.getLongProperty( "com.l7tech.common.mime.headersMaxSize", 1024 * 32 );
@@ -109,16 +109,15 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
                 if (start != null && !(start.equals(firstPart.getContentId(false))))
                     throw new IOException("Multipart content type has a \"start\" parameter, but it doesn't match the cid of the first MIME part.");
                 if (firstPartMaxBytes > 0)
-                    this.mainInputStream.setFirstPartSizeLimit(firstPartMaxBytes);
+                    this.mainInputStream.setSizeLimitNonFlagging(firstPartMaxBytes + this.mainInputStream.getBytesRead());
             } else {
                 // Single-part message.  Configure first and only part accordingly.
                 boundaryStr = null;
                 boundary = null;
                 pushbackSize = BLOCKSIZE;
                 this.mainInputStream = new FlaggingByteLimitInputStream(mainInputStream, pushbackSize);
-                if (firstPartMaxBytes > 0){
-                    this.mainInputStream.setSizeLimit(firstPartMaxBytes);
-                }
+                if (firstPartMaxBytes > 0)
+                    this.mainInputStream.setSizeLimitNonFlagging(firstPartMaxBytes);
                 final MimeHeaders outerHeaders = new MimeHeaders();
                 outerHeaders.add(outerContentType);
                 final PartInfoImpl mainPartInfo = new PartInfoImpl(0, outerHeaders) {
@@ -178,18 +177,18 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
     }
 
     /**
-    * @param propertyFirstPartMaxBytes  size limit to enforce for the first part for new MimeBody instances created from now on, or zero for no limit
+    * @param firstPartMaxBytes  size limit to enforce for the first part for new MimeBody instances created from now on, or zero for no limit
     */
-    public static void setPropertyFirstPartMaxBytes(long propertyFirstPartMaxBytes) {
-        MimeBody.propertyFirstPartMaxBytes.set(propertyFirstPartMaxBytes);
+    public static void setFirstPartMaxBytes(long firstPartMaxBytes) {
+        MimeBody.firstPartMaxBytes.set(firstPartMaxBytes);
     }
 
     /**
      * Value from cluster property "io.xmlPartMaxBytes"
      * @return size limit to enforce for the first part for new MimeBody instances created from now on, or zero for no limit
      */
-    public static long getPropertyFirstPartMaxBytes(){
-        return MimeBody.propertyFirstPartMaxBytes.get();
+    public static long getFirstPartMaxBytes(){
+        return MimeBody.firstPartMaxBytes.get();
     }
 
 
@@ -614,13 +613,9 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
         checkErrorIO();
 
         PartInfoImpl currentPart = (PartInfoImpl)partInfos.get(partInfos.size() - 1);
-        long firstPartLimit = mainInputStream.getSizeLimit();
-        if(currentPart.getPosition() > 0)
-            mainInputStream.clearLimitNonFlagging();
         final MimeBoundaryTerminatedInputStream in = new MimeBoundaryTerminatedInputStream(boundary, mainInputStream, pushbackSize);
         currentPart.stashAndCheckContentLength(in);
         currentPart.onBodyRead();
-        mainInputStream.setSizeLimit(firstPartLimit);
         if (in.isLastPartProcessed())
             moreParts = false;
     }
@@ -826,17 +821,6 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
         mainInputStream.setSizeLimit(sizeLimit);
     }
 
-     /**
-     * Set the maximum size of the first part that this MimeBody should be prepared to process.
-     *
-     * <p>This may have no effect if the parts have already all been read and stashed.</p>
-     *
-     * @param sizeLimit  the new size limit, or 0 for no limit.  Must be nonnegative.
-     */
-    public void setFirstPartLengthLimit(long sizeLimit)throws IOException {
-        mainInputStream.setFirstPartSizeLimit(sizeLimit);
-    }
-
     /** Our PartInfo implementation. */
     private class PartInfoImpl implements PartInfo {
         protected final int ordinal;
@@ -927,16 +911,12 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
             if (is != null)
                 return decodeIfNecessary(is, true);
 
-            final long firstPartLimit = mainInputStream.getSizeLimit();
-            if(getPosition() > 0)
-                mainInputStream.clearLimitNonFlagging();
-
+            // Prepare to read this Part's body
             is = new MimeBoundaryTerminatedInputStream(boundary, mainInputStream, pushbackSize);
             ((MimeBoundaryTerminatedInputStream)is).setEndOfStreamHook(new Runnable() {
                 @Override
                 public void run() {
                     try {
-                        mainInputStream.setSizeLimit(firstPartLimit);
                         onBodyRead();
                         readNextPartHeaders();
                     } catch (IOException e) {
@@ -1210,6 +1190,7 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
     }
 
     private class FlaggingByteLimitInputStream extends ByteLimitInputStream {
+        private boolean limitCustomized = false;
 
         private FlaggingByteLimitInputStream(InputStream mainInputStream) {
             super(mainInputStream, MimeBody.this.pushbackSize);
@@ -1219,15 +1200,24 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
             super(mainInputStream, pushbackSize);
         }
 
-        // lowers limit
-        private void setFirstPartSizeLimit(long newLimit) throws IOException{
-            if(getSizeLimit()== 0 || newLimit< getSizeLimit())
-                setSizeLimit(newLimit);
+        @Override
+        public void setSizeLimit(long newLimit) throws IOException {
+            limitCustomized = true;
+            super.setSizeLimit(newLimit);
         }
 
-        public void clearLimitNonFlagging() throws IOException {
-            setSizeLimit(0);
+        private void setSizeLimitNonFlagging(long newLimit) throws IOException {
+            if (!isLimitCustomized())
+                super.setSizeLimit(newLimit);
         }
 
+        private void clearLimitNonFlagging() throws IOException {
+            if (!isLimitCustomized())
+                super.setSizeLimit(0);
+        }
+
+        private boolean isLimitCustomized() {
+            return limitCustomized;
+        }
     }
 }
