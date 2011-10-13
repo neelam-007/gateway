@@ -614,11 +614,13 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
         checkErrorIO();
 
         PartInfoImpl currentPart = (PartInfoImpl)partInfos.get(partInfos.size() - 1);
+        long firstPartLimit = mainInputStream.getSizeLimit();
         if(currentPart.getPosition() > 0)
             mainInputStream.clearLimitNonFlagging();
         final MimeBoundaryTerminatedInputStream in = new MimeBoundaryTerminatedInputStream(boundary, mainInputStream, pushbackSize);
         currentPart.stashAndCheckContentLength(in);
         currentPart.onBodyRead();
+        mainInputStream.setSizeLimit(firstPartLimit);
         if (in.isLastPartProcessed())
             moreParts = false;
     }
@@ -925,6 +927,7 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
             if (is != null)
                 return decodeIfNecessary(is, true);
 
+            final long firstPartLimit = mainInputStream.getSizeLimit();
             if(getPosition() > 0)
                 mainInputStream.clearLimitNonFlagging();
 
@@ -933,6 +936,7 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
                 @Override
                 public void run() {
                     try {
+                        mainInputStream.setSizeLimit(firstPartLimit);
                         onBodyRead();
                         readNextPartHeaders();
                     } catch (IOException e) {
@@ -1217,17 +1221,8 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
 
         // lowers limit
         private void setFirstPartSizeLimit(long newLimit) throws IOException{
-            // check if fist part read
-            int currentPart = partInfos.size() - 1;
-            if(currentPart > 0) return;
-
             if(getSizeLimit()== 0 || newLimit< getSizeLimit())
-                super.setSizeLimit(newLimit);
-        }
-
-        @Override
-        public void setSizeLimit(long newLimit) throws IOException {
-            super.setSizeLimit(newLimit);
+                setSizeLimit(newLimit);
         }
 
         public void clearLimitNonFlagging() throws IOException {
