@@ -6,6 +6,8 @@
 
 package com.l7tech.gui.widgets;
 
+import org.jetbrains.annotations.Nullable;
+
 import javax.swing.*;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
@@ -19,14 +21,17 @@ import java.awt.*;
  */
 public class SquigglyTextField extends JTextField implements SquigglyField {
     private final SquigglyFieldSupport support = new SquigglyFieldSupport(new SquigglyFieldSupport.Callbacks() {
+        @Override
         public void repaint() {
             SquigglyTextField.this.repaint();
         }
 
+        @Override
         public void setToolTipTextRaw(String text) {
             SquigglyTextField.super.setToolTipText(text);
         }
 
+        @Override
         public String getToolTipTextRaw() {
             return SquigglyTextField.super.getToolTipText();
         }
@@ -51,6 +56,7 @@ public class SquigglyTextField extends JTextField implements SquigglyField {
         super(doc, text, columns);
     }
 
+    @Override
     public void paintComponent( Graphics g ) {
         super.paintComponent(g);
 
@@ -91,58 +97,72 @@ public class SquigglyTextField extends JTextField implements SquigglyField {
         support.draw( g, xb, xe, ya );
     }
 
+    @Override
     public void setToolTipText(String text) {
         support.setToolTipText(text);
     }
 
+    @Override
     public String getToolTipText() {
         return support.getToolTipText();
     }
 
+    @Override
     public String getModelessFeedback() {
         return support.getModelessFeedback();
     }
 
-    public void setModelessFeedback(String feedback) {
+    @Override
+    public void setModelessFeedback(@Nullable String feedback) {
         support.setModelessFeedback(feedback);
     }
 
+    @Override
     public int getBegin() {
         return support.getBegin();
     }
 
+    @Override
     public int getEnd() {
         return support.getEnd();
     }
 
+    @Override
     public void setRange(int begin, int end) {
         support.setRange(begin, end);
     }
 
+    @Override
     public void setAll() {
         support.setAll();
     }
 
+    @Override
     public void setNone() {
         support.setNone();
     }
 
+    @Override
     public Color getColor() {
         return support.getColor();
     }
 
+    @Override
     public void setColor(Color color) {
         support.setColor(color);
     }
 
+    @Override
     public void setSquiggly() {
         support.setSquiggly();
     }
 
+    @Override
     public void setDotted() {
         support.setDotted();
     }
 
+    @Override
     public void setStraight() {
         support.setStraight();
     }

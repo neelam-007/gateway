@@ -1,5 +1,6 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.security.saml.SamlConstants;
@@ -11,8 +12,7 @@ import org.w3c.dom.Document;
 import x0Assertion.oasisNamesTcSAML2.AuthnContextType;
 import x0Assertion.oasisNamesTcSAML2.AuthnStatementType;
 
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.*;
 
 /**
  * Validation for SAML 2.x Authentication statement.
@@ -43,10 +43,17 @@ class Saml2AuthenticationStatementValidate extends SamlStatementValidate {
      * @param wssResults
      * @param validationResults where the results are collected
      * @param collectAttrValues
+     * @param serverVariables
+     * @param auditor
      */
+    @Override
     protected void validate(Document document,
                             XmlObject statementAbstractType,
-                            ProcessorResult wssResults, Collection validationResults, Collection<Pair<String, String[]>> collectAttrValues) {
+                            ProcessorResult wssResults,
+                            Collection<SamlAssertionValidate.Error> validationResults,
+                            Collection<Pair<String, String[]>> collectAttrValues,
+                            Map<String, Object> serverVariables,
+                            Audit auditor) {
         if (!(statementAbstractType instanceof AuthnStatementType)) {
             throw new IllegalArgumentException("Expected "+AuthnStatementType.class);
         }
@@ -71,20 +78,11 @@ class Saml2AuthenticationStatementValidate extends SamlStatementValidate {
             }
         }
 
-        boolean methodMatches = methods.length == 0;
-        for (String method : methods) {
-            if (authenticationMethod.equals(method)) {
-                methodMatches = true;
-                logger.finer("Matched authentication method " + method);
-                break;
-            }
-        }
-        if (!methodMatches) {
-            final String msg = "Authentication method not matched expected/received: {0}/{1}";
-            validationResults.add(new SamlAssertionValidate.Error(msg, null,
-                                                                  methods.length == 1 ? methods[0]
-                                                                                : Arrays.asList(methods).toString(), authenticationMethod));
-            logger.finer(msg);
-        }
+        final String customAuthMethods = authenticationStatementConstraints.getCustomAuthenticationMethods();
+        validateAuthenticationMethods(authenticationMethod, Arrays.asList(methods),
+                customAuthMethods,
+                validationResults,
+                serverVariables,
+                auditor);
     }
 }

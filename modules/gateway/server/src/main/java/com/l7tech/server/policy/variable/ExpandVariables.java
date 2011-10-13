@@ -8,6 +8,8 @@ import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Functions;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.text.MessageFormat;
 import java.util.*;
@@ -165,6 +167,7 @@ public final class ExpandVariables {
         }
     }});
 
+    @Nullable
     private static Object[] getAndFilter(Map<String,?> vars, Syntax syntax, Audit audit, boolean strict) {
         String matchingName = Syntax.getMatchingName(syntax.remainingName.toLowerCase(), vars.keySet());
         if (matchingName == null) {
@@ -383,11 +386,18 @@ public final class ExpandVariables {
      * Multi valued variables are not returned as a single value, but the returned list will contain an element
      * for every element in each multi valued variable found
      *
+     * @param s The string to process.
+     * @param vars The available variables.
+     * @param audit The Auditor to audit to.
+     * @param strict Thrown VariableNameSyntaxException if a referenced variable does not exist.
      * @return a list of Objects containing String parts from the input that do not reference variables
-     *         and the resolved variable values
+     *         and the resolved variable values.
      * @see #process(String, java.util.Map, com.l7tech.gateway.common.audit.Audit, boolean)
+     * @throws com.l7tech.policy.variable.VariableNameSyntaxException throw if strict and an unknown variable is referenced.
      */
-    public static List<Object> processNoFormat(String s, Map<String,?> vars, Audit audit, boolean strict) {
+    @NotNull
+    public static List<Object> processNoFormat(String s, Map<String,?> vars, Audit audit, boolean strict)
+            throws VariableNameSyntaxException{
         if (s == null) throw new IllegalArgumentException();
 
         Matcher matcher = Syntax.regexPattern.matcher(s);
@@ -403,7 +413,11 @@ public final class ExpandVariables {
             //note if there is actually an empty space, we will preserve it, so no .trim() before .isEmpty()
             if (!preceedingText.isEmpty()) result.add(s.substring(previousMatchEndIndex, matcher.start()));
 
-            Collections.addAll(result, getAndFilter(vars, Syntax.parse(matcher.group(1), defaultDelimiter()), audit, strict));
+            final Object[] newVals = getAndFilter(vars, Syntax.parse(matcher.group(1), defaultDelimiter()), audit, strict);
+            if (newVals != null) {
+                Collections.addAll(result, newVals);
+            }
+
             previousMatchEndIndex = matcher.end();
         }
         if (previousMatchEndIndex < s.length())

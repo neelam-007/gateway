@@ -8,7 +8,7 @@
     <properties>
       <alignmentY value="0.5"/>
       <minimumSize width="-1" height="-1"/>
-      <preferredSize width="570" height="370"/>
+      <preferredSize width="570" height="500"/>
     </properties>
     <border type="none"/>
     <children>

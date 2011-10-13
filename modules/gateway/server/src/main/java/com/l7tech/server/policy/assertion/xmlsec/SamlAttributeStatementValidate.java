@@ -1,5 +1,6 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
@@ -14,6 +15,7 @@ import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.logging.Level;
 
 /**
@@ -44,10 +46,13 @@ class SamlAttributeStatementValidate extends SamlStatementValidate {
      * @param wssResults
      * @param validationResults     where the results are collected
      * @param collectAttrValues
+     * @param serverVariables
+     * @param auditor
      */
     protected void validate(Document document,
                             XmlObject statementAbstractType,
-                            ProcessorResult wssResults, Collection validationResults, Collection<Pair<String, String[]>> collectAttrValues) {
+                            ProcessorResult wssResults,
+                            Collection<SamlAssertionValidate.Error> validationResults, Collection<Pair<String, String[]>> collectAttrValues, Map<String, Object> serverVariables, Audit auditor) {
         if (!(statementAbstractType instanceof AttributeStatementType)) {
             throw new IllegalArgumentException("Expected " + AttributeStatementType.class);
         }

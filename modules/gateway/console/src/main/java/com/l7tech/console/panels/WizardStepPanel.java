@@ -110,6 +110,14 @@ public abstract class WizardStepPanel<ST> extends JPanel {
      * Test whether the step is finished and it is safe to advance to the next one.  This method
      * should return quickly.
      *
+     * Note: This method can be called before the panel has been initialized with data and before the user has been
+     * shown the dialog.
+     * Warning: be careful of using {@link com.l7tech.gui.util.TextComponentPauseListenerManager#registerPauseListener}
+     * with an event handler that can call canAdvance() indirectly through notifyListeners(). Pause events will be generated
+     * before the panel containing the pause capable component has been shown. If canAdvance() has logic to stop
+     * next from being enabled, then this sequence of events can disable the next button on the first panel of the wizard.
+     * (Unless your running in debug mode in which case it may work some or all of the time).
+     *
      * @return true if the panel is valid, false otherwise
      */
     public boolean canAdvance() {

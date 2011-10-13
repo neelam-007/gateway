@@ -437,7 +437,7 @@ public class Saml2ValidationTest {
             if ( "SAML Constraint Error: Unsigned SAML assertion found in security Header".equals( errorMessage ) )
                 foundError2 = true;
 
-            if ( "SAML Constraint Error: Authentication method not matched expected/received: urn:oasis:names:tc:SAML:2.0:ac:classes:unspecified/urn:oasis:names:tc:SAML:2.0:ac:classes:XMLDSig".equals( errorMessage ) )
+            if ( "SAML Constraint Error: Authentication method not matched. Received value: urn:oasis:names:tc:SAML:2.0:ac:classes:XMLDSig Expected one of: urn:oasis:names:tc:SAML:2.0:ac:classes:unspecified".equals( errorMessage ) )
                 methodError = true;
         }
 

@@ -31,6 +31,7 @@ import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.xpath.XpathExpression;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.support.StaticListableBeanFactory;
@@ -682,6 +683,17 @@ public class ExpandVariablesTest {
         assertTrue("Message not found from multi valued variable", paramValue.get(1) instanceof Message);
         assertEquals("Incorrect value found from multi valued variable", "three", paramValue.get(2));
 
+    }
+
+    /**
+     * Validate no null pointer when strict is false and variable does not exist.
+     */
+    @Test
+    public void testProcessNoFormat_Lax() throws Exception{
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(makeTinyRequest(), new Message());
+        final Map<String, Object> vars = pec.getVariableMap(new String[]{}, audit);
+        List<Object> paramValue = ExpandVariables.processNoFormat("${does_not_exist}", vars, audit, false);
+        Assert.assertTrue("List should be empty", paramValue.isEmpty());
     }
 
     @Test

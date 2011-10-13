@@ -8,6 +8,7 @@ import java.io.Serializable;
  */
 public class SamlAuthenticationStatement implements Cloneable, Serializable {
     private String[] authenticationMethods = new String[] {};
+    private String customAuthenticationMethods = "";
     private boolean includeAuthenticationContextDeclaration = true;
 
     public SamlAuthenticationStatement() {
@@ -19,6 +20,14 @@ public class SamlAuthenticationStatement implements Cloneable, Serializable {
 
     public void setAuthenticationMethods(String[] authenticationMethods) {
         this.authenticationMethods = authenticationMethods;
+    }
+
+    public String getCustomAuthenticationMethods() {
+        return customAuthenticationMethods;
+    }
+
+    public void setCustomAuthenticationMethods(String customAuthenticationMethods) {
+        this.customAuthenticationMethods = customAuthenticationMethods;
     }
 
     public boolean isIncludeAuthenticationContextDeclaration() {

@@ -2,18 +2,24 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.TestKeys;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.identity.mapping.NameFormat;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml2;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
+import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
+import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.ISO8601Date;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.saml.SamlAssertionV2;
 import com.l7tech.xml.soap.SoapUtil;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -31,10 +37,12 @@ import static org.junit.Assert.assertTrue;
 public class ServerRequireWssSaml2Test {
 
     Message request;
+    private SamlAssertionV2 samlAssertionV2;
 
     @Before
     public void initRequest() throws Exception {
         request = SamlTestUtil.makeSamlRequest(true);
+        samlAssertionV2 = new SamlAssertionV2(XmlUtil.stringAsDocument(AUTH_SAML_V2).getDocumentElement(), null);
     }
 
     @Test
@@ -125,6 +133,206 @@ public class ServerRequireWssSaml2Test {
         assertEquals("Checking SAML Token Expiration is ignored.", AssertionStatus.NONE, result);
     }
 
+    // Some test coverage for existing authentication matching behavior
+
+    /**
+     * Ensures that an known authentication method value matches.
+     */
+    @Test
+    public void testAuthValue_BuiltInAuthMethods_Success() throws Exception {
+
+        final RequireWssSaml requireWssSaml = new RequireWssSaml();
+        requireWssSaml.setVersion(2);
+        requireWssSaml.setCheckAssertionValidity(false);
+        requireWssSaml.setNameFormats(new String[] {NameFormat.OTHER.getSaml20Uri()});
+
+        requireWssSaml.setRequireHolderOfKeyWithMessageSignature(false);
+        requireWssSaml.setRequireSenderVouchesWithMessageSignature(false);
+        requireWssSaml.setNoSubjectConfirmation(true);
+
+        final SamlAuthenticationStatement authStmt = new SamlAuthenticationStatement();
+        authStmt.setAuthenticationMethods(new String[]{SamlConstants.AUTHENTICATION_SAML2_PASSWORD});
+        requireWssSaml.setAuthenticationStatement(authStmt);
+
+        ServerRequireWssSaml serverRequireWssSaml = new ServerRequireWssSaml<RequireWssSaml>(requireWssSaml, SamlTestUtil.beanFactory);
+
+        Message request = ServerRequireWssSamlTest.getDecoratedMessage(samlAssertionV2);
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
+        System.out.println("Req: " + XmlUtil.nodeToFormattedString(context.getRequest().getXmlKnob().getDocumentReadOnly()));
+
+        AssertionStatus result = serverRequireWssSaml.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+    }
+
+    /**
+     * Ensures that an unknown authentication method value fails.
+     */
+    @Test
+    public void testAuthValue_BuiltInAuthMethods_Failure() throws Exception {
+
+        final RequireWssSaml requireWssSaml = new RequireWssSaml();
+        requireWssSaml.setVersion(2);
+        requireWssSaml.setCheckAssertionValidity(false);
+        requireWssSaml.setNameFormats(new String[] {NameFormat.OTHER.getSaml20Uri()});
+
+        requireWssSaml.setRequireHolderOfKeyWithMessageSignature(false);
+        requireWssSaml.setRequireSenderVouchesWithMessageSignature(false);
+        requireWssSaml.setNoSubjectConfirmation(true);
+
+        final SamlAuthenticationStatement authStmt = new SamlAuthenticationStatement();
+        authStmt.setAuthenticationMethods(new String[]{SamlConstants.UNSPECIFIED_AUTHENTICATION});
+        requireWssSaml.setAuthenticationStatement(authStmt);
+
+        ServerRequireWssSaml serverRequireWssSaml = new ServerRequireWssSaml<RequireWssSaml>(requireWssSaml, SamlTestUtil.beanFactory);
+
+        Message request = ServerRequireWssSamlTest.getDecoratedMessage(samlAssertionV2);
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
+        System.out.println("Req: " + XmlUtil.nodeToFormattedString(context.getRequest().getXmlKnob().getDocumentReadOnly()));
+
+        AssertionStatus result = serverRequireWssSaml.checkRequest(context);
+        assertEquals(AssertionStatus.FALSIFIED, result);
+    }
+
+    /**
+     * Ensure a custom value will enable the assertion to succeed.
+     */
+    @Test
+    @BugNumber(9657)
+    public void testAuthValue_CustomMethods() throws Exception {
+        final RequireWssSaml requireWssSaml = new RequireWssSaml();
+        requireWssSaml.setVersion(2);
+        requireWssSaml.setCheckAssertionValidity(false);
+        requireWssSaml.setNameFormats(new String[] {NameFormat.OTHER.getSaml20Uri()});
+
+        requireWssSaml.setRequireHolderOfKeyWithMessageSignature(false);
+        requireWssSaml.setRequireSenderVouchesWithMessageSignature(false);
+        requireWssSaml.setNoSubjectConfirmation(true);
+
+        final SamlAuthenticationStatement authStmt = new SamlAuthenticationStatement();
+        authStmt.setCustomAuthenticationMethods(SamlConstants.AUTHENTICATION_SAML2_PASSWORD);
+        requireWssSaml.setAuthenticationStatement(authStmt);
+
+        Message request = ServerRequireWssSamlTest.getDecoratedMessage(samlAssertionV2);
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
+        System.out.println("Req: " + XmlUtil.nodeToFormattedString(context.getRequest().getXmlKnob().getDocumentReadOnly()));
+
+        ServerRequireWssSaml serverRequireWssSaml = new ServerRequireWssSaml<RequireWssSaml>(requireWssSaml, SamlTestUtil.beanFactory);
+        AssertionStatus result = serverRequireWssSaml.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+    }
+
+    /**
+     * Ensure assertion fails when there are no built in auth methods chosen and the custom method does not match.
+     */
+    @Test
+    @BugNumber(9657)
+    public void testAuthValue_CustomMethods_Failure() throws Exception {
+        final RequireWssSaml requireWssSaml = new RequireWssSaml();
+        requireWssSaml.setVersion(2);
+        requireWssSaml.setCheckAssertionValidity(false);
+        requireWssSaml.setNameFormats(new String[] {NameFormat.OTHER.getSaml20Uri()});
+
+        requireWssSaml.setRequireHolderOfKeyWithMessageSignature(false);
+        requireWssSaml.setRequireSenderVouchesWithMessageSignature(false);
+        requireWssSaml.setNoSubjectConfirmation(true);
+
+        final SamlAuthenticationStatement authStmt = new SamlAuthenticationStatement();
+        authStmt.setAuthenticationMethods(new String[]{SamlConstants.UNSPECIFIED_AUTHENTICATION});
+        authStmt.setCustomAuthenticationMethods("nomatch");
+        requireWssSaml.setAuthenticationStatement(authStmt);
+
+        Message request = ServerRequireWssSamlTest.getDecoratedMessage(samlAssertionV2);
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
+        System.out.println("Req: " + XmlUtil.nodeToFormattedString(context.getRequest().getXmlKnob().getDocumentReadOnly()));
+
+        ServerRequireWssSaml serverRequireWssSaml = new ServerRequireWssSaml<RequireWssSaml>(requireWssSaml, SamlTestUtil.beanFactory);
+        AssertionStatus result = serverRequireWssSaml.checkRequest(context);
+        assertEquals(AssertionStatus.FALSIFIED, result);
+    }
+
+    /**
+     * Test that multiple values are split and compared correctly.
+     * @throws Exception
+     */
+    @Test
+    @BugNumber(9657)
+    public void testAuthValue_CustomMethods_Multiple_Values() throws Exception {
+        final RequireWssSaml requireWssSaml = new RequireWssSaml();
+        requireWssSaml.setVersion(2);
+        requireWssSaml.setCheckAssertionValidity(false);
+        requireWssSaml.setNameFormats(new String[] {NameFormat.OTHER.getSaml20Uri()});
+
+        requireWssSaml.setRequireHolderOfKeyWithMessageSignature(false);
+        requireWssSaml.setRequireSenderVouchesWithMessageSignature(false);
+        requireWssSaml.setNoSubjectConfirmation(true);
+
+        final SamlAuthenticationStatement authStmt = new SamlAuthenticationStatement();
+        authStmt.setAuthenticationMethods(new String[]{SamlConstants.UNSPECIFIED_AUTHENTICATION});
+        authStmt.setCustomAuthenticationMethods("urn:oasis:names:tc:SAML:2.0:ac:classes:Password1 urn:oasis:names:tc:SAML:2.0:ac:classes:Password");
+        requireWssSaml.setAuthenticationStatement(authStmt);
+
+        Message request = ServerRequireWssSamlTest.getDecoratedMessage(samlAssertionV2);
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
+        System.out.println("Req: " + XmlUtil.nodeToFormattedString(context.getRequest().getXmlKnob().getDocumentReadOnly()));
+
+        ServerRequireWssSaml serverRequireWssSaml = new ServerRequireWssSaml<RequireWssSaml>(requireWssSaml, SamlTestUtil.beanFactory);
+        AssertionStatus result = serverRequireWssSaml.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+    }
+
+    /**
+     * Test that multiple values are split and compared correctly.
+     * @throws Exception
+     */
+    @Test
+    @BugNumber(9657)
+    public void testAuthValue_CustomMethods_Context_Variables() throws Exception {
+        final RequireWssSaml requireWssSaml = new RequireWssSaml();
+        requireWssSaml.setVersion(2);
+        requireWssSaml.setCheckAssertionValidity(false);
+        requireWssSaml.setNameFormats(new String[] {NameFormat.OTHER.getSaml20Uri()});
+
+        requireWssSaml.setRequireHolderOfKeyWithMessageSignature(false);
+        requireWssSaml.setRequireSenderVouchesWithMessageSignature(false);
+        requireWssSaml.setNoSubjectConfirmation(true);
+
+        final SamlAuthenticationStatement authStmt = new SamlAuthenticationStatement();
+        authStmt.setAuthenticationMethods(new String[]{SamlConstants.UNSPECIFIED_AUTHENTICATION});
+        authStmt.setCustomAuthenticationMethods("${context_var}");
+        requireWssSaml.setAuthenticationStatement(authStmt);
+
+        Message request = ServerRequireWssSamlTest.getDecoratedMessage(samlAssertionV2);
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
+        context.setVariable("context_var", SamlConstants.AUTHENTICATION_SAML2_PASSWORD);
+        System.out.println("Req: " + XmlUtil.nodeToFormattedString(context.getRequest().getXmlKnob().getDocumentReadOnly()));
+
+        ServerRequireWssSaml serverRequireWssSaml = new ServerRequireWssSaml<RequireWssSaml>(requireWssSaml, SamlTestUtil.beanFactory);
+        AssertionStatus result = serverRequireWssSaml.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+    }
+
+    @Test
+    public void testSplitPattern() throws Exception {
+        String test = "urn:oasis:names:tc:SAML:2.0:ac:classes:XMLDSig1 urn:oasis:names:tc:SAML:2.0:ac:classes:XMLDSig2 urn:oasis:names:tc:SAML:2.0:ac:classes:XMLDSig";
+        String[] tokens = RequireWssSaml.CUSTOM_AUTH_SPLITTER.split(test);
+        Assert.assertEquals(3, tokens.length);
+
+        String val = "one  two three   four";
+        tokens = RequireWssSaml.CUSTOM_AUTH_SPLITTER.split(val);
+        Assert.assertEquals(4, tokens.length);
+
+        String s = "urn:oasis:names:tc:SAML:2.0:ac:classes:XMLDSig1 \n  " +
+                "urn:oasis:names:tc:SAML:2.0:ac:classes:XMLDSig\n  " +
+                "urn:oasis:names:tc:SAML:2.0:ac:classes:XMLDSig3  \n" +
+                "urn:oasis:names:tc:SAML:2.0:ac:classes:Password";
+
+        tokens = RequireWssSaml.CUSTOM_AUTH_SPLITTER.split(s);
+        for (String token : tokens) {
+            System.out.println(token);
+        }
+        Assert.assertEquals(4, tokens.length);
+    }
+
     private AssertionStatus verifyExpiration(String issueInstant, String notBefore, String notOnOrAfter, boolean checkAssertionValidity, int maxExpiryTime) throws Exception {
         // Create doc
         Document samlAssertionDoc = XmlUtil.stringToDocument(buildSamlDocWithDynamicTime(issueInstant, notBefore, notOnOrAfter));
@@ -207,4 +415,23 @@ public class ServerRequireWssSaml2Test {
                     "        <saml:Attribute Name=\"Complex\" NameFormat=\"urn:f1\"><saml:AttributeValue>" + COMPLEX_ATTR_VALUE + COMPLEX_ATTR_VALUE + "</saml:AttributeValue></saml:Attribute>\n" +
                     "    </saml:AttributeStatement>\n" +
                     "</saml:Assertion>";
+
+    public static final String AUTH_SAML_V2 =
+            "            <saml2:Assertion ID=\"SSB-SamlAssertion-6eee8d1fffa9fe47c6f39b99623a7819\"\n" +
+            "                             IssueInstant=\"2011-10-12T02:43:35.902Z\" Version=\"2.0\"\n" +
+            "                             xmlns:saml2=\"urn:oasis:names:tc:SAML:2.0:assertion\">\n" +
+            "                <saml2:Issuer>donal</saml2:Issuer>\n" +
+            "                <saml2:Subject>\n" +
+            "                    <saml2:NameID Format=\"urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified\">admin</saml2:NameID>\n" +
+            "                </saml2:Subject>\n" +
+            "                <saml2:Conditions NotBefore=\"2011-10-12T02:41:35.924Z\" NotOnOrAfter=\"2011-10-12T02:48:35.924Z\"/>\n" +
+            "                <saml2:AuthnStatement AuthnInstant=\"2011-10-12T02:43:35.901Z\">\n" +
+            "                    <saml2:SubjectLocality Address=\"10.7.48.207\"/>\n" +
+            "                    <saml2:AuthnContext>\n" +
+            "                        <saml2:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:Password\n" +
+            "                        </saml2:AuthnContextClassRef>\n" +
+            "                    </saml2:AuthnContext>\n" +
+            "                </saml2:AuthnStatement>\n" +
+            "            </saml2:Assertion>";
+
 }

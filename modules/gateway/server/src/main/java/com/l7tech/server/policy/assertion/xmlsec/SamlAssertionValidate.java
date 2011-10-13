@@ -124,7 +124,7 @@ public class SamlAssertionValidate {
                                     SamlStatementValidate statementValidate = validators.get(clazz);
                                     validateSubjectConfirmation((SubjectStatementAbstractType)statementAbstractType, validationResults, serverVariables, auditor);
                                     validateConditions(assertionType, validationResults, serverVariables, auditor);
-                                    statementValidate.validate(soapMessageDoc, statementAbstractType, wssResults, validationResults, collectAttrValues);
+                                    statementValidate.validate(soapMessageDoc, statementAbstractType, wssResults, validationResults, collectAttrValues, serverVariables, auditor);
                                 }
                             }
                         }
@@ -148,7 +148,7 @@ public class SamlAssertionValidate {
                                 if (clazz.isAssignableFrom(statementAbstractType.getClass())) {
                                     assertionMatch = true;
                                     SamlStatementValidate statementValidate = validators.get(clazz);
-                                    statementValidate.validate(soapMessageDoc, statementAbstractType, wssResults, validationResults, collectAttrValues);
+                                    statementValidate.validate(soapMessageDoc, statementAbstractType, wssResults, validationResults, collectAttrValues, serverVariables, auditor);
                                 }
                             }
                         }

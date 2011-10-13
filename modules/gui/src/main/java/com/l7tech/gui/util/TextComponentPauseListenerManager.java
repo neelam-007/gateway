@@ -153,6 +153,10 @@ public class TextComponentPauseListenerManager {
         }
     }
 
+    /**
+     * Warning - be careful of usages where pause events will be fired before the text component's panel / dialog
+     * is ready for usage. See WizardStepPanel canAdvance().
+     */
     public static void registerPauseListener(JTextComponent component, PauseListener pl, int notifyDelay) {
         TextComponentPauseNotifier holder = new TextComponentPauseNotifier(component, notifyDelay);
         holder.addPauseListener(pl);

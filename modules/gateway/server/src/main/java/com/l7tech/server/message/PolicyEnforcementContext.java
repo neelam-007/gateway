@@ -207,6 +207,13 @@ public interface PolicyEnforcementContext extends Closeable {
      */
     Object getVariable(String name) throws NoSuchVariableException;
 
+    /**
+     * Get variables Map for named variables.
+     *
+     * @param names variables to retrieve
+     * @param auditor for any audit messages
+     * @return map of variable name to value. Never null.
+     */
     Map<String, Object> getVariableMap(String[] names, Audit auditor);
 
     void routingStarted();

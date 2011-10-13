@@ -120,7 +120,7 @@ public class AuthenticationMethodsWizardStepPanel extends WizardStepPanel {
             String method = methods[i];
             JCheckBox jc = (JCheckBox)authenticationsMap.get(method);
             if (jc == null) {
-                throw new IllegalArgumentException("No corresponding widget for "+method);
+                throw new IllegalArgumentException("Unknown authentication method: "+method);
             }
             jc.setSelected(true);
         }

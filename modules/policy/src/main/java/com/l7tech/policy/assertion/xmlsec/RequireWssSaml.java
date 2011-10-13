@@ -27,6 +27,8 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
     public static final String PREFIX_SAML_ATTR = "saml.attr";
     public static final long UPPER_BOUND_FOR_MAX_EXPIRY = 100L * 365L * 86400L * 1000L; // 100 Years
 
+    public static final Pattern CUSTOM_AUTH_SPLITTER = Pattern.compile("\\s+");
+
     private String[] subjectConfirmations = new String[]{};
     private String subjectConfirmationDataRecipient;
     private boolean subjectConfirmationDataCheckAddress = false;
@@ -254,7 +256,8 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
         return messageTargetableSupport.getMessageTargetVariablesUsed().withExpressions(
                 subjectConfirmationDataRecipient,
                 nameQualifier,
-                audienceRestriction
+                audienceRestriction,
+                (authenticationStatement != null)? authenticationStatement.getCustomAuthenticationMethods(): ""
         ).asArray();
     }
 

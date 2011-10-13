@@ -1,5 +1,6 @@
 package com.l7tech.console.panels.saml;
 
+import java.awt.event.*;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -10,19 +11,19 @@ import java.util.TreeSet;
 import java.util.Set;
 import java.util.HashSet;
 import java.awt.*;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
 
 import com.l7tech.console.panels.WizardStepPanel;
+import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.gui.util.ImageCache;
+import com.l7tech.util.ValidationUtils;
 
 /**
  * The <code>WizardStepPanel</code> that allows selection of SAML
@@ -39,6 +40,7 @@ public class AuthenticationMethodsNewWizardStepPanel extends WizardStepPanel {
     private JList listAvailable;
     private JList listSelected;
     private JLabel titleLabel;
+    private SquigglyTextField customAuthMethodTextField;
 
     private final HashMap authenticationsMap;
     private final HashMap enabledAuthenticationsMap;
@@ -108,11 +110,16 @@ public class AuthenticationMethodsNewWizardStepPanel extends WizardStepPanel {
             String method = methods[i];
             String methodText = (String)authenticationsMap.get(method);
             if (methodText == null) {
-                throw new IllegalArgumentException("No corresponding widget for "+method);
+                throw new IllegalArgumentException("Unknown authentication method: "+method);
             }
             if (enabledAuthenticationsMap.keySet().contains(method))
                 selectedList.addAll(Collections.singleton(methodText));
             unselectedList.removeAll(Collections.singleton(methodText));
+        }
+
+        final String customAuthMethods = statement.getCustomAuthenticationMethods();
+        if (customAuthMethods != null && !customAuthMethods.trim().isEmpty()) {
+            customAuthMethodTextField.setText(customAuthMethods);
         }
     }
 
@@ -138,6 +145,7 @@ public class AuthenticationMethodsNewWizardStepPanel extends WizardStepPanel {
         Map authMap = new HashMap(authenticationsMap);
         authMap.values().retainAll(selectedList.getItems());
         statement.setAuthenticationMethods((String[])authMap.keySet().toArray(new String[] {}));
+        statement.setCustomAuthenticationMethods(customAuthMethodTextField.getText());
     }
 
     private void initialize() {
@@ -245,11 +253,20 @@ public class AuthenticationMethodsNewWizardStepPanel extends WizardStepPanel {
                 listSelected.clearSelection();
             }
         });
+
+        //Do not use TextComponentPauseListenerManager.registerPauseListener. See it's java doc for warning.
+        customAuthMethodTextField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                notifyListeners();
+            }
+        }));
     }
 
     /**
      * @return the wizard step label
      */
+    @Override
     public String getStepLabel() {
         return "Authentication Methods";
     }
@@ -258,12 +275,43 @@ public class AuthenticationMethodsNewWizardStepPanel extends WizardStepPanel {
      * Test whether the step is finished and it is safe to advance to the next one.
      * A single authentication method must be specified.
      *
-     * @return true if the panel is valid, false otherwis
+     * @return true if the panel is valid
      */
+    @Override
     public boolean canAdvance() {
-        return selectedList.getSize() != 0;
+
+        final String customText = customAuthMethodTextField.getText().trim();
+        final boolean hasCustom = !customText.isEmpty();
+        boolean invalid = false;
+        if (hasCustom) {
+            final String[] split = RequireWssSaml.CUSTOM_AUTH_SPLITTER.split(customText);
+            for (String s : split) {
+                if(s.isEmpty()) continue;
+
+                final String[] referencedNames = Syntax.getReferencedNames(s);
+                if (referencedNames.length == 0) {
+
+                    if (!ValidationUtils.isValidUri(s)) {
+                        customAuthMethodTextField.setSquiggly();
+                        //Don't set a range as there may be more than one error. Squiggly does not yet support multiple values.
+                        //Set the entire text field to red squiggly
+                        customAuthMethodTextField.setModelessFeedback("Invalid URI: '" + s + "'");
+                        invalid = true;
+                        break;//first invalid URI is the pop up message.
+                    }
+                }
+            }
+
+        }
+        if (!invalid) {
+            customAuthMethodTextField.setNone();
+            customAuthMethodTextField.setModelessFeedback(null);
+        }
+
+        return (!hasCustom)? selectedList.getSize() != 0: !invalid;
     }
 
+    @Override
     public String getDescription() {
         return
           "<html>Specify one or more accepted authentication methods that the SAML statement must assert. " +
@@ -296,6 +344,7 @@ public class AuthenticationMethodsNewWizardStepPanel extends WizardStepPanel {
             items = new TreeSet();
         }
 
+        @Override
         public Object getElementAt(int index) {
             Object item = null;
             int count = 0;
@@ -310,6 +359,7 @@ public class AuthenticationMethodsNewWizardStepPanel extends WizardStepPanel {
             return item;
         }
 
+        @Override
         public int getSize() {
             return items.size();
         }
@@ -329,7 +379,7 @@ public class AuthenticationMethodsNewWizardStepPanel extends WizardStepPanel {
             fireContentsChanged(this,0,0);
             notifyListeners();
         }
-    };
+    }
 
     private static class JListDoubleClickMoveListener extends MouseAdapter {
         private final JList list1;
@@ -340,19 +390,20 @@ public class AuthenticationMethodsNewWizardStepPanel extends WizardStepPanel {
             this.list2 = list2;
         }
 
+        @Override
         public void mouseClicked(MouseEvent e){
             Object source = e.getSource();
             if(e.getClickCount() == 2){
                 if (source == list1) {
                     int index = list1.locationToIndex(e.getPoint());
                     ListModel dlm = list1.getModel();
-                    Object item = dlm.getElementAt(index);;
+                    Object item = dlm.getElementAt(index);
                     ((SortedListModel)list1.getModel()).removeAll(Collections.singletonList(item));
                     ((SortedListModel)list2.getModel()).addAll(Collections.singletonList(item));
                 } else if (source == list2){
                     int index = list2.locationToIndex(e.getPoint());
                     ListModel dlm = list2.getModel();
-                    Object item = dlm.getElementAt(index);;
+                    Object item = dlm.getElementAt(index);
                     ((SortedListModel)list2.getModel()).removeAll(Collections.singletonList(item));
                     ((SortedListModel)list1.getModel()).addAll(Collections.singletonList(item));
                 }
