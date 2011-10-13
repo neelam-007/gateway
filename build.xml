@@ -985,10 +985,9 @@
             <classpath>
                 <pathelement location="modules/skunkworks/build/classes"/>
                 <fileset dir="lib">
-                    <include name="**/mail-1.4*.jar"/>
-                    <include name="**/smtp-1.4*.jar"/>
+                    <include name="repository/javax.mail/mail-1.4*.jar"/>
                     <include name="xercesImpl.jar"/>
-                    <include name="**/commons-lang-2.3.jar"/>
+                    <include name="repository/commons-lang/commons-lang-2.6.jar"/>
                     <include name="test/japex-1.1.jar"/>
                 </fileset>
                 <fileset dir="modules/gateway/server/build">
