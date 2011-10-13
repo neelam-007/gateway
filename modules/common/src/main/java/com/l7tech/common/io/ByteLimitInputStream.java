@@ -81,7 +81,7 @@ public class ByteLimitInputStream extends PushbackInputStream {
         return sizeLimit;
     }
 
-    private void gotBytes(long got) throws IOException {
+    protected void gotBytes(long got) throws IOException {
         bytesRead += got;
         if (sizeLimit > 0 && bytesRead >= sizeLimit) {
             close();
