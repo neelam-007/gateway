@@ -8,37 +8,41 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
 import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdateAny;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.gui.util.ClipboardActions;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.gateway.common.security.rbac.AttemptedUpdateAny;
-import com.l7tech.gateway.common.service.ServiceHeader;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gui.util.ClipboardActions;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.OrganizationHeader;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.Functions.Binary;
 import com.l7tech.util.Functions.Unary;
-import static com.l7tech.util.Functions.reduce;
 import com.l7tech.util.Option;
-import static com.l7tech.util.Option.optional;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.tree.*;
+import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.FlavorEvent;
 import java.awt.datatransfer.FlavorListener;
-import java.awt.event.*;
-import java.awt.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.util.Functions.reduce;
+import static com.l7tech.util.Option.optional;
 
 /**
  * Class ServiceTree is the specialized <code>JTree</code> that
@@ -104,7 +108,13 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
             public void flavorsChanged(FlavorEvent e) {
                 if(e.getSource() instanceof Clipboard){
                     Clipboard clip = (Clipboard)e.getSource();
-                    DataFlavor[] flavours = clip.getAvailableDataFlavors();
+                    DataFlavor[] flavours;
+                    try {
+                        flavours = clip.getAvailableDataFlavors();
+                    } catch (IllegalStateException ise) {
+                        // Clipboard busy, give up for now
+                        return;
+                    }
                     if(!ArrayUtils.contains(flavours, FolderAndNodeTransferable.ALLOWED_DATA_FLAVOR)){
                         setAllChildrenUnCut();
                         setIgnoreCurrentClipboard(true);
