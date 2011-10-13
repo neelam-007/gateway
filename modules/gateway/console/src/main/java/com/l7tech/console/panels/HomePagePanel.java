@@ -148,8 +148,8 @@ public class HomePagePanel extends JPanel {
         }
 
         add("CreateIdentityProvider32x32.gif", new NewLdapProviderAction(getIdentitiesRoot()));
-        add("CreateIdentityProvider32x32.gif", new NewFederatedIdentityProviderAction(getIdentitiesRoot()));
         add("CreateIdentityProvider32x32.gif", new NewBindOnlyLdapProviderAction(getIdentitiesRoot()));
+        add("CreateIdentityProvider32x32.gif", new NewFederatedIdentityProviderAction(getIdentitiesRoot()));
         add("user32.png", new NewInternalUserAction(null) {
             public String getName() {
                 return "Create Internal User";

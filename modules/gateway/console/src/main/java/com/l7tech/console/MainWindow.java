@@ -1038,8 +1038,8 @@ public class MainWindow extends JFrame implements SheetHolder {
             newProviderSubMenu.setIcon(new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/CreateIdentityProvider16x16.gif")));
 
             newProviderSubMenu.add(getNewProviderAction());
-            newProviderSubMenu.add(getNewFederatedIdentityProviderAction());
             newProviderSubMenu.add(getNewBindOnlyLdapProviderAction());
+            newProviderSubMenu.add(getNewFederatedIdentityProviderAction());
         }
         return newProviderSubMenu;
     }
