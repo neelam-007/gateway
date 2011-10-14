@@ -1,12 +1,20 @@
 package com.l7tech.server.service;
 
+import com.l7tech.gateway.common.audit.MessageProcessingMessages;
+import com.l7tech.gateway.common.cluster.ServiceUsage;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceStatistics;
+import com.l7tech.message.Message;
+import com.l7tech.message.XmlKnob;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.Policy;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.cluster.ClusterInfoManager;
+import com.l7tech.server.cluster.ServiceUsageManager;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.PolicyCacheEvent;
 import com.l7tech.server.event.ServiceEnablementEvent;
@@ -14,37 +22,33 @@ import com.l7tech.server.event.system.ServiceCacheEvent;
 import com.l7tech.server.event.system.ServiceReloadEvent;
 import com.l7tech.server.event.system.Started;
 import com.l7tech.server.policy.*;
-import com.l7tech.server.service.resolution.*;
-import com.l7tech.server.cluster.ClusterInfoManager;
-import com.l7tech.server.cluster.ServiceUsageManager;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.service.ServiceStatistics;
-import com.l7tech.gateway.common.cluster.ServiceUsage;
-import com.l7tech.gateway.common.audit.MessageProcessingMessages;
+import com.l7tech.server.service.resolution.NonUniqueServiceResolutionException;
+import com.l7tech.server.service.resolution.ServiceResolutionException;
+import com.l7tech.server.service.resolution.ServiceResolutionManager;
+import com.l7tech.server.service.resolution.UriResolver;
+import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
-import com.l7tech.util.ArrayUtils;
 import com.l7tech.xml.TarariLoader;
-import com.l7tech.message.Message;
-import com.l7tech.message.XmlKnob;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.support.ApplicationObjectSupport;
+import org.springframework.jmx.export.annotation.ManagedAttribute;
+import org.springframework.jmx.export.annotation.ManagedOperation;
+import org.springframework.jmx.export.annotation.ManagedResource;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.*;
-import org.springframework.jmx.export.annotation.ManagedOperation;
-import org.springframework.jmx.export.annotation.ManagedResource;
-import org.springframework.jmx.export.annotation.ManagedAttribute;
 
 import java.text.MessageFormat;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -417,11 +421,11 @@ public class ServiceCache
      * @param soapAction The SOAP action (ignored if null)
      * @param namespace The namespace (ignored if null)
      * @throws ServiceResolutionException If an error occurs
-     * @returns The services that match the given resolution parameters
+     * @return The services that match the given resolution parameters
      */
-    public Collection<PublishedService> resolve( final String path,
-                                                 final String soapAction,
-                                                 final String namespace ) throws ServiceResolutionException {
+    public Collection<PublishedService> resolve( final @Nullable String path,
+                                                 final @Nullable String soapAction,
+                                                 final @Nullable String namespace ) throws ServiceResolutionException {
         rwlock.readLock().lock();
         try {
             Collection<PublishedService> serviceSet = Collections.unmodifiableCollection(services.values());

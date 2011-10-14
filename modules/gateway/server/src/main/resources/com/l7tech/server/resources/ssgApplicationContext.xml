@@ -787,10 +787,10 @@
         <constructor-arg index="1" value="Default"/>
         <constructor-arg index="2">
             <list>
+                <!-- The RequirePathResolver must come first -->
                 <bean class="com.l7tech.server.service.resolution.RequirePathResolver">
                     <constructor-arg ref="auditFactory"/>
                 </bean>
-                <!-- This must be first -->
                 <bean class="com.l7tech.server.service.resolution.ServiceOidResolver">
                     <constructor-arg ref="auditFactory"/>
                 </bean>

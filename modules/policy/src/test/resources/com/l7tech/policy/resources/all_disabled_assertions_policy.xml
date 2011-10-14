@@ -343,5 +343,8 @@
         <L7p:AddHeader>
             <L7p:Enabled booleanValue="false"/>
         </L7p:AddHeader>
+        <L7p:ResolveService>
+            <L7p:Enabled booleanValue="false"/>
+        </L7p:ResolveService>
     </wsp:OneOrMore>
 </wsp:Policy>

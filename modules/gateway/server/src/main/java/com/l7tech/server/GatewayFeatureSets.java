@@ -122,7 +122,8 @@ public class GatewayFeatureSets {
             "Always needed",
             misc(SERVICE_MESSAGEPROCESSOR, "Core Gateway message processing module", null),
             ass(AllAssertion.class),
-            ass(UnknownAssertion.class));
+            ass(UnknownAssertion.class),
+            ass(ResolveServiceAssertion.class));
 
         GatewayFeatureSet admin =
         fsr("set:admin", "All admin APIs, over all admin API transports",

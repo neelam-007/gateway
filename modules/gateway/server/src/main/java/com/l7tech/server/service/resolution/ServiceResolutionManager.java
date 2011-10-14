@@ -13,6 +13,7 @@ import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.transport.ResolutionConfigurationManager;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -142,9 +143,9 @@ public class ServiceResolutionManager implements ApplicationListener, Initializi
         return service;
     }
 
-    public Collection<PublishedService> resolve( final String path,
-                                                 final String soapAction,
-                                                 final String namespace,
+    public Collection<PublishedService> resolve( final @Nullable String path,
+                                                 final @Nullable String soapAction,
+                                                 final @Nullable String namespace,
                                                  Collection<PublishedService> serviceSet ) throws ServiceResolutionException {
         if (serviceSet.isEmpty()) {
             return Collections.emptySet();

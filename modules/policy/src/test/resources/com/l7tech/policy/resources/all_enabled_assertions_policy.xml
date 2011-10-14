@@ -185,5 +185,6 @@
         <L7p:CustomizeErrorResponse/>
         <L7p:ContentType/>
         <L7p:AddHeader/>
+        <L7p:ResolveService/>
     </wsp:OneOrMore>
 </wsp:Policy>

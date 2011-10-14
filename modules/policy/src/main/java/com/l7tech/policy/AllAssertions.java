@@ -117,6 +117,7 @@ public class AllAssertions {
         new CustomizeErrorResponseAssertion(),
         new ContentTypeAssertion(),
         new AddHeaderAssertion(),
+        new ResolveServiceAssertion(),
     };
 
 
@@ -213,5 +214,6 @@ public class AllAssertions {
         new CustomizeErrorResponseAssertion(),
         new ContentTypeAssertion(),
         new AddHeaderAssertion(),
+        new ResolveServiceAssertion(),
     };
 }

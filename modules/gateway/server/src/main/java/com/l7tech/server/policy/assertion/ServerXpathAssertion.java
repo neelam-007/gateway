@@ -1,5 +1,6 @@
 package com.l7tech.server.policy.assertion;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
 import com.l7tech.message.XmlKnob;
@@ -42,6 +43,7 @@ public abstract class ServerXpathAssertion<AT extends SimpleXpathAssertion> exte
     private final String velement;
     private final String vmultipleElements;
     private final boolean xpathContainsVariables;
+    private final boolean xpathReferencesTargetDocument;
 
     public ServerXpathAssertion(AT assertion, boolean isReq) {
         super(assertion);
@@ -55,6 +57,7 @@ public abstract class ServerXpathAssertion<AT extends SimpleXpathAssertion> exte
         velement = varsUsed.contains(assertion.elementVariable()) ? assertion.elementVariable() : null;
         vmultipleElements = varsUsed.contains(assertion.multipleElementsVariable()) ? assertion.multipleElementsVariable() : null;
         xpathContainsVariables = getCompiledXpath() == null || getCompiledXpath().usesVariables();
+        xpathReferencesTargetDocument = getCompiledXpath() == null || getCompiledXpath().requiresTargetDocument();
     }
 
     @Override
@@ -105,14 +108,23 @@ public abstract class ServerXpathAssertion<AT extends SimpleXpathAssertion> exte
 
         final ElementCursor cursor;
         try {
+            boolean usePlaceholderMessage = false;
             if (!message.isXml()) {
-                auditNotXml();
+                if (xpathReferencesTargetDocument) {
+                    auditNotXml();
 
-                //the mesage isn't XML, so an XPath can't be applied ... NOT_APPLICABLE
-                return AssertionStatus.NOT_APPLICABLE;
+                    //the mesage isn't XML, so an XPath can't be applied ... NOT_APPLICABLE
+                    return AssertionStatus.NOT_APPLICABLE;
+                }
+
+                // XPath does not refer to the target document at all -- create an empty placeholder target
+                // document to match against
+                usePlaceholderMessage = true;
             }
 
-            if( vmultipleElements != null || xpathContainsVariables ) {
+            if (usePlaceholderMessage) {
+                cursor = new DomElementCursor(XmlUtil.createEmptyDocument());
+            } else if( vmultipleElements != null || xpathContainsVariables ) {
                 // Use a cursor backed by DOM so we can have Element results and/or XPath variables
                 logAndAudit( AssertionMessages.XPATH_NOT_ACCELERATED );
                 cursor = new DomElementCursor(message.getXmlKnob().getDocumentReadOnly());
