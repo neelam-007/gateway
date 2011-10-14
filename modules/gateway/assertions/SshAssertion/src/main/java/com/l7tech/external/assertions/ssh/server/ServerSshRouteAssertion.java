@@ -148,7 +148,9 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             }
 
             if(assertion.isUsePrivateKey()) {
-                String privateKeyText = ExpandVariables.process(assertion.getPrivateKey(), context.getVariableMap(Syntax.getReferencedNames(assertion.getPrivateKey()), getAudit()), getAudit());
+                String encryptedPrivateKeyText = ExpandVariables.process(assertion.getPrivateKey(),
+                        context.getVariableMap(Syntax.getReferencedNames(assertion.getPrivateKey()), getAudit()), getAudit());
+                String privateKeyText = String.valueOf(securePasswordManager.decryptPassword(encryptedPrivateKeyText));
                 sshParams.setSshPassword(null);
                 if(password == null) {
                     sshParams.setPrivateKey(privateKeyText);

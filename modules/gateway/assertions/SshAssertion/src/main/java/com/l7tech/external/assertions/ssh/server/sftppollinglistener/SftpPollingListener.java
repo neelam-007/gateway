@@ -9,8 +9,10 @@ import com.jscape.inet.ssh.util.SshParameters;
 import com.l7tech.external.assertions.ssh.keyprovider.SshKeyUtil;
 import com.l7tech.external.assertions.ssh.server.SshAssertionMessages;
 import com.l7tech.gateway.common.Component;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.event.system.TransportEvent;
+import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 
@@ -18,6 +20,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.text.ParseException;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
@@ -204,12 +207,20 @@ public abstract class SftpPollingListener implements PropertyChangeListener {
                         }
 
                         if(settings.getPrivateKey() != null) {
-                            String privateKeyText = settings.getPrivateKey();
-                            sshParams.setSshPassword(null);
-                            if(password == null) {
-                                sshParams.setPrivateKey(privateKeyText);
-                            } else {
-                                sshParams.setPrivateKey(privateKeyText, password);
+                            String encryptedPrivateKeyText = settings.getPrivateKey();
+                            SecurePasswordManager securePasswordManager = _sftpPollingListenerCfg.getApplicationContext().getBean("securePasswordManager", SecurePasswordManager.class);
+                            try {
+                                String privateKeyText = String.valueOf(securePasswordManager.decryptPassword(encryptedPrivateKeyText));
+                                sshParams.setSshPassword(null);
+                                if(password == null) {
+                                    sshParams.setPrivateKey(privateKeyText);
+                                } else {
+                                    sshParams.setPrivateKey(privateKeyText, password);
+                                }
+                            } catch (FindException e) {
+                                throw new SftpPollingListenerConfigException("Unable to decrypt private key.", e);
+                            } catch (ParseException e) {
+                                throw new SftpPollingListenerConfigException("Unable to decrypt private key.", e);
                             }
                         }
 

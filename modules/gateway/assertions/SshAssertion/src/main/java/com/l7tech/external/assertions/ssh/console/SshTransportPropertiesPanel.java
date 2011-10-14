@@ -1,11 +1,13 @@
 package com.l7tech.external.assertions.ssh.console;
 
 import com.l7tech.console.panels.CustomTransportPropertiesPanel;
+import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.ssh.SshCredentialAssertion;
 import com.l7tech.external.assertions.ssh.keyprovider.SshKeyUtil;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.ConfigFactory;
 import org.apache.commons.lang.StringUtils;
 
@@ -29,6 +31,7 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
     private JTextField idleTimeoutMinsField;
 
     private String hostPrivateKey;
+    private String encryptedHostPrivateKey;
     private InputValidator validator;
 
     public SshTransportPropertiesPanel() {
@@ -62,14 +65,20 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
         maxConcurrentSessionsPerUserField.setText(getStringProp(props, SshCredentialAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER,
                 ConfigFactory.getProperty("com.l7tech.external.assertions.ssh.defaultMaxConcurrentSessionsPerUser", "10")));
 
-        hostPrivateKey = props.get(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY);
-        if (!StringUtils.isEmpty(hostPrivateKey)) {
-            String determinedAlgorithm = SshKeyUtil.getPemPrivateKeyAlgorithm(hostPrivateKey);
-            if (determinedAlgorithm != null) {
-                hostPrivateKeyTypeField.setText(SshKeyUtil.PEM + " " + determinedAlgorithm);
-            } else {
-                hostPrivateKeyTypeField.setText("Unknown type");
+        encryptedHostPrivateKey = props.get(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY);
+        try {
+            hostPrivateKey = String.valueOf(Registry.getDefault().getTrustedCertManager().decryptPassword(encryptedHostPrivateKey));
+
+            if (!StringUtils.isEmpty(hostPrivateKey)) {
+                String determinedAlgorithm = SshKeyUtil.getPemPrivateKeyAlgorithm(hostPrivateKey);
+                if (determinedAlgorithm != null) {
+                    hostPrivateKeyTypeField.setText(SshKeyUtil.PEM + " " + determinedAlgorithm);
+                } else {
+                    hostPrivateKeyTypeField.setText("Unknown type");
+                }
             }
+        } catch (Exception e) {
+            // validation error will occur if host private key is empty
         }
     }
 
@@ -80,7 +89,7 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
         data.put(SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP, String.valueOf(sftpCheckBox.isSelected()));
         data.put(SshCredentialAssertion.LISTEN_PROP_IDLE_TIMEOUT_MINUTES, idleTimeoutMinsField.getText());
         data.put(SshCredentialAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER, maxConcurrentSessionsPerUserField.getText());
-        data.put(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY, hostPrivateKey);
+        data.put(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY, encryptedHostPrivateKey);
         return data;
     }
 
@@ -88,6 +97,12 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
     public String getValidationError() {
         if (StringUtils.isEmpty(hostPrivateKey)) {
             return "The Host private key field must not be empty.";
+        }
+
+        try {
+            encryptedHostPrivateKey = Registry.getDefault().getTrustedCertManager().encryptPassword(hostPrivateKey.toCharArray());
+        } catch (FindException fe) {
+            return "Cannot encrypt the given private key.  Please try a different private key.";
         }
 
         String validationError = validator.validate();

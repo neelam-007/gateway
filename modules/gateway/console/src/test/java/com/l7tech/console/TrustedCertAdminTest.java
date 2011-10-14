@@ -1,10 +1,9 @@
 package com.l7tech.console;
 
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.common.io.CertUtils;
 import com.l7tech.util.HexUtils;
-import static org.junit.Assert.*;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -15,6 +14,8 @@ import java.security.cert.X509Certificate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import static org.junit.Assert.*;
 
 /**
  * This test is pretty fragile and probably shouldn't be in the nightly run because:
@@ -174,6 +175,15 @@ public class TrustedCertAdminTest {
 
         Object gone = registry.getTrustedCertManager().findCertByPrimaryKey( oid );
         assertNull(gone);
+    }
+
+    @Test
+    public void testEncryptAndDecryptPassword() throws Exception {
+        String encrypted = registry.getTrustedCertManager().encryptPassword("foobarbazblat".toCharArray());
+        assertNotNull(encrypted);
+        assertTrue(encrypted.startsWith("$L7C$"));
+
+        assertEquals("foobarbazblat", new String(registry.getTrustedCertManager().decryptPassword(encrypted)));
     }
 
     private X509Certificate getCert() throws CertificateException, IOException {

@@ -1,26 +1,29 @@
 package com.l7tech.external.assertions.ssh.console;
 
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.console.SsmApplication;
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.RoutingDialogUtils;
 import com.l7tech.console.panels.SecurePasswordComboBox;
 import com.l7tech.console.panels.SecurePasswordManagerWindow;
+import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.external.assertions.ssh.SshRouteAssertion;
-import com.l7tech.gui.util.*;
+import com.l7tech.external.assertions.ssh.keyprovider.SshKeyUtil;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.InputValidator;
+import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.variable.Syntax;
-import com.l7tech.util.IOUtils;
+import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
-import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
@@ -33,9 +36,6 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
     private JRadioButton privateKeyRadioButton;
     private JTextField hostField;
     private JTextField usernameField;
-    private JScrollPane privateKeyScrollPane;
-    private JTextArea privateKeyField;
-    private JButton loadPrivateKeyFromFileButton;
     private SecurePasswordComboBox passwordField;
     private JButton managePasswordsButton;
     private JTextField directoryTextField;
@@ -57,9 +57,15 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
     private JTextField readTimeoutTextField;
     private JComboBox contentTypeComboBox;
     private JPanel specifyUserCredentialsPanel;
+    private JTextField privateKeyTypeField;
+    private JButton setPrivateKeyButton;
+    private JLabel userNameLabel;
     private InputValidator validators;
     private AbstractButton[] secHdrButtons = { wssIgnoreButton, wssCleanupButton, wssRemoveButton, null };
     private String hostKey;
+    private String privateKey;
+    private String encryptedPrivateKey;
+
     private RunOnChangeListener enableDisableListener = new RunOnChangeListener() {
         @Override
         public void run() {
@@ -84,9 +90,26 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         fileNameTextField.getDocument().addDocumentListener(enableDisableListener);
         Utilities.enableGrayOnDisabled(fileNameTextField);
 
-        loadPrivateKeyFromFileButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                readFromFile();
+        setPrivateKeyButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                final HostKeyDialog dialog = new HostKeyDialog(SwingUtilities.getWindowAncestor(
+                        SshRouteAssertionPropertiesPanel.this), null, HostKeyDialog.HostKeyValidationType.VALIDATE_PEM_PRIVATE_KEY_FORMAT);
+                Utilities.centerOnScreen(dialog);
+                DialogDisplayer.display(dialog, new Runnable() {
+                    @Override
+                    public void run() {
+                        if (dialog.isConfirmed()) {
+                            privateKey = dialog.getHostKey();
+                            String determinedAlgorithm = SshKeyUtil.getPemPrivateKeyAlgorithm(privateKey);
+                            if (determinedAlgorithm != null) {
+                                privateKeyTypeField.setText(SshKeyUtil.PEM + " " + determinedAlgorithm);
+                            } else {
+                                privateKeyTypeField.setText("Unknown type");
+                            }
+                        }
+                    }
+                });
             }
         });
 
@@ -194,29 +217,6 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         super.initComponents();
     }   // initComponents()
 
-    private void readFromFile() {
-        SsmApplication.doWithJFileChooser(new FileChooserUtil.FileChooserUser() {
-            @Override
-            public void useFileChooser(JFileChooser fc) {
-                doRead(fc, false);
-            }
-        });
-    }
-
-
-    private void doRead(JFileChooser dlg, boolean publicKey) {
-        if (JFileChooser.APPROVE_OPTION != dlg.showOpenDialog(this)) {
-            return;
-        }
-
-        String filename = dlg.getSelectedFile().getAbsolutePath();
-        try {
-            privateKeyField.setText(new String(IOUtils.slurpFile(new File(filename))));
-        } catch(IOException ioe) {
-            JOptionPane.showMessageDialog(this, ioe.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
     @Override
     protected JPanel createPropertyPanel() {
         return mainPanel;
@@ -242,21 +242,21 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         // authentication tab
         specifyUserCredentialsPanel.setEnabled(specifyUserCredentialsRadioButton.isSelected());
         if (specifyUserCredentialsRadioButton.isSelected()) {
+            userNameLabel.setEnabled(true);
             usernameField.setEnabled(true);
             usernamePasswordRadioButton.setEnabled(true);
             privateKeyRadioButton.setEnabled(true);
-            privateKeyScrollPane.setEnabled(privateKeyRadioButton.isSelected());
-            privateKeyField.setEnabled(privateKeyRadioButton.isSelected());
-            loadPrivateKeyFromFileButton.setEnabled(privateKeyRadioButton.isSelected());
+            privateKeyTypeField.setEnabled(privateKeyRadioButton.isSelected());
+            setPrivateKeyButton.setEnabled(privateKeyRadioButton.isSelected());
             passwordField.setEnabled(usernamePasswordRadioButton.isSelected());
             managePasswordsButton.setEnabled(usernamePasswordRadioButton.isSelected());
         } else {
+            userNameLabel.setEnabled(false);
             usernameField.setEnabled(false);
             usernamePasswordRadioButton.setEnabled(false);
             privateKeyRadioButton.setEnabled(false);
-            privateKeyScrollPane.setEnabled(false);
-            privateKeyField.setEnabled(false);
-            loadPrivateKeyFromFileButton.setEnabled(false);
+            privateKeyTypeField.setEnabled(false);
+            setPrivateKeyButton.setEnabled(false);
             passwordField.setEnabled(false);
             managePasswordsButton.setEnabled(false);
         }
@@ -310,10 +310,26 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
 
         if(assertion.isUsePrivateKey()) {
             privateKeyRadioButton.setSelected(true);
-            privateKeyField.setText(assertion.getPrivateKey() == null ? "" : assertion.getPrivateKey());
+
+            encryptedPrivateKey = assertion.getPrivateKey();
+            try {
+                privateKey = String.valueOf(Registry.getDefault().getTrustedCertManager().decryptPassword(encryptedPrivateKey));
+
+                if (!StringUtils.isEmpty(privateKey)) {
+                    String determinedAlgorithm = SshKeyUtil.getPemPrivateKeyAlgorithm(privateKey);
+                    if (determinedAlgorithm != null) {
+                        privateKeyTypeField.setText(SshKeyUtil.PEM + " " + determinedAlgorithm);
+                    } else {
+                        privateKeyTypeField.setText("Unknown type");
+                    }
+                }
+            } catch (Exception e) {
+                // validation error will occur if host private key is empty
+            }
         } else {
             usernamePasswordRadioButton.setSelected(true);
         }
+
         usernameField.setText(assertion.getUsername() == null ? "" : assertion.getUsername());
 
         if(assertion.isUsePublicKey() && assertion.getSshPublicKey() != null) {
@@ -363,9 +379,14 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
 
         if(usernamePasswordRadioButton.isSelected()) {
             assertion.setUsePrivateKey(false);
-        } else {
+        } else if (privateKeyRadioButton.isSelected()) {
+            try {
+                encryptedPrivateKey = Registry.getDefault().getTrustedCertManager().encryptPassword(privateKey.toCharArray());
+            } catch (FindException fe) {
+                throw new ValidationException("Cannot encrypt the given private key.  Please try a different private key.");
+            }
             assertion.setUsePrivateKey(true);
-            assertion.setPrivateKey(privateKeyField.getText());
+            assertion.setPrivateKey(encryptedPrivateKey);
         }
 
         if(validateServerSHostCheckBox.isSelected() && hostKey != null) {

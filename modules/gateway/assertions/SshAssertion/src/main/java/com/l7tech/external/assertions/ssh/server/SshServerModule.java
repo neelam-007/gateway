@@ -15,6 +15,7 @@ import com.l7tech.server.*;
 import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.identity.cert.TrustedCertServices;
+import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.server.transport.TransportModule;
@@ -47,11 +48,11 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.InvalidKeyException;
 import java.security.PublicKey;
 import java.security.Security;
+import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
@@ -88,10 +89,9 @@ public class SshServerModule extends TransportModule implements ApplicationListe
     private final EventChannel messageProcessingEventChannel;
     private final SoapFaultManager soapFaultManager;
     private final StashManagerFactory stashManagerFactory;
-
     private final Map<Long, Pair<SsgConnector, SshServer>> activeConnectors = new ConcurrentHashMap<Long, Pair<SsgConnector, SshServer>>();
-
     private final Audit auditor;
+    private final SecurePasswordManager securePasswordManager;
 
     public SshServerModule(ApplicationEventProxy applicationEventProxy,
                            LicenseManager licenseManager,
@@ -104,7 +104,8 @@ public class SshServerModule extends TransportModule implements ApplicationListe
                            StashManagerFactory stashManagerFactory,
                            SoapFaultManager soapFaultManager,
                            EventChannel messageProcessingEventChannel,
-                           AuditFactory auditFactory)
+                           AuditFactory auditFactory,
+                           SecurePasswordManager securePasswordManager)
     {
         super("SSH server module", LOGGER, GatewayFeatureSets.SERVICE_SSH_MESSAGE_INPUT, licenseManager, ssgConnectorManager, trustedCertServices, defaultKey, config );
         this.applicationEventProxy = applicationEventProxy;
@@ -114,6 +115,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
         this.soapFaultManager = soapFaultManager;
         this.stashManagerFactory = stashManagerFactory;
         this.auditor = auditFactory.newInstance( this, LOGGER);
+        this.securePasswordManager = securePasswordManager;
     }
 
     private static <T> T getBean(BeanFactory beanFactory, String beanName, Class<T> beanClass) {
@@ -136,10 +138,11 @@ public class SshServerModule extends TransportModule implements ApplicationListe
         SoapFaultManager soapFaultManager = getBean(appContext, "soapFaultManager", SoapFaultManager.class);
         EventChannel messageProcessingEventChannel = getBean(appContext, "messageProcessingEventChannel", EventChannel.class);
         AuditFactory auditFactory = getBean(appContext, "auditFactory", AuditFactory.class);
+        SecurePasswordManager securePasswordManager = getBean(appContext,"securePasswordManager", SecurePasswordManager.class);
 
         return new SshServerModule(applicationEventProxy, licenseManager, ssgConnectorManager, trustedCertServices,
                 defaultKey, config, gatewayState, messageProcessor, stashManagerFactory, soapFaultManager,
-                messageProcessingEventChannel, auditFactory);
+                messageProcessingEventChannel, auditFactory, securePasswordManager);
     }
 
     @Override
@@ -267,7 +270,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
             auditStart("connector OID " + connector.getOid() + ", on port " + connector.getPort());
             sshd.start();
             activeConnectors.put(connector.getOid(), new Pair<SsgConnector, SshServer>(connector, sshd));
-        } catch (IOException e) {
+        } catch (Exception e) {
             auditError("Error during startup, unable to create sshd.", e);
             throw new ListenerException("Unable to create sshd: " + ExceptionUtils.getMessage(e), e);
         }
@@ -379,7 +382,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
     /*
      * configure SSH server using listener properties
      */
-    private void configureSshServer(SshServer sshd, final SsgConnector connector) throws ListenerException {
+    private void configureSshServer(SshServer sshd, final SsgConnector connector) throws FindException, ListenerException, ParseException {
         // configure ciphers to enable
         setUpSshCiphers(sshd, connector);
 
@@ -406,8 +409,8 @@ public class SshServerModule extends TransportModule implements ApplicationListe
         sshd.setPort(connector.getPort());
 
         // set server host private key
-        String hostPrivateKey = connector.getProperty(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY);
-        sshd.setKeyPairProvider(new PemSshHostKeyProvider(hostPrivateKey));
+        String encryptedHostPrivateKey = connector.getProperty(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY);
+        sshd.setKeyPairProvider(new PemSshHostKeyProvider(String.valueOf(securePasswordManager.decryptPassword(encryptedHostPrivateKey))));
 
         // configure connection idle timeout in ms (min=60sec*1000ms)
         String idleTimeoutMins = connector.getProperty(SshCredentialAssertion.LISTEN_PROP_IDLE_TIMEOUT_MINUTES);

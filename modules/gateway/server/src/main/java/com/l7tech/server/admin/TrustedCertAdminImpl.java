@@ -44,6 +44,7 @@ import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
+import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
@@ -580,6 +581,16 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     @Override
     public void deleteSecurePassword(long oid) throws DeleteException, FindException {
         securePasswordManager.delete(oid);
+    }
+
+    @Override
+    public String encryptPassword(char[] plaintext) throws FindException {
+        return securePasswordManager.encryptPassword(plaintext);
+    }
+
+    @Override
+    public char[] decryptPassword(String encodedPassword) throws FindException, ParseException {
+        return securePasswordManager.decryptPassword(encodedPassword);
     }
 
     @Override
