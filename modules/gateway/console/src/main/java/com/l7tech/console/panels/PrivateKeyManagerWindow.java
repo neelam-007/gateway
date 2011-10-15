@@ -352,43 +352,46 @@ public class PrivateKeyManagerWindow extends JDialog {
             return;
         }
 
-        Utilities.centerOnScreen(signingCertPropertiesDialog);
-        DialogDisplayer.display(signingCertPropertiesDialog, new Runnable() {
+        Functions.Nullary<Void> postTaskFunc = new Functions.Nullary<Void>() {
             @Override
-            public void run() {
+            public Void call() {
                 // After the dialog is confirmed against the contents of the CSR, then generate a new certificate chain and save the new certificate.
-                if (signingCertPropertiesDialog.isConfirmed()) {
-                    final String[] pemCertChain;
-                    try {
-                        pemCertChain = getTrustedCertAdmin().signCSR(
-                            keystoreId,
-                            keyAlias,
-                            csrBytes[0],
-                            new X500Principal(signingCertPropertiesDialog.getSubjectDn()),
-                            signingCertPropertiesDialog.getExpiryAge(),
-                            null,
-                            signingCertPropertiesDialog.getHashAlg()
-                        );
-                    } catch (CertificateException e) {
-                        showErrorMessage("Unable to Sign Certificate", "Unable to process certificate signing request: " + ExceptionUtils.getMessage(e), e);
-                        return;
-                    } catch (FindException e) {
-                        showErrorMessage("Unable to Sign Certificate", "Unable to process certificate signing request: " + ExceptionUtils.getMessage(e), e);
-                        return;
-                    } catch (GeneralSecurityException e) {
-                        showErrorMessage("Unable to Sign Certificate", "Unable to process certificate signing request: " + ExceptionUtils.getMessage(e), e);
-                        return;
-                    }
-
-                    FileChooserUtil.doWithJFileChooser(new FileChooserUtil.FileChooserUser() {
-                        @Override
-                        public void useFileChooser(JFileChooser fc) {
-                            savePemCertChain(fc, pemCertChain);
-                        }
-                    });
+                final String[] pemCertChain;
+                try {
+                    pemCertChain = getTrustedCertAdmin().signCSR(
+                        keystoreId,
+                        keyAlias,
+                        csrBytes[0],
+                        new X500Principal(signingCertPropertiesDialog.getSubjectDn()),
+                        signingCertPropertiesDialog.getExpiryAge(),
+                        null,
+                        signingCertPropertiesDialog.getHashAlg()
+                    );
+                } catch (CertificateException e) {
+                    showErrorMessage("Unable to Sign Certificate", "Unable to process certificate signing request: " + ExceptionUtils.getMessage(e), e);
+                    return null;
+                } catch (FindException e) {
+                    showErrorMessage("Unable to Sign Certificate", "Unable to process certificate signing request: " + ExceptionUtils.getMessage(e), e);
+                    return null;
+                } catch (GeneralSecurityException e) {
+                    showErrorMessage("Unable to Sign Certificate", "Unable to process certificate signing request: " + ExceptionUtils.getMessage(e), e);
+                    return null;
                 }
+
+                FileChooserUtil.doWithJFileChooser(new FileChooserUtil.FileChooserUser() {
+                    @Override
+                    public void useFileChooser(JFileChooser fc) {
+                        savePemCertChain(fc, pemCertChain);
+                    }
+                });
+
+                return null;
             }
-        });
+        };
+        signingCertPropertiesDialog.setPostTaskFunc(postTaskFunc);
+
+        Utilities.centerOnParent(signingCertPropertiesDialog);
+        DialogDisplayer.display(signingCertPropertiesDialog);
     }
 
     private void savePemCertChain(JFileChooser fc, final String[] pemCertChain) {

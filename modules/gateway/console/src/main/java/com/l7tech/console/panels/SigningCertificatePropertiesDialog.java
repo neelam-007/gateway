@@ -62,8 +62,8 @@ public class SigningCertificatePropertiesDialog extends JDialog {
     private JTextField publicKeyDetailsTextField;
 
     private Functions.Nullary<Boolean> precheckingShortKeyFunc;
+    private Functions.Nullary<Void> postTaskFunc;
     private String publicKeyDetails;
-    private boolean confirmed;
 
     public SigningCertificatePropertiesDialog(Frame owner, Functions.Nullary<Boolean> precheckingShortKeyFunc) {
         super(owner, resources.getString("dialog.title"));
@@ -93,8 +93,8 @@ public class SigningCertificatePropertiesDialog extends JDialog {
         modelToView(csrProps);
     }
 
-    public boolean isConfirmed() {
-        return confirmed;
+    public void setPostTaskFunc(Functions.Nullary<Void> postTaskFunc) {
+        this.postTaskFunc = postTaskFunc;
     }
 
     public String getSubjectDn() {
@@ -128,10 +128,7 @@ public class SigningCertificatePropertiesDialog extends JDialog {
         inputValidator.attachToButton(okButton, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (validatePropertiesAndReportErrors()) {
-                    confirmed = true;
-                    dispose();
-                }
+                validatePropertiesAndExecutePostTask();
             }
         });
 
@@ -158,24 +155,20 @@ public class SigningCertificatePropertiesDialog extends JDialog {
         pack();
     }
 
-    private boolean validatePropertiesAndReportErrors() {
-        boolean valid = false;
-
+    private void validatePropertiesAndExecutePostTask() {
         // Check Subject DN
         final String subjectDn = getSubjectDn();
         try {
             if (subjectDn.isEmpty()) throw new IllegalArgumentException(resources.getString("error.message.empty.subject.dn"));
             new X500Principal(subjectDn);
-            valid = true;
         } catch (IllegalArgumentException e) {
             showErrorMessage(
                 resources.getString("error.dialog.title"),
                 MessageFormat.format(resources.getString("error.message.invalid.subject.dn"), ExceptionUtils.getMessage(e)));
+            return;
         }
-        if (!valid) return valid;
 
         // The CA Key is short or not
-        final boolean[] isShort = {false};
         final String hashAlg = getHashAlg();
         if (precheckingShortKeyFunc.call() && hashAlg != null && !hashAlg.startsWith("SHA1") && !hashAlg.equals("Automatic")) {
             final String[] options = {"Yes", "No"};
@@ -191,14 +184,17 @@ public class SigningCertificatePropertiesDialog extends JDialog {
                 new  DialogDisplayer.OptionListener(){
                     @Override
                     public void reportResult( final int option ) {
-                        if (option == JOptionPane.NO_OPTION) {
-                            isShort[0] = true;
+                        if (option == JOptionPane.YES_OPTION) {
+                            SigningCertificatePropertiesDialog.this.dispose();
+                            postTaskFunc.call();
                         }
                     }
                 }
             );
+        } else {
+            SigningCertificatePropertiesDialog.this.dispose();
+            postTaskFunc.call();
         }
-        return !isShort[0];
     }
 
     private void showErrorMessage(String title, String msg) {
