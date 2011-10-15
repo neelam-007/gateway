@@ -20,7 +20,7 @@ NSS_LDAP_CONF_FILE="/etc/ldap.conf"
 NSS_CONF_FILE="/etc/nsswitch.conf"
 PAM_RADIUS_CONF_FILE="/etc/pam_radius.conf"
 PAM_SSHD_CONF_FILE="/etc/pam.d/sshd"
-PAM_LOGIN_FILE="/etc/pam.d/login"
+PAM_LOGIN_CONF_FILE="/etc/pam.d/login"
 SKEL_DIR="/etc/skel_ssg"
 BK_TIME=$(date +"%Y%m%d_%H%M%S")
 DATE_TIME=$(date +"%Y-%m-%d %H:%M:%S")
@@ -541,32 +541,32 @@ else
 	fi
 		
 	# pam_groupdn field
-	if [ "X$PAM_GROUPDN" != "X" ]; then
-		sed -i "s|\(^#pam_groupdn cn=PAM.*$\)|\1\n# Added by $0 on $DATE_TIME:\npam_groupdn $PAM_GROUPDN\n|" $NSS_LDAP_CONF_FILE
-		if [ $? -ne 0 ] || [ "X$(grep "^pam_groupdn" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$PAM_GROUPDN" ]; then
-			toLog "    ERROR - Configuring 'pam_groupdn' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
-			exit 1
-		else
-			toLog "    Success - 'pam_groupdn' field set to $PAM_GROUPDN in $NSS_LDAP_CONF_FILE."
-		fi
-	else
-		toLog "    ERROR - PAM_GROUPDN cannot be empty! Exiting..."
-		exit 1
-	fi
+	#if [ "X$PAM_GROUPDN" != "X" ]; then
+	#	sed -i "s|\(^#pam_groupdn cn=PAM.*$\)|\1\n# Added by $0 on $DATE_TIME:\npam_groupdn $PAM_GROUPDN\n|" $NSS_LDAP_CONF_FILE
+	#	if [ $? -ne 0 ] || [ "X$(grep "^pam_groupdn" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$PAM_GROUPDN" ]; then
+	#		toLog "    ERROR - Configuring 'pam_groupdn' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
+	#		exit 1
+	#	else
+	#		toLog "    Success - 'pam_groupdn' field set to $PAM_GROUPDN in $NSS_LDAP_CONF_FILE."
+	#	fi
+	#else
+	#	toLog "    ERROR - PAM_GROUPDN cannot be empty! Exiting..."
+	#	exit 1
+	#fi
 	
 	# pam_member_attribute field
-	if [ "X$PAM_MEMBER_ATTR" != "X" ]; then
-		sed -i "s|\(^#pam_member_attribute uniquemember.*$\)|\1\n# Added by $0 on $DATE_TIME:\npam_member_attribute $PAM_MEMBER_ATTR\n|" $NSS_LDAP_CONF_FILE
-		if [ $? -ne 0 ] || [ "X$(grep "^pam_member_attribute" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$PAM_MEMBER_ATTR" ]; then
-			toLog "    ERROR - Configuring 'pam_member_attribute' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
-			exit 1
-		else
-			toLog "    Success - 'pam_member_attribute' field set to $PAM_MEMBER_ATTR in $NSS_LDAP_CONF_FILE."
-		fi
-	else
-		toLog "    ERROR - PAM_MEMBER_ATTR cannot be empty! Exiting..."
-		exit 1
-	fi
+	#if [ "X$PAM_MEMBER_ATTR" != "X" ]; then
+	#	sed -i "s|\(^#pam_member_attribute uniquemember.*$\)|\1\n# Added by $0 on $DATE_TIME:\npam_member_attribute $PAM_MEMBER_ATTR\n|" $NSS_LDAP_CONF_FILE
+	#	if [ $? -ne 0 ] || [ "X$(grep "^pam_member_attribute" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$PAM_MEMBER_ATTR" ]; then
+	#		toLog "    ERROR - Configuring 'pam_member_attribute' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
+	#		exit 1
+	#	else
+	#		toLog "    Success - 'pam_member_attribute' field set to $PAM_MEMBER_ATTR in $NSS_LDAP_CONF_FILE."
+	#	fi
+	#else
+	#	toLog "    ERROR - PAM_MEMBER_ATTR cannot be empty! Exiting..."
+	#	exit 1
+	#fi
 	
 	# pam_min_uid field
 	if [ "X$PAM_MIN_UID" != "X" ]; then
@@ -707,18 +707,21 @@ else
 	if [ "X$LDAP_TYPE" == "Xldaps" ]; then
 		toLog "   Info - '$LDAP_TYPE' will be configured."
 		# ssl field is set to start_tls
-		sed -i "s|\(^# OpenLDAP SSL mechanism.*$\)|\1\n# Added by $0 on $DATE_TIME:\nssl start_tls\n|" $NSS_LDAP_CONF_FILE
-		if [ $? -ne 0 ] || [ "$(grep "^ssl" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "start_tls" ]; then
-			toLog "    ERROR - Configuring 'ssl' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
-			exit 1
-		else
-			toLog "    Success - 'ssl' field set to start_tls in $NSS_LDAP_CONF_FILE."
-		fi
+		#sed -i "s|\(^# OpenLDAP SSL mechanism.*$\)|\1\n# Added by $0 on $DATE_TIME:\nssl start_tls\n|" $NSS_LDAP_CONF_FILE
+		#if [ $? -ne 0 ] || [ "$(grep "^ssl" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "start_tls" ]; then
+		#	toLog "    ERROR - Configuring 'ssl' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
+		#	exit 1
+		#else
+		#	toLog "    Success - 'ssl' field set to start_tls in $NSS_LDAP_CONF_FILE."
+		#fi
+		# The above code have been disabled as the start_tls option causes some conflicts that will lead to denied access
+		# even if the expected result would be allowed access.
+		# SSL encryption of the communication will still be enforced.
 		
 		# cacert url or file
 		# Instead of using the TLS_CACERT directive that will accept one file that contains all CA certificates to be recognized (concatenated),
 		# the TLS_CACERTDIR directive will be used to specify the directory that will contain multiple CA certificates in different/separeted files:
-		# For both situations (using URL or a previously copied file as the CA certificate) the file will end up in the /etc/openldap/cacerts dir.
+		# For both situations (using URL or a previously copied file as the CA certificate) the file will end up in the /etc/openldap/cacerts directory.
 		if [ "X$LDAP_CACERT_URL" != "X" ]; then
 			CACERT_FILE_NAME=$(echo "$LDAP_CACERT_URL" | sed 's/.*\///')
 			wget --quiet --no-check-certificate --no-clobber --dns-timeout=2 --timeout=2 --waitretry=2 --tries=2 $LDAP_CACERT_URL
@@ -734,7 +737,7 @@ else
 				toLog "    Success - CA certificate installation completed."
 			fi
 		else
-			# a file copied via scp to the ssg system will be used:
+			# a file copied via scp on the SSG system will be used:
 			/bin/cp -a --backup=numbered $LDAP_CACERT_FILE /etc/openldap/cacerts/
 			if [ $? -ne 0 ] || [ ! -s "$LDAP_CACERT_FILE" ]; then
 				toLog "    ERROR - Copying the CA certificate file failed or the certificate file is empty. Exiting..."
@@ -898,6 +901,25 @@ else
 	# if this point was reached, then:
 	toLog "   Success - Configuration of $NSS_CONF_FILE completed."
 	RETVAL=0
+fi
+
+# pam.d services configuration:
+# sshd
+sed -i "s|\(^#%PAM-1.0.*$\)|\1\n#Added by $0 on $DATE_TIME:\nauth sufficient pam_ldap.so|" $PAM_SSHD_CONF_FILE
+if [ $? -ne 0 ] || [ "X$(grep "^auth" $PAM_SSHD_CONF_FILE | head -n 1 | cut -d" " -f3)" != "Xpam_ldap.so" ]; then
+	toLog "    ERROR - Configuration of $PAM_SSHD_CONF_FILE to use pam_ldap.so library failed. Exiting..."
+	exit 1
+else
+	toLog "    Success - $PAM_SSHD_CONF_FILE configured to use pam_ldap.so library."
+fi
+
+# login
+sed -i "s|\(.*pam_securetty.so.*$\)|\1\n#Added by $0 on $DATE_TIME:\nauth sufficient pam_ldap.so|" $PAM_LOGIN_CONF_FILE
+if [ $? -ne 0 ] || [ "X$(grep "^auth" $PAM_LOGIN_CONF_FILE | head -n 1 | cut -d" " -f3)" != "Xpam_ldap.so" ]; then
+	toLog "    ERROR - Configuration of $PAM_LOGIN_CONF_FILE to use pam_ldap.so library failed. Exiting..."
+	exit 1
+else
+	toLog "    Success - $PAM_LOGIN_CONF_FILE configured to use pam_ldap.so library."
 fi
 
 # END of 'doConfigureLDAPonly' function
