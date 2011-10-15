@@ -1,9 +1,7 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.audit.AuditDetail;
+import com.l7tech.gateway.common.audit.AuditDetailEvent.AuditDetailWithInfo;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.util.Resolver;
@@ -29,16 +27,17 @@ public class AuditContextStub implements AuditContextStubInt {
 
     @Override
     public void addDetail(AuditDetail detail, Object source) {
-        addDetail( detail, source, null, null );
+        addDetail( new AuditDetailWithInfo(  source, detail, null, null ) );
     }
 
     @Override
-    public void addDetail(AuditDetail detail, Object source, Throwable exception, String loggerName) {
-        List<AuditDetail> details = this.details.get( source );
+    public void addDetail( final AuditDetailWithInfo detailWithInfo ) {
+        List<AuditDetail> details = this.details.get( detailWithInfo.getSource() );
         if ( details == null ) {
             details = new ArrayList<AuditDetail>();
-            this.details.put( source, details );
+            this.details.put( detailWithInfo.getSource(), details );
         }
+        final AuditDetail detail = detailWithInfo.getDetail();
         detail.setOrdinal( ordinal++ );
         details.add( detail );
     }

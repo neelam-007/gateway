@@ -184,7 +184,7 @@ public class SinkManagerImpl
                         LogRecord testRecord = new LogRecord( Level.INFO, testMessage==null ? "Test message." : testMessage );
 
                         // up level if required for message to be sent
-                        Level testLevel = Level.parse(sinkConfiguration.getSeverity().toString());
+                        Level testLevel = sinkConfiguration.getSeverity().toLoggingLevel();
                         if ( testLevel.intValue() > Level.INFO.intValue() ) {
                             testRecord.setLevel(testLevel);
                         }

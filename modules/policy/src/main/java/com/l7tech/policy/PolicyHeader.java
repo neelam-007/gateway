@@ -102,6 +102,7 @@ public class PolicyHeader extends OrganizationHeader {
      *
      * @return The display name.
      */
+    @Override
     public String getDisplayName() {
         String displayName = getName();
 

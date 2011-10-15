@@ -1,13 +1,12 @@
-/**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.policy;
 
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyDeletionForbiddenException;
 import com.l7tech.policy.CircularPolicyException;
 import com.l7tech.policy.PolicyType;
 
+import java.util.List;
 import java.util.Set;
 import java.util.Map;
 
@@ -174,4 +173,12 @@ public interface PolicyCache {
      *         true if queries for policies should now be expected to succeed.
      */
     boolean isStarted();
+
+    /**
+     * Get the folder path for the identified policy.
+     *
+     * @param policyOid The identifier of the policy
+     * @return The folder path from the root to the parent folder (empty if the policy is unknown)
+     */
+    List<Folder> getFolderPath(long policyOid);
 }

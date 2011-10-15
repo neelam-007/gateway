@@ -1,6 +1,7 @@
 package com.l7tech.util;
 
 import static com.l7tech.util.CollectionUtils.*;
+import com.l7tech.util.Functions.Binary;
 import static com.l7tech.util.Option.some;
 import static org.junit.Assert.*;
 
@@ -219,5 +220,29 @@ public class CollectionUtilsTest {
         } catch ( UnsupportedOperationException uoe ) {
             // expected
         }
+    }
+
+    @Test
+    public void testMatchesAny() {
+        final List<String> target = list( "a", "b", "c" );
+        final List<String> values = list( "A", "R", "T" );
+
+        final Binary<Boolean,String,String> caseSensitiveMatcher = new Binary<Boolean,String,String>(){
+            @Override
+            public Boolean call( final String target, final String value ) {
+                return target!=null && value!=null && value.equals( target );
+            }
+        };
+        final Binary<Boolean,String,String> caseInsensitiveMatcher = new Binary<Boolean,String,String>(){
+            @Override
+            public Boolean call( final String target, final String value ) {
+                return target!=null && value!=null && value.equalsIgnoreCase( target );
+            }
+        };
+
+        assertFalse( "null values", matchesAny( null, target, caseSensitiveMatcher ) );
+        assertFalse( "null target", matchesAny( values, null, caseSensitiveMatcher ) );
+        assertFalse( "case sensitive match", matchesAny( values, target, caseSensitiveMatcher ) );
+        assertTrue( "case insensitive match", matchesAny( values, target, caseInsensitiveMatcher ) );
     }
 }

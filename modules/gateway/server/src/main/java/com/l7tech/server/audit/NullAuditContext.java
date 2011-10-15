@@ -1,6 +1,7 @@
 package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.audit.AuditDetail;
+import com.l7tech.gateway.common.audit.AuditDetailEvent.AuditDetailWithInfo;
 import com.l7tech.gateway.common.audit.AuditRecord;
 
 import java.util.Collections;
@@ -21,7 +22,7 @@ public class NullAuditContext implements AuditContext {
     }
 
     @Override
-    public void addDetail(AuditDetail detail, Object source, Throwable thrown, String loggerName) {
+    public void addDetail(AuditDetailWithInfo detail) {
     }
 
     @Override

@@ -1,5 +1,7 @@
 package com.l7tech.external.assertions.ssh.server;
 
+import com.l7tech.common.log.HybridDiagnosticContext;
+import com.l7tech.common.log.HybridDiagnosticContextKeys;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.message.HasServiceOid;
@@ -53,6 +55,7 @@ public class MessageProcessingScpCommand extends ScpCommand implements SessionAw
         stashManagerFactory = smf;
     }
 
+    @Override
     public void setSession(ServerSession session) {
         this.session = session;
     }
@@ -74,7 +77,6 @@ public class MessageProcessingScpCommand extends ScpCommand implements SessionAw
             throw new IOException("Expected a C message but got '" + header + "'");
         }
 
-        String perms = header.substring(1, 5);
         long length = 0;
         try {
             length = Long.parseLong(header.substring(6, header.indexOf(' ', 6)));
@@ -93,7 +95,14 @@ public class MessageProcessingScpCommand extends ScpCommand implements SessionAw
             }
         }
 
-        pipeInputStreamToGatewayRequestMessage(connector, absolutePath, name, in, length);
+        HybridDiagnosticContext.put( HybridDiagnosticContextKeys.LISTEN_PORT_ID, Long.toString( connector.getOid() ) );
+        HybridDiagnosticContext.put( HybridDiagnosticContextKeys.CLIENT_IP, MessageProcessingSshUtil.getRemoteAddress(session) );
+        try {
+            pipeInputStreamToGatewayRequestMessage(connector, absolutePath, name, in, length);
+        } finally {
+            HybridDiagnosticContext.remove( HybridDiagnosticContextKeys.LISTEN_PORT_ID );
+            HybridDiagnosticContext.remove( HybridDiagnosticContextKeys.CLIENT_IP );
+        }
 
         readAck(false);
     }
@@ -111,8 +120,11 @@ public class MessageProcessingScpCommand extends ScpCommand implements SessionAw
         throw new IOException("Recursive directory read unsupported.");
     }
 
-    private boolean pipeInputStreamToGatewayRequestMessage(SsgConnector connector, String path, String file,
-                                                           InputStream inputStream, long length) throws IOException {
+    private boolean pipeInputStreamToGatewayRequestMessage( final SsgConnector connector,
+                                                            final String path,
+                                                            final String file,
+                                                            final InputStream inputStream,
+                                                            final long length ) throws IOException {
         boolean success = false;
         Message request = new Message();
 
@@ -143,8 +155,8 @@ public class MessageProcessingScpCommand extends ScpCommand implements SessionAw
             }
         }
 
-        long hardwiredServiceOid = connector.getLongProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, -1);
-        if (hardwiredServiceOid != -1) {
+        long hardwiredServiceOid = connector.getLongProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, -1L );
+        if (hardwiredServiceOid != -1L ) {
             request.attachKnob(HasServiceOid.class, new HasServiceOidImpl(hardwiredServiceOid));
         }
 
@@ -233,14 +245,14 @@ public class MessageProcessingScpCommand extends ScpCommand implements SessionAw
             ack();
 
             byte[] buffer = new byte[8192];
-            while (length > 0) {
-                int len = (int) Math.min(length, buffer.length);
+            while (length > 0L ) {
+                int len = (int) Math.min(length, (long) buffer.length );
                 len = inputStream.read(buffer, 0, len);
                 if (len <= 0) {
                     throw new IOException("End of stream reached");
                 }
                 outputStream.write(buffer, 0, len);
-                length -= len;
+                length -= (long) len;
             }
         } finally {
             outputStream.close();

@@ -1,5 +1,7 @@
 package com.l7tech.server.message;
 
+import com.l7tech.common.log.HybridDiagnosticContext;
+import com.l7tech.common.log.HybridDiagnosticContextKeys;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.identity.User;
@@ -47,6 +49,7 @@ public class AuthenticationContext extends CredentialContext {
         if (!authenticationResults.contains(taggedResult)) {
             authenticationResults.add(taggedResult);
         }
+        HybridDiagnosticContext.put( HybridDiagnosticContextKeys.USER_ID, authResult.getUser().getProviderId() + ":" + authResult.getUser().getId() );
         this.lastAuthenticationResult = authResult;
     }
 

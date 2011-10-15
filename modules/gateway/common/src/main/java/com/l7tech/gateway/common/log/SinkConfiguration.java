@@ -4,7 +4,6 @@ import static com.l7tech.util.CollectionUtils.cast;
 import static com.l7tech.util.CollectionUtils.toList;
 import static com.l7tech.util.CollectionUtils.set;
 
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Functions.Unary;
 import static com.l7tech.util.Functions.map;
@@ -17,6 +16,7 @@ import com.l7tech.util.Pair;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
 import org.hibernate.annotations.Proxy;
+import org.jetbrains.annotations.NotNull;
 
 import javax.persistence.*;
 import java.beans.XMLDecoder;
@@ -25,6 +25,7 @@ import java.io.ByteArrayInputStream;
 import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.*;
+import java.util.logging.Level;
 
 /**
  * Describes the configuration of a logging sink.
@@ -74,11 +75,25 @@ public class SinkConfiguration extends NamedEntityImp {
     }
 
     public static enum SeverityThreshold {
-        ALL,
-        CONFIG,
-        INFO,
-        WARNING,
-        SEVERE
+        ALL(Level.ALL),
+        FINEST(Level.FINEST),
+        FINER(Level.FINER),
+        FINE(Level.FINE),
+        CONFIG(Level.CONFIG),
+        INFO(Level.INFO),
+        WARNING(Level.WARNING),
+        SEVERE(Level.SEVERE);
+
+        private final Level logLevel;
+
+        private SeverityThreshold( @NotNull final Level logLevel ) {
+            this.logLevel = logLevel;
+        }
+
+        @NotNull
+        public Level toLoggingLevel() {
+            return logLevel;
+        }
     }
 
     public static final String CATEGORY_GATEWAY_LOGS = "LOG";
@@ -88,12 +103,6 @@ public class SinkConfiguration extends NamedEntityImp {
             CATEGORY_AUDITS,
             CATEGORY_GATEWAY_LOGS,
             CATEGORY_TRAFFIC_LOGS
-    );
-
-    public static final Set<EntityType> SUPPORTED_TRANSPORTS = set(
-            EntityType.EMAIL_LISTENER,
-            EntityType.JMS_CONNECTION,
-            EntityType.SSG_CONNECTOR
     );
 
     // Log file sink property names

@@ -1,7 +1,10 @@
 package com.l7tech.server.policy;
 
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
+import com.l7tech.util.Functions.Nullary;
 
+import java.util.Collection;
 import java.util.Set;
 import java.util.Map;
 
@@ -45,5 +48,14 @@ public interface ServerPolicyMetadata {
      * @return The map of policy ids to versions
      */
     public Map<Long,Integer> getDependentVersions( boolean includeSelf );
+
+    /**
+     * Get folder lookup.
+     *
+     * <p>The folder path can change without a policy being rebuilt.</p>
+     *
+     * @return Folder path lookup function.
+     */
+    public Nullary<Collection<Folder>> getFolderPath();
 
 }

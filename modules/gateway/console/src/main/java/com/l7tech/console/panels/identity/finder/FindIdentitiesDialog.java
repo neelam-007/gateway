@@ -19,8 +19,11 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.*;
-import com.l7tech.util.Resolver;
-import com.l7tech.util.ResolvingComparator;
+import com.l7tech.util.Functions.Unary;
+import static com.l7tech.util.Functions.map;
+import com.l7tech.util.Option;
+import static com.l7tech.util.Option.none;
+import static com.l7tech.util.Option.some;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -41,8 +44,7 @@ import java.util.logging.Logger;
 /**
  * Find Dialog
  *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.2
+ * @author Emil Marceta
  */
 public class FindIdentitiesDialog extends JDialog {
     final Logger logger = Logger.getLogger(FindIdentitiesDialog.class.getName());
@@ -79,41 +81,31 @@ public class FindIdentitiesDialog extends JDialog {
     private static final String NAME_SEARCH_OPTION_EQUALS = "Equals";
     private static final String NAME_SEARCH_OPTION_STARTS = "Starts with";
 
-
-    private JPanel mainPanel = null;
-    private JTextField nameField = null;
-    private JComboBox providersComboBox = null;
-    private JComboBox searchNameOptions = null;
-    private JComboBox searchType = null;
-
-    private JTable searchResultTable = new JTable();
-    private JPanel searchResultPanel = new JPanel();
-
-    /**
-     * cancle search
-     */
-    private JButton stopSearchButton = null;
-    /**
-     * find button
-     */
-    private JButton findButton = null;
-
-    /**
-     * result counter label
-     */
-    final JLabel resultCounter = new JLabel();
-
+    private JPanel mainPanel;
+    private JTextField nameField;
+    private JComboBox providersComboBox;
+    private JComboBox searchNameOptions;
+    private JComboBox searchType;
+    private JTable searchResultTable;
+    private JButton findButton;
+    private JButton stopSearchButton;
+    private JButton closeButton;
+    private JButton selectButton;
+    private JButton deleteButton;
+    private JButton newSearchButton;
+    private JLabel resultCounter;
+    private JScrollPane scrollPane;
+    private JPanel searchDetailsPanel;
+    private JPanel searchResultsPanel;
 
     private DynamicTableModel tableModel = null;
-    private JTabbedPane searchTabs = new JTabbedPane();
-    private Dimension origDimension = null;
 
     /**
      * the search info with search expression and parameters
      */
-    private SearchInfo searchInfo = new SearchInfo();
-    private DefaultComboBoxModel providersComboBoxModel;
-    IdentityHeader[] selections = new IdentityHeader[]{};
+    private Option<SearchInfo> searchInfo = none();
+    private ComboBoxModel providersComboBoxModel;
+    private IdentityHeader[] selections = new IdentityHeader[]{};
 
     private Options options = new Options();
     private DeleteEntityAction deleteIdAction;
@@ -150,14 +142,25 @@ public class FindIdentitiesDialog extends JDialog {
         initComponents();
     }
 
+    /**
+     * Get identity search helper.
+     *
+     * @param options the options to use
+     * @return The FindIdentities helper
+     */
+    public static FindIdentities getFindIdentities( final Options options,
+                                                    final Collection<EntityHeader> identityProviderHeaders,
+                                                    final Runnable selectionCallback ) {
+        return new FindIdentities(options, identityProviderHeaders, selectionCallback);
+    }
 
     /**
      * bring up the find form and return the selected
      */
     public FindResult showDialog() {
         setVisible(true);
-        IdentityProviderConfig ipc = (IdentityProviderConfig)providersComboBoxModel.getSelectedItem();
-        return ipc == null ? null : new FindResult(ipc.getOid(), selections);
+        ProviderEntry providerEntry = (ProviderEntry)providersComboBoxModel.getSelectedItem();
+        return providerEntry == null ? null : new FindResult(providerEntry.getOid(), selections);
     }
 
     public static class FindResult {
@@ -166,20 +169,8 @@ public class FindIdentitiesDialog extends JDialog {
             this.entityHeaders = headers;
         }
 
-        public long providerConfigOid;
-        public IdentityHeader[] entityHeaders;
-    }
-
-    /**
-     * Get/access the search result table. This is to allow
-     * access to set certain table properties, such as single/mutliple
-     * selection model etc.
-     * <strong>note that the form table instance is accessed directly</strong>
-     *
-     * @return the search result yable
-     */
-    public JTable getSearchResultTable() {
-        return searchResultTable;
+        public final long providerConfigOid;
+        public final IdentityHeader[] entityHeaders;
     }
 
     /**
@@ -194,303 +185,108 @@ public class FindIdentitiesDialog extends JDialog {
      * Called from the constructor to initialize this window
      */
     private void initComponents() {
-        searchResultTable.setSelectionMode(options.selectionMode);
         // Set properties on the dialog, itself
-        setTitle(resources.getString("dialog.label"));
-        addWindowListener(new WindowAdapter() {
-            public void windowClosing(WindowEvent event) {
+        setTitle( resources.getString( "dialog.label" ) );
+        addWindowListener( new WindowAdapter() {
+            @Override
+            public void windowClosing( WindowEvent event ) {
                 // user hit window manager close button
-                windowAction(CMD_CANCEL);
+                windowAction( CMD_CANCEL );
             }
-        });
-        Utilities.setEscKeyStrokeDisposes(this);
-        addComponentListener(new ComponentAdapter() {
-            /**
-             * Invoked when the component has been made visible.
-             */
-            public void componentShown(ComponentEvent e) {
-                origDimension = FindIdentitiesDialog.this.getSize();
-            }
-        });
+        } );
 
         // accessibility - all frames, dialogs, and applets should have
         // a description
         getAccessibleContext().
           setAccessibleDescription(resources.getString("dialog.description"));
 
-        // table properties
-        searchResultTable.setDefaultRenderer(Object.class, tableRenderer);
-        searchResultTable.setShowGrid(false);
-        searchResultTable.sizeColumnsToFit(0);
-        mainPanel = new JPanel();
-        Container contents = mainPanel;
-        contents.setLayout(new GridBagLayout());
+        initSearchPanel();
+        initSearchButtons();
+        initSearchResultPanel();
 
-        // "description" label
-        JLabel descLabel = new JLabel();
-        descLabel.setText(resources.getString("dialog.description"));
-        GridBagConstraints constraints = new GridBagConstraints();
-        constraints.gridx = 0;
-        constraints.gridy = 0;
-//    constraints.weightx = 1.0;
-        constraints.gridwidth = GridBagConstraints.REMAINDER;
-        constraints.fill = GridBagConstraints.NONE;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(12, 12, 0, 0);
-        contents.add(descLabel, constraints);
-
-        searchTabs.addTab("Details", getGeneralSearchPanel());
-        constraints = new GridBagConstraints();
-        constraints.gridx = 0;
-        constraints.gridy = 1;
-        constraints.weightx = 1.0;
-        constraints.gridheight = 2;
-        constraints.gridwidth = 4;
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(12, 12, 5, 0);
-        contents.add(searchTabs, constraints);
-
-
-        constraints = new GridBagConstraints();
-        constraints.gridx = 4;
-        constraints.gridy = 2;
-        constraints.gridwidth = GridBagConstraints.REMAINDER;
-        constraints.fill = GridBagConstraints.NONE;
-        constraints.anchor = GridBagConstraints.EAST;
-        constraints.insets = new Insets(12, 12, 0, 11);
-        contents.add(getSearchButtonPanel(), constraints);
-
-        constraints = new GridBagConstraints();
-        constraints.gridx = 0;
-        constraints.gridy = 4;
-        constraints.weightx = 1.0;
-        constraints.weighty = 1.0;
-        constraints.gridwidth = 5;
-        constraints.fill = GridBagConstraints.BOTH;
-        constraints.anchor = GridBagConstraints.CENTER;
-        constraints.insets = new Insets(12, 12, 5, 12);
-
-        JPanel p = getSearchResultPanel();
-        contents.add(p, constraints);
-        getContentPane().add(mainPanel);
+        // Set up the default button for the dialog
+        getRootPane().setDefaultButton(findButton);
+        setContentPane( mainPanel );
+        Utilities.setEscKeyStrokeDisposes( this );
+        Utilities.setMinimumSize(this);
     } // initComponents()
 
 
     /**
-     * Returns the general search panel
+     * Initializes the general search panel
      */
-    private JPanel getGeneralSearchPanel() {
-        // Build the contents
-        JPanel gSearchPanel = new JPanel();
-        gSearchPanel.setLayout(new GridBagLayout());
-
-        // "from" label
-        JLabel selectProviderLabel = new JLabel();
-        selectProviderLabel.setDisplayedMnemonic(resources.getString("selectProviderText.mnemonic").charAt(0));
-        selectProviderLabel.setText(resources.getString("selectProviderText.label"));
-
-        GridBagConstraints constraints = new GridBagConstraints();
-        constraints.gridx = 0;
-        constraints.gridy = 1;
-        constraints.fill = GridBagConstraints.NONE;
-        constraints.anchor = GridBagConstraints.EAST;
-        constraints.insets = new Insets(12, 12, 0, 0);
-        gSearchPanel.add(selectProviderLabel, constraints);
-
-        // provider to search
-
-        providersComboBox = new JComboBox();
-        providersComboBox.setModel(getProvidersComboBoxModel());
-        providersComboBox.addItemListener(new ItemListener() {
-            public void itemStateChanged(ItemEvent e) {
-                if (searchResultTable.getModel() != null && searchResultTable.getModel() instanceof DynamicTableModel) {
-                    DynamicTableModel model = (DynamicTableModel)searchResultTable.getModel();
+    private void initSearchPanel() {
+        providersComboBox.setModel( getProvidersComboBoxModel() );
+        providersComboBox.addItemListener( new ItemListener() {
+            @Override
+            public void itemStateChanged( ItemEvent e ) {
+                if ( searchResultTable.getModel() != null && searchResultTable.getModel() instanceof DynamicTableModel ) {
+                    DynamicTableModel model = (DynamicTableModel) searchResultTable.getModel();
                     try {
                         model.clear();
-                    } catch (InterruptedException e1) {
-                        logger.log(Level.SEVERE, "unexpected interruption", e);
+                    } catch ( InterruptedException e1 ) {
+                        logger.log( Level.SEVERE, "unexpected interruption", e );
                     }
                 }
             }
-        });
-        providersComboBox.setRenderer(new DefaultListCellRenderer() {
-            public Component getListCellRendererComponent(JList list,
-                                                          Object value,
-                                                          int index,
-                                                          boolean isSelected,
-                                                          boolean cellHasFocus) {
-                Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                IdentityProviderConfig ipc = (IdentityProviderConfig)value;
-                if (ipc == null) {
-                    logger.severe("null IdentityProviderConfig in list");
-                    setText("<null Identity Provider>");
-                } else {
-                    setText(ipc.getName());
-                }
-                return c;
-            }
-        });
+        } );
         final ComboBoxModel cbModel = providersComboBox.getModel();
         int size = cbModel.getSize();
         for (int i = 0; i < size; i++) {
-            IdentityProviderConfig ipc = (IdentityProviderConfig)cbModel.getElementAt(i);
-            if (options.initialProviderOid == ipc.getOid()) {
-                cbModel.setSelectedItem(ipc);
+            ProviderEntry providerEntry = (ProviderEntry)cbModel.getElementAt(i);
+            if (options.getInitialProviderOid() == providerEntry.getOid()) {
+                cbModel.setSelectedItem(providerEntry);
                 break;
             }
         }
 
-        providersComboBox.setToolTipText(resources.getString("selectProviderText.tooltip"));
-        constraints = new GridBagConstraints();
-        constraints.gridx = 1;
-        constraints.gridy = 1;
-        constraints.gridwidth = 2;
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(12, 12, 0, 12);
-        gSearchPanel.add(providersComboBox, constraints);
-
-        constraints = new GridBagConstraints();
-        constraints.gridx = 2;
-        constraints.gridy = 1;
-        constraints.gridwidth = 1;
-        constraints.weightx = 1.0;
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.anchor = GridBagConstraints.WEST;
-        gSearchPanel.add(Box.createHorizontalGlue(), constraints);
-
-        // "type" label
-        JLabel typeLabel = new JLabel();
-        typeLabel.setDisplayedMnemonic(resources.getString("findType.mnemonic").charAt(0));
-        typeLabel.setText(resources.getString("findType.label"));
-
-        constraints = new GridBagConstraints();
-        constraints.gridx = 0;
-        constraints.gridy = 2;
-        constraints.anchor = GridBagConstraints.EAST;
-        constraints.insets = new Insets(12, 12, 0, 0);
-        gSearchPanel.add(typeLabel, constraints);
-
-        if (options.getSearchType() != SearchType.ALL) {
-            searchType = new JComboBox(new Object[]{options.getSearchType().getName()});
+        if ( options.getSearchType() != SearchType.ALL ) {
+            searchType.setModel(new DefaultComboBoxModel(new Object[]{options.getSearchType().getName()}));
             searchType.setEditable(false);
+        } else {
+            searchType.setModel((Utilities.comboBoxModel(oTypes.keySet())));
         }
-        else
-            searchType = new JComboBox(new Vector<String>(oTypes.keySet()));
 
-        searchType.setToolTipText(resources.getString("findType.tooltip"));
-        constraints = new GridBagConstraints();
-        constraints.gridx = 1;
-        constraints.gridy = 2;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.fill = GridBagConstraints.NONE;
-        constraints.insets = new Insets(12, 12, 0, 0);
-        gSearchPanel.add(searchType, constraints);
-
-
-
-        // "find name" label
-        JLabel findLabel = new JLabel();
-        findLabel.setDisplayedMnemonic(resources.getString("findText.mnemonic").charAt(0));
-        findLabel.setText(resources.getString("findText.label"));
-
-        constraints = new GridBagConstraints();
-        constraints.gridx = 0;
-        constraints.gridy = 3;
-        constraints.anchor = GridBagConstraints.EAST;
-        constraints.insets = new Insets(12, 12, 5, 0);
-        gSearchPanel.add(findLabel, constraints);
-
-        searchNameOptions = new JComboBox(new String[] {NAME_SEARCH_OPTION_EQUALS, NAME_SEARCH_OPTION_STARTS});
-        constraints = new GridBagConstraints();
-        constraints.gridx = 1;
-        constraints.gridy = 3;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.fill = GridBagConstraints.NONE;
-        constraints.insets = new Insets(12, 12, 5, 0);
-        gSearchPanel.add(searchNameOptions, constraints);
-
-        // text field for name to be found
-        nameField = new JTextField(15);
-        nameField.setToolTipText(resources.getString("findText.tooltip"));
-
-        constraints = new GridBagConstraints();
-        constraints.gridx = 2;
-        constraints.gridy = 3;
-        constraints.gridwidth = 2;
-        constraints.weightx = 1.0;
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(12, 12, 5, 12);
-        gSearchPanel.add(nameField, constraints);
-
-
-        return gSearchPanel;
+        searchNameOptions.setModel(new DefaultComboBoxModel(new String[] {NAME_SEARCH_OPTION_EQUALS, NAME_SEARCH_OPTION_STARTS}));
     }
 
     /**
      * @return the panel containing the main search
      *         button controls
      */
-    private JPanel getSearchButtonPanel() {
-        JButton closeButton;
-        // Button panel at the bottom
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
+    private void initSearchButtons() {
         // find button
-        findButton = new JButton();
-        findButton.setText(resources.getString("findButton.label"));
         findButton.setActionCommand(CMD_FIND);
-        findButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent event) {
-                windowAction(event.getActionCommand());
+        findButton.addActionListener( new ActionListener() {
+            @Override
+            public void actionPerformed( ActionEvent event ) {
+                windowAction( event.getActionCommand() );
             }
-        });
-        buttonPanel.add(findButton);
-        // space
-        buttonPanel.add(Box.createRigidArea(new Dimension(5, 5)));
+        } );
 
         // cancel search button
-        stopSearchButton = new JButton();
-        stopSearchButton.setText(resources.getString("stopSearchButton.label"));
-        stopSearchButton.setToolTipText(resources.getString("stopSearchButton.tooltip"));
-        stopSearchButton.setEnabled(false);
-
+        stopSearchButton.setEnabled( false );
         stopSearchButton.
-          addActionListener(new ActionListener() {
-              public void actionPerformed(ActionEvent event) {
+          addActionListener( new ActionListener() {
+              @Override
+              public void actionPerformed( ActionEvent event ) {
                   stopLoadingTableModel();
               }
-          });
-        buttonPanel.add(stopSearchButton);
-
-        // space
-        buttonPanel.add(Box.createRigidArea(new Dimension(5, 5)));
+          } );
 
         // close button
-        closeButton = new JButton();
-        closeButton.setText(resources.getString("closeButton.label"));
         closeButton.setActionCommand(CMD_CLOSE);
         closeButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 windowAction(event.getActionCommand());
             }
         });
-
-        buttonPanel.add(closeButton);
-
 
         JButton[] buttons
           = new JButton[]{findButton, stopSearchButton, closeButton};
 
         Utilities.equalizeButtonSizes(buttons);
-
-        // Set up the default button for the dialog
-        getRootPane().setDefaultButton(findButton);
-
-        return buttonPanel;
-
     }
 
 
@@ -507,10 +303,7 @@ public class FindIdentitiesDialog extends JDialog {
         } else if (actionCommand.equals(CMD_CANCEL)) {
         } else if (actionCommand.equals(CMD_CLOSE)) {
         } else if (actionCommand.equals(CMD_FIND)) {
-            if (collectFormData()) {
-                showSearchResult(searchInfo);
-            }
-
+            doSearch();
             return;
         }
         setVisible(false);
@@ -519,17 +312,26 @@ public class FindIdentitiesDialog extends JDialog {
         dispose();
     }
 
-    private boolean collectFormData() {
-        String name = nameField.getText();
-        String option = (String)searchNameOptions.getSelectedItem();
-        searchInfo.setSearchName(name, NAME_SEARCH_OPTION_EQUALS.equals(option));
-        String key = (String)searchType.getSelectedItem();
-        searchInfo.setSearchType(oTypes.get(key));
-        searchInfo.setProviderConfig((IdentityProviderConfig)providersComboBox.getSelectedItem());
-
-        return true;
+    private void doSearch() {
+        showSearchResult( collectFormData() );
     }
 
+    private SearchInfo collectFormData() {
+        final String name = nameField.getText();
+        final String option = (String)searchNameOptions.getSelectedItem();
+        final String key = (String)searchType.getSelectedItem();
+
+        final SearchInfo info = new SearchInfo(
+                (ProviderEntry)providersComboBox.getSelectedItem(),
+                oTypes.get(key),
+                name,
+                NAME_SEARCH_OPTION_EQUALS.equals(option)
+        );
+
+        searchInfo = some(info);
+
+        return info;
+    }
 
     private IdentityAdmin getIdentityAdmin() {
         return Registry.getDefault().getIdentityAdmin();
@@ -539,7 +341,7 @@ public class FindIdentitiesDialog extends JDialog {
      * show the result table. Display and layout the
      * table if required.
      */
-    private void showSearchResult(SearchInfo info) {
+    private void showSearchResult( final SearchInfo info ) {
         final EntityType[] types = info.getSearchType().getTypes();
         String searchName = info.getSearchName();
         if (!info.isExactName() && !searchName.endsWith("*")) {
@@ -551,7 +353,7 @@ public class FindIdentitiesDialog extends JDialog {
         try {
             final Set<IdentityHeader> tableModelHeaders;
             final EntityHeaderSet<IdentityHeader> headers =
-                    getIdentityAdmin().searchIdentities( searchInfo.getProviderConfig().getOid(), types, searchName);
+                    getIdentityAdmin().searchIdentities( info.getProviderEntry().getOid(), types, searchName);
             if (headers.isMaxExceeded()) {
                 tableModelHeaders = new LinkedHashSet<IdentityHeader>();
                 tableModelHeaders.add(new LimitExceededMarkerIdentityHeader());
@@ -572,188 +374,157 @@ public class FindIdentitiesDialog extends JDialog {
                     notify(Level.WARNING, e, "The system reported an error during search.");
             }
         }
-
-        if (!searchResultPanel.isVisible()) {
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    searchResultPanel.setVisible(true);
-                    Dimension d = getSize();
-                    setSize(d.width, origDimension.height * 3);
-                    mainPanel.revalidate();
-                    mainPanel.repaint();
-                }
-            });
-        }
     }
 
     /**
      * display and layout the search result table.
      * The table is displayed after the first search.
      */
-    private JPanel getSearchResultPanel() {
-        searchResultPanel.setLayout(new BorderLayout());
-        searchResultPanel.add(new JLabel("Search Results:"), BorderLayout.NORTH);
-        JScrollPane scrollPane = new JScrollPane(searchResultTable);
-        scrollPane.getViewport().setBackground(searchResultTable.getBackground());
-
-        searchResultPanel.add(scrollPane, BorderLayout.CENTER);
-
-        // Button panel at the bottom
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
-        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
-        // result counter
-        buttonPanel.add(resultCounter);
-
-        buttonPanel.add(Box.createGlue());
-
-        final JButton selectButton = new JButton();
-        selectButton.setText(resources.getString("selectButton.label"));
-        selectButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent event) {
-                int rows[] = searchResultTable.getSelectedRows();
-                List<IdentityHeader> principals = new ArrayList<IdentityHeader>();
-                for (int i = 0; rows != null && i < rows.length; i++) {
-                    int row = rows[i];
-                    IdentityHeader eh = (IdentityHeader)searchResultTable.getModel().getValueAt(row, 0);
-                    principals.add(eh);
-                }
-                if (options.isDisposeOnSelect()) {
-                    selections = principals.toArray(new IdentityHeader[principals.size()]);
+    private void initSearchResultPanel() {
+        selectButton.addActionListener( new ActionListener() {
+            @Override
+            public void actionPerformed( ActionEvent event ) {
+                List<IdentityHeader> principals = getSelectedIdentities();
+                if ( options.isDisposeOnSelect() ) {
+                    selections = principals.toArray( new IdentityHeader[principals.size()] );
                     FindIdentitiesDialog.this.dispose();
                 } else {
                     int row = searchResultTable.getSelectedRow();
-                    if (row == -1) return;
-                    Object o = searchResultTable.getModel().getValueAt(row, 0);
-                    if (o == null) return;
-                    if (options.enableOpenProperties) {
-                      showEntityDialog(o);
+                    if ( row == -1 ) return;
+                    Object o = searchResultTable.getModel().getValueAt( row, 0 );
+                    if ( o == null ) return;
+                    if ( options.isEnableOpenProperties() ) {
+                        showEntityDialog( o );
                     }
                 }
             }
-        });
-        buttonPanel.add(selectButton);
+        } );
         selectButton.setEnabled(false);
 
-        final JButton deleteButton = new JButton(getDeleteAction());
+        deleteButton.setAction( getDeleteAction() );
         deleteButton.setText(resources.getString("deleteButton.label"));
-        /*deleteButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent event) {
-                int rows[] = searchResultTable.getSelectedRows();
-                for (int i = 0; rows != null && i < rows.length; i++) {
-                    int row = rows[i];
-                    EntityHeader eh = (EntityHeader)searchResultTable.getModel().getValueAt(row, 0);
-                    deleteEntity(eh, row);
-                }
-            }
-        });*/
-
-        if (options.enableDeleteAction) {
-            buttonPanel.add(deleteButton);
-        }
+        deleteButton.setVisible(options.isEnableDeleteAction());
         deleteButton.setEnabled(false);
 
+        scrollPane.getViewport().setBackground(searchResultTable.getBackground());
 
-        searchResultTable.getSelectionModel().
-          addListSelectionListener(new ListSelectionListener() {
-              /**
-               * Called whenever the value of the selection changes.
-               *
-               * @param e the event that characterizes the change.
-               */
-              public void valueChanged(ListSelectionEvent e) {
-                  int row = searchResultTable.getSelectedRow();
+        // table properties
+        searchResultTable.setDefaultRenderer(Object.class, tableRenderer);
+        searchResultTable.setShowGrid( false );
+        searchResultTable.sizeColumnsToFit( 0 );
+        searchResultTable.getTableHeader().setReorderingAllowed( false );
+        searchResultTable.setSelectionMode( options.getSelectionMode() );
+        searchResultTable.getSelectionModel().addListSelectionListener( new ListSelectionListener() {
+            @Override
+            public void valueChanged( ListSelectionEvent e ) {
+                onSearchResultsSelectionChange();
+            }
+        } );
 
-                  if (row == -1) {
-                      selectButton.setEnabled(false);
-                      deleteButton.setEnabled(false);
-                  } else {
-                      EntityHeader eh = (EntityHeader)searchResultTable.getModel().getValueAt(row, 0);
-                      if (eh instanceof LimitExceededMarkerIdentityHeader ||
-                          (eh.getType() != EntityType.USER && eh.getType() !=EntityType.GROUP &&
-                           eh.getType() != EntityType.ID_PROVIDER_CONFIG)) {
-                        selectButton.setEnabled(false);
-                        deleteButton.setEnabled(false);
-
-                      } else {
-                          selectButton.setEnabled(true);
-                          IdentityProviderConfig ipc = (IdentityProviderConfig)providersComboBox.getSelectedItem();
-
-                          deleteButton.setEnabled(
-                                    getDeleteAction().isAuthorized() &&
-                                    ipc.isWritable());
-                      }
-                  }
-              }
-          });
-
-        searchResultTable.
-          addMouseListener(new MouseAdapter() {
-              public void mouseClicked(MouseEvent e) {
-                  if (e.getClickCount() == 2) {
-                      int row = searchResultTable.getSelectedRow();
-                      if (row == -1) return;
-                      Object o = searchResultTable.getModel().getValueAt(row, 0);
-                      if (o == null) return;
-                      if (options.enableOpenProperties) {
-                        showEntityDialog(o);
-                      }
-                  }
-              }
-          });
-
-        searchResultTable.
-          addKeyListener(new KeyAdapter() {
-              /**
-               * Invoked when a key has been pressed.
-               */
-              public void keyPressed(KeyEvent e) {
-                  int row = searchResultTable.getSelectedRow();
-                  if (row == -1) return;
-                  EntityHeader eh = (EntityHeader)searchResultTable.getValueAt(row, 0);
-
-                  int keyCode = e.getKeyCode();
-                  if (keyCode == KeyEvent.VK_ENTER && options.enableOpenProperties) {
-                      showEntityDialog(eh);
-                  } else if (keyCode == KeyEvent.VK_DELETE && options.enableDeleteAction) {
-                      if (getDeleteAction().isAuthorized()) {
-                          getDeleteAction().invoke();
-                      }
-                      //deleteEntity(eh, row);
-                  }
-              }
-          });
-        // space
-        buttonPanel.add(Box.createRigidArea(new Dimension(5, 0)));
+        initSearchResultActions();
 
         // cancel button
-        JButton newSearchButton = new JButton();
-        newSearchButton.setText(resources.getString("newSearchButton.label"));
-        newSearchButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent event) {
+        newSearchButton.addActionListener( new ActionListener() {
+            @Override
+            public void actionPerformed( ActionEvent event ) {
                 // reset search info
-                if (tableModel != null) {
+                if ( tableModel != null ) {
                     try {
                         tableModel.clear();
-                    } catch (InterruptedException e) {
+                    } catch ( InterruptedException e ) {
                         //swallow
                     }
                 }
-                searchInfo = new SearchInfo();
-                resultCounter.setText("");
+                searchInfo = none();
+                resultCounter.setText( "" );
             }
-        });
-        buttonPanel.add(newSearchButton);
-        buttonPanel.add(Box.createGlue());
-
-        searchResultPanel.add(buttonPanel, BorderLayout.SOUTH);
+        } );
 
         JButton[] buttons
           = new JButton[]{newSearchButton, deleteButton, selectButton};
 
         Utilities.equalizeButtonSizes(buttons);
 
-        return searchResultPanel;
+        resultCounter.setText( "" );
+    }
+
+    private List<IdentityHeader> getSelectedIdentities() {
+        int rows[] = searchResultTable.getSelectedRows();
+        List<IdentityHeader> principals = new ArrayList<IdentityHeader>();
+        for ( int i = 0; rows != null && i < rows.length; i++ ) {
+            int row = rows[i];
+            IdentityHeader eh = (IdentityHeader) searchResultTable.getModel().getValueAt( row, 0 );
+            if ( !shouldIgnoreHeader(eh) )
+                principals.add( eh );
+        }
+        return principals;
+    }
+
+    /**
+     * Add "advanced" options, not suitable for a basic user/group search.
+     */
+    protected void initSearchResultActions() {
+        searchResultTable.addMouseListener( new MouseAdapter() {
+            @Override
+            public void mouseClicked( MouseEvent e ) {
+                if ( e.getClickCount() == 2 ) {
+                    int row = searchResultTable.getSelectedRow();
+                    if ( row == -1 ) return;
+                    Object o = searchResultTable.getModel().getValueAt( row, 0 );
+                    if ( o == null ) return;
+                    if ( options.isEnableOpenProperties() ) {
+                        showEntityDialog( o );
+                    }
+                }
+            }
+        } );
+
+        searchResultTable.addKeyListener( new KeyAdapter() {
+            @Override
+            public void keyPressed( KeyEvent e ) {
+                int row = searchResultTable.getSelectedRow();
+                if ( row == -1 ) return;
+                EntityHeader eh = (EntityHeader) searchResultTable.getValueAt( row, 0 );
+
+                int keyCode = e.getKeyCode();
+                if ( keyCode == KeyEvent.VK_ENTER && options.isEnableOpenProperties() ) {
+                    showEntityDialog( eh );
+                } else if ( keyCode == KeyEvent.VK_DELETE && options.isEnableDeleteAction() ) {
+                    if ( getDeleteAction().isAuthorized() ) {
+                        getDeleteAction().invoke();
+                    }
+                }
+            }
+        } );
+    }
+
+    protected void onSearchResultsSelectionChange() {
+        int row = searchResultTable.getSelectedRow();
+
+        if (row == -1) {
+            selectButton.setEnabled(false);
+            deleteButton.setEnabled(false);
+        } else {
+            EntityHeader eh = (EntityHeader)searchResultTable.getModel().getValueAt(row, 0);
+            if ( shouldIgnoreHeader(eh) ) {
+              selectButton.setEnabled(false);
+              deleteButton.setEnabled(false);
+
+            } else {
+                selectButton.setEnabled(true);
+                ProviderEntry providerEntry = (ProviderEntry)providersComboBox.getSelectedItem();
+
+                deleteButton.setEnabled(
+                        getDeleteAction().isAuthorized() &&
+                        providerEntry.isWritable() );
+            }
+        }
+    }
+
+    private boolean shouldIgnoreHeader( final EntityHeader  eh ) {
+        return eh instanceof LimitExceededMarkerIdentityHeader ||
+                (eh.getType() != EntityType.USER && eh.getType() !=EntityType.GROUP &&
+                 eh.getType() != EntityType.ID_PROVIDER_CONFIG);
     }
 
     /**
@@ -765,6 +536,7 @@ public class FindIdentitiesDialog extends JDialog {
 
         DynamicTableModel.ObjectRowAdapter oa =
           new DynamicTableModel.ObjectRowAdapter() {
+              @Override
               public Object getValue(Object o, int col) {
                   String text;
                   if(o instanceof IdentityHeader){
@@ -797,28 +569,29 @@ public class FindIdentitiesDialog extends JDialog {
         String columns[] = new String[]{"Name", "Login", "Description"};
 
         tableModel = new DynamicTableModel(e, columns.length, columns, oa);
-        searchResultTable.setModel(tableModel);
+        searchResultTable.setModel( tableModel );
 
         tableModel.
-          addTableModelListener(new TableModelListener() {
+          addTableModelListener( new TableModelListener() {
               int counter = 0;
 
               /**
                * This fine grain notification tells listeners the exact range
                * of cells, rows, or columns that changed.
                */
-              public void tableChanged(TableModelEvent e) {
-                  if (e.getType() == TableModelEvent.INSERT) {
+              @Override
+              public void tableChanged( TableModelEvent e ) {
+                  if ( e.getType() == TableModelEvent.INSERT ) {
                       counter = numEntries;
-                      resultCounter.setText("[ " + counter + " objects found]");
-                      findButton.setEnabled(true);
-                      stopSearchButton.setEnabled(false);
+                      resultCounter.setText( "[ " + counter + " objects found]" );
+                      findButton.setEnabled( true );
+                      stopSearchButton.setEnabled( false );
                   }
               }
-          });
-        findButton.setEnabled(false);
-        stopSearchButton.setEnabled(true);
+          } );
+        searchInProgress( true );
         SwingUtilities.invokeLater(new Runnable() {
+            @Override
             public void run() {
                 try {
                     tableModel.start();
@@ -829,6 +602,10 @@ public class FindIdentitiesDialog extends JDialog {
         });
     }
 
+    protected void searchInProgress( final boolean searching ) {
+        findButton.setEnabled(!searching);
+        stopSearchButton.setEnabled(searching);
+    }
 
     /**
      * stop loading the table model. The method does nothing
@@ -841,8 +618,7 @@ public class FindIdentitiesDialog extends JDialog {
             } catch (InterruptedException e) {
                 // swallow
             }
-            findButton.setEnabled(true);
-            stopSearchButton.setEnabled(false);
+            searchInProgress( false );
         }
     }
 
@@ -868,7 +644,7 @@ public class FindIdentitiesDialog extends JDialog {
             // null in the case of UserNode
             if (action == null) {
                 if (eh.getType() == EntityType.USER) {
-                    if (searchInfo.getProviderConfig().type() == IdentityProviderType.FEDERATED) {
+                    if ( searchInfo.isSome() && searchInfo.some().getProviderEntry().getConfig().type() == IdentityProviderType.FEDERATED ) {
                         action = new FederatedUserPropertiesAction((UserNode) an);
                     } else {
                         action = new GenericUserPropertiesAction((UserNode) an);
@@ -882,16 +658,20 @@ public class FindIdentitiesDialog extends JDialog {
 
             final BaseAction a = action;
             a.addPropertyChangeListener(new PropertyChangeListener() {
+                @Override
                 public void propertyChange(PropertyChangeEvent evt) {
                     searchResultTable.repaint();
                 }
             });
             SwingUtilities.invokeLater(new Runnable() {
+                @Override
                 public void run() {
-                    if (a instanceof UserPropertiesAction) {
-                        ((UserPropertiesAction)a).setIdProviderConfig(searchInfo.getProviderConfig());
-                    } else if (a instanceof GroupPropertiesAction) {
-                        ((GroupPropertiesAction)a).setIdProviderConfig(searchInfo.getProviderConfig());
+                    if ( searchInfo.isSome() ) {
+                        if (a instanceof UserPropertiesAction) {
+                            ((UserPropertiesAction)a).setIdProviderConfig( searchInfo.some().getProviderEntry().getConfig() );
+                        } else if (a instanceof GroupPropertiesAction) {
+                            ((GroupPropertiesAction)a).setIdProviderConfig(searchInfo.some().getProviderEntry().getConfig() );
+                        }
                     }
                     a.invoke();
                 }
@@ -916,7 +696,7 @@ public class FindIdentitiesDialog extends JDialog {
                 @Override
                 public synchronized boolean isAuthorized() {
                     final int rows[] = searchResultTable.getSelectedRows();
-                    config = (IdentityProviderConfig)providersComboBox.getSelectedItem();
+                    config = ((ProviderEntry)providersComboBox.getSelectedItem()).getConfig();
                     for (int i = 0; rows != null && i < rows.length; i++) {
                         final int row = rows[i];
                         EntityHeader eh = (EntityHeader)searchResultTable.getModel().getValueAt(row, 0);
@@ -926,16 +706,18 @@ public class FindIdentitiesDialog extends JDialog {
                     return true;
                 }
 
+                @Override
                 protected void performAction() {
-                    final IdentityProviderConfig ip = (IdentityProviderConfig)providersComboBox.getSelectedItem();
+                    final ProviderEntry providerEntry = (ProviderEntry)providersComboBox.getSelectedItem();
                     final int rows[] = searchResultTable.getSelectedRows();
                     for (int i = 0; rows != null && i < rows.length; i++) {
                         final int row = rows[i];
                         EntityHeader eh = (EntityHeader)searchResultTable.getModel().getValueAt(row, 0);
                         EntityHeaderNode an = (EntityHeaderNode)TreeNodeFactory.asTreeNode(eh, null);
                         setNode(an);
-                        setConfig(ip);
+                        setConfig(providerEntry.getConfig());
                         final EntityListenerAdapter listener = new EntityListenerAdapter() {
+                            @Override
                             public void entityRemoved(EntityEvent ev) {
                                 tableModel.removeRow(row);
                             }
@@ -955,7 +737,7 @@ public class FindIdentitiesDialog extends JDialog {
      * the <CODE>TableCellRenderer</CODE> instance
      * for the result table
      */
-    private final TableCellRenderer
+    private static final TableCellRenderer
       tableRenderer = new DefaultTableCellRenderer() {
           Icon groupIcon = new ImageIcon(Utilities.loadImage(GroupPanel.GROUP_ICON_RESOURCE));
           Icon userIcon = new ImageIcon(Utilities.loadImage(UserPanel.USER_ICON_RESOURCE));
@@ -964,6 +746,7 @@ public class FindIdentitiesDialog extends JDialog {
           /**
            * Returns the default table cell renderer.
            */
+          @Override
           public Component
             getTableCellRendererComponent(JTable table,
                                           Object value,
@@ -1012,77 +795,183 @@ public class FindIdentitiesDialog extends JDialog {
         if (providersComboBoxModel != null)
             return providersComboBoxModel;
 
-        try {
-            providersComboBoxModel = new DefaultComboBoxModel();
-            final IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
-            final EntityHeader[] headers = admin.findAllIdentityProviderConfig();
-            Arrays.sort( headers, 0, headers.length, new ResolvingComparator<EntityHeader,String>( new Resolver<EntityHeader,String>(){
-                @Override
-                public String resolve( final EntityHeader key ) {
-                    return key.getName() == null ? "" : key.getName().toLowerCase();
-                }
-            }, false ) );
-            for (EntityHeader header : headers) {
-                IdentityProviderConfig config = admin.findIdentityProviderConfigByID(header.getOid());
-                if (config == null) {
-                    logger.warning("IdentityProviderConfig #" + header.getOid() + " no longer exists");
-                } else {
-                    if (config.isAdminEnabled() || !options.isAdminOnly()) {
-                        providersComboBoxModel.addElement(config);
-                    }
-                }
-            }
-        } catch ( FindException fe ) {
-            throw new RuntimeException("Error while loading identity provider list.", fe);        
-        }
+        final List<ProviderEntry> providerEntries = new ArrayList<ProviderEntry>(getIdentityProviderEntries());
+        Collections.sort( providerEntries );
+        providersComboBoxModel = Utilities.comboBoxModel( providerEntries );
 
         return providersComboBoxModel;
     }
 
+    protected Collection<ProviderEntry> getIdentityProviderEntries() {
+        Collection<ProviderEntry> identityProviderEntries = Collections.emptyList();
+        try {
+            final IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
+            final EntityHeader[] headers = admin.findAllIdentityProviderConfig();
+
+            if ( headers != null ) {
+                identityProviderEntries = new ArrayList<ProviderEntry>();
+                for ( final EntityHeader header : headers ) {
+                    final IdentityProviderConfig config = admin.findIdentityProviderConfigByID(header.getOid());
+                    if ( config == null ) {
+                        logger.warning("IdentityProviderConfig #" + header.getOid() + " no longer exists");
+                    } else {
+                        if ( config.isAdminEnabled() || !options.isAdminOnly() ) {
+                            identityProviderEntries.add( new ProviderEntry( config ) );
+                        }
+                    }
+                }
+            }
+        } catch ( FindException fe ) {
+            throw new RuntimeException("Error while loading identity provider list.", fe);
+        }
+        return identityProviderEntries;
+    }
+
+    private static class ProviderEntry implements Comparable<ProviderEntry> {
+        private final long oid;
+        private final String name;
+        private final boolean writable;
+        private final IdentityProviderConfig config;
+
+        private ProviderEntry( final EntityHeader header ) {
+            this.oid = header.getOid();
+            this.name = header.getName();
+            this.writable = false;
+            this.config = null;
+        }
+
+        private ProviderEntry( final IdentityProviderConfig config ) {
+            this.oid = config.getOid();
+            this.name = config.getName();
+            this.writable = config.isWritable();
+            this.config = config;
+        }
+
+        public long getOid() {
+            return oid;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public boolean isWritable() {
+            return writable;
+        }
+
+        public IdentityProviderConfig getConfig() {
+            return config;
+        }
+
+        public String toString() {
+            return getName();
+        }
+
+        @Override
+        public int compareTo( final ProviderEntry o ) {
+            return getName().toLowerCase().compareTo( o.getName().toLowerCase() );
+        }
+
+        @SuppressWarnings({ "RedundantIfStatement" })
+        @Override
+        public boolean equals( final Object o ) {
+            if ( this == o ) return true;
+            if ( o == null || getClass() != o.getClass() ) return false;
+
+            final ProviderEntry that = (ProviderEntry) o;
+
+            if ( oid != that.oid ) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return (int) (oid ^ (oid >>> 32));
+        }
+
+        private static Unary<ProviderEntry,EntityHeader> fromEntity() {
+            return new Unary<ProviderEntry,EntityHeader>(){
+                @Override
+                public ProviderEntry call( final EntityHeader entityHeader ) {
+                    return new ProviderEntry( entityHeader );
+                }
+            };
+        }
+    }
 
     /**
      * the class instances keep the search info.
      */
-    private class SearchInfo {
-        IdentityProviderConfig providerConfig;
-        String searchName;
-        boolean exactName;
-        SearchType searchType;
+    private static class SearchInfo {
+        private final ProviderEntry providerEntry;
+        private final SearchType searchType;
+        private final String searchName;
+        private final boolean exactName;
 
-        /**
-         * set the search by name and equals/contains.
-         */
-        void setSearchName(String name, boolean b) {
-            searchName = name;
-            exactName = b;
-        }
-
-        public IdentityProviderConfig getProviderConfig() {
-            return providerConfig;
-        }
-
-        public void setProviderConfig(IdentityProviderConfig config) {
-            this.providerConfig = config;
-        }
-
-        public String getSearchName() {
-            return searchName;
-        }
-
-        public void setSearchName(String searchName) {
+        private SearchInfo( final ProviderEntry providerConfig,
+                            final SearchType searchType,
+                            final String searchName,
+                            final boolean exactName ) {
+            this.providerEntry = providerConfig;
+            this.searchType = searchType;
             this.searchName = searchName;
+            this.exactName = exactName;
         }
 
-        public boolean isExactName() {
-            return exactName;
+        public ProviderEntry getProviderEntry() {
+            return providerEntry;
         }
 
         public SearchType getSearchType() {
             return searchType;
         }
 
-        public void setSearchType(SearchType searchType) {
-            this.searchType = searchType;
+        public String getSearchName() {
+            return searchName;
+        }
+
+        public boolean isExactName() {
+            return exactName;
+        }
+    }
+
+    public static class FindIdentities {
+        private final FindIdentitiesDialog dialog;
+
+        private FindIdentities( final Options options,
+                                final Collection<EntityHeader> identityProviderHeaders,
+                                final Runnable selectionCallback ) {
+            this.dialog = new FindIdentitiesDialog( null, false, options ) {
+                @Override
+                protected void initSearchResultActions() {
+                    // disable delete, view, etc
+                }
+                @Override
+                protected void onSearchResultsSelectionChange() {
+                    selectionCallback.run();
+                }
+
+                @Override
+                protected Collection<ProviderEntry> getIdentityProviderEntries() {
+                    return identityProviderHeaders == null ?
+                            super.getIdentityProviderEntries() :
+                            map( identityProviderHeaders, ProviderEntry.fromEntity() );
+                }
+            };
+            this.dialog.closeButton.setVisible( false );
+        }
+
+        public JPanel getSearchDetailsPanel() {
+            return dialog.searchDetailsPanel;
+        }
+
+        public JPanel getSearchResultsPanel() {
+            return dialog.searchResultsPanel;
+        }
+
+        public Collection<IdentityHeader> getSelections() {
+            return dialog.getSelectedIdentities();
         }
     }
 

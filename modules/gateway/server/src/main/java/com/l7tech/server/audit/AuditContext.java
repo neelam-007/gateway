@@ -1,9 +1,7 @@
-/*
- * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.audit.AuditDetail;
+import com.l7tech.gateway.common.audit.AuditDetailEvent.AuditDetailWithInfo;
 import com.l7tech.gateway.common.audit.AuditRecord;
 
 import java.util.List;
@@ -25,9 +23,9 @@ import java.util.logging.Level;
  * </p>
  * <p>
  * Call {@link com.l7tech.server.ServerConfig#getProperty}, specifying
- * {@link com.l7tech.server.ServerConfig#PARAM_AUDIT_MESSAGE_THRESHOLD} or
- * {@link com.l7tech.server.ServerConfig#PARAM_AUDIT_ADMIN_THRESHOLD} as
- * the parameter, to determine the current threshold for
+ * {@link com.l7tech.server.ServerConfigParams#PARAM_AUDIT_ADMIN_THRESHOLD} as
+ * {@link com.l7tech.server.ServerConfigParams#PARAM_AUDIT_MESSAGE_THRESHOLD} or
+  * the parameter, to determine the current threshold for
  * {@link com.l7tech.gateway.common.audit.MessageSummaryAuditRecord} and
  * {@link com.l7tech.gateway.common.audit.AdminAuditRecord}
  * records, respectively.
@@ -44,35 +42,35 @@ import java.util.logging.Level;
 public interface AuditContext {
     /**
      * Message audit threshold to be used if
-     * {@link com.l7tech.server.ServerConfig#PARAM_AUDIT_MESSAGE_THRESHOLD} is
+     * {@link com.l7tech.server.ServerConfigParams#PARAM_AUDIT_MESSAGE_THRESHOLD} is
      * unset or invalid
      */
     Level DEFAULT_MESSAGE_THRESHOLD = Level.WARNING;
 
     /**
      * Message audit threshold to be used if
-     * {@link com.l7tech.server.ServerConfig#PARAM_AUDIT_SYSTEM_CLIENT_THRESHOLD} is
+     * {@link com.l7tech.server.ServerConfigParams#PARAM_AUDIT_SYSTEM_CLIENT_THRESHOLD} is
      * unset or invalid
      */
     Level DEFAULT_SYSTEM_CLIENT_THRESHOLD = Level.WARNING;
 
     /**
      * Message audit threshold to be used if
-     * {@link com.l7tech.server.ServerConfig#PARAM_AUDIT_ADMIN_THRESHOLD} is
+     * {@link com.l7tech.server.ServerConfigParams#PARAM_AUDIT_ADMIN_THRESHOLD} is
      * unset or invalid
      */
     Level DEFAULT_ADMIN_THRESHOLD = Level.INFO;
 
     /**
      * Associated logs threshold to be used if
-     * {@link com.l7tech.server.ServerConfig#PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD}
+     * {@link com.l7tech.server.ServerConfigParams#PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD}
      * is unset or invalid
      */
     Level DEFAULT_ASSOCIATED_LOGS_THRESHOLD = Level.INFO;
 
     /**
      * USe associated logs threshold to be used if
-     * {@link com.l7tech.server.ServerConfig#PARAM_AUDIT_USE_ASSOCIATED_LOGS_THRESHOLD}
+     * {@link com.l7tech.server.ServerConfigParams#PARAM_AUDIT_USE_ASSOCIATED_LOGS_THRESHOLD}
      * is unset or invalid
      */
     Boolean DEFAULT_USE_ASSOCIATED_LOGS_THRESHOLD = Boolean.FALSE;
@@ -105,12 +103,9 @@ public interface AuditContext {
      * a call to {@link #flush}.
      * </p>
      *
-     * @param detail the {@link com.l7tech.gateway.common.audit.AuditDetail} record to add. Must not be null.
-     * @param source the source of the {@link com.l7tech.gateway.common.audit.AuditDetailEvent}.
-     * @param thrown the exception associated with the {@link com.l7tech.gateway.common.audit.AuditDetailEvent}.
-     * @param loggerName the name of the Logger object associated with this detail record, or null.
+     * @param auditDetailInfo the audit detail and associated information. Must not be null.
      */
-    void addDetail(AuditDetail detail, Object source, Throwable thrown, String loggerName);
+    void addDetail(AuditDetailWithInfo auditDetailInfo);
 
     /**
      * Is the current record an update?

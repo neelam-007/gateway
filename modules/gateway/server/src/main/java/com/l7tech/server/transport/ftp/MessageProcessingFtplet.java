@@ -1,5 +1,7 @@
 package com.l7tech.server.transport.ftp;
 
+import com.l7tech.common.log.HybridDiagnosticContext;
+import com.l7tech.common.log.HybridDiagnosticContextKeys;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.message.FtpRequestKnob;
@@ -52,7 +54,8 @@ class MessageProcessingFtplet extends DefaultFtplet {
                              final EventChannel messageProcessingEventChannel,
                              final ContentTypeHeader overriddenContentType,
                              final long hardwiredServiceOid,
-                             final long maxRequestSize) {
+                             final long maxRequestSize,
+                             final long connectorId ) {
         this.ftpServerManager = ftpServerManager;
         this.messageProcessor = messageProcessor;
         this.soapFaultManager = soapFaultManager;
@@ -61,6 +64,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
         this.overriddenContentType = overriddenContentType;
         this.hardwiredServiceOid = hardwiredServiceOid;
         this.maxRequestSize = maxRequestSize;
+        this.connectorId = connectorId;
     }
 
     /**
@@ -127,6 +131,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
     private final ContentTypeHeader overriddenContentType;
     private final long hardwiredServiceOid;
     private final long maxRequestSize;
+    private final long connectorId;
 
     /*
      * Process a file upload 
@@ -154,6 +159,8 @@ class MessageProcessingFtplet extends DefaultFtplet {
                 // request data
                 ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_150_FILE_STATUS_OKAY, "File status okay; about to open data connection."));
                 DataConnectionFactory dataConnectionFactory = null;
+                HybridDiagnosticContext.put( HybridDiagnosticContextKeys.LISTEN_PORT_ID, Long.toString( connectorId ) );
+                HybridDiagnosticContext.put( HybridDiagnosticContextKeys.CLIENT_IP, ftpSession.getClientAddress().getHostAddress() );
                 try {
                     dataConnectionFactory = ftpSession.getDataConnection();
                     DataConnection dataConnection = null;
@@ -192,6 +199,8 @@ class MessageProcessingFtplet extends DefaultFtplet {
                     }
                 }
                 finally {
+                    HybridDiagnosticContext.remove( HybridDiagnosticContextKeys.LISTEN_PORT_ID );
+                    HybridDiagnosticContext.remove( HybridDiagnosticContextKeys.CLIENT_IP );
                     if (dataConnectionFactory !=null) dataConnectionFactory.closeDataConnection();
                 }
             }

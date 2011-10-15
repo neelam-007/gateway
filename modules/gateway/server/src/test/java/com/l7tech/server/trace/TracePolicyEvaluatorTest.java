@@ -18,6 +18,7 @@ import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.TestLicenseManager;
 import com.l7tech.server.event.system.Started;
+import com.l7tech.server.folder.FolderCacheStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.*;
@@ -94,7 +95,7 @@ public class TracePolicyEvaluatorTest {
         PolicyManager policyManager = new PolicyManagerStub(policyToTrace, tracePolicy);
         final ServerPolicyFactory spf = new ServerPolicyFactory(new TestLicenseManager(),new MockInjector());
         spf.setApplicationContext(applicationContext);
-        policyCache = new PolicyCacheImpl(null, spf);
+        policyCache = new PolicyCacheImpl(null, spf, new FolderCacheStub());
         policyCache.setPolicyManager(policyManager);
         policyCache.setPolicyVersionManager( new PolicyVersionManagerStub(){
             @Override

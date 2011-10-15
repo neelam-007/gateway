@@ -1,5 +1,7 @@
 package com.l7tech.external.assertions.ssh.server;
 
+import com.l7tech.common.log.HybridDiagnosticContext;
+import com.l7tech.common.log.HybridDiagnosticContextKeys;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.message.HasServiceOid;
@@ -316,8 +318,11 @@ public class MessageProcessingSftpSubsystem extends SftpSubsystem {
      * Start Gateway Message Process thread.  Thread will finish when there nothing left in the InputStream (e.g. when it has been closed).
      */
     private void startGatewayMessageProcessThread(SsgConnector connector, SshFile file) throws IOException {
-        if (file instanceof VirtualSshFile) {
+        if (file instanceof VirtualSshFile) try {
             final VirtualSshFile virtualSshFile = (VirtualSshFile) file;
+
+            HybridDiagnosticContext.put( HybridDiagnosticContextKeys.LISTEN_PORT_ID, Long.toString( connector.getOid() ) );
+            HybridDiagnosticContext.put( HybridDiagnosticContextKeys.CLIENT_IP, MessageProcessingSshUtil.getRemoteAddress(session) );
 
             final PipedInputStream pis = new PipedInputStream();
             PipedOutputStream pos = new PipedOutputStream(pis);
@@ -415,6 +420,9 @@ public class MessageProcessingSftpSubsystem extends SftpSubsystem {
                 Thread.currentThread().interrupt();
                 throw new CausedIOException("Interrupted waiting for data.", ie);
             }
+        } finally {
+            HybridDiagnosticContext.remove( HybridDiagnosticContextKeys.LISTEN_PORT_ID );
+            HybridDiagnosticContext.remove( HybridDiagnosticContextKeys.CLIENT_IP );
         }
     }
 

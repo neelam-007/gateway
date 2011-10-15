@@ -1473,6 +1473,13 @@ INSERT INTO rbac_permission VALUES (-803,0,-800,'UPDATE',NULL,'LOG_SINK');
 INSERT INTO rbac_permission VALUES (-804,0,-800,'DELETE',NULL,'LOG_SINK');
 INSERT INTO rbac_permission VALUES (-805,0,-800,'READ',NULL,'CLUSTER_INFO');
 INSERT INTO rbac_permission VALUES (-806,0,-800,'OTHER','log-viewer','LOG_SINK');
+INSERT INTO rbac_permission VALUES (-807,0,-800,'READ',NULL,'SSG_CONNECTOR');
+INSERT INTO rbac_permission VALUES (-808,0,-800,'READ',NULL,'SERVICE');
+INSERT INTO rbac_permission VALUES (-809,0,-800,'READ',NULL,'FOLDER');
+INSERT INTO rbac_permission VALUES (-810,0,-800,'READ',NULL,'JMS_ENDPOINT');
+INSERT INTO rbac_permission VALUES (-811,0,-800,'READ',NULL,'USER');
+INSERT INTO rbac_permission VALUES (-812,0,-800,'READ',NULL,'ID_PROVIDER_CONFIG');
+INSERT INTO rbac_permission VALUES (-813,0,-800,'READ',NULL,'POLICY');
 
 INSERT INTO rbac_role VALUES (-850,0,'Gateway Maintenance', null,null,null, 'Users assigned to the {0} role have the ability to perform Gateway maintenance tasks.');
 INSERT INTO rbac_permission VALUES (-851,0,-850,'READ',NULL,'CLUSTER_PROPERTY');

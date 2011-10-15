@@ -1,5 +1,8 @@
 package com.l7tech.server.log;
 
+import com.l7tech.common.log.HybridDiagnosticContext;
+import com.l7tech.common.log.HybridDiagnosticContextKeys;
+
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 
@@ -26,12 +29,14 @@ public class SinkHandler extends Handler {
     /**
      * Does nothing.
      */
+    @Override
     public void close() {
     }
 
     /**
      * Does nothing.
      */
+    @Override
     public void flush() {
     }
 
@@ -40,7 +45,9 @@ public class SinkHandler extends Handler {
      *
      * @param record The record to publish
      */
+    @Override
     public void publish(final LogRecord record) {
+        HybridDiagnosticContext.put( HybridDiagnosticContextKeys.LOGGER_NAME, record.getLoggerName() );
         sink.message(category, record);
     }
 

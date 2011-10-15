@@ -23,6 +23,7 @@ import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.server.folder.FolderCacheStub;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.event.PolicyCacheEvent;
@@ -489,7 +490,7 @@ public class PolicyDependencyTest {
             };
         }
 
-        PolicyCacheImpl cache = new PolicyCacheImpl(null, null){
+        PolicyCacheImpl cache = new PolicyCacheImpl(null, null, new FolderCacheStub()){
             @Override
             protected ServerAssertion buildServerPolicy( final Policy policy ) throws InvalidPolicyException {
                 try {

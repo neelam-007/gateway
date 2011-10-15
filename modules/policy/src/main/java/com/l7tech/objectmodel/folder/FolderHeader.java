@@ -27,10 +27,20 @@ public class FolderHeader extends EntityHeader {
                          final String path) {
         super(objectid, EntityType.FOLDER, name, path, version);
         this.parentFolderOid = parentFolderOid;
+        this.path = path;
     }
 
     public Long getParentFolderOid() {
         return parentFolderOid;
+    }
+
+    /**
+     * Get the full path for the Folder.
+     *
+     * @return the path
+     */
+    public String getPath() {
+        return path;
     }
 
     @Override
@@ -41,5 +51,6 @@ public class FolderHeader extends EntityHeader {
     //- PRIVATE
 
     private final Long parentFolderOid;
+    private final String path;
 }
 

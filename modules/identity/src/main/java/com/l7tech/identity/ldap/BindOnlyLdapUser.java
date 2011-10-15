@@ -6,6 +6,7 @@ package com.l7tech.identity.ldap;
 public class BindOnlyLdapUser extends LdapUser {
     public BindOnlyLdapUser(long identityProviderOid, String dn, String login) {
         super(identityProviderOid, dn, login);
+        setLogin( login );
     }
 
     @Override

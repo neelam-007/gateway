@@ -46,7 +46,6 @@ public class IdentityProviderNode extends EntityHeaderNode<EntityHeader> {
         list.add(new IdentityProviderPropertiesAction(this));
         Options options = new Options();
         options.setEnableDeleteAction(true);
-        options.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         Object obj = getUserObject();
         if (obj instanceof EntityHeader) {
             options.setInitialProvider(((EntityHeader)obj).getOid());

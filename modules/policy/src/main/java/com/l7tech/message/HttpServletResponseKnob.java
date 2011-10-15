@@ -1,12 +1,7 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.message;
 
 import com.l7tech.common.http.CookieUtils;
+import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.util.Pair;
 
@@ -66,7 +61,7 @@ public class HttpServletResponseKnob extends AbstractHttpResponseKnob {
         Collections.sort(challengesToSend, String.CASE_INSENSITIVE_ORDER);
         Collections.reverse(challengesToSend);
         for (String challenge : challengesToSend) {
-            response.addHeader("WWW-Authenticate", challenge);
+            response.addHeader(HttpConstants.HEADER_WWW_AUTHENTICATE, challenge);
         }
     }
 

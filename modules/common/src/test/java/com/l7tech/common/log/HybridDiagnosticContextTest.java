@@ -14,9 +14,18 @@ public class HybridDiagnosticContextTest {
     @Test
     public void testMappedDiagnosticContext() {
         put( "test", "value" );
-        assertEquals( "test value get 1", "value", get( "test" ) );
+        assertEquals( "test value get 1", "value", getFirst( "test" ) );
+        assertEquals( "test value get 2", list("value"), get( "test" ) );
         remove( "test" );
-        assertNull( "test value get 2", get( "test" ) );
+        assertNull( "test value get 3", getFirst( "test" ) );
+        assertNull( "test value get 4", get( "test" ) );
+
+        put( "test", list("value1", "value2") );
+        assertEquals( "test multi-value get 1", "value1", getFirst( "test" ) );
+        assertEquals( "test multi-value get 2", list("value1", "value2"), get( "test" ) );
+        remove( "test" );
+        assertNull( "test multi-value get 3", getFirst( "test" ) );
+        assertNull( "test multi-value get 4", get( "test" ) );
     }
 
     @Test
@@ -26,19 +35,20 @@ public class HybridDiagnosticContextTest {
         doInContext( key, "1", new Nullary<Void>(){
             @Override
             public Void call() {
-                assertEquals( "test value get 1", "1", get( key ) );
+                assertEquals( "test value get 1", "1", getFirst( key ) );
                 assertEquals( "test value getAll 1", list( "1" ), getAll( key ) );
 
-                doInContext( key, "2", new Nullary<Void>(){
+                doInContext( key, list("2", "3"), new Nullary<Void>(){
                     @Override
                     public Void call() {
-                        assertEquals( "test value get 2", "2", get( key ) );
-                        assertEquals( "test value getAll 2", list( "1", "2" ), getAll( key ) );
+                        assertEquals( "test value get 2", "2", getFirst( key ) );
+                        assertEquals( "test value get 3", list("2","3"), get( key ) );
+                        assertEquals( "test value getAll 2", list( "1", "2", "3" ), getAll( key ) );
                         return null;
                     }
                 } );
 
-                assertEquals( "test value get 1", "1", get( key ) );
+                assertEquals( "test value get 1", "1", getFirst( key ) );
                 assertEquals( "test value getAll 1", list( "1" ), getAll( key ) );
 
                 return null;
@@ -54,28 +64,28 @@ public class HybridDiagnosticContextTest {
         final SavedDiagnosticContext saved = save();
         reset();
 
-        assertNull( "test1 value get 1", get( "test1" ) );
-        assertNull( "test2 value get 1", get( "test2" ) );
-        assertNull( "test3 value get 1", get( "test3" ) );
+        assertNull( "test1 value get 1", getFirst( "test1" ) );
+        assertNull( "test2 value get 1", getFirst( "test2" ) );
+        assertNull( "test3 value get 1", getFirst( "test3" ) );
 
         doWithContext( saved, new Nullary<Void>(){
             @Override
             public Void call() {
-                assertEquals( "test1 value get 2", "value1", get( "test1" ) );
-                assertEquals( "test2 value get 2", "value2", get( "test2" ) );
-                assertEquals( "test3 value get 2", "value3", get( "test3" ) );
+                assertEquals( "test1 value get 2", "value1", getFirst( "test1" ) );
+                assertEquals( "test2 value get 2", "value2", getFirst( "test2" ) );
+                assertEquals( "test3 value get 2", "value3", getFirst( "test3" ) );
                 return null;
             }
         } );
 
-        assertNull( "test1 value get 3", get( "test1" ) );
-        assertNull( "test2 value get 3", get( "test2" ) );
-        assertNull( "test3 value get 3", get( "test3" ) );
+        assertNull( "test1 value get 3", getFirst( "test1" ) );
+        assertNull( "test2 value get 3", getFirst( "test2" ) );
+        assertNull( "test3 value get 3", getFirst( "test3" ) );
 
         restore( saved );
 
-        assertEquals( "test1 value get 4", "value1", get( "test1" ) );
-        assertEquals( "test2 value get 4", "value2", get( "test2" ) );
-        assertEquals( "test3 value get 4", "value3", get( "test3" ) );
+        assertEquals( "test1 value get 4", "value1", getFirst( "test1" ) );
+        assertEquals( "test2 value get 4", "value2", getFirst( "test2" ) );
+        assertEquals( "test3 value get 4", "value3", getFirst( "test3" ) );
     }
 }

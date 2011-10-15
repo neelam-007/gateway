@@ -1,6 +1,8 @@
 package com.l7tech.external.assertions.rawtcp.server;
 
 import com.l7tech.common.io.ByteLimitInputStream;
+import com.l7tech.common.log.HybridDiagnosticContext;
+import com.l7tech.common.log.HybridDiagnosticContextKeys;
 import com.l7tech.util.Config;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -364,6 +366,9 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
 
         PolicyEnforcementContext context = null;
         InputStream responseStream = null;
+        InetAddress address = sock.getInetAddress();
+        HybridDiagnosticContext.put( HybridDiagnosticContextKeys.LISTEN_PORT_ID, Long.toString( connector.getOid() ) );
+        HybridDiagnosticContext.put( HybridDiagnosticContextKeys.CLIENT_IP, address==null ? "" : address.getHostAddress() );
         try {
 
             Message request = new Message();
@@ -409,6 +414,8 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
             // TODO send response of some kind?  customize response to send upon error?
             logger.log(Level.SEVERE, "Unexpected error handling raw TCP request: " + ExceptionUtils.getMessage(e), e);
         } finally {
+            HybridDiagnosticContext.remove( HybridDiagnosticContextKeys.LISTEN_PORT_ID );
+            HybridDiagnosticContext.remove( HybridDiagnosticContextKeys.CLIENT_IP );
             if (context != null)
                 ResourceUtils.closeQuietly(context);
             ResourceUtils.closeQuietly(sock);

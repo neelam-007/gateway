@@ -22,6 +22,7 @@ import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.TestLicenseManager;
 import com.l7tech.server.audit.AuditDetailProcessingAuditListener;
 import com.l7tech.server.event.system.Started;
+import com.l7tech.server.folder.FolderCacheStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.*;
@@ -69,7 +70,7 @@ public class ServerConcurrentAllAssertionTest {
         serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager(),new MockInjector());
         auditContext = new ConcurrentDetailCollectingAuditContext();
         auditContext.logDetails = true;
-        policyCache = new PolicyCacheImpl(null, new ServerPolicyFactory(new TestLicenseManager(),new MockInjector())) {
+        policyCache = new PolicyCacheImpl(null, new ServerPolicyFactory(new TestLicenseManager(),new MockInjector()), new FolderCacheStub()) {
             {
                 PolicyManagerStub policyManager = new PolicyManagerStub( new Policy[0] );
                 setPolicyManager(policyManager);

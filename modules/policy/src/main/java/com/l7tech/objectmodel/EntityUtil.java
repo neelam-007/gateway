@@ -1,5 +1,7 @@
 package com.l7tech.objectmodel;
 
+import com.l7tech.util.Functions.Unary;
+
 import javax.persistence.Column;
 import java.lang.reflect.AccessibleObject;
 import java.util.HashMap;
@@ -110,5 +112,19 @@ public class EntityUtil {
         }
 
         return new CreatedUpdatedDeleted<T>(creates, updates, deletes);
+    }
+
+    /**
+     * First class function for identifier access.
+     *
+     * @return A function to access the identifier of an entity
+     */
+    public static Unary<String,Entity> id() {
+        return new Unary<String,Entity>(){
+            @Override
+            public String call( final Entity entity ) {
+                return entity == null ?  null : entity.getId();
+            }
+        };
     }
 }

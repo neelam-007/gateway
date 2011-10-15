@@ -38,14 +38,14 @@ public class LoggingPrintStream extends PrintStream {
 
     @Override
     public PrintStream append(char c) {
-        process( Character.toString(c) );
+        process( Character.toString(c), false );
         return this;
     }
 
     @Override
     public PrintStream append(CharSequence csq) {
         if ( csq != null) {
-            process( csq.toString() );
+            process( csq.toString(), false );
         }
         return this;
     }
@@ -53,110 +53,116 @@ public class LoggingPrintStream extends PrintStream {
     @Override
     public PrintStream append(CharSequence csq, int start, int end) {
         if ( csq != null) {
-            process( csq.subSequence(start, end).toString() );
+            process( csq.subSequence(start, end).toString(), false );
         }
         return this;
     }
 
     @Override
     public void print(boolean b) {
-        process( Boolean.toString(b) );
+        process( Boolean.toString(b), false );
     }
 
     @Override
     public void print(char c) {
-        process( Character.toString(c) );
+        process( Character.toString(c), false );
     }
 
     @Override
     public void print(double d) {
-        process( Double.toString(d) );
+        process( Double.toString(d), false );
     }
 
     @Override
     public void print(float f) {
-        process( Float.toString(f) );
+        process( Float.toString(f), false );
     }
 
     @Override
     public void print(int i) {
-        process( Integer.toString(i) );
+        process( Integer.toString(i), false );
     }
 
     @Override
     public void print(long l) {
-        process( Long.toString(l) );
+        process( Long.toString(l), false );
     }
 
     @Override
     public void print(Object obj) {
         if ( obj != null ) {
-            process( obj.toString() );
+            process( obj.toString(), false );
         }
     }
 
     @Override
     public void print(char s[]) {
         if ( s != null ) {
-            process( new String(s) );
+            process( new String(s), false );
         }
     }
 
     @Override
     public void print(String s) {
         if ( s != null ) {
-            process( s );
+            process( s, false );
         }
     }
 
     @Override
     public void println() {
-        // no
+        process( "", true );
     }
 
     @Override
     public void println(boolean x) {
-        print(x);
+        process( Boolean.toString(x), true );
     }
 
     @Override
     public void println(char x) {
-        print(x);
+        process( Character.toString(x), true );
     }
 
     @Override
     public void println(char x[]) {
-        print(x);
+        if (x != null) {
+            process( new String(x), true );
+        }
     }
 
     @Override
     public void println(double x) {
-        print(x);
+        process( Double.toString( x ), true );
     }
 
     @Override
     public void println(float x) {
-        print(x);
+        process( Float.toString( x ), true );
     }
 
     @Override
     public void println(int x) {
-        print(x);
+        process( Integer.toString( x ), true );
     }
 
     @Override
     public void println(long x) {
-        print(x);
+        process( Long.toString( x ), true );
     }
 
     @Override
     public void println(Object x) {
-        print(x);
+        if ( x != null ) {
+            process( x.toString(), true );
+        }
     }
 
     @Override
     public void println(String x) {
-        print(x);
+        if ( x != null ) {
+            process( x, true );
+        }
     }
 
     /**
@@ -211,10 +217,33 @@ public class LoggingPrintStream extends PrintStream {
 
     private final Logger logger;
     private final Level level;
+    private ThreadLocal<StringBuilder> buffer = new ThreadLocal<StringBuilder>();
+    //TODO [steve] configurable max buffer size for logging print stream?
+    private final int MAX_BUFFER = 256;
 
-    private void process(final String text) {
+    private void process( final String text, final boolean newline ) {
         if ( logger.isLoggable( level) ) {
-            logger.logp( level, logger.getName(), "", text );
+            StringBuilder builder = this.buffer.get();
+
+            if ( newline ) {
+                if ( builder != null && builder.length() > 0 ) {
+                    builder.append( text );
+                    logger.logp( level, logger.getName(), "", builder.toString() );
+                    builder.setLength( 0 );
+                    if (builder.capacity() > MAX_BUFFER) builder.trimToSize();
+                } else {
+                    logger.logp( level, logger.getName(), "", text );
+                }
+            } else {
+                if ( builder == null ) {
+                    builder = new StringBuilder();
+                    buffer.set( builder );
+                }
+                builder.append( text );
+                if ( builder.length() > MAX_BUFFER ) {
+                    process( "", true ); // flush buffer
+                }
+            }
         }
     }
 
@@ -227,7 +256,7 @@ public class LoggingPrintStream extends PrintStream {
             StringBuilder builder = new StringBuilder();
             Formatter formatter = new Formatter(builder);
             formatter.format(locale, format, args);
-            process( builder.toString() );
+            process( builder.toString(), false );
         }
     }
 }

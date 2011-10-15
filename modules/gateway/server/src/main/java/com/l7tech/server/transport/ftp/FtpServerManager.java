@@ -262,7 +262,8 @@ public class FtpServerManager extends TransportModule {
                 messageProcessingEventChannel,
                 overrideContentType,
                 hardwiredServiceOid,
-                maxRequestSize);
+                maxRequestSize,
+                connector.getOid());
 
         Properties props = asFtpProperties(connector);
 

@@ -1,12 +1,16 @@
 package com.l7tech.common.log;
 
+import static com.l7tech.util.CollectionUtils.join;
 import static com.l7tech.util.CollectionUtils.toList;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Functions.Nullary;
-import static java.util.Collections.unmodifiableMap;
+import static com.l7tech.util.Functions.map;
+import static java.util.Collections.singleton;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -23,87 +27,211 @@ public class HybridDiagnosticContext {
 
     //- PUBLIC
 
-    public static <R> R doInContext( final String name,
-                                     final String value,
-                                     final Nullary<R> callback ) {
+    /**
+     * Perform a callback with a nested diagnostic context.
+     *
+     * <p>This should be used for contexts that can be nested such as a call
+     * stack. It should not be used for keys that are single valued, such as
+     * a thread identifier.</p>
+     *
+     * @param name The context key (required)
+     * @param value The context value (required)
+     * @param callback The callback to run in the context (required)
+     * @param <R> The return type
+     * @return The value returned by callback
+     */
+    public static <R> R doInContext( @NotNull final String name,
+                                     @NotNull final String value,
+                                     @NotNull final Nullary<R> callback ) {
+        return doInContext(
+                Collections.<String,Collection<String>>singletonMap( name, singleton( value ) ),
+                callback );
+    }
+
+    /**
+     * Perform a callback with a nested diagnostic context.
+     *
+     * <p>This should be used for contexts that can be nested such as a call
+     * stack. It should not be used for keys that are single valued, such as
+     * a thread identifier.</p>
+     *
+     * @param name The context key (required)
+     * @param values The context values (required)
+     * @param callback The callback to run in the context (required)
+     * @param <R> The return type
+     * @return The value returned by callback
+     */
+    public static <R> R doInContext( @NotNull final String name,
+                                     @NotNull final Collection<String> values,
+                                     @NotNull final Nullary<R> callback ) {
+        return doInContext( Collections.singletonMap( name, values ), callback );
+    }
+
+    /**
+     * Perform a callback with a nested diagnostic context.
+     *
+     * <p>This should be used for contexts that can be nested such as a call
+     * stack. It should not be used for keys that are single valued, such as
+     * a thread identifier.</p>
+     *
+     * @param contextMap The map of context keys to (multiple) context values (required)
+     * @param callback The callback to run in the context (required)
+     * @param <R> The return type
+     * @return The value returned by callback
+     */
+    public static <R> R doInContext( @NotNull final Map<String,Collection<String>> contextMap,
+                                     @NotNull final Nullary<R> callback ) {
+        final Map<String,List<String>> immutableContext = immutable( contextMap );
         try {
-            context.get().push( name, value );
+            for( final Map.Entry<String,List<String>> contextEntry : immutableContext.entrySet() ) {
+                context.get().push( contextEntry.getKey(), contextEntry.getValue() );
+            }
             return callback.call();
         } finally {
-            context.get().pop( name, value );
+            for( final Map.Entry<String,List<String>> contextEntry : immutableContext.entrySet() ) {
+                context.get().pop( contextEntry.getKey(), contextEntry.getValue() );
+            }
         }
     }
 
     /**
      * Perform an action using the saved context.
      *
-     * <p>If the given context is null then the current context is used.</p>
+     * <p>If the given context is null then an empty context is used.</p>
      *
      * @param savedDiagnosticContext The context to use, may be null.
-     * @param callback The callback to perform with the given context.
+     * @param callback The callback to perform with the given context (required)
      * @param <R> The return type
      * @return The value from the callback
      */
-    public static <R> R doWithContext( final SavedDiagnosticContext savedDiagnosticContext,
-                                       final Nullary<R> callback ) {
+    public static <R> R doWithContext( @Nullable final SavedDiagnosticContext savedDiagnosticContext,
+                                       @NotNull  final Nullary<R> callback ) {
         final DiagnosticContext current = context.get();
         try {
+            final DiagnosticContext temporary = new DiagnosticContext();
             if ( savedDiagnosticContext != null ) {
-                final DiagnosticContext temporary = new DiagnosticContext();
                 temporary.restore( savedDiagnosticContext );
-                context.set( temporary );
             }
+            context.set( temporary );
             return callback.call();
         } finally {
             context.set( current );
         }
     }
 
-    public static String get( final String key  )  {
+    /**
+     * Get the first value for the given context key.
+     *
+     * @param key The context key (required)
+     * @return The value (may be null)
+     */
+    public static String getFirst( @NotNull final String key )  {
+        final List<String> values = context.get().peek( key );
+        return values!=null && !values.isEmpty() ? values.get( 0 ) : null;
+    }
+
+    /**
+     * Get all context values for the given context key.
+     *
+     * @param key The context key (required)
+     * @return The values (may be null)
+     */
+    public static List<String> get( @NotNull final String key )  {
         return context.get().peek( key );
     }
 
-    public static void put( final String key,
-                            final String value )  {
-        context.get().put( key, Collections.singletonList( value ) );
+    /**
+     * Put a single value into the context for the given context key.
+     *
+     * @param key The context key (required)
+     * @param value The value to set (required)
+     */
+    public static void put( @NotNull final String key,
+                            @NotNull final String value )  {
+        context.get().put( key, new ArrayList<List<String>>(singleton(Collections.singletonList( value ))));
     }
 
-    public static void remove( final String key  )  {
+    /**
+     * Put the given values into the context for the given context key
+     *
+     * @param key The context key (required)
+     * @param values The context values (required)
+     */
+    public static void put( @NotNull final String key,
+                            @NotNull final List<String> values )  {
+        context.get().put( key, new ArrayList<List<String>>(singleton(toList( values ))) );
+    }
+
+    /**
+     * Remove the values for the given context key.
+     *
+     * @param key The context key (required)
+     */
+    public static void remove( @NotNull final String key  )  {
         context.get().remove( key );
     }
 
+    /**
+     * Reset the diagnostic context.
+     *
+     * <p>All keys and values are cleared.</p>
+     */
     public static void reset() {
         context.remove();
     }
 
+    /**
+     * Save the current diagnostic context.
+     *
+     * @return The saved context
+     */
+    @NotNull
     public static SavedDiagnosticContext save() {
         return context.get().save();
     }
 
-    public static SavedDiagnosticContext restore( final SavedDiagnosticContext savedDiagnosticContext ) {
+    /**
+     * Restore the given context.
+     *
+     * @param savedDiagnosticContext The context to restore
+     * @return The current context
+     */
+    @NotNull
+    public static SavedDiagnosticContext restore( @NotNull final SavedDiagnosticContext savedDiagnosticContext ) {
         return context.get().restore( savedDiagnosticContext );
     }
 
+    /**
+     * Saved diagnostic context.
+     *
+     * @see #save
+     * @see #restore
+     * @see #doWithContext
+     */
     public static class SavedDiagnosticContext {
-        private final Map<String,List<String>> properties;
+        private final Map<String,List<List<String>>> properties;
 
         private SavedDiagnosticContext( final DiagnosticContext context ) {
-            this.properties = unmodifiableMap( Functions.map( context.properties, null, Functions.<String>identity(), new Functions.Unary<List<String>,List<String>>(){
-                @Override
-                public List<String> call( final List<String> strings ) {
-                    return toList( strings );
-                }
-            } ) );
+            this.properties = immutable(context.properties);
         }
     }
 
     //- PACKAGE
 
-    static List<String> getAll( final String key ) {
-        return context.get().get( key );
+    static Collection<String> getAll( final String key ) {
+        return join( context.get().get( key ) );
     }
 
     //- PRIVATE
+
+    private static <R> Map<String,List<R>> immutable( final Map<String,? extends Collection<R>> map ) {
+        return Collections.unmodifiableMap( map( map, null, Functions.<String>identity(), new Functions.Unary<List<R>, Collection<R>>() {
+                @Override
+                public List<R> call( final Collection<R> strings ) {
+                    return toList( strings );
+                }
+            } ) );
+    }
 
     private static final ThreadLocal<DiagnosticContext> context = new ThreadLocal<DiagnosticContext>(){
         @Override
@@ -113,45 +241,49 @@ public class HybridDiagnosticContext {
     };
 
     private static class DiagnosticContext {
-        private final Map<String,List<String>> properties = new HashMap<String,List<String>>();
+        /**
+         * Context properties are a stack which may contain multiple values
+         * for each level.
+         */
+        private final Map<String,List<List<String>>> properties = new HashMap<String,List<List<String>>>();
         private SavedDiagnosticContext savedContext;
 
         private DiagnosticContext() {
         }
 
-        public List<String> get( final String key ) {
+        public List<List<String>> get( final String key ) {
             return properties.get( key );
         }
 
-        public List<String> put( final String key, final List<String> values ) {
+        public List<List<String>> put( final String key, final List<List<String>> values ) {
             invalidateSaved();
             return properties.put( key, values );
         }
 
-        public List<String> remove( final String key ) {
+        public List<List<String>> remove( final String key ) {
             invalidateSaved();
             return properties.remove( key );
         }
 
-        public void push( final String key, final String value ) {
+        public void push( final String key, final List<String> value ) {
             invalidateSaved();
-            List<String> values = properties.get( key );
+            List<List<String>> values = properties.get( key );
             if ( values == null ) {
-                values = new ArrayList<String>();
+                values = new ArrayList<List<String>>();
                 properties.put( key, values );
             }
             values.add( value );
         }
 
-        public String peek( final String key ) {
-            final List<String> values = properties.get( key );
+        public List<String> peek( final String key ) {
+            final List<List<String>> values = properties.get( key );
             return values==null || values.isEmpty() ? null : values.get( values.size()-1 );
         }
 
-        public String pop( final String key, @Nullable final String value ) {
+        public List<String> pop( final String key, @Nullable final List<String> value ) {
             invalidateSaved();
-            final List<String> values = properties.get( key );
-            final String popped;
+            final List<List<String>> values = properties.get( key );
+            final List<String> popped;
             if ( values==null || values.isEmpty() ) {
                 popped = null;
             } else if ( value == null || value.equals( values.get( values.size() - 1 ) ) ) {
@@ -176,8 +308,8 @@ public class HybridDiagnosticContext {
         private SavedDiagnosticContext restore( final SavedDiagnosticContext savedDiagnosticContext ) {
             final SavedDiagnosticContext currentContext = save();
             properties.clear();
-            for ( Entry<String, List<String>> stringListEntry : savedDiagnosticContext.properties.entrySet() ) {
-                properties.put( stringListEntry.getKey(), new ArrayList<String>( stringListEntry.getValue() ) );
+            for ( Entry<String, List<List<String>>> stringListEntry : savedDiagnosticContext.properties.entrySet() ) {
+                properties.put( stringListEntry.getKey(), new ArrayList<List<String>>( stringListEntry.getValue() ) );
             }
             return currentContext;
         }

@@ -237,7 +237,7 @@
     </bean>
 
     <!--
-    * singleton using the factory method. This is transitional, as it is referencef from
+    * singleton using the factory method. This is transitional, as it is referenced from
     * too many places.
     -->
     <bean id="serverConfig" class="com.l7tech.server.ServerConfig" factory-method="getInstance"
@@ -433,6 +433,10 @@
                         <entry key="simplePropertyChangeHandler">
                             <list>
                                 <value>otherTextualContentTypes</value>
+                                <value>ioDebugSsl</value>
+                                <value>ioDebugSslValue</value>
+                                <value>logStdOutLevel</value>
+                                <value>logStdErrLevel</value>
                             </list>
                         </entry>
                         <entry key="httpConfigurationCache">
@@ -819,6 +823,10 @@
                 </bean>
             </list>
         </constructor-arg>
+    </bean>
+
+    <bean id="folderCache" class="com.l7tech.server.folder.FolderCacheImpl">
+        <constructor-arg index="0" ref="folderManager"/>
     </bean>
 
     <!-- service cache -->
@@ -1573,6 +1581,7 @@
                 <ref bean="resolutionConfigurationManager"/>
                 <ref bean="passwordPolicyManger"/>
                 <ref bean="policyVersionManager"/>
+                <ref bean="folderManager"/>
             </list>
         </property>
         <property name="timer" ref="entityVersionCheckerTimer"/>
@@ -1804,8 +1813,9 @@
 
 
     <bean id="policyCache" class="com.l7tech.server.policy.PolicyCacheImpl">
-        <constructor-arg ref="transactionManager"/>
-        <constructor-arg ref="policyFactory"/>
+        <constructor-arg index="0" ref="transactionManager"/>
+        <constructor-arg index="1" ref="policyFactory"/>
+        <constructor-arg index="2" ref="folderCache"/>
         <property name="policyManager" ref="policyManager"/>
         <property name="policyVersionManager" ref="policyVersionManager"/>
     </bean>

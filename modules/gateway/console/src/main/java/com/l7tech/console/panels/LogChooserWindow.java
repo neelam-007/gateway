@@ -51,6 +51,11 @@ public class LogChooserWindow extends JFrame implements LogonListener {
     private PermissionFlags flags;
     private SimpleTableModel<LogTableRow> logTableModel;
 
+    private static final int COLUMN_FILE_NAME = 0;
+    private static final int COLUMN_NODE_NAME = 2;
+    private static final int COLUMN_SINK_NAME = 3;
+    private static final int COLUMN_SINK_DESC = 4;
+
     public LogChooserWindow() {
         super("Select Log");
         initialize();
@@ -81,6 +86,7 @@ public class LogChooserWindow extends JFrame implements LogonListener {
         //noinspection unchecked
         logTableModel = TableUtil.configureTable(
                 logTable,
+                // Update column indexes above if changing or reordering (COLUMN_FILE_NAME, etc)
                 TableUtil.column( "File", 40, 80, 999999, stringProperty("file") ),
                 TableUtil.column( "Last Modified", 80, 120, 999999, dateProperty( "lastModified" ), Date.class ),
                 TableUtil.column( "Node", 40, 80, 999999, stringProperty( "nodeName" ) ),
@@ -127,6 +133,13 @@ public class LogChooserWindow extends JFrame implements LogonListener {
                 resetFilter();
            }
        }, 700 );
+
+        filterTextField.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // consume the enter key event, do nothing
+            }
+        });
 
         Utilities.setDoubleClickAction(logTable, viewButton);
 
@@ -226,10 +239,10 @@ public class LogChooserWindow extends JFrame implements LogonListener {
         return new RowFilter<SimpleTableModel<LogTableRow>,Integer>(){
             @Override
             public boolean include( final Entry<? extends SimpleTableModel<LogTableRow>, ? extends Integer> entry ) {
-                return pattern.matcher(entry.getStringValue(0)).find() ||
-                       pattern.matcher(entry.getStringValue( 1 )).find() ||
-                       pattern.matcher(entry.getStringValue( 2 )).find() ||
-                       pattern.matcher(entry.getStringValue( 3 )).find();
+                return pattern.matcher(entry.getStringValue( COLUMN_FILE_NAME )).find() ||
+                       pattern.matcher(entry.getStringValue( COLUMN_NODE_NAME )).find() ||
+                       pattern.matcher(entry.getStringValue( COLUMN_SINK_NAME )).find() ||
+                       pattern.matcher(entry.getStringValue( COLUMN_SINK_DESC )).find();
             }
         };
     }

@@ -1,5 +1,6 @@
 package com.l7tech.server.log;
 
+import com.l7tech.common.log.SerializableFilter;
 import com.l7tech.util.ConfigurableLogFormatter;
 
 import java.io.Serializable;
@@ -14,28 +15,38 @@ public class LogFileConfiguration implements Serializable {
 
     //- PUBLIC
 
-    public LogFileConfiguration( String filepat, int limit, int count, boolean append, int level, String formatPattern ) {
+    public LogFileConfiguration( final String filepat,
+                                 final int limit,
+                                 final int count,
+                                 final boolean append,
+                                 final int level,
+                                 final String formatPattern,
+                                 final SerializableFilter filter ) {
         this.filepat = filepat;
         this.limit = limit;
         this.count = count;
         this.append = append;
         this.level = level;
-        this.formatPattern = formatPattern;        
+        this.formatPattern = formatPattern;
+        this.filter = filter;
     }
 
-    public LogFileConfiguration( LogFileConfiguration config, int level ) {
+    public LogFileConfiguration( final LogFileConfiguration config,
+                                 final int level ) {
         this( config.getFilepat(),
               config.getLimit(),
               config.getCount(),
               config.isAppend(),
               level,
-              config.getFormatPattern() );
+              config.getFormatPattern(),
+              config.getFilter() );
     }
 
     public FileHandler buildFileHandler() throws IOException {
         FileHandler fileHandler = new StartupAwareFileHandler( filepat, limit, count, append );
         fileHandler.setFormatter(new ConfigurableLogFormatter(formatPattern));
         fileHandler.setLevel(Level.parse(Integer.toString(level)));
+        fileHandler.setFilter(filter);
         return fileHandler;
     }
 
@@ -63,6 +74,10 @@ public class LogFileConfiguration implements Serializable {
         return formatPattern;
     }
 
+    public SerializableFilter getFilter() {
+        return filter;
+    }
+
     //- PRIVATE
 
     private static final long serialVersionUID = 1L;
@@ -73,9 +88,10 @@ public class LogFileConfiguration implements Serializable {
     private final boolean append;
     private final int level;
     private final String formatPattern;
+    private final SerializableFilter filter;
 
     private static final class StartupAwareFileHandler extends FileHandler implements StartupAwareHandler{
-        public StartupAwareFileHandler(String pattern, int limit, int count, boolean append) throws IOException, SecurityException {
+        private StartupAwareFileHandler(String pattern, int limit, int count, boolean append) throws IOException, SecurityException {
             super(pattern, limit, count, append);
         }
     }

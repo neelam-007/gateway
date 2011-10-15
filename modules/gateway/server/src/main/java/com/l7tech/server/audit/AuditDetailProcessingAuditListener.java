@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.audit.AuditDetailEvent;
@@ -20,13 +17,11 @@ public class AuditDetailProcessingAuditListener implements ApplicationListener {
         this.auditContext = auditContext;
     }
 
-    public void onApplicationEvent(ApplicationEvent event) {
-        Object source = event.getSource();
-
+    @Override
+    public void onApplicationEvent( final ApplicationEvent event ) {
         if ( event instanceof AuditDetailEvent ) {
-            AuditDetailEvent auditDetailEvent = (AuditDetailEvent)event;
-            //noinspection ThrowableResultOfMethodCallIgnored
-            auditContext.addDetail(auditDetailEvent.getDetail(), source, auditDetailEvent.getException(), auditDetailEvent.getLoggerName());
+            AuditDetailEvent auditDetailEvent = (AuditDetailEvent) event;
+            auditContext.addDetail(auditDetailEvent.getDetailWithInfo());
         }
     }
 }

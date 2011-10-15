@@ -19,9 +19,11 @@ public class HybridDiagnosticContextMatcherTest {
     public void testSpecifiedMatch() {
         final MatcherRules rules = new MatcherRules( CollectionUtils.<String, List<String>>mapBuilder()
                 .put( "a", list( "1", "2", "3" ) )
-                .map() );
+                .put( "b", list( "1", "2", "3" ) )
+                .map(), list( "b") );
 
         put( "a", "1" );
+        put( "b", "1" );
 
         assertTrue( "matches 1", matches( rules ) );
 
@@ -32,6 +34,13 @@ public class HybridDiagnosticContextMatcherTest {
         put( "a", "4" );
 
         assertFalse( "matches 3", matches( rules ) );
+
+        remove( "a" );
+        remove( "b" );
+        put( "a", "1" );
+        put( "b", "1111" );
+
+        assertTrue( "matches prefix", matches( rules ) );
     }
 
     @Test
@@ -39,14 +48,26 @@ public class HybridDiagnosticContextMatcherTest {
         setDefaultRules( new MatcherRules( CollectionUtils.<String, List<String>>mapBuilder()
                 .put( "a", list( "1", "2", "3" ) )
                 .put( "b", list( "101" ) )
-                .map()  ) );
+                .put( "c", list( "123" ) )
+                .map(), list("c")  ) );
 
         put( "a", "1" );
 
         assertFalse( "matches 1", matches() );
 
         put( "b", "101" );
+        put( "c", "123" );
 
         assertTrue( "matches 2", matches() );
+
+        remove( "c" );
+        put( "c", "1" );
+
+        assertFalse( "matches prefix 1", matches() );
+
+        remove( "c" );
+        put( "c", "12345" );
+
+        assertTrue( "matches prefix 2", matches() );
     }
 }

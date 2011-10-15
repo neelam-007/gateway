@@ -1,7 +1,6 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.panels.LogChooserWindow;
-import com.l7tech.console.panels.dashboard.DashboardWindow;
 import com.l7tech.gateway.common.security.rbac.AttemptedOther;
 import com.l7tech.gateway.common.security.rbac.OtherOperationName;
 import com.l7tech.gui.util.Utilities;
@@ -59,10 +58,12 @@ public class ViewLogsAction extends SecureAction {
         if (cw == null) {
             cw = new LogChooserWindow();
             cw.addWindowListener(new WindowAdapter() {
+                @Override
                 public void windowClosed(final WindowEvent e) {
                     chooserWindow = null;
                 }
 
+                @Override
                 public void windowClosing(final WindowEvent e) {
                     chooserWindow = null;
                 }

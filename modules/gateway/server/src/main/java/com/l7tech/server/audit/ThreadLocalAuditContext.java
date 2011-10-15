@@ -1,6 +1,7 @@
 package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.audit.AuditDetail;
+import com.l7tech.gateway.common.audit.AuditDetailEvent.AuditDetailWithInfo;
 import com.l7tech.gateway.common.audit.AuditRecord;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -16,8 +17,7 @@ import java.util.Set;
  * <p>You need to set the targetId of the bean to delegate to. Be sure that it
  * is not a singleton!</p>
  *
- * @author Steve Jones, $Author$
- * @version $Revision$
+ * @author Steve Jones
  */
 public class ThreadLocalAuditContext implements AuditContext, ApplicationContextAware {
 
@@ -38,8 +38,8 @@ public class ThreadLocalAuditContext implements AuditContext, ApplicationContext
     }
 
     @Override
-    public void addDetail(AuditDetail detail, Object source, Throwable exception, String loggerName) {
-        threadLocalDelegate.get().addDetail(detail, source, exception, loggerName);
+    public void addDetail(AuditDetailWithInfo detail) {
+        threadLocalDelegate.get().addDetail(detail);
     }
 
     @Override
@@ -92,6 +92,7 @@ public class ThreadLocalAuditContext implements AuditContext, ApplicationContext
     private String targetId;
     private ApplicationContext applicationContext;
     private ThreadLocal<AuditContext> threadLocalDelegate = new ThreadLocal<AuditContext>(){
+        @Override
         protected AuditContext initialValue() {
             return applicationContext.getBean(targetId, AuditContext.class);
         }

@@ -15,6 +15,19 @@ import javax.swing.*;
  */
 public class Options {
 
+    public Options() {
+    }
+
+    public Options( final Options original ) {
+        this.searchType = original.searchType;
+        this.enableDeleteAction = original.enableDeleteAction;
+        this.enableOpenProperties = original.enableOpenProperties;
+        this.adminOnly = original.adminOnly;
+        this.disposeOnSelect = original.disposeOnSelect;
+        this.selectionMode = original.selectionMode;
+        this.initialProviderOid = original.initialProviderOid;
+    }
+
     /**
      * Enable the delete action
      * @param enableDeleteAction
@@ -100,11 +113,18 @@ public class Options {
         this.adminOnly = adminOnly;
     }
 
-    SearchType searchType = SearchType.ALL;
-    boolean enableDeleteAction = false;
-    boolean enableOpenProperties = true;
-    boolean adminOnly = false;
+
+    // TODO Update copy constructor if adding fields
+    // TODO Update copy constructor if adding fields
+    // TODO Update copy constructor if adding fields
+    private SearchType searchType = SearchType.ALL;
+    private boolean enableDeleteAction = false;
+    private boolean enableOpenProperties = true;
+    private boolean adminOnly = false;
     private boolean disposeOnSelect = false;
-    int selectionMode = ListSelectionModel.MULTIPLE_INTERVAL_SELECTION;
-    long initialProviderOid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
+    private int selectionMode = ListSelectionModel.MULTIPLE_INTERVAL_SELECTION;
+    private long initialProviderOid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
+    // TODO Update copy constructor if adding fields
+    // TODO Update copy constructor if adding fields
+    // TODO Update copy constructor if adding fields
 }

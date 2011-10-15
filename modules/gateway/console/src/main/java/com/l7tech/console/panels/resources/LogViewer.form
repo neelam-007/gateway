@@ -189,7 +189,7 @@
                   <component id="b6570" class="javax.swing.JTextArea" binding="logMessageTextArea">
                     <constraints/>
                     <properties>
-                      <editable value="true"/>
+                      <editable value="false"/>
                       <lineWrap value="true"/>
                     </properties>
                   </component>

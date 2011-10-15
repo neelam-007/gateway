@@ -77,6 +77,7 @@ public class ServiceHeader extends OrganizationHeader {
         return isDisabled;
     }
 
+    @Override
     public String getDisplayName() {
         return displayName;
     }

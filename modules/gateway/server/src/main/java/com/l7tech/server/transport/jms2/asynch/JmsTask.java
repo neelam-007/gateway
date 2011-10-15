@@ -1,5 +1,7 @@
 package com.l7tech.server.transport.jms2.asynch;
 
+import com.l7tech.common.log.HybridDiagnosticContext;
+import com.l7tech.common.log.HybridDiagnosticContextKeys;
 import com.l7tech.server.transport.jms.JmsBag;
 import com.l7tech.server.transport.jms.JmsRuntimeException;
 import com.l7tech.server.transport.jms.JmsUtil;
@@ -89,10 +91,15 @@ class JmsTask implements Runnable {
      * @throws JmsRuntimeException when the RequestHandler encounters errors while processing the message
      */
     void handleMessage() throws JmsRuntimeException {
-
         // call the request handler to invoke the MessageProcessor
-        handler.onMessage(endpointCfg, jmsBag, endpointCfg.isTransactional(), createFailureProducer(), jmsMessage);
-
+        HybridDiagnosticContext.put(
+                HybridDiagnosticContextKeys.JMS_LISTENER_ID,
+                Long.toString( endpointCfg.getEndpoint().getOid() ) );
+        try {
+            handler.onMessage(endpointCfg, jmsBag, endpointCfg.isTransactional(), createFailureProducer(), jmsMessage);
+        } finally {
+            HybridDiagnosticContext.remove( HybridDiagnosticContextKeys.JMS_LISTENER_ID );
+        }
     }
 
     /**

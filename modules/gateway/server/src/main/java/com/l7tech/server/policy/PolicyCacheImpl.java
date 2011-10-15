@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.PolicyVariableUtils;
@@ -15,12 +16,14 @@ import com.l7tech.server.event.PolicyCacheEvent;
 import com.l7tech.server.event.system.LicenseEvent;
 import com.l7tech.server.event.system.PolicyReloadEvent;
 import com.l7tech.server.event.system.Started;
+import com.l7tech.server.folder.FolderCache;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import static com.l7tech.util.ArrayUtils.box;
 import static com.l7tech.util.ArrayUtils.zipI;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions.Nullary;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
 import org.springframework.beans.BeansException;
@@ -78,9 +81,11 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
      * @param policyFactory the policy factory to use for compiling policy trees.  Required.       
      */
     public PolicyCacheImpl( final PlatformTransactionManager transactionManager,
-                            final ServerPolicyFactory policyFactory ) {
+                            final ServerPolicyFactory policyFactory,
+                            final FolderCache folderCache ) {
         this.transactionManager = transactionManager;
         this.policyFactory = policyFactory;
+        this.folderCache = folderCache;
     }
 
     public void setPolicyManager( final PolicyManager policyManager ) {
@@ -155,6 +160,14 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         }
 
         return null;
+    }
+
+    @Override
+    public List<Folder> getFolderPath( final long policyOid ) {
+        final PolicyCacheEntry pce = cacheGetWithLock( policyOid );
+        return pce!=null && pce.policy.getFolder()!=null ?
+                folderCache.findPathByPrimaryKey( pce.policy.getFolder().getOid() ) :
+                Collections.<Folder>emptyList();
     }
 
     @Override
@@ -685,7 +698,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
     private PolicyManager policyManager;
     private PolicyVersionManager policyVersionManager;
     private final ServerPolicyFactory policyFactory;
-
+    private final FolderCache folderCache;
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private boolean cacheIsInvalid = true;
@@ -986,9 +999,9 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
                                                     final Set<Long> seenOids,
                                                     final Map<Long, Integer> dependentVersions,
                                                     final List<PolicyCacheEvent> events ) {
-        Long thisPolicyId = thisPolicy.getOid();
+        final Long thisPolicyId = thisPolicy.getOid();
         dependentVersions.put( thisPolicyId, thisPolicy.getVersion() );
-        Set<Long> descendentPolicies = new HashSet<Long>();
+        final Set<Long> descendentPolicies = new HashSet<Long>();
         if ( logger.isLoggable( Level.FINE ) )
             logger.log( Level.FINE, "Processing Policy #{0} ({1})", new Object[]{ thisPolicyId, thisPolicy.getName() } );
 
@@ -1098,7 +1111,12 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
 
             PolicyCacheEntry pce;
             if ( serverAssertion != null ) {
-                ServerPolicy ServerPolicy = new ServerPolicy( thisPolicy, meta, descendentPolicies, dependentVersions, serverAssertion );
+                ServerPolicy ServerPolicy = new ServerPolicy( thisPolicy, meta, descendentPolicies, dependentVersions, serverAssertion, new Nullary<Collection<Folder>>(){
+                    @Override
+                    public Collection<Folder> call() {
+                        return getFolderPath( thisPolicyId );
+                    }
+                } );
                 pce = new PolicyCacheEntry( thisPolicy, ServerPolicy, null );
             } else {
                 pce = new PolicyCacheEntry( thisPolicy, usedInvalidPolicyId );
@@ -1240,7 +1258,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         final boolean metaTarariWanted = tarariWanted;
         final boolean metaWssInPolicy = wssInPolicy;
         final boolean metaMultipartInPolicy = multipartInPolicy;
-        final String[] metaVariablesUsed = allVarsUsed.toArray(new String[allVarsUsed.size()]);
+        final String[] metaVariablesUsed = allVarsUsed.toArray( new String[allVarsUsed.size()] );
         final VariableMetadata[] metaVariablesSet = allVarsSet.values().toArray(new VariableMetadata[allVarsSet.values().size()]);
         final PolicyHeader policyHeader = new PolicyHeader(policy, policyRevision);
         return new PolicyMetadata() {

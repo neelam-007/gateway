@@ -7,6 +7,9 @@ import java.util.HashSet;
 import java.util.Collections;
 import java.util.StringTokenizer;
 
+import com.l7tech.common.log.HybridDiagnosticContextKeys;
+import com.l7tech.common.log.HybridDiagnosticContextMatcher;
+import com.l7tech.common.log.HybridDiagnosticContextMatcher.MatcherRules;
 import com.l7tech.gateway.common.log.SinkConfiguration;
 
 /**
@@ -20,11 +23,8 @@ abstract class MessageSinkSupport implements MessageSink {
 
     @Override
     public void message( final MessageCategory category, final LogRecord record ) {        
-        if ( record != null ) {
-            if ( isCategoryEnabled( category ) &&
-                 record.getLevel().intValue() >= getThreshold() ) {
-                processMessage( category, record );
-            }
+        if ( record != null && acceptMessage( category, record ) ) {
+            processMessage( category, record );
         }
     }
 
@@ -32,8 +32,9 @@ abstract class MessageSinkSupport implements MessageSink {
 
     MessageSinkSupport( final SinkConfiguration configuration ) {
         this.configuration = configuration;
-        this.threshold = getThreshold( configuration );
+        this.threshold = configuration.getSeverity().toLoggingLevel().intValue();
         this.categories = buildCategories( configuration );
+        this.rules = new MatcherRules(configuration.getFilters(),HybridDiagnosticContextKeys.PREFIX_MATCH_PROPERTIES);
     }
 
     /**
@@ -80,11 +81,11 @@ abstract class MessageSinkSupport implements MessageSink {
      * Exception class used for initialization errors
      */
     static class ConfigurationException extends Exception {
-        public ConfigurationException(String message) {
+        ConfigurationException(String message) {
             super(message);
         }
 
-        public ConfigurationException(String message, Throwable cause) {
+        ConfigurationException(String message, Throwable cause) {
             super(message, cause);
         }
     }
@@ -94,32 +95,14 @@ abstract class MessageSinkSupport implements MessageSink {
     private final SinkConfiguration configuration;
     private final Set<MessageCategory> categories;
     private final int threshold;
+    private final MatcherRules rules;
 
-    /**
-     * Get the threshold for the configuration
-     */
-    private int getThreshold( final SinkConfiguration configuration ) {
-        Level level = Level.WARNING;
-
-        switch ( configuration.getSeverity() ) {
-            case ALL:
-                level = Level.ALL; 
-                break;
-            case CONFIG:
-                level = Level.CONFIG;
-                break;
-            case INFO:
-                level = Level.INFO;
-                break;
-            case WARNING:
-                level = Level.WARNING;
-                break;
-            case SEVERE:
-                level = Level.SEVERE;
-                break;
-        }
-
-        return level.intValue();
+    private boolean acceptMessage( final MessageCategory category,
+                                   final LogRecord record ) {
+        return
+                record.getLevel().intValue() >= getThreshold() &&
+                isCategoryEnabled( category ) &&
+                HybridDiagnosticContextMatcher.matches( rules );
     }
 
     /**

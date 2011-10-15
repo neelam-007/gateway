@@ -1,5 +1,6 @@
 package com.l7tech.server.policy;
 
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -7,6 +8,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.AbstractReferenceCounted;
+import com.l7tech.util.Functions.Nullary;
 import com.l7tech.util.ResourceUtils;
 
 import java.io.IOException;
@@ -34,17 +36,20 @@ public class ServerPolicy extends AbstractReferenceCounted<ServerPolicyHandle> {
                         final PolicyMetadata policyMetadata,
                         final Set<Long> usedPolicyIds,
                         final Map<Long, Integer> dependentVersions,
-                        final ServerAssertion rootAssertion ) {
+                        final ServerAssertion rootAssertion,
+                        final Nullary<Collection<Folder>> folderPathCallback ) {
         if ( policy == null ) throw new IllegalArgumentException("policy must not be null");
         if ( policyMetadata == null ) throw new IllegalArgumentException("policyMetadata must not be null");
         if ( usedPolicyIds == null ) throw new IllegalArgumentException("usedPolicyIds must not be null");
         if ( dependentVersions == null ) throw new IllegalArgumentException("dependentVersions must not be null");
         if ( rootAssertion == null ) throw new IllegalArgumentException("rootAssertion must not be null");
+        if ( folderPathCallback == null ) throw new IllegalArgumentException("folderPathCallback must not be null");
 
         this.serverPolicyMetadata = new Metadata(
                 policy,
                 buildPolicyUniqueIdentifier(policy, dependentVersions, usedPolicyIds),
-                usedPolicyIds);
+                usedPolicyIds,
+                folderPathCallback );
         this.policyMetadata = policyMetadata;
         this.rootAssertion = rootAssertion;
     }
@@ -108,13 +113,16 @@ public class ServerPolicy extends AbstractReferenceCounted<ServerPolicyHandle> {
         private final Policy policy;
         private final PolicyUniqueIdentifier policyUVID;
         private final Set<Long> usedPolicyIds;
+        private final Nullary<Collection<Folder>> folderPathCallback;
 
         private Metadata( final Policy policy,
                           final PolicyUniqueIdentifier puvid,
-                          final Set<Long> usedPolicyIds ) {
+                          final Set<Long> usedPolicyIds,
+                          final Nullary<Collection<Folder>> folderPathCallback ) {
             this.policy = policy;
             this.policyUVID = puvid;
             this.usedPolicyIds = usedPolicyIds;
+            this.folderPathCallback = folderPathCallback;
         }
 
         @Override
@@ -141,6 +149,11 @@ public class ServerPolicy extends AbstractReferenceCounted<ServerPolicyHandle> {
         @Override
         public Map<Long,Integer> getDependentVersions( final boolean includeSelf ) {
             return policyUVID.getUsedPoliciesAndVersions( includeSelf );
+        }
+
+        @Override
+        public Nullary<Collection<Folder>> getFolderPath() {
+            return folderPathCallback;
         }
     }
 }

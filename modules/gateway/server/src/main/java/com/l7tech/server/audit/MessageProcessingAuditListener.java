@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.audit.AuditDetail;
@@ -21,7 +18,6 @@ import org.springframework.context.ApplicationListener;
  * need to ensure flush is called. An easy way to achieve this is to publish a SystemEvent.
  *
  * @author alex
- * @version $Revision$
  */
 public class MessageProcessingAuditListener implements ApplicationListener {
     private final MessageSummaryAuditFactory messageSummaryAuditFactory;
@@ -39,7 +35,7 @@ public class MessageProcessingAuditListener implements ApplicationListener {
         if (event instanceof AuditDetailEvent) {
             AuditDetailEvent auditDetailEvent = (AuditDetailEvent)event;
             //noinspection ThrowableResultOfMethodCallIgnored
-            auditContext.addDetail(auditDetailEvent.getDetail(), source, auditDetailEvent.getException(), auditDetailEvent.getLoggerName());
+            auditContext.addDetail(auditDetailEvent.getDetailWithInfo());
         } else if (event instanceof MessageProcessed) {
             MessageProcessed mp = (MessageProcessed)event;
             auditContext.setCurrentRecord(messageSummaryAuditFactory.makeEvent(mp.getContext(), mp.getStatus()));

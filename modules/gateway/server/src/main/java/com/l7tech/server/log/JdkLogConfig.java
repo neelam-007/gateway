@@ -177,7 +177,9 @@ public class JdkLogConfig {
                         SyspropUtil.getInteger(PARAM_LOG_DEFAULT_COUNT, DEFAULT_COUNT),
                         SyspropUtil.getBoolean(PARAM_LOG_DEFAULT_APPEND, DEFAULT_APPEND),
                         level != 0 ? level : Level.INFO.intValue(),
-                        LogUtils.DEFAULT_LOG_FORMAT_STANDARD) );
+                        LogUtils.DEFAULT_LOG_FORMAT_STANDARD,
+                        null )
+                        );
             } catch ( IOException ioe ) {
                 // don't log while initializing logging, could use system.err?
             }

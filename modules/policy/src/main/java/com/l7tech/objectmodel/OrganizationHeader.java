@@ -48,6 +48,8 @@ public abstract class OrganizationHeader extends GuidEntityHeader implements Ali
         this.isPolicyDisabled = isPolicyDisabled;
     }
 
+    public abstract String getDisplayName();
+
     //PRIVATE
     protected Long folderOid;
     protected Long aliasOid;

@@ -1,35 +1,56 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.log.HybridDiagnosticContextKeys;
+import com.l7tech.console.panels.SinkConfigurationFilterSelectionDialog.FilterContext;
+import com.l7tech.console.panels.SinkConfigurationFilterSelectionDialog.FilterSelection;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.log.SinkConfiguration;
-import static com.l7tech.gateway.common.log.SinkConfiguration.SeverityThreshold;
-import static com.l7tech.gateway.common.log.SinkConfiguration.SinkType;
-import com.l7tech.gui.util.DocumentSizeFilter;
-import com.l7tech.gui.util.InputValidator;
-import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.gui.widgets.TextEntryPanel;
+import com.l7tech.gui.widgets.TextListCellRenderer;
+import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
+import com.l7tech.util.Functions.Binary;
 import com.l7tech.util.InetAddressUtil;
+import com.l7tech.util.Option;
+import static com.l7tech.util.Option.some;
 import com.l7tech.util.Pair;
+import com.l7tech.util.TextUtils;
 import com.l7tech.util.ValidationUtils;
+import static com.l7tech.gateway.common.log.SinkConfiguration.SeverityThreshold;
+import static com.l7tech.gateway.common.log.SinkConfiguration.SinkType;
+
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.text.AbstractDocument;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This is the dialog for updating the properties of a log sink configuration.
  */
 public class SinkConfigurationPropertiesDialog extends JDialog {
-    /** The title for the dialog window */
+
+    private static final Logger logger = Logger.getLogger( SinkConfigurationPropertiesDialog.class.getName() );
+
+    /**
+     * The title for the dialog window
+     */
     private static final String DIALOG_TITLE = "Log Sink Properties";
 
-    /** Resource bundle with default locale */
+    /**
+     * Resource bundle with default locale
+     */
     private ResourceBundle resources = null;
 
     private JPanel contentPane;
@@ -41,7 +62,6 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
     private JTextField descriptionField;
     private JComboBox typeField;
     private JComboBox severityField;
-    private JList categoriesList;
     private JSpinner fileMaxSizeField;
     private JSpinner fileLogCount;
     private JComboBox syslogProtocolField;
@@ -58,17 +78,123 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
     private DefaultListModel syslogHostListModel;
     private JCheckBox syslogSSLClientAuthenticationCheckBox;
     private PrivateKeysComboBox syslogSSLKeystoreComboBox;
-    private JScrollPane syslogHostScrollPane;
     private JButton syslogHostUp;
     private JButton syslogHostDown;
     private JPanel syslogSSLSettingsPanel;
     private JLabel syslogSSLKeystoreLabel;
     private JLabel syslogSSLSettingsLabel;
+    private JButton addFilterButton;
+    private JButton removeFilterButton;
+    private JList filtersList;
 
+    private final FilterContext filterContext;
     private final SinkConfiguration sinkConfiguration;
     private InputValidator inputValidator;
     private int testCount = 0;
     private boolean confirmed = false;
+    private List<FilterInfo> filterList = new ArrayList<FilterInfo>();
+
+    private static abstract class FilterBuilder {
+        private final String typeId;
+        protected FilterBuilder( final String typeId ) {
+            this.typeId = typeId;
+        }
+        protected abstract FilterInfo buildFilterInfo( FilterSelection value );
+        protected FilterInfo buildFilterInfo( final String value ) {
+            return buildFilterInfo(
+                    resolveFilterSelection( value )
+                            .orSome( new FilterSelection( typeId, value, "Unknown '" + value + "'" ) )
+            );
+        }
+        protected Option<FilterSelection> resolveFilterSelection( final String value ) {
+            return some( new FilterSelection( typeId, value, value ) );
+        }
+    }
+
+    private final Map<String,FilterBuilder> filterBuilders = CollectionUtils.<String,FilterBuilder>mapBuilder()
+            .put( HybridDiagnosticContextKeys.SERVICE_ID, new FilterBuilder(HybridDiagnosticContextKeys.SERVICE_ID) {
+                @Override
+                protected FilterInfo buildFilterInfo( final FilterSelection value ) {
+                    return newServiceFilter( value );
+                }
+                @Override
+                protected Option<FilterSelection> resolveFilterSelection( final String value ) {
+                    return filterContext.resolveServiceFilter( value );
+                }
+            } )
+            .put( HybridDiagnosticContextKeys.CLIENT_IP, new FilterBuilder(HybridDiagnosticContextKeys.CLIENT_IP) {
+                @Override
+                protected FilterInfo buildFilterInfo( final FilterSelection value ) {
+                    return newIPAddressFilter( value.getValue() );
+                }
+            } )
+            .put( HybridDiagnosticContextKeys.LOGGER_NAME, new FilterBuilder(HybridDiagnosticContextKeys.LOGGER_NAME) {
+                @Override
+                protected FilterInfo buildFilterInfo( final FilterSelection value ) {
+                    return newLoggerNameFilter( value.getValue() );
+                }
+            } )
+            .put( HybridDiagnosticContextKeys.EMAIL_LISTENER_ID, new FilterBuilder(HybridDiagnosticContextKeys.EMAIL_LISTENER_ID) {
+                @Override
+                protected FilterInfo buildFilterInfo( final FilterSelection value ) {
+                    return newEmailTransportFilter( value );
+                }
+                @Override
+                protected Option<FilterSelection> resolveFilterSelection( final String value ) {
+                    return filterContext.resolveEmailTransportFilter( value );
+                }
+            } )
+            .put( HybridDiagnosticContextKeys.JMS_LISTENER_ID, new FilterBuilder(HybridDiagnosticContextKeys.JMS_LISTENER_ID) {
+                @Override
+                protected FilterInfo buildFilterInfo( final FilterSelection value ) {
+                    return newJMSTransportFilter( value );
+                }
+                @Override
+                protected Option<FilterSelection> resolveFilterSelection( final String value ) {
+                    return filterContext.resolveJmsTransportFilter( value );
+                }
+            } )
+            .put( HybridDiagnosticContextKeys.LISTEN_PORT_ID, new FilterBuilder(HybridDiagnosticContextKeys.LISTEN_PORT_ID) {
+                @Override
+                protected FilterInfo buildFilterInfo( final FilterSelection value ) {
+                    return newListenPortTransportFilter( value );
+                }
+                @Override
+                protected Option<FilterSelection> resolveFilterSelection( final String value ) {
+                    return filterContext.resolveListenPortTransportFilter( value );
+                }
+            } )
+            .put( HybridDiagnosticContextKeys.USER_ID, new FilterBuilder(HybridDiagnosticContextKeys.USER_ID) {
+                @Override
+                protected FilterInfo buildFilterInfo( final FilterSelection value ) {
+                    return newUserFilter( value );
+                }
+                @Override
+                protected Option<FilterSelection> resolveFilterSelection( final String value ) {
+                    return filterContext.resolveUserFilter( value );
+                }
+            } )
+            .put( HybridDiagnosticContextKeys.POLICY_ID, new FilterBuilder(HybridDiagnosticContextKeys.POLICY_ID) {
+                @Override
+                protected FilterInfo buildFilterInfo( final FilterSelection value ) {
+                    return newPolicyFilter( value );
+                }
+                @Override
+                protected Option<FilterSelection> resolveFilterSelection( final String value ) {
+                    return filterContext.resolvePolicyFilter( value );
+                }
+            } )
+            .put( HybridDiagnosticContextKeys.FOLDER_ID, new FilterBuilder(HybridDiagnosticContextKeys.FOLDER_ID) {
+                @Override
+                protected FilterInfo buildFilterInfo( final FilterSelection value ) {
+                    return newFolderFilter( value );
+                }
+                @Override
+                protected Option<FilterSelection> resolveFilterSelection( final String value ) {
+                    return filterContext.resolveFolderFilter( value );
+                }
+            } )
+            .unmodifiableMap();
 
     private static final int ACTION_ADD    = 0;
     private static final int ACTION_REMOVE = 2;
@@ -85,33 +211,23 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
      * @param owner The owner of this dialog window
      * @param sinkConfiguration The SinkConfiguration to read values from and possibly update
      */
-    public SinkConfigurationPropertiesDialog(Frame owner, SinkConfiguration sinkConfiguration) {
-        super(owner, DIALOG_TITLE);
+    public SinkConfigurationPropertiesDialog( final Window owner,
+                                              final SinkConfiguration sinkConfiguration ) {
+        super( owner, DIALOG_TITLE, ModalityType.APPLICATION_MODAL );
+        this.filterContext = new FilterContext();
         this.sinkConfiguration = sinkConfiguration;
         initialize();
     }
 
-    /**
-     * Creates a new instance of SinkConfigurationPropertiesDialog. The fields in the dialog
-     * will be set from the values in the provided SinkConfiguration and if the dialog is
-     * dismissed with the OK button, then the provided SinkConfiguration will be updated with
-     * the values from the fields in this dialog.
-     *
-     * @param owner The owner of this dialog window
-     * @param sinkConfiguration The SinkConfiguration to read values from and possibly update
-     */
-    public SinkConfigurationPropertiesDialog(Dialog owner, SinkConfiguration sinkConfiguration) {
-        super(owner, DIALOG_TITLE);
-        this.sinkConfiguration = sinkConfiguration;
-        initialize();
+    public void selectNameField() {
+        nameField.requestFocus();
+        nameField.selectAll();
     }
-
     /**
      * Loads locale-specific resources: strings, images, etc
      */
     private void initResources() {
-        Locale locale = Locale.getDefault();
-        resources = ResourceBundle.getBundle("com.l7tech.console.resources.SinkConfigurationPropertiesDialog", locale);
+        resources = ResourceBundle.getBundle("com.l7tech.console.resources.SinkConfigurationPropertiesDialog");
     }
 
     /**
@@ -119,25 +235,28 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
      * object.
      */
     private void initialize() {
+        initResources();
+
         initializeBaseFields();
         initializeFileFields();
         initializeSyslogFields();
-        
-        Utilities.setEscKeyStrokeDisposes(this);
+
+        Utilities.setEscKeyStrokeDisposes( this );
 
         // Update all of the fields using the values from SinkConfiguration
         modelToView();
+        enableDisableMain();
         enableDisableTabs();
         enableDisableSyslogSslSettings();
         if (nameField.getText().length() < 1)
             nameField.requestFocusInWindow();
+        Utilities.setMinimumSize(this);
     }
 
     /**
      * Initializes the base settings fields.
      */
     private void initializeBaseFields() {
-        initResources();
 
         setTitle(resources.getString("sinkConfigurationProperties.window.title"));
         inputValidator = new InputValidator(this, resources.getString("sinkConfigurationProperties.window.title"));
@@ -149,12 +268,14 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
 
         // Attach the validator to the OK button
         inputValidator.attachToButton(okButton, new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onOk();
             }
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 dispose();
             }
@@ -165,6 +286,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         typeField.setModel(new DefaultComboBoxModel(SinkType.values()));
         typeField.setRenderer(new Renderers.KeyedResourceRenderer(resources, "baseSettings.type.{0}.text"));
         typeField.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 enableDisableTabs();
             }
@@ -173,23 +295,35 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         severityField.setModel(new DefaultComboBoxModel(SeverityThreshold.values()));
         severityField.setRenderer(new Renderers.KeyedResourceRenderer(resources, "baseSettings.severity.{0}.text"));
 
-        categoriesList.setListData(SinkConfiguration.CATEGORIES_SET.toArray());
-        categoriesList.setCellRenderer(new Renderers.KeyedResourceRenderer(resources, "baseSettings.categories.{0}.text"));
-        inputValidator.addRule(new InputValidator.ValidationRule(){
-            public String getValidationError() {
-                String error = null;
-
-                if ( categoriesList.getSelectedValues().length==0 ) {
-                    return resources.getString("baseSettings.categories.errors.empty");
-                }
-
-                return error;
+        filtersList.addListSelectionListener( new RunOnChangeListener(){
+            @Override
+            protected void run() {
+                enableDisableMain();
             }
-        });
+        } );
+
+        addFilterButton.addActionListener(new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                addFilter();
+            }
+        }));
+
+        removeFilterButton.addActionListener(new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                if ( filtersList.getSelectedValues().length > 0) {
+                    for(Object sel :filtersList.getSelectedValues() )
+                        filterList.remove(sel);
+                    filtersList.setModel( Utilities.listModel( filterList ) );
+                }
+            }
+        }));
 
         // Name field must not be empty and must not be longer than 32 characters
         ((AbstractDocument)nameField.getDocument()).setDocumentFilter(new DocumentSizeFilter(32));
         inputValidator.constrainTextFieldToBeNonEmpty("Name", nameField, new InputValidator.ComponentValidationRule(nameField) {
+            @Override
             public String getValidationError() {
                 if( nameField.getText().trim().length()==0 ) {
                     return resources.getString("baseSettings.name.errors.empty");
@@ -200,10 +334,43 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
                 return null;
             }
         });
-        inputValidator.validateWhenDocumentChanges(nameField);
+        inputValidator.validateWhenDocumentChanges( nameField );
 
         // Description field must not be longer than 1000 characters
         ((AbstractDocument)descriptionField.getDocument()).setDocumentFilter(new DocumentSizeFilter(1000));
+    }
+
+    private void addFilter() {
+        final SinkConfigurationFilterSelectionDialog filterSelectionDialog = new SinkConfigurationFilterSelectionDialog( this, filterContext );
+        DialogDisplayer.display( filterSelectionDialog, new Runnable(){
+            @Override
+            public void run() {
+                boolean added = false;
+                for ( final FilterSelection filterSelection : filterSelectionDialog.getSelections() ) {
+                    final FilterBuilder builder = filterBuilders.get( filterSelection.getTypeId() );
+                    FilterInfo info = null;
+                    if ( builder != null ) {
+                        info = builder.buildFilterInfo( filterSelection );
+                    } else if ( "category".equals( filterSelection.getTypeId() ) ) {
+                        info = newCategoryFilter( filterSelection.getValue() );
+                    }
+
+                    if ( info != null && ! filterList.contains( info ) ) {
+                        filterList.add( info );
+                        added = true;
+                    }
+                }
+                if ( added ) {
+                    Collections.sort( filterList );
+                    SwingUtilities.invokeLater( new Runnable() {
+                        @Override
+                        public void run() {
+                            filtersList.setModel( Utilities.listModel( filterList ) );
+                        }
+                    } );
+                }
+            }
+        } );
     }
 
     /**
@@ -228,6 +395,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
 
         // add validation rule for maximum file use
         inputValidator.addRule(new InputValidator.ValidationRule(){
+            @Override
             public String getValidationError() {
                 String error = null;
 
@@ -259,19 +427,27 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
      * Get the space used for the given sinkConfiguration.
      */
     private long getSpaceUsed( final SinkConfiguration sinkConfiguration ) {
-        long space = 0L;
-
         if ( sinkConfiguration.isEnabled() && SinkConfiguration.SinkType.FILE == sinkConfiguration.getType() ) {
-            try {
-                long limit = Long.parseLong( sinkConfiguration.getProperty( SinkConfiguration.PROP_FILE_MAX_SIZE ) );
-                long count = Long.parseLong( sinkConfiguration.getProperty( SinkConfiguration.PROP_FILE_LOG_COUNT ) );
-
-                return 1024L * limit * count;
-            } catch (NumberFormatException nfe) {
-            }
+            final long limit = getLongProperty( sinkConfiguration, SinkConfiguration.PROP_FILE_MAX_SIZE, 0L );
+            final long count = getLongProperty( sinkConfiguration, SinkConfiguration.PROP_FILE_LOG_COUNT, 0L );
+            return 1024L * limit * count;
         }
 
-        return space;
+        return 0L;
+    }
+
+    private long getLongProperty( final SinkConfiguration sinkConfiguration,
+                                  final String propertyName,
+                                  final long defaultValue ) {
+        long value = defaultValue;
+        try {
+            value = Long.parseLong( sinkConfiguration.getProperty( propertyName ) );
+        } catch (NumberFormatException e) {
+            logger.log(
+                    Level.WARNING,
+                    "Error parsing sink configuration property '"+propertyName+"':" + ExceptionUtils.getMessage( e ) );
+        }
+        return value;
     }
 
     /**
@@ -281,6 +457,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         syslogProtocolField.setModel(new DefaultComboBoxModel(SinkConfiguration.SYSLOG_PROTOCOL_SET.toArray()));
         syslogProtocolField.setRenderer(new Renderers.KeyedResourceRenderer(resources, "syslogSettings.protocol.{0}.text"));
         syslogProtocolField.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 enableDisableSyslogSslSettings();
             }
@@ -313,6 +490,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
 
         // Setup the test button
         inputValidator.attachToButton(syslogTestMessageButton, new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 SinkConfiguration newSinkConfiguration = new SinkConfiguration();
                 viewToModel( newSinkConfiguration );
@@ -343,6 +521,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
 
         // add validator rule for Syslog hosts
         inputValidator.addRule(new InputValidator.ValidationRule() {
+            @Override
             public String getValidationError() {
                 // check for empty host list
                 if (SinkConfiguration.SinkType.SYSLOG.equals(typeField.getSelectedItem()) &&
@@ -355,11 +534,13 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         });
 
         // SSL Keystore combo box
+        syslogSSLKeystoreComboBox.setRenderer( TextListCellRenderer.basicComboBoxRenderer() );
         if (syslogSSLKeystoreComboBox.getModel().getSize() == 0)
             syslogSSLKeystoreComboBox.repopulate();
 
         // SSL client auth checkbox
         syslogSSLClientAuthenticationCheckBox.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
 
                 // enable the keystore combo box based this checkbox
@@ -386,7 +567,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
     }
 
     /**
-     * Get the maximum space for all log configurations (bytes) 
+     * Get the maximum space for all log configurations (bytes)
      */
     private long getMaximumLogFileSize() {
         try {
@@ -396,6 +577,11 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
             // no longer connected to server, just return a value that will validate
             return Long.MAX_VALUE;
         }
+    }
+
+    public void enableDisableMain() {
+        final boolean enableFilterRemove = filtersList.getSelectedValues().length > 0;
+        removeFilterButton.setEnabled( enableFilterRemove );
     }
 
     /**
@@ -448,7 +634,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
      * Updates the dialog fields to match the values from the backing SinkConfiguration.
      */
     private void modelToView() {
-        modelToView(sinkConfiguration);
+        modelToView( sinkConfiguration );
     }
 
     /**
@@ -477,9 +663,9 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         if ( sinkConfiguration.getOid() != SinkConfiguration.DEFAULT_OID ) {
             nameField.setEditable(false);
         }
-        nameField.setText(sinkConfiguration.getName());
+        nameField.setText( sinkConfiguration.getName() );
         enabledField.setSelected(sinkConfiguration.isEnabled());
-        descriptionField.setText(sinkConfiguration.getDescription());
+        descriptionField.setText( sinkConfiguration.getDescription() );
         if ( sinkConfiguration.getType()!=null )
             typeField.setSelectedItem(sinkConfiguration.getType());
         else
@@ -489,23 +675,28 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         else
             severityField.setSelectedItem(SeverityThreshold.INFO);
 
-        categoriesList.clearSelection();
-        boolean selected = false;
-        if(sinkConfiguration.getCategories() != null) {
-            HashSet<String> values = new HashSet<String>();
-            String[] categories = sinkConfiguration.getCategories().split(",");
-            values.addAll(Arrays.<String>asList(categories));
+        filterList.clear();
 
-            for(int i = 0;i < categoriesList.getModel().getSize();i++) {
-                if(values.contains(categoriesList.getModel().getElementAt(i))) {
-                    selected = true;
-                    categoriesList.getSelectionModel().addSelectionInterval(i, i);
+        if( sinkConfiguration.getCategories() != null && !sinkConfiguration.getCategories().isEmpty() ) {
+            String[] categories = sinkConfiguration.getCategories().split(",");
+            for( final String category : categories) {
+                filterList.add( newCategoryFilter( category ) );
+            }
+        }
+
+        if( sinkConfiguration.getFilters() != null ) {
+            for ( final Entry<String,List<String>> entry : sinkConfiguration.getFilters().entrySet() ) {
+                final FilterBuilder builder = filterBuilders.get( entry.getKey() );
+                if ( builder != null ) {
+                    for ( final String value : entry.getValue() ) {
+                        filterList.add( builder.buildFilterInfo( value ) );
+                    }
                 }
             }
         }
-        if (!selected) {
-            categoriesList.setSelectedValue(SinkConfiguration.CATEGORY_GATEWAY_LOGS, true);
-        }
+
+        Collections.sort( filterList );
+        filtersList.setModel( Utilities.listModel( filterList ) );
     }
 
     /**
@@ -518,7 +709,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         fileLogCount.setValue(value == null ? 2 : Integer.parseInt(value));
         value = sinkConfiguration.getProperty(SinkConfiguration.PROP_FILE_FORMAT);
         if(value == null) {
-            fileFormatField.setSelectedItem(SinkConfiguration.FILE_FORMAT_STANDARD);
+            fileFormatField.setSelectedItem( SinkConfiguration.FILE_FORMAT_STANDARD );
         } else {
             fileFormatField.setSelectedItem(value);
         }
@@ -543,9 +734,9 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         value = sinkConfiguration.getProperty(SinkConfiguration.PROP_SYSLOG_FACILITY);
         syslogFacilityField.setValue(value == null ? 1 : new Integer(value));
         value = sinkConfiguration.getProperty(SinkConfiguration.PROP_SYSLOG_LOG_HOSTNAME);
-        syslogLogHostnameField.setSelected(value == null || Boolean.parseBoolean(value));
+        syslogLogHostnameField.setSelected( value == null || Boolean.parseBoolean( value ) );
         value = sinkConfiguration.getProperty(SinkConfiguration.PROP_SYSLOG_CHAR_SET);
-        syslogCharsetField.setSelectedItem(value == null ? "UTF-8" : value);
+        syslogCharsetField.setSelectedItem( value == null ? "UTF-8" : value );
         value = sinkConfiguration.getProperty(SinkConfiguration.PROP_SYSLOG_TIMEZONE);
         syslogTimezoneField.setSelectedItem(value == null ? resources.getString("syslogSettings.timezone.values.useExisting") : value);
         value = sinkConfiguration.getProperty(SinkConfiguration.PROP_SYSLOG_SSL_CLIENTAUTH);
@@ -565,7 +756,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
      * Updates the backing SinkConfiguration with the values from this dialog.
      */
     private void viewToModel() {
-        viewToModel(sinkConfiguration);
+        viewToModel( sinkConfiguration );
     }
 
     /**
@@ -589,28 +780,41 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
     private void viewToModelBase(final SinkConfiguration sinkConfiguration) {
         if ( nameField.isEditable())
             sinkConfiguration.setName(nameField.getText().trim());
-        sinkConfiguration.setEnabled(enabledField.isSelected());
-        sinkConfiguration.setDescription(descriptionField.getText());
+        sinkConfiguration.setEnabled( enabledField.isSelected() );
+        sinkConfiguration.setDescription( descriptionField.getText() );
         sinkConfiguration.setType((SinkType)typeField.getSelectedItem());
         sinkConfiguration.setSeverity((SeverityThreshold)severityField.getSelectedItem());
-        StringBuilder sb = new StringBuilder();
-        for(Object selectedValue : categoriesList.getSelectedValues()) {
-            if(sb.length() > 0) {
-                sb.append(',');
+
+        final Map<String, List<String>> allFilters = Functions.reduce( filterList, new HashMap<String, List<String>>(), new Binary<Map<String, List<String>>,Map<String, List<String>>,FilterInfo>(){
+            @Override
+            public Map<String, List<String>> call( final Map<String, List<String>> stringListMap, final FilterInfo filterInfo ) {
+                final String filterTypeId = filterInfo.getFilterTypeId();
+                final String filterItemId = filterInfo.getFilterItemId();
+
+                List<String> values = stringListMap.get( filterTypeId );
+                if ( values == null ) {
+                    values = new ArrayList<String>();
+                    stringListMap.put( filterTypeId, values );
+                }
+                if ( !values.contains( filterItemId ) ) values.add( filterItemId );
+
+                return stringListMap;
             }
-            sb.append(selectedValue);
-        }
-        sinkConfiguration.setCategories(sb.toString());
+        } );
+
+        final String categories = TextUtils.join( ",", allFilters.remove( "category" ) ).toString();
+        sinkConfiguration.setCategories( categories.isEmpty() ? null : categories );
+        sinkConfiguration.setFilters( allFilters ); // Categories removed above
     }
 
     /**
      * Updates the backing SinkConfiguration with the file settings field values.
      */
     private void viewToModelFile(final SinkConfiguration sinkConfiguration) {
-        sinkConfiguration.setProperty(SinkConfiguration.PROP_FILE_MAX_SIZE, fileMaxSizeField.getValue().toString());
+        sinkConfiguration.setProperty( SinkConfiguration.PROP_FILE_MAX_SIZE, fileMaxSizeField.getValue().toString() );
         sinkConfiguration.setProperty(SinkConfiguration.PROP_FILE_LOG_COUNT, fileLogCount.getValue().toString());
-        sinkConfiguration.setProperty(SinkConfiguration.PROP_FILE_FORMAT, (String)fileFormatField.getSelectedItem());
-        
+        sinkConfiguration.setProperty( SinkConfiguration.PROP_FILE_FORMAT, (String) fileFormatField.getSelectedItem() );
+
         if (!sinkConfiguration.syslogHostList().isEmpty())
             sinkConfiguration.syslogHostList().clear();
     }
@@ -627,7 +831,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
             sinkConfiguration.addSyslogHostEntry(syslogHostListModel.getElementAt(i).toString());
         }
 
-        sinkConfiguration.setProperty(SinkConfiguration.PROP_SYSLOG_FACILITY, syslogFacilityField.getValue().toString());
+        sinkConfiguration.setProperty( SinkConfiguration.PROP_SYSLOG_FACILITY, syslogFacilityField.getValue().toString() );
 
         if (syslogLogHostnameField.isSelected()) {
             sinkConfiguration.setProperty(SinkConfiguration.PROP_SYSLOG_LOG_HOSTNAME, Boolean.TRUE.toString());
@@ -655,9 +859,10 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         }
     }
 
+    @Override
     public void setVisible(boolean b) {
         if (b && !isVisible()) confirmed = false;
-        super.setVisible(b);
+        super.setVisible( b );
     }
 
     private void onOk() {
@@ -671,22 +876,111 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         return confirmed;
     }
 
-    public static void main(String[] args) {
-        Frame f = new JFrame();
-        f.setVisible(true);
-        SinkConfiguration sc = new SinkConfiguration();
-        SinkConfigurationPropertiesDialog s = new SinkConfigurationPropertiesDialog(f, sc);
-        s.setVisible(true);
-        s.dispose();
-        f.dispose();
+    private FilterInfo newCategoryFilter( final String categoryId ) {
+        return new FilterInfo( "category", "Category", categoryId, resources.getString( "baseSettings.categories." + categoryId + ".text" ) );
     }
 
-    private void createUIComponents() {
+    private FilterInfo newLoggerNameFilter( final String loggerName ) {
+        return new FilterInfo( "logger-name", "Package", loggerName, loggerName );
     }
 
-    public void selectNameField() {
-        nameField.requestFocus();
-        nameField.selectAll();
+    private FilterInfo newServiceFilter( final FilterSelection filterSelection ) {
+        return new FilterInfo( HybridDiagnosticContextKeys.SERVICE_ID, "Service", filterSelection.getValue(), filterSelection.getDisplayValue() );
+    }
+
+    private FilterInfo newUserFilter( final FilterSelection filterSelection ) {
+        return new FilterInfo( HybridDiagnosticContextKeys.USER_ID, "User", filterSelection.getValue(), filterSelection.getDisplayValue() );
+    }
+
+    private FilterInfo newEmailTransportFilter( final FilterSelection filterSelection ) {
+        return new FilterInfo( HybridDiagnosticContextKeys.EMAIL_LISTENER_ID, "Transport", filterSelection.getValue(), "Email/" + filterSelection.getDisplayValue() );
+    }
+
+    private FilterInfo newJMSTransportFilter( final FilterSelection filterSelection ) {
+        return new FilterInfo( HybridDiagnosticContextKeys.JMS_LISTENER_ID, "Transport", filterSelection.getValue(), "JMS/" + filterSelection.getDisplayValue() );
+    }
+
+    private FilterInfo newListenPortTransportFilter( final FilterSelection filterSelection ) {
+        return new FilterInfo( HybridDiagnosticContextKeys.LISTEN_PORT_ID, "Transport", filterSelection.getValue(), "Listen Port/" + filterSelection.getDisplayValue() );
+    }
+
+    private FilterInfo newIPAddressFilter( final String ipPattern ) {
+        return new FilterInfo( HybridDiagnosticContextKeys.CLIENT_IP, "IP", ipPattern, ipPattern );
+    }
+
+    private FilterInfo newPolicyFilter( final FilterSelection filterSelection ) {
+        return new FilterInfo( HybridDiagnosticContextKeys.POLICY_ID, "Policy", filterSelection.getValue(), filterSelection.getDisplayValue() );
+    }
+
+    private FilterInfo newFolderFilter( final FilterSelection filterSelection ) {
+        return new FilterInfo( HybridDiagnosticContextKeys.FOLDER_ID, "Folder", filterSelection.getValue(), filterSelection.getDisplayValue() );
+    }
+
+    private static final class FilterInfo implements Comparable<FilterInfo> {
+        private final String filterTypeId;
+        private final String filterTypeName;
+        private final String filterItemId;
+        private final String filterItemName;
+
+        private FilterInfo( @NotNull final String filterTypeId,
+                            @NotNull final String filterTypeName,
+                            @NotNull final String filterItemId,
+                            @NotNull final String filterItemName ) {
+            this.filterTypeId = filterTypeId;
+            this.filterTypeName = filterTypeName;
+            this.filterItemId = filterItemId;
+            this.filterItemName = filterItemName;
+        }
+
+        public String getFilterItemId() {
+            return filterItemId;
+        }
+
+        public String getFilterItemName() {
+            return filterItemName;
+        }
+
+        public String getFilterTypeId() {
+            return filterTypeId;
+        }
+
+        public String getFilterTypeName() {
+            return filterTypeName;
+        }
+
+        public String toString() {
+            return filterTypeName + "=" + filterItemName;
+        }
+
+        @Override
+        public int compareTo( final FilterInfo o ) {
+            return toString().toLowerCase().compareTo( o.toString().toLowerCase() );
+        }
+
+        @SuppressWarnings({ "RedundantIfStatement" })
+        @Override
+        public boolean equals( final Object o ) {
+            if ( this == o ) return true;
+            if ( o == null || getClass() != o.getClass() ) return false;
+
+            final FilterInfo that = (FilterInfo) o;
+
+            if ( !filterItemId.equals( that.filterItemId ) ) return false;
+            if ( !filterItemName.equals( that.filterItemName ) ) return false;
+            if ( !filterTypeId.equals( that.filterTypeId ) ) return false;
+            if ( !filterTypeName.equals( that.filterTypeName ) ) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = filterTypeId.hashCode();
+            result = 31 * result + filterTypeName.hashCode();
+            result = 31 * result + filterItemId.hashCode();
+            result = 31 * result + filterItemName.hashCode();
+            return result;
+        }
     }
 
     public static class SyslogHostPanel extends TextEntryPanel {
@@ -724,23 +1018,24 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
 
         private final int listenerAction;
 
-        public SyslogHostListActionListener(int action) {
+        protected SyslogHostListActionListener(int action) {
 
             this.listenerAction = action;
         }
 
+        @Override
         public void actionPerformed(ActionEvent e) {
 
             switch(listenerAction) {
-                case ACTION_ADD:    doAdd(e); break;
-                case ACTION_REMOVE: doRemove(e); break;
-                case ACTION_EDIT:   doEdit(e); break;
-                case ACTION_UP:     doUp(e); break;
-                case ACTION_DOWN:   doDown(e); break;
+                case ACTION_ADD:    doAdd(); break;
+                case ACTION_REMOVE: doRemove(); break;
+                case ACTION_EDIT:   doEdit(); break;
+                case ACTION_UP:     doUp(); break;
+                case ACTION_DOWN:   doDown(); break;
             }
         }
 
-        void doAdd(ActionEvent e) {
+        void doAdd() {
             // open a dialog box
             OkCancelDialog dialog = OkCancelDialog.createOKCancelDialog(
                     getRootPane(), "Add Syslog Host", true, new SyslogHostPanel());
@@ -756,7 +1051,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
             }
         }
 
-        void doRemove(ActionEvent e) {
+        void doRemove() {
             // remove value to model
             Object val = syslogHostList.getSelectedValue();
             if (val != null) {
@@ -764,7 +1059,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
             }
         }
 
-        void doEdit(ActionEvent e) {
+        void doEdit() {
             if (syslogHostList.getSelectedValue() != null) {
                 // open a dialog box
                 int selected = syslogHostList.getSelectedIndex();
@@ -784,19 +1079,19 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
             }
         }
 
-        void doUp(ActionEvent e) {
+        void doUp() {
             if (syslogHostList.getSelectedValue() != null) {
                 int selected = syslogHostList.getSelectedIndex();
                 if (selected > 0) {
                     Object obj = syslogHostListModel.getElementAt(selected);
                     syslogHostListModel.removeElementAt(selected);
                     syslogHostListModel.add(selected-1, obj);
-                    syslogHostList.setSelectedIndex(selected-1);
-                }
+                      syslogHostList.setSelectedIndex(selected-1);
+              }
             }
         }
 
-        void doDown(ActionEvent e) {
+        void doDown() {
             if (syslogHostList.getSelectedValue() != null) {
                 int selected = syslogHostList.getSelectedIndex();
                 if (selected < syslogHostListModel.size()-1) {

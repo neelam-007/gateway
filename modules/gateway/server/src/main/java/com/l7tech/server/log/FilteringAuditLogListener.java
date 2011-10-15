@@ -1,5 +1,7 @@
 package com.l7tech.server.log;
 
+import com.l7tech.common.log.HybridDiagnosticContext;
+import com.l7tech.common.log.HybridDiagnosticContextKeys;
 import com.l7tech.gateway.common.audit.AdminAuditRecord;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.audit.AuditRecord;
@@ -219,6 +221,7 @@ public class FilteringAuditLogListener implements AuditLogListener, PropertyChan
      * Pass the given record to the sink as an audit message
      */
     private void processMessage(final LogRecord record) {
+        HybridDiagnosticContext.put( HybridDiagnosticContextKeys.LOGGER_NAME, record.getLoggerName() );
         sink.message(MessageCategory.AUDIT, record);
     }
 

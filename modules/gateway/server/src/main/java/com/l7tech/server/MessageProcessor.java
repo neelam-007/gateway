@@ -1,10 +1,8 @@
-/*
- * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.server;
 
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpMethod;
+import com.l7tech.common.log.HybridDiagnosticContext;
 import com.l7tech.common.mime.MimeBody;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.protocol.SecureSpanConstants;
@@ -15,6 +13,7 @@ import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceStatistics;
 import com.l7tech.message.*;
+import static com.l7tech.objectmodel.EntityUtil.id;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -31,6 +30,8 @@ import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.MessageProcessed;
 import com.l7tech.server.event.MessageReceived;
+import static com.l7tech.common.log.HybridDiagnosticContextKeys.FOLDER_ID;
+import static com.l7tech.common.log.HybridDiagnosticContextKeys.SERVICE_ID;
 import com.l7tech.server.log.TrafficLogger;
 import com.l7tech.server.message.HttpSessionPolicyContextCache;
 import com.l7tech.server.message.PolicyContextCache;
@@ -49,6 +50,7 @@ import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.util.*;
+import static com.l7tech.util.Functions.map;
 import com.l7tech.xml.InvalidDocumentSignatureException;
 import com.l7tech.xml.MessageNotSoapException;
 import com.l7tech.xml.SoapFaultLevel;
@@ -67,10 +69,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Set;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -611,6 +610,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
             auditor.logAndAudit(MessageProcessingMessages.RESOLVED_SERVICE, service.getName(), String.valueOf(service.getOid()));
             context.setService(service);
+            HybridDiagnosticContext.put( SERVICE_ID, service.getId() );
+            HybridDiagnosticContext.put( FOLDER_ID, map( policyCache.getFolderPath( service.getPolicy().getOid() ), id() ));
             return AssertionStatus.NONE;
         }
 

@@ -12,6 +12,10 @@ import com.l7tech.server.EntityManagerStub;
 import com.l7tech.server.folder.FolderManager;
 
 /** @author alex */
+
+/**
+ * TODO [steve] move to com.l7tech.server.folder when development in logging branch is complete
+ */
 public class FolderManagerStub extends EntityManagerStub<Folder, FolderHeader> implements FolderManager {
 
     public FolderManagerStub() {

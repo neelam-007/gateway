@@ -8,7 +8,6 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
 
-
 /**
  * Represents a service/policy folder.
  */
@@ -20,6 +19,34 @@ public class Folder extends NamedEntityImp implements HasFolder {
     public Folder(String name, Folder parentFolder) {
         this._name = name;
         this.parentFolder = parentFolder;
+    }
+
+    /**
+     * Create a copy of the given folder.
+     *
+     * <p>This will copy the identity of the orginal, if you don't want this
+     * you will need to reset the id and version.</p>
+     *
+     * @param folder The policy to duplicate.
+     */
+    public Folder(final Folder folder) {
+        super(folder);
+        this.parentFolder = folder.getFolder();
+    }
+
+    /**
+     * Create a copy of the given folder.
+     *
+     *
+     * <p>This will copy the identity of the orginal, if you don't want this
+     * you will need to reset the id and version.</p>
+     *
+     * @param folder The policy to duplicate.
+     * @param readOnly True for a read-only copy
+     */
+    public Folder( final Folder folder, final boolean readOnly ) {
+        this( folder );
+        if (readOnly) this.lock();
     }
 
     @Deprecated // For Serialization and persistence only
@@ -41,26 +68,15 @@ public class Folder extends NamedEntityImp implements HasFolder {
     @Override
     @Deprecated // For Serialization and persistence only; don't want exceptions thrown, like the alternative reParent() does
     public void setFolder(Folder parentFolder) {
+        checkLocked();
         this.parentFolder = parentFolder;
     }
 
     public void reParent(Folder parentFolder) throws InvalidParentFolderException {
+        checkLocked();
         if (parentFolder.getOid()==getOid() || isParentOf(parentFolder))
             throw new InvalidParentFolderException("The destination folder is a subfolder of the source folder");
         this.parentFolder = parentFolder;
-    }
-
-    /**
-     * Create a copy of the given policy.
-     *
-     * <p>This will copy the identity of the orginal, if you don't want this
-     * you will need to reset the id and version.</p>
-     *
-     * @param folder The policy to duplicate.
-     */
-    public Folder(final Folder folder) {
-        super(folder);
-        this.parentFolder = folder.getFolder();
     }
 
     /**

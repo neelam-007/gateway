@@ -58,12 +58,19 @@ INSERT INTO cluster_properties
 ALTER TABLE internal_user ADD COLUMN properties mediumtext default NULL;
 
 --
--- Update Administrator / Operator and Manage Log Sinks roles to permit log viewing
+-- Update Administrator / Operator and Manage Log Sinks roles to permit log viewing / filtering
 --
 INSERT INTO rbac_permission VALUES (-105, 0, -100, 'OTHER', 'log-viewer', 'LOG_SINK');
 INSERT INTO rbac_permission VALUES (-152, 0, -150, 'OTHER', 'log-viewer', 'LOG_SINK');
 INSERT INTO rbac_permission VALUES (-805,0,-800,'READ',NULL,'CLUSTER_INFO');
 INSERT INTO rbac_permission VALUES (-806,0,-800,'OTHER','log-viewer','LOG_SINK');
+INSERT INTO rbac_permission VALUES (-807,0,-800,'READ',NULL,'SSG_CONNECTOR');
+INSERT INTO rbac_permission VALUES (-808,0,-800,'READ',NULL,'SERVICE');
+INSERT INTO rbac_permission VALUES (-809,0,-800,'READ',NULL,'FOLDER');
+INSERT INTO rbac_permission VALUES (-810,0,-800,'READ',NULL,'JMS_ENDPOINT');
+INSERT INTO rbac_permission VALUES (-811,0,-800,'READ',NULL,'USER');
+INSERT INTO rbac_permission VALUES (-812,0,-800,'READ',NULL,'ID_PROVIDER_CONFIG');
+INSERT INTO rbac_permission VALUES (-813,0,-800,'READ',NULL,'POLICY');
 
 --
 -- Register upgrade task to create log viewing roles

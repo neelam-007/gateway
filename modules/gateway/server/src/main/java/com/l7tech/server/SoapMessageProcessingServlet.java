@@ -1,6 +1,7 @@
 package com.l7tech.server;
 
 import com.l7tech.common.http.CookieUtils;
+import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.util.Config;
 import com.l7tech.util.InetAddressUtil;
@@ -34,6 +35,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.soap.SoapVersion;
+import static java.util.Collections.list;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -43,6 +45,7 @@ import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletInputStream;
 import javax.servlet.ServletOutputStream;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.*;
 import javax.xml.soap.SOAPConstants;
 import java.io.IOException;
@@ -51,6 +54,8 @@ import java.io.OutputStream;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -67,10 +72,12 @@ import static com.l7tech.server.GatewayFeatureSets.SERVICE_HTTP_MESSAGE_INPUT;
  * The name of this class has not been accurate since non-SOAP web services were added in SecureSpan version 3.0.
  */
 public class SoapMessageProcessingServlet extends HttpServlet {
-    public static final String DEFAULT_CONTENT_TYPE = XmlUtil.TEXT_XML + "; charset=utf-8";
-    public static final String SOAP_1_2_CONTENT_TYPE = SOAPConstants.SOAP_1_2_CONTENT_TYPE + "; charset=utf-8";
-    public static final String PARAM_POLICYSERVLET_URI = "PolicyServletUri";
-    public static final String DEFAULT_POLICYSERVLET_URI = "/policy/disco?serviceoid=";
+    private static final String DEFAULT_CONTENT_TYPE = XmlUtil.TEXT_XML + "; charset=utf-8";
+    private static final Charset DEFAULT_CONTENT_ENCODING = Charsets.UTF8;
+    private static final String SOAP_1_2_CONTENT_TYPE = SOAPConstants.SOAP_1_2_CONTENT_TYPE + "; charset=utf-8";
+    private static final Charset SOAP_1_2_CONTENT_ENCODING = Charsets.UTF8;
+    private static final String PARAM_POLICYSERVLET_URI = "PolicyServletUri";
+    private static final String DEFAULT_POLICYSERVLET_URI = "/policy/disco?serviceoid=";
 
     private static final String GZIP_REQUESTS_FORBIDDEN_SOAP_FAULT = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                                                                      "    <soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
@@ -145,8 +152,15 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             return;
         }
 
+        if ( logger.isLoggable( Level.FINE ) ) {
+            logger.log( Level.FINE, "HTTP request URI [{0}]", new Object[]{ hrequest.getRequestURI() } );
+            for ( final String headerName : safeList(hrequest.getHeaderNames()) ) {
+                logger.log( Level.FINE, "HTTP request header [{0}]={1}", new Object[]{headerName, safeList(hrequest.getHeaders( headerName ))} );
+            }
+        }
+
         GZIPInputStream gis = null;
-        String maybegzipencoding = hrequest.getHeader("content-encoding");
+        String maybegzipencoding = hrequest.getHeader(HttpConstants.HEADER_CONTENT_ENCODING);
         boolean gzipEncodedTransaction = false;
         if (maybegzipencoding != null) { // case of value ?
             if (maybegzipencoding.contains("gzip")) {
@@ -161,7 +175,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                         responseStream = hresponse.getOutputStream();
                         hresponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                         hresponse.setContentType(DEFAULT_CONTENT_TYPE);
-                        responseStream.write(soapFault.getBytes(Charsets.UTF8));
+                        responseStream.write(soapFault.getBytes(DEFAULT_CONTENT_ENCODING));
                     } finally {
                         if(responseStream != null) responseStream.close();
                     }
@@ -223,8 +237,8 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 request.initialize(stashManager, ctype, hrequest.getInputStream(),maxBytes);
             }
 
-            final long hardwiredServiceOid = connector.getLongProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, -1);
-            if (hardwiredServiceOid != -1) {
+            final long hardwiredServiceOid = connector.getLongProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, -1L );
+            if (hardwiredServiceOid != -1L ) {
                 request.attachKnob(HasServiceOid.class, new HasServiceOidImpl(hardwiredServiceOid));
             }
 
@@ -232,7 +246,9 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             HttpServletRequestKnob reqKnob = new HttpServletRequestKnob(new LazyInputStreamServletRequestWrapper(hrequest, new MimeKnobInputStreamHolder(mk)));
             request.attachHttpRequestKnob(reqKnob);
 
-            final HttpServletResponseKnob respKnob = new HttpServletResponseKnob(hresponse);
+            final HttpServletResponseKnob respKnob = logger.isLoggable( Level.FINE ) ?
+                    new HttpServletResponseKnob( new DebugHttpServletResponse( hresponse, logger ) ) :
+                    new HttpServletResponseKnob(hresponse);
             response.attachHttpResponseKnob(respKnob);
 
             // Process message
@@ -294,21 +310,20 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
                 // Transmit the response and return
                 hresponse.setStatus(routeStat);
-                String[] ct = response.getHttpResponseKnob().getHeaderValues("content-type");
+                String[] ct = response.getHttpResponseKnob().getHeaderValues(HttpConstants.HEADER_CONTENT_TYPE);
                 if (ct == null || ct.length <= 0) {
                     final ContentTypeHeader mimeKnobCt = response.getMimeKnob().getOuterContentType();
                     final String toset = mimeKnobCt == ContentTypeHeader.NONE ? null : mimeKnobCt.getFullValue();
                     hresponse.setContentType(toset);
                     if (toset == null) {
                         // Omit content length if no content type
-                        hresponse.setHeader("content-length", null);
+                        hresponse.setHeader(HttpConstants.HEADER_CONTENT_LENGTH, null);
                     }
                 }
                 OutputStream responseos = hresponse.getOutputStream();
                 if (gzipEncodedTransaction) {
-                    //logger.info("Compression #3");
                     logger.fine("zipping response back to requester");
-                    hresponse.setHeader("content-encoding", "gzip");
+                    hresponse.setHeader(HttpConstants.HEADER_CONTENT_ENCODING, "gzip");
                     responseos = new GZIPOutputStream(responseos);
                 }
                 boolean destroyAsRead = !context.isAuditSaveResponse();
@@ -420,7 +435,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     }
 
     private String makePolicyUrl(HttpServletRequest hreq, long oid) {
-        StringBuffer policyUrl = new StringBuffer(hreq.getScheme());
+        StringBuilder policyUrl = new StringBuilder( hreq.getScheme() );
         policyUrl.append("://");
         policyUrl.append(InetAddressUtil.getHostForUrl(hreq.getServerName()));
         policyUrl.append(":");
@@ -510,10 +525,10 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 hresp.setContentType(contentType);
             } else if(context.getService() != null && context.getService().getSoapVersion() == SoapVersion.SOAP_1_2) {
                 hresp.setContentType(SOAP_1_2_CONTENT_TYPE);
-                faultEncoding = Charsets.UTF8;
+                faultEncoding = SOAP_1_2_CONTENT_ENCODING;
             } else {
                 hresp.setContentType(DEFAULT_CONTENT_TYPE);
-                faultEncoding = Charsets.UTF8;
+                faultEncoding = DEFAULT_CONTENT_ENCODING;
             }
             hresp.setStatus(httpStatus);
 
@@ -581,6 +596,13 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         }
     }
 
+    @SuppressWarnings({ "unchecked" })
+    private Iterable<String> safeList( final Enumeration enumeration ) {
+        return enumeration == null ?
+                Collections.<String>emptyList() :
+                list( (Enumeration<String>) enumeration );
+    }
+
     private static interface InputStreamHolder {
         InputStream getInputStream() throws IOException;
     }
@@ -612,6 +634,113 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 return mk.getEntireMessageBodyAsInputStream();
             } catch (NoSuchPartException e) {
                 throw (IOException)new IOException(ExceptionUtils.getMessage(e)).initCause(e);
+            }
+        }
+    }
+
+    /**
+     * HTTP Servlet response wrapper with debug logging for headers and status.
+     */
+    private static class DebugHttpServletResponse extends HttpServletResponseWrapper {
+        private final Logger logger;
+
+        private DebugHttpServletResponse( final HttpServletResponse response,
+                                          final Logger logger ) {
+            super( response );
+            this.logger = logger;
+        }
+
+        /**
+         * Don't allow response to be changed
+         */
+        @Override
+        public void setResponse( final ServletResponse response ) {
+        }
+
+        /**
+         * Don't allow response to be unwrapped
+         */
+        @Override
+        public ServletResponse getResponse() {
+            return this;
+        }
+
+        @Override
+        public void setStatus( final int sc ) {
+            logStatus( sc );
+            super.setStatus( sc );
+        }
+
+        @Override
+        public void setStatus( final int sc, final String sm ) {
+            logStatus( sc );
+            super.setStatus( sc, sm );
+        }
+
+        @Override
+        public void addCookie( final Cookie cookie ) {
+            logCookie(cookie);
+            super.addCookie( cookie );
+        }
+
+        @Override
+        public void addDateHeader( final String name, final long date ) {
+            logAddHeader( name, Long.toString( date ) );
+            super.addDateHeader( name, date );
+        }
+
+        @Override
+        public void addHeader( final String name, final String value ) {
+            logAddHeader( name, value );
+            super.addHeader( name, value );
+        }
+
+        @Override
+        public void addIntHeader( final String name, final int value ) {
+            logAddHeader( name, Integer.toString( value ) );
+            super.addIntHeader( name, value );
+        }
+
+        @Override
+        public void setIntHeader( final String name, final int value ) {
+            logSetHeader( name, Integer.toString(value) );
+            super.setIntHeader( name, value );
+        }
+
+        @Override
+        public void setHeader( final String name, final String value ) {
+            logSetHeader( name, value );
+            super.setHeader( name, value );
+        }
+
+        @Override
+        public void setDateHeader( final String name, final long date ) {
+            logSetHeader( name, Long.toString(date) );
+            super.setDateHeader( name, date );
+        }
+
+        private void logStatus( final int statusCode ) {
+            log( "HTTP response status [{0}]", statusCode );
+        }
+
+        private void logCookie( final Cookie cookie ) {
+            if ( cookie != null ) {
+                log( "HTTP response cookie [{0}]=[{1}]", cookie.getName(), cookie.getValue() );
+            }
+        }
+        private void logAddHeader( final String name,
+                                   final String value ) {
+            log( "HTTP response header added [{0}]=[{1}]", name, value );
+        }
+
+        private void logSetHeader( final String name,
+                                   final String value ) {
+            log( "HTTP response header set [{0}]=[{1}]", name, value );
+        }
+
+        private void log( final String message, final Object... params ) {
+            if ( logger.isLoggable( Level.FINE ) ) {
+                logger.log( Level.FINE, message, params );
             }
         }
     }

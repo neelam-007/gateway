@@ -1,7 +1,9 @@
 package com.l7tech.server.audit;
 
+import com.l7tech.common.log.HybridDiagnosticContext;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.*;
+import com.l7tech.gateway.common.audit.AuditDetailEvent.AuditDetailWithInfo;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -12,6 +14,7 @@ import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions.Nullary;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.util.Pair;
 
@@ -36,9 +39,8 @@ import java.util.logging.Logger;
  * minimum threshold; they are always persisted.
  *
  * @see ServerConfig#getProperty(String)
- * @see ServerConfig#PARAM_AUDIT_MESSAGE_THRESHOLD
- * @see ServerConfig#PARAM_AUDIT_MESSAGE_THRESHOLD
-
+ * @see ServerConfigParams#PARAM_AUDIT_ADMIN_THRESHOLD
+ * @see ServerConfigParams#PARAM_AUDIT_MESSAGE_THRESHOLD
  * @see MessageSummaryAuditRecord
  * @see AdminAuditRecord
  * @see SystemAuditRecord
@@ -85,19 +87,20 @@ public class AuditContextImpl implements AuditContext {
 
     @Override
     public void addDetail(AuditDetail detail, Object source) {
-        addDetail(detail, source, null, null);
+        addDetail( new AuditDetailWithInfo( source, detail, null, null ));
     }
 
     @Override
-    public void addDetail(AuditDetail detail, Object source, Throwable thrown, String loggerName) {
-        if (detail == null) throw new NullPointerException();
+    public void addDetail( final AuditDetailWithInfo detailWithInfo ) {
+        if (detailWithInfo == null) throw new NullPointerException();
+        final AuditDetail detail = detailWithInfo.getDetail();
 
         AuditDetailMessage message = MessagesUtil.getAuditDetailMessageById(detail.getMessageId());
         Level severity = message==null ? null : message.getLevel();
         if(severity == null) throw new RuntimeException("Cannot find the message (id=" + detail.getMessageId() + ")" + " in the Message Map.");
         detail.setOrdinal(ordinal++);
         // set the ordinal (used to resolve the sequence as the time stamp in ms cannot resolve the order of the messages)
-        getDetailList(source).add(new AuditDetailWithInfo(source, detail, thrown, loggerName));
+        getDetailList(detailWithInfo.getSource()).add(detailWithInfo);
         if(getUseAssociatedLogsThreshold() && severity.intValue() > highestLevelYetSeen.intValue()) {
             highestLevelYetSeen = severity;
         }
@@ -140,7 +143,7 @@ public class AuditContextImpl implements AuditContext {
         Set<AuditDetailMessage.Hint> hints = new HashSet<AuditDetailMessage.Hint>();
         for (List<AuditDetailWithInfo> list : details.values()) {
             for (AuditDetailWithInfo detailWithInfo : list) {
-                AuditDetailMessage message = MessagesUtil.getAuditDetailMessageById(detailWithInfo.detail.getMessageId());
+                AuditDetailMessage message = MessagesUtil.getAuditDetailMessageById(detailWithInfo.getDetail().getMessageId());
                 Set<AuditDetailMessage.Hint> dHints = message==null ? null : message.getHints();
                 if (dHints != null) {
                     hints.addAll(dHints);
@@ -212,7 +215,7 @@ public class AuditContextImpl implements AuditContext {
             /*
              * 5.0 Audit Log Formatter will be passed into the listener
              */
-            AuditLogFormatter formatter = new AuditLogFormatter(logFormatContextVariables);
+            final AuditLogFormatter formatter = new AuditLogFormatter(logFormatContextVariables);
 
             currentRecord.setLevel(highestLevelYetSeen);
             listener.notifyRecordFlushed(currentRecord, formatter, true);
@@ -220,13 +223,13 @@ public class AuditContextImpl implements AuditContext {
             Set<AuditDetail> sortedDetailsToSave = new TreeSet<AuditDetail>(new Comparator<AuditDetail>() {
                 @Override
                 public int compare(AuditDetail o1, AuditDetail o2) {
-                    return new Integer(o1.getOrdinal()).compareTo(new Integer(o2.getOrdinal()));
+                    return new Integer(o1.getOrdinal()).compareTo( o2.getOrdinal() );
                 }
             });
             for (List<AuditDetailWithInfo> list : details.values()) {
                 for (int i = list.size()-1 ; i>=0 ; i-- ){
-                    AuditDetailWithInfo detailWithInfo = list.get(i);
-                    int mid = detailWithInfo.detail.getMessageId();
+                    final AuditDetailWithInfo detailWithInfo = list.get(i);
+                    int mid = detailWithInfo.getDetail().getMessageId();
 
                     final Pair<Boolean,AuditDetailMessage> pair = MessagesUtil.getAuditDetailMessageByIdWithFilter(mid);
                     if(!pair.left){
@@ -242,22 +245,28 @@ public class AuditContextImpl implements AuditContext {
                     final Level severity = message.getLevel();
                     if(severity.intValue() >= getAssociatedLogsThreshold().intValue()) {
                         // Call even if not saving
-                        detailWithInfo.detail.setAuditRecord(currentRecord);
+                        detailWithInfo.getDetail().setAuditRecord(currentRecord);
 
-                        if (detailWithInfo.detail instanceof ExtendedAuditDetail) {
-                            ExtendedAuditDetail extendedAuditDetail = (ExtendedAuditDetail) detailWithInfo.detail;
+                        if (detailWithInfo.getDetail() instanceof ExtendedAuditDetail) {
+                            ExtendedAuditDetail extendedAuditDetail = (ExtendedAuditDetail) detailWithInfo.getDetail();
                             if (!extendedAuditDetail.shouldSave()) continue; // we don't want to save this.
                         }
 
-                        sortedDetailsToSave.add(detailWithInfo.detail);
+                        sortedDetailsToSave.add(detailWithInfo.getDetail());
 
-                        listener.notifyDetailFlushed(
-                                getSource(detailWithInfo.source, "com.l7tech.server.audit"),
-                                detailWithInfo.loggerName,
-                                message,
-                                detailWithInfo.detail.getParams(),
-                                formatter,
-                                detailWithInfo.exception);
+                        HybridDiagnosticContext.doWithContext( detailWithInfo.getContext(), new Nullary<Void>(){
+                            @Override
+                            public Void call() {
+                                listener.notifyDetailFlushed(
+                                        getSource(detailWithInfo.getSource(), "com.l7tech.server.audit"),
+                                        detailWithInfo.getLoggerName(),
+                                        message,
+                                        detailWithInfo.getDetail().getParams(),
+                                        formatter,
+                                        detailWithInfo.getException());
+                                return null;
+                            }
+                        } );
                     }
                 }
             }
@@ -341,7 +350,7 @@ public class AuditContextImpl implements AuditContext {
                             Component.GW_AUDIT_SYSTEM,
                             AuditClusterPropertiesChecker.AUDIT_SINK_FALL_BACK_WARNING,
                             false,
-                            0,
+                            0L,
                             null,
                             null,
                             "Audit Sink Properties Evaluation",
@@ -363,14 +372,14 @@ public class AuditContextImpl implements AuditContext {
 
         //check audit message size
         if( rec instanceof MessageSummaryAuditRecord){
-            if(auditRecordManager.getMessageLimitSize() > 0 ){
+            if(auditRecordManager.getMessageLimitSize() > 0L ){
                 MessageSummaryAuditRecord messageSummaryAuditRecord = (MessageSummaryAuditRecord)rec;
                 if(messageSummaryAuditRecord.getRequestXml()!=null  &&
-                        messageSummaryAuditRecord.getRequestXml().length() > auditRecordManager.getMessageLimitSize()){
+                        (long) messageSummaryAuditRecord.getRequestXml().length() > auditRecordManager.getMessageLimitSize()){
                     messageSummaryAuditRecord.setRequestXml(MESSAGE_TOO_LARGE);
                 }
                 if(messageSummaryAuditRecord.getResponseXml()!=null &&
-                        messageSummaryAuditRecord.getResponseXml().length() > auditRecordManager.getMessageLimitSize()){
+                        (long) messageSummaryAuditRecord.getResponseXml().length() > auditRecordManager.getMessageLimitSize()){
                     messageSummaryAuditRecord.setResponseXml(MESSAGE_TOO_LARGE);
                 }
             }
@@ -391,7 +400,7 @@ public class AuditContextImpl implements AuditContext {
         if (sinkPolicyFailed) {
             // Need to audit something about the failure, says func spec
             SystemAuditRecord fail = new SystemAuditRecord(Level.WARNING, nodeId, Component.GW_AUDIT_SYSTEM,
-                    "Audit sink policy failed; status = " + sinkPolicyStatus.getNumeric(), false, 0, null, null, "Sink Failure", OUR_IP);
+                    "Audit sink policy failed; status = " + sinkPolicyStatus.getNumeric(), false, 0L, null, null, "Sink Failure", OUR_IP);
             if(isSignAudits()){
                 signRecord(fail);
             }
@@ -446,7 +455,7 @@ public class AuditContextImpl implements AuditContext {
         for ( Map.Entry<Object,List<AuditDetailWithInfo>> entry : details.entrySet() ) {
             List<AuditDetail> ds = new ArrayList<AuditDetail>();
             for ( AuditDetailWithInfo detailWithInfo : entry.getValue() ) {
-                ds.add( detailWithInfo.detail );
+                ds.add( detailWithInfo.getDetail() );
             }
             ads.put(entry.getKey(), ds);
         }
@@ -630,20 +639,4 @@ public class AuditContextImpl implements AuditContext {
      */
     private final Map<Object, List<AuditDetailWithInfo>> details = new LinkedHashMap<Object, List<AuditDetailWithInfo>>();
 
-    private final static class AuditDetailWithInfo {
-        private final Object source;
-        private final AuditDetail detail;
-        private final Throwable exception;
-        private final String loggerName;  // loggerName is permitted to be null
-
-        private AuditDetailWithInfo(final Object source,
-                                    final AuditDetail detail,
-                                    final Throwable exception,
-                                    final String loggerName) {
-            this.source = source;
-            this.detail = detail;
-            this.exception = exception;
-            this.loggerName = loggerName;
-        }
-    }
 }

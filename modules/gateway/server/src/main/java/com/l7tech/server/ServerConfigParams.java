@@ -166,4 +166,8 @@ public interface ServerConfigParams {
     String PARAM_MAX_FOLDER_DEPTH = "policyorganization.maxFolderDepth";
     String PARAM_UUID_AMOUNT_MAX = "uuid.amount.max";
     String PARAM_BIND_ONLY_LDAP_USERNAME_PATTERN = "ldapSimpleUsernamePattern";
+    String PARAM_DEBUG_SSL = "ioDebugSsl";
+    String PARAM_DEBUG_SSL_VALUE = "ioDebugSslValue";
+    String PARAM_LOG_STDOUT_LEVEL = "logStdOutLevel";
+    String PARAM_LOG_STDERR_LEVEL = "logStdErrLevel";
 }

@@ -2,7 +2,9 @@ package com.l7tech.external.assertions.ssh.server;
 
 import com.l7tech.message.SshKnob;
 import com.l7tech.util.Pair;
+import org.apache.sshd.server.session.ServerSession;
 
+import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.SocketAddress;
 
@@ -107,6 +109,26 @@ public class MessageProcessingSshUtil {
                     return publicKeyCredential;
             }
         };
+    }
+
+    /**
+     * Get the remote IP address for the given session (the client IP)
+     *
+     * @param session The server session (required)
+     * @return The address or an empty string if not available (never null)
+     */
+    public static String getRemoteAddress( final ServerSession session ) {
+        String address = "";
+        final SocketAddress socketAddress = session.getIoSession().getRemoteAddress();
+
+        if ( socketAddress instanceof InetSocketAddress ) {
+            final InetSocketAddress inetSocketAddress = (InetSocketAddress) socketAddress;
+            if ( !inetSocketAddress.isUnresolved() ) {
+                address = inetSocketAddress.getAddress().getHostAddress();
+            }
+        }
+
+        return address;
     }
 
     /**

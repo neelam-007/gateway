@@ -39,7 +39,7 @@ public class SsgConnectorSslHelper {
 
     private static final Pattern SPLITTER = Pattern.compile("\\s*,\\s*");
     private static final SecureRandom secureRandom = new SecureRandom();
-    
+
     private final TransportModule transportModule;
     private final SsgConnector ssgConnector;
     private final SSLContext sslContext;

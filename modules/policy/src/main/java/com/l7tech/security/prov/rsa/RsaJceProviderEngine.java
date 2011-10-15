@@ -8,6 +8,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -240,5 +241,17 @@ public class RsaJceProviderEngine extends JceProvider {
         if (TLS12_PROVIDER != null && SERVICE_TLS12.equals(service))
             return TLS12_PROVIDER;
         return super.getProviderFor(service);
+    }
+
+    @Override
+    public void setDebugOptions( final Map<String, String> options ) {
+        super.setDebugOptions( options );
+
+        //TODO [steve] clean this up
+        try {
+            cryptoj.cl.loadClass( "com.rsa.jsse.engine.util.Debug" ).getMethod( "debugInitialize" ).invoke( null );
+        } catch ( Exception e ) {
+            logger.log( Level.WARNING, "Error resetting SSL/TLS debug configuration", e );
+        }
     }
 }

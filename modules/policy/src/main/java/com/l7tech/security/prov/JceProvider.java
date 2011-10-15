@@ -5,6 +5,7 @@ import com.l7tech.security.prov.bc.BouncyCastleRsaSignerEngine;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.JceUtil;
+import com.l7tech.util.SyspropUtil;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
@@ -63,6 +64,8 @@ public abstract class JceProvider {
     public static final String SERVICE_KEYSTORE_PKCS12 = "KeyStore.PKCS12";
     public static final String SERVICE_TLS10 = "SSLContext.TLSv1";   // Not the real service name, but lets us distinguish
     public static final String SERVICE_TLS12 = "SSLContext.TLSv1.2"; // SunJSSE from RsaJsse on the basis of which one (currently) support TLSv1.2
+
+    private static final String SYSPROP_SSL_DEBUG = "javax.net.debug";
 
     /* Recognized component names to pass to {@link #isComponentCompatible(String)}. */
 
@@ -502,5 +505,31 @@ public abstract class JceProvider {
      */
     private static KeyStore getKeyStore(String kstype, Provider prov) throws KeyStoreException {
         return prov == null ? KeyStore.getInstance(kstype) : KeyStore.getInstance(kstype, prov);
+    }
+
+    /**
+     * Set debug options for the provider.
+     *
+     * <p>Any options that are not specified in the given set should not be
+     * udpated. A null value for an option means that any existing value for
+     * that option should be cleared.</p>
+     *
+     * <p>The supported names and values are provider specific, a provider
+     * should ignore any unrecognised options.</p>
+     *
+     * @param options The debug options to use (required)
+     */
+    public void setDebugOptions( final Map<String,String> options ) {
+        if ( options.containsKey( "ssl" ) ) {
+            final String debugValue = options.get( "ssl" );
+
+            // Forbid the value "help" as this will cause some providers to terminate
+            // the JVM
+            if ( debugValue == null || debugValue.toLowerCase().contains( "help" ) ) {
+                SyspropUtil.clearProperty( SYSPROP_SSL_DEBUG );
+            } else {
+                SyspropUtil.setProperty( SYSPROP_SSL_DEBUG, debugValue );
+            }
+        }
     }
 }

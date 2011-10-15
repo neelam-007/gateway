@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.concall.server;
 
 import com.l7tech.gateway.common.audit.AuditDetail;
+import com.l7tech.gateway.common.audit.AuditDetailEvent.AuditDetailWithInfo;
 import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.server.audit.AuditContext;
 
@@ -31,17 +32,16 @@ public class ConcurrentDetailCollectingAuditContext implements AuditContext {
 
     @Override
     public void addDetail(AuditDetail detail, Object source) {
-        addDetail(detail, source, null, null);
+        addDetail( new AuditDetailWithInfo( source, detail, null, null) );
     }
 
     @Override
-    public void addDetail(AuditDetail detail, Object source, Throwable thrown, String loggerName) {
+    public void addDetail(AuditDetailWithInfo detail) {
         List<AuditDetail> list = getDetailListForThread();
-        list.add(detail);
+        list.add(detail.getDetail());
 
         if (logDetails) {
-
-            logger.info("Detail: " + detailToString(detail));
+            logger.info("Detail: " + detailToString(detail.getDetail()));
         }
     }
 

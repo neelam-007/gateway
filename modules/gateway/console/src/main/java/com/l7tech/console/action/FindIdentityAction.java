@@ -16,9 +16,11 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.IdentityHeader;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
@@ -29,16 +31,16 @@ import java.util.logging.Logger;
  * The <code>FindIdentityAction</code> action invokes the searche identity
  * dialog.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.0
- * 
+ * @author Emil Marceta
+ *
  * TODO why doesn't this extend SecureAction?
  */
 public class FindIdentityAction extends BaseAction implements LicenseListener, PermissionRefreshListener {
-    static final Logger log = Logger.getLogger(FindIdentityAction.class.getName());
-    Options options = new Options();
+    @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
+    private static final Logger log = Logger.getLogger(FindIdentityAction.class.getName());
+    private final Options options;
 
-    private static
+    private static final
     ResourceBundle resapplication =
       java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
 
@@ -54,11 +56,9 @@ public class FindIdentityAction extends BaseAction implements LicenseListener, P
      * create the find idnetity action action with the dialog options
      * specified
      */
-    public FindIdentityAction(Options opts) {
-        if (opts == null) {
-            throw new IllegalArgumentException();
-        }
-        options = opts;
+    public FindIdentityAction( @NotNull Options opts) {
+        options = new Options(opts);
+        options.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); // previously this was always done in performAction
         Registry.getDefault().getLicenseManager().addLicenseListener(this);
     }
 
@@ -66,6 +66,7 @@ public class FindIdentityAction extends BaseAction implements LicenseListener, P
     /**
      * @return the action name
      */
+    @Override
     public String getName() {
         return resapplication.getString("Search_IdentityProvider_MenuItem_text");
     }
@@ -73,6 +74,7 @@ public class FindIdentityAction extends BaseAction implements LicenseListener, P
     /**
      * @return the aciton description
      */
+    @Override
     public String getDescription() {
         return "Search for users and/or groups in this Identity Provider";
     }
@@ -80,6 +82,7 @@ public class FindIdentityAction extends BaseAction implements LicenseListener, P
     /**
      * subclasses override this method specifying the resource name
      */
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/SearchIdentityProvider16x16.gif";
     }
@@ -90,11 +93,11 @@ public class FindIdentityAction extends BaseAction implements LicenseListener, P
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
+    @Override
     protected void performAction() {
         Frame f = TopComponents.getInstance().getTopParent();
         FindIdentitiesDialog fd = new FindIdentitiesDialog(f, true, options);
         fd.pack();
-        fd.getSearchResultTable().getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         Utilities.centerOnScreen(fd);
         FindIdentitiesDialog.FindResult result = fd.showDialog();
         if (result != null && result.entityHeaders != null && result.entityHeaders.length > 0) {
@@ -127,12 +130,14 @@ public class FindIdentityAction extends BaseAction implements LicenseListener, P
         }
 
         SwingUtilities.invokeLater(new Runnable() {
+            @Override
             public void run() {
                 a.invoke();
             }
         });
     }
 
+    @Override
     public void setEnabled(boolean newValue) {
         boolean wasEnabled = isEnabled();
         super.setEnabled(newValue);
@@ -142,9 +147,10 @@ public class FindIdentityAction extends BaseAction implements LicenseListener, P
             firePropertyChange("enabled", wasEnabled, isEnabled);
     }
 
-    private static final EnumSet TYPES = EnumSet.of(
+    private static final Collection<EntityType> TYPES = EnumSet.of(
             EntityType.ANY, EntityType.ID_PROVIDER_CONFIG, EntityType.USER, EntityType.GROUP);
 
+    @Override
     public boolean isEnabled() {
         boolean e = super.isEnabled();
         if (!e) return false;
@@ -157,10 +163,12 @@ public class FindIdentityAction extends BaseAction implements LicenseListener, P
         return false;
     }
 
+    @Override
     public void licenseChanged(ConsoleLicenseManager licenseManager) {
         setEnabled(true); // it'll immediately get forced back to false if the license disallows it
     }
 
+    @Override
     public void onPermissionRefresh() {
         setEnabled(true);
     }

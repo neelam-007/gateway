@@ -38,6 +38,12 @@
 
     <bean id="resolutionConfigurationManager" class="com.l7tech.server.transport.ResolutionConfigurationManagerStub"/>
 
+    <bean id="folderManager" class="com.l7tech.server.security.rbac.FolderManagerStub"/>
+
+    <bean id="folderCache" class="com.l7tech.server.folder.FolderCacheImpl">
+        <constructor-arg index="0" ref="folderManager"/>
+    </bean>
+
     <!-- service cache -->
     <bean id="serviceCache" class="com.l7tech.server.service.ServiceCacheStub" depends-on="wsdlStrategyServiceDocumentsInitializer">
         <constructor-arg index="0" ref="policyCache"/>
@@ -349,8 +355,9 @@
     <bean id="policyManager" class="com.l7tech.server.policy.PolicyManagerStub"/>
 
     <bean id="policyCache" class="com.l7tech.server.policy.PolicyCacheImpl">
-        <constructor-arg><null/></constructor-arg>
-        <constructor-arg ref="policyFactory"/>
+        <constructor-arg index="0"><null/></constructor-arg>
+        <constructor-arg index="1" ref="policyFactory"/>
+        <constructor-arg index="2" ref="folderCache"/>
         <property name="policyManager" ref="policyManager"/>
     </bean>
 

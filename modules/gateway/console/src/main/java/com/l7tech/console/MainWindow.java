@@ -1620,7 +1620,6 @@ public class MainWindow extends JFrame implements SheetHolder {
 
         Options options = new Options();
         options.setEnableDeleteAction(true);
-        options.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         findIdentityAction = new FindIdentityAction(options);
         String aDesc = resapplication.getString("Search_IdentityProvider_MenuItem_text_description");

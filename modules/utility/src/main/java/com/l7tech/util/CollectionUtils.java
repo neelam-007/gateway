@@ -1,5 +1,6 @@
 package com.l7tech.util;
 
+import com.l7tech.util.Functions.Binary;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -236,15 +237,19 @@ public final class CollectionUtils {
     /**
      * Join sublists into a list.
      *
-     * @param collections The collection of collection subclasses of A
+     * @param collections The collection of collection subclasses of A (may be null and contain null entries)
      * @param <T> The joined collection element type
      * @return The joined collection (never null)
      */
     public static <T> Collection<T> join( final Collection<? extends Collection<T>> collections ) {
         final List<T> joined = new ArrayList<T>();
 
-        for ( final Collection<T> collection : collections ) {
-            joined.addAll( collection );
+        if ( collections != null ) {
+            for ( final Collection<T> collection : collections ) {
+                if ( collection != null ) {
+                    joined.addAll( collection );
+                }
+            }
         }
 
         return joined;
@@ -258,12 +263,12 @@ public final class CollectionUtils {
      * @param iterables The iterables to iterate
      * @return An iterable that iterates all the given iterables.
      */
-    public static <T> Iterable<T> iterable( final Iterable<T>... iterables ) {
+    public static <T> Iterable<T> iterable( final Iterable<? extends T>... iterables ) {
         return new Iterable<T>() {
             @Override
             public Iterator<T> iterator() {
                 return new Iterator<T>() {
-                    private Iterator<T> currentIterator;
+                    private Iterator<? extends T> currentIterator;
                     private int iterableIndex = 0;
 
                     @Override
@@ -300,6 +305,31 @@ public final class CollectionUtils {
         }
         return false;
     }
+
+    /**
+     * Check if any value in the collection matches any target value.
+     *
+     * @param collection The collection to match (may be null)
+     * @param targets The target values (may be null)
+     * @param matcher The matcher to user
+     * @param <T> The item type
+     * @return True if any value matches
+     */
+    public static <T> boolean matchesAny( @Nullable final Collection<? extends T> collection,
+                                          @Nullable final Collection<? extends T> targets,
+                                          @NotNull final Binary<Boolean,T,T> matcher ) {
+        if (collection != null && targets != null) {
+            for (final T t : targets) {
+                for ( final T c : collection ) {
+                    if ( matcher.call( t, c ) )  {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
 
     /** @return true if all of the target Objects are contained in the collection. */
     public static boolean containsAll( @Nullable final Collection<?> collection,

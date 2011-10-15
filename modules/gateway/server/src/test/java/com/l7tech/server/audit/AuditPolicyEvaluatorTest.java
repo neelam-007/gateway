@@ -16,6 +16,7 @@ import com.l7tech.server.ServerConfigStub;
 import com.l7tech.server.TestLicenseManager;
 import com.l7tech.server.event.system.Started;
 import com.l7tech.server.event.PolicyCacheEvent;
+import com.l7tech.server.folder.FolderCacheStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.*;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
@@ -137,7 +138,7 @@ public class AuditPolicyEvaluatorTest {
     PolicyManagerStub policyManager = new PolicyManagerStub(new Policy[] { testPolicy });
 
     /** A PolicyCache that always returns the fake policy, with a ServerAssertion instrumented to count its invocations. */
-    PolicyCache policyCache = new PolicyCacheImpl(null, new ServerPolicyFactory(new TestLicenseManager(),new MockInjector())) {
+    PolicyCache policyCache = new PolicyCacheImpl(null, new ServerPolicyFactory(new TestLicenseManager(),new MockInjector()), new FolderCacheStub()) {
         {
             setPolicyManager(policyManager);
             setApplicationEventPublisher(new EventChannel());
