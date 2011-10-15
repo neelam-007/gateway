@@ -428,8 +428,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                             sizeLimit = com.l7tech.message.Message.getMaxBytes();
                         }
                     }else{
-                        String maxBytesString = ExpandVariables.process(assertion.getResponseSize(),variables,getAudit());
-                        sizeLimit = Long.parseLong(maxBytesString); // resolve var
+                        sizeLimit = expandVariableAsLong( assertion.getResponseSize(), "response message size", 0L, Long.MAX_VALUE, variables );
                     }
 
                     long size = 0;
