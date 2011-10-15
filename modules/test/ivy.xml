@@ -15,5 +15,6 @@
         <dependency org="junit" name="junit" rev="4.8.2" force="true" conf="core"/>
         <dependency org="org.scala-lang" name="scala-library" rev="2.9.1" force="true" conf="core"/>
         <dependency org="org.specs2" name="specs2_2.9.1" rev="1.5" force="true" conf="core"/>
+        <dependency org="org.mockito" name="mockito-core" rev="1.9.0-rc1" force="true" conf="test"/>
     </dependencies>
 </ivy-module>
