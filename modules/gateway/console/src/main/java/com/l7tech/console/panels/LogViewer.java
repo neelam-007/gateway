@@ -18,6 +18,7 @@ import com.l7tech.util.SyspropUtil;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
+import javax.swing.Timer;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ListDataListener;
 import javax.swing.event.ListSelectionEvent;
@@ -59,6 +60,7 @@ public class LogViewer extends JFrame {
     private JButton cancelButton;
     private JTextArea logMessageTextArea;
     private JSplitPane splitPane;
+    private JCheckBox autoRefreshCheckBox;
 
 
     private JMenuBar windowMenuBar = null;
@@ -70,6 +72,8 @@ public class LogViewer extends JFrame {
 
     private FilterListModel<String> filteredListModel;
     private InputValidator validator;
+    private Timer logsRefreshTimer;
+    private int logsRefreshInterval = 3000; // 3secs
 
     private final ClusterNodeInfo clusterNodeInfo;
     private final long sinkId;
@@ -85,7 +89,7 @@ public class LogViewer extends JFrame {
     public LogViewer(@NotNull ClusterNodeInfo clusterNodeInfo,
                      long sinkId,
                      @NotNull String file) {
-        super(resources.getString("title")+ " "+ file);
+        super(MessageFormat.format(resources.getString("title"), file, clusterNodeInfo.getName()));
 
         this.clusterNodeInfo = clusterNodeInfo;
         this.sinkId  = sinkId;
@@ -122,15 +126,20 @@ public class LogViewer extends JFrame {
 
         validator = new InputValidator(this,getTitle());
         validator.disableButtonWhenInvalid(refreshButton);
-        validator.constrainTextFieldToNumberRange(resources.getString("tail.checkbox.text"),tailTextField,0L,Long.MAX_VALUE);
+        validator.constrainTextFieldToNumberRange(resources.getString("tail.checkbox.text"),tailTextField,1L,Long.MAX_VALUE);
 
         tailCheckBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                tailTextField.setEnabled(tailCheckBox.isSelected());
+                refreshTailButtons();
             }
         });
-
+        autoRefreshCheckBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                refreshTailButtons();
+            }
+        });
 
         // saveMenuItem listener
         getSaveMenuItem().
@@ -194,6 +203,7 @@ public class LogViewer extends JFrame {
         // set init values
         tailCheckBox.setSelected(true);
         tailTextField.setText("100");
+        refreshTailButtons();
 
         pack();
 
@@ -210,9 +220,34 @@ public class LogViewer extends JFrame {
         Utilities.restoreWindowStatus(this, preferences.asProperties(), 800, 600);
     }
 
+    private void refreshTailButtons() {
+        tailTextField.setEnabled(tailCheckBox.isSelected());
+        autoRefreshCheckBox.setEnabled(tailCheckBox.isSelected());
+        if(tailCheckBox.isSelected() && autoRefreshCheckBox.isSelected()){
+            getLogsRefreshTimer().restart();
+        }else if (getLogsRefreshTimer().isRunning()){
+            getLogsRefreshTimer().stop();
+        }
+    }
+
     private void updateLogMessageText() {
-        String val = logList.getSelectedIndex()>filteredListModel.getSize()? null : (String)logList.getSelectedValue();
+        String val = logList.getSelectedIndex()>=filteredListModel.getSize()? null : (String)logList.getSelectedValue();
         logMessageTextArea.setText(val);
+    }
+
+    private Timer getLogsRefreshTimer() {
+        if (logsRefreshTimer == null) {
+            //Create a refresh logs timer.
+            logsRefreshTimer = new Timer(logsRefreshInterval, new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent evt) {
+                    loadLogs();
+                }
+            });
+            logsRefreshTimer.setInitialDelay(0);
+        }
+
+        return logsRefreshTimer;
     }
 
     private void filterLogs() {
@@ -314,7 +349,8 @@ public class LogViewer extends JFrame {
                     byte[] newline = SyspropUtil.getString( "line.separator", "\n" ).getBytes( Charsets.UTF8 );
                     try {
                         out = new BufferedOutputStream( new FileOutputStream( file) );
-                        for( final String data : cachedData ){
+                        for(int i = 0; i <filteredListModel.getSize();++i){
+                            String data = filteredListModel.getElementAt(i);
                             out.write(data.getBytes(Charsets.UTF8));
                             out.write(newline);
                         }
@@ -451,14 +487,15 @@ public class LogViewer extends JFrame {
         return filteredListModel;
     }
 
-    public boolean loadLogs()  {
+    public void loadLogs()  {
         long tail  = -1 ;
         if(tailCheckBox.isSelected()){
             try{
                 tail = Long.parseLong(tailTextField.getText());
             }catch( Exception e)
             {
-                // do nothing ignore value, should not happen
+                return;
+                // abort loading
             }
         }
 
@@ -475,10 +512,6 @@ public class LogViewer extends JFrame {
 
         workerReference.set(infoWorker);
         infoWorker.start();
-
-
-
-        return true;
     }
 
     public String getDisplayedLogKey() {
@@ -548,7 +581,7 @@ public class LogViewer extends JFrame {
                     while(!done && !cancelled.get()){
                         LogSinkData logData = null;
                         try {
-                            logData = logSinkAdmin.getSinkLogs(clusterNodeInfo.getNodeIdentifier(),sinkId,file,startByte);
+                            logData = logSinkAdmin.getSinkLogs(clusterNodeInfo.getNodeIdentifier(),sinkId,file,startByte, tail>0);
                         } catch ( FindException e ) {
                             ErrorManager.getDefault().notify( Level.WARNING, e, "Error loading log data" );
                             break;
@@ -573,7 +606,6 @@ public class LogViewer extends JFrame {
                                     eof = true;
                                 else if (read=='\n' )
                                      eol = true;
-
                                 else
                                     sb.append((char)read);
                             }
@@ -584,14 +616,15 @@ public class LogViewer extends JFrame {
                                 list.add(data);
                                 sb = new StringBuilder();
                             }
-                            if(tail>0 && tail<list.size()){
-                                break;
-                            }
                         }
-                        done = logData.getLastReadByteLocation()<0 || ( tail>0 && tail<list.size());
+                        done = logData.getLastReadByteLocation()<0 || ( tail>0 );
                         startByte = logData.getLastReadByteLocation();
                     }
-                    if(tail>0 && tail<list.size()) list = list.subList(0, (int) tail);
+                    if(tail>0)
+                    {
+                        if(list.size()>0)list.remove(0); // last line might not be complete
+                        if(tail<list.size()) list = list.subList(list.size() - (int) tail -1,list.size()-1);
+                    }
                 }catch (IOException e) {
                     logger.warning("Error loading logs");
                     DialogDisplayer.showMessageDialog(LogViewer.this, null,
@@ -624,6 +657,9 @@ public class LogViewer extends JFrame {
         public void finished() {
             cachedData = Collections.synchronizedList(list);
             filterLogs();
+            if(getLogsRefreshTimer().isRunning()){
+                logList.ensureIndexIsVisible(filteredListModel.getSize()-1);
+            }
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                     filteredListModel.filterUpdated();

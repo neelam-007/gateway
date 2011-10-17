@@ -66,5 +66,5 @@ public interface SinkManager extends EntityManager<SinkConfiguration, EntityHead
      * @param startPosition The start offset
      * @return The log data
      */
-    LogSinkData getSinkLogs(String nodeId, long sinkId,String file,long startPosition) throws FindException;
+    LogSinkData getSinkLogs(String nodeId, long sinkId,String file,long startPosition, boolean fromEnd) throws FindException;
 }

@@ -567,13 +567,13 @@ public class SinkConfigurationFilterSelectionDialog extends JDialog {
 
     public static enum FilterType {
         CATEGORY,
+        FOLDER,
         IP,
         PACKAGE,
+        POLICY,
         SERVICE,
         TRANSPORT,
         USER,
-        FOLDER,
-        POLICY,
     }
 
     public static final class FilterSelection {

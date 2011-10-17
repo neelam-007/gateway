@@ -52,7 +52,7 @@ public class LogSinkAdminStub implements LogSinkAdmin {
     }
 
     @Override
-    public LogSinkData getSinkLogs(String nodeId, long sinkId, String file, long startPosition) {
+    public LogSinkData getSinkLogs(String nodeId, long sinkId, String file, long startPosition, boolean fromEnd) {
         return null;
     }
 }

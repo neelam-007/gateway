@@ -71,7 +71,8 @@ public class LogSinkAdminImpl implements LogSinkAdmin {
     public LogSinkData getSinkLogs( final String nodeId,
                                     final long sinkId,
                                     final String file,
-                                    final long startPosition ) throws FindException {
-        return sinkManager.getSinkLogs(nodeId, sinkId,file, startPosition);
+                                    final long startPosition,
+                                    boolean fromEnd) throws FindException {
+        return sinkManager.getSinkLogs(nodeId, sinkId,file, startPosition, fromEnd);
     }
 }

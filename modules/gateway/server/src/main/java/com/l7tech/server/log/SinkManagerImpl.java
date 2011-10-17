@@ -303,7 +303,7 @@ public class SinkManagerImpl
     }
 
     @Override
-    public LogSinkData getSinkLogs(final String nodeId, final long sinkId, final String file, final long startPosition) throws FindException {
+    public LogSinkData getSinkLogs(final String nodeId, final long sinkId, final String file, final long startPosition, final boolean fromEnd) throws FindException {
         LogSinkData data = null;
         if(isThisNodeMe(nodeId))
         {
@@ -318,8 +318,13 @@ public class SinkManagerImpl
                     String filePattern = getSinkFilePattern(sinkConfig);
                     String filePath = filePattern.substring(0,filePattern.lastIndexOf("/")+1)+file; //TODO [steve] verify file matches pattern (so user has permission to view the file)
 
+                    File f = new File(filePath);
+                    long startPoint = startPosition;
+                    if(fromEnd){
+                        startPoint = Math.max(0,f.length() - startPoint - 16384);
+                    }
                     fin = new FileInputStream(filePath);
-                    in = new TruncatingInputStream(fin,startPosition);
+                    in = new TruncatingInputStream(fin,startPoint);
                     bs = new ByteArrayOutputStream();
                     out = new GZIPOutputStream(bs);
 
@@ -347,7 +352,7 @@ public class SinkManagerImpl
             data = doWithLogAccessAdmin( nodeId, new UnaryThrows<LogSinkData,LogAccessAdmin,FindException>(){
                 @Override
                 public LogSinkData call( final LogAccessAdmin logAccessAdmin ) throws FindException {
-                    return logAccessAdmin.getSinkLogs( nodeId, sinkId, file, startPosition );
+                    return logAccessAdmin.getSinkLogs( nodeId, sinkId, file, startPosition , fromEnd);
                 }
             } ).toNull();
         }

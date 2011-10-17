@@ -96,7 +96,7 @@ public class LogChooserWindow extends JFrame implements LogonListener {
 
         logTable.setModel( logTableModel );
         logTable.getTableHeader().setReorderingAllowed( false );
-        logTable.setSelectionMode( ListSelectionModel.SINGLE_SELECTION );
+        logTable.setSelectionMode( ListSelectionModel.MULTIPLE_INTERVAL_SELECTION );
         logTable.setAutoCreateRowSorter( true );
         logTable.getRowSorter().toggleSortOrder( 0 );
         logTable.getSelectionModel().addListSelectionListener( new ListSelectionListener() {
@@ -166,55 +166,58 @@ public class LogChooserWindow extends JFrame implements LogonListener {
     }
 
     private void doView() {
-        final LogTableRow row = getSelectedLogTableRow();
-        if ( row != null ) {
-            final ClusterNodeInfo nodeInfo = row.getNodeInfo();
-            final SinkConfiguration sinkConfig = row.getSinkConfiguration();
-            final String file = row.getFile();
-
-            final String key = nodeInfo.getId() +  sinkConfig.getOid() + file;
-            final Frame window;
-            if(openedLogViewers.containsKey(key)){
-                window = openedLogViewers.get(key);
-                int state = window.getExtendedState();
-                state &= ~Frame.ICONIFIED;
-                window.setExtendedState(state);
-                window.setVisible(true);
-
-
-
-            }
-            else{
-                window = new LogViewer(nodeInfo,sinkConfig.getOid(), file);
-                window.pack();
-                Utilities.centerOnScreen(window);
-                window.setVisible(true);
-                openedLogViewers.put(key,window);
-
-                window.addWindowListener(new WindowAdapter() {
-                    @Override
-                    public void windowClosed(WindowEvent e) {
-                        openedLogViewers.remove(key);
-                    }
-                });
-            }
-
+        for( LogTableRow row : getSelectedLogTableRows()){
+            showLog(row);
         }
     }
 
-    private LogTableRow getSelectedLogTableRow() {
-        LogTableRow logTableRow = null;
-        final int viewRow = logTable.getSelectedRow();
-        final int modelRow = viewRow == -1 ? -1 : logTable.convertRowIndexToModel( viewRow );
-        if ( modelRow > -1 && modelRow < logTableModel.getRowCount() ) {
-            logTableRow = logTableModel.getRowObject( modelRow );
+    private void showLog(final LogTableRow row){
+        final ClusterNodeInfo nodeInfo = row.getNodeInfo();
+        final SinkConfiguration sinkConfig = row.getSinkConfiguration();
+        final String file = row.getFile();
+
+        final String key = nodeInfo.getId() +  sinkConfig.getOid() + file;
+        final Frame window;
+        if(openedLogViewers.containsKey(key)){
+            window = openedLogViewers.get(key);
+            int state = window.getExtendedState();
+            state &= ~Frame.ICONIFIED;
+            window.setExtendedState(state);
+            window.setVisible(true);
+
+
+
         }
-        return logTableRow;
+        else{
+            window = new LogViewer(nodeInfo,sinkConfig.getOid(), file);
+            window.pack();
+            Utilities.centerOnScreen(window);
+            window.setVisible(true);
+            openedLogViewers.put(key,window);
+
+            window.addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosed(WindowEvent e) {
+                    openedLogViewers.remove(key);
+                }
+            });
+        }
+
+    }
+
+    private LogTableRow[] getSelectedLogTableRows() {
+        ArrayList<LogTableRow> logTableRow = new ArrayList<LogTableRow>();
+        for(int viewRow:  logTable.getSelectedRows()){
+            final int modelRow = viewRow == -1 ? -1 : logTable.convertRowIndexToModel( viewRow );
+            if ( modelRow > -1 && modelRow < logTableModel.getRowCount() ) {
+                logTableRow.add(logTableModel.getRowObject( modelRow ));
+            }
+        }
+        return logTableRow.toArray(new LogTableRow[logTableRow.size()]);
     }
 
     private void enableOrDisableButtons() {
-        boolean haveSel = getSelectedLogTableRow() != null;
-
+        boolean haveSel = getSelectedLogTableRows().length > 0;
         viewButton.setEnabled(haveSel);
     }
 
@@ -343,6 +346,10 @@ public class LogChooserWindow extends JFrame implements LogonListener {
 
         public String getDescription(){
             return sinkConfiguration.getDescription();
+        }
+
+        public LogFileInfo getLogFileInfo() {
+            return logFileInfo;
         }
     }
 }

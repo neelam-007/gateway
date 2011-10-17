@@ -403,6 +403,7 @@ public class FindIdentitiesDialog extends JDialog {
 
         deleteButton.setAction( getDeleteAction() );
         deleteButton.setText(resources.getString("deleteButton.label"));
+        deleteButton.setToolTipText( null );
         deleteButton.setVisible(options.isEnableDeleteAction());
         deleteButton.setEnabled(false);
 

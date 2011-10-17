@@ -218,11 +218,31 @@ public class HybridDiagnosticContext {
 
     //- PACKAGE
 
+    @NotNull
     static Collection<String> getAll( final String key ) {
-        return join( context.get().get( key ) );
+        return ijoin( context.get().get( key ) );
     }
 
     //- PRIVATE
+
+    /**
+     * Wrapper around join with special cases for empty / single list.
+     *
+     * The returned list is always immutable.
+     */
+    private static Collection<String> ijoin( @Nullable final List<List<String>> values ) {
+        final Collection<String> joined;
+        if ( values != null ) {
+            if ( values.size() == 1 && values.get( 0 ) != null ) {
+                joined = values.get( 0 );
+            } else {
+                joined = join( values );
+            }
+        } else {
+            joined = Collections.emptyList();
+        }
+        return joined;
+    }
 
     private static <R> Map<String,List<R>> immutable( final Map<String,? extends Collection<R>> map ) {
         return Collections.unmodifiableMap( map( map, null, Functions.<String>identity(), new Functions.Unary<List<R>, Collection<R>>() {

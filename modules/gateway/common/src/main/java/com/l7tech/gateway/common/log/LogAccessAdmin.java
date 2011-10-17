@@ -33,6 +33,6 @@ public interface LogAccessAdmin {
      * @return The log data
      */
     @Transactional(readOnly=true)
-    LogSinkData getSinkLogs(String nodeId, long sinkId,String file, long startPosition) throws FindException;
+    LogSinkData getSinkLogs(String nodeId, long sinkId,String file, long startPosition, boolean fromEnd) throws FindException;
 
 }

@@ -17,7 +17,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
 import java.util.List;
-import java.util.logging.Logger;
 
 /**
  * Class PolicyTree is the extended <code>JTree</code>
@@ -25,13 +24,6 @@ import java.util.logging.Logger;
  * TODO [steve] rename to reflect this component is not just for services after development in logging branch complete
  */
 public class ServiceSelectionTree<LEH extends OrganizationHeader> extends JTree  {
-    static final Logger logger = Logger.getLogger(ServiceSelectionTree.class.getName());
-    /**
-     * component name
-     */
-    public final static String NAME = "policy.tree";
-
-    public static final String PROPERTY_NAME_SELECTION = "organizationTree.selection";
 
     private CheckBoxNode rootNode;
     private DefaultTreeModel organizationTreeModel;
@@ -39,6 +31,8 @@ public class ServiceSelectionTree<LEH extends OrganizationHeader> extends JTree 
 
     /**
      * Create empty policy tree
+     *
+     * @param leafsSelectable True if the displayed OrganizationHeaders are selectable.
      */
     public ServiceSelectionTree( final boolean leafsSelectable ) {
         this.rootNode = new CheckBoxNode( new FolderHeader(-5002L, "/", null, null, "/" ), false);

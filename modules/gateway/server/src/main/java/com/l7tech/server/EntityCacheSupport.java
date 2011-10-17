@@ -6,6 +6,8 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.util.Functions.Unary;
+import com.l7tech.util.Option;
+import static com.l7tech.util.Option.optional;
 import org.springframework.context.ApplicationListener;
 
 import java.util.Collection;
@@ -24,10 +26,10 @@ public abstract class EntityCacheSupport<ET extends PersistentEntity, HT extends
 
     //- PUBLIC
 
-    public final ET findByPrimaryKey( final long oid ) {
+    public final Option<ET> findByPrimaryKey( final long oid ) {
         lock.readLock().lock();
         try {
-            return entityCache.get( oid );
+            return optional(entityCache.get( oid ));
         } finally {
             lock.readLock().unlock();
         }
@@ -58,7 +60,7 @@ public abstract class EntityCacheSupport<ET extends PersistentEntity, HT extends
 
     //- PROTECTED
 
-    private final Logger logger = Logger.getLogger( getClass().getName() );
+    protected final Logger logger = Logger.getLogger( getClass().getName() );
 
     protected EntityCacheSupport( final EM entityManager ) {
         this.entityManager = entityManager;

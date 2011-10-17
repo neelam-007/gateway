@@ -24,9 +24,9 @@ public class LogAccessAdminImpl implements LogAccessAdmin {
     }
 
     @Override
-    public LogSinkData getSinkLogs( final String nodeId, final long sinkId, final String file, final long startPosition ) throws FindException {
+    public LogSinkData getSinkLogs( final String nodeId, final long sinkId, final String file, final long startPosition, boolean fromEnd ) throws FindException {
         if ( !nodeId.equals( clusterInfoManager.thisNodeId() ) ) return null;
-        return sinkManager.getSinkLogs( nodeId, sinkId, file, startPosition );
+        return sinkManager.getSinkLogs( nodeId, sinkId, file, startPosition, fromEnd );
     }
 
     //- PRIVATE
