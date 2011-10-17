@@ -522,6 +522,9 @@ public class ServicePropertiesDialog extends JDialog {
 
         //apply permissions last
         applyPermissions();
+
+        pack();
+        Utilities.setMinimumSize( this );
     }
 
     private void clearLocalUDDIServiceControl() {
@@ -634,6 +637,13 @@ public class ServicePropertiesDialog extends JDialog {
     private static boolean areUnsavedChangesToThisPolicy(PublishedService subject) {
         PolicyEditorPanel pep = TopComponents.getInstance().getPolicyEditorPanel();
         return pep != null && pep.isEditingPublishedService() && subject.getOid() == pep.getPublishedServiceOid() && pep.isUnsavedChanges();
+    }
+
+    public boolean hasResolutionConflict() {
+        final PublishedService service = new PublishedService( subject );
+        final Collection<ServiceDocument> documents = getServiceDocuments();
+        viewToModel( service );
+        return hasResolutionConflict( service, documents );
     }
 
     public static boolean hasResolutionConflict( final PublishedService subject,
@@ -820,7 +830,7 @@ public class ServicePropertiesDialog extends JDialog {
     private void ok() {
 
         // validate the name
-        String name = nameField.getText();
+        final String name = nameField.getText();
         if (name == null || name.length() < 1) {
             JOptionPane.showMessageDialog(this, "The service must be given a name");
             return;
@@ -836,7 +846,7 @@ public class ServicePropertiesDialog extends JDialog {
                 return;
             }
         }
-
+        // validate resolution path
         final String message = validateResolutionPath( newURI, subject.isSoap(), subject.isInternal() );
         if ( message != null ) {
             JOptionPane.showMessageDialog(this, message);
@@ -851,53 +861,23 @@ public class ServicePropertiesDialog extends JDialog {
                 return;
             }
         }
+        // validate service resolution for new services
+        if ( subject.getOid()==PublishedService.DEFAULT_OID && hasResolutionConflict() ) {
+            String msg = "The resolution parameters (SOAPAction, namespace, and possibly\n" +
+                         "routing URI) for this Web service are already used by an existing\n" +
+                         "published service.\n\nDo you want to save the service?";
+            int res = JOptionPane.showConfirmDialog(this, msg, "Service Resolution Conflict", JOptionPane.YES_NO_OPTION);
+            if (res != JOptionPane.YES_OPTION) {
+                return;
+            }
+        }
 
         // set the new data into the edited subject
-        subject.setName(name);
-        subject.setDisabled(!enableRadio.isSelected());
-        subject.setRoutingUri(newURI);
-        EnumSet<HttpMethod> methods = EnumSet.noneOf(HttpMethod.class);
-        if (getCheck.isSelected()) {
-            methods.add(HttpMethod.GET);
-        }
-        if (putCheck.isSelected()) {
-            methods.add(HttpMethod.PUT);
-        }
-        if (postCheck.isSelected()) {
-            methods.add(HttpMethod.POST);
-        }
-        if (deleteCheck.isSelected()) {
-            methods.add(HttpMethod.DELETE);
-        }
-        if (headCheck.isSelected()) {
-            methods.add(HttpMethod.HEAD);
-        }
-        if (optionsCheck.isSelected()) {
-            methods.add(HttpMethod.OPTIONS);
-        }
-        subject.setHttpMethods(methods);
-        subject.setLaxResolution(laxResolutionCheckbox.isSelected());
-        subject.setWssProcessingEnabled(enableWSSSecurityProcessingCheckBox.isSelected());
-        subject.setTracingEnabled(tracingCheckBox.isSelected());
-        setWsdl( subject );
-
-        if ( wsdlUnderUDDIControlCheckBox.isSelected() && originalServiceEndPoint != null ) {
-            subject.setDefaultRoutingUrl(originalServiceEndPoint);
-        } else {
-            subject.setDefaultRoutingUrl( null );
-        }
-
-        if (soapVersion11Button.isSelected()) {
-            subject.setSoapVersion(SoapVersion.SOAP_1_1);
-        } else if (soapVersion12Button.isSelected()) {
-            subject.setSoapVersion(SoapVersion.SOAP_1_2);
-        } else {
-            subject.setSoapVersion(SoapVersion.UNKNOWN);
-        }
+        viewToModel( subject );
+        Collection<ServiceDocument> documents = getServiceDocuments();
 
         //attempt to save the changes
         try {
-            Collection<ServiceDocument> documents = getServiceDocuments();
             long newOid;
             if (documents == null)
                 newOid = Registry.getDefault().getServiceManager().savePublishedService(subject);
@@ -961,6 +941,50 @@ public class ServicePropertiesDialog extends JDialog {
             String errorMessage = e.getMessage();
             if (errorMessage != null) msg += ":\n" + errorMessage;
             JOptionPane.showMessageDialog(this, msg);
+        }
+    }
+
+    private void viewToModel( final PublishedService subject ) {
+        subject.setName(nameField.getText());
+        subject.setDisabled(!enableRadio.isSelected());
+        subject.setRoutingUri(getRoutingUri());
+        EnumSet<HttpMethod> methods = EnumSet.noneOf(HttpMethod.class);
+        if (getCheck.isSelected()) {
+            methods.add(HttpMethod.GET);
+        }
+        if (putCheck.isSelected()) {
+            methods.add(HttpMethod.PUT);
+        }
+        if (postCheck.isSelected()) {
+            methods.add(HttpMethod.POST);
+        }
+        if (deleteCheck.isSelected()) {
+            methods.add(HttpMethod.DELETE);
+        }
+        if (headCheck.isSelected()) {
+            methods.add(HttpMethod.HEAD);
+        }
+        if (optionsCheck.isSelected()) {
+            methods.add(HttpMethod.OPTIONS);
+        }
+        subject.setHttpMethods(methods);
+        subject.setLaxResolution(laxResolutionCheckbox.isSelected());
+        subject.setWssProcessingEnabled(enableWSSSecurityProcessingCheckBox.isSelected());
+        subject.setTracingEnabled(tracingCheckBox.isSelected());
+        setWsdl( subject );
+
+        if ( wsdlUnderUDDIControlCheckBox.isSelected() && originalServiceEndPoint != null ) {
+            subject.setDefaultRoutingUrl(originalServiceEndPoint);
+        } else {
+            subject.setDefaultRoutingUrl( null );
+        }
+
+        if (soapVersion11Button.isSelected()) {
+            subject.setSoapVersion(SoapVersion.SOAP_1_1);
+        } else if (soapVersion12Button.isSelected()) {
+            subject.setSoapVersion(SoapVersion.SOAP_1_2);
+        } else {
+            subject.setSoapVersion(SoapVersion.UNKNOWN);
         }
     }
 

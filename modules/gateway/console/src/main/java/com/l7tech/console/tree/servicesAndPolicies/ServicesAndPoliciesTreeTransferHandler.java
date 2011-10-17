@@ -418,12 +418,11 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                         rootNode.addEntity(savedService.getOid(), serviceNode);
                         tree.setSelectionPath(new TreePath(serviceNode.getPath()));
                         model.nodeChanged(serviceNode);
-
                         tree.filterTreeToDefault();
                     }
                 }
             });
-            return dlg.wasOKed();
+            return true;
         } catch ( FindException e ) {
             ErrorManager.getDefault().notify( Level.WARNING, e, "Error accessing service for copy." );
             return false;
