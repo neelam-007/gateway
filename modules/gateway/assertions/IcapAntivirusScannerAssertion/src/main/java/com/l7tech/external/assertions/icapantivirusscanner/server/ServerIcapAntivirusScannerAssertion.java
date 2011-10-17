@@ -85,10 +85,10 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
     private int getTimeoutValue(final PolicyEnforcementContext context, String value) {
         int timeout = DEFAULT_TIMEOUT;
         String timeoutStr = getContextVariable(context, value);
-        if (ValidationUtils.isValidInteger(timeoutStr, false, 0, MAX_TIMEOUT)) {
+        if (ValidationUtils.isValidInteger(timeoutStr, false, 1, MAX_TIMEOUT)) {
             timeout = Integer.parseInt(timeoutStr) * 1000;
         } else {
-            logAndAudit(AssertionMessages.USERDETAIL_INFO, "Invalid timeout value from " + value + " (" + timeoutStr + ").  Must be between 1 and 3600 (0 for no limit).");
+            logAndAudit(AssertionMessages.USERDETAIL_INFO, "Invalid timeout value from " + value + " (" + timeoutStr + ").  Timeout value must be a valid integer with range 1 to 3600 inclusive.");
         }
         return timeout;
     }

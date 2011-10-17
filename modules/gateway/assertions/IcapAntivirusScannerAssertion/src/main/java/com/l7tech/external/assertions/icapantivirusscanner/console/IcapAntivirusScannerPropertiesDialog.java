@@ -273,12 +273,15 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
     @Override
     public IcapAntivirusScannerAssertion getData(IcapAntivirusScannerAssertion assertion) throws ValidationException {
         String timeoutText = connectionTimeoutField.getText().trim();
-        if (Syntax.getReferencedNames(timeoutText).length == 0 && !ValidationUtils.isValidInteger(timeoutText, false, 0, ServerIcapAntivirusScannerAssertion.MAX_TIMEOUT)) {
-            throw new ValidationException("Connection timeout value must be a valid integer between 1 and 3600 (0 for no limit)");
+        if (Syntax.getReferencedNames(timeoutText).length == 0 && !ValidationUtils.isValidInteger(timeoutText, false, 1, ServerIcapAntivirusScannerAssertion.MAX_TIMEOUT)) {
+            throw new ValidationException("Connection timeout value must be a valid integer with range 1 to 3600 inclusive.");
         }
         timeoutText = readTimeoutField.getText().trim();
-        if (Syntax.getReferencedNames(timeoutText).length == 0 && !ValidationUtils.isValidInteger(timeoutText, false, 0, ServerIcapAntivirusScannerAssertion.MAX_TIMEOUT)) {
-            throw new ValidationException("Read timeout value must be a valid integer between 1 and 3600 (0 for no limit)");
+        if (Syntax.getReferencedNames(timeoutText).length == 0 && !ValidationUtils.isValidInteger(timeoutText, false, 1, ServerIcapAntivirusScannerAssertion.MAX_TIMEOUT)) {
+            throw new ValidationException("Read timeout value must be a valid integer with range 1 to 3600 inclusive.");
+        }
+        if(serverListModel.size() < 1){
+            throw new ValidationException("One or more ICAP server must be added.");
         }
         assertion.setContinueOnVirusFound(continueIfVirusFound.isSelected());
         assertion.setFailoverStrategy(((FailoverStrategy) cbStrategy.getSelectedItem()).getName());
