@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2007-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.gateway.common.admin;
 
 import static com.l7tech.objectmodel.EntityType.POLICY;
@@ -11,6 +8,7 @@ import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import com.l7tech.policy.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.util.Pair;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -126,11 +124,11 @@ public interface PolicyAdmin extends AliasAdmin<PolicyAlias> {
      * as the second argument.
      *
      * @param policy the policy to be saved.
-     * @return the OID of the policy that was saved.
+     * @return the OID/GUID pair for he policy that was saved.
      * @throws PolicyAssertionException if there is a problem with the policy
      */
     @Secured(stereotype=SAVE_OR_UPDATE)
-    long savePolicy(Policy policy) throws PolicyAssertionException, SaveException;
+    Pair<Long,String> savePolicy(Policy policy) throws PolicyAssertionException, SaveException;
 
     /**
      * Saves or updates the specified PolicyAlias.
@@ -139,6 +137,7 @@ public interface PolicyAdmin extends AliasAdmin<PolicyAlias> {
      * @return the OID of the PolicyAlias that was saved.
      * @throws SaveException
      */
+    @Override
     @Secured(stereotype=SAVE_OR_UPDATE)
     long saveAlias(PolicyAlias policyAlias) throws SaveException;
 

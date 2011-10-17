@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
- */
 package com.l7tech.gui.widgets;
 
 import com.l7tech.gui.util.DialogDisplayer;
@@ -61,6 +58,7 @@ public class OkCancelDialog<V> extends JDialog {
         });
 
         validatedPanel.addPropertyChangeListener(validatedPanel.getPropertyName(), new PropertyChangeListener() {
+            @SuppressWarnings({ "unchecked" })
             @Override
             public void propertyChange(PropertyChangeEvent evt) {
                 value = (V) evt.getNewValue();
@@ -92,19 +90,20 @@ public class OkCancelDialog<V> extends JDialog {
 
         okButton.setDefaultCapable(true);
         getRootPane().setDefaultButton(okButton);
-        okButton.setEnabled(validatedPanel.isSyntaxOk() && !readOnly);
         innerPanel.add(validatedPanel, BorderLayout.CENTER);
 
+        Utilities.equalizeButtonSizes(new JButton[] { okButton, cancelButton });
+        getContentPane().setLayout( new BorderLayout() );
+        getContentPane().add( mainPanel, BorderLayout.CENTER );
+
+        validatedPanel.checkSyntax();
+        okButton.setEnabled(validatedPanel.isSyntaxOk() && !readOnly);
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
                 validatedPanel.focusFirstComponent();
             }
         });
-
-        Utilities.equalizeButtonSizes(new JButton[] { okButton, cancelButton });
-        getContentPane().setLayout(new BorderLayout());
-        getContentPane().add(mainPanel, BorderLayout.CENTER);
     }
 
     public boolean isReadOnly() {

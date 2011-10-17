@@ -14,7 +14,6 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.objectmodel.DuplicateObjectException;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
@@ -27,6 +26,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.Option;
+import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -93,31 +93,31 @@ public class CreatePolicyAction extends SecureAction {
 
                 AbstractTreeNode root = TopComponents.getInstance().getPoliciesFolderNode();
 
-                final Policy dlgPolicy = dlg.getValue();
-                long oid = -1L;
+                final Policy newPolicy = dlg.getValue();
+                Pair<Long,String> oidAndGuid = null;
                 try {
                     //if the editor didn't already create some policy content, create a default here
-                    if (!(dlgPolicy.getType() == PolicyType.INTERNAL)) {
-                        String xml = WspWriter.getPolicyXml(new AllAssertion(Arrays.<Assertion>asList(new AuditDetailAssertion("Policy Fragment: " + dlgPolicy.getName()))));
-                        dlgPolicy.setXml( xml );
-                    } else if (dlgPolicy.getXml() == null) {
+                    if (!(newPolicy.getType() == PolicyType.INTERNAL)) {
+                        String xml = WspWriter.getPolicyXml(new AllAssertion(Arrays.<Assertion>asList(new AuditDetailAssertion("Policy Fragment: " + newPolicy.getName()))));
+                        newPolicy.setXml( xml );
+                    } else if (newPolicy.getXml() == null) {
                         final String defaultPolicyXml =
-                                Registry.getDefault().getPolicyAdmin().getDefaultPolicyXml(dlgPolicy.getType(), dlgPolicy.getInternalTag());
+                                Registry.getDefault().getPolicyAdmin().getDefaultPolicyXml(newPolicy.getType(), newPolicy.getInternalTag());
 
                         String xml = (defaultPolicyXml != null)? defaultPolicyXml: WspWriter.getPolicyXml(
-                                new AllAssertion(Arrays.<Assertion>asList(new AuditDetailAssertion("Internal Policy: " + dlgPolicy.getName()))));
-                        dlgPolicy.setXml( xml );
+                                new AllAssertion(Arrays.<Assertion>asList(new AuditDetailAssertion("Internal Policy: " + newPolicy.getName()))));
+                        newPolicy.setXml( xml );
                     }
-                    dlgPolicy.setFolder(folder.orSome( ((RootNode) root).getFolder() ));
-                    oid = Registry.getDefault().getPolicyAdmin().savePolicy(dlgPolicy);
+                    newPolicy.setFolder( folder.orSome( ((RootNode) root).getFolder() ) );
+                    oidAndGuid = Registry.getDefault().getPolicyAdmin().savePolicy(newPolicy);
                 } catch ( DuplicateObjectException doe) {
-                    String message = "Unable to save the policy '" + dlgPolicy.getName() + "'.\n";
-                    if ( dlgPolicy.getType() == PolicyType.GLOBAL_FRAGMENT ) {
+                    String message = "Unable to save the policy '" + newPolicy.getName() + "'.\n";
+                    if ( newPolicy.getType() == PolicyType.GLOBAL_FRAGMENT ) {
                         message += "The policy name is already in use or there is an existing\n" +
-                                   "Global Policy Fragment with the '"+dlgPolicy.getInternalTag()+"' tag.";
-                    } else if (dlgPolicy.getType() == PolicyType.INTERNAL && PolicyType.getAuditMessageFilterTags().contains(dlgPolicy.getInternalTag())){
+                                   "Global Policy Fragment with the '"+newPolicy.getInternalTag()+"' tag.";
+                    } else if (newPolicy.getType() == PolicyType.INTERNAL && PolicyType.getAuditMessageFilterTags().contains(newPolicy.getInternalTag())){
                         message += "The policy name is already in use or there is an existing\n" +
-                                   "Internal Policy with the '"+dlgPolicy.getInternalTag()+"' tag.";
+                                   "Internal Policy with the '"+newPolicy.getInternalTag()+"' tag.";
                     }
                     else {
                         message += "The policy name is already used, please choose a different\n name and try again.";
@@ -127,7 +127,7 @@ public class CreatePolicyAction extends SecureAction {
                         @Override
                         public void run() {
                             // callback when dialog dismissed
-                            doEdit( parent, dlgPolicy );
+                            doEdit( parent, newPolicy );
                         }
                      });
                 } catch (PolicyAssertionException e) {
@@ -136,14 +136,10 @@ public class CreatePolicyAction extends SecureAction {
                     throw new RuntimeException("Couldn't save Policy", e);
                 }
 
-                Policy savedPolicy;
-                try {
-                    savedPolicy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(oid);
-                } catch (FindException e) {
-                    throw new RuntimeException("Policy saved, but couldn't be retrieved", e);
-                }
+                if ( oidAndGuid != null ) {
+                    newPolicy.setOid( oidAndGuid.left );
+                    newPolicy.setGuid( oidAndGuid.right );
 
-                if ( oid > 0L ) {
                     final JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
                     if (tree == null) {
                         log.log(Level.WARNING, "Policy tree unreachable.");
@@ -156,7 +152,7 @@ public class CreatePolicyAction extends SecureAction {
                     //Remove any filter before insert
                     TopComponents.getInstance().clearFilter();
 
-                    PolicyHeader ph = new PolicyHeader(savedPolicy);
+                    PolicyHeader ph = new PolicyHeader(newPolicy);
                     final AbstractTreeNode sn = TreeNodeFactory.asTreeNode(ph, null);
                     model.insertNodeInto(sn, parent, parent.getInsertPosition(sn, RootNode.getComparator()));
                     RootNode rootNode = (RootNode) model.getRoot();

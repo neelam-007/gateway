@@ -37,6 +37,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.util.Functions.map;
+import com.l7tech.util.Pair;
+import static com.l7tech.util.Pair.pair;
 
 /**
  * @author alex
@@ -193,8 +195,9 @@ public class PolicyAdminImpl implements PolicyAdmin {
     }
 
     @Override
-    public long savePolicy(Policy policy) throws SaveException {
-        return savePolicy(policy, true).getPolicyOid();
+    public Pair<Long,String> savePolicy(Policy policy) throws SaveException {
+        final PolicyCheckpointState policyCheckpointState = savePolicy(policy, true);
+        return pair( policyCheckpointState.getPolicyOid(), policyCheckpointState.getPolicyGuid() );
     }
 
     @Override
@@ -214,7 +217,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
     public long saveAlias(PolicyAlias pa) throws SaveException {
         long oid;
         try {
-            if(pa.getOid() > 0){
+            if(pa.getOid() > 0L ){
                 oid = pa.getOid();
                 logger.fine("Updating PolicyAlias: " + oid);
                 policyAliasManager.update(pa);
@@ -245,19 +248,16 @@ public class PolicyAdminImpl implements PolicyAdmin {
                 return saveWithoutActivating(policy);
 
             if (policy.getOid() == Policy.DEFAULT_OID) {
-                if(policy.getGuid() == null) {
-                    UUID guid = UUID.randomUUID();
-                    policy.setGuid(guid.toString());
-                }
+                ensureGuid( policy );
                 final long oid = policyManager.save(policy);
                 final PolicyVersion checkpoint = policyVersionManager.checkpointPolicy(policy, activateAsWell, true);
                 policyManager.addManagePolicyRole(policy);
-                return new PolicyCheckpointState(oid, checkpoint.getOrdinal(), checkpoint.isActive());
+                return new PolicyCheckpointState(oid, policy.getGuid(), checkpoint.getOrdinal(), checkpoint.isActive());
             } else {
                 policyManager.update(policy);
                 final PolicyVersion checkpoint = policyVersionManager.checkpointPolicy(policy, true, false);
                 long versionOrdinal = checkpoint.getOrdinal();
-                return new PolicyCheckpointState(policy.getOid(), versionOrdinal, checkpoint.isActive());
+                return new PolicyCheckpointState(policy.getOid(), policy.getGuid(), versionOrdinal, checkpoint.isActive());
             }
         } catch (SaveException e) {
             throw e;
@@ -270,6 +270,13 @@ public class PolicyAdminImpl implements PolicyAdmin {
             }
         } catch (ObjectModelException e) {
             throw new SaveException("Couldn't update policy", e);
+        }
+    }
+
+    private void ensureGuid( final Policy policy ) {
+        if(policy.getGuid() == null) {
+            UUID guid = UUID.randomUUID();
+            policy.setGuid(guid.toString());
         }
     }
 
@@ -328,7 +335,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
      * @throws SaveException
      * @throws ObjectModelException
      */
-    private void savePolicyFragments(boolean activateAsWell, HashMap<String, Policy> fragments, HashMap<String, String> fragmentNameGuidMap)
+    private void savePolicyFragments(boolean activateAsWell, HashMap<String, Policy> fragments, Map<String, String> fragmentNameGuidMap)
     throws IOException, ObjectModelException
     {
         Set<PolicyDependencyTreeNode> dependencyTree = generateIncludeDependencyTree(fragments);
@@ -345,7 +352,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
                     Policy p = policyManager.findByGuid(dependencyNode.policy.getGuid());
                     if (p == null) {
                         action = FragmentImportAction.CREATE;
-                    } else if (dependencyNode.policy.getOid() > 0) {
+                    } else if (dependencyNode.policy.getOid() > 0L ) {
                         fragmentNameGuidMap.put(dependencyNode.policy.getName(), p.getGuid());
                     }
                 } catch (FindException e) {
@@ -393,7 +400,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
      * @throws IOException If the XML for a policy cannot be converted to an Assertion tree
      */
     private Set<PolicyDependencyTreeNode> generateIncludeDependencyTree(HashMap<String, Policy> policies) throws IOException {
-        HashMap<String, PolicyDependencyTreeNode> dependencyNodes = new HashMap<String, PolicyDependencyTreeNode>();
+        Map<String, PolicyDependencyTreeNode> dependencyNodes = new HashMap<String, PolicyDependencyTreeNode>();
         Set<PolicyDependencyTreeNode> treeRoots = new HashSet<PolicyDependencyTreeNode>();
 
         for(Map.Entry<String, Policy> entry : policies.entrySet()) {
@@ -445,12 +452,13 @@ public class PolicyAdminImpl implements PolicyAdmin {
             // Save new policy without activating it
             String revisionXml = policy.getXml();
             policy.disable();
+            ensureGuid( policy );
             long oid = policyManager.save(policy);
             policyManager.addManagePolicyRole(policy);
             Policy toCheckpoint = makeCopyWithDifferentXml(policy, revisionXml);
             toCheckpoint.setVersion(toCheckpoint.getVersion() - 1);
             final PolicyVersion checkpoint = policyVersionManager.checkpointPolicy(toCheckpoint, false, true);
-            return new PolicyCheckpointState(oid, checkpoint.getOrdinal(), checkpoint.isActive());
+            return new PolicyCheckpointState(oid, policy.getGuid(), checkpoint.getOrdinal(), checkpoint.isActive());
         }
 
         try {
@@ -464,7 +472,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
             curPolicy.setXml(curXml + ' '); // leave policy semantics unchanged but bump the version number
             policyManager.update(curPolicy);
             final PolicyVersion checkpoint = policyVersionManager.checkpointPolicy(makeCopyWithDifferentXml(curPolicy, revisionXml), false, false);
-            return new PolicyCheckpointState(policyOid, checkpoint.getOrdinal(), checkpoint.isActive());
+            return new PolicyCheckpointState(policyOid, policy.getGuid(), checkpoint.getOrdinal(), checkpoint.isActive());
         } catch (InvocationTargetException e) {
             throw new SaveException(e);
         } catch (IllegalAccessException e) {

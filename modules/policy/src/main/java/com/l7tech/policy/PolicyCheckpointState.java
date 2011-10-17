@@ -1,5 +1,7 @@
 package com.l7tech.policy;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.Serializable;
 
 /**
@@ -10,6 +12,7 @@ public class PolicyCheckpointState implements Serializable {
     private static final long serialVersionUID = -2389027329118377434L;
 
     private final long policyOid;
+    private final String policyGuid;
     private final long policyVersionOrdinal;
     private final boolean policyVersionActive;
 
@@ -17,11 +20,16 @@ public class PolicyCheckpointState implements Serializable {
      * Create a PolicyCheckpointState to hold information about a Policy that was just saved.
      *
      * @param policyOid  the OID that got assigned to the policy that was saved.
+     * @param policyGuid the GUID for the policy that was saved.
      * @param policyVersionOrdinal the ordinal that was assigned to this version of the policy XML.
      * @param policyVersionActive true if this ordinal matches that of the currently-active version of the policy.
      */
-    public PolicyCheckpointState(long policyOid, long policyVersionOrdinal, boolean policyVersionActive) {
+    public PolicyCheckpointState( final long policyOid,
+                                  @NotNull final String policyGuid,
+                                  final long policyVersionOrdinal,
+                                  final boolean policyVersionActive) {
         this.policyOid = policyOid;
+        this.policyGuid = policyGuid;
         this.policyVersionOrdinal = policyVersionOrdinal;
         this.policyVersionActive = policyVersionActive;
     }
@@ -29,6 +37,12 @@ public class PolicyCheckpointState implements Serializable {
     /** @return the OID of the policy that was saved. */
     public long getPolicyOid() {
         return policyOid;
+    }
+
+    /** @return the GUID of the policy that was saved. */
+    @NotNull
+    public String getPolicyGuid() {
+        return policyGuid;
     }
 
     /**

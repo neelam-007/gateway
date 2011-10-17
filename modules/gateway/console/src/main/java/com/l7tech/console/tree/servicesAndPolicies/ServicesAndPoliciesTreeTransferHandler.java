@@ -25,6 +25,7 @@ import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -343,14 +344,15 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
             public void run() {
                 if (dlg.wasOKed()) {
                     Policy returnedPolicy = dlg.getValue();
-                    long oid;
                     try {
-                        oid = Registry.getDefault().getPolicyAdmin().savePolicy(returnedPolicy);
+                        final Pair<Long,String> oidAndGuid = Registry.getDefault().getPolicyAdmin().savePolicy(returnedPolicy);
+                        returnedPolicy.setOid( oidAndGuid.left );
+                        returnedPolicy.setGuid( oidAndGuid.right );
                         final AbstractTreeNode policyNode = TreeNodeFactory.asTreeNode(new PolicyHeader(returnedPolicy), RootNode.getComparator());
                         DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
                         model.insertNodeInto(policyNode, parentNode, parentNode.getInsertPosition(policyNode, RootNode.getComparator()));
                         RootNode rootNode = (RootNode) model.getRoot();
-                        rootNode.addEntity(oid, policyNode);
+                        rootNode.addEntity(oidAndGuid.left, policyNode);
                         tree.setSelectionPath(new TreePath(policyNode.getPath()));
                         model.nodeChanged(policyNode);
                     } catch ( DuplicateObjectException doe) {
