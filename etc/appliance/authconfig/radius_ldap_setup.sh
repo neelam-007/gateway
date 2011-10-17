@@ -851,6 +851,32 @@ else
 			toLog "    ERROR - The value of 'bindpw' directive for $NSS_LDAP_CONF_FILE is not valid! Exiting..."
 			exit 1
 		fi
+		
+		# updating the /etc/sudoers file:
+		if [ "X$LDAP_GROUP_NAME" != "X" ]; then
+			BK_DATE=$(date +"%Y%m%d_%H%M%S")
+			sed -i.before_"$LDAP_GROUP_NAME"_"$BK_DATE" "s|\(^ssgconfig ALL = NOPASSWD: /sbin/service ssem start.*$\)|\1\n\n# Added by $0 on $DATE_TIME:\n\
+%$LDAP_GROUP_NAME ALL = NOPASSWD: /sbin/reboot\n\
+%$LDAP_GROUP_NAME ALL = (layer7) NOPASSWD: /opt/SecureSpan/Appliance/config/systemconfig.sh\n\
+%$LDAP_GROUP_NAME ALL = (layer7) NOPASSWD: /opt/SecureSpan/Appliance/config/scahsmconfig.sh\n\
+%$LDAP_GROUP_NAME ALL = (layer7,root) NOPASSWD: /opt/SecureSpan/Appliance/libexec/masterkey-manage.pl\n\
+%$LDAP_GROUP_NAME ALL = (layer7) NOPASSWD: /opt/SecureSpan/Appliance/libexec/ncipherconfig.pl\n\
+%$LDAP_GROUP_NAME ALL = (layer7) NOPASSWD: /opt/SecureSpan/Appliance/libexec/ssgconfig_launch\n\
+%$LDAP_GROUP_NAME ALL = (layer7) NOPASSWD: /opt/SecureSpan/EnterpriseManager/config/emconfig.sh\n\
+%$LDAP_GROUP_NAME ALL = (layer7) NOPASSWD: /opt/SecureSpan/Appliance/libexec/patchcli_launch\n\
+%$LDAP_GROUP_NAME ALL = NOPASSWD: /sbin/chkconfig ssem on, /sbin/chkconfig ssem off\n\
+%$LDAP_GROUP_NAME ALL = NOPASSWD: /sbin/service ssem start, /sbin/service ssem stop, /sbin/service ssem status\n|" /etc/sudoers
+			if [ $? -ne 0 ] || [ "$(grep "^%$LDAP_GROUP_NAME" /etc/sudoers | head -n 1 | cut -d" " -f1)" != "%$LDAP_GROUP_NAME" ]; then
+				toLog "    ERROR - Updating the /etc/sudoers file failed. Restoring the previous version of the /etc/sudoers file and exiting..."
+				echo "mv -f /etc/sudoers.before* /etc/sudoers"
+				exit 1
+			else
+				toLog "    Success - the /etc/sudoers file was updated."
+			fi
+		else
+			toLog "    ERROR - The value of 'LDAP_GROUP_NAME' directive is not valid! Exiting..."
+			exit 1
+		fi
 	else
 		# Disable LDAP auth on the system
 		sed -i "s|^USELDAPAUTH.*$|USELDAPAUTH=no|" /etc/sysconfig/authconfig
