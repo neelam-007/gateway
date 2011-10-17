@@ -93,6 +93,14 @@ public class AssertionMessages extends Messages {
     public static final M HTTPCLIENTCERT_FOUND = m(4114, Level.INFO, "Found client certificate for {0}");
     public static final M HTTPCOOKIE_FOUND_EMPTY = m(4115, Level.WARNING, "Ignoring empty cookie with the name: {0}");
 
+    // ServerResolveServiceAssertion, service resolution
+    public static final Messages.M RESOLVE_SERVICE_ALREADY_RESOLVED = m(4150, Level.INFO, "Service resolution has already been performed for this request");
+    public static final Messages.M RESOLVE_SERVICE_ALREADY_HARDWIRED = m(4151, Level.INFO, "Request has already been assigned to a service");
+    public static final Messages.M RESOLVE_SERVICE_NOT_FOUND = m(4152, Level.INFO, "No service matched the specified parameters");
+    public static final Messages.M RESOLVE_SERVICE_FOUND_MULTI = m(4153, Level.INFO, "More than one service matched the specified parameters");
+    public static final Messages.M RESOLVE_SERVICE_FAILED = m(4154, Level.WARNING, "Service resolution failed: {0}");
+    public static final Messages.M RESOLVE_SERVICE_SUCCEEDED = m(4155, Level.INFO, "Resolved to service OID: {0}");
+
     // ServerIdentityAssertion
     /**
      * @deprecated
