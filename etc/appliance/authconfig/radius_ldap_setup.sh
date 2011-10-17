@@ -868,7 +868,12 @@ else
 %$LDAP_GROUP_NAME ALL = NOPASSWD: /sbin/service ssem start, /sbin/service ssem stop, /sbin/service ssem status\n|" /etc/sudoers
 			if [ $? -ne 0 ] || [ "$(grep "^%$LDAP_GROUP_NAME" /etc/sudoers | head -n 1 | cut -d" " -f1)" != "%$LDAP_GROUP_NAME" ]; then
 				toLog "    ERROR - Updating the /etc/sudoers file failed. Restoring the previous version of the /etc/sudoers file and exiting..."
-				echo "mv -f /etc/sudoers.before* /etc/sudoers"
+				mv -f /etc/sudoers.before* /etc/sudoers
+				if [ $? -ne 0 ]; then
+					toLog "    ERROR - Restoring the previous version of the /etc/sudoers file failed!"
+				else
+					toLog "    Success - Restoring the previous version of the /etc/sudoers file completed."
+				fi
 				exit 1
 			else
 				toLog "    Success - the /etc/sudoers file was updated."
