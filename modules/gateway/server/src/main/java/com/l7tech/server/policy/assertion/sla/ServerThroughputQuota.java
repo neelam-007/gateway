@@ -165,6 +165,12 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
             resolvedCounterName = ExpandVariables.process(resolvedCounterName, context.getVariableMap(varsUsed, getAudit()), getAudit());
         }
 
+        if (resolvedCounterName == null || resolvedCounterName.trim().isEmpty()) {
+            String errorMessage = "The resolved Counter ID is empty.";
+            logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_INVALID_COUNTER_ID, errorMessage);
+            throw new AssertionStatusException(AssertionStatus.FALSIFIED, errorMessage);
+        }
+
         final CounterManager counterManager = (CounterManager)applicationContext.getBean("counterManager");
         try {
             counterManager.checkOrCreateCounter(resolvedCounterName, true);
