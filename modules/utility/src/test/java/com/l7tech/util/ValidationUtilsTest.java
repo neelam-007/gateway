@@ -1,13 +1,10 @@
 package com.l7tech.util;
 
-import static com.l7tech.util.Option.optional;
 import static com.l7tech.util.Option.some;
 import com.l7tech.util.ValidationUtils.Validator;
-import static org.hamcrest.CoreMatchers.not;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-import java.lang.management.MonitorInfo;
 import java.util.regex.Pattern;
 
 /**
@@ -149,8 +146,12 @@ public class ValidationUtilsTest {
         assertFalse( "Invalid string empty timeunit", validatorSTU.isValid( null ) );
         assertFalse( "Invalid string syntax timeunit", validatorSTU.isValid( "asdf" ) );
 
-        assertTrue( "Valid time unit 100 d", validatorSTU.isValid( "100  d" ) );
+        assertTrue( "Valid time unit 100 d", validatorSTU.isValid( "100 d" ) );
+        assertTrue( "Valid time unit [ 100d]", validatorSTU.isValid( " 100d" ) );
+        assertTrue( "Valid time unit [100d ]", validatorSTU.isValid( "100d " ) );
         assertTrue( "Valid time unit 1,0,0 d", validatorSTU.isValid( "1,0,0 d" ) );
+        assertFalse( "Invalid time unit 100  d", validatorSTU.isValid( "100  d" ) );
+        assertFalse( "Invalid time unit 1 0 0 d", validatorSTU.isValid( "1 0 0 d" ) );
         assertFalse( "Invalid time unit 100de", validatorSTU.isValid( "100de" ) );
         assertFalse( "Invalid time unit 100X", validatorSTU.isValid( "100X" ) );
 

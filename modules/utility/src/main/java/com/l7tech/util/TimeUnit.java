@@ -29,6 +29,7 @@ public final class TimeUnit implements Serializable, Comparable {
     private final String abbreviation;
     private final int multiplier;
 
+    private static final Pattern numberPattern = Pattern.compile("(-?\\d*\\.?\\d*) ?(\\p{Lower}*)");
     private static final Map<String,TimeUnit> valuesByAbbrev = new HashMap<String,TimeUnit>();
     static {
         for ( TimeUnit timeUnit : ALL ) {
@@ -103,8 +104,6 @@ public final class TimeUnit implements Serializable, Comparable {
         return unit;
     }
 
-    private static final Pattern numberPattern = Pattern.compile("(-?\\d*\\.?\\d*)(\\p{Lower}*)");
-
     /**
      * Parses a time duration expressed as a number (which may contain periods, commas or spaces) followed by a one- or
      * two-letter, case-insensitive unit abbreviation, e.g. "60s" is 60 seconds, resulting in 60000.
@@ -132,7 +131,9 @@ public final class TimeUnit implements Serializable, Comparable {
         if (value.length() > 20) throw new NumberFormatException("Strings with more than 20 characters are not supported");
 
         try {
-            Matcher mat = numberPattern.matcher(value.toLowerCase().replace(",", "").replace(" ", ""));
+            Matcher mat = numberPattern.matcher( strict ?
+                    value.toLowerCase().replace(",", "") :
+                    value.toLowerCase().replace(",", "").replace(" ", ""));
             if (!mat.matches() && mat.groupCount() != 2)
                 throw new NumberFormatException("Value doesn't match expected format");
 
