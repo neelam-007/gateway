@@ -307,12 +307,13 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     hresponse.getOutputStream().close();
                     return;
                 }
+                final MimeKnob responseMimeKnob = response.getMimeKnob();
 
                 // Transmit the response and return
                 hresponse.setStatus(routeStat);
                 String[] ct = response.getHttpResponseKnob().getHeaderValues(HttpConstants.HEADER_CONTENT_TYPE);
                 if (ct == null || ct.length <= 0) {
-                    final ContentTypeHeader mimeKnobCt = response.getMimeKnob().getOuterContentType();
+                    final ContentTypeHeader mimeKnobCt = responseMimeKnob.getOuterContentType();
                     final String toset = mimeKnobCt == ContentTypeHeader.NONE ? null : mimeKnobCt.getFullValue();
                     hresponse.setContentType(toset);
                     if (toset == null) {
@@ -327,10 +328,17 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     responseos = new GZIPOutputStream(responseos);
                 }
                 boolean destroyAsRead = !context.isAuditSaveResponse();
-                IOUtils.copyStream(response.getMimeKnob().getEntireMessageBodyAsInputStream(destroyAsRead), responseos);
+                if ( destroyAsRead && config.getBooleanProperty( ServerConfigParams.PARAM_IO_HTTP_RESPONSE_STREAM_UNLIMITED, true ) ) {
+                    // It is safe to clear the response size limit since we're
+                    // not reading into memory. If an explicit size limit was
+                    // set for the entire message then it would have been
+                    // checked at that time.
+                    responseMimeKnob.setContentLengthLimit( 0L );
+                }
+                IOUtils.copyStream(responseMimeKnob.getEntireMessageBodyAsInputStream(destroyAsRead), responseos);
                 responseos.close();
                 logger.fine("servlet transport returned status " + routeStat +
-                            ". content-type " + response.getMimeKnob().getOuterContentType().getFullValue());
+                            ". content-type " + responseMimeKnob.getOuterContentType().getFullValue());
 
             } else if (respKnob.hasChallenge()) {
                 logger.fine("servlet transport returning challenge");
@@ -389,7 +397,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                                       ResponseKillerValve.ATTRIBUTE_FLAG_NAME);
                 return;
             }
-            
+
             try {
                 if (e instanceof MessageResponseIOException) {
                     sendExceptionFault(context, e.getMessage(), null, null, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, hrequest, hresponse);
@@ -547,7 +555,9 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 faultEncoding = Charsets.UTF8; // fallback to UTF-8 rather than failing    
             }
 
-            responseStream.write(faultXml.getBytes(faultEncoding));
+            if ( !hresp.isCommitted() ) {
+                responseStream.write(faultXml.getBytes(faultEncoding));
+            }
         } finally {
             if (responseStream != null) responseStream.close();
         }

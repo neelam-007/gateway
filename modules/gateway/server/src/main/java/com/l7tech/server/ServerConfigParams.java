@@ -170,4 +170,5 @@ public interface ServerConfigParams {
     String PARAM_DEBUG_SSL_VALUE = "ioDebugSslValue";
     String PARAM_LOG_STDOUT_LEVEL = "logStdOutLevel";
     String PARAM_LOG_STDERR_LEVEL = "logStdErrLevel";
+    String PARAM_IO_HTTP_RESPONSE_STREAM_UNLIMITED = "ioHttpResponseStreamUnlimited";
 }
