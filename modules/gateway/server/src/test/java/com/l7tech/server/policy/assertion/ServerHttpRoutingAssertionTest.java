@@ -31,6 +31,7 @@ import java.net.PasswordAuthentication;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 public class ServerHttpRoutingAssertionTest {
@@ -82,9 +83,9 @@ public class ServerHttpRoutingAssertionTest {
 
     @Test
     @BugNumber(10018)
-    public void testPassthroughAuthHeader() throws Exception {
+    public void testPassthroughAuthHeaderNotDuplicated() throws Exception {
         HttpRoutingAssertion hra = new HttpRoutingAssertion();
-        hra.setProtectedServiceUrl("http://localhost:17380/testPassthroughAuthHeader");
+        hra.setProtectedServiceUrl("http://localhost:17380/testPassthroughAuthHeaderNotDuplicated");
 
         // Configure to combine passthrough auth with pass through all application headers
         hra.setPassthroughHttpAuthentication(true);
@@ -134,5 +135,66 @@ public class ServerHttpRoutingAssertionTest {
 
         assertEquals("Only one copy of the request's Authorization header shall be passed through when both passthroughHttpAuthentication and request header forwardAll are enabled",
                 1, numAuthHeaders);
+    }
+
+    @Test
+    @BugNumber(10795)
+    public void testPassthroughAuthHeaderIgnoredIfCredentialsSpecified() throws Exception {
+        HttpRoutingAssertion hra = new HttpRoutingAssertion();
+        hra.setProtectedServiceUrl("http://localhost:17380/testPassthroughAuthHeader");
+
+        // Pass through all headers
+        hra.setRequestHeaderRules(new HttpPassthroughRuleSet(true, new HttpPassthroughRule[]{}));
+
+        // Configure a back-end HTTP Basic password
+        hra.setLogin("jimmy");
+        hra.setPassword("qwert");
+
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+        Message request = new Message(XmlUtil.stringAsDocument("<foo/>"));
+
+        MockServletContext servletContext = new MockServletContext();
+        MockHttpServletRequest hrequest = new MockHttpServletRequest(servletContext);
+        hrequest.addHeader("Authorization", "abcde=");
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));
+
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
+
+        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
+
+        final Object[] requestRecordedExtraHeaders = { null };
+        final PasswordAuthentication[] requestRecordedPasswordAuthentication = { null };
+
+        final String expectedResponse = "<bar/>";
+        final GenericHttpHeaders responseHeaders = new GenericHttpHeaders(new GenericHttpHeader[0]);
+        final MockGenericHttpClient mockClient = new MockGenericHttpClient(200, responseHeaders, ContentTypeHeader.XML_DEFAULT, 6L, (expectedResponse.getBytes()));
+        mockClient.setCreateRequestListener(new MockGenericHttpClient.CreateRequestListener() {
+            @Override
+            public MockGenericHttpClient.MockGenericHttpRequest onCreateRequest(HttpMethod method, GenericHttpRequestParams params, MockGenericHttpClient.MockGenericHttpRequest request) {
+                requestRecordedExtraHeaders[0] = params.getExtraHeaders();
+                requestRecordedPasswordAuthentication[0] = params.getPasswordAuthentication();
+                return request;
+            }
+        });
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+
+        final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(hra, appContext);
+        routingAssertion.checkRequest(pec);
+
+        PasswordAuthentication reqPasswordAuth = requestRecordedPasswordAuthentication[0];
+        assertNotNull("Request should be explicitly configured to use HTTP Basic credentials", reqPasswordAuth);
+        assertEquals("jimmy", reqPasswordAuth.getUserName());
+        assertEquals("qwert", new String(reqPasswordAuth.getPassword()));
+
+        @SuppressWarnings({"unchecked"}) List<HttpHeader> reqExtraHeaders = (List<HttpHeader>) requestRecordedExtraHeaders[0];
+
+        int numAuthHeaders = 0;
+        for (HttpHeader header : reqExtraHeaders) {
+            if ("authorization".equalsIgnoreCase(header.getName()))
+                numAuthHeaders++;
+        }
+
+        assertEquals("No authorization headers shall be passed through if request is configured with explicit HTTP Basic credentials",
+                0, numAuthHeaders);
     }
 }

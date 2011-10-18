@@ -80,6 +80,8 @@ public class HttpForwardingRuleEnforcer {
                     if (headerShouldBeIgnored(headerName)) {
                         // some headers should just be ignored cause they are not 'application headers'
                         logger.fine("not passing through " + headerName);
+                    } else if (headerName.equalsIgnoreCase(HttpConstants.HEADER_AUTHORIZATION) && httpRequestParams.getPasswordAuthentication() != null) {
+                        logger.fine("not passing through authorization header because credentials are specified for back-end request"); // bug 10795
                     } else if (headerName.equalsIgnoreCase(HttpConstants.HEADER_COOKIE)) {
                         if ( !cookieAlreadyHandled ) {
                             // special cookie handling
