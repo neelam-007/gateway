@@ -37,11 +37,7 @@ import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.TypedReference;
 import com.l7tech.policy.wsp.WspSensitive;
 import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.*;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.NamespaceMigratable;
 import com.l7tech.xml.soap.SoapVersion;
@@ -1865,8 +1861,9 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                                     log.log(Level.SEVERE, "Cannot update policy with new fragment OIDs", e);
                                 }
                             }
-                            if(activateAsWell){
-                                PolicyEditorPanel.this.topComponents.refreshPoliciesFolderNode();
+                            if (activateAsWell) {
+                                ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+                                ((DefaultTreeModel)tree.getModel()).nodeChanged(subject.getPolicyNode());
                             }
                         }
                     } finally {

@@ -258,7 +258,7 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
     protected String iconResource(boolean open) {
         ServiceHeader header = getEntityHeader();
 
-        if (header == null || header.isPolicyDisabled()) {
+        if (header == null) {
             return "com/l7tech/console/resources/services_disabled16.png";
         }
         else if (header.isPolicyDisabled() || header.isDisabled()) {

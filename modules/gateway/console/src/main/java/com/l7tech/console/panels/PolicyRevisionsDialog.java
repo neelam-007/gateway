@@ -6,6 +6,7 @@ import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
@@ -198,7 +199,6 @@ public class PolicyRevisionsDialog extends JDialog {
 
             info.right.setActive(true);
             tableModel.fireTableRowsUpdated(info.left, info.left);
-            TopComponents.getInstance().refreshPoliciesFolderNode();
             doEdit(evt);
         } catch (Exception e) {
             showErrorMessage("Unable to Set Active Version", "Unable to set active version: " + ExceptionUtils.getMessage(e), e);
@@ -243,9 +243,8 @@ public class PolicyRevisionsDialog extends JDialog {
 
                     versionTable.clearSelection();
                     showSelectedPolicyXml(true);
-                    TopComponents topComponents = TopComponents.getInstance();
                     // If currently this policy, make sure we don't misleadingly imply that it's active (Bug #4554)
-                    WorkSpacePanel workspace = topComponents.getCurrentWorkspace();
+                    WorkSpacePanel workspace = TopComponents.getInstance().getCurrentWorkspace();
                     if (workspace.getComponent() instanceof PolicyEditorPanel) {
                         PolicyEditorPanel pep = (PolicyEditorPanel)workspace.getComponent();
                         if (pep.getPolicyNode().getPolicy().getOid() == policyOid) {
@@ -253,7 +252,11 @@ public class PolicyRevisionsDialog extends JDialog {
                             pep.updateHeadings();
                         }
                     }
-                    topComponents.refreshPoliciesFolderNode();
+                    Object o = policyNode.getUserObject();
+                    if(o instanceof ServiceHeader){
+                        ServiceHeader sh = (ServiceHeader)o;
+                        sh.setPolicyDisabled(true);
+                    }
                 } catch (Exception e) {
                     showErrorMessage("Unable to Clear Active Version", "Unable to clear active version: " + ExceptionUtils.getMessage(e), e);
                 }
