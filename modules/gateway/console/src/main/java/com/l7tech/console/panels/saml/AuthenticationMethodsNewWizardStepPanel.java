@@ -21,6 +21,7 @@ import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.gui.util.ImageCache;
 import com.l7tech.util.ValidationUtils;
@@ -287,18 +288,23 @@ public class AuthenticationMethodsNewWizardStepPanel extends WizardStepPanel {
             final String[] split = RequireWssSaml.CUSTOM_AUTH_SPLITTER.split(customText);
             for (String s : split) {
                 if(s.isEmpty()) continue;
-
-                final String[] referencedNames = Syntax.getReferencedNames(s);
-                if (referencedNames.length == 0) {
-
-                    if (!ValidationUtils.isValidUri(s)) {
-                        customAuthMethodTextField.setSquiggly();
-                        //Don't set a range as there may be more than one error. Squiggly does not yet support multiple values.
-                        //Set the entire text field to red squiggly
-                        customAuthMethodTextField.setModelessFeedback("Invalid URI: '" + s + "'");
-                        invalid = true;
-                        break;//first invalid URI is the pop up message.
+                try {
+                    final String[] referencedNames = Syntax.getReferencedNames(s);
+                    if (referencedNames.length == 0) {
+                        if (!ValidationUtils.isValidUri(s)) {
+                            customAuthMethodTextField.setSquiggly();
+                            //Don't set a range as there may be more than one error. Squiggly does not yet support multiple values.
+                            //Set the entire text field to red squiggly
+                            customAuthMethodTextField.setModelessFeedback("Invalid URI: '" + s + "'");
+                            invalid = true;
+                            break;//first invalid URI is the pop up message.
+                        }
                     }
+                } catch (VariableNameSyntaxException e) {
+                    customAuthMethodTextField.setSquiggly();
+                    customAuthMethodTextField.setModelessFeedback("Invalid variable reference '" + s + "'");
+                    invalid = true;
+                    break;//first invalid variable reference is the pop up message.
                 }
             }
 
