@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspReader;
 
+import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.*;
 
@@ -107,6 +108,8 @@ public class ServerThroughputQuotaTest {
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
 
         assertEquals(AssertionStatus.NONE, assertionStatus);
+        //counter value should not have incremented
+        assertEquals(String.valueOf(DEFAULT_QUOTA + 1), context.getVariable("counter.value"));
         assertTrue( testAudit.isAuditPresent( AssertionMessages.THROUGHPUT_QUOTA_EXCEEDED ) );
     }
 

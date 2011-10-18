@@ -95,7 +95,12 @@ public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuo
                 String msg = "throughput quota limit is already reached.";
                 logger.info(msg);
                 logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_ALREADY_MET, getCounterName(context));
-                return assertion.isLogOnly() ? AssertionStatus.NONE : AssertionStatus.FALSIFIED;
+                if(assertion.isLogOnly()){
+                    this.setValue(context, counterManager.getCounterValue(getCounterName(context), assertion.getTimeUnit()));
+                    return AssertionStatus.NONE;
+                }else{
+                    return AssertionStatus.FALSIFIED;
+                }
             } finally {
                 // no sync issue here: this flag array belongs to the context which lives inside one thread only
                 context.getIncrementedCounters().add(getCounterName(context));
