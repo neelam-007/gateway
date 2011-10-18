@@ -48,7 +48,7 @@ class ServerResolveServiceAssertionTest extends SpecificationWithJUnit with Mock
 
       there was one(sass.serviceCache).resolve(anyString, anyString, anyString)
       val hasServiceOid = pec.getRequest.getKnob(classOf[HasServiceOid])
-      hasServiceOid must not be null
+      hasServiceOid must not beTheSameAs null
       hasServiceOid.getServiceOid must be equalTo service.getOid
       there was one(audit).logAndAudit(Matchers.eq(RESOLVE_SERVICE_SUCCEEDED), any)
     }
@@ -90,7 +90,7 @@ class ServerResolveServiceAssertionTest extends SpecificationWithJUnit with Mock
     ass.setUri("/foo")
 
     val audit = mock[Audit]
-    val auditFactory = new AuditFactory() { def newInstance(source: Any, logger: Logger): Audit = audit }
+    val auditFactory = new AuditFactory() { def newInstance(source: Object, logger: Logger): Audit = audit }
     val sass = new ServerResolveServiceAssertion(ass, auditFactory)
     sass.serviceCache = mock[ServiceCache]
 
