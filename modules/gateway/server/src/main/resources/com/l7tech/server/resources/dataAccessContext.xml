@@ -34,6 +34,7 @@
                 <value>classpath:hibernate.properties</value>
                 <value>file:${com.l7tech.server.configDirectory}${file.separator}node.properties</value>
                 <value>file:${com.l7tech.server.configDirectory}${file.separator}hibernate.properties</value>
+                <value>file:${com.l7tech.server.configDirectory}${file.separator}local.properties</value>
             </list>
         </property>
     </bean>
