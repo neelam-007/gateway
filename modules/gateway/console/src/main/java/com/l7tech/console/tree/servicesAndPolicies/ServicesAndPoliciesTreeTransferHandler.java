@@ -340,56 +340,65 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
         newPolicy.setGuid( null );
         newPolicy.setFolder(newParentFolder);
 
-        final Frame mw = TopComponents.getInstance().getTopParent();
-        final OkCancelDialog<Policy> dlg = PolicyPropertiesPanel.makeDialog(mw, newPolicy, true);
-        dlg.pack();
-        Utilities.centerOnParentWindow(dlg);
+        editAndSavePolicy( parentNode, tree, newPolicy );
+        return true;
+    }
 
-        DialogDisplayer.display(dlg, new Runnable() {
+    private void editAndSavePolicy( final AbstractTreeNode parentNode,
+                                    final ServicesAndPoliciesTree tree,
+                                    final Policy newPolicy ) {
+        final Frame mw = TopComponents.getInstance().getTopParent();
+        final OkCancelDialog<Policy> dlg = PolicyPropertiesPanel.makeDialog( mw, newPolicy, true );
+        dlg.pack();
+        Utilities.centerOnParentWindow( dlg );
+
+        final Runnable editAndSaveRunnable = new Runnable(){
             @Override
             public void run() {
-                if (dlg.wasOKed()) {
+                editAndSavePolicy( parentNode, tree, newPolicy );
+            }
+        };
+
+        DialogDisplayer.display( dlg, new Runnable() {
+            @Override
+            public void run() {
+                if ( dlg.wasOKed() ) {
                     Policy returnedPolicy = dlg.getValue();
                     try {
-                        final Pair<Long,String> oidAndGuid = Registry.getDefault().getPolicyAdmin().savePolicy(returnedPolicy);
+                        final Pair<Long, String> oidAndGuid = Registry.getDefault().getPolicyAdmin().savePolicy( returnedPolicy );
                         returnedPolicy.setOid( oidAndGuid.left );
                         returnedPolicy.setGuid( oidAndGuid.right );
-                        final AbstractTreeNode policyNode = TreeNodeFactory.asTreeNode(new PolicyHeader(returnedPolicy), RootNode.getComparator());
-                        DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
-                        model.insertNodeInto(policyNode, parentNode, parentNode.getInsertPosition(policyNode, RootNode.getComparator()));
-                        RootNode rootNode = (RootNode) model.getRoot();
-                        rootNode.addEntity(oidAndGuid.left, policyNode);
-                        tree.setSelectionPath(new TreePath(policyNode.getPath()));
-                        model.nodeChanged(policyNode);
-                    } catch ( DuplicateObjectException doe) {
+                        final AbstractTreeNode policyNode = TreeNodeFactory.asTreeNode( new PolicyHeader( returnedPolicy ), RootNode.getComparator() );
+                        final DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
+                        model.insertNodeInto( policyNode, parentNode, parentNode.getInsertPosition( policyNode, RootNode.getComparator() ) );
+                        final RootNode rootNode = (RootNode) model.getRoot();
+                        rootNode.addEntity( oidAndGuid.left, policyNode );
+                        tree.setSelectionPath( new TreePath( policyNode.getPath() ) );
+                        model.nodeChanged( policyNode );
+                    } catch ( DuplicateObjectException doe ) {
                         String message = "Unable to save the policy '" + returnedPolicy.getName() + "'.\n";
                         if ( returnedPolicy.getType() == PolicyType.GLOBAL_FRAGMENT ) {
                             message += "The policy name is already in use or there is an existing\n" +
-                                       "Global Policy Fragment with the '"+returnedPolicy.getInternalTag()+"' tag.";
-                        } else if (returnedPolicy.getType() == PolicyType.INTERNAL && PolicyType.getAuditMessageFilterTags().contains(returnedPolicy.getInternalTag())){
+                                    "Global Policy Fragment with the '" + returnedPolicy.getInternalTag() + "' tag.";
+                        } else if ( returnedPolicy.getType() == PolicyType.INTERNAL && PolicyType.getAuditMessageFilterTags().contains( returnedPolicy.getInternalTag() ) ) {
                             message += "The policy name is already in use or there is an existing\n" +
-                                       "Internal Policy with the '"+returnedPolicy.getInternalTag()+"' tag.";
-                        }
-                        else {
+                                    "Internal Policy with the '" + returnedPolicy.getInternalTag() + "' tag.";
+                        } else {
                             message += "The policy name is already used, please choose a different\n name and try again.";
 
                         }
-                        DialogDisplayer.showMessageDialog(mw, "Duplicate policy", message, null);
-                        copyPolicy(  parentNode,   tree,  newParentFolder,returnedPolicy);
-                    } catch (SaveException e) {
-                        String msg = "Error creating policy:" + e.getMessage();
-                        DialogDisplayer.showMessageDialog(mw, null, msg, null);
-                        copyPolicy(  parentNode,   tree,  newParentFolder,returnedPolicy);
-                    } catch (PolicyAssertionException e) {
-                        String msg = "Error while changing policy properties.";
-                        DialogDisplayer.showMessageDialog(mw, null, msg, null);
-                        copyPolicy(  parentNode,   tree,  newParentFolder,returnedPolicy);
+                        DialogDisplayer.showMessageDialog( mw, "Duplicate policy", message, null, editAndSaveRunnable );
+                    } catch ( SaveException e ) {
+                        final String msg = "Error creating policy:" + ExceptionUtils.getMessage(e);
+                        DialogDisplayer.showMessageDialog( mw, null, msg, null, editAndSaveRunnable );
+                    } catch ( PolicyAssertionException e ) {
+                        final String msg = "Error creating policy:" + ExceptionUtils.getMessage(e);
+                        DialogDisplayer.showMessageDialog( mw, null, msg, null, editAndSaveRunnable );
                     }
                     tree.filterTreeToDefault();
                 }
             }
-        });
-        return true;
+        } );
     }
 
     private boolean copyService(final AbstractTreeNode parentNode, final ServicesAndPoliciesTree tree, Folder newParentFolder, PublishedService service) {
