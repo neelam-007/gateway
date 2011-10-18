@@ -506,24 +506,31 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
         boolean isValid = false;
 
         final String tagName = elmToValidate.getLocalName();
+        final Attr name;
         final String namespaceURI = elmToValidate.getNamespaceURI();
+        final String ignoreMsg = "Ignoring variable.";
         switch (version) {
-
             case 1:
                 if (!"Attribute".equals(tagName)) {
-                    logger.warning("Expected SAML Attribute Element, found Element with name '" + tagName + "'");
+                    logger.warning("Expected SAML Attribute Element, found Element with name '" + tagName + "'. " + ignoreMsg);
                     break;
                 }
 
                 if (!SamlConstants.NS_SAML.equals(namespaceURI)) {
-                    logger.warning("Expected Namespace '"+SamlConstants.NS_SAML+"' found Element with namespace '" + namespaceURI + "'");
+                    logger.warning("Expected Namespace '"+SamlConstants.NS_SAML+"' found Element with namespace '" + namespaceURI + "'. " + ignoreMsg);
+                    break;
+                }
+
+                name = elmToValidate.getAttributeNode("AttributeName");
+                if (name == null) {
+                    logger.warning("Attribute element missing AttributeName attribute. " + ignoreMsg);
                     break;
                 }
 
 
                 final Attr nameNS = elmToValidate.getAttributeNode("AttributeNamespace");
                 if (nameNS == null) {
-                    logger.warning("Attribute element missing Name attribute.");
+                    logger.warning("Attribute element missing Name attribute. " + ignoreMsg);
                     break;
                 }
 
@@ -531,18 +538,18 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                 break;
             case 2:
                 if (!"Attribute".equals(tagName)) {
-                    logger.warning("Expected SAML Attribute Element, found Element with name '" + tagName + "'");
+                    logger.warning("Expected SAML Attribute Element, found Element with name '" + tagName + "'. " + ignoreMsg);
                     break;
                 }
 
                 if (!SamlConstants.NS_SAML2.equals(namespaceURI)) {
-                    logger.warning("Expected Namespace '"+SamlConstants.NS_SAML2+"' found Element with namespace '" + namespaceURI + "'");
+                    logger.warning("Expected Namespace '"+SamlConstants.NS_SAML2+"' found Element with namespace '" + namespaceURI + "'. " + ignoreMsg);
                     break;
                 }
 
-                final Attr name = elmToValidate.getAttributeNode("Name");
+                name = elmToValidate.getAttributeNode("Name");
                 if (name == null) {
-                    logger.warning("Attribute element missing Name attribute.");
+                    logger.warning("Attribute element missing Name attribute." + ignoreMsg);
                     break;
                 }
 

@@ -171,10 +171,11 @@ public final class CollectionUtils {
      * @param listToFilter List of items to filter. This list is not modified.
      * @param filterCallback The callback filter function. Return true to include item in return list. Callback
      * function will be called for every value in the list, including null.
-     * @return New list only containing items which satisfied the filter.
+     * @return New list only containing items which satisfied the filter, never null.
      */
-    public static <T> List<T> filter(final List<T> listToFilter,
-                                     final Functions.Unary<Boolean, T> filterCallback) {
+    @NotNull
+    public static <T> List<T> filter(@NotNull final List<T> listToFilter,
+                                     @NotNull final Functions.Unary<Boolean, T> filterCallback) {
         final List<T> filteredList = new ArrayList<T>();
         for (T item : listToFilter) {
             if (filterCallback.call(item)) {
