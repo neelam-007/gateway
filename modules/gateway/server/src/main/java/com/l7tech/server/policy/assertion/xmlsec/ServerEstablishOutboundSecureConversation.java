@@ -136,7 +136,7 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
         final String creationTimeStr = ExpandVariables.process(assertion.getCreationTime(), variableMap, getAudit());
         final String expirationTimeStr = ExpandVariables.process(assertion.getExpirationTime(), variableMap, getAudit());
 
-        // 5.1 Get the creation time
+        // Get the creation time
         if (! isEmptyString(creationTimeStr)) {
             try {
                 creationTime = ISO8601Date.parse(creationTimeStr).getTime();
@@ -152,7 +152,7 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
         } else {
             creationTime = now;
         }
-        // 5.2 Get the expiration time
+        // Get the expiration time
         if (! isEmptyString(expirationTimeStr)) {
             try {
                 expirationTime = ISO8601Date.parse(expirationTimeStr).getTime();
@@ -163,15 +163,22 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
         }  else {
             expirationTime = Long.MAX_VALUE;
         }
-        // 5.3 Apply Pre-expiry age on the expiration time
-        long preExpiryAge = config.getTimeUnitProperty(SESSION_PRE_EXPIRY_AGE, TimeUnit.MINUTES.toMillis(1L)); // Default: 1 minute
-        if (expirationTime != Long.MAX_VALUE) {
-            expirationTime -= preExpiryAge;
-            if (expirationTime < 0L ) {
-                expirationTime = 0L;
-            }
+        // Validate the expiration time against the creation time
+        if ( expirationTime - creationTime < 0L ) {
+            logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "Invalid Session Time: the session expiration time is before the session creation time.");
+            return AssertionStatus.FALSIFIED;
         }
-        // 5.4 Check the maximum expiry period against  "Maximum Expiry Period".
+
+        // Apply Pre-expiry age on the expiration time
+        long preExpiryAge = config.getTimeUnitProperty(SESSION_PRE_EXPIRY_AGE, TimeUnit.MINUTES.toMillis(1L)); // Default: 1 minute
+        if ( expirationTime != Long.MAX_VALUE ) {
+            if ( expirationTime - preExpiryAge <= creationTime ) {
+                logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "Session pre-expiry age exceeds session lifetime.");
+                return AssertionStatus.FALSIFIED;
+            }
+            expirationTime -= preExpiryAge;
+        }
+        // Check the maximum expiry period against  "Maximum Expiry Period".
         // If "Maximum Expiry Period" is zero, then don't check the creation time and the expiration time against "Maximum Expiry Period". 
         long maxExpiryPeriod;
         if (assertion.isUseSystemDefaultSessionDuration()) {
@@ -182,11 +189,8 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
         if (maxExpiryPeriod > 0L && ((expirationTime == creationTime) || maxExpiryPeriod < (expirationTime - creationTime))) {
             expirationTime = creationTime + maxExpiryPeriod;
         }
-        // 5.5 Validate the expiration time against the creation time and check if the session has expired
-        if (expirationTime - creationTime < 0L ) {
-            logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "Invalid Session Time: the session expiration time is before the session creation time.");
-            return AssertionStatus.FALSIFIED;
-        } else if (expirationTime < now) {
+        // Verify that the session has not expired
+        if (expirationTime < now) {
             logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "The session (ID: " + sessionId + ") has expired.");
             return AssertionStatus.FALSIFIED;
         }

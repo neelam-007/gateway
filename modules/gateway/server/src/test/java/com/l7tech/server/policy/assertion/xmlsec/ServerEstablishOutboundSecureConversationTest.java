@@ -1,6 +1,7 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.message.Message;
@@ -11,6 +12,9 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.xmlsec.EstablishOutboundSecureConversation;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.security.token.http.HttpBasicToken;
+import com.l7tech.server.ApplicationContextTest;
+import com.l7tech.server.ApplicationContexts;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -19,6 +23,7 @@ import com.l7tech.server.secureconversation.OutboundSecureConversationContextMan
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.server.secureconversation.SessionCreationException;
 import com.l7tech.server.secureconversation.StoredSecureConversationSessionManagerStub;
+import com.l7tech.server.util.ApplicationContextInjector;
 import com.l7tech.util.ISO8601Date;
 import com.l7tech.util.MockConfig;
 import org.junit.Before;
@@ -29,6 +34,7 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Properties;
 
 import static org.junit.Assert.*;
@@ -38,14 +44,16 @@ import static org.junit.Assert.*;
  */
 public class ServerEstablishOutboundSecureConversationTest {
     private static final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
-    private static final MockConfig mockConfig = new MockConfig(new Properties());
+    private static final Properties configProperties = new Properties();
+    private static final MockConfig mockConfig = new MockConfig(configProperties);
+    private static final TestAudit testAudit = new TestAudit();
     private static final InboundSecureConversationContextManager inboundContextManager = new InboundSecureConversationContextManager(mockConfig,new StoredSecureConversationSessionManagerStub());
     private static final OutboundSecureConversationContextManager outboundContextManager = new OutboundSecureConversationContextManager(mockConfig,new StoredSecureConversationSessionManagerStub());
 
     static {
         beanFactory.addBean("inboundSecureConversationContextManager", inboundContextManager);
         beanFactory.addBean("outboundSecureConversationContextManager", outboundContextManager);
-        beanFactory.addBean("serverConfig", new MockConfig(new Properties()));
+        beanFactory.addBean("serverConfig", mockConfig);
     }
 
     private final String serviceUrl = "http://service_url";
@@ -63,6 +71,7 @@ public class ServerEstablishOutboundSecureConversationTest {
     public void setUp() throws SessionCreationException, SAXException {
         establishmentAssertion = new EstablishOutboundSecureConversation();
         serverEstablishmentAssertion = new ServerEstablishOutboundSecureConversation(establishmentAssertion, beanFactory);
+        ApplicationContexts.inject( serverEstablishmentAssertion, Collections.singletonMap( "auditFactory", testAudit.factory() ) );
         request = new Message();
         context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request,  new Message());
 
@@ -158,6 +167,17 @@ public class ServerEstablishOutboundSecureConversationTest {
 
         expectedExpirationTime = creationTime + maxExpiryPeriod; // Since the system default max expiry period is 30 minutes, which is less than  [(expirationTime - creationTime) - defaultPreExpiryAge)].
         assertEquals( "New Expiration Time:", expectedExpirationTime, session.getExpiration());
+
+        // Test 5: Pre-expiry exceeds session lifetime
+        configProperties.setProperty( "outbound.secureConversation.sessionPreExpiryAge", "40m" ); // Token lifetime is 40 minutes
+        testAudit.reset();
+        try {
+            AssertionStatus pestatus = serverEstablishmentAssertion.doCheckRequest(context, request, "", context.getAuthenticationContext(request));
+            assertEquals( "Outbound Secure Conversation Session Expired:", AssertionStatus.FALSIFIED, pestatus);
+            assertTrue( "Failure due to pre-expiry", testAudit.isAuditPresentContaining( "Session pre-expiry age exceeds session lifetime." ));
+        } finally {
+            configProperties.remove( "outbound.secureConversation.sessionPreExpiryAge" );
+        }
     }
 
     private User user(final long userId, final String login) {
