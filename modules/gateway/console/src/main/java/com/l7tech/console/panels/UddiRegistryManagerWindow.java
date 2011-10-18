@@ -67,6 +67,7 @@ public class UddiRegistryManagerWindow extends JDialog {
         mainScrollPane.setViewportView(uddiRegistryTable);
         mainScrollPane.getViewport().setBackground(Color.white);
 
+        Utilities.setRowSorter(uddiRegistryTable, uddiRegistryTable.getModel(), new int[]{1,2,3}, new boolean[]{true,true,true}, null);
         uddiRegistryTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
@@ -282,7 +283,6 @@ public class UddiRegistryManagerWindow extends JDialog {
             for (UDDIRegistry uddiRegistry : registries)
                 rows.add(new UddiRegistryTableRow(uddiRegistry));
             uddiRegistryTable.setData(rows);
-            Utilities.setRowSorter(uddiRegistryTable, uddiRegistryTable.getModel());
         } catch (FindException e) {
             showErrorMessage("Loading failed", "Unable to list all UDDI Registry: " + ExceptionUtils.getMessage(e), e);
         }
