@@ -68,10 +68,6 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
             for( final AbstractTreeNode atn : transferNodes ){
                 if( atn instanceof RootNode ){
                     return null;
-                } else if ( atn instanceof PolicyEntityNode &&
-                        !((PolicyEntityNode)atn).getEntityHeader().isAlias() &&
-                         ((PolicyEntityNode)atn).getEntityHeader().getPolicyType()!=PolicyType.INCLUDE_FRAGMENT) {
-                    return null;
                 }
             }
 
@@ -213,7 +209,9 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
         return true;
     }
 
-    private boolean copyNode(AbstractTreeNode transferNode, final FolderNode newParent, final ServicesAndPoliciesTree tree)
+    private boolean copyNode( final AbstractTreeNode transferNode,
+                              final FolderNode newParent,
+                              final ServicesAndPoliciesTree tree)
             throws FindException, ConstraintViolationException, UpdateException, VersionException, PolicyAssertionException, SaveException {
 
 
@@ -328,7 +326,15 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
         return true;
     }
 
-    private boolean copyPolicy(final AbstractTreeNode parentNode, final ServicesAndPoliciesTree tree, final Folder newParentFolder, Policy policy) {
+    private boolean copyPolicy( final AbstractTreeNode parentNode,
+                                final ServicesAndPoliciesTree tree,
+                                final Folder newParentFolder,
+                                final Policy policy ) {
+        // Only policy include fragments can be copied
+        if ( policy.getType() != PolicyType.INCLUDE_FRAGMENT ) {
+            return false;
+        }
+
         Policy newPolicy = new Policy(policy);
         EntityUtils.updateCopy( newPolicy );
         newPolicy.setGuid( null );

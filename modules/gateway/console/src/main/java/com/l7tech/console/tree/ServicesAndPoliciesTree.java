@@ -513,6 +513,11 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
     }
 
     private static boolean isUserAuthorizedForEntityClipboardUse( final EntityType entityType ) {
+        return isUserAuthorizedForEntityClipboardUse( entityType, false );
+    }
+
+    private static boolean isUserAuthorizedForEntityClipboardUse( final EntityType entityType,
+                                                                  final boolean isMove ) {
         final Registry registry = Registry.getDefault();
         if ( registry==null || !registry.isAdminContextPresent()) return false;
 
@@ -522,7 +527,9 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
                 operation = new AttemptedUpdateAny(entityType);
                 break;
             default:
-                operation = new AttemptedCreate(entityType);
+                operation = isMove ?
+                        new AttemptedUpdateAny(entityType) :
+                        new AttemptedCreate(entityType);
                 break;
         }
 
@@ -549,7 +556,7 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
         final Unary<Boolean,EntityHeader> cutOrCopyPermission = new Unary<Boolean,EntityHeader>(){
             @Override
             public Boolean call( final EntityHeader entityHeader ) {
-                return entityHeader.getType()!=null && isUserAuthorizedForEntityClipboardUse( entityHeader.getType() );
+                return entityHeader.getType()!=null && isUserAuthorizedForEntityClipboardUse( entityHeader.getType(), true );
             }
         };
 
