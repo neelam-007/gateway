@@ -171,4 +171,5 @@ public interface ServerConfigParams {
     String PARAM_LOG_STDOUT_LEVEL = "logStdOutLevel";
     String PARAM_LOG_STDERR_LEVEL = "logStdErrLevel";
     String PARAM_IO_HTTP_RESPONSE_STREAM_UNLIMITED = "ioHttpResponseStreamUnlimited";
+    String PARAM_IO_HTTP_RESPONSE_STREAMING = "ioHttpResponseStreaming";
 }

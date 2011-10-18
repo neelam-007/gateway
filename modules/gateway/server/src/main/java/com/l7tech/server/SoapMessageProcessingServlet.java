@@ -3,6 +3,7 @@ package com.l7tech.server;
 import com.l7tech.common.http.CookieUtils;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpCookie;
+import static com.l7tech.server.ServerConfigParams.*;
 import com.l7tech.util.Config;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.XmlUtil;
@@ -327,8 +328,10 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     hresponse.setHeader(HttpConstants.HEADER_CONTENT_ENCODING, "gzip");
                     responseos = new GZIPOutputStream(responseos);
                 }
-                boolean destroyAsRead = !context.isAuditSaveResponse();
-                if ( destroyAsRead && config.getBooleanProperty( ServerConfigParams.PARAM_IO_HTTP_RESPONSE_STREAM_UNLIMITED, true ) ) {
+                boolean destroyAsRead =
+                        !context.isAuditSaveResponse() &&
+                        config.getBooleanProperty( PARAM_IO_HTTP_RESPONSE_STREAMING, true );
+                if ( destroyAsRead && config.getBooleanProperty( PARAM_IO_HTTP_RESPONSE_STREAM_UNLIMITED, true ) ) {
                     // It is safe to clear the response size limit since we're
                     // not reading into memory. If an explicit size limit was
                     // set for the entire message then it would have been
