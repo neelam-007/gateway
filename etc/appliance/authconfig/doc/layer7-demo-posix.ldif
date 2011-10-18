@@ -1,0 +1,475 @@
+# LDAP definition for Layer 7 demonstrations
+# Purpose is to illustrate adding new attributes that can be leveraged
+# from within policy using the Idenityt Attributes or LDAP Query assertions
+#
+# Use in conjunction with the layer7-demo.schema 
+#
+# Once schema has been added to ldap run:
+#
+#  ldapadd -x -D "<rootdn>" -f layer7-demo.ldif -w <rootpw>
+#
+# where <rootdn> and <rootpw> are defined in slapd.conf
+#
+# v20080514 - Jay MacDonald
+# v20090421 - Jay MacDonald
+# v20110819 - Adi Chiru - adding posixAccount and posixGroup in order to
+#			demonstrate centralized auth via Radius with LDAP
+
+dn: dc=l7tech,dc=com
+dc: l7tech
+description: Layer 7 Technologies markets a family of XML appliances and
+ software to secure, simplify and scale Web services. Web services are
+ applications that can expose their functionality to other applications
+ over the Internet using standards based XML data formats like SOAP, REST,
+ AJAX, and RSS. Modern service oriented application integration models and
+ Web oriented application delivery models depend on effectively addressing
+ the performance, security, complexity, reliability and availability
+ issues inherent in sharing Web services with other applications. Layer 7
+ Technologies therefore aims to provide the essential application oriented
+ security and networking infrastructure to enable Service-oriented and
+ Web-oriented architectures (i.e. SOA and Web 2.0) that are central to the
+ next wave of Internet and software innovation.
+ 
+ Founded in 2003, the company operates in the US, Canada and Europe. Its
+ customers include leading insurance, banking, telecom and government
+ organizations. The company is venture backed by leading Canadian and US
+ investors.
+objectClass: dcObject
+objectClass: organization
+o: Layer 7 Technologies, Inc
+
+## FIRST Level hierarchy - people 
+
+dn: ou=people,dc=l7tech,dc=com
+ou: people
+description: All people in organisation
+objectclass: organizationalunit
+
+dn: ou=posixAccounts,dc=l7tech,dc=com
+ou: posixAccounts
+description: All posix users
+objectClass: organizationalUnit
+objectClass: top
+
+dn: ou=posixGroups,dc=l7tech,dc=com
+ou: posixGroups
+description: All posix groups
+objectClass: organizationalUnit
+objectClass: top
+
+
+## SECOND Level hierarchy
+
+dn: cn=James Kirk,ou=people,dc=l7tech,dc=com
+objectclass: inetOrgPerson
+objectclass: Layer7Person
+cn: James Kirk
+sn: Kirk
+givenName: James Tiberius
+uid: jkirk
+userpassword: 7layer
+telephoneNumber: 778-329-9970
+mail: jkirk@l7tech.com
+description: Captain, USS Enterprise
+rank: Captain
+clearance: 5
+
+dn: cn=Spock,ou=people,dc=l7tech,dc=com
+objectclass: inetOrgPerson
+objectclass: Layer7Person
+cn: Spock
+sn: Spock
+uid: spock
+userpassword: 7layer
+telephoneNumber: 778-329-9984
+mail: spock@layer7tech.com
+description: Science Officer, USS Enterprise
+rank: Commander
+clearance: 4
+
+dn: cn=Leonard McCoy,ou=people,dc=l7tech,dc=com
+objectclass: inetOrgPerson
+objectclass: Layer7Person
+cn: Leonard McCoy
+sn: McCoy
+givenName: Leonard Horatio
+givenName: Bones
+uid: lmccoy
+userpassword: 7layer
+telephoneNumber: 778-329-9970
+mail: lmccoy@layer7tech.com
+description: Chief Medical Officer, USS Enterprise
+rank: Commander
+clearance: 4
+
+dn: cn=Nyota Uhura,ou=people,dc=l7tech,dc=com
+objectclass: inetOrgPerson
+objectclass: Layer7Person
+cn: Nyota Uhura
+sn: Uhura
+givenName: Nyota
+uid: nuhura
+userpassword: 7layer
+telephoneNumber: 778-329-9977
+mail: nuhura@layer7tech.com
+description: Communications Officer, USS Enterprise
+rank: Lieutenant
+clearance: 3
+
+dn: cn=Montgomery Scott,ou=people,dc=l7tech,dc=com
+objectclass: inetOrgPerson
+objectclass: Layer7Person
+cn: Montgomery Scott
+sn: Scott
+givenName: Montgomery
+givenName: Scotty
+uid: mscott
+userpassword: 7layer
+telephoneNumber: 778-329-9982
+mail: mscott@layer7tech.com
+description: Chief Engineer, USS Enterprise
+rank: Lieutenant Commander
+clearance: 3
+
+dn: cn=Hikaru Sulu,ou=people,dc=l7tech,dc=com
+objectclass: inetOrgPerson
+objectclass: Layer7Person
+cn: Hikaru Sulu
+sn: Sulu
+givenName: Hikaru
+uid: hsulu
+userpassword: 7layer
+telephoneNumber: 778-329-9972
+mail: hsulu@layer7tech.com
+description: Helmsman, USS Enterprise
+rank: Lieutenant Commander
+clearance: 3
+
+dn: cn=Pavel Chekov,ou=people,dc=l7tech,dc=com
+objectclass: inetOrgPerson
+objectclass: Layer7Person
+cn: Pavel Chekov
+sn: Chekov
+givenName: Pavel
+uid: pchekov
+userpassword: 7layer
+telephoneNumber: 778-329-9974
+mail: pchekov@layer7tech.com
+description: Navigator, USS Enterprise
+rank: Ensign
+clearance: 1
+
+dn: cn=Christine Chapel,ou=people,dc=l7tech,dc=com
+objectclass: inetOrgPerson
+objectclass: Layer7Person
+cn: Christine Chapel
+sn: Chapel
+givenName: Christine
+uid: cchapel
+userpassword: 7layer
+telephoneNumber: 778-329-9975
+mail: cchapel@layer7tech.com
+description: Nurse, USS Enterprise
+rank: Lieutenant
+clearance: 2
+
+dn: cn=Janice Rand,ou=people,dc=l7tech,dc=com
+objectclass: inetOrgPerson
+objectclass: Layer7Person
+cn: Janice Rand
+sn: Rand
+givenName: Janice
+uid: jrand
+userpassword: 7layer
+telephoneNumber: 778-329-9989
+mail: jrand@layer7tech.com
+description: Yeoman, USS Enterprise
+rank: Lieutenant
+clearance: 2
+
+dn: cn=Kevin Riley,ou=people,dc=l7tech,dc=com
+objectclass: inetOrgPerson
+objectclass: Layer7Person
+cn: Kevin Riley
+sn: Riley
+givenName: Kevin
+uid: kriley
+userpassword: 7layer
+telephoneNumber: 778-329-9993
+mail: kriley@layer7tech.com
+description: Bridge Officer, USS Enterprise
+rank: Lieutenant
+clearance: 2
+
+dn: cn=John Farrell,ou=people,dc=l7tech,dc=com
+objectclass: inetOrgPerson
+objectclass: Layer7Person
+cn: John Farrell
+sn: Farrell
+givenName: John
+uid: jfarrell
+userpassword: 7layer
+telephoneNumber: 778-329-9993
+mail: jfarrell@layer7tech.com
+description: Bridge Officer, USS Enterprise
+rank: Lieutenant
+clearance: 2
+
+dn: cn=Sarek,ou=people,dc=l7tech,dc=com
+objectclass: inetOrgPerson
+objectclass: Layer7Person
+cn: Sarek
+sn: Sarek
+uid: sarek
+userpassword: 7layer
+telephoneNumber: 778-329-9992
+mail: sarek@layer7tech.com
+description: Vulcan Ambassador to Earth
+entitlement: breakfast
+entitlement: lunch
+entitlement: dinner
+clearance: 0
+
+dn: cn=Harry Mudd,ou=people,dc=l7tech,dc=com
+objectclass: inetOrgPerson
+objectclass: Layer7Person
+cn: Harry Mudd
+sn: Mudd
+uid: hmudd
+userpassword: 7layer
+mail: hmudd@layer7tech.com
+description: Interstellar con man
+entitlement: lunch
+clearance: 0
+
+dn: cn=Robert Crater,ou=people,dc=l7tech,dc=com
+objectclass: inetOrgPerson
+objectclass: Layer7Person
+cn: Robert Crater
+sn: Crater
+uid: rcrater
+userpassword: 7layer
+mail: rcrater@layer7tech.com
+description: Archaeologist
+entitlement: breakfast
+entitlement: lunch
+entitlement: dinner
+clearance: 1
+
+dn: cn=Nancy Crater,ou=people,dc=l7tech,dc=com
+objectclass: inetOrgPerson
+objectclass: Layer7Person
+cn: Nancy Crater
+sn: Crater
+uid: ncrater
+userpassword: 7layer
+mail: ncrater@layer7tech.com
+description: Archaeologist
+entitlement: breakfast
+entitlement: lunch
+entitlement: dinner
+clearance: 1
+
+dn: cn=Roger Korby,ou=people,dc=l7tech,dc=com
+objectclass: inetOrgPerson
+objectclass: Layer7Person
+cn: Roger Korby
+sn: Korby
+uid: rkorby
+userpassword: 7layer
+mail: rkorby@layer7tech.com
+description: Nurse Chapel's fiancé and renowned exobiologist
+clearance: 1
+
+dn: cn=Simon van Gelder,ou=people,dc=l7tech,dc=com
+objectclass: inetOrgPerson
+objectclass: Layer7Person
+cn: Simon van Gelder
+sn: van Gelder
+uid: svangelder
+userpassword: 7layer
+mail: svangelder@layer7tech.com
+description: Tantalus V rehabilitation colony administrator
+entitlement: breakfast
+entitlement: lunch
+entitlement: dinner
+clearance: 2
+
+dn: cn=T'Pring,ou=people,dc=l7tech,dc=com
+objectclass: inetOrgPerson
+objectclass: Layer7Person
+cn: T'Pring
+sn: T'Pring
+uid: tpring
+userpassword: 7layer
+mail: tpring@layer7tech.com
+description: Vulcan bride for Spock
+
+dn: cn=T'Pau,ou=people,dc=l7tech,dc=com
+objectclass: inetOrgPerson
+objectclass: Layer7Person
+cn: T'Pau
+sn: T'Pau
+uid: tpau
+userpassword: 7layer
+mail: tpau@layer7tech.com
+description: Vulcan elder
+
+dn: cn=Stonn,ou=people,dc=l7tech,dc=com
+objectclass: inetOrgPerson
+objectclass: Layer7Person
+cn: Stonn
+sn: Stonn
+uid: tstonn
+userpassword: 7layer
+mail: stonn@layer7tech.com
+description: T'Pring's full blooded Vulcan lover
+
+dn: cn=Kor,ou=people,dc=l7tech,dc=com
+objectclass: inetOrgPerson
+objectclass: Layer7Person
+cn: Kor
+sn: Kor
+uid: kor
+userpassword: 7layer
+mail: kor@layer7tech.com
+description: Klingon military governor of Organia
+entitlement: dinner
+
+# Define a few groups by groupOfUniqueNames
+dn: cn=Vulcans,ou=people,dc=l7tech,dc=com
+objectclass: top
+objectclass: groupOfUniqueNames
+cn: Vulcans
+description: List of Vulcans in the directory
+uniqueMember: cn=Spock,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Sarek,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=T'Pring,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=T'Pau,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Stonn,ou=people,dc=l7tech,dc=com
+
+dn: cn=Humans,ou=people,dc=l7tech,dc=com
+objectclass: top
+objectclass: groupOfUniqueNames
+cn: Humans
+description: List of Humans in the directory
+uniqueMember: cn=James Kirk,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Spock,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Leonard McCoy,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Nyota Uhura,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Montgomery Scott,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Hikaru Sulu,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Pavel Chekov,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Christine Chapel,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Janice Rand,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Kevin Riley,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=John Farrell,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Harry Mudd,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Robert Crater,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Nancy Crater,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Roger Korby,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Simon van Gelder,ou=people,dc=l7tech,dc=com
+
+dn: cn=Starfleet,ou=people,dc=l7tech,dc=com
+objectclass: top
+objectclass: groupOfUniqueNames
+cn: Starfleet
+description: List of Starfleet members in the directory
+uniqueMember: cn=James Kirk,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Spock,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Leonard McCoy,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Nyota Uhura,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Montgomery Scott,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Hikaru Sulu,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Pavel Chekov,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Christine Chapel,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Janice Rand,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Kevin Riley,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=John Farrell,ou=people,dc=l7tech,dc=com
+
+dn: cn=USS Enterprise,ou=people,dc=l7tech,dc=com
+objectclass: top
+objectclass: groupOfUniqueNames
+cn: USS Enterprise
+description: List of Enterprise crew members in the directory
+uniqueMember: cn=James Kirk,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Spock,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Leonard McCoy,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Nyota Uhura,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Montgomery Scott,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Hikaru Sulu,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Pavel Chekov,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Christine Chapel,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Janice Rand,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Kevin Riley,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=John Farrell,ou=people,dc=l7tech,dc=com
+
+dn: cn=Senior Officers,ou=people,dc=l7tech,dc=com
+objectclass: top
+objectclass: groupOfUniqueNames
+cn: Senior Officers
+description: List of Senior Officers in the directory
+uniqueMember: cn=James Kirk,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Spock,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Leonard McCoy,ou=people,dc=l7tech,dc=com
+uniqueMember: cn=Montgomery Scott,ou=people,dc=l7tech,dc=com
+
+# Entry for posixGroups ou
+dn: cn=ssgconfig_ldap,ou=posixGroups,dc=l7tech,dc=com
+objectclass: top
+objectclass: posixGroup
+cn: ssgconfig_ldap
+gidNumber: 4000
+description: List of users with access to SSG
+memberUid: testuser1
+
+# Entries for posixAccounts ou
+dn: uid=testuser1,ou=posixAccounts,dc=l7tech,dc=com
+objectclass: top
+objectclass: account
+objectclass: posixAccount
+objectclass: shadowAccount
+cn: Test User1
+gidNumber: 4000
+uid: testuser1
+uidNumber: 4001
+userPassword:
+gecos: Test User1
+homeDirectory: /home/testuser1
+loginShell: /bin/bash
+description: SSG shell access account for user testuser1
+shadowLastChange: 1
+shadowMin: 0
+shadowMax: 99999
+shadowWarning: 7
+shadowInactive: -1
+shadowExpire: -1
+shadowFlag: 0
+
+dn: uid=testuser2,ou=posixAccounts,dc=l7tech,dc=com
+objectclass: top
+objectclass: account
+objectclass: posixAccount
+objectclass: shadowAccount
+cn: Test User2
+gidNumber: 3000
+uid: testuser2
+uidNumber: 4002
+userPassword:
+gecos: Test User2
+homeDirectory: /home/testuser2
+loginShell: /bin/bash
+description: SSG shell access account for user testuser2
+shadowLastChange: 1
+shadowMin: 0
+shadowMax: 99999
+shadowWarning: 7
+shadowInactive: -1
+shadowExpire: -1
+shadowFlag: 0
+
+# Define the jndi object for JMS
+dn: cn=jndi,dc=l7tech,dc=com
+cn: jndi
+objectClass: top
+objectClass: javaContainer
