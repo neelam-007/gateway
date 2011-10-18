@@ -5,8 +5,12 @@ package com.l7tech.console.panels.saml;
 
 import com.l7tech.console.beaneditor.BeanAdapter;
 import com.l7tech.console.panels.WizardStepPanel;
+import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlPolicyAssertion;
+import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.security.saml.SamlConstants;
 
 import javax.swing.*;
@@ -37,6 +41,9 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
     private JButton removeButton;
     private JButton editButton;
     private JLabel attributeTableLabel;
+    private SquigglyTextField filterExpressionTextField;
+    private JLabel filterSamlAttributesLabel;
+    private JPanel filterPanel;
     private DefaultTableModel attributesTableModel;
     private int samlVersion;
     private static final String ANY = "<any>";
@@ -90,6 +97,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
      * @throws IllegalArgumentException if the the data provided
      *                                  by the wizard are not valid.
      */
+    @Override
     public void storeSettings(Object settings) throws IllegalArgumentException {
         SamlPolicyAssertion assertion = (SamlPolicyAssertion)settings;
         SamlAttributeStatement statement = assertion.getAttributeStatement();
@@ -111,6 +119,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
             attributes.add(att);
         }
         statement.setAttributes((SamlAttributeStatement.Attribute[])attributes.toArray(new SamlAttributeStatement.Attribute[]{}));
+        statement.setFilterExpression(filterExpressionTextField.getText());
     }
 
     /**
@@ -122,6 +131,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
      * @throws IllegalArgumentException if the the data provided
      *                                  by the wizard are not valid.
      */
+    @Override
     public void readSettings(Object settings) throws IllegalArgumentException {
         SamlPolicyAssertion assertion = (SamlPolicyAssertion)settings;
         samlVersion = assertion.getVersion();
@@ -145,6 +155,8 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
                     att.isAnyValue() ? ANY : att.getValue(),
                     att.isRepeatIfMulti()});
         }
+
+        filterExpressionTextField.setText(statement.getFilterExpression());
     }
 
     private void initialize() {
@@ -161,7 +173,11 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
         } else {
             titleLabel.getParent().remove(titleLabel);
         }
+
+        filterPanel.setVisible(issueMode);
+
         attributesTableModel = new DefaultTableModel(new String[]{"Name", "Namespace", "Name Format", "Value", "Repeat?"}, 0){
+            @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
@@ -172,6 +188,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
         ListSelectionModel selectionModel = attributeTable.getSelectionModel();
         selectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         selectionModel.addListSelectionListener(new ListSelectionListener() {
+            @Override
             public void valueChanged(ListSelectionEvent e) {
                 removeButton.setEnabled(attributeTable.getSelectedRow() !=-1);
                 editButton.setEnabled(attributeTable.getSelectedRow() !=-1);
@@ -180,6 +197,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
 
         removeButton.setEnabled(false);
         removeButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 attributesTableModel.removeRow(attributeTable.getSelectedRow());
                 notifyListeners();
@@ -188,6 +206,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
 
         editButton.setEnabled(false);
         editButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 final int row = attributeTable.getSelectedRow();
                 final SamlAttributeStatement.Attribute attribute = new SamlAttributeStatement.Attribute();
@@ -198,6 +217,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
                 String value = AttributeStatementWizardStepPanel.toString(attributesTableModel.getValueAt(row, 3));
                 if (ANY.equals(value)) {
                     attribute.setAnyValue(true);
+                    //todo there may be cases where this value cannot be null.
                     attribute.setValue(null);
                 } else {
                     attribute.setAnyValue(false);
@@ -211,6 +231,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
                      * @param source the event source
                      * @param bean   the bean being edited
                      */
+                    @Override
                     public void onEditAccepted(Object source, Object bean) {
                         attributesTableModel.setValueAt(attribute.getName(), row, 0);
                         attributesTableModel.setValueAt(attribute.getNamespace(), row, 1);
@@ -224,6 +245,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
             }
         });
         addAttributeButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 final SamlAttributeStatement.Attribute attribute = new SamlAttributeStatement.Attribute();
                 EditAttributeDialog editAttributeDialog = new EditAttributeDialog(owner, attribute, samlVersion, issueMode);
@@ -234,6 +256,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
                      * @param source the event source
                      * @param bean   the bean being edited
                      */
+                    @Override
                     public void onEditAccepted(Object source, Object bean) {
                         attributesTableModel.addRow(new Object[] {
                                 attribute.getName(),
@@ -248,16 +271,27 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
                 editAttributeDialog.setVisible(true);
             }
         });
+
+        //Do not use TextComponentPauseListenerManager.registerPauseListener. See it's java doc for warning.
+        filterExpressionTextField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                notifyListeners();
+            }
+        }));
+
     }
 
     /**
      * @return the wizard step label
      */
+    @Override
     public String getStepLabel() {
         return "Attribute Statement";
     }
 
 
+    @Override
     public String getDescription() {
         if (issueMode) {
             return
@@ -278,8 +312,31 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
      *
      * @return true if the panel is valid, false otherwis
      */
+    @Override
     public boolean canAdvance() {
-        return attributesTableModel.getRowCount() > 0;
+
+        final String filterExp = filterExpressionTextField.getText();
+        boolean invalid = false;
+        if (!"".equals(filterExp)) {
+            try {
+                if (!Syntax.validateStringOnlyReferencesVariables(filterExp)) {
+                    filterExpressionTextField.setSquiggly();
+                    filterExpressionTextField.setModelessFeedback("Only variables may be referenced");
+                    invalid = true;
+                }
+            } catch (VariableNameSyntaxException e) {
+                filterExpressionTextField.setSquiggly();
+                filterExpressionTextField.setModelessFeedback("Invalid variable reference");
+                invalid = true;
+            }
+        }
+
+        if (!invalid) {
+            filterExpressionTextField.setNone();
+            filterExpressionTextField.setModelessFeedback(null);
+        }
+
+        return attributesTableModel.getRowCount() > 0 && !invalid;
     }
 
     /**

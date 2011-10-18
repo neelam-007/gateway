@@ -205,6 +205,7 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
                 collectVars(varNames, attr.getName());
                 collectVars(varNames, attr.getValue());
             }
+            collectVars(varNames, attributeStatement.getFilterExpression());
         }
 
         if (authorizationStatement != null) {

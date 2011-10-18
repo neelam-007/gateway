@@ -732,6 +732,7 @@ public class AssertionMessages extends Messages {
     public static final M MESSAGE_VARIABLE_NOT_XML = m(7245, Level.INFO, "Message variable {0} does not contain XML");
     public static final M OVERSIZEDTEXT_NS_DECLARATION_EXCEEDED = m(7246, Level.WARNING, "{0} exceeds namespace declaration limit");
     public static final M OVERSIZEDTEXT_NS_PREFIX_DECLARATION_EXCEEDED = m(7247, Level.WARNING, "{0} exceeds namespace prefix declaration limit");
+    public static final M MESSAGE_VARIABLE_NOT_XML_WARNING = m(7248, Level.WARNING, "Message variable {0} does not contain XML");
 
     // ServerWsTrustCredentialExchange
     public static final M WSFEDPASS_NO_SUITABLE_CREDENTIALS = m(7300, Level.INFO, "The current request did not contain credentials of any supported type");

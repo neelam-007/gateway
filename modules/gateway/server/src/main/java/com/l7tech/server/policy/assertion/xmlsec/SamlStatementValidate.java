@@ -112,8 +112,8 @@ public abstract class SamlStatementValidate {
 
     /**
      * Get all String values referenced from a custom authentication method value.
-     * @param customMethodExpression The expression to extract strings from. This may contain space or comma seperated
-     * strings, context variables, which themselves may be multi valued or contain spare / comma separated values to split.
+     * @param customMethodExpression The expression to extract strings from. This may contain space separated
+     * strings, context variables, which themselves may be multi valued or contain space separated values to split.
      * @param serverVariables Map of available variables.
      * @param auditor The auditor to audit to.
      * @return The list of Strings extracted from the customMethodExpression.
