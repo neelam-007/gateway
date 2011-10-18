@@ -1,7 +1,6 @@
 package com.l7tech.console.action;
 
 import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.Utilities;
 import com.l7tech.gateway.common.security.rbac.AttemptedAnyOperation;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.console.security.rbac.RoleManagementDialog;
@@ -19,6 +18,7 @@ public class ManageRolesAction extends SecureAction {
         super(new AttemptedAnyOperation(EntityType.RBAC_ROLE), UI_RBAC_ROLE_EDITOR);
     }
 
+    @Override
     public String getName() {
         return "Manage Roles";
     }
@@ -26,17 +26,17 @@ public class ManageRolesAction extends SecureAction {
     /**
      * @return the action description
      */
+    @Override
     public String getDescription() {
         return "View Roles";
     }
 
-    /**
-     *
-     */
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/Properties16.gif";
     }
 
+    @Override
     protected void performAction() {
         final JDialog dlg = new RoleManagementDialog(TopComponents.getInstance().getTopParent());
         DialogDisplayer.display(dlg);

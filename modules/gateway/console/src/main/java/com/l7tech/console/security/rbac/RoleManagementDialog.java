@@ -1,7 +1,11 @@
 package com.l7tech.console.security.rbac;
 
 import com.l7tech.console.action.Actions;
+import com.l7tech.console.util.Filter;
+import com.l7tech.console.util.FilterListModel;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.PauseListenerAdapter;
+import com.l7tech.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.util.Functions;
@@ -14,35 +18,39 @@ import javax.swing.*;
 import javax.swing.table.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.*;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 public class RoleManagementDialog extends JDialog {
+    private JPanel mainPanel;
     private JButton buttonHelp;
     private JButton buttonClose;
-
     private JList roleList;
     private JButton addRole;
     private JButton editRole;
     private JButton removeRole;
-
-    private JPanel mainPanel;
     private JTextPane propertiesPane;
-
-    private final PermissionFlags flags;
+    private JTable roleAssigneeTable;
+    private JTextField filterTextField;
+    private JLabel filterWarningLabel;
 
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.RbacGui");
 
+    private final PermissionFlags flags;
     private final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
-
     private final ActionListener roleActionListener = new ActionListener() {
+        @Override
         public void actionPerformed(ActionEvent e) {
             doUpdateRoleAction(e);
         }
     };
-    private JTable roleAssigneeTable;
+    private final DefaultListModel roleListModel = new DefaultListModel();
+    private final FilterListModel<RoleModel> filteredListRoleModel = new FilterListModel<RoleModel>(roleListModel);
     private RoleAssignmentTableModel roleAssignmentTableModel;
 
     public RoleManagementDialog(final Window parent) throws HeadlessException {
@@ -64,6 +72,7 @@ public class RoleManagementDialog extends JDialog {
         setupButtonListeners();
         setupActionListeners();
 
+        roleList.setModel( filteredListRoleModel );
         roleList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         enableEditRemoveButtons();
@@ -82,6 +91,7 @@ public class RoleManagementDialog extends JDialog {
 
     private void setupActionListeners() {
         roleList.addMouseListener(new MouseAdapter() {
+            @Override
             public void mouseClicked(MouseEvent e) {
                     //disable this code for now since we are not allowing the editing of roles in 3.6.
                     //Uncomment this to allow double click editing and enable/disable of the buttons
@@ -89,6 +99,7 @@ public class RoleManagementDialog extends JDialog {
                         enableEditRemoveButtons();
                     else if (e.getClickCount() >= 2) {
                         showEditDialog(getSelectedRole(), new Functions.UnaryVoid<Role>() {
+                            @Override
                             public void call(Role role) {
                                 updatePropertiesSummary();
                             }
@@ -99,11 +110,28 @@ public class RoleManagementDialog extends JDialog {
         });
 
         roleList.addListSelectionListener(new ListSelectionListener() {
+            @Override
             public void valueChanged(ListSelectionEvent e) {
                 enableEditRemoveButtons();
                 updatePropertiesSummary();
             }
         });
+
+        TextComponentPauseListenerManager.registerPauseListener( filterTextField, new PauseListenerAdapter() {
+            @Override
+            public void textEntryPaused( final JTextComponent component, final long msecs ) {
+                resetFilter();
+            }
+        }, 700 );
+
+        filterTextField.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // consume the enter key event, do nothing
+            }
+        });
+
+        filterWarningLabel.setVisible( false );
     }
 
     private void updatePropertiesSummary() {
@@ -202,6 +230,7 @@ public class RoleManagementDialog extends JDialog {
             }
         } );
         buttonClose.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onClose();
             }
@@ -227,6 +256,7 @@ public class RoleManagementDialog extends JDialog {
         JButton srcButton = (JButton) source;
         if (srcButton == addRole) {
             showEditDialog(new Role(), new Functions.UnaryVoid<Role>() {
+                @Override
                 public void call(Role newRole) {
                     if (newRole != null) populateList();
                     updatePropertiesSummary();
@@ -234,6 +264,7 @@ public class RoleManagementDialog extends JDialog {
             });
         } else if (srcButton == editRole) {
             showEditDialog(getSelectedRole(), new Functions.UnaryVoid<Role>() {
+                @Override
                 public void call(Role r) {
                     if (r != null) populateList();
                     updatePropertiesSummary();
@@ -247,6 +278,7 @@ public class RoleManagementDialog extends JDialog {
                 resources.getString("manageRoles.deleteTitle"),
                 MessageFormat.format(resources.getString("manageRoles.deleteMessage"), selectedRole.getName()),
                 new Runnable() {
+                    @Override
                     public void run() {
                         try {
                             rbacAdmin.deleteRole(selectedRole);
@@ -274,6 +306,7 @@ public class RoleManagementDialog extends JDialog {
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
+            @Override
             public void run() {
                 Role updated = dlg.getRole();
                 if (updated != null) {
@@ -291,15 +324,39 @@ public class RoleManagementDialog extends JDialog {
             final Collection<Role> roleCollection = rbacAdmin.findAllRoles();
             final Role[] roles = roleCollection.toArray(new Role[roleCollection.size()]);
             Arrays.sort(roles);
-            final RoleModel[] models = new RoleModel[roles.length];
-            for (int i = 0; i < roles.length; i++) {
-                Role role = roles[i];
-                models[i] = new RoleModel(role);
+            roleListModel.clear();
+            for ( final Role role : roles ) {
+                roleListModel.addElement( new RoleModel( role ) );
             }
-            roleList.setModel(new DefaultComboBoxModel(models));
         } catch (Exception e) {
             throw new RuntimeException("Couldn't get initial list of Roles", e);
         }
+    }
+
+    private void resetFilter() {
+        final String filterString = filterTextField.getText();
+        try {
+            filteredListRoleModel.setFilter( getFilter( filterString ) );
+            filterWarningLabel.setVisible( !filterString.isEmpty() );
+            roleList.getSelectionModel().clearSelection();
+        } catch (PatternSyntaxException e) {
+            DialogDisplayer.showMessageDialog(
+                    this,
+                    "Invalid syntax for the regular expression, \"" + filterString + "\"",
+                    "Role Filter",
+                    JOptionPane.WARNING_MESSAGE,
+                    null );
+        }
+    }
+
+    private Filter<RoleModel> getFilter( final String filter ) {
+        final Pattern pattern = Pattern.compile(filter, Pattern.CASE_INSENSITIVE);
+        return new Filter<RoleModel>(){
+            @Override
+            public boolean accept( final RoleModel o ) {
+                return pattern.matcher(o.name).find();
+            }
+        };
     }
 
     private static class RoleModel {
