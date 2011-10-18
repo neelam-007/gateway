@@ -39,11 +39,12 @@ public class ServerItemLookupByIndexAssertion extends AbstractServerAssertion<It
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         try {
             final Map<String,Object> varMap = context.getVariableMap(varsUsed, getAudit());
-            int index = Integer.parseInt(ExpandVariables.process(indexValue, varMap, getAudit(), true, 64));
-            if (index < 0) throw new NumberFormatException();
+            long lindex = Math.round(Double.parseDouble(ExpandVariables.process(indexValue, varMap, getAudit(), true, 64)));
+            if (lindex < 0) throw new NumberFormatException();
+            if (lindex > Integer.MAX_VALUE) throw new NumberFormatException();
 
             Object multival = context.getVariable(multivaluedVariableName);
-            Object value = getItemAtIndex(multivaluedVariableName, multival, index);
+            Object value = getItemAtIndex(multivaluedVariableName, multival, (int) lindex);
 
             context.setVariable(outputVariableName, value);
             return AssertionStatus.NONE;
@@ -55,7 +56,7 @@ public class ServerItemLookupByIndexAssertion extends AbstractServerAssertion<It
             logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Bad variable syntax: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
         } catch (NumberFormatException e) {
-            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Index value is not a nonnegative integer");
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Index value did not round to a nonnegative integer less than or equal to " + Integer.MAX_VALUE);
             return AssertionStatus.SERVER_ERROR;
         } catch (IndexOutOfBoundsException e) {
             logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Index value is out of bounds");
