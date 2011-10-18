@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
 import com.l7tech.gateway.common.transport.email.EmailServerType;
 import com.l7tech.gui.util.*;
+import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.ValidationUtils;
@@ -464,7 +465,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
      */
     private void modelToView() {
         name.setText(emailListener.getName());
-        activeCheckbox.setSelected(emailListener.isActive() || emailListener.getOid() == EmailListener.DEFAULT_OID);
+        activeCheckbox.setSelected(emailListener.isActive());
         serverType.setSelectedItem(emailListener.getServerType() == null ? EmailServerType.POP3 : emailListener.getServerType());
         useSSLCheckbox.setSelected(emailListener.isUseSsl());
         deleteOnReceiveCheckbox.setSelected(emailListener.isDeleteOnReceive());
@@ -524,6 +525,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
             });            
 
             serviceNameCombo.setModel(new DefaultComboBoxModel(comboitems));
+            serviceNameCombo.setRenderer(TextListCellRenderer.basicComboBoxRenderer());
  	 	    if (selectMe != null) {
  	 	        serviceNameCombo.setSelectedItem(selectMe);
  	 	        associateWithPublishedService.setSelected(true);

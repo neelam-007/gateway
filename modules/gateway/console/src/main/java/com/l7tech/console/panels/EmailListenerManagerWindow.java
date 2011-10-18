@@ -175,7 +175,9 @@ public class EmailListenerManagerWindow extends JDialog {
     }
 
     private void doCreate() {
-        editAndSave(new EmailListener(EmailServerType.POP3), true);
+        final EmailListener emailListener = new EmailListener(EmailServerType.POP3);
+        emailListener.setActive( true );
+        editAndSave(emailListener, true);
     }
 
     private void doClone() {
