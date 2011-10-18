@@ -116,6 +116,7 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
                 if (!ValidationUtils.isValidInteger(portText, false, 1, MAX_PORT)) {
                     logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Invalid port specified, port must be between 1 and 65535: " + selectedService);
                     failoverStrategy.reportFailure(selectedService);
+                    continue;
                 }
                 String serviceName = getContextVariable(context, matcher.group(3).trim());
                 String currentService = String.format("icap://%s:%s/%s", hostname, Integer.parseInt(portText), serviceName);
