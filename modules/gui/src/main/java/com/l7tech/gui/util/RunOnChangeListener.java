@@ -15,12 +15,27 @@ public class RunOnChangeListener implements ActionListener, ChangeListener, Docu
 
     //- PUBLIC
 
+    /**
+     * Create a run on change listener wihout a runnable.
+     *
+     * <p>When using the constructor the <code>run</code> method is typically
+     * overridden.</p>
+     *
+     * @see #run
+     */
     public RunOnChangeListener() {
         this.runnable = null;
     }
 
     /**
+     * Create a run on change listener that invokes the given runnable.
      *
+     * <p>NOTE: Rather than creating a Runnable instance and a RunOnChangeListener
+     * you may want to use the no-arg constructor and override the <code>run</code>
+     * method.</p>
+     *
+     * @param runme The runnable to run.
+     * @see #run
      */
     public RunOnChangeListener( final Runnable runme ) {
         if(runme==null) throw new NullPointerException("runme parameter must not be null");
@@ -101,6 +116,11 @@ public class RunOnChangeListener implements ActionListener, ChangeListener, Docu
 
     //- PROTECTED
 
+    /**
+     * Perform the action associated with this run on change listener.
+     *
+     * <p>This implementation invokes the wrapped Runnable (if any)</p>
+     */
     protected void run() {
         if ( runnable != null ) runnable.run();
     }
