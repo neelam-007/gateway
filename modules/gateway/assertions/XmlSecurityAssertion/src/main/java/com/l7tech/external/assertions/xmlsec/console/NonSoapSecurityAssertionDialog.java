@@ -29,8 +29,8 @@ public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionB
     private JTextField variablePrefixTextField;
     private JLabel variablePrefixLabel;
 
+    protected final AT assertion;
     private final XpathExpression defaultXpathExpression;
-    private final AT assertion;
     private XpathExpression xpathExpression;
 
     /**
@@ -177,6 +177,15 @@ public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionB
             hvp.setVariablePrefix(variablePrefix.length() < 1 ? null : variablePrefix);
         }
         return assertion;
+    }
+
+    @Override
+    public void setPolicyPosition(PolicyPosition policyPosition) {
+        super.setPolicyPosition(policyPosition);
+        policyPositionUpdated();
+    }
+
+    protected void policyPositionUpdated() {
     }
 
     // for child dialogs to check if OK button should be enabled

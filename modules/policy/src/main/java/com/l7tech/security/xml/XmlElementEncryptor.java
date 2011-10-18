@@ -10,10 +10,12 @@ import com.ibm.xml.enc.type.EncryptedData;
 import com.ibm.xml.enc.type.EncryptionMethod;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -25,6 +27,7 @@ import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Map;
 
 /**
  * Utility class that can perform non-SOAP XML encryption of an element, using an XmlElementEncryptionConfig.
@@ -39,12 +42,34 @@ public class XmlElementEncryptor {
      * Create an encryptor that will encrypt elements according to the specified configuration.
      *
      * @param config the configuration to use.  Required.
+     * @param variableMap a map of variable name to value.  Required if config specifies a certificate context variable.
      * @throws IOException if there is a problem decoding the recipient certificate.
      * @throws CertificateException if there is a problem decoding the recipient certificate.
      * @throws NoSuchAlgorithmException if the specified encryption algorithm URI is missing or unrecognized.
+     * @throws NoSuchVariableException if the config specifies a recipient cert context variable, but no matching key is present in the variable map, or no variable map was provided.
      */
-    public XmlElementEncryptor(@NotNull XmlElementEncryptionConfig config) throws IOException, CertificateException, NoSuchAlgorithmException {
-        this.recipientCert = CertUtils.decodeFromPEM(config.getRecipientCertificateBase64(), false);
+    public XmlElementEncryptor(@NotNull XmlElementEncryptionConfig config, @Nullable Map<String, ?> variableMap) throws IOException, CertificateException, NoSuchAlgorithmException, NoSuchVariableException {
+        X509Certificate cert;
+
+        final String varName = config.getRecipientCertContextVariableName();
+        if (varName != null && varName.trim().length() > 0) {
+            if (variableMap == null || !variableMap.containsKey(varName))
+                throw new NoSuchVariableException(varName);
+
+            Object value = variableMap.get(varName);
+            if (value instanceof X509Certificate) {
+                cert = (X509Certificate) value;
+            } else if (value instanceof String) {
+                // Assume PEM or raw base64 encoded
+                cert = CertUtils.decodeFromPEM(String.valueOf(value), false);
+            } else {
+                throw new NoSuchVariableException(varName, "Recipient certificate variable was neither an X509Certificate nor a string in PEM or Base-64 format.");
+            }
+        } else {
+            cert = CertUtils.decodeFromPEM(config.getRecipientCertificateBase64(), false);
+        }
+
+        this.recipientCert = cert;
         this.xencAlgorithm = config.getXencAlgorithm();
         XencUtil.getFlexKeyAlg(xencAlgorithm);
     }

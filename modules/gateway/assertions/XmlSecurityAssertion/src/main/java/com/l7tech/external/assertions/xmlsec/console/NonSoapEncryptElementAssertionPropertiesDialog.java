@@ -31,6 +31,7 @@ public class NonSoapEncryptElementAssertionPropertiesDialog extends NonSoapSecur
     public void setData(NonSoapEncryptElementAssertion assertion) {
         super.setData(assertion);
         encryptionConfigPanel.setData(assertion.config());
+        encryptionConfigPanel.setPolicyPosition(assertion, getPreviousAssertion());
     }
 
     @Override
@@ -38,5 +39,10 @@ public class NonSoapEncryptElementAssertionPropertiesDialog extends NonSoapSecur
         assertion = super.getData(assertion);
         assertion.config(encryptionConfigPanel.getData());
         return assertion;
+    }
+
+    @Override
+    protected void policyPositionUpdated() {
+        encryptionConfigPanel.setPolicyPosition(assertion, getPreviousAssertion());
     }
 }

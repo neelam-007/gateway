@@ -4,8 +4,10 @@ import com.l7tech.common.io.CertUtils;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.ValidatedPanel;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.xml.XencUtil;
 import com.l7tech.security.xml.XmlElementEncryptionConfig;
@@ -34,6 +36,9 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
     private JComboBox encryptionMethodComboBox;
     private JLabel recipientCertLabel;
     private JButton setRecipientCertificateButton;
+    private JRadioButton specifyCertificateRadioButton;
+    private JRadioButton useContextVariableRadioButton;
+    private TargetVariablePanel contextVariableField;
     private String certb64;
 
     private XmlElementEncryptionConfig model;
@@ -113,6 +118,18 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
             }
         });
 
+        RunOnChangeListener enableListener = new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                enableOrDisableComponents();
+            }
+        });
+        specifyCertificateRadioButton.addActionListener(enableListener);
+        useContextVariableRadioButton.addActionListener(enableListener);
+
+        contextVariableField.setValueWillBeRead(true);
+        contextVariableField.setValueWillBeWritten(false);
+
         updateRecipientCertLabel();
         add(contentPane, BorderLayout.CENTER);
     }
@@ -122,20 +139,41 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
         encryptionMethodComboBox.requestFocus();
     }
 
+    public void enableOrDisableComponents() {
+        setRecipientCertificateButton.setEnabled(specifyCertificateRadioButton.isSelected());
+        contextVariableField.setEnabled(useContextVariableRadioButton.isSelected());
+    }
+
     @Override
     protected void doUpdateModel() {
         model.setEncryptContentsOnly(false);
         model.setRecipientCertificateBase64(certb64);
         model.setXencAlgorithm((String)encryptionMethodComboBox.getSelectedItem());
+        if (specifyCertificateRadioButton.isSelected()) {
+            model.setRecipientCertContextVariableName(null);
+        } else {
+            model.setRecipientCertContextVariableName(contextVariableField.getVariable());
+        }
     }
 
     public void setData(XmlElementEncryptionConfig model) {
         encryptionMethodComboBox.setSelectedItem(model.getXencAlgorithm());
+        final String varname = model.getRecipientCertContextVariableName();
+        final boolean useVar = varname != null;
+        contextVariableField.setEnabled(useVar);
+        contextVariableField.setVariable(useVar ? varname : "");
+        specifyCertificateRadioButton.setSelected(!useVar);
+        useContextVariableRadioButton.setSelected(useVar);
         certb64 = model.getRecipientCertificateBase64();
+        updateRecipientCertLabel();
     }
 
-    public XmlElementEncryptionConfig getData() {
+    public XmlElementEncryptionConfig getData() throws AssertionPropertiesOkCancelSupport.ValidationException {
         doUpdateModel();
+        if (useContextVariableRadioButton.isSelected()) {
+            String err = contextVariableField.getErrorMessage();
+            if (err != null) throw new AssertionPropertiesOkCancelSupport.ValidationException(err);
+        }
         return model;
     }
 
@@ -158,5 +196,9 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
             logger.log(Level.INFO, "Unable to parse recipient certificate: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return "<html><i>&lt;Invalid X.509 certificate&gt;";
         }
+    }
+
+    public void setPolicyPosition(Assertion assertion, Assertion previousAssertion) {
+        contextVariableField.setAssertion(assertion, previousAssertion);
     }
 }

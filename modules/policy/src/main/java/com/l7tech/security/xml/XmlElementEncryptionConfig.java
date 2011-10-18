@@ -1,11 +1,14 @@
 package com.l7tech.security.xml;
 
+import com.l7tech.policy.assertion.UsesVariables;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.Serializable;
 
 /**
  * Holds settings for encrypting a non-SOAP element.
  */
-public final class XmlElementEncryptionConfig implements Serializable {
+public final class XmlElementEncryptionConfig implements Serializable, UsesVariables {
     /**
      * The recipient's certificate, if generating an EncryptedKey.
      */
@@ -19,6 +22,11 @@ public final class XmlElementEncryptionConfig implements Serializable {
 
     /** Symmetric encryption algorithm. */
     private String xencAlgorithm = XencUtil.AES_128_CBC;
+
+    /**
+     * If non-null, ignore any base64 cert and use the contents of the specified context variable instead.
+     */
+    private String recipientCertContextVariableName = null;
 
     public String getRecipientCertificateBase64() {
         return recipientCertificateBase64;
@@ -42,5 +50,18 @@ public final class XmlElementEncryptionConfig implements Serializable {
 
     public void setXencAlgorithm(String xencAlgorithm) {
         this.xencAlgorithm = xencAlgorithm;
+    }
+
+    public String getRecipientCertContextVariableName() {
+        return recipientCertContextVariableName;
+    }
+
+    public void setRecipientCertContextVariableName(@Nullable String recipientCertContextVariableName) {
+        this.recipientCertContextVariableName = recipientCertContextVariableName;
+    }
+
+    @Override
+    public String[] getVariablesUsed() {
+        return recipientCertContextVariableName == null ? new String[0] : new String[] {recipientCertContextVariableName};
     }
 }

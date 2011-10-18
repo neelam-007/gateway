@@ -37,6 +37,11 @@ public class NonSoapEncryptElementAssertion extends NonSoapSecurityAssertionBase
     }
 
     @Override
+    protected VariablesUsed doGetVariablesUsed() {
+        return super.doGetVariablesUsed().withVariables(config().getVariablesUsed());
+    }
+
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
@@ -84,6 +89,14 @@ public class NonSoapEncryptElementAssertion extends NonSoapSecurityAssertionBase
 
     public void setRecipientCertificateBase64(String recipientCertificateBase64) {
         config.setRecipientCertificateBase64(recipientCertificateBase64);
+    }
+
+    public String getRecipientCertContextVariableName() {
+        return config.getRecipientCertContextVariableName();
+    }
+
+    public void setRecipientCertContextVariableName(String contextVariableName) {
+        config.setRecipientCertContextVariableName(contextVariableName);
     }
 
     public XmlElementEncryptionConfig config() {

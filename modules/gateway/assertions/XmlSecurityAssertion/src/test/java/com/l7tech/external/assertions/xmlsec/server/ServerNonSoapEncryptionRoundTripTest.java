@@ -6,12 +6,14 @@ import com.l7tech.external.assertions.xmlsec.NonSoapEncryptElementAssertion;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.InvalidXpathException;
@@ -41,13 +43,15 @@ public class ServerNonSoapEncryptionRoundTripTest {
 
     private static SecurityTokenResolver securityTokenResolver;
     private static BeanFactory beanFactory;
+    private static X509Certificate recipCert;
     private static String recipb64;
 
     @BeforeClass
     public static void setupKeys() throws Exception {
         Pair<X509Certificate,PrivateKey> ks = TestCertificateGenerator.convertFromBase64Pkcs12(NonSoapXmlSecurityTestUtils.TEST_KEYSTORE);
-        recipb64 = HexUtils.encodeBase64(ks.left.getEncoded());
-        securityTokenResolver = new SimpleSecurityTokenResolver(ks.left, ks.right);
+        recipCert = ks.left;
+        recipb64 = HexUtils.encodeBase64(recipCert.getEncoded());
+        securityTokenResolver = new SimpleSecurityTokenResolver(recipCert, ks.right);
         beanFactory = new SimpleSingletonBeanFactory(new HashMap<String,Object>() {{
             put("securityTokenResolver", securityTokenResolver);
         }});
@@ -55,7 +59,24 @@ public class ServerNonSoapEncryptionRoundTripTest {
     
     @Test
     public void testEncryptionRoundTrip() throws Exception {
-        String encryptedXml = makeEncryptedMessage();
+        doRoundTripTest(false, false);
+
+    }
+
+    @Test
+    @BugNumber(7805)
+    public void testEncryptionRoundTripWithRecipientCertVariable() throws Exception {
+        doRoundTripTest(true, false);
+    }
+
+    @Test
+    @BugNumber(7805)
+    public void testEncryptionRoundTripWithRecipientCertStringVariable() throws Exception {
+        doRoundTripTest(true, true);
+    }
+
+    private void doRoundTripTest(boolean useCertVar, boolean encodeAsString) throws PolicyAssertionException, InvalidXpathException, IOException, CertificateException, SAXException, NoSuchAlgorithmException, NoSuchVariableException {
+        String encryptedXml = makeEncryptedMessage(useCertVar, encodeAsString);
 
         logger.info("Encrypted XML:\n" + encryptedXml);
 
@@ -68,15 +89,20 @@ public class ServerNonSoapEncryptionRoundTripTest {
         final Document doc = request.getXmlKnob().getDocumentReadOnly();
         logger.info("Decrypted XML:\n" + XmlUtil.nodeToString(doc));
         assertEquals(0, doc.getElementsByTagNameNS(SoapUtil.XMLENC_NS, "EncryptedData").getLength());
-
     }
 
-    private String makeEncryptedMessage() throws PolicyAssertionException, InvalidXpathException, IOException, CertificateException, SAXException, NoSuchAlgorithmException {
+    private String makeEncryptedMessage(boolean useCertVar, boolean encodeCertAsString) throws PolicyAssertionException, InvalidXpathException, IOException, CertificateException, SAXException, NoSuchAlgorithmException, NoSuchVariableException {
         Message req = ServerNonSoapEncryptElementAssertionTest.makeReq();
         NonSoapEncryptElementAssertion ass = ServerNonSoapEncryptElementAssertionTest.makeAss();
         ass.setRecipientCertificateBase64(recipb64);
+        if (useCertVar) {
+            ass.setRecipientCertContextVariableName(encodeCertAsString ? "recipCertString" : "recipCert");
+        }
         ServerNonSoapEncryptElementAssertion sass = new ServerNonSoapEncryptElementAssertion(ass);
-        AssertionStatus encryptResult = sass.checkRequest( PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, new Message()) );
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, new Message());
+        context.setVariable("recipCert", recipCert);
+        context.setVariable("recipCertString", recipb64);
+        AssertionStatus encryptResult = sass.checkRequest(context);
         assertEquals(AssertionStatus.NONE, encryptResult);
         return XmlUtil.nodeToString(req.getXmlKnob().getDocumentReadOnly());
     }
