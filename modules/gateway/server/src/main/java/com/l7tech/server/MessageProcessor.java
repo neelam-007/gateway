@@ -625,7 +625,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             final HttpMethod requestMethod = httpRequestKnob.getMethod();
             if (requestMethod != null && !service.isMethodAllowed(requestMethod)) {
                 String[] auditArgs = new String[] { requestMethod.name(), service.getName() };
-                Object[] faultArgs = new Object[] { requestMethod.name(), httpRequestKnob.getRequestUrl() };
+                Object[] faultArgs = new Object[] { requestMethod.name() };
                 auditor.logAndAudit(MessageProcessingMessages.METHOD_NOT_ALLOWED, auditArgs);
                 throw new MethodNotAllowedException(
                         MessageFormat.format(MessageProcessingMessages.METHOD_NOT_ALLOWED_FAULT.getMessage(), faultArgs));

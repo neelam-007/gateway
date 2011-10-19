@@ -34,7 +34,7 @@ public class MessageProcessingMessages extends Messages {
     public static final M METHOD_NOT_ALLOWED          = m(3021, Level.INFO, "HTTP method {0} not allowed for service {1}");
     public static final M INVALID_REQUEST_WITH_DETAIL = m(3022, Level.INFO, "Invalid request: {0}");
     public static final M MULTIPART_NOT_ALLOWED       = m(3023, Level.INFO, "Service does not accept multipart data");
-    public static final M METHOD_NOT_ALLOWED_FAULT    = m(3024, Level.INFO, "HTTP method {0} not allowed by {1}");
+    public static final M METHOD_NOT_ALLOWED_FAULT    = m(3024, Level.INFO, "HTTP method {0} not allowed");
     public static final M ERROR_WSS_SIGNATURE         = m(3025, Level.INFO, "Error in WSS signature processing: {0}");
     public static final M MESSAGE_NO_WSS              = m(3026, Level.INFO, "Message did not contain any WSS level security");
     public static final M MESSAGE_VAR_NOT_SOAP        = m(3027, Level.INFO, "{0} is not SOAP");
