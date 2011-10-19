@@ -166,26 +166,6 @@ public final class CollectionUtils {
     }
 
     /**
-     * Filter items from a List.
-     *
-     * @param listToFilter List of items to filter. This list is not modified.
-     * @param filterCallback The callback filter function. Return true to include item in return list. Callback
-     * function will be called for every value in the list, including null.
-     * @return New list only containing items which satisfied the filter, never null.
-     */
-    @NotNull
-    public static <T> List<T> filter(@NotNull final List<T> listToFilter,
-                                     @NotNull final Functions.Unary<Boolean, T> filterCallback) {
-        final List<T> filteredList = new ArrayList<T>();
-        for (T item : listToFilter) {
-            if (filterCallback.call(item)) {
-                filteredList.add(item);
-            }
-        }
-        return filteredList;
-    }
-
-    /**
      * Invoke the callback function for each item in the iterable.
      *
      * @param iterable The item to iterate
@@ -255,11 +235,11 @@ public final class CollectionUtils {
     }
 
     /**
-     * Join sublists into a list.
+     * Join sublists into a mutable list.
      *
-     * @param collections The collection of collection subclasses of A (may be null and contain null entries)
+     * @param collections The collection of collection subclasses of A
      * @param <T> The joined collection element type
-     * @return The joined collection (never null)
+     * @return The joined mutable collection (never null)
      */
     public static <T> Collection<T> join( final Collection<? extends Collection<T>> collections ) {
         final List<T> joined = new ArrayList<T>();
@@ -279,6 +259,9 @@ public final class CollectionUtils {
      * Get an iterable for all the given iterables.
      *
      * TODO [jdk7] @SafeVarargs
+     *
+     * <p>The returned iterable will support "remove" if supported by the given
+     * iterables.</p>
      *
      * @param iterables The iterables to iterate
      * @return An iterable that iterates all the given iterables.
@@ -361,13 +344,11 @@ public final class CollectionUtils {
     }
 
     /**
-     * Get a list containing the values from the given iterable.
-     *
-     * TODO [steve] renaming to make it clear if the result of a toList call is mutable
+     * Get a mutable list containing the values from the given iterable.
      *
      * @param iterable The iterable (may be null)
      * @param <T> The value type
-     * @return The list (never null)
+     * @return The mutable list (never null)
      */
     @NotNull
     public static <T> List<T> toList( final Iterable<T> iterable ) {
@@ -458,9 +439,9 @@ public final class CollectionUtils {
         }
 
         /**
-         * Construct the result map.
+         * Construct the mutable result map.
          *
-         * @return The map.
+         * @return The mutable map.
          */
         public Map<K,V> map() {
             return map;
@@ -472,7 +453,7 @@ public final class CollectionUtils {
          * <p>Currently the builder will permit modification of the
          * underlying map.</p>
          *
-         * @return The map.
+         * @return The read-only map.
          */
         public Map<K,V> unmodifiableMap() {
             return Collections.unmodifiableMap( map );

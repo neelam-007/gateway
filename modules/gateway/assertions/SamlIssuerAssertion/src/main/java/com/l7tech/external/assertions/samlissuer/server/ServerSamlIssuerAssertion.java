@@ -29,6 +29,7 @@ import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertionUtils;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.*;
+import static com.l7tech.util.Functions.grep;
 import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Attr;
@@ -354,7 +355,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
 
         //todo - check variables resolved from the filter expression for duplicates (name + nameformat)
         //Remove any Elements which are not valid.
-        final List<Element> requestAttributeElements = CollectionUtils.filter(extractElements(objects), new Functions.Unary<Boolean, Element>() {
+        final List<Element> requestAttributeElements = grep(extractElements(objects), new Functions.Unary<Boolean, Element>() {
             @Override
             public Boolean call(Element element) {
                 return validateElementIsAttribute(element, version);
@@ -388,7 +389,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
             configuredAttList.addAll(Arrays.asList(assertion.getAttributeStatement().getAttributes()));
         } else {
             // Filter early to avoid misleading logging / auditing messages.
-            configuredAttList = CollectionUtils.filter(
+            configuredAttList = grep(
                     Arrays.asList(assertion.getAttributeStatement().getAttributes()),
                     new Functions.Unary<Boolean, SamlAttributeStatement.Attribute>() {
                 @Override
