@@ -599,7 +599,6 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     return securityProcessingAssertionStatus;
                 } else {
                     auditor.logAndAudit(MessageProcessingMessages.SERVICE_NOT_FOUND);
-                    logger.info("Request URL not resolved: " + context.getRequest().getHttpRequestKnob().getRequestUrl());
                     return AssertionStatus.SERVICE_NOT_FOUND;
                 }
             }
