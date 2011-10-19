@@ -77,7 +77,7 @@ INSERT INTO rbac_permission VALUES (-813,0,-800,'READ',NULL,'POLICY');
 --
 INSERT INTO cluster_properties
     (objectid, version, propkey, propvalue)
-    values (-600200, 0, "upgrade.task.600200", "com.l7tech.server.upgrade.Upgrade61To62AddRoles");
+    values (-600201, 0, "upgrade.task.600201", "com.l7tech.server.upgrade.Upgrade61To62AddRoles");
 
 --
 -- Bug 9860: "Throughput Quota Enhancement" Feature Request
