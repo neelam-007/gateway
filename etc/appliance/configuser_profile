@@ -12,6 +12,7 @@ MASTERKEYMANAGE="/opt/SecureSpan/Appliance/libexec/masterkey-manage.pl"
 NCIPHERCONFIG="sudo -u layer7 /opt/SecureSpan/Appliance/libexec/ncipherconfig.pl"
 CHECK_USB_KEY="sudo -u layer7 ${MASTERKEYMANAGE} probe &> /dev/null"
 PATCHTOOL="sudo -u layer7 /opt/SecureSpan/Appliance/libexec/patchcli_launch"
+VIEWLOG="sudo /opt/SecureSpan/Appliance/libexec/viewlog"
 GETROOT="su -"
 MASTER_KEY_BACKUP_FILE_NAME="ssgscabk"
 
@@ -36,6 +37,13 @@ checkForEm() {
     EM_ENABLED=""
     if [ -d "/opt/SecureSpan/EnterpriseManager" ] ; then
         EM_PRESENT="true"
+    fi
+}
+
+checkForEmLog() {
+    EM_LOG_PRESENT=""
+    if [ -r "/opt/SecureSpan/EnterpriseManager/var/logs/ssem_0_0.log" ] ; then
+        EM_LOG_PRESENT="true"
     fi
 }
 
@@ -934,6 +942,210 @@ IFS='
     confirmedMessage ""
 }
 
+doLogMenu() {
+    checkForEmLog
+    isMenuValid="n"
+    while [ "$isMenuValid" != "y" ]
+    do
+        clear
+        echo "This menu allows you to view log files on the"
+        echo "Layer 7 Gateway Appliance"
+        echo ""
+        echo "What would you like to do?"
+        echo ""
+        echo " 1) View system logs"
+        echo " 2) View Gateway logs"
+        if [ "${EM_LOG_PRESENT}" == "true" ] ; then
+            echo " 3) View Enterprise Service Manager log"
+        fi
+        echo " X) Exit menu"
+        echo ""
+        echo -n "Please make a selection: "
+        read choice
+
+        case $choice in
+                1)
+                    clear;
+                    LOG_MENU_ITEMS=( "main" "security" "command" "MySQL" )
+                    LOG_FILE_PATTERNS=(
+                        "/var/log/messages"
+                        "/var/log/secure"
+                        "/var/log/bash_commands.log"
+                        "/var/log/mysqld.log"
+                    )
+                    doLogSubMenu "system"
+                    clear;;
+                2)
+                    clear;
+                    LOG_MENU_ITEMS=( "node" "host" "patch history" "patch client" "patch verifier" )
+                    LOG_FILE_PATTERNS=(
+                        "/opt/SecureSpan/Gateway/node/default/var/logs/ssg_._0.log"
+                        "/opt/SecureSpan/Controller/var/logs/sspc_._0.log"
+                        "/opt/SecureSpan/Controller/var/logs/patches.log"
+                        "/opt/SecureSpan/Controller/var/logs/patch_cli_._0.log"
+                        "/opt/SecureSpan/Controller/var/logs/patch_verifier_._0.log"
+                    )
+                    doLogSubMenu "Gateway"
+                    clear;;
+                3)
+                    clear;
+                    doLogViewMenu "Enterprise Service Manager" "/opt/SecureSpan/EnterpriseManager/var/logs/ssem_._0.log"
+                    clear;;
+                x|X)
+                    clear;
+                    isMenuValid="y";
+                    clear;;
+                *)
+                    clear;
+                    confirmedMessage "That is not a valid selection";
+                    clear;;
+        esac
+    done
+    isMenuValid="n"
+}
+
+doLogSubMenu() {
+    isMenuValid="n"
+    while [ "$isMenuValid" != "y" ]
+    do
+        clear
+        echo "This menu allows you to view ${1}"
+        echo "log files on the Layer 7 Gateway Appliance"
+        echo ""
+        echo "What would you like to do?"
+        echo ""
+        count=0;
+        while [ ! -z "${LOG_MENU_ITEMS[count]:+1}" ] ; do
+            LOG_NAME="${LOG_MENU_ITEMS[count]}"
+            count=$(( $count + 1 ))
+            echo " ${count}) View ${LOG_NAME} logs"
+        done
+        echo " X) Exit menu"
+        echo ""
+        echo -n "Please make a selection: "
+        read choice
+
+        case $choice in
+                x|X)
+                    clear;
+                    isMenuValid="y";
+                    clear;;
+                *)
+                    clear;
+                    count=0;
+                    LOG_MENU_DISPLAYED=""
+                    while [ ! -z "${LOG_MENU_ITEMS[count]:+1}" ] ; do
+                        LOG_NAME="${LOG_MENU_ITEMS[count]}"
+                        LOG_PATTERN="${LOG_FILE_PATTERNS[count]}"
+                        count=$(( $count + 1 ))
+                        if [ "${choice}" == "${count}" ] ; then
+                            LOG_MENU_DISPLAYED="true"
+                            doLogViewMenu "${LOG_NAME}" "${LOG_PATTERN}"
+                        fi
+                    done
+                    if [ "${LOG_MENU_DISPLAYED}" != "true" ]; then
+                        confirmedMessage "That is not a valid selection";
+                    fi
+                    clear;;
+        esac
+    done
+    isMenuValid="n"
+}
+
+doLogViewMenu() {
+    isMenuValid="n"
+    LOG_FILES=( $(${VIEWLOG} list "${LOG_PATTERN}" || true) )
+    if [ -z "${LOG_FILES:+1}" ] ; then
+        isMenuValid="y"
+        confirmedMessage "No log files available for ${1}"
+        clear
+    elif [ "${#LOG_FILES[@]}" == "1" ] ; then
+        # If there is only one log then display it
+        isMenuValid="y"
+        ${VIEWLOG} "${LOG_FILES[0]}"
+        clear
+    fi
+
+    while [ "$isMenuValid" != "y" ]
+    do
+        clear
+        echo "This menu allows you to view the"
+        echo "${1} log file(s)"
+        echo ""
+        echo "What would you like to do?"
+        echo ""
+        echo " 1) View current log"
+        echo " 2) View older logs"
+        echo " X) Exit menu"
+        echo ""
+        echo -n "Please make a selection: "
+        read choice
+
+        case $choice in
+                1)
+                    clear;
+                    ${VIEWLOG} "${LOG_FILES[0]}"
+                    clear;;
+                2)
+                    clear;
+                    doLogSelection "${1}"
+                    clear;;
+                x|X)
+                    clear;
+                    isMenuValid="y";
+                    clear;;
+                *)
+                    clear;
+                    confirmedMessage "That is not a valid selection";
+                    clear;;
+        esac
+    done
+    isMenuValid="n"
+}
+
+doLogSelection() {
+    isMenuValid="n"
+    while [ "$isMenuValid" != "y" ]
+    do
+        clear
+        echo "This menu allows you to view older"
+        echo "${1} log file(s)"
+        echo ""
+        echo "What would you like to do?"
+        echo ""
+        count=1;
+        while [ ! -z "${LOG_FILES[count]:+1}" ] ; do
+            LOG_NAME="${LOG_FILES[count]##*/}"
+            echo " ${count}) View ${LOG_NAME} log"
+            count=$(( $count + 1 ))
+        done
+        echo " X) Exit menu"
+        echo ""
+        echo -n "Please make a selection: "
+        read choice
+
+        case $choice in
+                x|X)
+                    clear;
+                    isMenuValid="y";
+                    clear;;
+                [1-9])
+                    clear;
+                    if [ ! -z "${LOG_FILES[choice]:+1}" ] ; then
+                        ${VIEWLOG} "${LOG_FILES[choice]}"
+                    else
+                        confirmedMessage "That is not a valid selection";
+                    fi
+                    clear;;
+                *)
+                    clear;
+                    confirmedMessage "That is not a valid selection";
+                    clear;;
+        esac
+    done
+    isMenuValid="n"
+}
+
 checkForSca
 checkForNcipher
 checkForEm
@@ -944,7 +1156,7 @@ while [ "$isPatchListMenuValid" != "y" ]
 do
     clear
         echo "Welcome to the SecureSpan Gateway - $(cat /etc/issue | head -1 | cut -d" " -f4 | sed 's/^v/ Version /')"
-		echo
+        echo
         echo "This user account allows you to configure the appliance"
         echo "What would you like to do?"
         echo ""
@@ -963,6 +1175,7 @@ do
         if [ "${PATCHER_PRESENT}" == "true" ] ; then
             echo " 8) Display Patch Management menu"
         fi
+        echo " 9) Display Log Viewing menu"
 
         echo " R) Reboot the SSG appliance (apply the new configuration)"
         echo " X) Exit (no reboot)"
@@ -988,6 +1201,9 @@ do
                 5)  clear;
                     (${CONFWIZARD} -processController);
                     confirmedMessage ""
+                    clear;;
+                9)  clear;
+                    doLogMenu
                     clear;;
                 x|X)  doLogout;;
                 r|R)  echo -n "Are you sure you want to reboot the Layer 7 Gateway? [y/n]: "

@@ -3084,6 +3084,7 @@
                         <include name="systeminfo.sh"/>
                         <include name="patch_launcher"/>
                         <include name="patchcli_launch"/>
+                        <include name="viewlog"/>
                     </fileset>
                     <fileset dir="${src.root}/etc/appliance/crypto">
                         <include name="ncipherconfig.pl"/>
