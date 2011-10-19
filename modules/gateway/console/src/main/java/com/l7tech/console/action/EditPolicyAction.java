@@ -9,6 +9,7 @@ import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
+import com.l7tech.console.util.PolicyRevisionUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
@@ -22,12 +23,12 @@ import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Option;
 
 import javax.swing.*;
 import javax.swing.tree.TreeModel;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
-import java.text.DateFormat;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -236,73 +237,24 @@ public class EditPolicyAction extends NodeAction {
      * @throws com.l7tech.objectmodel.FindException if there is a problem finding the selected revision's policy XML
      */
     private static Assertion findStartingAssertion(Policy policy) throws IOException, FindException {
-        final List<PolicyVersion> versions;
+        final Option<PolicyVersion> version;
         try {
-            versions = Registry.getDefault().getPolicyAdmin().findPolicyVersionHeadersByPolicy(policy.getOid());
+            version = PolicyRevisionUtils.selectRevision( policy.getOid(), "edit" );
         } catch (FindException e) {
-            String msg = "Unable to retrive versions for disabled policy oid " + policy.getOid() + ": " + ExceptionUtils.getMessage(e);
+            String msg = "Unable to retrieve versions for disabled policy oid " + policy.getOid() + ": " + ExceptionUtils.getMessage(e);
             logger.log(Level.WARNING, msg, e);
             JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(),
                                           msg, "Unable to Retrieve Revisions", JOptionPane.ERROR_MESSAGE);
             return policy.getAssertion();
         }
 
-        // Sort more recent revisions to the top
-        Collections.sort(versions, new Comparator<PolicyVersion>() {
-            @Override
-            public int compare(PolicyVersion o1, PolicyVersion o2) {
-                return Long.valueOf(o2.getOrdinal()).compareTo(o1.getOrdinal());
-            }
-        });
-
-        List<AssertionHaver> options = new ArrayList<AssertionHaver>();
-
-        AssertionHaver startFromEmpty = new AssertionHaver() {
-            @Override
-            public Assertion getAssertion() throws IOException, FindException {
-                return new AllAssertion(new ArrayList<Assertion>(Arrays.asList(new FalseAssertion())));
-            }
-
-            public String toString() {
-                return "Start from an empty policy";
-            }
-        };
-        options.add(startFromEmpty);
-
-        final DateFormat dateFormat = DateFormat.getInstance();
-        for (final PolicyVersion policyVersion : versions) {
-            long ordinal = policyVersion.getOrdinal();
-            String date = dateFormat.format(policyVersion.getTime());
-            String name = policyVersion.getName();
-            name = name == null ? "" : " (" + name + ')';
-            final String displayString = ordinal + " " + date + name;
-
-            options.add(new AssertionHaver() {
-                @Override
-                public Assertion getAssertion() throws IOException, FindException {
-                    PolicyVersion fullVersion = Registry.getDefault().getPolicyAdmin().
-                            findPolicyVersionByPrimaryKey(policyVersion.getPolicyOid(), policyVersion.getOid());
-                    return WspReader.getDefault().parsePermissively(fullVersion.getXml(), WspReader.INCLUDE_DISABLED);
-                }
-
-                public String toString() {
-                    return displayString;
-                }
-            });
+        if ( version.isSome() ) {
+            final PolicyVersion policyVersion = version.some();
+            PolicyVersion fullVersion = Registry.getDefault().getPolicyAdmin().
+                    findPolicyVersionByPrimaryKey( policyVersion.getPolicyOid(), policyVersion.getOid() );
+            return WspReader.getDefault().parsePermissively(fullVersion.getXml(), WspReader.INCLUDE_DISABLED);
+        } else {
+            return new AllAssertion(new ArrayList<Assertion>(Arrays.asList(new FalseAssertion())));
         }
-
-        Object result = JOptionPane.showInputDialog(TopComponents.getInstance().getTopParent(),
-                                                    "This policy has been disabled by having its active revision revoked.\n" +
-                                                    "Please choose a revision on which to base your edit.",
-                                                    "Choose Starting Revision",
-                                                    JOptionPane.QUESTION_MESSAGE,
-                                                    null,
-                                                    options.toArray(new AssertionHaver[options.size()]),
-                                                    startFromEmpty);
-
-        if (result == null)
-            return null;
-
-        return ((AssertionHaver)result).getAssertion();
     }
 }

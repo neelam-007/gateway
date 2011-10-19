@@ -5,6 +5,7 @@ import com.l7tech.console.panels.PolicyPropertiesPanel;
 import com.l7tech.console.panels.ServicePropertiesDialog;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.util.EntityUtils;
+import com.l7tech.console.util.PolicyRevisionUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.admin.AliasAdmin;
@@ -23,9 +24,16 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyAlias;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.PolicyVersion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions.Unary;
+import com.l7tech.util.Option;
+import static com.l7tech.util.Option.optional;
 import com.l7tech.util.Pair;
+import static com.l7tech.util.TextUtils.isNotEmpty;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -338,10 +346,39 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
         Policy newPolicy = new Policy(policy);
         EntityUtils.updateCopy( newPolicy );
         newPolicy.setGuid( null );
-        newPolicy.setFolder(newParentFolder);
+        newPolicy.setFolder( newParentFolder );
+        ensureActivePolicy( policy, newPolicy );
 
         editAndSavePolicy( parentNode, tree, newPolicy );
         return true;
+    }
+
+    private void ensureActivePolicy( final Policy originalPolicy,
+                                     final Policy copiedPolicy ) {
+        if ( originalPolicy.isDisabled() ) {
+            String policyXml = WspWriter.getPolicyXml(new AllAssertion());
+            final Option<PolicyVersion> version;
+            try {
+                version = PolicyRevisionUtils.selectRevision( originalPolicy.getOid(), "copy" );
+                if ( version.isSome() ) {
+                    final PolicyVersion policyVersion = version.some();
+                    final Option<PolicyVersion> fullVersion = optional( Registry.getDefault().getPolicyAdmin().
+                            findPolicyVersionByPrimaryKey( policyVersion.getPolicyOid(), policyVersion.getOid() ) );
+                    policyXml = fullVersion.map( new Unary<String,PolicyVersion>(){
+                        @Override
+                        public String call( final PolicyVersion policyVersion ) {
+                            return policyVersion.getXml();
+                        }
+                    } ).filter( isNotEmpty() ).orSome( policyXml );
+                }
+            } catch (FindException e) {
+                String msg = "Unable to retrieve versions for disabled policy oid " + originalPolicy.getOid() + ": " + ExceptionUtils.getMessage(e);
+                JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                                              msg, "Unable to Retrieve Revisions", JOptionPane.ERROR_MESSAGE);
+
+            }
+            copiedPolicy.setXml( policyXml );
+        }
     }
 
     private void editAndSavePolicy( final AbstractTreeNode parentNode,
@@ -408,6 +445,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
         EntityUtils.updateCopy( newService.getPolicy() );
         newService.getPolicy().setGuid( null );
         newService.setFolder(newParentFolder);
+        ensureActivePolicy( service.getPolicy(), newService.getPolicy() );
 
         try {
             final Registry registry = Registry.getDefault();
