@@ -28,8 +28,8 @@ BK_DIR="/opt/SecureSpan/Appliance/config/authconfig/bk_files"
 ORIG_CONF_FILES_DIR="/opt/SecureSpan/Appliance/config/authconfig/orig_conf_files"
 LOG_FILE="/opt/SecureSpan/Appliance/config/radius_ldap_setup.log"
 RADIUS_CFG_FILES="$PAM_RADIUS_CONF_FILE $PAM_SSHD_CONF_FILE /etc/pam.d/system-auth-ac"
-LDAP_CFG_FILES="$OPENLDAP_CONF_FILE $NSS_LDAP_CONF_FILE $NSS_CONF_FILE /etc/sysconfig/authconfig /etc/pam.d/system-auth-ac"
-RADIUS_WITH_LDAP_FILES="$OPENLDAP_CONF_FILE $NSS_LDAP_CONF_FILE $NSS_CONF_FILE $PAM_RADIUS_CONF_FILE $PAM_SSHD_CONF_FILE /etc/sysconfig/authconfig /etc/pam.d/system-auth-ac"
+LDAP_CFG_FILES="$OPENLDAP_CONF_FILE $NSS_LDAP_CONF_FILE $NSS_CONF_FILE $PAM_LOGIN_CONF_FILE /etc/sysconfig/authconfig /etc/pam.d/system-auth-ac"
+RADIUS_WITH_LDAP_FILES="$OPENLDAP_CONF_FILE $NSS_LDAP_CONF_FILE $NSS_CONF_FILE $PAM_RADIUS_CONF_FILE $PAM_SSHD_CONF_FILE $PAM_LOGIN_CONF_FILE /etc/sysconfig/authconfig /etc/pam.d/system-auth-ac"
 
 OWNER_CFG_FILE="layer7"
 PERM_CFG_FILE="600"
@@ -598,7 +598,7 @@ else
 	
 	# timelimit field
 	if [ "X$NSS_TIMELIMIT" != "X" ]; then
-		sed -i "s|\(^#timelimit.*$\)|\1\n# Added by $0 on $DATE_TIME:\ntimelimit $NSS_TIMELIMIT\n|" $NSS_LDAP_CONF_FILE
+		sed -i "s|^timelimit.*$|# Added by $0 on $DATE_TIME:\ntimelimit $NSS_TIMELIMIT\n|" $NSS_LDAP_CONF_FILE
 		if [ $? -ne 0 ] || [ "X$(grep "^timelimit" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$NSS_TIMELIMIT" ]; then
 			toLog "    ERROR - Configuring 'timelimit' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
 			exit 1
@@ -612,7 +612,7 @@ else
 	
 	# bind_timelimit
 	if [ "X$NSS_BIND_TIMELIMIT" != "X" ]; then
-		sed -i "s|\(^#bind_timelimit.*$\)|\1\n# Added by $0 on $DATE_TIME:\nbind_timelimit $NSS_BIND_TIMELIMIT\n|" $NSS_LDAP_CONF_FILE
+		sed -i "s|^bind_timelimit.*$|# Added by $0 on $DATE_TIME:\nbind_timelimit $NSS_BIND_TIMELIMIT\n|" $NSS_LDAP_CONF_FILE
 		if [ $? -ne 0 ] || [ "X$(grep "^bind_timelimit" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$NSS_BIND_TIMELIMIT" ]; then
 			toLog "    ERROR - Configuring 'bind_timelimit' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
 			exit 1
@@ -626,7 +626,7 @@ else
 	
 	# idle_timelimit
 	if [ "X$NSS_IDLE_TIMELIMIT" != "X" ]; then
-		sed -i "s|\(^#idle_timelimit.*$\)|\1\n# Added by $0 on $DATE_TIME:\nidle_timelimit $NSS_IDLE_TIMELIMIT\n|" $NSS_LDAP_CONF_FILE
+		sed -i "s|^idle_timelimit.*$|# Added by $0 on $DATE_TIME:\nidle_timelimit $NSS_IDLE_TIMELIMIT\n|" $NSS_LDAP_CONF_FILE
 		if [ $? -ne 0 ] || [ "X$(grep "^idle_timelimit" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$NSS_IDLE_TIMELIMIT" ]; then
 			toLog "    ERROR - Configuring 'idle_timelimit' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
 			exit 1
@@ -654,8 +654,8 @@ else
 	
 	# nss_base_passwd
 	if [ "X$NSS_BASE_PASSWD" != "X" ]; then
-		sed -i "s|\(^#nss_base_passwd.*$\)|\1\n# Added by $0 on $DATE_TIME:\nnss_base_passwd $NSS_BASE_PASSWD?one\n|" $NSS_LDAP_CONF_FILE
-		if [ $? -ne 0 ] || [ "X$(grep "^nss_base_passwd" $NSS_LDAP_CONF_FILE | cut -d" " -f2)?one" != "X$NSS_BASE_PASSWD" ]; then
+		sed -i "s|\(^#nss_base_passwd.*$\)|\1\n# Added by $0 on $DATE_TIME:\nnss_base_passwd $NSS_BASE_PASSWD,$LDAP_BASE?one\n|" $NSS_LDAP_CONF_FILE
+		if [ $? -ne 0 ] || [ "X$(grep "^nss_base_passwd" $NSS_LDAP_CONF_FILE | head -n 1 | cut -d" " -f2)" != "X$NSS_BASE_PASSWD,$LDAP_BASE?one" ]; then
 			toLog "    ERROR - Configuring 'nss_base_passwd' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
 			exit 1
 		else
@@ -668,8 +668,8 @@ else
 	
 	# nss_base_group
 	if [ "X$NSS_BASE_GROUP" != "X" ]; then
-		sed -i "s|\(^#nss_base_group.*$\)|\1\n# Added by $0 on $DATE_TIME:\nnss_base_group $NSS_BASE_GROUP?one\n|" $NSS_LDAP_CONF_FILE
-		if [ $? -ne 0 ] || [ "X$(grep "^nss_base_group" $NSS_LDAP_CONF_FILE | cut -d" " -f2)?one" != "X$NSS_BASE_GROUP" ]; then
+		sed -i "s|\(^#nss_base_group.*$\)|\1\n# Added by $0 on $DATE_TIME:\nnss_base_group $NSS_BASE_GROUP,$LDAP_BASE?one\n|" $NSS_LDAP_CONF_FILE
+		if [ $? -ne 0 ] || [ "X$(grep "^nss_base_group" $NSS_LDAP_CONF_FILE | head -n 1 | cut -d" " -f2)" != "X$NSS_BASE_GROUP,$LDAP_BASE?one" ]; then
 			toLog "    ERROR - Configuring 'nss_base_group' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
 			exit 1
 		else
@@ -682,8 +682,8 @@ else
 	
 	# nss_base_shadow
 	if [ "X$NSS_BASE_SHADOW" != "X" ]; then
-		sed -i "s|\(^#nss_base_shadow.*$\)|\1\n# Added by $0 on $DATE_TIME:\nnss_base_shadow $NSS_BASE_SHADOW?one\n|" $NSS_LDAP_CONF_FILE
-		if [ $? -ne 0 ] || [ "X$(grep "^nss_base_shadow" $NSS_LDAP_CONF_FILE | cut -d" " -f2)?one" != "X$NSS_BASE_SHADOW" ]; then
+		sed -i "s|\(^#nss_base_shadow.*$\)|\1\n# Added by $0 on $DATE_TIME:\nnss_base_shadow $NSS_BASE_SHADOW,$LDAP_BASE?one\n|" $NSS_LDAP_CONF_FILE
+		if [ $? -ne 0 ] || [ "X$(grep "^nss_base_shadow" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$NSS_BASE_SHADOW,$LDAP_BASE?one" ]; then
 			toLog "    ERROR - Configuring 'nss_base_shadow' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
 			exit 1
 		else
@@ -946,7 +946,7 @@ fi
 
 # login
 sed -i "s|\(.*pam_securetty.so.*$\)|\1\n#Added by $0 on $DATE_TIME:\nauth sufficient pam_ldap.so|" $PAM_LOGIN_CONF_FILE
-if [ $? -ne 0 ] || [ "X$(grep "^auth" $PAM_LOGIN_CONF_FILE | head -n 1 | cut -d" " -f3)" != "Xpam_ldap.so" ]; then
+if [ $? -ne 0 ] || [ "X$(grep "^auth" $PAM_LOGIN_CONF_FILE | head -n 2 | tail -n 1 | cut -d" " -f3)" != "Xpam_ldap.so" ]; then
 	toLog "    ERROR - Configuration of $PAM_LOGIN_CONF_FILE to use pam_ldap.so library failed. Exiting..."
 	exit 1
 else
@@ -1066,6 +1066,7 @@ elif [ $# -eq 2 ]; then
 						doBackup $OPENLDAP_CONF_FILE
 						doBackup $NSS_LDAP_CONF_FILE
 						doBackup $NSS_CONF_FILE
+						doBackup $PAM_LOGIN_CONF_FILE
 						doBackup /etc/pam.d/system-auth-ac
 						doBackup /etc/sysconfig/authconfig
 						# bring back the original files
@@ -1098,6 +1099,7 @@ elif [ $# -eq 2 ]; then
 						toLog "Info - ===== Starting backup for Radius current configuration files. ====="
 						doBackup $PAM_SSHD_CONF_FILE
 						doBackup $PAM_RADIUS_CONF_FILE
+						doBackup $PAM_LOGIN_CONF_FILE
 						doBackup /etc/pam.d/system-auth-ac
 						# bring back the original files
 						toLog "Info - ===== Restoring original configuration files. ====="
@@ -1242,3 +1244,4 @@ fi
 
 
 # END of script
+
