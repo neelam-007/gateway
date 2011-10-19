@@ -101,10 +101,10 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
     private JButton okButton;
     private JButton cancelButton;
-    private JSpinner connectTimeoutSpinner;
     private JCheckBox connectTimeoutDefaultCheckBox;
-    private JSpinner readTimeoutSpinner;
     private JCheckBox readTimeoutDefaultCheckBox;
+    private JTextField connectTimeoutTextField;
+    private JTextField readTimeoutTextField;
     private JSpinner maxRetriesSpinner;
     private JCheckBox maxRetriesDefaultCheckBox;
     private JRadioButton resHeadersAll;
@@ -282,11 +282,29 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private void initComponents(final boolean readOnly) {
         add(mainPanel);
 
-        connectTimeoutSpinner.setModel(new SpinnerNumberModel(1,1,86400,1));  // 1 day in seconds
-        inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(connectTimeoutSpinner, "Connection timeout"));
+        inputValidator.addRule(new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                if(ValidationUtils.isValidInteger(connectTimeoutTextField.getText(), false, 1,86400)) return null;
 
-        readTimeoutSpinner.setModel(new SpinnerNumberModel(1,1,86400,1));
-        inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(readTimeoutSpinner, "Read timeout"));
+                if(Syntax.getReferencedNames(connectTimeoutTextField.getText()).length > 0)
+                    return null;
+                else
+                     return MessageFormat.format("The {0} field must contain a context variable and/or an integer between {1} and {2}","Connection timeout",1,86400);
+            }
+        });
+
+        inputValidator.addRule(new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                if(ValidationUtils.isValidInteger(readTimeoutTextField.getText(), false, 1,86400)) return null;
+
+                if(Syntax.getReferencedNames(readTimeoutTextField.getText()).length > 0)
+                    return null;
+                else
+                     return MessageFormat.format("The {0} field must contain a context variable and/or an integer between {1} and {2}","Read timeout",1,86400);
+            }
+        });
 
         maxRetriesSpinner.setModel(new SpinnerNumberModel(3,0,100,1));
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(maxRetriesSpinner, "Maximum retries"));
@@ -297,8 +315,8 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         ActionListener enableSpinners = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                connectTimeoutSpinner.setEnabled(!connectTimeoutDefaultCheckBox.isSelected());
-                readTimeoutSpinner.setEnabled(!readTimeoutDefaultCheckBox.isSelected());
+                connectTimeoutTextField.setEnabled(!connectTimeoutDefaultCheckBox.isSelected());
+                readTimeoutTextField.setEnabled(!readTimeoutDefaultCheckBox.isSelected());
                 maxRetriesSpinner.setEnabled(!maxRetriesDefaultCheckBox.isSelected());
             }
         };
@@ -740,13 +758,13 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         }
 
         if (connectTimeoutDefaultCheckBox.isSelected())
-            assertion.setConnectionTimeout(null);
+            assertion.setConnectionTimeout((String)null);
         else
-            assertion.setConnectionTimeout((Integer)connectTimeoutSpinner.getValue()*1000);
+            assertion.setConnectionTimeout(connectTimeoutTextField.getText());
         if (readTimeoutDefaultCheckBox.isSelected())
-            assertion.setTimeout(null);
+            assertion.setTimeout((String)null);
         else
-            assertion.setTimeout((Integer)readTimeoutSpinner.getValue()*1000);
+            assertion.setTimeout(readTimeoutTextField.getText());
         if (maxRetriesDefaultCheckBox.isSelected())
             assertion.setMaxRetries(-1);
         else
@@ -849,24 +867,22 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         }
         ipListPanel.setFailoverStrategyName(assertion.getFailoverStrategyName());
 
-        Integer connectTimeout = assertion.getConnectionTimeout();
-        if (connectTimeout == null) {
-            connectTimeoutSpinner.setValue(30);
+        if (assertion.getConnectionTimeout() == null) {
+            connectTimeoutTextField.setText("30");
             connectTimeoutDefaultCheckBox.setSelected(true);
         } else {
-            connectTimeoutSpinner.setValue(connectTimeout / 1000);
+            connectTimeoutTextField.setText(assertion.getConnectionTimeout());
             connectTimeoutDefaultCheckBox.setSelected(false);
         }
-        connectTimeoutSpinner.setEnabled(!connectTimeoutDefaultCheckBox.isSelected());
-        Integer readTimeout = assertion.getTimeout();
-        if (readTimeout == null) {
-            readTimeoutSpinner.setValue(60);
+        connectTimeoutTextField.setEnabled(!connectTimeoutDefaultCheckBox.isSelected());
+        if (assertion.getTimeout() == null) {
+            readTimeoutTextField.setText("60");
             readTimeoutDefaultCheckBox.setSelected(true);
         } else {
-            readTimeoutSpinner.setValue(readTimeout / 1000);
+            readTimeoutTextField.setText(assertion.getTimeout());
             readTimeoutDefaultCheckBox.setSelected(false);
         }
-        readTimeoutSpinner.setEnabled(!readTimeoutDefaultCheckBox.isSelected());
+        readTimeoutTextField.setEnabled(!readTimeoutDefaultCheckBox.isSelected());
         int maxRetries = assertion.getMaxRetries();
         if (maxRetries == -1) {
             maxRetriesSpinner.setValue(3);

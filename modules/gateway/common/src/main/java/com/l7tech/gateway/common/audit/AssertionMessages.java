@@ -59,6 +59,7 @@ public class AssertionMessages extends Messages {
     public static final M HTTPROUTE_INVALIDCOOKIE = m(4036, Level.INFO, "Ignoring invalid cookie header ''{0}''");
     public static final M HTTPROUTE_RESPONSE_CHALLENGE = m(4037, Level.INFO, "Protected service requires authentication.");
     public static final M HTTPROUTE_RESPONSE_BADSTATUS = m(4038, Level.INFO, "Downstream service returned status ({0}). This is considered a failure case.");
+    public static final M HTTPROUTE_CONFIGURATION_ERROR = m(4050, Level.WARNING, "Invalid HTTP configuration ''{0}''.");
     /**
      * @deprecated
      */

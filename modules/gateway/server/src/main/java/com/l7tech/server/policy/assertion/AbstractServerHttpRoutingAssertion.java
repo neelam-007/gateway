@@ -6,17 +6,21 @@ import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.identity.User;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.message.HttpInboundResponseKnob;
 import com.l7tech.message.Message;
 import com.l7tech.message.HttpInboundResponseFacet;
+import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.util.ValidationUtils;
 import org.springframework.context.ApplicationContext;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 import java.util.logging.Level;
 
 /**
@@ -47,11 +51,11 @@ public abstract class AbstractServerHttpRoutingAssertion<HRAT extends HttpRoutin
      * @return The connection timeout in millis
      */
     @Override
-    protected int getConnectionTimeout() {
-        Integer timeout = validateTimeout(assertion.getConnectionTimeout());
+    protected int getConnectionTimeout(Map vars) {
 
+        Integer timeout = expandVariableAsInt(assertion.getConnectionTimeout(), "Connection timeout", 1, 86400, vars);
         if (timeout == null)
-            timeout = super.getConnectionTimeout();
+            timeout = super.getTimeout(null);
 
         return timeout;
     }
@@ -64,13 +68,35 @@ public abstract class AbstractServerHttpRoutingAssertion<HRAT extends HttpRoutin
      * @return The timeout in millis
      */
     @Override
-    protected int getTimeout() {
-        Integer timeout = validateTimeout(assertion.getTimeout());
-
+    protected int getTimeout(Map vars) {
+        Integer timeout = expandVariableAsInt(assertion.getTimeout(), "Timeout", 1, 86400, vars);
         if (timeout == null)
-            timeout = super.getTimeout();
+            timeout = super.getTimeout(null);
 
         return timeout;
+    }
+
+    private Integer expandVariableAsInt( final String expressionValue,
+                                             final String description,
+                                             final int min,
+                                             final int max,
+                                             final Map<String, Object> variables ) {
+        final Integer value;
+
+        if ( expressionValue != null ) {
+            final String textValue = ExpandVariables.process(expressionValue, variables, getAudit()).trim();
+
+            if ( ValidationUtils.isValidInteger(textValue, false, min, max) ) {
+                value = Integer.parseInt( textValue );
+            } else {
+                logAndAudit(AssertionMessages.HTTPROUTE_CONFIGURATION_ERROR, description + " invalid: " + textValue);
+                throw new AssertionStatusException(AssertionStatus.FAILED);
+            }
+        } else {
+            value = null;
+        }
+
+        return value;
     }
 
     /**

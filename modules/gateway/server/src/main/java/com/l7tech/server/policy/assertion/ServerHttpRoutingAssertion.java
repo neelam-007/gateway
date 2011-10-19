@@ -480,8 +480,8 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             GenericHttpClient httpClient = httpClientFactory.createHttpClient(
                                                                  getMaxConnectionsPerHost(),
                                                                  getMaxConnectionsAllHosts(),
-                                                                 getConnectionTimeout(),
-                                                                 getTimeout(),
+                                                                 getConnectionTimeout(vars),
+                                                                 getTimeout(vars),
                                                                  connectionId);
 
             if (httpClient instanceof RerunnableGenericHttpClient ||

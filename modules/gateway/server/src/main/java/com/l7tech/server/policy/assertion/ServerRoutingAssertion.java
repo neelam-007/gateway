@@ -46,6 +46,7 @@ import java.net.URL;
 import java.security.SignatureException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+import java.util.Map;
 
 /**
  * Base class for routing assertions.
@@ -349,7 +350,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
      *
      * @return the configured or default timeout.
      */
-    protected int getConnectionTimeout() {
+    protected int getConnectionTimeout(Map vars) {
         return getIntProperty( ServerConfigParams.PARAM_IO_BACK_CONNECTION_TIMEOUT,0,Integer.MAX_VALUE,0);
     }
 
@@ -358,7 +359,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
      *
      * @return the configured or default timeout.
      */
-    protected int getTimeout() {
+    protected int getTimeout(Map vars) {
         return getIntProperty( ServerConfigParams.PARAM_IO_BACK_READ_TIMEOUT,0,Integer.MAX_VALUE,0);
     }
 

@@ -74,8 +74,8 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
     protected String[] customURLs = null;
     protected String failoverStrategyName = "ordered";
     private boolean taiCredentialChaining = false;
-    protected Integer connectionTimeout;
-    protected Integer timeout;
+    protected String connectionTimeout;
+    protected String timeout;
     protected int maxRetries = -1;
     protected String requestMsgSrc;
     protected String responseMsgDest;
@@ -212,20 +212,32 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         this.maxConnections = maxConnections;
     }
 
-    public Integer getConnectionTimeout() {
+    public String getConnectionTimeout() {
         return connectionTimeout;
     }
 
-    public void setConnectionTimeout(Integer connectionTimeout) {
+    public void setConnectionTimeout(String connectionTimeout) {
         this.connectionTimeout = connectionTimeout;
     }
 
-    public Integer getTimeout() {
+    @Deprecated
+    public void setConnectionTimeout(Integer connectionTimeout) {
+        connectionTimeout = connectionTimeout/1000;
+        this.connectionTimeout = connectionTimeout.toString();
+    }
+
+    public String getTimeout() {
         return timeout;
     }
 
-    public void setTimeout(Integer timeout) {
+    public void setTimeout(String timeout) {
         this.timeout = timeout;
+    }
+
+    @Deprecated
+    public void setTimeout(Integer timeout) {
+        timeout = timeout/1000;
+        this.timeout = timeout.toString();
     }
 
     /**
@@ -483,6 +495,8 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         expressions.add(krbConfiguredPassword);
         expressions.add(proxyPassword);
         expressions.add(responseSize);
+        expressions.add(timeout);
+        expressions.add(connectionTimeout);
         if (customURLs != null) expressions.addAll( Arrays.asList( customURLs ) );
         if (customIpAddresses != null) expressions.addAll( Arrays.asList( customIpAddresses ) );
         expressions.add(Syntax.getVariableExpression(requestMsgSrc));
