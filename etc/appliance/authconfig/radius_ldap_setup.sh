@@ -1,5 +1,5 @@
 #!/bin/bash
-
+	
 # Description:
 # This script is used by a .jar file to apply the necessary configurations to make the appliance
 # use a Radius and/or LDAP server for SSH and console authentication.
@@ -22,14 +22,15 @@ PAM_RADIUS_CONF_FILE="/etc/pam_radius.conf"
 PAM_SSHD_CONF_FILE="/etc/pam.d/sshd"
 PAM_LOGIN_CONF_FILE="/etc/pam.d/login"
 SKEL_DIR="/etc/skel_ssg"
+SUDOERS_FILE="/etc/sudoers"
 BK_TIME=$(date +"%Y%m%d_%H%M%S")
 DATE_TIME=$(date +"%Y-%m-%d %H:%M:%S")
 BK_DIR="/opt/SecureSpan/Appliance/config/authconfig/bk_files"
 ORIG_CONF_FILES_DIR="/opt/SecureSpan/Appliance/config/authconfig/orig_conf_files"
 LOG_FILE="/opt/SecureSpan/Appliance/config/radius_ldap_setup.log"
 RADIUS_CFG_FILES="$PAM_RADIUS_CONF_FILE $PAM_SSHD_CONF_FILE /etc/pam.d/system-auth-ac"
-LDAP_CFG_FILES="$OPENLDAP_CONF_FILE $NSS_LDAP_CONF_FILE $NSS_CONF_FILE $PAM_LOGIN_CONF_FILE /etc/sysconfig/authconfig /etc/pam.d/system-auth-ac"
-RADIUS_WITH_LDAP_FILES="$OPENLDAP_CONF_FILE $NSS_LDAP_CONF_FILE $NSS_CONF_FILE $PAM_RADIUS_CONF_FILE $PAM_SSHD_CONF_FILE $PAM_LOGIN_CONF_FILE /etc/sysconfig/authconfig /etc/pam.d/system-auth-ac"
+LDAP_CFG_FILES="$OPENLDAP_CONF_FILE $NSS_LDAP_CONF_FILE $NSS_CONF_FILE $PAM_LOGIN_CONF_FILE $SUDOERS_FILE /etc/sysconfig/authconfig /etc/pam.d/system-auth-ac"
+RADIUS_WITH_LDAP_FILES="$OPENLDAP_CONF_FILE $NSS_LDAP_CONF_FILE $NSS_CONF_FILE $PAM_RADIUS_CONF_FILE $PAM_SSHD_CONF_FILE $PAM_LOGIN_CONF_FILE $SUDOERS_FILE /etc/sysconfig/authconfig /etc/pam.d/system-auth-ac"
 
 OWNER_CFG_FILE="layer7"
 PERM_CFG_FILE="600"
@@ -431,8 +432,54 @@ else
 		toLog "    Success - 'URI' set to $LDAP_TYPE://$LDAP_SRV:$LDAP_PORT in $OPENLDAP_CONF_FILE."
 	fi
 	
-	if [ "X$LDAP_TYPE" == "Xldaps" ] && [ "X$ADVANCED_TLS_CONF" == "Xyes" ]; then
-		# tls_reqcert
+	# up to this point whether it is ldap or ldaps is not important
+	
+	if [ "X$LDAP_TYPE" == "Xldaps" ]; then
+		# cacert url or file
+		# Instead of using the TLS_CACERT directive that will accept one file that contains all CA certificates to be recognized (concatenated),
+		# the TLS_CACERTDIR directive will be used to specify the directory that will contain multiple CA certificates in different/separeted files:
+		# For both situations (using URL or a previously copied file as the CA certificate) the file will end up in the /etc/openldap/cacerts directory.
+		if [ "X$LDAP_CACERT_URL" != "X" ]; then
+			CACERT_FILE_NAME=$(echo "$LDAP_CACERT_URL" | sed 's/.*\///')
+			wget --quiet --no-check-certificate --no-clobber --dns-timeout=2 --timeout=2 --waitretry=2 --tries=2 $LDAP_CACERT_URL
+			if [ $? -ne 0 ]; then
+				toLog "    ERROR - Retriving the CA certificate from URL failed! Exiting..."
+				exit 1
+			else
+				mv -f --backup=numbered $CACERT_FILE_NAME /etc/openldap/cacerts/
+				if [ $? -ne 0 ] || [ ! -s "/etc/openldap/cacerts/$CACERT_FILE_NAME" ]; then
+					toLog "    ERROR - Installing the CA certificate in /etc/openldap/cacerts directory failed or certificate file is empty! Exiting..."
+					exit 1
+				fi
+				toLog "    Success - CA certificate installation completed."
+			fi
+		else
+			# a file copied via scp on the SSG system will be used:
+			/bin/cp -a --backup=numbered $LDAP_CACERT_FILE /etc/openldap/cacerts/
+			if [ $? -ne 0 ] || [ ! -s "$LDAP_CACERT_FILE" ]; then
+				toLog "    ERROR - Copying the CA certificate file failed or the certificate file is empty. Exiting..."
+				exit 1
+			fi
+			# If this point was reached the certificate file has been retrieved sucessfully and it is not empty.
+			# Basic verification to make sure the file is a certificate:
+			if [ "X$(openssl verify /etc/openldap/cacerts/$(basename $LDAP_CACERT_FILE) 2>&1 | grep "^unable")" == "Xunable to load certificate" ]; then
+				toLog "    ERROR - The CA certificate retrieved does not seem to be a certificate! Exiting..."
+				exit 1
+			else
+				toLog "    Success - CA certificate has been retreived successfuly."
+			fi
+		fi
+		
+		# TLS_CACERTDIR in /etc/openldap/ldap.conf
+		echo "TLS_CACERTDIR /etc/openldap/cacerts" >> $OPENLDAP_CONF_FILE
+		if [ $? -ne 0 ] || [ "$(grep "^TLS_CACERTDIR" $OPENLDAP_CONF_FILE | cut -d" " -f2)" != "/etc/openldap/cacerts" ]; then
+				toLog "    ERROR - Configuring 'TLS_CACERTDIR' field in $OPENLDAP_CONF_FILE failed. Exiting..."
+				exit 1
+		else
+				toLog "    Success - 'TLS_CACERTDIR' set to /etc/openldap/cacerts in $OPENLDAP_CONF_FILE."
+		fi
+
+		# TLS_REQCERT in /etc/openldap/ldap.conf
 		if [ "X$LDAP_TLS_REQCERT" == "Xnever" ] || [ "X$LDAP_TLS_REQCERT" == "Xallow" ] || [ "X$LDAP_TLS_REQCERT" == "Xtry" ] || \
 			[ "X$LDAP_TLS_REQCERT" == "Xdemand" ] || [ "X$LDAP_TLS_REQCERT" == "Xhard" ]; then
 			echo "# Added by $0 on $DATE_TIME" >> $OPENLDAP_CONF_FILE
@@ -448,7 +495,7 @@ else
 			exit 1
 		fi
 		
-		# tls crlcheck
+		# TLS_CRLCHECK in /etc/openldap/ldap.conf
 		if [ "X$LDAP_TLS_CRLCHECK" == "Xnone" ] || [ "X$LDAP_TLS_CRLCHECK" == "Xpeer" ] || [ "X$LDAP_TLS_CRLCHECK" == "Xall" ]; then
 			echo "# Added by $0 on $DATE_TIME" >> $OPENLDAP_CONF_FILE
 			echo -e "TLS_CRLCHECK $LDAP_TLS_CRLCHECK\n" >> $OPENLDAP_CONF_FILE
@@ -703,21 +750,10 @@ else
 		toLog "    Success - 'scope' field set to sub in $NSS_LDAP_CONF_FILE."
 	fi
 	
-	# Decide if LDAP or LDAPS (defined by $LDAP_TYPE):
-	if [ "X$LDAP_TYPE" == "Xldaps" ]; then
+	# For LDAPS with advanced configuration:
+	if [ "X$LDAP_TYPE" == "Xldaps" ] && [ "X$ADVANCED_TLS_CONF" == "Xyes" ]; then
 		toLog "   Info - '$LDAP_TYPE' will be configured."
-		# ssl field is set to start_tls
-		#sed -i "s|\(^# OpenLDAP SSL mechanism.*$\)|\1\n# Added by $0 on $DATE_TIME:\nssl start_tls\n|" $NSS_LDAP_CONF_FILE
-		#if [ $? -ne 0 ] || [ "$(grep "^ssl" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "start_tls" ]; then
-		#	toLog "    ERROR - Configuring 'ssl' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
-		#	exit 1
-		#else
-		#	toLog "    Success - 'ssl' field set to start_tls in $NSS_LDAP_CONF_FILE."
-		#fi
-		# The above code have been disabled as the start_tls option causes some conflicts that will lead to denied access
-		# even if the expected result would be allowed access.
-		# SSL encryption of the communication will still be enforced.
-		
+				
 		# cacert url or file
 		# Instead of using the TLS_CACERT directive that will accept one file that contains all CA certificates to be recognized (concatenated),
 		# the TLS_CACERTDIR directive will be used to specify the directory that will contain multiple CA certificates in different/separeted files:
@@ -752,18 +788,48 @@ else
 				toLog "    Success - CA certificate has been retreived successfuly."
 			fi
 		fi
-		# /etc/openldap/ldap.conf
+		
+		# TLS_CACERTDIR in /etc/openldap/ldap.conf
 		echo "TLS_CACERTDIR /etc/openldap/cacerts" >> $OPENLDAP_CONF_FILE
-		echo "TLS_REQCERT never" >> $OPENLDAP_CONF_FILE
+		if [ $? -ne 0 ] || [ "$(grep "^TLS_CACERTDIR" $OPENLDAP_CONF_FILE | cut -d" " -f2)" != "/etc/openldap/cacerts" ]; then
+                        toLog "    ERROR - Configuring 'TLS_CACERTDIR' field in $OPENLDAP_CONF_FILE failed. Exiting..."
+                        exit 1
+                else
+                        toLog "    Success - 'TLS_CACERTDIR' set to /etc/openldap/cacerts in $OPENLDAP_CONF_FILE."
+                fi
 
-		# /etc/ldap.conf
+		# TLS_REQCERT in /etc/openldap/ldap.conf
+		echo "TLS_REQCERT $LDAP_TLS_REQCERT" >> $OPENLDAP_CONF_FILE
+		if [ $? -ne 0 ] || [ "$(grep "^TLS_REQCERT" $OPENLDAP_CONF_FILE | cut -d" " -f2)" != "$LDAP_TLS_REQCERT" ]; then
+                        toLog "    ERROR - Configuring 'TLS_REQCERT' field in $OPENLDAP_CONF_FILE failed. Exiting..."
+                        exit 1
+                else
+                        toLog "    Success - 'TLS_REQCERT' set to $LDAP_TLS_REQCERT in $OPENLDAP_CONF_FILE."
+                fi
+
+		# TLS_CRLCHECK in /etc/openldap/ldap.conf
+                if [ "X$LDAP_TLS_CRLCHECK" == "Xnone" ] || [ "X$LDAP_TLS_CRLCHECK" == "Xpeer" ] || [ "X$LDAP_TLS_CRLCHECK" == "Xall" ]; then
+                        echo "# Added by $0 on $DATE_TIME" >> $OPENLDAP_CONF_FILE
+                        echo -e "TLS_CRLCHECK $LDAP_TLS_CRLCHECK\n" >> $OPENLDAP_CONF_FILE
+                        if [ $? -ne 0 ] || [ "$(grep "^TLS_CRLCHECK" $OPENLDAP_CONF_FILE | cut -d" " -f2)" != "$LDAP_TLS_CRLCHECK" ]; then
+                                toLog "    ERROR - Configuring 'TLS_CRLCHECK' field in $OPENLDAP_CONF_FILE failed. Exiting..."
+                                exit 1
+                        else
+                                toLog "    Success - 'TLS_CRLCHECK' set to $LDAP_TLS_CRLCHECK in $OPENLDAP_CONF_FILE."
+                        fi
+                else
+                        toLog "    ERROR - The value of TLS_CRLCHECK ($LDAP_TLS_CRLCHECK) directive for $OPENLDAP_CONF_FILE is not valid! Exiting..."
+                        exit 1
+                fi
+
+		# tls_cacertdir in /etc/ldap.conf
 		sed -i "s|\(^#tls_cacertdir /etc/ssl/certs.*$\)|\1\n# Added by $0 on $DATE_TIME:\ntls_cacertdir /etc/openldap/cacerts\n|" $NSS_LDAP_CONF_FILE
 		if [ $? -ne 0 ] || [ "$(grep "^tls_cacertdir" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "/etc/openldap/cacerts" ]; then
-				toLog "    ERROR - Configuring 'tls_cacertdir' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
-				exit 1
-		else
-				toLog "    Success - 'tls_cacertdir' set to /etc/openldap/cacerts in $NSS_LDAP_CONF_FILE."
-		fi
+                        toLog "    ERROR - Configuring 'tls_cacertdir' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
+                        exit 1
+                else
+                        toLog "    Success - 'tls_cacertdir' set to /etc/openldap/cacerts in $NSS_LDAP_CONF_FILE."
+                fi
 		
 		# client tls auth (mutual authentication)
 		if [ "X$CLT_TLS_AUTH" == "Xyes" ]; then
@@ -820,9 +886,6 @@ else
 		else
 			toLog "    Success - SSL has been disabled in $NSS_LDAP_CONF_FILE file."
 		fi
-	else
-		toLog "    ERROR - The value of LDAP_TYPE ($LDAP_TYPE) variable in the configuration file is not valid! Exiting..."
-		exit 1
 	fi
 
 	# If anonymous bind to ldap is disabled then credentials are expected:
@@ -1256,4 +1319,5 @@ fi
 
 
 # END of script
+
 
