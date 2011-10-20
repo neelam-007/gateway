@@ -133,8 +133,9 @@ public class PrivateKeyPropertiesDialog extends JDialog {
     }
 
     private Logger logger = Logger.getLogger(PrivateKeyPropertiesDialog.class.getName());
-    private boolean deleted = false;
-    private boolean defaultKeyChanged = false;
+    private boolean deleted;
+    private boolean defaultKeyChanged;
+    private boolean certificateChainChanged;
     private final DefaultAliasTracker defaultAliasTracker;
     private final PermissionFlags flags;
 
@@ -318,6 +319,10 @@ public class PrivateKeyPropertiesDialog extends JDialog {
 
     public boolean isDefaultKeyChanged() {
         return defaultKeyChanged;
+    }
+
+    public boolean isCertificateChainChanged() {
+        return certificateChainChanged;
     }
 
     class ListEntry {
@@ -667,6 +672,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                         }
                     }
                     populateList();
+                    certificateChainChanged = true;
                 } catch (GeneralSecurityException e) {
                     showErrorMessage("Error Assigning Certificate",
                             "Error Assigning new Cert.  Make sure the " +

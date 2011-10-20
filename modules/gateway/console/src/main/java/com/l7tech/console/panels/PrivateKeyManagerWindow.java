@@ -621,6 +621,8 @@ public class PrivateKeyManagerWindow extends JDialog {
                 if (dlg.isDefaultKeyChanged()) {
                     defaultAliasTracker.invalidate();
                     loadPrivateKeys();
+                } else if (dlg.isCertificateChainChanged()) {
+                    loadPrivateKeys();
                 } else if (dlg.isDeleted()) {
                     doRemove(data);
                 }
