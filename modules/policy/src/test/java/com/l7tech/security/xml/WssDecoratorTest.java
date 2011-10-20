@@ -926,6 +926,25 @@ public class WssDecoratorTest {
     }
 
     @Test
+	public void testSignedEncryptedEmptyElement() throws Exception {
+        runTest(getSignedEncryptedEmptyElementTestDocument());
+    }
+
+    public TestDocument getSignedEncryptedEmptyElementTestDocument() throws Exception {
+        final Context c = new Context();
+        Element empty = DomUtils.createAndAppendElementNS(c.payload, "empty", c.payload.getNamespaceURI(), null);
+        return new TestDocument(c,
+                                TestDocuments.getEttkClientCertificate(),
+                                TestDocuments.getEttkClientPrivateKey(),
+                                TestDocuments.getDotNetServerCertificate(),
+                                TestDocuments.getDotNetServerPrivateKey(),
+                                true,
+                                new Element[]{empty},
+                                new Element[]{empty});
+
+    }
+
+    @Test
 	public void testEncryptedGooglesearchResponse() throws Exception {
         runTest(getEncryptedGooglesearchResponseTestDocument());
     }

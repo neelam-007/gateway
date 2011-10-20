@@ -123,8 +123,7 @@ public class ServerNonSoapDecryptElementAssertion extends ServerNonSoapSecurityA
         final NodeList decryptedNodes;
         try {
             dc.decrypt();
-            decryptedNodes = dc.getDataAsNodeList();
-            dc.replace();
+            decryptedNodes = XencUtil.decryptionContextReplace(dc, encryptedDataEl);
         } catch (XSignatureException e) {
             DsigUtil.repairXSignatureException(e);
             throw new InvalidDocumentFormatException("Error decrypting", e); // generify exception message

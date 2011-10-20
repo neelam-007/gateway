@@ -1453,9 +1453,8 @@ public class WssProcessorImpl implements WssProcessor {
         try {
             // do the actual decryption
             dc.decrypt();
-            dc.replace();
-            // remember encrypted element
-            dataList = dc.getDataAsNodeList();
+            dataList = XencUtil.decryptionContextReplace(dc, encryptedDataElement);
+
         } catch (XSignatureException e) {
             DsigUtil.repairXSignatureException(e);
             logger.log(Level.FINE, "Error decrypting", e);

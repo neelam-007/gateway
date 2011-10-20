@@ -10,12 +10,14 @@ import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.security.xml.XencUtil;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.xpath.XpathExpression;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
@@ -40,6 +42,13 @@ public class ServerNonSoapEncryptElementAssertionTest {
     static X509Certificate recipCert;
     static PrivateKey recipPrivateKey;
 
+    private static final String TEST_XML =
+            "<par:GetNoaParties xmlns:par=\"urn:noapar\">\n" +
+            "  <par:username>brian</par:username> \n" +
+            "  <par:password>somepassword</par:password> \n" +
+            "  <par:notice_id>12345</par:notice_id> \n" +
+            "</par:GetNoaParties>";
+
     @BeforeClass
     public static void setUpCert() throws Exception {
         Pair<X509Certificate, PrivateKey> got = TestKeys.getCertAndKey("RSA_1024");
@@ -53,6 +62,19 @@ public class ServerNonSoapEncryptElementAssertionTest {
     public void testEncryptElement() throws Exception {
         Message req = makeReq();
         NonSoapEncryptElementAssertion ass = makeAss();
+        ServerNonSoapEncryptElementAssertion sass = new ServerNonSoapEncryptElementAssertion(ass);
+        AssertionStatus result = sass.checkRequest( PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, new Message()) );
+        assertEquals(AssertionStatus.NONE, result);
+        checkResult(req, 1);
+    }
+
+    @Test
+    @BugNumber(11191)
+    @Ignore("Disabled because content-only encryption is not currently implemented for the non-SOAP XML Encrypt Element assertion")
+    public void testEncryptEmptyElement() throws Exception {
+        Message req = makeReq(TEST_XML.replace("<par:password>password</par:password>", "<par:password/>"));
+        NonSoapEncryptElementAssertion ass = makeAss();
+        ass.setEncryptContentsOnly(true);
         ServerNonSoapEncryptElementAssertion sass = new ServerNonSoapEncryptElementAssertion(ass);
         AssertionStatus result = sass.checkRequest( PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, new Message()) );
         assertEquals(AssertionStatus.NONE, result);
@@ -168,12 +190,11 @@ public class ServerNonSoapEncryptElementAssertionTest {
     }
 
     public static Message makeReq() {
-        return new Message(XmlUtil.stringAsDocument(
-                "<par:GetNoaParties xmlns:par=\"urn:noapar\">\n" +
-                "  <par:username>brian</par:username> \n" +
-                "  <par:password>somepassword</par:password> \n" +
-                "  <par:notice_id>12345</par:notice_id> \n" +
-                "</par:GetNoaParties>"));
+        return makeReq(TEST_XML);
+    }
+
+    private static Message makeReq(String testXml) {
+        return new Message(XmlUtil.stringAsDocument(testXml));
     }
 
     private void checkResult(Message req, int expectedLength) throws SAXException, IOException {

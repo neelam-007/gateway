@@ -1136,8 +1136,7 @@ public class Saml2WssProcessorImpl {
             // do the actual decryption
             dc.decrypt();
             dc.replace();
-            // remember encrypted element
-            dataList = dc.getDataAsNodeList();
+            dataList = XencUtil.decryptionContextReplace(dc, encryptedDataElement);
 
             if(removeEncryptedKey) {
                 ekTok.getElement().getParentNode().removeChild(ekTok.getElement());

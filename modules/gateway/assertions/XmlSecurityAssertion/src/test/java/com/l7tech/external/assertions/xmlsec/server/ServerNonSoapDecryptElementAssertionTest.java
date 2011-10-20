@@ -5,18 +5,27 @@ import com.l7tech.external.assertions.xmlsec.NonSoapDecryptElementAssertion;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.security.xml.XencUtil;
+import com.l7tech.security.xml.XencUtilTest;
+import com.l7tech.security.xml.XmlElementEncryptor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
+import com.l7tech.test.BugNumber;
+import com.l7tech.util.Pair;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.xpath.XpathExpression;
-import static org.junit.Assert.*;
-import org.junit.*;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.springframework.beans.factory.BeanFactory;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import java.util.HashMap;
 import java.util.logging.Logger;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  *
@@ -81,6 +90,29 @@ public class ServerNonSoapDecryptElementAssertionTest {
         assertEquals(1, ((Object[])context.getVariable("elementsDecrypted")).length);
         assertEquals(1, ((Object[])context.getVariable("encryptionMethodUris")).length);
         assertEquals("http://www.w3.org/2001/04/xmlenc#aes256-cbc", ((String[])context.getVariable("encryptionMethodUris"))[0]);
+    }
+
+    @Test
+    @BugNumber(11191)
+    public void testDecryptEmptyElement() throws Exception {
+        Pair<Element, XencUtil.XmlEncKey> pair = XencUtilTest.makeEncryptedEmptyElement();
+        Element element = pair.left;
+        XencUtil.XmlEncKey key = pair.right;
+
+        Element encryptedKey = XmlElementEncryptor.createEncryptedKey(element.getOwnerDocument(), NonSoapXmlSecurityTestUtils.getTestKey().getCertificate(), key);
+        final Element encDataElement = XmlUtil.findExactlyOneChildElement(element);
+        XmlElementEncryptor.insertKeyInfoAndDeUglifyNamespaces(encDataElement, encryptedKey, key.getAlgorithm());
+
+        String xml = XmlUtil.nodeToString(element.getOwnerDocument());
+        NonSoapDecryptElementAssertion ass = new NonSoapDecryptElementAssertion();
+        ass.setXpathExpression(new XpathExpression("//*[local-name() = 'EncryptedData']"));
+
+        ServerNonSoapDecryptElementAssertion sass = new ServerNonSoapDecryptElementAssertion(ass, beanFactory);
+        Message request = new Message(XmlUtil.stringAsDocument(xml));
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
+
+        assertEquals(AssertionStatus.NONE, sass.checkRequest(context));
+        assertEquals("<foo><blah/></foo>", XmlUtil.nodeToString(request.getXmlKnob().getDocumentReadOnly(), false));
     }
 
     private void assertNoVariable(PolicyEnforcementContext context, String variableName) {

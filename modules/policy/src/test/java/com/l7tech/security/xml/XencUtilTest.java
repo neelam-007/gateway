@@ -4,13 +4,19 @@
 
 package com.l7tech.security.xml;
 
+import com.ibm.xml.enc.type.EncryptionMethod;
 import com.l7tech.common.TestDocuments;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.security.prov.JceProvider;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.SyspropUtil;
-import static org.junit.Assert.*;
-import org.junit.*;
+import com.l7tech.test.BugNumber;
+import com.l7tech.util.*;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
+import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
@@ -18,11 +24,14 @@ import java.security.interfaces.RSAPublicKey;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
+import static org.junit.Assert.assertTrue;
+
 /**
  * @author mike
  */
 public class XencUtilTest {
     private static Logger logger = Logger.getLogger(XencUtilTest.class.getName());
+    private static final SecureRandom secureRandom = new SecureRandom();
 
     @BeforeClass
     public static void setUp() throws Exception {
@@ -112,4 +121,24 @@ public class XencUtilTest {
         return HexUtils.encodeBase64(XencUtil.encryptKeyWithRsaAndPad(keyBytes, recipientCert, publicKey), true);
     }
 
+    @Test
+    @BugNumber(11191)
+    public void testEncryptEmptyElement() throws Exception {
+        Element element = makeEncryptedEmptyElement().left;
+
+        assertTrue("must no longer be empty", element.getChildNodes().getLength() > 0);
+        assertTrue("must have been encrypted", XmlUtil.nodeToString(element).contains("EncryptedData"));
+    }
+
+    public static Pair<Element, XencUtil.XmlEncKey> makeEncryptedEmptyElement() throws MissingRequiredElementException, TooManyChildElementsException, XencUtil.XencException, GeneralSecurityException {
+        Document doc = XmlUtil.stringAsDocument("<foo><blah/></foo>");
+        Element root = doc.getDocumentElement();
+        Element element = DomUtils.findExactlyOneChildElement(root);
+
+        byte[] keybytes = new byte[32];
+        secureRandom.nextBytes(keybytes);
+        XencUtil.XmlEncKey encKey = new XencUtil.XmlEncKey(EncryptionMethod.AES256_CBC, keybytes);
+        XencUtil.encryptElement(element, encKey, true);
+        return new Pair<Element, XencUtil.XmlEncKey>(element, encKey);
+    }
 }

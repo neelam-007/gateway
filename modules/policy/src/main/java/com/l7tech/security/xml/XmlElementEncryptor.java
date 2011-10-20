@@ -87,11 +87,25 @@ public class XmlElementEncryptor {
      * @throws GeneralSecurityException if there is an error performing the encryption.
      */
     public Pair<Element, SecretKey> createEncryptedKey(@NotNull Document factory) throws GeneralSecurityException {
-        final String xencNs = SoapUtil.XMLENC_NS;
-        final String xenc = "xenc";
         byte[] keybytes = new byte[32];
         random.nextBytes(keybytes);
         XencUtil.XmlEncKey xek = new XencUtil.XmlEncKey(xencAlgorithm, keybytes);
+        return new Pair<Element, SecretKey>(createEncryptedKey(factory, recipientCert, xek), xek.getSecretKey());
+    }
+
+    /**
+     * Create a new EncryptedKey element using the specified document factory, recipient certificate, and ephemeral symmetric key.
+     * The specified key will be wrapped for the specified recipient certificate.
+     *
+     * @param factory a DOM document to use as a factory for new DOM nodes.  Required.
+     * @param recipientCert the recipient certificate.  Required.
+     * @param xek the symmetric key and cipher URI to use. Required.
+     * @return a Pair consisting of the new EncryptedKey DOM Element and the new SecretKey that was generated for it.  Never null, and neither element is ever null.
+     * @throws GeneralSecurityException if there is an error performing the encryption.
+     */
+    public static Element createEncryptedKey(@NotNull Document factory, @NotNull X509Certificate recipientCert, @NotNull XencUtil.XmlEncKey xek) throws GeneralSecurityException {
+        final String xencNs = SoapUtil.XMLENC_NS;
+        final String xenc = "xenc";
         Element encryptedKey = factory.createElementNS(xencNs, "xenc:EncryptedKey");
         encryptedKey.setAttributeNS(XmlUtil.XMLNS_NS, "xmlns:xenc", xencNs);
         Element encryptionMethod = DomUtils.createAndAppendElementNS(encryptedKey, "EncryptionMethod", xencNs, xenc);
@@ -105,7 +119,7 @@ public class XmlElementEncryptor {
         encryptedKeyBytes = XencUtil.encryptKeyWithRsaAndPad(secretKey.getEncoded(), recipientCert, recipientCert.getPublicKey());
         final String base64 = HexUtils.encodeBase64(encryptedKeyBytes, true);
         cipherValue.appendChild(DomUtils.createTextNode(factory, base64));
-        return new Pair<Element, SecretKey>(encryptedKey, secretKey);
+        return encryptedKey;
     }
 
     /**
@@ -126,6 +140,7 @@ public class XmlElementEncryptor {
      * @throws KeyInfoResolvingException if there is a problem with the format of the specified EncryptedKey
      */
     public Element encryptAndReplaceElement(@NotNull Element element, @NotNull Pair<Element, SecretKey> encryptedKey) throws StructureException, GeneralSecurityException, IOException, KeyInfoResolvingException {
+        // TODO implement support for content-only encryption
         Document soapMsg = element.getOwnerDocument();
         final Element encryptedKeyElement = encryptedKey.left;
         final SecretKey secretKey = encryptedKey.right;
@@ -155,9 +170,8 @@ public class XmlElementEncryptor {
         ec.setKey(secretKey);
 
         ec.encrypt();
-        ec.replace();
+        Element encryptedData = XencUtil.encryptionContextReplace(ec, element);
 
-        Element encryptedData = ec.getEncryptedTypeAsElement();
         try {
             encryptedData = insertKeyInfoAndDeUglifyNamespaces(encryptedData, encryptedKeyElement, xencAlgorithm);
         } catch (InvalidDocumentFormatException e) {
@@ -166,7 +180,7 @@ public class XmlElementEncryptor {
         return encryptedData;
     }
 
-    private static Element insertKeyInfoAndDeUglifyNamespaces(Element ibmEncData, Element encryptedKey, String xencAlgorithm) throws InvalidDocumentFormatException {
+    public static Element insertKeyInfoAndDeUglifyNamespaces(Element ibmEncData, Element encryptedKey, String xencAlgorithm) throws InvalidDocumentFormatException {
         final String xencNs = SoapUtil.XMLENC_NS;
         final String xenc = "xenc";
         Element encryptedData = ibmEncData.getOwnerDocument().createElementNS(xencNs, xenc + ":EncryptedData");

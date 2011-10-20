@@ -28,12 +28,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
-import javax.xml.namespace.NamespaceContext;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
-import javax.xml.xpath.XPathFactoryConfigurationException;
+import javax.xml.xpath.*;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -433,6 +428,13 @@ public class WssRoundTripTest {
     public void testEncryptedEmptyElement() throws Exception {
         runRoundTripTest(new NamedTestDocument("EncryptedEmptyElement",
                                                wssDecoratorTest.getEncryptedEmptyElementTestDocument()));
+    }
+
+    @Test
+    @BugNumber(11191)
+    public void testSignedEncryptedEmptyElement() throws Exception {
+        runRoundTripTest(new NamedTestDocument("SignedEncryptedEmptyElement",
+                                               wssDecoratorTest.getSignedEncryptedEmptyElementTestDocument()));
     }
 
     @Test

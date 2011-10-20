@@ -40,6 +40,7 @@ public final class XmlElementEncryptionConfig implements Serializable, UsesVaria
         return encryptContentsOnly;
     }
 
+    // Warning: not currently implemented
     public void setEncryptContentsOnly(boolean encryptContentsOnly) {
         this.encryptContentsOnly = encryptContentsOnly;
     }

@@ -1592,7 +1592,7 @@ public class WssDecoratorImpl implements WssDecorator {
             Element element = entry.getKey();
             boolean encryptContentsOnly = entry.getValue().isEncryptContentsOnly();
 
-            if (DomUtils.elementIsEmpty(element)) {
+            if (DomUtils.elementIsEmpty(element) && !XencUtil.shouldEncryptEmptyElements()) {
                 logger.fine("Element \"" + element.getNodeName() + "\" is empty; will not encrypt it");
                 continue;
             }

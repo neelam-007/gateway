@@ -5,10 +5,7 @@
 
 package com.l7tech.security.xml;
 
-import com.ibm.xml.enc.AlgorithmFactoryExtn;
-import com.ibm.xml.enc.EncryptionContext;
-import com.ibm.xml.enc.KeyInfoResolvingException;
-import com.ibm.xml.enc.StructureException;
+import com.ibm.xml.enc.*;
 import com.ibm.xml.enc.type.CipherData;
 import com.ibm.xml.enc.type.CipherValue;
 import com.ibm.xml.enc.type.EncryptedData;
@@ -18,17 +15,17 @@ import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.security.keys.FlexKey;
 import com.l7tech.security.keys.UnsupportedKeyTypeException;
 import com.l7tech.security.prov.JceProvider;
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.util.SoapConstants;
+import com.l7tech.util.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.spec.PSource;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.security.*;
 import java.security.cert.X509Certificate;
@@ -46,6 +43,8 @@ public class XencUtil {
     public static final String AES_128_CBC = "http://www.w3.org/2001/04/xmlenc#aes128-cbc";
     public static final String AES_192_CBC = "http://www.w3.org/2001/04/xmlenc#aes192-cbc";
     public static final String AES_256_CBC = "http://www.w3.org/2001/04/xmlenc#aes256-cbc";
+
+    public static final String PROP_ENCRYPT_EMPTY_ELEMENTS = "com.l7tech.security.xml.encryptEmptyElements";
 
     public static class XencException extends Exception {
         public XencException() {}
@@ -179,7 +178,8 @@ public class XencUtil {
 
         try {
             ec.encrypt();
-            ec.replace();
+            return encryptionContextReplace(ec, element);
+
         } catch (KeyInfoResolvingException e) {
             throw new XencException(e); // can't happen
         } catch (StructureException e) {
@@ -187,8 +187,41 @@ public class XencUtil {
         } catch (IOException e) {
             throw new XencException(e); // shouldn't happen
         }
+    }
 
-        return ec.getEncryptedTypeAsElement();
+    /**
+     * @return true if completely empty elements that are encrypted should still have an EncryptedData child element added that
+     * decrypts to an empty NodeList.  false if empty elements that are encrypted should be left unchanged.  The default is "true",
+     * but this behavior can be disabled using the {@link #PROP_ENCRYPT_EMPTY_ELEMENTS} system property for backward
+     * compatiblity (eg, with previous versions of the XML VPN Client).
+     */
+    public static boolean shouldEncryptEmptyElements() {
+        return ConfigFactory.getBooleanProperty(PROP_ENCRYPT_EMPTY_ELEMENTS, true);
+    }
+
+    /**
+     * A wrapper for the XSS4J EncryptionContext replace() that detects failure to properly replace the
+     * (nonexistent) contents when an empty element is encrypted (Bug #11191).  This work-around can
+     * be disabled, if necessary for backward compatility, using the {@link #PROP_ENCRYPT_EMPTY_ELEMENTS}
+     * system property to "false".
+     * <p/>
+     * Returns the already-accessed encrypted type element for convenience.
+     *
+     * @param ec The EncryptionContext whose replace() method is to be invoked.  Required.
+     * @param element the element whose contents are being encrypted.
+     * @return the EncryptedData or EncryptedElement element that has already been added to the document.  Should never be null.
+     * @throws StructureException if EncryptionContext.replace() throws StructureException
+     */
+    public static Element encryptionContextReplace(EncryptionContext ec, Element element) throws StructureException {
+        Element encTypeElement;
+        ec.replace();
+
+        encTypeElement = ec.getEncryptedTypeAsElement();
+        if (encTypeElement.getParentNode() == null && shouldEncryptEmptyElements()) {
+            // Replace failure -- original element must have been empty.  Manually add it. (Bug #11191)
+            element.appendChild(encTypeElement);
+        }
+        return encTypeElement;
     }
 
     /**
@@ -230,6 +263,35 @@ public class XencUtil {
 
         throw new InvalidDocumentFormatException("Algorithm not supported " + encMethodValue +
                 (digestAlgo == null ? "" : (" with DigestMethod Algorithm " + digestAlgo)));
+    }
+
+    /**
+     * A wrapper for XSS4J's DecryptionContext.replace() method that implements a work-around for when the decrypted element was originally completely
+     * empty before it was encrypted (Bug #11191).
+     * <p/>
+     * Returns the already-accessed dataList for convenience.
+     *
+     * @param dc the DecryptionContext on which to call replace.  Required.
+     * @param encryptedDataElement the encrypted type (EncryptedData or EncryptedElement) element that is being decrypted.  Required.
+     * @return the result of calling DecryptionContext.getDataAsNodeList(), after the replacement.  Should normally not be null HOWEVER may be empty if the element was empty before it was encrypted.
+     * @throws java.io.IOException if thrown by replace() or getDataAsNodeList()
+     * @throws javax.xml.parsers.ParserConfigurationException if thrown by replace() or getDataAsNodeList()
+     * @throws org.xml.sax.SAXException if thrown by replace() or getDataAsNodeList()
+     * @throws com.ibm.xml.enc.StructureException if thrown by replace() or getDataAsNodeList()
+     */
+    public static NodeList decryptionContextReplace(DecryptionContext dc, Element encryptedDataElement) throws IOException, ParserConfigurationException, SAXException, StructureException {
+        dc.replace();
+
+        // remember encrypted element
+        NodeList dataList = dc.getDataAsNodeList();
+
+        // Check for failed replace after decryption of an element that was completely empty before it was encrypted (Bug #11191)
+        if (encryptedDataElement.getParentNode() != null && dataList.getLength() == 0) {
+            // Manually perform replacement
+            encryptedDataElement.getParentNode().removeChild(encryptedDataElement);
+        }
+
+        return dataList;
     }
 
     /**
@@ -527,27 +589,34 @@ public class XencUtil {
      * Holds the secret key and the xml enc algorithm name
      */
     public static class XmlEncKey {
-        final byte[] keyBytes;
-        final String algorithmUri;
-        private SecretKey sk;
+        private final byte[] keyBytes;
+        private final String algorithmUri;
+        private final Either<SecretKey, NoSuchAlgorithmException> sk;
 
         public XmlEncKey(String encryptionAlgorithm, byte[] secretKey) {
             this.algorithmUri = encryptionAlgorithm;
             this.keyBytes = secretKey;
+            SecretKey sk = null;
+            NoSuchAlgorithmException nsae = null;
+            try {
+                sk = makeFlexKey(keyBytes, algorithmUri);
+            } catch (NoSuchAlgorithmException e) {
+                nsae = e;
+            }
+            assert nsae != null || sk != null;
+            this.sk = nsae != null ? Either.<SecretKey, NoSuchAlgorithmException>right(nsae) : Either.<SecretKey, NoSuchAlgorithmException>left(sk);
         }
 
-        public byte[] getSecretKeyBytes() {
-            return keyBytes;
-        }
-
-        public synchronized SecretKey getSecretKey() throws NoSuchAlgorithmException {
-            if (sk != null) return sk;
-            return sk = makeFlexKey(keyBytes, algorithmUri);
+        public SecretKey getSecretKey() throws NoSuchAlgorithmException {
+            if (sk.isRight()) {
+                //noinspection ThrowableResultOfMethodCallIgnored
+                throw new NoSuchAlgorithmException(sk.right());
+            }
+            return sk.left();
         }
 
         public String getAlgorithm() {
             return algorithmUri;
         }
     }
-
 }
