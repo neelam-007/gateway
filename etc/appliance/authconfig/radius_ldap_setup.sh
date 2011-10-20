@@ -752,6 +752,18 @@ else
 				toLog "    Success - CA certificate has been retreived successfuly."
 			fi
 		fi
+		# /etc/openldap/ldap.conf
+		echo "TLS_CACERTDIR /etc/openldap/cacerts" >> $OPENLDAP_CONF_FILE
+		echo "TLS_REQCERT never" >> $OPENLDAP_CONF_FILE
+
+		# /etc/ldap.conf
+		sed -i "s|\(^#tls_cacertdir /etc/ssl/certs.*$\)|\1\n# Added by $0 on $DATE_TIME:\ntls_cacertdir /etc/openldap/cacerts\n|" $NSS_LDAP_CONF_FILE
+		if [ $? -ne 0 ] || [ "$(grep "^tls_cacertdir" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "/etc/openldap/cacerts" ]; then
+				toLog "    ERROR - Configuring 'tls_cacertdir' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
+				exit 1
+		else
+				toLog "    Success - 'tls_cacertdir' set to /etc/openldap/cacerts in $NSS_LDAP_CONF_FILE."
+		fi
 		
 		# client tls auth (mutual authentication)
 		if [ "X$CLT_TLS_AUTH" == "Xyes" ]; then
