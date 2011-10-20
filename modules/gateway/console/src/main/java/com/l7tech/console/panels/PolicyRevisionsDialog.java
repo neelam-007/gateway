@@ -6,12 +6,12 @@ import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.OrganizationHeader;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
@@ -253,8 +253,8 @@ public class PolicyRevisionsDialog extends JDialog {
                         }
                     }
                     Object o = policyNode.getUserObject();
-                    if(o instanceof ServiceHeader){
-                        ServiceHeader sh = (ServiceHeader)o;
+                    if(o instanceof OrganizationHeader){
+                        OrganizationHeader sh = (OrganizationHeader)o;
                         sh.setPolicyDisabled(true);
                     }
                 } catch (Exception e) {
