@@ -59,7 +59,6 @@ public class AssertionMessages extends Messages {
     public static final M HTTPROUTE_INVALIDCOOKIE = m(4036, Level.INFO, "Ignoring invalid cookie header ''{0}''");
     public static final M HTTPROUTE_RESPONSE_CHALLENGE = m(4037, Level.INFO, "Protected service requires authentication.");
     public static final M HTTPROUTE_RESPONSE_BADSTATUS = m(4038, Level.INFO, "Downstream service returned status ({0}). This is considered a failure case.");
-    public static final M HTTPROUTE_CONFIGURATION_ERROR = m(4050, Level.WARNING, "Invalid HTTP configuration ''{0}''.");
     /**
      * @deprecated
      */
@@ -75,6 +74,7 @@ public class AssertionMessages extends Messages {
     public static final M HTTPROUTE_DEFAULT_METHOD_VAR = m(4047, Level.INFO, "Request is a context variable; using POST");
     public static final M BRIDGEROUTE_WSS_PROCESSING_RESP = m(4048, Level.WARNING, "Error in WSS processing of response ''{0}''");
     public static final M HTTPROUTE_RESPONSE_DEFCONTENTTYPE = m(4049, Level.INFO, "Downstream service response did not include a content type header, using default.");
+    public static final M HTTPROUTE_CONFIGURATION_ERROR = m(4050, Level.WARNING, "Invalid HTTP configuration ''{0}''.");
 
     // ServerCredentialSourceAssertion messages
     public static final M HTTPCREDS_AUTH_REQUIRED = m(4100, Level.INFO, "Authentication required");
