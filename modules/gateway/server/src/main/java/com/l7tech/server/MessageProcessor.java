@@ -599,6 +599,12 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     return securityProcessingAssertionStatus;
                 } else {
                     auditor.logAndAudit(MessageProcessingMessages.SERVICE_NOT_FOUND);
+                    try {
+                        String httpURL = context.getRequest().getHttpRequestKnob().getRequestUrl();
+                        logger.info("Request URL not resolved: " + httpURL);
+                    } catch (IllegalStateException e) {
+                        // do nothing here, if the message is not HTTP.
+                    }
                     return AssertionStatus.SERVICE_NOT_FOUND;
                 }
             }
@@ -626,8 +632,10 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 String[] auditArgs = new String[] { requestMethod.name(), service.getName() };
                 Object[] faultArgs = new Object[] { requestMethod.name() };
                 auditor.logAndAudit(MessageProcessingMessages.METHOD_NOT_ALLOWED, auditArgs);
-                throw new MethodNotAllowedException(
-                        MessageFormat.format(MessageProcessingMessages.METHOD_NOT_ALLOWED_FAULT.getMessage(), faultArgs));
+
+                String faultDetails = MessageFormat.format(
+                    MessageProcessingMessages.METHOD_NOT_ALLOWED_FAULT.getMessage(), faultArgs) + ": " + httpRequestKnob.getRequestUrl();
+                throw new MethodNotAllowedException(faultDetails);
             }
 
             // initialize cache
