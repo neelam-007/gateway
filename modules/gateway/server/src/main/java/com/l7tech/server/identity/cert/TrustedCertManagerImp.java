@@ -2,6 +2,7 @@ package com.l7tech.server.identity.cert;
 
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.common.Component;
+import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.audit.SystemAuditRecord;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
@@ -272,43 +273,72 @@ public class TrustedCertManagerImp
                 return;
             }
 
-            auditContext.setCurrentRecord(new SystemAuditRecord(Level.INFO, nodeInfo.getNodeIdentifier(), Component.GW_TRUST_STORE, "One or more trusted certificates has expired or is expiring soon", false, -1, null, null, "Checking", nodeInfo.getAddress()));
+            final List<CertExpiryWarningDetail> warnings = new ArrayList<CertExpiryWarningDetail>();
+            Level level = Level.FINEST;
 
+            for (TrustedCert trustedCert : trustedCerts) {
+                final X509Certificate cert;
+                cert = trustedCert.getCertificate();
+
+                final long expiresUTC = cert.getNotAfter().getTime();
+                final long millisUntilExpiry = expiresUTC - nowUTC;
+
+                if (millisUntilExpiry > fineExpiryPeriod) continue;
+
+                final TimeUnit displayUnit;
+                final long abs = Math.abs(millisUntilExpiry);
+                if (abs <= MINUTES_THRESHOLD) {
+                    displayUnit = TimeUnit.MINUTES;
+                } else if (abs <= HOURS_THRESHOLD) {
+                    displayUnit = TimeUnit.HOURS;
+                } else {
+                    displayUnit = TimeUnit.DAYS;
+                }
+
+                String howLong = new Formatter().format("%.1f %s", (double)abs / displayUnit.getMultiplier(), displayUnit.getName()).toString();
+
+                CertExpiryWarningDetail detail = null;
+                if (millisUntilExpiry <= 0) {
+                    detail = new CertExpiryWarningDetail(SystemMessages.CERT_EXPIRED, trustedCert, howLong);
+                } else if (millisUntilExpiry <= warningExpiryPeriod) {
+                    detail = new CertExpiryWarningDetail(SystemMessages.CERT_EXPIRING_WARNING, trustedCert, howLong);
+                } else if (millisUntilExpiry <= infoExpiryPeriod) {
+                    detail = new CertExpiryWarningDetail(SystemMessages.CERT_EXPIRING_INFO, trustedCert, howLong);
+                } else if (millisUntilExpiry <= fineExpiryPeriod) {
+                    detail = new CertExpiryWarningDetail(SystemMessages.CERT_EXPIRING_FINE, trustedCert, howLong);
+                }
+                if (detail != null) {
+                    warnings.add(detail);
+                    if (detail.level.intValue() > level.intValue())
+                        level = detail.level;
+                }
+            }
+
+            final boolean alwaysAudit = !warnings.isEmpty();
+            auditContext.setCurrentRecord(new SystemAuditRecord(level, nodeInfo.getNodeIdentifier(), Component.GW_TRUST_STORE, "One or more trusted certificates has expired or is expiring soon", alwaysAudit, -1, null, null, "Checking", nodeInfo.getAddress()));
             try {
-                for (TrustedCert trustedCert : trustedCerts) {
-                    final X509Certificate cert;
-                    cert = trustedCert.getCertificate();
-
-                    final long expiresUTC = cert.getNotAfter().getTime();
-                    final long millisUntilExpiry = expiresUTC - nowUTC;
-
-                    if (millisUntilExpiry > fineExpiryPeriod) continue;
-
-                    final TimeUnit displayUnit;
-                    final long abs = Math.abs(millisUntilExpiry);
-                    if (abs <= MINUTES_THRESHOLD) {
-                        displayUnit = TimeUnit.MINUTES;
-                    } else if (abs <= HOURS_THRESHOLD) {
-                        displayUnit = TimeUnit.HOURS;
-                    } else {
-                        displayUnit = TimeUnit.DAYS;
-                    }
-
-                    String howLong = new Formatter().format("%.1f %s", (double)abs / displayUnit.getMultiplier(), displayUnit.getName()).toString();
-
-                    if (millisUntilExpiry <= 0) {
-                        auditor.logAndAudit(SystemMessages.CERT_EXPIRED, Long.toString(trustedCert.getOid()), trustedCert.getSubjectDn(), howLong);
-                    } else if (millisUntilExpiry <= warningExpiryPeriod) {
-                        auditor.logAndAudit(SystemMessages.CERT_EXPIRING_WARNING, Long.toString(trustedCert.getOid()), trustedCert.getSubjectDn(), howLong);
-                    } else if (millisUntilExpiry <= infoExpiryPeriod) {
-                        auditor.logAndAudit(SystemMessages.CERT_EXPIRING_INFO, Long.toString(trustedCert.getOid()), trustedCert.getSubjectDn(), howLong);
-                    } else if (millisUntilExpiry <= fineExpiryPeriod) {
-                        auditor.logAndAudit(SystemMessages.CERT_EXPIRING_FINE, Long.toString(trustedCert.getOid()), trustedCert.getSubjectDn(), howLong);
-                    }
+                for (CertExpiryWarningDetail warning : warnings) {
+                    auditor.logAndAudit(warning.detail, warning.oidStr, warning.subjectDnStr, warning.howLongStr);
                 }
             } finally {
                 auditContext.flush();
             }
+        }
+    }
+
+    private static final class CertExpiryWarningDetail {
+        private final AuditDetailMessage detail;
+        private final Level level;
+        private final String oidStr;
+        private final String subjectDnStr;
+        private final String howLongStr;
+
+        private CertExpiryWarningDetail(AuditDetailMessage detail, TrustedCert trustedCert, String howLongStr) {
+            this.detail = detail;
+            this.level = detail.getLevel();
+            this.oidStr = Long.toString(trustedCert.getOid());
+            this.subjectDnStr = trustedCert.getSubjectDn();
+            this.howLongStr = howLongStr;
         }
     }
 }
