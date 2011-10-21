@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement;
 
 import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
@@ -22,9 +23,9 @@ public class GatewayManagementAssertionTest {
                 new GatewayManagementAssertion.Validator( gatewayManagementAssertion );
 
         final PolicyValidatorResult result = new PolicyValidatorResult();
-        validator.validate( new AssertionPath( new Assertion[]{ new AuthenticationAssertion(), gatewayManagementAssertion } ), new PolicyValidationContext(null, null, null, true, null), result );
+        validator.validate( new AssertionPath( new Assertion[]{ new AuthenticationAssertion(), gatewayManagementAssertion } ), new PolicyValidationContext(PolicyType.INCLUDE_FRAGMENT, null, null, true, null), result );
 
-        assertEquals( "Validation warning present", 1, result.getWarningCount() );
+        assertEquals( "Validation warning present", 1L, (long) result.getWarningCount() );
         assertEquals( "Validation warning message", "Assertion is for use only with a Gateway Management Service", result.getWarnings().get(0).getMessage());
     }
 
@@ -35,9 +36,9 @@ public class GatewayManagementAssertionTest {
                 new GatewayManagementAssertion.Validator( gatewayManagementAssertion );
 
         final PolicyValidatorResult result = new PolicyValidatorResult();
-        validator.validate( new AssertionPath( new Assertion[]{ gatewayManagementAssertion } ), new PolicyValidationContext(null, null, null, true, null), result );
+        validator.validate( new AssertionPath( new Assertion[]{ gatewayManagementAssertion } ), new PolicyValidationContext(PolicyType.INCLUDE_FRAGMENT, null, null, true, null), result );
 
-        assertEquals( "Validation warning present", 2, result.getWarningCount() );
+        assertEquals( "Validation warning present", 2L, (long) result.getWarningCount() );
         assertEquals( "Validation warning message", "Assertion is for use only with a Gateway Management Service", result.getWarnings().get(0).getMessage());
         assertEquals( "Validation warning message", "An authentication assertion should precede this assertion, anonymous users have no access permissions.", result.getWarnings().get(1).getMessage());
     }
@@ -52,9 +53,9 @@ public class GatewayManagementAssertionTest {
     @Test
     public void testSetsVariables() {
         final GatewayManagementAssertion gatewayManagementAssertion = new GatewayManagementAssertion();
-        assertEquals("no variables", 0, gatewayManagementAssertion.getVariablesSet().length );
+        assertEquals("no variables", 0L, (long) gatewayManagementAssertion.getVariablesSet().length );
         
         gatewayManagementAssertion.setVariablePrefix( "prefix" );
-        assertEquals("variables", 4, gatewayManagementAssertion.getVariablesSet().length);
+        assertEquals("variables", 4L, (long) gatewayManagementAssertion.getVariablesSet().length );
     }
 }

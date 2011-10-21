@@ -4,9 +4,9 @@ import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapVersion;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
@@ -33,7 +33,6 @@ public class PolicyValidationContext implements Serializable {
      * @param soapVersion if a specific SOAP version is in use and, if so, which version that is; or null if not relevant.
      */
     public PolicyValidationContext(@NotNull PolicyType policyType, @Nullable String policyInternalTag, @Nullable Wsdl wsdl, boolean soap, @Nullable SoapVersion soapVersion) {
-        assert policyType != null;
         this.policyType = policyType;
         this.policyInternalTag = policyInternalTag;
         this.wsdl = wsdl;
@@ -44,6 +43,7 @@ public class PolicyValidationContext implements Serializable {
     /**
      * @return PolicyType if known and available, otherwise null.
      */
+    @NotNull
     public PolicyType getPolicyType() {
         return policyType;
     }

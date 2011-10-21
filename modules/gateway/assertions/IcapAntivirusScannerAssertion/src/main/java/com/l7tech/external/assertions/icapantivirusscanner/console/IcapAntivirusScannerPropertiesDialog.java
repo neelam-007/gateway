@@ -8,6 +8,7 @@ import com.l7tech.external.assertions.icapantivirusscanner.server.ServerIcapAnti
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.ValidationUtils;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -15,7 +16,6 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
-import javax.validation.constraints.NotNull;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
