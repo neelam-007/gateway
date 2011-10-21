@@ -4,6 +4,7 @@ package com.l7tech.console.panels;
 import com.l7tech.console.action.Actions;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.IdentityProviderType;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
@@ -26,7 +27,13 @@ public class CreateIdentityProviderWizard extends IdentityProviderWizard {
     public CreateIdentityProviderWizard(Frame parent, final WizardStepPanel panel, @NotNull IdentityProviderConfig wizardInput, boolean readSettings) {
         super(parent, panel);
         setResizable(true);
-        setTitle("Create LDAP Identity Provider Wizard");
+
+        if(wizardInput.type() == IdentityProviderType.BIND_ONLY_LDAP) {
+            setTitle("Create Simple LDAP Identity Provider Wizard");
+        } else {
+            setTitle("Create LDAP Identity Provider Wizard");
+        }
+
         setShowDescription(false);
         Utilities.setEscKeyStrokeDisposes(this);
 
@@ -43,7 +50,5 @@ public class CreateIdentityProviderWizard extends IdentityProviderWizard {
                 Actions.invokeHelp(CreateIdentityProviderWizard.this);
             }
         });
-
     }
-
 }

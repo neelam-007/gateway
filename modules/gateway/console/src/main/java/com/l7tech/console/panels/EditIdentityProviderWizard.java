@@ -29,12 +29,14 @@ public class EditIdentityProviderWizard extends IdentityProviderWizard {
         super(parent, panel);
         setResizable(true);
 
-        if(iProvider.type() == IdentityProviderType.LDAP) {
-            setTitle("Edit LDAP Identity Provider Properties Wizard");
+        if(iProvider.type() == IdentityProviderType.BIND_ONLY_LDAP) {
+            setTitle("Edit Simple LDAP Identity Provider Wizard");
+        } else if(iProvider.type() == IdentityProviderType.LDAP) {
+            setTitle("Edit LDAP Identity Provider Wizard");
         } else if (iProvider.type() == IdentityProviderType.INTERNAL) {
-            setTitle("Edit Internal Identity Provider Properties Wizard");
+            setTitle("Edit Internal Identity Provider Wizard");
         } else {
-            setTitle("Edit Identity Provider Properties Wizard");
+            setTitle("Edit Identity Provider Wizard");
         }
 
         setShowDescription(false);
@@ -49,7 +51,5 @@ public class EditIdentityProviderWizard extends IdentityProviderWizard {
                 Actions.invokeHelp(EditIdentityProviderWizard.this);
             }
         });
-
     }
-
 }
