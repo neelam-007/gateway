@@ -2,9 +2,12 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.SsmApplication;
 import com.l7tech.gateway.common.security.password.SecurePassword;
+import com.l7tech.gateway.common.security.password.SecurePassword.SecurePasswordType;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.PasswordDoubleEntryDialog;
+import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.EntityUtil;
+import com.l7tech.util.Functions;
 import com.l7tech.util.IOUtils;
 import org.apache.commons.lang.StringUtils;
 
@@ -15,8 +18,11 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
+import java.util.ResourceBundle;
 
 public class SecurePasswordPropertiesDialog extends JDialog {
+    private static ResourceBundle resources = ResourceBundle.getBundle( SecurePasswordPropertiesDialog.class.getName() );
+
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
@@ -39,19 +45,11 @@ public class SecurePasswordPropertiesDialog extends JDialog {
 
     private final SecurePassword securePassword;
     private final boolean newRecord;
-    private final InputValidator inputValidator;
 
     private boolean confirmed = false;
     private char[] enteredPassword = null;
 
-    private RunOnChangeListener enableDisableListener = new RunOnChangeListener() {
-        @Override
-        public void run() {
-            enableOrDisableComponents();
-        }
-    };
-
-    public SecurePasswordPropertiesDialog(Window owner, SecurePassword securePassword) {
+    public SecurePasswordPropertiesDialog( final Window owner, final SecurePassword securePassword) {
         super(owner, "Stored Password Properties");
         setContentPane(contentPane);
         setModal(true);
@@ -70,17 +68,30 @@ public class SecurePasswordPropertiesDialog extends JDialog {
             }
         });
 
+        final RunOnChangeListener enableDisableListener = new RunOnChangeListener() {
+            @Override
+            public void run() {
+                enableOrDisableComponents();
+            }
+        };
         typeComboBox.addActionListener(enableDisableListener);
         typeComboBox.setModel(new DefaultComboBoxModel(SecurePassword.SecurePasswordType.values()));
+        typeComboBox.setRenderer( new TextListCellRenderer<SecurePasswordType>( new Functions.Unary<String, SecurePasswordType>() {
+                    @Override
+                    public String call( final SecurePasswordType securePasswordType ) {
+                        return resources.getString( "securepassword.type." + securePasswordType.name() );
+                    }
+                } ) );
         typeComboBox.setSelectedItem(securePassword.getType() != null ? securePassword.getType() : SecurePassword.SecurePasswordType.PASSWORD);
 
         loadFromFileButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 readFromFile();
             }
         });
 
-        inputValidator = new InputValidator(this, "Stored Password Properties");
+        final InputValidator inputValidator = new InputValidator( this, "Stored Password Properties" );
         inputValidator.attachToButton(buttonOK, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -232,7 +243,7 @@ public class SecurePasswordPropertiesDialog extends JDialog {
         descriptionField.setText(nn(securePassword.getDescription()));
         descriptionField.setCaretPosition(0);
         final long update = securePassword.getLastUpdate();
-        lastUpdateLabel.setText(update > 0 ? new Date(update).toString() : "<Never Set>");
+        lastUpdateLabel.setText(update > 0L ? new Date(update).toString() : "<Never Set>");
         allowVariableCheckBox.setSelected(securePassword.isUsageFromVariable());
     }
 

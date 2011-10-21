@@ -2,6 +2,7 @@ package com.l7tech.gui.util;
 
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.gui.ErrorMessageDialog;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.event.InternalFrameAdapter;
@@ -469,7 +470,7 @@ public class DialogDisplayer {
     public static void showMessageDialog(final Component component,
                                          final String title,
                                          final String message,
-                                         final Throwable throwable) {
+                                         @Nullable final Throwable throwable) {
         showMessageDialog(component, title, message, throwable, null);
     }
 

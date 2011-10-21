@@ -808,6 +808,7 @@ public class ServerGatewayManagementAssertionTest {
         doCreate( resourceUri, payload, "4", "5" );
     }
 
+    @Test
     public void testCreateStoredPassword() throws Exception {
         String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/storedPasswords";
         String payload =
@@ -815,7 +816,23 @@ public class ServerGatewayManagementAssertionTest {
                 "    <Name>Stored Password</Name>\n" +
                 "    <Password>password</Password>\n" +
                 "</StoredPassword>";
-        doCreate( resourceUri, payload, "2" );
+        doCreate( resourceUri, payload, "2", "3" );
+    }
+
+    @Test
+    public void testCreateStoredPasswordWithType() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/storedPasswords";
+        String payload =
+                "<StoredPassword xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                "    <Name>Stored Password</Name>\n" +
+                "    <Password>password</Password>\n" +
+                "    <Properties>\n" +
+                "        <Property key=\"type\">\n" +
+                "            <StringValue>PEM Private Key</StringValue>\n" +
+                "        </Property>\n" +
+                "    </Properties>\n" +
+                "</StoredPassword>";
+        doCreate( resourceUri, payload, "2", "3" );
     }
 
     @Test

@@ -6,6 +6,7 @@ import org.hibernate.annotations.Proxy;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import javax.xml.bind.annotation.XmlEnumValue;
 import java.util.Date;
 
 /**
@@ -15,7 +16,14 @@ import java.util.Date;
 @Proxy(lazy=false)
 @Table(name="secure_password")
 public class SecurePassword extends NamedEntityImp {
-    public static enum SecurePasswordType { PASSWORD, PEM_PRIVATE_KEY };
+
+    public static enum SecurePasswordType {
+        @XmlEnumValue("Password")
+        PASSWORD,
+
+        @XmlEnumValue("PEM Private Key")
+        PEM_PRIVATE_KEY
+    }
 
     private String description;
     private String encodedPassword;

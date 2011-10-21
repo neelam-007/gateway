@@ -2,6 +2,7 @@ package com.l7tech.gui.util;
 
 import com.l7tech.util.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -1639,7 +1640,7 @@ public class Utilities {
      * @throws NullPointerException if one of the cols or order arrays are null 
      */
     public static void setRowSorter( JTable table, TableModel model, int[] cols, boolean[] order,
-                                     Comparator [] comparators ) throws IllegalArgumentException, NullPointerException{
+                                     @Nullable Comparator [] comparators ) throws IllegalArgumentException, NullPointerException{
         TableRowSorter sorter = new TableRowSorter(model);
         if ( cols != null && order != null ) {
             if( cols.length != order.length){

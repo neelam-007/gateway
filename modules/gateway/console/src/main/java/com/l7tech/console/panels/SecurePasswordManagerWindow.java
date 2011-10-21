@@ -3,10 +3,12 @@ package com.l7tech.console.panels;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.security.password.SecurePassword;
+import com.l7tech.gateway.common.security.password.SecurePassword.SecurePasswordType;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
@@ -19,16 +21,18 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
+import java.util.Date;
+import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.gui.util.TableUtil.column;
 import static com.l7tech.util.Functions.propertyTransform;
+import org.jetbrains.annotations.Nullable;
 
 public class SecurePasswordManagerWindow extends JDialog {
     private static Logger logger = Logger.getLogger(SecurePasswordManagerWindow.class.getName());
+    private static ResourceBundle resources = ResourceBundle.getBundle( SecurePasswordManagerWindow.class.getName() );
 
     private JPanel contentPane;
     private JButton closeButton;
@@ -48,9 +52,9 @@ public class SecurePasswordManagerWindow extends JDialog {
 
         passwordTableModel = TableUtil.configureTable(passwordTable,
                 column("Name", 25, 110, 1024, propertyTransform(SecurePassword.class, "name")),
-                column("Type", 25, 60, 64, propertyTransform(SecurePassword.class, "type")),
+                column("Type", 25, 100, 300, Functions.<SecurePasswordType,SecurePassword>propertyTransform( SecurePassword.class, "type" ), SecurePasswordType.class),
                 column("Description", 25, 220, 99999, propertyTransform(SecurePassword.class, "description")),
-                column("Last Changed", 25, 210, 300, propertyTransform(SecurePassword.class, "lastUpdateAsDate")));
+                column("Last Changed", 25, 210, 300, propertyTransform( SecurePassword.class, "lastUpdateAsDate" )));
 
         closeButton.addActionListener(new ActionListener() {
             @Override
@@ -144,25 +148,28 @@ public class SecurePasswordManagerWindow extends JDialog {
                 enableOrDisableButtons();
             }
         });
+        passwordTable.setDefaultRenderer(
+                SecurePasswordType.class,
+                new TextListCellRenderer<SecurePasswordType>( new Functions.Unary<String, SecurePasswordType>() {
+                    @Override
+                    public String call( final SecurePasswordType securePasswordType ) {
+                        return resources.getString( "securepassword.type." + securePasswordType.name() );
+                    }
+                } ).asTableCellRenderer() );
 
         enableOrDisableButtons();
 
         Utilities.setButtonAccelerator( this, helpButton, KeyEvent.VK_F1 );
         Utilities.setDoubleClickAction(passwordTable, editButton);
-        Utilities.setRowSorter(passwordTable, passwordTableModel);
+        Utilities.setRowSorter(passwordTable, passwordTableModel, new int[]{0,1,2,3}, new boolean[]{true,true,true,true}, null);
+        Utilities.setMinimumSize(this);
 
-        loadSecurePasswords(null);
+        loadSecurePasswords( null );
     }
 
-    private void loadSecurePasswords(final Long oidToSelect) {
+    private void loadSecurePasswords( @Nullable final Long oidToSelect ) {
         try {
             java.util.List<SecurePassword> passes = new ArrayList<SecurePassword>(Registry.getDefault().getTrustedCertManager().findAllSecurePasswords());
-            Collections.sort(passes, new Comparator<SecurePassword>() {
-                @Override
-                public int compare(SecurePassword a, SecurePassword b) {                    
-                    return (a.getName().compareTo(b.getName()));
-                }
-            });
             passwordTableModel.setRows(passes);
 
             if (oidToSelect != null) {

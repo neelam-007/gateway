@@ -8,6 +8,7 @@ import com.l7tech.gateway.api.PolicyImportResult.ImportedPolicyReferenceType;
 import com.l7tech.gateway.api.PolicyReferenceInstruction.PolicyReferenceInstructionType;
 import com.l7tech.gateway.api.PolicyValidationResult.ValidationStatus;
 import com.l7tech.gateway.common.security.SpecialKeyType;
+import com.l7tech.gateway.common.security.password.SecurePassword.SecurePasswordType;
 import com.l7tech.gateway.common.transport.SsgConnector.Endpoint;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
@@ -83,6 +84,7 @@ public class EntityPropertiesHelperTest {
      */
     @Test
     public void xmlEnumValueTest() throws Exception {
+        //NOTE : Do not change values, read javadoc above
         testXmlEnumValueAnnotations( Endpoint.class,
                 "Published service message input",
                 "Policy Manager access",
@@ -100,58 +102,73 @@ public class EntityPropertiesHelperTest {
                 "Node Control",
                 "Inter-Node Communication" );
 
+        //NOTE : Do not change values, read javadoc above
         testXmlEnumValueAnnotations( IdentityProviderType.class,
                 "Internal",
                 "LDAP",
                 "Federated",
                 "Simple LDAP");
 
+        //NOTE : Do not change values, read javadoc above
         testXmlEnumValueAnnotations( JMSProviderType.class,
                 "TIBCO EMS",
                 "WebSphere MQ over LDAP",
                 "FioranoMQ" );
 
+        //NOTE : Do not change values, read javadoc above
         testXmlEnumValueAnnotations( ClientAuthentication.class,
                 "None",
                 "Optional",
                 "Required" );
 
+        //NOTE : Do not change values, read javadoc above
         testXmlEnumValueAnnotations( PolicyType.class,
                 "Include",
                 "Internal",
                 "Global" );
 
+        //NOTE : Do not change values, read javadoc above
         testXmlEnumValueAnnotations( ImportedPolicyReferenceType.class,
                 "Created",
                 "Mapped" );
 
+        //NOTE : Do not change values, read javadoc above
         testXmlEnumValueAnnotations( PolicyReferenceInstructionType.class,
                 "Delete",
                 "Ignore",
                 "Map",
                 "Rename" );
 
+        //NOTE : Do not change values, read javadoc above
         testXmlEnumValueAnnotations( ValidationStatus.class,
                 "OK",
                 "Warning",
                 "Error" );
 
+        //NOTE : Do not change values, read javadoc above
         testXmlEnumValueAnnotations( SpecialKeyType.class,
                 "Default SSL Key",
                 "Default CA Key",
                 "Audit Viewer Key",
                 "Audit Signing Key" );
 
+        //NOTE : Do not change values, read javadoc above
         testXmlEnumValueAnnotations( UserCertificateUseType.class,
                 "None",
                 "Index",
                 "Custom Index",
                 "Search" );
 
+        //NOTE : Do not change values, read javadoc above
         testXmlEnumValueAnnotations( CertificateValidationType.class,
                 "Validate",
                 "Validate Certificate Path",
                 "Revocation Checking" );
+
+        //NOTE : Do not change values, read javadoc above
+        testXmlEnumValueAnnotations( SecurePasswordType.class,
+                "Password",
+                "PEM Private Key" );
     }
 
     private <E extends Enum<E>> void testXmlEnumValueAnnotations( final Class<E> enumType,
