@@ -12,7 +12,7 @@ public class SftpPollingListenerDialogSettings {
     private String hostKey;
     private String username;
     private Long passwordOid;
-    private String privateKey;
+    private Long privateKeyOid;
     private String directory;
     private int pollingInterval = 60;
     private String contentType = "text/xml; charset=UTF-8";
@@ -89,12 +89,12 @@ public class SftpPollingListenerDialogSettings {
         this.passwordOid = passwordOid;
     }
 
-    public String getPrivateKey() {
-        return privateKey;
+    public Long getPrivateKeyOid() {
+        return privateKeyOid;
     }
 
-    public void setPrivateKey(String privateKey) {
-        this.privateKey = privateKey;
+    public void setPrivateKeyOid(Long privateKeyOid) {
+        this.privateKeyOid = privateKeyOid;
     }
 
     public String getDirectory() {
@@ -170,7 +170,7 @@ public class SftpPollingListenerDialogSettings {
         copyTo.setHostKey(getHostKey());
         copyTo.setUsername(getUsername());
         copyTo.setPasswordOid(getPasswordOid());
-        copyTo.setPrivateKey(getPrivateKey());
+        copyTo.setPrivateKeyOid(getPrivateKeyOid());
         copyTo.setDirectory(getDirectory());
         copyTo.setPollingInterval(getPollingInterval());
         copyTo.setContentType(getContentType());

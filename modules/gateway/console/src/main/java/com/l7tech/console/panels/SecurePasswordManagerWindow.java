@@ -48,6 +48,7 @@ public class SecurePasswordManagerWindow extends JDialog {
 
         passwordTableModel = TableUtil.configureTable(passwordTable,
                 column("Name", 25, 110, 1024, propertyTransform(SecurePassword.class, "name")),
+                column("Type", 25, 60, 64, propertyTransform(SecurePassword.class, "type")),
                 column("Description", 25, 220, 99999, propertyTransform(SecurePassword.class, "description")),
                 column("Last Changed", 25, 210, 300, propertyTransform(SecurePassword.class, "lastUpdateAsDate")));
 

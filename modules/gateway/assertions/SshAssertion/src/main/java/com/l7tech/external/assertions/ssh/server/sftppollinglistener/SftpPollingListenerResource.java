@@ -10,6 +10,7 @@ public class SftpPollingListenerResource {
 
     private SftpPollingListenerDialogSettings configuration;
     private String password;
+    private String privateKey;
 
     public SftpPollingListenerResource(SftpPollingListenerDialogSettings configuration) {
         this.configuration = configuration;
@@ -52,7 +53,11 @@ public class SftpPollingListenerResource {
     }
 
     public String getPrivateKey() {
-        return configuration.getPrivateKey();
+        return privateKey;
+    }
+
+    public void setPrivateKey(String privateKey) {
+        this.privateKey = privateKey;
     }
 
     public String getDirectory() {

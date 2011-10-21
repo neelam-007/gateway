@@ -1,15 +1,15 @@
 package com.l7tech.external.assertions.ssh.console;
 
 import com.l7tech.console.panels.CustomTransportPropertiesPanel;
-import com.l7tech.console.util.Registry;
+import com.l7tech.console.panels.SecurePasswordComboBox;
+import com.l7tech.console.panels.SecurePasswordManagerWindow;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.external.assertions.ssh.SshCredentialAssertion;
-import com.l7tech.external.assertions.ssh.keyprovider.SshKeyUtil;
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.ConfigFactory;
-import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -26,12 +26,10 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
     private JCheckBox scpCheckBox;
     private JCheckBox sftpCheckBox;
     private JTextField maxConcurrentSessionsPerUserField;
-    private JTextField hostPrivateKeyTypeField;
-    private JButton setHostPrivateKeyButton;
     private JTextField idleTimeoutMinsField;
+    private SecurePasswordComboBox privateKeyField;
+    private JButton managePasswordsPrivateKeysButton;
 
-    private String hostPrivateKey;
-    private String encryptedHostPrivateKey;
     private InputValidator validator;
 
     public SshTransportPropertiesPanel() {
@@ -45,6 +43,19 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
         if (val == null)
             return dflt;
         return Boolean.parseBoolean(val);
+    }
+
+    private long getLongProp(Map<String, String> map, String key, long dflt) {
+        long result = dflt;
+        String val = map.get(key);
+        if (val != null) {
+            try {
+                result = Long.parseLong(val);
+            } catch (NumberFormatException e) {
+                // do nothing, use default value
+            }
+        }
+        return result;
     }
 
     private String getStringProp(Map<String, String> map, String key, String dflt) {
@@ -64,22 +75,7 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
                 ConfigFactory.getProperty("com.l7tech.external.assertions.ssh.idleTimeoutMinutes", "10")));
         maxConcurrentSessionsPerUserField.setText(getStringProp(props, SshCredentialAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER,
                 ConfigFactory.getProperty("com.l7tech.external.assertions.ssh.defaultMaxConcurrentSessionsPerUser", "10")));
-
-        encryptedHostPrivateKey = props.get(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY);
-        try {
-            hostPrivateKey = String.valueOf(Registry.getDefault().getTrustedCertManager().decryptPassword(encryptedHostPrivateKey));
-
-            if (!StringUtils.isEmpty(hostPrivateKey)) {
-                String determinedAlgorithm = SshKeyUtil.getPemPrivateKeyAlgorithm(hostPrivateKey);
-                if (determinedAlgorithm != null) {
-                    hostPrivateKeyTypeField.setText(SshKeyUtil.PEM + " " + determinedAlgorithm);
-                } else {
-                    hostPrivateKeyTypeField.setText("Unknown type");
-                }
-            }
-        } catch (Exception e) {
-            // validation error will occur if host private key is empty
-        }
+        privateKeyField.setSelectedSecurePassword(getLongProp(props, SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY, SecurePassword.DEFAULT_OID));
     }
 
     @Override
@@ -89,20 +85,14 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
         data.put(SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP, String.valueOf(sftpCheckBox.isSelected()));
         data.put(SshCredentialAssertion.LISTEN_PROP_IDLE_TIMEOUT_MINUTES, idleTimeoutMinsField.getText());
         data.put(SshCredentialAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER, maxConcurrentSessionsPerUserField.getText());
-        data.put(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY, encryptedHostPrivateKey);
+        data.put(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY, String.valueOf(privateKeyField.getSelectedSecurePassword().getOid()));
         return data;
     }
 
     @Override
     public String getValidationError() {
-        if (StringUtils.isEmpty(hostPrivateKey)) {
+        if (privateKeyField.getSelectedSecurePassword() == null) {
             return "The Host private key field must not be empty.";
-        }
-
-        try {
-            encryptedHostPrivateKey = Registry.getDefault().getTrustedCertManager().encryptPassword(hostPrivateKey.toCharArray());
-        } catch (FindException fe) {
-            return "Cannot encrypt the given private key.  Please try a different private key.";
         }
 
         String validationError = validator.validate();
@@ -131,26 +121,15 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
         validator.addRule(validator.constrainTextFieldToNumberRange(
                 "Idle timeout (in minutes)", maxConcurrentSessionsPerUserField, 0, Integer.MAX_VALUE));
 
-        setHostPrivateKeyButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                final HostKeyDialog dialog = new HostKeyDialog(SwingUtilities.getWindowAncestor(
-                        SshTransportPropertiesPanel.this), null, HostKeyDialog.HostKeyValidationType.VALIDATE_PEM_PRIVATE_KEY_FORMAT);
+        privateKeyField.reloadPasswordList(SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY);
+
+        managePasswordsPrivateKeysButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                SecurePasswordManagerWindow dialog = new SecurePasswordManagerWindow(TopComponents.getInstance().getTopParent());
+                dialog.pack();
                 Utilities.centerOnScreen(dialog);
-                DialogDisplayer.display(dialog, new Runnable() {
-                    @Override
-                    public void run() {
-                        if (dialog.isConfirmed()) {
-                            hostPrivateKey = dialog.getHostKey();
-                            String determinedAlgorithm = SshKeyUtil.getPemPrivateKeyAlgorithm(hostPrivateKey);
-                            if (determinedAlgorithm != null) {
-                                hostPrivateKeyTypeField.setText(SshKeyUtil.PEM + " " + determinedAlgorithm);
-                            } else {
-                                hostPrivateKeyTypeField.setText("Unknown type");
-                            }
-                        }
-                    }
-                });
+                DialogDisplayer.display(dialog);
+                privateKeyField.reloadPasswordList(SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY);
             }
         });
     }

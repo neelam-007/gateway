@@ -97,6 +97,12 @@ ALTER TABLE policy ADD CONSTRAINT policy_folder FOREIGN KEY (folder_oid) REFEREN
 ALTER TABLE folder ADD CONSTRAINT folder_parent_folder FOREIGN KEY (parent_folder_oid) REFERENCES folder (objectid);
 
 --
+-- Bug 11158: SSH private key should not display in plain sight
+--
+ALTER TABLE secure_password MODIFY COLUMN encoded_password BLOB NOT NULL;
+ALTER TABLE secure_password ADD COLUMN type varchar(64) NOT NULL DEFAULT 'PASSWORD';
+
+--
 --
 -- Reenable FK at very end of script
 --

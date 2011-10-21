@@ -3,10 +3,7 @@ package com.l7tech.gateway.common.security.password;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import org.hibernate.annotations.Proxy;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Transient;
+import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.Date;
@@ -18,10 +15,13 @@ import java.util.Date;
 @Proxy(lazy=false)
 @Table(name="secure_password")
 public class SecurePassword extends NamedEntityImp {
+    public static enum SecurePasswordType { PASSWORD, PEM_PRIVATE_KEY };
+
     private String description;
     private String encodedPassword;
     private Date lastUpdate;
     private boolean usageFromVariable;
+    private SecurePasswordType type;
     
     public SecurePassword() {
     }
@@ -61,9 +61,10 @@ public class SecurePassword extends NamedEntityImp {
         this.usageFromVariable = usageFromVariable;
     }
 
-    @Column(name = "encoded_password", length = 256, nullable = false)
+    @Lob
+    @Column(name = "encoded_password", length = 65535, nullable = false)
     @NotNull
-    @Size(max=256)
+    @Size(max=65535)
     public String getEncodedPassword() {
         return encodedPassword;
     }
@@ -79,6 +80,16 @@ public class SecurePassword extends NamedEntityImp {
 
     public void setLastUpdate(long lastUpdate) {
         this.lastUpdate = new Date(lastUpdate);
+    }
+
+    @Column(name = "type", length = 64)
+    @Enumerated(EnumType.STRING)
+    public SecurePasswordType getType() {
+        return type;
+    }
+
+    public void setType(SecurePasswordType type) {
+        this.type = type;
     }
 
     @SuppressWarnings({"UnusedDeclaration"})
@@ -110,6 +121,7 @@ public class SecurePassword extends NamedEntityImp {
         if (encodedPassword != null ? !encodedPassword.equals(that.encodedPassword) : that.encodedPassword != null)
             return false;
         if (lastUpdate != null ? !lastUpdate.equals(that.lastUpdate) : that.lastUpdate != null) return false;
+        if (type != null ? !type.equals(that.type) : that.type != null) return false;
 
         return true;
     }
@@ -121,6 +133,7 @@ public class SecurePassword extends NamedEntityImp {
         result = 31 * result + (encodedPassword != null ? encodedPassword.hashCode() : 0);
         result = 31 * result + (lastUpdate != null ? lastUpdate.hashCode() : 0);
         result = 31 * result + (usageFromVariable ? 1 : 0);
+        result = 31 * result + (type != null ? type.hashCode() : 0);
         return result;
     }
 }

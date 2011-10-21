@@ -1,15 +1,14 @@
 package com.l7tech.external.assertions.ssh.console;
 
-import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.SecurePasswordComboBox;
 import com.l7tech.console.panels.SecurePasswordManagerWindow;
 import com.l7tech.console.panels.ServiceComboBox;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.external.assertions.ssh.keyprovider.SshKeyUtil;
 import com.l7tech.external.assertions.ssh.server.sftppollinglistener.SftpPollingListenerConstants;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gui.MaxLengthDocument;
@@ -20,8 +19,6 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.VersionException;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.HexUtils;
-import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -40,7 +37,7 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
     private JPanel mainPanel;
     private JTextField nameField;
     private JCheckBox enabledCheckBox;
-    private JRadioButton usernamePasswordRadioButton;
+    private JRadioButton passwordRadioButton;
     private JRadioButton privateKeyRadioButton;
     private JTextField hostField;
     private JTextField portField;
@@ -48,7 +45,8 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
     private JButton manageHostKeyButton;
     private JTextField usernameField;
     private SecurePasswordComboBox passwordField;
-    private JButton managePasswordsButton;
+    private SecurePasswordComboBox privateKeyField;
+    private JButton managePasswordsPrivateKeysButton;
     private JTextField directoryField;
     private JTextField contentTypeField;
     private JSpinner pollingIntervalField;
@@ -58,20 +56,13 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
     private JComboBox serviceNameComboBox;
     private JButton cancelButton;
     private JButton okButton;
-    private JTextField privateKeyTypeField;
-    private JButton setPrivateKeyButton;
 
     private String hostKey;
-    private String privateKey;
-    private String encryptedPrivateKey;
-
     private boolean isNew;
     private SftpPollingListenerDialogSettings configuration;
     private boolean confirmed = false;
 
     private Logger logger = Logger.getLogger(SftpPollingListenerPropertiesDialog.class.getName());
-
-    private static final byte[] privateKeyKey = HexUtils.decodeBase64("kYp+tfNd0hhE79ujJpzgk7MlctHJabdtm23nwsKMfF0=");
 
     private RunOnChangeListener enableDisableListener = new RunOnChangeListener() {
         @Override
@@ -107,7 +98,7 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
         usernameField.setDocument(new MaxLengthDocument(255));
         usernameField.getDocument().addDocumentListener(enableDisableListener);
         passwordField.addActionListener(enableDisableListener);
-        privateKeyTypeField.getDocument().addDocumentListener(enableDisableListener);
+        privateKeyField.addActionListener(enableDisableListener);
         directoryField.getDocument().addDocumentListener( enableDisableListener );
         contentTypeField.getDocument().addDocumentListener( enableDisableListener );
 
@@ -116,19 +107,11 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
         ActionListener authTypeActionListener = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                privateKeyTypeField.setEnabled(privateKeyRadioButton.isSelected());
-                setPrivateKeyButton.setEnabled(privateKeyRadioButton.isSelected());
-
-                boolean enablePasswordFields = true;
-                if(privateKeyRadioButton.isSelected()) {
-                    enablePasswordFields = false;
-                }
-
-                passwordField.setEnabled(enablePasswordFields);
-                managePasswordsButton.setEnabled(enablePasswordFields);
+                passwordField.setEnabled(passwordRadioButton.isSelected());
+                privateKeyField.setEnabled(privateKeyRadioButton.isSelected());
             }
         };
-        usernamePasswordRadioButton.addActionListener(authTypeActionListener);
+        passwordRadioButton.addActionListener(authTypeActionListener);
         privateKeyRadioButton.addActionListener(authTypeActionListener);
 
         manageHostKeyButton.addActionListener(new ActionListener() {
@@ -149,37 +132,18 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
             }
         });
 
-        setPrivateKeyButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                final HostKeyDialog dialog = new HostKeyDialog(SwingUtilities.getWindowAncestor(
-                        SftpPollingListenerPropertiesDialog.this), null, HostKeyDialog.HostKeyValidationType.VALIDATE_PEM_PRIVATE_KEY_FORMAT);
-                Utilities.centerOnScreen(dialog);
-                DialogDisplayer.display(dialog, new Runnable() {
-                    @Override
-                    public void run() {
-                        if (dialog.isConfirmed()) {
-                            privateKey = dialog.getHostKey();
-                            String determinedAlgorithm = SshKeyUtil.getPemPrivateKeyAlgorithm(privateKey);
-                            if (determinedAlgorithm != null) {
-                                privateKeyTypeField.setText(SshKeyUtil.PEM + " " + determinedAlgorithm);
-                            } else {
-                                privateKeyTypeField.setText("Unknown type");
-                            }
-                        }
-                    }
-                });
-            }
-        });
-
-        managePasswordsButton.addActionListener(enableDisableListener);
-        managePasswordsButton.addActionListener(new ActionListener() {
+        passwordField.reloadPasswordList(SecurePassword.SecurePasswordType.PASSWORD);
+        privateKeyField.reloadPasswordList(SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY);
+        managePasswordsPrivateKeysButton.addActionListener(enableDisableListener);
+        managePasswordsPrivateKeysButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
                 SecurePasswordManagerWindow dialog = new SecurePasswordManagerWindow(TopComponents.getInstance().getTopParent());
                 dialog.pack();
                 Utilities.centerOnScreen(dialog);
                 DialogDisplayer.display(dialog);
-                passwordField.reloadPasswordList();
+                passwordField.reloadPasswordList(SecurePassword.SecurePasswordType.PASSWORD);
+                privateKeyField.reloadPasswordList(SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY);
+                pack();
             }
         });
 
@@ -239,18 +203,16 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
             enableOkButton = false;
         }
 
-        if(usernamePasswordRadioButton.isSelected()) {
+        if(passwordRadioButton.isSelected()) {
             if(passwordField.getSelectedSecurePassword() == null) {
                 enableOkButton = false;
             }
-            privateKeyTypeField.setEnabled(false);
-            setPrivateKeyButton.setEnabled(false);
+            privateKeyField.setEnabled(false);
         } else if(privateKeyRadioButton.isSelected()) {
-            if(privateKeyTypeField.getText() == null || privateKeyTypeField.getText().trim().length() == 0) {
+            if(privateKeyField.getSelectedSecurePassword() == null) {
                 enableOkButton = false;
             }
             passwordField.setEnabled(false);
-            managePasswordsButton.setEnabled(false);
         }
 
         if(directoryField.getText() == null || directoryField.getText().trim().length() == 0) {
@@ -273,28 +235,6 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
 
         enabledCheckBox.setSelected(configuration.getVersion() <=0 ? true : configuration.isActive());
 
-        encryptedPrivateKey = configuration.getPrivateKey();
-        if(encryptedPrivateKey != null) {
-            privateKeyRadioButton.setSelected(true);
-
-            try {
-                privateKey = String.valueOf(Registry.getDefault().getTrustedCertManager().decryptPassword(encryptedPrivateKey));
-
-                if (!StringUtils.isEmpty(privateKey)) {
-                    String determinedAlgorithm = SshKeyUtil.getPemPrivateKeyAlgorithm(privateKey);
-                    if (determinedAlgorithm != null) {
-                        privateKeyTypeField.setText(SshKeyUtil.PEM + " " + determinedAlgorithm);
-                    } else {
-                        privateKeyTypeField.setText("Unknown type");
-                    }
-                }
-            } catch (Exception e) {
-                // validation error will occur if host private key is empty
-            }
-        } else {
-            usernamePasswordRadioButton.setSelected(true);
-        }
-
         hostField.setText(configuration.getHostname() == null ? "" : configuration.getHostname().trim());
         portField.setText(Integer.toString(configuration.getPort()));
         if(configuration.getHostKey() != null) {
@@ -308,6 +248,12 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
 
         if(configuration.getPasswordOid() != null) {
             passwordField.setSelectedSecurePassword(configuration.getPasswordOid());
+            passwordRadioButton.setSelected(true);
+        } else if (configuration.getPrivateKeyOid() != null) {
+            privateKeyField.setSelectedSecurePassword(configuration.getPrivateKeyOid());
+            privateKeyRadioButton.setSelected(true);
+        } else {
+           passwordRadioButton.setSelected(true);
         }
 
         directoryField.setText(configuration.getDirectory() == null ? "" : configuration.getDirectory());
@@ -350,21 +296,12 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
 
         c.setUsername(usernameField.getText() == null || usernameField.getText().trim().length() == 0 ? null : usernameField.getText().trim());
 
-        if(usernamePasswordRadioButton.isSelected()) {
+        if(passwordRadioButton.isSelected()) {
             if(passwordField.getSelectedSecurePassword() != null) {
                 c.setPasswordOid(passwordField.getSelectedSecurePassword().getOid());
             }
         } else if(privateKeyRadioButton.isSelected()) {
-            try {
-                encryptedPrivateKey = Registry.getDefault().getTrustedCertManager().encryptPassword(privateKey.toCharArray());
-            } catch (FindException fe) {
-                throw new AssertionPropertiesOkCancelSupport.ValidationException("Cannot encrypt the given private key.  Please try a different private key.");
-            }
-            if(StringUtils.isEmpty(encryptedPrivateKey)) {
-                c.setPrivateKey(null);
-            } else {
-                c.setPrivateKey(encryptedPrivateKey);
-            }
+            c.setPrivateKeyOid(privateKeyField.getSelectedSecurePassword().getOid());
         }
 
         c.setDirectory(directoryField.getText() == null || directoryField.getText().trim().length() == 0 ? null : directoryField.getText().trim());

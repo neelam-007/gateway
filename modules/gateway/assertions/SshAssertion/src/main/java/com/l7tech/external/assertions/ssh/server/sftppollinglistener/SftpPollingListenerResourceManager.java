@@ -127,6 +127,10 @@ public class SftpPollingListenerResourceManager {
                     String decrypted = getDecryptedPassword(configuration.getPasswordOid());
                     res.setPassword(decrypted);
                 }
+                if (configuration.getPrivateKeyOid() != null) {
+                    String decrypted = getDecryptedPassword(configuration.getPrivateKeyOid());
+                    res.setPrivateKey(decrypted);
+                }
 
                 newConfigurations.add(res);
             }
@@ -134,11 +138,11 @@ public class SftpPollingListenerResourceManager {
     }
 
     private String getDecryptedPassword(long passwordOid) {
-        SecurePasswordManager man = (SecurePasswordManager)context.getBean("securePasswordManager");
+        SecurePasswordManager securePasswordManager = (SecurePasswordManager)context.getBean("securePasswordManager");
         String decrypted = null;
         try{
-            String encrypted = man.findByPrimaryKey(passwordOid).getEncodedPassword();
-            char[] pwd = man.decryptPassword(encrypted);
+            String encrypted = securePasswordManager.findByPrimaryKey(passwordOid).getEncodedPassword();
+            char[] pwd = securePasswordManager.decryptPassword(encrypted);
             decrypted = new String(pwd);
         } catch(ParseException pe) {
             decrypted = null;

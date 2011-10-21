@@ -15,19 +15,14 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.CollectionUtils.MapBuilder;
-import static com.l7tech.util.CollectionUtils.list;
 import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Option;
 
 import javax.validation.groups.Default;
 import javax.xml.bind.annotation.XmlEnumValue;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
+
+import static com.l7tech.util.CollectionUtils.list;
 
 /**
  * 
@@ -214,6 +209,7 @@ class EntityPropertiesHelper {
         .put( SecurePassword.class, MapBuilder.<String, String>builder()
             .put( "description", null )
             .put( "lastUpdateAsDate", "lastUpdated" )
+            .put( "type", null )
             .put( "usageFromVariable", null )
             .unmodifiableMap() )
         .put( TrustedCert.class, MapBuilder.<String,String>builder()
@@ -270,6 +266,7 @@ class EntityPropertiesHelper {
         )
         .put( SecurePassword.class, MapBuilder.<String,Object>builder()
             .put( "usageFromVariable", false )
+            .put( "type", "PASSWORD" )
             .unmodifiableMap()
         )
         .put( TrustedCert.class, MapBuilder.<String,Object>builder()

@@ -11,6 +11,7 @@ import com.l7tech.util.ResolvingComparator;
 import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -23,12 +24,26 @@ public class SecurePasswordComboBox extends JComboBox {
     private List<SecurePassword> securePasswords;
 
     public SecurePasswordComboBox() {
-        reloadPasswordList();
+        reloadPasswordList(SecurePassword.SecurePasswordType.PASSWORD);
+    }
+
+    public SecurePasswordComboBox(SecurePassword.SecurePasswordType typeFilter) {
+        reloadPasswordList(typeFilter);
     }
 
     public void reloadPasswordList() {
+        reloadPasswordList(SecurePassword.SecurePasswordType.PASSWORD);
+    }
+
+    public void reloadPasswordList(SecurePassword.SecurePasswordType typeFilter) {
         try {
             securePasswords = new ArrayList<SecurePassword>(Registry.getDefault().getTrustedCertManager().findAllSecurePasswords());
+            for (Iterator<SecurePassword> iterator = securePasswords.iterator(); iterator.hasNext(); ) {
+                SecurePassword securePassword =  iterator.next();
+                if (securePassword.getType() != typeFilter) {
+                    iterator.remove();
+                }
+            }
             Collections.sort( securePasswords, new ResolvingComparator<SecurePassword,String>( new Resolver<SecurePassword,String>(){
                 @Override
                 public String resolve( final SecurePassword key ) {

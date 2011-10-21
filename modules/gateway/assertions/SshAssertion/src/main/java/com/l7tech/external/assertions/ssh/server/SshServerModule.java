@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.gateway.common.audit.SystemMessages;
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.objectmodel.FindException;
@@ -409,8 +410,16 @@ public class SshServerModule extends TransportModule implements ApplicationListe
         sshd.setPort(connector.getPort());
 
         // set server host private key
-        String encryptedHostPrivateKey = connector.getProperty(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY);
-        sshd.setKeyPairProvider(new PemSshHostKeyProvider(String.valueOf(securePasswordManager.decryptPassword(encryptedHostPrivateKey))));
+        long hostPrivateKeyOid = connector.getLongProperty(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY, SecurePassword.DEFAULT_OID);
+        SecurePassword securePassword = securePasswordManager.findByPrimaryKey(hostPrivateKeyOid);
+        if (securePassword != null) {
+            String encryptedHostPrivateKey = securePassword.getEncodedPassword();
+            char[] hostPrivateKey = securePasswordManager.decryptPassword(encryptedHostPrivateKey);
+            sshd.setKeyPairProvider(new PemSshHostKeyProvider(String.valueOf(hostPrivateKey)));
+        } else {
+            LOGGER.log(Level.WARNING, "Unable to find private key OID: " + hostPrivateKeyOid + ".  KeyPairProvider not set.");
+        }
+
 
         // configure connection idle timeout in ms (min=60sec*1000ms)
         String idleTimeoutMins = connector.getProperty(SshCredentialAssertion.LISTEN_PROP_IDLE_TIMEOUT_MINUTES);

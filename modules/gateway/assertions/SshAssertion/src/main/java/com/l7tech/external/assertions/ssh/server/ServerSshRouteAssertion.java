@@ -147,10 +147,17 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                 sshParams.setHostKeyVerifier(new HostKeyFingerprintVerifier(sshHostKeys));
             }
 
-            if(assertion.isUsePrivateKey()) {
-                String encryptedPrivateKeyText = ExpandVariables.process(assertion.getPrivateKey(),
-                        context.getVariableMap(Syntax.getReferencedNames(assertion.getPrivateKey()), getAudit()), getAudit());
-                String privateKeyText = String.valueOf(securePasswordManager.decryptPassword(encryptedPrivateKeyText));
+            if(assertion.isUsePrivateKey() && assertion.getPrivateKeyOid() != null) {
+                String privateKeyText;
+                try {
+                    privateKeyText = new String(securePasswordManager.decryptPassword(
+                            securePasswordManager.findByPrimaryKey(assertion.getPrivateKeyOid()).getEncodedPassword()));
+                } catch(FindException fe) {
+                    return AssertionStatus.FAILED;
+                } catch(ParseException pe) {
+                    return AssertionStatus.FAILED;
+                }
+
                 sshParams.setSshPassword(null);
                 if(password == null) {
                     sshParams.setPrivateKey(privateKeyText);

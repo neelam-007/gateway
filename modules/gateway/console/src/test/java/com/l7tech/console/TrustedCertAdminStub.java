@@ -19,7 +19,6 @@ import java.security.KeyStoreException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.text.ParseException;
 import java.util.*;
 
 /**
@@ -185,16 +184,6 @@ public class TrustedCertAdminStub implements TrustedCertAdmin {
 
     @Override
     public void deleteSecurePassword(long oid) throws DeleteException, FindException {
-    }
-
-    @Override
-    public String encryptPassword(char[] plaintext) throws FindException {
-        return null;
-    }
-
-    @Override
-    public char[] decryptPassword(String encodedPassword) throws FindException, ParseException {
-        return new char[0];
     }
 
     @Override

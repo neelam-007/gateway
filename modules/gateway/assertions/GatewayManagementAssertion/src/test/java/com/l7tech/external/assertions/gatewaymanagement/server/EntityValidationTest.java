@@ -21,7 +21,6 @@ import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.BeanUtils;
 import com.l7tech.util.ExceptionUtils;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
@@ -32,6 +31,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
+
+import static org.junit.Assert.*;
 
 /**
  * Tests for entity validation annotations.
@@ -490,7 +491,7 @@ public class EntityValidationTest {
 
         // test encoded password
         checkNull( securePassword, "encodedPassword", false );
-        checkSize( securePassword, "encodedPassword", 0, 256 );
+        checkSize( securePassword, "encodedPassword", 0, 65535 );
     }
 
     //- PRIVATE

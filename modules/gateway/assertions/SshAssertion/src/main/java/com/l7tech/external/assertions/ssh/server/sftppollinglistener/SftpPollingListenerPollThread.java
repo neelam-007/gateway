@@ -90,7 +90,7 @@ public class SftpPollingListenerPollThread extends Thread {
                                 ExceptionUtils.getDebugException(e));
                         sftpPollingListener.cleanup();
                     } else {
-                        sftpPollingListener.log(Level.WARNING, "Running out threads in the SFTP polling listener ThreadPool, " +
+                        sftpPollingListener.log(Level.WARNING, "Running out of threads in the SFTP polling listener ThreadPool, " +
                                 "consider increasing the sftpPolling.listenerThreadLimit : {0}", e.getMessage());
                         retryLastMsg = true;
                     }

@@ -177,15 +177,6 @@ public class TrustedCertAdminTest {
         assertNull(gone);
     }
 
-    @Test
-    public void testEncryptAndDecryptPassword() throws Exception {
-        String encrypted = registry.getTrustedCertManager().encryptPassword("foobarbazblat".toCharArray());
-        assertNotNull(encrypted);
-        assertTrue(encrypted.startsWith("$L7C$"));
-
-        assertEquals("foobarbazblat", new String(registry.getTrustedCertManager().decryptPassword(encrypted)));
-    }
-
     private X509Certificate getCert() throws CertificateException, IOException {
         byte[] certBytes = HexUtils.decodeBase64(CERT_BASE64);
         return CertUtils.decodeCert(certBytes);

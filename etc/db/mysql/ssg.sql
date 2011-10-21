@@ -903,8 +903,9 @@ CREATE TABLE secure_password (
   name varchar(128) NOT NULL,
   description varchar(256),
   usage_from_variable tinyint(1) NOT NULL DEFAULT 0,
-  encoded_password varchar(256) NOT NULL,
+  encoded_password BLOB NOT NULL,
   last_update bigint(20) NOT NULL DEFAULT 0,
+  type varchar(64) NOT NULL DEFAULT 'PASSWORD',
   PRIMARY KEY (objectid),
   UNIQUE(name)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;

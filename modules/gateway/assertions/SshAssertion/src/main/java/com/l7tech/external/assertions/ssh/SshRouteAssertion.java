@@ -38,7 +38,7 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
     private static final String baseName = "Route via SSH2";
 
     private String username;   // Username. Can contain context variables.
-    private String privateKey;   // privateKey. Can contain context variables.
+    private Long privateKeyOid;   // privateKey. Can contain context variables.
     private Long passwordOid = null;   // password. Can contain context variables.
     private String hostName;   // SSH server host name. Can contain context variables.
     private String port = Integer.toString(DEFAULT_SSH_PORT);   // Port number. Can contain context variables.
@@ -169,12 +169,12 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
         this.username = username;
     }
 
-    public String getPrivateKey() {
-        return privateKey;
+    public Long getPrivateKeyOid() {
+        return privateKeyOid;
     }
 
-    public void setPrivateKey(String privateKey) {
-        this.privateKey = privateKey;
+    public void setPrivateKeyOid(Long privateKeyOid) {
+        this.privateKeyOid = privateKeyOid;
     }
 
      public String getSshPublicKey() {
