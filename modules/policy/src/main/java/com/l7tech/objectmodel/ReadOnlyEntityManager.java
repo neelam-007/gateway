@@ -1,7 +1,6 @@
-/**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.objectmodel;
+
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 
@@ -9,10 +8,21 @@ import java.util.Collection;
  * @author alex
  */
 public interface ReadOnlyEntityManager<ET extends Entity, HT extends EntityHeader> {
+
+    /**
+     * Find an entity by object identifier.
+     *
+     * @param oid The identifier for the entity
+     * @return The entity or null if not found
+     * @throws FindException If an error occurs
+     * @see ObjectNotFoundException Some implementations may throw this rather than returning null
+     */
+    @Nullable
     ET findByPrimaryKey(long oid) throws FindException;
 
     /**
      * Returns an unmodifiable collection of <code>EntityHeader</code> objects for all instances of the entity class corresponding to this Manager.
+     *
      * @return A <code>Collection</code> of EntityHeader objects.
      */
     Collection<HT> findAllHeaders() throws FindException;

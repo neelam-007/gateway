@@ -1,7 +1,6 @@
-/*
- * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.objectmodel;
+
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Map;
@@ -17,6 +16,7 @@ public interface EntityManager<ET extends PersistentEntity, HT extends EntityHea
         extends ReadOnlyEntityManager<ET,HT>
 {
     @Override
+    @Nullable
     ET findByPrimaryKey(long oid) throws FindException;
 
     @Override
@@ -46,7 +46,8 @@ public interface EntityManager<ET extends PersistentEntity, HT extends EntityHea
      * @return the Entity with the specified OID, or <code>null</code> if it does not exist.
      * @throws FindException in the event of a database problem
      */
-    public ET getCachedEntity( long o, int maxAge ) throws FindException;
+    @Nullable
+    ET getCachedEntity( long o, int maxAge ) throws FindException;
 
     /**
      * The Entity this manager manages may implement an Interface representing the Entity. If so this method should
@@ -67,16 +68,17 @@ public interface EntityManager<ET extends PersistentEntity, HT extends EntityHea
      * @return the entity by that name, or null if none was found.
      * @throws FindException in the event of a database problem
      */
+    @Nullable
     ET findByUniqueName(String name) throws FindException;
 
     void delete(long oid) throws DeleteException, FindException;
 
     void update(ET entity) throws UpdateException;
 
+    @Nullable
     ET findByHeader(EntityHeader header) throws FindException;
 
-    public static enum UniqueType {
+    static enum UniqueType {
         NONE, NAME, OTHER
     }
-
 }
