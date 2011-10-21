@@ -1,13 +1,8 @@
 package com.l7tech.console;
 
-import com.l7tech.console.util.HeavySsmPreferences;
-import com.l7tech.console.util.PreferencesChangedEvent;
-import com.l7tech.console.util.SsmPreferences;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.util.HelpUtil;
 import com.l7tech.util.ConfigFactory;
-import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
 
 import javax.swing.*;
 import java.io.File;
@@ -18,7 +13,7 @@ import java.util.logging.Logger;
 /**
  * Thick-client version of SsmApplication.
  */
-public class SsmApplicationHeavy extends SsmApplication implements ApplicationListener  {
+public class SsmApplicationHeavy extends SsmApplication  {
     private final Logger log = Logger.getLogger(getClass().getName());
 
     //the property name for the current applications home directory. If not set, this is defaulted to null by code
@@ -60,18 +55,6 @@ public class SsmApplicationHeavy extends SsmApplication implements ApplicationLi
 
     public boolean isApplet() {
         return false;
-    }
-
-    public void onApplicationEvent(ApplicationEvent event) {
-        if (event instanceof PreferencesChangedEvent) {
-            final HeavySsmPreferences prefs = (HeavySsmPreferences)getApplicationContext().getBean("preferences");
-            log.finest("preferences have been updated");
-            setLookAndFeel(prefs.getString(SsmPreferences.LOOK_AND_FEEL));
-            MainWindow mainWindow = getMainWindow();
-            if (mainWindow !=null) {
-                mainWindow.setInactivitiyTimeout(prefs.getInactivityTimeout());
-            }
-        }
     }
 
     /**
