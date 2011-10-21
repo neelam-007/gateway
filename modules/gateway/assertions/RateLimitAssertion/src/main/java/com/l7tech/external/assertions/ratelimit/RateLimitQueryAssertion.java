@@ -91,7 +91,7 @@ public class RateLimitQueryAssertion extends Assertion implements UsesVariables,
     //
     private static final String META_INITIALIZED = RateLimitQueryAssertion.class.getName() + ".metadataInitialized";
 
-    private final static String baseName = "Query Rate Limit Counter";
+    private final static String baseName = "Query Rate Limit";
 
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<RateLimitQueryAssertion>(){
         @Override
@@ -117,6 +117,7 @@ public class RateLimitQueryAssertion extends Assertion implements UsesVariables,
         meta.put(PALETTE_FOLDERS, new String[] { "misc" });
 
         meta.put(SHORT_NAME, baseName);
+        meta.put(LONG_NAME, baseName);
         meta.put(DESCRIPTION, "Query a rate limit counter instance, by its exact counter name.  Counter instances are per-node.");
 
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/disconnect-question.gif");

@@ -74,7 +74,7 @@ public class ThroughputQuotaQueryAssertion extends Assertion implements SetsVari
     //
     private static final String META_INITIALIZED = ThroughputQuotaQueryAssertion.class.getName() + ".metadataInitialized";
 
-    private final static String baseName = "Query Throughput Quota Counter";
+    private final static String baseName = "Query Throughput Quota";
 
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<ThroughputQuotaQueryAssertion>(){
         @Override
@@ -100,6 +100,7 @@ public class ThroughputQuotaQueryAssertion extends Assertion implements SetsVari
         meta.put(PALETTE_FOLDERS, new String[] { "misc" });
 
         meta.put(SHORT_NAME, baseName);
+        meta.put(LONG_NAME, baseName);
         meta.put(DESCRIPTION, "Query a throughput quota counter instance, by its exact counter name.  Counters are stored in the database and shared cluster-wide.");
 
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/disconnect-question.gif");
