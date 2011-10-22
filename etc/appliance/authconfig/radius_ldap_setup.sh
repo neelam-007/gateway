@@ -21,6 +21,8 @@ NSS_CONF_FILE="/etc/nsswitch.conf"
 PAM_RADIUS_CONF_FILE="/etc/pam_radius.conf"
 PAM_SSHD_CONF_FILE="/etc/pam.d/sshd"
 PAM_LOGIN_CONF_FILE="/etc/pam.d/login"
+SYS_AUTHCONF_FILE="/etc/sysconfig/authconfig"
+PAM_SYS_AUTHCONF_FILE="/etc/pam.d/system-auth-ac"
 SKEL_DIR="/etc/skel_ssg"
 SUDOERS_FILE="/etc/sudoers"
 BK_TIME=$(date +"%Y%m%d_%H%M%S")
@@ -28,9 +30,9 @@ DATE_TIME=$(date +"%Y-%m-%d %H:%M:%S")
 BK_DIR="/opt/SecureSpan/Appliance/config/authconfig/bk_files"
 ORIG_CONF_FILES_DIR="/opt/SecureSpan/Appliance/config/authconfig/orig_conf_files"
 LOG_FILE="/opt/SecureSpan/Appliance/config/radius_ldap_setup.log"
-RADIUS_CFG_FILES="$PAM_RADIUS_CONF_FILE $PAM_SSHD_CONF_FILE /etc/pam.d/system-auth-ac"
-LDAP_CFG_FILES="$OPENLDAP_CONF_FILE $NSS_LDAP_CONF_FILE $NSS_CONF_FILE $PAM_LOGIN_CONF_FILE $SUDOERS_FILE /etc/sysconfig/authconfig /etc/pam.d/system-auth-ac"
-RADIUS_WITH_LDAP_FILES="$OPENLDAP_CONF_FILE $NSS_LDAP_CONF_FILE $NSS_CONF_FILE $PAM_RADIUS_CONF_FILE $PAM_SSHD_CONF_FILE $PAM_LOGIN_CONF_FILE $SUDOERS_FILE /etc/sysconfig/authconfig /etc/pam.d/system-auth-ac"
+RADIUS_CFG_FILES="$PAM_RADIUS_CONF_FILE $PAM_SSHD_CONF_FILE $PAM_SYS_AUTHCONF_FILE $PAM_LOGIN_CONF_FILE $SUDOERS_FILE"
+LDAP_CFG_FILES="$OPENLDAP_CONF_FILE $NSS_LDAP_CONF_FILE $NSS_CONF_FILE $PAM_LOGIN_CONF_FILE $PAM_SSHD_CONF_FILE $SUDOERS_FILE $SYS_AUTHCONF_FILE $PAM_SYS_AUTHCONF_FILE"
+RADIUS_WITH_LDAP_FILES="$OPENLDAP_CONF_FILE $NSS_LDAP_CONF_FILE $NSS_CONF_FILE $PAM_RADIUS_CONF_FILE $PAM_SSHD_CONF_FILE $PAM_LOGIN_CONF_FILE $SUDOERS_FILE $SYS_AUTHCONF_FILE $PAM_SYS_AUTHCONF_FILE"
 
 OWNER_CFG_FILE="layer7"
 PERM_CFG_FILE="600"
@@ -266,9 +268,9 @@ fi
 doConfigPAMmkHomeDir () {
 # This function will be used to configure pam to automatically create home directories for
 # any user allowed to login via any service that includes the pam auth rules from system-auth-ac:
-LINE=$(grep -n "^session" /etc/pam.d/system-auth-ac | head -1 | cut -d":" -f1)
-sed -i ""$LINE"s|\(^session.*$\)|# Added by $0 on $DATE_TIME:\nsession     required     pam_mkhomedir.so skel=$SKEL_DIR umask=077\n\1|" /etc/pam.d/system-auth-ac
-if [ $? -ne 0 ] || [ "$(grep "skel" /etc/pam.d/system-auth-ac |  awk '{print $3}')" != "pam_mkhomedir.so" ]; then
+LINE=$(grep -n "^session" $PAM_SYS_AUTHCONF_FILE | head -1 | cut -d":" -f1)
+sed -i ""$LINE"s|\(^session.*$\)|# Added by $0 on $DATE_TIME:\nsession     required     pam_mkhomedir.so skel=$SKEL_DIR umask=077\n\1|" $PAM_SYS_AUTHCONF_FILE
+if [ $? -ne 0 ] || [ "$(grep "skel" $PAM_SYS_AUTHCONF_FILE |  awk '{print $3}')" != "pam_mkhomedir.so" ]; then
 	RETVAL=1
 else
 	RETVAL=0
@@ -280,8 +282,8 @@ fi
 doConfigAUTHhash () {
 # This function will be used to toggle the hash algorithm for user's passwords between md5 and sha512
 # md5 has been used prior RHEL6; sha512 was by default the hash algoritm used by RHEL6
-sed -i "s|^PASSWDALGORITHM.*$|PASSWDALGORITHM=$1|" /etc/sysconfig/authconfig
-if [ $? -ne 0 ] || [ "$(grep "^PASSWDALGORITHM" /etc/sysconfig/authconfig | cut -d"=" -f2)" != "sha512" ]; then
+sed -i "s|^PASSWDALGORITHM.*$|PASSWDALGORITHM=$1|" $SYS_AUTHCONF_FILE
+if [ $? -ne 0 ] || [ "$(grep "^PASSWDALGORITHM" $SYS_AUTHCONF_FILE | cut -d"=" -f2)" != "sha512" ]; then
 	RETVAL=1
 else
 	RETVAL=0
@@ -292,9 +294,9 @@ fi
 
 doLocalAuthSufficient (){
 # local authorization is sufficient for local users
-LINE2=$(grep -n "^account" /etc/pam.d/system-auth-ac | head -1 | cut -d":" -f1)
-sed -i ""$LINE2"s|\(^account.*$\)|\1\n# Added by $0 on $DATE_TIME:\naccount     sufficient    pam_localuser.so|" /etc/pam.d/system-auth-ac
-if [ $? -ne 0 ] || [ "$(grep "pam_localuser.so" /etc/pam.d/system-auth-ac | awk '{print $3}')" != "pam_localuser.so" ]; then
+LINE2=$(grep -n "^account" $PAM_SYS_AUTHCONF_FILE | head -1 | cut -d":" -f1)
+sed -i ""$LINE2"s|\(^account.*$\)|\1\n# Added by $0 on $DATE_TIME:\naccount     sufficient    pam_localuser.so|" $PAM_SYS_AUTHCONF_FILE
+if [ $? -ne 0 ] || [ "$(grep "pam_localuser.so" $PAM_SYS_AUTHCONF_FILE | awk '{print $3}')" != "pam_localuser.so" ]; then
 	RETVAL=1
 else
 	RETVAL=0
@@ -353,6 +355,26 @@ else
 	toLog "    Success - Configuration of $PAM_SSHD_CONF_FILE completed."
 fi
 
+# Configuring pam login module to use pam_radius module:
+checkFileExists $PAM_LOGIN_CONF_FILE
+if [ "X$RETVAL" == "X1" ]; then
+	toLog "  ERROR - File $PAM_LOGIN_CONF_FILE does not exist! Exiting..."
+	exit 1
+else
+	toLog "   Info - FILE $PAM_LOGIN_CONF_FILE CONFIGURATION:"
+	# adding the line for pam_radius with 'sufficient' ensures that
+	# login will allow logins if radius server fails; also, the 'retry=2' and
+	# 'localifdown' option makes sure that after 2 retries the auth process
+	# will fall back to local authentication
+	sed -i "s|\(^#%PAM.*$\)|\1\n# Added by $0 on $DATE_TIME:\nauth\tsufficient\tpam_radius_auth.so conf=$PAM_RADIUS_CONF_FILE retry=2 localifdown|" $PAM_LOGIN_CONF_FILE
+	if [ $(grep "$PAM_RADIUS_CONF_FILE" $PAM_LOGIN_CONF_FILE | awk '{print $4}' | cut -d"=" -f2) != "$PAM_RADIUS_CONF_FILE" ]; then
+		toLog "    ERROR - Inserting the pam_radius module line in the $PAM_LOGIN_CONF_FILE file failed! Exiting..."
+		exit 1
+	else
+		toLog "    Success - Configuration of $PAM_LOGIN_CONF_FILE completed."
+	fi
+fi
+
 # Configuration of linux pam radius module:
 checkFileExists $PAM_RADIUS_CONF_FILE
 if [ "X$RETVAL" == "X1" ]; then
@@ -396,10 +418,10 @@ toLog "Info - ===== Starting system configuration for LDAP only authentication. 
 toLog " Info - Applying all necessary ldap only authentication specific configurations:"
 
 # Enable LDAP auth on the system
-sed -i "s|^USELDAP=.*$|USELDAP=yes|" /etc/sysconfig/authconfig
-if [ $? -ne 0 ] || [ "X$(grep "^USELDAP=" /etc/sysconfig/authconfig | cut -d"=" -f2)" != "Xyes" ]; then
-	toLog "  ERROR - Enabling LDAP in /etc/sysconfig/authconfig failed. Exiting..."
-	exit 1
+sed -i "s|^USELDAP=.*$|USELDAP=yes|" $SYS_AUTHCONF_FILE
+if [ $? -ne 0 ] || [ "X$(grep "^USELDAP=" $SYS_AUTHCONF_FILE | cut -d"=" -f2)" != "Xyes" ]; then
+	toLog "  ERROR - Enabling LDAP in $SYS_AUTHCONF_FILE failed. Exiting..."
+	STATUS=1
 else
 	toLog "  Success - LDAP has been enabled."
 fi
@@ -407,7 +429,7 @@ fi
 checkFileExists $OPENLDAP_CONF_FILE
 if [ "X$RETVAL" == "X1" ]; then
 	toLog "  ERROR - File $OPENLDAP_CONF_FILE does not exist! Exiting..."
-	exit 1
+	STATUS=1
 else
 	toLog "   Info - FILE $OPENLDAP_CONF_FILE CONFIGURATION:"
 	# BASE field
@@ -415,19 +437,19 @@ else
 		sed -i "s|\(^#BASE.*$\)|\1\n# Added by $0 on $DATE_TIME:\nBASE $LDAP_BASE\n|" $OPENLDAP_CONF_FILE
 		if [ $? -ne 0 ] || [ "$(grep "^BASE" $OPENLDAP_CONF_FILE | cut -d" " -f2)" != "$LDAP_BASE" ]; then
 			toLog "    ERROR - Configuring 'BASE' field in $OPENLDAP_CONF_FILE failed. Exiting..."
-			exit 1
+			STATUS=1
 		else
 			toLog "    Success - 'BASE' set to $LDAP_BASE in $OPENLDAP_CONF_FILE."
 		fi
 	else
 		toLog "    ERROR - The value of LDAP_BASE ($LDAP_BASE) variable in the configuration file is not valid! Exiting..."
-		exit 1
+		STATUS=1
 	fi
 	# URI field
 	sed -i "s|\(^#URI.*$\)|\1\n# Added by $0 on $DATE_TIME:\nURI $LDAP_TYPE://$LDAP_SRV:$LDAP_PORT\n|" $OPENLDAP_CONF_FILE
 	if [ $? -ne 0 ] || [ "$(grep "^URI" $OPENLDAP_CONF_FILE | cut -d" " -f2)" != "$LDAP_TYPE://$LDAP_SRV:$LDAP_PORT" ]; then
 		toLog "    ERROR - Configuring 'URI' field in $OPENLDAP_CONF_FILE failed. Exiting..."
-		exit 1
+		STATUS=1
 	else
 		toLog "    Success - 'URI' set to $LDAP_TYPE://$LDAP_SRV:$LDAP_PORT in $OPENLDAP_CONF_FILE."
 	fi
@@ -444,12 +466,12 @@ else
 			wget --quiet --no-check-certificate --no-clobber --dns-timeout=2 --timeout=2 --waitretry=2 --tries=2 $LDAP_CACERT_URL
 			if [ $? -ne 0 ]; then
 				toLog "    ERROR - Retriving the CA certificate from URL failed! Exiting..."
-				exit 1
+				STATUS=1
 			else
 				mv -f --backup=numbered $CACERT_FILE_NAME /etc/openldap/cacerts/
 				if [ $? -ne 0 ] || [ ! -s "/etc/openldap/cacerts/$CACERT_FILE_NAME" ]; then
 					toLog "    ERROR - Installing the CA certificate in /etc/openldap/cacerts directory failed or certificate file is empty! Exiting..."
-					exit 1
+					STATUS=1
 				fi
 				toLog "    Success - CA certificate installation completed."
 			fi
@@ -458,13 +480,13 @@ else
 			/bin/cp -a --backup=numbered $LDAP_CACERT_FILE /etc/openldap/cacerts/
 			if [ $? -ne 0 ] || [ ! -s "$LDAP_CACERT_FILE" ]; then
 				toLog "    ERROR - Copying the CA certificate file failed or the certificate file is empty. Exiting..."
-				exit 1
+				STATUS=1
 			fi
 			# If this point was reached the certificate file has been retrieved sucessfully and it is not empty.
 			# Basic verification to make sure the file is a certificate:
 			if [ "X$(openssl verify /etc/openldap/cacerts/$(basename $LDAP_CACERT_FILE) 2>&1 | grep "^unable")" == "Xunable to load certificate" ]; then
 				toLog "    ERROR - The CA certificate retrieved does not seem to be a certificate! Exiting..."
-				exit 1
+				STATUS=1
 			else
 				toLog "    Success - CA certificate has been retreived successfuly."
 			fi
@@ -474,7 +496,7 @@ else
 		echo "TLS_CACERTDIR /etc/openldap/cacerts" >> $OPENLDAP_CONF_FILE
 		if [ $? -ne 0 ] || [ "$(grep "^TLS_CACERTDIR" $OPENLDAP_CONF_FILE | cut -d" " -f2)" != "/etc/openldap/cacerts" ]; then
 				toLog "    ERROR - Configuring 'TLS_CACERTDIR' field in $OPENLDAP_CONF_FILE failed. Exiting..."
-				exit 1
+				STATUS=1
 		else
 				toLog "    Success - 'TLS_CACERTDIR' set to /etc/openldap/cacerts in $OPENLDAP_CONF_FILE."
 		fi
@@ -486,13 +508,13 @@ else
 			echo -e "TLS_REQCERT $LDAP_TLS_REQCERT\n" >> $OPENLDAP_CONF_FILE
 			if [ $? -ne 0 ] || [ "$(grep "^TLS_REQCERT" $OPENLDAP_CONF_FILE | cut -d" " -f2)" != "$LDAP_TLS_REQCERT" ]; then
 				toLog "    ERROR - Configuring 'TLS_REQCERT' field in $OPENLDAP_CONF_FILE failed. Exiting..."
-				exit 1
+				STATUS=1
 			else
 				toLog "    Success - 'TLS_REQCERT' set to $LDAP_TLS_REQCERT in $OPENLDAP_CONF_FILE."
 			fi
 		else
 			toLog "    ERROR - The value of TLS_REQCERT ($LDAP_TLS_REQCERT) directive for $OPENLDAP_CONF_FILE is not valid! Exiting..."
-			exit 1
+			STATUS=1
 		fi
 		
 		# TLS_CRLCHECK in /etc/openldap/ldap.conf
@@ -501,13 +523,13 @@ else
 			echo -e "TLS_CRLCHECK $LDAP_TLS_CRLCHECK\n" >> $OPENLDAP_CONF_FILE
 			if [ $? -ne 0 ] || [ "$(grep "^TLS_CRLCHECK" $OPENLDAP_CONF_FILE | cut -d" " -f2)" != "$LDAP_TLS_CRLCHECK" ]; then
 				toLog "    ERROR - Configuring 'TLS_CRLCHECK' field in $OPENLDAP_CONF_FILE failed. Exiting..."
-				exit 1
+				STATUS=1
 			else
 				toLog "    Success - 'TLS_CRLCHECK' set to $LDAP_TLS_CRLCHECK in $OPENLDAP_CONF_FILE."
 			fi
 		else
 			toLog "    ERROR - The value of TLS_CRLCHECK ($LDAP_TLS_CRLCHECK) directive for $OPENLDAP_CONF_FILE is not valid! Exiting..."
-			exit 1
+			STATUS=1
 		fi
 	fi
 	# If this point was reached, then:
@@ -519,14 +541,14 @@ fi
 checkFileExists $NSS_LDAP_CONF_FILE
 if [ "X$RETVAL" == "X1" ]; then
 	toLog "  ERROR - File $NSS_LDAP_CONF_FILE does not exist! Exiting..."
-	exit 1
+	STATUS=1
 else
 	toLog "   Info - FILE $NSS_LDAP_CONF_FILE CONFIGURATION:"
 	# host field
 	sed -i "s|\(^host 127.0.0.1\)|# Commented by $0 on $DATE_TIME:\n#\1\n|" $NSS_LDAP_CONF_FILE
 	if [ $? -ne 0 ] || [ "$(grep -i "^host" $NSS_LDAP_CONF_FILE)" != "" ]; then
 		toLog "    ERROR - Disabling default 'host' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
-		exit 1
+		STATUS=1
 	else
 		toLog "    Success - 'host' field disabled in $NSS_LDAP_CONF_FILE."
 	fi
@@ -536,13 +558,13 @@ else
 		sed -i "s|\(^base dc=example,dc=com.*$\)|# Commented by 0$ on $DATE_TIME:\n#\1\n# Added by $0 on $DATE_TIME:\nbase $LDAP_BASE\n|" $NSS_LDAP_CONF_FILE
 		if [ $? -ne 0 ] || [ "$(grep "^base" $NSS_LDAP_CONF_FILE | cut -d" " -f 2)" != "$LDAP_BASE" ]; then
 			toLog "    ERROR - Configuring the 'base' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
-			exit 1
+			STATUS=1
 		else
 			toLog "    Success - 'base' field set to $LDAP_BASE in $NSS_LDAP_CONF_FILE."
 		fi
 	else
 		toLog "    ERROR - The value of LDAP_BASE ($LDAP_BASE) variable in the configuration file is not valid! Exiting..."
-		exit 1
+		STATUS=1
 	fi
 	
 	# uri field
@@ -550,13 +572,13 @@ else
 		sed -i "s|\(^#uri ldapi.*$\)|\1\n# Added by $0 on $DATE_TIME:\nuri $LDAP_TYPE://$LDAP_SRV:$LDAP_PORT\n|" $NSS_LDAP_CONF_FILE
 		if [ $? -ne 0 ] || [ "$(grep "^uri" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "$LDAP_TYPE://$LDAP_SRV:$LDAP_PORT" ]; then
 			toLog "    ERROR - Configuring 'uri' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
-			exit 1
+			STATUS=1
 		else
 			toLog "    Success - 'uri' field set to $LDAP_TYPE://$LDAP_SRV:$LDAP_PORT in $NSS_LDAP_CONF_FILE."
 		fi
 	else
 		toLog "    ERROR - At least the value of one of LDAP_TYPE, LDAP_SRV or LDAP_PORT variables in the configuration file is not valid! Exiting..."
-		exit 1
+		STATUS=1
 	fi
 	
 	# pam_login_attribute field
@@ -564,13 +586,13 @@ else
 		sed -i "s|\(^# The user ID attribute.*$\)|\1\n# Added by $0 on $DATE_TIME:\npam_login_attribute $PAM_LOGIN_ATTR\n|" $NSS_LDAP_CONF_FILE
 		if [ $? -ne 0 ] || [ "X$(grep "^pam_login_attribute" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$PAM_LOGIN_ATTR" ]; then
 			toLog "    ERROR - Configuring 'pam_login_attribute' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
-			exit 1
+			STATUS=1
 		else
 			toLog "    Success - 'pam_login_attribute' field set to $PAM_LOGIN_ATTR in $NSS_LDAP_CONF_FILE."
 		fi
 	else
 		toLog "    ERROR - PAM_LOGIN_ATTR cannot be empty! Exiting..."
-		exit 1
+		STATUS=1
 	fi
 	
 	# pam_filter field
@@ -578,13 +600,13 @@ else
 		sed -i "s|\(^# Filter to AND with.*$\)|\1\n# Added by $0 on $DATE_TIME:\npam_filter $PAM_FILTER\n|" $NSS_LDAP_CONF_FILE
 		if [ $? -ne 0 ] || [ "X$(grep "^pam_filter" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$PAM_FILTER" ]; then
 			toLog "    ERROR - Configuring 'pam_filter' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
-			exit 1
+			STATUS=1
 		else
 			toLog "    Success - 'pam_filter' field set to $PAM_FILTER in $NSS_LDAP_CONF_FILE."
 		fi
 	else
 		toLog "    ERROR - PAM_FILTER cannot be empty! Exiting..."
-		exit 1
+		STATUS=1
 	fi
 		
 	# pam_groupdn field
@@ -592,13 +614,13 @@ else
 	#	sed -i "s|\(^#pam_groupdn cn=PAM.*$\)|\1\n# Added by $0 on $DATE_TIME:\npam_groupdn $PAM_GROUPDN\n|" $NSS_LDAP_CONF_FILE
 	#	if [ $? -ne 0 ] || [ "X$(grep "^pam_groupdn" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$PAM_GROUPDN" ]; then
 	#		toLog "    ERROR - Configuring 'pam_groupdn' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
-	#		exit 1
+	#		STATUS=1
 	#	else
 	#		toLog "    Success - 'pam_groupdn' field set to $PAM_GROUPDN in $NSS_LDAP_CONF_FILE."
 	#	fi
 	#else
 	#	toLog "    ERROR - PAM_GROUPDN cannot be empty! Exiting..."
-	#	exit 1
+	#	STATUS=1
 	#fi
 	
 	# pam_member_attribute field
@@ -606,13 +628,13 @@ else
 	#	sed -i "s|\(^#pam_member_attribute uniquemember.*$\)|\1\n# Added by $0 on $DATE_TIME:\npam_member_attribute $PAM_MEMBER_ATTR\n|" $NSS_LDAP_CONF_FILE
 	#	if [ $? -ne 0 ] || [ "X$(grep "^pam_member_attribute" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$PAM_MEMBER_ATTR" ]; then
 	#		toLog "    ERROR - Configuring 'pam_member_attribute' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
-	#		exit 1
+	#		STATUS=1
 	#	else
 	#		toLog "    Success - 'pam_member_attribute' field set to $PAM_MEMBER_ATTR in $NSS_LDAP_CONF_FILE."
 	#	fi
 	#else
 	#	toLog "    ERROR - PAM_MEMBER_ATTR cannot be empty! Exiting..."
-	#	exit 1
+	#	STATUS=1
 	#fi
 	
 	# pam_min_uid field
@@ -620,13 +642,13 @@ else
 		sed -i "s|\(^#pam_min_uid.*$\)|\1\n# Added by $0 on $DATE_TIME:\npam_min_uid $PAM_MIN_UID|" $NSS_LDAP_CONF_FILE
 		if [ $? -ne 0 ] || [ "X$(grep "^pam_min_uid" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$PAM_MIN_UID" ]; then
 			toLog "    ERROR - Configuring 'pam_min_uid' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
-			exit 1
+			STATUS=1
 		else
 			toLog "    Success - 'pam_min_uid' field set to $PAM_MIN_UID in $NSS_LDAP_CONF_FILE."
 		fi
 	else
 		toLog "    ERROR - PAM_MIN_UID cannot be empty! Exiting..."
-		exit 1
+		STATUS=1
 	fi
 	
 	# pam_max_uid field
@@ -634,13 +656,13 @@ else
 		sed -i "s|\(^#pam_max_uid.*$\)|\1\n# Added by $0 on $DATE_TIME:\npam_max_uid $PAM_MAX_UID\n|" $NSS_LDAP_CONF_FILE
 		if [ $? -ne 0 ] || [ "X$(grep "^pam_max_uid" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$PAM_MAX_UID" ]; then
 			toLog "    ERROR - Configuring 'pam_max_uid' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
-			exit 1
+			STATUS=1
 		else
 			toLog "    Success - 'pam_max_uid' field set to $PAM_MAX_UID in $NSS_LDAP_CONF_FILE."
 		fi
 	else
 		toLog "    ERROR - PAM_MAX_UID cannot be empty! Exiting..."
-		exit 1
+		STATUS=1
 	fi
 	
 	# timelimit field
@@ -648,13 +670,13 @@ else
 		sed -i "s|^timelimit.*$|# Added by $0 on $DATE_TIME:\ntimelimit $NSS_TIMELIMIT\n|" $NSS_LDAP_CONF_FILE
 		if [ $? -ne 0 ] || [ "X$(grep "^timelimit" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$NSS_TIMELIMIT" ]; then
 			toLog "    ERROR - Configuring 'timelimit' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
-			exit 1
+			STATUS=1
 		else
 			toLog "    Success - 'timelimit' field set to $NSS_TIMELIMIT in $NSS_LDAP_CONF_FILE."
 		fi
 	else
 		toLog "    ERROR - NSS_TIMELIMIT cannot be empty! Exiting..."
-		exit 1
+		STATUS=1
 	fi
 	
 	# bind_timelimit
@@ -662,13 +684,13 @@ else
 		sed -i "s|^bind_timelimit.*$|# Added by $0 on $DATE_TIME:\nbind_timelimit $NSS_BIND_TIMELIMIT\n|" $NSS_LDAP_CONF_FILE
 		if [ $? -ne 0 ] || [ "X$(grep "^bind_timelimit" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$NSS_BIND_TIMELIMIT" ]; then
 			toLog "    ERROR - Configuring 'bind_timelimit' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
-			exit 1
+			STATUS=1
 		else
 			toLog "    Success - 'bind_timelimit' field set to $NSS_BIND_TIMELIMIT in $NSS_LDAP_CONF_FILE."
 		fi
 	else
 		toLog "    ERROR - NSS_BIND_TIMELIMIT cannot be empty! Exiting..."
-		exit 1
+		STATUS=1
 	fi
 	
 	# idle_timelimit
@@ -676,13 +698,13 @@ else
 		sed -i "s|^idle_timelimit.*$|# Added by $0 on $DATE_TIME:\nidle_timelimit $NSS_IDLE_TIMELIMIT\n|" $NSS_LDAP_CONF_FILE
 		if [ $? -ne 0 ] || [ "X$(grep "^idle_timelimit" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$NSS_IDLE_TIMELIMIT" ]; then
 			toLog "    ERROR - Configuring 'idle_timelimit' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
-			exit 1
+			STATUS=1
 		else
 			toLog "    Success - 'idle_timelimit' field set to $NSS_IDLE_TIMELIMIT in $NSS_LDAP_CONF_FILE."
 		fi
 	else
 		toLog "    ERROR - NSS_IDLE_TIMELIMIT cannot be empty! Exiting..."
-		exit 1
+		STATUS=1
 	fi
 	
 	# bind_policy
@@ -690,13 +712,13 @@ else
 		sed -i "s|\(^#bind_policy.*$\)|\1\n# Added by $0 on $DATE_TIME:\nbind_policy $NSS_BIND_POLICY\n|" $NSS_LDAP_CONF_FILE
 		if [ $? -ne 0 ] || [ "X$(grep "^bind_policy" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$NSS_BIND_POLICY" ]; then
 			toLog "    ERROR - Configuring 'bind_policy' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
-			exit 1
+			STATUS=1
 		else
 			toLog "    Success - 'bind_policy' field set to $NSS_BIND_POLICY in $NSS_LDAP_CONF_FILE."
 		fi
 	else
 		toLog "    ERROR - NSS_BIND_POLICY cannot be empty! Exiting..."
-		exit 1
+		STATUS=1
 	fi
 	
 	# nss_base_passwd
@@ -704,13 +726,13 @@ else
 		sed -i "s|\(^#nss_base_passwd.*$\)|\1\n# Added by $0 on $DATE_TIME:\nnss_base_passwd $NSS_BASE_PASSWD,$LDAP_BASE?one\n|" $NSS_LDAP_CONF_FILE
 		if [ $? -ne 0 ] || [ "X$(grep "^nss_base_passwd" $NSS_LDAP_CONF_FILE | head -n 1 | cut -d" " -f2)" != "X$NSS_BASE_PASSWD,$LDAP_BASE?one" ]; then
 			toLog "    ERROR - Configuring 'nss_base_passwd' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
-			exit 1
+			STATUS=1
 		else
 			toLog "    Success - 'nss_base_passwd' field set to $NSS_BASE_PASSWD in $NSS_LDAP_CONF_FILE."
 		fi
 	else
 		toLog "    ERROR - NSS_BASE_PASSWD cannot be empty! Exiting..."
-		exit 1
+		STATUS=1
 	fi
 	
 	# nss_base_group
@@ -718,13 +740,13 @@ else
 		sed -i "s|\(^#nss_base_group.*$\)|\1\n# Added by $0 on $DATE_TIME:\nnss_base_group $NSS_BASE_GROUP,$LDAP_BASE?one\n|" $NSS_LDAP_CONF_FILE
 		if [ $? -ne 0 ] || [ "X$(grep "^nss_base_group" $NSS_LDAP_CONF_FILE | head -n 1 | cut -d" " -f2)" != "X$NSS_BASE_GROUP,$LDAP_BASE?one" ]; then
 			toLog "    ERROR - Configuring 'nss_base_group' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
-			exit 1
+			STATUS=1
 		else
 			toLog "    Success - 'nss_base_group' field set to $NSS_BASE_GROUP in $NSS_LDAP_CONF_FILE."
 		fi
 	else
 		toLog "    ERROR - NSS_BASE_GROUP cannot be empty! Exiting..."
-		exit 1
+		STATUS=1
 	fi
 	
 	# nss_base_shadow
@@ -732,20 +754,20 @@ else
 		sed -i "s|\(^#nss_base_shadow.*$\)|\1\n# Added by $0 on $DATE_TIME:\nnss_base_shadow $NSS_BASE_SHADOW,$LDAP_BASE?one\n|" $NSS_LDAP_CONF_FILE
 		if [ $? -ne 0 ] || [ "X$(grep "^nss_base_shadow" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$NSS_BASE_SHADOW,$LDAP_BASE?one" ]; then
 			toLog "    ERROR - Configuring 'nss_base_shadow' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
-			exit 1
+			STATUS=1
 		else
 			toLog "    Success - 'nss_base_shadow' field set to $NSS_BASE_SHADOW in $NSS_LDAP_CONF_FILE."
 		fi
 	else
 		toLog "    ERROR - NSS_BASE_SHADOW cannot be empty! Exiting..."
-		exit 1
+		STATUS=1
 	fi
 	
 	# scope filed (this will be just activated with the "sub" value - no variable exists in the configuration file for this)
 	sed -i "s|\(^#scope sub.*$\)|\1\n# Added by $0 on $DATE_TIME:\nscope sub|" $NSS_LDAP_CONF_FILE
 	if [ $? -ne 0 ] || [ "X$(grep "^scope sub" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "Xsub" ]; then
 		toLog "    ERROR - Configuring 'scope' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
-		exit 1
+		STATUS=1
 	else
 		toLog "    Success - 'scope' field set to sub in $NSS_LDAP_CONF_FILE."
 	fi
@@ -763,12 +785,12 @@ else
 			wget --quiet --no-check-certificate --no-clobber --dns-timeout=2 --timeout=2 --waitretry=2 --tries=2 $LDAP_CACERT_URL
 			if [ $? -ne 0 ]; then
 				toLog "    ERROR - Retriving the CA certificate from URL failed! Exiting..."
-				exit 1
+				STATUS=1
 			else
 				mv -f --backup=numbered $CACERT_FILE_NAME /etc/openldap/cacerts/
 				if [ $? -ne 0 ] || [ ! -s "/etc/openldap/cacerts/$CACERT_FILE_NAME" ]; then
 					toLog "    ERROR - Installing the CA certificate in /etc/openldap/cacerts directory failed or certificate file is empty! Exiting..."
-					exit 1
+					STATUS=1
 				fi
 				toLog "    Success - CA certificate installation completed."
 			fi
@@ -777,13 +799,13 @@ else
 			/bin/cp -a --backup=numbered $LDAP_CACERT_FILE /etc/openldap/cacerts/
 			if [ $? -ne 0 ] || [ ! -s "$LDAP_CACERT_FILE" ]; then
 				toLog "    ERROR - Copying the CA certificate file failed or the certificate file is empty. Exiting..."
-				exit 1
+				STATUS=1
 			fi
 			# If this point was reached the certificate file has been retrieved sucessfully and it is not empty.
 			# Basic verification to make sure the file is a certificate:
 			if [ "X$(openssl verify /etc/openldap/cacerts/$(basename $LDAP_CACERT_FILE) 2>&1 | grep "^unable")" == "Xunable to load certificate" ]; then
 				toLog "    ERROR - The CA certificate retrieved does not seem to be a certificate! Exiting..."
-				exit 1
+				STATUS=1
 			else
 				toLog "    Success - CA certificate has been retreived successfuly."
 			fi
@@ -793,7 +815,7 @@ else
 		echo "TLS_CACERTDIR /etc/openldap/cacerts" >> $OPENLDAP_CONF_FILE
 		if [ $? -ne 0 ] || [ "$(grep "^TLS_CACERTDIR" $OPENLDAP_CONF_FILE | cut -d" " -f2)" != "/etc/openldap/cacerts" ]; then
                         toLog "    ERROR - Configuring 'TLS_CACERTDIR' field in $OPENLDAP_CONF_FILE failed. Exiting..."
-                        exit 1
+                        STATUS=1
                 else
                         toLog "    Success - 'TLS_CACERTDIR' set to /etc/openldap/cacerts in $OPENLDAP_CONF_FILE."
                 fi
@@ -802,7 +824,7 @@ else
 		echo "TLS_REQCERT $LDAP_TLS_REQCERT" >> $OPENLDAP_CONF_FILE
 		if [ $? -ne 0 ] || [ "$(grep "^TLS_REQCERT" $OPENLDAP_CONF_FILE | cut -d" " -f2)" != "$LDAP_TLS_REQCERT" ]; then
                         toLog "    ERROR - Configuring 'TLS_REQCERT' field in $OPENLDAP_CONF_FILE failed. Exiting..."
-                        exit 1
+                        STATUS=1
                 else
                         toLog "    Success - 'TLS_REQCERT' set to $LDAP_TLS_REQCERT in $OPENLDAP_CONF_FILE."
                 fi
@@ -813,20 +835,20 @@ else
                         echo -e "TLS_CRLCHECK $LDAP_TLS_CRLCHECK\n" >> $OPENLDAP_CONF_FILE
                         if [ $? -ne 0 ] || [ "$(grep "^TLS_CRLCHECK" $OPENLDAP_CONF_FILE | cut -d" " -f2)" != "$LDAP_TLS_CRLCHECK" ]; then
                                 toLog "    ERROR - Configuring 'TLS_CRLCHECK' field in $OPENLDAP_CONF_FILE failed. Exiting..."
-                                exit 1
+                                STATUS=1
                         else
                                 toLog "    Success - 'TLS_CRLCHECK' set to $LDAP_TLS_CRLCHECK in $OPENLDAP_CONF_FILE."
                         fi
                 else
                         toLog "    ERROR - The value of TLS_CRLCHECK ($LDAP_TLS_CRLCHECK) directive for $OPENLDAP_CONF_FILE is not valid! Exiting..."
-                        exit 1
+                        STATUS=1
                 fi
 
 		# tls_cacertdir in /etc/ldap.conf
 		sed -i "s|\(^#tls_cacertdir /etc/ssl/certs.*$\)|\1\n# Added by $0 on $DATE_TIME:\ntls_cacertdir /etc/openldap/cacerts\n|" $NSS_LDAP_CONF_FILE
 		if [ $? -ne 0 ] || [ "$(grep "^tls_cacertdir" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "/etc/openldap/cacerts" ]; then
                         toLog "    ERROR - Configuring 'tls_cacertdir' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
-                        exit 1
+                        STATUS=1
                 else
                         toLog "    Success - 'tls_cacertdir' set to /etc/openldap/cacerts in $NSS_LDAP_CONF_FILE."
                 fi
@@ -837,7 +859,7 @@ else
 			sed -i "s|\(^#tls_cert.*$\)|\1\n# Added by $0 on $DATE_TIME:\ntls_cert $LDAP_TLS_CERT\n|" $NSS_LDAP_CONF_FILE
 			if [ $? -ne 0 ] || [ "$(grep "^tls_cert" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "$LDAP_TLS_CERT" ]; then
 				toLog "    ERROR - Configuring 'tls_cert' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
-				exit 1
+				STATUS=1
 			else
 				toLog "    Success - 'tls_cert' set to $LDAP_TLS_CERT in $NSS_LDAP_CONF_FILE."
 			fi
@@ -846,7 +868,7 @@ else
 			sed -i "s|\(^#tls_key.*$\)|\1\n# Added by $0 on $DATE_TIME:\ntls_key $LDAP_TLS_KEY\n|" $NSS_LDAP_CONF_FILE
 			if [ $? -ne 0 ] || [ "$(grep "^tls_key" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "$LDAP_TLS_KEY" ]; then
 				toLog "    ERROR - Configuring 'tls_key' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
-				exit 1
+				STATUS=1
 			else
 				toLog "    Success - 'tls_key' set to $LDAP_TLS_KEY in $NSS_LDAP_CONF_FILE."
 			fi
@@ -858,7 +880,7 @@ else
 			sed -i "s|\(^#tls_ciphers.*$\)|\1\n# Added by $0 on $DATE_TIME:\ntls_ciphers $LDAP_TLS_CIPHER_SUITE\n|" $NSS_LDAP_CONF_FILE
 			if [ $? -ne 0 ] || [ "$(grep "^tls_ciphers" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "$LDAP_TLS_CIPHER_SUITE" ]; then
 				toLog "    ERROR - Configuring 'tls_ciphers' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
-				exit 1
+				STATUS=1
 			else
 				toLog "    Success - 'tls_ciphers' set to $LDAP_TLS_CIPHER_SUITE in $NSS_LDAP_CONF_FILE."
 			fi
@@ -868,13 +890,13 @@ else
 				sed -i "s|\(^#tls_checkpeer.*$\)|\1\n# Added by $0 on $DATE_TIME:\ntls_checkpeer $LDAP_TLS_CHECKPEER\n|" $NSS_LDAP_CONF_FILE
 				if [ $? -ne 0 ] || [ "$(grep "^tls_checkpeer" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "$LDAP_TLS_CHECKPEER" ]; then
 					toLog "    ERROR - Configuring 'tls_checkpeer' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
-					exit 1
+					STATUS=1
 				else
 					toLog "    Success - 'tls_checkpeer' set to $LDAP_TLS_CHECKPEER in $NSS_LDAP_CONF_FILE."
 				fi
 			else
 				toLog "    ERROR - The value of tls_checkpeer ($LDAP_TLS_CHECKPEER) directive for $NSS_LDAP_CONF_FILE is not valid! Exiting..."
-				exit 1
+				STATUS=1
 			fi
 		fi
 	elif [ "X$LDAP_TYPE" == "Xldap" ]; then
@@ -882,7 +904,7 @@ else
 		sed -i "s|\(^# OpenLDAP SSL mechanism.*$\)|\1\n# Added by $0 on $DATE_TIME:\nssl no\n|" $NSS_LDAP_CONF_FILE
 		if [ $? -ne 0 ] || [ "$(grep "^ssl" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "no" ]; then
 			toLog "    ERROR - Disabling 'ssl' in $NSS_LDAP_CONF_FILE failed. Exiting..."
-			exit 1
+			STATUS=1
 		else
 			toLog "    Success - SSL has been disabled in $NSS_LDAP_CONF_FILE file."
 		fi
@@ -891,10 +913,10 @@ else
 	# If anonymous bind to ldap is disabled then credentials are expected:
 	if [ "X$LDAP_ANONYM" == "Xno" ]; then
 		# Enable LDAP auth on the system
-		sed -i "s|^USELDAPAUTH.*$|USELDAPAUTH=yes|" /etc/sysconfig/authconfig
-		if [ $? -ne 0 ] || [ "X$(grep "^USELDAPAUTH" /etc/sysconfig/authconfig | cut -d"=" -f2)" != "Xyes" ]; then
-			toLog "    ERROR - Enabling LDAP AUTH in /etc/sysconfig/authconfig failed. Exiting..."
-			exit 1
+		sed -i "s|^USELDAPAUTH.*$|USELDAPAUTH=yes|" $SYS_AUTHCONF_FILE
+		if [ $? -ne 0 ] || [ "X$(grep "^USELDAPAUTH" $SYS_AUTHCONF_FILE | cut -d"=" -f2)" != "Xyes" ]; then
+			toLog "    ERROR - Enabling LDAP AUTH in $SYS_AUTHCONF_FILE failed. Exiting..."
+			STATUS=1
 		else
 			toLog "    Success - LDAP AUTH has been enabled."
 		fi
@@ -904,13 +926,13 @@ else
 			sed -i "s|\(^#binddn.*$\)|\1\n# Added by $0 on $DATE_TIME:\nbinddn $LDAP_BINDDN\n|" $NSS_LDAP_CONF_FILE
 			if [ $? -ne 0 ] || [ "$(grep "^binddn" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "$LDAP_BINDDN" ]; then
 				toLog "    ERROR - Configuring 'binddn' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
-				exit 1
+				STATUS=1
 			else
 				toLog "    Success - 'binddn' field set to $LDAP_BINDDN in $NSS_LDAP_CONF_FILE file."
 			fi
 		else
 			toLog "    ERROR - The value of 'binddn' directive for $NSS_LDAP_CONF_FILE is not valid! Exiting..."
-			exit 1
+			STATUS=1
 		fi
 		
 		# bindpw field
@@ -918,13 +940,13 @@ else
 			sed -i "s|\(^#bindpw.*$\)|\1\n# Added by $0 on $DATE_TIME:\nbindpw $LDAP_BIND_PASSWD\n|" $NSS_LDAP_CONF_FILE
 			if [ $? -ne 0 ] || [ "$(grep "^bindpw" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "$LDAP_BIND_PASSWD" ]; then
 				toLog "    ERROR - Configuring 'bindpw' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
-				exit 1
+				STATUS=1
 			else
 				toLog "    Success - 'bindpw' field set to $LDAP_BIND_PASSWD in $NSS_LDAP_CONF_FILE file."
 			fi
 		else
 			toLog "    ERROR - The value of 'bindpw' directive for $NSS_LDAP_CONF_FILE is not valid! Exiting..."
-			exit 1
+			STATUS=1
 		fi
 		
 		# updating the /etc/sudoers file:
@@ -949,20 +971,20 @@ else
 				else
 					toLog "    Success - Restoring the previous version of the /etc/sudoers file completed."
 				fi
-				exit 1
+				STATUS=1
 			else
 				toLog "    Success - the /etc/sudoers file was updated."
 			fi
 		else
 			toLog "    ERROR - The value of 'LDAP_GROUP_NAME' directive is not valid! Exiting..."
-			exit 1
+			STATUS=1
 		fi
 	else
 		# Disable LDAP auth on the system
-		sed -i "s|^USELDAPAUTH.*$|USELDAPAUTH=no|" /etc/sysconfig/authconfig
-		if [ $? -ne 0 ] || [ "X$(grep "^USELDAPAUTH" /etc/sysconfig/authconfig | cut -d"=" -f2)" != "Xno" ]; then
-			toLog "    ERROR - Disabling LDAP AUTH in /etc/sysconfig/authconfig failed. Exiting..."
-			exit 1
+		sed -i "s|^USELDAPAUTH.*$|USELDAPAUTH=no|" $SYS_AUTHCONF_FILE
+		if [ $? -ne 0 ] || [ "X$(grep "^USELDAPAUTH" $SYS_AUTHCONF_FILE | cut -d"=" -f2)" != "Xno" ]; then
+			toLog "    ERROR - Disabling LDAP AUTH in $SYS_AUTHCONF_FILE failed. Exiting..."
+			STATUS=1
 		else
 			toLog "    Success - LDAP AUTH has been disabled."
 		fi
@@ -974,14 +996,14 @@ fi
 checkFileExists $NSS_CONF_FILE
 if [ "X$RETVAL" == "X1" ]; then
 	toLog "  ERROR - File $NSS_CONF_FILE does not exist! Exiting..."
-	exit 1
+	STATUS=1
 else
 	toLog "   Info - FILE $NSS_CONF_FILE CONFIGURATION:"
 	# passwd field
 	sed -i "s|^passwd:\(.*$\)|# Commented by $0 on $DATE_TIME:\n#passwd:\1\n# Added by $0 on $DATE_TIME:\npasswd: files ldap\n|" $NSS_CONF_FILE
 	if [ $? -ne 0 ] || [ "X$(grep "^passwd" $NSS_CONF_FILE | cut -d" " -f3)" != "Xldap" ]; then
 		toLog "    ERROR - Configuration of 'passwd' field in $NSS_CONF_FILE failed. Exiting..."
-		exit 1
+		STATUS=1
 	else
 		toLog "    Success - 'passwd' field in $NSS_CONF_FILE configured."
 	fi
@@ -990,7 +1012,7 @@ else
 	sed -i "s|^shadow:\(.*$\)|# Commented by $0 on $DATE_TIME:\n#shadow:\1\n# Added by $0 on $DATE_TIME:\nshadow: files ldap\n|" $NSS_CONF_FILE
 	if [ $? -ne 0 ] || [ "X$(grep "^shadow" $NSS_CONF_FILE | cut -d" " -f3)" != "Xldap" ]; then
 		toLog "    ERROR - Configuration of 'shadow:' field in $NSS_CONF_FILE failed. Exiting..."
-		exit 1
+		STATUS=1
 	else
 		toLog "    Success - 'shadow' field in $NSS_CONF_FILE configured."
 	fi
@@ -999,7 +1021,7 @@ else
 	sed -i "s|^group:\(.*$\)|# Commented by $0 on $DATE_TIME:\n#group:\1\n# Added by $0 on $DATE_TIME:\ngroup: files ldap\n|" $NSS_CONF_FILE
 	if [ $? -ne 0 ] || [ "X$(grep "^group" $NSS_CONF_FILE | cut -d" " -f3)" != "Xldap" ]; then
 		toLog "    ERROR - Configuration of 'group:' field in $NSS_CONF_FILE failed. Exiting..."
-		exit 1
+		STATUS=1
 	else
 		toLog "    Success - 'group' field in $NSS_CONF_FILE configured."
 	fi
@@ -1014,7 +1036,7 @@ fi
 sed -i "s|\(^#%PAM-1.0.*$\)|\1\n#Added by $0 on $DATE_TIME:\nauth sufficient pam_ldap.so|" $PAM_SSHD_CONF_FILE
 if [ $? -ne 0 ] || [ "X$(grep "^auth" $PAM_SSHD_CONF_FILE | head -n 1 | cut -d" " -f3)" != "Xpam_ldap.so" ]; then
 	toLog "    ERROR - Configuration of $PAM_SSHD_CONF_FILE to use pam_ldap.so library failed. Exiting..."
-	exit 1
+	STATUS=1
 else
 	toLog "    Success - $PAM_SSHD_CONF_FILE configured to use pam_ldap.so library."
 fi
@@ -1023,7 +1045,7 @@ fi
 sed -i "s|\(.*pam_securetty.so.*$\)|\1\n#Added by $0 on $DATE_TIME:\nauth sufficient pam_ldap.so|" $PAM_LOGIN_CONF_FILE
 if [ $? -ne 0 ] || [ "X$(grep "^auth" $PAM_LOGIN_CONF_FILE | head -n 2 | tail -n 1 | cut -d" " -f3)" != "Xpam_ldap.so" ]; then
 	toLog "    ERROR - Configuration of $PAM_LOGIN_CONF_FILE to use pam_ldap.so library failed. Exiting..."
-	exit 1
+	STATUS=1
 else
 	toLog "    Success - $PAM_LOGIN_CONF_FILE configured to use pam_ldap.so library."
 fi
@@ -1142,29 +1164,46 @@ elif [ $# -eq 2 ]; then
 						doBackup $NSS_LDAP_CONF_FILE
 						doBackup $NSS_CONF_FILE
 						doBackup $PAM_LOGIN_CONF_FILE
-						doBackup /etc/pam.d/system-auth-ac
-						doBackup /etc/sysconfig/authconfig
+						doBackup $PAM_SSHD_CONF_FILE
+						doBackup $SUDOERS_FILE
+						doBackup $PAM_SYS_AUTHCONF_FILE
+						doBackup $SYS_AUTHCONF_FILE
+						
 						# bring back the original files
 						toLog "Info - ===== Restoring original configuration files. ====="
 						getOriginalFiles ldap_only
 						if [ $RETVAL -ne 0 ]; then
                             toLog "  ERROR - Restoring original files failed. Exiting..."
+							toLog "  Info - No configuration files were modified."
                             exit 1
                         else
+							# start configuration for ldap_only
 							doConfigureLDAPonly
-							if [ $RETVAL -eq 0 ]; then
-								toLog "  Success - System configuration for LDAP only authentication completed."
-							else
+							if [ $RETVAL -eq 1 ]; then
 								toLog "  ERROR - Configuration of LDAP only authentication failed! Exiting..."
-								exit 1
-							fi
-							# Configuration of pam to create home directories at sucessful login:
-							doConfigPAMmkHomeDir
-							if [ "X$RETVAL" == "X1" ]; then
-								toLog "ERROR - Configuration of PAM to create home directories failed! Exiting..."
-								exit 1
+								STATUS=1
 							else
-								toLog "Success - Home directories will be automatically created at first successful login."
+								toLog "  Success - System configuration for LDAP only authentication completed."
+								# Configuration of pam to create home directories at sucessful login:
+								doConfigPAMmkHomeDir
+								if [ "X$RETVAL" == "X0" ]; then
+									toLog "  Success - Home directories will be automatically created at first successful login."
+								else
+									toLog "  ERROR - Configuration of PAM to create home directories failed! Exiting..."
+									STATUS=1
+								fi
+							fi
+							if [ $STATUS -eq 1 ]; then
+								#roll back the changes
+								toLog "  Info - Rolling back the changes..."
+								getOriginalFiles ldap_only
+								if [ $RETVAL -ne 0 ]; then
+									toLog "  ERROR - Rolling back changes failed! Exiting..."
+									exit 1
+								else
+									toLog "  Success - Rolling back changes successful. Exiting..."
+									exit 1
+								fi
 							fi
 						fi
 						;;
@@ -1175,7 +1214,7 @@ elif [ $# -eq 2 ]; then
 						doBackup $PAM_SSHD_CONF_FILE
 						doBackup $PAM_RADIUS_CONF_FILE
 						doBackup $PAM_LOGIN_CONF_FILE
-						doBackup /etc/pam.d/system-auth-ac
+						doBackup $PAM_SYS_AUTHCONF_FILE
 						# bring back the original files
 						toLog "Info - ===== Restoring original configuration files. ====="
 						getOriginalFiles radius_only
@@ -1205,14 +1244,17 @@ elif [ $# -eq 2 ]; then
 					radius_with_ldap)
 						# make backups of each file that will be changed/replaced:
 						toLog "Info - ===== Starting backup for Radius current configuration files. ====="
-						doBackup $PAM_SSHD_CONF_FILE
 						doBackup $PAM_RADIUS_CONF_FILE
 						toLog "Info - ===== Starting backup for LDAP current configuration files. ====="
 						doBackup $OPENLDAP_CONF_FILE
 						doBackup $NSS_LDAP_CONF_FILE
 						doBackup $NSS_CONF_FILE
-						doBackup /etc/pam.d/system-auth-ac
-						doBackup /etc/sysconfig/authconfig
+						doBackup $PAM_LOGIN_CONF_FILE
+						doBackup $PAM_SSHD_CONF_FILE
+						doBackup $PAM_SYS_AUTHCONF_FILE
+						doBackup $SYS_AUTHCONF_FILE
+						doBackup $SUDOERS_FILE
+						
 						# bring back the original files
 						toLog "Info - ===== Restoring original configuration files. ====="
 						getOriginalFiles radius_with_ldap
@@ -1255,8 +1297,8 @@ elif [ $# -eq 2 ]; then
 							doBackup $OPENLDAP_CONF_FILE
 							doBackup $NSS_LDAP_CONF_FILE
 							doBackup $NSS_CONF_FILE
-							doBackup /etc/pam.d/system-auth-ac
-							doBackup /etc/sysconfig/authconfig
+							doBackup $PAM_SYS_AUTHCONF_FILE
+							doBackup $SYS_AUTHCONF_FILE
 							# bring back the original files
 							toLog "Info - ===== Restoring original configuration files. ====="
 							getOriginalFiles radius_with_ldap
@@ -1277,7 +1319,7 @@ elif [ $# -eq 2 ]; then
 				# Make sure that local auth is sufficient for local users:
 				doLocalAuthSufficient
 				if [ "X$RETVAL" == "X1" ]; then
-					toLog "ERROR - Configuring /etc/pam.d/system-auth-ac to consider local auth sufficient for local users failed! Exiting..."
+					toLog "ERROR - Configuring $PAM_SYS_AUTHCONF_FILE to consider local auth sufficient for local users failed! Exiting..."
 					exit 1
 				else
 					toLog "Success - The system was configured to consider local auth to be sufficient for local users."
