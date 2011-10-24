@@ -2,6 +2,7 @@ package com.l7tech.gateway.common.audit;
 
 import com.l7tech.util.Functions;
 import com.l7tech.util.Triple;
+import org.jetbrains.annotations.NotNull;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -19,19 +20,19 @@ public class TestAudit implements Audit, AuditHaver {
     }
 
     @Override
-    public final void logAndAudit( final AuditDetailMessage msg, final String[] params, final Throwable e ) {
+    public final void logAndAudit( @NotNull final AuditDetailMessage msg, final String[] params, final Throwable e ) {
         if ( notifyAudit( msg, params, e ) ) {
             storeAudit( msg, params, e );
         }
     }
 
     @Override
-    public final void logAndAudit( final AuditDetailMessage msg, final String... params ) {
+    public final void logAndAudit( @NotNull final AuditDetailMessage msg, final String... params ) {
         logAndAudit( msg, params, null );
     }
 
     @Override
-    public final void logAndAudit( final AuditDetailMessage msg ) {
+    public final void logAndAudit( @NotNull final AuditDetailMessage msg ) {
         logAndAudit( msg, new String[0], null );
     }
 

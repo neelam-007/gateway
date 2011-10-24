@@ -1,6 +1,7 @@
 package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.audit.*;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -90,7 +91,7 @@ public class Auditor extends LoggingAudit {
     }
 
     @Override
-    public void logAndAudit(AuditDetailMessage msg, String[] params, Throwable e) {
+    public void logAndAudit( @NotNull AuditDetailMessage msg, String[] params, Throwable e) {
         String loggerName = logger == null ? null : logger.getName();
         if ( eventPub != null && (filter == null || filter.isAuditable(msg)) )
             eventPub.publishEvent(new AuditDetailEvent(source, new AuditDetail(msg, params == null ? null : params, e), e, loggerName));
@@ -101,12 +102,12 @@ public class Auditor extends LoggingAudit {
     }
 
     @Override
-    public void logAndAudit(AuditDetailMessage msg, String... params) {
+    public void logAndAudit( @NotNull AuditDetailMessage msg, String... params) {
         logAndAudit(msg, params, null);
     }
 
     @Override
-    public void logAndAudit(AuditDetailMessage msg) {
+    public void logAndAudit( @NotNull AuditDetailMessage msg) {
         logAndAudit(msg, null, null);
     }
 

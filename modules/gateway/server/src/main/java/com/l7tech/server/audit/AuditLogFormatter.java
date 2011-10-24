@@ -11,6 +11,7 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.Config;
 import com.l7tech.util.ConfigFactory;
+import org.jetbrains.annotations.NotNull;
 
 import java.text.MessageFormat;
 import java.util.*;
@@ -337,17 +338,17 @@ public class AuditLogFormatter<REC extends AuditRecord> {
      */
     private class DummyAuditor implements Audit {
         @Override
-        public void logAndAudit(AuditDetailMessage msg, String[] params, Throwable e) {
+        public void logAndAudit( @NotNull AuditDetailMessage msg, String[] params, Throwable e) {
             // do nothing impl
         }
 
         @Override
-        public void logAndAudit(AuditDetailMessage msg, String... params) {
+        public void logAndAudit( @NotNull AuditDetailMessage msg, String... params) {
             // do nothing impl
         }
 
         @Override
-        public void logAndAudit(AuditDetailMessage msg) {
+        public void logAndAudit( @NotNull AuditDetailMessage msg) {
             // do nothing impl
         }
     }

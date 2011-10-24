@@ -188,20 +188,20 @@ public abstract class AbstractServerAssertion<AT extends Assertion> implements S
                     // create a lazy auditor
                     audit = new Audit() {
                         @Override
-                        public void logAndAudit( final AuditDetailMessage msg,
+                        public void logAndAudit( @NotNull final AuditDetailMessage msg,
                                                  final String[] params,
                                                  final Throwable e ) {
                             getAudit( false ).logAndAudit( msg, params, e );
                         }
 
                         @Override
-                        public void logAndAudit( final AuditDetailMessage msg,
+                        public void logAndAudit( @NotNull final AuditDetailMessage msg,
                                                  final String... params ) {
                             getAudit( false ).logAndAudit( msg, params );
                         }
 
                         @Override
-                        public void logAndAudit( final AuditDetailMessage msg ) {
+                        public void logAndAudit( @NotNull final AuditDetailMessage msg ) {
                             getAudit( false ).logAndAudit( msg );
                         }
                     };

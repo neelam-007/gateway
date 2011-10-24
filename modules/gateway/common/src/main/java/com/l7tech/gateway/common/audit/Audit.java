@@ -1,7 +1,6 @@
-/**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.gateway.common.audit;
+
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Interface over Auditor that allows optional-audit code to be shared with non-SSG systems
@@ -16,7 +15,7 @@ public interface Audit {
      * @param e a Throwable to save with this detail message, or null
      * @see AssertionMessages for a collection of AuditDetailMessage instances
      */
-    void logAndAudit(AuditDetailMessage msg, String[] params, Throwable e);
+    void logAndAudit(@NotNull AuditDetailMessage msg, String[] params, Throwable e);
 
     /**
      * Audit and log the specified detail message, filled in with the specified parameters.
@@ -24,12 +23,12 @@ public interface Audit {
      * @param msg  an AuditDetailMessage.  Required.
      * @param params parameters to fill in if this detail message has parameters to fill in
      */
-    void logAndAudit(AuditDetailMessage msg, String... params);
+    void logAndAudit(@NotNull AuditDetailMessage msg, String... params);
 
     /**
      * Audit and log the specified detail message.
      *
      * @param msg  an AuditDetailMessage.  Required.
      */
-    void logAndAudit(AuditDetailMessage msg);
+    void logAndAudit(@NotNull AuditDetailMessage msg);
 }
