@@ -74,7 +74,7 @@ public class UUIDGeneratorPropertiesDialog extends AssertionPropertiesOkCancelSu
             throw new ValidationException(error);
         }
         assertion.setTargetVariable(targetVariablePanel.getVariable());
-        assertion.setAmount(amountTextField.getText());
+        assertion.setAmount(amountTextField.getText().trim());
         return assertion;
     }
 }
