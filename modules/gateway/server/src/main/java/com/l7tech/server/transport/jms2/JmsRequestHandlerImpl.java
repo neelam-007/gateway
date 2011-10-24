@@ -127,10 +127,10 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
 
                 // enforce size restriction
                 long sizeLimit;
-                if(endpointCfg.getEndpoint().getRequestMaxSize()<0)
+                if(endpointCfg.getEndpoint().getRequestMaxSize()<0L)
                 {
                     long clusterPropValue = config.getLongProperty(ServerConfigParams.PARAM_JMS_MESSAGE_MAX_BYTES, DEFAULT_MESSAGE_MAX_BYTES);
-                    if(clusterPropValue < 0 ){
+                    if(clusterPropValue >= 0L ){
                         sizeLimit = clusterPropValue;
                     }else{
                         sizeLimit = com.l7tech.message.Message.getMaxBytes();
