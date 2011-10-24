@@ -154,8 +154,8 @@
                   <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
-                  <icon value="com/l7tech/console/resources/Stop16.gif"/>
-                  <text value=""/>
+                  <hideActionText value="false"/>
+                  <text resource-bundle="com/l7tech/console/panels/LogViewer" key="cancel.button.text"/>
                 </properties>
               </component>
             </children>
@@ -168,7 +168,7 @@
             </constraints>
             <properties>
               <continuousLayout value="true"/>
-              <dividerLocation value="219"/>
+              <dividerLocation value="201"/>
               <orientation value="0"/>
               <resizeWeight value="1.0"/>
             </properties>

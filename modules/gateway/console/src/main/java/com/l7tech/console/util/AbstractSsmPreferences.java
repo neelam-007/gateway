@@ -1,8 +1,3 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.console.util;
 
 import org.springframework.context.support.ApplicationObjectSupport;
@@ -23,12 +18,14 @@ import java.security.NoSuchAlgorithmException;
  * Implementation of SsmPreferences shared between applet and fat client.
  */
 public abstract class AbstractSsmPreferences extends ApplicationObjectSupport implements SsmPreferences {
+    @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
     protected static final Logger logger = Logger.getLogger(AbstractSsmPreferences.class.getName());
     protected static boolean debug = false;
     protected Properties defaultProps = new Properties();
     protected Properties props = new Properties(defaultProps);
     private static final int DEFAULT_INACTIVITY_TIMEOUT = 30;
 
+    @Override
     public void updateFromProperties(Properties p, boolean append) {
         for (Object o : p.keySet()) {
             String key = (String) o;
@@ -42,17 +39,31 @@ public abstract class AbstractSsmPreferences extends ApplicationObjectSupport im
         }
     }
 
+    @Override
     public String getString(String key, String def)
       throws NullPointerException {
         if (key == null) throw new NullPointerException("key == null");
         return props.getProperty(key, def);
     }
 
+    @Override
     public String getString(String key) {
         if (key == null) throw new NullPointerException("key == null");
         return props.getProperty(key);
     }
 
+    @Override
+    public int getIntProperty( final String key, final int def ) {
+        if (key == null) throw new NullPointerException("key == null");
+        final String value = props.getProperty(key);
+        try {
+            return Integer.parseInt(value);
+        } catch ( NumberFormatException e ) {
+            return def;
+        }
+    }
+
+    @Override
     public History getHistory(String property) {
         return new PropertyHistory(property);
     }
@@ -92,22 +103,27 @@ public abstract class AbstractSsmPreferences extends ApplicationObjectSupport im
         }
     }
 
+    @Override
     public Dimension getLastScreenSize() {
         return getDimension(LAST_SCREEN_SIZE_WIDTH, LAST_SCREEN_SIZE_HEIGHT);
     }
 
+    @Override
     public void setLastScreenSize(Dimension d) {
         setDimension(LAST_SCREEN_SIZE_WIDTH, LAST_SCREEN_SIZE_HEIGHT, d);
     }
 
+    @Override
     public Dimension getLastWindowSize() {
         return getDimension(LAST_WINDOW_SIZE_WIDTH, LAST_WINDOW_SIZE_HEIGHT);
     }
 
+    @Override
     public void setLastWindowSize(Dimension d) {
         setDimension(LAST_WINDOW_SIZE_WIDTH, LAST_WINDOW_SIZE_HEIGHT, d);
     }
 
+    @Override
     public Point getLastWindowLocation() {
         // For now we'll just abuse getDimension().
         Dimension d = getDimension(LAST_WINDOW_LOC_X, LAST_WINDOW_LOC_Y);
@@ -116,6 +132,7 @@ public abstract class AbstractSsmPreferences extends ApplicationObjectSupport im
         return new Point(d.width, d.height);
     }
 
+    @Override
     public void setLastWindowLocation(Point p) {
         // For now we'll just abuse setDimension().
         Dimension d = p != null ? new Dimension(p.x, p.y) : null;
@@ -130,6 +147,7 @@ public abstract class AbstractSsmPreferences extends ApplicationObjectSupport im
      * @param value value to be associated with the specified key.
      * @throws NullPointerException if key or value is null.
      */
+    @Override
     public void putProperty(String key, String value) throws NullPointerException {
         if (key == null) throw new NullPointerException("key == null");
         if (value == null) throw new NullPointerException("value == null");
@@ -144,27 +162,26 @@ public abstract class AbstractSsmPreferences extends ApplicationObjectSupport im
      * @param key the key that needs to be removed.
      * @throws NullPointerException if key or value is null.
      */
+    @Override
     public void remove(String key) throws NullPointerException {
         if (key == null) throw new NullPointerException("key == null");
         props.remove(key);
         //firePropertyChange(e);
     }
 
+    @Override
     public String getServiceUrl() {
         return props.getProperty(SERVICE_URL);
     }
 
+    @Override
     public int getInactivityTimeout() {
-        String value = props.getProperty(INACTIVITY_TIMEOUT);
-        try {
-            return Integer.parseInt(value);
-        } catch (NumberFormatException e) {
-            //when the inactivity timeout was never set to begin with, we'll use this default
-            //note: this value MUST be the same as the value in PreferencesDialog.java
-            return DEFAULT_INACTIVITY_TIMEOUT;
-        }
+        //when the inactivity timeout was never set to begin with, we'll use this default
+        //note: this value MUST be the same as the value in PreferencesDialog.java
+        return getIntProperty( INACTIVITY_TIMEOUT, DEFAULT_INACTIVITY_TIMEOUT );
     }
 
+    @Override
     public boolean rememberLoginId() {
         return Boolean.
           valueOf(props.getProperty(SAVE_LAST_LOGIN_ID)).booleanValue();
@@ -175,12 +192,14 @@ public abstract class AbstractSsmPreferences extends ApplicationObjectSupport im
      *
      * @return the shortcut bar visible value as boolean.
      */
+    @Override
     public boolean isStatusBarBarVisible() {
         // default set
         String sbprop = props.getProperty(STATUS_BAR_VISIBLE);
         return sbprop == null || Boolean.valueOf(sbprop).booleanValue();
     }
 
+    @Override
     public void seStatusBarVisible(boolean b) {
         putProperty(STATUS_BAR_VISIBLE, Boolean.toString(b));
     }
@@ -190,20 +209,24 @@ public abstract class AbstractSsmPreferences extends ApplicationObjectSupport im
      *
      * @return the policy messages visible value as boolean.
      */
+    @Override
     public boolean isPolicyMessageAreaVisible() {
         // default set
         String pmaprop = props.getProperty(POLICY_MSG_AREA_VISIBLE);
         return pmaprop == null || Boolean.valueOf(pmaprop).booleanValue();
     }
 
+    @Override
     public void setPolicyMessageAreaVisible(boolean b) {
         putProperty(POLICY_MSG_AREA_VISIBLE, Boolean.toString(b));
     }
 
+    @Override
     public void list(PrintStream ps) {
         props.list(ps);
     }
 
+    @Override
     public Properties asProperties() {
         Properties p = new Properties();
         p.putAll(props);
@@ -230,6 +253,7 @@ public abstract class AbstractSsmPreferences extends ApplicationObjectSupport im
          *
          * @param o the object to add to the
          */
+        @Override
         public void add(Object o) {
             LinkedList<Object> values = values();
             Collection<Object> remove = new ArrayList<Object>();
@@ -246,6 +270,7 @@ public abstract class AbstractSsmPreferences extends ApplicationObjectSupport im
 
         private LinkedList<Object> values() {
             SortedSet<Object> sortedKeys = new TreeSet<Object>(new Comparator<Object>() {
+                @Override
                 public int compare(Object o1, Object o2) {
                     //service.url
                     //service.url.1
@@ -309,6 +334,7 @@ public abstract class AbstractSsmPreferences extends ApplicationObjectSupport im
          *
          * @return the array of history entries.
          */
+        @Override
         public Object[] getEntries() {
             return values().toArray();
         }
@@ -318,6 +344,7 @@ public abstract class AbstractSsmPreferences extends ApplicationObjectSupport im
        * What ever value you set here is reflected immediately in the number of values
        * returned by getEntries()
        * */
+        @Override
         public void setMaxSize(int maxSize) {
             this.maxSize = maxSize;
             LinkedList<Object> values = values();
@@ -327,31 +354,38 @@ public abstract class AbstractSsmPreferences extends ApplicationObjectSupport im
         /*
        * @return how large the history is allowed for this instance of History
            * */
+        @Override
         public int getMaxSize() {
             return maxSize;
         }
     }
 
+    @Override
     public Set<X509Certificate> getKeys() throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException {
         return new HashSet<X509Certificate>();
     }
 
+    @Override
     public Set<X509Certificate> getCertificates() throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException {
         return new HashSet<X509Certificate>();
     }
 
+    @Override
     public void importPrivateKey(X509Certificate[] cert, PrivateKey privateKey)
             throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException {
     }
 
+    @Override
     public void deleteCertificate(X509Certificate cert)
             throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException {
     }
 
+    @Override
     public X509Certificate getClientCertificate() {
         return null;
     }
 
+    @Override
     public void setClientCertificate(X509Certificate cert) {
     }
 }

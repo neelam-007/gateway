@@ -9,7 +9,7 @@ import java.util.Collection;
 /**
  * Administrative API for read access to Gateway logs.
  */
-@Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
+@Transactional(propagation=REQUIRED)
 public interface LogAccessAdmin {
 
     /**
@@ -20,7 +20,7 @@ public interface LogAccessAdmin {
      * @return a collection of log file information.  Never null.
      * @throws FindException if there is a problem reading from the database
      */
-    @Transactional(readOnly=true)
+    @Transactional(readOnly=true, noRollbackFor = Throwable.class)
     Collection<LogFileInfo> findAllFilesForSinkByNode(String nodeId, long sinkId) throws FindException;
 
     /**
@@ -28,11 +28,12 @@ public interface LogAccessAdmin {
      *
      * @param nodeId  node to get sink configurations from
      * @param sinkId  associated log sink id
-     * @param startPosition  -1 for the first chunk
      * @param file the file associated with the log sink to read
+     * @param startPosition  -1 for the first chunk
+     * @param fromEnd true to offset from the end of the file
      * @return The log data
      */
-    @Transactional(readOnly=true)
-    LogSinkData getSinkLogs(String nodeId, long sinkId,String file, long startPosition, boolean fromEnd) throws FindException;
+    @Transactional(readOnly=true, noRollbackFor = Throwable.class)
+    LogSinkData getSinkLogs(String nodeId, long sinkId, String file, long startPosition, boolean fromEnd) throws FindException;
 
 }

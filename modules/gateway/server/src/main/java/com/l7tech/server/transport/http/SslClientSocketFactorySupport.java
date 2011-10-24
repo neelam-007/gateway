@@ -1,6 +1,7 @@
 package com.l7tech.server.transport.http;
 
 import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.common.io.SSLSocketWrapper;
@@ -13,8 +14,6 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSocket;
 import java.util.Comparator;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 import java.security.GeneralSecurityException;
 import java.net.Socket;
 import java.net.InetAddress;
@@ -190,7 +189,7 @@ public abstract class SslClientSocketFactorySupport extends SSLSocketFactory imp
                         sslSocket.startHandshake();
 
                         InetSocketAddress inetEndpoint = (InetSocketAddress) endpoint;
-                        final String host = getHost(inetEndpoint);
+                        final String host = InetAddressUtil.getHost( inetEndpoint );
                         if ( !verifier.verify( host, sslSocket.getSession() ) ) {
                             ResourceUtils.closeQuietly( sslSocket );
                             throw new IOException("Host name does not match certificate '" + host + "'.");
@@ -221,21 +220,9 @@ public abstract class SslClientSocketFactorySupport extends SSLSocketFactory imp
     /**
      * This name is used for backwards compatibility, do not change.
      */
+    @SuppressWarnings({ "ClassReferencesSubclass" })
     private static final String PROP_SSL_SESSION_TIMEOUT = SslClientSocketFactory.class.getName() + ".sslSessionTimeoutSeconds";
     private static final int DEFAULT_SSL_SESSION_TIMEOUT = 10 * 60;
-
-    /**
-     * Regex for matching addresses in the formats:
-     *
-     * - hostname:port
-     * - ipv4:port
-     * - ipv6:port
-     * - /ipv4:port
-     * - /ipv6:port
-     * - hostname/ipv4:port
-     * - hostname/ipv6:port
-     */
-    private static final Pattern HOST_PATTERN = Pattern.compile( "([A-Za-z0-9_\\-\\.:]{1,1024})?/?([A-Za-z0-9_\\-\\.:]{1,1024}):[0-9]{1,5}" );
 
     private final SSLContext sslContext;
 
@@ -260,24 +247,5 @@ public abstract class SslClientSocketFactorySupport extends SSLSocketFactory imp
                 throw ExceptionUtils.wrap( e );
             }
         }
-    }
-
-    // hack to access hostname without causing reverse lookup
-    private static String getHost( final InetSocketAddress address ) {
-        String host;
-
-        // TODO switch to getHostString when JDK7 is required
-        Matcher matcher = HOST_PATTERN.matcher( address.toString() );
-        if ( matcher.matches() ) {
-            host = matcher.group(1); // hostname, if present
-            if ( host == null ) {
-                host = matcher.group(2); // was unresolved, so this could be an IP address or hostname
-            }
-        } else {
-            // fallback that can cause reverse DNS lookup
-            host = address.getHostName();
-        }
-
-        return host;
     }
 }

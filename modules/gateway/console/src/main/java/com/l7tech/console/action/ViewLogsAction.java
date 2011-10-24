@@ -18,7 +18,7 @@ public class ViewLogsAction extends SecureAction {
     private LogChooserWindow chooserWindow;
 
     public ViewLogsAction() {
-        super(new AttemptedOther(EntityType.LOG_SINK, OtherOperationName.LOG_VIEWER.toString()));
+        super(new AttemptedOther(EntityType.LOG_SINK, OtherOperationName.LOG_VIEWER.getOperationName()));
     }
 
     /**

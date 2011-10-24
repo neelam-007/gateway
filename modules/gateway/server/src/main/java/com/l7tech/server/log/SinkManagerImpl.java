@@ -55,6 +55,7 @@ import java.util.*;
 import java.util.logging.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.Deflater;
 import java.util.zip.GZIPOutputStream;
 
 import static com.l7tech.gateway.common.security.rbac.OperationType.READ;
@@ -230,12 +231,12 @@ public class SinkManagerImpl
         role.addEntityPermission(READ, LOG_SINK, entity.getId());
         role.addEntityPermission(READ, CLUSTER_INFO, null);
 
-        role.addEntityOtherPermission(LOG_SINK, entity.getId(), OtherOperationName.LOG_VIEWER.name());
+        role.addEntityOtherPermission(LOG_SINK, entity.getId(), OtherOperationName.LOG_VIEWER.getOperationName());
 
         // Set role as entity-specific
         role.setEntityType(LOG_SINK);
         role.setEntityOid(entity.getOidAsLong());
-        role.setDescription("Users assigned to the {0} role have the ability to view the {1} logs and its configurations.");
+        role.setDescription("Users assigned to the {0} role have the ability to read the log sink and any associated log files.");
 
         roleManager.save(role);
     }
@@ -303,50 +304,64 @@ public class SinkManagerImpl
     }
 
     @Override
-    public LogSinkData getSinkLogs(final String nodeId, final long sinkId, final String file, final long startPosition, final boolean fromEnd) throws FindException {
+    public LogSinkData getSinkLogs( final String nodeId,
+                                    final long sinkId,
+                                    final String file,
+                                    final long startPosition,
+                                    final boolean fromEnd ) throws FindException {
         LogSinkData data = null;
-        if(isThisNodeMe(nodeId))
+
+        if( isThisNodeMe(nodeId) )
         {
-            SinkConfiguration sinkConfig;
             FileInputStream fin = null;
             TruncatingInputStream in = null;
-            ByteArrayOutputStream bs = null;
+            PoolByteArrayOutputStream bs = null;
             GZIPOutputStream out = null;
             try {
-                sinkConfig = findByPrimaryKey(sinkId);
-                if(sinkConfig.getType().equals(SinkConfiguration.SinkType.FILE)){
-                    String filePattern = getSinkFilePattern(sinkConfig);
-                    String filePath = filePattern.substring(0,filePattern.lastIndexOf("/")+1)+file; //TODO [steve] verify file matches pattern (so user has permission to view the file)
+                final SinkConfiguration sinkConfig = findByPrimaryKey(sinkId);
+                if( sinkConfig != null && SinkConfiguration.SinkType.FILE.equals(sinkConfig.getType()) ){
+                    final File logFileWithPattern = new File(getSinkFilePattern(sinkConfig));
+                    final String fileDirectory = logFileWithPattern.getParent();
+                    final String fileRegex = logFileWithPattern.getName()
+                            .replace( "%u", "[0-9]" )
+                            .replace( "%g", "[0-9]" );
+                    if ( file.matches( fileRegex ) ) {
+                        final File logFile = new File(fileDirectory, file);
+                        long startPoint = startPosition;
+                        if( fromEnd ){
+                            startPoint = Math.max(0L,logFile.length() - startPoint - 16384L);
+                        }
+                        fin = new FileInputStream(logFile);
+                        final long skipped = fin.skip( startPoint );
+                        if ( skipped < startPoint ) {
+                            data = new LogSinkData(new byte[0],-1L);
+                        } else {
+                            in = new TruncatingInputStream(fin);
+                            bs = new PoolByteArrayOutputStream((int)(TruncatingInputStream.DEFAULT_SIZE_LIMIT / 4L));
+                            out = new GZIPOutputStream(bs, 16384){{
+                                def = new Deflater(Deflater.BEST_SPEED, true);
+                            }};
 
-                    File f = new File(filePath);
-                    long startPoint = startPosition;
-                    if(fromEnd){
-                        startPoint = Math.max(0,f.length() - startPoint - 16384);
+                            IOUtils.copyStream(in,out);
+
+                            long lastLocation = in.getPosition();
+                            if ( lastLocation >= 0L ) {
+                                lastLocation += skipped;
+                            }
+                            out.finish();
+
+                            data = new LogSinkData(bs.toByteArray(),lastLocation);
+                        }
+                    } else {
+                        logger.warning( "Attempt to read log file " + file + ", not matching sink file pattern " + fileRegex );
                     }
-                    fin = new FileInputStream(filePath);
-                    in = new TruncatingInputStream(fin,startPoint);
-                    bs = new ByteArrayOutputStream();
-                    out = new GZIPOutputStream(bs);
-
-                    IOUtils.copyStream(in,out);
-
-                    long lastLocation = in.getLastRead();
-                    in.close();
-                    out.close();
-
-                    data = new LogSinkData(bs.toByteArray(),lastLocation);
                 }
-            } catch (FindException e) {
-                logger.warning("Log sink configuration not found: "+ e.getMessage());
-            } catch (FileNotFoundException e) {
+            } catch ( final FileNotFoundException e ) {
                 logger.info("Log file not found: "+ e.getMessage());
-            } catch (IOException e) {
-                logger.warning("Error reading from log file: "+ e.getMessage());
+            } catch ( final IOException e ) {
+                logger.log( Level.WARNING, "Error reading from log file: "+ e.getMessage(), ExceptionUtils.getDebugException( e ) );
             }finally {
-                ResourceUtils.closeQuietly(fin);
-                ResourceUtils.closeQuietly(in);
-                ResourceUtils.closeQuietly(bs);
-                ResourceUtils.closeQuietly(out);
+                ResourceUtils.closeQuietly(fin, in, bs, out);
             }
         } else {
             data = doWithLogAccessAdmin( nodeId, new UnaryThrows<LogSinkData,LogAccessAdmin,FindException>(){
@@ -356,8 +371,8 @@ public class SinkManagerImpl
                 }
             } ).toNull();
         }
-        return data;
 
+        return data;
     }
 
     @Override

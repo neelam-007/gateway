@@ -1,12 +1,7 @@
-/*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.common.io;
 
 import com.l7tech.util.ArrayUtils;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.IOUtils;
 import org.junit.Test;
@@ -204,6 +199,37 @@ public class HexUtilsTest {
 
         // Test huge substringy match
         assertEquals(221, ArrayUtils.matchSubarrayOrPrefix(huge, 0, 230, boundary, 0));
+    }
+
+    @Test
+    public void testHexAppend() {
+        final byte[] data = "hexappend".getBytes( Charsets.UTF8 );
+
+        final StringBuilder out = new StringBuilder();
+        HexUtils.hexAppend( out, data, 0, data.length, true, (char) 0 );
+        assertEquals( "HEX upper no seperator", "686578617070656E64", out.toString() );
+
+        out.setLength( 0 );
+        HexUtils.hexAppend( out, data, 0, data.length, false, (char) 0 );
+        assertEquals( "HEX lower no seperator", "686578617070656e64", out.toString() );
+
+        out.setLength( 0 );
+        HexUtils.hexAppend( out, data, 0, data.length, true, '_' );
+        assertEquals( "HEX upper _ seperator", "68_65_78_61_70_70_65_6E_64", out.toString() );
+    }
+
+    @Test
+    public void testAsciiAppend() {
+        final byte[] text8 = "asciiappend".getBytes( Charsets.UTF8 );
+        final byte[] text16 = "\31\0\u20ACtext\u221E".getBytes( Charsets.UTF16 );
+
+        final StringBuilder out = new StringBuilder();
+        HexUtils.asciiAppend( out, text8, 0, text8.length );
+        assertEquals( "Acscii all", "asciiappend", out.toString() );
+
+        out.setLength( 0 );
+        HexUtils.asciiAppend( out, text16, 0, text16.length );
+        assertEquals( "HEX lower no seperator", "...... ..t.e.x.t\".", out.toString() );
     }
 
     public static final String COMPLEX_SUBSTRING = "0d0a2d2d2d2d3d5f7e344b2d596358445e75";

@@ -1,9 +1,12 @@
 package com.l7tech.server.tomcat;
 
 import com.l7tech.gateway.common.transport.SsgConnector;
+import static com.l7tech.server.tomcat.SsgServerSocketFactory.wrapSocket;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.server.transport.tls.SsgConnectorSslHelper;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
+import org.apache.tomcat.util.net.ServerSocketFactory;
 
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLServerSocket;
@@ -13,17 +16,12 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.logging.Logger;
+import java.util.Hashtable;
 
 /**
  * Gateway's TLS socket factory for Tomcat, which knows how to obtain key, cert and socket information with the rest of the SSG.
  */
 public class SsgJSSESocketFactory extends org.apache.tomcat.util.net.ServerSocketFactory {
-    protected static final Logger logger = Logger.getLogger(SsgJSSESocketFactory.class.getName());
-
-    private SsgConnectorSslHelper sslHelper = null;
-    private long transportModuleId = -1;
-    private long connectorOid = -1;
 
     //
     // Public
@@ -32,36 +30,30 @@ public class SsgJSSESocketFactory extends org.apache.tomcat.util.net.ServerSocke
     public SsgJSSESocketFactory() {
     }
 
-    public ServerSocket createSocket(int port) throws IOException {
-        if (sslHelper == null) initialize();
-        ServerSocket socket = sslHelper.getSslContext().getServerSocketFactory().createServerSocket(port);
-        sslHelper.configureServerSocket((SSLServerSocket) socket);
-        return socket;
+    @Override
+    public ServerSocket createSocket(int port) throws IOException, InstantiationException {
+        return strategy.createSocket( port );
     }
 
-    public ServerSocket createSocket(int port, int backlog) throws IOException {
-        if (sslHelper == null) initialize();
-        ServerSocket socket = sslHelper.getSslContext().getServerSocketFactory().createServerSocket(port, backlog);
-        sslHelper.configureServerSocket((SSLServerSocket) socket);
-        return socket;
+    @Override
+    public ServerSocket createSocket(int port, int backlog) throws IOException, InstantiationException {
+        return strategy.createSocket( port, backlog );
     }
 
-    public ServerSocket createSocket(int port, int backlog, InetAddress ifAddress) throws IOException {
-        if (sslHelper == null) initialize();
-        ServerSocket socket = sslHelper.getSslContext().getServerSocketFactory().createServerSocket(port, backlog, ifAddress);
-        sslHelper.configureServerSocket((SSLServerSocket) socket);
-        return socket;
+    @Override
+    public ServerSocket createSocket(int port, int backlog, InetAddress ifAddress) throws IOException, InstantiationException {
+        return strategy.createSocket( port, backlog, ifAddress );
     }
 
+    @Override
     public void handshake(Socket sock) throws IOException {
-        if (sslHelper == null) initialize();
-        sslHelper.startHandshake((SSLSocket) sock);
+        strategy.handshake( sock );
     }
 
+    @Override
     public Socket acceptSocket(ServerSocket socket) throws IOException {
         try {
-            SSLSocket asock = (SSLSocket) socket.accept();
-            return SsgServerSocketFactory.wrapSocket(transportModuleId, connectorOid, asock);
+            return strategy.acceptSocket( socket );
         } catch (SSLException e){
             SocketException se = new SocketException("SSL handshake error: " + ExceptionUtils.getMessage(e));
             se.initCause(e);
@@ -73,30 +65,129 @@ public class SsgJSSESocketFactory extends org.apache.tomcat.util.net.ServerSocke
     // Private
     //
 
-    private synchronized void initialize() throws IOException {
-        if (sslHelper != null)
-            return;
-        try {
-            transportModuleId = getRequiredLongAttr(HttpTransportModule.CONNECTOR_ATTR_TRANSPORT_MODULE_ID);
-            connectorOid = getRequiredLongAttr(HttpTransportModule.CONNECTOR_ATTR_CONNECTOR_OID);
-            HttpTransportModule httpTransportModule = HttpTransportModule.getInstance(transportModuleId);
-            if (httpTransportModule == null)
-                throw new IllegalStateException("No HttpTransportModule with ID " + transportModuleId + " was found");
-            SsgConnector ssgConnector = httpTransportModule.getActiveConnectorByOid(connectorOid);
-            sslHelper = new SsgConnectorSslHelper(httpTransportModule, ssgConnector);
-        } catch (Exception e) {
-            throw new IOException("Unable to initialize TLS socket factory: " + ExceptionUtils.getMessage(e), e);
+    private final SocketStrategy strategy = ConfigFactory.getBooleanProperty( "com.l7tech.server.tomcat.enableHttpsTrace", true ) ?
+            new HttpsTraceSupportSocketStrategy( attributes ) :
+            new DirectSocketStrategy( attributes );
+
+
+    /**
+     * Strategy to use for socket creation
+     */
+    private static abstract class SocketStrategy {
+        private final Hashtable attributes;
+        protected final ServerSocketFactory socketFactory = ServerSocketFactory.getDefault();
+        protected SsgConnectorSslHelper sslHelper = null;
+        protected long transportModuleId = -1L;
+        protected long connectorOid = -1L;
+
+        protected SocketStrategy( final Hashtable attributes ) {
+            this.attributes = attributes;
+        }
+
+        protected abstract ServerSocket createSocket(int port) throws IOException, InstantiationException;
+        protected abstract ServerSocket createSocket(int port, int backlog) throws IOException, InstantiationException;
+        protected abstract ServerSocket createSocket(int port, int backlog, InetAddress ifAddress) throws IOException, InstantiationException;
+        protected abstract Socket acceptSocket(ServerSocket socket) throws IOException;
+        protected void handshake(Socket sock) throws IOException {
+            if (sslHelper == null) initialize();
+            sslHelper.startHandshake((SSLSocket) sock);
+        }
+
+        protected final synchronized void initialize() throws IOException {
+            if (sslHelper != null)
+                return;
+            try {
+                transportModuleId = getRequiredLongAttr(HttpTransportModule.CONNECTOR_ATTR_TRANSPORT_MODULE_ID);
+                connectorOid = getRequiredLongAttr(HttpTransportModule.CONNECTOR_ATTR_CONNECTOR_OID);
+                HttpTransportModule httpTransportModule = HttpTransportModule.getInstance(transportModuleId);
+                if (httpTransportModule == null)
+                    throw new IllegalStateException("No HttpTransportModule with ID " + transportModuleId + " was found");
+                SsgConnector ssgConnector = httpTransportModule.getActiveConnectorByOid(connectorOid);
+                sslHelper = new SsgConnectorSslHelper(httpTransportModule, ssgConnector);
+            } catch (Exception e) {
+                throw new IOException("Unable to initialize TLS socket factory: " + ExceptionUtils.getMessage(e), e);
+            }
+        }
+
+        private String getRequiredStringAttr(String attrName) {
+            String value = (String)attributes.get(attrName);
+            if (value == null)
+                throw new IllegalStateException("Required attribute \"" + attrName + "\" was not provided");
+            return value;
+        }
+
+        private long getRequiredLongAttr(String attrName) {
+            return Long.parseLong(getRequiredStringAttr(attrName));
         }
     }
 
-    private String getRequiredStringAttr(String attrName) {
-        String value = (String)attributes.get(attrName);
-        if (value == null)
-            throw new IllegalStateException("Required attribute \"" + attrName + "\" was not provided");
-        return value;
+    /**
+     * Direct socket strategy creates an SSLSocket and does not support tracing of HTTPS
+     */
+    private static class DirectSocketStrategy extends SocketStrategy {
+        protected DirectSocketStrategy( final Hashtable attributes ) {
+            super( attributes );
+        }
+
+        @Override
+        protected ServerSocket createSocket( final int port ) throws IOException, InstantiationException {
+            if (sslHelper == null) initialize();
+            final ServerSocket socket = sslHelper.getSslContext().getServerSocketFactory().createServerSocket(port);
+            sslHelper.configureServerSocket((SSLServerSocket) socket);
+            return socket;
+        }
+
+        @Override
+        protected ServerSocket createSocket( final int port, final int backlog ) throws IOException, InstantiationException {
+            if (sslHelper == null) initialize();
+            final ServerSocket socket = sslHelper.getSslContext().getServerSocketFactory().createServerSocket(port, backlog);
+            sslHelper.configureServerSocket((SSLServerSocket) socket);
+            return socket;
+        }
+
+        @Override
+        protected ServerSocket createSocket( final int port, final int backlog, final InetAddress ifAddress ) throws IOException, InstantiationException {
+            if (sslHelper == null) initialize();
+            final ServerSocket socket = sslHelper.getSslContext().getServerSocketFactory().createServerSocket(port, backlog, ifAddress);
+            sslHelper.configureServerSocket((SSLServerSocket) socket);
+            return socket;
+        }
+
+        @Override
+        protected Socket acceptSocket( final ServerSocket socket ) throws IOException {
+            SSLSocket asock = (SSLSocket) socket.accept();
+            return SsgServerSocketFactory.wrapSocket(transportModuleId, connectorOid, asock);
+        }
     }
 
-    private long getRequiredLongAttr(String attrName) {
-        return Long.parseLong(getRequiredStringAttr(attrName));
+    /**
+     * HTTPS trace support strategy creates a plain socket for listening and
+     * wraps with an SSL socket on accept.
+     */
+    private static class HttpsTraceSupportSocketStrategy extends SocketStrategy {
+        protected HttpsTraceSupportSocketStrategy( final Hashtable attributes ) {
+            super( attributes );
+        }
+
+        @Override
+        protected ServerSocket createSocket( final int port ) throws IOException, InstantiationException {
+            return socketFactory.createSocket( port );
+        }
+
+        @Override
+        protected ServerSocket createSocket( final int port, final int backlog ) throws IOException, InstantiationException {
+            return  socketFactory.createSocket( port, backlog );
+        }
+
+        @Override
+        protected ServerSocket createSocket( final int port, final int backlog, final InetAddress ifAddress ) throws IOException, InstantiationException {
+            return socketFactory.createSocket( port, backlog, ifAddress );
+        }
+
+        @Override
+        protected Socket acceptSocket( final ServerSocket socket ) throws IOException {
+            if (sslHelper == null) initialize();
+            return wrapSocket( transportModuleId, connectorOid, sslHelper.wrapAndConfigureSocketForSsl( wrapSocket( socket.accept() ), false ) );
+        }
     }
 }

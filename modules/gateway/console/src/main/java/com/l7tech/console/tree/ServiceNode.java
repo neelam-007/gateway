@@ -117,6 +117,7 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
         if (getEntityHeader().isSoap()) actions.add(new EditServiceUDDISettingsAction(this));
         actions.add(new DeleteServiceAction(this));
         actions.add(new MarkEntityToAliasAction(this));
+        actions.add(new CreateEntityLogSinkAction(this.getEntityHeader()));
         actions.add(new PolicyRevisionsAction(this));
         actions.add(new RefreshTreeNodeAction(this));
         Action secureCut = ServicesAndPoliciesTree.getSecuredAction(ServicesAndPoliciesTree.ClipboardActionType.CUT);

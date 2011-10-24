@@ -223,6 +223,18 @@ public interface SsmPreferences {
     String getString(String key);
 
     /**
+     * Returns the integer value associated with the specified key.
+     *
+     * @param key key whose associated value is to be returned.
+     * @param def the value to be returned in the event that this
+     *            preference key has no value or is not an integer
+     * @return the value associated with key, or def if no value is
+     *         associated with key or the value is invalid.
+     * @throws NullPointerException if key is null.
+     */
+    int getIntProperty(String key, int def);
+
+    /**
      * retrieve the history property
      *
      * @param property the property to get the history

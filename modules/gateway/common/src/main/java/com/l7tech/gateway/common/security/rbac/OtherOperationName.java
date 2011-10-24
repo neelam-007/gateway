@@ -1,15 +1,12 @@
-/**
- * Copyright (C) 2008, Layer 7 Technologies Inc.
- * @author darmstrong
- */
 package com.l7tech.gateway.common.security.rbac;
 
 /**
  * Represents non CRUD operations secured on an Admin interface.
  * These values are used in conjunction with stereotype {@link com.l7tech.gateway.common.security.rbac.MethodStereotype#ENTITY_OPERATION}
  *
- * The toString() values of these enum values are used to compare to the value of a {@link Permission#otherOperationName}
- * 
+ * Use <code>getOperationName()</code> to compare to the value of a {@link Permission#otherOperationName}
+ *
+ * @see #getOperationName()
  */
 public enum OtherOperationName {
 
@@ -17,14 +14,13 @@ public enum OtherOperationName {
     AUDIT_VIEWER_POLICY("audit-viewer policy"),
     LOG_VIEWER("log-viewer");
 
-    private OtherOperationName(String name) {
-        this.name = name;
+    private OtherOperationName( final String operationName ) {
+        this.operationName = operationName;
     }
 
-    @Override
-    public String toString() {
-        return name;
+    public String getOperationName() {
+        return operationName;
     }
 
-    private final String name;
+    private final String operationName;
 }

@@ -71,6 +71,7 @@ INSERT INTO rbac_permission VALUES (-810,0,-800,'READ',NULL,'JMS_ENDPOINT');
 INSERT INTO rbac_permission VALUES (-811,0,-800,'READ',NULL,'USER');
 INSERT INTO rbac_permission VALUES (-812,0,-800,'READ',NULL,'ID_PROVIDER_CONFIG');
 INSERT INTO rbac_permission VALUES (-813,0,-800,'READ',NULL,'POLICY');
+INSERT INTO rbac_permission VALUES (-814,0,-800,'READ',NULL,'EMAIL_LISTENER');
 
 --
 -- Register upgrade task to create log viewing roles

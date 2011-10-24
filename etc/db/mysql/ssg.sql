@@ -1481,6 +1481,7 @@ INSERT INTO rbac_permission VALUES (-810,0,-800,'READ',NULL,'JMS_ENDPOINT');
 INSERT INTO rbac_permission VALUES (-811,0,-800,'READ',NULL,'USER');
 INSERT INTO rbac_permission VALUES (-812,0,-800,'READ',NULL,'ID_PROVIDER_CONFIG');
 INSERT INTO rbac_permission VALUES (-813,0,-800,'READ',NULL,'POLICY');
+INSERT INTO rbac_permission VALUES (-814,0,-800,'READ',NULL,'EMAIL_LISTENER');
 
 INSERT INTO rbac_role VALUES (-850,0,'Gateway Maintenance', null,null,null, 'Users assigned to the {0} role have the ability to perform Gateway maintenance tasks.');
 INSERT INTO rbac_permission VALUES (-851,0,-850,'READ',NULL,'CLUSTER_PROPERTY');
@@ -1639,7 +1640,7 @@ INSERT INTO rbac_predicate_attribute VALUES (-1274,'name','logon.inactivityPerio
 -- NOTE: This is an entity specific role and will be deleted if the default log
 -- sink is removed.
 --
-INSERT INTO rbac_role VALUES (-1300,0,'View ssg Log Sink',null,'LOG_SINK',-810, 'Users assigned to the {0} role have the ability to read the log sink and any associated log files.');
+INSERT INTO rbac_role VALUES (-1300,0,'View ssg Log Sink (#-1,300)',null,'LOG_SINK',-810, 'Users assigned to the {0} role have the ability to read the log sink and any associated log files.');
 INSERT INTO rbac_permission VALUES (-1301,0,-1300,'READ',NULL,'LOG_SINK');
 INSERT INTO rbac_predicate VALUES (-1301,0,-1301);
 INSERT INTO rbac_predicate_oid VALUES (-1301,'-810');

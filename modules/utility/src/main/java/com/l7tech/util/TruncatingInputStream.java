@@ -1,7 +1,6 @@
 package com.l7tech.util;
 
 import java.io.*;
-import java.util.logging.Logger;
 
 /**
  * A version of InputStream for reading a truncated input stream.  This class is not synchronized.
@@ -9,59 +8,36 @@ import java.util.logging.Logger;
  * <p/>
  */
 public class TruncatingInputStream extends InputStream {
-    private static final Logger logger = Logger.getLogger(TruncatingInputStream.class.getName());
+    public static final long DEFAULT_SIZE_LIMIT = 1024L * 512L; // 512 kb
 
-    private static final long DEFAULT_CHUNK_SIZE = 1024 * 512; // 512 kb
-    protected long lastRead; // last read byte location, -1 for eof read
-    private InputStream inputStream;
-    private long endOfChunk;
-    private long size;
+    private final InputStream inputStream;
+    private final long maximumSize;
+    private long position; // position for next read location, -1 if eof read
 
     /**
-     *  Create a new stream reading from the beginning
+     * Create a new truncating stream
+     *
      * @param inputStream  stream to read from
      * @throws IOException  seeking failed
      */
-    public TruncatingInputStream(InputStream inputStream)  throws IOException {
-        this(inputStream, 0, DEFAULT_CHUNK_SIZE);
+    public TruncatingInputStream( final InputStream inputStream ) {
+        this(inputStream, DEFAULT_SIZE_LIMIT );
     }
 
     /**
-     * Create a new stream reading from the specified start value
-     * @param inputStream  stream to read from
-     * @param start starting point to read from
-     * @throws IOException  seeking failed
-     */
-    public TruncatingInputStream(InputStream inputStream, long start) throws IOException  {
-        this(inputStream, start, DEFAULT_CHUNK_SIZE);
-    }
-
-    /**
-     * Create a new stream with the specified start value and the chunk size
+     * Create a new stream with the given size limit
      *
      * @param inputStream   stream to read from
-     * @param start         starting point to read from
-     * @param size          the number of bytes to truncate after
+     * @param maximumSize          the number of bytes to truncate after
      * @throws IOException  seeking failed
      */
-    public TruncatingInputStream(InputStream inputStream,long start, long size ) throws IOException {
+    public TruncatingInputStream( final InputStream inputStream,
+                                  final long maximumSize ) {
         this.inputStream = inputStream;
-        this.size = size;
-        if (size < 0) {
+        this.maximumSize = maximumSize;
+        if ( maximumSize < 0L) {
             throw new IllegalArgumentException("size must be nonnegative");
         }
-        if (start < 0) {
-            throw new IllegalArgumentException("start must be nonnegative");
-        }
-
-
-        lastRead = start;
-        endOfChunk = size + start;
-        inputStream.skip(start);
-
-        lastRead = start;
-
-
     }
 
     /**
@@ -69,41 +45,90 @@ public class TruncatingInputStream extends InputStream {
      * Check the value of @lastRead for end of input stream or end of chunk
      * @return the next byte of data, or <code>-1</code> if the end of the
      *             stream is reached.
-     * @throws IOException
+     *
+     * @throws IOException If an error occurs.
      */
     @Override
     public int read() throws IOException {
-        if(endOfChunk <= lastRead ){
-            return -1;
-        }
-        int data = inputStream.read();
-        if(data < 0 ){
-            lastRead = -1;
-        }else{
-            ++lastRead;
+        int read = (int)getAdjustedLength( 1L, -1L );
+        int data = -1;
+        if ( read == 1 ) {
+            data = inputStream.read();
+            dataRead( data == -1 ? -1L : 1L );
         }
         return data;
     }
 
     /**
-     * Skips over and discards bytes of data from this input stream.
-     * Resets the truncated end point
-     * @param n     bytes to skip
-     * @return the  actual number of bytes skipped.
-     * @throws IOException
+     * Read data from the input stream.
+     *
+     * @param b Byte array to read into
+     * @param off The array offset
+     * @param len The length of data to read
+     * @return The number of bytes read
+     * @throws IOException If an error occurs.
      */
     @Override
-    public long skip(long n) throws IOException {
-        endOfChunk = size + n;
-        return super.skip(n);    //To change body of overridden methods use File | Settings | File Templates.
+    public int read( final byte[] b, final int off, final int len ) throws IOException {
+        int read = (int)getAdjustedLength( (long)len, -1L );
+        if ( read <= 0 ) {
+            return read;
+        } else {
+            return (int)dataRead( (long)inputStream.read( b, off, read ) );
+        }
     }
 
+    /**
+     * Is data available from the stream.
+     *
+     * <p>The available byte count is truncated to match this streams limit.</p>
+     *
+     * @return The (possibly truncated) available bytes.
+     * @throws IOException If an error occurs.
+     */
+    @Override
+    public int available() throws IOException {
+        return (int)getAdjustedLength( (long) inputStream.available(), 0L );
+    }
 
     /**
-     * Get the location of the last read byte
-     * @return  location of the last read byte, -1 for end of file
+     * Skips over and discards bytes of data from this input stream.
+     *
+     * @param n The number of bytes to skip
+     * @return the  actual number of bytes skipped.
+     * @throws IOException If an error occurs
      */
-    public long getLastRead() {
-        return lastRead;
+    @Override
+    public long skip( final long n ) throws IOException {
+        long skip = getAdjustedLength( n, 0L );
+        return dataRead( inputStream.skip( skip ) );
+    }
+
+    /**
+     * Get the position for the next read
+     *
+     * @return  position for the next read, -1 for end of file
+     */
+    public long getPosition() {
+        return position;
+    }
+
+    private long getAdjustedLength( final long length, final long eofValue ) {
+        if( position < 0L || position >= maximumSize ){
+            return eofValue;
+        } else if ( position + length >= maximumSize ) {
+            return maximumSize - position;
+        } else {
+            return length;
+        }
+    }
+
+    private long dataRead( final long length ) {
+        if ( length == -1L ) {
+            position = -1L;
+        } else {
+            position += length;
+        }
+        return length;
     }
 }

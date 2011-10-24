@@ -20,13 +20,23 @@ public class InetAddressUtil {
 
     private static final InetAddress localHost;
 
+    /**
+     * Regex for matching addresses in the formats:
+     *
+     * - hostname:port
+     * - ipv4:port
+     * - ipv6:port
+     * - /ipv4:port
+     * - /ipv6:port
+     * - hostname/ipv4:port
+     * - hostname/ipv6:port
+     */
+    private static final Pattern HOST_PATTERN = Pattern.compile( "([A-Za-z0-9_\\-\\.:]{1,1024})?/?([A-Za-z0-9_\\-\\.:]{1,1024}):[0-9]{1,5}" );
     /** Pattern that matches syntax (but not numeric sematics) of a valid IPv4 network address. */
     private static final Pattern IPV4_PAT = Pattern.compile("\\d{1,3}(?:\\.\\d{1,3}(?:\\.\\d{1,3}(?:\\.\\d{1,3})?)?)?(?:/\\d{1,2})?");
     private static final Pattern validIpAddressPattern = Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)$");
-
     private static final Pattern mightBeIpv6AddressPattern = Pattern.compile("^\\[?[a-fA-F0-9]+\\:[a-fA-F0-9:]+(?:\\d+\\.\\d+\\.\\d+\\.\\d+)?\\]?$");
     private static final int NO_EXPLICIT_IPV6_PREFIX = 129;
-
 
     static {
         InetAddress lh;
@@ -685,6 +695,31 @@ public class InetAddressUtil {
             return maybeIpAddress.substring(1, maybeIpAddress.length() - 1);
         }
         return null;
+    }
+
+    /**
+     * Gets the hostname from an InetSocketAddress by any means necessary.
+     *
+     * @param address The socket address.
+     * @return The hostname or IP address
+     */
+    public static String getHost( final InetSocketAddress address ) {
+        String host;
+
+        // Hack to access hostname without causing reverse lookup
+        // TODO [jdk7] switch to getHostString when JDK7 is required
+        Matcher matcher = HOST_PATTERN.matcher( address.toString() );
+        if ( matcher.matches() ) {
+            host = matcher.group(1); // hostname, if present
+            if ( host == null ) {
+                host = matcher.group(2); // was unresolved, so this could be an IP address or hostname
+            }
+        } else {
+            // fallback that can cause reverse DNS lookup
+            host = address.getHostName();
+        }
+
+        return host;
     }
 
     private static boolean isEqualString(String s1, String s2) {

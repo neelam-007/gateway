@@ -257,6 +257,60 @@ public class HexUtils {
     }
 
     /**
+     * Append HEX of the given bytes to the given builder.
+     *
+     * @param out The builder to append to
+     * @param binaryData The data to append as HEX
+     * @param off The data offset
+     * @param len The data length
+     * @param upperCase True to use uppercase for HEX
+     * @param byteSeparator Separator to append between bytes (zero for no separation)
+     */
+    public static void hexAppend( final StringBuilder out,
+                                  final byte[] binaryData,
+                                  final int off,
+                                  final int len,
+                                  final boolean upperCase,
+                                  final char byteSeparator ) {
+        if (off < 0 || len < 0 || off + len > binaryData.length) throw new IllegalArgumentException();
+        final char[] hex = upperCase ? hexadecimal_upper : hexadecimal;
+        final boolean addSeparator = (int)byteSeparator>0;
+        for (int i = 0; i < len; i++) {
+            int low = (binaryData[off + i] & 0x0f);
+            int high = ((binaryData[off + i] & 0xf0) >> 4);
+            if ( i>0 && addSeparator ) {
+                out.append(byteSeparator);
+            }
+            out.append(hex[high]);
+            out.append(hex[low]);
+        }
+    }
+
+    /**
+     * Append any ASCII characters to the given builder.
+     *
+     * <p>Any non ASCII characters will be appended as '.'</p>
+     *
+     * @param out The builder to append to
+     * @param binaryData The data to append
+     * @param off The data offset
+     * @param len The data length
+     */
+    public static void asciiAppend( final StringBuilder out,
+                                    final byte[] binaryData,
+                                    final int off,
+                                    final int len ) {
+        if (off < 0 || len < 0 || off + len > binaryData.length) throw new IllegalArgumentException();
+        for (int i = 0; i < len; i++) {
+            if ( binaryData[off + i] > 31 && binaryData[off + i] < 127 ) {
+                out.append((char)binaryData[off + i]);
+            } else {
+                out.append('.');
+            }
+        }
+    }
+
+    /**
      * Compare that treats null as being less than any other Comparable.
      *
      * @param s1 a Comparable object.  May be null.

@@ -11,12 +11,15 @@ import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.CachedCallable;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.InetAddressUtil;
 
 import javax.net.ssl.*;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.security.*;
 import java.security.cert.X509Certificate;
@@ -38,12 +41,12 @@ public class SsgConnectorSslHelper {
     public static final String SYSPROP_ACCEPTED_ISSUERS_CACHE_TIMEOUT = "com.l7tech.transport.tls.acceptedIssuersCacheTimeout";
 
     private static final Pattern SPLITTER = Pattern.compile("\\s*,\\s*");
-    private static final SecureRandom secureRandom = new SecureRandom();
 
     private final TransportModule transportModule;
     private final SsgConnector ssgConnector;
     private final SSLContext sslContext;
     private final SSLServerSocketFactory sslServerSocketFactory;
+    private final SSLSocketFactory sslSocketFactory;
     private final String[] enabledTlsVersions;
     private final String[] enabledCiphers;
     private final boolean allowUnsafeLegacyRenegotiation;
@@ -73,6 +76,7 @@ public class SsgConnectorSslHelper {
         SsgKeyEntry keyEntry = transportModule.getKeyEntry(ssgConnector);
         sslContext.init(getKeyManagers(keyEntry), getTrustManagers(), JceProvider.getInstance().getSecureRandom());
         sslServerSocketFactory = sslContext.getServerSocketFactory();
+        sslSocketFactory = sslContext.getSocketFactory();
         logger.fine("Using TLS provider " + sslContext.getProvider().getName() + " for listen port " + c.getScheme() + "/" + c.getPort());
 
         // Configure SSL session cache
@@ -203,6 +207,15 @@ public class SsgConnectorSslHelper {
                 return sock;
             }
         };
+    }
+
+    public SSLSocket wrapAndConfigureSocketForSsl( final Socket socket, final boolean clientMode ) throws IOException {
+        final SocketAddress remoteSocketAddress = socket.getRemoteSocketAddress();
+        final String remoteHost = remoteSocketAddress instanceof InetSocketAddress ? InetAddressUtil.getHost((InetSocketAddress)remoteSocketAddress) : null;
+        final int remotePort = remoteSocketAddress instanceof InetSocketAddress ? ((InetSocketAddress)remoteSocketAddress).getPort() : 1;
+        final SSLSocket sslSocket = (SSLSocket) sslSocketFactory.createSocket( socket, remoteHost, remotePort, true );
+        configureSocket( sslSocket, clientMode );
+        return sslSocket;
     }
 
     /**

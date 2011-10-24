@@ -2,6 +2,10 @@ package com.l7tech.security.prov.rsa;
 
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions.Unary;
+import com.l7tech.util.Functions.UnaryVoid;
+import com.l7tech.util.Option;
+import static com.l7tech.util.Option.none;
 import com.l7tech.util.Pair;
 
 import java.io.File;
@@ -40,6 +44,7 @@ class CryptoJWrapper {
 
     static final String CLASSNAME_CRYPTOJ = "com.rsa.jsafe.crypto.CryptoJ";
     static final String CLASSNAME_PROVIDER = "com.rsa.jsafe.provider.JsafeJCE";
+    static final String CLASSNAME_DEBUG = "com.rsa.jsse.engine.util.Debug";
 
     @SuppressWarnings({"unchecked"})
     private static final Collection<Pair<String,String>> SERVICE_BLACKLIST = Collections.unmodifiableCollection(Arrays.asList(
@@ -53,22 +58,24 @@ class CryptoJWrapper {
     final ClassLoader cl;
     final Provider provider;
     final Class cryptoj;
+    final Option<Method> debugReset;
 
     final int FIPS140_SSL_ECC_MODE;
     final int NON_FIPS140_MODE;
 
     CryptoJWrapper(boolean fips) throws ClassNotFoundException, IllegalAccessException, InstantiationException, NoSuchFieldException, MalformedURLException {
         String libPath = fips ? FIPS_LIB_PATH : NON_FIPS_LIB_PATH;
-        cl = libPath == null || "USECLASSPATH".equals(libPath)
+        this.cl = libPath == null || "USECLASSPATH".equals(libPath)
                 ? Thread.currentThread().getContextClassLoader()
                 : makeJarClassLoader(libPath);
-        provider = (Provider)cl.loadClass(CLASSNAME_PROVIDER).newInstance();
+        this.provider = (Provider)cl.loadClass(CLASSNAME_PROVIDER).newInstance();
         if ( DISABLE_BLACKLISTED_SERVICES ) {
             configureProvider(provider);
         }
-        cryptoj = cl.loadClass(CLASSNAME_CRYPTOJ);
-        FIPS140_SSL_ECC_MODE = cryptoj.getField("FIPS140_SSL_ECC_MODE").getInt(null);
-        NON_FIPS140_MODE = cryptoj.getField("NON_FIPS140_MODE").getInt(null);
+        this.cryptoj = cl.loadClass(CLASSNAME_CRYPTOJ);
+        this.debugReset = findDebugResetMethod();
+        this.FIPS140_SSL_ECC_MODE = cryptoj.getField("FIPS140_SSL_ECC_MODE").getInt(null);
+        this.NON_FIPS140_MODE = cryptoj.getField("NON_FIPS140_MODE").getInt(null);
     }
 
     // Replace the filename at the end of a path with a new filename, ie changing "/foo/bar/jsafe.jar" into "/foo/bar/sslj.jar".
@@ -123,6 +130,21 @@ class CryptoJWrapper {
         }
     }
 
+    void resetDebug() {
+        debugReset.foreach( new UnaryVoid<Method>() {
+            @Override
+            public void call( final Method debugReset ) {
+                try {
+                    debugReset.invoke( null );
+                } catch ( InvocationTargetException e ) {
+                    logger.log( Level.WARNING, "Error resetting SSL/TLS debug configuration", e.getCause() );
+                } catch ( Exception e ) {
+                    logger.log( Level.WARNING, "Error resetting SSL/TLS debug configuration", e );
+                }
+            }
+        } );
+    }
+
     private void configureProvider( final Provider provider ) {
         try {
             final Method method = Provider.class.getDeclaredMethod( "removeService", Provider.Service.class );
@@ -144,5 +166,31 @@ class CryptoJWrapper {
         } catch (IllegalAccessException e) {
             logger.log( Level.WARNING, "Error configuring services '"+ ExceptionUtils.getMessage(e) +"'.", ExceptionUtils.getDebugException(e) );  
         }
+    }
+
+    private Option<Method> findDebugResetMethod() {
+        Option<Class<?>> debug = none();
+        try {
+            debug = Option.<Class<?>>some( cl.loadClass( CLASSNAME_DEBUG ) );
+        } catch ( ClassNotFoundException e ) {
+            logger.log(
+                    Level.WARNING,
+                    "Unable to load class for debug output control.",
+                    ExceptionUtils.getDebugException( e ) );
+        }
+        return debug.map( new Unary<Method,Class<?>>(){
+            @Override
+            public Method call( final Class<?> debug ) {
+                try {
+                    return debug.getMethod( "debugInitialize" );
+                } catch ( Exception e ) {
+                    logger.log(
+                            Level.WARNING,
+                            "Unable to access method for debug output control: " + ExceptionUtils.getMessage( e ),
+                            ExceptionUtils.getDebugException( e ) );
+                }
+                return null;
+            }
+        } );
     }
 }

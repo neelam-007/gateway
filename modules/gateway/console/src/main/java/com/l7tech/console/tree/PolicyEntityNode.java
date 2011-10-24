@@ -96,6 +96,7 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
         actions.add(new EditPolicyProperties(this));
         actions.add(new DeletePolicyAction(this));
         actions.add(new MarkEntityToAliasAction(this));
+        actions.add(new CreateEntityLogSinkAction(getEntityHeader()));
         actions.add(new PolicyRevisionsAction(this));
         actions.add(new RefreshTreeNodeAction(this));
 

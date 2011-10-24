@@ -421,7 +421,7 @@ public class SinkConfigurationFilterSelectionDialog extends JDialog {
             return policyHeaders = doAdmin( policyHeaders, new UnaryThrows<Collection<PolicyHeader>, Registry, ObjectModelException>() {
                 @Override
                 public Collection<PolicyHeader> call( final Registry registry ) throws ObjectModelException {
-                    return CollectionUtils.toList( registry.getPolicyAdmin().findPolicyHeadersWithTypes(EnumSet.of(PolicyType.INCLUDE_FRAGMENT, PolicyType.INTERNAL))  );
+                    return CollectionUtils.toList( registry.getPolicyAdmin().findPolicyHeadersWithTypes(EnumSet.of(PolicyType.INCLUDE_FRAGMENT, PolicyType.INTERNAL, PolicyType.GLOBAL_FRAGMENT))  );
                 }
             } ).orSome( Collections.<PolicyHeader>emptyList() );
         }
@@ -567,8 +567,8 @@ public class SinkConfigurationFilterSelectionDialog extends JDialog {
 
     public static enum FilterType {
         CATEGORY,
-        FOLDER,
         IP,
+        FOLDER,
         PACKAGE,
         POLICY,
         SERVICE,

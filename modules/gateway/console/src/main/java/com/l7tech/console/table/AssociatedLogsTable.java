@@ -363,7 +363,7 @@ public class AssociatedLogsTable extends JTable {
     private boolean enableInvokeButton(){
         if(Registry.getDefault().isAdminContextPresent()){
             final boolean avPermGranted = Registry.getDefault().getSecurityProvider().hasPermission(
-                    new AttemptedOther(EntityType.AUDIT_RECORD, OtherOperationName.AUDIT_VIEWER_POLICY.toString()));
+                    new AttemptedOther(EntityType.AUDIT_RECORD, OtherOperationName.AUDIT_VIEWER_POLICY.getOperationName()));
 
             final boolean avPolicyIsActive;
             if(avPermGranted){

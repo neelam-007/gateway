@@ -8,6 +8,7 @@ import java.util.Locale;
 import java.util.Formatter;
 
 import com.l7tech.common.io.NullOutputStream;
+import com.l7tech.util.ConfigFactory;
 
 /**
  * PrintStream that outputs to the given Logger.
@@ -218,8 +219,7 @@ public class LoggingPrintStream extends PrintStream {
     private final Logger logger;
     private final Level level;
     private ThreadLocal<StringBuilder> buffer = new ThreadLocal<StringBuilder>();
-    //TODO [steve] configurable max buffer size for logging print stream?
-    private final int MAX_BUFFER = 256;
+    private final int MAX_BUFFER = ConfigFactory.getIntProperty( "com.l7tech.server.log.LoggingPrintStream.bufferSize", 256 );
 
     private void process( final String text, final boolean newline ) {
         if ( logger.isLoggable( level) ) {

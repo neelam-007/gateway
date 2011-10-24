@@ -22,10 +22,9 @@ import java.util.regex.Pattern;
  * Date: Jul 31, 2006
  * Time: 4:55:46 PM
  */
-
 public class RbacUtilities {
     public static final String SYSTEM_PROP_ENABLEROLEEDIT = "com.l7tech.rbac.allowEditRoles";
-    public static final Pattern removeOidPattern = Pattern.compile("^(\\w{1,128} .*?) \\(#\\d[\\d, ]*\\)$");
+    public static final Pattern removeOidPattern = Pattern.compile("^(\\w{1,128} .*?) \\(#-?\\d[\\d, ]*\\)$");
     public static final String REGEX_PATTERN = "^\\w'{'1,128'}' (.*?) {0}$";
 
     /**

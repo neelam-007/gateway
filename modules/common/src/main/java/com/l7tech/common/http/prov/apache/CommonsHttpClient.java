@@ -4,6 +4,7 @@ import com.l7tech.common.http.*;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.NonCloseableOutputStream;
+import com.l7tech.common.io.SocketWrapper;
 import com.l7tech.common.io.UnsupportedTlsVersionsException;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeHeader;
@@ -15,6 +16,7 @@ import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.cookie.CookiePolicy;
 import org.apache.commons.httpclient.methods.*;
 import org.apache.commons.httpclient.params.*;
+import org.apache.commons.httpclient.protocol.DefaultProtocolSocketFactory;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
@@ -41,6 +43,8 @@ import java.util.zip.GZIPOutputStream;
  */
 public class CommonsHttpClient implements RerunnableGenericHttpClient {
     private static final Logger logger = Logger.getLogger(CommonsHttpClient.class.getName());
+    private static final Logger traceLogger = Logger.getLogger( "com.l7tech.server.routing.http.trace");
+    private static final Logger traceSecureLogger = Logger.getLogger("com.l7tech.server.routing.https.trace");
 
     public static final String PROP_MAX_CONN_PER_HOST = CommonsHttpClient.class.getName() + ".maxConnectionsPerHost";
     public static final String PROP_MAX_TOTAL_CONN = CommonsHttpClient.class.getName() + ".maxTotalConnections";
@@ -62,6 +66,9 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
 
     private static HttpParams httpParams;
     private static final Map<SSLSocketFactory, Protocol> protoBySockFac = Collections.synchronizedMap(new WeakHashMap<SSLSocketFactory, Protocol>());
+    static {
+        Protocol.registerProtocol( PROTOCOL_HTTP, new Protocol( PROTOCOL_HTTP, new TraceProtocolSocketFactory(), 80 ) );
+    }
 
     /**
      * This property was true in 5.1, switched to false in 5.2, URLs should be encoded by the caller (see bug 7598).
@@ -285,7 +292,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
         
         final Long contentLen = params.getContentLength();
         if ( (httpMethod instanceof PostMethod || httpMethod instanceof PutMethod) && contentLen != null) {
-            if (contentLen > Integer.MAX_VALUE)
+            if (contentLen > (long) Integer.MAX_VALUE )
                 throw new GenericHttpException("Content-Length is too long -- maximum supported is " + Integer.MAX_VALUE);
         }
 
@@ -497,7 +504,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
         httpMethod.setFollowRedirects(params.isFollowRedirects());
         final HttpMethodParams methodParams = httpMethod.getParams();
         methodParams.setSoTimeout(params.getReadTimeout()>=0 ? params.getReadTimeout() : timeout);
-        clientParams.setConnectionManagerTimeout(params.getConnectionTimeout() >= 0 ? params.getConnectionTimeout() : connectionTimeout );
+        clientParams.setConnectionManagerTimeout( (long) (params.getConnectionTimeout() >= 0 ? params.getConnectionTimeout() : connectionTimeout) );
         if (params.getMaxRetries() >= 0) {
             methodParams.setParameter(HttpMethodParams.RETRY_HANDLER, new DefaultHttpMethodRetryHandler( params.getMaxRetries(), false ));                        
         }
@@ -683,7 +690,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
 
                 @Override
                 public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort, HttpConnectionParams httpConnectionParams) throws IOException {
-                    Socket socket = sockFac.createSocket();
+                    final Socket socket = new Socket();
                     int connectTimeout = httpConnectionParams.getConnectionTimeout();
 
                     socket.bind(new InetSocketAddress(clientAddress, clientPort));
@@ -695,7 +702,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                         throw new ConnectTimeoutException("Timeout when connecting to host '"+host+"'.", ste);
                     }
 
-                    return verify(socket, host);
+                    return wrapSocket( verify( sockFac.createSocket( wrapSocket( socket, "https", traceSecureLogger ), host, port, true ), host ), "http", traceLogger );
                 }
 
                 private Socket verify(Socket socket, String host) throws IOException {
@@ -737,6 +744,24 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
     private static String[] getCommaDelimitedSystemProperty(String propertyName) {
         String delimited = ConfigFactory.getProperty(propertyName, null);
         return delimited == null || delimited.length() < 1 ? null : commasWithWhitespace.split(delimited);
+    }
+
+    private static Socket wrapSocket( final Socket accepted,
+                                      final String prefix,
+                                      final Logger traceLogger ) {
+        return new SocketWrapper(accepted) {
+            private final TraceSupport ts = new TraceSupport(accepted, prefix, traceLogger);
+
+            @Override
+            public InputStream getInputStream() throws IOException {
+                return ts.getInputStream();
+            }
+
+            @Override
+            public OutputStream getOutputStream() throws IOException {
+                return ts.getOutputStream();
+            }
+        };
     }
 
     /**
@@ -847,7 +872,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
             if ( gzipCompress ) {
                 if ( compressedData == null &&
                      uncompressedContentLength != null &&
-                      uncompressedContentLength <= gzipThreshold ) {
+                      uncompressedContentLength <= (long) gzipThreshold ) {
                     try {
                         if ( inputStreamFactory != null ) {
                             InputStream inputStream = null;
@@ -860,17 +885,17 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                         } else {
                             compressedData = IOUtils.compressGzip( inputStream );
                         }
-                        requestContentLength = compressedData.length;
+                        requestContentLength = (long) compressedData.length;
                     } catch ( IOException ioe ) {
                         compressedData = new byte[0];
                         compressionException = ioe;
                         requestContentLength = uncompressedContentLength;
                     }
                 } else if ( compressedData == null ) {
-                    requestContentLength = -1; // Chunked
+                    requestContentLength = -1L; // Chunked
                 }
             } else {
-                requestContentLength = uncompressedContentLength == null ? -1 : uncompressedContentLength;
+                requestContentLength = uncompressedContentLength == null ? -1L : uncompressedContentLength;
             }
         }
     }
@@ -895,6 +920,36 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
         @Override
         public URI getURI() throws URIException {
             throw (URIException) new URIException(ExceptionUtils.getMessage(exception)).initCause( exception );
+        }
+    }
+
+    /**
+     * ProtocolSocketFactory that supports debug logging
+     */
+    private static final class TraceProtocolSocketFactory implements ProtocolSocketFactory {
+        private final ProtocolSocketFactory delegate = new DefaultProtocolSocketFactory();
+
+        @Override
+        public Socket createSocket( final String host,
+                                    final int port ) throws IOException {
+            return wrapSocket( delegate.createSocket( host, port ), "http", traceLogger );
+        }
+
+        @Override
+        public Socket createSocket( final String host,
+                                    final int port,
+                                    final InetAddress localAddress,
+                                    final int localPort ) throws IOException {
+            return wrapSocket( delegate.createSocket( host, port, localAddress, localPort ), "http", traceLogger );
+        }
+
+        @Override
+        public Socket createSocket( final String host,
+                                    final int port,
+                                    final InetAddress localAddress,
+                                    final int localPort,
+                                    final HttpConnectionParams params ) throws IOException {
+            return wrapSocket( delegate.createSocket( host, port, localAddress, localPort, params ), "http", traceLogger );
         }
     }
 }
