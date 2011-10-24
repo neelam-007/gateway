@@ -43,7 +43,7 @@ public class SftpPollingListenerFileHandlerTask implements Runnable {
         try {
             handleFile();
         } catch (SftpPollingListenerRuntimeException ex) {
-            _logger.log(Level.WARNING, "Runtime exception encountered: " + ExceptionUtils.getMessage(ex), ex);
+            _logger.log(Level.WARNING, "Runtime exception encountered: " + ExceptionUtils.getMessage(ex), ExceptionUtils.getDebugException(ex));
         } finally {
             if (errors.isEmpty())
                 success = true;

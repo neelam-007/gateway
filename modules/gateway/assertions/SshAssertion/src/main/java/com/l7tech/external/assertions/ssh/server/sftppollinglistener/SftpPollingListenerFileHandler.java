@@ -74,7 +74,7 @@ public class SftpPollingListenerFileHandler {
                 fileTooLarge = true;
             }
         } catch (IOException ioe) {
-            throw new SftpPollingListenerRuntimeException("Error processing request message", ExceptionUtils.getDebugException(ioe));
+            throw new SftpPollingListenerRuntimeException("Error processing request message.  " + ExceptionUtils.getMessage(ioe), ioe);
         }
 
         PolicyEnforcementContext context = null;
