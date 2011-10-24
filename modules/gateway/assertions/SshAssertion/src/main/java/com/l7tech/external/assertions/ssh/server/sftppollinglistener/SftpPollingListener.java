@@ -3,9 +3,11 @@ package com.l7tech.external.assertions.ssh.server.sftppollinglistener;
 import com.jscape.inet.sftp.Sftp;
 import com.jscape.inet.sftp.SftpException;
 import com.jscape.inet.sftp.SftpFile;
+import com.jscape.inet.sftp.SftpFileNotFoundException;
 import com.jscape.inet.ssh.util.HostKeyFingerprintVerifier;
 import com.jscape.inet.ssh.util.SshHostKeys;
 import com.jscape.inet.ssh.util.SshParameters;
+import com.jscape.inet.ssh.util.keyreader.FormatException;
 import com.l7tech.external.assertions.ssh.keyprovider.SshKeyUtil;
 import com.l7tech.external.assertions.ssh.server.SshAssertionMessages;
 import com.l7tech.gateway.common.Component;
@@ -302,6 +304,18 @@ public abstract class SftpPollingListener implements PropertyChangeListener {
             } catch (SftpPollingListenerConfigException cex) {
                 message = ExceptionUtils.getMessage(cex);
                 throw cex;
+            } catch (SftpFileNotFoundException fnf) {
+                message = "Directory not found.";
+                throw fnf;
+            } catch (FormatException fe) {
+                message = "Invalid private key, cannot restore.";
+                throw fe;
+            } catch (SftpException se) {
+                message = ExceptionUtils.getMessage(se);
+                if ("com.jscape.inet.sftp.SftpException".equals(message)) {
+                    message = "Unable to connect to " + getResourceConfig().getHostname() + ":" + getResourceConfig().getPort();
+                }
+                throw se;
             } catch (IOException ioe) {
                 message = ExceptionUtils.getMessage(ioe);
                 throw ioe;

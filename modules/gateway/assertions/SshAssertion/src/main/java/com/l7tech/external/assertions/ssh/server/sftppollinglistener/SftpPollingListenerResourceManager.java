@@ -192,43 +192,44 @@ public class SftpPollingListenerResourceManager {
         newCopy.removeAll(oldConfigurations);
 
 
-        List<UpdateStatus> queueResIds = new ArrayList<UpdateStatus>();
-        for(SftpPollingListenerResource queue : oldCopy)
+        List<UpdateStatus> resourceIds = new ArrayList<UpdateStatus>();
+        for(SftpPollingListenerResource resource : oldCopy)
         {
-            queueResIds.add(new UpdateStatus(queue.getResId(), UpdateStatus.DELETE));
+            resourceIds.add(new UpdateStatus(resource.getResId(), resource.getName(), UpdateStatus.DELETE));
         }
-        for(SftpPollingListenerResource queue : newCopy)
+        for(SftpPollingListenerResource resource : newCopy)
         {
-            if(queueResIds.contains(new UpdateStatus(queue.getResId(), UpdateStatus.DELETE))){
-                int index =  queueResIds.indexOf(new UpdateStatus(queue.getResId(), UpdateStatus.DELETE));
-                queueResIds.get(index).status = UpdateStatus.UPDATE;
+            if(resourceIds.contains(new UpdateStatus(resource.getResId(), resource.getName(), UpdateStatus.DELETE))){
+                int index =  resourceIds.indexOf(new UpdateStatus(resource.getResId(), resource.getName(), UpdateStatus.DELETE));
+                resourceIds.get(index).status = UpdateStatus.UPDATE;
             }
             else
-                queueResIds.add(new UpdateStatus(queue.getResId(), UpdateStatus.ADD));
+                resourceIds.add(new UpdateStatus(resource.getResId(), resource.getName(), UpdateStatus.ADD));
         }
 
-        return queueResIds.toArray(new UpdateStatus[queueResIds.size()]);
+        return resourceIds.toArray(new UpdateStatus[resourceIds.size()]);
     }
 
     public class UpdateStatus {
-        public static final char DELETE = 'D';
-        public static final char UPDATE = 'U';
-        public static final char ADD = 'A';
+        public static final String DELETE = "Delete";
+        public static final String UPDATE = "Update";
+        public static final String ADD = "Add";
 
         public long resId;
-        public char status;
+        public String name;
+        public String status;
 
-        public UpdateStatus(long resId, char status) {
+        public UpdateStatus(long resId, String name, String status) {
             this.resId = resId;
             this.status = status;
+            this.name = name;
         }
 
         @Override
         public boolean equals(Object obj) {
             if(obj instanceof UpdateStatus){
                 UpdateStatus status = (UpdateStatus) obj;
-                return this.resId == status.resId &&
-                       this.status == status.status;
+                return this.resId == status.resId && this.name.equals(status.name) && this.status.equals(status.status);
             }
 
             return super.equals(obj);

@@ -224,19 +224,21 @@ public class SftpPollingListenerModule extends LifecycleBean implements Property
         synchronized(listenerLock) {
             try {
                 SftpPollingListenerResourceManager.UpdateStatus[] changed = sftpPollingResourceManager.onUpdate();
-                StringBuffer sb = new StringBuffer("SFTP polling listeners changed: ");
-                for (SftpPollingListenerResourceManager.UpdateStatus rid : changed) {
-                    sb.append(rid.resId).append(":").append(rid.status).append(", ");
-                }
-                logger.info(sb.toString());
+                if (changed != null && changed.length > 0) {
+                    StringBuffer sb = new StringBuffer("SFTP polling listener(s) changed: ");
+                    for (SftpPollingListenerResourceManager.UpdateStatus resource : changed) {
+                        sb.append(resource.status + " - ").append(resource.name + "(id ").append(resource.resId).append(").  ");
+                    }
+                    logger.info(sb.toString());
 
-                SftpPollingListenerResource res;
-                for (SftpPollingListenerResourceManager.UpdateStatus one : changed) {
-                    if (one.status == SftpPollingListenerResourceManager.UpdateStatus.DELETE) {
-                        deleteListener( one.resId );
-                    } else {
-                        res = sftpPollingResourceManager.getResourceByResId( one.resId );
-                        updateListener(res);
+                    SftpPollingListenerResource res;
+                    for (SftpPollingListenerResourceManager.UpdateStatus one : changed) {
+                        if (one.status == SftpPollingListenerResourceManager.UpdateStatus.DELETE) {
+                            deleteListener( one.resId );
+                        } else {
+                            res = sftpPollingResourceManager.getResourceByResId( one.resId );
+                            updateListener(res);
+                        }
                     }
                 }
             } catch ( Exception e ) { // FindException
@@ -282,7 +284,8 @@ public class SftpPollingListenerModule extends LifecycleBean implements Property
             SftpPollingListenerConfig newCfg = new SftpPollingListenerConfig(updated, getApplicationContext());
             newListener = new SftpPollingListenerThreadPoolFileHandler(newCfg, threadPoolBean);
 
-            logger.info("Starting SFTP polling listener for " + newCfg.getSftpPollingListenerResource().toString());
+            SftpPollingListenerResource resource = newCfg.getSftpPollingListenerResource();
+            logger.info("Starting SFTP polling listener " + resource.getName() + " on " + resource.getHostname());
             newListener.start();
             synchronized(listenerLock) {
                 activeListeners.add(newListener);

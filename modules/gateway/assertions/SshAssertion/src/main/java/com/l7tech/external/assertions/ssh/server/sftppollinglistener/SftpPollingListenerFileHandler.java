@@ -201,8 +201,8 @@ public class SftpPollingListenerFileHandler {
 
                 long startResp = System.currentTimeMillis();
                 sendResponse( responseBytes, sftpClient, directory, fileName );
-                _logger.log(Level.INFO, "Send response took {0} millis; listener {1}", new Object[] {
-                        (System.currentTimeMillis() - startResp), settings.getName()});
+                _logger.log(Level.INFO, "Send response took {0} millis; {1}; {2}", new Object[] {
+                        (System.currentTimeMillis() - startResp), settings.getName(), fileName + SftpPollingListener.RESPONSE_FILE_EXTENSION});
             }
         } catch (IOException e) {
             throw new SftpPollingListenerRuntimeException(e);
