@@ -232,16 +232,15 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
 
         final Folder newParentFolder = newParent.getFolder();
         final OrganizationHeader oH = (OrganizationHeader) childObj;
-        final FolderNode oldParent = (FolderNode)transferNode.getParent();
         if (entity instanceof PublishedService){
             if ( oH.isAlias() ) {
-                return copyAlias(newParent, tree, (PublishedService)entity, oldParent);
+                return copyAlias(newParent, tree, (PublishedService)entity);
             } else {
                 return copyService(newParent, tree, newParentFolder, (PublishedService) entity);
             }
         } else if(entity instanceof Policy){
             if ( oH.isAlias() ) {
-                return copyAlias(newParent, tree, (Policy)entity, oldParent);
+                return copyAlias(newParent, tree, (Policy)entity);
             } else {
                 return copyPolicy( newParent, tree, newParentFolder, (Policy) entity );
             }
@@ -251,24 +250,21 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
 
     private <FE extends NamedEntityImp & HasFolder> boolean copyAlias( final FolderNode newParent,
                                                                        final ServicesAndPoliciesTree tree,
-                                                                       final FE entity,
-                                                                       final FolderNode oldParent) {
+                                                                       final FE entity) {
 
         //Make sure the folder in which they are being created is not the same the folder they original entities are in
         //this constraint is also enforced in MarkEntityToAliasAction and also in db
         //entity.getFolder()
         final Folder entityFolder = entity.getFolder();
-        final FolderHeader oldParentHeader = (FolderHeader) oldParent.getUserObject();
-        final FolderHeader newParentHeader = (FolderHeader) newParent.getUserObject();
-        if( entityFolder != null && entityFolder.getOid()==newParentHeader.getOid() ){
+        final Folder parentFolder = newParent.getFolder();
+        if( entityFolder != null && entityFolder.getOid()==parentFolder.getOid() ){
             DialogDisplayer.showMessageDialog(tree, "Cannot create alias in the same folder as original", "Create Error", JOptionPane.ERROR_MESSAGE, null);
             return false;
         }
 
         final DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
         final RootNode rootNode = (RootNode) model.getRoot();
-        final long parentFolderOid = newParentHeader.getOid();
-        final Folder parentFolder = newParent.getFolder();
+        final long parentFolderOid = parentFolder.getOid();
         //Create an alias of each node selected
 
         final OrganizationHeader header;
@@ -280,7 +276,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
             try {
                 checkAlias = Registry.getDefault().getServiceManager().findAliasByEntityAndFolder(ps.getOid(), parentFolderOid);
                 if(checkAlias != null){
-                    DialogDisplayer.showMessageDialog(tree,"Alias of service " + ps.displayName() + " already exists in folder " + oldParentHeader.getName(), "Create Error", JOptionPane.ERROR_MESSAGE, null);
+                    DialogDisplayer.showMessageDialog(tree,"Alias of service " + ps.displayName() + " already exists in folder " + parentFolder.getName(), "Create Error", JOptionPane.ERROR_MESSAGE, null);
                     return false;
                 }
             } catch (FindException e1) {
@@ -303,7 +299,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
             try {
                 checkAlias = Registry.getDefault().getPolicyAdmin().findAliasByEntityAndFolder(policy.getOid(), parentFolderOid);
                 if(checkAlias != null){
-                    DialogDisplayer.showMessageDialog(tree,"Alias of policy " + policy.getName() + " already exists in folder " + oldParentHeader.getName(), "Create Error", JOptionPane.ERROR_MESSAGE, null);
+                    DialogDisplayer.showMessageDialog(tree,"Alias of policy " + policy.getName() + " already exists in folder " + parentFolder.getName(), "Create Error", JOptionPane.ERROR_MESSAGE, null);
                     return false;
                 }
             } catch (FindException e1) {

@@ -75,6 +75,11 @@ public class PasteAsAliasAction extends SecureAction {
         //this constraint is also enforced in MarkEntityToAliasAction and also in db
         if(abstractTreeNodes.size() > 0){
             final AbstractTreeNode parentNode = (AbstractTreeNode) abstractTreeNodes.get(0).getParent();
+            if ( parentNode == null ) {
+                DialogDisplayer.showMessageDialog(tree, "Service or policy not found for alias", "Create Error", JOptionPane.ERROR_MESSAGE, null);
+                return;
+            }
+
             final FolderHeader fH = (FolderHeader) parentNode.getUserObject();
             final FolderHeader parentHeader = (FolderHeader) this.parentNode.getUserObject();
             if(fH.getOid() == parentHeader.getOid()){
