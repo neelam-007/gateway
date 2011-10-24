@@ -35,6 +35,8 @@ import com.l7tech.util.Functions.UnaryThrows;
 import static com.l7tech.util.Functions.grepFirst;
 import static com.l7tech.util.Functions.map;
 import static com.l7tech.util.Functions.reduce;
+import static com.l7tech.util.InetAddressUtil.isValidIpv4Address;
+import static com.l7tech.util.InetAddressUtil.isValidIpv6Address;
 import com.l7tech.util.Option;
 import static com.l7tech.util.Option.none;
 import static com.l7tech.util.Option.optional;
@@ -276,7 +278,8 @@ public class SinkConfigurationFilterSelectionDialog extends JDialog {
                 enableAdd = !packageTextField.getText().trim().isEmpty();
                 break;
             case IP :
-                enableAdd = !ipTextField.getText().trim().isEmpty();
+                final String ipAddress = ipTextField.getText().trim();
+                enableAdd = isValidIpv4Address( ipAddress ) || isValidIpv6Address( ipAddress );
                 break;
         }
 
