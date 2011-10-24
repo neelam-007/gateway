@@ -21,9 +21,14 @@ public abstract class Alias<ET extends PersistentEntity> extends PersistentEntit
     @Deprecated // For Serialization and persistence only
     protected Alias() { }
 
-    protected Alias(ET entity, Folder folder) {
-        this.entityOid = entity.getOid();
+    protected Alias( final long entityOid,
+                     final Folder folder ) {
+        this.entityOid = entityOid;
         this.folder = folder;
+    }
+
+    protected Alias(ET entity, Folder folder) {
+        this( entity.getOid(), folder);
     }
 
     /**

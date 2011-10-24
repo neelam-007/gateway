@@ -18,8 +18,14 @@ public class PublishedServiceAlias extends Alias<PublishedService> {
     @Deprecated // For Serialization and persistence only
     protected PublishedServiceAlias() { }
 
-    public PublishedServiceAlias(PublishedService pService, Folder folder) {
+    public PublishedServiceAlias( final PublishedService pService,
+                                  final Folder folder) {
         super(pService, folder);
+    }
+
+    public PublishedServiceAlias( final ServiceHeader pService,
+                                  final Folder folder ) {
+        super(pService.getOid(), folder);
     }
 
     @XmlTransient

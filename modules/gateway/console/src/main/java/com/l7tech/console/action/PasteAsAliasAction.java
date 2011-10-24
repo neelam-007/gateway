@@ -19,9 +19,11 @@ import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyAlias;
 import com.l7tech.policy.PolicyHeader;
+import com.l7tech.util.Functions.NullaryThrows;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
+import java.awt.*;
 import java.util.List;
 
 /**
@@ -65,95 +67,108 @@ public class PasteAsAliasAction extends SecureAction {
      */
     @Override
     protected void performAction() {
-        List<AbstractTreeNode> abstractTreeNodes = RootNode.getEntitiesToAlias();
-        RootNode.clearEntitiesToAlias();
-        JTree tree = (JTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+        final List<AbstractTreeNode> abstractTreeNodes = RootNode.getEntitiesToAlias();
+        final JTree tree = (JTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+        final Folder parentFolder = parentNode.getFolder();
+
         //Make sure the folder in which they are being created is not the same the folder they original entities are in
         //this constraint is also enforced in MarkEntityToAliasAction and also in db
         if(abstractTreeNodes.size() > 0){
-            AbstractTreeNode parentNode = (AbstractTreeNode) abstractTreeNodes.get(0).getParent();
-            FolderHeader fH = (FolderHeader) parentNode.getUserObject();
-            FolderHeader parentHeader = (FolderHeader) this.parentNode.getUserObject();
+            final AbstractTreeNode parentNode = (AbstractTreeNode) abstractTreeNodes.get(0).getParent();
+            final FolderHeader fH = (FolderHeader) parentNode.getUserObject();
+            final FolderHeader parentHeader = (FolderHeader) this.parentNode.getUserObject();
             if(fH.getOid() == parentHeader.getOid()){
                 DialogDisplayer.showMessageDialog(tree, "Cannot create alias in the same folder as original", "Create Error", JOptionPane.ERROR_MESSAGE, null);
                 return;
             }
         }
 
-        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-        RootNode rootNode = (RootNode) model.getRoot();
-        FolderHeader parentFolderHeader = (FolderHeader) this.parentNode.getUserObject();
-        long parentFolderOid = parentFolderHeader.getOid();
-        Folder parentFolder = parentNode.getFolder();
-        //Create an alias of each node selected
-        for(AbstractTreeNode atn: abstractTreeNodes){
+        // Verify that aliases can be created for all entities
+        for( final AbstractTreeNode atn: abstractTreeNodes ){
             if(!(atn instanceof EntityWithPolicyNode)) return;
-            EntityWithPolicyNode ewpn = (EntityWithPolicyNode) atn;
-            Entity e;
-            try {
-                e = ewpn.getEntity();
-            } catch (FindException e1) {
-                throw new RuntimeException("Unable to load entity", e1);
-            }
+            final EntityHeader eh = ((EntityWithPolicyNode)atn).getEntityHeader();
 
-            final OrganizationHeader header;
-            Long aliasOid;
-            if (e instanceof PublishedService) {
-                PublishedService ps = (PublishedService) e;
-                //check if an alias already exists here
-                PublishedServiceAlias checkAlias;
-                try {
-                    checkAlias = Registry.getDefault().getServiceManager().findAliasByEntityAndFolder(ps.getOid(), parentFolderOid);
-                    if(checkAlias != null){
-                        DialogDisplayer.showMessageDialog(tree,"Alias of service " + ps.displayName() + " already exists in folder " + parentFolderHeader.getName(), "Create Error", JOptionPane.ERROR_MESSAGE, null);
-                        return;
-                    }
-                } catch (FindException e1) {
-                    throw new RuntimeException("Unable to check for existing alias", e1);
+            //check if an alias already exists for any entity
+            if ( eh instanceof OrganizationHeader ) {
+                NullaryThrows<Alias<?>,FindException> aliasFinder = null;
+                if ( eh.getType() == EntityType.SERVICE ) {
+                    aliasFinder = new NullaryThrows<Alias<?>,FindException>(){
+                        @Override
+                        public Alias<?> call() throws FindException {
+                            return Registry.getDefault().getServiceManager().findAliasByEntityAndFolder(eh.getOid(), parentFolder.getOid());
+                        }
+                    };
+                } else if ( eh.getType() == EntityType.POLICY ) {
+                    //check if an alias already exists here
+                    aliasFinder = new NullaryThrows<Alias<?>,FindException>(){
+                        @Override
+                        public Alias<?> call() throws FindException {
+                            return Registry.getDefault().getPolicyAdmin().findAliasByEntityAndFolder(eh.getOid(), parentFolder.getOid());
+                        }
+                    };
                 }
-
-                try {
-                    header = new ServiceHeader(ps);
-                    PublishedServiceAlias psa = new PublishedServiceAlias(ps, parentFolder);
-                    aliasOid = Registry.getDefault().getServiceManager().saveAlias(psa);
-                } catch (ObjectModelException ome) {
-                    throw new RuntimeException("Unable to save alias", ome);
-                } catch (VersionException ve) {
-                    throw new RuntimeException("Unable to save alias", ve);
-                }
-            } else if (e instanceof Policy) {
-                Policy policy = (Policy) e;
-                //check if an alias already exists here
-                PolicyAlias checkAlias;
-                try {
-                    checkAlias = Registry.getDefault().getPolicyAdmin().findAliasByEntityAndFolder(policy.getOid(), parentFolderOid);
-                    if(checkAlias != null){
-                        DialogDisplayer.showMessageDialog(tree,"Alias of policy " + policy.getName() + " already exists in folder " + parentFolderHeader.getName(), "Create Error", JOptionPane.ERROR_MESSAGE, null);
-                        return;
-                    }
-                } catch (FindException e1) {
-                    throw new RuntimeException("Unable to check for existing alias", e1);
-                }
-
-                try {
-                    header = new PolicyHeader(policy);
-                    PolicyAlias pa = new PolicyAlias(policy, parentFolder);
-                    aliasOid = Registry.getDefault().getPolicyAdmin().saveAlias(pa);
-                } catch (SaveException e1) {
-                    throw new RuntimeException("Unable to save alias", e1);
+                if ( aliasFinder==null || aliasExistsInFolder(
+                        aliasFinder,
+                        tree,
+                        "policy " + eh.getName(),
+                        parentFolder.getName() ) ) {
+                    return;
                 }
             } else {
-                throw new IllegalStateException("Referent was neither a Policy nor a Service");
+                return;
+            }
+        }
+
+        RootNode.clearEntitiesToAlias();
+
+        //Create an alias of each node selected
+        for( final AbstractTreeNode atn: abstractTreeNodes ){
+            final EntityHeader eh = ((EntityWithPolicyNode)atn).getEntityHeader();
+            final OrganizationHeader header;
+            final Long aliasOid;
+            try {
+                if ( eh instanceof ServiceHeader ) {
+                    header = new ServiceHeader((ServiceHeader)eh);
+                    final PublishedServiceAlias psa = new PublishedServiceAlias((ServiceHeader)eh, parentFolder);
+                    aliasOid = Registry.getDefault().getServiceManager().saveAlias(psa);
+                } else if ( eh instanceof PolicyHeader  ) {
+                    header = new PolicyHeader((PolicyHeader)eh);
+                    final PolicyAlias pa = new PolicyAlias((PolicyHeader)eh, parentFolder);
+                    aliasOid = Registry.getDefault().getPolicyAdmin().saveAlias(pa);
+                } else {
+                    throw new IllegalStateException("Referent was neither a Policy nor a Service");
+                }
+            } catch (ObjectModelException ome) {
+                throw new RuntimeException("Unable to save alias", ome);
+            } catch (VersionException ve) {
+                throw new RuntimeException("Unable to save alias", ve);
             }
 
             header.setAliasOid(aliasOid);
-            header.setFolderOid(parentFolderOid);
-            EntityWithPolicyNode childNode = (EntityWithPolicyNode) TreeNodeFactory.asTreeNode(header, RootNode.getComparator());
+            header.setFolderOid(parentFolder.getOid());
+            final EntityWithPolicyNode childNode = (EntityWithPolicyNode) TreeNodeFactory.asTreeNode(header, RootNode.getComparator());
 
             int insertPosition = parentNode.getInsertPosition(childNode, RootNode.getComparator());
             parentNode.insert(childNode, insertPosition);
+            final DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+            final RootNode rootNode = (RootNode) model.getRoot();
             model.nodesWereInserted(parentNode, new int[]{insertPosition});
             rootNode.addAlias(header.getOid(), childNode);
+        }
+    }
+
+    private boolean aliasExistsInFolder( final NullaryThrows<Alias<?>,FindException> aliasLookup,
+                                         final Component parent,
+                                         final String description,
+                                         final String folderDescription ) {
+        try {
+            final Alias<?> checkAlias = aliasLookup.call();
+            if( checkAlias != null ){
+                DialogDisplayer.showMessageDialog(parent,"Alias of " + description + " already exists in folder " + folderDescription, "Create Error", JOptionPane.ERROR_MESSAGE, null);
+            }
+            return checkAlias != null;
+        } catch (FindException e1) {
+            throw new RuntimeException("Unable to check for existing alias", e1);
         }
     }
 }

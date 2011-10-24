@@ -18,8 +18,12 @@ public class PolicyAlias extends Alias<Policy> {
     @Deprecated // For Serialization and persistence only
     protected PolicyAlias() { }
 
-    public PolicyAlias(Policy policy, Folder folder) {
+    public PolicyAlias( final Policy policy, final Folder folder ) {
         super(policy, folder);
+    }
+
+    public PolicyAlias( final PolicyHeader policy, final Folder folder ) {
+        super(policy.getOid(), folder);
     }
 
     @XmlTransient
