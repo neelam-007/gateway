@@ -1,17 +1,19 @@
 package com.l7tech.policy.assertion.xmlsec;
 
-import com.l7tech.util.Option;
-import org.jetbrains.annotations.Nullable;
-
 import java.io.Serializable;
+
+import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.AttributeValueAddBehavior.*;
 
 /**
  * The <code>SamlAttributeStatement</code> assertion describes
  * the SAML Attribute Statement constraints.
  *
  * This bean stores Attribute configuration for various purposes:
- * Validating an AttributeStatement in Require SAML Token
- * Validating a protocol response in SamlpAssertion.
+ * <ul>
+ * <li>Validating an AttributeStatement in Require SAML Token</li>
+ * <li>Validating a protocol response in SamlpAssertion.</li>
+ * <li>Issuing an AttributeStatement in Create SAML Token</li>
+ * </ul>
  * Note: these use cases have the same core functionality except they differ on the location of where a SAML
  * token should be found.
  */
@@ -73,8 +75,7 @@ public class SamlAttributeStatement implements Cloneable, Serializable {
     }
 
     /**
-     * This class is almost identical to {@link com.l7tech.security.saml.Attribute}, but this one is used on the
-     * validation side, whereas the other is used on the issuing side.  TODO merge these two classes!
+     * This class is almost identical to {@link com.l7tech.security.saml.Attribute}  TODO merge these two classes!
      */
     public static class Attribute implements Cloneable, Serializable {
         private static final long serialVersionUID = 1L;
@@ -86,8 +87,25 @@ public class SamlAttributeStatement implements Cloneable, Serializable {
         private boolean anyValue;
         private boolean repeatIfMulti;
 
+        private AttributeValueAddBehavior addBehavior = STRING_CONVERT;
+
         // additional Value for SAMLP
         private String friendlyName;
+
+        public enum AttributeValueAddBehavior {
+            STRING_CONVERT("Convert to string"),
+            ADD_AS_XML("Add as XML fragment"),;
+
+            AttributeValueAddBehavior(String value) {
+                this.value = value;
+            }
+
+            public String getValue() {
+                return value;
+            }
+
+            private final String value;
+        }
 
         public Attribute() {
         }
@@ -158,6 +176,14 @@ public class SamlAttributeStatement implements Cloneable, Serializable {
 
         public void setFriendlyName(String friendlyName) {
             this.friendlyName = friendlyName;
+        }
+
+        public AttributeValueAddBehavior getAddBehavior() {
+            return addBehavior;
+        }
+
+        public void setAddBehavior(AttributeValueAddBehavior addBehavior) {
+            this.addBehavior = addBehavior;
         }
 
         public String toString() {

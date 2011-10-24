@@ -113,4 +113,26 @@ public class SyntaxTest {
         var = "${issuedSamlAssertion saml2}";
         Syntax.validateStringOnlyReferencesVariables(var);
     }
+
+    @Test
+    public void testVariableExpression() throws Exception {
+        final String varName = Syntax.getVariableExpression("varName");
+        Assert.assertEquals("Incorrect variable name generated.", "${varName}", varName);
+    }
+
+    @Test
+    public void testIsOnlyASingleVariableReferenced() throws Exception {
+        String singleRef = "${single}";
+        Assert.assertTrue("Only a single var is referenced!", Syntax.isOnlyASingleVariableReferenced(singleRef));
+
+        String invalidRef = "${single} text";
+        Assert.assertFalse("More than a single var is referenced", Syntax.isOnlyASingleVariableReferenced(invalidRef));
+
+        String twoVarRef = "${single} ${double}";
+        Assert.assertFalse("More than a single var is referenced", Syntax.isOnlyASingleVariableReferenced(twoVarRef));
+
+        String singlePlusWhiteSpace = "${single} ";
+        Assert.assertFalse("White space is counted as invalid text configuration.", Syntax.isOnlyASingleVariableReferenced(singlePlusWhiteSpace));
+    }
+
 }

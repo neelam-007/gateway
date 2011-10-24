@@ -20,8 +20,7 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.*;
 
 /**
  * The SAML Conditions <code>WizardStepPanel</code>
@@ -44,7 +43,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
     private SquigglyTextField filterExpressionTextField;
     private JLabel filterSamlAttributesLabel;
     private JPanel filterPanel;
-    private DefaultTableModel attributesTableModel;
+    private DefaultTableModelWithAssociatedBean<SamlAttributeStatement.Attribute> attributesTableModel;
     private int samlVersion;
     private static final String ANY = "<any>";
 
@@ -108,15 +107,8 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
         int nrows = attributesTableModel.getRowCount();
         Collection attributes = new ArrayList();
         for (int i = 0; i < nrows; i++) {
-            String value = attributesTableModel.getValueAt(i, 3).toString();
-            boolean isAny = ANY.equals(value);
-            SamlAttributeStatement.Attribute att = new SamlAttributeStatement.Attribute(
-                    toString(attributesTableModel.getValueAt(i, 0)),
-                    toString(attributesTableModel.getValueAt(i, 1)),
-                    fromDisplayNameFormat(attributesTableModel.getValueAt(i, 2)),
-                    isAny ? null : value,
-                    isAny, Boolean.TRUE.equals(attributesTableModel.getValueAt(i,4)));
-            attributes.add(att);
+            final SamlAttributeStatement.Attribute attribute = attributesTableModel.getBeanForRow(i);
+            attributes.add(attribute);
         }
         statement.setAttributes((SamlAttributeStatement.Attribute[])attributes.toArray(new SamlAttributeStatement.Attribute[]{}));
         statement.setFilterExpression(filterExpressionTextField.getText());
@@ -148,7 +140,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
         SamlAttributeStatement.Attribute[] attributes = statement.getAttributes();
         for (int i = 0; i < attributes.length; i++) {
             SamlAttributeStatement.Attribute att = attributes[i];
-            attributesTableModel.addRow(new Object[]{
+            attributesTableModel.addRow(att, new Object[]{
                     att.getName(),
                     att.getNamespace(),
                     toDisplayNameFormat(att.getNameFormat(), samlVersion),
@@ -176,12 +168,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
 
         filterPanel.setVisible(issueMode);
 
-        attributesTableModel = new DefaultTableModel(new String[]{"Name", "Namespace", "Name Format", "Value", "Repeat?"}, 0){
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
+        attributesTableModel = new DefaultTableModelWithAssociatedBean<SamlAttributeStatement.Attribute>(new String[]{"Name", "Namespace", "Name Format", "Value", "Repeat?"}, 0);
         attributeTableScrollPane.getViewport().setBackground(attributeTable.getBackground());
         attributeTable.setModel(attributesTableModel);
         attributeTable.getTableHeader().setReorderingAllowed(false);
@@ -209,20 +196,8 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 final int row = attributeTable.getSelectedRow();
-                final SamlAttributeStatement.Attribute attribute = new SamlAttributeStatement.Attribute();
-                attribute.setName(AttributeStatementWizardStepPanel.toString(attributesTableModel.getValueAt(row, 0)));
-                attribute.setNamespace(AttributeStatementWizardStepPanel.toString(attributesTableModel.getValueAt(row, 1)));
-                attribute.setNameFormat(AttributeStatementWizardStepPanel.fromDisplayNameFormat(attributesTableModel.getValueAt(row, 2)));
-                attribute.setRepeatIfMulti(Boolean.TRUE.equals(attributesTableModel.getValueAt(row, 4)));
-                String value = AttributeStatementWizardStepPanel.toString(attributesTableModel.getValueAt(row, 3));
-                if (ANY.equals(value)) {
-                    attribute.setAnyValue(true);
-                    //todo there may be cases where this value cannot be null.
-                    attribute.setValue(null);
-                } else {
-                    attribute.setAnyValue(false);
-                    attribute.setValue(value);
-                }
+                final SamlAttributeStatement.Attribute attribute = attributesTableModel.getBeanForRow(row);
+
                 EditAttributeDialog editAttributeDialog = new EditAttributeDialog(owner, attribute, samlVersion, issueMode);
                 editAttributeDialog.addBeanListener(new BeanAdapter() {
                     /**
@@ -238,6 +213,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
                         attributesTableModel.setValueAt(toDisplayNameFormat(attribute.getNameFormat(), samlVersion), row, 2);
                         attributesTableModel.setValueAt(attribute.isAnyValue() ? ANY : attribute.getValue(), row, 3);
                         attributesTableModel.setValueAt(attribute.isRepeatIfMulti(), row, 4);
+                        attributesTableModel.updateBeanForRow(row, (SamlAttributeStatement.Attribute) bean);
                         notifyListeners();
                     }
                 });
@@ -258,13 +234,12 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
                      */
                     @Override
                     public void onEditAccepted(Object source, Object bean) {
-                        attributesTableModel.addRow(new Object[] {
+                        attributesTableModel.addRow((SamlAttributeStatement.Attribute) bean, new Object[] {
                                 attribute.getName(),
                                 attribute.getNamespace(),
                                 toDisplayNameFormat(attribute.getNameFormat(), samlVersion),
                                 attribute.isAnyValue() ? ANY : attribute.getValue(),
-                                attribute.isRepeatIfMulti()
-                        });
+                                attribute.isRepeatIfMulti()});
                         notifyListeners();
                     }
                 });
@@ -380,4 +355,61 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
 
         return nameFormat;
     }
+
+    /**
+     * Quick hack of a table model which will track a bean for each row. Ideally the columns and getValuesAt would
+     * be pulled from the bean, perhaps based on bean property annotations. For now this is the same as default table
+     * model except that a bean is tracked for each row.
+     *
+     * This allows for data not shown in the table columns to be stored.
+     * @param <T>
+     */
+    private class DefaultTableModelWithAssociatedBean<T extends Cloneable> extends DefaultTableModel {
+
+        private DefaultTableModelWithAssociatedBean(Object[] columnNames, int rowCount) {
+            super(columnNames, rowCount);
+        }
+
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            return false;
+        }
+
+        public void addRow(T bean, Object[] columnDataForRow) {
+            super.addRow(columnDataForRow);
+            rowToBeanMap.put(getRowCount() - 1, bean);
+        }
+
+        public void updateBeanForRow(int row, T bean) {
+            if (!rowToBeanMap.containsKey(row)) {
+                throw new IllegalArgumentException("Unknown row.");
+            }
+            rowToBeanMap.put(row, bean);
+        }
+
+        @Override
+        public void removeRow(int row) {
+            super.removeRow(row);
+            rowToBeanMap.remove(row);
+        }
+
+        public T getBeanForRow(int row) {
+            return rowToBeanMap.get(row);
+        }
+
+        @Override
+        public Object getValueAt(int row, int column) {
+            final T t = rowToBeanMap.get(row);
+            if (t == null) {
+                throw new IllegalStateException("Unknown value at row " + row);
+            }
+            // proceed
+            return super.getValueAt(row, column);
+        }
+
+        // - PRIVATE
+
+        private final Map<Integer, T> rowToBeanMap = new HashMap<Integer, T>();
+    }
+
 }

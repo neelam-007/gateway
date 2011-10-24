@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.saml.Attribute;
 import com.l7tech.security.saml.SamlAssertionGenerator;
 import com.l7tech.security.saml.SamlConstants;
@@ -29,6 +30,9 @@ import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertionUtils;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.*;
+
+import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.AttributeValueAddBehavior.ADD_AS_XML;
+import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.AttributeValueAddBehavior.STRING_CONVERT;
 import static com.l7tech.util.Functions.grep;
 import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.context.ApplicationContext;
@@ -90,8 +94,24 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
             authMethodUri = methods != null && methods.length > 0 && methods[0] != null
                                 ? methods[0]
                                 : null;
-        } else
+        } else {
             authMethodUri = null;
+        }
+
+        // validate AttributeValue configuration when 'attribute.isRepeatIfMulti()' is true.
+        final SamlAttributeStatement attributeStatement = assertion.getAttributeStatement();
+        if (attributeStatement != null) {
+            final SamlAttributeStatement.Attribute[] attributes = attributeStatement.getAttributes();
+            for (SamlAttributeStatement.Attribute attribute : attributes) {
+                if (attribute.isRepeatIfMulti()) {
+                    final String value = attribute.getValue();
+                    final String errorMsg = "Invalid AttributeValue value configuration. When repeat if Multivalued is configured only a single variable may be referenced:  '" + value + "'";
+                    if (value != null && !Syntax.isOnlyASingleVariableReferenced(value)) {
+                        throw new ServerPolicyException(assertion, errorMsg);
+                    }
+                }
+            }
+        }
     }
 
     @Override
@@ -364,25 +384,6 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
 
         final boolean hasFilter = !requestAttributeElements.isEmpty();
 
-        final String samlNamespace;
-        final boolean hasNameFormat; // true for 2.0, false otherwise
-        final String nameAttributeName;
-        switch (version) {
-            case 1:
-                samlNamespace = SamlConstants.NS_SAML;
-                hasNameFormat = false;
-                nameAttributeName = "AttributeName";
-                break;
-            case 2:
-                samlNamespace = SamlConstants.NS_SAML2;
-                hasNameFormat = true;
-                nameAttributeName = "Name";
-                break;
-            default:
-                //this will likely have occurred before now but adding for future changes.
-                throw new IllegalStateException("Unknown version");
-        }
-
         final List<SamlAttributeStatement.Attribute> configuredAttList;
         if (!hasFilter) {
             configuredAttList = new ArrayList<SamlAttributeStatement.Attribute>();
@@ -392,13 +393,12 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
             configuredAttList = grep(
                     Arrays.asList(assertion.getAttributeStatement().getAttributes()),
                     new Functions.Unary<Boolean, SamlAttributeStatement.Attribute>() {
-                @Override
-                public Boolean call(SamlAttributeStatement.Attribute configAttribute) {
-                    //we must find this static attribute in the request to include it
-                    //note: incomingElement only contains validated saml:Attribute elements
-                    return isConfigAttributeInRequest(configAttribute, requestAttributeElements, nameAttributeName, hasNameFormat, samlNamespace);
-                }
-            });
+                        @Override
+                        public Boolean call(SamlAttributeStatement.Attribute configAttribute) {
+                            //we must find this static attribute in the request to include it
+                            return isConfigAttributeInRequest(configAttribute, requestAttributeElements, version);
+                        }
+                    });
         }
 
         for (SamlAttributeStatement.Attribute attribute : configuredAttList) {
@@ -418,28 +418,73 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                     throw new RuntimeException(); // Can't happen
             }
 
-            if (attribute.isRepeatIfMulti()) {
-                // Repeat this attribute once for each value
-                Object obj = ExpandVariables.processSingleVariableAsDisplayableObject(attribute.getValue(), vars, getAudit());
-                if (obj instanceof Object[]) {
-                    Object[] vals = (Object[]) obj;
-                    for (Object val : vals) {
-                        final String s = val.toString();
+            // Pre 6.2 behavior for isMulti is as follows: If true and a single variable is referenced, then multiple
+            // attributes are added. If false, all values are concatenated. Pre 6.2 if more than one variable was referenced
+            // then nothing was added. This behavior is kept except that the assertion no longer supports invalid multi
+            // valued variable references.
+
+            final boolean isMulti = attribute.isRepeatIfMulti();
+            final List<Object> allResolvedObjects;
+            if (attribute.getAddBehavior() == STRING_CONVERT && !isMulti) {
+                //stringify everything and turn it into a single record.
+                final Object value = ExpandVariables.process(attribute.getValue(), vars, getAudit());
+                allResolvedObjects = Collections.singletonList(value);
+            } else if(attribute.getAddBehavior() == STRING_CONVERT && isMulti){
+                //stringify everything and turn it into a list of records.
+                final Object obj = ExpandVariables.processSingleVariableAsDisplayableObject(attribute.getValue(), vars, getAudit());
+                if (obj == null) {
+                    //keep existing behavior where null is converted to an empty string
+                    final Object o = "";
+                    allResolvedObjects = Collections.singletonList(o);
+                } else {
+                    //obj may be a single Object or an Object []
+                    if (obj instanceof Object[]) {
+                        allResolvedObjects = new ArrayList<Object>();
+                        final Object[] obj1 = (Object[]) obj;
+                        allResolvedObjects.addAll(Arrays.asList(obj1));
+                    } else {
+                        allResolvedObjects = Collections.singletonList(obj);
+                    }
+
+                }
+            } else  {
+                final List<Object> flatten = flatten(ExpandVariables.processNoFormat(attribute.getValue(), vars, getAudit(), false));
+                if (isMulti) {
+                    // all of these items will be added as a separate Attribute.
+                    allResolvedObjects = flatten;
+                } else {
+                    // all items in a single element of the list will be added as mixed content.
+                    final Object listObj = flatten;//so compiler is happy with singletonList
+                    allResolvedObjects = Collections.singletonList(listObj);
+                }
+            }
+
+            // Logic with isMulti is now done. For each item in allResolvedObjects, an Attribute can be added
+            // not at some point here or elsewhere this should be multiple AttributeValues and not Attributes. See bug 11200
+
+            final boolean isXmlConvert = attribute.getAddBehavior() == ADD_AS_XML;
+
+            //TODO [Donal] - filter for incoming values.
+            for (Object resolvedObject : allResolvedObjects) {
+                if (!isXmlConvert) {
+                    // For string convert options the content of allResolvedObjects is already in the correct state
+                    final String s = resolvedObject.toString();
+                    outAtts.add(new Attribute(name, nameFormatOrNamespace, s));
+                    logAndAudit(AssertionMessages.SAML_ISSUER_ADDING_ATTR, name, s);
+                } else {
+                    final boolean isXmlVariable = resolvedObject instanceof Message || resolvedObject instanceof Element;
+                    if (isXmlVariable) {
+                        outAtts.add(new Attribute(name, nameFormatOrNamespace, resolvedObject));
+                        logAndAudit(AssertionMessages.SAML_ISSUER_ADDING_ATTR, name, "Value of type " + ((resolvedObject instanceof Message) ? "Message" : "Element"));
+                    } else if (resolvedObject instanceof List) {
+                        outAtts.add(new Attribute(name, nameFormatOrNamespace, resolvedObject));
+                        logAndAudit(AssertionMessages.SAML_ISSUER_ADDING_ATTR, name, "Value of type List");
+                    } else {
+                        final String s = resolvedObject.toString();
                         outAtts.add(new Attribute(name, nameFormatOrNamespace, s));
                         logAndAudit(AssertionMessages.SAML_ISSUER_ADDING_ATTR, name, s);
                     }
-                } else {
-                    // ExpandVariables will have already thrown/logged a warning if the variable is bad
-                    final String s = obj == null ? "" : obj.toString();
-                    logAndAudit(AssertionMessages.SAML_ISSUER_ADDING_ATTR, name, s);
-                    outAtts.add(new Attribute(name, nameFormatOrNamespace, s));
                 }
-            } else {
-                // If it happens to be multivalued, ExpandVariables.process will join the values with a
-                // delimiter.
-                final String value = ExpandVariables.process(attribute.getValue(), vars, getAudit());
-                logAndAudit(AssertionMessages.SAML_ISSUER_ADDING_ATTR, name, value);
-                outAtts.add(new Attribute(name, nameFormatOrNamespace, value));
             }
         }
 
@@ -448,13 +493,36 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                 assertion.getSubjectConfirmationKeyInfoType(), assertion.getNameIdentifierType(), overrideNameValue, overrideNameFormat, nameQualifier);
     }
 
+    /**
+     * Check if the statically configured Attribute is contained in filterAttributeElms, which represent the Attributes
+     * from an AttributeQuery
+     *
+     * @param configAttribute Static config attribute to validate is in the request.
+     * @param filterAttributeElms Attributes elements to filter the static attributes with.
+     * @param version
+     * @return
+     */
     private Boolean isConfigAttributeInRequest(final SamlAttributeStatement.Attribute configAttribute,
-                                               final List<Element> incomingElements,
-                                               final String nameAttributeName,
-                                               final boolean hasNameFormat,
-                                               final String samlNamespace) {
-        boolean isInIncoming = false;
-        for (Element incomingElement : incomingElements) {
+                                               final List<Element> filterAttributeElms, int version) {
+        boolean isInRequest = false;
+
+        final boolean hasNameFormat; // true for 2.0, false otherwise
+        final String nameAttributeName;
+        switch (version) {
+            case 1:
+                hasNameFormat = false;
+                nameAttributeName = "AttributeName";
+                break;
+            case 2:
+                hasNameFormat = true;
+                nameAttributeName = "Name";
+                break;
+            default:
+                //this will likely have occurred before now but adding for future changes.
+                throw new IllegalStateException("Unknown version");
+        }
+
+        for (Element incomingElement : filterAttributeElms) {
             final Attr nameAttr = incomingElement.getAttributeNode(nameAttributeName);
 
             final String nameAttrValue = nameAttr.getValue();
@@ -488,32 +556,22 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                 }
             }
 
-            //does the incoming element have any values to check against?
-            final List<Element> attributeValueElms = XmlUtil.findChildElementsByName(incomingElement, samlNamespace, "AttributeValue");
-            if (attributeValueElms.isEmpty()) {
-                //no values to check
-                isInIncoming = true;
-                break;
-            } else {
-                isInIncoming = true;
-                //todo element attribute value comparison
-            }
+            isInRequest = true;
         }
-        return isInIncoming;
+        return isInRequest;
     }
-
 
     private boolean validateElementIsAttribute(final Element elmToValidate, final int version) {
         boolean isValid = false;
 
         final String tagName = elmToValidate.getLocalName();
-        final Attr name;
+        Attr name;
         final String namespaceURI = elmToValidate.getNamespaceURI();
         final String ignoreMsg = "Ignoring variable.";
         switch (version) {
             case 1:
-                if (!"Attribute".equals(tagName)) {
-                    logger.warning("Expected SAML Attribute Element, found Element with name '" + tagName + "'. " + ignoreMsg);
+                if (!"Attribute".equals(tagName) && !"AttributeDesignator".equals(tagName)) {
+                    logger.warning("Expected SAML Attribute or AttributeDesignator Element, found Element with name '" + tagName + "'. " + ignoreMsg);
                     break;
                 }
 
@@ -524,7 +582,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
 
                 name = elmToValidate.getAttributeNode("AttributeName");
                 if (name == null) {
-                    logger.warning("Attribute element missing AttributeName attribute. " + ignoreMsg);
+                    logger.warning("Attribute element missing AttributeName or AttributeDesignator attribute. " + ignoreMsg);
                     break;
                 }
 
@@ -563,6 +621,24 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
         return isValid;
     }
 
+    private List<Object> flatten(final List<Object> objects) {
+
+        final List<Object> extractedValues = new ArrayList<Object>();
+        for (Object object : objects) {
+            if (object instanceof List) {
+                @SuppressWarnings({"unchecked"})
+                final List<Object> objects1 = flatten((List<Object>) object);
+                extractedValues.addAll(objects1);
+            } else if (object instanceof Object[]) {
+                extractedValues.addAll(flatten(Arrays.asList((Object[]) object)));
+            } else {
+                extractedValues.add(object);
+            }
+        }
+
+        return extractedValues;
+    }
+
     private List<Element> extractElements(List<Object> objects) {
         final List<Element> foundElements = new ArrayList<Element>();
 
@@ -570,7 +646,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
             if (object instanceof List) {
                 foundElements.addAll(extractElements((List<Object>) object));
             } else if (object instanceof Object[]) {
-                foundElements.addAll(extractElements(Arrays.asList((Object [])object)));
+                foundElements.addAll(extractElements(Arrays.asList((Object[]) object)));
             } else if (object instanceof Element) {
                 foundElements.add((Element) object);
             } else if (object instanceof Message) {

@@ -130,6 +130,17 @@ public abstract class Syntax {
         return getReferencedNames( s, true );
     }
 
+    /**
+     * Validate a user supplied string only validates a single variable and nothing else.
+     *
+     * @param value user input to validate for a single reference.
+     * @return true if parameter only contains a single single reference to a variable
+     */
+    public static boolean isOnlyASingleVariableReferenced(final @NotNull String value) {
+        final String[] referencedNames = Syntax.getReferencedNames(value);
+        return referencedNames.length == 1 && value.equals(Syntax.getVariableExpression(referencedNames[0]));
+    }
+
 
     /**
      * This will return the entire string contained within each set of ${...} in the String s. The variables names

@@ -486,10 +486,12 @@ public class DomUtils {
 
     /**
      * Gets the child text node value for an element.
+     * @param node The Node to get text from
+     * @param trim True if white space should be removed.
      * @return a String consisting of all text nodes glued together and then trimmed.  May be empty but never null.
      */
-    public static String getTextValue(Element node) {
-        StringBuffer output = new StringBuffer();
+    public static String getTextValue(Element node, boolean trim) {
+        StringBuilder output = new StringBuilder();
         NodeList children = node.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
             Node kid = children.item(i);
@@ -499,7 +501,11 @@ public class DomUtils {
                     output.append(thisTxt);
             }
         }
-        return output.toString().trim();
+        return (trim)? output.toString().trim(): output.toString();
+    }
+
+    public static String getTextValue(Element node) {
+        return getTextValue(node, true);
     }
 
     /**
