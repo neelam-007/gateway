@@ -7,7 +7,6 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.external.assertions.jsontransformation.JsonTransformationAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.json.InvalidJsonException;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -64,23 +63,12 @@ public class ServerJsonTransformationAssertion extends AbstractServerAssertion<J
                 targetValue = doTransformation(sourceString, assertion.getTransformation(),
                         assertion.getConvention(), assertion.getRootTagString(), assertion.isPrettyPrint());
             } else {
-
                 Map<String, Object> vars = context.getVariableMap(assertion.getVariablesUsed(), getAudit());
                 String rootTag = ExpandVariables.process(assertion.getRootTagString(), vars, getAudit(), true);
-
-                // try to use JSON map, less processing
-                Object jsonObj = sourceMessage.getJsonKnob().getJsonData().getJsonObject();
-                if (jsonObj instanceof Map) {
-                    Map<Object, Object> data = (Map<Object, Object>) jsonObj;
-                    jsonObject = new JSONObject(data);
-                    targetValue = assertion.getConvention() == JsonTransformationAssertion.TransformationConvention.STANDARD ?
-                            XML.toString(jsonObject, rootTag.trim().isEmpty() ? null : rootTag) :
-                            JSONML.toString(jsonObject);
-                } else {
                     String source = getFirstPartString(sourceMessage);
                     targetValue = doTransformation(source, assertion.getTransformation(),
-                            assertion.getConvention(), assertion.getRootTagString(), assertion.isPrettyPrint());
-                }
+                            assertion.getConvention(), rootTag, assertion.isPrettyPrint());
+
                 Document document = XmlUtil.stringToDocument(targetValue);
                 targetValue = assertion.isPrettyPrint() ? XmlUtil.nodeToFormattedString(document) : XmlUtil.nodeToString(document);
             }
@@ -93,9 +81,6 @@ public class ServerJsonTransformationAssertion extends AbstractServerAssertion<J
             return AssertionStatus.FAILED;
         } catch (NoSuchPartException ex) {
             logAndAudit( AssertionMessages.NO_SUCH_PART, new String[]{assertion.getTargetName(), "1"}, ExceptionUtils.getDebugException(ex) );
-            return AssertionStatus.FAILED;
-        } catch (InvalidJsonException ex) {
-            logAndAudit( AssertionMessages.JSON_INVALID_JSON, new String[]{assertion.getTargetName()}, ExceptionUtils.getDebugException(ex) );
             return AssertionStatus.FAILED;
         } catch (IOException ex){
             logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{ex.getMessage()}, ExceptionUtils.getDebugException(ex));
