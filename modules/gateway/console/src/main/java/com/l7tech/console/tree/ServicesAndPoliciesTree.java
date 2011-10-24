@@ -69,6 +69,7 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
         super(newModel);
         initialize();
         getSelectionModel().setSelectionMode(TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);
+        getSelectionModel().addTreeSelectionListener(ClipboardActions.getTreeUpdateListener());
     }
 
     /**
@@ -129,7 +130,6 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
         // disable Edit menu actions
         putClientProperty(ClipboardActions.COPY_HINT, "true");
         putClientProperty(ClipboardActions.CUT_HINT, "true");
-        putClientProperty(ClipboardActions.PASTE_HINT, "true");
 
         ClipboardActions.replaceClipboardActionMap(this);
     }
