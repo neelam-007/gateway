@@ -180,7 +180,7 @@ public class HexLogger implements Closeable {
             }
 
             // flush any full size chunks of data
-            for ( int i=offset+consumed; i<length-bufferSize; i+=bufferSize ) {
+            for ( int i=offset+consumed; i<(offset+length)-bufferSize; i+=bufferSize ) {
                 flushBuffer( data, i, bufferSize, null, 0, 0 );
                 consumed += bufferSize;
             }
