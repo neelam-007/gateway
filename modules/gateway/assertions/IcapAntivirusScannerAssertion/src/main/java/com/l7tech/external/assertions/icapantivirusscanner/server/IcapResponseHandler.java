@@ -3,8 +3,6 @@ package com.l7tech.external.assertions.icapantivirusscanner.server;
 import ch.mimo.netty.handler.codec.icap.*;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.*;
 import org.jboss.netty.handler.codec.http.*;
 
@@ -74,10 +72,8 @@ public final class IcapResponseHandler extends AbstractIcapResponseHandler {
         //if we explicitly close the channel, the exceptionCaught will be executed
         //and raise many ClosedChannelException
         request.addHeader(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.CLOSE);
-        HttpResponse httpResponse = new DefaultHttpResponse(HttpVersion.HTTP_1_0, HttpResponseStatus.OK);
-        ChannelBuffer cb = ChannelBuffers.dynamicBuffer();
-        cb.writeBytes(partInfo.getInputStream(false), (int) partInfo.getActualContentLength());
-        httpResponse.setContent(cb);
+        HttpResponse httpResponse = new StreamedHttpResponse(HttpVersion.HTTP_1_0, HttpResponseStatus.OK);
+        ((StreamedHttpResponse)httpResponse).setContent(partInfo.getInputStream(false));
         httpResponse.addHeader(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.CLOSE);
         request.setHttpResponse(httpResponse);
         return sendRequest(request);

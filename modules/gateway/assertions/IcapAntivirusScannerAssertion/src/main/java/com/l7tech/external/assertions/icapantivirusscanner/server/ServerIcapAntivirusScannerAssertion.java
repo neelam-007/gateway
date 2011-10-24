@@ -2,11 +2,13 @@ package com.l7tech.external.assertions.icapantivirusscanner.server;
 
 import ch.mimo.netty.handler.codec.icap.IcapResponse;
 import ch.mimo.netty.handler.codec.icap.IcapResponseStatus;
-import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.io.failover.AbstractFailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
-import com.l7tech.common.mime.*;
+import com.l7tech.common.mime.MimeBody;
+import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.mime.PartInfo;
+import com.l7tech.common.mime.PartIterator;
 import com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
@@ -174,9 +176,10 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
     private AssertionStatus scan(final PolicyEnforcementContext context, PartInfo partInfo, int currentDepth, List<String> infectedParts) {
         try {
             if (currentDepth != assertion.getMaxMimeDepth() && partInfo.getContentType().isMultipart()) {
+                MimeBody mimeBody = null;
                 try {
-                    MimeBody mimeBody = new MimeBody(stashManagerFactory.createStashManager(),
-                            partInfo.getContentType(), partInfo.getInputStream(false), Message.getMaxBytes());
+                    mimeBody = new MimeBody(stashManagerFactory.createStashManager(),
+                            partInfo.getContentType(), partInfo.getInputStream(false), 0);
                     for (PartIterator pit = mimeBody.iterator(); pit.hasNext(); ) {
                         PartInfo pi = pit.next();
                         //recursively traverse all the multiparts
@@ -187,14 +190,12 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
                         }
                     }
                 } catch (IOException e) {
-                    String msg = e.getMessage();
-                    if(msg != null && msg.contains(ByteLimitInputStream.SIZE_LIMIT_EXCEEDED)){
-                        logAndAudit(AssertionMessages.USERDETAIL_WARNING, "The " + assertion.getTargetName() + " message has exceeded the size limit of " + Message.getMaxBytes() + " bytes.");
-                    }
-                    else {
-                        logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Error reading MIME content from " + assertion.getTargetName() + " : " + msg);
-                    }
+                    logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Error reading MIME content from " + assertion.getTargetName() + " : " + e.getMessage());
                     return AssertionStatus.FAILED;
+                } finally {
+                    if (mimeBody != null) {
+                        mimeBody.close();
+                    }
                 }
             } else {
                 Channel channel = null;
@@ -227,13 +228,7 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
                     }
                     failoverStrategy.reportSuccess(selectedService);
                 } catch (IOException e) {
-                    String msg = e.getMessage();
-                    if(msg != null && msg.contains(ByteLimitInputStream.SIZE_LIMIT_EXCEEDED)){
-                        logAndAudit(AssertionMessages.USERDETAIL_WARNING, "The " + assertion.getTargetName() + " message has exceeded the size limit of " + Message.getMaxBytes() + " bytes.");
-                    }
-                    else {
-                        logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Error occurred while scanning content " + assertion.getTargetName() + " : " + e.getMessage());
-                    }
+                    logAndAudit(AssertionMessages.USERDETAIL_WARNING, "Error occurred while scanning content " + assertion.getTargetName() + " : " + e.getMessage());
                     return AssertionStatus.FAILED;
                 }
                 finally {

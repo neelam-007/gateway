@@ -2,7 +2,6 @@ package com.l7tech.external.assertions.icapantivirusscanner.server;
 
 
 import ch.mimo.netty.handler.codec.icap.IcapChunkAggregator;
-import ch.mimo.netty.handler.codec.icap.IcapChunkSeparator;
 import ch.mimo.netty.handler.codec.icap.IcapRequestEncoder;
 import ch.mimo.netty.handler.codec.icap.IcapResponseDecoder;
 import org.jboss.netty.channel.ChannelPipeline;
