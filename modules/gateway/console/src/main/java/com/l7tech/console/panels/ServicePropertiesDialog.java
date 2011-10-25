@@ -136,7 +136,8 @@ public class ServicePropertiesDialog extends JDialog {
         super(owner, DEFAULT_MODALITY_TYPE);
         subject = svc;
         newWsdlDocuments = serviceDocuments;
-        wasTracingEnabled = subject.isTracingEnabled();
+        // tracing cannot be enabled in new services, only after service creation
+        wasTracingEnabled = subject.getOid()!=PublishedService.DEFAULT_OID && subject.isTracingEnabled();
 
         if (areUnsavedChangesToThisPolicy(svc)) {
             readOnlyWarningLabel.setText("Service has unsaved policy changes");
@@ -543,6 +544,10 @@ public class ServicePropertiesDialog extends JDialog {
         tracingCheckBox.setEnabled(canUpdate && canTrace);
         if (canUpdate && !canTrace)
             tracingCheckBox.setToolTipText("Disabled because enabling tracing requires having permission to update all published services");
+
+        if ( !tracingCheckBox.isEnabled() && subject.getOid()==PublishedService.DEFAULT_OID ) {
+            tracingCheckBox.setSelected( false ); // insufficient permissions to enable tracing for new service
+        }
 
         if(uddiServiceControl == null){
             clearButton.setEnabled( false );
