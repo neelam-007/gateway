@@ -14,11 +14,9 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
 
 /**
- * Action to load saved audit or log records.
- *
- * TODO [steve] rename after development in logging branch completed
+ * Action to load saved audit records.
  */
-public class ViewAuditsOrLogsFromFileAction extends BaseAction {
+public class ViewAuditsFromFileAction extends BaseAction {
 
     /**
      * @return the action name

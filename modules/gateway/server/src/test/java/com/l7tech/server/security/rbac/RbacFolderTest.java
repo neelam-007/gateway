@@ -20,6 +20,7 @@ import com.l7tech.policy.assertion.CommentAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.EntityFinderStub;
 import com.l7tech.server.folder.FolderManager;
+import com.l7tech.server.folder.FolderManagerStub;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyManagerStub;
 import com.l7tech.server.service.PolicyAliasManagerStub;

@@ -1,13 +1,13 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.common.log.HybridDiagnosticContextKeys;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.panels.identity.finder.FindIdentitiesDialog;
 import com.l7tech.console.panels.identity.finder.FindIdentitiesDialog.FindIdentities;
 import com.l7tech.console.panels.identity.finder.Options;
 import com.l7tech.console.panels.identity.finder.SearchType;
-import com.l7tech.console.tree.servicesAndPolicies.ServiceSelectionTree;
+import com.l7tech.console.tree.servicesAndPolicies.OrganizationSelectionTree;
 import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
 import com.l7tech.gateway.common.log.SinkConfiguration;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin.JmsTuple;
@@ -44,6 +44,7 @@ import com.l7tech.util.TextUtils;
 import com.l7tech.util.ValidationUtils;
 import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableCollection;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.event.TreeModelEvent;
@@ -66,9 +67,9 @@ public class SinkConfigurationFilterSelectionDialog extends JDialog {
 
     private JPanel mainPanel;
     private JComboBox keyCombobox;
-    private ServiceSelectionTree<OrganizationHeader> folderTree;
-    private ServiceSelectionTree<ServiceHeader> servicesTree;
-    private ServiceSelectionTree<PolicyHeader> policiesTree;
+    private OrganizationSelectionTree<OrganizationHeader> folderTree;
+    private OrganizationSelectionTree<ServiceHeader> servicesTree;
+    private OrganizationSelectionTree<PolicyHeader> policiesTree;
     private JComboBox transportTypeComboBox;
     private JTextField ipTextField;
     private JTextField packageTextField;
@@ -239,13 +240,13 @@ public class SinkConfigurationFilterSelectionDialog extends JDialog {
         String typeId = null;
         switch (type){
             case EMAIL_LISTENER:
-                typeId = HybridDiagnosticContextKeys.EMAIL_LISTENER_ID;
+                typeId = GatewayDiagnosticContextKeys.EMAIL_LISTENER_ID;
                 break;
             case JMS_CONNECTION:
-                typeId = HybridDiagnosticContextKeys.JMS_LISTENER_ID;
+                typeId = GatewayDiagnosticContextKeys.JMS_LISTENER_ID;
                 break;
             case SSG_CONNECTOR:
-                typeId = HybridDiagnosticContextKeys.LISTEN_PORT_ID;
+                typeId = GatewayDiagnosticContextKeys.LISTEN_PORT_ID;
                 break;
         }
         return typeId;
@@ -315,10 +316,10 @@ public class SinkConfigurationFilterSelectionDialog extends JDialog {
                 } ) ) );
                 break;
             case PACKAGE:
-                filterSelections.addAll( toSelection(packageTextField.getText(), HybridDiagnosticContextKeys.LOGGER_NAME ) );
+                filterSelections.addAll( toSelection(packageTextField.getText(), GatewayDiagnosticContextKeys.LOGGER_NAME ) );
                 break;
             case IP :
-                filterSelections.addAll( toSelection(ipTextField.getText(), HybridDiagnosticContextKeys.CLIENT_IP ) );
+                filterSelections.addAll( toSelection(ipTextField.getText(), GatewayDiagnosticContextKeys.CLIENT_IP ) );
                 break;
         }
 
@@ -334,9 +335,9 @@ public class SinkConfigurationFilterSelectionDialog extends JDialog {
     }
 
     private void createUIComponents() {
-        folderTree = new ServiceSelectionTree<OrganizationHeader>(false);
-        servicesTree = new ServiceSelectionTree<ServiceHeader>(true);
-        policiesTree = new ServiceSelectionTree<PolicyHeader>(true);
+        folderTree = new OrganizationSelectionTree<OrganizationHeader>(false);
+        servicesTree = new OrganizationSelectionTree<ServiceHeader>(true);
+        policiesTree = new OrganizationSelectionTree<PolicyHeader>(true);
     }
 
     public static final class FilterContext {
@@ -429,7 +430,7 @@ public class SinkConfigurationFilterSelectionDialog extends JDialog {
             } ).orSome( Collections.<PolicyHeader>emptyList() );
         }
 
-        public <R> Option<R> doAdmin( final R value,
+        public <R> Option<R> doAdmin( @Nullable final R value,
                                       final UnaryThrows<R,Registry,ObjectModelException> adminCallback ) {
             Option<R> result = optional( value );
             final Registry registry = Registry.getDefault();
@@ -456,15 +457,15 @@ public class SinkConfigurationFilterSelectionDialog extends JDialog {
         }
 
         public Option<FilterSelection> resolveEmailTransportFilter( final String value ) {
-            return findHeader( getEmailHeaders(), value ).map( toSelection( HybridDiagnosticContextKeys.EMAIL_LISTENER_ID ) );
+            return findHeader( getEmailHeaders(), value ).map( toSelection( GatewayDiagnosticContextKeys.EMAIL_LISTENER_ID ) );
         }
 
         public Option<FilterSelection> resolveJmsTransportFilter( final String value ) {
-            return findHeader( getJmsHeaders(), value ).map( toSelection( HybridDiagnosticContextKeys.JMS_LISTENER_ID ) );
+            return findHeader( getJmsHeaders(), value ).map( toSelection( GatewayDiagnosticContextKeys.JMS_LISTENER_ID ) );
         }
 
         public Option<FilterSelection> resolveListenPortTransportFilter( final String value ) {
-            return findHeader( getListenPortHeaders(), value ).map( toSelection( HybridDiagnosticContextKeys.LISTEN_PORT_ID ) );
+            return findHeader( getListenPortHeaders(), value ).map( toSelection( GatewayDiagnosticContextKeys.LISTEN_PORT_ID ) );
         }
 
         public Option<FilterSelection> resolveUserFilter( final String value ) {
@@ -480,7 +481,7 @@ public class SinkConfigurationFilterSelectionDialog extends JDialog {
                     @Override
                     public FilterSelection call( final User user ) {
                         return new FilterSelection(
-                                HybridDiagnosticContextKeys.USER_ID,
+                                GatewayDiagnosticContextKeys.USER_ID,
                                 value,
                                 getIdentityProviderName(user.getProviderId())+"/"+optional(user.getLogin()).orSome(id[1]) );
                     }
@@ -506,18 +507,18 @@ public class SinkConfigurationFilterSelectionDialog extends JDialog {
         }
 
         private static Unary<FilterSelection, OrganizationHeader> toServiceSelection() {
-            return toOrganizationHeaderSelection( HybridDiagnosticContextKeys.SERVICE_ID );
+            return toOrganizationHeaderSelection( GatewayDiagnosticContextKeys.SERVICE_ID );
         }
 
         private static Unary<FilterSelection, OrganizationHeader> toPolicySelection() {
-            return toOrganizationHeaderSelection( HybridDiagnosticContextKeys.POLICY_ID );
+            return toOrganizationHeaderSelection( GatewayDiagnosticContextKeys.POLICY_ID );
         }
 
         private static Unary<FilterSelection, FolderHeader> toFolderSelection() {
             return new Unary<FilterSelection, FolderHeader>(){
                 @Override
                 public FilterSelection call( final FolderHeader folderHeader ) {
-                    return new FilterSelection( HybridDiagnosticContextKeys.FOLDER_ID, folderHeader.getStrId(), folderHeader.getPath() );
+                    return new FilterSelection( GatewayDiagnosticContextKeys.FOLDER_ID, folderHeader.getStrId(), folderHeader.getPath() );
                 }
             };
         }
@@ -525,7 +526,7 @@ public class SinkConfigurationFilterSelectionDialog extends JDialog {
             return new Unary<FilterSelection, IdentityHeader>(){
                 @Override
                 public FilterSelection call( final IdentityHeader header ) {
-                    return new FilterSelection( HybridDiagnosticContextKeys.USER_ID, header.getProviderOid()+":"+header.getStrId(), getIdentityProviderName(header.getProviderOid())+"/"+header.getName() );
+                    return new FilterSelection( GatewayDiagnosticContextKeys.USER_ID, header.getProviderOid()+":"+header.getStrId(), getIdentityProviderName(header.getProviderOid())+"/"+header.getName() );
                 }
             };
         }

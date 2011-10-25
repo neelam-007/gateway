@@ -22,7 +22,7 @@
             <properties/>
             <border type="none"/>
             <children>
-              <component id="f12d" class="com.l7tech.console.tree.servicesAndPolicies.ServiceSelectionTree" binding="servicesTree" custom-create="true">
+              <component id="f12d" class="com.l7tech.console.tree.servicesAndPolicies.OrganizationSelectionTree" binding="servicesTree" custom-create="true">
                 <constraints/>
                 <properties/>
               </component>
@@ -163,7 +163,7 @@
             <properties/>
             <border type="none"/>
             <children>
-              <component id="13de" class="com.l7tech.console.tree.servicesAndPolicies.ServiceSelectionTree" binding="folderTree" custom-create="true">
+              <component id="13de" class="com.l7tech.console.tree.servicesAndPolicies.OrganizationSelectionTree" binding="folderTree" custom-create="true">
                 <constraints/>
                 <properties/>
               </component>
@@ -176,7 +176,7 @@
             <properties/>
             <border type="none"/>
             <children>
-              <component id="d7ecf" class="com.l7tech.console.tree.servicesAndPolicies.ServiceSelectionTree" binding="policiesTree" custom-create="true">
+              <component id="d7ec" class="com.l7tech.console.tree.servicesAndPolicies.OrganizationSelectionTree" binding="policiesTree" custom-create="true">
                 <constraints/>
                 <properties>
                   <enabled value="true"/>

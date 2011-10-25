@@ -5,13 +5,13 @@ import com.l7tech.gateway.common.audit.AuditRecordHeader;
 import java.io.IOException;
 
 /**
- * LogMessage subclass for AuditRecords headers.
+ * AbstractAuditMessage implementation for AuditRecord headers.
  */
-public class AuditHeaderLogMessage extends LogMessage {
+public class AuditHeaderMessage extends AbstractAuditMessage {
 
     //- PUBLIC
 
-    public AuditHeaderLogMessage( final AuditRecordHeader header ) {
+    public AuditHeaderMessage( final AuditRecordHeader header ) {
         this.header = header;
     }
 

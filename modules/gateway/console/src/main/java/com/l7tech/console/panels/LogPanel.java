@@ -114,7 +114,7 @@ public class LogPanel extends JPanel {
     private Icon upArrowIcon = new ArrowIcon(0);
     private Icon downArrowIcon = new ArrowIcon(1);
     private JScrollPane detailsScrollPane;
-    private LogMessage displayedLogMessage;
+    private AbstractAuditMessage displayedLogMessage;
     private AssociatedLogsTable associatedLogsTable;
     private JScrollPane requestXmlScrollPane;
     private JTextArea requestXmlTextArea;
@@ -139,7 +139,7 @@ public class LogPanel extends JPanel {
     private boolean connected = false;
 
     private final Map<Integer, String> cachedAuditMessages = new HashMap<Integer, String>();
-    private final Map<Long, SoftReference<AuditLogMessage>> cachedLogMessages = Collections.synchronizedMap( new HashMap<Long, SoftReference<AuditLogMessage>>() );
+    private final Map<Long, SoftReference<AuditMessage>> cachedLogMessages = Collections.synchronizedMap( new HashMap<Long, SoftReference<AuditMessage>>() );
     private JButton invokeRequestAVPolicyButton;
     private JButton invokeResponseAVPolicyButton;
     private JLabel sigStatusLabel;
@@ -1095,11 +1095,11 @@ public class LogPanel extends JPanel {
         refreshLogs(timeRangeStart, timeRangeEnd, true);
     }
 
-    private AuditLogMessage getCachedLogMessage( final LogMessage logMessage ) {
-        AuditLogMessage auditLogMessage = logMessage instanceof AuditLogMessage ? (AuditLogMessage) logMessage : null;
+    private AuditMessage getCachedLogMessage( final AbstractAuditMessage logMessage ) {
+        AuditMessage auditLogMessage = logMessage instanceof AuditMessage ? (AuditMessage) logMessage : null;
 
         if ( auditLogMessage == null ) {
-            SoftReference<AuditLogMessage> messageRef = this.cachedLogMessages.get( logMessage.getMsgNumber() );
+            SoftReference<AuditMessage> messageRef = this.cachedLogMessages.get( logMessage.getMsgNumber() );
             if ( messageRef != null ) {
                 auditLogMessage = messageRef.get();
             }
@@ -1108,24 +1108,24 @@ public class LogPanel extends JPanel {
         return auditLogMessage;
     }
 
-    private AuditLogMessage cacheLogMessage( final LogMessage logMessage, final AuditLogMessage auditLogMessage ) {
+    private AuditMessage cacheLogMessage( final AbstractAuditMessage logMessage, final AuditMessage auditLogMessage ) {
         auditLogMessage.setNodeName(logMessage.getNodeName());
-        this.cachedLogMessages.put( logMessage.getMsgNumber(), new SoftReference<AuditLogMessage>( auditLogMessage ) );
+        this.cachedLogMessages.put( logMessage.getMsgNumber(), new SoftReference<AuditMessage>( auditLogMessage ) );
         return auditLogMessage;
     }
 
-    private void doUpdateMsgDetails( final LogMessage logMessage, final Functions.UnaryVoid<AuditRecord> auditLoadedCallback) {
-        AuditLogMessage auditLogMessage = getCachedLogMessage( logMessage );
+    private void doUpdateMsgDetails( final AbstractAuditMessage logMessage, final Functions.UnaryVoid<AuditRecord> auditLoadedCallback) {
+        AuditMessage auditLogMessage = getCachedLogMessage( logMessage );
         if ( auditLogMessage != null ) {
             updateMsgDetails( auditLogMessage );
         } else {
             //then we need to retrieve it from the SSG if possible
-            if ( logMessage instanceof AuditHeaderLogMessage ) {
+            if ( logMessage instanceof AuditHeaderMessage ) {
                 getMsgProgressBar().setVisible(true);
-                final AuditRecordWorker auditRecordWorker = new AuditRecordWorker(Registry.getDefault().getAuditAdmin(), (AuditHeaderLogMessage)logMessage) {
+                final AuditRecordWorker auditRecordWorker = new AuditRecordWorker(Registry.getDefault().getAuditAdmin(), (AuditHeaderMessage)logMessage) {
                     @Override
                     public void finished() {
-                        final AuditLogMessage fullLogMessage = (AuditLogMessage) this.get();
+                        final AuditMessage fullLogMessage = (AuditMessage) this.get();
                         if ( fullLogMessage != null ) {
                             doUpdateMsgDetails( cacheLogMessage( logMessage, fullLogMessage ), null);
                             final AuditRecord auditRecord = fullLogMessage.getAuditRecord();
@@ -1141,7 +1141,7 @@ public class LogPanel extends JPanel {
         }
     }
 
-    private void updateMsgDetails( final LogMessage lm ) {
+    private void updateMsgDetails( final AbstractAuditMessage lm ) {
         String msg = "";
 
         TimeZone timeZone = retrievalMode == RetrievalMode.TIME_RANGE ? timeRangeTimeZone : null;
@@ -1150,18 +1150,18 @@ public class LogPanel extends JPanel {
                 new SimpleDateFormat( DATE_FORMAT_ZONE_PATTERN );
         if ( timeZone != null ) sdf.setTimeZone( timeZone );
 
-        final int maxWidth = ((lm instanceof AuditLogMessage) && (((AuditLogMessage) lm).getAuditRecord() instanceof AdminAuditRecord))? 20 : 15; // "Identity Provider ID" width = 20 and "Audit Record ID" width = 15
+        final int maxWidth = ((lm instanceof AuditMessage) && (((AuditMessage) lm).getAuditRecord() instanceof AdminAuditRecord))? 20 : 15; // "Identity Provider ID" width = 20 and "Audit Record ID" width = 15
         msg += nonull(TextUtils.pad("Node", maxWidth) + ": ", lm.getNodeName());
         msg += nonull(TextUtils.pad("Time", maxWidth) + ": ", sdf.format( lm.getTimestamp() ));
         msg += nonull(TextUtils.pad("Severity", maxWidth) + ": ", lm.getSeverity());
         msg += nonule(TextUtils.pad("Request Id", maxWidth) + ": ", lm.getReqId());
         msg += nonull(TextUtils.pad("Message", maxWidth) + ": ", lm.getMsgDetails());
-        if (lm instanceof AuditLogMessage) {
-            msg += nonull(TextUtils.pad("Audit Record ID", maxWidth) + ": ", ((AuditLogMessage) lm).getAuditRecord().getId());
+        if (lm instanceof AuditMessage ) {
+            msg += nonull(TextUtils.pad("Audit Record ID", maxWidth) + ": ", ((AuditMessage) lm).getAuditRecord().getId());
         }
 
-        if ( lm instanceof AuditLogMessage ) {
-            AuditRecord arec = ((AuditLogMessage) lm).getAuditRecord();
+        if ( lm instanceof AuditMessage ) {
+            AuditRecord arec = ((AuditMessage) lm).getAuditRecord();
             msg += "\n";
 
             boolean reqXmlVisible = false;
@@ -1326,7 +1326,7 @@ public class LogPanel extends JPanel {
         final TableModel model = getMsgTable().getModel();
         if (model instanceof AuditLogTableSorterModel) {
             final AuditLogTableSorterModel auditModel = (AuditLogTableSorterModel) model;
-            final LogMessage logHeader = auditModel.getLogMessageAtRow(row);
+            final AbstractAuditMessage logHeader = auditModel.getLogMessageAtRow(row);
             if (logHeader == displayedLogMessage) return;
             displayedLogMessage = logHeader;
 
@@ -1334,15 +1334,15 @@ public class LogPanel extends JPanel {
             final Functions.UnaryVoid<AuditRecord> auditRecordRetrievedCallback = new Functions.UnaryVoid<AuditRecord>() {
                 @Override
                 public void call(AuditRecord auditRecord) {
-                    if (logHeader instanceof AuditHeaderLogMessage) {
-                        AuditHeaderLogMessage actualHeader = (AuditHeaderLogMessage) logHeader;
+                    if (logHeader instanceof AuditHeaderMessage ) {
+                        AuditHeaderMessage actualHeader = (AuditHeaderMessage) logHeader;
                         actualHeader.setSignatureDigest(auditRecord.computeSignatureDigest());
                         auditModel.fireTableRowsUpdated(row, row);
                     }
                 }
             };
 
-            doUpdateMsgDetails( logHeader, (logHeader instanceof AuditHeaderLogMessage)? auditRecordRetrievedCallback: null );
+            doUpdateMsgDetails( logHeader, (logHeader instanceof AuditHeaderMessage)? auditRecordRetrievedCallback: null );
         } else {
             updateMsgDetailText( "" );
         }
@@ -1855,7 +1855,7 @@ public class LogPanel extends JPanel {
         if (row == -1) return null;
 
         final AuditLogTableSorterModel model = (AuditLogTableSorterModel) getMsgTable().getModel();
-        final LogMessage logHeader = model.getLogMessageAtRow(row);
+        final AbstractAuditMessage logHeader = model.getLogMessageAtRow(row);
 
         final boolean isRequest = getRequestXmlPanel() == getMsgDetailsPane().getSelectedComponent();
         final boolean isResponse = getResponseXmlPanel() == getMsgDetailsPane().getSelectedComponent();
@@ -2245,9 +2245,9 @@ public class LogPanel extends JPanel {
      * Displays the given log messages. Old display is cleared first.
      *
      * @param logs log messages to load; as a map of gateway node ID and
-     *             corresponding collection of {@link com.l7tech.console.util.AuditLogMessage}s
+     *             corresponding collection of {@link AuditMessage}s
      */
-    public void setLogs(Map<Long, ? extends LogMessage> logs) {
+    public void setLogs(Map<Long, ? extends AbstractAuditMessage> logs) {
         onDisconnect();
         retrievalMode = RetrievalMode.NONE;
         getFilteredLogTableSorter().setLogs(this, logs);
@@ -2472,9 +2472,9 @@ public class LogPanel extends JPanel {
         List<WriteableLogMessage> data = new ArrayList<WriteableLogMessage>(rows);
         AuditLogTableSorterModel logTableSorterModel = getFilteredLogTableSorter();
         for (int i = 0; i < rows; i++) {
-            LogMessage logMessage = logTableSorterModel.getLogMessageAtRow(i);
-            if ( logMessage instanceof AuditLogMessage) {
-                data.add(new WriteableLogMessage((AuditLogMessage)logMessage));
+            AbstractAuditMessage logMessage = logTableSorterModel.getLogMessageAtRow(i);
+            if ( logMessage instanceof AuditMessage ) {
+                data.add(new WriteableLogMessage((AuditMessage)logMessage));
             }  else {
                 data.add(new LazyWriteableLogMessage(logMessage));
             }
@@ -2575,9 +2575,9 @@ public class LogPanel extends JPanel {
                 if (data.isEmpty()) {
                     logger.info("No data in file! '" + file.getAbsolutePath() + "'.");
                 }
-                Map<Long, LogMessage> loadedLogs = new HashMap<Long, LogMessage>();
+                Map<Long, AbstractAuditMessage> loadedLogs = new HashMap<Long, AbstractAuditMessage>();
                 for (WriteableLogMessage message : data) {
-                    LogMessage lm =  new AuditLogMessage((AuditRecord)message.ssgLogRecord);
+                    AbstractAuditMessage lm =  new AuditMessage((AuditRecord)message.ssgLogRecord);
                     lm.setNodeName(message.nodeName);
                     loadedLogs.put(lm.getMsgNumber(), lm);
                 }
@@ -2597,18 +2597,18 @@ public class LogPanel extends JPanel {
         return true;
     }
 
-    private static AuditLogMessage getLogMessage( final LogMessage logMessage ) throws FindException {
+    private static AuditMessage getLogMessage( final AbstractAuditMessage logMessage ) throws FindException {
         AuditRecord record = Registry.getDefault().getAuditAdmin().findByPrimaryKey( logMessage.getMsgNumber() );
         if ( record == null )
             throw new FindException("Missing audit record for id '"+logMessage.getMsgNumber()+"'.");
-        return new AuditLogMessage( record, logMessage.getNodeName() );
+        return new AuditMessage( record, logMessage.getNodeName() );
     }
 
     public static class WriteableLogMessage implements Comparable, Serializable {
         private String nodeName;
         private AuditRecord ssgLogRecord;
 
-        public WriteableLogMessage( AuditLogMessage lm ) {
+        public WriteableLogMessage( AuditMessage lm ) {
             nodeName = lm.getNodeName();
             ssgLogRecord = lm.getAuditRecord();
         }
@@ -2624,9 +2624,9 @@ public class LogPanel extends JPanel {
     }
 
     public static class LazyWriteableLogMessage extends WriteableLogMessage {
-        private LogMessage logMessage;
+        private AbstractAuditMessage logMessage;
 
-        public LazyWriteableLogMessage(LogMessage logMessage) {
+        public LazyWriteableLogMessage(AbstractAuditMessage logMessage) {
             super();
             this.logMessage = logMessage;
         }

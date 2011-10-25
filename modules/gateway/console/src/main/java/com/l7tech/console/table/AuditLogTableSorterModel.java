@@ -120,8 +120,8 @@ public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
     private final AtomicReference<ClusterLogWorker> workerReference = new AtomicReference<ClusterLogWorker>();
     private TimeZone timeZone;
 
-    private volatile Map<Long, LogMessage> rawLogCache = new HashMap<Long, LogMessage>();
-    private volatile List<LogMessage> filteredLogCache = new ArrayList<LogMessage>();
+    private volatile Map<Long, AbstractAuditMessage> rawLogCache = new HashMap<Long, AbstractAuditMessage>();
+    private volatile List<AbstractAuditMessage> filteredLogCache = new ArrayList<AbstractAuditMessage>();
     private Map<String, GatewayStatus> currentNodeList;
 
     /**
@@ -187,7 +187,7 @@ public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
      *
      * @param newLogs  The new logs.
      */
-    private void addLogs(Map<Long, ? extends LogMessage> newLogs) {
+    private void addLogs(Map<Long, ? extends AbstractAuditMessage> newLogs) {
 
         // add new logs to the cache
         if (newLogs.size() > 0) {
@@ -230,7 +230,7 @@ public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
                             return;
                         }
 
-                        final Map<Long, AuditHeaderLogMessage> auditHeaders = new HashMap<Long, AuditHeaderLogMessage>();
+                        final Map<Long, AuditHeaderMessage> auditHeaders = new HashMap<Long, AuditHeaderMessage>();
                         int index = sigValidationIndex;
                         int count = 0;
                         synchronized (auditHeaderLock) {
@@ -240,7 +240,7 @@ public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
                                     return;
                                 }
 
-                                final AuditHeaderLogMessage logMessage = (AuditHeaderLogMessage) filteredLogCache.get(index);
+                                final AuditHeaderMessage logMessage = (AuditHeaderMessage) filteredLogCache.get(index);
                                 if (logMessage.getSignatureDigest() == null) {
                                     auditHeaders.put(logMessage.getMsgNumber(), logMessage);
                                 }
@@ -267,7 +267,7 @@ public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
                                         return;
                                     }
 
-                                    final AuditHeaderLogMessage auditHeader = auditHeaders.get(auditRecordId);
+                                    final AuditHeaderMessage auditHeader = auditHeaders.get(auditRecordId);
                                     if (digestsForRecords.containsKey(auditRecordId)) {
                                         auditHeader.setSignatureDigest(digestsForRecords.get(auditRecordId));
                                     } else {
@@ -391,8 +391,8 @@ public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
       * @param nodeId  The Id of the node whose logs will be removed from the cache.
       */
      private void removeLogs(String nodeId) {
-        Collection<LogMessage> rawLogCacheCollection = rawLogCache.values();
-        for(LogMessage logMessage : rawLogCacheCollection){
+        Collection<AbstractAuditMessage> rawLogCacheCollection = rawLogCache.values();
+        for(AbstractAuditMessage logMessage : rawLogCacheCollection){
             if(logMessage.getNodeId().equals(nodeId)){
                 rawLogCache.remove(logMessage.getMsgNumber());
             }
@@ -450,7 +450,7 @@ public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
      */
     @Override
     public Object getValueAt(int row, int col) {
-        LogMessage msg = getLogMessageAtRow(row);
+        AbstractAuditMessage msg = getLogMessageAtRow(row);
         switch (col) {
             case LogPanel.LOG_SIGNATURE_COLUMN_INDEX:
                 return getUISignatureState(msg);
@@ -476,11 +476,11 @@ public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
         }
     }
 
-    public LogMessage getLogMessageAtRow(int row) {
+    public AbstractAuditMessage getLogMessageAtRow(int row) {
         return filteredLogCache.get(sortedData[row]);
     }
 
-    private DigitalSignatureUIState getUISignatureState(LogMessage msg) {
+    private DigitalSignatureUIState getUISignatureState(AbstractAuditMessage msg) {
         try {
             return compareSignatureDigests(msg);
         } catch ( IOException e ) {
@@ -522,8 +522,8 @@ public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
             Object elementA = null;
             Object elementB = null;
 
-            LogMessage logMsgA = filteredLogCache.get(a);
-            LogMessage logMsgB = filteredLogCache.get(b);
+            AbstractAuditMessage logMsgA = filteredLogCache.get(a);
+            AbstractAuditMessage logMsgB = filteredLogCache.get(b);
 
             switch (column) {
                 case LogPanel.LOG_SIGNATURE_COLUMN_INDEX:
@@ -657,9 +657,9 @@ public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
         }
 
         synchronized (auditHeaderLock) {
-            rawLogCache = new HashMap<Long,LogMessage>();
+            rawLogCache = new HashMap<Long,AbstractAuditMessage>();
             sigValidationIndex = 0;
-            filteredLogCache = new ArrayList<LogMessage>();
+            filteredLogCache = new ArrayList<AbstractAuditMessage>();
         }
         currentNodeList = new HashMap<String, GatewayStatus>();
         sortedData = new Integer[0];
@@ -700,14 +700,14 @@ public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
             //...so must set the start message number
             //TODO there is likely a faster way to do this
             Map<String, Long> nodeToHighestId = new HashMap<String, Long>();
-            Collection<LogMessage> rawLogCacheCollection = rawLogCache.values();
+            Collection<AbstractAuditMessage> rawLogCacheCollection = rawLogCache.values();
 
             // new results can only be obtained for known nodes in the cluster.
             for (String nodeId : currentNodeList.keySet()) {
                 nodeToHighestId.put(nodeId, -1L);
             }
 
-            for (LogMessage logMessage : rawLogCacheCollection) {
+            for (AbstractAuditMessage logMessage : rawLogCacheCollection) {
                 //protect against records from nodes not in the cluster anymore
                 if (nodeToHighestId.containsKey(logMessage.getNodeId())) {
                     final Long nodesHighest = nodeToHighestId.get(logMessage.getNodeId());
@@ -731,7 +731,7 @@ public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
      * @param logPane   The object reference to the LogPanel.
      * @param logs the data list.
      */
-    public void setLogs(final LogPanel logPane, final Map<Long, ? extends LogMessage> logs) {
+    public void setLogs(final LogPanel logPane, final Map<Long, ? extends AbstractAuditMessage> logs) {
         logger.info("Importing "+/*count*/logs.size()+"audit records.");
 
         // import
@@ -784,7 +784,7 @@ public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
                     // Note: the get() operation is a blocking operation.
                     // get() will never block based on construct()'s implementation.
                     if ( !isCancelled() && this.get() != null) {
-                        Map<Long, AuditHeaderLogMessage> newLogs = getNewLogs();
+                        Map<Long, AuditHeaderMessage> newLogs = getNewLogs();
                         int logCount = newLogs.size();
                         boolean updated = logCount > 0;
 
@@ -859,13 +859,13 @@ public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
         refreshCancelled = false;
     }
 
-    private DigitalSignatureUIState compareSignatureDigests( LogMessage msg ) throws IOException {
+    private DigitalSignatureUIState compareSignatureDigests( AbstractAuditMessage msg ) throws IOException {
         final String signatureToVerify = msg.getSignature();
         final byte[] digestValue =  msg.getSignatureDigest();
 
         if (signatureToVerify != null && digestValue == null) {
-            if (msg instanceof AuditHeaderLogMessage) {
-                AuditHeaderLogMessage auditHeader = (AuditHeaderLogMessage) msg;
+            if (msg instanceof AuditHeaderMessage ) {
+                AuditHeaderMessage auditHeader = (AuditHeaderMessage) msg;
                 if (auditHeader.isDigestWasSkipped()) {
                     return DigitalSignatureUIState.MANUAL_DOWNLOAD;
                 }

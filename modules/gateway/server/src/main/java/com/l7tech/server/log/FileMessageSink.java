@@ -11,9 +11,9 @@ import java.io.Serializable;
 import java.io.ObjectStreamException;
 
 import com.l7tech.common.log.HybridDiagnosticContextFilter;
-import com.l7tech.common.log.HybridDiagnosticContextKeys;
 import com.l7tech.common.log.HybridDiagnosticContextMatcher.MatcherRules;
 import com.l7tech.common.log.SerializableFilter;
+import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
 import com.l7tech.gateway.common.log.SinkConfiguration;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.util.ExceptionUtils;
@@ -114,7 +114,7 @@ class FileMessageSink extends MessageSinkSupport implements Serializable {
     private SerializableFilter buildFilter( final SinkConfiguration configuration ) {
         return new HybridDiagnosticContextFilter( new MatcherRules(
                 configuration.getFilters(),
-                HybridDiagnosticContextKeys.PREFIX_MATCH_PROPERTIES
+                GatewayDiagnosticContextKeys.PREFIX_MATCH_PROPERTIES
         ) );
     }
 

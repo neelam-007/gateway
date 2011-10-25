@@ -1,15 +1,14 @@
 package com.l7tech.server.log;
 
 import java.util.logging.LogRecord;
-import java.util.logging.Level;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Collections;
 import java.util.StringTokenizer;
 
-import com.l7tech.common.log.HybridDiagnosticContextKeys;
 import com.l7tech.common.log.HybridDiagnosticContextMatcher;
 import com.l7tech.common.log.HybridDiagnosticContextMatcher.MatcherRules;
+import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
 import com.l7tech.gateway.common.log.SinkConfiguration;
 
 /**
@@ -34,7 +33,7 @@ abstract class MessageSinkSupport implements MessageSink {
         this.configuration = configuration;
         this.threshold = configuration.getSeverity().toLoggingLevel().intValue();
         this.categories = buildCategories( configuration );
-        this.rules = new MatcherRules(configuration.getFilters(),HybridDiagnosticContextKeys.PREFIX_MATCH_PROPERTIES);
+        this.rules = new MatcherRules(configuration.getFilters(), GatewayDiagnosticContextKeys.PREFIX_MATCH_PROPERTIES );
     }
 
     /**

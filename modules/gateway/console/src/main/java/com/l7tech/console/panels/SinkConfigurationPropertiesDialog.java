@@ -1,9 +1,9 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.common.log.HybridDiagnosticContextKeys;
 import com.l7tech.console.panels.SinkConfigurationFilterSelectionDialog.FilterContext;
 import com.l7tech.console.panels.SinkConfigurationFilterSelectionDialog.FilterSelection;
 import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
 import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.log.SinkConfiguration;
 import com.l7tech.gui.util.*;
@@ -112,7 +112,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
     }
 
     private final Map<String,FilterBuilder> filterBuilders = CollectionUtils.<String,FilterBuilder>mapBuilder()
-            .put( HybridDiagnosticContextKeys.SERVICE_ID, new FilterBuilder(HybridDiagnosticContextKeys.SERVICE_ID) {
+            .put( GatewayDiagnosticContextKeys.SERVICE_ID, new FilterBuilder( GatewayDiagnosticContextKeys.SERVICE_ID ) {
                 @Override
                 protected FilterInfo buildFilterInfo( final FilterSelection value ) {
                     return newServiceFilter( value );
@@ -122,19 +122,19 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
                     return filterContext.resolveServiceFilter( value );
                 }
             } )
-            .put( HybridDiagnosticContextKeys.CLIENT_IP, new FilterBuilder(HybridDiagnosticContextKeys.CLIENT_IP) {
+            .put( GatewayDiagnosticContextKeys.CLIENT_IP, new FilterBuilder( GatewayDiagnosticContextKeys.CLIENT_IP ) {
                 @Override
                 protected FilterInfo buildFilterInfo( final FilterSelection value ) {
                     return newIPAddressFilter( value.getValue() );
                 }
             } )
-            .put( HybridDiagnosticContextKeys.LOGGER_NAME, new FilterBuilder(HybridDiagnosticContextKeys.LOGGER_NAME) {
+            .put( GatewayDiagnosticContextKeys.LOGGER_NAME, new FilterBuilder( GatewayDiagnosticContextKeys.LOGGER_NAME ) {
                 @Override
                 protected FilterInfo buildFilterInfo( final FilterSelection value ) {
                     return newLoggerNameFilter( value.getValue() );
                 }
             } )
-            .put( HybridDiagnosticContextKeys.EMAIL_LISTENER_ID, new FilterBuilder(HybridDiagnosticContextKeys.EMAIL_LISTENER_ID) {
+            .put( GatewayDiagnosticContextKeys.EMAIL_LISTENER_ID, new FilterBuilder( GatewayDiagnosticContextKeys.EMAIL_LISTENER_ID ) {
                 @Override
                 protected FilterInfo buildFilterInfo( final FilterSelection value ) {
                     return newEmailTransportFilter( value );
@@ -144,7 +144,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
                     return filterContext.resolveEmailTransportFilter( value );
                 }
             } )
-            .put( HybridDiagnosticContextKeys.JMS_LISTENER_ID, new FilterBuilder(HybridDiagnosticContextKeys.JMS_LISTENER_ID) {
+            .put( GatewayDiagnosticContextKeys.JMS_LISTENER_ID, new FilterBuilder( GatewayDiagnosticContextKeys.JMS_LISTENER_ID ) {
                 @Override
                 protected FilterInfo buildFilterInfo( final FilterSelection value ) {
                     return newJMSTransportFilter( value );
@@ -154,7 +154,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
                     return filterContext.resolveJmsTransportFilter( value );
                 }
             } )
-            .put( HybridDiagnosticContextKeys.LISTEN_PORT_ID, new FilterBuilder(HybridDiagnosticContextKeys.LISTEN_PORT_ID) {
+            .put( GatewayDiagnosticContextKeys.LISTEN_PORT_ID, new FilterBuilder( GatewayDiagnosticContextKeys.LISTEN_PORT_ID ) {
                 @Override
                 protected FilterInfo buildFilterInfo( final FilterSelection value ) {
                     return newListenPortTransportFilter( value );
@@ -164,7 +164,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
                     return filterContext.resolveListenPortTransportFilter( value );
                 }
             } )
-            .put( HybridDiagnosticContextKeys.USER_ID, new FilterBuilder(HybridDiagnosticContextKeys.USER_ID) {
+            .put( GatewayDiagnosticContextKeys.USER_ID, new FilterBuilder( GatewayDiagnosticContextKeys.USER_ID ) {
                 @Override
                 protected FilterInfo buildFilterInfo( final FilterSelection value ) {
                     return newUserFilter( value );
@@ -174,7 +174,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
                     return filterContext.resolveUserFilter( value );
                 }
             } )
-            .put( HybridDiagnosticContextKeys.POLICY_ID, new FilterBuilder(HybridDiagnosticContextKeys.POLICY_ID) {
+            .put( GatewayDiagnosticContextKeys.POLICY_ID, new FilterBuilder( GatewayDiagnosticContextKeys.POLICY_ID ) {
                 @Override
                 protected FilterInfo buildFilterInfo( final FilterSelection value ) {
                     return newPolicyFilter( value );
@@ -184,7 +184,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
                     return filterContext.resolvePolicyFilter( value );
                 }
             } )
-            .put( HybridDiagnosticContextKeys.FOLDER_ID, new FilterBuilder(HybridDiagnosticContextKeys.FOLDER_ID) {
+            .put( GatewayDiagnosticContextKeys.FOLDER_ID, new FilterBuilder( GatewayDiagnosticContextKeys.FOLDER_ID ) {
                 @Override
                 protected FilterInfo buildFilterInfo( final FilterSelection value ) {
                     return newFolderFilter( value );
@@ -885,35 +885,35 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
     }
 
     private FilterInfo newServiceFilter( final FilterSelection filterSelection ) {
-        return new FilterInfo( HybridDiagnosticContextKeys.SERVICE_ID, "Service", filterSelection.getValue(), filterSelection.getDisplayValue() );
+        return new FilterInfo( GatewayDiagnosticContextKeys.SERVICE_ID, "Service", filterSelection.getValue(), filterSelection.getDisplayValue() );
     }
 
     private FilterInfo newUserFilter( final FilterSelection filterSelection ) {
-        return new FilterInfo( HybridDiagnosticContextKeys.USER_ID, "User", filterSelection.getValue(), filterSelection.getDisplayValue() );
+        return new FilterInfo( GatewayDiagnosticContextKeys.USER_ID, "User", filterSelection.getValue(), filterSelection.getDisplayValue() );
     }
 
     private FilterInfo newEmailTransportFilter( final FilterSelection filterSelection ) {
-        return new FilterInfo( HybridDiagnosticContextKeys.EMAIL_LISTENER_ID, "Transport", filterSelection.getValue(), "Email/" + filterSelection.getDisplayValue() );
+        return new FilterInfo( GatewayDiagnosticContextKeys.EMAIL_LISTENER_ID, "Transport", filterSelection.getValue(), "Email/" + filterSelection.getDisplayValue() );
     }
 
     private FilterInfo newJMSTransportFilter( final FilterSelection filterSelection ) {
-        return new FilterInfo( HybridDiagnosticContextKeys.JMS_LISTENER_ID, "Transport", filterSelection.getValue(), "JMS/" + filterSelection.getDisplayValue() );
+        return new FilterInfo( GatewayDiagnosticContextKeys.JMS_LISTENER_ID, "Transport", filterSelection.getValue(), "JMS/" + filterSelection.getDisplayValue() );
     }
 
     private FilterInfo newListenPortTransportFilter( final FilterSelection filterSelection ) {
-        return new FilterInfo( HybridDiagnosticContextKeys.LISTEN_PORT_ID, "Transport", filterSelection.getValue(), "Listen Port/" + filterSelection.getDisplayValue() );
+        return new FilterInfo( GatewayDiagnosticContextKeys.LISTEN_PORT_ID, "Transport", filterSelection.getValue(), "Listen Port/" + filterSelection.getDisplayValue() );
     }
 
     private FilterInfo newIPAddressFilter( final String ipPattern ) {
-        return new FilterInfo( HybridDiagnosticContextKeys.CLIENT_IP, "IP", ipPattern, ipPattern );
+        return new FilterInfo( GatewayDiagnosticContextKeys.CLIENT_IP, "IP", ipPattern, ipPattern );
     }
 
     private FilterInfo newPolicyFilter( final FilterSelection filterSelection ) {
-        return new FilterInfo( HybridDiagnosticContextKeys.POLICY_ID, "Policy", filterSelection.getValue(), filterSelection.getDisplayValue() );
+        return new FilterInfo( GatewayDiagnosticContextKeys.POLICY_ID, "Policy", filterSelection.getValue(), filterSelection.getDisplayValue() );
     }
 
     private FilterInfo newFolderFilter( final FilterSelection filterSelection ) {
-        return new FilterInfo( HybridDiagnosticContextKeys.FOLDER_ID, "Folder", filterSelection.getValue(), filterSelection.getDisplayValue() );
+        return new FilterInfo( GatewayDiagnosticContextKeys.FOLDER_ID, "Folder", filterSelection.getValue(), filterSelection.getDisplayValue() );
     }
 
     private static final class FilterInfo implements Comparable<FilterInfo> {

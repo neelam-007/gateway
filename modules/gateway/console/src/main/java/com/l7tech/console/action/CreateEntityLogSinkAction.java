@@ -1,9 +1,9 @@
 package com.l7tech.console.action;
 
-import com.l7tech.common.log.HybridDiagnosticContextKeys;
 import com.l7tech.console.panels.SinkConfigurationPropertiesDialog;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
 import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.log.SinkConfiguration;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
@@ -68,11 +68,11 @@ public class CreateEntityLogSinkAction extends SecureAction {
         EntityType type = entityHeader.getType();
         switch (type){
             case POLICY:
-                return HybridDiagnosticContextKeys.POLICY_ID;
+                return GatewayDiagnosticContextKeys.POLICY_ID;
             case SERVICE:
-                return HybridDiagnosticContextKeys.SERVICE_ID;
+                return GatewayDiagnosticContextKeys.SERVICE_ID;
             case FOLDER:
-                return HybridDiagnosticContextKeys.FOLDER_ID;
+                return GatewayDiagnosticContextKeys.FOLDER_ID;
         }
         throw new IllegalStateException("Unsupported entityHeader type: " + type);
     }

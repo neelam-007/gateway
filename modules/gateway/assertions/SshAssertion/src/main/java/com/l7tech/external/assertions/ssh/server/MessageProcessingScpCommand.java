@@ -1,8 +1,8 @@
 package com.l7tech.external.assertions.ssh.server;
 
 import com.l7tech.common.log.HybridDiagnosticContext;
-import com.l7tech.common.log.HybridDiagnosticContextKeys;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.message.HasServiceOid;
 import com.l7tech.message.HasServiceOidImpl;
@@ -95,13 +95,13 @@ public class MessageProcessingScpCommand extends ScpCommand implements SessionAw
             }
         }
 
-        HybridDiagnosticContext.put( HybridDiagnosticContextKeys.LISTEN_PORT_ID, Long.toString( connector.getOid() ) );
-        HybridDiagnosticContext.put( HybridDiagnosticContextKeys.CLIENT_IP, MessageProcessingSshUtil.getRemoteAddress(session) );
+        HybridDiagnosticContext.put( GatewayDiagnosticContextKeys.LISTEN_PORT_ID, Long.toString( connector.getOid() ) );
+        HybridDiagnosticContext.put( GatewayDiagnosticContextKeys.CLIENT_IP, MessageProcessingSshUtil.getRemoteAddress(session) );
         try {
             pipeInputStreamToGatewayRequestMessage(connector, absolutePath, name, in, length);
         } finally {
-            HybridDiagnosticContext.remove( HybridDiagnosticContextKeys.LISTEN_PORT_ID );
-            HybridDiagnosticContext.remove( HybridDiagnosticContextKeys.CLIENT_IP );
+            HybridDiagnosticContext.remove( GatewayDiagnosticContextKeys.LISTEN_PORT_ID );
+            HybridDiagnosticContext.remove( GatewayDiagnosticContextKeys.CLIENT_IP );
         }
 
         readAck(false);

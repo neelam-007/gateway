@@ -31,7 +31,7 @@ public class ClusterLogWorker extends SwingWorker {
     private final AuditAdmin logService;
     private Map<String, GatewayStatus> newNodeList;
     private LogRequest logRequest;
-    private final Map<Long, AuditHeaderLogMessage> retrievedLogs = new HashMap<Long, AuditHeaderLogMessage>();
+    private final Map<Long, AuditHeaderMessage> retrievedLogs = new HashMap<Long, AuditHeaderMessage>();
     private java.util.Date currentClusterSystemTime = null;
     private final AtomicBoolean cancelled;
 
@@ -70,7 +70,7 @@ public class ClusterLogWorker extends SwingWorker {
      *
      * @return new logs
      */
-    public Map<Long, AuditHeaderLogMessage> getNewLogs(){
+    public Map<Long, AuditHeaderMessage> getNewLogs(){
         return retrievedLogs;
     }
 
@@ -133,10 +133,10 @@ public class ClusterLogWorker extends SwingWorker {
 
             List<AuditRecordHeader> rawHeaders;
             if (logRequest != null) {
-                Map<Long, AuditHeaderLogMessage> newLogs = new HashMap<Long, AuditHeaderLogMessage>();
+                Map<Long, AuditHeaderMessage> newLogs = new HashMap<Long, AuditHeaderMessage>();
 
                 try {
-                    AuditHeaderLogMessage logMessage;
+                    AuditHeaderMessage logMessage;
 
                     AuditSearchCriteria asc = new AuditSearchCriteria.Builder(logRequest).
                         nodeId(nodeNameIdMap.get(logRequest.getNodeName())).
@@ -155,7 +155,7 @@ public class ClusterLogWorker extends SwingWorker {
 
                         for (int j = 0; j < (rawHeaders.size()) && (retrievedLogs.size() < AuditLogTableSorterModel.MAX_NUMBER_OF_LOG_MESSAGES); j++) {
                             AuditRecordHeader header = rawHeaders.get(j);
-                            logMessage = new AuditHeaderLogMessage(header);
+                            logMessage = new AuditHeaderMessage(header);
 
                             final GatewayStatus nodeStatus = newNodeList.get(header.getNodeId());
                             if (nodeStatus != null) { // do not add log messages for nodes that are no longer in the cluster

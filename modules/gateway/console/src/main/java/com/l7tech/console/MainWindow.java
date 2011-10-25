@@ -164,7 +164,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private CreateServiceWsdlAction createServiceAction = null;
     private CreatePolicyAction createPolicyAction;
     private ViewGatewayAuditsAction viewGatewayAuditsWindowAction;
-    private ViewAuditsOrLogsFromFileAction auditOrLogFromFileAction;
+    private ViewAuditsFromFileAction auditOrLogFromFileAction;
     private ViewLogsAction viewLogsAction;
     private ManageJmsEndpointsAction manageJmsEndpointsAction = null;
     private ManageKerberosAction manageKerberosAction = null;
@@ -2239,9 +2239,9 @@ public class MainWindow extends JFrame implements SheetHolder {
         return viewLogsAction;
     }
 
-    private ViewAuditsOrLogsFromFileAction getAuditOrLogsFromFileAction() {
+    private ViewAuditsFromFileAction getAuditOrLogsFromFileAction() {
         if (auditOrLogFromFileAction != null) return auditOrLogFromFileAction;
-        auditOrLogFromFileAction = new ViewAuditsOrLogsFromFileAction();
+        auditOrLogFromFileAction = new ViewAuditsFromFileAction();
         return auditOrLogFromFileAction;
     }
 

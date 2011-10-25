@@ -19,11 +19,9 @@ import java.util.*;
 import java.util.List;
 
 /**
- * Class PolicyTree is the extended <code>JTree</code>
- *
- * TODO [steve] rename to reflect this component is not just for services after development in logging branch complete
+ * Tree for selection of organizational headers / folders.
  */
-public class ServiceSelectionTree<LEH extends OrganizationHeader> extends JTree  {
+public class OrganizationSelectionTree<LEH extends OrganizationHeader> extends JTree  {
 
     private CheckBoxNode rootNode;
     private DefaultTreeModel organizationTreeModel;
@@ -34,7 +32,7 @@ public class ServiceSelectionTree<LEH extends OrganizationHeader> extends JTree 
      *
      * @param leafsSelectable True if the displayed OrganizationHeaders are selectable.
      */
-    public ServiceSelectionTree( final boolean leafsSelectable ) {
+    public OrganizationSelectionTree( final boolean leafsSelectable ) {
         this.rootNode = new CheckBoxNode( new FolderHeader(-5002L, "/", null, null, "/" ), false);
         this.organizationTreeModel = new DefaultTreeModel(rootNode);
         this.leafsSelectable = leafsSelectable;

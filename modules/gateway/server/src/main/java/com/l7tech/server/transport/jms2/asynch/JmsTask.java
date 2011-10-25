@@ -1,7 +1,7 @@
 package com.l7tech.server.transport.jms2.asynch;
 
 import com.l7tech.common.log.HybridDiagnosticContext;
-import com.l7tech.common.log.HybridDiagnosticContextKeys;
+import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
 import com.l7tech.server.transport.jms.JmsBag;
 import com.l7tech.server.transport.jms.JmsRuntimeException;
 import com.l7tech.server.transport.jms.JmsUtil;
@@ -93,12 +93,12 @@ class JmsTask implements Runnable {
     void handleMessage() throws JmsRuntimeException {
         // call the request handler to invoke the MessageProcessor
         HybridDiagnosticContext.put(
-                HybridDiagnosticContextKeys.JMS_LISTENER_ID,
+                GatewayDiagnosticContextKeys.JMS_LISTENER_ID,
                 Long.toString( endpointCfg.getEndpoint().getOid() ) );
         try {
             handler.onMessage(endpointCfg, jmsBag, endpointCfg.isTransactional(), createFailureProducer(), jmsMessage);
         } finally {
-            HybridDiagnosticContext.remove( HybridDiagnosticContextKeys.JMS_LISTENER_ID );
+            HybridDiagnosticContext.remove( GatewayDiagnosticContextKeys.JMS_LISTENER_ID );
         }
     }
 

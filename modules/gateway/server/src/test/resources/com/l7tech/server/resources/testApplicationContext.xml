@@ -38,7 +38,7 @@
 
     <bean id="resolutionConfigurationManager" class="com.l7tech.server.transport.ResolutionConfigurationManagerStub"/>
 
-    <bean id="folderManager" class="com.l7tech.server.security.rbac.FolderManagerStub"/>
+    <bean id="folderManager" class="com.l7tech.server.folder.FolderManagerStub"/>
 
     <bean id="folderCache" class="com.l7tech.server.folder.FolderCacheImpl">
         <constructor-arg index="0" ref="folderManager"/>

@@ -19,9 +19,9 @@ import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.SsmPreferences;
-import com.l7tech.console.util.AuditLogMessage;
-import com.l7tech.console.util.LogMessage;
-import com.l7tech.console.util.AuditHeaderLogMessage;
+import com.l7tech.console.util.AuditMessage;
+import com.l7tech.console.util.AbstractAuditMessage;
+import com.l7tech.console.util.AuditHeaderMessage;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.Functions;
 
@@ -207,10 +207,10 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
      * @param auditRecords  audit records to display
      */
     public void displayAudits(Collection<AuditRecord> auditRecords) {
-        displayAudits( auditRecords, new Functions.Unary<LogMessage,AuditRecord>(){
+        displayAudits( auditRecords, new Functions.Unary<AbstractAuditMessage,AuditRecord>(){
             @Override
-            public LogMessage call(final AuditRecord auditRecord) {
-                return new AuditLogMessage( auditRecord );
+            public AbstractAuditMessage call(final AuditRecord auditRecord) {
+                return new AuditMessage( auditRecord );
             }
         } );
     }
@@ -221,10 +221,10 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
      * @param auditRecordHeaders  audit records to display
      */
     public void displayAuditHeaders(Collection<AuditRecordHeader> auditRecordHeaders) {
-        displayAudits( auditRecordHeaders, new Functions.Unary<LogMessage,AuditRecordHeader>(){
+        displayAudits( auditRecordHeaders, new Functions.Unary<AbstractAuditMessage,AuditRecordHeader>(){
             @Override
-            public LogMessage call(final AuditRecordHeader auditRecordHeader) {
-                return new AuditHeaderLogMessage( auditRecordHeader );
+            public AbstractAuditMessage call(final AuditRecordHeader auditRecordHeader) {
+                return new AuditHeaderMessage( auditRecordHeader );
             }
         } );
     }
@@ -233,7 +233,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
      * Displays the given audit info. Old display is cleared first.
      */
     private <T> void displayAudits( final Collection<T> auditDataCollection,
-                                    final Functions.Unary<LogMessage, T> logMessageBuilder ) {
+                                    final Functions.Unary<AbstractAuditMessage, T> logMessageBuilder ) {
         // Constructs mapping from gateway node ID to name.
         final Map<String, String> nodeIdNames = new HashMap<String, String>();
         final Registry registry = Registry.getDefault();
@@ -250,9 +250,9 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
         // else Leave the map empty.
 
         // Converts flat collection to Map.
-        final Map<Long, LogMessage> logs = new HashMap<Long, LogMessage>();
+        final Map<Long, AbstractAuditMessage> logs = new HashMap<Long, AbstractAuditMessage>();
         for ( T auditData : auditDataCollection ) {
-            final LogMessage logMessage = logMessageBuilder.call( auditData );
+            final AbstractAuditMessage logMessage = logMessageBuilder.call( auditData );
             final String nodeId = logMessage.getNodeId();
             // Needs to set gateway node name manually:
             String nodeName = nodeIdNames.get(nodeId);

@@ -1,7 +1,7 @@
 package com.l7tech.server.log;
 
 import com.l7tech.common.log.HybridDiagnosticContext;
-import com.l7tech.common.log.HybridDiagnosticContextKeys;
+import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.util.ConfigFactory;
@@ -40,9 +40,9 @@ public class HybridDiagnosticContextServletFilter implements Filter {
             // populate connector / IP info
             final SsgConnector connector = HttpTransportModule.getConnector( servletRequest );
             if ( connector != null ) {
-                HybridDiagnosticContext.put( HybridDiagnosticContextKeys.LISTEN_PORT_ID, Long.toString( connector.getOid() ) );
+                HybridDiagnosticContext.put( GatewayDiagnosticContextKeys.LISTEN_PORT_ID, Long.toString( connector.getOid() ) );
             }
-            HybridDiagnosticContext.put( HybridDiagnosticContextKeys.CLIENT_IP, servletRequest.getRemoteAddr() );
+            HybridDiagnosticContext.put( GatewayDiagnosticContextKeys.CLIENT_IP, servletRequest.getRemoteAddr() );
         }
 
         try {

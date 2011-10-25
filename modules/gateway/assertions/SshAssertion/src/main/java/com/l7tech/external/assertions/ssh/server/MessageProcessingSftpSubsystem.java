@@ -1,8 +1,8 @@
 package com.l7tech.external.assertions.ssh.server;
 
 import com.l7tech.common.log.HybridDiagnosticContext;
-import com.l7tech.common.log.HybridDiagnosticContextKeys;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.message.HasServiceOid;
 import com.l7tech.message.HasServiceOidImpl;
@@ -304,13 +304,13 @@ public class MessageProcessingSftpSubsystem extends SftpSubsystem {
                 }
             }
         } catch (IOException e) {
-            sendStatus(id, SSH_FX_FAILURE, e.getMessage());
+            sendStatus(id, SSH_FX_FAILURE, ExceptionUtils.getMessage( e ));
         } catch (InterruptedException e) {
-            sendStatus(id, SSH_FX_FAILURE, e.getMessage());
+            sendStatus(id, SSH_FX_FAILURE, ExceptionUtils.getMessage( e ));
         } catch (ExecutionException e) {
-            sendStatus(id, SSH_FX_FAILURE, e.getMessage());
+            sendStatus(id, SSH_FX_FAILURE, ExceptionUtils.getMessage( e ));
         } catch (TimeoutException e) {
-            sendStatus(id, SSH_FX_FAILURE, e.getMessage());
+            sendStatus(id, SSH_FX_FAILURE, ExceptionUtils.getMessage( e ));
         }
     }
 
@@ -321,8 +321,8 @@ public class MessageProcessingSftpSubsystem extends SftpSubsystem {
         if (file instanceof VirtualSshFile) try {
             final VirtualSshFile virtualSshFile = (VirtualSshFile) file;
 
-            HybridDiagnosticContext.put( HybridDiagnosticContextKeys.LISTEN_PORT_ID, Long.toString( connector.getOid() ) );
-            HybridDiagnosticContext.put( HybridDiagnosticContextKeys.CLIENT_IP, MessageProcessingSshUtil.getRemoteAddress(session) );
+            HybridDiagnosticContext.put( GatewayDiagnosticContextKeys.LISTEN_PORT_ID, Long.toString( connector.getOid() ) );
+            HybridDiagnosticContext.put( GatewayDiagnosticContextKeys.CLIENT_IP, MessageProcessingSshUtil.getRemoteAddress(session) );
 
             final PipedInputStream pis = new PipedInputStream();
             PipedOutputStream pos = new PipedOutputStream(pis);
@@ -421,8 +421,8 @@ public class MessageProcessingSftpSubsystem extends SftpSubsystem {
                 throw new CausedIOException("Interrupted waiting for data.", ie);
             }
         } finally {
-            HybridDiagnosticContext.remove( HybridDiagnosticContextKeys.LISTEN_PORT_ID );
-            HybridDiagnosticContext.remove( HybridDiagnosticContextKeys.CLIENT_IP );
+            HybridDiagnosticContext.remove( GatewayDiagnosticContextKeys.LISTEN_PORT_ID );
+            HybridDiagnosticContext.remove( GatewayDiagnosticContextKeys.CLIENT_IP );
         }
     }
 

@@ -1,7 +1,7 @@
 package com.l7tech.server.transport.jms2.synch;
 
 import com.l7tech.common.log.HybridDiagnosticContext;
-import com.l7tech.common.log.HybridDiagnosticContextKeys;
+import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.server.transport.jms.JmsBag;
 import com.l7tech.server.transport.jms.JmsConfigException;
@@ -45,7 +45,7 @@ class LegacyJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
     @Override
     protected void handleMessage( final Message jmsMessage ) throws JmsRuntimeException {
         HybridDiagnosticContext.put(
-                HybridDiagnosticContextKeys.JMS_LISTENER_ID,
+                GatewayDiagnosticContextKeys.JMS_LISTENER_ID,
                 Long.toString( getEndpointConfig().getEndpoint().getOid() ) );
         try {
             if ( !_endpointCfg.isTransactional() ) {
@@ -65,7 +65,7 @@ class LegacyJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
         } catch (NamingException ex) {
             throw new JmsRuntimeException(ex);
         } finally {
-            HybridDiagnosticContext.remove( HybridDiagnosticContextKeys.JMS_LISTENER_ID );
+            HybridDiagnosticContext.remove( GatewayDiagnosticContextKeys.JMS_LISTENER_ID );
         }
     }
 

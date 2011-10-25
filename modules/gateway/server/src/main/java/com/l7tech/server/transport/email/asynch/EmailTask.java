@@ -1,7 +1,7 @@
 package com.l7tech.server.transport.email.asynch;
 
 import com.l7tech.common.log.HybridDiagnosticContext;
-import com.l7tech.common.log.HybridDiagnosticContextKeys;
+import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
 import com.l7tech.server.transport.email.EmailListenerConfig;
 import com.l7tech.server.transport.email.EmailHandler;
 import com.l7tech.server.transport.email.EmailHandlerImpl;
@@ -79,12 +79,12 @@ public class EmailTask implements Runnable {
     protected void handleMessage() throws EmailListenerRuntimeException {
         // call the request handler to invoke the MessageProcessor
         HybridDiagnosticContext.put(
-                HybridDiagnosticContextKeys.EMAIL_LISTENER_ID,
+                GatewayDiagnosticContextKeys.EMAIL_LISTENER_ID,
                 Long.toString( emailListenerCfg.getEmailListener().getOid() ) );
         try {
             handler.onMessage(emailListenerCfg, message);
         } finally {
-            HybridDiagnosticContext.remove( HybridDiagnosticContextKeys.EMAIL_LISTENER_ID );
+            HybridDiagnosticContext.remove( GatewayDiagnosticContextKeys.EMAIL_LISTENER_ID );
         }
 
     }

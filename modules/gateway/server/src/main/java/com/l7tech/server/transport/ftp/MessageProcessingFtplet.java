@@ -1,7 +1,7 @@
 package com.l7tech.server.transport.ftp;
 
 import com.l7tech.common.log.HybridDiagnosticContext;
-import com.l7tech.common.log.HybridDiagnosticContextKeys;
+import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.message.FtpRequestKnob;
@@ -159,8 +159,8 @@ class MessageProcessingFtplet extends DefaultFtplet {
                 // request data
                 ftpReplyOutput.write(new DefaultFtpReply(FtpReply.REPLY_150_FILE_STATUS_OKAY, "File status okay; about to open data connection."));
                 DataConnectionFactory dataConnectionFactory = null;
-                HybridDiagnosticContext.put( HybridDiagnosticContextKeys.LISTEN_PORT_ID, Long.toString( connectorId ) );
-                HybridDiagnosticContext.put( HybridDiagnosticContextKeys.CLIENT_IP, ftpSession.getClientAddress().getHostAddress() );
+                HybridDiagnosticContext.put( GatewayDiagnosticContextKeys.LISTEN_PORT_ID, Long.toString( connectorId ) );
+                HybridDiagnosticContext.put( GatewayDiagnosticContextKeys.CLIENT_IP, ftpSession.getClientAddress().getHostAddress() );
                 try {
                     dataConnectionFactory = ftpSession.getDataConnection();
                     DataConnection dataConnection = null;
@@ -199,8 +199,8 @@ class MessageProcessingFtplet extends DefaultFtplet {
                     }
                 }
                 finally {
-                    HybridDiagnosticContext.remove( HybridDiagnosticContextKeys.LISTEN_PORT_ID );
-                    HybridDiagnosticContext.remove( HybridDiagnosticContextKeys.CLIENT_IP );
+                    HybridDiagnosticContext.remove( GatewayDiagnosticContextKeys.LISTEN_PORT_ID );
+                    HybridDiagnosticContext.remove( GatewayDiagnosticContextKeys.CLIENT_IP );
                     if (dataConnectionFactory !=null) dataConnectionFactory.closeDataConnection();
                 }
             }

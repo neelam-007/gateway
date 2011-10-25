@@ -10,17 +10,17 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 /**
- * LogMessage subclass for AuditRecords.
+ * AbstractAuditMessage subclass for AuditRecords.
  */
-public class AuditLogMessage extends LogMessage {
+public class AuditMessage extends AbstractAuditMessage {
 
     //- PUBLIC
 
-    public AuditLogMessage( final AuditRecord auditRecord ) {
+    public AuditMessage( final AuditRecord auditRecord ) {
         this.auditRecord = auditRecord;
     }
 
-    public AuditLogMessage( final AuditRecord auditRecord, final String nodeName ) {
+    public AuditMessage( final AuditRecord auditRecord, final String nodeName ) {
         this.auditRecord = auditRecord;
         setNodeName( nodeName );
     }

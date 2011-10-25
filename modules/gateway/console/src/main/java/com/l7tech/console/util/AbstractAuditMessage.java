@@ -3,11 +3,9 @@ package com.l7tech.console.util;
 import java.io.IOException;
 
 /**
- * LogMessages are displayed in the audit viewer.
- *
- * TODO [steve] rename after development in logging branch completed
+ * AbstractAuditMessages are displayed in the audit viewer.
  */
-public abstract class LogMessage implements Comparable {
+public abstract class AbstractAuditMessage implements Comparable {
 
     //- PUBLIC
 
@@ -31,21 +29,13 @@ public abstract class LogMessage implements Comparable {
 
     public abstract String getNodeId();
 
-    public int getThreadID() {
-        return 0;        
-    }
-
     public String getServiceName() {
         return "";
     }
 
-    public String getSignature(){
-        return null;
-    }
+    public abstract String getSignature();
 
-    public byte[] getSignatureDigest() throws IOException {
-        return null;
-    }
+    public abstract byte[] getSignatureDigest() throws IOException;
 
     @SuppressWarnings({"RedundantIfStatement"})
     @Override
@@ -53,7 +43,7 @@ public abstract class LogMessage implements Comparable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        LogMessage that = (LogMessage) o;
+        AbstractAuditMessage that = (AbstractAuditMessage) o;
 
         if (getMsgNumber() != that.getMsgNumber()) return false;
         if (nodeName != null ? !nodeName.equals(that.nodeName) : that.nodeName != null) return false;
@@ -74,11 +64,11 @@ public abstract class LogMessage implements Comparable {
     public int compareTo(Object o) {
         int compareValue;
 
-        if (!(o instanceof LogMessage)) {
+        if (!(o instanceof AbstractAuditMessage)) {
             throw new IllegalStateException("Can only compare to other LogMessages ("+o.getClass()+")");
         }
 
-        LogMessage other = (LogMessage) o;
+        AbstractAuditMessage other = (AbstractAuditMessage) o;
 
         if ( this.equals(other) ) {
             compareValue = 0;
@@ -104,7 +94,7 @@ public abstract class LogMessage implements Comparable {
 
     //- PROTECTED
 
-    protected LogMessage() {
+    protected AbstractAuditMessage() {
     }
 
     //- PRIVATE

@@ -23,8 +23,8 @@ import java.util.HashMap;
  */
 public class AuditRecordWorker extends SwingWorker {
     private AuditAdmin auditAdminService = null;
-    private AuditHeaderLogMessage auditHeaderLogMessage = null;
-    private AuditLogMessage logMessage = null;
+    private AuditHeaderMessage auditHeaderLogMessage = null;
+    private AuditMessage logMessage = null;
     private AuditSearchCriteria asc = null;
     private Map<Long, AuditRecord> auditRecords;
 
@@ -32,7 +32,7 @@ public class AuditRecordWorker extends SwingWorker {
 
     //use this constructor if we only want to retrieve 1 log record
     //used when a record row is selected in the table
-    public AuditRecordWorker( AuditAdmin auditAdminService, AuditHeaderLogMessage auditHeaderLogMessage ) {
+    public AuditRecordWorker( AuditAdmin auditAdminService, AuditHeaderMessage auditHeaderLogMessage ) {
         if (auditAdminService == null || auditHeaderLogMessage == null) throw new IllegalArgumentException();
         this.auditAdminService = auditAdminService;
         this.auditHeaderLogMessage = auditHeaderLogMessage;
@@ -89,7 +89,7 @@ public class AuditRecordWorker extends SwingWorker {
         try {
             //retrieve the full AuditRecord associated with this AuditRecordHeader
             auditRecord = auditAdminService.findByPrimaryKey(auditHeaderLogMessage.getMsgNumber());
-            if (auditRecord != null) this.logMessage = new AuditLogMessage(auditRecord);
+            if (auditRecord != null) this.logMessage = new AuditMessage(auditRecord);
         } catch (FindException e) {
             logger.log(Level.SEVERE, "Unable to retrieve audit record from server", e);
         }
@@ -97,7 +97,7 @@ public class AuditRecordWorker extends SwingWorker {
         return logMessage;
     }
 
-    public AuditLogMessage getUpdatedLogMessage(){
+    public AuditMessage getUpdatedLogMessage(){
         return logMessage;
     }
 }

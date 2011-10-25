@@ -1,7 +1,7 @@
 package com.l7tech.server.policy;
 
 import com.l7tech.common.log.HybridDiagnosticContext;
-import com.l7tech.common.log.HybridDiagnosticContextKeys;
+import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
 import static com.l7tech.objectmodel.EntityUtil.id;
 import com.l7tech.server.util.Handle;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -74,8 +74,8 @@ public class ServerPolicyHandle extends Handle<ServerPolicy> {
 
     private Map<String,Collection<String>> getContext() {
         return CollectionUtils.<String,Collection<String>>mapBuilder()
-                .put( HybridDiagnosticContextKeys.POLICY_ID, singleton(policyMetadata.getPolicyHeader().getStrId()) )
-                .put( HybridDiagnosticContextKeys.FOLDER_ID, map( metadata.getFolderPath().call(), id() ) )
+                .put( GatewayDiagnosticContextKeys.POLICY_ID, singleton(policyMetadata.getPolicyHeader().getStrId()) )
+                .put( GatewayDiagnosticContextKeys.FOLDER_ID, map( metadata.getFolderPath().call(), id() ) )
                 .map();
     }
 }
