@@ -91,7 +91,7 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
         // Set up smart Getter for nice, informative policy node name, for GUI
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/server16.gif");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.ssh.console.SshRouteAssertionPropertiesPanel");
-        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "SSH Route Assertion Properties");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "SSH2 Routing Properties");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new AssertionNodeNameFactory<SshRouteAssertion>() {
             @Override
             public String getAssertionName(final SshRouteAssertion assertion, final boolean decorate) {
