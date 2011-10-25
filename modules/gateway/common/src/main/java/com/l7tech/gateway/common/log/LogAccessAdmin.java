@@ -29,11 +29,10 @@ public interface LogAccessAdmin {
      * @param nodeId  node to get sink configurations from
      * @param sinkId  associated log sink id
      * @param file the file associated with the log sink to read
-     * @param startPosition  -1 for the first chunk
-     * @param fromEnd true to offset from the end of the file
+     * @param query  query data
      * @return The log data
      */
     @Transactional(readOnly=true, noRollbackFor = Throwable.class)
-    LogSinkData getSinkLogs(String nodeId, long sinkId, String file, long startPosition, boolean fromEnd) throws FindException;
+    LogSinkData getSinkLogs(String nodeId, long sinkId, String file, LogSinkQuery query) throws FindException;
 
 }

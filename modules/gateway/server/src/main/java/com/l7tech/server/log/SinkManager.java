@@ -2,6 +2,7 @@ package com.l7tech.server.log;
 
 import com.l7tech.gateway.common.log.LogFileInfo;
 import com.l7tech.gateway.common.log.LogSinkData;
+import com.l7tech.gateway.common.log.LogSinkQuery;
 import com.l7tech.gateway.common.log.SinkConfiguration;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityManager;
@@ -63,8 +64,8 @@ public interface SinkManager extends EntityManager<SinkConfiguration, EntityHead
      * @param nodeId The node identifier
      * @param sinkId The sink identifier
      * @param file The file
-     * @param startPosition The start offset
+     * @param query query data
      * @return The log data
      */
-    LogSinkData getSinkLogs(String nodeId, long sinkId,String file,long startPosition, boolean fromEnd) throws FindException;
+    LogSinkData getSinkLogs(String nodeId, long sinkId,String file,LogSinkQuery query) throws FindException;
 }

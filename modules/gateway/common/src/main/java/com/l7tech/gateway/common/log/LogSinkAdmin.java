@@ -112,5 +112,5 @@ public interface LogSinkAdmin extends LogAccessAdmin {
     @Override
     @Transactional(readOnly=true)
     @Secured(types=LOG_SINK, stereotype=ENTITY_OPERATION, relevantArg=1, otherOperation = "log-viewer")
-    LogSinkData getSinkLogs( String nodeId, long sinkId, String file, long startPosition, boolean fromEnd ) throws FindException;
+    LogSinkData getSinkLogs( String nodeId, long sinkId, String file, LogSinkQuery query ) throws FindException;
 }

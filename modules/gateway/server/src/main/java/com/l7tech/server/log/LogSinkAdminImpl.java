@@ -1,9 +1,6 @@
 package com.l7tech.server.log;
 
-import com.l7tech.gateway.common.log.LogFileInfo;
-import com.l7tech.gateway.common.log.LogSinkAdmin;
-import com.l7tech.gateway.common.log.LogSinkData;
-import com.l7tech.gateway.common.log.SinkConfiguration;
+import com.l7tech.gateway.common.log.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
@@ -71,8 +68,7 @@ public class LogSinkAdminImpl implements LogSinkAdmin {
     public LogSinkData getSinkLogs( final String nodeId,
                                     final long sinkId,
                                     final String file,
-                                    final long startPosition,
-                                    boolean fromEnd) throws FindException {
-        return sinkManager.getSinkLogs(nodeId, sinkId,file, startPosition, fromEnd);
+                                    final LogSinkQuery query) throws FindException {
+        return sinkManager.getSinkLogs(nodeId, sinkId,file, query);
     }
 }

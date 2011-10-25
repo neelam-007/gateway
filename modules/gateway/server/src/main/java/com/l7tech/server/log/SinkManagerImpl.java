@@ -2,11 +2,7 @@ package com.l7tech.server.log;
 
 import com.l7tech.gateway.common.cluster.ClusterContext;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
-import com.l7tech.gateway.common.log.LogAccessAdmin;
-import com.l7tech.gateway.common.log.LogFileInfo;
-import com.l7tech.gateway.common.log.LogSinkAdmin;
-import com.l7tech.gateway.common.log.LogSinkData;
-import com.l7tech.gateway.common.log.SinkConfiguration;
+import com.l7tech.gateway.common.log.*;
 import com.l7tech.gateway.common.security.rbac.OtherOperationName;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.security.rbac.Role;
@@ -14,6 +10,7 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
@@ -307,8 +304,7 @@ public class SinkManagerImpl
     public LogSinkData getSinkLogs( final String nodeId,
                                     final long sinkId,
                                     final String file,
-                                    final long startPosition,
-                                    final boolean fromEnd ) throws FindException {
+                                    final LogSinkQuery query) throws FindException {
         LogSinkData data = null;
 
         if( isThisNodeMe(nodeId) )
@@ -327,14 +323,15 @@ public class SinkManagerImpl
                             .replace( "%g", "[0-9]" );
                     if ( file.matches( fileRegex ) ) {
                         final File logFile = new File(fileDirectory, file);
-                        long startPoint = startPosition;
-                        if( fromEnd ){
+                        boolean isRotated = isRotated(query.getLastRead(), file,fileDirectory,logFileWithPattern.getName());
+                        long startPoint =  isRotated ? 0 : query.getStartPosition();
+                        if( query.isFromEnd() ){
                             startPoint = Math.max(0L,logFile.length() - startPoint - 16384L);
                         }
                         fin = new FileInputStream(logFile);
                         final long skipped = fin.skip( startPoint );
                         if ( skipped < startPoint ) {
-                            data = new LogSinkData(new byte[0],-1L);
+                            data = new LogSinkData(new byte[0],-1L,false,0);
                         } else {
                             in = new TruncatingInputStream(fin);
                             bs = new PoolByteArrayOutputStream((int)(TruncatingInputStream.DEFAULT_SIZE_LIMIT / 4L));
@@ -343,6 +340,7 @@ public class SinkManagerImpl
                             }};
 
                             IOUtils.copyStream(in,out);
+                            long readAt = System.currentTimeMillis();
 
                             long lastLocation = in.getPosition();
                             if ( lastLocation >= 0L ) {
@@ -350,7 +348,7 @@ public class SinkManagerImpl
                             }
                             out.finish();
 
-                            data = new LogSinkData(bs.toByteArray(),lastLocation);
+                            data = new LogSinkData(bs.toByteArray(),lastLocation,isRotated,readAt);
                         }
                     } else {
                         logger.warning( "Attempt to read log file " + file + ", not matching sink file pattern " + fileRegex );
@@ -367,12 +365,36 @@ public class SinkManagerImpl
             data = doWithLogAccessAdmin( nodeId, new UnaryThrows<LogSinkData,LogAccessAdmin,FindException>(){
                 @Override
                 public LogSinkData call( final LogAccessAdmin logAccessAdmin ) throws FindException {
-                    return logAccessAdmin.getSinkLogs( nodeId, sinkId, file, startPosition , fromEnd);
+                    return logAccessAdmin.getSinkLogs( nodeId, sinkId, file, query);
                 }
             } ).toNull();
         }
 
         return data;
+    }
+
+    private boolean isRotated(long lastRead, String fileName, String fileDirectory, String filePattern){
+        if(lastRead == 0) return false;
+        try{
+            int start  = filePattern.indexOf("%g");
+            Pattern pattern = Pattern.compile("[0-9]");
+            Matcher matcher = pattern.matcher(fileName);
+            if(matcher.find(start))
+            {
+                String indexStr = matcher.group();
+                int index = Integer.parseInt(indexStr);
+                String nextFileName = fileName.replaceFirst(indexStr,Integer.toString(index+1));
+                final File logFile = new File(fileDirectory, nextFileName);
+                if(logFile!=null){
+                    return logFile.lastModified()>lastRead;
+                }
+            }
+        }catch (NumberFormatException e){
+            return false;
+        }
+
+
+        return false;
     }
 
     @Override

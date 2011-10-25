@@ -3,6 +3,7 @@ package com.l7tech.server.log;
 import com.l7tech.gateway.common.log.LogAccessAdmin;
 import com.l7tech.gateway.common.log.LogFileInfo;
 import com.l7tech.gateway.common.log.LogSinkData;
+import com.l7tech.gateway.common.log.LogSinkQuery;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.cluster.ClusterInfoManager;
 
@@ -24,9 +25,9 @@ public class LogAccessAdminImpl implements LogAccessAdmin {
     }
 
     @Override
-    public LogSinkData getSinkLogs( final String nodeId, final long sinkId, final String file, final long startPosition, boolean fromEnd ) throws FindException {
+    public LogSinkData getSinkLogs( final String nodeId, final long sinkId, final String file, final LogSinkQuery query) throws FindException {
         if ( !nodeId.equals( clusterInfoManager.thisNodeId() ) ) return null;
-        return sinkManager.getSinkLogs( nodeId, sinkId, file, startPosition, fromEnd );
+        return sinkManager.getSinkLogs( nodeId, sinkId, file, query);
     }
 
     //- PRIVATE

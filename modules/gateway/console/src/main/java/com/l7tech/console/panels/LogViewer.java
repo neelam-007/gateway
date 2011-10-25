@@ -6,6 +6,7 @@ import com.l7tech.console.util.*;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.log.LogSinkData;
+import com.l7tech.gateway.common.log.LogSinkQuery;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.util.SwingWorker;
 import com.l7tech.gui.widgets.SquigglyTextField;
@@ -19,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.Timer;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.ListDataListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -60,6 +62,7 @@ public class LogViewer extends JFrame {
     private JTextArea logMessageTextArea;
     private JSplitPane splitPane;
     private JCheckBox autoRefreshCheckBox;
+    private JLabel lastUpdatedLabel;
 
 
     private JMenuBar windowMenuBar = null;
@@ -79,6 +82,9 @@ public class LogViewer extends JFrame {
     private final AtomicReference<LogWorker> workerReference = new AtomicReference<LogWorker>();
     private java.util.List<String> cachedData = new java.util.ArrayList<String>();
 
+    private long lastReadByte = 0L;
+    private long lastReadTime = 0L;
+
     /**
      * Create a log window for the given node.
      *
@@ -93,7 +99,7 @@ public class LogViewer extends JFrame {
         this.file = file;
 
         initialize();
-        loadLogs();
+        loadLogs(false);
     }
 
 
@@ -123,7 +129,7 @@ public class LogViewer extends JFrame {
 
         final InputValidator validator = new InputValidator(this,getTitle());
         validator.disableButtonWhenInvalid(refreshButton);
-        validator.constrainTextFieldToNumberRange(resources.getString("tail.checkbox.text"),tailTextField,1L,Long.MAX_VALUE);
+        validator.constrainTextFieldToNumberRange(resources.getString("tail.checkbox.text"),tailTextField,1,100);
 
         tailCheckBox.addActionListener(new ActionListener() {
             @Override
@@ -192,7 +198,7 @@ public class LogViewer extends JFrame {
         refreshButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                loadLogs();
+                loadLogs(false);
             }
         });
 
@@ -224,6 +230,7 @@ public class LogViewer extends JFrame {
         }else if (getLogsRefreshTimer().isRunning()){
             getLogsRefreshTimer().stop();
         }
+        lastReadByte = 0L;
     }
 
     private void updateLogMessageText() {
@@ -237,7 +244,7 @@ public class LogViewer extends JFrame {
             logsRefreshTimer = new Timer(logsRefreshInterval, new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent evt) {
-                    loadLogs();
+                    loadLogs(true);
                 }
             });
             logsRefreshTimer.setInitialDelay(0);
@@ -351,9 +358,7 @@ public class LogViewer extends JFrame {
                             out.write(newline);
                         }
                     } catch (IOException ioe) {
-                        if ( !file.delete() ) { // attempt to clean up
-                            logger.warning("Unable to delete file: " + file.getAbsolutePath());
-                        }
+                        file.delete(); // attempt to clean up
                         DialogDisplayer.showMessageDialog(LogViewer.this, null,
                                 resources.getString("save.write.error")+"\n'" + file.getAbsolutePath() + "'.", null);
                     } finally {
@@ -456,7 +461,7 @@ public class LogViewer extends JFrame {
         if (exitMenuItem == null) {
             exitMenuItem = new JMenuItem();
             exitMenuItem.setText(applicationResources.getString("ExitMenuItem.name"));
-            int mnemonic = (int) 'X';
+            int mnemonic = 'X';
             exitMenuItem.setMnemonic(mnemonic);
             exitMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
         }
@@ -472,7 +477,7 @@ public class LogViewer extends JFrame {
         if (saveMenuItem == null) {
             saveMenuItem = new JMenuItem();
             saveMenuItem.setText(applicationResources.getString("SaveAsMenuItem.name"));
-            int mnemonic = (int) 'S';
+            int mnemonic = 'S';
             saveMenuItem.setMnemonic(mnemonic);
             saveMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
         }
@@ -485,16 +490,17 @@ public class LogViewer extends JFrame {
         return filteredListModel;
     }
 
-    public void loadLogs()  {
-        long tail  = -1L;
+    public void loadLogs(boolean isAutoRefresh)  {
+        int tail  = -1 ;
         if(tailCheckBox.isSelected()){
             try{
-                tail = Long.parseLong(tailTextField.getText());
+                tail = Integer.parseInt(tailTextField.getText());
             }catch( Exception e)
             {
                 return;
                 // abort loading
             }
+            lastReadByte = 0;
         }
 
         // stop loading prev
@@ -503,10 +509,10 @@ public class LogViewer extends JFrame {
             workerReference.get().cancel();
         }
 
-        cancelButton.setEnabled(true);
+        cancelButton.setEnabled(tail<0); // not enable cancel button when in 'tail' mode
         final LogWorker infoWorker = new LogWorker(
                 Registry.getDefault().getLogSinkAdmin(),
-                tail);
+                tail, isAutoRefresh);
 
         workerReference.set(infoWorker);
         infoWorker.start();
@@ -545,8 +551,9 @@ public class LogViewer extends JFrame {
 
         private final LogSinkAdmin logSinkAdmin;
         private final AtomicBoolean cancelled;
-        private final long tail;
+        private final int tail;
         private List<String> list;
+        private final boolean isAutoRefresh;
 
         /**
          * Create a new log worker.
@@ -554,11 +561,12 @@ public class LogViewer extends JFrame {
          * @param logSinkAdmin  An object reference to the <CODE>LogSinkAdmin</CODE>service
          *
          */
-        LogWorker(final LogSinkAdmin logSinkAdmin, long tail) {
+        public LogWorker(final LogSinkAdmin logSinkAdmin, int tail, boolean isAutoRefresh) {
             this.logSinkAdmin = logSinkAdmin;
             this.cancelled = new AtomicBoolean(false);
             this.tail = tail;
-            list = new ArrayList<String>();
+            this.isAutoRefresh = isAutoRefresh;
+            list = new ArrayList<String>(cachedData);
         }
 
         /**
@@ -568,18 +576,20 @@ public class LogViewer extends JFrame {
          */
         @Override
         public Object construct() {
-            list.clear();
             try {
                 GZIPInputStream inStream = null;
                 Reader dis = null;
                 try {
                     boolean done = false;
-                    long startByte = 0L;
+                    boolean reloadFile = false;
+                    long startByte = lastReadByte;
                     final StringBuilder sb = new StringBuilder(1024);
                     while(!done && !cancelled.get()){
                         LogSinkData logData;
                         try {
-                            logData = logSinkAdmin.getSinkLogs(clusterNodeInfo.getNodeIdentifier(),sinkId,file,startByte, tail> 0L );
+                            LogSinkQuery query = new LogSinkQuery(tail> 0,lastReadTime,startByte);
+                            logData = logSinkAdmin.getSinkLogs(clusterNodeInfo.getNodeIdentifier(),sinkId,file, query );
+                            lastReadTime = logData.timeRead();
                         } catch ( FindException e ) {
                             ErrorManager.getDefault().notify( Level.WARNING, e, "Error loading log data" );
                             break;
@@ -594,12 +604,18 @@ public class LogViewer extends JFrame {
                         String data;
                         boolean eol ;
                         boolean eof = false;
-
+                        if(logData.isRotated() || startByte == 0){
+                            list.clear();
+                            startByte = 0;
+                            reloadFile = logData.getNextReadPosition() == -1L && logData.getData().length==0;
+                        }
+                        int size = 0;
                         while (!eof && !cancelled.get()) {
 
                             eol = false;
                             while(!eol && !eof){
                                 final int read = dis.read();
+                                ++size;
                                 if(read == -1)
                                     eof = true;
                                 else if (read== (int) '\n' )
@@ -615,13 +631,15 @@ public class LogViewer extends JFrame {
                                 sb.setLength( 0 );
                             }
                         }
-                        done = logData.getNextReadPosition()< 0L || ( tail> 0L);
+                        done = logData.getNextReadPosition()< 0L || ( tail> 0) || reloadFile;
+                        reloadFile = false;
+                        lastReadByte = size + startByte -1;
                         startByte = logData.getNextReadPosition();
                     }
-                    if(tail> 0L )
+                    if(tail> 0 )
                     {
                         if(list.size()>0)list.remove(0); // last line might not be complete
-                        if(tail< (long) list.size() ) list = list.subList(list.size() - (int) tail -1,list.size()-1);
+                        if(tail< (long) list.size() ) list = list.subList(list.size() - tail ,list.size());
                     }
                 }catch (IOException e) {
                     logger.warning("Error loading logs");
@@ -649,6 +667,10 @@ public class LogViewer extends JFrame {
         public void cancel() {
             cancelled.set(true);
             cancelButton.setEnabled(false);
+
+            updateLastUpdatedText();
+            if(workerReference.get(). isAlive())
+                lastReadByte = 0L; // reload next time
         }
 
         @Override
@@ -659,7 +681,6 @@ public class LogViewer extends JFrame {
                 logList.ensureIndexIsVisible(filteredListModel.getSize()-1);
             }
             SwingUtilities.invokeLater(new Runnable() {
-                @Override
                 public void run() {
                     filteredListModel.filterUpdated();
                 }
@@ -667,7 +688,18 @@ public class LogViewer extends JFrame {
             if(!workerReference.get().isAlive()){
                 cancelButton.setEnabled(false);
             }
+            updateLastUpdatedText();
         }
+
+        private void updateLastUpdatedText() {
+            Date date = new Date(System.currentTimeMillis());
+            SimpleDateFormat sdf = new SimpleDateFormat("MMM d yyyy hh:mm:ss aaa");
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(date);
+            String method = isAutoRefresh ? resources.getString("auto.refresh.text") : "";
+            lastUpdatedLabel.setText(MessageFormat.format(resources.getString("last.update.text"),sdf.format(cal.getTime()),method));
+        }
+
     }
 
 }
