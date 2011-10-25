@@ -948,6 +948,7 @@ public class GatewayManagementClient {
                 AO mo = cast( readInput(), type );
                 String id = accessor.create( mo );
                 mo.setId( id );
+                mo.setVersion( null );
                 writeOutput( mo );
             } catch ( Accessor.AccessorException ioe ) {
                 throw new CommandException( "Accessor error", ioe );
