@@ -223,8 +223,7 @@ public class SsgConnectorManagerWindow extends JDialog {
                         }
                     };
 
-                    if (warnAboutConflicts(connector)) {
-                        reedit.run();
+                    if (warnAboutConflictsAndReedit(connector, reedit)) {
                         return;
                     }
 
@@ -262,15 +261,16 @@ public class SsgConnectorManagerWindow extends JDialog {
      * in use in the system and, if so, display a warning dialog.
      *
      * @param connector the connector to check
+     * @param reedit a rnnable object will be run to re-edit the connector, if a conflict exists
      * @return true if conflicts were detected, false otherwise.
      */
-    private boolean warnAboutConflicts(SsgConnector connector) {
+    private boolean warnAboutConflictsAndReedit(SsgConnector connector, Runnable reedit) {
         if (connector == null) return false;
 
         if (reservedPorts != null) {
             Pair<PortRange, PortRange> conflict = connector.getFirstOverlappingPortRange(reservedPorts);
             if (null != conflict) {
-                showConflictWarningDialog(conflict.left, conflict.right, "system reserved ports");
+                showConflictWarningDialog(conflict.left, conflict.right, "system reserved ports", reedit);
                 return true;
             }
         }
@@ -281,14 +281,14 @@ public class SsgConnectorManagerWindow extends JDialog {
         if ( null != conflict ) {
             SsgConnector theirConnector = conflict.right.left;
             String theirName = "connector: " + theirConnector.getName();
-            showConflictWarningDialog(conflict.left, conflict.right.right, theirName);
+            showConflictWarningDialog(conflict.left, conflict.right.right, theirName, reedit);
             return true;
         } else {
             return false;
         }
     }
 
-    private static void showConflictWarningDialog(PortRange ourRange, PortRange theirRange, String theirName) {
+    private static void showConflictWarningDialog(PortRange ourRange, PortRange theirRange, String theirName, Runnable reedit) {
 
         String conflictMsgLeft = ourRange.isSinglePort() ?
             "Port " + ourRange.getPortStart() :
@@ -303,7 +303,8 @@ public class SsgConnectorManagerWindow extends JDialog {
         DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
             "Port Conflict",
             conflictMsgLeft + " conflicts with " + conflictMsgRight,
-            null);
+            null,
+            reedit);
     }
 
     private boolean warnAboutFeatures( final SsgConnector originalConnector, final SsgConnector editedConnector ) {
