@@ -132,7 +132,17 @@ public class IdentityProviderPropertiesAction extends NodeAction {
 
         w.pack();
         Utilities.centerOnScreen( w );
-        DialogDisplayer.display( w );
+        DialogDisplayer.display(w, new Runnable() {
+            @Override
+            public void run() {
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        TopComponents.getInstance().refreshIdentityProvidersTree();
+                    }
+                });
+            }
+        });
     }
 
     private void handleProviderDeleted( final EntityHeader header ) {

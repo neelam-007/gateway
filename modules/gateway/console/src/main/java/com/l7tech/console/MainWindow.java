@@ -1525,6 +1525,10 @@ public class MainWindow extends JFrame implements SheetHolder {
         servicesAndPoliciesTree.refresh(rootNode);
     }
 
+    public void refreshIdentityProvidersTree() {
+        identityProvidersTree.refresh(identitiesRootNode);
+    }
+
     public void clearFilter() {
         AlterFilterAction.applyfilter(AlterFilterAction.FilterType.ALL, getFilterStatusLabel());
     }

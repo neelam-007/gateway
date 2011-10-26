@@ -118,6 +118,10 @@ public class TopComponents {
         getMainWindow().refreshPoliciesFolderNode();
     }
 
+    public void refreshIdentityProvidersTree() {
+        getMainWindow().refreshIdentityProvidersTree();
+    }
+
     public AbstractTreeNode getServicesFolderNode() {
         return getMainWindow().getServicesFolderNode();
     }
