@@ -971,6 +971,10 @@ public class FindIdentitiesDialog extends JDialog {
             return dialog.searchResultsPanel;
         }
 
+        public JComponent getSearchStatusComponent() {
+            return dialog.resultCounter;
+        }
+
         public Collection<IdentityHeader> getSelections() {
             return dialog.getSelectedIdentities();
         }

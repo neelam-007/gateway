@@ -212,9 +212,10 @@ public class SinkConfigurationFilterSelectionDialog extends JDialog {
             }
         } );
 
-        identitySearchPanel.setLayout( new BorderLayout() );
+        identitySearchPanel.setLayout( new BorderLayout( 0, 4 ) );
         identitySearchPanel.add( findIdentities.getSearchDetailsPanel(), BorderLayout.NORTH );
         identitySearchPanel.add( findIdentities.getSearchResultsPanel(), BorderLayout.CENTER );
+        identitySearchPanel.add( findIdentities.getSearchStatusComponent(), BorderLayout.SOUTH );
     }
 
     private void updateTransportList() {
