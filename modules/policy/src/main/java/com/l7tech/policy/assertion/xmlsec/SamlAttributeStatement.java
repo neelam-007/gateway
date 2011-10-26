@@ -88,6 +88,7 @@ public class SamlAttributeStatement implements Cloneable, Serializable {
         private boolean repeatIfMulti;
 
         private AttributeValueAddBehavior addBehavior = STRING_CONVERT;
+        private AttributeValueComparison valueComparison = AttributeValueComparison.STRING_COMPARE;
 
         // additional Value for SAMLP
         private String friendlyName;
@@ -105,6 +106,22 @@ public class SamlAttributeStatement implements Cloneable, Serializable {
             }
 
             private final String value;
+        }
+
+        public enum AttributeValueComparison {
+            STRING_COMPARE("String comparison"),
+            CANONICALIZE("Canonicalize");
+
+            AttributeValueComparison(String value) {
+                this.value = value;
+            }
+
+            public String getValue() {
+                return value;
+            }
+
+            private final String value;
+
         }
 
         public Attribute() {
@@ -184,6 +201,14 @@ public class SamlAttributeStatement implements Cloneable, Serializable {
 
         public void setAddBehavior(AttributeValueAddBehavior addBehavior) {
             this.addBehavior = addBehavior;
+        }
+
+        public AttributeValueComparison getValueComparison() {
+            return valueComparison;
+        }
+
+        public void setValueComparison(AttributeValueComparison valueComparison) {
+            this.valueComparison = valueComparison;
         }
 
         public String toString() {

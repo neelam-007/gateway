@@ -35,7 +35,6 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
 import org.w3c.dom.*;
-import org.junit.*;
 import org.xml.sax.SAXException;
 import x0Assertion.oasisNamesTcSAML1.AssertionType;
 import x0Assertion.oasisNamesTcSAML2.AttributeStatementType;
@@ -48,6 +47,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
+
+import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.AttributeValueAddBehavior.ADD_AS_XML;
+import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.AttributeValueComparison.CANONICALIZE;
 
 public class ServerSamlIssuerAssertionTest {
 
@@ -75,10 +77,6 @@ public class ServerSamlIssuerAssertionTest {
                 ApplicationContexts.getTestApplicationContext());
 
         final PolicyEnforcementContext context = getContext();
-
-        //set credentials
-        addCredentials(context);
-        context.getRequest().initialize(XmlUtil.parse("<xml></xml>"));
 
         serverAssertion.checkRequest(context);
         final String issuedSamlAssertion = (String) context.getVariable("issuedSamlAssertion");
@@ -131,10 +129,6 @@ public class ServerSamlIssuerAssertionTest {
                 ApplicationContexts.getTestApplicationContext());
 
         final PolicyEnforcementContext context = getContext();
-
-        //set credentials
-        addCredentials(context);
-        context.getRequest().initialize(XmlUtil.parse("<xml></xml>"));
 
         serverAssertion.checkRequest(context);
         final String issuedSamlAssertion = (String) context.getVariable("issuedSamlAssertion");
@@ -204,10 +198,6 @@ public class ServerSamlIssuerAssertionTest {
             ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 2);
             final PolicyEnforcementContext context = getContext();
 
-            //set credentials
-            addCredentials(context);
-            context.getRequest().initialize(XmlUtil.parse("<xml></xml>"));
-
             final AssertionStatus status = serverAssertion.checkRequest(context);
             Assert.assertEquals("Status should be none.", AssertionStatus.NONE, status);
 
@@ -222,10 +212,6 @@ public class ServerSamlIssuerAssertionTest {
             // V1
             ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 1);
             final PolicyEnforcementContext context = getContext();
-
-            //set credentials
-            addCredentials(context);
-            context.getRequest().initialize(XmlUtil.parse("<xml></xml>"));
 
             final AssertionStatus status = serverAssertion.checkRequest(context);
             Assert.assertEquals("Status should be none.", AssertionStatus.NONE, status);
@@ -257,10 +243,6 @@ public class ServerSamlIssuerAssertionTest {
             // V2
             ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 2);
             final PolicyEnforcementContext context = getContext();
-
-            //set credentials
-            addCredentials(context);
-            context.getRequest().initialize(XmlUtil.parse("<xml></xml>"));
 
             final AssertionStatus status = serverAssertion.checkRequest(context);
             Assert.assertEquals("Status should be none.", AssertionStatus.NONE, status);
@@ -296,10 +278,6 @@ public class ServerSamlIssuerAssertionTest {
             nameAttr.setNamespace(namespace);
             ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 1);
             final PolicyEnforcementContext context = getContext();
-
-            //set credentials
-            addCredentials(context);
-            context.getRequest().initialize(XmlUtil.parse("<xml></xml>"));
 
             final AssertionStatus status = serverAssertion.checkRequest(context);
             Assert.assertEquals("Status should be none.", AssertionStatus.NONE, status);
@@ -350,9 +328,6 @@ public class ServerSamlIssuerAssertionTest {
         samlAttributeStatement.setAttributes(attributes.toArray(new SamlAttributeStatement.Attribute[attributes.size()]));
         final PolicyEnforcementContext context = getContext();
         context.setVariable(multiVarName, Arrays.asList("James", "Kirk"));
-        //set credentials
-        addCredentials(context);
-        context.getRequest().initialize(XmlUtil.parse("<xml></xml>"));
 
         {
             //V2
@@ -428,9 +403,6 @@ public class ServerSamlIssuerAssertionTest {
 
         final PolicyEnforcementContext context = getContext();
         context.setVariable(multiVarName, Arrays.asList("James", "Kirk"));
-        //set credentials
-        addCredentials(context);
-        context.getRequest().initialize(XmlUtil.parse("<xml></xml>"));
 
         {
             // V2
@@ -500,10 +472,6 @@ public class ServerSamlIssuerAssertionTest {
         samlAttributeStatement.setAttributes(attributes.toArray(new SamlAttributeStatement.Attribute[attributes.size()]));
 
         final PolicyEnforcementContext context = getContext();
-//        context.setVariable(multiVarName, Arrays.asList("James", "Kirk")); - Variable not set!
-        //set credentials
-        addCredentials(context);
-        context.getRequest().initialize(XmlUtil.parse("<xml></xml>"));
 
         {
             // V2
@@ -568,14 +536,12 @@ public class ServerSamlIssuerAssertionTest {
         final String multiVarName = "messageRef";
         nameAttr.setValue("${" + multiVarName + "}");
         nameAttr.setRepeatIfMulti(false);
-        nameAttr.setAddBehavior(SamlAttributeStatement.Attribute.AttributeValueAddBehavior.ADD_AS_XML);
+        nameAttr.setAddBehavior(ADD_AS_XML);
         attributes.add(nameAttr);
 
         samlAttributeStatement.setAttributes(attributes.toArray(new SamlAttributeStatement.Attribute[attributes.size()]));
 
         final PolicyEnforcementContext context = getContext();
-        //set credentials
-        addCredentials(context);
         String customXml =
         "<custom:PersonName xmlns:custom=\"http://custom.com\" >" +
         "James" +
@@ -668,14 +634,12 @@ public class ServerSamlIssuerAssertionTest {
         nameAttr.setValue("${" + varNameMsg + "} this is some text inbetween elements ${" + varNameElm + "}");
 
         nameAttr.setRepeatIfMulti(false);
-        nameAttr.setAddBehavior(SamlAttributeStatement.Attribute.AttributeValueAddBehavior.ADD_AS_XML);
+        nameAttr.setAddBehavior(ADD_AS_XML);
         attributes.add(nameAttr);
 
         samlAttributeStatement.setAttributes(attributes.toArray(new SamlAttributeStatement.Attribute[attributes.size()]));
 
         final PolicyEnforcementContext context = getContext();
-        //set credentials
-        addCredentials(context);
 
         String customXml =
         "<custom:PersonName xmlns:custom=\"http://custom.com\" >" +
@@ -728,7 +692,7 @@ public class ServerSamlIssuerAssertionTest {
             personName1.appendChild(textNode1);
             emptyDoc.getDocumentElement().appendChild(personName1);
 
-            failIfNotEqual(emptyDoc.getDocumentElement(), (Element) valueNode, "Incorrect mixed context created.");
+            failIfNotEqual(emptyDoc.getDocumentElement(), (Element) valueNode, "Incorrect mixed context created.", false);
         }
         {
             //V1
@@ -771,7 +735,7 @@ public class ServerSamlIssuerAssertionTest {
             personName1.appendChild(textNode1);
             emptyDoc.getDocumentElement().appendChild(personName1);
 
-            failIfNotEqual(emptyDoc.getDocumentElement(), (Element) valueNode, "Incorrect mixed context created.");
+            failIfNotEqual(emptyDoc.getDocumentElement(), (Element) valueNode, "Incorrect mixed context created.", false);
         }
     }
 
@@ -790,7 +754,7 @@ public class ServerSamlIssuerAssertionTest {
         final String multiVarName = "multiVar";
         nameAttr.setValue("${" + multiVarName + "}");
         nameAttr.setRepeatIfMulti(true);
-        nameAttr.setAddBehavior(SamlAttributeStatement.Attribute.AttributeValueAddBehavior.ADD_AS_XML);
+        nameAttr.setAddBehavior(ADD_AS_XML);
         attributes.add(nameAttr);
 
         String customXml =
@@ -808,9 +772,6 @@ public class ServerSamlIssuerAssertionTest {
         List<Object> multiVarValue = Arrays.asList(mVar, text, mVar.getXmlKnob().getDocumentReadOnly().getDocumentElement());
         context.setVariable(multiVarName, multiVarValue);
 
-        //set credentials
-        addCredentials(context);
-        context.getRequest().initialize(XmlUtil.parse("<xml></xml>"));
         {
             // V2
             samlAttributeStatement.setAttributes(attributes.toArray(new SamlAttributeStatement.Attribute[attributes.size()]));
@@ -900,12 +861,18 @@ public class ServerSamlIssuerAssertionTest {
         }
     }
 
-    public void failIfNotEqual(Element expectedElement, Element actualElement, String failMsg) throws SAXException, IOException {
+    public void failIfNotEqual(Element expectedElement, Element actualElement, String failMsg, boolean stripWhiteSpace) throws SAXException, IOException {
         ByteArrayOutputStream byteOutExpected = new ByteArrayOutputStream();
-        DomUtils.stripWhitespace(expectedElement);
+
+        if (stripWhiteSpace) {
+            DomUtils.stripWhitespace(expectedElement);
+        }
         XmlUtil.canonicalize(expectedElement, byteOutExpected);
 
-        DomUtils.stripWhitespace(actualElement);
+        if (stripWhiteSpace) {
+            DomUtils.stripWhitespace(actualElement);
+        }
+
         ByteArrayOutputStream byteOutActual = new ByteArrayOutputStream();
         XmlUtil.canonicalize(actualElement, byteOutActual);
 
@@ -970,15 +937,7 @@ public class ServerSamlIssuerAssertionTest {
         nameAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
         nameAttr.setValue("James");
 
-        final SamlAttributeStatement.Attribute middleNameAttr = new SamlAttributeStatement.Attribute();
-        middleNameAttr.setName("nc:PersonMiddleName");
-        middleNameAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
-        middleNameAttr.setValue("Tiberius");
-
-        final SamlAttributeStatement.Attribute lastNameAttr = new SamlAttributeStatement.Attribute();
-        lastNameAttr.setName("nc:PersonSurName");
-        lastNameAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
-        lastNameAttr.setValue("Kirk");
+        final List<SamlAttributeStatement.Attribute> middleAndLastName = getSomeAttributes();
 
         //This is the attribute we expect to not be included in the created saml token
         final SamlAttributeStatement.Attribute attributeNotInRequest = new SamlAttributeStatement.Attribute();
@@ -987,8 +946,7 @@ public class ServerSamlIssuerAssertionTest {
         attributeNotInRequest.setValue("not_in_request_value");
 
         attributes.add(nameAttr);
-        attributes.add(middleNameAttr);
-        attributes.add(lastNameAttr);
+        attributes.addAll(middleAndLastName);
         attributes.add(attributeNotInRequest);
 
         final String filterExpression = "${attributeQuery.attributes}";
@@ -1013,15 +971,7 @@ public class ServerSamlIssuerAssertionTest {
         nameAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
         nameAttr.setValue("James");
 
-        final SamlAttributeStatement.Attribute middleNameAttr = new SamlAttributeStatement.Attribute();
-        middleNameAttr.setName("nc:PersonMiddleName");
-        middleNameAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
-        middleNameAttr.setValue("Tiberius");
-
-        final SamlAttributeStatement.Attribute lastNameAttr = new SamlAttributeStatement.Attribute();
-        lastNameAttr.setName("nc:PersonSurName");
-        lastNameAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
-        lastNameAttr.setValue("Kirk");
+        final List<SamlAttributeStatement.Attribute> middleAndLastName = getSomeAttributes();
 
         //This is the attribute we expect to not be included in the created saml token
         final SamlAttributeStatement.Attribute attributeNotInRequest = new SamlAttributeStatement.Attribute();
@@ -1030,8 +980,7 @@ public class ServerSamlIssuerAssertionTest {
         attributeNotInRequest.setValue("not_in_request_value");
 
         attributes.add(nameAttr);
-        attributes.add(middleNameAttr);
-        attributes.add(lastNameAttr);
+        attributes.addAll(middleAndLastName);
         attributes.add(attributeNotInRequest);
 
         //add another a as message variable
@@ -1097,10 +1046,8 @@ public class ServerSamlIssuerAssertionTest {
      * Test that the attributes added to an AttributeStatement are correctly filtered for a set of requested
      * attributes.
      * This test case ensures that incoming AttributeValue are respected and that only matching values are returned.
-     * TODO - Remove @ignore when AttributeValue comparision is implemented.
      */
     @Test
-    @Ignore
     public void testAttriubuteStatement_Filtered_V2_AttributeValue_Match() throws Exception {
         //Test basic Attribute + AttributeValue addition to AttributeStatement
         final SamlAttributeStatement samlAttributeStatement = new SamlAttributeStatement();
@@ -1112,15 +1059,7 @@ public class ServerSamlIssuerAssertionTest {
         nameAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
         nameAttr.setValue("Name does not match request so this attribute should be filtered out");
 
-        final SamlAttributeStatement.Attribute middleNameAttr = new SamlAttributeStatement.Attribute();
-        middleNameAttr.setName("nc:PersonMiddleName");
-        middleNameAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
-        middleNameAttr.setValue("Tiberius");
-
-        final SamlAttributeStatement.Attribute lastNameAttr = new SamlAttributeStatement.Attribute();
-        lastNameAttr.setName("nc:PersonSurName");
-        lastNameAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
-        lastNameAttr.setValue("Kirk");
+        final List<SamlAttributeStatement.Attribute> middleAndLastName = getSomeAttributes();
 
         //This is the attribute we expect to not be included in the created saml token
         final SamlAttributeStatement.Attribute attributeNotInRequest = new SamlAttributeStatement.Attribute();
@@ -1129,8 +1068,7 @@ public class ServerSamlIssuerAssertionTest {
         attributeNotInRequest.setValue("not_in_request_value");
 
         attributes.add(nameAttr);
-        attributes.add(middleNameAttr);
-        attributes.add(lastNameAttr);
+        attributes.addAll(middleAndLastName);
         attributes.add(attributeNotInRequest);
 
         samlAttributeStatement.setAttributes(attributes.toArray(new SamlAttributeStatement.Attribute[attributes.size()]));
@@ -1139,24 +1077,7 @@ public class ServerSamlIssuerAssertionTest {
         ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 2);
 
         final PolicyEnforcementContext context = getContext();
-        // add filter expression variables.
-
-        final Document attributeQuery = XmlUtil.parse(attributeRequestWithAttributeValue);
-        System.out.println(XmlUtil.nodeToFormattedString(attributeQuery));
-
-        final NodeList attrList = attributeQuery.getElementsByTagNameNS(SamlConstants.NS_SAML2, "Attribute");
-
-        List<Element> elementList = new ArrayList<Element>();
-        for (int i = 0; i < attrList.getLength(); i++) {
-            final Node attribute = attrList.item(i);
-            elementList.add((Element) attribute);
-        }
-
-        context.setVariable(varName, elementList);
-
-        //set credentials
-        addCredentials(context);
-        context.getRequest().initialize(XmlUtil.parse("<xml></xml>"));
+        context.setVariable(varName, getElementsFromXml(attributeRequestWithAttributeValue, SamlConstants.NS_SAML2));
 
         final AssertionStatus status = serverAssertion.checkRequest(context);
         Assert.assertEquals("Status should be none.", AssertionStatus.NONE, status);
@@ -1169,6 +1090,446 @@ public class ServerSamlIssuerAssertionTest {
         final List<Element> attribute = XmlUtil.findChildElementsByName(attrStatement, SamlConstants.NS_SAML2, "Attribute");
         Assert.assertEquals("Incorrect number of Attributes found in AttributeStatement", 2, attribute.size());
     }
+
+    /**
+     * Tests that configured Attributes are correctly filtered based on request attributes when the runtime value
+     * of an Attribute may be multiple values.
+     * In this case none of the configured values match the filter.
+     */
+    @Test
+    public void testAttriubuteStatement_Filtered_V2_AttributeValue_NoMatch_Repeat() throws Exception {
+        //Test basic Attribute + AttributeValue addition to AttributeStatement
+        final SamlAttributeStatement samlAttributeStatement = new SamlAttributeStatement();
+        List<SamlAttributeStatement.Attribute> attributes = new ArrayList<SamlAttributeStatement.Attribute>();
+
+        // Statically configure 3 attributes
+        final SamlAttributeStatement.Attribute nameAttr = new SamlAttributeStatement.Attribute();
+        nameAttr.setName("nc:PersonGivenName");
+        nameAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        final String multiValuedVar = "multiValuedVar";
+        nameAttr.setValue("${" + multiValuedVar + "}");
+        nameAttr.setRepeatIfMulti(true);
+
+        final List<SamlAttributeStatement.Attribute> middleAndLastName = getSomeAttributes();
+
+        //This is the attribute we expect to not be included in the created saml token
+        final SamlAttributeStatement.Attribute attributeNotInRequest = new SamlAttributeStatement.Attribute();
+        attributeNotInRequest.setName("not_in_request");
+        attributeNotInRequest.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        attributeNotInRequest.setValue("not_in_request_value");
+
+        attributes.add(nameAttr);
+        attributes.addAll(middleAndLastName);
+        attributes.add(attributeNotInRequest);
+
+        samlAttributeStatement.setAttributes(attributes.toArray(new SamlAttributeStatement.Attribute[attributes.size()]));
+        final String varName = "attributeQuery.attributes";
+        samlAttributeStatement.setFilterExpression("${" + varName + "}");
+        ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 2);
+
+        final PolicyEnforcementContext context = getContext();
+        context.setVariable(varName, getElementsFromXml(attributeRequestWithAttributeValue, SamlConstants.NS_SAML2));
+        context.setVariable(multiValuedVar, Arrays.asList("Name1", "Name2"));
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be none.", AssertionStatus.NONE, status);
+
+        final Document document = getIssuedSamlAssertionDoc(context);
+        System.out.println(XmlUtil.nodeToFormattedString(document));
+
+        final Element assertionElm = document.getDocumentElement();
+        final Element attrStatement = XmlUtil.findFirstChildElementByName(assertionElm, SamlConstants.NS_SAML2, "AttributeStatement");
+        final List<Element> attribute = XmlUtil.findChildElementsByName(attrStatement, SamlConstants.NS_SAML2, "Attribute");
+        Assert.assertEquals("Incorrect number of Attributes found in AttributeStatement", 2, attribute.size());
+        failIfNotEqual(attrStatement, XmlUtil.parse(expectedWhenNameFiltered).getDocumentElement(), "Unexpected AttributeStatement created.", true);
+    }
+
+    /**
+     * Tests that configured Attributes are correctly filtered based on request attributes when the runtime value
+     * of an Attribute may be multiple values.
+     * This test ensures that only matching values are returned - when there can be many both incoming and configured
+     * such that only the intersection of values is returned.
+     */
+    @Test
+    public void testAttriubuteStatement_Filtered_V2_AttributeValue_Choice_Repeat() throws Exception {
+        //Test basic Attribute + AttributeValue addition to AttributeStatement
+        final SamlAttributeStatement samlAttributeStatement = new SamlAttributeStatement();
+        List<SamlAttributeStatement.Attribute> attributes = new ArrayList<SamlAttributeStatement.Attribute>();
+
+        // Statically configure 3 attributes
+        final SamlAttributeStatement.Attribute nameAttr = new SamlAttributeStatement.Attribute();
+        nameAttr.setName("nc:PersonGivenName");
+        nameAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        final String multiValuedVar = "multiValuedVar";
+        nameAttr.setValue("${" + multiValuedVar + "}");
+        nameAttr.setRepeatIfMulti(true);
+
+        final List<SamlAttributeStatement.Attribute> middleAndLastName = getSomeAttributes();
+
+        //This is the attribute we expect to not be included in the created saml token
+        final SamlAttributeStatement.Attribute attributeNotInRequest = new SamlAttributeStatement.Attribute();
+        attributeNotInRequest.setName("not_in_request");
+        attributeNotInRequest.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        attributeNotInRequest.setValue("not_in_request_value");
+
+        attributes.add(nameAttr);
+        attributes.addAll(middleAndLastName);
+        attributes.add(attributeNotInRequest);
+
+        samlAttributeStatement.setAttributes(attributes.toArray(new SamlAttributeStatement.Attribute[attributes.size()]));
+        final String varName = "attributeQuery.attributes";
+        samlAttributeStatement.setFilterExpression("${" + varName + "}");
+        ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 2);
+
+        final PolicyEnforcementContext context = getContext();
+        context.setVariable(varName, getElementsFromXml(attributeRequestWithAttributeValue, SamlConstants.NS_SAML2));
+        context.setVariable(multiValuedVar, Arrays.asList("Jim", "James", "John"));
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be none.", AssertionStatus.NONE, status);
+
+        final Document document = getIssuedSamlAssertionDoc(context);
+        System.out.println(XmlUtil.nodeToFormattedString(document));
+
+        final Element assertionElm = document.getDocumentElement();
+        final Element attrStatement = XmlUtil.findFirstChildElementByName(assertionElm, SamlConstants.NS_SAML2, "AttributeStatement");
+        final List<Element> attribute = XmlUtil.findChildElementsByName(attrStatement, SamlConstants.NS_SAML2, "Attribute");
+        //Note: THIS WILL FAIL WHEN WE START PRODUCING A SINGLE ATTRIBUTE WITH MULTIPLE VALUES INSTEAD OF MULTIPLE ATTRIBUTES. See bug 11200
+        Assert.assertEquals("Incorrect number of Attributes found in AttributeStatement", 4, attribute.size());
+
+        failIfNotEqual(attrStatement, XmlUtil.parse(expectedChosenAttributeStatementMulti).getDocumentElement(), "Unexpected AttributeStatement created.", true);
+    }
+
+    /**
+     * Tests that XML is supported for Attribute Values and when XML that incoming AttributeValues are correctly
+     * matched against configured (runtime) XML values.
+     */
+    @Test
+    public void testAttriubuteStatement_Filtered_V2_AttributeValue_Choice_Repeat_XML() throws Exception {
+        //Test basic Attribute + AttributeValue addition to AttributeStatement
+        final SamlAttributeStatement samlAttributeStatement = new SamlAttributeStatement();
+        List<SamlAttributeStatement.Attribute> attributes = new ArrayList<SamlAttributeStatement.Attribute>();
+
+        // Statically configure 3 attributes
+        final SamlAttributeStatement.Attribute nameAttr = new SamlAttributeStatement.Attribute();
+        nameAttr.setName("nc:PersonGivenName");
+        nameAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        final String multiValuedVar = "multiValuedVar";
+        nameAttr.setValue("${" + multiValuedVar + "}");
+        nameAttr.setRepeatIfMulti(true);
+        nameAttr.setAddBehavior(ADD_AS_XML);
+        nameAttr.setValueComparison(CANONICALIZE);
+
+        final List<SamlAttributeStatement.Attribute> middleAndLastName = getSomeAttributes();
+
+        //This is the attribute we expect to not be included in the created saml token
+        final SamlAttributeStatement.Attribute attributeNotInRequest = new SamlAttributeStatement.Attribute();
+        attributeNotInRequest.setName("not_in_request");
+        attributeNotInRequest.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        attributeNotInRequest.setValue("not_in_request_value");
+
+        attributes.add(nameAttr);
+        attributes.addAll(middleAndLastName);
+        attributes.add(attributeNotInRequest);
+
+        samlAttributeStatement.setAttributes(attributes.toArray(new SamlAttributeStatement.Attribute[attributes.size()]));
+        final String varName = "attributeQuery.attributes";
+        samlAttributeStatement.setFilterExpression("${" + varName + "}");
+        ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 2);
+
+        final PolicyEnforcementContext context = getContext();
+        // add filter expression variables.
+
+        context.setVariable(varName, getElementsFromXml(attributeRequestWithAttributeValueXml, SamlConstants.NS_SAML2));
+        context.setVariable(multiValuedVar, Arrays.asList(
+                new Message(XmlUtil.parse("<xml>Jim</xml>")),
+                new Message(XmlUtil.parse("<xml>James</xml>")),
+                new Message(XmlUtil.parse("<xml>John</xml>"))));
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be none.", AssertionStatus.NONE, status);
+
+        final Document document = getIssuedSamlAssertionDoc(context);
+        System.out.println(XmlUtil.nodeToFormattedString(document));
+
+        final Element assertionElm = document.getDocumentElement();
+        final Element attrStatement = XmlUtil.findFirstChildElementByName(assertionElm, SamlConstants.NS_SAML2, "AttributeStatement");
+        final List<Element> attribute = XmlUtil.findChildElementsByName(attrStatement, SamlConstants.NS_SAML2, "Attribute");
+        //Note: THIS WILL FAIL WHEN WE START PRODUCING A SINGLE ATTRIBUTE WITH MULTIPLE VALUES INSTEAD OF MULTIPLE ATTRIBUTES. See bug 11200
+        Assert.assertEquals("Incorrect number of Attributes found in AttributeStatement", 4, attribute.size());
+
+        failIfNotEqual(attrStatement, XmlUtil.parse(expectedChosenAttributeStatementMultiXml).getDocumentElement(), "Unexpected AttributeStatement created.", true);
+    }
+
+    /**
+     * Test that incoming AttributeValue elements are used to filter the set of return values - e.g. the Gateway
+     * can choose from an incoming list.
+     */
+    @Test
+    public void testAttriubuteStatement_Filtered_V2_AttributeValue_Choice() throws Exception {
+        //Test basic Attribute + AttributeValue addition to AttributeStatement
+        final SamlAttributeStatement samlAttributeStatement = new SamlAttributeStatement();
+        List<SamlAttributeStatement.Attribute> attributes = new ArrayList<SamlAttributeStatement.Attribute>();
+
+        // Statically configure 3 attributes
+        final SamlAttributeStatement.Attribute nameAttr = new SamlAttributeStatement.Attribute();
+        nameAttr.setName("nc:PersonGivenName");
+        nameAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        nameAttr.setValue("Jim"); //Jim is one of two values in the request - so it should be included in the response.
+
+        final List<SamlAttributeStatement.Attribute> middleAndLastName = getSomeAttributes();
+
+        //This is the attribute we expect to not be included in the created saml token
+        final SamlAttributeStatement.Attribute attributeNotInRequest = new SamlAttributeStatement.Attribute();
+        attributeNotInRequest.setName("not_in_request");
+        attributeNotInRequest.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        attributeNotInRequest.setValue("not_in_request_value");
+
+        attributes.add(nameAttr);
+        attributes.addAll(middleAndLastName);
+        attributes.add(attributeNotInRequest);
+
+        samlAttributeStatement.setAttributes(attributes.toArray(new SamlAttributeStatement.Attribute[attributes.size()]));
+        final String varName = "attributeQuery.attributes";
+        samlAttributeStatement.setFilterExpression("${" + varName + "}");
+        ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 2);
+
+        final PolicyEnforcementContext context = getContext();
+        // add filter expression variables.
+
+        context.setVariable(varName, getElementsFromXml(attributeRequestWithAttributeValue, SamlConstants.NS_SAML2));
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be none.", AssertionStatus.NONE, status);
+
+        final Document document = getIssuedSamlAssertionDoc(context);
+        System.out.println(XmlUtil.nodeToFormattedString(document));
+
+        final Element assertionElm = document.getDocumentElement();
+        final Element attrStatement = XmlUtil.findFirstChildElementByName(assertionElm, SamlConstants.NS_SAML2, "AttributeStatement");
+        final List<Element> attribute = XmlUtil.findChildElementsByName(attrStatement, SamlConstants.NS_SAML2, "Attribute");
+        Assert.assertEquals("Incorrect number of Attributes found in AttributeStatement", 3, attribute.size());
+
+        failIfNotEqual(attrStatement, XmlUtil.parse(expectedChosenAttributeStatement).getDocumentElement(), "Unexpected AttributeStatement created.", true);
+    }
+
+    /**
+     * Tests that when CANONICALIZE is chosen for AttributeValue comparison that it continues to work for simple
+     * string values.
+     */
+    @Test
+    public void testAttriubuteStatement_Filtered_V2_AttributeValue_String_Canonalize() throws Exception {
+        //Test basic Attribute + AttributeValue addition to AttributeStatement
+        final SamlAttributeStatement samlAttributeStatement = new SamlAttributeStatement();
+        List<SamlAttributeStatement.Attribute> attributes = new ArrayList<SamlAttributeStatement.Attribute>();
+
+        // Statically configure 3 attributes
+        final SamlAttributeStatement.Attribute nameAttr = new SamlAttributeStatement.Attribute();
+        nameAttr.setName("nc:PersonGivenName");
+        nameAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        nameAttr.setValue("Jim");
+        nameAttr.setValueComparison(CANONICALIZE);
+
+        final List<SamlAttributeStatement.Attribute> middleAndLastName = getSomeAttributes();
+        attributes.add(nameAttr);
+        attributes.addAll(middleAndLastName);
+
+        samlAttributeStatement.setAttributes(attributes.toArray(new SamlAttributeStatement.Attribute[attributes.size()]));
+        final String varName = "attributeQuery.attributes";
+        samlAttributeStatement.setFilterExpression("${" + varName + "}");
+        ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 2);
+
+        final PolicyEnforcementContext context = getContext();
+        context.setVariable(varName, getElementsFromXml(attributeRequestWithAttributeValue, SamlConstants.NS_SAML2));
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be none.", AssertionStatus.NONE, status);
+
+        final Document document = getIssuedSamlAssertionDoc(context);
+        System.out.println(XmlUtil.nodeToFormattedString(document));
+
+        final Element assertionElm = document.getDocumentElement();
+        final Element attrStatement = XmlUtil.findFirstChildElementByName(assertionElm, SamlConstants.NS_SAML2, "AttributeStatement");
+        final List<Element> attribute = XmlUtil.findChildElementsByName(attrStatement, SamlConstants.NS_SAML2, "Attribute");
+        Assert.assertEquals("Incorrect number of Attributes found in AttributeStatement", 3, attribute.size());
+
+        failIfNotEqual(attrStatement, XmlUtil.parse(expectedChosenAttributeStatement).getDocumentElement(), "Unexpected AttributeStatement created.", true);
+    }
+
+    /**
+     * Tests attribute value comparison for canonicalized XML AttributeValue values.
+     */
+    @Test
+    public void testAttriubuteStatement_Filtered_V2_AttributeValue_XML_Canonalize() throws Exception {
+        //Test basic Attribute + AttributeValue addition to AttributeStatement
+        final SamlAttributeStatement samlAttributeStatement = new SamlAttributeStatement();
+        List<SamlAttributeStatement.Attribute> attributes = new ArrayList<SamlAttributeStatement.Attribute>();
+
+        // Statically configure 3 attributes
+        final SamlAttributeStatement.Attribute nameAttr = new SamlAttributeStatement.Attribute();
+        nameAttr.setName("nc:PersonGivenName");
+        nameAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        final String xmlVarName = "xmlVar";
+        nameAttr.setValue("${" + xmlVarName + "}");
+        nameAttr.setValueComparison(CANONICALIZE);
+        nameAttr.setAddBehavior(ADD_AS_XML);
+
+        Message xmlMsgForVar = new Message(XmlUtil.parse("<xml>Jim</xml>"));
+
+        final List<SamlAttributeStatement.Attribute> middleAndLastName = getSomeAttributes();
+
+        attributes.add(nameAttr);
+        attributes.addAll(middleAndLastName);
+
+        samlAttributeStatement.setAttributes(attributes.toArray(new SamlAttributeStatement.Attribute[attributes.size()]));
+        final String varName = "attributeQuery.attributes";
+        samlAttributeStatement.setFilterExpression("${" + varName + "}");
+        ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 2);
+
+        final PolicyEnforcementContext context = getContext();
+        context.setVariable(varName, getElementsFromXml(attributeRequestWithAttributeValuesXml, SamlConstants.NS_SAML2));
+        context.setVariable(xmlVarName, xmlMsgForVar);
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be none.", AssertionStatus.NONE, status);
+
+        final Document document = getIssuedSamlAssertionDoc(context);
+        System.out.println(XmlUtil.nodeToFormattedString(document));
+
+        final Element assertionElm = document.getDocumentElement();
+        final Element attrStatement = XmlUtil.findFirstChildElementByName(assertionElm, SamlConstants.NS_SAML2, "AttributeStatement");
+        final List<Element> attribute = XmlUtil.findChildElementsByName(attrStatement, SamlConstants.NS_SAML2, "Attribute");
+        Assert.assertEquals("Incorrect number of Attributes found in AttributeStatement", 3, attribute.size());
+
+        failIfNotEqual(attrStatement, XmlUtil.parse(expectedAttributeStatementXmlAttributeValue).getDocumentElement(), "Unexpected AttributeStatement created.", true);
+    }
+
+    /**
+     * Tests attribute value comparison for canonicalized AttributeValue values with mixed content.
+     */
+    @Test
+    public void testAttriubuteStatement_Filtered_V2_AttributeValue_XML_MixedContent_Canonalize() throws Exception {
+        //Test basic Attribute + AttributeValue addition to AttributeStatement
+        final SamlAttributeStatement samlAttributeStatement = new SamlAttributeStatement();
+        List<SamlAttributeStatement.Attribute> attributes = new ArrayList<SamlAttributeStatement.Attribute>();
+
+        // Statically configure 3 attributes
+        final SamlAttributeStatement.Attribute nameAttr = new SamlAttributeStatement.Attribute();
+        nameAttr.setName("nc:PersonGivenName");
+        nameAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        final String xmlVarName = "xmlVar";
+        nameAttr.setValue("${" + xmlVarName + "} just some text ");//trailing spaces
+        nameAttr.setValueComparison(CANONICALIZE);
+        nameAttr.setAddBehavior(ADD_AS_XML);
+
+        Message xmlMsgForVar = new Message(XmlUtil.parse("<xml>Jim</xml>"));
+
+        final List<SamlAttributeStatement.Attribute> middleAndLastName = getSomeAttributes();
+
+        attributes.add(nameAttr);
+        attributes.addAll(middleAndLastName);
+
+        samlAttributeStatement.setAttributes(attributes.toArray(new SamlAttributeStatement.Attribute[attributes.size()]));
+        final String varName = "attributeQuery.attributes";
+        samlAttributeStatement.setFilterExpression("${" + varName + "}");
+        ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 2);
+
+        final PolicyEnforcementContext context = getContext();
+        context.setVariable(varName, getElementsFromXml(attributeRequestWithAttributeValuesXmlMixedContent, SamlConstants.NS_SAML2));
+        context.setVariable(xmlVarName, xmlMsgForVar);
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be none.", AssertionStatus.NONE, status);
+
+        final Document document = getIssuedSamlAssertionDoc(context);
+        System.out.println(XmlUtil.nodeToFormattedString(document));
+
+        final Element assertionElm = document.getDocumentElement();
+        final Element attrStatement = XmlUtil.findFirstChildElementByName(assertionElm, SamlConstants.NS_SAML2, "AttributeStatement");
+        final List<Element> attribute = XmlUtil.findChildElementsByName(attrStatement, SamlConstants.NS_SAML2, "Attribute");
+        Assert.assertEquals("Incorrect number of Attributes found in AttributeStatement", 3, attribute.size());
+
+        failIfNotEqual(attrStatement, XmlUtil.parse(expectedAttributeStatementXmlAttributeValueMixedContent).getDocumentElement(), "Unexpected AttributeStatement created.", true);
+    }
+
+    private static final String expectedWhenNameFiltered = "    <saml2:AttributeStatement xmlns:saml2=\"urn:oasis:names:tc:SAML:2.0:assertion\">\n" +
+            "        <saml2:Attribute Name=\"nc:PersonMiddleName\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\">\n" +
+            "            <saml2:AttributeValue>Tiberius</saml2:AttributeValue>\n" +
+            "        </saml2:Attribute>\n" +
+            "        <saml2:Attribute Name=\"nc:PersonSurName\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\">\n" +
+            "            <saml2:AttributeValue>Kirk</saml2:AttributeValue>\n" +
+            "        </saml2:Attribute>\n" +
+            "    </saml2:AttributeStatement>";
+
+    private static final String expectedAttributeStatementXmlAttributeValueMixedContent = "    <saml2:AttributeStatement xmlns:saml2=\"urn:oasis:names:tc:SAML:2.0:assertion\">\n" +
+            "        <saml2:Attribute Name=\"nc:PersonGivenName\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\">\n" +
+            "            <saml2:AttributeValue>\n" +
+            "                <xml>Jim</xml> just some text \n" +
+            "            </saml2:AttributeValue>\n" +
+            "        </saml2:Attribute>\n" +
+            "        <saml2:Attribute Name=\"nc:PersonMiddleName\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\">\n" +
+            "            <saml2:AttributeValue>Tiberius</saml2:AttributeValue>\n" +
+            "        </saml2:Attribute>\n" +
+            "        <saml2:Attribute Name=\"nc:PersonSurName\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\">\n" +
+            "            <saml2:AttributeValue>Kirk</saml2:AttributeValue>\n" +
+            "        </saml2:Attribute>\n" +
+            "    </saml2:AttributeStatement>";
+
+    private static final String expectedAttributeStatementXmlAttributeValue = "    <saml2:AttributeStatement xmlns:saml2=\"urn:oasis:names:tc:SAML:2.0:assertion\">\n" +
+            "        <saml2:Attribute Name=\"nc:PersonGivenName\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\">\n" +
+            "            <saml2:AttributeValue>\n" +
+            "                <xml>Jim</xml>\n" +
+            "            </saml2:AttributeValue>\n" +
+            "        </saml2:Attribute>\n" +
+            "        <saml2:Attribute Name=\"nc:PersonMiddleName\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\">\n" +
+            "            <saml2:AttributeValue>Tiberius</saml2:AttributeValue>\n" +
+            "        </saml2:Attribute>\n" +
+            "        <saml2:Attribute Name=\"nc:PersonSurName\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\">\n" +
+            "            <saml2:AttributeValue>Kirk</saml2:AttributeValue>\n" +
+            "        </saml2:Attribute>\n" +
+            "    </saml2:AttributeStatement>";
+
+    private static final String expectedChosenAttributeStatementMultiXml = "    <saml2:AttributeStatement xmlns:saml2=\"urn:oasis:names:tc:SAML:2.0:assertion\">\n" +
+            "        <saml2:Attribute Name=\"nc:PersonGivenName\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\">\n" +
+            "            <saml2:AttributeValue><xml>Jim</xml></saml2:AttributeValue>\n" +
+            "        </saml2:Attribute>\n" +
+            "        <saml2:Attribute Name=\"nc:PersonGivenName\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\">\n" +
+            "            <saml2:AttributeValue><xml>James</xml></saml2:AttributeValue>\n" +
+            "        </saml2:Attribute>\n" +
+            "        <saml2:Attribute Name=\"nc:PersonMiddleName\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\">\n" +
+            "            <saml2:AttributeValue>Tiberius</saml2:AttributeValue>\n" +
+            "        </saml2:Attribute>\n" +
+            "        <saml2:Attribute Name=\"nc:PersonSurName\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\">\n" +
+            "            <saml2:AttributeValue>Kirk</saml2:AttributeValue>\n" +
+            "        </saml2:Attribute>\n" +
+            "    </saml2:AttributeStatement>";
+
+    private static final String expectedChosenAttributeStatementMulti = "    <saml2:AttributeStatement xmlns:saml2=\"urn:oasis:names:tc:SAML:2.0:assertion\">\n" +
+            "        <saml2:Attribute Name=\"nc:PersonGivenName\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\">\n" +
+            "            <saml2:AttributeValue>Jim</saml2:AttributeValue>\n" +
+            "        </saml2:Attribute>\n" +
+            "        <saml2:Attribute Name=\"nc:PersonGivenName\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\">\n" +
+            "            <saml2:AttributeValue>James</saml2:AttributeValue>\n" +
+            "        </saml2:Attribute>\n" +
+            "        <saml2:Attribute Name=\"nc:PersonMiddleName\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\">\n" +
+            "            <saml2:AttributeValue>Tiberius</saml2:AttributeValue>\n" +
+            "        </saml2:Attribute>\n" +
+            "        <saml2:Attribute Name=\"nc:PersonSurName\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\">\n" +
+            "            <saml2:AttributeValue>Kirk</saml2:AttributeValue>\n" +
+            "        </saml2:Attribute>\n" +
+            "    </saml2:AttributeStatement>";
+
+    private static final String expectedChosenAttributeStatement = "    <saml2:AttributeStatement xmlns:saml2=\"urn:oasis:names:tc:SAML:2.0:assertion\">\n" +
+            "        <saml2:Attribute Name=\"nc:PersonGivenName\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\">\n" +
+            "            <saml2:AttributeValue>Jim</saml2:AttributeValue>\n" +
+            "        </saml2:Attribute>\n" +
+            "        <saml2:Attribute Name=\"nc:PersonMiddleName\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\">\n" +
+            "            <saml2:AttributeValue>Tiberius</saml2:AttributeValue>\n" +
+            "        </saml2:Attribute>\n" +
+            "        <saml2:Attribute Name=\"nc:PersonSurName\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\">\n" +
+            "            <saml2:AttributeValue>Kirk</saml2:AttributeValue>\n" +
+            "        </saml2:Attribute>\n" +
+            "    </saml2:AttributeStatement>";
 
     private static final String attributeRequestWithAttributeValue =
             "<samlp:AttributeQuery\n" +
@@ -1189,6 +1550,88 @@ public class ServerSamlIssuerAssertionTest {
             "      NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\">\n" +
             "     <saml:AttributeValue>Jim</saml:AttributeValue>\n" +
             "     <saml:AttributeValue>James</saml:AttributeValue>\n" +
+            "  </saml:Attribute>\n" +
+            "  <saml:Attribute Name=\"nc:PersonMiddleName\"\n" +
+            "       NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\">\n" +
+            "  </saml:Attribute>\n" +
+            "  <saml:Attribute Name=\"nc:PersonSurName\"\n" +
+            "       NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\">\n" +
+            "  </saml:Attribute>\n" +
+            "</samlp:AttributeQuery>";
+
+    private static final String attributeRequestWithAttributeValueXml =
+            "<samlp:AttributeQuery\n" +
+            "  xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\"\n" +
+            "  xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\"\n" +
+            "  ID=\"aaf23196-1773-2113-474a-fe114412ab72\"\n" +
+            "  Destination=\"urn:idmanagement.gov:icam:bae:v2:1:7000:0000\"\n" +
+            "  Version=\"2.0\"\n" +
+            "  IssueInstant=\"2006-07-17T22:26:40Z\">\n" +
+            "  <saml:Issuer>urn:idmanagement.gov:icam:bae:v2:1:2100:1700</saml:Issuer>\n" +
+            "  <saml:Subject>\n" +
+            "    <saml:NameID\n" +
+            "      Format=\"urn:idmanagement.gov:icam:bae:v2:SAML:2.0:nameid-format:fasc-n\">\n" +
+            "          70001234000002110000000000000000\n" +
+            "    </saml:NameID>\n" +
+            "  </saml:Subject>\n" +
+            "  <saml:Attribute Name=\"nc:PersonGivenName\"\n" +
+            "      NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\">\n" +
+            "     <saml:AttributeValue><xml>Jim</xml></saml:AttributeValue>\n" +
+            "     <saml:AttributeValue><xml>James</xml></saml:AttributeValue>\n" +
+            "  </saml:Attribute>\n" +
+            "  <saml:Attribute Name=\"nc:PersonMiddleName\"\n" +
+            "       NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\">\n" +
+            "  </saml:Attribute>\n" +
+            "  <saml:Attribute Name=\"nc:PersonSurName\"\n" +
+            "       NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\">\n" +
+            "  </saml:Attribute>\n" +
+            "</samlp:AttributeQuery>";
+
+    private static final String attributeRequestWithAttributeValuesXmlMixedContent =
+            "<samlp:AttributeQuery\n" +
+            "  xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\"\n" +
+            "  xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\"\n" +
+            "  ID=\"aaf23196-1773-2113-474a-fe114412ab72\"\n" +
+            "  Destination=\"urn:idmanagement.gov:icam:bae:v2:1:7000:0000\"\n" +
+            "  Version=\"2.0\"\n" +
+            "  IssueInstant=\"2006-07-17T22:26:40Z\">\n" +
+            "  <saml:Issuer>urn:idmanagement.gov:icam:bae:v2:1:2100:1700</saml:Issuer>\n" +
+            "  <saml:Subject>\n" +
+            "    <saml:NameID\n" +
+            "      Format=\"urn:idmanagement.gov:icam:bae:v2:SAML:2.0:nameid-format:fasc-n\">\n" +
+            "          70001234000002110000000000000000\n" +
+            "    </saml:NameID>\n" +
+            "  </saml:Subject>\n" +
+            "  <saml:Attribute Name=\"nc:PersonGivenName\"\n" +
+            "      NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\">\n" +
+            "     <saml:AttributeValue><xml>Jim</xml> just some text </saml:AttributeValue>\n" +
+            "  </saml:Attribute>\n" +
+            "  <saml:Attribute Name=\"nc:PersonMiddleName\"\n" +
+            "       NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\">\n" +
+            "  </saml:Attribute>\n" +
+            "  <saml:Attribute Name=\"nc:PersonSurName\"\n" +
+            "       NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\">\n" +
+            "  </saml:Attribute>\n" +
+            "</samlp:AttributeQuery>";
+
+    private static final String attributeRequestWithAttributeValuesXml =
+            "<samlp:AttributeQuery\n" +
+            "  xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\"\n" +
+            "  xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\"\n" +
+            "  ID=\"aaf23196-1773-2113-474a-fe114412ab72\"\n" +
+            "  Destination=\"urn:idmanagement.gov:icam:bae:v2:1:7000:0000\"\n" +
+            "  Version=\"2.0\"\n" +
+            "  IssueInstant=\"2006-07-17T22:26:40Z\">\n" +
+            "  <saml:Issuer>urn:idmanagement.gov:icam:bae:v2:1:2100:1700</saml:Issuer>\n" +
+            "  <saml:Subject>\n" +
+            "    <saml:NameID\n" +
+            "      Format=\"urn:idmanagement.gov:icam:bae:v2:SAML:2.0:nameid-format:fasc-n\">\n" +
+            "          70001234000002110000000000000000\n" +
+            "    </saml:NameID>\n" +
+            "  </saml:Subject>\n" +
+            "  <saml:Attribute Name=\"nc:PersonGivenName\"\n" +
+            "      NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\">\n" +
+            "     <saml:AttributeValue><xml>Jim</xml></saml:AttributeValue>\n" +
             "  </saml:Attribute>\n" +
             "  <saml:Attribute Name=\"nc:PersonMiddleName\"\n" +
             "       NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\">\n" +
@@ -1234,6 +1677,20 @@ public class ServerSamlIssuerAssertionTest {
             "    <saml:AttributeDesignator AttributeName=\"nc:PersonSurName\" AttributeNamespace=\"http://uri.com\"/>\n" +
             "</samlp:AttributeQuery>";
 
+    private List<SamlAttributeStatement.Attribute> getSomeAttributes() {
+        final SamlAttributeStatement.Attribute middleNameAttr = new SamlAttributeStatement.Attribute();
+        middleNameAttr.setName("nc:PersonMiddleName");
+        middleNameAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        middleNameAttr.setValue("Tiberius");
+
+        final SamlAttributeStatement.Attribute lastNameAttr = new SamlAttributeStatement.Attribute();
+        lastNameAttr.setName("nc:PersonSurName");
+        lastNameAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        lastNameAttr.setValue("Kirk");
+
+        return Arrays.asList(middleNameAttr, lastNameAttr);
+    }
+
     private ServerSamlIssuerAssertion getServerAssertion(SamlAttributeStatement attributeStatement, int version) throws ServerPolicyException {
         SamlIssuerAssertion assertion = new SamlIssuerAssertion();
         assertion.setAttributeStatement(attributeStatement);
@@ -1257,7 +1714,7 @@ public class ServerSamlIssuerAssertionTest {
         authContext.addCredentials(LoginCredentials.makeLoginCredentials(basicToken, HttpBasic.class));
     }
 
-    private PolicyEnforcementContext getContext() throws IOException {
+    private PolicyEnforcementContext getContext() throws Exception {
 
         Message request = new Message();
         Message response = new Message();
@@ -1270,6 +1727,11 @@ public class ServerSamlIssuerAssertionTest {
 
         request.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));
         response.attachHttpResponseKnob(new HttpServletResponseKnob(hresponse));
+
+        policyEnforcementContext.getRequest().initialize(XmlUtil.parse("<xml></xml>"));
+
+        //set credentials
+        addCredentials(policyEnforcementContext);
 
         return policyEnforcementContext;
     }
@@ -1326,4 +1788,16 @@ public class ServerSamlIssuerAssertionTest {
         return document;
     }
 
+    private List<Element> getElementsFromXml(String attributeRequest, String samlNS) throws Exception {
+        final Document attributeQuery = XmlUtil.parse(attributeRequest);
+        System.out.println(XmlUtil.nodeToFormattedString(attributeQuery));
+        final NodeList attrList = attributeQuery.getElementsByTagNameNS(samlNS, "Attribute");
+        List<Element> elementList = new ArrayList<Element>();
+        for (int i = 0; i < attrList.getLength(); i++) {
+            final Node attribute = attrList.item(i);
+            elementList.add((Element) attribute);
+        }
+
+        return elementList;
+    }
 }

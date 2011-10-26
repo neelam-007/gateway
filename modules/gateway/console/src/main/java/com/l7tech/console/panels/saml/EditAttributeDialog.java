@@ -24,6 +24,8 @@ import java.util.logging.Logger;
 
 import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.*;
 import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.AttributeValueAddBehavior.*;
+import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.AttributeValueComparison.CANONICALIZE;
+import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.AttributeValueComparison.STRING_COMPARE;
 
 /**
  * Edits the SAML Attribute: name, namespace, value.
@@ -75,6 +77,9 @@ public class EditAttributeDialog extends JDialog {
     private JPanel mainPanel;
     private JCheckBox repeatIfMultivaluedCheckBox;
     private JComboBox msgElmBehaviorComboBox;
+    private JComboBox attValueComparisonComboBox;
+    private JLabel msgElmBehaviorLabel;
+    private JLabel attValueComparisonLabel;
 
     private final SamlAttributeStatement.Attribute attribute;
     private final boolean issueMode;
@@ -150,6 +155,20 @@ public class EditAttributeDialog extends JDialog {
                     }
                 }));
 
+        attValueComparisonComboBox.setModel(
+                new DefaultComboBoxModel(
+                        EnumSet.of(
+                                STRING_COMPARE,
+                                CANONICALIZE).toArray()));
+
+        attValueComparisonComboBox.setRenderer(new TextListCellRenderer<AttributeValueComparison>(
+                new Functions.Unary<String, AttributeValueComparison>() {
+                    @Override
+                    public String call(final AttributeValueComparison dataType) {
+                        return dataType.getValue();
+                    }
+                }));
+
         ButtonGroup buttonGroup = new ButtonGroup();
         buttonGroup.add(nameFormatUnspecifiedRadioButton);
         buttonGroup.add(nameFormatURIRefRadioButton);
@@ -161,6 +180,7 @@ public class EditAttributeDialog extends JDialog {
         attributeValueField.setText(attribute.getValue());
         repeatIfMultivaluedCheckBox.setSelected(attribute.isRepeatIfMulti());
         msgElmBehaviorComboBox.setSelectedItem(attribute.getAddBehavior());
+        attValueComparisonComboBox.setSelectedItem(attribute.getValueComparison());
 
         String nameFormat = attribute.getNameFormat();
         if (nameFormat == null || nameFormat.length()==0 ||
@@ -247,9 +267,15 @@ public class EditAttributeDialog extends JDialog {
             specificValueRadio.setVisible(false);
             repeatIfMultivaluedCheckBox.setVisible(true);
             msgElmBehaviorComboBox.setVisible(true);
+            msgElmBehaviorLabel.setVisible(true);
+            attValueComparisonComboBox.setVisible(enableNameFormat); // Comparison for Version 2 only
+            attValueComparisonLabel.setVisible(enableNameFormat);
         } else {
             repeatIfMultivaluedCheckBox.setVisible(false);
             msgElmBehaviorComboBox.setVisible(false);
+            msgElmBehaviorLabel.setVisible(false);
+            attValueComparisonComboBox.setVisible(false);
+            attValueComparisonLabel.setVisible(false);
         }
 
         if (attribute.isAnyValue()) {
@@ -317,6 +343,7 @@ public class EditAttributeDialog extends JDialog {
                 }
                 attribute.setRepeatIfMulti(repeatIfMultivaluedCheckBox.isSelected());
                 attribute.setAddBehavior((AttributeValueAddBehavior) msgElmBehaviorComboBox.getSelectedItem());
+                attribute.setValueComparison((AttributeValueComparison) attValueComparisonComboBox.getSelectedItem());
                 fireEditAccepted();
                 dispose();
             }

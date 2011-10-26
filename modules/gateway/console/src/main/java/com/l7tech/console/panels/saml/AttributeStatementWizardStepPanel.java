@@ -21,6 +21,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.*;
+import java.util.List;
 
 /**
  * The SAML Conditions <code>WizardStepPanel</code>
@@ -377,29 +378,30 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
 
         public void addRow(T bean, Object[] columnDataForRow) {
             super.addRow(columnDataForRow);
-            rowToBeanMap.put(getRowCount() - 1, bean);
+            beanList.add(bean);
         }
 
         public void updateBeanForRow(int row, T bean) {
-            if (!rowToBeanMap.containsKey(row)) {
+            if (beanList.size() < row) {
                 throw new IllegalArgumentException("Unknown row.");
             }
-            rowToBeanMap.put(row, bean);
+            beanList.remove(row);
+            beanList.add(row , bean);
         }
 
         @Override
         public void removeRow(int row) {
             super.removeRow(row);
-            rowToBeanMap.remove(row);
+            beanList.remove(row);
         }
 
         public T getBeanForRow(int row) {
-            return rowToBeanMap.get(row);
+            return beanList.get(row);
         }
 
         @Override
         public Object getValueAt(int row, int column) {
-            final T t = rowToBeanMap.get(row);
+            final T t = beanList.get(row);
             if (t == null) {
                 throw new IllegalStateException("Unknown value at row " + row);
             }
@@ -409,7 +411,6 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
 
         // - PRIVATE
 
-        private final Map<Integer, T> rowToBeanMap = new HashMap<Integer, T>();
+        private final List<T> beanList = new ArrayList<T>();
     }
-
 }

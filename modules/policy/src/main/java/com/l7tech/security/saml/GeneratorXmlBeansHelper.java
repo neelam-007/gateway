@@ -3,8 +3,6 @@
  */
 package com.l7tech.security.saml;
 
-import com.l7tech.message.Message;
-import com.l7tech.util.ExceptionUtils;
 import org.apache.xmlbeans.XmlObject;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -55,23 +53,6 @@ class GeneratorXmlBeansHelper {
             Element elm = (Element) objToProcess;
             final Node importedNode = ownerDoc.importNode(elm, true);
             parentNode.appendChild(importedNode);
-        } else if (objToProcess instanceof Message) {
-            Message msg = (Message) objToProcess;
-            try {
-                // If the Message is XML add it as toString.
-                final Element documentElement = msg.getXmlKnob().getDocumentReadOnly().getDocumentElement();
-                final Node importedNode = ownerDoc.importNode(documentElement, true);
-                parentNode.appendChild(importedNode);
-            } catch (Exception e) {
-                if (e instanceof RuntimeException) {
-                    throw new RuntimeException(e);
-                }
-                //todo [Donal] - perhaps clients should have already converted any Messages to Elements? Remove this burden from here.
-                logger.warning("Could not include Message variable as XML content. Including as toString instead. Exception info: " + ExceptionUtils.getMessage(e));
-                // this is equivalent to referencing ${messageVar} and forgetting to leave out the '.mainpart' suffix.
-                final Text textNode = ownerDoc.createTextNode(msg.toString());
-                parentNode.appendChild(textNode);
-            }
         } else {
             String s = objToProcess.toString();
             final Text textNode = ownerDoc.createTextNode(s);
