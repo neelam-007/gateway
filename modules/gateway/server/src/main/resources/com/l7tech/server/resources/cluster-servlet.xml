@@ -21,13 +21,15 @@
                 <value>[Ljava.lang.Object;</value>
                 <value>int</value>
                 <value>long</value>
+                <value>java.lang.Boolean</value>
                 <value>java.lang.Class</value>
-                <value>java.lang.Object</value>
                 <value>java.lang.Integer</value>
                 <value>java.lang.Long</value>
-                <value>java.lang.Boolean</value>
+                <value>java.lang.Number</value>
+                <value>java.lang.Object</value>
                 <value>java.lang.String</value>
                 <value>org.springframework.remoting.support.RemoteInvocation</value>
+                <value>com.l7tech.gateway.common.log.LogSinkQuery</value>
             </set>
         </property>
     </bean>

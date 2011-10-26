@@ -8,6 +8,13 @@ import java.util.Collection;
 
 /**
  * Administrative API for read access to Gateway logs.
+ *
+ * WARNING
+ * WARNING
+ * WARNING If you change this API you MUST update "cluster-servlet.xml" to
+ * WARNING permit the classes used in the parameters (node to node whitelist)
+ * WARNING
+ * WARNING
  */
 @Transactional(propagation=REQUIRED)
 public interface LogAccessAdmin {
