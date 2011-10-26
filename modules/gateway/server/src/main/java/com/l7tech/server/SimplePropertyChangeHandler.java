@@ -81,7 +81,7 @@ public class SimplePropertyChangeHandler implements PropertyChangeListener, Init
     private void setSslDebug() {
         final boolean enableSslDebug = config.getBooleanProperty( ServerConfigParams.PARAM_DEBUG_SSL, false );
         final String debugValue = config.getProperty( ServerConfigParams.PARAM_DEBUG_SSL_VALUE, DEFAULT_SSL_DEBUG_VALUE );
-        if ( enableSslDebug ) { // don't allow "help" as this shuts down the JVM
+        if ( enableSslDebug ) {
             JceProvider.getInstance().setDebugOptions( Collections.singletonMap("ssl", debugValue) );
         } else {
             JceProvider.getInstance().setDebugOptions( Collections.<String,String>singletonMap("ssl", null) );
