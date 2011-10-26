@@ -16,11 +16,14 @@ public class LogSinkData implements Serializable {
     public LogSinkData(@NotNull final byte[] data,
                        final long nextReadPosition,
                        boolean isRotated,
-                       long timeRead) {
+                       long timeRead,
+                       long fileLength) {
         this.nextReadPosition = nextReadPosition;
         this.data = data;
         this.isRotated = isRotated;
         this.timeRead = timeRead;
+        this.fileSize = fileLength;
+
     }
 
     /**
@@ -56,14 +59,24 @@ public class LogSinkData implements Serializable {
      * The time when the chunk of data is read by the server
      * @return
      */
-    public long timeRead() {
+    public long getTimeRead() {
         return timeRead;
     }
+
+    /**
+     * The size of the log file
+     * @return
+     */
+    public long getFileSize() {
+        return fileSize;
+    }
+
     //- PRIVATE
 
     private final byte[] data;
     private final long nextReadPosition;
     private final boolean isRotated;
     private final long timeRead;
+    private final long fileSize;
 
 }

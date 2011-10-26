@@ -331,7 +331,7 @@ public class SinkManagerImpl
                         fin = new FileInputStream(logFile);
                         final long skipped = fin.skip( startPoint );
                         if ( skipped < startPoint ) {
-                            data = new LogSinkData(new byte[0],-1L,false,0);
+                            data = new LogSinkData(new byte[0],-1L,false,0,0);
                         } else {
                             in = new TruncatingInputStream(fin);
                             bs = new PoolByteArrayOutputStream((int)(TruncatingInputStream.DEFAULT_SIZE_LIMIT / 4L));
@@ -348,7 +348,7 @@ public class SinkManagerImpl
                             }
                             out.finish();
 
-                            data = new LogSinkData(bs.toByteArray(),lastLocation,isRotated,readAt);
+                            data = new LogSinkData(bs.toByteArray(),lastLocation,isRotated,readAt,logFile.length());
                         }
                     } else {
                         logger.warning( "Attempt to read log file " + file + ", not matching sink file pattern " + fileRegex );

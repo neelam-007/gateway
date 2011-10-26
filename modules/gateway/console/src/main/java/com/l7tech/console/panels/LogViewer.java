@@ -583,13 +583,15 @@ public class LogViewer extends JFrame {
                     boolean done = false;
                     boolean reloadFile = false;
                     long startByte = lastReadByte;
+                    long fileSize = 0;
                     final StringBuilder sb = new StringBuilder(1024);
                     while(!done && !cancelled.get()){
                         LogSinkData logData;
                         try {
                             LogSinkQuery query = new LogSinkQuery(tail> 0,lastReadTime,startByte);
                             logData = logSinkAdmin.getSinkLogs(clusterNodeInfo.getNodeIdentifier(),sinkId,file, query );
-                            lastReadTime = logData.timeRead();
+                            fileSize = logData.getFileSize();
+                            lastReadTime = logData.getTimeRead();
                         } catch ( FindException e ) {
                             ErrorManager.getDefault().notify( Level.WARNING, e, "Error loading log data" );
                             break;
@@ -638,7 +640,8 @@ public class LogViewer extends JFrame {
                     }
                     if(tail> 0 )
                     {
-                        if(list.size()>0)list.remove(0); // last line might not be complete
+                        boolean firstLineComplete = lastReadByte == fileSize ; //  started reading at middle of file?
+                        if(!firstLineComplete) list.remove(0); // first line might not be complete
                         if(tail< (long) list.size() ) list = list.subList(list.size() - tail ,list.size());
                     }
                 }catch (IOException e) {
