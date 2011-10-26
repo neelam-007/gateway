@@ -135,7 +135,7 @@ public class PrivateKeyManagerWindow extends JDialog {
 
         setContentPane(mainPanel);
 
-        defaultAliasTracker = TopComponents.getInstance().getBean("defaultAliasTracker", DefaultAliasTracker.class);
+        defaultAliasTracker = new DefaultAliasTracker();
 
         keyTable = new KeyTable();
 

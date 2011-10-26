@@ -1,13 +1,10 @@
 package com.l7tech.console.util;
 
-import com.l7tech.gateway.common.audit.LogonEvent;
 import com.l7tech.gateway.common.security.SpecialKeyType;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.util.ExceptionUtils;
-import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -17,7 +14,7 @@ import java.util.logging.Logger;
 /**
  * Client-side utility class for keeping track of the currently-designated special-purpose keys.
  */
-public class DefaultAliasTracker implements ApplicationListener {
+public class DefaultAliasTracker {
     private static final Logger logger = Logger.getLogger(DefaultAliasTracker.class.getName());
 
     private static final class SpecialKeyInfo {
@@ -147,11 +144,5 @@ public class DefaultAliasTracker implements ApplicationListener {
      */
     public void invalidate() {
         info.set(null);
-    }
-
-    public void onApplicationEvent(ApplicationEvent event) {
-        if (event instanceof LogonEvent) {
-            invalidate();
-        }
     }
 }
