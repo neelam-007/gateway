@@ -12,6 +12,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Dialog to enter PEM private key.
@@ -116,7 +118,9 @@ public class SecurePasswordPemPrivateKeyDialog extends JDialog {
      * @return whether PEM private key has BEGIN and END markers
      */
     public static boolean simplePemPrivateKeyValidation(String pemPrivateKey) {
-        return pemPrivateKey.matches("^( *[[\n][\r\n][\r]]*)*-----BEGIN(.*[[\n][\r\n][\r]]*)*PRIVATE KEY-----( *[[\n][\r\n][\r]]*)*$");
+        final Pattern pattern = Pattern.compile("^[ \n\r]*-----BEGIN.*PRIVATE KEY-----[ \n\r]*$", Pattern.DOTALL);
+        final Matcher matcher = pattern.matcher(pemPrivateKey);
+        return matcher.matches();
     }
 
     public String getPemPrivateKey() {

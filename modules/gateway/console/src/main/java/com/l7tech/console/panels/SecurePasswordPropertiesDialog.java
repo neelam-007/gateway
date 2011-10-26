@@ -95,39 +95,30 @@ public class SecurePasswordPropertiesDialog extends JDialog {
         inputValidator.attachToButton(buttonOK, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                char[] passToSave = null;
-                switch ((SecurePassword.SecurePasswordType) typeComboBox.getSelectedItem()) {
-                    case PASSWORD:
-                        passToSave = newRecord ? passwordField.getPassword() : enteredPassword;
-                        break;
-                    case PEM_PRIVATE_KEY:
-                        passToSave = (newRecord && pemPrivateKeyField.getText() != null) ? pemPrivateKeyField.getText().toCharArray() : enteredPassword;
-                        break;
-                    default:
-                        break;
-                }
-
-                if (passToSave != null && passToSave.length < 1) {
-                    DialogDisplayer.showConfirmDialog(buttonOK,
-                            "The password will be empty.  Save it anyway?",
-                            "Save Empty Password?",
-                            JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, new DialogDisplayer.OptionListener() {
-                        @Override
-                        public void reportResult(int option) {
-                            if (JOptionPane.YES_OPTION == option) {
-                                doConfirm();
+                SecurePassword.SecurePasswordType type = (SecurePassword.SecurePasswordType) typeComboBox.getSelectedItem();
+                if (type == SecurePassword.SecurePasswordType.PASSWORD) {
+                    char[] passToSave = newRecord ? passwordField.getPassword() : enteredPassword;
+                    if (passToSave != null && passToSave.length < 1) {
+                        DialogDisplayer.showConfirmDialog(buttonOK,
+                                "The password will be empty.  Save it anyway?",
+                                "Save Empty Password?",
+                                JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, new DialogDisplayer.OptionListener() {
+                            @Override
+                            public void reportResult(int option) {
+                                if (JOptionPane.YES_OPTION == option) {
+                                    doConfirm();
+                                }
                             }
-                        }
-                    });
-                } else {
-                    doConfirm();
+                        });
+                    }
                 }
+                doConfirm();
             }
         });
         inputValidator.constrainTextField(confirmPasswordField, new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
-                SecurePassword.SecurePasswordType type = (SecurePassword.SecurePasswordType) typeComboBox.getSelectedItem();
+                SecurePassword.SecurePasswordType type = newRecord ? (SecurePassword.SecurePasswordType) typeComboBox.getSelectedItem() : securePassword.getType();
                 if (type != SecurePassword.SecurePasswordType.PASSWORD
                         || new String(confirmPasswordField.getPassword()).equals(new String(passwordField.getPassword())))
                     return null;
@@ -137,12 +128,22 @@ public class SecurePasswordPropertiesDialog extends JDialog {
         inputValidator.constrainTextField(pemPrivateKeyField, new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
-                SecurePassword.SecurePasswordType type = (SecurePassword.SecurePasswordType) typeComboBox.getSelectedItem();
-                if (type != SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY
-                        || StringUtils.isEmpty(pemPrivateKeyField.getText())
-                        || SecurePasswordPemPrivateKeyDialog.simplePemPrivateKeyValidation(pemPrivateKeyField.getText()))
-                    return null;
-                return "The key must be in PEM private key format.";
+                SecurePassword.SecurePasswordType type = newRecord ? (SecurePassword.SecurePasswordType) typeComboBox.getSelectedItem() : securePassword.getType();
+                if (type == SecurePasswordType.PEM_PRIVATE_KEY) {
+                    if (newRecord) {
+                        String passToSave = pemPrivateKeyField.getText();
+                        if (StringUtils.isEmpty(passToSave)) {
+                            return "PEM private key must not be empty.";
+                        } else if (!SecurePasswordPemPrivateKeyDialog.simplePemPrivateKeyValidation(passToSave)) {
+                            return "The key must be in PEM private key format.";
+                        }
+                    } else {
+                        if (enteredPassword != null && !SecurePasswordPemPrivateKeyDialog.simplePemPrivateKeyValidation(new String(enteredPassword))) {
+                            return "The key must be in PEM private key format.";
+                        }
+                    }
+                }
+                return null;
             }
         });
 

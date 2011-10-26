@@ -2208,7 +2208,7 @@ public class ServerGatewayManagementAssertionTest {
             }
         } );
         beanFactory.addBean( "securePasswordManager", new SecurePasswordManagerStub(
-                securePassword( 1L, "test", "password", true )
+                securePassword( 1L, "test", "password", true, SecurePassword.SecurePasswordType.PASSWORD )
         ) );
 
         managementAssertion = new ServerGatewayManagementAssertion(
@@ -2331,13 +2331,14 @@ public class ServerGatewayManagementAssertionTest {
         return service;
     }
 
-    private static SecurePassword securePassword( final long oid, final String name, final String password, final boolean fromVariable ) {
+    private static SecurePassword securePassword( final long oid, final String name, final String password, final boolean fromVariable, final SecurePassword.SecurePasswordType type) {
         final SecurePassword securePassword = new SecurePassword();
         securePassword.setOid( oid );
         securePassword.setName( name );
         securePassword.setEncodedPassword( password );
         securePassword.setUsageFromVariable( fromVariable );
         securePassword.setLastUpdate( System.currentTimeMillis() );
+        securePassword.setType(type);
         return securePassword;
     }
 

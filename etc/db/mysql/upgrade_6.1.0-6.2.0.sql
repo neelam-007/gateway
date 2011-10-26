@@ -100,7 +100,7 @@ ALTER TABLE folder ADD CONSTRAINT folder_parent_folder FOREIGN KEY (parent_folde
 --
 -- Bug 11158: SSH private key should not display in plain sight
 --
-ALTER TABLE secure_password MODIFY COLUMN encoded_password BLOB NOT NULL;
+ALTER TABLE secure_password MODIFY COLUMN encoded_password mediumtext NOT NULL;
 ALTER TABLE secure_password ADD COLUMN type varchar(64) NOT NULL DEFAULT 'PASSWORD';
 
 --

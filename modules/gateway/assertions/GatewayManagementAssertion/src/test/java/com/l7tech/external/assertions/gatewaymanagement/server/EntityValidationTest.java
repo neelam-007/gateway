@@ -478,6 +478,7 @@ public class EntityValidationTest {
     public void testSecurePassword() {
         final SecurePassword securePassword = new SecurePassword();
         securePassword.setName( "test" );
+        securePassword.setType( SecurePassword.SecurePasswordType.PASSWORD );
         securePassword.setEncodedPassword( "PASS" );
         valid( securePassword, "basic secure password" );
 
@@ -491,7 +492,10 @@ public class EntityValidationTest {
 
         // test encoded password
         checkNull( securePassword, "encodedPassword", false );
-        checkSize( securePassword, "encodedPassword", 0, 65535 );
+        checkSize( securePassword, "encodedPassword", 0, 16777215 );
+
+        // test type
+        checkNull( securePassword, "type", false );
     }
 
     //- PRIVATE

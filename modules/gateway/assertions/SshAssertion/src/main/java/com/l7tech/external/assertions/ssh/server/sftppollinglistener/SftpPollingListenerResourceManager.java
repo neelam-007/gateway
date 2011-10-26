@@ -145,14 +145,14 @@ public class SftpPollingListenerResourceManager {
             char[] pwd = securePasswordManager.decryptPassword(encrypted);
             decrypted = new String(pwd);
         } catch(ParseException pe) {
-            decrypted = null;
-            logger.warning("The password could not be parsed, the stored password is corrupted.");
+            logger.log(Level.WARNING, "The password could not be parsed, the stored password is corrupted. "
+                    + ExceptionUtils.getMessage(pe), ExceptionUtils.getDebugException(pe));
         } catch(FindException fe) {
-            decrypted = null;
-            logger.warning("The password could not be found in the password manager storage.  The password should be fixed or set in the password manager.");
+            logger.log(Level.WARNING, "The password could not be found in the password manager storage.  The password should be fixed or set in the password manager."
+                    + ExceptionUtils.getMessage(fe), ExceptionUtils.getDebugException(fe));
         } catch(NullPointerException npe) {
-            decrypted = null;
-            logger.warning("The password could not be found in the password manager storage.  The password should be fixed or set in the password manager.");
+            logger.log(Level.WARNING, "The password could not be found in the password manager storage.  The password should be fixed or set in the password manager."
+                    + ExceptionUtils.getMessage(npe), ExceptionUtils.getDebugException(npe));
         }
         return decrypted;
     }

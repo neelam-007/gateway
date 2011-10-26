@@ -70,9 +70,9 @@ public class SecurePassword extends NamedEntityImp {
     }
 
     @Lob
-    @Column(name = "encoded_password", length = 65535, nullable = false)
+    @Column(name = "encoded_password", length = 16777215, nullable = false)
     @NotNull
-    @Size(max=65535)
+    @Size(max=16777215)
     public String getEncodedPassword() {
         return encodedPassword;
     }
@@ -90,8 +90,9 @@ public class SecurePassword extends NamedEntityImp {
         this.lastUpdate = new Date(lastUpdate);
     }
 
-    @Column(name = "type", length = 64)
+    @Column(name = "type", length = 64, nullable = false)
     @Enumerated(EnumType.STRING)
+    @NotNull
     public SecurePasswordType getType() {
         return type;
     }

@@ -16,6 +16,7 @@ import com.l7tech.external.assertions.ssh.server.client.SftpClient;
 import com.l7tech.external.assertions.ssh.server.client.SshClient;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Messages;
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.objectmodel.FindException;
@@ -98,10 +99,17 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             username = ExpandVariables.process(assertion.getUsername(), context.getVariableMap(Syntax.getReferencedNames(assertion.getUsername()), getAudit()), getAudit());
             if(assertion.getPasswordOid() != null) {
                 try {
-                    password = new String(securePasswordManager.decryptPassword(securePasswordManager.findByPrimaryKey(assertion.getPasswordOid()).getEncodedPassword()));
+                    SecurePassword securePassword = securePasswordManager.findByPrimaryKey(assertion.getPasswordOid());
+                    if (securePassword == null) {
+                        logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, "Unable to find stored password for OID: " + assertion.getPasswordOid());
+                        return AssertionStatus.FAILED;
+                    }
+                    password = new String(securePasswordManager.decryptPassword(securePassword.getEncodedPassword()));
                 } catch(FindException fe) {
+                    logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {ExceptionUtils.getMessage(fe)}, ExceptionUtils.getDebugException(fe));
                     return AssertionStatus.FAILED;
                 } catch(ParseException pe) {
+                    logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {ExceptionUtils.getMessage(pe)}, ExceptionUtils.getDebugException(pe));
                     return AssertionStatus.FAILED;
                 }
             }
@@ -150,20 +158,22 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             if(assertion.isUsePrivateKey() && assertion.getPrivateKeyOid() != null) {
                 String privateKeyText;
                 try {
-                    privateKeyText = new String(securePasswordManager.decryptPassword(
-                            securePasswordManager.findByPrimaryKey(assertion.getPrivateKeyOid()).getEncodedPassword()));
+                    SecurePassword securePemPrivateKey = securePasswordManager.findByPrimaryKey(assertion.getPrivateKeyOid());
+                    if (securePemPrivateKey == null) {
+                        logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, "Unable to find stored PEM private key for OID: " + assertion.getPrivateKeyOid());
+                        return AssertionStatus.FAILED;
+                    }
+                    privateKeyText = new String(securePasswordManager.decryptPassword(securePemPrivateKey.getEncodedPassword()));
                 } catch(FindException fe) {
+                    logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {ExceptionUtils.getMessage(fe)}, ExceptionUtils.getDebugException(fe));
                     return AssertionStatus.FAILED;
                 } catch(ParseException pe) {
+                    logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {ExceptionUtils.getMessage(pe)}, ExceptionUtils.getDebugException(pe));
                     return AssertionStatus.FAILED;
                 }
 
                 sshParams.setSshPassword(null);
-                if(password == null) {
-                    sshParams.setPrivateKey(privateKeyText);
-                } else {
-                    sshParams.setPrivateKey(privateKeyText, password);
-                }
+                sshParams.setPrivateKey(privateKeyText);
             }
 
             if (assertion.isScpProtocol()) {
