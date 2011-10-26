@@ -273,13 +273,13 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                             return AssertionStatus.FAILED;
                         }
                     }
-                    bridgeResponse.getMimeKnob().setContentLengthLimit(xmlSizeLimit);
 
                     HeaderHolder hh = new HeaderHolder();
                     long[] latencyHolder = new long[]{-1};
                     PolicyApplicationContext pac = newPolicyApplicationContext(context, bridgeRequest, bridgeResponse, pak, origUrl, hh, latencyHolder);
                     messageProcessor.processMessage(pac);
 
+                    bridgeResponse.getMimeKnob().setContentLengthLimit(xmlSizeLimit);
                     final HttpResponseKnob hrk = bridgeResponse.getKnob(HttpResponseKnob.class);
                     int status = hrk == null ? HttpConstants.STATUS_SERVER_ERROR : hrk.getStatus();
                     if (status == HttpConstants.STATUS_OK)
