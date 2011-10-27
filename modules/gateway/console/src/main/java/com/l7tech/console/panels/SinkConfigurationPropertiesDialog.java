@@ -43,6 +43,8 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
 
     private static final Logger logger = Logger.getLogger( SinkConfigurationPropertiesDialog.class.getName() );
 
+    public static final String VALID_NAME_CHARACTERS = ValidationUtils.ALPHA_NUMERIC + "_-";
+
     /**
      * The title for the dialog window
      */
@@ -327,7 +329,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
             public String getValidationError() {
                 if( nameField.getText().trim().length()==0 ) {
                     return resources.getString("baseSettings.name.errors.empty");
-                } else if ( !ValidationUtils.isValidCharacters(nameField.getText().trim(), ValidationUtils.ALPHA_NUMERIC + "_-") ) {
+                } else if ( !ValidationUtils.isValidCharacters(nameField.getText().trim(), VALID_NAME_CHARACTERS) ) {
                     return resources.getString("baseSettings.name.errors.chars");
                 }
 

@@ -57,11 +57,26 @@ public class CreateEntityLogSinkAction extends SecureAction {
         filters.put(getHybridContextType(),  values);
         sink.setFilters(filters);
 
-        String nameStr = entityHeader.getName().replace(' ','_');
+        String nameStr = filterName( entityHeader.getName() );
         sink.setName(nameStr);
         sink.setDescription(entityHeader.getName() + " Log");
 
         doEdit(mw, sink);
+    }
+
+    private String filterName( final String name ) {
+        final StringBuilder nameBuilder = new StringBuilder();
+
+        if ( name != null ) {
+            final String valid = SinkConfigurationPropertiesDialog.VALID_NAME_CHARACTERS;
+            for ( final char character : name.toCharArray() ) {
+                if ( valid.indexOf( character ) > -1 ) {
+                    nameBuilder.append( character );
+                }
+            }
+        }
+
+        return nameBuilder.toString();
     }
 
     private String getHybridContextType(){
