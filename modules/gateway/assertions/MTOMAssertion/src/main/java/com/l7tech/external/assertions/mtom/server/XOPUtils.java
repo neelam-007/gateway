@@ -397,7 +397,7 @@ public class XOPUtils {
         final MimeKnob mimeKnob = sourceMessage.getMimeKnob();
         final ContentTypeHeader originalContentType = mimeKnob.getOuterContentType();
         if ( !originalContentType.isMultipart() ||
-             !XOP_CONTENT_TYPE.matches(ContentTypeHeader.parseValue(originalContentType.getParam(CONTENT_TYPE_PARAM_TYPE)))) {
+             !ContentTypeHeader.parseValue(originalContentType.getParam(CONTENT_TYPE_PARAM_TYPE)).matches( XOP_CONTENT_TYPE )) {
             throw new XOPException( "Message is not XOP, content type is '" + originalContentType.getMainValue() + "'" );
         }
 
