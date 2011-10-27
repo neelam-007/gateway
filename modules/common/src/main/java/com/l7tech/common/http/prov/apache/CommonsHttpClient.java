@@ -66,15 +66,13 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
 
     private static HttpParams httpParams;
     private static final Map<SSLSocketFactory, Protocol> protoBySockFac = Collections.synchronizedMap(new WeakHashMap<SSLSocketFactory, Protocol>());
-    static {
-        Protocol.registerProtocol( PROTOCOL_HTTP, new Protocol( PROTOCOL_HTTP, new TraceProtocolSocketFactory(), 80 ) );
-    }
 
     /**
      * This property was true in 5.1, switched to false in 5.2, URLs should be encoded by the caller (see bug 7598).
      */
     private static final boolean encodePath = ConfigFactory.getBooleanProperty( CommonsHttpClient.class.getName() + ".encodePath", false );
     private static final int gzipThreshold = ConfigFactory.getIntProperty( PROP_GZIP_STREAMING_THRESHOLD, DEFAULT_GZIP_STREAMING_THRESHOLD );
+    private static final boolean enableTrace = ConfigFactory.getBooleanProperty( CommonsHttpClient.class.getName() + ".enableTrace", true );
 
     static {
         DefaultHttpParams.setHttpParamsFactory(new CachingHttpParamsFactory(new DefaultHttpParamsFactory()));
@@ -85,6 +83,9 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
         }
         if ( ConfigFactory.getBooleanProperty( PROP_HTTP_DISABLE_KEEP_ALIVE, false ) ) {
             defaultParams.setParameter( "http.default-headers", Collections.singletonList( new Header( "Connection", "close" ) ) );
+        }
+        if ( enableTrace ) {
+            Protocol.registerProtocol( PROTOCOL_HTTP, new Protocol( PROTOCOL_HTTP, new TraceProtocolSocketFactory(), 80 ) );
         }
     }
 
@@ -672,65 +673,17 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
         Protocol protocol = protoBySockFac.get(sockFac);
         if (protocol == null) {
             logger.finer("Creating new commons Protocol for https");
-            protocol = new Protocol( PROTOCOL_HTTPS, (ProtocolSocketFactory) new SecureProtocolSocketFactory() {
-                @Override
-                public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException {
-                    return verify(sockFac.createSocket(socket, host, port, autoClose), host);
-                }
-
-                @Override
-                public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort) throws IOException {
-                    return verify(sockFac.createSocket(host, port, clientAddress, clientPort), host);
-                }
-
-                @Override
-                public Socket createSocket(String host, int port) throws IOException {
-                    return verify(sockFac.createSocket(host, port), host);
-                }
-
-                @Override
-                public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort, HttpConnectionParams httpConnectionParams) throws IOException {
-                    final Socket socket = new Socket();
-                    int connectTimeout = httpConnectionParams.getConnectionTimeout();
-
-                    socket.bind(new InetSocketAddress(clientAddress, clientPort));
-
-                    try {
-                        socket.connect(new InetSocketAddress(host, port), connectTimeout);
-                    }
-                    catch( SocketTimeoutException ste) {
-                        throw new ConnectTimeoutException("Timeout when connecting to host '"+host+"'.", ste);
-                    }
-
-                    return wrapSocket( verify( sockFac.createSocket( wrapSocket( socket, "https", traceSecureLogger ), host, port, true ), host ), "http", traceLogger );
-                }
-
-                private Socket verify(Socket socket, String host) throws IOException {
-                    if (socket instanceof SSLSocket ) {
-                        configureEnabledProtocolsAndCiphers((SSLSocket) socket);
-
-                        if (hostVerifier != null) {
-                            SSLSocket sslSocket = (SSLSocket) socket;
-
-                            // must start handshake or any exception can be lost when
-                            // getSession() is called
-                            sslSocket.startHandshake();
-
-                            if (!hostVerifier.verify(host, sslSocket.getSession())) {
-                                ResourceUtils.closeQuietly(socket);
-                                throw new CausedIOException("Host name does not match certificate '" + host + "'.");
-                            }
-                        }
-                    }
-                    return socket;
-                }
-            }, 443);
+            protocol = new Protocol( PROTOCOL_HTTPS,
+                    (ProtocolSocketFactory) (enableTrace ?
+                            new SecureTraceProtocolSocketFactory( sockFac, hostVerifier ) :
+                            new SecureDirectProtocolSocketFactory( sockFac, hostVerifier ) )
+                     , 443);
             protoBySockFac.put(sockFac, protocol);
         }
         return protocol;
     }
 
-    private void configureEnabledProtocolsAndCiphers(SSLSocket s) {
+    private static void configureEnabledProtocolsAndCiphers(SSLSocket s) {
         String[] prots = getCommaDelimitedSystemProperty("https.protocols");
         String[] suites = getCommaDelimitedSystemProperty("https.cipherSuites");
         if (prots != null)
@@ -920,6 +873,117 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
         @Override
         public URI getURI() throws URIException {
             throw (URIException) new URIException(ExceptionUtils.getMessage(exception)).initCause( exception );
+        }
+    }
+
+    /**
+     * SecureProtocolSocketFactory that directly uses an underlying SSLSocketFactory
+     */
+    private static class SecureDirectProtocolSocketFactory implements SecureProtocolSocketFactory {
+        protected final SSLSocketFactory sockFac;
+        protected final HostnameVerifier hostVerifier;
+
+        protected SecureDirectProtocolSocketFactory( final SSLSocketFactory sockFac,
+                                                     final HostnameVerifier hostVerifier ) {
+            this.sockFac = sockFac;
+            this.hostVerifier = hostVerifier;
+        }
+
+        @Override
+        public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException {
+            return verify(sockFac.createSocket(socket, host, port, autoClose), host);
+        }
+
+        @Override
+        public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort) throws IOException {
+            return verify(sockFac.createSocket(host, port, clientAddress, clientPort), host);
+        }
+
+        @Override
+        public Socket createSocket(String host, int port) throws IOException {
+            return verify(sockFac.createSocket(host, port), host);
+        }
+
+        @Override
+        public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort, HttpConnectionParams httpConnectionParams) throws IOException {
+            final Socket socket = sockFac.createSocket();
+            connectWithTimeout( host, port, clientAddress, clientPort, httpConnectionParams, socket );
+            return verify(socket, host);
+        }
+
+        protected void connectWithTimeout( final String host,
+                                           final int port,
+                                           final InetAddress clientAddress,
+                                           final int clientPort,
+                                           final HttpConnectionParams httpConnectionParams,
+                                           final Socket socket ) throws IOException {
+            final int connectTimeout = httpConnectionParams.getConnectionTimeout();
+            socket.bind(new InetSocketAddress(clientAddress, clientPort));
+            try {
+                socket.connect(new InetSocketAddress(host, port), connectTimeout);
+            }
+            catch( SocketTimeoutException ste) {
+                throw new ConnectTimeoutException("Timeout when connecting to host '"+host+"'.", ste);
+            }
+        }
+
+        protected final Socket verify(Socket socket, String host) throws IOException {
+            if (socket instanceof SSLSocket ) {
+                configureEnabledProtocolsAndCiphers((SSLSocket) socket);
+
+                if (hostVerifier != null) {
+                    SSLSocket sslSocket = (SSLSocket) socket;
+
+                    // must start handshake or any exception can be lost when
+                    // getSession() is called
+                    sslSocket.startHandshake();
+
+                    if (!hostVerifier.verify(host, sslSocket.getSession())) {
+                        ResourceUtils.closeQuietly(socket);
+                        throw new CausedIOException("Host name does not match certificate '" + host + "'.");
+                    }
+                }
+            }
+            return socket;
+        }
+    }
+
+    /**
+     * SecureProtocolSocketFactory that uses an SSLSocketFactory with sockets wrapped for tracing support
+     */
+    private static class SecureTraceProtocolSocketFactory extends SecureDirectProtocolSocketFactory {
+        private SecureTraceProtocolSocketFactory( final SSLSocketFactory sockFac,
+                                                  final HostnameVerifier hostVerifier ) {
+            super( sockFac, hostVerifier );
+        }
+
+        @Override
+        public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException {
+            return secureWrapAndVerify( socket, host, port, autoClose );
+        }
+
+        @Override
+        public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort) throws IOException {
+            return secureWrapAndVerify( new Socket( host, port, clientAddress, clientPort ), host, port, true );
+        }
+
+        @Override
+        public Socket createSocket(String host, int port) throws IOException {
+            return secureWrapAndVerify( new Socket( host, port ), host, port, true );
+        }
+
+        @Override
+        public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort, HttpConnectionParams httpConnectionParams) throws IOException {
+            final Socket socket = new Socket();
+            connectWithTimeout( host, port, clientAddress, clientPort, httpConnectionParams, socket );
+            return secureWrapAndVerify( socket, host, port, true );
+        }
+
+        private Socket secureWrapAndVerify( final Socket socket,
+                                            final String host,
+                                            final int port,
+                                            final boolean autoClose ) throws IOException {
+            return wrapSocket( verify( sockFac.createSocket( wrapSocket(  socket, "https", traceSecureLogger ), host, port, autoClose ), host ), "http", traceLogger );
         }
     }
 
