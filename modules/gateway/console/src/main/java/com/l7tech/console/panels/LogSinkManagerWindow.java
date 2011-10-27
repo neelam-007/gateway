@@ -226,7 +226,7 @@ public class LogSinkManagerWindow extends JDialog {
     }
 
     private void editAndSave(final SinkConfiguration sinkConfiguration, final boolean selectNameField) {
-        final SinkConfigurationPropertiesDialog dlg = new SinkConfigurationPropertiesDialog(this, sinkConfiguration);
+        final SinkConfigurationPropertiesDialog dlg = new SinkConfigurationPropertiesDialog(this, sinkConfiguration, !flags.canUpdateSome());
         dlg.pack();
         Utilities.centerOnScreen( dlg );
         if(selectNameField)

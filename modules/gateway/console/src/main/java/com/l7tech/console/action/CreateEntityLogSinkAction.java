@@ -107,7 +107,7 @@ public class CreateEntityLogSinkAction extends SecureAction {
     }
 
     private void doEdit( final Frame parent, final SinkConfiguration sinkConfiguration ) {
-        final SinkConfigurationPropertiesDialog dlg = new SinkConfigurationPropertiesDialog(parent, sinkConfiguration);
+        final SinkConfigurationPropertiesDialog dlg = new SinkConfigurationPropertiesDialog(parent, sinkConfiguration, false);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         dlg.selectNameField();

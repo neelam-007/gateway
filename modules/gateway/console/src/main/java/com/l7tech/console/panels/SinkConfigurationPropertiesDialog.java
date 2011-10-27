@@ -91,6 +91,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
 
     private final FilterContext filterContext;
     private final SinkConfiguration sinkConfiguration;
+    private final boolean readOnly;
     private InputValidator inputValidator;
     private int testCount = 0;
     private boolean confirmed = false;
@@ -214,10 +215,12 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
      * @param sinkConfiguration The SinkConfiguration to read values from and possibly update
      */
     public SinkConfigurationPropertiesDialog( final Window owner,
-                                              final SinkConfiguration sinkConfiguration ) {
+                                              final SinkConfiguration sinkConfiguration,
+                                              final boolean readOnly ) {
         super( owner, DIALOG_TITLE, ModalityType.APPLICATION_MODAL );
         this.filterContext = new FilterContext();
         this.sinkConfiguration = sinkConfiguration;
+        this.readOnly = readOnly;
         initialize();
     }
 
@@ -249,7 +252,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         modelToView();
         enableDisableMain();
         enableDisableTabs();
-        enableDisableSyslogSslSettings();
+        enableDisableSyslogSettings();
         if (nameField.getText().length() < 1)
             nameField.requestFocusInWindow();
         Utilities.setMinimumSize(this);
@@ -268,13 +271,17 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         setModal(true);
         getRootPane().setDefaultButton(okButton);
 
-        // Attach the validator to the OK button
-        inputValidator.attachToButton(okButton, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                onOk();
-            }
-        });
+        if ( !readOnly ) {
+            // Attach the validator to the OK button
+            inputValidator.attachToButton(okButton, new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    onOk();
+                }
+            });
+        } else {
+            okButton.setEnabled( false );
+        }
 
         cancelButton.addActionListener(new ActionListener() {
             @Override
@@ -461,7 +468,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         syslogProtocolField.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                enableDisableSyslogSslSettings();
+                enableDisableSyslogSettings();
             }
         });
 
@@ -512,6 +519,12 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         // populate host list
         syslogHostListModel = new DefaultListModel();
         syslogHostList.setModel(syslogHostListModel);
+        syslogHostList.addListSelectionListener( new RunOnChangeListener() {
+            @Override
+            protected void run() {
+                enableDisableSyslogSettings();
+            }
+        } );
 
         // host list add, edit, and remove button
         syslogHostAdd.addActionListener(new SyslogHostListActionListener(ACTION_ADD));
@@ -583,7 +596,8 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
 
     public void enableDisableMain() {
         final boolean enableFilterRemove = filtersList.getSelectedValues().length > 0;
-        removeFilterButton.setEnabled( enableFilterRemove );
+        addFilterButton.setEnabled( !readOnly );
+        removeFilterButton.setEnabled( !readOnly && enableFilterRemove );
     }
 
     /**
@@ -600,7 +614,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         case SYSLOG:
             tabbedPane.setEnabledAt(1, false);
             tabbedPane.setEnabledAt(2, true);
-            enableDisableSyslogSslSettings();
+            enableDisableSyslogSettings();
             break;
         default:
             tabbedPane.setEnabledAt(1, false);
@@ -612,7 +626,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
     /**
      * Updates the enabled status for the SSL settings section in the Syslog Settings Tab.
      */
-    private void enableDisableSyslogSslSettings() {
+    private void enableDisableSyslogSettings() {
 
         if (SinkType.SYSLOG == typeField.getSelectedItem()) {
 
@@ -630,6 +644,14 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
                 syslogSSLSettingsLabel.setEnabled(false);
             }
         }
+
+        final boolean syslogHostSelected = syslogHostList.getSelectedValue() != null;
+        syslogTestMessageButton.setEnabled( !readOnly );
+        syslogHostAdd.setEnabled( !readOnly );
+        syslogHostRemove.setEnabled( !readOnly && syslogHostSelected );
+        syslogHostEdit.setEnabled( !readOnly && syslogHostSelected );
+        syslogHostUp.setEnabled( !readOnly && syslogHostSelected );
+        syslogHostDown.setEnabled( !readOnly && syslogHostSelected );
     }
 
     /**
