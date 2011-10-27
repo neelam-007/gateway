@@ -101,11 +101,8 @@ public class IntegerOrContextVariableValidationRuleTest {
     }
 
     @Test
-    public void spacesInvalid(){
+    public void spacesTrimmed(){
         rule.setTextToValidate("   1   ");
-
-        final String error = rule.getValidationError();
-
-        assertEquals("Invalid syntax used for " + FIELD_NAME + ".", error);
+        assertNull(rule.getValidationError());
     }
 }

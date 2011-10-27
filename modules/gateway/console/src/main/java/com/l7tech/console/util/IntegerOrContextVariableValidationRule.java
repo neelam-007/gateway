@@ -25,7 +25,7 @@ public class IntegerOrContextVariableValidationRule implements InputValidator.Va
     }
 
     public void setTextToValidate(final String textToValidate) {
-        this.textToValidate = textToValidate;
+        this.textToValidate = (textToValidate == null)? null : textToValidate.trim();
     }
 
     @Override

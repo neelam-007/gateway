@@ -4,20 +4,13 @@ import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.util.IntegerOrContextVariableValidationRule;
 import com.l7tech.external.assertions.uuidgenerator.UUIDGeneratorAssertion;
-import com.l7tech.external.assertions.uuidgenerator.server.ServerUUIDGeneratorAssertion;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.variable.Syntax;
-import com.l7tech.server.ServerConfigParams;
-import com.l7tech.util.Config;
 
-import javax.inject.Inject;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
-import java.text.MessageFormat;
-import java.util.ResourceBundle;
 
 /**
  * Dialog for editing UUIDGeneratorAssertion properties.
@@ -68,7 +61,8 @@ public class UUIDGeneratorPropertiesDialog extends AssertionPropertiesOkCancelSu
     }
 
     public UUIDGeneratorAssertion getData(UUIDGeneratorAssertion assertion) {
-        integerOrContextVariableRule.setTextToValidate(amountTextField.getText());
+        String amount = amountTextField.getText();
+        integerOrContextVariableRule.setTextToValidate((amount == null)? null : amount.trim());
         final String error = validators.validate();
         if(error != null){
             throw new ValidationException(error);
