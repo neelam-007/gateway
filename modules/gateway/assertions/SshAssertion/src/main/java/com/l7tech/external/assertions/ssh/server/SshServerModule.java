@@ -336,8 +336,6 @@ public class SshServerModule extends TransportModule implements ApplicationListe
                 new CompressionNone.Factory(),
                 new CompressionZlib.Factory(),
                 new CompressionDelayedZlib.Factory()));
-        sshd.setCompressionFactories(Arrays.<NamedFactory<Compression>>asList(
-                new CompressionNone.Factory()));
 
         // removed MD5 & MD596 for Gateway
         sshd.setMacFactories(Arrays.<NamedFactory<Mac>>asList(
