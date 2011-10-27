@@ -186,7 +186,12 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
             enableOkButton = false;
         }
 
-        if(portField.getText() == null || portField.getText().trim().length() == 0 || !portField.getText().matches("[0-9]{1,5}")) {
+        try {
+            int port = Integer.parseInt(portField.getText().trim());
+            if(port <= 0 || port > 65535) {
+                enableOkButton = false;
+            }
+        } catch (Exception e) {
             enableOkButton = false;
         }
 
