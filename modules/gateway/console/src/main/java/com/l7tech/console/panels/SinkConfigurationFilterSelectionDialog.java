@@ -9,6 +9,7 @@ import com.l7tech.console.tree.servicesAndPolicies.OrganizationSelectionTree;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
 import com.l7tech.gateway.common.log.SinkConfiguration;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin.JmsTuple;
 import com.l7tech.gui.MaxLengthDocument;
@@ -438,6 +439,8 @@ public class SinkConfigurationFilterSelectionDialog extends JDialog {
             if ( !result.isSome() && registry.isAdminContextPresent() ) {
                 try {
                     result = optional(adminCallback.call( registry ));
+                } catch ( PermissionDeniedException e ) {
+                    // Display as unknown
                 } catch ( ObjectModelException e ) {
                     ErrorManager.getDefault().notify( Level.WARNING, e, "Error listing entities for log filtering" );
                 }
