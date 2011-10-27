@@ -85,15 +85,25 @@ class CryptoJWrapper {
         return parentFile == null ? filename : new File(parentFile, filename).getPath();
     }
 
-    URLClassLoader makeJarClassLoader(String libPath) throws MalformedURLException {
+    private URLClassLoader makeJarClassLoader(String libPath) throws MalformedURLException {
         final File file = new File(libPath);
         if (!file.exists() || !file.canRead())
             throw new IllegalArgumentException("Crypto library path not found: " + file.getAbsolutePath());
         List<URL> jarUrls = new ArrayList<URL>();
         jarUrls.add(file.toURI().toURL());
-        if (SSLJ_LIB_PATH != null) jarUrls.add(new File(SSLJ_LIB_PATH).toURI().toURL());
-        if (CERTJ_LIB_PATH != null) jarUrls.add(new File(CERTJ_LIB_PATH).toURI().toURL());
+        addRequiredLib( jarUrls, SSLJ_LIB_PATH );
+        addRequiredLib( jarUrls, CERTJ_LIB_PATH );
         return new URLClassLoader(jarUrls.toArray(new URL[jarUrls.size()]));
+    }
+
+    private void addRequiredLib( final List<URL> jarUrls, final String libPath ) throws MalformedURLException {
+        if ( libPath != null ) {
+            final File libFile = new File(libPath);
+            if ( !libFile.exists() ) {
+                logger.severe( "Missing required library for RSA: '" + libPath + "'");
+            }
+            jarUrls.add(libFile.toURI().toURL());
+        }
     }
 
     boolean isFIPS140Compliant() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
