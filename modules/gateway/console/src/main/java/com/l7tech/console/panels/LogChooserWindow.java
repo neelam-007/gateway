@@ -46,6 +46,7 @@ public class LogChooserWindow extends JFrame implements LogonListener {
     private JTable logTable;
     private JTextField filterTextField;
     private JLabel filterWarningLabel;
+    private JButton refreshButton;
     private HashMap<String,Frame> openedLogViewers;
 
     private PermissionFlags flags;
@@ -124,6 +125,13 @@ public class LogChooserWindow extends JFrame implements LogonListener {
             @Override
             public void actionPerformed(ActionEvent e) {
                 doView();
+            }
+        });
+
+        refreshButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                loadLogs();
             }
         });
 
