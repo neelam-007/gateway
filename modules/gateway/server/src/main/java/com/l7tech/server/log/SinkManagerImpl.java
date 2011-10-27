@@ -10,7 +10,6 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
