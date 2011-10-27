@@ -26,11 +26,13 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.text.JTextComponent;
+import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
@@ -63,6 +65,8 @@ public class LogViewer extends JFrame {
     private JSplitPane splitPane;
     private JCheckBox autoRefreshCheckBox;
     private JLabel lastUpdatedLabel;
+    private JLabel cautionLabel;
+    private JPanel cautionPanel;
 
 
     private JMenuBar windowMenuBar = null;
@@ -127,9 +131,21 @@ public class LogViewer extends JFrame {
 
         Utilities.setEscKeyStrokeDisposes(this);
 
-        final InputValidator validator = new InputValidator(this,getTitle());
-        validator.disableButtonWhenInvalid(refreshButton);
-        validator.constrainTextFieldToNumberRange(resources.getString("tail.checkbox.text"),tailTextField,1,100);
+        final InputValidator tailTextValidator = new InputValidator(this,getTitle());
+        tailTextValidator.disableButtonWhenInvalid(refreshButton);
+        tailTextValidator.constrainTextFieldToNumberRange(resources.getString("tail.checkbox.text"),tailTextField,1,100);
+
+        TextComponentPauseListenerManager.registerPauseListener(
+            tailTextField,
+            new PauseListenerAdapter() {
+                @Override
+                public void textEntryPaused(JTextComponent component, long msecs) {
+                    String error = tailTextValidator.validate();
+                    tailTextField.setToolTipText(error);
+                    autoRefreshCheckBox.setEnabled(error==null);
+                }
+            },
+            400);
 
         tailCheckBox.addActionListener(new ActionListener() {
             @Override
@@ -291,6 +307,19 @@ public class LogViewer extends JFrame {
         updateLogMessageText();
 
         shownLabel.setText(MessageFormat.format(resources.getString("shownLabel.text"), filteredListModel.getSize(), cachedData.size()));
+
+        // update caution
+
+        final Color bgColor;
+        final boolean showWarning = filterString != null && !filterString.isEmpty();
+        if (showWarning) {
+            bgColor = new Color(255, 255, 225);
+            cautionLabel.setText(resources.getString("caution.label.text"));
+        } else {
+            bgColor = contentPane.getBackground();
+            cautionLabel.setText("");
+        }
+        cautionPanel.setBackground(bgColor);
     }
 
     @Override
@@ -699,7 +728,7 @@ public class LogViewer extends JFrame {
             SimpleDateFormat sdf = new SimpleDateFormat("MMM d yyyy hh:mm:ss aaa");
             Calendar cal = Calendar.getInstance();
             cal.setTime(date);
-            String method = isAutoRefresh ? resources.getString("auto.refresh.text") : "";
+            String method = isAutoRefresh ? resources.getString("auto.refresh.last.update.text") : "";
             lastUpdatedLabel.setText(MessageFormat.format(resources.getString("last.update.text"),sdf.format(cal.getTime()),method));
         }
 
