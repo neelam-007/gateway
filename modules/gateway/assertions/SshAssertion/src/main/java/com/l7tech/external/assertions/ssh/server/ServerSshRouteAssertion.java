@@ -138,6 +138,8 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
         SshClient sshClient = null;
         try {
             SshParameters sshParams = new SshParameters(host, port, username, password);
+            sshParams.setConnectionTimeout(assertion.getConnectTimeout());
+            sshParams.setReadingTimeout(assertion.getReadTimeout());
 
             if (assertion.isUsePublicKey() && assertion.getSshPublicKey() != null){
                 String publicKeyFingerprint = ExpandVariables.process(assertion.getSshPublicKey().trim(), context.getVariableMap(
@@ -209,7 +211,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                     response.getMimeKnob().getContentLength();
 
                     logger.log(Level.FINE, "Waiting for read thread retrieve.");
-                    future.get(assertion.getConnectTimeout(), TimeUnit.SECONDS);
+                    future.get(assertion.getReadTimeout(), TimeUnit.SECONDS);
                     logger.log(Level.FINE, "Done read thread retrieve.");
                 } else {
                     sshClient.upload(mimeKnob.getEntireMessageBodyAsInputStream(), expandVariables(context, assertion.getDirectory()),  expandVariables(context, assertion.getFileName()));

@@ -146,7 +146,8 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         validators.addRule(validators.constrainTextFieldToBeNonEmpty(getResourceString("hostNameLabel"), hostField, null));
         validators.addRule(validators.constrainTextFieldToBeNonEmpty(getResourceString("fileNameLabel"), fileNameTextField, null));
         validators.addRule(validators.constrainTextFieldToBeNonEmpty(getResourceString("usernameLabel"), usernameField, null));
-        validators.addRule(validators.constrainTextFieldToNumberRange(getResourceString("sshTimeoutLabel"), connectTimeoutTextField, 2, 10));
+        validators.addRule(validators.constrainTextFieldToNumberRange(getResourceString("sshTimeoutLabel"), connectTimeoutTextField, 1, Integer.MAX_VALUE));
+        validators.addRule(validators.constrainTextFieldToNumberRange(getResourceString("sshTimeoutLabel"), readTimeoutTextField, 1, Integer.MAX_VALUE));
 
         validators.addRule(new InputValidator.ComponentValidationRule(portNumberTextField) {
             @Override
@@ -218,11 +219,9 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
             }
             if (downloadFromRadioButton.isSelected()) {
                 contentTypeComboBox.setEnabled(true);
-                readTimeoutTextField.setEnabled(true);
                 messageSource.setEnabled(false);
             } else {
                 contentTypeComboBox.setEnabled(false);
-                readTimeoutTextField.setEnabled(false);
                 messageSource.setEnabled(true);
             }
 
