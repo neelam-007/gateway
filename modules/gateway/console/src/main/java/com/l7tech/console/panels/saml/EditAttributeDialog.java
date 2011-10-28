@@ -26,6 +26,11 @@ import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribut
 import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.AttributeValueAddBehavior.*;
 import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.AttributeValueComparison.CANONICALIZE;
 import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.AttributeValueComparison.STRING_COMPARE;
+import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.EmptyBehavior.EMPTY_STRING;
+import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.EmptyBehavior.EXISTS_NO_VALUE;
+import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.EmptyBehavior.NULL_VALUE;
+import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.VariableNotFoundBehavior.REPLACE_EMPTY_STRING;
+import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.VariableNotFoundBehavior.REPLACE_EXPRESSION_EMPTY_STRING;
 
 /**
  * Edits the SAML Attribute: name, namespace, value.
@@ -80,6 +85,11 @@ public class EditAttributeDialog extends JDialog {
     private JComboBox attValueComparisonComboBox;
     private JLabel msgElmBehaviorLabel;
     private JLabel attValueComparisonLabel;
+    private JComboBox emptyVariableComboBox;
+    private JLabel emptyVariableLabel;
+    private JComboBox variableNotFoundComboBox;
+    private JLabel variableNotFoundLabel;
+    private JCheckBox missingWhenEmptyStringCheckBox;
 
     private final SamlAttributeStatement.Attribute attribute;
     private final boolean issueMode;
@@ -169,6 +179,35 @@ public class EditAttributeDialog extends JDialog {
                     }
                 }));
 
+        emptyVariableComboBox.setModel(
+                new DefaultComboBoxModel(
+                        EnumSet.of(
+                                EMPTY_STRING,
+                                EXISTS_NO_VALUE,
+                                NULL_VALUE).toArray()));
+
+        emptyVariableComboBox.setRenderer(new TextListCellRenderer<EmptyBehavior>(
+                new Functions.Unary<String, EmptyBehavior>() {
+                    @Override
+                    public String call(final EmptyBehavior dataType) {
+                        return dataType.getValue();
+                    }
+                }));
+
+        variableNotFoundComboBox.setModel(
+                new DefaultComboBoxModel(
+                        EnumSet.of(
+                                REPLACE_EMPTY_STRING,
+                                REPLACE_EXPRESSION_EMPTY_STRING).toArray()));
+
+        variableNotFoundComboBox.setRenderer(new TextListCellRenderer<VariableNotFoundBehavior>(
+                new Functions.Unary<String, VariableNotFoundBehavior>() {
+                    @Override
+                    public String call(final VariableNotFoundBehavior dataType) {
+                        return dataType.getValue();
+                    }
+                }));
+
         ButtonGroup buttonGroup = new ButtonGroup();
         buttonGroup.add(nameFormatUnspecifiedRadioButton);
         buttonGroup.add(nameFormatURIRefRadioButton);
@@ -181,6 +220,9 @@ public class EditAttributeDialog extends JDialog {
         repeatIfMultivaluedCheckBox.setSelected(attribute.isRepeatIfMulti());
         msgElmBehaviorComboBox.setSelectedItem(attribute.getAddBehavior());
         attValueComparisonComboBox.setSelectedItem(attribute.getValueComparison());
+        emptyVariableComboBox.setSelectedItem(attribute.getEmptyBehavior());
+        variableNotFoundComboBox.setSelectedItem(attribute.getVariableNotFoundBehavior());
+        missingWhenEmptyStringCheckBox.setSelected(attribute.isMissingWhenEmpty());
 
         String nameFormat = attribute.getNameFormat();
         if (nameFormat == null || nameFormat.length()==0 ||
@@ -270,12 +312,22 @@ public class EditAttributeDialog extends JDialog {
             msgElmBehaviorLabel.setVisible(true);
             attValueComparisonComboBox.setVisible(enableNameFormat); // Comparison for Version 2 only
             attValueComparisonLabel.setVisible(enableNameFormat);
+            emptyVariableLabel.setVisible(true);
+            emptyVariableComboBox.setVisible(true);
+            variableNotFoundLabel.setVisible(true);
+            variableNotFoundComboBox.setVisible(true);
+            missingWhenEmptyStringCheckBox.setVisible(true);
         } else {
             repeatIfMultivaluedCheckBox.setVisible(false);
             msgElmBehaviorComboBox.setVisible(false);
             msgElmBehaviorLabel.setVisible(false);
             attValueComparisonComboBox.setVisible(false);
             attValueComparisonLabel.setVisible(false);
+            emptyVariableLabel.setVisible(false);
+            emptyVariableComboBox.setVisible(false);
+            variableNotFoundLabel.setVisible(false);
+            variableNotFoundComboBox.setVisible(false);
+            missingWhenEmptyStringCheckBox.setVisible(false);
         }
 
         if (attribute.isAnyValue()) {
@@ -344,6 +396,10 @@ public class EditAttributeDialog extends JDialog {
                 attribute.setRepeatIfMulti(repeatIfMultivaluedCheckBox.isSelected());
                 attribute.setAddBehavior((AttributeValueAddBehavior) msgElmBehaviorComboBox.getSelectedItem());
                 attribute.setValueComparison((AttributeValueComparison) attValueComparisonComboBox.getSelectedItem());
+                attribute.setEmptyBehavior((EmptyBehavior) emptyVariableComboBox.getSelectedItem());
+                attribute.setVariableNotFoundBehavior((VariableNotFoundBehavior) variableNotFoundComboBox.getSelectedItem());
+                attribute.setMissingWhenEmpty(missingWhenEmptyStringCheckBox.isSelected());
+
                 fireEditAccepted();
                 dispose();
             }

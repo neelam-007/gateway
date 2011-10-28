@@ -4,12 +4,16 @@
 package com.l7tech.security.saml;
 
 import org.apache.xmlbeans.XmlObject;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.Text;
 import java.util.List;
 import java.util.logging.Logger;
+
+import static com.l7tech.security.saml.Attribute.NullBehavior.NO_ATTRIBUTE_VALUE;
 
 /**
  * Helper methods for SAML Generators V1 and V2.
@@ -20,18 +24,30 @@ class GeneratorXmlBeansHelper {
 
     // PROTECTED
 
-    static XmlObject createXmlObject(Object objectValue) {
+    /**
+     * Create an XmlObject to represent an AttributeValue elements content.
+     *
+     * //TODO Bug 11200 - clients of this method may need to call more than once, once for each AttributeValue element.
+     *
+     * @param objectValue value to add as contents of an AttributeValue. May be null.
+     * @param nullBehavior Behavior of the AttributeValue contents when null.
+     * @return The XmlObject to add to an AttributeValue element. May be null when no AttributeValue should be added.
+     */
+    @Nullable
+    static XmlObject createXmlObjectForAttributeValueContents(@Nullable final Object objectValue,
+                                                              @NotNull final Attribute.NullBehavior nullBehavior) {
+        // determine if there is anything to do - this is a convenience for callers
+        if (objectValue == null && nullBehavior == NO_ATTRIBUTE_VALUE) {
+            return null;
+        }
+
         final XmlObject xmlObject = XmlObject.Factory.newInstance();
 
         final Node domNode = xmlObject.getDomNode();
         final Document ownerDoc = domNode.getOwnerDocument();
 
         if (objectValue == null) {
-            //TODO [Donal] - determine after 'missing when' is implemented if this needs to be here.
-            // adding for completeness - currently no null values should arrive here.
-            // ExpandVariables should never return a null value for any of it's process methods.
             xmlObject.setNil();
-            logger.warning("Null value for AttributeValue found.");
         } else if (objectValue instanceof List) {
             List<Object> listObjs = (List<Object>) objectValue;
             for (Object obj : listObjs) {

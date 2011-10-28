@@ -832,6 +832,7 @@ public class AssertionMessages extends Messages {
     public static final M FTP_CREDENTIAL_NO_AUTH = m(8301, Level.FINE, "Not authenticated.");
     public static final M FTP_CREDENTIAL_AUTH_USER = m(8302, Level.FINE, "Found credentials for user ''{0}''.");
 
+    // Create SAML Token
     public static final M SAML_ISSUER_ISSUED_AUTHN = m(8400, Level.FINE, "Issued SAML Authentication statement");
     public static final M SAML_ISSUER_ISSUED_ATTR = m(8401, Level.FINE, "Issued SAML Attribute statement");
     public static final M SAML_ISSUER_ISSUED_AUTHZ = m(8402, Level.FINE, "Issued SAML Authorization Decision statement");
@@ -842,6 +843,9 @@ public class AssertionMessages extends Messages {
     public static final M SAML_ISSUER_BAD_XML = m(8407, Level.WARNING, "Message appeared to be SOAP but is not valid");
     public static final M SAML_ISSUER_CANT_DECORATE = m(8408, Level.WARNING, "WS-Security decoration failed");
     public static final M SAML_ISSUER_MISSING_NIVAL = m(8409, Level.WARNING, "Specified NameIdentifier chosen, but no value specified; using default");
+    public static final M SAML_ISSUER_ATTR_STMT_MISSING_ATTRIBUTE = m(8410, Level.FINE, "One or more configured attributes are missing: {0}");
+    public static final M SAML_ISSUER_ATTR_STMT_FAIL_UNKNOWN_FILTER_ATTRIBUTE = m(8411, Level.FINE, "SAML Attribute filter contained one or more unknown variables: {0}");
+    public static final M SAML_ISSUER_ATTR_STMT_DUPLICATE_FILTER_ATTRIBUTE = m(8412, Level.WARNING, "SAML Attribute filter variables contained duplicate Attribute: {0}");
 
     public static final M IDENTITY_ATTRIBUTE_NO_USER = m(8450, Level.INFO, "No user from the expected identity provider has yet been authenticated");
     public static final M IDENTITY_ATTRIBUTE_MULTI_USERS = m(8451, Level.INFO, "Multiple users from the expected identity provider have been authenticated; choosing the first");

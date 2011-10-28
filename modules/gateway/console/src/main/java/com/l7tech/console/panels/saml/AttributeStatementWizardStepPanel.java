@@ -4,6 +4,7 @@
 package com.l7tech.console.panels.saml;
 
 import com.l7tech.console.beaneditor.BeanAdapter;
+import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.widgets.SquigglyTextField;
@@ -42,8 +43,13 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
     private JButton editButton;
     private JLabel attributeTableLabel;
     private SquigglyTextField filterExpressionTextField;
-    private JLabel filterSamlAttributesLabel;
     private JPanel filterPanel;
+    private JCheckBox failIfAnyAttributeMissingCheckBox;
+    private JPanel variablePrefixTextFieldPanel;
+    private JCheckBox failIfUnknownAttributeCheckBox;
+    private JCheckBox failIfNoAttributesAddedCheckBox;
+    private JCheckBox failIfAttributeValueExcludesAttributeCheckBox;
+    private TargetVariablePanel variablePrefixTextField;
     private DefaultTableModelWithAssociatedBean<SamlAttributeStatement.Attribute> attributesTableModel;
     private int samlVersion;
     private static final String ANY = "<any>";
@@ -112,7 +118,12 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
             attributes.add(attribute);
         }
         statement.setAttributes((SamlAttributeStatement.Attribute[])attributes.toArray(new SamlAttributeStatement.Attribute[]{}));
-        statement.setFilterExpression(filterExpressionTextField.getText());
+        statement.setFilterExpression(filterExpressionTextField.getText().trim());
+        statement.setFailIfAnyAttributeIsMissing(failIfAnyAttributeMissingCheckBox.isSelected());
+        statement.setVariablePrefix(variablePrefixTextField.getVariable());
+        statement.setFailIfAttributeValueExcludesAttribute(failIfAttributeValueExcludesAttributeCheckBox.isSelected());
+        statement.setFailIfNoAttributesAdded(failIfNoAttributesAddedCheckBox.isSelected());
+        statement.setFailIfUnknownAttributeInFilter(failIfUnknownAttributeCheckBox.isSelected());
     }
 
     /**
@@ -150,6 +161,15 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
         }
 
         filterExpressionTextField.setText(statement.getFilterExpression());
+        failIfAnyAttributeMissingCheckBox.setSelected(statement.isFailIfAnyAttributeIsMissing());
+        variablePrefixTextField.setVariable(statement.getVariablePrefix());
+        failIfAttributeValueExcludesAttributeCheckBox.setSelected(statement.isFailIfAttributeValueExcludesAttribute());
+        failIfNoAttributesAddedCheckBox.setSelected(statement.isFailIfNoAttributesAdded());
+        failIfUnknownAttributeCheckBox.setSelected(statement.isFailIfUnknownAttributeInFilter());
+
+        variablePrefixTextField.setSuffixes(SamlAttributeStatement.VARIABLE_SUFFIXES.toArray( new String[SamlAttributeStatement.VARIABLE_SUFFIXES.size()] ));
+
+        enableDisableComponents();
     }
 
     private void initialize() {
@@ -168,6 +188,10 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
         }
 
         filterPanel.setVisible(issueMode);
+        failIfAnyAttributeMissingCheckBox.setVisible(issueMode);
+        failIfAttributeValueExcludesAttributeCheckBox.setVisible(issueMode);
+        failIfNoAttributesAddedCheckBox.setVisible(issueMode);
+        failIfUnknownAttributeCheckBox.setVisible(issueMode);
 
         attributesTableModel = new DefaultTableModelWithAssociatedBean<SamlAttributeStatement.Attribute>(new String[]{"Name", "Namespace", "Name Format", "Value", "Repeat?"}, 0);
         attributeTableScrollPane.getViewport().setBackground(attributeTable.getBackground());
@@ -253,9 +277,13 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
             @Override
             public void run() {
                 notifyListeners();
+                enableDisableComponents();
             }
         }));
 
+        variablePrefixTextField = new TargetVariablePanel();
+        variablePrefixTextFieldPanel.setLayout(new BorderLayout());
+        variablePrefixTextFieldPanel.add(variablePrefixTextField, BorderLayout.CENTER);
     }
 
     /**
@@ -291,7 +319,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
     @Override
     public boolean canAdvance() {
 
-        final String filterExp = filterExpressionTextField.getText();
+        final String filterExp = filterExpressionTextField.getText().trim();
         boolean invalid = false;
         if (!"".equals(filterExp)) {
             try {
@@ -313,6 +341,23 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
         }
 
         return attributesTableModel.getRowCount() > 0 && !invalid;
+    }
+
+    private void enableDisableComponents() {
+        final String filterExp = filterExpressionTextField.getText().trim();
+        boolean enableFilterFailCheckBoxes = false;
+        if (!"".equals(filterExp.trim())) {
+            try {
+                if (Syntax.validateStringOnlyReferencesVariables(filterExp)) {
+                    enableFilterFailCheckBoxes = true;
+                }
+            } catch (VariableNameSyntaxException e) {
+            }
+        }
+
+        failIfUnknownAttributeCheckBox.setEnabled(enableFilterFailCheckBoxes);
+        failIfNoAttributesAddedCheckBox.setEnabled(enableFilterFailCheckBoxes);
+        failIfAttributeValueExcludesAttributeCheckBox.setEnabled(enableFilterFailCheckBoxes);
     }
 
     /**

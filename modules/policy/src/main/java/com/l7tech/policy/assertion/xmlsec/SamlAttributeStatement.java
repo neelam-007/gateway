@@ -1,6 +1,9 @@
 package com.l7tech.policy.assertion.xmlsec;
 
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 
 import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.AttributeValueAddBehavior.*;
 
@@ -18,16 +21,19 @@ import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribut
  * token should be found.
  */
 public class SamlAttributeStatement implements Cloneable, Serializable {
-   private static final long serialVersionUID = 1L;
+    // - PUBLIC
 
-    private Attribute[] attributes = new Attribute[]{};
+    public static final String SUFFIX_UNKNOWN_ATTRIBUTE_NAMES = "unknownAttrNames";
+    public static final String SUFFIX_MISSING_ATTRIBUTE_NAMES = "missingAttrNames";
+    public static final String SUFFIX_NO_ATTRIBUTES_ADDED = "noAttributes";
+    public static final String SUFFIX_EXCLUDED_ATTRIBUTES = "excludedAttributes";
 
-    /**
-     * An expression that may reference any number of variables. Only variables of types 'Element' or 'Message' are
-     * considered. Schema type should be an SAML Attribute. Used in the issuing use cases, where the set of
-     * Attributes issued may need to be filtered by elements from an Attribute Query request.
-     */
-    private String filterExpression = "";
+    public static final Collection<String> VARIABLE_SUFFIXES = Collections.unmodifiableCollection(Arrays.asList(
+            SUFFIX_UNKNOWN_ATTRIBUTE_NAMES,
+            SUFFIX_MISSING_ATTRIBUTE_NAMES,
+            SUFFIX_NO_ATTRIBUTES_ADDED,
+            SUFFIX_EXCLUDED_ATTRIBUTES
+            ));
 
     public Attribute[] getAttributes() {
         return attributes;
@@ -55,6 +61,46 @@ public class SamlAttributeStatement implements Cloneable, Serializable {
 
     public void setFilterExpression(String filterExpression) {
         this.filterExpression = filterExpression;
+    }
+
+    public boolean isFailIfAnyAttributeIsMissing() {
+        return failIfAnyAttributeIsMissing;
+    }
+
+    public void setFailIfAnyAttributeIsMissing(boolean failIfAnyAttributeIsMissing) {
+        this.failIfAnyAttributeIsMissing = failIfAnyAttributeIsMissing;
+    }
+
+    public String getVariablePrefix() {
+        return variablePrefix;
+    }
+
+    public void setVariablePrefix(String variablePrefix) {
+        this.variablePrefix = variablePrefix;
+    }
+
+    public boolean isFailIfUnknownAttributeInFilter() {
+        return failIfUnknownAttributeInFilter;
+    }
+
+    public void setFailIfUnknownAttributeInFilter(boolean failIfUnknownAttributeInFilter) {
+        this.failIfUnknownAttributeInFilter = failIfUnknownAttributeInFilter;
+    }
+
+    public boolean isFailIfNoAttributesAdded() {
+        return failIfNoAttributesAdded;
+    }
+
+    public void setFailIfNoAttributesAdded(boolean failIfNoAttributesAdded) {
+        this.failIfNoAttributesAdded = failIfNoAttributesAdded;
+    }
+
+    public boolean isFailIfAttributeValueExcludesAttribute() {
+        return failIfAttributeValueExcludesAttribute;
+    }
+
+    public void setFailIfAttributeValueExcludesAttribute(boolean failIfAttributeValueExcludesAttribute) {
+        this.failIfAttributeValueExcludesAttribute = failIfAttributeValueExcludesAttribute;
     }
 
     @Override
@@ -86,9 +132,12 @@ public class SamlAttributeStatement implements Cloneable, Serializable {
         private String value;
         private boolean anyValue;
         private boolean repeatIfMulti;
+        private boolean missingWhenEmpty = false;
 
         private AttributeValueAddBehavior addBehavior = STRING_CONVERT;
         private AttributeValueComparison valueComparison = AttributeValueComparison.STRING_COMPARE;
+        private EmptyBehavior emptyBehavior = EmptyBehavior.EMPTY_STRING;
+        private VariableNotFoundBehavior variableNotFoundBehavior = VariableNotFoundBehavior.REPLACE_EMPTY_STRING;
 
         // additional Value for SAMLP
         private String friendlyName;
@@ -121,7 +170,37 @@ public class SamlAttributeStatement implements Cloneable, Serializable {
             }
 
             private final String value;
+        }
 
+        public enum EmptyBehavior {
+            EMPTY_STRING("Add empty AttributeValue"),
+            EXISTS_NO_VALUE("Do not add AttributeValue"),
+            NULL_VALUE("Add null value AttributeValue");
+
+            EmptyBehavior(String value) {
+                this.value = value;
+            }
+
+            public String getValue() {
+                return value;
+            }
+
+            private final String value;
+        }
+
+        public enum VariableNotFoundBehavior {
+            REPLACE_EMPTY_STRING("Replace variable with empty string"),
+            REPLACE_EXPRESSION_EMPTY_STRING("Replace expression with empty string"),;
+
+            VariableNotFoundBehavior(String value) {
+                this.value = value;
+            }
+
+            public String getValue() {
+                return value;
+            }
+
+            private final String value;
         }
 
         public Attribute() {
@@ -211,6 +290,31 @@ public class SamlAttributeStatement implements Cloneable, Serializable {
             this.valueComparison = valueComparison;
         }
 
+        public boolean isMissingWhenEmpty() {
+            return missingWhenEmpty;
+        }
+
+        public void setMissingWhenEmpty(boolean missingWhenEmpty) {
+            this.missingWhenEmpty = missingWhenEmpty;
+        }
+
+        public EmptyBehavior getEmptyBehavior() {
+            return emptyBehavior;
+        }
+
+        public void setEmptyBehavior(EmptyBehavior emptyBehavior) {
+            this.emptyBehavior = emptyBehavior;
+        }
+
+        public VariableNotFoundBehavior getVariableNotFoundBehavior() {
+            return variableNotFoundBehavior;
+        }
+
+        public void setVariableNotFoundBehavior(VariableNotFoundBehavior variableNotFoundBehavior) {
+            this.variableNotFoundBehavior = variableNotFoundBehavior;
+        }
+
+        @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
             sb.append("[ ")
@@ -238,5 +342,24 @@ public class SamlAttributeStatement implements Cloneable, Serializable {
             }
         }
     }
+
+    // - PRIVATE
+    private static final long serialVersionUID = 1L;
+
+    private Attribute[] attributes = new Attribute[]{};
+
+    /**
+     * An expression that may reference any number of variables. Only variables of types 'Element' or 'Message' are
+     * considered. Schema type should be an SAML Attribute. Used in the issuing use cases, where the set of
+     * Attributes issued may need to be filtered by elements from an Attribute Query request.
+     */
+    private String filterExpression = "";
+
+    private boolean failIfAnyAttributeIsMissing;
+    private boolean failIfUnknownAttributeInFilter;
+    private boolean failIfNoAttributesAdded;
+    private boolean failIfAttributeValueExcludesAttribute;
+
+    private String variablePrefix = "attrStmt";
 
 }

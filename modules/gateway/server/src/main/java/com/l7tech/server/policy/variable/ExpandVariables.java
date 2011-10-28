@@ -71,7 +71,7 @@ public final class ExpandVariables {
      * @param vars the caller supplied variables map that is consulted first
      * @param audit an audit instance to catch warnings
      * @param strict true if failures to resolve variables should throw exceptions rather than log warnings
-     * @return if the expression references a single reference, then either null (does not exist - depends on strict)
+     * @return if the expression references a single reference, then either null (does not exist - depends on strict = false)
      * or a String or an Object [] of formatted Strings. If an Object [] it is never null or empty, otherwise see
      * {@link #process(String, java.util.Map, com.l7tech.gateway.common.audit.Audit, boolean)}
      */
@@ -187,6 +187,29 @@ public final class ExpandVariables {
             }
         }
     }});
+
+    /**
+     * Determine if any variable in the expression does not exist.
+     *
+     * @param expression String expression to check
+     * @param vars all available variables
+     * @param audit Auditor to audit to
+     * @return true if any referenced variable does not exist, false otherwise.
+     */
+    public static boolean isVariableReferencedNotFound(@Nullable final String expression,
+                                                       @NotNull final Map<String, Object> vars,
+                                                       @NotNull Audit audit) {
+        final String[] referencedNames = Syntax.getReferencedNames(expression);
+        for (String referencedName : referencedNames) {
+            try {
+                ExpandVariables.process(Syntax.getVariableExpression(referencedName), vars, audit, true);
+            } catch (VariableNameSyntaxException e) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     @Nullable
     private static Object[] getAndFilter(Map<String,?> vars, Syntax syntax, Audit audit, boolean strict) {

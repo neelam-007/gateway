@@ -106,8 +106,10 @@ class SamlAssertionGeneratorSaml1 {
                     attributeType.setAttributeNamespace(attribute.getNamespace());
                 }
                 final Object objValue = attribute.getValue();
-                final XmlObject xmlObject = GeneratorXmlBeansHelper.createXmlObject(objValue);
-                attributeType.setAttributeValueArray(new XmlObject[]{xmlObject});
+                final XmlObject xmlObject = GeneratorXmlBeansHelper.createXmlObjectForAttributeValueContents(objValue, attribute.getNullBehavior());
+                if (xmlObject != null) {
+                    attributeType.setAttributeValueArray(new XmlObject[]{xmlObject});
+                }
             }
             subjectStatementAbstractType = attStatement;
         } else {

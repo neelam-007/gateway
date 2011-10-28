@@ -782,6 +782,16 @@ public class ExpandVariablesTest {
         assertEquals("scLookup.session.scNamespace", "http://docs.oasis-open.org/ws-sx/ws-secureconversation/200512", scNamespace);
     }
 
+    @Test
+    public void testVariableReferencedWhichDoesNotExist() throws Exception {
+        Assert.assertTrue(ExpandVariables.isVariableReferencedNotFound("${doesnotexist}", Collections.<String, Object>emptyMap(), audit));
+
+        Map<String, Object> varMap = new HashMap<String, Object>();
+        varMap.put("exists", "value");
+
+        Assert.assertFalse(ExpandVariables.isVariableReferencedNotFound("${exists}", varMap, audit));
+    }
+
     private byte[] generateNewSecret(int length) {
         final byte[] output = new byte[length];
         Random random = new SecureRandom();

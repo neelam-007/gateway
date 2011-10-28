@@ -338,7 +338,9 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
             new Java5EnumTypeMapping(KeyInfoInclusionType.class, "subjectConfirmationKeyInfoType"),
             new Java5EnumSetTypeMapping(EnumSet.class, DecorationType.class, "decorationTypes"),
             new Java5EnumTypeMapping(SamlAttributeStatement.Attribute.AttributeValueAddBehavior.class, "addBehavior" ),
-            new Java5EnumTypeMapping(SamlAttributeStatement.Attribute.AttributeValueComparison.class, "valueComparison" )
+            new Java5EnumTypeMapping(SamlAttributeStatement.Attribute.AttributeValueComparison.class, "valueComparison" ),
+            new Java5EnumTypeMapping(SamlAttributeStatement.Attribute.EmptyBehavior.class, "emptyBehavior" ),
+            new Java5EnumTypeMapping(SamlAttributeStatement.Attribute.VariableNotFoundBehavior.class, "variableNotFoundBehavior" )
         )));
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, SamlIssuerAssertionValidator.class.getName());
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
@@ -349,6 +351,18 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
 
     @Override
     public VariableMetadata[] getVariablesSet() {
-        return new VariableMetadata[] { new VariableMetadata("issuedSamlAssertion", false, false, null, false, DataType.STRING) };
+        final SamlAttributeStatement attStmt = getAttributeStatement();
+        List<VariableMetadata> allVars = new ArrayList<VariableMetadata>();
+        allVars.add(new VariableMetadata("issuedSamlAssertion", false, false, null, false, DataType.STRING));
+
+        if (attStmt != null) {
+            final String variablePrefix = attStmt.getVariablePrefix();
+            allVars.addAll(Arrays.asList(
+                    new VariableMetadata(variablePrefix + "." + SamlAttributeStatement.SUFFIX_UNKNOWN_ATTRIBUTE_NAMES, false, false, null, false, DataType.STRING),
+                    new VariableMetadata(variablePrefix + "." + SamlAttributeStatement.SUFFIX_MISSING_ATTRIBUTE_NAMES, false, false, null, false, DataType.STRING),
+                    new VariableMetadata(variablePrefix + "." + SamlAttributeStatement.SUFFIX_NO_ATTRIBUTES_ADDED, false, false, null, false, DataType.BOOLEAN)));
+        }
+
+        return allVars.toArray(new VariableMetadata[allVars.size()]);
     }
 }
