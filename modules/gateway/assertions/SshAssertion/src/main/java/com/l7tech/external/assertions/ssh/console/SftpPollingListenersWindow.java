@@ -10,6 +10,8 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -47,7 +49,6 @@ public class SftpPollingListenersWindow extends JDialog {
         listenersTable.setModel(tableModel);
         listenersTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         listenersTable.setColumnSelectionAllowed(false);
-        listenersTable.setCellSelectionEnabled(false);
 
         addButton.addActionListener(new ActionListener() {
             @Override
@@ -134,6 +135,19 @@ public class SftpPollingListenersWindow extends JDialog {
                 setVisible(false);
             }
         });
+
+        listenersTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                enableOrDisableButtons();
+            }
+        });
+
+        enableOrDisableButtons();
+
+        Utilities.setDoubleClickAction(listenersTable, modifyButton);
+        Utilities.setRowSorter(listenersTable, tableModel, new int[]{0,1,2}, new boolean[]{true,true,true}, null);
+        Utilities.setMinimumSize(this);
 
         setContentPane(mainPanel);
         pack();
@@ -247,7 +261,7 @@ public class SftpPollingListenersWindow extends JDialog {
         }
 
         if(property != null) {
-            //load the MqResources from the property string!
+            // load the resources from the property string
             final ClassLoader currentContextClassLoader = Thread.currentThread().getContextClassLoader();
             try {
                 Thread.currentThread().setContextClassLoader(SftpPollingListenerPropertiesDialog.class.getClassLoader());
@@ -333,5 +347,11 @@ public class SftpPollingListenersWindow extends JDialog {
         }
 
         saveClusterPropertyList(list);
+    }
+
+    private void enableOrDisableButtons() {
+        boolean enabled = listenersTable.getSelectedRow() >= 0;
+        removeButton.setEnabled(enabled);
+        modifyButton.setEnabled(enabled);
     }
 }
