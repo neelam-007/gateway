@@ -130,6 +130,10 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
                 Utilities.centerOnScreen(dialog);
                 DialogDisplayer.display(dialog);
                 privateKeyField.reloadPasswordList(SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY);
+                Window parentWindow = SwingUtilities.getWindowAncestor(SshTransportPropertiesPanel.this);
+                if (parentWindow != null) {
+                    parentWindow.pack();
+                }
             }
         });
     }

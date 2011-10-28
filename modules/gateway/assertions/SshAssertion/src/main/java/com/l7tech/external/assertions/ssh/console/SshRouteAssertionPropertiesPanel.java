@@ -113,6 +113,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
                 DialogDisplayer.display(dialog);
                 passwordField.reloadPasswordList(SecurePassword.SecurePasswordType.PASSWORD);
                 privateKeyField.reloadPasswordList(SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY);
+                pack();
             }
         });
 
