@@ -70,9 +70,9 @@ public class SecurePassword extends NamedEntityImp {
     }
 
     @Lob
-    @Column(name = "encoded_password", length = 16777215, nullable = false)
+    @Column(name = "encoded_password", length = 65535, nullable = false)
     @NotNull
-    @Size(max=16777215)
+    @Size(max=65535)
     public String getEncodedPassword() {
         return encodedPassword;
     }

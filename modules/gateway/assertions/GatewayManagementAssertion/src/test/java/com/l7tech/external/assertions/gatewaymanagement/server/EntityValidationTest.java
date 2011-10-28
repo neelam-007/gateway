@@ -492,7 +492,7 @@ public class EntityValidationTest {
 
         // test encoded password
         checkNull( securePassword, "encodedPassword", false );
-        checkSize( securePassword, "encodedPassword", 0, 16777215 );
+        checkSize( securePassword, "encodedPassword", 0, 65535 );
 
         // test type
         checkNull( securePassword, "type", false );
