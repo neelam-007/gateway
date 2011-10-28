@@ -62,4 +62,10 @@ public class FlexKey implements SecretKey {
     public byte[] getEncoded() {
         return shortbytes;
     }
+
+    public int copyBytes(byte[] out) {
+        final int bytesCopied = Math.min(bytes.length, out.length);
+        System.arraycopy(bytes, 0, out, 0, bytesCopied);
+        return bytesCopied;
+    }
 }

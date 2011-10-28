@@ -1,9 +1,9 @@
 package com.l7tech.external.assertions.saml2attributequery.server;
 
 import com.ibm.xml.dsig.*;
-import com.ibm.xml.enc.*;
+import com.ibm.xml.enc.AlgorithmFactoryExtn;
+import com.ibm.xml.enc.DecryptionContext;
 import com.ibm.xml.enc.type.EncryptedData;
-import com.ibm.xml.enc.type.EncryptionMethod;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.mime.PartIterator;
@@ -23,10 +23,8 @@ import com.l7tech.xml.soap.SoapUtil;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 import javax.security.auth.x500.X500Principal;
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.*;
@@ -1104,21 +1102,8 @@ public class Saml2WssProcessorImpl {
         // Support "flexible" answers to getAlgorithm() query when using 3des with HSM (Bug #3705)
         final FlexKey flexKey = new FlexKey(key);
 
-
         // override getEncryptionEngine to collect the encryptionmethod algorithm
-        AlgorithmFactoryExtn af = new AlgorithmFactoryExtn() {
-            public EncryptionEngine getEncryptionEngine(EncryptionMethod encryptionMethod)
-                    throws NoSuchAlgorithmException, NoSuchPaddingException, NoSuchProviderException, StructureException {
-                final String alguri = encryptionMethod.getAlgorithm();
-                algorithm.add(alguri);
-                try {
-                    flexKey.setAlgorithm(XencUtil.getFlexKeyAlg(alguri));
-                } catch (KeyException e) {
-                    throw new NoSuchAlgorithmException("Unable to use algorithm " + alguri + " with provided key material", e);
-                }
-                return super.getEncryptionEngine(encryptionMethod);
-            }
-        };
+        AlgorithmFactoryExtn af = new XencUtil.EncryptionEngineAlgorithmCollectingAlgorithmFactory(flexKey, algorithm);
 
         Element encMethod = XmlUtil.findFirstChildElementByName(encryptedDataElement, SoapUtil.XMLENC_NS, "EncryptionMethod");
         Element keyInfo = XmlUtil.findFirstChildElementByName(encryptedDataElement, SoapUtil.DIGSIG_URI, "KeyInfo");
@@ -1130,33 +1115,23 @@ public class Saml2WssProcessorImpl {
         dc.setAlgorithmFactory(af);
         dc.setEncryptedType(encryptedDataElement, EncryptedData.CONTENT,
                             encMethod, keyInfo);
-        dc.setKey(flexKey);
-        NodeList dataList;
-        try {
-            // do the actual decryption
-            dc.decrypt();
-            dc.replace();
-            dataList = XencUtil.decryptionContextReplace(dc, encryptedDataElement);
 
-            if(removeEncryptedKey) {
-                ekTok.getElement().getParentNode().removeChild(ekTok.getElement());
-            }
-        } catch (XSignatureException e) {
-            logger.log(Level.WARNING, "Error decrypting", e);
-            throw new ProcessorException(e);
-        } catch (StructureException e) {
-            logger.log(Level.WARNING, "Error decrypting", e);
-            throw new ProcessorException(e);
-        } catch (KeyInfoResolvingException e) {
-            logger.log(Level.WARNING, "Error decrypting", e);
-            throw new ProcessorException(e);
-        } catch (IOException ioe) {
-            logger.log(Level.WARNING, "Error decrypting", ioe);
-            throw ioe;
-        } catch (ParserConfigurationException pce) {
-            logger.log(Level.WARNING, "Error decrytping", pce);
-            return null;
+        final NodeList dataList;
+        try {
+            dataList = XencUtil.decryptAndReplaceUsingKey(encryptedDataElement, flexKey, dc, new Functions.UnaryVoid<Throwable>() {
+                @Override
+                public void call(Throwable throwable) {
+                    logger.log(Level.FINE, "Error decrypting", throwable);
+                }
+            });
+        } catch (XencUtil.XencException e) {
+            throw new ProcessorException("Error decrypting", e);
         }
+
+        if(removeEncryptedKey) {
+            ekTok.getElement().getParentNode().removeChild(ekTok.getElement());
+        }
+
         // determine algorithm
         String algorithmName = XencAlgorithm.AES_128_CBC.getXEncName();
         if (!algorithm.isEmpty()) {

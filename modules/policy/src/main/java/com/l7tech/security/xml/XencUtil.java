@@ -5,24 +5,28 @@
 
 package com.l7tech.security.xml;
 
+import com.ibm.xml.dsig.XSignatureException;
 import com.ibm.xml.enc.*;
 import com.ibm.xml.enc.type.CipherData;
 import com.ibm.xml.enc.type.CipherValue;
 import com.ibm.xml.enc.type.EncryptedData;
 import com.ibm.xml.enc.type.EncryptionMethod;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.security.cert.KeyUsageActivity;
 import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.security.keys.FlexKey;
 import com.l7tech.security.keys.UnsupportedKeyTypeException;
 import com.l7tech.security.prov.JceProvider;
+import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.util.*;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
+import javax.crypto.*;
 import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.spec.PSource;
 import javax.xml.parsers.ParserConfigurationException;
@@ -31,6 +35,7 @@ import java.security.*;
 import java.security.cert.X509Certificate;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.MGF1ParameterSpec;
+import java.util.List;
 import java.util.Random;
 import java.util.logging.Logger;
 
@@ -43,8 +48,11 @@ public class XencUtil {
     public static final String AES_128_CBC = "http://www.w3.org/2001/04/xmlenc#aes128-cbc";
     public static final String AES_192_CBC = "http://www.w3.org/2001/04/xmlenc#aes192-cbc";
     public static final String AES_256_CBC = "http://www.w3.org/2001/04/xmlenc#aes256-cbc";
+    public static final String AES_128_GCM = "http://www.w3.org/2009/xmlenc11#aes128-gcm";
+    public static final String AES_256_GCM = "http://www.w3.org/2009/xmlenc11#aes256-gcm";
 
     public static final String PROP_ENCRYPT_EMPTY_ELEMENTS = "com.l7tech.security.xml.encryptEmptyElements";
+    public static final String PROP_DECRYPTION_ALWAYS_SUCCEEDS = "com.l7tech.security.xml.decryptionAlwaysSucceeds";
 
     public static class XencException extends Exception {
         public XencException() {}
@@ -165,7 +173,7 @@ public class XencUtil {
 
         // Create encryption context and encrypt the header subtree
         EncryptionContext ec = new EncryptionContext();
-        AlgorithmFactoryExtn af = new AlgorithmFactoryExtn();
+        AlgorithmFactoryExtn af = new WssProcessorAlgorithmFactory(null);
         // TODO we'll assume it's the same Provider for all symmetric crypto
         Provider symmetricProvider = JceProvider.getInstance().getProviderFor("Cipher.AES");
         if (symmetricProvider != null)
@@ -190,6 +198,17 @@ public class XencUtil {
     }
 
     /**
+     * @return true if errors should be ignored while decrypting, once we already have the key material
+     * and an EncryptedData element and have committed to using the key to decrypt and replace
+     * the EncryptedData.  If an error does occur, we will "succeed" by decrypting to a dummy element. (Bug #11251)
+     * <p/>
+     * False if decryption errors (including bad padding, bad UTF-8 char sequence, bad XML, etc) should be reported using exceptions.
+     */
+    public static boolean shouldDecryptionAlwaysSucceed() {
+        return ConfigFactory.getBooleanProperty(PROP_DECRYPTION_ALWAYS_SUCCEEDS, true);
+    }
+
+    /**
      * @return true if completely empty elements that are encrypted should still have an EncryptedData child element added that
      * decrypts to an empty NodeList.  false if empty elements that are encrypted should be left unchanged.  The default is "true",
      * but this behavior can be disabled using the {@link #PROP_ENCRYPT_EMPTY_ELEMENTS} system property for backward
@@ -197,6 +216,75 @@ public class XencUtil {
      */
     public static boolean shouldEncryptEmptyElements() {
         return ConfigFactory.getBooleanProperty(PROP_ENCRYPT_EMPTY_ELEMENTS, true);
+    }
+
+    /**
+     * Attempt to decrypt the specified EncryptedData (or EncryptedElement) and replace it with its plaintext,
+     * using the specified DecryptionContext, which must already be fully configured except for the key, and secret key.
+     *
+     * @param encryptedDataEl the EncryptedData or EncryptedElement element to decrypt.  Required.
+     * @param flexKey the secret key to use for decryption.  Required. May not have had the algorithm set yet.
+     * @param dc the DecryptionContext, already configured except for the key.  Required.
+     * @param errorCallback a callback to invoke if decryption fails, and we are not configured to throw exceptions.
+     * @return the decrypted nodelist that has already been spliced into the document.  This may be a dummy nodelist if decryption failed but {@link #shouldDecryptionAlwaysSucceed()} is true.
+     * @throws XencException if decryption fails and {@link #shouldDecryptionAlwaysSucceed()} is false
+     */
+    public static NodeList decryptAndReplaceUsingKey(Element encryptedDataEl, FlexKey flexKey, DecryptionContext dc, @Nullable Functions.UnaryVoid<Throwable> errorCallback) throws XencException {
+        Throwable err = null;
+        NodeList decryptedNodes = null;
+
+        // TODO omit blacklist check if alg URI uses GCM mode (in which case it is unnecessary)
+        final byte[] blacklistKeyBytes = new byte[16]; // We'll only use the first 16 bytes of the key for the blacklist, since we don't know the actual algorithm yet
+        flexKey.copyBytes(blacklistKeyBytes);
+        if (XencKeyBlacklist.isKeyBlacklisted(blacklistKeyBytes)) {
+            err = new InvalidKeyException("Error decrypting", new RuntimeException("Secret key is blacklisted due to too many decryption attempt failures"));
+        } else {
+            dc.setKey(flexKey);
+
+            // TODO omit alwaysSucceed if alg URI uses GCM mode (in which case it is unnecessary)
+            final boolean alwaysSucceed = shouldDecryptionAlwaysSucceed();
+
+            try {
+                dc.decrypt();
+                decryptedNodes = decryptionContextReplace(dc, encryptedDataEl);
+            } catch (XSignatureException e) {
+                DsigUtil.repairXSignatureException(e);
+                err = e;
+                XencKeyBlacklist.recordDecryptionFailure(blacklistKeyBytes);
+                if (!alwaysSucceed) throw new XencException("Error decrypting", e); // generify exception message
+            } catch (Exception e) {
+                err = e;
+                XencKeyBlacklist.recordDecryptionFailure(blacklistKeyBytes);
+                if (!alwaysSucceed) throw new XencException("Error decrypting", e); // generify exception message
+            }
+        }
+
+        if (err != null) {
+            // Decryption failed, but since alwaysSucceed is enabled, we will go ahead anyway, replacing the encrypted element with a dummy element (Bug #9946, Bug #11251)
+            // We will do this in a relatively inefficient way, by parsing some XML from scratch and then importing it, so it will hopefully
+            // take approximately as long as doing the "real" decryption replace of a gibberish decyrption would have taken.
+            // TODO should add junk to the dummy element as text to pad it to about the length of the ciphertext, to avoid obvious easy timing attack
+            // TODO find a way to make the entire process take about the same length of time regardless of how much of the ciphertext we got through decrypting, or plaintext we got through XML parsing, before the failure
+            Element el = XmlUtil.stringAsDocument("<L7xenc:DecryptionFault xmlns:L7xenc=\"http://layer7tech.com/ns/xenc/decryptionfault\"/>").getDocumentElement();
+            final Node importedNode = encryptedDataEl.getOwnerDocument().importNode(el, true);
+            decryptedNodes = new NodeList() {
+                @Override
+                public Node item(int index) {
+                    return index == 0 ? importedNode : null;
+                }
+
+                @Override
+                public int getLength() {
+                    return 1;
+                }
+            };
+
+            if (errorCallback != null) {
+                errorCallback.call(err);
+            }
+        }
+
+        return decryptedNodes;
     }
 
     /**
@@ -410,7 +498,7 @@ public class XencUtil {
      * @throws InvalidDocumentFormatException  if there is a problem interpreting the EncryptedKey.
      * @throws java.security.GeneralSecurityException if there was a crypto problem
      */
-    public static byte[] decryptKey(String b64edEncryptedKey, byte[] oaepParams, PrivateKey recipientKey)
+    public static byte[] decryptKey(String b64edEncryptedKey, @Nullable byte[] oaepParams, PrivateKey recipientKey)
             throws InvalidDocumentFormatException, GeneralSecurityException
     {
         return decryptKey(HexUtils.decodeBase64(b64edEncryptedKey, true), oaepParams, recipientKey);
@@ -563,6 +651,10 @@ public class XencUtil {
             return(FlexKey.AES192);
         else if (EncryptionMethod.AES256_CBC.equals(algorithmUri))
             return(FlexKey.AES256);
+        else if (AES_128_GCM.equals(algorithmUri))
+            return(FlexKey.AES128);
+        else if (AES_256_GCM.equals(algorithmUri))
+            return(FlexKey.AES256);
         throw new NoSuchAlgorithmException("Unsupported WSS algorithm URI " + algorithmUri);
     }
 
@@ -591,12 +683,12 @@ public class XencUtil {
     public static class XmlEncKey {
         private final byte[] keyBytes;
         private final String algorithmUri;
-        private final Either<SecretKey, NoSuchAlgorithmException> sk;
+        private final Either<FlexKey, NoSuchAlgorithmException> sk;
 
         public XmlEncKey(String encryptionAlgorithm, byte[] secretKey) {
             this.algorithmUri = encryptionAlgorithm;
             this.keyBytes = secretKey;
-            SecretKey sk = null;
+            FlexKey sk = null;
             NoSuchAlgorithmException nsae = null;
             try {
                 sk = makeFlexKey(keyBytes, algorithmUri);
@@ -604,10 +696,10 @@ public class XencUtil {
                 nsae = e;
             }
             assert nsae != null || sk != null;
-            this.sk = nsae != null ? Either.<SecretKey, NoSuchAlgorithmException>right(nsae) : Either.<SecretKey, NoSuchAlgorithmException>left(sk);
+            this.sk = nsae != null ? Either.<FlexKey, NoSuchAlgorithmException>right(nsae) : Either.<FlexKey, NoSuchAlgorithmException>left(sk);
         }
 
-        public SecretKey getSecretKey() throws NoSuchAlgorithmException {
+        public FlexKey getSecretKey() throws NoSuchAlgorithmException {
             if (sk.isRight()) {
                 //noinspection ThrowableResultOfMethodCallIgnored
                 throw new NoSuchAlgorithmException(sk.right());
@@ -617,6 +709,32 @@ public class XencUtil {
 
         public String getAlgorithm() {
             return algorithmUri;
+        }
+    }
+
+    /**
+     * An algorithm factory for decryption that will configure the specified FlexKey with the algorithm, when it is known,
+     * and will accumulate all algorithms seen in a list for later verification.
+     */
+    public static class EncryptionEngineAlgorithmCollectingAlgorithmFactory extends AlgorithmFactoryExtn {
+        private final FlexKey flexKey;
+        private final List<String> collectAlgorithms;
+
+        public EncryptionEngineAlgorithmCollectingAlgorithmFactory(FlexKey flexKey, List<String> collectAlgorithms) {
+            this.flexKey = flexKey;
+            this.collectAlgorithms = collectAlgorithms;
+        }
+
+        public EncryptionEngine getEncryptionEngine(EncryptionMethod encryptionMethod)
+                throws NoSuchAlgorithmException, NoSuchPaddingException, NoSuchProviderException, StructureException {
+            final String alguri = encryptionMethod.getAlgorithm();
+            collectAlgorithms.add(alguri);
+            try {
+                flexKey.setAlgorithm(getFlexKeyAlg(alguri));
+            } catch (KeyException e) {
+                throw new NoSuchAlgorithmException("Unable to use algorithm " + alguri + " with provided key material", e);
+            }
+            return super.getEncryptionEngine(encryptionMethod);
         }
     }
 }

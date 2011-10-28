@@ -1,9 +1,9 @@
 package com.l7tech.external.assertions.xmlsec.server;
 
-import com.ibm.xml.dsig.XSignatureException;
-import com.ibm.xml.enc.*;
+import com.ibm.xml.enc.AlgorithmFactoryExtn;
+import com.ibm.xml.enc.DecryptionContext;
+import com.ibm.xml.enc.KeyInfoResolvingException;
 import com.ibm.xml.enc.type.EncryptedData;
-import com.ibm.xml.enc.type.EncryptionMethod;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.xmlsec.NonSoapDecryptElementAssertion;
@@ -25,17 +25,17 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.NoSuchPaddingException;
 import javax.security.auth.x500.X500Principal;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.security.*;
+import java.security.GeneralSecurityException;
+import java.security.Provider;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 
 import static com.l7tech.external.assertions.xmlsec.NonSoapDecryptElementAssertion.*;
 
@@ -97,20 +97,7 @@ public class ServerNonSoapDecryptElementAssertion extends ServerNonSoapSecurityA
         final List<String> algorithm = new ArrayList<String>();
 
         // override getEncryptionEngine to collect the encryptionmethod algorithm
-        AlgorithmFactoryExtn af = new AlgorithmFactoryExtn() {
-            @Override
-            public EncryptionEngine getEncryptionEngine(EncryptionMethod encryptionMethod)
-                    throws NoSuchAlgorithmException, NoSuchPaddingException, NoSuchProviderException, StructureException  {
-                final String alguri = encryptionMethod.getAlgorithm();
-                algorithm.add(alguri);
-                try {
-                    flexKey.setAlgorithm(XencUtil.getFlexKeyAlg(alguri));
-                } catch (KeyException e) {
-                    throw new NoSuchAlgorithmException("Unable to use algorithm " + alguri + " with provided key material", e);
-                }
-                return super.getEncryptionEngine(encryptionMethod);
-            }
-        };
+        AlgorithmFactoryExtn af = new XencUtil.EncryptionEngineAlgorithmCollectingAlgorithmFactory(flexKey, algorithm);
 
         // TODO we won't know the actual cipher until the EncryptionMethod is created, so we'll hope that the Provider will be the same for all symmetric crypto
         Provider symmetricProvider = JceProvider.getInstance().getProviderFor("Cipher.AES");
@@ -118,25 +105,17 @@ public class ServerNonSoapDecryptElementAssertion extends ServerNonSoapSecurityA
             af.setProvider(symmetricProvider.getName());
         dc.setAlgorithmFactory(af);
         dc.setEncryptedType(encryptedDataEl, EncryptedData.ELEMENT, null, null);
-        dc.setKey(flexKey);
 
         final NodeList decryptedNodes;
         try {
-            dc.decrypt();
-            decryptedNodes = XencUtil.decryptionContextReplace(dc, encryptedDataEl);
-        } catch (XSignatureException e) {
-            DsigUtil.repairXSignatureException(e);
-            throw new InvalidDocumentFormatException("Error decrypting", e); // generify exception message
-        } catch (PseudoIOException e) {
-            throw new InvalidKeyException(e);
-        } catch (SAXException e) {
-            throw new SAXException("Error decrypting", e); // generify exception message
-        } catch (IOException e) {
-            throw new IOException("Error decrypting", e); // generify exception message
-        } catch (StructureException e) {
-            throw new InvalidDocumentFormatException("Error decrypting", e); // generify exception message
-        } catch (BadPaddingException e) {
-            throw new InvalidDocumentFormatException("Error decrypting", e); // generify exception message
+            decryptedNodes = XencUtil.decryptAndReplaceUsingKey(encryptedDataEl, flexKey, dc, new Functions.UnaryVoid<Throwable>() {
+                @Override
+                public void call(Throwable throwable) {
+                    logger.log(Level.FINE, "Error decrypting", throwable);
+                }
+            });
+        } catch (XencUtil.XencException e) {
+            throw new GeneralSecurityException("Error decrypting", e);
         }
 
         // determine algorithm

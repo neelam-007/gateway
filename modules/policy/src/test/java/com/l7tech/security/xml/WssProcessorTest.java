@@ -1107,9 +1107,16 @@ public class WssProcessorTest {
     @Test(expected = ProcessorException.class)
     @BugNumber(9781)
     public void testBug9781WrongDecryptionKey() throws Exception {
-        Document d = TestDocuments.getTestDocument("com/l7tech/policy/resources/bug9781_request.xml");
-        TestDocument td = new TestDocument("testBug9781WrongDecryptionKey", d, TestDocuments.getWssInteropAliceKey(), TestDocuments.getWssInteropAliceCert(), null, null, null);
-        doTest(td);
+        System.setProperty(XencUtil.PROP_DECRYPTION_ALWAYS_SUCCEEDS, "false");
+        ConfigFactory.clearCachedConfig();
+        try {
+            Document d = TestDocuments.getTestDocument("com/l7tech/policy/resources/bug9781_request.xml");
+            TestDocument td = new TestDocument("testBug9781WrongDecryptionKey", d, TestDocuments.getWssInteropAliceKey(), TestDocuments.getWssInteropAliceCert(), null, null, null);
+            doTest(td);
+        } finally {
+            System.clearProperty(XencUtil.PROP_DECRYPTION_ALWAYS_SUCCEEDS);
+            ConfigFactory.clearCachedConfig();
+        }
     }
 
     @Test

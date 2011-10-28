@@ -39,7 +39,6 @@ public class PaddingOracleTest {
 
     @Test
     @BugNumber(9946)
-    //@Ignore("Currently failing")
     public void testPaddingAttack() throws Exception {
         // Decorate a test message
         final Document doc = XmlUtil.stringAsDocument(SHORT_SOAP_MSG);
@@ -140,8 +139,7 @@ public class PaddingOracleTest {
         assertTrue("All decryption errors must be reported with the generic exception message 'Error decrypting'", 0 == numOther);
 
         // To resist attack, either all attempts must result in "successful" decryption, or all attempts must result in generic "Error decrypting"
-        // Current commented out because we do not yet have a complete fix for this
-        //assertTrue("Either all attempts must succeed, or all attempts must report generic failure messages", numAttempts == numSuccesses || numAttempts == numGeneric);
+        assertTrue("Either all attempts must succeed, or all attempts must report generic failure messages", numAttempts == numSuccesses || numAttempts == numGeneric);
     }
 
     private Document attemptDecryption(Document attackDoc) throws Exception {
