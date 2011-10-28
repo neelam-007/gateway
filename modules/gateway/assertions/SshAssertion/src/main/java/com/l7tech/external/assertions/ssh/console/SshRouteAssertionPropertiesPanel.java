@@ -29,7 +29,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
     private static final ResourceBundle resources = ResourceBundle.getBundle( SshRouteAssertionPropertiesPanel.class.getName());
 
     private JPanel mainPanel;
-    private JRadioButton usernamePasswordRadioButton;
+    private JRadioButton passwordRadioButton;
     private JRadioButton privateKeyRadioButton;
     private JTextField hostField;
     private JTextField usernameField;
@@ -76,7 +76,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
 
     @Override
     protected void initComponents() {
-        usernamePasswordRadioButton.addActionListener(enableDisableListener);
+        passwordRadioButton.addActionListener(enableDisableListener);
         privateKeyRadioButton.addActionListener(enableDisableListener);
         validateServerSHostCheckBox.addActionListener(enableDisableListener);
         passThroughCredentialsInRadioButton.addActionListener(enableDisableListener);
@@ -166,7 +166,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         validators.addRule(new InputValidator.ComponentValidationRule(passwordField) {
             @Override
             public String getValidationError() {
-                if(usernamePasswordRadioButton.isSelected()) {
+                if(specifyUserCredentialsRadioButton.isSelected() && passwordRadioButton.isSelected()) {
                     if (passwordField == null || passwordField.getItemCount() == 0)
                     {
                         return getResourceString("passwordEmptyError");
@@ -179,7 +179,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         validators.addRule(new InputValidator.ComponentValidationRule(privateKeyField) {
             @Override
             public String getValidationError() {
-                if(usernamePasswordRadioButton.isSelected()) {
+                if(specifyUserCredentialsRadioButton.isSelected() && privateKeyRadioButton.isSelected()) {
                     if (privateKeyField == null || privateKeyField.getItemCount() == 0)
                     {
                         return getResourceString("privateKeyEmptyError");
@@ -231,15 +231,15 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         if (specifyUserCredentialsRadioButton.isSelected()) {
             userNameLabel.setEnabled(true);
             usernameField.setEnabled(true);
-            usernamePasswordRadioButton.setEnabled(true);
+            passwordRadioButton.setEnabled(true);
             privateKeyRadioButton.setEnabled(true);
             privateKeyField.setEnabled(privateKeyRadioButton.isSelected());
-            passwordField.setEnabled(usernamePasswordRadioButton.isSelected());
+            passwordField.setEnabled(passwordRadioButton.isSelected());
             managePasswordsButton.setEnabled(true);
         } else {
             userNameLabel.setEnabled(false);
             usernameField.setEnabled(false);
-            usernamePasswordRadioButton.setEnabled(false);
+            passwordRadioButton.setEnabled(false);
             privateKeyRadioButton.setEnabled(false);
             privateKeyField.setEnabled(false);
             passwordField.setEnabled(false);
@@ -297,7 +297,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
             privateKeyRadioButton.setSelected(true);
             privateKeyField.setSelectedSecurePassword(assertion.getPrivateKeyOid());
         } else {
-            usernamePasswordRadioButton.setSelected(true);
+            passwordRadioButton.setSelected(true);
         }
 
         usernameField.setText(assertion.getUsername() == null ? "" : assertion.getUsername());
@@ -360,7 +360,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         assertion.setCredentialsSourceSpecified(specifyUserCredentialsRadioButton.isSelected());
         if (specifyUserCredentialsRadioButton.isSelected()) {
             assertion.setUsername(usernameField.getText().trim());
-            if(usernamePasswordRadioButton.isSelected()) {
+            if(passwordRadioButton.isSelected()) {
                 assertion.setUsePrivateKey(false);
                 assertion.setPasswordOid(passwordField.getSelectedSecurePassword().getOid());
                 assertion.setPrivateKeyOid(null);
