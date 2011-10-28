@@ -12,6 +12,7 @@ import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -21,14 +22,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.gui.util.TableUtil.column;
 import static com.l7tech.util.Functions.propertyTransform;
-import org.jetbrains.annotations.Nullable;
 
 public class SecurePasswordManagerWindow extends JDialog {
     private static Logger logger = Logger.getLogger(SecurePasswordManagerWindow.class.getName());
@@ -79,23 +78,25 @@ public class SecurePasswordManagerWindow extends JDialog {
                     @Override
                     public void run() {
                         if (dlg.isConfirmed()) {
+                            Long oid = null;
                             try {
-                                long oid = Registry.getDefault().getTrustedCertManager().saveSecurePassword(securePassword);
+                                oid = Registry.getDefault().getTrustedCertManager().saveSecurePassword(securePassword);
                                 securePassword.setOid(oid);
 
                                 // Update password field, if necessary
                                 char[] newpass = dlg.getEnteredPassword();
                                 if (newpass != null)
                                     Registry.getDefault().getTrustedCertManager().setSecurePassword(oid, newpass);
-
-                                loadSecurePasswords(oid);
                             } catch (UpdateException e1) {
                                 showError("save stored password", e1);
                             } catch (SaveException e1) {
                                 showError("save stored password", e1);
                             } catch (FindException e1) {
                                 showError("save stored password", e1);
+                            } finally {
+                                loadSecurePasswords(oid);
                             }
+
                         }
                     }
                 });
