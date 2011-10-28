@@ -12,9 +12,16 @@ import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.util.Functions;
 import org.springframework.context.ApplicationContext;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.regex.Pattern;
 
 public class JsonTransformationAssertion extends MessageTargetableAssertion {
+    /**
+     * Pattern to verify the root tag element name according to it's naming rule.
+     */
+    public static final Pattern ROOT_TAG_VERIFIER = Pattern.compile("(?i)\\A(?!XML)\\p{Alpha}\\p{Graph}*");
 
     public enum Transformation {
         XML_to_JSON,

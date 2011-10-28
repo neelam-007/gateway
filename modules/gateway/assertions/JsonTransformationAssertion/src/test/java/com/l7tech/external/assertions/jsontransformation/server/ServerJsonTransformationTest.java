@@ -86,6 +86,8 @@ public class ServerJsonTransformationTest {
         EXPECTED_XML_NAMESPACES = Collections.unmodifiableMap(m);
     }
 
+    private static final String EXPECTED_JSON_ROUNDTRIP = "{root={menu={id=file, popup={menuitem=[{value=New, onclick=CreateNewDoc()}, {value=Open, onclick=OpenDoc()}, {value=Close, onclick=CloseDoc()}]}, value=File}}}";
+
     private String xmlStr;
     private String jsonStr;
     private Map<Object, Object> objectMap;
@@ -165,7 +167,7 @@ public class ServerJsonTransformationTest {
         // do JSON->XML
         JsonTransformationAssertion assertion = new JsonTransformationAssertion();
         assertion.setDestinationMessageTarget(new MessageTargetableSupport("newXml"));
-        assertion.setRootTagString("");
+        assertion.setRootTagString("root");
         assertion.setOtherTargetMessageVariable("json");
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setTransformation(JsonTransformationAssertion.Transformation.JSON_to_XML);
@@ -189,7 +191,7 @@ public class ServerJsonTransformationTest {
 
         Object outputObj = context.getVariable("target");
         Map mapObj = (Map) ((Message) outputObj).getJsonKnob().getJsonData().getJsonObject();
-        assertJsonData(mapObj);
+        Assert.assertEquals(EXPECTED_JSON_ROUNDTRIP, mapObj.toString());
     }
 
     private void assertJsonData(Map jsonMap) {
@@ -242,7 +244,7 @@ public class ServerJsonTransformationTest {
         // do JSONML->XML
         JsonTransformationAssertion assertion = new JsonTransformationAssertion();
         assertion.setDestinationMessageTarget(new MessageTargetableSupport("newXml"));
-        assertion.setRootTagString("");
+        assertion.setRootTagString("root");
         assertion.setOtherTargetMessageVariable("json");
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setTransformation(JsonTransformationAssertion.Transformation.JSON_to_XML);
@@ -277,7 +279,7 @@ public class ServerJsonTransformationTest {
         //XML TO JSONML
         JsonTransformationAssertion assertion = new JsonTransformationAssertion();
         assertion.setDestinationMessageTarget(new MessageTargetableSupport("newXml"));
-        assertion.setRootTagString("");
+        assertion.setRootTagString("root");
         assertion.setOtherTargetMessageVariable("xml");
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setTransformation(JsonTransformationAssertion.Transformation.XML_to_JSON);
@@ -327,7 +329,7 @@ public class ServerJsonTransformationTest {
         PolicyEnforcementContext context = getContext();
         JsonTransformationAssertion assertion = new JsonTransformationAssertion();
         assertion.setDestinationMessageTarget(new MessageTargetableSupport("newXml"));
-        assertion.setRootTagString("");
+        assertion.setRootTagString("root");
         assertion.setOtherTargetMessageVariable("xml");
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setTransformation(JsonTransformationAssertion.Transformation.XML_to_JSON);
@@ -347,7 +349,7 @@ public class ServerJsonTransformationTest {
         PolicyEnforcementContext context = getContext();
         JsonTransformationAssertion assertion = new JsonTransformationAssertion();
         assertion.setDestinationMessageTarget(new MessageTargetableSupport("newXml"));
-        assertion.setRootTagString("");
+        assertion.setRootTagString("root");
         assertion.setOtherTargetMessageVariable("testJSON");
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setTransformation(JsonTransformationAssertion.Transformation.JSON_to_XML);

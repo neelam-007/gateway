@@ -62,8 +62,16 @@ public class JsonTransformationPropertiesDialog extends AssertionPropertiesOkCan
         testButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
+                if(Syntax.getReferencedNames(rootTagTextField.getText()).length > 0){
+                    JOptionPane.showMessageDialog(parent, "Cannot test using context variable as root tag name.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
                 if(rootTagTextField.isEnabled() && rootTagTextField.getText().trim().isEmpty()){
                     JOptionPane.showMessageDialog(parent, "Root tag is required.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                if(!JsonTransformationAssertion.ROOT_TAG_VERIFIER.matcher(rootTagTextField.getText()).matches()){
+                    JOptionPane.showMessageDialog(parent, "Invalid root tag specified.", "Error", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
                 doTest();
@@ -176,6 +184,10 @@ public class JsonTransformationPropertiesDialog extends AssertionPropertiesOkCan
         final String error = validators.validate();
         if(error != null){
             throw new ValidationException(error);
+        }
+        if(Syntax.getReferencedNames(rootTagTextField.getText()).length == 0 &&
+                !JsonTransformationAssertion.ROOT_TAG_VERIFIER.matcher(rootTagTextField.getText()).matches()){
+            throw new ValidationException("Invalid root tag specified.");
         }
         assertion.setRootTagString(rootTagTextField.getText());
         sourcePanel.updateModel(assertion);

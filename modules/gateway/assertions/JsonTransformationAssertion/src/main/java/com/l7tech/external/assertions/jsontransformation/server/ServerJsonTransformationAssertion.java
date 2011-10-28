@@ -56,8 +56,6 @@ public class ServerJsonTransformationAssertion extends AbstractServerAssertion<J
 
         String targetValue;
         try {
-            JSONObject jsonObject;
-
             if (assertion.getTransformation().equals(JsonTransformationAssertion.Transformation.XML_to_JSON)) {
                 String sourceString = getFirstPartString(sourceMessage);
                 targetValue = doTransformation(sourceString, assertion.getTransformation(),
@@ -65,9 +63,13 @@ public class ServerJsonTransformationAssertion extends AbstractServerAssertion<J
             } else {
                 Map<String, Object> vars = context.getVariableMap(assertion.getVariablesUsed(), getAudit());
                 String rootTag = ExpandVariables.process(assertion.getRootTagString(), vars, getAudit(), true);
-                    String source = getFirstPartString(sourceMessage);
-                    targetValue = doTransformation(source, assertion.getTransformation(),
-                            assertion.getConvention(), rootTag, assertion.isPrettyPrint());
+                if(!JsonTransformationAssertion.ROOT_TAG_VERIFIER.matcher(rootTag).matches()){
+                    logAndAudit( AssertionMessages.USERDETAIL_WARNING, "Invalid root tag specified: " + rootTag );
+                    return AssertionStatus.FAILED;
+                }
+                String source = getFirstPartString(sourceMessage);
+                targetValue = doTransformation(source, assertion.getTransformation(), assertion.getConvention(),
+                        rootTag, assertion.isPrettyPrint());
 
                 Document document = XmlUtil.stringToDocument(targetValue);
                 targetValue = assertion.isPrettyPrint() ? XmlUtil.nodeToFormattedString(document) : XmlUtil.nodeToString(document);
