@@ -50,9 +50,13 @@ public class BufferPool {
             return ret != null ? ret : new byte[size];
         }
 
-        void returnBuffer(byte[] offering) {
-            if (offering.length == size)
-                queue.offer(new SoftReference<byte[]>(offering));
+        boolean returnBuffer(byte[] offering) {
+            return offering.length == size &&
+                    queue.offer(new SoftReference<byte[]>(offering));
+        }
+
+        void clear() {
+            queue.clear();
         }
     }
 
@@ -61,13 +65,19 @@ public class BufferPool {
 
         byte[] getBuffer(int wantSize) {
             assert wantSize >= HUGE_THRESHOLD;
+            // Avoid returning a huge buffer that is more than double the requested size, to avoid tying up
+            // enormous amounts of memory.
+            int maxSize = wantSize > Integer.MAX_VALUE/2 ? wantSize : wantSize * 2;
             for (int i = 0; i < 32; ++i) {
                 Reference<byte[]> ref = queue.poll();
                 if (ref == null)
                     break;
                 byte[] bytes = ref.get();
-                if (bytes != null && bytes.length >= wantSize)
-                    return bytes;
+                if (bytes != null) {
+                    final int len = bytes.length;
+                    if (len >= wantSize && len <= maxSize)
+                        return bytes;
+                }
                 // That ref was reclaimed by the GC; try the next one
             }
             return null;
@@ -78,9 +88,13 @@ public class BufferPool {
             return ret != null ? ret : new byte[wantSize];
         }
 
-        void returnBuffer(byte[] offering) {
-            if (offering.length >= HUGE_THRESHOLD)
-                queue.offer(new SoftReference<byte[]>(offering));
+        boolean returnBuffer(byte[] offering) {
+            return offering.length >= HUGE_THRESHOLD &&
+                    queue.offer(new SoftReference<byte[]>(offering));
+        }
+
+        void clear() {
+            queue.clear();
         }
     }
 
@@ -127,24 +141,24 @@ public class BufferPool {
      * although allocating all buffers through this class will help ensure that the buffer sizes stay reasonable.
      *
      * @param buffer the buffer to return to the pool. No action is taken if this is null or smaller than {@link #getMinBufferSize()}.
+     * @return true if the returned buffer was accepted by a buffer pool.  False if the buffer was discarded (too small or too big, or too many buffers of that size class already pooled)
      */
-    public static void returnBuffer(byte[] buffer) {
+    public static boolean returnBuffer(byte[] buffer) {
         if (buffer == null || buffer.length < MIN_BUFFER_SIZE)
-            return;
+            return false;
         final int size = buffer.length;
         if (size > HUGE_THRESHOLD) {
-            returnHugeBuffer(buffer);
-            return;
+            return returnHugeBuffer(buffer);
         }
         for (int i = pools.length - 1; i >= 0; i--) {
             Pool pool = pools[i];
             if (pool.size <= size) {
-                pool.returnBuffer(buffer);
-                return;
+                return pool.returnBuffer(buffer);
             }
         }
         // Normally not possible to reach this.  If we do, must have returned a tiny buffer.
         assert size < MIN_BUFFER_SIZE;
+        return false;
     }
 
     /**
@@ -170,12 +184,13 @@ public class BufferPool {
      * Return a buffer that is bigger than 1mb.
      *
      * @param buffer the buffer to return.  Must not be null.  Must be larger than 1mb.
+     * @return true if the buffer was accepted by the hugePool.  false if the buffer was discarded (too small or too big, or too many huge buffers already)
      */
-    private static void returnHugeBuffer(byte[] buffer) {
+    private static boolean returnHugeBuffer(byte[] buffer) {
         final int size = buffer.length;
         if (size < HUGE_THRESHOLD)
             throw new IllegalArgumentException("size must be greater than 1mb");
-        hugePool.returnBuffer(buffer);
+        return hugePool.returnBuffer(buffer);
     }
 
     static int getNumSizeClasses() {
@@ -193,5 +208,12 @@ public class BufferPool {
 
     static int getSizeOfSizeClass(int sizeClass) {
         return sizeClass < sizes.length ? sizes[sizeClass] : Integer.MAX_VALUE;
+    }
+
+    // Used by test code to reset pools between tests
+    static void clearAllPools() {
+        hugePool.clear();
+        for (Pool pool : pools)
+            pool.clear();
     }
 }
