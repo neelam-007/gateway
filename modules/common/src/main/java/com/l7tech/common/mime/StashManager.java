@@ -47,6 +47,22 @@ public interface StashManager extends Closeable {
     void stash(int ordinal, byte[] in) throws IOException;
 
     /**
+     * For callers that already possess the entire content as a byte array, this method can be used
+     * to stash the byte array directly without needing to wrap it in a ByteArrayInputStream.
+     * <p>
+     * Prefer this stash(int, byte[]) method, but <i>only if you already have a byte array</i>.  Otherwise, it is
+     * recommended to feed the InputStream into the stash(int, InputStream) method instead.
+     *
+     * @param ordinal a small non-negative integer to identify this stream within the stash
+     * @param in      the byte array to stash.  May be zero-length but must be non-null.
+     * @param offset  the offset of the start of the content in the byte array
+     * @param length  the length of the content in the byte array
+     * @throws IOException if there is a problem stashing this byte array.
+     *                     Implementations are required to save and rethrow the IOException so that it may be recall()'ed later.
+     */
+    void stash(int ordinal, byte[] in, int offset, int length) throws IOException;
+
+    /**
      * Free all resources used by the specified previously-stashed InputStream.  After this call, recall(ordinal)
      * will return null and peek(ordinal) will return false.  If no such ordinal is currently stashed, this
      * method takes no action.

@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.common.mime;
 
 import com.l7tech.util.IOUtils;
@@ -65,7 +59,11 @@ public class FileStashManager implements StashManager {
     }
 
     public void stash(int ordinal, byte[] in) throws IOException {
-        stash(ordinal, new ByteArrayInputStream(in)); // byte array doesn't help us in this case
+        stash( ordinal, in, 0, in.length);
+    }
+
+    public void stash(int ordinal, byte[] in, int offset, int length ) throws IOException {
+        stash(ordinal, new ByteArrayInputStream(in, offset, length)); // byte array doesn't help us in this case
     }
 
     /** @return a File pointed at the name uniqueFilenamePrefix_ordinal.part in parentDirectory */

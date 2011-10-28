@@ -874,6 +874,11 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
 
         @Override
         public void setBodyBytes(byte[] newBody) throws IOException {
+            setBodyBytes( newBody, 0, newBody.length );
+        }
+
+        @Override
+        public void setBodyBytes(byte[] newBody, int offset, int length) throws IOException {
             checkErrorIO();
 
             if (stashManager.peek(ordinal))
@@ -891,17 +896,17 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
             if ( !RAW_PARTS && MimeUtil.isProcessedTransferEncoding(contentTransferEncoding) ) {
                 InputStream in = null;
                 try {
-                    in = MimeUtil.getEncodingInputStream( newBody, contentTransferEncoding );
+                    in = MimeUtil.getEncodingInputStream( newBody, offset, length, contentTransferEncoding );
                     stashManager.stash(ordinal, in );
                 } finally {
                     ResourceUtils.closeQuietly(in);
                 }
             } else if ( RAW_PARTS || MimeUtil.isIdentityTransferEncoding(contentTransferEncoding) ) {
-                stashManager.stash(ordinal, newBody);
+                stashManager.stash(ordinal, newBody, offset, length);
             } else {
                 throw new IOException( "Unsupported content transfer encoding '"+contentTransferEncoding+"'." );
             }
-            headers.replace(new MimeHeader(MimeUtil.CONTENT_LENGTH, Integer.toString(newBody.length), null, false));
+            headers.replace(new MimeHeader(MimeUtil.CONTENT_LENGTH, Integer.toString(length), null, false));
         }
 
         @Override

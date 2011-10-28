@@ -886,6 +886,7 @@ public class ExpandVariablesTest {
 
         @Override public int getPosition() { return 0; }
         @Override public void setBodyBytes( final byte[] newBody ) throws IOException { throw new IOException(); }
+        @Override public void setBodyBytes( final byte[] newBody, int offset, int length ) throws IOException { throw new IOException(); }
         @Override public void setContentType( final ContentTypeHeader newContentType ) {}
         @Override public MimeHeaders getHeaders() { return null; }
         @Override public String getContentId( final boolean stripAngleBrackets ) { return null; }

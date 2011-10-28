@@ -1,5 +1,7 @@
 package com.l7tech.util;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.Serializable;
 
 /**
@@ -14,6 +16,22 @@ public class Triple<L,M,R> implements Serializable {
         this.left = left;
         this.middle = middle;
         this.right = right;
+    }
+
+    /**
+     * Construct a triple with the given values.
+     *
+     * @param left The left value
+     * @param middle The middle value
+     * @param right The right value
+     * @param <L> The left type
+     * @param <M> The middle type
+     * @param <R> The right type
+     * @return The triple
+     */
+    @NotNull
+    public static <L,M,R> Triple<L,M,R> triple( final L left, final M middle, final R right) {
+        return new Triple<L,M,R>( left, middle, right );
     }
 
     @SuppressWarnings({ "RedundantIfStatement" })

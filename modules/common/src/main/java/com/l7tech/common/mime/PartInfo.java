@@ -19,10 +19,10 @@ import java.io.InputStream;
  */
 public interface PartInfo {
     /** @return the specified MIME header (ie, "Content-Disposition") or null if this Part did not include it. */
-    public MimeHeader getHeader(String name);
+    MimeHeader getHeader(String name);
 
     /** @return the ordinal position of this Part in the message.  The SOAP part is always ordinal zero. */
-    public int getPosition();
+    int getPosition();
 
     /**
      * Obtain this multipart part's content as an InputStream.  This method can be called more than once on the same
@@ -44,7 +44,7 @@ public interface PartInfo {
      * @throws NoSuchPartException if this PartInfo's InputStream has already been destructively read.
      * @throws IOException if there is a problem retrieving a stashed InputStream.
      */
-    public InputStream getInputStream(boolean destroyAsRead) throws IOException, NoSuchPartException;
+    InputStream getInputStream(boolean destroyAsRead) throws IOException, NoSuchPartException;
 
     /**
      * Get this part's body as a byte array, but only if it is already available internally in that form.
@@ -58,7 +58,7 @@ public interface PartInfo {
      *        <b>Note:</b> any returned byte array is the live data, not a copy, and should <b>not be
      *           modified</b> in any way.
      */
-    public byte[] getBytesIfAlreadyAvailable();
+    byte[] getBytesIfAlreadyAvailable();
 
     /**
      * Get this part's body as a byte array, creating a new byte array if necessary.
@@ -82,7 +82,7 @@ public interface PartInfo {
      * @throws IOException if there is an IOException while reading the part to produce a new byte array.
      * @throws NoSuchPartException if this PartInfo's InputStream has already been destructively read.
      */
-    public byte[] getBytesIfAvailableOrSmallerThan(int maxSize) throws IOException, NoSuchPartException;
+    byte[] getBytesIfAvailableOrSmallerThan(int maxSize) throws IOException, NoSuchPartException;
 
     /**
      * Completely replace the body content of this multipart part.  This may require reading and discarding the
@@ -97,17 +97,34 @@ public interface PartInfo {
      * @throws IOException    if there is a problem reading past the original part body in the main InputStream; or,
      *                        if there is a problem stashing the new part body
      */
-    public void setBodyBytes(byte[] newBody) throws IOException;
+    void setBodyBytes(byte[] newBody) throws IOException;
+
+    /**
+     * Completely replace the body content of this multipart part.  This may require reading and discarding the
+     * old content, and will result in the new content being stashed.
+     * <p>
+     * The Content-Length will be updated with the new length.
+     * <p>
+     * If the parts content transfer encoding requires encoding this is performed automatically on the given
+     * data.
+     *
+     * @param newBody         the new body content to substitute.  May be empty but not null.
+     * @param offset          the offset of the data in newBody
+     * @param length          the length of the data in newBody
+     * @throws IOException    if there is a problem reading past the original part body in the main InputStream; or,
+     *                        if there is a problem stashing the new part body
+     */
+    void setBodyBytes(byte[] newBody, int offset, int length) throws IOException;
 
     /**
      * Replace the Content-Type, perhaps due to a change in body content.
      *
      * @param newContentType  the content type.  Must not be null.
      */
-    public void setContentType(ContentTypeHeader newContentType);
+    void setContentType(ContentTypeHeader newContentType);
 
     /** @return the MimeHeaders describing this Part.  Never null. */
-    public MimeHeaders getHeaders();
+    MimeHeaders getHeaders();
 
     /**
      * Get the content-length of this Part, if known.  If the Part has already been read and its actual size is
@@ -121,7 +138,7 @@ public interface PartInfo {
      *
      * @return the content length known or declared for this Part, or -1 if this information is not available.
      */
-    public long getContentLength();
+    long getContentLength();
 
     /**
      * Get the actual length of this Part's body in bytes.  Any length declared in a Content-Length: header will
@@ -136,10 +153,10 @@ public interface PartInfo {
      *                      if there was a problem recalling from the stash
      * @throws NoSuchPartException if this part's body has already been destructively read
      */
-    public long getActualContentLength() throws IOException, NoSuchPartException;
+    long getActualContentLength() throws IOException, NoSuchPartException;
 
     /** @return the ContentTypeHeader, or a default value.  Never null. */
-    public ContentTypeHeader getContentType();
+    ContentTypeHeader getContentType();
 
     /**
      * Get the Content-ID value, optionally stripping enclosing angle brackets.
@@ -147,17 +164,17 @@ public interface PartInfo {
      * @param stripAngleBrackets true to strip angle brackets, or false to get the raw value.
      * @return the Content-ID value, possibly with any enclosing &lt; &gt; characters removed; or null if there isn't one.
      */
-    public String getContentId(boolean stripAngleBrackets);
+    String getContentId(boolean stripAngleBrackets);
 
     /**
      * @return true if this PartInfo was previously tagged as valid with setValidated(true).
      *         This flag is not used by artInfo itself in any way.
      */
-    public boolean isValidated();
+    boolean isValidated();
 
     /**
      * @param validated true if you would like to flag this attachment as valid.
      *        This flag is not used by PartInfo itself in any way. 
      */
-    public void setValidated(boolean validated);
+    void setValidated(boolean validated);
 }

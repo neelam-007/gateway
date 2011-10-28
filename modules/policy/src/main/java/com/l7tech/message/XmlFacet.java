@@ -1,13 +1,12 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- */
-
 package com.l7tech.message;
 
 import com.l7tech.common.io.UncheckedIOException;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.*;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Triple;
 import com.l7tech.xml.DomElementCursor;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.tarari.TarariMessageContext;
@@ -145,15 +144,24 @@ public class XmlFacet extends MessageFacet {
                 return;
             }
 
-            final ContentTypeHeader textXml = ContentTypeHeader.XML_DEFAULT;
-            final byte[] bytes = XmlUtil.nodeToString(workingDocument.getDocument()).getBytes(textXml.getEncoding());
-            if (bytes != null) {
-                final PartInfo firstPart = mk.getFirstPart();
-                firstPart.setBodyBytes(bytes);
-                firstPart.setContentType(textXml);
+            final Triple<byte[],Integer,Integer> bytes = XmlUtil.toRawByteArray(workingDocument.getDocument());
+            final PartInfo firstPart = mk.getFirstPart();
+            firstPart.setBodyBytes(bytes.left, bytes.middle, bytes.right);
+
+            final ContentTypeHeader contentType = firstPart.getContentType();
+            if ( isSetContentTypeOnCommit() || !Charsets.UTF8.equals( contentType.getEncoding() ) ) {
+                if ( contentType.matches( ContentTypeHeader.SOAP_1_2_DEFAULT ) ) {
+                    firstPart.setContentType( ContentTypeHeader.SOAP_1_2_DEFAULT );
+                } else {
+                    firstPart.setContentType( ContentTypeHeader.XML_DEFAULT );
+                }
             }
 
             firstPartValid = true;
+        }
+
+        private boolean isSetContentTypeOnCommit() {
+            return ConfigFactory.getBooleanProperty( "com.l7tech.message.XmlFacet.setContentTypeOnCommit", false );
         }
 
         private class PartIteratorWrapper implements PartIterator {
@@ -218,6 +226,13 @@ public class XmlFacet extends MessageFacet {
 
             public void setBodyBytes(byte[] newBody) throws IOException {
                 delegate.setBodyBytes(newBody);
+                if (fp) {
+                    onFirstPartChanged();
+                }
+            }
+
+            public void setBodyBytes(byte[] newBody, int offset, int length) throws IOException {
+                delegate.setBodyBytes(newBody, offset, length);
                 if (fp) {
                     onFirstPartChanged();
                 }

@@ -665,11 +665,23 @@ public class XmlUtil extends DomUtils {
         }
     }
 
-    public static byte[] toByteArray(Node node, String encoding) throws IOException {
+    /**
+     * Convert the given node to UTF-8 bytes.
+     *
+     * <p>This method directly returns a byte[] buffer so the given offset
+     * and length must be used.</p>
+     *
+     * @param node The node to convert.
+     * @return The byte array, offset and length
+     * @throws IOException If an error occurs
+     */
+    public static Triple<byte[],Integer,Integer> toRawByteArray( final Node node ) throws IOException {
         final PoolByteArrayOutputStream out = new PoolByteArrayOutputStream(1024);
         try {
-            nodeToOutputStream(node, out, encoding);
-            return out.toByteArray();
+            nodeToOutputStream(node, out);
+            final int length = out.size();
+            final byte[] data = out.detachPooledByteArray();
+            return Triple.triple( data, 0, length );
         } finally {
             out.close();
         }

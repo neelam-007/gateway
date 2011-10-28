@@ -344,16 +344,21 @@ public class IOUtils {
      * should otherwise handle closing the stream.</p>
      *
      * @param data The data to be read
+     * @param offset The offset for the data
+     * @param length The length for the data
      * @param outputBuilder Callback for construction of the filtering output stream.
      * @return The filtered input stream.
      */
     public static InputStream toInputStream( final byte[] data,
+                                             final int offset,
+                                             final int length,
                                              final Functions.Unary<OutputStream,OutputStream> outputBuilder ) {
         return new InputStream(){
             private final int[] out = new int[400];
             private int outReadIndex = 0;
             private int outWriteIndex = 0;
-            private int dataIndex = 0;
+            private int dataIndex = offset;
+            private final int dataEnd = offset + length;
             private final OutputStream encoderOut = outputBuilder.call( new OutputStream(){
                 @Override
                 public void write( final int b ) throws IOException {
@@ -365,15 +370,15 @@ public class IOUtils {
             @Override
             public int read() throws IOException {
                 if ( outReadIndex == outWriteIndex ) {
-                    if ( (dataIndex + 100) < data.length ) {
+                    if ( (dataIndex + 100) < dataEnd ) {
                         encoderOut.write( data, dataIndex, 100 );
                         encoderOut.flush();
                         dataIndex += 100;
-                    } else if ( dataIndex < data.length ) {
-                        encoderOut.write( data, dataIndex, data.length - dataIndex );
+                    } else if ( dataIndex < dataEnd ) {
+                        encoderOut.write( data, dataIndex, dataEnd - dataIndex );
                         encoderOut.flush();
                         encoderOut.close();
-                        dataIndex = data.length;
+                        dataIndex = dataEnd;
                     }
                 }
 

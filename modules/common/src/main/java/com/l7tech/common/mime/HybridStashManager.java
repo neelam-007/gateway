@@ -100,15 +100,19 @@ public class HybridStashManager implements StashManager {
     }
 
     public void stash(int ordinal, byte[] in) throws IOException {
+        stash( ordinal, in, 0, in.length);
+    }
+
+    public void stash(int ordinal, byte[] in, int offset, int length) throws IOException {
         unstash(ordinal);
-        size += in.length;
+        size += length;
 
         if (size  > limit) {
-            getFilestash().stash(ordinal, in);
+            getFilestash().stash(ordinal, in, offset, length);
             return;
         }
 
-        ramstash.stash(ordinal, in);
+        ramstash.stash(ordinal, in, offset, length);
     }
 
     /**

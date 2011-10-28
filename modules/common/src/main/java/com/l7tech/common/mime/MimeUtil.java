@@ -168,9 +168,28 @@ public class MimeUtil {
      */
     public static InputStream getEncodingInputStream( final byte[] data,
                                                       final String contentTransferEncoding ) {
+        return getEncodingInputStream( data, 0, data.length, contentTransferEncoding );
+    }
+
+    /**
+     * Get an input stream that encodes the given data with the specified encoding.
+     *
+     * <p>If the encoding is not supported then the returned stream will throw an
+     * exception on first use.</p>
+     *
+     * @param data The data to encode
+     * @param offset The offset for data
+     * @param length The length of the data
+     * @param contentTransferEncoding The encoding to use
+     * @return The input stream
+     */
+    public static InputStream getEncodingInputStream( final byte[] data,
+                                                      final int offset,
+                                                      final int length,
+                                                      final String contentTransferEncoding ) {
         // We need an input stream but MimeUtility only provides an
         // output stream so we'll convert on the fly.
-        return IOUtils.toInputStream( data, new Functions.Unary<OutputStream,OutputStream>(){
+        return IOUtils.toInputStream( data, offset, length, new Functions.Unary<OutputStream,OutputStream>(){
             @Override
             public OutputStream call( final OutputStream outputStream ) {
                 OutputStream outStream;
