@@ -1073,7 +1073,6 @@ public class JmsQueuePropertiesDialog extends JDialog {
                     inboundMessageIdRadioButton.setSelected(true);
                 else
                     inboundCorrelationIdRadioButton.setSelected(true);
-                byteLimitPanel.setValue(Long.toString(endpoint.getRequestMaxSize()), Registry.getDefault().getPolicyAdmin().getXmlMaxBytes());
             } else {
                 outboundReplyAutomaticRadioButton.setSelected(endpoint.getReplyType() == JmsReplyType.AUTOMATIC);
                 outboundReplyNoneRadioButton.setSelected(endpoint.getReplyType() == JmsReplyType.NO_REPLY);
@@ -1085,6 +1084,11 @@ public class JmsQueuePropertiesDialog extends JDialog {
                     outboundCorrelationIdRadioButton.setSelected(true);
             }
         }
+
+        byteLimitPanel.setValue(
+            endpoint == null? null : Long.toString(endpoint.getRequestMaxSize()),
+            Registry.getDefault().getJmsManager().getDefaultJmsMessageMaxBytes()
+        );
 
         useJmsMsgPropAsSoapActionRadioButton.setSelected(false);
         jmsMsgPropWithSoapActionTextField.setText("");

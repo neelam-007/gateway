@@ -199,4 +199,11 @@ public interface JmsAdmin {
      */
     @Transactional(readOnly=true)
     void testEndpoint(JmsConnection connection, JmsEndpoint endpoint) throws JmsTestException, FindException;
+
+    /**
+     * Get the default value of the JMS message max bytes defined in "io.jmsMessageMaxBytes"
+     * @return the maximum number of bytes permitted for a JMS message, or 0 for unlimited (Integer)
+     */
+    @Transactional(readOnly=true)
+    long getDefaultJmsMessageMaxBytes();
 }

@@ -376,6 +376,7 @@
         <constructor-arg ref="jmsConnectionManager"/>
         <constructor-arg ref="jmsEndpointManager"/>
         <constructor-arg ref="jmsPropertyMapper"/>
+        <constructor-arg ref="serverConfig"/>
     </bean>
 
     <!-- jdbc admin servant -->

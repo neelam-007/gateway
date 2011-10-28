@@ -128,4 +128,9 @@ public class JmsAdminStub implements JmsAdmin {
         if (endpoint.getName().indexOf("FAIL") >= 0)
             throw new JmsTestException("Invalid Destination name");
     }
+
+    @Override
+    public long getDefaultJmsMessageMaxBytes() {
+        return 0;
+    }
 }

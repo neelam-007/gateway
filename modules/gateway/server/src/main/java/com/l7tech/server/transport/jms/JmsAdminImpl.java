@@ -3,7 +3,9 @@ package com.l7tech.server.transport.jms;
 import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.transport.jms.*;
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.policy.variable.GatewaySecurePasswordReferenceExpander;
+import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.jms.*;
@@ -22,13 +24,16 @@ public class JmsAdminImpl implements JmsAdmin {
     private final JmsConnectionManager jmsConnectionManager;
     private final JmsEndpointManager jmsEndpointManager;
     private final JmsPropertyMapper jmsPropertyMapper;
+    private final Config config;
 
     public JmsAdminImpl(JmsConnectionManager jmsConnectionManager,
                         JmsEndpointManager jmsEndpointManager,
-                        JmsPropertyMapper jmsPropertyMapper) {
+                        JmsPropertyMapper jmsPropertyMapper,
+                        Config config) {
         this.jmsConnectionManager = jmsConnectionManager;
         this.jmsEndpointManager = jmsEndpointManager;
         this.jmsPropertyMapper = jmsPropertyMapper;
+        this.config = config;
     }
 
     @Override
@@ -313,6 +318,11 @@ public class JmsAdminImpl implements JmsAdmin {
             for ( final MessageConsumer consumer : consumers ) close(consumer);
             if (bag != null) bag.close();
         }
+    }
+
+    @Override
+    public long getDefaultJmsMessageMaxBytes() {
+        return config.getLongProperty(ServerConfigParams.PARAM_IO_JMS_MESSAGE_MAX_BYTES, 2621440L);  // ioJmsMessageMaxBytes.default = 2621440
     }
 
     @Override
