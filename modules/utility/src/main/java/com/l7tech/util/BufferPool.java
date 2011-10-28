@@ -77,6 +77,9 @@ public class BufferPool {
                     final int len = bytes.length;
                     if (len >= wantSize && len <= maxSize)
                         return bytes;
+
+                    // Put it back for someone else to use
+                    returnBuffer(bytes);
                 }
                 // That ref was reclaimed by the GC; try the next one
             }
