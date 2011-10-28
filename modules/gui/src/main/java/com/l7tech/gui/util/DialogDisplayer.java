@@ -145,6 +145,12 @@ public class DialogDisplayer {
         displayNatively(dialog, continuation);
     }
 
+    /**
+     * Causes the given JDialog to be sized to fit the preferred size and layouts of its sub-components.
+     * Works for both native mode (e.g. native Gateway Manager) and sheet mode (e.g. applet Gateway Manager).
+     *
+     * @param dialog  the dialog to resize.  Must not be null.
+     */
     public static void pack(JDialog dialog) {
         SheetHolder holder = getSheetHolderAncestor(dialog.getParent());
         if (holder != null) {

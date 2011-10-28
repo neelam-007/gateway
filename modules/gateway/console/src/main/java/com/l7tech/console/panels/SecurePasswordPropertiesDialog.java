@@ -235,7 +235,9 @@ public class SecurePasswordPropertiesDialog extends JDialog {
             passwordLabel.setVisible(false);
             confirmPasswordLabel.setVisible(false);
         }
-        pack();
+
+        // resize dialog to fit content
+        DialogDisplayer.pack(SecurePasswordPropertiesDialog.this);
     }
 
     private void modelToView() {
