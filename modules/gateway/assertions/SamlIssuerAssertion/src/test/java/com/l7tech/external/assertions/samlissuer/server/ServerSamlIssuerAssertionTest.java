@@ -1083,7 +1083,7 @@ public class ServerSamlIssuerAssertionTest {
         ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 2);
 
         final PolicyEnforcementContext context = getContext();
-        context.setVariable(varName, getElementsFromXml(attributeRequestWithAttributeValue, SamlConstants.NS_SAML2));
+        context.setVariable(varName, getElementsFromXml(attributeRequestWithAttributeValue, SamlConstants.NS_SAML2, "Attribute"));
 
         final AssertionStatus status = serverAssertion.checkRequest(context);
         Assert.assertEquals("Status should be none.", AssertionStatus.NONE, status);
@@ -1134,7 +1134,7 @@ public class ServerSamlIssuerAssertionTest {
         ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 2);
 
         final PolicyEnforcementContext context = getContext();
-        context.setVariable(varName, getElementsFromXml(attributeRequestWithAttributeValue, SamlConstants.NS_SAML2));
+        context.setVariable(varName, getElementsFromXml(attributeRequestWithAttributeValue, SamlConstants.NS_SAML2, "Attribute"));
         context.setVariable(multiValuedVar, Arrays.asList("Name1", "Name2"));
 
         final AssertionStatus status = serverAssertion.checkRequest(context);
@@ -1188,7 +1188,7 @@ public class ServerSamlIssuerAssertionTest {
         ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 2);
 
         final PolicyEnforcementContext context = getContext();
-        context.setVariable(varName, getElementsFromXml(attributeRequestWithAttributeValue, SamlConstants.NS_SAML2));
+        context.setVariable(varName, getElementsFromXml(attributeRequestWithAttributeValue, SamlConstants.NS_SAML2, "Attribute"));
         context.setVariable(multiValuedVar, Arrays.asList("Jim", "James", "John"));
 
         final AssertionStatus status = serverAssertion.checkRequest(context);
@@ -1246,7 +1246,7 @@ public class ServerSamlIssuerAssertionTest {
         final PolicyEnforcementContext context = getContext();
         // add filter expression variables.
 
-        context.setVariable(varName, getElementsFromXml(attributeRequestWithAttributeValueXml, SamlConstants.NS_SAML2));
+        context.setVariable(varName, getElementsFromXml(attributeRequestWithAttributeValueXml, SamlConstants.NS_SAML2, "Attribute"));
         context.setVariable(multiValuedVar, Arrays.asList(
                 new Message(XmlUtil.parse("<xml>Jim</xml>")),
                 new Message(XmlUtil.parse("<xml>James</xml>")),
@@ -1303,7 +1303,7 @@ public class ServerSamlIssuerAssertionTest {
         final PolicyEnforcementContext context = getContext();
         // add filter expression variables.
 
-        context.setVariable(varName, getElementsFromXml(attributeRequestWithAttributeValue, SamlConstants.NS_SAML2));
+        context.setVariable(varName, getElementsFromXml(attributeRequestWithAttributeValue, SamlConstants.NS_SAML2, "Attribute"));
 
         final AssertionStatus status = serverAssertion.checkRequest(context);
         Assert.assertEquals("Status should be none.", AssertionStatus.NONE, status);
@@ -1346,7 +1346,7 @@ public class ServerSamlIssuerAssertionTest {
         ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 2);
 
         final PolicyEnforcementContext context = getContext();
-        context.setVariable(varName, getElementsFromXml(attributeRequestWithAttributeValue, SamlConstants.NS_SAML2));
+        context.setVariable(varName, getElementsFromXml(attributeRequestWithAttributeValue, SamlConstants.NS_SAML2, "Attribute"));
 
         final AssertionStatus status = serverAssertion.checkRequest(context);
         Assert.assertEquals("Status should be none.", AssertionStatus.NONE, status);
@@ -1393,7 +1393,7 @@ public class ServerSamlIssuerAssertionTest {
         ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 2);
 
         final PolicyEnforcementContext context = getContext();
-        context.setVariable(varName, getElementsFromXml(attributeRequestWithAttributeValuesXml, SamlConstants.NS_SAML2));
+        context.setVariable(varName, getElementsFromXml(attributeRequestWithAttributeValuesXml, SamlConstants.NS_SAML2, "Attribute"));
         context.setVariable(xmlVarName, xmlMsgForVar);
 
         final AssertionStatus status = serverAssertion.checkRequest(context);
@@ -1441,7 +1441,7 @@ public class ServerSamlIssuerAssertionTest {
         ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 2);
 
         final PolicyEnforcementContext context = getContext();
-        context.setVariable(varName, getElementsFromXml(attributeRequestWithAttributeValuesXmlMixedContent, SamlConstants.NS_SAML2));
+        context.setVariable(varName, getElementsFromXml(attributeRequestWithAttributeValuesXmlMixedContent, SamlConstants.NS_SAML2, "Attribute"));
         context.setVariable(xmlVarName, xmlMsgForVar);
 
         final AssertionStatus status = serverAssertion.checkRequest(context);
@@ -1930,7 +1930,7 @@ public class ServerSamlIssuerAssertionTest {
                 Assert.fail("AssertionStatusException should have been thrown.");
             } catch (AssertionStatusException e) {
             }
-            Assert.assertNotNull(context.getVariable(samlAttributeStatement.getVariablePrefix() + ".missingAttrNames"));
+            Assert.assertNotNull(context.getVariable(samlAttributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_MISSING_ATTRIBUTE_NAMES));
         }
         {
             //V1
@@ -1944,9 +1944,11 @@ public class ServerSamlIssuerAssertionTest {
                 Assert.fail("AssertionStatusException should have been thrown.");
             } catch (AssertionStatusException e) {
             }
-            Assert.assertNotNull(context.getVariable(samlAttributeStatement.getVariablePrefix() + ".missingAttrNames"));
+            Assert.assertNotNull(context.getVariable(samlAttributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_MISSING_ATTRIBUTE_NAMES));
         }
     }
+
+    //TODO [Donal] - composite test for all fail cases configured - then run through the fail modes.
 
     /**
      * Tests fail case when a filter Attribute is unknown to the static Attribute configuration.
@@ -1979,7 +1981,7 @@ public class ServerSamlIssuerAssertionTest {
                 Assert.fail("Assertion should have failed as unknown attribute was requested.");
             } catch (AssertionStatusException e) {
             }
-            Assert.assertNotNull(context.getVariable(samlAttributeStatement.getVariablePrefix() + ".unknownAttrNames"));
+            Assert.assertNotNull(context.getVariable(samlAttributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_UNKNOWN_ATTRIBUTE_NAMES));
         }
         {
             //V1
@@ -1995,8 +1997,265 @@ public class ServerSamlIssuerAssertionTest {
                 Assert.fail("Assertion should have failed as unknown attribute was requested.");
             } catch (AssertionStatusException e) {
             }
-            Assert.assertNotNull(context.getVariable(samlAttributeStatement.getVariablePrefix() + ".unknownAttrNames"));
+            Assert.assertNotNull(context.getVariable(samlAttributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_UNKNOWN_ATTRIBUTE_NAMES));
        }
+    }
+
+    @Test
+    public void testAttributeStatement_Filter_NoAttributesAdded() throws Exception {
+        final SamlAttributeStatement samlAttributeStatement = new SamlAttributeStatement();
+        List<SamlAttributeStatement.Attribute> attributes = new ArrayList<SamlAttributeStatement.Attribute>();
+
+        final SamlAttributeStatement.Attribute nameAttr = new SamlAttributeStatement.Attribute();
+        nameAttr.setName("nc:NotInFilter");
+        nameAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        nameAttr.setValue("NotInFilter Value");
+        attributes.add(nameAttr);
+
+        samlAttributeStatement.setAttributes(attributes.toArray(new SamlAttributeStatement.Attribute[attributes.size()]));
+        final String filterExpression = "${attributeQuery.attributes}";
+        samlAttributeStatement.setFilterExpression(filterExpression);
+        samlAttributeStatement.setFailIfNoAttributesAdded(true);
+
+        {
+            // V2
+            final PolicyEnforcementContext context = getContext();
+            context.setVariable("attributeQuery.attributes", getAttributesFromRequest(attributeRequest_V2, SamlConstants.NS_SAML2, "Attribute"));
+
+            ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 2);
+
+            try {
+                serverAssertion.checkRequest(context);
+                Assert.fail("Assertion should have failed as unknown attribute was requested.");
+            } catch (AssertionStatusException e) {
+            }
+            final Object variable = context.getVariable(samlAttributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_NO_ATTRIBUTES_ADDED);
+            Assert.assertNotNull(variable);
+            final boolean b = Boolean.parseBoolean(variable.toString());
+            System.out.println("Variable value: " + b);
+        }
+        {
+            //V1
+            final PolicyEnforcementContext context = getContext();
+            final String namespace = "http://namespace.com";
+            nameAttr.setNamespace(namespace);
+            context.setVariable("attributeQuery.attributes", getAttributesFromRequest(attributeRequest_V1, SamlConstants.NS_SAML, "AttributeDesignator"));
+
+            ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 1);
+
+            try {
+                serverAssertion.checkRequest(context);
+                Assert.fail("Assertion should have failed as unknown attribute was requested.");
+            } catch (AssertionStatusException e) {
+            }
+            final Object variable = context.getVariable(samlAttributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_NO_ATTRIBUTES_ADDED);
+            Assert.assertNotNull(variable);
+            final boolean b = Boolean.parseBoolean(variable.toString());
+            System.out.println("Variable value: " + b);
+       }
+    }
+
+    /**
+     * Tests that all context variables are set, when no fail modes are configured.
+     *
+     * In the pre 6.2 case the conditions for when these variables are not provided cannot happen, so they should
+     * all contain either empty string values or false. Accessing these variables should not cause WARNING logging
+     * due to the variable not existing. (Not tested automatically)
+     */
+    @Test
+    public void testAttributeStatement_AllSetContextVariables_Normal_AllEmpty() throws Exception {
+        //Test basic Attribute + AttributeValue addition to AttributeStatement
+        final SamlAttributeStatement samlAttributeStatement = new SamlAttributeStatement();
+        List<SamlAttributeStatement.Attribute> attributes = new ArrayList<SamlAttributeStatement.Attribute>();
+
+        // Statically configure 3 attributes
+        final SamlAttributeStatement.Attribute nameAttr = new SamlAttributeStatement.Attribute();
+        nameAttr.setName("nc:PersonGivenName");
+        nameAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        nameAttr.setNamespace("http://namespace.com");
+        nameAttr.setValue("James");
+
+        final List<SamlAttributeStatement.Attribute> middleAndLastName = getSomeAttributes();
+        attributes.add(nameAttr);
+        attributes.addAll(middleAndLastName);
+
+        samlAttributeStatement.setAttributes(attributes.toArray(new SamlAttributeStatement.Attribute[attributes.size()]));
+
+        {
+            // V2
+            ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 2);
+            final PolicyEnforcementContext context = getContext();
+
+            final AssertionStatus status = serverAssertion.checkRequest(context);
+            Assert.assertEquals("Status should be none.", AssertionStatus.NONE, status);
+
+            validateVariableNotNull(samlAttributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_UNKNOWN_ATTRIBUTE_NAMES, "", context);
+            validateVariableNotNull(samlAttributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_FILTERED_ATTRIBUTES, "", context);
+            validateVariableNotNull(samlAttributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_EXCLUDED_ATTRIBUTES, "", context);
+            validateVariableNotNull(samlAttributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_MISSING_ATTRIBUTE_NAMES, "", context);
+        }
+        {
+            // V1
+            ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 1);
+            final PolicyEnforcementContext context = getContext();
+
+            final AssertionStatus status = serverAssertion.checkRequest(context);
+            Assert.assertEquals("Status should be none.", AssertionStatus.NONE, status);
+
+            validateVariableNotNull(samlAttributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_UNKNOWN_ATTRIBUTE_NAMES, "", context);
+            validateVariableNotNull(samlAttributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_FILTERED_ATTRIBUTES, "", context);
+            validateVariableNotNull(samlAttributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_MISSING_ATTRIBUTE_NAMES, "", context);
+
+            // Ensure excluded was not set.
+            try {
+                context.getVariable(samlAttributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_EXCLUDED_ATTRIBUTES);
+                Assert.fail("Variable " + samlAttributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_EXCLUDED_ATTRIBUTES + " should not exist.");
+            } catch (NoSuchVariableException e) {
+            }
+        }
+    }
+
+    /**
+     * Tests that all context variables are set, when no fail modes are configured.
+     */
+    @Test
+    public void testAttributeStatement_AllSetContextVariables_Normal_AllSet() throws Exception {
+        //Test basic Attribute + AttributeValue addition to AttributeStatement
+        final SamlAttributeStatement samlAttributeStatement = new SamlAttributeStatement();
+        List<SamlAttributeStatement.Attribute> attributes = new ArrayList<SamlAttributeStatement.Attribute>();
+
+        // Statically configure 3 attributes
+        final SamlAttributeStatement.Attribute nameAttr = new SamlAttributeStatement.Attribute();
+        nameAttr.setName("nc:PersonGivenName");
+        nameAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        nameAttr.setNamespace("http://uri.com");
+        nameAttr.setValue("UnexpectedName"); // Excluded
+
+        final SamlAttributeStatement.Attribute missingAttr = new SamlAttributeStatement.Attribute();
+        missingAttr.setName("Missing");
+        missingAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        missingAttr.setNamespace("http://uri.com");
+        missingAttr.setValue(""); // Missing
+        missingAttr.setMissingWhenEmpty(true);
+
+        final SamlAttributeStatement.Attribute notInFilterAttr = new SamlAttributeStatement.Attribute();
+        notInFilterAttr.setName("NotInFilter");
+        notInFilterAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        notInFilterAttr.setNamespace("http://uri.com");
+        notInFilterAttr.setValue("notInFilterAttr");
+
+        final List<SamlAttributeStatement.Attribute> middleAndLastName = getSomeAttributes();
+        attributes.add(nameAttr);
+        attributes.add(middleAndLastName.get(0)); // don't add surname - 'Unknown'
+        attributes.add(notInFilterAttr); // 'Filtered'
+        attributes.add(missingAttr);
+
+        samlAttributeStatement.setAttributes(attributes.toArray(new SamlAttributeStatement.Attribute[attributes.size()]));
+        final String varName = "attributeQuery.attributes";
+        samlAttributeStatement.setFilterExpression("${" + varName + "}");
+
+        {
+            // V2
+            ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 2);
+            final PolicyEnforcementContext context = getContext();
+            final List<Element> elementsFromXml = getElementsFromXml(attributeRequestWithAttributeValue, SamlConstants.NS_SAML2, "Attribute");
+            // add an attribute which will be 'filtered'.
+            elementsFromXml.add(XmlUtil.parse("<saml:Attribute xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" Name=\"Missing\" NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\"/>").getDocumentElement());
+            context.setVariable(varName, elementsFromXml);
+
+            final AssertionStatus status = serverAssertion.checkRequest(context);
+            Assert.assertEquals("Status should be none.", AssertionStatus.NONE, status);
+
+            validateVariableNotNull(samlAttributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_UNKNOWN_ATTRIBUTE_NAMES, "[Name=nc:PersonSurName NameFormat=urn:oasis:names:tc:SAML:2.0:attrname-format:basic]", context);
+            validateVariableNotNull(samlAttributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_FILTERED_ATTRIBUTES, "[Name=NotInFilter NameFormat=urn:oasis:names:tc:SAML:2.0:attrname-format:basic]", context);
+            validateVariableNotNull(samlAttributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_EXCLUDED_ATTRIBUTES, "[Name=nc:PersonGivenName NameFormat=urn:oasis:names:tc:SAML:2.0:attrname-format:basic]", context);
+            validateVariableNotNull(samlAttributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_MISSING_ATTRIBUTE_NAMES, "[Name=Missing NameFormat=urn:oasis:names:tc:SAML:2.0:attrname-format:basic]", context);
+        }
+        {
+            // V1
+            ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 1);
+            final PolicyEnforcementContext context = getContext();
+
+            final List<Element> elementsFromXml = getElementsFromXml(attributeRequest_V1, SamlConstants.NS_SAML, "AttributeDesignator");
+            elementsFromXml.add(XmlUtil.parse("<saml:AttributeDesignator xmlns:saml=\"urn:oasis:names:tc:SAML:1.0:assertion\" AttributeName=\"Missing\" AttributeNamespace=\"http://uri.com\"/>").getDocumentElement());
+            context.setVariable(varName, elementsFromXml);
+
+            final AssertionStatus status = serverAssertion.checkRequest(context);
+            Assert.assertEquals("Status should be none.", AssertionStatus.NONE, status);
+
+            validateVariableNotNull(samlAttributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_UNKNOWN_ATTRIBUTE_NAMES, "[AttributeName=nc:PersonSurName AttributeNamespace=http://uri.com]", context);
+            validateVariableNotNull(samlAttributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_FILTERED_ATTRIBUTES, "[AttributeName=NotInFilter AttributeNamespace=http://uri.com]", context);
+            validateVariableNotNull(samlAttributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_MISSING_ATTRIBUTE_NAMES, "[AttributeName=Missing AttributeNamespace=http://uri.com]", context);
+
+            // Ensure excluded was not set.
+            try {
+                context.getVariable(samlAttributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_EXCLUDED_ATTRIBUTES);
+                Assert.fail("Variable " + samlAttributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_EXCLUDED_ATTRIBUTES+ " should not exist.");
+            } catch (NoSuchVariableException e) {
+            }
+        }
+    }
+
+    @Test
+    public void testAttributeStatement_NoAttributes() throws Exception {
+        //Test basic Attribute + AttributeValue addition to AttributeStatement
+        final SamlAttributeStatement samlAttributeStatement = new SamlAttributeStatement();
+        List<SamlAttributeStatement.Attribute> attributes = new ArrayList<SamlAttributeStatement.Attribute>();
+
+        final SamlAttributeStatement.Attribute notInFilterAttr = new SamlAttributeStatement.Attribute();
+        notInFilterAttr.setName("NotInFilter");
+        notInFilterAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        notInFilterAttr.setNamespace("http://uri.com");
+        notInFilterAttr.setValue("notInFilterAttr");
+
+        attributes.add(notInFilterAttr); // 'Filtered'
+
+        samlAttributeStatement.setAttributes(attributes.toArray(new SamlAttributeStatement.Attribute[attributes.size()]));
+        final String varName = "attributeQuery.attributes";
+        samlAttributeStatement.setFilterExpression("${" + varName + "}");
+
+        {
+            // V2
+            ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 2);
+            final PolicyEnforcementContext context = getContext();
+            final List<Element> elementsFromXml = getElementsFromXml(attributeRequestWithAttributeValue, SamlConstants.NS_SAML2, "Attribute");
+            context.setVariable(varName, elementsFromXml);
+
+            final AssertionStatus status = serverAssertion.checkRequest(context);
+            Assert.assertEquals("Status should be none.", AssertionStatus.NONE, status);
+
+            validateVariableNotNull(samlAttributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_NO_ATTRIBUTES_ADDED, "true", context);
+        }
+        {
+            // V1
+            ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 1);
+            final PolicyEnforcementContext context = getContext();
+
+            final List<Element> elementsFromXml = getElementsFromXml(attributeRequest_V1, SamlConstants.NS_SAML, "AttributeDesignator");
+            elementsFromXml.add(XmlUtil.parse("<saml:AttributeDesignator xmlns:saml=\"urn:oasis:names:tc:SAML:1.0:assertion\" AttributeName=\"Missing\" AttributeNamespace=\"http://uri.com\"/>").getDocumentElement());
+            context.setVariable(varName, elementsFromXml);
+
+            final AssertionStatus status = serverAssertion.checkRequest(context);
+            Assert.assertEquals("Status should be none.", AssertionStatus.NONE, status);
+
+            validateVariableNotNull(samlAttributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_NO_ATTRIBUTES_ADDED, "true", context);
+
+            // Ensure excluded was not set.
+            try {
+                context.getVariable(samlAttributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_EXCLUDED_ATTRIBUTES);
+                Assert.fail("Variable " + samlAttributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_EXCLUDED_ATTRIBUTES+ " should not exist.");
+            } catch (NoSuchVariableException e) {
+            }
+        }
+
+    }
+
+    private void validateVariableNotNull(String variableName, String expectedValue, final PolicyEnforcementContext context) throws NoSuchVariableException {
+        final Object variable = context.getVariable(variableName);
+        Assert.assertNotNull(variable);
+        if (expectedValue != null) {
+            Assert.assertEquals("Unexpected variable value", expectedValue, variable.toString());
+        }
     }
 
     private static final String expectedWhenNameFiltered = "    <saml2:AttributeStatement xmlns:saml2=\"urn:oasis:names:tc:SAML:2.0:assertion\">\n" +
@@ -2228,11 +2487,13 @@ public class ServerSamlIssuerAssertionTest {
         final SamlAttributeStatement.Attribute middleNameAttr = new SamlAttributeStatement.Attribute();
         middleNameAttr.setName("nc:PersonMiddleName");
         middleNameAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        middleNameAttr.setNamespace("http://uri.com");
         middleNameAttr.setValue("Tiberius");
 
         final SamlAttributeStatement.Attribute lastNameAttr = new SamlAttributeStatement.Attribute();
         lastNameAttr.setName("nc:PersonSurName");
         lastNameAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        lastNameAttr.setNamespace("http://uri.com");
         lastNameAttr.setValue("Kirk");
 
         return Arrays.asList(middleNameAttr, lastNameAttr);
@@ -2335,10 +2596,10 @@ public class ServerSamlIssuerAssertionTest {
         return document;
     }
 
-    private List<Element> getElementsFromXml(String attributeRequest, String samlNS) throws Exception {
+    private List<Element> getElementsFromXml(String attributeRequest, String samlNS, String nameAttrName) throws Exception {
         final Document attributeQuery = XmlUtil.parse(attributeRequest);
         System.out.println(XmlUtil.nodeToFormattedString(attributeQuery));
-        final NodeList attrList = attributeQuery.getElementsByTagNameNS(samlNS, "Attribute");
+        final NodeList attrList = attributeQuery.getElementsByTagNameNS(samlNS, nameAttrName);
         List<Element> elementList = new ArrayList<Element>();
         for (int i = 0; i < attrList.getLength(); i++) {
             final Node attribute = attrList.item(i);

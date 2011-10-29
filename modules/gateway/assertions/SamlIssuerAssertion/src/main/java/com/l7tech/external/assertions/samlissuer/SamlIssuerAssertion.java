@@ -360,7 +360,12 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
             allVars.addAll(Arrays.asList(
                     new VariableMetadata(variablePrefix + "." + SamlAttributeStatement.SUFFIX_UNKNOWN_ATTRIBUTE_NAMES, false, false, null, false, DataType.STRING),
                     new VariableMetadata(variablePrefix + "." + SamlAttributeStatement.SUFFIX_MISSING_ATTRIBUTE_NAMES, false, false, null, false, DataType.STRING),
-                    new VariableMetadata(variablePrefix + "." + SamlAttributeStatement.SUFFIX_NO_ATTRIBUTES_ADDED, false, false, null, false, DataType.BOOLEAN)));
+                    new VariableMetadata(variablePrefix + "." + SamlAttributeStatement.SUFFIX_NO_ATTRIBUTES_ADDED, false, false, null, false, DataType.BOOLEAN),
+                    new VariableMetadata(variablePrefix + "." + SamlAttributeStatement.SUFFIX_FILTERED_ATTRIBUTES, false, false, null, false, DataType.STRING)));
+
+            if (getVersion() == 2) {
+                allVars.add(new VariableMetadata(variablePrefix + "." + SamlAttributeStatement.SUFFIX_EXCLUDED_ATTRIBUTES, false, false, null, false, DataType.STRING));
+            }
         }
 
         return allVars.toArray(new VariableMetadata[allVars.size()]);

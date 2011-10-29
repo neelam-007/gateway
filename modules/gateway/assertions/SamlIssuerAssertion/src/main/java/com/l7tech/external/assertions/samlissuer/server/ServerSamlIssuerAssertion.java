@@ -384,17 +384,19 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
         final SamlAttributeStatement attributeStatement = assertion.getAttributeStatement();
         final String filterExpression = attributeStatement.getFilterExpression();
 
-        // Support variables of Type Element or Message which resolve to saml:Attribute and warn logging anything else found.
         final List<Object> objects = ExpandVariables.processNoFormat(filterExpression, vars, getAudit(), false);
+        // Support variables of Type Element or Message which resolve to saml:Attribute and warn anything else found.
         final List<Element> requestAttributeElements = extractElements(objects);
-        final boolean hasFilter = !requestAttributeElements.isEmpty();
-
         //build map of request Attributes
         final Map<String, XmlObject> requestAttributeMap = buildRequestAttributeMap(requestAttributeElements, version);
+        // requestAttributeMap only contains valid Attributes.
+        final boolean hasFilter = !requestAttributeMap.isEmpty();
         final List<SamlAttributeStatement.Attribute> configuredAttList = Arrays.asList(attributeStatement.getAttributes());
 
         final Set<String> missingAttributes = new LinkedHashSet<String>();
         final List<String> keysOfAllConfiguredAttributes = new ArrayList<String>();
+        final List<String> filteredAttributes = new ArrayList<String>();
+        final List<String> filteredAttributesBasedOnValue = new ArrayList<String>();
         for (SamlAttributeStatement.Attribute configAttribute : configuredAttList) {
             String resolvedName = ExpandVariables.process(configAttribute.getName(), vars, getAudit());
             String nameFormatOrNamespace;
@@ -422,6 +424,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                     if (logger.isLoggable(Level.FINE)) {
                         logger.log(Level.FINE, "Filtering out attribute based on filter attribute variables: " + getAttributeDisplayString(configAttribute, version));
                     }
+                    filteredAttributes.add(getAttributeDisplayString(configAttribute, version));
                     continue;
                 }
 
@@ -448,6 +451,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                     if (!requestAttributeValues.contains(resolvedString)) {
                         //TODO [Donal] - Can a request supply an empty string value? Should this be respected?
                         logger.log(Level.FINE, "Resolved value for Attribute '" + configAttribute.getName() + "' was filtered as it's value '" + resolvedString + "' was not included in the filter attribute variables.");
+                        filteredAttributesBasedOnValue.add(getAttributeDisplayString(configAttribute, version));
                         continue;
                     }
                 }
@@ -515,19 +519,62 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
             }
         }
 
-        // Process fail cases - fail in dialog order
+        // Set variables
 
         // Any missing
+        final String missingString = CollectionUtils.mkString(missingAttributes, ", ");
+        context.setVariable(attributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_MISSING_ATTRIBUTE_NAMES, missingString);
+        getAudit().logAndAudit(AssertionMessages.SAML_ISSUER_ATTR_STMT_MISSING_ATTRIBUTE, missingString);
+
+        // Any unknown
+        final String unknownString = getUnknownAttributesInFilter(version, requestAttributeMap, keysOfAllConfiguredAttributes);
+        context.setVariable(attributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_UNKNOWN_ATTRIBUTE_NAMES, unknownString);
+        getAudit().logAndAudit(AssertionMessages.SAML_ISSUER_ATTR_STMT_FAIL_UNKNOWN_FILTER_ATTRIBUTE, unknownString);
+
+        // No attributes added - because of filter
+        final boolean noAttributesAdded = outAtts.isEmpty() && !filteredAttributes.isEmpty();
+        if (noAttributesAdded) {
+            getAudit().logAndAudit(AssertionMessages.SAML_ISSUER_ATTR_STMT_FILTER_REMOVED_ALL_ATTRIBUTES);
+        }
+        context.setVariable(attributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_NO_ATTRIBUTES_ADDED, noAttributesAdded);
+
+        // Any filtered
+        final String filteredString = CollectionUtils.mkString(filteredAttributes, ", ");
+        context.setVariable(attributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_FILTERED_ATTRIBUTES, filteredString);
+        if (!filteredAttributes.isEmpty()) {
+            getAudit().logAndAudit(AssertionMessages.SAML_ISSUER_ATTR_STMT_FILTERED_ATTRIBUTES, filteredString);
+        }
+
+        // Any excluded
+        if (version == 2) {
+            // Saml 1 does not allow incoming AttributeValue elements
+            final String excludedString = CollectionUtils.mkString(filteredAttributesBasedOnValue, ", ");
+            context.setVariable(attributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_EXCLUDED_ATTRIBUTES, excludedString);
+            if (!filteredAttributesBasedOnValue.isEmpty()) {
+                getAudit().logAndAudit(AssertionMessages.SAML_ISSUER_ATTR_STMT_EXCLUDED_ATTRIBUTES, excludedString);
+            }
+        }
+
+        // Fail cases
+
+        // Missing
         if (attributeStatement.isFailIfAnyAttributeIsMissing() && !missingAttributes.isEmpty()) {
-            final String missingString = CollectionUtils.mkString(missingAttributes, ", ");
-            context.setVariable(attributeStatement.getVariablePrefix() + ".missingAttrNames", missingString);
-            getAudit().logAndAudit(AssertionMessages.SAML_ISSUER_ATTR_STMT_MISSING_ATTRIBUTE, missingString);
             throw new AssertionStatusException(AssertionStatus.FALSIFIED);
         }
 
-        // Any unknown
-        if (hasFilter && attributeStatement.isFailIfUnknownAttributeInFilter()) {
-            handleFailForUnknownAttributes(version, requestAttributeMap, keysOfAllConfiguredAttributes, context, attributeStatement.getVariablePrefix());
+        // Unknown
+        if (attributeStatement.isFailIfUnknownAttributeInFilter() && !unknownString.isEmpty()) {
+            throw new AssertionStatusException(AssertionStatus.FALSIFIED);
+        }
+
+        // Fail if no attributes added
+        if (attributeStatement.isFailIfNoAttributesAdded() && noAttributesAdded) {
+            throw new AssertionStatusException(AssertionStatus.FALSIFIED);
+        }
+
+        // Any excluded Attribute
+        if (attributeStatement.isFailIfNoAttributesAdded() && !filteredAttributesBasedOnValue.isEmpty()) {
+            throw new AssertionStatusException(AssertionStatus.FALSIFIED);
         }
 
         return SubjectStatement.createAttributeStatement(
@@ -535,11 +582,9 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                 assertion.getSubjectConfirmationKeyInfoType(), assertion.getNameIdentifierType(), overrideNameValue, overrideNameFormat, nameQualifier);
     }
 
-    private void handleFailForUnknownAttributes(final Integer version,
+    private String getUnknownAttributesInFilter(final Integer version,
                                                 final Map<String, XmlObject> requestAttributeMap,
-                                                final List<String> keysOfAllConfiguredAttributes,
-                                                final PolicyEnforcementContext context,
-                                                final String prefix) {
+                                                final List<String> keysOfAllConfiguredAttributes) {
         final List<String> allUnknownAttributes = new ArrayList<String>();
         for (String requestKey : requestAttributeMap.keySet()) {
             boolean found = false;
@@ -555,6 +600,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
             }
         }
 
+        String unknownString = "";
         if (!allUnknownAttributes.isEmpty()) {
             final List<String> transformedList = Functions.map(allUnknownAttributes, new Functions.Unary<String, String>() {
                 @Override
@@ -565,25 +611,22 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                             AttributeDesignatorType desType = (AttributeDesignatorType) xmlObject;
                             String attributeName = desType.getAttributeName();
                             String attributeNamespace = desType.getAttributeNamespace();
-                            return "[Attribute=" + attributeName + " NameFormat=" + attributeNamespace + "]";
+                            return getAttributeDisplayString("AttributeName", attributeName, "AttributeNamespace", attributeNamespace);
                         case 2:
                             AttributeType attributeTypeV2 = (AttributeType) xmlObject;
                             String name = attributeTypeV2.getName();
                             String nameFormat = attributeTypeV2.getNameFormat();
-                            return "[Attribute=" + name + " NameFormat=" + nameFormat + "]";
+                            return getAttributeDisplayString("Name", name, "NameFormat", nameFormat);
                         default:
                             throw new IllegalStateException("Unknown version"); // coding error
                     }
                 }
             });
 
-            final String unknownList = CollectionUtils.mkString(transformedList, ", ");
-            context.setVariable(prefix + ".unknownAttrNames", unknownList);
-            getAudit().logAndAudit(AssertionMessages.SAML_ISSUER_ATTR_STMT_FAIL_UNKNOWN_FILTER_ATTRIBUTE,
-                    unknownList);
-
-            throw new AssertionStatusException(AssertionStatus.FALSIFIED);
+            unknownString = CollectionUtils.mkString(transformedList, ", ");
         }
+
+        return unknownString;
     }
 
     private String getStringForResolvedObject(final SamlAttributeStatement.Attribute.AttributeValueComparison valueComparison,
@@ -698,28 +741,32 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                     case 1:
                         //TODO - Need a container type for SAML 1.1 - create XMLBeans jar for 1.1 protocol schema if needed to use the AttributeQueryType`
                         final String tagName = attElement.getLocalName();
-                        final String ignoreMsg = "Ignoring variable.";
 
                         if (!"Attribute".equals(tagName) && !"AttributeDesignator".equals(tagName)) {
-                            logger.warning("Expected AttributeDesignator Element, found Element with name '" + tagName + "'. " + ignoreMsg);
+                            // Note Attribute types are not valid for an AttributeQuery
+                            getAudit().logAndAudit(AssertionMessages.SAML_ISSUER_ATTR_STMT_INVALID_FILTER_ATTRIBUTE,
+                                    "Expected AttributeDesignator Element, found Element with name '" + tagName + "'");
                             continue;
                         }
 
                         final String namespaceURI = attElement.getNamespaceURI();
                         if (!SamlConstants.NS_SAML.equals(namespaceURI)) {
-                            logger.warning("Expected Namespace '"+SamlConstants.NS_SAML+"' found Element with namespace '" + namespaceURI + "'. " + ignoreMsg);
+                            getAudit().logAndAudit(AssertionMessages.SAML_ISSUER_ATTR_STMT_INVALID_FILTER_ATTRIBUTE,
+                                    "Expected Namespace '" + SamlConstants.NS_SAML + "' found Element with namespace '" + namespaceURI + "'");
                             continue;
                         }
 
                         Attr nameAtt = attElement.getAttributeNode("AttributeName");
                         if (nameAtt == null) {
-                            logger.warning("Attribute element missing AttributeName attribute. " + ignoreMsg);
+                            getAudit().logAndAudit(AssertionMessages.SAML_ISSUER_ATTR_STMT_INVALID_FILTER_ATTRIBUTE,
+                                    "Attribute element missing AttributeName attribute");
                             continue;
                         }
 
                         final Attr nameNS = attElement.getAttributeNode("AttributeNamespace");
                         if (nameNS == null) {
-                            logger.warning("Attribute element missing Name attribute. " + ignoreMsg);
+                            getAudit().logAndAudit(AssertionMessages.SAML_ISSUER_ATTR_STMT_INVALID_FILTER_ATTRIBUTE,
+                                    "Attribute element missing AttributeNamespace attribute");
                             continue;
                         }
 
@@ -746,7 +793,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                             attType = attributeTypeV2;
                             break;
                         } else {
-                            logger.warning(warningMsg);
+                            getAudit().logAndAudit(AssertionMessages.SAML_ISSUER_ATTR_STMT_INVALID_FILTER_ATTRIBUTE, warningMsg);
                             continue;
                         }
 
@@ -756,18 +803,25 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
 
                 if (nameAndFormatToAttribute.containsKey(mapKey)) {
                     // If the SAML Attributes filter contains more
-                    StringBuilder sb = new StringBuilder("Duplicate SAML ");
+                    final String dupName;
+                    final String nameValue;
+                    final String formatOrNs;
+                    final String formatOrNsValue;
+
                     if (version == 1) {
-                        sb.append("AttributeDesignator: ");
-                        sb.append("Name = ").append(name);
-                        sb.append(" Namespace = ").append(nameFormatOrNamespace);
+                        dupName = "AttributeName";
+                        nameValue = name;
+                        formatOrNs = "AttributeNamespace";
+                        formatOrNsValue = nameFormatOrNamespace;
                     } else {
-                        sb.append("Attribute: ");
-                        sb.append("Name = ").append(name);
-                        sb.append(" NameFormat = ").append(nameFormatOrNamespace);
+                        dupName = "Name";
+                        nameValue = name;
+                        formatOrNs = "NameFormat";
+                        formatOrNsValue = nameFormatOrNamespace;
                     }
 
-                    getAudit().logAndAudit(AssertionMessages.SAML_ISSUER_ATTR_STMT_DUPLICATE_FILTER_ATTRIBUTE, sb.toString());
+                    final String dupAttDisplayString = getAttributeDisplayString(dupName, nameValue, formatOrNs, formatOrNsValue);
+                    getAudit().logAndAudit(AssertionMessages.SAML_ISSUER_ATTR_STMT_DUPLICATE_FILTER_ATTRIBUTE, dupAttDisplayString);
                 } else {
                     // first in wins
                     nameAndFormatToAttribute.put(mapKey, attType);
@@ -847,33 +901,47 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
         return allAttributeValues;
     }
 
+    private String getAttributeDisplayString(final String name,
+                                             final String nameValue,
+                                             final String formatOrNs,
+                                             final String formatOrNsValue) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[" + name + "=");
+        sb.append(nameValue);
+        sb.append(" ");
+        sb.append(formatOrNs + "=");
+        sb.append(formatOrNsValue);
+        sb.append("]");
+
+        return sb.toString();
+
+    }
+
     private String getAttributeDisplayString(final SamlAttributeStatement.Attribute configAttribute,
                                              final int version) {
 
-        StringBuilder sb = new StringBuilder();
+        final String name;
+        final String nameValue;
+        final String formatOrNs;
+        final String formatOrNsValue;
         switch (version) {
             case 1:
-                sb.append("[Attribute=");
-                sb.append(configAttribute.getName());
-                sb.append(" ");
-                sb.append("Namespace=");
-                sb.append(configAttribute.getNamespace());
-                sb.append("]");
+                name = "AttributeName";
+                nameValue = configAttribute.getName();
+                formatOrNs = "AttributeNamespace";
+                formatOrNsValue = configAttribute.getNamespace();
                 break;
             case 2:
-                sb.append("[Attribute=");
-                sb.append(configAttribute.getName());
-                sb.append(" ");
-                sb.append("NameFormat=");
-                sb.append((configAttribute.getNameFormat() == null? SamlConstants.ATTRIBUTE_NAME_FORMAT_UNSPECIFIED:configAttribute.getNameFormat()));
-                sb.append("]");
+                name = "Name";
+                nameValue = configAttribute.getName();
+                formatOrNs = "NameFormat";
+                formatOrNsValue = configAttribute.getNameFormat() == null? SamlConstants.ATTRIBUTE_NAME_FORMAT_UNSPECIFIED:configAttribute.getNameFormat();
                 break;
-
             default:
                 throw new IllegalStateException("Unknown version");
         }
 
-        return sb.toString();
+        return getAttributeDisplayString(name, nameValue, formatOrNs, formatOrNsValue);
     }
 
     private List<Object> flatten(final List<Object> objects) {
@@ -936,6 +1004,8 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
             } else if (object instanceof Message) {
                 final Element element = processMessageVariable((Message) object);
                 foundElements.add(element);
+            } else {
+                logger.warning("Unsupported variable value found of type " + object.getClass().getSimpleName());
             }
         }
 
