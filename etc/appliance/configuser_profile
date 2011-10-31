@@ -1193,7 +1193,11 @@ do
                     clear;;
                 3)  clear;
                     (${GETROOT});
-                    clear;;
+					if [ "X$?" == "X1" ]; then
+ 	 	                confirmedMessage "";
+ 	 	            fi
+ 	 	            #clear;;
+ 	 	            ;;
                 4)  clear;
                     (${CONFWIZARD} -changeMasterPassphrase);
                     confirmedMessage ""
