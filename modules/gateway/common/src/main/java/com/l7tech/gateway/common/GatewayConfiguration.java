@@ -3,7 +3,7 @@ package com.l7tech.gateway.common;
 import java.io.Serializable;
 
 /**
- * Gateway configuration bean which holds configuration values that are publicly available.
+ * Gateway configuration bean which holds information required for assertion configuration.
  *
  * @author alee
  */

@@ -146,7 +146,7 @@ public interface AdminLogin {
     void ping();
 
     /**
-     * Retrieve the GatewayConfiguration which contains public configuration values.
+     * Retrieve the GatewayConfiguration.
      *
      * @return the GatewayConfiguration.
      */
