@@ -550,7 +550,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
             response.getAssertion().add(value);
         }
         final JAXBElement<saml.v1.protocol.ResponseType> typeJAXBElement = v1SamlpFactory.createResponse(response);
-        if(validateSSOProfileDetails){
+        if(assertion.isValidateWebSsoRules() && validateSSOProfileDetails){
             validateV1Response(typeJAXBElement.getValue());
         }
         return typeJAXBElement;
@@ -683,7 +683,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
         }
 
         final JAXBElement<ResponseType> typeJAXBElement = v2SamlpFactory.createResponse(response);
-        if(validateSSOProfileDetails){
+        if(assertion.isValidateWebSsoRules() && validateSSOProfileDetails){
             validateV2Response(typeJAXBElement.getValue());
         }
         return typeJAXBElement;

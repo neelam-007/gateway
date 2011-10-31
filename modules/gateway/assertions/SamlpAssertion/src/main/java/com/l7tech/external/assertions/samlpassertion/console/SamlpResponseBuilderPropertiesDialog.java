@@ -123,6 +123,7 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
         }
 
         signResponseCheckBox.setSelected(assertion.isSignResponse());
+        validateWebSSORulesCheckBox.setSelected(assertion.isValidateWebSsoRules());
         statusMessageTextField.setText(assertion.getStatusMessage());
         statusDetailTextField.setText(assertion.getStatusDetail());
 
@@ -177,6 +178,7 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
         final SamlVersion samlVersion = (SamlVersion) samlVersionComboBox.getSelectedItem();
         assertion.setSamlVersion(samlVersion);
         assertion.setSignResponse(signResponseCheckBox.isSelected());
+        assertion.setValidateWebSsoRules(validateWebSSORulesCheckBox.isSelected());
         assertion.setAddIssuer(addIssuerCheckBox.isSelected());
         assertion.setSamlStatus((SamlStatus) statusCodeComboBox.getSelectedItem());
         assertion.setStatusMessage(statusMessageTextField.getText());
@@ -342,6 +344,7 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
     private JLabel extensionsLabel;
     private JLabel encryptedAssertionsLabel;
     private JTextField encryptedAssertionsTextField;
+    private JCheckBox validateWebSSORulesCheckBox;
 
     private static final String autoString = "<auto>";
     private static final ResourceBundle resources = ResourceBundle.getBundle( SamlpResponseBuilderPropertiesDialog.class.getName() );

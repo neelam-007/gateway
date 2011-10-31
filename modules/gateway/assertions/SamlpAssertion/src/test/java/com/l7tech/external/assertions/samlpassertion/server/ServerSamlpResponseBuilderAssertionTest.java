@@ -60,7 +60,6 @@ import java.util.List;
  *
  * @author darmstrong
  */
-
 public class ServerSamlpResponseBuilderAssertionTest {
 
     private Unmarshaller v1Unmarshaller;
@@ -149,7 +148,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
     @BugNumber(9056)
     @Test
     public void testSaml_2_0_validateAllProfileRules() throws Exception{
-        v2EvaluateAllProfileRules(true);
+        v2EvaluateAllProfileRules(true, true);
     }
 
     /**
@@ -161,7 +160,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
     public void testSaml_2_0_NoValidationWhenSystemPropertyIsOff() throws Exception{
         try {
             SyspropUtil.setProperty( "com.l7tech.external.assertions.samlpassertion.validateSSOProfile", "false" );
-            v2EvaluateAllProfileRules(false);
+            v2EvaluateAllProfileRules(false, true);
         } finally {
             SyspropUtil.clearProperty( "com.l7tech.external.assertions.samlpassertion.validateSSOProfile" );
         }
@@ -174,7 +173,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
     @BugNumber(9056)
     @Test
     public void testSaml_1_1_validateAllProfileRules() throws Exception{
-        v1EvaluateAllProfileRules(true);
+        v1EvaluateAllProfileRules(true, true);
     }
 
     /**
@@ -186,17 +185,36 @@ public class ServerSamlpResponseBuilderAssertionTest {
     public void testSaml_1_1_NoValidationWhenSystemPropertyIsOff() throws Exception{
         try {
             SyspropUtil.setProperty( "com.l7tech.external.assertions.samlpassertion.validateSSOProfile", "false" );
-            v1EvaluateAllProfileRules(false);
+            v1EvaluateAllProfileRules(false, true);
         } finally {
             SyspropUtil.clearProperty( "com.l7tech.external.assertions.samlpassertion.validateSSOProfile" );
         }
     }
 
-    private void v1EvaluateAllProfileRules(final boolean expectThrow) throws Exception{
+    /**
+     * Tests configuration not to validate Web SSO rules.
+     */
+    @BugNumber(10960)
+    @Test
+    public void testSaml_2_0_NoValidationWhenAssertionNotConfiguredToValidate() throws Exception{
+        v2EvaluateAllProfileRules(false, false);
+    }
+
+    /**
+     * Tests configuration not to validate Web SSO rules.
+     */
+    @BugNumber(10960)
+    @Test
+    public void testSaml_1_0_NoValidationWhenAssertionNotConfiguredToValidate() throws Exception{
+        v1EvaluateAllProfileRules(false, false);
+    }
+
+    private void v1EvaluateAllProfileRules(final boolean expectThrow, boolean validateWebSsoRules) throws Exception{
         final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
         final PolicyEnforcementContext context = getContext();
         SamlpResponseBuilderAssertion assertion = new SamlpResponseBuilderAssertion();
         assertion.setSamlVersion(SamlVersion.SAML1_1);
+        assertion.setValidateWebSsoRules(validateWebSsoRules);
 
         assertion.setResponseAssertions("${samlToken}");
         context.setVariable("samlToken", new Message(XmlUtil.parse(v1_1AttributeAssertion)));
@@ -234,13 +252,14 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
     }
 
-    private void v2EvaluateAllProfileRules(final boolean expectThrow) throws Exception{
+    private void v2EvaluateAllProfileRules(final boolean expectThrow, boolean validateWebSsoRules) throws Exception{
         final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
         final PolicyEnforcementContext context = getContext();
         SamlpResponseBuilderAssertion assertion = new SamlpResponseBuilderAssertion();
         assertion.setTarget(TargetMessageType.OTHER);
         assertion.setOtherTargetMessageVariable("outputVar");
         assertion.setSamlVersion(SamlVersion.SAML2);
+        assertion.setValidateWebSsoRules(validateWebSsoRules);
 
         //If Success an Assertion must be supplied
         boolean correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);

@@ -140,6 +140,14 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPri
         this.addIssuer = addIssuer;
     }
 
+    public boolean isValidateWebSsoRules() {
+        return validateWebSsoRules;
+    }
+
+    public void setValidateWebSsoRules(boolean validateWebSsoRules) {
+        this.validateWebSsoRules = validateWebSsoRules;
+    }
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
@@ -150,8 +158,7 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPri
         meta.put(SHORT_NAME, baseName);
         meta.put(DESCRIPTION, "Build a SAML Protocol Response with optional signing. This assertion is compatible with the Web Browser SSO Profile of SAML.");
         meta.put(PALETTE_FOLDERS, new String[]{"xmlSecurity"});
-        // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
-        meta.put(POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(POLICY_ADVICE_CLASSNAME, "com.l7tech.external.assertions.samlpassertion.console.SamlpResponseBuilderAssertionAdvice");
         meta.put(PROPERTIES_ACTION_NAME, "SAML Protocol Response Properties");
 
         meta.put(POLICY_NODE_NAME_FACTORY, new AssertionNodeNameFactory<SamlpResponseBuilderAssertion>(){
@@ -220,6 +227,8 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPri
     private String responseAssertions;
     private String encryptedAssertions;
     private String responseExtensions;
+
+    private boolean validateWebSsoRules = true;// backwards compatibility - true by default for pre Escolar assertions
 
     private static final String META_INITIALIZED = SamlpResponseBuilderAssertion.class.getName() + ".metadataInitialized";
 }
