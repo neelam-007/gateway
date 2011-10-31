@@ -3,7 +3,9 @@ package com.l7tech.external.assertions.uuidgenerator.console;
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.util.IntegerOrContextVariableValidationRule;
+import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.uuidgenerator.UUIDGeneratorAssertion;
+import com.l7tech.gateway.common.admin.AdminLogin;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.policy.assertion.AssertionMetadata;
 
@@ -23,9 +25,11 @@ public class UUIDGeneratorPropertiesDialog extends AssertionPropertiesOkCancelSu
     private TargetVariablePanel targetVariablePanel;
     private InputValidator validators;
     private IntegerOrContextVariableValidationRule integerOrContextVariableRule;
+    private final AdminLogin adminLogin;
 
     public UUIDGeneratorPropertiesDialog(Frame parent, UUIDGeneratorAssertion assertion) {
         super(assertion.getClass(), parent, (String) assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME), true);
+        adminLogin = Registry.getDefault().getAdminLogin();
         initComponents();
     }
 
@@ -36,7 +40,7 @@ public class UUIDGeneratorPropertiesDialog extends AssertionPropertiesOkCancelSu
         targetVariablePanel = new TargetVariablePanel();
         targetVariablePanel.addChangeListener(new ChangeListener() {
             @Override
-            public void stateChanged(ChangeEvent e) {
+            public void stateChanged(final ChangeEvent e) {
                 getOkButton().setEnabled(targetVariablePanel.isEntryValid());
             }
         });
@@ -45,7 +49,7 @@ public class UUIDGeneratorPropertiesDialog extends AssertionPropertiesOkCancelSu
 
         validators = new InputValidator(this, getTitle());
         validators.constrainTextFieldToBeNonEmpty(AMOUNT, amountTextField, null);
-        integerOrContextVariableRule = new IntegerOrContextVariableValidationRule(UUIDGeneratorAssertion.MINIMUM_AMOUNT, Integer.MAX_VALUE, AMOUNT);
+        integerOrContextVariableRule = new IntegerOrContextVariableValidationRule(UUIDGeneratorAssertion.MINIMUM_AMOUNT, adminLogin.getGatewayConfiguration().getUuidAmountMax(), AMOUNT);
         validators.addRule(integerOrContextVariableRule);
     }
 
@@ -54,14 +58,14 @@ public class UUIDGeneratorPropertiesDialog extends AssertionPropertiesOkCancelSu
         return contentPane;
     }
 
-    public void setData(UUIDGeneratorAssertion assertion) {
+    public void setData(final UUIDGeneratorAssertion assertion) {
         targetVariablePanel.setAssertion(assertion, getPreviousAssertion());
         targetVariablePanel.setVariable(assertion.getTargetVariable());
         amountTextField.setText(assertion.getAmount());
     }
 
-    public UUIDGeneratorAssertion getData(UUIDGeneratorAssertion assertion) {
-        String amount = amountTextField.getText();
+    public UUIDGeneratorAssertion getData(final UUIDGeneratorAssertion assertion) {
+        final String amount = amountTextField.getText();
         integerOrContextVariableRule.setTextToValidate((amount == null)? null : amount.trim());
         final String error = validators.validate();
         if(error != null){

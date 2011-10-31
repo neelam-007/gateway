@@ -5,6 +5,7 @@
  */
 package com.l7tech.gateway.common.admin;
 
+import com.l7tech.gateway.common.GatewayConfiguration;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.objectmodel.InvalidPasswordException;
@@ -143,4 +144,12 @@ public interface AdminLogin {
      */
     @Administrative(licensed=false)
     void ping();
+
+    /**
+     * Retrieve the GatewayConfiguration which contains public configuration values.
+     *
+     * @return the GatewayConfiguration.
+     */
+    @Administrative
+    GatewayConfiguration getGatewayConfiguration();
 }

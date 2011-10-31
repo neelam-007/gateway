@@ -36,6 +36,7 @@
         <dependency name="layer7-gateway-management" rev="latest.integration" conf="core"/>
         <dependency name="layer7-gateway-reporting" rev="latest.integration" conf="core"/>
         <dependency name="layer7-gateway-sca-common" rev="latest.integration" conf="core"/>
+        <dependency name="layer7-test" rev="latest.integration" conf="test"/>
 
         <!-- Dependencies -->
         <dependency org="com.l7tech.lib" name="layer7-sun-jaxws" rev="1.0" conf="core"/> <!-- should be before CXF in classpath -->

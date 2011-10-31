@@ -6,6 +6,7 @@ package com.l7tech.server.admin;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.gateway.common.GatewayConfiguration;
 import com.l7tech.gateway.common.admin.AdminLogin;
 import com.l7tech.gateway.common.admin.AdminLoginResult;
 import com.l7tech.gateway.common.audit.LogonEvent;
@@ -292,6 +293,14 @@ public class AdminLoginImpl
     @Override
     public byte[] getServerCertificate( final String username ) {
         return new byte[0];
+    }
+
+    @Override
+    public GatewayConfiguration getGatewayConfiguration(){
+        final GatewayConfiguration configuration = new GatewayConfiguration();
+        final int max = config.getIntProperty(ServerConfigParams.PARAM_UUID_AMOUNT_MAX, 100);
+        configuration.setUuidAmountMax(max);
+        return configuration;
     }
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
