@@ -15,6 +15,7 @@ public class LookupTrustedCertificateAssertionPropertiesDialog extends Assertion
     private JTextField trustedCertificateNameTextField;
     private JCheckBox allowMultipleCertificatesCheckBox;
     private TargetVariablePanel targetVariablePanel;
+    private JLabel variableNameLabel;
 
     public LookupTrustedCertificateAssertionPropertiesDialog( final Window owner,
                                                               final LookupTrustedCertificateAssertion assertion) {
@@ -51,6 +52,7 @@ public class LookupTrustedCertificateAssertionPropertiesDialog extends Assertion
 
         trustedCertificateNameTextField.getDocument().addDocumentListener( buttonStateUpdateListener );
         targetVariablePanel.addChangeListener(buttonStateUpdateListener);
+        variableNameLabel.setLabelFor( targetVariablePanel );
 
         return mainPanel;
     }

@@ -6,10 +6,9 @@ import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
-import static com.l7tech.policy.assertion.AssertionMetadata.DESCRIPTION;
-import static com.l7tech.policy.assertion.AssertionMetadata.PALETTE_FOLDERS;
-import static com.l7tech.policy.assertion.AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME;
-import static com.l7tech.policy.assertion.AssertionMetadata.SHORT_NAME;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
+import com.l7tech.policy.assertion.AssertionNodeNameFactory;
+import com.l7tech.policy.assertion.AssertionUtils;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.SetsVariables;
 import com.l7tech.policy.assertion.UsesVariables;
@@ -74,7 +73,24 @@ public class LookupTrustedCertificateAssertion extends Assertion implements Sets
         meta.put(SHORT_NAME, "Look Up Trusted Certificate");
         meta.put(DESCRIPTION, "Look up trusted certificates for later use in policy");
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.LookupTrustedCertificateAssertionPropertiesDialog");
+        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/lookup16.gif");
         meta.put(PALETTE_FOLDERS, new String[] { "xmlSecurity" });
+        meta.put(POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(POLICY_NODE_NAME_FACTORY, new AssertionNodeNameFactory<LookupTrustedCertificateAssertion>(){
+            @Override
+            public String getAssertionName( final LookupTrustedCertificateAssertion assertion, final boolean decorate ) {
+                final String baseName = assertion.meta().get(SHORT_NAME);
+                if(!decorate) return baseName;
+
+                final StringBuilder builder = new StringBuilder();
+                builder.append(baseName);
+                if ( assertion.getTrustedCertificateName() != null ) {
+                    builder.append(", Name=");
+                    builder.append( assertion.getTrustedCertificateName() );
+                }
+                return AssertionUtils.decorateName( assertion, builder );
+            }
+        });
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
