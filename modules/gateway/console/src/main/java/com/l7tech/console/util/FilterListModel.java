@@ -173,6 +173,20 @@ public class FilterListModel<E> extends AbstractListModel {
         }
     }
 
+    /**
+     * Returns the filtered index of the specified index.
+     *
+     * @param index  the original index of the element
+     * @return the index after the filter is applied
+     */
+    public int getFilteredIndex(int index){
+         if (filter == null) {
+            return index;
+        } else {
+            return filteredIndices.indexOf(index);
+        }
+    }
+
     private Filter<E> filter;
     private ListModel model;
     private List<Integer> filteredIndices; // sorted list of filtered indices

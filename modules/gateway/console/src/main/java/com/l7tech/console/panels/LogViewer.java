@@ -12,10 +12,7 @@ import com.l7tech.gui.util.SwingWorker;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -192,7 +189,18 @@ public class LogViewer extends JFrame {
             new PauseListenerAdapter() {
                 @Override
                 public void textEntryPaused(JTextComponent component, long msecs) {
+                    Object[]selectedContent = logList.getSelectedValues();
+
                     filterLogs();
+
+                    int[] indices = new int[selectedContent.length];
+                    int i = 0;
+                    for(Object content : selectedContent){
+                        indices[i++]=filteredListModel.getFilteredIndex(cachedData.indexOf(content));
+                    }
+                    logList.setSelectedIndices(indices);
+                    logList.ensureIndexIsVisible(logList.getSelectedIndex());
+
                 }
             },
             700);
@@ -541,7 +549,7 @@ public class LogViewer extends JFrame {
         cancelButton.setEnabled(tail<0); // not enable cancel button when in 'tail' mode
         final LogWorker infoWorker = new LogWorker(
                 Registry.getDefault().getLogSinkAdmin(),
-                tail, isAutoRefresh);
+                tail, isAutoRefresh,logList.getSelectedValues());
 
         workerReference.set(infoWorker);
         infoWorker.start();
@@ -583,6 +591,8 @@ public class LogViewer extends JFrame {
         private final int tail;
         private List<String> list;
         private final boolean isAutoRefresh;
+        private Object[] selectedContent;
+        private boolean hasReload = false;
 
         /**
          * Create a new log worker.
@@ -590,12 +600,13 @@ public class LogViewer extends JFrame {
          * @param logSinkAdmin  An object reference to the <CODE>LogSinkAdmin</CODE>service
          *
          */
-        public LogWorker(final LogSinkAdmin logSinkAdmin, int tail, boolean isAutoRefresh) {
+        public LogWorker(final LogSinkAdmin logSinkAdmin, int tail, boolean isAutoRefresh, Object[] selectedContent) {
             this.logSinkAdmin = logSinkAdmin;
             this.cancelled = new AtomicBoolean(false);
             this.tail = tail;
             this.isAutoRefresh = isAutoRefresh;
             list = new ArrayList<String>(cachedData);
+            this.selectedContent   = selectedContent;
         }
 
         /**
@@ -639,6 +650,7 @@ public class LogViewer extends JFrame {
                             list.clear();
                             startByte = 0;
                             reloadFile = logData.getNextReadPosition() == -1L && logData.getData().length==0;
+                            hasReload = hasReload || reloadFile;
                         }
                         int size = 0;
                         while (!eof && !cancelled.get()) {
@@ -721,6 +733,24 @@ public class LogViewer extends JFrame {
                 cancelButton.setEnabled(false);
             }
             updateLastUpdatedText();
+
+            if(!hasReload && selectedContent.length>0){
+                updateSelectedText();
+            }else{
+                logList.clearSelection();
+            }
+        }
+
+        private void updateSelectedText() {
+            int[] indices = new int[selectedContent.length];
+            int i = 0;
+            for(Object content : selectedContent){
+                indices[i++]=filteredListModel.getFilteredIndex(cachedData.indexOf(content));
+            }
+
+            logList.setSelectedIndices(indices);
+            logList.ensureIndexIsVisible(logList.getSelectedIndex());
+
         }
 
         private void updateLastUpdatedText() {
