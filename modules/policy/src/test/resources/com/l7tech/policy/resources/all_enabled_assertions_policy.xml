@@ -186,5 +186,6 @@
         <L7p:ContentType/>
         <L7p:AddHeader/>
         <L7p:ResolveService/>
+        <L7p:LookupTrustedCertificate/>
     </wsp:OneOrMore>
 </wsp:Policy>

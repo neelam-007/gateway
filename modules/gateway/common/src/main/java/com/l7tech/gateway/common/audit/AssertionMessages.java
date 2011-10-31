@@ -1024,5 +1024,10 @@ public class AssertionMessages extends Messages {
     public static final M SSH_CREDENTIAL_AUTH_USER = m(9432, Level.FINE, "Found credentials for user ''{0}''.");
     public static final M SSH_ROUTING_PASSTHRU_NO_USERNAME = m(9433, Level.WARNING, "No user name found for passing through to SSH server");
 
+    public static final Messages.M CERT_LOOKUP_NAME = m(9460, Level.FINE, "Looking up certificate for name ''{0}''.");
+    public static final Messages.M CERT_LOOKUP_NOTFOUND = m(9461, Level.WARNING, "Certificate not found for name ''{0}''." );
+    public static final Messages.M CERT_LOOKUP_MULTIPLE = m(9462, Level.WARNING, "Multiple certificates found for name ''{0}''." );
+    public static final Messages.M CERT_LOOKUP_ERROR = m(9463, Level.WARNING, "Error looking up certificate ''{0}''." );
+
     // Highest ID reserved for AssertionMessages = 99999
 }
