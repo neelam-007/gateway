@@ -172,7 +172,7 @@ public class ClassUtils {
         return new Unary<T,Object>() {
             @Override
             public T call( final Object o ) {
-                return clazz.cast( o );
+                return clazz.isInstance( o ) ? clazz.cast( o ) : null;
             }
         };
     }
