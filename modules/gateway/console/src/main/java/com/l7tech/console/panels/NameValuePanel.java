@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.gui.widgets.ValidatedPanel;
 import com.l7tech.util.NameValuePair;
+import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -52,6 +53,17 @@ public class NameValuePanel extends ValidatedPanel<NameValuePair> {
     protected void doUpdateModel() {
         model.setKey(nameField.getText());
         model.setValue(valueField.getText());
+    }
+
+    @Override
+    protected String getSyntaxError(final NameValuePair model) {
+        String error = null;
+        // must validate values set on TextFields, not the NameValuePair
+        // because NameValuePair is not updated until OK is clicked
+        if(StringUtils.isBlank(nameField.getText()) || StringUtils.isBlank(valueField.getText())){
+            error = "Both name and value must be specified.";
+        }
+        return error;
     }
 
     public void setNameLabelText(String label) {
