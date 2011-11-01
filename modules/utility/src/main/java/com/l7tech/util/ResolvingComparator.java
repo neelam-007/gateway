@@ -1,5 +1,8 @@
 package com.l7tech.util;
 
+import com.l7tech.util.Functions.Unary;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Comparator;
 
 /**
@@ -13,7 +16,35 @@ public class ResolvingComparator<KT,RT extends Comparable<RT>> implements Compar
 
     //- PUBLIC
 
-    public ResolvingComparator(Resolver<KT, RT> resolver, boolean reverse) {
+    /**
+     * Construct a resolving comparator from a Unary function.
+     *
+     * @param unary The function to call
+     * @param reverse True to reverse the comparison (and hence the order)
+     * @param <KT> The key type
+     * @param <RT> The (comparable) value type
+     * @return The new resolving comparator
+     */
+    @NotNull
+    public static <KT,RT extends Comparable<RT>> ResolvingComparator<KT,RT> fromUnary(
+            @NotNull final Unary<RT,KT> unary,
+            final boolean reverse ) {
+        return new ResolvingComparator<KT, RT>( new Resolver<KT, RT>(){
+            @Override
+            public RT resolve( final KT key ) {
+                return unary.call( key );
+            }
+        }, reverse );
+    }
+
+    /**
+     * Create a resolving comparator that uses the given resolver.
+     *
+     * @param resolver The resolver to use
+     * @param reverse True to reverse the comparison (and hence the order)
+     */
+    public ResolvingComparator( @NotNull final Resolver<KT, RT> resolver,
+                                final boolean reverse) {
         this.resolver = resolver;
         this.reverse = reverse;
     }
