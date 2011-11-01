@@ -46,7 +46,7 @@ public class RmiErrorHandler implements ErrorHandler {
             throwable instanceof AccessControlException ||
             (throwable instanceof NoClassDefFoundError && TopComponents.getInstance().isApplet())) {
             // prevent error cascade during repaint if it's a network problem
-            e.getLogger().log(Level.WARNING, "Disconnected from gateway, notifiying workspace.");
+            e.getLogger().log(Level.WARNING, "Disconnected from gateway, notifying workspace.");
             TopComponents.getInstance().setConnectionLost(true);
             TopComponents.getInstance().disconnectFromGateway();
         }
@@ -74,14 +74,14 @@ public class RmiErrorHandler implements ErrorHandler {
             e.getLogger().log(Level.SEVERE, message, ExceptionUtils.getDebugException(t));
             if (rex instanceof NoSuchObjectException ||
                 throwable instanceof AccessControlException) {
-                message = "Gateway restarted or session expired, please login again.";
+                message = "Gateway Inactivity Session Timeout has been reached.";
                 t = null;
             }
             else if ((rex instanceof ConnectException) ||
                      (raex != null && (throwable instanceof SocketException || throwable instanceof SocketTimeoutException)) ||
                     (throwable instanceof NoClassDefFoundError && TopComponents.getInstance().isApplet()) ||
                     (throwable instanceof TimeoutRuntimeException)) {
-                message = "Gateway unavailable (Network issue or server stopped).";
+                message = "Connection to the Gateway has been broken.";
                 t = null;
             }
             topParent.repaint();
