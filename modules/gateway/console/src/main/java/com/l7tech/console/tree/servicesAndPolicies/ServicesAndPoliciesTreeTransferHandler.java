@@ -461,6 +461,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                 @Override
                 public void run() {
                     if (dlg.wasOKed()) {
+                        Registry.getDefault().getSecurityProvider().refreshPermissionCache();
                         PublishedService savedService = dlg.getService();
                         final AbstractTreeNode serviceNode = TreeNodeFactory.asTreeNode(new ServiceHeader(savedService), RootNode.getComparator());
                         DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
