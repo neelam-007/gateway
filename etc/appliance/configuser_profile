@@ -1016,7 +1016,7 @@ doLogSubMenu() {
         echo ""
         count=0;
         while [ ! -z "${LOG_MENU_ITEMS[count]:+1}" ] ; do
-            LOG_NAME="${LOG_MENU_ITEMS[count]}"
+            local LOG_NAME="${LOG_MENU_ITEMS[count]}"
             count=$(( $count + 1 ))
             echo " ${count}) View ${LOG_NAME} logs"
         done
@@ -1035,8 +1035,8 @@ doLogSubMenu() {
                     count=0;
                     LOG_MENU_DISPLAYED=""
                     while [ ! -z "${LOG_MENU_ITEMS[count]:+1}" ] ; do
-                        LOG_NAME="${LOG_MENU_ITEMS[count]}"
-                        LOG_PATTERN="${LOG_FILE_PATTERNS[count]}"
+                        local LOG_NAME="${LOG_MENU_ITEMS[count]}"
+                        local LOG_PATTERN="${LOG_FILE_PATTERNS[count]}"
                         count=$(( $count + 1 ))
                         if [ "${choice}" == "${count}" ] ; then
                             LOG_MENU_DISPLAYED="true"
@@ -1054,6 +1054,7 @@ doLogSubMenu() {
 
 doLogViewMenu() {
     isMenuValid="n"
+    local LOG_PATTERN="${2}"
     LOG_FILES=( $(${VIEWLOG} list "${LOG_PATTERN}" || true) )
     if [ -z "${LOG_FILES:+1}" ] ; then
         isMenuValid="y"
@@ -1115,7 +1116,7 @@ doLogSelection() {
         echo ""
         count=1;
         while [ ! -z "${LOG_FILES[count]:+1}" ] ; do
-            LOG_NAME="${LOG_FILES[count]##*/}"
+            local LOG_NAME="${LOG_FILES[count]##*/}"
             echo " ${count}) View ${LOG_NAME} log"
             count=$(( $count + 1 ))
         done
@@ -1193,11 +1194,10 @@ do
                     clear;;
                 3)  clear;
                     (${GETROOT});
-					if [ "X$?" == "X1" ]; then
- 	 	                confirmedMessage "";
- 	 	            fi
- 	 	            #clear;;
- 	 	            ;;
+                    if [ "X$?" == "X1" ]; then
+                        confirmedMessage "";
+                    fi
+                    ;;
                 4)  clear;
                     (${CONFWIZARD} -changeMasterPassphrase);
                     confirmedMessage ""
