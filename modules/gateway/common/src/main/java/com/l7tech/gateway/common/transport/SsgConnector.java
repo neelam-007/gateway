@@ -129,6 +129,9 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
         @XmlEnumValue( "Policy download service" )
         POLICYDISCO,
 
+        @XmlEnumValue( "Gateway status and ping service" )
+        PING,
+
         /** The WS-Trust security token service. */
         @XmlEnumValue( "WS-Trust security token service" )
         STS,
@@ -154,11 +157,10 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
         HPSOAM,
 
         /**
-         * All built-in servlets other than the first three.  This includes POLICYDISCO, STS, PASSWD etc.
-         * This does NOT include the PingServlet since the PingServlet has its own access rules.
+         * All built-in servlets other than the first three.  This includes POLICYDISCO, PING, STS, PASSWD etc.
          */
         @XmlEnumValue( "Built-in services" )
-        OTHER_SERVLETS(POLICYDISCO, STS, CSRHANDLER, PASSWD, WSDLPROXY, SNMPQUERY, HPSOAM),
+        OTHER_SERVLETS(POLICYDISCO, PING, STS, CSRHANDLER, PASSWD, WSDLPROXY, SNMPQUERY, HPSOAM),
 
         /** Process Controller Service Node API*/
         @XmlEnumValue( "Node Control" )

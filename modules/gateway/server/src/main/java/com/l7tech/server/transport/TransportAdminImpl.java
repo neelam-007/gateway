@@ -2,6 +2,7 @@ package com.l7tech.server.transport;
 
 import com.l7tech.gateway.common.transport.ResolutionConfiguration;
 import com.l7tech.message.Message;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.Config;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.PortRanges;
@@ -204,6 +205,6 @@ public class TransportAdminImpl implements TransportAdmin {
 
     @Override
     public boolean isSnmpQueryEnabled() {
-        return config.getBooleanProperty("builtinService.snmpQuery.enabled", true);
+        return config.getBooleanProperty(ServerConfigParams.PARAM_SNMP_QUERY_SERVICE_ENABLED, true);
     }
 }

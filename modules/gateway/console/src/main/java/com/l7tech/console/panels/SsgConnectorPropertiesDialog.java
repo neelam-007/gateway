@@ -42,7 +42,6 @@ import static com.l7tech.gateway.common.transport.SsgConnector.*;
 public class SsgConnectorPropertiesDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(SsgConnectorPropertiesDialog.class.getName());
     private static final boolean ENABLE_FTPS_TLS12 = ConfigFactory.getBooleanProperty( "com.l7tech.console.connector.allowFtpsTls12", false );
-    private static final String CLUSTER_PROP_PARAM_SNMP_QUERY_SERVICE = "builtinService.snmpQuery.enabled";
     private static final String DIALOG_TITLE = "Listen Port Properties";
     private static final int TAB_SSL = 1;
     private static final int TAB_HTTP = 2;
@@ -119,6 +118,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private ServiceComboBox serviceNameComboBox;
     private JButton collapseOrExpandButton;
     private JCheckBox policyDiscoveryCheckBox;
+    private JCheckBox pingServiceCheckBox;
     private JCheckBox stsCheckBox;
     private JCheckBox csrHandlerCheckBox;
     private JCheckBox passwordChangeCheckBox;
@@ -339,7 +339,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                     collapseOrExpandButton.setIcon(collapseIcon);
                     builtinServicesPanel.setVisible(true);
                 }
-                resizeDialogAsNeeded();
+                DialogDisplayer.pack(SsgConnectorPropertiesDialog.this);
             }
         });
 
@@ -351,10 +351,11 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                 if (allBuiltinServicesChecked) {
                     builtinServicesPanel.setVisible(true);
                     collapseOrExpandButton.setIcon(collapseIcon);
-                    resizeDialogAsNeeded();
+                    DialogDisplayer.pack(SsgConnectorPropertiesDialog.this);
                 }
 
                 policyDiscoveryCheckBox.setSelected(allBuiltinServicesChecked);
+                pingServiceCheckBox.setSelected(allBuiltinServicesChecked);
                 stsCheckBox.setSelected(allBuiltinServicesChecked);
                 if (httpsEnabled()) { // If the protocol is HTTPS
                     csrHandlerCheckBox.setSelected(allBuiltinServicesChecked);
@@ -364,7 +365,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                 if (snmpQueryServicePropertyEnabled()) snmpQueryCheckBox.setSelected(allBuiltinServicesChecked);
 
                 saveAllBuiltinServiceCheckboxStates();
-                resizeDialogAsNeeded();
+                DialogDisplayer.pack(SsgConnectorPropertiesDialog.this);
             }
         });
 
@@ -374,7 +375,9 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                 final boolean isHttps = httpsEnabled();
 
                 // If one of individual built-in services is not selected, then de-select the "Built-in services" checkbox.
-                if (!policyDiscoveryCheckBox.isSelected() || !stsCheckBox.isSelected() ||
+                if (!policyDiscoveryCheckBox.isSelected() ||
+                    !pingServiceCheckBox.isSelected() ||
+                    !stsCheckBox.isSelected() ||
                     (isHttps && !csrHandlerCheckBox.isSelected()) ||
                     (isHttps && !passwordChangeCheckBox.isSelected()) ||
                     !wsdlProxyCheckBox.isSelected() ||
@@ -385,10 +388,11 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                 }
 
                 saveAllBuiltinServiceCheckboxStates();
-                resizeDialogAsNeeded();
+                DialogDisplayer.pack(SsgConnectorPropertiesDialog.this);
             }
         };
         policyDiscoveryCheckBox.addActionListener(cleanCheckboxListener);
+        pingServiceCheckBox.addActionListener(cleanCheckboxListener);
         stsCheckBox.addActionListener(cleanCheckboxListener);
         csrHandlerCheckBox.addActionListener(cleanCheckboxListener);
         passwordChangeCheckBox.addActionListener(cleanCheckboxListener);
@@ -482,6 +486,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                 if (disabled ||
                     cbEnableBuiltinServices.isSelected() ||
                     policyDiscoveryCheckBox.isSelected() ||
+                    pingServiceCheckBox.isSelected() ||
                     stsCheckBox.isSelected() ||
                     (httpsEnabled() && csrHandlerCheckBox.isSelected()) ||
                     (httpsEnabled() && passwordChangeCheckBox.isSelected()) ||
@@ -575,22 +580,6 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             nameField.requestFocusInWindow();
     }
 
-    /**
-     * Resize the properties dialog if the width and/or height shrink or expanded.
-     */
-    private void resizeDialogAsNeeded() {
-        JRootPane rootPane = contentPane.getRootPane();
-        Container rootParent = rootPane.getParent();
-        if (rootParent instanceof JInternalFrame) {
-            JInternalFrame jif = (JInternalFrame)rootParent;
-            Dimension newSize = contentPane.getPreferredSize();
-            Dimension fullSize = new Dimension(10 + (int)newSize.getWidth(), 32 + (int)newSize.getHeight());
-            jif.setSize(fullSize);
-        } else {
-            pack();
-        }
-    }
-
     private CustomTransportPropertiesPanel getCustomPropertiesPanel(TransportDescriptor descriptor, String customPropertiesPanelClassname) {
         if (customPropertiesPanelClassname == null)
             return null;
@@ -600,7 +589,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         if (panel != null)
             return panel;
 
-        resizeDialogAsNeeded();
+        DialogDisplayer.pack(this);
 
         String owningAssertionClassname = descriptor.getModularAssertionClassname();
         ClassLoader panelLoader = owningAssertionClassname == null ? Thread.currentThread().getContextClassLoader()
@@ -961,6 +950,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         // Otherwise, go thru each checkbox and set the endpoint if the checkbox is selected.
         if (httpsEnabled() && snmpQueryServicePropertyEnabled() &&
             policyDiscoveryCheckBox.isSelected() &&
+            pingServiceCheckBox.isSelected() &&
             stsCheckBox.isSelected() &&
             csrHandlerCheckBox.isSelected() &&
             passwordChangeCheckBox.isSelected() &&
@@ -970,6 +960,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             endpoints.add(SsgConnector.Endpoint.OTHER_SERVLETS.name());
         } else {
             if (policyDiscoveryCheckBox.isSelected()) endpoints.add(Endpoint.POLICYDISCO.name());
+            if (pingServiceCheckBox.isSelected()) endpoints.add(Endpoint.PING.name());
             if (stsCheckBox.isSelected()) endpoints.add(Endpoint.STS.name());
             if (httpsEnabled() && csrHandlerCheckBox.isSelected()) endpoints.add(Endpoint.CSRHANDLER.name());
             if (httpsEnabled() && passwordChangeCheckBox.isSelected()) endpoints.add(Endpoint.PASSWD.name());
@@ -998,6 +989,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         boolean pcapi = false;
         boolean builtin = false;
         boolean policyDisco = false;
+        boolean ping = false;
         boolean sts = false;
         boolean csrHandler = false;
         boolean passwordChange = false;
@@ -1023,6 +1015,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                     case PC_NODE_API:       pcapi     = true;   break;
                     case OTHER_SERVLETS: builtin   = true;   break;
                     case POLICYDISCO: policyDisco = true; break;
+                    case PING: ping = true; break;
                     case STS: sts = true; break;
                     case CSRHANDLER: csrHandler = true; break;
                     case PASSWD: passwordChange = true; break;
@@ -1044,6 +1037,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         // For all individual built-in services
         policyDiscoveryCheckBox.setSelected(policyDisco);
+        pingServiceCheckBox.setSelected(ping);
         stsCheckBox.setSelected(sts);
         csrHandlerCheckBox.setSelected(csrHandler);
         passwordChangeCheckBox.setSelected(passwordChange);
@@ -1081,6 +1075,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         // If one of individual built-in services is enabled, then the "Built-in services" checkbox should be enabled..
         if (policyDiscoveryCheckBox.isEnabled() ||
+            pingServiceCheckBox.isEnabled() ||
             stsCheckBox.isEnabled() ||
             (httpsEnabled && csrHandlerCheckBox.isEnabled()) ||
             (httpsEnabled && passwordChangeCheckBox.isEnabled()) ||
@@ -1096,6 +1091,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         // If all individual built-in services are not selected, then collapse the built-in service list
         if (!policyDiscoveryCheckBox.isSelected() &&
+            !pingServiceCheckBox.isSelected() &&
             !stsCheckBox.isSelected() &&
             (!httpsEnabled || !csrHandlerCheckBox.isSelected()) &&
             (!httpsEnabled || !passwordChangeCheckBox.isSelected()) &&
@@ -1112,6 +1108,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         // If the "Built-in services" checkbox is checked, then all individual built-in service checkboxes should be checked.
         if (cbEnableBuiltinServices.isEnabled() && cbEnableBuiltinServices.isSelected()) {
             policyDiscoveryCheckBox.setSelected(true);
+            pingServiceCheckBox.setSelected(true);
             stsCheckBox.setSelected(true);
             if (httpsEnabled) {
                 csrHandlerCheckBox.setEnabled(true);
@@ -1131,7 +1128,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         }
 
         saveAllBuiltinServiceCheckboxStates();
-        resizeDialogAsNeeded();
+        DialogDisplayer.pack(this);
     }
 
     private void saveAllBuiltinServiceCheckboxStates() {
@@ -1169,6 +1166,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             builtinServicesMap = new HashMap<Endpoint, JCheckBox>();
             builtinServicesMap.put(Endpoint.OTHER_SERVLETS, cbEnableBuiltinServices);
             builtinServicesMap.put(Endpoint.POLICYDISCO, policyDiscoveryCheckBox);
+            builtinServicesMap.put(Endpoint.PING, pingServiceCheckBox);
             builtinServicesMap.put(Endpoint.STS, stsCheckBox);
             builtinServicesMap.put(Endpoint.CSRHANDLER, csrHandlerCheckBox);
             builtinServicesMap.put(Endpoint.PASSWD, passwordChangeCheckBox);

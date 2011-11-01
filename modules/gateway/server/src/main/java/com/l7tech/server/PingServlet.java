@@ -80,7 +80,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
 
     @Override
     protected SsgConnector.Endpoint getRequiredEndpoint() {
-        return null; // PingServlet should work on every connector, regardless of enabled endpoints (Bug #5079)
+        return SsgConnector.Endpoint.PING;  // Ping service added into "Granularity in enabling built in services" (bug 11055)
     }
 
     /** Overrided to indicate we allow HTTP Basic without SSL. */
