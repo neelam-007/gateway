@@ -27,7 +27,8 @@ import com.l7tech.server.policy.PolicyMetadata;
 import static com.l7tech.server.policy.variable.BuildVersionContext.BUILD_VERSION_CONTEXT;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.trace.TracePolicyEnforcementContext;
-import com.l7tech.util.ExceptionUtils;
+import static com.l7tech.util.ExceptionUtils.getDebugException;
+import static com.l7tech.util.ExceptionUtils.getMessage;
 import com.l7tech.util.Pair;
 import com.l7tech.util.TextUtils;
 
@@ -432,13 +433,13 @@ public class ServerVariables {
                     } catch (WSDLException e) {
                         logger.log(
                                 Level.WARNING,
-                                "Could not access default routing URL for service '" + context.getService().displayName() + "', due to '" + ExceptionUtils.getMessage(e) + "'.",
-                                ExceptionUtils.getDebugException(e));
+                                "Could not access default routing URL for service '" + context.getService().displayName() + "', due to '" + getMessage( e ) + "'.",
+                                getDebugException( e ));
                     } catch (MalformedURLException e) {
                         logger.log(
                                 Level.WARNING,
-                                "Could not access default routing URL for service '" + context.getService().displayName() + "', due to '" + ExceptionUtils.getMessage(e) + "'.",
-                                ExceptionUtils.getDebugException(e));
+                                "Could not access default routing URL for service '" + context.getService().displayName() + "', due to '" + getMessage( e ) + "'.",
+                                getDebugException( e ));
                     }
 
                     return routingUrl;
@@ -537,7 +538,7 @@ public class ServerVariables {
                             }
                         });
                     } catch (TimeVariableUtils.TimeFormatException e) {
-                        logger.warning("Variable name '" + name + "' uses an invalid date format: " + ExceptionUtils.getMessage(e.getCause()));
+                        logger.warning("Variable name '" + name + "' uses an invalid date format: " + getMessage( e.getCause() ));
                         return null;
                     }
                 }
@@ -553,7 +554,7 @@ public class ServerVariables {
                             }
                         });
                     } catch (TimeVariableUtils.TimeFormatException e) {
-                        logger.warning("Variable name '" + name + "' uses an invalid date format: " + ExceptionUtils.getMessage(e.getCause()));
+                        logger.warning("Variable name '" + name + "' uses an invalid date format: " + getMessage( e.getCause() ));
                         return null;
                     }
                 }
@@ -682,6 +683,7 @@ public class ServerVariables {
         return tk == null ? null : tk.getRemoteAddress();
     }
 
+    @SuppressWarnings({ "UnusedParameters" })
     private static String getRequestProtocolId(Message request) {
         // We shouldn't get here if it's HTTP (it should have had a client IP), and we currently know of no
         // equivalent identifier for other supported protocols, so just return null for now
@@ -845,25 +847,25 @@ public class ServerVariables {
         @Override
         public Object get(String name, PolicyEnforcementContext context) {
             try {
-                if (context.getService() == null) {
-                    logger.info("Can't get operation name because there is no resolved service attached to this context");
+                if ( context.getService() == null ) {
+                    logger.fine( "Can't get operation name because there is no resolved service attached to this context" );
                     return null;
                 }
-                if (context.getService().isSoap()) {
+                if ( context.getService().isSoap() ) {
                     final Pair<Binding, Operation> pair = context.getBindingAndOperation();
                     if (pair != null) {
                         Operation operation = pair.right;
                         return operation.getName();
                     }
-                    return null;
                 } else {
-                    logger.info("Can't get operation name for a non-SOAP service");
-                    return null;
+                    logger.fine( "Can't get operation name for a non-SOAP service" );
                 }
-            } catch (Exception e) {
-                logger.log(Level.WARNING, "Couldn't get operation name", e);
-                return null;
+            } catch ( WSDLException e ) {
+                logger.log(Level.WARNING, "Couldn't get operation name, invalid WSDL for service "+context.getService().displayName()+": " + getMessage( e ), getDebugException( e ));
+            } catch ( Exception e ) {
+                logger.log(Level.WARNING, "Couldn't get operation name: " + getMessage( e ), getDebugException( e ));
             }
+            return null;
         }
     }
 
@@ -1159,7 +1161,7 @@ public class ServerVariables {
             // to allow debugging we will log it if debug exceptions are enabled and the log level for this class is elevated
             final String msg = "Password-only context variable expression referred to secure password that could not be decrypted";
             //noinspection ThrowableResultOfMethodCallIgnored
-            logger.log(Level.FINER, msg, ExceptionUtils.getDebugException(e));
+            logger.log(Level.FINER, msg, getDebugException( e ));
             throw new FindException(msg);
         }
     }
@@ -1216,7 +1218,7 @@ public class ServerVariables {
             // to allow debugging we will log it if debug exceptions are enabled and the log level for this class is elevated
             final String msg = "Password-only context variable expression referred to secure password that could not be decrypted";
             //noinspection ThrowableResultOfMethodCallIgnored
-            logger.log(Level.FINER, msg, ExceptionUtils.getDebugException(e));
+            logger.log(Level.FINER, msg, getDebugException( e ));
             throw new FindException(msg);
         }
     }
