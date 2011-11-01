@@ -1,8 +1,13 @@
-#!/bin/sh
+#!/bin/bash
 . /opt/SecureSpan/Appliance/libexec/envclean
+
+# Debug level so off by default
+LOGGER="logger -p local5.debug -t ssg"
 
 if [ "$(whoami)" = "layer7" ] || [ "$(whoami)" = "root" ] ; then
     exec sudo -u gateway $0 "$@"
 else
-    exec /opt/SecureSpan/Gateway/runtime/bin/gateway.sh "${@}"
+    # Output is via a "cat" in an implicit FIFO so it will
+    # overflow rather than block if output is not consumed
+    /opt/SecureSpan/Gateway/runtime/bin/gateway.sh "${@}" 2>&1 | ${LOGGER} > >(cat)
 fi
