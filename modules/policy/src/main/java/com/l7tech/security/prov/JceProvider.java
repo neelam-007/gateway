@@ -2,10 +2,7 @@ package com.l7tech.security.prov;
 
 import com.l7tech.security.cert.BouncyCastleCertUtils;
 import com.l7tech.security.prov.bc.BouncyCastleRsaSignerEngine;
-import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.JceUtil;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.*;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
@@ -108,7 +105,7 @@ public abstract class JceProvider {
 
     private static class Holder {
         private static final String ENGINE_NAME = getEngineClassname();
-        private static final JceProvider engine = createEngine();
+        private static final JceProvider engine = createInitialEngine();
 
         private static String getEngineClassname() {
             String overrideEngineName = ConfigFactory.getProperty( ENGINE_OVERRIDE_PROPERTY, null );
@@ -122,7 +119,21 @@ public abstract class JceProvider {
             return mapEngine( ConfigFactory.getProperty( ENGINE_PROPERTY, DEFAULT_ENGINE ) );
         }
 
-        private static JceProvider createEngine() {
+        private static JceProvider createInitialEngine() {
+            final JceProvider jceProvider = doCreateEngine();
+
+            // Use preferred SecureRandom in place of default SecureRandom
+            RandomUtil.setFactory(new Functions.Nullary<SecureRandom>() {
+                @Override
+                public SecureRandom call() {
+                    return jceProvider.newSecureRandom();
+                }
+            });
+
+            return jceProvider;
+        }
+
+        private static JceProvider doCreateEngine() {
             try {
                 return (JceProvider) Class.forName(ENGINE_NAME).getConstructors()[0].newInstance();
             } catch (Throwable t) {
@@ -375,6 +386,9 @@ public abstract class JceProvider {
      * <p/>
      * The algorithm may differ from the system-default SecureRandom in cases where the highest-preference Security Provider
      * offers an unsuitable default and cannot be configured differently (Bug #8885).
+     * <p/>
+     * All callers of this method will share a single synchronized SecureRandom instance.
+     * To access a reusable pool of SecureRandom instances, see {@link RandomUtil}.
      *
      * @return a SecureRandom implementation.  Never null.
      */

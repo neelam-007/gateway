@@ -279,6 +279,10 @@ public class XencUtil {
                 }
             };
 
+            Node parent = encryptedDataEl.getParentNode();
+            parent.insertBefore(importedNode, encryptedDataEl);
+            parent.removeChild(encryptedDataEl);
+
             if (errorCallback != null) {
                 errorCallback.call(err);
             }

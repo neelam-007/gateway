@@ -216,7 +216,9 @@ public class XencUtilTest {
         dc.setAlgorithmFactory(new XencUtil.EncryptionEngineAlgorithmCollectingAlgorithmFactory(flexKey, new ArrayList<String>()));
         dc.setEncryptedType(encdata, EncryptedData.ELEMENT, null, null);
         XencUtil.decryptAndReplaceUsingKey(encdata, flexKey, dc, null);
-        assertTrue("Second decryption attempt, with incorrect ciphertext, should fail silently", !plaintext.equals(XmlUtil.nodeToString(doc.getDocumentElement(), false)));
+        String decrypted = XmlUtil.nodeToString(doc.getDocumentElement(), false);
+        assertTrue(decrypted.contains("DecryptionFault"));
+        assertTrue("Second decryption attempt, with incorrect ciphertext, should fail silently", !plaintext.equals(decrypted));
 
         // Decrypt with original ciphertext again
         doc = XmlUtil.stringAsDocument(xml);
@@ -239,6 +241,8 @@ public class XencUtilTest {
         dc.setEncryptedType(encdata, EncryptedData.ELEMENT, null, null);
         XencUtil.decryptAndReplaceUsingKey(encdata, flexKey, dc, null);
         assertTrue("Fourth decryption attempt, with incorrect ciphertext, should fail silently", !plaintext.equals(XmlUtil.nodeToString(doc.getDocumentElement(), false)));
+        decrypted = XmlUtil.nodeToString(doc.getDocumentElement(), false);
+        assertTrue(decrypted.contains("DecryptionFault"));
 
         // Decrypt with original ciphertext again
         doc = XmlUtil.stringAsDocument(xml);
@@ -261,6 +265,8 @@ public class XencUtilTest {
         dc.setEncryptedType(encdata, EncryptedData.ELEMENT, null, null);
         XencUtil.decryptAndReplaceUsingKey(encdata, flexKey, dc, null);
         assertTrue("Sixth decryption attempt, with incorrect ciphertext, should fail silently", !plaintext.equals(XmlUtil.nodeToString(doc.getDocumentElement(), false)));
+        decrypted = XmlUtil.nodeToString(doc.getDocumentElement(), false);
+        assertTrue(decrypted.contains("DecryptionFault"));
 
         // Decrypt with original ciphertext again
         doc = XmlUtil.stringAsDocument(xml);
@@ -272,6 +278,8 @@ public class XencUtilTest {
         XencUtil.decryptAndReplaceUsingKey(encdata, flexKey, dc, null);
         assertTrue("Seventh decryption attempt, with actual ciphertext, should now FAIL before it is even attempted, due to the key blacklist",
                 !plaintext.equals(XmlUtil.nodeToString(doc.getDocumentElement(), false)));
+        decrypted = XmlUtil.nodeToString(doc.getDocumentElement(), false);
+        assertTrue(decrypted.contains("DecryptionFault"));
     }
 
 }

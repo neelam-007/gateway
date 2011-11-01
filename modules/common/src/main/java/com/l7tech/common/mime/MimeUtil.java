@@ -1,10 +1,7 @@
 package com.l7tech.common.mime;
 
 import com.l7tech.common.io.IOExceptionThrowingOutputStream;
-import com.l7tech.util.CausedIOException;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.IOUtils;
+import com.l7tech.util.*;
 
 import javax.mail.Header;
 import javax.mail.MessagingException;
@@ -15,7 +12,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.SecureRandom;
 import java.util.Enumeration;
 
 /**
@@ -36,7 +32,6 @@ public class MimeUtil {
     public static final String MULTIPART_TYPE = "type";
     public static final String MULTIPART_BOUNDARY = "boundary";
     public static final String MULTIPART_BOUNDARY_PREFIX = "--";
-    private static final SecureRandom random = new SecureRandom();
     public static final byte[] CRLF = "\r\n".getBytes();
 
     public static final String TRANSFER_ENCODING_BASE64 = "base64";
@@ -88,16 +83,16 @@ public class MimeUtil {
     public static byte[] randomBoundary() {
         StringBuffer bb = new StringBuffer();
 
-        final int numDashes = random.nextInt(5);
+        final int numDashes = RandomUtil.nextInt(5);
         for (int i = 0; i < numDashes; i++) {
             bb.append('-');
         }
 
         bb.append("=_");
 
-        final int numPrintables = random.nextInt(38) + 3;
+        final int numPrintables = RandomUtil.nextInt(38) + 3;
         for (int i = 0; i < numPrintables; i++) {
-            byte printable = (byte)(random.nextInt(127-32)+32);
+            byte printable = (byte)(RandomUtil.nextInt(127-32)+32);
             if (HeaderTokenizer.MIME.indexOf(printable) < 0)
                 bb.append(new String(new byte[] { printable }));
         }

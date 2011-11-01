@@ -1,10 +1,12 @@
 package com.l7tech.security.xml;
 
+import com.l7tech.util.Background;
 import com.l7tech.util.ConfigFactory;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -21,14 +23,33 @@ import java.util.logging.Logger;
 public class XencKeyBlacklist {
     private static final Logger logger = Logger.getLogger(XencKeyBlacklist.class.getName());
 
+    public static final boolean DEFAULT_ENABLEMENT = true;
+    public static final boolean DEFAULT_FAIL_WHEN_FULL = false;
+    public static final int DEFAULT_MAX_AGE_SEC = 7 * 86400;
+    public static final int DEFAULT_FAILURE_DELAY_MILLIS = 50;
+    public static final int DEFAULT_MAX_FAILURES = 5;
+    public static final int DEFAULT_CAPACITY = 50000;
+    public static final long DEFAULT_CLEANER_PERIOD_MILLIS = 451723L;
+
     public static final String PROP_XENC_KEY_BLACKLIST_ENABLED = "com.l7tech.security.xml.xenc.decryptionKeyBlacklist.enabled";
+    public static final String PROP_XENC_KEY_BLACKLIST_FAIL_WHEN_FULL = "com.l7tech.security.xml.xenc.decryptionKeyBlacklist.failWhenFull";
     public static final String PROP_XENC_KEY_BLACKLIST_CAPACITY = "com.l7tech.security.xml.xenc.decryptionKeyBlacklist.capacity";
     public static final String PROP_XENC_KEY_BLACKLIST_MAX_FAILURES = "com.l7tech.security.xml.xenc.decryptionKeyBlacklist.maxFailures";
     public static final String PROP_XENC_KEY_BLACKLIST_MAX_AGE = "com.l7tech.security.xml.xenc.decryptionKeyBlacklist.maxAgeSec";
     public static final String PROP_XENC_KEY_BLACKLIST_FAILURE_DELAY = "com.l7tech.security.xml.xenc.decryptionKeyBlacklist.failureDelayMillis";
+    public static final String PROP_XENC_KEY_BLACKLIST_CLEANER_PERIOD = "com.l7tech.security.xml.xenc.decryptionKeyBlacklist.cleanerPeriodMillis";
 
     private static final ConcurrentMap<KeyHolder, FailedKey> failedKeys = new ConcurrentHashMap<KeyHolder, FailedKey>();
     private static final AtomicBoolean blacklistFull = new AtomicBoolean(false);
+
+    static {
+        Background.scheduleRepeated(new TimerTask() {
+            @Override
+            public void run() {
+                expireOldKeys();
+            }
+        }, getCleanerPeriodMillis(), getCleanerPeriodMillis());
+    }
 
     /**
      * Check if the specified secret key bytes are blacklisted due to too many unsuccessful decryption attempts.
@@ -41,9 +62,9 @@ public class XencKeyBlacklist {
             return false;
 
         if (blacklistFull.get()) {
+            maybeExpireOldKeys();
             // Ouch -- have to disallow any encryption from even being attempted, lest an attacker flood us with random keys to disable this mechanism
-            expireOldKeys();
-            if (blacklistFull.get())
+            if (blacklistFull.get() && isFailWhenFull())
                 return true;
         }
 
@@ -72,7 +93,7 @@ public class XencKeyBlacklist {
             } else {
                 // New key added -- check blacklist size
                 if (failedKeys.size() > getBlacklistSize()) {
-                    expireOldKeys();
+                    maybeExpireOldKeys();
                 }
             }
         } else {
@@ -80,17 +101,11 @@ public class XencKeyBlacklist {
         }
     }
 
-    private static void expireOldKeys() {
+    private static void maybeExpireOldKeys() {
         synchronized (failedKeys) {
-            long oldestToKeep = System.currentTimeMillis() - (1000L * getBlacklistMaxAgeSec());
 
             if (failedKeys.size() > getBlacklistSize()) {
-                Iterator<FailedKey> it = failedKeys.values().iterator();
-                while (it.hasNext()) {
-                    FailedKey fk = it.next();
-                    if (fk.lastUsedMillis.get() < oldestToKeep)
-                        it.remove();
-                }
+                expireOldKeys();
             }
             if (failedKeys.size() > getBlacklistSize()) {
                 // We have no choice -- we have to stop permitting further decryption attempts
@@ -101,9 +116,19 @@ public class XencKeyBlacklist {
                 }
             } else {
                 if (blacklistFull.getAndSet(false)) {
-                    logger.log(Level.WARNING, "Decryption key blacklist is no longer full.  Decryption attempst reenabled.");
+                    logger.log(Level.WARNING, "Decryption key blacklist is no longer full.  Decryption attempts reenabled.");
                 }
             }
+        }
+    }
+
+    private static void expireOldKeys() {
+        final long oldestToKeep = System.currentTimeMillis() - getBlacklistMaxAgeMillis();
+        Iterator<FailedKey> it = failedKeys.values().iterator();
+        while (it.hasNext()) {
+            FailedKey fk = it.next();
+            if (fk.lastUsedMillis.get() < oldestToKeep)
+                it.remove();
         }
     }
 
@@ -153,7 +178,7 @@ public class XencKeyBlacklist {
                 serializedDelay();
             }
             
-            return fc;
+            return failureCount.get();
         }
 
         private synchronized void serializedDelay() {
@@ -171,23 +196,30 @@ public class XencKeyBlacklist {
     }
     
     private static boolean isBlacklistEnabled() {
-        return ConfigFactory.getBooleanProperty(PROP_XENC_KEY_BLACKLIST_ENABLED, true);
+        return ConfigFactory.getBooleanProperty(PROP_XENC_KEY_BLACKLIST_ENABLED, DEFAULT_ENABLEMENT);
+    }
+
+    private static boolean isFailWhenFull() {
+        return ConfigFactory.getBooleanProperty(PROP_XENC_KEY_BLACKLIST_FAIL_WHEN_FULL, DEFAULT_FAIL_WHEN_FULL);
     }
 
     private static int getBlacklistSize() {
-        return ConfigFactory.getIntProperty(PROP_XENC_KEY_BLACKLIST_CAPACITY, 50000);
+        return ConfigFactory.getIntProperty(PROP_XENC_KEY_BLACKLIST_CAPACITY, DEFAULT_CAPACITY);
     }
 
     private static int getMaximumAcceptableFailureCount() {
-        return ConfigFactory.getIntProperty(PROP_XENC_KEY_BLACKLIST_MAX_FAILURES, 5);
+        return ConfigFactory.getIntProperty(PROP_XENC_KEY_BLACKLIST_MAX_FAILURES, DEFAULT_MAX_FAILURES);
     }
     
-    private static int getBlacklistMaxAgeSec() {
-        return ConfigFactory.getIntProperty(PROP_XENC_KEY_BLACKLIST_MAX_AGE, 7 * 86400);
+    private static long getBlacklistMaxAgeMillis() {
+        return ConfigFactory.getTimeUnitProperty(PROP_XENC_KEY_BLACKLIST_MAX_AGE, DEFAULT_MAX_AGE_SEC);
     }
 
-    private static int getFailureDelayMillis() {
-        return ConfigFactory.getIntProperty(PROP_XENC_KEY_BLACKLIST_FAILURE_DELAY, 50);
+    private static long getFailureDelayMillis() {
+        return ConfigFactory.getTimeUnitProperty(PROP_XENC_KEY_BLACKLIST_FAILURE_DELAY, DEFAULT_FAILURE_DELAY_MILLIS);
     }
 
+    private static long getCleanerPeriodMillis() {
+        return ConfigFactory.getTimeUnitProperty(PROP_XENC_KEY_BLACKLIST_CLEANER_PERIOD, DEFAULT_CLEANER_PERIOD_MILLIS);
+    }
 }

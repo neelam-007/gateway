@@ -9,10 +9,7 @@ import com.l7tech.security.xml.DsigUtil;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertionUtils;
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.FullQName;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.Pair;
+import com.l7tech.util.*;
 import com.l7tech.xml.InvalidXpathException;
 import org.springframework.beans.factory.BeanFactory;
 import org.w3c.dom.Document;
@@ -20,14 +17,12 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import javax.xml.XMLConstants;
-import java.security.SecureRandom;
 import java.security.SignatureException;
 import java.security.UnrecoverableKeyException;
 import java.text.ParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 /**
  * Server implementation of signing arbitrary XML elements in a non-SOAP message.
@@ -35,7 +30,6 @@ import java.util.Random;
 public class ServerNonSoapSignElementAssertion extends ServerNonSoapSecurityAssertion<NonSoapSignElementAssertion> {
     private final BeanFactory beanFactory;
 
-    private static final Random random = new SecureRandom();
     private final FullQName attrname;
     private final boolean enableImplicitEmptyUriDocRef;
 
@@ -128,7 +122,7 @@ public class ServerNonSoapSignElementAssertion extends ServerNonSoapSecurityAsse
             return new Pair<Integer, String>(count, id);
 
         byte[] randbytes = new byte[16];
-        random.nextBytes(randbytes);
+        RandomUtil.nextBytes(randbytes);
         id = element.getLocalName() + "-" + count++ + "-" + HexUtils.hexDump(randbytes);
 
         if (ns == null) {
