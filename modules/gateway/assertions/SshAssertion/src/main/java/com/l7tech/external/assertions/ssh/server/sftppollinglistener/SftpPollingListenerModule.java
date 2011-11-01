@@ -182,7 +182,11 @@ public class SftpPollingListenerModule extends LifecycleBean implements Property
         for (long oid : eiEvent.getEntityIds()) {
             try {
                 ClusterProperty cp = clusterPropertyManager.findByPrimaryKey(oid);
-                if (cp != null && cp.getOid() == sftpPollingResourceManager.getConfigPropertyOid()) {
+
+                // call update when cluster property oid matches
+                // or call update when in the process of deleting last poll listener in the list
+                if ((cp != null && cp.getOid() == sftpPollingResourceManager.getConfigPropertyOid())
+                        || (cp == null && sftpPollingResourceManager.getConfigPropertyOid() > 0)) {
                     resourceUpdated();
                 }
             } catch (FindException e) {

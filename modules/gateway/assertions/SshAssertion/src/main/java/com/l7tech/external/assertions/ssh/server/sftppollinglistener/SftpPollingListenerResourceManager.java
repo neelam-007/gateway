@@ -56,8 +56,7 @@ public class SftpPollingListenerResourceManager {
     }
 
     public long getConfigPropertyOid() {
-
-        if (sftpPollingConfigPropertyOid == null) {
+        if (sftpPollingConfigPropertyOid == null || sftpPollingConfigPropertyOid == -1L) {
             long theOid = -1L;
             try {
                 ClusterProperty key = cpManager.findByUniqueName(SftpPollingListenerConstants.SFTP_POLLING_CONFIGURATION_UI_PROPERTY);
@@ -66,10 +65,10 @@ public class SftpPollingListenerResourceManager {
 
             } catch (FindException fe) {
                 logger.log(Level.WARNING, ExceptionUtils.getMessage(fe), ExceptionUtils.getDebugException(fe));
+            }
 
-            } finally {
-                if (theOid == -1L)
-                    logger.log(Level.WARNING, "required property [{0}] not found in ClusterPropertyManager, " +
+            if (theOid == -1L && listenerResources != null && listenerResources.size() > 0) {
+                logger.log(Level.WARNING, "Required property [{0}] not found in ClusterPropertyManager, " +
                             "this may cause problems in the SFTP polling listener sub-system",
                             SftpPollingListenerConstants.SFTP_POLLING_CONFIGURATION_UI_PROPERTY);
             }
@@ -165,6 +164,11 @@ public class SftpPollingListenerResourceManager {
     {
         ArrayList<SftpPollingListenerResource> newConfigurations = new ArrayList<SftpPollingListenerResource>();
         updateFromClusterProperty(newConfigurations);
+
+        // in process of deleting last poll listener resource, reset oid
+        if (newConfigurations.size() == 0 && listenerResources.size() == 1) {
+            sftpPollingConfigPropertyOid = null;
+        }
 
         List<UpdateStatus> diffListenerConfigs = new ArrayList<UpdateStatus>();
         // only update the listeners array if the listener configurations did change
