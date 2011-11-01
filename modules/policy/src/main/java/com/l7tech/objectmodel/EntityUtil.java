@@ -127,4 +127,18 @@ public class EntityUtil {
             }
         };
     }
+
+    /**
+     * First class function for name access.
+     *
+     * @return A function to access the name of a named entity
+     */
+    public static Unary<String,NamedEntity> name() {
+        return new Unary<String,NamedEntity>(){
+            @Override
+            public String call( final NamedEntity entity ) {
+                return entity == null ?  null : entity.getName();
+            }
+        };
+    }
 }

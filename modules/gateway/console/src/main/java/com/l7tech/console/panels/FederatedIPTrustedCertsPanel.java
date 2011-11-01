@@ -8,38 +8,44 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.event.WizardListener;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
-import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gui.util.Utilities;
+import static com.l7tech.gui.util.Utilities.listModel;
+import com.l7tech.gui.widgets.WrappingLabel;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
+import static com.l7tech.objectmodel.EntityUtil.name;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.security.cert.TrustedCert;
+import static com.l7tech.util.ArrayUtils.box;
+import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.CollectionUtils.MapBuilder;
+import com.l7tech.util.Functions.Binary;
+import static com.l7tech.util.Functions.map;
+import static com.l7tech.util.Functions.reduce;
+import static java.util.Collections.sort;
 
 import javax.swing.*;
 import java.awt.*;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.ResourceBundle;
-import java.util.logging.Logger;
+import java.util.*;
+import java.util.logging.Level;
 
 /**
  * This class provides the step panel for the Federated Identity Provider dialog.
  */
 public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
-    private static final Logger logger = Logger.getLogger(FederatedIPTrustedCertsPanel.class.getName());
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.FederatedIdentityProviderDialog");
 
+    private long oid;
     private JPanel mainPanel;
     private JPanel certPanel;
     private boolean x509CertSelected = false;
     private boolean limitationsAccepted = true;
 
     private TrustedCertsPanel trustedCertsPanel = null;
-    private X509Certificate ssgcert = null;
     private Collection<FederatedIdentityProviderConfig> fedIdProvConfigs = new ArrayList<FederatedIdentityProviderConfig>();
 
     /**
@@ -87,20 +93,11 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
 
         FederatedIdentityProviderConfig iProviderConfig = (FederatedIdentityProviderConfig) settings;
 
+        oid = iProviderConfig.getOid();
         x509CertSelected = iProviderConfig.isX509Supported();
         trustedCertsPanel.setCertificateOids( iProviderConfig.getTrustedCertOids() );
     }
 
-
-    /**
-     * Retrieve the object reference of the Trusted Cert Admin service
-     *
-     * @return TrustedCertAdmin  - The object reference.
-     * @throws RuntimeException if the object reference of the Trusted Cert Admin service is not found.
-     */
-    private TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
-        return Registry.getDefault().getTrustedCertManager();
-    }
 
     /**
      * Store the values of all fields on the panel to the wizard object which is a used for
@@ -135,17 +132,33 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
     @Override
     public boolean onNextButton() {
         final JDialog owner = getOwner();
-        if (trustedCertsPanel.getCertificateOids().length == 0) {
-            FederatedIPWarningDialog d = new FederatedIPWarningDialog(owner, createMsgPanel());
+
+        Collection<TrustedCert> certsInUse;
+        if ( trustedCertsPanel.getCertificateOids().length == 0 ) {
+            final FederatedIPWarningDialog d = new FederatedIPWarningDialog(owner, createMsgPanel());
             d.pack();
             d.addWizardListener(wizardListener);
             Utilities.centerOnScreen(d);
             d.setVisible(true);
-        } else {
-            return true;
+            return limitationsAccepted;
+        } else if ( !(certsInUse = getCertsTrustedByAnotherProvider()).isEmpty() ) {
+            final java.util.List<String> displayCertificates = map( certsInUse, name() );
+            sort( displayCertificates, String.CASE_INSENSITIVE_ORDER );
+            final JPanel panel = new JPanel();
+            panel.setLayout( new BorderLayout( 4, 4 ) );
+            panel.add( new WrappingLabel(resources.getString( "error-trusted-certificate-in-use" )), BorderLayout.NORTH );
+            panel.add( new JScrollPane(new JList( listModel( displayCertificates ) )), BorderLayout.CENTER );
+            panel.setPreferredSize( new Dimension( 420, 160 ) );
+            int result = JOptionPane.showConfirmDialog( this,
+                    panel,
+                    resources.getString( "trusted-certificate-in-use-warning-dialog.title" ),
+                    JOptionPane.OK_CANCEL_OPTION,
+                    JOptionPane.WARNING_MESSAGE );
+
+            return result == JOptionPane.OK_OPTION;
         }
 
-        return limitationsAccepted;
+        return true;
     }
 
     /**
@@ -193,26 +206,6 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
      */
     private final TrustedCertsPanel.TrustedCertListener certListener = new TrustedCertsPanel.TrustedCertListenerSupport(this) {
         @Override
-        public boolean addTrustedCert( final TrustedCert tc ) {
-            boolean addOk = true;
-            try {
-                if (isCertTrustedByAnotherProvider(tc)) {
-                    addOk = false;
-                    JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
-                            "This cert cannot be used as a trusted cert in this " +
-                                    "federated identity\nprovider because it is already " +
-                                    "trusted by another identity provider.",
-                            "Cannot add this cert",
-                            JOptionPane.ERROR_MESSAGE);
-                }
-            } catch (FindException e1) {
-                throw new RuntimeException(e1); //  not expected to happen
-            }
-
-            return addOk;
-        }
-
-        @Override
         public void notifyError() {
             JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
                     resources.getString("cert.find.error"),
@@ -222,29 +215,45 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
 
     };
 
-    private boolean isCertTrustedByAnotherProvider(TrustedCert trustedCert) throws FindException {
-        if (fedIdProvConfigs.isEmpty()) {
-            IdentityAdmin idadmin = Registry.getDefault().getIdentityAdmin();
-            EntityHeader[] providerHeaders = idadmin.findAllIdentityProviderConfig();
-            for (EntityHeader providerHeader : providerHeaders) {
-                IdentityProviderConfig config = idadmin.findIdentityProviderConfigByID(providerHeader.getOid());
-                if (config instanceof FederatedIdentityProviderConfig) {
-                    fedIdProvConfigs.add((FederatedIdentityProviderConfig) config);
+    private Collection<TrustedCert> getCertsTrustedByAnotherProvider() {
+        try {
+            if ( fedIdProvConfigs.isEmpty() ) {
+                final IdentityAdmin idadmin = Registry.getDefault().getIdentityAdmin();
+                final EntityHeader[] providerHeaders = idadmin.findAllIdentityProviderConfig();
+                for ( final EntityHeader providerHeader : providerHeaders) {
+                    final IdentityProviderConfig config = idadmin.findIdentityProviderConfigByID(providerHeader.getOid());
+                    if ( config.getOid() != oid && config instanceof FederatedIdentityProviderConfig ) {
+                        fedIdProvConfigs.add((FederatedIdentityProviderConfig) config);
+                    }
                 }
             }
-        }
-        java.util.List<TrustedCert> removedCerts = trustedCertsPanel.getRemovedCerts();
-        for (FederatedIdentityProviderConfig cfg : fedIdProvConfigs) {
-            long[] trustedCertOIDs = cfg.getTrustedCertOids();
-            for (long trustedCertOID : trustedCertOIDs) {
-                if (trustedCertOID == trustedCert.getOid()) {
-                    // Check if this cert is a removed cert in trustedCertsPanel.
-                    if (! removedCerts.contains(trustedCert))
-                        return true;
+
+            final Map<Long,TrustedCert> trustedCertificates = reduce(
+                    trustedCertsPanel.getTrustedCertificates(),
+                    CollectionUtils.<Long,TrustedCert>mapBuilder(),
+                    new Binary<MapBuilder<Long, TrustedCert>,MapBuilder<Long,TrustedCert>,TrustedCert>(){
+                @Override
+                public MapBuilder<Long, TrustedCert> call( final MapBuilder<Long, TrustedCert> builder, final TrustedCert trustedCert ) {
+                    builder.put( trustedCert.getOid(), trustedCert );
+                    return builder;
                 }
-            }
+            } ).map();
+
+            final Set<Long> usedTrustedCertificateOids = reduce( fedIdProvConfigs, new HashSet<Long>(), new Binary<Set<Long>,Set<Long>,FederatedIdentityProviderConfig>(){
+                @Override
+                public Set<Long> call( final Set<Long> oids, final FederatedIdentityProviderConfig config ) {
+                    oids.addAll( CollectionUtils.list( box( config.getTrustedCertOids() ) ) );
+                    return oids;
+                }
+            } );
+
+            trustedCertificates.keySet().retainAll( usedTrustedCertificateOids );
+            return trustedCertificates.values();
+        } catch ( FindException e ) {
+            ErrorManager.getDefault().notify( Level.WARNING, e, "Error checking trusted certificate use" );
         }
-        return false;
+
+        return Collections.emptyList();
     }
 
     private WizardListener wizardListener = new WizardAdapter() {

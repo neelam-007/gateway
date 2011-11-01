@@ -12,6 +12,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.CertificateInfo;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.ArrayUtils;
+import static com.l7tech.util.CollectionUtils.toList;
 import com.l7tech.util.Resolver;
 import com.l7tech.util.ResolvingComparator;
 
@@ -120,6 +121,15 @@ public class TrustedCertsPanel extends JPanel {
      */
     public long[] getCertificateOids() {
         return getTrustedSignerOids( certificates );
+    }
+
+    /**
+     * Get the selected trusted certificates.
+     *
+     * @return The selected certificates
+     */
+    public List<TrustedCert> getTrustedCertificates() {
+        return toList( certificates );
     }
 
     /**
