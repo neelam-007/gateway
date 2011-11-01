@@ -80,8 +80,8 @@ public class CustomizeErrorResponsePropertiesDialog extends AssertionPropertiesO
         };
 
         extraHeadersTableModel = TableUtil.configureTable(extraHeadersTable,
-                TableUtil.column("Name", 10, 100, 999999, Functions.<String, NameValuePair>propertyTransform(NameValuePair.class, "key"), String.class),
-                TableUtil.column("Value", 10, 100, 99999, Functions.<String, NameValuePair>propertyTransform(NameValuePair.class, "value"), String.class));
+                TableUtil.column("Name", 10, 100, 99999, Functions.<String, NameValuePair>propertyTransform(NameValuePair.class, "key"), String.class),
+                TableUtil.column("Value", 10, 100, 999999, Functions.<String, NameValuePair>propertyTransform(NameValuePair.class, "value"), String.class));
         extraHeadersTable.getSelectionModel().addListSelectionListener(stateUpdateListener);
 
         addButton.addActionListener(new ActionListener() {
