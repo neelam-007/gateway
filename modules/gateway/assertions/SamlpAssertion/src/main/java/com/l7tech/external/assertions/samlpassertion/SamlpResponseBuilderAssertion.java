@@ -148,6 +148,14 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPri
         this.validateWebSsoRules = validateWebSsoRules;
     }
 
+    public String getCustomIssuer() {
+        return customIssuer;
+    }
+
+    public void setCustomIssuer(String customIssuer) {
+        this.customIssuer = customIssuer;
+    }
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
@@ -200,7 +208,8 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPri
                         getDestination(),
                         getConsent(),
                         getResponseExtensions(),
-                        getEncryptedAssertions() );
+                        getEncryptedAssertions(),
+                        getCustomIssuer());
                 break;
             case SAML1_1:
                 variablesUsed.addExpressions( getRecipient() );
@@ -229,6 +238,10 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPri
     private String responseExtensions;
 
     private boolean validateWebSsoRules = true;// backwards compatibility - true by default for pre Escolar assertions
+    /**
+     * Allow a custom Issuer value via the assertion. Requires 'addIssuer' to be true.
+     */
+    private String customIssuer;
 
     private static final String META_INITIALIZED = SamlpResponseBuilderAssertion.class.getName() + ".metadataInitialized";
 }

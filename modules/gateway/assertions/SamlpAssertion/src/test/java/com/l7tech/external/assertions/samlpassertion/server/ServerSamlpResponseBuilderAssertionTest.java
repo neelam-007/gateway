@@ -862,6 +862,55 @@ public class ServerSamlpResponseBuilderAssertionTest {
     }
 
     /**
+     * Test Custom Issuer assertion config value is added correctly to the samlp:Response.
+     */
+    @Test
+    @BugNumber(11079)
+    public void testSaml2_0_CustomIssuer() throws Exception {
+        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        SamlpResponseBuilderAssertion assertion = new SamlpResponseBuilderAssertion();
+        assertion.setSignResponse(true);
+        assertion.setTarget(TargetMessageType.OTHER);
+        final String outputVar = "${outputVar}";
+        assertion.setOtherTargetMessageVariable(outputVar);
+
+        assertion.setSamlVersion(SamlVersion.SAML2);
+
+        assertion.setAddIssuer(true);
+        final String issuerVar = "issuerVar";
+        assertion.setCustomIssuer("${" + issuerVar + "}");
+
+        assertion.setSamlStatus(SamlStatus.SAML2_AUTHN_FAILED);
+
+        final String responseId = "Response_" + HexUtils.generateRandomHexId(16);
+        assertion.setResponseId(responseId);
+        final String issueInstant = "2010-08-11T17:13:02Z";
+        //yyyy-MM-ddTHH:mm:ssZ
+        assertion.setIssueInstant(issueInstant);
+
+        final String requestId = "RequestId-dahkcbfkifieemhlmpmhiocldceihfeoeajkdook";
+        assertion.setInResponseTo(requestId);
+
+        ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
+
+        final PolicyEnforcementContext context = getContext();
+        final String customIssuerValue = "Custom Issuer";
+        context.setVariable(issuerVar, customIssuerValue);
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
+
+        final Message output = (Message) context.getVariable(outputVar);
+
+        final JAXBElement<saml.v2.protocol.ResponseType> typeJAXBElement = v2Unmarshaller.unmarshal(output.getXmlKnob().getDocumentReadOnly(), saml.v2.protocol.ResponseType.class);
+        final saml.v2.protocol.ResponseType responseType = typeJAXBElement.getValue();
+
+        final NameIDType nameIDType = responseType.getIssuer();
+        Assert.assertEquals("Invalid custom Issuer value found", customIssuerValue, nameIDType.getValue());
+    }
+
+    /**
      * Tests that the Signature is the first element.
      * @throws Exception
      */
