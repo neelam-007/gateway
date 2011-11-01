@@ -495,4 +495,9 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
     public SftpPollingListenerDialogSettings getConfiguration() {
         return configuration;
     }
+
+    public void selectNameField() {
+        nameField.requestFocus();
+        nameField.selectAll();
+    }
 }

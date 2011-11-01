@@ -32,6 +32,7 @@ public class SftpPollingListenersWindow extends JDialog {
     private JButton modifyButton;
     private JButton removeButton;
     private JButton closeButton;
+    private JButton cloneButton;
 
     public SftpPollingListenersWindow(Frame owner) {
         super(owner, "Manage SFTP Polling Listeners", true);
@@ -66,6 +67,37 @@ public class SftpPollingListenersWindow extends JDialog {
             }
         });
 
+        cloneButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if(listenersTable.getSelectedRow() > -1) {
+                    int viewRow = listenersTable.getSelectedRow();
+                    if(viewRow >= 0) {
+                        int modelRow = listenersTable.convertRowIndexToModel(viewRow);
+                        SftpPollingListenerDialogSettings i = tableModel.getListenerConfigurations().get(modelRow);
+                        if(i != null) {
+                            SftpPollingListenerDialogSettings newListener =  new SftpPollingListenerDialogSettings();
+                            i.copyPropertiesToResource(newListener);
+                            newListener.setName("Copy of "+ newListener.getName());
+
+                            final SftpPollingListenerPropertiesDialog dialog =
+                                new SftpPollingListenerPropertiesDialog(SftpPollingListenersWindow.this, newListener, true);
+                            dialog.selectNameField();
+                            Utilities.centerOnScreen(dialog);
+                            DialogDisplayer.display(dialog, new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (dialog.isConfirmed()) {
+                                        updateListenersList(dialog.getConfiguration());
+                                    }
+                                }
+                            });
+
+                        }
+                    }
+                }
+            }
+        });
         modifyButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -353,5 +385,6 @@ public class SftpPollingListenersWindow extends JDialog {
         boolean enabled = listenersTable.getSelectedRow() >= 0;
         removeButton.setEnabled(enabled);
         modifyButton.setEnabled(enabled);
+        cloneButton.setEnabled(enabled);
     }
 }
