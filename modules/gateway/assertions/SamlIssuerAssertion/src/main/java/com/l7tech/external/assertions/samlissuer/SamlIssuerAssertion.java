@@ -336,11 +336,7 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
             new Java5EnumTypeMapping(NameIdentifierInclusionType.class, "nameIdentifierType"),
             new Java5EnumTypeMapping(KeyInfoInclusionType.class, "subjectConfirmationKeyInfoType"),
-            new Java5EnumSetTypeMapping(EnumSet.class, DecorationType.class, "decorationTypes"),
-            new Java5EnumTypeMapping(SamlAttributeStatement.Attribute.AttributeValueAddBehavior.class, "addBehavior" ),
-            new Java5EnumTypeMapping(SamlAttributeStatement.Attribute.AttributeValueComparison.class, "valueComparison" ),
-            new Java5EnumTypeMapping(SamlAttributeStatement.Attribute.EmptyBehavior.class, "emptyBehavior" ),
-            new Java5EnumTypeMapping(SamlAttributeStatement.Attribute.VariableNotFoundBehavior.class, "variableNotFoundBehavior" )
+            new Java5EnumSetTypeMapping(EnumSet.class, DecorationType.class, "decorationTypes")
         )));
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, SamlIssuerAssertionValidator.class.getName());
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
