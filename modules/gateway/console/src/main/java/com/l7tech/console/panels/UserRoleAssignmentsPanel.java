@@ -52,6 +52,7 @@ public class UserRoleAssignmentsPanel extends JPanel {
             assignmentsModel.add(role.getName());
         }
         rolesList.setListData(assignmentsModel);
+        setEnabled(!assignmentsModel.isEmpty());  // disable for non admin user
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
 

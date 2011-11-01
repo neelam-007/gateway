@@ -245,7 +245,7 @@ public class GenericUserPanel extends UserPanel {
 
         // Add all tabs
         tabbedPane.add(getDetailsPanel(), DETAILS_LABEL);
-        tabbedPane.add(rolesPanel, ROLES_LABEL);
+        tabbedPane.add(rolesPanel, ROLES_LABEL);  tabbedPane.setEnabledAt(1,rolesPanel.isEnabled());
         tabbedPane.add(groupPanel, MEMBERSHIP_LABEL);
         tabbedPane.add(certPanel, CERTIFICATE_LABEL);
         if (config.type().equals(IdentityProviderType.INTERNAL) && sshPanel != null) {
