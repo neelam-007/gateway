@@ -523,6 +523,15 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 routedRequestParams.setGzipEncode( true );
             }
 
+            if ( logger.isLoggable( Level.FINE ) ) {
+                for ( final HttpHeader header : routedRequestParams.getExtraHeaders() ) {
+                    if ( HttpConstants.HEADER_AUTHORIZATION.equalsIgnoreCase(header.getName()) ) {
+                        continue;
+                    }
+                    logger.log( Level.FINE, "HTTP request header added [{0}]=[{1}]", new String[]{header.getName(), header.getFullValue()} );
+                }
+            }
+
             String useHostName = null;
             HttpPassthroughRuleSet ruleSet = assertion.getRequestHeaderRules();
             if(ruleSet!=null && ruleSet.getRules()!=null && ruleSet.getRules().length>0){
@@ -596,6 +605,12 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
             long latencyTimerStart = System.currentTimeMillis();
             routedResponse = routedRequest.getResponse();
+
+            if ( logger.isLoggable( Level.FINE ) ) {
+                for ( final HttpHeader header : routedResponse.getHeaders().toArray() ) {
+                    logger.log( Level.FINE, "HTTP response header [{0}]=[{1}]", new String[]{header.getName(), header.getFullValue()} );
+                }
+            }
 
             status = routedResponse.getStatus();
 
