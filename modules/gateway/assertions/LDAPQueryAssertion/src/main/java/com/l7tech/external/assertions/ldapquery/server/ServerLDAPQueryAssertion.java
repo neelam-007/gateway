@@ -17,6 +17,7 @@ import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.util.ManagedTimerTask;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.HexUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.TimeUnit;
@@ -357,7 +358,11 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
 
         protected String getStringValue( final int index ) throws Exception {
             final Object value = attribute.get( index );
-            return value==null ? null : value.toString();
+            return value==null ?
+                    null :
+                    value instanceof byte[] ?
+                            HexUtils.encodeBase64( (byte[])value, true ) :
+                            value.toString();
         }
     }
 
