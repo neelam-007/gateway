@@ -108,7 +108,7 @@ public class ServerMtomDecodeAssertion extends AbstractMessageTargetableServerAs
         }
 
         if ( outputMessage != null ) {
-            int attachmentMaxSize = Message.getMaxBytes()> Integer.MAX_VALUE ? DEFAULT_ATTACHMENT_MAX : (int)Message.getMaxBytes();
+            int attachmentMaxSize = Message.getMaxBytes()> (long) Integer.MAX_VALUE ? DEFAULT_ATTACHMENT_MAX : (int)Message.getMaxBytes();
             try {
                 XOPUtils.reconstitute( message, outputMessage, assertion.isRemovePackaging(), attachmentMaxSize , stashManagerFactory );
                 status = AssertionStatus.NONE;
@@ -117,7 +117,7 @@ public class ServerMtomDecodeAssertion extends AbstractMessageTargetableServerAs
                 logAndAudit(
                         MTOM_DECODE_ERROR,
                         new String[]{"Error decoding XOP '"+ ExceptionUtils.getMessage(e)+"'"},
-                        e instanceof XOPUtils.XOPException ? e.getCause() : e );
+                        ExceptionUtils.getDebugException(e instanceof XOPUtils.XOPException ? e.getCause() : e) );
             }
         }
         
