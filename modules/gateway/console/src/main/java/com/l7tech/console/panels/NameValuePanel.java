@@ -58,10 +58,10 @@ public class NameValuePanel extends ValidatedPanel<NameValuePair> {
     @Override
     protected String getSyntaxError(final NameValuePair model) {
         String error = null;
-        // must validate values set on TextFields, not the NameValuePair
+        // must validate value set on TextField, not the NameValuePair
         // because NameValuePair is not updated until OK is clicked
-        if(StringUtils.isBlank(nameField.getText()) || StringUtils.isBlank(valueField.getText())){
-            error = "Both name and value must be specified.";
+        if(StringUtils.isBlank(nameField.getText())){
+            error = "Name must be specified.";
         }
         return error;
     }
