@@ -379,8 +379,24 @@ public class ServerJSONSchemaAssertionTest {
         m = p.matcher("<http://irishman:8080/templateschema>;rel=\"describedby1\"");
         Assert.assertFalse("Regex should not match", m.matches());
 
-        m = p.matcher("<http://12.a>;rel=\"describedby\"");
-        Assert.assertFalse("Regex should not match", m.matches());
+        m = p.matcher("<abc>;rel=\"describedby\"");
+        Assert.assertTrue("Regex should match", m.matches());
+
+    }
+
+    @Test
+   public void testNew() throws Exception{
+
+        Pattern pattern = Pattern.compile("<(.*)>\\s*;\\s*rel=\"describedby\"");
+        String blah = "<http://irishman:8080/templateschema> ; rel=\"describedby\"";
+        final Matcher matcher = pattern.matcher(blah);
+        String url="";
+        if(matcher.matches() && matcher.groupCount() > 0){
+            url = matcher.group(1);
+        }
+        System.out.print(url.toCharArray());
+
+        Assert.assertTrue("Bleh", url.equalsIgnoreCase("http://irishman:8080/templateschema"));
 
     }
 

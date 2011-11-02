@@ -29,6 +29,8 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.text.ParseException;
 import java.util.List;
@@ -273,12 +275,12 @@ public class ServerJSONSchemaAssertion extends AbstractServerAssertion<JSONSchem
                 //message may be a request, response or Message variable
                 final MimeKnob mimeKnob = message.getMimeKnob();
                 final ContentTypeHeader typeHeader = mimeKnob.getOuterContentType();
-                String url = null;
+                String urlString = null;
                 if (typeHeader.isJson()) {
-                    url = typeHeader.getParam("profile");
+                    urlString = typeHeader.getParam("profile");
                 }
 
-                if (url == null) {
+                if (urlString == null) {
                     //try link header
                     String linkHeaderValue = null;
                     final String link = "Link";
@@ -296,19 +298,26 @@ public class ServerJSONSchemaAssertion extends AbstractServerAssertion<JSONSchem
                     if(linkHeaderValue != null){
                         final Matcher matcher = pattern.matcher(linkHeaderValue);
                         if(matcher.matches() && matcher.groupCount() > 0){
-                            url = matcher.group(1);                            
+                            urlString = matcher.group(1);
                         }
                     }
                 }
 
+                try{
+                    URL url = new URL(urlString);
+                }
+                catch(MalformedURLException e){
+                    urlString = null;
+                }
+
                 final boolean isFineLoggable = logger.isLoggable(Level.FINE);
-                if(url != null && isFineLoggable){
-                    logger.log(Level.FINE, "URL retrieved from header: " + url);
+                if(urlString != null && isFineLoggable){
+                    logger.log(Level.FINE, "URL retrieved from header: " + urlString);
                 } else if (isFineLoggable){
                     logger.log(Level.FINE, "No URL found in header");
                 }
 
-                return url;
+                return urlString;
             }
         };
     }
@@ -378,7 +387,8 @@ public class ServerJSONSchemaAssertion extends AbstractServerAssertion<JSONSchem
      *
      * The only restriction on the url after http:// is that it is at least 5 characters long
      */
-    static final String linkHeaderPattern = "<([h|H][t|T][t|T][p|P][s|S]?+://.{5,}?)>\\s*;\\s*rel=\"describedby\"";
+    static final String linkHeaderPattern = "<(.*)>\\s*;\\s*rel=\"describedby\"";
+
 
     private static HttpObjectCache<JSONSchema> httpObjectCache = null;
     private static final Logger logger = Logger.getLogger(ServerJSONSchemaAssertion.class.getName());
