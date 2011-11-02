@@ -26,9 +26,14 @@ import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.security.xml.processor.X509BinarySecurityTokenImpl;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
+import com.l7tech.xml.DomElementCursor;
+import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.MessageNotSoapException;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.xml.xpath.DomCompiledXpath;
+import com.l7tech.xml.xpath.XpathExpression;
+import com.l7tech.xml.xpath.XpathResult;
 import junit.framework.Assert;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -37,17 +42,15 @@ import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
 import javax.xml.XMLConstants;
+import javax.xml.soap.SOAPConstants;
+import javax.xml.xpath.XPathExpressionException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.EnumSet;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -268,6 +271,70 @@ public class WssDecoratorTest {
                 assertTrue("Message contains an unexpected Signature", signature || signatureCount==0);
             }
         };
+    }
+
+    private Functions.UnaryVoid<Document> xpathVerifier(final String booleanXpathExpression) {
+        return xpathVerifier(booleanXpathExpression, makeDefaultNsMap());
+    }
+
+    private Functions.UnaryVoid<Document> xpathVerifier(final String booleanXpathExpression, Map<String, String> nsMap) {
+        try {
+            XpathExpression xpath = new XpathExpression(booleanXpathExpression, nsMap);
+            final DomCompiledXpath compiledXpath = new DomCompiledXpath(xpath);
+            return new Functions.UnaryVoid<Document>() {
+                @Override
+                public void call(Document document) {
+                    try {
+                        XpathResult result = compiledXpath.getXpathResult(new DomElementCursor(document, true), null);
+                        assertTrue("XPath expression does not return a boolean result: " + booleanXpathExpression, XpathResult.TYPE_BOOLEAN == result.getType());
+                        assertTrue("XPath expression returned false: " + booleanXpathExpression, result.getBoolean());
+                    } catch (XPathExpressionException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            };
+        } catch (InvalidXpathException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Make a new verifier that invokes one or more child verifiers in sequence.
+     *
+     * @param verifiers verifiers to invoke.  Required.
+     * @return a verifier that runs both verifiers.
+     */
+    @SuppressWarnings("varargs")
+    private Functions.UnaryVoid<Document> chain(final Functions.UnaryVoid<Document>... verifiers) {
+        return new Functions.UnaryVoid<Document>() {
+            @Override
+            public void call(Document document) {
+                for (Functions.UnaryVoid<Document> verifier: verifiers){
+                    verifier.call(document);
+                }
+            }
+        };
+    }
+
+    private static HashMap<String, String> makeDefaultNsMap() {
+        final HashMap<String, String> map = new HashMap<String, String>();
+        map.put("xenc", SoapConstants.XMLENC_NS);
+        map.put("xenc11", SoapConstants.XMLENC11_NS);
+        map.put("dsig", SoapConstants.DIGSIG_URI);
+        map.put("dsig11", SoapConstants.DIGSIG11_URI);
+        map.put("soapenv", SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE);
+        map.put("SOAP-ENV", SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE);
+        map.put("soap", SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE);
+        map.put("soap11", SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE);
+        map.put("soap12", SOAPConstants.URI_NS_SOAP_1_2_ENCODING);
+        map.put("s", SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE);
+        map.put("s11", SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE);
+        map.put("s12", SOAPConstants.URI_NS_SOAP_1_2_ENCODING);
+        return map;
+    }
+
+    private Functions.UnaryVoid<Document> xencAlgVerifier(String algUri) {
+        return xpathVerifier("1=count(//xenc:EncryptionMethod[@Algorithm='" + algUri + "'])");
     }
 
     @Test
@@ -647,6 +714,35 @@ public class WssDecoratorTest {
                                                      new Element[0]);
         testDocument.req.setEncryptionAlgorithm(encryptionAlgorithm);
         return testDocument;
+    }
+
+    @Test
+	public void testTripleDesEncryptionOnly() throws Exception {
+        runTest(getTripleDesEncryptionOnlyTestDocument(), chain(verifier(false, 0, false), xencAlgVerifier(XencUtil.TRIPLE_DES_CBC)));
+    }
+
+    public TestDocument getTripleDesEncryptionOnlyTestDocument() throws Exception {
+        return getEncryptionOnlyTestDocument(XencAlgorithm.TRIPLE_DES_CBC.getXEncName());
+    }
+
+    @Test
+    @BugNumber(11320)
+	public void testAes128GcmEncryptionOnly() throws Exception {
+        runTest(getAes128GcmEncryptionOnlyTestDocument(), chain(verifier(false, 0, false), xencAlgVerifier(XencUtil.AES_128_GCM)));
+    }
+
+    public TestDocument getAes128GcmEncryptionOnlyTestDocument() throws Exception {
+        return getEncryptionOnlyTestDocument(XencAlgorithm.AES_128_GCM.getXEncName());
+    }
+
+    @Test
+    @BugNumber(11320)
+	public void testAes256GcmEncryptionOnly() throws Exception {
+        runTest(getAes256GcmEncryptionOnlyTestDocument(), chain(verifier(false, 0, false), xencAlgVerifier(XencUtil.AES_256_GCM)));
+    }
+
+    public TestDocument getAes256GcmEncryptionOnlyTestDocument() throws Exception {
+        return getEncryptionOnlyTestDocument(XencAlgorithm.AES_256_GCM.getXEncName());
     }
 
     @Test

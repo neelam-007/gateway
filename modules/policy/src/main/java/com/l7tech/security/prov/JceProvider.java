@@ -3,11 +3,13 @@ package com.l7tech.security.prov;
 import com.l7tech.security.cert.BouncyCastleCertUtils;
 import com.l7tech.security.prov.bc.BouncyCastleRsaSignerEngine;
 import com.l7tech.util.*;
+import org.jetbrains.annotations.NotNull;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import java.security.*;
 import java.security.cert.X509Certificate;
+import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECGenParameterSpec;
 import java.util.Collections;
 import java.util.HashMap;
@@ -327,6 +329,44 @@ public abstract class JceProvider {
     }
 
     /**
+     * Get an implementation of AES configured to use Galois/Counter Mode.
+     *
+     * @return a Cipher implementation.  Never null.
+     * @throws NoSuchProviderException   if there is a configuration problem.  Shouldn't happen.
+     * @throws NoSuchAlgorithmException  if this provider is unable to deliver an appropriately-configured AES-GCM implementation.  Will happen unless provider supports GCM mode.
+     * @throws NoSuchPaddingException    if this provider is unable to deliver an appropriately-configured AES-GCM implementation.
+     */
+    public Cipher getAesGcmCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
+        return getCipher(getAesGcmCipherName(), getProviderFor("Cipher.AES"));
+    }
+
+    public String getAesGcmCipherName() {
+        return "AES/GCM/NoPadding";
+    }
+
+    /**
+     * Generate AlgorithmParameters for initialization of an AES/GCM cipher obtained from the current symmetric crypto
+     * provider.
+     * <p/>
+     * The number of bytes in the auth tag may be specified.  Additional authenticated (but non-encrypted) data is not supported:
+     * the generated parameters will always specify zero bytes of authenticated data.
+     * <p/>
+     * This method always throws NoSuchAlgorithmException, but specific providers may override it if they support AES-GCM.
+     *
+     * @param authTagLenBytes authentication tag length in bytes.  Must be between 12 and 16 inclusive.
+     * @param iv the IV to use for encryption or decryption.  Required.  Must be exactly 12 bytes long.
+     *        for encryption, this must be a new iv filled with random bytes.
+     *        for decryption, this iv must come from the sender of the message (typically this will be the first 12 bytes of the ciphertext)
+     * @return an AlgorithmParameterSpec instance suitable for initializing an AES/GCM cipher from the symmetric provider in ENCRYPT_MODE or DECRYPT_MODE
+     * @throws InvalidAlgorithmParameterException if AlgorithParameters cannot be generated using the specified settings.
+     * @throws NoSuchAlgorithmException if AES-GCM mode is not supported by this JceProvider.
+     */
+    public AlgorithmParameterSpec generateAesGcmParameterSpec(int authTagLenBytes, @NotNull byte[] iv) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException {
+        // TODO update to use javax.crypto.spec.GCMParameterSpec when we switch to Java 7
+        throw new NoSuchAlgorithmException("AES-GCM not supported when using the current crypto provider");
+    }
+
+    /**
      * Get an implementation of the specified MessageDigest.
      *
      * @param messageDigest the algorithm to get, ie "SHA-384".  Required.
@@ -546,4 +586,6 @@ public abstract class JceProvider {
             }
         }
     }
+
+    // If you add new methods to this class, don't forget to add them to DelegatingJceProvider
 }

@@ -5,11 +5,15 @@ import com.ibm.xml.dsig.SignatureMethod;
 import com.ibm.xml.dsig.Transform;
 import com.ibm.xml.dsig.transform.FixedExclusiveC11r;
 import com.ibm.xml.enc.AlgorithmFactoryExtn;
+import com.ibm.xml.enc.EncryptionEngine;
+import com.ibm.xml.enc.StructureException;
+import com.ibm.xml.enc.type.EncryptionMethod;
 import com.l7tech.security.xml.*;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.xml.soap.SoapUtil;
 import org.w3c.dom.Node;
 
+import javax.crypto.NoSuchPaddingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -127,6 +131,18 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
             md = super.getDigestMethod(s);
         }
         return checkDigestMethod(md);
+    }
+
+    @Override
+    public EncryptionEngine getEncryptionEngine(EncryptionMethod encMeth) throws NoSuchAlgorithmException, NoSuchPaddingException, NoSuchProviderException, StructureException {
+        final String algorithm = encMeth.getAlgorithm();
+        if (XencUtil.AES_128_GCM.equals(algorithm)) {
+            return new AesGcmEncryptionEngine(128, algorithm);
+        } else if (XencUtil.AES_256_GCM.equals(algorithm)) {
+            return new AesGcmEncryptionEngine(256, algorithm);
+        }
+
+        return super.getEncryptionEngine(encMeth);
     }
 
     public static void clearAlgorithmPools() {

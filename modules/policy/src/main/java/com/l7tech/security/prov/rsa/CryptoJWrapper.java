@@ -5,19 +5,23 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Functions.UnaryVoid;
 import com.l7tech.util.Option;
-import static com.l7tech.util.Option.none;
 import com.l7tech.util.Pair;
 
 import java.io.File;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
+import java.security.spec.AlgorithmParameterSpec;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.util.Option.none;
 
 /**
  * Wrapper for Crypto-J classes that uses reflection to load them to avoid compile-time dependencies on a particular
@@ -45,6 +49,7 @@ class CryptoJWrapper {
     static final String CLASSNAME_CRYPTOJ = "com.rsa.jsafe.crypto.CryptoJ";
     static final String CLASSNAME_PROVIDER = "com.rsa.jsafe.provider.JsafeJCE";
     static final String CLASSNAME_DEBUG = "com.rsa.jsse.engine.util.Debug";
+    static final String CLASSNAME_GCM_PARAMETER_SPEC = "com.rsa.jsafe.provider.GCMParameterSpec";
 
     @SuppressWarnings({"unchecked"})
     private static final Collection<Pair<String,String>> SERVICE_BLACKLIST = Collections.unmodifiableCollection(Arrays.asList(
@@ -59,6 +64,7 @@ class CryptoJWrapper {
     final Provider provider;
     final Class cryptoj;
     final Option<Method> debugReset;
+    final Option<Constructor> gcmParameterSpecCtor;
 
     final int FIPS140_SSL_ECC_MODE;
     final int NON_FIPS140_MODE;
@@ -76,6 +82,7 @@ class CryptoJWrapper {
         this.debugReset = findDebugResetMethod();
         this.FIPS140_SSL_ECC_MODE = cryptoj.getField("FIPS140_SSL_ECC_MODE").getInt(null);
         this.NON_FIPS140_MODE = cryptoj.getField("NON_FIPS140_MODE").getInt(null);
+        this.gcmParameterSpecCtor = findGcmParameterSpecCtor();
     }
 
     // Replace the filename at the end of a path with a new filename, ie changing "/foo/bar/jsafe.jar" into "/foo/bar/sslj.jar".
@@ -155,6 +162,21 @@ class CryptoJWrapper {
         } );
     }
 
+    AlgorithmParameterSpec createGcmParameterSpec(int authTagLenBytes, long authenticatedDataLenBytes, byte[] iv) throws NoSuchAlgorithmException {
+        if (!gcmParameterSpecCtor.isSome())
+            throw new NoSuchAlgorithmException("Galous/Counter Mode is not available");
+
+        try {
+            return (AlgorithmParameterSpec) gcmParameterSpecCtor.some().newInstance(authTagLenBytes, authenticatedDataLenBytes, iv);
+        } catch (InstantiationException e) {
+            throw new NoSuchAlgorithmException("Galous/Counter Mode is not available: " + ExceptionUtils.getMessage(e), e);
+        } catch (IllegalAccessException e) {
+            throw new NoSuchAlgorithmException("Galous/Counter Mode is not available: " + ExceptionUtils.getMessage(e), e);
+        } catch (InvocationTargetException e) {
+            throw new NoSuchAlgorithmException("Galous/Counter Mode is not available: " + ExceptionUtils.getMessage(e), e);
+        }
+    }
+
     private void configureProvider( final Provider provider ) {
         try {
             final Method method = Provider.class.getDeclaredMethod( "removeService", Provider.Service.class );
@@ -202,5 +224,37 @@ class CryptoJWrapper {
                 return null;
             }
         } );
+    }
+
+    private Option<Constructor> findGcmParameterSpecCtor() {
+        Option<Class<?>> spec = none();
+        try {
+            spec = Option.<Class<?>>some(cl.loadClass(CLASSNAME_GCM_PARAMETER_SPEC));
+        } catch (ClassNotFoundException e) {
+            logger.log(
+                    Level.WARNING,
+                    "Unable to load class for Crypto-J Galois/Counter Mode parameters.  AES-GCM will be unavailable.",
+                    ExceptionUtils.getDebugException( e ) );
+        }
+        return spec.map(new Unary<Constructor, Class<?>>() {
+            @Override
+            public Constructor call(Class<?> spec) {
+                if (!AlgorithmParameterSpec.class.isAssignableFrom(spec)) {
+                    logger.log(
+                            Level.WARNING,
+                            "Unable to load class for Crypto-J Galois/Counter Mode parameters.  AES-GCM will be unavailable: " + CLASSNAME_GCM_PARAMETER_SPEC + " is not assignable to AlgorithmParameterSpec");
+                    return null;
+                }
+                try {
+                    return spec.getConstructor(int.class, long.class, byte[].class);
+                } catch (Exception e) {
+                    logger.log(
+                            Level.WARNING,
+                            "Unable to find constructor for Crypto-J Galois/Counter Mode parameters.  AES-GCM will be unavailable: " + ExceptionUtils.getMessage(e),
+                            ExceptionUtils.getDebugException(e));
+                }
+                return null;
+            }
+        });
     }
 }

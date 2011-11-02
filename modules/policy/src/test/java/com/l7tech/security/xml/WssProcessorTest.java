@@ -30,10 +30,12 @@ import com.l7tech.xml.xpath.XpathUtil;
 import org.jcp.xml.dsig.internal.dom.DOMReference;
 import org.jcp.xml.dsig.internal.dom.DOMSubTreeData;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import javax.xml.XMLConstants;
@@ -171,6 +173,13 @@ public class WssProcessorTest {
             this.senderCeritifcate = senderCert;
             this.securityTokenResolver = securityTokenResolver;
         }
+    }
+
+    @Before
+    public void beforeEachTest() {
+        SyspropUtil.clearProperty(XencUtil.PROP_DECRYPTION_ALWAYS_SUCCEEDS);
+        SyspropUtil.clearProperty(XencUtil.PROP_ENCRYPT_EMPTY_ELEMENTS);
+        ConfigFactory.clearCachedConfig();
     }
 
     @Test
@@ -416,6 +425,77 @@ public class WssProcessorTest {
             throw new RuntimeException(e);
         }
         doTest(result);
+    }
+
+    @Test
+    @BugNumber(11320)
+    public void testAes128GcmDecryption() throws Exception {
+        doTest(new TestDocument("testAes128GcmDecryption", TestDocuments.getTestDocument(TestDocuments.DIR + "placeOrder_encrypted_aes128gcm.xml"), null, null, null, null,
+                new SimpleSecurityTokenResolver(TestDocuments.getDotNetServerCertificate(), TestDocuments.getDotNetServerPrivateKey())),  new WssProcessorImpl(), new Functions.UnaryVoid<ProcessorResult>() {
+            @Override
+            public void call(ProcessorResult processorResult) {
+                final EncryptedElement[] encryptedElements = processorResult.getElementsThatWereEncrypted();
+                assertEquals(1, encryptedElements.length);
+
+                final EncryptedElement encryptedElement = encryptedElements[0];
+                assertEquals(XencUtil.AES_128_GCM, encryptedElement.getAlgorithm());
+
+                final Element element = encryptedElement.asElement();
+                assertEquals("Body", element.getLocalName());
+                assertTrue(element == findSoapBody(element));
+                assertTrue(!nodeToString(element).contains("DecryptionFault"));
+            }
+        });
+    }
+
+    @Test
+    @BugNumber(11320)
+    public void testAes256GcmDecryption() throws Exception {
+        doTest(new TestDocument("testAes256GcmDecryption", TestDocuments.getTestDocument(TestDocuments.DIR + "placeOrder_encrypted_aes256gcm.xml"), null, null, null, null,
+                new SimpleSecurityTokenResolver(TestDocuments.getDotNetServerCertificate(), TestDocuments.getDotNetServerPrivateKey())),  new WssProcessorImpl(), new Functions.UnaryVoid<ProcessorResult>() {
+            @Override
+            public void call(ProcessorResult processorResult) {
+                final EncryptedElement[] encryptedElements = processorResult.getElementsThatWereEncrypted();
+                assertEquals(1, encryptedElements.length);
+
+                final EncryptedElement encryptedElement = encryptedElements[0];
+                assertEquals(XencUtil.AES_256_GCM, encryptedElement.getAlgorithm());
+
+                final Element element = encryptedElement.asElement();
+                assertEquals("Body", element.getLocalName());
+                assertTrue(element == findSoapBody(element));
+                assertTrue(!nodeToString(element).contains("DecryptionFault"));
+            }
+        });
+    }
+
+    @Test(expected = ProcessorException.class)
+    @BugNumber(11320)
+    public void testAes256GcmDecryptionFailure() throws Exception {
+        SyspropUtil.setProperty(XencUtil.PROP_DECRYPTION_ALWAYS_SUCCEEDS, "false");
+        ConfigFactory.clearCachedConfig();
+
+        doTest(new TestDocument("testAes256GcmDecryptionFailure", TestDocuments.getTestDocument(TestDocuments.DIR + "placeOrder_encrypted_aes256gcm_corrupted.xml"), null, null, null, null,
+                new SimpleSecurityTokenResolver(TestDocuments.getDotNetServerCertificate(), TestDocuments.getDotNetServerPrivateKey())));
+    }
+
+    private static Element findSoapBody(Node someNodeFromDoc) {
+        try {
+            Element body = SoapUtil.getBodyElement(someNodeFromDoc.getOwnerDocument());
+            if (body == null)
+                throw new RuntimeException("no SOAP body found");
+            return body;
+        } catch (InvalidDocumentFormatException e) {
+            throw new RuntimeException("bad SOAP env", e);
+        }
+    }
+
+    private static String nodeToString(Node node) {
+        try {
+            return XmlUtil.nodeToString(node);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test

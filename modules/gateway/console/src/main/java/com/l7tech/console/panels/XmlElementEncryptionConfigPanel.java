@@ -66,7 +66,9 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
                 XencUtil.TRIPLE_DES_CBC,
                 XencUtil.AES_128_CBC,
                 XencUtil.AES_192_CBC,
-                XencUtil.AES_256_CBC
+                XencUtil.AES_256_CBC,
+                XencUtil.AES_128_GCM,
+                XencUtil.AES_256_GCM
         }));
         setRecipientCertificateButton.addActionListener(new ActionListener() {
             @Override

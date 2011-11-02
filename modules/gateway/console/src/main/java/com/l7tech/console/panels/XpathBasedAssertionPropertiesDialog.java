@@ -168,6 +168,8 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
     private JPanel encryptionConfigPanel;
     private JRadioButton encryptElementContentsOnlyRadioButton;
     private JRadioButton encryptEntireElementIncludingRadioButton;
+    private JCheckBox aes128GcmCheckBox;
+    private JCheckBox aes256GcmCheckBox;
     private List<JCheckBox> acceptedDigestCheckboxes;
     private final boolean showHardwareAccelStatus;
     private boolean wasOk = false;
@@ -882,10 +884,12 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             }
 
             final Map<String,String> nameMap = CollectionUtils.<String,String>treeMapBuilder()
-                .put( XencAlgorithm.AES_128_CBC.getXEncName(), "AES 128bit" )
-                .put( XencAlgorithm.AES_192_CBC.getXEncName(), "AES 192bit" )
-                .put( XencAlgorithm.AES_256_CBC.getXEncName(), "AES 256bit" )
+                .put( XencAlgorithm.AES_128_CBC.getXEncName(), "AES 128 CBC" )
+                .put( XencAlgorithm.AES_192_CBC.getXEncName(), "AES 192 CBC" )
+                .put( XencAlgorithm.AES_256_CBC.getXEncName(), "AES 256 CBC" )
                 .put( XencAlgorithm.TRIPLE_DES_CBC.getXEncName(), "Triple DES" )
+                .put( XencAlgorithm.AES_128_GCM.getXEncName(), "AES 128 GCM" )
+                .put( XencAlgorithm.AES_256_GCM.getXEncName(), "AES 256 GCM" )
                 .unmodifiableMap();
             encryptionMethodComboBox.setModel( new DefaultComboBoxModel( nameMap.keySet().toArray() ) );
             encryptionMethodComboBox.setRenderer( new TextListCellRenderer<String>( new Functions.Unary<String,String>(){
@@ -916,6 +920,8 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             aes192CheckBox.setSelected(xencAlgorithmlist.contains(XencAlgorithm.AES_192_CBC.getXEncName()));
             aes256CheckBox.setSelected(xencAlgorithmlist.contains(XencAlgorithm.AES_256_CBC.getXEncName()));
             tripleDESCheckBox.setSelected(xencAlgorithmlist.contains(XencAlgorithm.TRIPLE_DES_CBC.getXEncName()));
+            aes128GcmCheckBox.setSelected(xencAlgorithmlist.contains(XencAlgorithm.AES_128_GCM.getXEncName()));
+            aes256GcmCheckBox.setSelected(xencAlgorithmlist.contains(XencAlgorithm.AES_256_GCM.getXEncName()));
 
             boolean contentsOnly = requestWssConfidentiality.isEncryptContentsOnly();
             encryptElementContentsOnlyRadioButton.setSelected(contentsOnly);
@@ -949,6 +955,11 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             if (tripleDESCheckBox.isSelected()) {
                 xencAlgorithmList.add(XencAlgorithm.TRIPLE_DES_CBC.getXEncName());
             }
+            if (aes128GcmCheckBox.isSelected())
+                xencAlgorithmList.add(XencAlgorithm.AES_128_GCM.getXEncName());
+            if (aes256GcmCheckBox.isSelected())
+                xencAlgorithmList.add(XencAlgorithm.AES_256_GCM.getXEncName());
+
             // Check if there are invalid configurations.
             if (xencAlgorithmList.isEmpty()) {
                 DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), null,

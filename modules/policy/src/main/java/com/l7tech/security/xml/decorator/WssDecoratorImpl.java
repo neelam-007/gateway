@@ -1795,6 +1795,10 @@ public class WssDecoratorImpl implements WssDecorator {
             length = 32;
         } else if (XencUtil.TRIPLE_DES_CBC.equals(xEncAlgorithm)) {
             length = 24;
+        } else if (XencUtil.AES_128_GCM.equals(xEncAlgorithm)) {
+            length = 16;
+        } else if (XencUtil.AES_256_GCM.equals(xEncAlgorithm)) {
+            length = 32;
         }
         return length;
     }

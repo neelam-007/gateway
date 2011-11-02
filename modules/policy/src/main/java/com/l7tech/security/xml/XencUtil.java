@@ -720,11 +720,12 @@ public class XencUtil {
      * An algorithm factory for decryption that will configure the specified FlexKey with the algorithm, when it is known,
      * and will accumulate all algorithms seen in a list for later verification.
      */
-    public static class EncryptionEngineAlgorithmCollectingAlgorithmFactory extends AlgorithmFactoryExtn {
+    public static class EncryptionEngineAlgorithmCollectingAlgorithmFactory extends WssProcessorAlgorithmFactory {
         private final FlexKey flexKey;
         private final List<String> collectAlgorithms;
 
         public EncryptionEngineAlgorithmCollectingAlgorithmFactory(FlexKey flexKey, List<String> collectAlgorithms) {
+            super(null);
             this.flexKey = flexKey;
             this.collectAlgorithms = collectAlgorithms;
         }

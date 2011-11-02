@@ -60,6 +60,24 @@ public class ServerNonSoapDecryptElementAssertionTest {
     }
 
     @Test
+    @BugNumber(11320)
+    public void testDecryptElementAes128Gcm() throws Exception {
+        logger.info("Attempting to decrypt:\n" + TEST_ENCRYPTED_AES128GCM);
+        NonSoapDecryptElementAssertion ass = new NonSoapDecryptElementAssertion();
+        ass.setXpathExpression(new XpathExpression("//*[local-name() = 'EncryptedData']"));
+        Message request = new Message(XmlUtil.stringAsDocument(TEST_ENCRYPTED_AES128GCM));
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
+        AssertionStatus result = new ServerNonSoapDecryptElementAssertion(ass, beanFactory).checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+        final Document doc = request.getXmlKnob().getDocumentReadOnly();
+        logger.info("Decrypted XML:\n" + XmlUtil.nodeToString(doc));
+        assertEquals(0, doc.getElementsByTagNameNS(SoapUtil.XMLENC_NS, "EncryptedData").getLength());
+        assertEquals(1, ((Object[])context.getVariable("elementsDecrypted")).length);
+        assertEquals(1, ((Object[])context.getVariable("encryptionMethodUris")).length);
+        assertEquals("http://www.w3.org/2009/xmlenc11#aes128-gcm", ((String[])context.getVariable("encryptionMethodUris"))[0]);
+    }
+
+    @Test
     public void testDecryptElement_encryptedForSomeoneElse() throws Exception {
         logger.info("Attempting to decrypt:\n" + TEST_ENCRYPTED_FOR_SOMEONE_ELSE);
         NonSoapDecryptElementAssertion ass = new NonSoapDecryptElementAssertion();
@@ -128,6 +146,13 @@ public class ServerNonSoapDecryptElementAssertionTest {
             "<par:GetNoaParties xmlns:par=\"urn:noapar\">\n" +
             "  <par:username>brian</par:username> \n" +
             "  <xenc:EncryptedData xmlns:xenc=\"http://www.w3.org/2001/04/xmlenc#\"><xenc:EncryptionMethod Algorithm=\"http://www.w3.org/2001/04/xmlenc#aes256-cbc\"/><dsig:KeyInfo xmlns:dsig=\"http://www.w3.org/2000/09/xmldsig#\"><xenc:EncryptedKey xmlns:xenc=\"http://www.w3.org/2001/04/xmlenc#\"><xenc:EncryptionMethod Algorithm=\"http://www.w3.org/2001/04/xmlenc#rsa-1_5\"/><dsig:KeyInfo xmlns:dsig=\"http://www.w3.org/2000/09/xmldsig#\"><dsig:X509Data><dsig:X509IssuerSerial><dsig:X509IssuerName>CN=test</dsig:X509IssuerName><dsig:X509SerialNumber>7730273685284174799</dsig:X509SerialNumber></dsig:X509IssuerSerial></dsig:X509Data></dsig:KeyInfo><xenc:CipherData><xenc:CipherValue>O0xs2VQa0p3d9tzUvy+2ljjgef/RX2zDMo8FIQ9rjYCCRKDFEsLb5XOFQWK5MtnTl+bC68khTfJq6FeKh+3NBI9D41BJipZAWAI+HZrnyU0iUPSJL936AAWsq9bgL+RkaGkXjsWAjb/XCluDMlQ+9pK2CiLoyIMRSHirES72vSM=</xenc:CipherValue></xenc:CipherData></xenc:EncryptedKey></dsig:KeyInfo><xenc:CipherData><xenc:CipherValue>B3fvKCstaZwlTxSvsFBHZnoEobEjqbIy0P+hRxhotFy9vxacIfbpQRMrYbpRh4lJEUdgiDoD6JVeNT1xWJmakQ==</xenc:CipherValue></xenc:CipherData></xenc:EncryptedData> \n" +
+            "  <par:notice_id>12345</par:notice_id> \n" +
+            "</par:GetNoaParties>";
+
+    public static final String TEST_ENCRYPTED_AES128GCM =
+            "<par:GetNoaParties xmlns:par=\"urn:noapar\">\n" +
+            "  <par:username>brian</par:username> \n" +
+            "  <xenc:EncryptedData xmlns:xenc=\"http://www.w3.org/2001/04/xmlenc#\"><xenc:EncryptionMethod Algorithm=\"http://www.w3.org/2009/xmlenc11#aes128-gcm\"/><dsig:KeyInfo xmlns:dsig=\"http://www.w3.org/2000/09/xmldsig#\"><xenc:EncryptedKey xmlns:xenc=\"http://www.w3.org/2001/04/xmlenc#\"><xenc:EncryptionMethod Algorithm=\"http://www.w3.org/2001/04/xmlenc#rsa-1_5\"/><dsig:KeyInfo xmlns:dsig=\"http://www.w3.org/2000/09/xmldsig#\"><dsig:X509Data><dsig:X509IssuerSerial><dsig:X509IssuerName>CN=test_rsa_1024</dsig:X509IssuerName><dsig:X509SerialNumber>15005762314007893580</dsig:X509SerialNumber></dsig:X509IssuerSerial></dsig:X509Data></dsig:KeyInfo><xenc:CipherData><xenc:CipherValue>Aag2dhLqgLmNGSIUUlcxmc+D4H3OZtb2tDxBMX7tkYKpTJwcJVqi6YWWYneRRe++7+pWGVfUDtGmnKoIXNlyJXF055iBwc8Lq65GXog/oXbo8PUyYqtItZRmRhtyw6199TJgczjSPmzmXaX192iPOiIzqa4Ud8bBTST9vb6z/Q4=</xenc:CipherValue></xenc:CipherData></xenc:EncryptedKey></dsig:KeyInfo><xenc:CipherData><xenc:CipherValue>S/fXPTNecZBGD1pZay3t2H6D8tQeS0WMS8g73aZ6C530uZN/oZLpkOPcZ7KGr2o9LIprOY4CCx1eIv2thWOswdDnKpGZ</xenc:CipherValue></xenc:CipherData></xenc:EncryptedData> \n" +
             "  <par:notice_id>12345</par:notice_id> \n" +
             "</par:GetNoaParties>";
 

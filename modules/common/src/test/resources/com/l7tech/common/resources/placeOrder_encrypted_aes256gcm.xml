@@ -1,0 +1,38 @@
+<soapenv:Envelope
+    xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <soapenv:Header>
+        <wsse:Security soapenv:actor="secure_span"
+            soapenv:mustUnderstand="1"
+            xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+            <wsu:Timestamp>
+                <wsu:Created>2011-11-02T05:25:06.920557795Z</wsu:Created>
+                <wsu:Expires>2011-11-02T05:30:06.920Z</wsu:Expires>
+            </wsu:Timestamp>
+            <xenc:EncryptedKey xmlns:xenc="http://www.w3.org/2001/04/xmlenc#">
+                <xenc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#rsa-1_5"/>
+                <dsig:KeyInfo xmlns:dsig="http://www.w3.org/2000/09/xmldsig#">
+                    <wsse:SecurityTokenReference>
+                        <wsse:KeyIdentifier
+                            EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary" ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509SubjectKeyIdentifier">Xeg55vRyK3ZhAEhEf+YT0z986L0=</wsse:KeyIdentifier>
+                    </wsse:SecurityTokenReference>
+                </dsig:KeyInfo>
+                <xenc:CipherData>
+                    <xenc:CipherValue>ZyslmPz33FsESKtFwpfVKKns47boYcc6FFuoNBJRYEfXRB/CDQ4wOKgOlTMWx7mcMBvKxQy2WgIgJFYpDbyOfIDNDO+SlPgBPJxQzmu70NTDZdn+j5BSLS/7dG8g4Ig1wB/MtY9/JDVIuVPAUXSN1G5bM6ANtIH9CMcCRN/Yofk=</xenc:CipherValue>
+                </xenc:CipherData>
+                <xenc:ReferenceList>
+                    <xenc:DataReference URI="#Body-0-c533c89293ab360e87e5c56b02439b2d"/>
+                </xenc:ReferenceList>
+            </xenc:EncryptedKey>
+        </wsse:Security>
+    </soapenv:Header>
+    <soapenv:Body>
+        <EncryptedData Id="Body-0-c533c89293ab360e87e5c56b02439b2d"
+            Type="http://www.w3.org/2001/04/xmlenc#Content" xmlns="http://www.w3.org/2001/04/xmlenc#">
+            <EncryptionMethod Algorithm="http://www.w3.org/2009/xmlenc11#aes256-gcm"/>
+            <CipherData>
+                <CipherValue>g6k0gZlNC68VO/A2p0Qa7kc7zPAYcqXUIxI2LUKB0cmny4W82VXfYiQAt75ej/HDtjIUv7ur1ygiVACEEGlTQOFeDkkvEDN5PxJKTkZDUAozHNpJscNUVoo5iQYDx6AA4H7svc/5i41G3qLk47WxnbRVWrruGUG7TWhTidQJzmPfVy3wdIEua+QJCzAqL0IEhhTniVGx6k6IoFpjFzwh7wS9iYRQDKJsXuxOthGqnnznpt7SDrm3JCiI29T2Xscj3uIuhfeCBzYAj2KtVbAcmIJ/gY3KSDi1tbqby7WM7itqFNhSD6MOC0obq9d6GHYDh5Q9rTOzo7uEZklDahZ8byWv9yQbEym9t7U/oBoXjYd27DvjAmdoJtPDthhq+c5ecp/N8qJo890pBfYAorTZG/4Rn6H02ELsbdWRiYvu3CekM00PShBVHV3pAdu1wtnBUTWOsfXWdNfO24BV9+yICt/60pcyi5HHlCPHHblODoHe8SH+LknF6Arm02mS9/HG8BNaXfilGFZ9fxED3vmEveClwqJ4kcV740d602DR+2c95HHOgjGeuQoXL8RJ</CipherValue>
+            </CipherData>
+        </EncryptedData>
+    </soapenv:Body>
+</soapenv:Envelope>

@@ -14,6 +14,7 @@ import org.jaxen.FunctionContext;
 import org.jaxen.JaxenException;
 import org.jaxen.XPathFunctionContext;
 import org.jaxen.dom.DOMXPath;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -142,11 +143,11 @@ public class DomCompiledXpath extends CompiledXpath {
      * Run a software-only XPath.
      *
      * @param cursor   the DOM cursor on which to run the xpath.  Must not be null.
-     * @param variableFinder
+     * @param variableFinder an XpathVariableFinder instance for processing variables in the expression, or null.
      * @return a new XpathResult instance.  Never null.
      * @throws XPathExpressionException if lazy compilation of the XPath reveals it to be invalid.
      */
-    public XpathResult getXpathResult(final DomElementCursor cursor, XpathVariableFinder variableFinder) throws XPathExpressionException {
+    public XpathResult getXpathResult(final DomElementCursor cursor, @Nullable XpathVariableFinder variableFinder) throws XPathExpressionException {
         if (variableFinder == null)
             return getXpathResult(cursor);
         try {

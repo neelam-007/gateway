@@ -18,8 +18,10 @@ public final class XencAlgorithm implements Serializable {
     public static final XencAlgorithm AES_128_CBC = new XencAlgorithm(index++, "aes128-cbc", "http://www.w3.org/2001/04/xmlenc#aes128-cbc");
     public static final XencAlgorithm AES_192_CBC = new XencAlgorithm(index++, "aes192-cbc", "http://www.w3.org/2001/04/xmlenc#aes192-cbc");
     public static final XencAlgorithm AES_256_CBC = new XencAlgorithm(index++, "aes256-cbc", "http://www.w3.org/2001/04/xmlenc#aes256-cbc");
+    public static final XencAlgorithm AES_128_GCM = new XencAlgorithm(index++, "aes128-gcm", "http://www.w3.org/2009/xmlenc11#aes128-gcm");
+    public static final XencAlgorithm AES_256_GCM = new XencAlgorithm(index++, "aes256-gcm", "http://www.w3.org/2009/xmlenc11#aes256-gcm");
     // for readResolve
-    private static final XencAlgorithm[] ALGORITHMS = {TRIPLE_DES_CBC, AES_128_CBC, AES_192_CBC, AES_256_CBC};
+    private static final XencAlgorithm[] ALGORITHMS = {TRIPLE_DES_CBC, AES_128_CBC, AES_192_CBC, AES_256_CBC, AES_128_GCM, AES_256_GCM};
 
     private int val;
     private final String shortName;

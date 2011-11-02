@@ -43,7 +43,9 @@ public class SoapConstants {
     public static final String ATTRIBUTE_ALGORITHM = "Algorithm";
 
     public static final String XMLENC_NS = "http://www.w3.org/2001/04/xmlenc#";
+    public static final String XMLENC11_NS = "http://www.w3.org/2009/xmlenc11#";
     public static final String DIGSIG_URI = "http://www.w3.org/2000/09/xmldsig#";
+    public static final String DIGSIG11_URI = "http://www.w3.org/2009/xmldsig11#";
     public static final String WSU_NAMESPACE = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd";
     public static final String WSU_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2002/07/utility";
     public static final String WSU_NAMESPACE3 = "http://schemas.xmlsoap.org/ws/2003/06/utility";

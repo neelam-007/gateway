@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.xmlsec.server;
 
+import com.l7tech.common.TestKeys;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.security.prov.JceProvider;
@@ -27,6 +28,7 @@ public class NonSoapXmlSecurityTestUtils {
     public static final String TEST_KEY_ALIAS = "test";
     public static final String DATA_KEY_ALIAS = "data";
     public static final String ECDSA_KEY_ALIAS = "ecdsa";
+    public static final String TEST_RSA_1024_ALIAS = "test_rsa_1024";
 
     /**
      * @return the test key from TEST_KEYSTORE.
@@ -42,6 +44,14 @@ public class NonSoapXmlSecurityTestUtils {
     public static SsgKeyEntry getDataKey() throws IOException, GeneralSecurityException {
         final Pair<X509Certificate,PrivateKey> k = TestCertificateGenerator.convertFromBase64Pkcs12(DATA_KEYSTORE);
         return new SsgKeyEntry(99, DATA_KEY_ALIAS, new X509Certificate[] { k.left }, k.right);
+    }
+
+    /**
+     * @return the test key from TestKeys.getCertAndKey("RSA_1024")
+     */
+    public static SsgKeyEntry getTestRsa1024Key() {
+        Pair<X509Certificate, PrivateKey> k = TestKeys.getCertAndKey("RSA_1024");
+        return new SsgKeyEntry(99, TEST_RSA_1024_ALIAS, new X509Certificate[] { k.left }, k.right);
     }
 
     public static SsgKeyEntry getEcdsaKey() throws IOException, GeneralSecurityException {
@@ -86,7 +96,8 @@ public class NonSoapXmlSecurityTestUtils {
         return new SsgKeyEntry[] {
                 getTestKey(),
                 getDataKey(),
-                getEcdsaKey()
+                getEcdsaKey(),
+                getTestRsa1024Key()
         };
     }
 

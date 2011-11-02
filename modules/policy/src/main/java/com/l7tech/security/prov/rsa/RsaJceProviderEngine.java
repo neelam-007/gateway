@@ -3,11 +3,11 @@ package com.l7tech.security.prov.rsa;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
+import org.jetbrains.annotations.NotNull;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.Provider;
-import java.security.SecureRandom;
-import java.security.Security;
+import java.security.*;
+import java.security.spec.AlgorithmParameterSpec;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,6 +32,9 @@ public class RsaJceProviderEngine extends JceProvider {
     private static final String cryptojVersion;
 
     private static final String defaultSecureRandom;
+
+    // A GCM IV full of zero bytes, for sanity checking IVs
+    private static final byte[] ZERO_IV = new byte[12];
 
     static {
         try {
@@ -182,6 +185,17 @@ public class RsaJceProviderEngine extends JceProvider {
         return cryptoj.getJsseProvider();
     }
 
+    @Override
+    public AlgorithmParameterSpec generateAesGcmParameterSpec(int authTagLenBytes, @NotNull byte[] iv) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException {
+        if (authTagLenBytes < 12 || authTagLenBytes > 16)
+            throw new InvalidAlgorithmParameterException("GCM auth tag length must be between 12 and 16 bytes");
+        if (iv.length != 12)
+            throw new InvalidAlgorithmParameterException("GCM IV must be exactly 12 bytes long");
+        if (Arrays.equals(ZERO_IV, iv))
+            throw new InvalidAlgorithmParameterException("GCM IV is entirely zero octets");
+
+        return cryptoj.createGcmParameterSpec(authTagLenBytes, 0, iv);
+    }
 
     @Override
     public boolean isFips140ModeEnabled() {

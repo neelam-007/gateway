@@ -1,9 +1,13 @@
 package com.l7tech.security.prov;
 
+import org.jetbrains.annotations.NotNull;
+
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import java.security.*;
 import java.security.cert.X509Certificate;
+import java.security.spec.AlgorithmParameterSpec;
+import java.util.Map;
 
 /**
  * A JceProvider that always delegates all method invocation to a specified delegate JceProvider.
@@ -20,6 +24,36 @@ public class DelegatingJceProvider extends JceProvider {
         if (delegate == null)
             throw new IllegalArgumentException("delegate is required");
         this.delegate = delegate;
+    }
+
+    @Override
+    public Cipher getAesGcmCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
+        return delegate.getAesGcmCipher();
+    }
+
+    @Override
+    public String getAesGcmCipherName() {
+        return delegate.getAesGcmCipherName();
+    }
+
+    @Override
+    public AlgorithmParameterSpec generateAesGcmParameterSpec(int authTagLenBytes, @NotNull byte[] iv) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException {
+        return delegate.generateAesGcmParameterSpec(authTagLenBytes, iv);
+    }
+
+    @Override
+    public SecureRandom getSecureRandom() {
+        return delegate.getSecureRandom();
+    }
+
+    @Override
+    public SecureRandom newSecureRandom() {
+        return delegate.newSecureRandom();
+    }
+
+    @Override
+    public void setDebugOptions(Map<String, String> options) {
+        delegate.setDebugOptions(options);
     }
 
     @Override

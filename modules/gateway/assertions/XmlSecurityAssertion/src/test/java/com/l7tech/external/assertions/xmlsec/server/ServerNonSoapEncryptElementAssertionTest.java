@@ -179,6 +179,30 @@ public class ServerNonSoapEncryptElementAssertionTest {
         checkResult(req, 0);
     }
 
+    @Test
+    public void testEncryptElementWithAes128Gcm() throws Exception {
+        Message req = makeReq();
+        NonSoapEncryptElementAssertion ass = makeAss();
+        ass.setXencAlgorithm(XencUtil.AES_128_GCM);
+        ServerNonSoapEncryptElementAssertion sass = new ServerNonSoapEncryptElementAssertion(ass);
+        AssertionStatus result = sass.checkRequest( PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, new Message()) );
+        assertEquals(AssertionStatus.NONE, result);
+        String doc = checkResult(req, 1);
+        assertTrue(doc.contains(XencUtil.AES_128_GCM));
+    }
+
+    @Test
+    public void testEncryptElementWithAes256Gcm() throws Exception {
+        Message req = makeReq();
+        NonSoapEncryptElementAssertion ass = makeAss();
+        ass.setXencAlgorithm(XencUtil.AES_256_GCM);
+        ServerNonSoapEncryptElementAssertion sass = new ServerNonSoapEncryptElementAssertion(ass);
+        AssertionStatus result = sass.checkRequest( PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, new Message()) );
+        assertEquals(AssertionStatus.NONE, result);
+        String doc = checkResult(req, 1);
+        assertTrue(doc.contains(XencUtil.AES_256_GCM));
+    }
+
     public static NonSoapEncryptElementAssertion makeAss() {
         NonSoapEncryptElementAssertion ass = new NonSoapEncryptElementAssertion();
         ass.setTarget(TargetMessageType.REQUEST);
@@ -197,14 +221,16 @@ public class ServerNonSoapEncryptElementAssertionTest {
         return new Message(XmlUtil.stringAsDocument(testXml));
     }
 
-    private void checkResult(Message req, int expectedLength) throws SAXException, IOException {
+    private String checkResult(Message req, int expectedLength) throws SAXException, IOException {
         final Document doc = req.getXmlKnob().getDocumentReadOnly();
-        logger.info("Encrypted result: \n" + XmlUtil.nodeToString(doc));
+        final String docString = XmlUtil.nodeToString(doc);
+        logger.info("Encrypted result: \n" + docString);
         NodeList nodeList = doc.getElementsByTagNameNS(SoapUtil.XMLENC_NS, "EncryptedData");
         assertTrue(nodeList.getLength() == expectedLength);
         for (int i = 0; i < expectedLength; ++i)
             assertEquals("EncryptedData", nodeList.item(i).getLocalName());
         assertWellFormed(doc);
+        return docString;
     }
 
     private void assertWellFormed(Document doc) {

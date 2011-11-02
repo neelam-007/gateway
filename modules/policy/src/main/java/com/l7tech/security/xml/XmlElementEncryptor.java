@@ -12,6 +12,7 @@ import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.security.prov.JceProvider;
+import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
 import org.jetbrains.annotations.NotNull;
@@ -158,7 +159,7 @@ public class XmlElementEncryptor {
 
         // Create encryption context and encrypt the header subtree
         EncryptionContext ec = new EncryptionContext();
-        AlgorithmFactoryExtn af = new AlgorithmFactoryExtn();
+        AlgorithmFactoryExtn af = new WssProcessorAlgorithmFactory(null);
         // TODO we'll assume it's the same Provider for all symmetric crypto
         Provider symmetricProvider = JceProvider.getInstance().getProviderFor("Cipher.AES");
         if (symmetricProvider != null)

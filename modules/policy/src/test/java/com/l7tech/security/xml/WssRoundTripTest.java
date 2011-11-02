@@ -315,6 +315,18 @@ public class WssRoundTripTest {
     }
 
     @Test
+    @BugNumber(11320)
+    public void testAes128GcmEncryptionOnly() throws Exception {
+        runRoundTripTest(new NamedTestDocument("Aes128GcmEncryptionOnly", wssDecoratorTest.getAes128GcmEncryptionOnlyTestDocument()), null);
+    }
+
+    @Test
+    @BugNumber(11320)
+    public void testAes256GcmEncryptionOnly() throws Exception {
+        runRoundTripTest(new NamedTestDocument("Aes256GcmEncryptionOnly", wssDecoratorTest.getAes256GcmEncryptionOnlyTestDocument()), null);
+    }
+
+    @Test
     public void testSingleSignatureMultipleEncryption() throws Exception {
         runRoundTripTest(new NamedTestDocument("SingleSignatureMultipleEncryption",
                                                wssDecoratorTest.getSingleSignatureMultipleEncryptionTestDocument()));

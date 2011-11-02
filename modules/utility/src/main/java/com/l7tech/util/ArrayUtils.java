@@ -1,10 +1,10 @@
 package com.l7tech.util;
 
-import static java.lang.reflect.Array.get;
-import static java.lang.reflect.Array.getLength;
-import static java.lang.reflect.Array.newInstance;
-import static java.lang.reflect.Array.set;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.*;
+
+import static java.lang.reflect.Array.*;
 
 /**
  * Utilities for manipulating arrays.
@@ -416,6 +416,20 @@ public class ArrayUtils {
      */
     public static String[] concat(String[] a, String[] b) {
         String[] ret = new String[a.length + b.length];
+        if (a.length > 0) System.arraycopy(a, 0, ret, 0, a.length);
+        if (b.length > 0) System.arraycopy(b, 0, ret, a.length, b.length);
+        return ret;
+    }
+
+    /**
+     * Merge two arrays.
+     *
+     * @param a  a byte array.  May be empty but not null.
+     * @param b  a byte array.  May be empty but not null.
+     * @return a new array that contains all the elements of a followed by all the elements of b.  Never null.
+     */
+    public static byte[] concat(@NotNull byte[] a, @NotNull byte[] b) {
+        byte[] ret = new byte[a.length + b.length];
         if (a.length > 0) System.arraycopy(a, 0, ret, 0, a.length);
         if (b.length > 0) System.arraycopy(b, 0, ret, a.length, b.length);
         return ret;

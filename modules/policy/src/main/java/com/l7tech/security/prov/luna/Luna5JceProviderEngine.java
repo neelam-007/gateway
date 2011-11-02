@@ -6,8 +6,11 @@ import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.safenetinc.luna.LunaSlotManager;
 import com.safenetinc.luna.provider.LunaProvider;
+import com.safenetinc.luna.provider.param.LunaGcmParameterSpec;
+import org.jetbrains.annotations.NotNull;
 
 import java.security.*;
+import java.security.spec.AlgorithmParameterSpec;
 import java.util.concurrent.Callable;
 
 /**
@@ -47,6 +50,15 @@ public class Luna5JceProviderEngine extends JceProvider {
             throw new RuntimeException("Unable to look up client password for Luna security provider (do you need to set either the com.l7tech.lunaPin or com.l7tech.lunaPinFinder system properties?): " + ExceptionUtils.getMessage(e), e);
         }
         return pin;
+    }
+
+    @Override
+    public AlgorithmParameterSpec generateAesGcmParameterSpec(int authTagLenBytes, @NotNull byte[] iv) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException {
+        if (authTagLenBytes < 12 || authTagLenBytes > 16)
+            throw new InvalidAlgorithmParameterException("GCM auth tag length must be between 12 and 16 bytes");
+        if (iv.length != 12)
+            throw new InvalidAlgorithmParameterException("GCM IV must be exactly 12 bytes long");
+        return new LunaGcmParameterSpec(iv, null, authTagLenBytes * 8);
     }
 
     @Override
