@@ -5,9 +5,95 @@ Index: sshd-core/src/main/filtered-resources/org/apache/sshd/sshd-version.proper
 @@ -17,4 +17,4 @@
  ## under the License.
  ##
-
+ 
 -version=${pom.artifactId}-${pom.version}
 +version=SSH
+Index: sshd-core/src/main/java/org/apache/sshd/server/command/ScpCommand.java
+===================================================================
+--- sshd-core/src/main/java/org/apache/sshd/server/command/ScpCommand.java	(revision 1177421)
++++ sshd-core/src/main/java/org/apache/sshd/server/command/ScpCommand.java	(revision )
+@@ -18,23 +18,14 @@
+  */
+ package org.apache.sshd.server.command;
+ 
+-import java.io.ByteArrayOutputStream;
+-import java.io.EOFException;
+-import java.io.IOException;
+-import java.io.InputStream;
+-import java.io.OutputStream;
+-import java.util.Arrays;
+-
+ import org.apache.sshd.common.util.DirectoryScanner;
+-import org.apache.sshd.server.Command;
+-import org.apache.sshd.server.Environment;
+-import org.apache.sshd.server.ExitCallback;
+-import org.apache.sshd.server.FileSystemAware;
+-import org.apache.sshd.server.FileSystemView;
+-import org.apache.sshd.server.SshFile;
++import org.apache.sshd.server.*;
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
+ 
++import java.io.*;
++import java.util.Arrays;
++
+ /**
+  * This commands provide SCP support on both server and client side.
+  * Permissions and preservation of access / modification times on files
+@@ -181,7 +172,12 @@
+                         basedir = pattern.substring(0, lastSep);
+                         pattern = pattern.substring(lastSep + 1);
+                     }
+-                    String[] included = new DirectoryScanner(basedir, pattern).scan();
++                    String[] included = null;
++                    try {
++                        included = new DirectoryScanner(basedir, pattern).scan();
++                    } catch (IllegalStateException ise) {
++                        throw new IOException(ise);
++                    }
+                     for (String path : included) {
+                         SshFile file = root.getFile(basedir + "/" + path);
+                         if (file.isFile()) {
+@@ -225,17 +221,7 @@
+                 throw new IOException("Unsupported mode");
+             }
+         } catch (IOException e) {
+-            try {
+-                exitValue = ERROR;
+-                exitMessage = e.getMessage();
+-                out.write(exitValue);
+-                out.write(exitMessage.getBytes());
+-                out.write('\n');
+-                out.flush();
+-            } catch (IOException e2) {
+-                // Ignore
+-            }
+-            log.info("Error in scp command", e);
++            writeExit(e, exitValue, exitMessage);
+         } finally {
+             if (callback != null) {
+                 callback.onExit(exitValue, exitMessage);
+@@ -439,6 +425,20 @@
+         return c;
+     }
+ 
++    protected void writeExit(IOException e, int exitValue, String exitMessage) {
++        try {
++            exitValue = ERROR;
++            exitMessage = e.getMessage();
++            out.write(exitValue);
++            out.write(exitMessage.getBytes());
++            out.write('\n');
++            out.flush();
++        } catch (IOException e2) {
++            // Ignore
++        }
++        log.info("Error in scp command", e);
++    }
++
+     public void setFileSystemView(FileSystemView view) {
+         this.root = view;
+     }
 Index: sshd-core/src/main/java/org/apache/sshd/server/sftp/SftpSubsystem.java
 ===================================================================
 --- sshd-core/src/main/java/org/apache/sshd/server/sftp/SftpSubsystem.java	(revision 1177421)
@@ -15,7 +101,7 @@ Index: sshd-core/src/main/java/org/apache/sshd/server/sftp/SftpSubsystem.java
 @@ -18,20 +18,18 @@
   */
  package org.apache.sshd.server.sftp;
-
+ 
 -import java.io.*;
 -import java.util.*;
 -
@@ -29,7 +115,7 @@ Index: sshd-core/src/main/java/org/apache/sshd/server/sftp/SftpSubsystem.java
  import org.apache.sshd.server.session.ServerSession;
  import org.slf4j.Logger;
  import org.slf4j.LoggerFactory;
-
+ 
 +import java.io.*;
 +import java.util.*;
 +
@@ -43,22 +129,22 @@ Index: sshd-core/src/main/java/org/apache/sshd/server/sftp/SftpSubsystem.java
 -    private ServerSession session;
 +    protected ServerSession session;
      private boolean closed = false;
-
+ 
      private FileSystemView root;
-
+ 
 -    private int version;
 -    private Map<String, Handle> handles = new HashMap<String, Handle>();
 +    protected int version;
 +    protected Map<String, Handle> handles = new HashMap<String, Handle>();
-
-
+ 
+ 
      protected static abstract class Handle {
 @@ -997,7 +995,7 @@
          closed = true;
      }
-
+ 
 -    private SshFile resolveFile(String path) {
 +    protected SshFile resolveFile(String path) {
      	return this.root.getFile(path);
      }
-
+ 

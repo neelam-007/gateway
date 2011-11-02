@@ -65,7 +65,7 @@ public class MessageProcessingScpCommand extends ScpCommand implements SessionAw
         if (logger.isLoggable(Level.FINER)) {
             logger.log(Level.FINER, "Recursively writing dir {0} unsupported", path);
         }
-        throw new IOException("Recursive directory write unsupported.");
+        throw new IOException("Unsupported mode");
     }
 
     @Override
@@ -117,7 +117,29 @@ public class MessageProcessingScpCommand extends ScpCommand implements SessionAw
         if (logger.isLoggable(Level.FINER)) {
             logger.log(Level.FINER, "Recursively reading directory {0} unsupported", path);
         }
-        throw new IOException("Recursive directory read unsupported.");
+        throw new IOException("Unsupported mode");
+    }
+
+    @Override
+    protected void writeExit(IOException e, int exitValue, String exitMessage) {
+        try {
+            exitValue = ERROR;
+            exitMessage = e.getMessage();
+
+            // intercept any messages that may reveal which files are present on the Gateway
+            if (!StringUtils.isEmpty(exitMessage) &&
+                    (exitMessage.contains("java.lang.IllegalStateException: basedir") && exitMessage.contains("does not exist"))) {
+                exitMessage = "Unsupported mode";
+            }
+
+            out.write(exitValue);
+            out.write(exitMessage.getBytes());
+            out.write('\n');
+            out.flush();
+        } catch (IOException e2) {
+            // Ignore
+        }
+        log.info("Error in scp command", e);
     }
 
     private boolean pipeInputStreamToGatewayRequestMessage( final SsgConnector connector,
