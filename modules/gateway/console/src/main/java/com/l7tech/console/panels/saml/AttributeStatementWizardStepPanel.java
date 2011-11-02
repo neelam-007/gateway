@@ -221,6 +221,10 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 final int row = attributeTable.getSelectedRow();
+                if (row < 0) {
+                    return;
+                }
+
                 final SamlAttributeStatement.Attribute attribute = attributesTableModel.getBeanForRow(row);
 
                 EditAttributeDialog editAttributeDialog = new EditAttributeDialog(owner, attribute, samlVersion, issueMode);
@@ -245,6 +249,8 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
                 editAttributeDialog.setVisible(true);
             }
         });
+        com.l7tech.gui.util.Utilities.setDoubleClickAction(attributeTable, editButton);
+
         addAttributeButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
