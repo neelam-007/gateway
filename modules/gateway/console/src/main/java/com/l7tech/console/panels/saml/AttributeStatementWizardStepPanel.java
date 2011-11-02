@@ -152,7 +152,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
         SamlAttributeStatement.Attribute[] attributes = statement.getAttributes();
         for (int i = 0; i < attributes.length; i++) {
             SamlAttributeStatement.Attribute att = attributes[i];
-            attributesTableModel.addRow(att, new Object[]{
+            attributesTableModel.addRow((SamlAttributeStatement.Attribute) att.clone(), new Object[]{
                     att.getName(),
                     att.getNamespace(),
                     toDisplayNameFormat(att.getNameFormat(), samlVersion),
