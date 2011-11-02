@@ -129,7 +129,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
         @XmlEnumValue( "Policy download service" )
         POLICYDISCO,
 
-        @XmlEnumValue( "Gateway status and ping service" )
+        @XmlEnumValue( "Ping service" )
         PING,
 
         /** The WS-Trust security token service. */

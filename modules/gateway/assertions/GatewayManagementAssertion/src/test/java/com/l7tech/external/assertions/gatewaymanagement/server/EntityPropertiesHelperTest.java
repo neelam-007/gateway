@@ -92,7 +92,7 @@ public class EntityPropertiesHelperTest {
                 "Administrative access",
                 "Browser-based administration",
                 "Policy download service",
-                "Gateway status and ping service",
+                "Ping service",
                 "WS-Trust security token service",
                 "Certificate signing service",
                 "Password changing service",
