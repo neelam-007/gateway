@@ -1,7 +1,3 @@
-/*
- * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
- */
-
 package com.l7tech.server.policy.validator;
 
 import com.l7tech.common.TestDocuments;
@@ -10,6 +6,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
+import com.l7tech.policy.PolicyValidatorResult.Message;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
@@ -21,7 +18,7 @@ import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.TestLicenseManager;
-import com.l7tech.wsdl.Wsdl;
+import com.l7tech.wsdl.SerializableWSDLLocator;
 import com.l7tech.xml.soap.SoapVersion;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,14 +28,12 @@ import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 
 /**
  * Test the default policy assertion path validator functionality.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.0
+ * @author Emil Marceta
  */
 public class DefaultPolicyValidatorTest {
     private ApplicationContext spring;
@@ -48,8 +43,8 @@ public class DefaultPolicyValidatorTest {
         this.spring = ApplicationContexts.getTestApplicationContext();
     }
 
-    private PolicyValidationContext pvc(PolicyType type, Wsdl wsdl, boolean soap, SoapVersion soapVersion) {
-        return new PolicyValidationContext(type, null, wsdl, soap, soapVersion);
+    private PolicyValidationContext pvc(PolicyType type, SerializableWSDLLocator wsdlLocator, boolean soap, SoapVersion soapVersion) {
+        return new PolicyValidationContext(type, null, wsdlLocator, soap, soapVersion);
     }
 
     /**
@@ -61,31 +56,27 @@ public class DefaultPolicyValidatorTest {
     public void testPublicAccessWarning() throws Exception {
         HttpRoutingAssertion httpRoutingAssertion = new HttpRoutingAssertion();
         httpRoutingAssertion.setProtectedServiceUrl("http://wheel");
-        List kids =
-          Arrays.asList(new Assertion[]{
-              new SslAssertion(),
-              new HttpBasic(),
-              httpRoutingAssertion
-          });
+        List<Assertion> kids =
+          Arrays.asList( new SslAssertion(),
+                  new HttpBasic(),
+                  httpRoutingAssertion );
 
         AllAssertion aa = new AllAssertion();
         aa.setChildren(kids);
         PolicyValidator dfpv = getValidator();
         final PublishedService service = getBogusService();
-        PolicyValidatorResult result = dfpv.validate(aa, pvc(PolicyType.PRIVATE_SERVICE, service.parsedWsdl(), service.isSoap(), service.getSoapVersion()), new TestLicenseManager());
-        List messages = result.messages(httpRoutingAssertion);
+        PolicyValidatorResult result = dfpv.validate(aa, pvc(PolicyType.PRIVATE_SERVICE, service.wsdlLocator(), service.isSoap(), service.getSoapVersion()), new TestLicenseManager());
+        List<Message> messages = result.messages(httpRoutingAssertion);
         assertTrueWithMessages("Expected errors/warnings for the " + HttpRoutingAssertion.class + " assertion, got 0", !messages.isEmpty(), messages);
 
         kids =
-          Arrays.asList(new Assertion[]{
-              new SslAssertion(),
-              new HttpBasic(),
-              new SpecificUser(),
-              httpRoutingAssertion
-          });
+          Arrays.asList( new SslAssertion(),
+                  new HttpBasic(),
+                  new SpecificUser(),
+                  httpRoutingAssertion );
         aa = new AllAssertion();
         aa.setChildren(kids);
-        result = dfpv.validate(aa, pvc(PolicyType.PRIVATE_SERVICE, service.parsedWsdl(), service.isSoap(), service.getSoapVersion()), new TestLicenseManager());
+        result = dfpv.validate(aa, pvc(PolicyType.PRIVATE_SERVICE, service.wsdlLocator(), service.isSoap(), service.getSoapVersion()), new TestLicenseManager());
         messages = result.messages(httpRoutingAssertion);
         assertTrueWithMessages("Expected no errors/warnings.", messages.isEmpty(), messages);
     }
@@ -113,32 +104,28 @@ public class DefaultPolicyValidatorTest {
         HttpRoutingAssertion httpRoutingAssertion = new HttpRoutingAssertion();
         httpRoutingAssertion.setProtectedServiceUrl("http://wheel");
         SpecificUser specificUser = new SpecificUser();
-        List kids =
-          Arrays.asList(new Assertion[]{
-              specificUser,
-              httpRoutingAssertion
-          });
+        List<Assertion> kids =
+          Arrays.<Assertion>asList( specificUser,
+                  httpRoutingAssertion );
 
         AllAssertion aa = new AllAssertion();
         aa.setChildren(kids);
         PolicyValidator dfpv = getValidator();
         final PublishedService service = getBogusService();
-        PolicyValidatorResult result = dfpv.validate(aa, pvc(PolicyType.PRIVATE_SERVICE, service.parsedWsdl(), service.isSoap(), service.getSoapVersion()), new TestLicenseManager());
-        List messages = result.messages(specificUser);
+        PolicyValidatorResult result = dfpv.validate(aa, pvc(PolicyType.PRIVATE_SERVICE, service.wsdlLocator(), service.isSoap(), service.getSoapVersion()), new TestLicenseManager());
+        List<Message> messages = result.messages(specificUser);
         assertTrue("Expected errors/warnings for the " + HttpRoutingAssertion.class + " assertion, got 0 messages.", !messages.isEmpty());
 
         RequireWssX509Cert xs = new RequireWssX509Cert();
         kids =
-          Arrays.asList(new Assertion[]{
-              xs,
-              specificUser,
-              httpRoutingAssertion
-          });
+          Arrays.<Assertion>asList( xs,
+                  specificUser,
+                  httpRoutingAssertion );
 
         aa = new AllAssertion();
         aa.setChildren(kids);
         dfpv = getValidator();
-        result = dfpv.validate(aa, pvc(PolicyType.PRIVATE_SERVICE, service.parsedWsdl(), service.isSoap(), service.getSoapVersion()), new TestLicenseManager());
+        result = dfpv.validate(aa, pvc(PolicyType.PRIVATE_SERVICE, service.wsdlLocator(), service.isSoap(), service.getSoapVersion()), new TestLicenseManager());
         messages = result.messages(specificUser);
         assertTrueWithMessages("Expected no errors/warnings.", messages.isEmpty(), messages);
     }
@@ -151,20 +138,18 @@ public class DefaultPolicyValidatorTest {
     @Test
     public void testPartialXmlRequestSecurityAfterRoute() throws Exception {
         RequireWssX509Cert xs = new RequireWssX509Cert();
-        final List kids =
-          Arrays.asList(new Assertion[]{
-              new SslAssertion(),
-              new HttpBasic(),
-              new SpecificUser(),
-              new HttpRoutingAssertion(),
-              xs
-          });
+        final List<Assertion> kids =
+          Arrays.asList( new SslAssertion(),
+                  new HttpBasic(),
+                  new SpecificUser(),
+                  new HttpRoutingAssertion(),
+                  xs );
         AllAssertion aa = new AllAssertion();
         aa.setChildren(kids);
         PolicyValidator dfpv = getValidator();
         final PublishedService service = getBogusService();
-        PolicyValidatorResult result = dfpv.validate(aa, pvc(PolicyType.PRIVATE_SERVICE, service.parsedWsdl(), service.isSoap(), service.getSoapVersion()), new TestLicenseManager());
-        List messages = result.messages(xs);
+        PolicyValidatorResult result = dfpv.validate(aa, pvc(PolicyType.PRIVATE_SERVICE, service.wsdlLocator(), service.isSoap(), service.getSoapVersion()), new TestLicenseManager());
+        List<Message> messages = result.messages(xs);
         assertTrueWithMessages("Expected errors/warnings for the " + RequireWssSignedElement.class + " assertion, got 0", !messages.isEmpty(), messages);
     }
 
@@ -176,20 +161,18 @@ public class DefaultPolicyValidatorTest {
     @Test
     public void testPartialXmlRequestSecurity() throws Exception {
         RequireWssSignedElement xs = new RequireWssSignedElement();
-        final List kids =
-          Arrays.asList(new Assertion[]{
-              new SslAssertion(),
-              new RequireWssX509Cert(),
-              new SpecificUser(),
-              xs,
-              new HttpRoutingAssertion()
-          });
+        final List<Assertion> kids =
+          Arrays.asList( new SslAssertion(),
+                  new RequireWssX509Cert(),
+                  new SpecificUser(),
+                  xs,
+                  new HttpRoutingAssertion() );
         AllAssertion aa = new AllAssertion();
         aa.setChildren(kids);
         PolicyValidator dfpv = getValidator();
         final PublishedService service = getBogusService();
-        PolicyValidatorResult result = dfpv.validate(aa, pvc(PolicyType.PRIVATE_SERVICE, service.parsedWsdl(), service.isSoap(), service.getSoapVersion()), new TestLicenseManager());
-        List messages = result.messages(xs);
+        PolicyValidatorResult result = dfpv.validate(aa, pvc(PolicyType.PRIVATE_SERVICE, service.wsdlLocator(), service.isSoap(), service.getSoapVersion()), new TestLicenseManager());
+        List<Message> messages = result.messages(xs);
         assertTrueWithMessages("Expected no errors/warnings", messages.isEmpty(), messages);
     }
 
@@ -204,40 +187,35 @@ public class DefaultPolicyValidatorTest {
         HttpRoutingAssertion httpRoutingAssertion = new HttpRoutingAssertion();
         httpRoutingAssertion.setProtectedServiceUrl("http://wheel");
 
-        List kids =
-          Arrays.asList(new Assertion[]{
-              new SslAssertion(),
-              new SslAssertion(true),
-              new SpecificUser(),
-              httpRoutingAssertion
-          });
+        List<Assertion> kids =
+          Arrays.asList( new SslAssertion(),
+                  new SslAssertion(true),
+                  new SpecificUser(),
+                  httpRoutingAssertion );
         AllAssertion aa = new AllAssertion();
         aa.setChildren(kids);
         PolicyValidator dfpv = getValidator();
         final PublishedService service = getBogusService();
-        PolicyValidatorResult result = dfpv.validate(aa, pvc(PolicyType.PRIVATE_SERVICE, service.parsedWsdl(), service.isSoap(), service.getSoapVersion()), new TestLicenseManager());
-        List messages = result.getMessages();
+        PolicyValidatorResult result = dfpv.validate(aa, pvc(PolicyType.PRIVATE_SERVICE, service.wsdlLocator(), service.isSoap(), service.getSoapVersion()), new TestLicenseManager());
+        List<Message> messages = result.getMessages();
         assertTrueWithMessages("Expected no errors/warnings", messages.isEmpty(), messages);
 
         SslAssertion clientCert = new SslAssertion(true);
         kids =
-          Arrays.asList(new Assertion[]{
-              clientCert,
-              new SpecificUser(),
-              httpRoutingAssertion
-          });
+          Arrays.asList( clientCert,
+                  new SpecificUser(),
+                  httpRoutingAssertion );
         aa = new AllAssertion();
         aa.setChildren(kids);
-        result = dfpv.validate(aa, pvc(PolicyType.PRIVATE_SERVICE, service.parsedWsdl(), service.isSoap(), service.getSoapVersion()), new TestLicenseManager());
+        result = dfpv.validate(aa, pvc(PolicyType.PRIVATE_SERVICE, service.wsdlLocator(), service.isSoap(), service.getSoapVersion()), new TestLicenseManager());
         messages = result.messages(clientCert);
         assertTrueWithMessages("Expected no errors/warnings", messages.isEmpty(), messages);
     }
 
-    private static void assertTrueWithMessages(String msg, boolean expression, List messages) {
-        StringBuffer sb = new StringBuffer();
-        for (Iterator iterator = messages.iterator(); iterator.hasNext();) {
-            PolicyValidatorResult.Message message = (PolicyValidatorResult.Message)iterator.next();
-            sb.append(message.getMessage()).append("\n");
+    private static void assertTrueWithMessages(String msg, boolean expression, List<Message> messages) {
+        StringBuilder sb = new StringBuilder();
+        for ( final Message message : messages ) {
+            sb.append( message.getMessage() ).append( "\n" );
         }
         if (sb.length() > 0) {
             msg += "\n" + sb.toString();

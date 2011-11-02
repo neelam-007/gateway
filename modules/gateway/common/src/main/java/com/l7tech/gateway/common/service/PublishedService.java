@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.gateway.common.service;
 
 import com.l7tech.common.http.HttpMethod;
@@ -11,7 +8,9 @@ import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.util.Functions.TernaryThrows;
 import com.l7tech.util.Service;
+import com.l7tech.wsdl.SerializableWSDLLocator;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
@@ -168,6 +167,7 @@ public class PublishedService extends NamedEntityImp implements Flushable, HasFo
         checkLocked();
         _wsdlXml = wsdlXml;
         _parsedWsdl.set(null);
+        _wsdlLocator.set(null);
     }
 
     private static SoapVersion guessSoapVersionFromWsdl(Wsdl wsdl) {
@@ -233,27 +233,27 @@ public class PublishedService extends NamedEntityImp implements Flushable, HasFo
      * @throws WSDLException if the WSDL cannot be parsed
      */
     public Wsdl parsedWsdl() throws WSDLException {
-        Wsdl wsdl = _parsedWsdl.get();
-        if (wsdl != null)
-            return wsdl;
+        return accessWsdlItem( _parsedWsdl, new TernaryThrows<Wsdl,WsdlStrategy,String,String,WSDLException>(){
+            @Override
+            public Wsdl call( final WsdlStrategy strategy, final String url, final String content ) throws WSDLException {
+                return strategy.parseWsdl( PublishedService.this, url, content );
+            }
+        } );
+    }
 
-        String cachedWsdl = getWsdlXml();
-        if (cachedWsdl == null)
-            return null;        
-        
-        synchronized (this) {
-            wsdl = _parsedWsdl.get();
-            if (wsdl != null)
-                return wsdl;
-
-            WsdlStrategy strategy = wsdlStrategy;
-            if (strategy == null)
-                strategy = new DefaultWsdlStrategy();
-            wsdl = strategy.parseWsdl(this, getWsdlUrl(), cachedWsdl);
-            _parsedWsdl.set(wsdl);
-        }
-        
-        return wsdl;
+    /**
+     * Gets a WSDLLocator that can be used to generate this service's WSDL
+     *
+     * @return The WSDLLocator or null
+     * @throws WSDLException If an error occurs
+     */
+    public SerializableWSDLLocator wsdlLocator() throws WSDLException {
+        return accessWsdlItem( _wsdlLocator, new TernaryThrows<SerializableWSDLLocator,WsdlStrategy,String,String,WSDLException>(){
+            @Override
+            public SerializableWSDLLocator call( final WsdlStrategy strategy, final String url, final String content ) throws WSDLException {
+                return strategy.wsdlLocator( PublishedService.this, url, content );
+            }
+        } );
     }
 
     /**
@@ -620,6 +620,7 @@ public class PublishedService extends NamedEntityImp implements Flushable, HasFo
      */
     public static interface WsdlStrategy {
         public Wsdl parseWsdl(PublishedService service, String uri, String wsdl) throws WSDLException;
+        public SerializableWSDLLocator wsdlLocator(PublishedService service, String uri, String wsdl) throws WSDLException;
     }
 
     /**
@@ -672,6 +673,7 @@ public class PublishedService extends NamedEntityImp implements Flushable, HasFo
 
     private transient WsdlStrategy wsdlStrategy;
     private final AtomicReference<Wsdl> _parsedWsdl = new AtomicReference<Wsdl>(null);
+    private final AtomicReference<SerializableWSDLLocator> _wsdlLocator = new AtomicReference<SerializableWSDLLocator>(null);
     private final AtomicReference<Port> _wsdlPort = new AtomicReference<Port>(null);
     private transient URL _serviceUrl;
 
@@ -684,8 +686,34 @@ public class PublishedService extends NamedEntityImp implements Flushable, HasFo
      */
     private void writeObject( final ObjectOutputStream out ) throws IOException {
         _parsedWsdl.set( null );
+        _wsdlLocator.set( null );
         _wsdlPort.set( null );
         out.defaultWriteObject();
+    }
+
+    private <WI> WI accessWsdlItem( final AtomicReference<WI> reference,
+                                    final TernaryThrows<WI,WsdlStrategy,String,String,WSDLException> builder ) throws WSDLException {
+        WI wsdlItem = reference.get();
+        if (wsdlItem != null)
+            return wsdlItem;
+
+        String cachedWsdl = getWsdlXml();
+        if (cachedWsdl == null)
+            return null;
+
+        synchronized (this) {
+            wsdlItem = reference.get();
+            if (wsdlItem != null)
+                return wsdlItem;
+
+            WsdlStrategy strategy = wsdlStrategy;
+            if (strategy == null)
+                strategy = new DefaultWsdlStrategy();
+            wsdlItem = builder.call( strategy, getWsdlUrl(), cachedWsdl);
+            reference.set(wsdlItem);
+        }
+
+        return wsdlItem;
     }
 
     /**
@@ -695,7 +723,7 @@ public class PublishedService extends NamedEntityImp implements Flushable, HasFo
     private static class DefaultWsdlStrategy implements WsdlStrategy {
         private final WsdlStrategy delegate;
 
-        public DefaultWsdlStrategy() {
+        private DefaultWsdlStrategy() {
             WsdlStrategy strategy = null;
             Iterator providerIter = Service.providers(WsdlStrategy.class);
             if ( providerIter != null && providerIter.hasNext() ) {
@@ -710,6 +738,14 @@ public class PublishedService extends NamedEntityImp implements Flushable, HasFo
                 throw new WSDLException( WSDLException.CONFIGURATION_ERROR, "Missing strategy to load WSDL for '"+uri+"'." );
 
             return delegate.parseWsdl( service, uri, wsdl );
+        }
+
+        @Override
+        public SerializableWSDLLocator wsdlLocator(PublishedService service, String uri, String wsdl) throws WSDLException {
+            if ( delegate == null )
+                throw new WSDLException( WSDLException.CONFIGURATION_ERROR, "Missing strategy to load WSDL for '"+uri+"'." );
+
+            return delegate.wsdlLocator( service, uri, wsdl );
         }
     }
 }

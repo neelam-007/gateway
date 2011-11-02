@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.console.poleditor;
 
 import com.l7tech.common.io.XmlUtil;
@@ -38,7 +35,7 @@ import com.l7tech.policy.wsp.TypedReference;
 import com.l7tech.policy.wsp.WspSensitive;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.*;
-import com.l7tech.wsdl.Wsdl;
+import com.l7tech.wsdl.SerializableWSDLLocator;
 import com.l7tech.xml.NamespaceMigratable;
 import com.l7tech.xml.soap.SoapVersion;
 import org.w3c.dom.Document;
@@ -305,16 +302,16 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private PolicyValidatorResult validatePolicy(boolean displayResult) {
         final Assertion assertion = getCurrentRoot().asAssertion();
         final boolean soap;
-        final Wsdl wsdl;
+        final SerializableWSDLLocator wsdlLocator;
         final SoapVersion soapVersion;
         try {
             final PublishedService service = getPublishedService();
             if (service == null) {
-                wsdl = null;
+                wsdlLocator = null;
                 soap = getPolicyNode().getPolicy().isSoap();
                 soapVersion = null;
             } else {
-                wsdl = service.parsedWsdl();
+                wsdlLocator = service.wsdlLocator();
                 soap = service.isSoap();
                 soapVersion = service.getSoapVersion();
             }
@@ -334,7 +331,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     	r.addError(new PolicyValidatorResult.Error(Collections.<Integer>emptyList(), -1, "Policy could not be loaded", null));
                     	return r;
                 	}
-                    PolicyValidatorResult r = policyValidator.validate(assertion, new PolicyValidationContext(policy.getType(), policy.getInternalTag(), wsdl, soap, soapVersion), licenseManager);
+                    PolicyValidatorResult r = policyValidator.validate(assertion, new PolicyValidationContext(policy.getType(), policy.getInternalTag(), wsdlLocator, soap, soapVersion), licenseManager);
                     policyValidator.checkForCircularIncludes(policy.getGuid(), policy.getName(), assertion, r);
                     return r;
                 }
@@ -884,7 +881,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private String fullValidate() {
         final Assertion assertion = getCurrentRoot().asAssertion();
         final String policyXml;
-        final Wsdl wsdl;
+        final SerializableWSDLLocator wsdlLocator;
         final boolean soap;
         final SoapVersion soapVersion;
         final PolicyType type;
@@ -922,13 +919,13 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
             service = getPublishedService();
             if (service == null) {
-                wsdl = null;
+                wsdlLocator = null;
                 soap = getPolicyNode().getPolicy().isSoap();
                 soapVersion = null;
                 type = getPolicyNode().getPolicy().getType();
                 internalTag = getPolicyNode().getPolicy().getInternalTag();
             } else {
-                wsdl = service.parsedWsdl();
+                wsdlLocator = service.wsdlLocator();
                 soap = service.isSoap();
                 soapVersion = service.getSoapVersion();
                 type = PolicyType.PRIVATE_SERVICE;
@@ -947,7 +944,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 @Override
                 public PolicyValidatorResult call() throws Exception {
                     final Policy policy = getPolicyNode().getPolicy();
-                    final PolicyValidationContext pvc = new PolicyValidationContext(type, internalTag, wsdl, soap, soapVersion);
+                    final PolicyValidationContext pvc = new PolicyValidationContext(type, internalTag, wsdlLocator, soap, soapVersion);
                     final PolicyValidatorResult result = policyValidator.validate(assertion, pvc, licenseManager);
                     policyValidator.checkForCircularIncludes(policy.getGuid(), policy.getName(), assertion, result);
                     final ServiceAdmin serviceAdmin = Registry.getDefault().getServiceManager();

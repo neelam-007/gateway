@@ -10,6 +10,7 @@ import org.apache.ws.policy.PolicyReference;
 import org.apache.ws.policy.util.DOMPolicyReader;
 import org.apache.ws.policy.util.PolicyFactory;
 import org.apache.ws.policy.util.PolicyRegistry;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -56,9 +57,9 @@ import java.util.logging.Logger;
  * <a href="http://www.jcp.org/jsr/detail/110.jsp"> Java APIs
  * for WSDL - JWSDL</a>).
  *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
+ * @author Emil Marceta
  */
-public class Wsdl implements Serializable {
+public class Wsdl {
 
     //- PUBLIC
 
@@ -275,9 +276,9 @@ public class Wsdl implements Serializable {
      * @param logger A logger to write debug information
      * @return a WSDLLocator instance
      */
-    public static WSDLLocator getWSDLLocator(final String documentBaseURI,
-                                             final Map<String,String> resourceMap,
-                                             final Logger logger ) {
+    public static SerializableWSDLLocator getWSDLLocator( final String documentBaseURI,
+                                                          final Map<String,String> resourceMap,
+                                                          final Logger logger ) {
         return new CachedDocumentResolver( documentBaseURI, resourceMap, logger );
     }
 
@@ -524,7 +525,6 @@ public class Wsdl implements Serializable {
 
     public static class BadPolicyReferenceException extends Exception {
         public BadPolicyReferenceException() {
-            super();
         }
 
         public BadPolicyReferenceException(String message) {
@@ -1158,7 +1158,7 @@ public class Wsdl implements Serializable {
         }
 
         ns = 1;
-        LinkedHashMap<String, String> result2 = new LinkedHashMap<String, String>();
+        Map<String, String> result2 = new LinkedHashMap<String, String>();
         for (String prefix : result.keySet()) {
             String uri = result.get(prefix);
             if (prefix == null || prefix.length() == 0 || prefix.startsWith(TEMP)) prefix = NS + ns++;
@@ -1498,8 +1498,6 @@ public class Wsdl implements Serializable {
 
     //- PRIVATE
 
-    private static final long serialVersionUID = 1L;
-
     private static final String NS = "ns";
 
     private static WSDLFactoryBuilder wsdlFactoryBuilder = new WSDLFactoryBuilder() {
@@ -1631,7 +1629,7 @@ public class Wsdl implements Serializable {
                 }
                 // Hack the element so it contains the correct attribute, without a wsp: prefix
                 ele.removeAttributeNS(ele.getNamespaceURI(), "URI");
-                ele.setAttribute("URI", uri);
+                ele.setAttributeNS( null, "URI", uri );
             }
             return policyReader.readPolicyReference(ele);
         } catch (NullPointerException npe) {
@@ -1701,42 +1699,6 @@ public class Wsdl implements Serializable {
     }
 
     /**
-     * The wrapped WSDL may not be Serializable, so we'll convert to a String.
-     */
-    private void writeObject( final ObjectOutputStream out) throws IOException {
-        out.defaultWriteObject();
-
-        Map<String,String> content = new HashMap<String,String>();
-        try {
-            writeWsdl( definition, content );            
-        } catch (WSDLException we) {
-            throw new CausedIOException("Error serializing WSDL.", we);
-        }
-
-        out.writeObject( definition.getDocumentBaseURI() );
-        out.writeObject( content );
-    }
-
-    /**
-     * Restore the wrapped WSDL from String representation.
-     */
-    private void readObject( final ObjectInputStream in ) throws IOException, ClassNotFoundException {
-        logger = Logger.getLogger(getClass().getName());
-        in.defaultReadObject();
-
-        String documentBaseURI = (String) in.readObject();
-        //noinspection unchecked
-        Map<String,String> content = (Map<String,String>) in.readObject();
-
-        try {
-            Wsdl wsdl = Wsdl.newInstance( getWSDLLocator(documentBaseURI, content, logger) );
-            definition = wsdl.getDefinition();
-        } catch (WSDLException we) {
-            throw new CausedIOException("Error deserializing WSDL.", we);
-        }
-    }
-
-    /**
      * Register known Attribute extensions which require correct conversion from WSDL XML to the WSDL4J object model.
      *
      * E.g. If an attribute's type is anyURI, and a value of 'http://example.com' is supplied, if the document
@@ -1758,11 +1720,13 @@ public class Wsdl implements Serializable {
         //add any more extension attributes which need to be configured
     }
     
-    private static final class CachedDocumentResolver implements WSDLLocator {
-        private final Logger logger;
+    private static final class CachedDocumentResolver implements SerializableWSDLLocator {
+        @Nullable
+        private transient final Logger logger;
+        @Nullable
+        private transient String lastUri = null;
         private final String uri;
         private final Map<String,String> contentByUri;
-        private String lastUri = null;
 
         CachedDocumentResolver( final String uri, final Map<String,String> contentByUri, final Logger logger ) {
             this.uri = uri;
@@ -1812,7 +1776,9 @@ public class Wsdl implements Serializable {
                 lastUri = resolvedUri.toString();
                 String content = getDocumentByUri(lastUri);
 
-                logger.log(Level.FINE, "Resolving WSDL uri '"+resolvedUri.toString()+"', document found '"+(content != null)+"'.");
+                if ( logger != null ) {
+                    logger.log(Level.FINE, "Resolving WSDL uri '"+resolvedUri.toString()+"', document found '"+(content != null)+"'.");
+                }
 
                 if (content != null) {
                     is = new InputSource();

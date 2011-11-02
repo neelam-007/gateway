@@ -2,15 +2,23 @@ package com.l7tech.policy.validator;
 
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.util.Either;
+import static com.l7tech.util.Either.left;
+import static com.l7tech.util.Either.right;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.wsdl.SerializableWSDLLocator;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapVersion;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.wsdl.WSDLException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Context for use with policy validation.
@@ -18,14 +26,22 @@ import java.util.Map;
  * <p>A new context should be created for each validation operation.</p>
  */
 public class PolicyValidationContext implements Serializable {
+    private static final Logger logger = Logger.getLogger( PolicyValidationContext.class.getName() );
+
     private final @NotNull PolicyType policyType;
     private final @Nullable String policyInternalTag;
-    private final @Nullable Wsdl wsdl;
+    private final @Nullable SerializableWSDLLocator wsdlLocator;
     private final boolean soap;
     private final @Nullable SoapVersion soapVersion;
     private transient Map<Assertion,AssertionValidator> validatorMap = new HashMap<Assertion,AssertionValidator>();
+    private transient Either<WSDLException,Wsdl> wsdl;
 
     /**
+     * Create a policy validation context.
+     *
+     * <p>WARNING: Wsdl is not serializable, to create a context suitable for
+     * serialization use the constructor with a SerializableWSDLLocator</p>
+     *
      * @param policyType   policy type.  Generally required.
      * @param policyInternalTag  policy internal tag, if applicable and available.  May be null.
      * @param wsdl  policy WSDL, if a soap policy and if available.  May be null.
@@ -35,7 +51,23 @@ public class PolicyValidationContext implements Serializable {
     public PolicyValidationContext(@NotNull PolicyType policyType, @Nullable String policyInternalTag, @Nullable Wsdl wsdl, boolean soap, @Nullable SoapVersion soapVersion) {
         this.policyType = policyType;
         this.policyInternalTag = policyInternalTag;
-        this.wsdl = wsdl;
+        this.wsdlLocator = null;
+        this.wsdl = wsdl == null ? null : Either.<WSDLException,Wsdl>right(wsdl);
+        this.soap = soap;
+        this.soapVersion = soapVersion;
+    }
+
+    /**
+     * @param policyType   policy type.  Generally required.
+     * @param policyInternalTag  policy internal tag, if applicable and available.  May be null.
+     * @param wsdlLocator  policy WSDLLocator, if a soap policy and if available.  May be null.
+     * @param soap  true if this is known to be a SOAP policy
+     * @param soapVersion if a specific SOAP version is in use and, if so, which version that is; or null if not relevant.
+     */
+    public PolicyValidationContext(@NotNull PolicyType policyType, @Nullable String policyInternalTag, @Nullable SerializableWSDLLocator wsdlLocator, boolean soap, @Nullable SoapVersion soapVersion) {
+        this.policyType = policyType;
+        this.policyInternalTag = policyInternalTag;
+        this.wsdlLocator = wsdlLocator;
         this.soap = soap;
         this.soapVersion = soapVersion;
     }
@@ -61,7 +93,18 @@ public class PolicyValidationContext implements Serializable {
      */
     @Nullable
     public Wsdl getWsdl() {
-        return wsdl;
+        if ( wsdl == null && wsdlLocator != null ) {
+            try {
+                wsdl = right( Wsdl.newInstance( wsdlLocator ) );
+            } catch ( WSDLException e ) {
+                wsdl = left( e );
+                logger.log(
+                        Level.WARNING,
+                        "Error processing WSDL: " + ExceptionUtils.getMessage( e ),
+                        ExceptionUtils.getDebugException( e ) );
+            }
+        }
+        return wsdl == null ? null : wsdl.toRightOption().toNull();
     }
 
     /**

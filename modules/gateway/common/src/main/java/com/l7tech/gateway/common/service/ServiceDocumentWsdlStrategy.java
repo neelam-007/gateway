@@ -4,6 +4,7 @@ import com.l7tech.common.io.DocumentReferenceProcessor;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.wsdl.SerializableWSDLLocator;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.wsdl.ResourceTrackingWSDLLocator;
 import com.l7tech.wsdl.WsdlEntityResolver;
@@ -42,7 +43,12 @@ public class ServiceDocumentWsdlStrategy implements PublishedService.WsdlStrateg
     public final Wsdl parseWsdl( final PublishedService service,
                                  final String uri,
                                  final String wsdl ) throws WSDLException {
-        return Wsdl.newInstance(Wsdl.getWSDLLocator(uri, buildContent(uri, wsdl, service), getLogger()));
+        return Wsdl.newInstance( wsdlLocator( service, uri, wsdl ) );
+    }
+
+    @Override
+    public SerializableWSDLLocator wsdlLocator( final PublishedService service, final String uri, final String wsdl ) throws WSDLException {
+        return Wsdl.getWSDLLocator(uri, buildContent(uri, wsdl, service), getLogger());
     }
 
     public static Wsdl parseWsdl( final PublishedService service,
