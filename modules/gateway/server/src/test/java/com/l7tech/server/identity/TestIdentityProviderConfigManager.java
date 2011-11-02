@@ -2,10 +2,7 @@ package com.l7tech.server.identity;
 
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.EntityManagerStub;
 import org.springframework.beans.factory.InitializingBean;
 
@@ -14,16 +11,10 @@ public class TestIdentityProviderConfigManager
         implements IdentityProviderConfigManager, InitializingBean
 {
     public TestIdentityProviderConfigManager() {
-        super();
     }
 
     public TestIdentityProviderConfigManager( final IdentityProviderConfig... entitiesIn ) {
         super( entitiesIn );
-    }
-
-    @Override
-    public void addManageProviderRole(IdentityProviderConfig config) throws SaveException {
-        // No-op for stub mode
     }
 
     @Override

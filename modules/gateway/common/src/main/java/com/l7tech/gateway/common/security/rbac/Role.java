@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2006-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.gateway.common.security.rbac;
 
 import com.l7tech.gateway.common.admin.IdentityAdmin;
@@ -19,6 +16,7 @@ import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.Proxy;
+import org.jetbrains.annotations.Nullable;
 
 import javax.persistence.*;
 import java.util.HashSet;
@@ -93,7 +91,7 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
      * {@link ObjectIdentityPredicate} for the provided ID, or no scope (allowing any instance of the supplied type)
      * if id == null.
      */
-    public void addEntityPermission(OperationType operation, EntityType etype, String id) {
+    public void addEntityPermission(OperationType operation, EntityType etype, @Nullable String id) {
         Permission perm = new Permission(this, operation, etype);
         if (id != null) perm.getScope().add(new ObjectIdentityPredicate(perm, id));
         permissions.add(perm);

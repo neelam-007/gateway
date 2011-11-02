@@ -1,8 +1,3 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.server.upgrade;
 
 import static com.l7tech.objectmodel.EntityType.ID_PROVIDER_CONFIG;
@@ -87,7 +82,7 @@ public class Upgrade35To36AddRoles implements UpgradeTask {
             Collection<Role> roles = roleManager.findEntitySpecificRoles(ID_PROVIDER_CONFIG, ipc.getOid());
             if (roles == null || roles.isEmpty() ) {
                 logger.info("Auto-creating missing admin Role for identity provider " + ipc.getName() + " (#" + ipc.getOid() + ")");
-                ipcManager.addManageProviderRole(ipc);
+                ipcManager.createRoles(ipc);
             }
         }
     }

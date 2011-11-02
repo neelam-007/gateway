@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.identity;
 
 import com.l7tech.gateway.common.admin.IdentityAdmin;
@@ -32,6 +29,7 @@ public class IdProvConfManagerServer
     extends HibernateEntityManager<IdentityProviderConfig, EntityHeader>
     implements IdentityProviderConfigManager
 {
+    @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
     private static final Logger logger = Logger.getLogger(IdProvConfManagerServer.class.getName());
     private RoleManager roleManager;
 
@@ -103,13 +101,19 @@ public class IdProvConfManagerServer
         return IdentityProviderConfig.class;
     }
 
-    public String getTableName() {
-        return "identity_provider";
-    }
-
     @Override
     public EntityType getEntityType() {
         return EntityType.ID_PROVIDER_CONFIG;
+    }
+
+    @Override
+    public void createRoles( final IdentityProviderConfig config ) throws SaveException {
+        addManageProviderRole( config );
+    }
+
+    @Override
+    public void deleteRoles( final long entityOid ) throws DeleteException {
+        roleManager.deleteEntitySpecificRoles(ID_PROVIDER_CONFIG, entityOid);
     }
 
     // ************************************************
@@ -136,7 +140,7 @@ public class IdProvConfManagerServer
      * @param config  the config for which a new Role is to be created.  Must not be null, and must not already have a Role.
      * @throws SaveException if there was a problem saving the new Role.
      */
-    public void addManageProviderRole(IdentityProviderConfig config) throws SaveException {
+    private void addManageProviderRole(IdentityProviderConfig config) throws SaveException {
         User currentUser = JaasUtils.getCurrentUser();
 
         String name = MessageFormat.format(IdentityAdmin.ROLE_NAME_PATTERN, config.getName(), config.getOid());

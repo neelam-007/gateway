@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.security.rbac;
 
 import com.l7tech.gateway.common.security.rbac.OperationType;
@@ -10,6 +7,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.OrganizationHeader;
 import com.l7tech.server.EntityFinder;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Set;
 
@@ -67,7 +65,7 @@ public interface RbacServices {
                                                  EntityType requiredType)
             throws FindException;
 
-    boolean isPermittedForEntity(User user, Entity entity, OperationType operation, String otherOperationName) throws FindException;
+    boolean isPermittedForEntity(User user, Entity entity, OperationType operation, @Nullable String otherOperationName) throws FindException;
 
     /**
      * Filters a collection of {@link com.l7tech.objectmodel.EntityHeader}s, returning a new {@link Iterable} (<em>not necessarily of the same

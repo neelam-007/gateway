@@ -31,6 +31,7 @@ import com.l7tech.util.Config;
 import com.l7tech.util.Functions;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 
@@ -46,8 +47,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static com.l7tech.objectmodel.EntityType.ID_PROVIDER_CONFIG;
 
 /**
  * Server side implementation of the IdentityAdmin interface.
@@ -140,6 +139,10 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
             if (identityProviderConfig.getOid() != IdentityProviderConfig.DEFAULT_OID) {
                 IdentityProviderConfigManager manager = getIdProvCfgMan();
                 IdentityProviderConfig originalConfig = manager.findByPrimaryKey(identityProviderConfig.getOid());
+                if ( originalConfig == null ) {
+                    throw new SaveException("Identity provider not found for id '"+identityProviderConfig.getOid()+"'.");
+                }
+
                 originalConfig.copyFrom(identityProviderConfig);
                 manager.update(originalConfig);
                 logger.info("Updated IDProviderConfig: " + identityProviderConfig.getOid());
@@ -147,7 +150,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
             } else {
                 logger.info("Saving IDProviderConfig: " + identityProviderConfig.getOid());
                 oid = getIdProvCfgMan().save(identityProviderConfig);
-                getIdProvCfgMan().addManageProviderRole(identityProviderConfig);
+                getIdProvCfgMan().createRoles(identityProviderConfig);
             }
 
             return oid;
@@ -222,6 +225,9 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
             IdentityProviderConfigManager manager = getIdProvCfgMan();
 
             final IdentityProviderConfig ipc = manager.findByPrimaryKey(oid);
+            if ( ipc == null ) {
+                throw new DeleteException("Identity provider not found for id '"+oid+"'.");
+            }
 
             if (ipc.type() == IdentityProviderType.FEDERATED) {
                 deleteAllUsers(oid);
@@ -229,14 +235,14 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
                 deleteAllVirtualGroups(oid);
             }
 
+            manager.deleteRoles( ipc.getOid() );
             manager.delete(ipc);
 
-            roleManager.deleteEntitySpecificRoles(ID_PROVIDER_CONFIG, ipc.getOid());
             trustedEsmUserManager.deleteMappingsForIdentityProvider(ipc.getOid());
             logger.info("Deleted IDProviderConfig: " + ipc);
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
-            throw new DeleteException("This object cannot be found (it no longer exist?).", e);
+            throw new DeleteException("Error finding identity provider for deletion.", e);
         }
     }
 
@@ -312,7 +318,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     }
 
     @Override
-    public String saveUser(long identityProviderConfigId, User user, Set groupHeaders, String clearTextPassword)
+    public String saveUser(long identityProviderConfigId, User user, Set groupHeaders, @Nullable String clearTextPassword)
             throws SaveException, UpdateException, ObjectNotFoundException, InvalidPasswordException {
         boolean isSave = true;
         try {
