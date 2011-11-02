@@ -21,7 +21,7 @@ import java.util.Random;
 import static org.junit.Assert.*;
 
 /**
- *
+ * Test XencUtil AES-GCM support.
  */
 public class XencGcmTest {
     private static final Random random = new Random(1717171L);

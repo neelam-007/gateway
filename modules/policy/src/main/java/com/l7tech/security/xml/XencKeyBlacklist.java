@@ -35,7 +35,7 @@ public class XencKeyBlacklist {
     public static final String PROP_XENC_KEY_BLACKLIST_FAIL_WHEN_FULL = "com.l7tech.security.xml.xenc.decryptionKeyBlacklist.failWhenFull";
     public static final String PROP_XENC_KEY_BLACKLIST_CAPACITY = "com.l7tech.security.xml.xenc.decryptionKeyBlacklist.capacity";
     public static final String PROP_XENC_KEY_BLACKLIST_MAX_FAILURES = "com.l7tech.security.xml.xenc.decryptionKeyBlacklist.maxFailures";
-    public static final String PROP_XENC_KEY_BLACKLIST_MAX_AGE = "com.l7tech.security.xml.xenc.decryptionKeyBlacklist.maxAgeSec";
+    public static final String PROP_XENC_KEY_BLACKLIST_MAX_AGE = "com.l7tech.security.xml.xenc.decryptionKeyBlacklist.maxAge";
     public static final String PROP_XENC_KEY_BLACKLIST_FAILURE_DELAY = "com.l7tech.security.xml.xenc.decryptionKeyBlacklist.failureDelayMillis";
     public static final String PROP_XENC_KEY_BLACKLIST_CLEANER_PERIOD = "com.l7tech.security.xml.xenc.decryptionKeyBlacklist.cleanerPeriodMillis";
 
