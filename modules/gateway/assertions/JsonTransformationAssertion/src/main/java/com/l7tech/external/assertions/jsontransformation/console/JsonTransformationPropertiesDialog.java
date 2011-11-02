@@ -62,17 +62,19 @@ public class JsonTransformationPropertiesDialog extends AssertionPropertiesOkCan
         testButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
-                if(Syntax.getReferencedNames(rootTagTextField.getText()).length > 0){
-                    JOptionPane.showMessageDialog(parent, "Cannot test using context variable as root tag name.", "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-                if(rootTagTextField.isEnabled() && rootTagTextField.getText().trim().isEmpty()){
-                    JOptionPane.showMessageDialog(parent, "Root tag is required.", "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-                if(!JsonTransformationAssertion.ROOT_TAG_VERIFIER.matcher(rootTagTextField.getText()).matches()){
-                    JOptionPane.showMessageDialog(parent, "Invalid root tag specified.", "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
+                if(rootTagTextField.isEnabled()){
+                    if(Syntax.getReferencedNames(rootTagTextField.getText()).length > 0){
+                        JOptionPane.showMessageDialog(parent, "Cannot test using context variable as root tag name.", "Error", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    if(rootTagTextField.getText().trim().isEmpty()){
+                        JOptionPane.showMessageDialog(parent, "Root Tag is required.", "Error", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    if(!JsonTransformationAssertion.ROOT_TAG_VERIFIER.matcher(rootTagTextField.getText()).matches()){
+                        JOptionPane.showMessageDialog(parent, "Invalid root tag specified.", "Error", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
                 }
                 doTest();
             }
@@ -153,7 +155,7 @@ public class JsonTransformationPropertiesDialog extends AssertionPropertiesOkCan
 
         // resolve context vars
         String[] refTag = Syntax.getReferencedNames(rootTag);
-        if(refTag.length > 0 ){
+        if(rootTagTextField.isEnabled() && refTag.length > 0 ){
             Map<String, Object> contextVars = null;
             ResolveContextVariablesPanel dlg = new ResolveContextVariablesPanel(this,refTag);
             dlg.pack();

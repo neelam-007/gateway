@@ -63,6 +63,10 @@ public class ServerJsonTransformationAssertion extends AbstractServerAssertion<J
             } else {
                 Map<String, Object> vars = context.getVariableMap(assertion.getVariablesUsed(), getAudit());
                 String rootTag = ExpandVariables.process(assertion.getRootTagString(), vars, getAudit(), true);
+                if(rootTag == null || rootTag.trim().isEmpty()){
+                    logAndAudit( AssertionMessages.USERDETAIL_WARNING, "Root Tag is required.");
+                    return AssertionStatus.FAILED;
+                }
                 if(!JsonTransformationAssertion.ROOT_TAG_VERIFIER.matcher(rootTag).matches()){
                     logAndAudit( AssertionMessages.USERDETAIL_WARNING, "Invalid root tag specified: " + rootTag );
                     return AssertionStatus.FAILED;
