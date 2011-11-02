@@ -220,9 +220,8 @@ public class SecurePasswordPropertiesDialog extends JDialog {
                     break;
             }
         } else {
-            typeComboBox.setVisible(false);
             typeComboBox.setEnabled(false);
-            typeLabel.setVisible(false);
+            typeLabel.setEnabled(false);
 
             pemPrivateKeyFieldPanel.setVisible(false);
             pemPrivateKeyFieldPanel.setEnabled(false);
