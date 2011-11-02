@@ -1,8 +1,7 @@
-package com.l7tech.server.admin.ws;
+package com.l7tech.server.admin;
 
 import com.l7tech.gateway.common.GatewayConfiguration;
 import com.l7tech.server.ServerConfigParams;
-import com.l7tech.server.admin.AdminLoginImpl;
 import com.l7tech.util.Config;
 import org.junit.Before;
 import org.junit.Test;
