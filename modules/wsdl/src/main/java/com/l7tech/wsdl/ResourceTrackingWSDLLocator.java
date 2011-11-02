@@ -6,6 +6,8 @@ import com.l7tech.common.io.IOExceptionThrowingReader;
 import com.l7tech.common.io.SchemaUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.util.*;
+import com.l7tech.util.Functions.Binary;
+import static com.l7tech.util.Functions.reduce;
 import org.w3c.dom.DOMConfiguration;
 import org.w3c.dom.Document;
 import org.w3c.dom.ls.DOMImplementationLS;
@@ -145,6 +147,21 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
      */
     public Collection<WSDLResource> getWSDLResources() {
         return Collections.unmodifiableCollection(resources);
+    }
+
+    /**
+     * Get a map of retrieved documents ( uri -> content )
+     *
+     * @return The unordered Map of resources.
+     */
+    public Map<String,String> getResourceMap() {
+        return reduce( resources, new HashMap<String,String>(), new Binary<Map<String,String>,Map<String,String>,WSDLResource>(){
+            @Override
+            public Map<String, String> call( final Map<String, String> resourceMap, final WSDLResource wsdlResource ) {
+                resourceMap.put( wsdlResource.getUri(), wsdlResource.getWsdl() );
+                return resourceMap;
+            }
+        } );
     }
 
     /**
@@ -424,7 +441,8 @@ public class ResourceTrackingWSDLLocator implements WSDLLocator {
      */
     private static String loadFromStream(InputSource inputSource, InputStream in) throws IOException {
         in = new ByteOrderMarkInputStream(in);
-        Charset encoding = Charset.isSupported(inputSource.getEncoding()) ? Charset.forName(inputSource.getEncoding()) : null;
+        Charset encoding = inputSource.getEncoding()!=null && Charset.isSupported(inputSource.getEncoding()) ?
+                Charset.forName(inputSource.getEncoding()) : null;
         if (encoding == null) {
             encoding = ((ByteOrderMarkInputStream)in).getEncoding();
             if (encoding == null) {
