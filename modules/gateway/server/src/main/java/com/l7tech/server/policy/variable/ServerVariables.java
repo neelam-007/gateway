@@ -652,13 +652,6 @@ public class ServerVariables {
                     return new SecurePasswordLocatorContext();
                 }
             }),
-            new Variable("uuid", new Getter() {
-                @Override
-                public Object get(String name, PolicyEnforcementContext context) {
-                    UUID id = UUID.randomUUID();
-                    return id == null ? null : id.toString();
-                }
-            }),
     };
 
     private static X509Certificate getOnlyOneClientCertificateForSource(final List<LoginCredentials> credentials,

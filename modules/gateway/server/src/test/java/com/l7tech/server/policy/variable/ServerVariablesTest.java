@@ -950,15 +950,6 @@ public class ServerVariablesTest {
     }
 
     @Test
-    public void testUUIDGenerated() throws Exception {
-        final PolicyEnforcementContext context = context();
-        String[] usedVars = Syntax.getReferencedNames("${uuid}");
-        Map<String, Object> vars = context.getVariableMap(usedVars, auditor);
-        String expanded = ExpandVariables.process("${uuid}", vars, auditor);
-        assertNotNull(expanded);
-    }
-
-    @Test
     public void testBuildVariables() throws Exception {
         final PolicyEnforcementContext context = context();
         expandAndCheck(context, "${ssgnode.build.label}", BuildInfo.getProductVersion());
