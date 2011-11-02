@@ -24,10 +24,10 @@ import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.util.*;
 import com.l7tech.wsdl.ResourceTrackingWSDLLocator;
+import com.l7tech.wsdl.SerializableWSDLLocator;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.wsdl.PrettyGoodWSDLLocator;
 import com.l7tech.wsdl.WsdlEntityResolver;
-import com.l7tech.common.io.DocumentReferenceProcessor;
 import com.l7tech.xml.soap.SoapMessageGenerator;
 import com.l7tech.xml.soap.SoapUtil;
 import org.apache.commons.httpclient.SimpleHttpConnectionManager;
@@ -179,6 +179,7 @@ public class GClient {
     //
     private final Color defaultTextAreaBg;
     private final Color errorColor = ERROR_COLOR;
+    private SerializableWSDLLocator wsdlLocator;
     private Wsdl wsdl;
     private Service service;
     private Port port;
@@ -357,8 +358,9 @@ public class GClient {
         frame.setJMenuBar(mb);
     }
 
-    private void setWsdl(Wsdl wsdl) {
+    private void setWsdl(Wsdl wsdl, SerializableWSDLLocator wsdlLocator) {
         this.wsdl = wsdl;
+        this.wsdlLocator = wsdlLocator;
         this.service = null;
         this.port = null;
         this.operation = null;
@@ -644,7 +646,8 @@ public class GClient {
 
             try {
                 final URL baseUrl = new URL(uri);
-                setWsdl(Wsdl.newInstance(new PrettyGoodWSDLLocator(baseUrl, permissiveUrlGetter)));
+                final ResourceTrackingWSDLLocator locator = new ResourceTrackingWSDLLocator( new PrettyGoodWSDLLocator(baseUrl, permissiveUrlGetter), true, false, false );
+                setWsdl(Wsdl.newInstance(locator), Wsdl.getWSDLLocator( uri, locator.getResourceMap(), logger ) );
             } catch(Exception e) {
                 e.printStackTrace();
             }
@@ -847,7 +850,11 @@ public class GClient {
             FileInputStream fis = null;
             try {
                 fis = new FileInputStream(selected);
-                setWsdl(Wsdl.newInstance(selected.toURI().toString(), new InputStreamReader(fis, Charsets.UTF8)));
+                final InputSource source = new InputSource();
+                source.setSystemId(selected.toURI().toString());
+                source.setByteStream(fis);
+                final ResourceTrackingWSDLLocator locator = new ResourceTrackingWSDLLocator( Wsdl.getWSDLLocator( source, true ), true, false, false );
+                setWsdl(Wsdl.newInstance(locator), Wsdl.getWSDLLocator( selected.toURI().toString(), locator.getResourceMap(), logger ) );
             }
             catch(Exception e) {
                 e.printStackTrace();
@@ -1622,15 +1629,15 @@ public class GClient {
         this.cookiesTextField = cookiesTextField;
     }
 
-    public String getSerializedWsdl() {
+    public String getSerializedWsdlLocator() {
         String value = null;
-        if ( wsdl != null ) {
+        if ( wsdlLocator != null ) {
             ByteArrayOutputStream baos = null;
             ObjectOutputStream out = null;
             try {
                 baos = new ByteArrayOutputStream();
                 out = new ObjectOutputStream( baos );
-                out.writeObject( wsdl );
+                out.writeObject( wsdlLocator );
                 value = HexUtils.encodeBase64( baos.toByteArray() );
             } catch ( Exception e ) {
                 e.printStackTrace();
@@ -1642,19 +1649,20 @@ public class GClient {
         return value;
     }
 
-    public void setSerializedWsdl( final String wsdlStr ) {
+    public void setSerializedWsdlLocator( final String wsdlStr ) {
         if ( wsdlStr != null && wsdlStr.length() > 0 ) {
             ObjectInputStream in = null;
             try {
                 in = new ObjectInputStream( new ByteArrayInputStream( HexUtils.decodeBase64(wsdlStr) ) );
-                final Wsdl wsdl = (Wsdl) in.readObject();
+                final SerializableWSDLLocator wsdlLocator = (SerializableWSDLLocator) in.readObject();
+                final Wsdl wsdl = Wsdl.newInstance( wsdlLocator );
                 SwingUtilities.invokeLater( new Runnable(){
                     @Override
                     public void run() {
                         final String action = soapActionTextField.getText(); // save and restore so setting WSDL doesn't overwrite
                         final String url = urlTextField.getText();
                         final String message = requestTextArea.getText();
-                        setWsdl( wsdl );                        
+                        setWsdl( wsdl, wsdlLocator );
                         soapActionTextField.setText( action );
                         soapActionTextField.setCaretPosition( 0 );
                         urlTextField.setText( url );
