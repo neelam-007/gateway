@@ -17,9 +17,7 @@ public class EntityUtils {
      */
     public static void updateCopy( final NamedEntityImp entity ) {
         resetIdentity( entity );
-        if (  entity.getName() != null && !entity.getName().startsWith( COPY_OF_PREFIX ) ) {
-            entity.setName( COPY_OF_PREFIX + entity.getName() );
-        }
+        entity.setName( getNameForCopy( entity.getName() ) );
     }
 
     /**
@@ -30,5 +28,19 @@ public class EntityUtils {
     public static void resetIdentity( final PersistentEntity entity ) {
         entity.setOid( PersistentEntity.DEFAULT_OID);
         entity.setVersion( 0 );
+    }
+
+    /**
+     * Get a possibly updated name to use for a copied item.
+     *
+     * @param name The original name
+     * @return The name to use for the copy
+     */
+    public static String getNameForCopy( final String name ) {
+        String updatedName = name;
+        if (  name != null && !name.startsWith( COPY_OF_PREFIX ) ) {
+            updatedName = COPY_OF_PREFIX + name;
+        }
+        return updatedName;
     }
 }

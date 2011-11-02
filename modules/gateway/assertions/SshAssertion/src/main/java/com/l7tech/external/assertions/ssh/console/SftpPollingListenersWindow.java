@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.ssh.console;
 
+import com.l7tech.console.util.EntityUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.ssh.server.sftppollinglistener.SftpPollingListenerConstants;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
@@ -78,7 +79,8 @@ public class SftpPollingListenersWindow extends JDialog {
                         if(i != null) {
                             SftpPollingListenerDialogSettings newListener =  new SftpPollingListenerDialogSettings();
                             i.copyPropertiesToResource(newListener);
-                            newListener.setName("Copy of "+ newListener.getName());
+                            newListener.setName(EntityUtils.getNameForCopy( newListener.getName() ));
+                            newListener.setVersion( 0 );
 
                             final SftpPollingListenerPropertiesDialog dialog =
                                 new SftpPollingListenerPropertiesDialog(SftpPollingListenersWindow.this, newListener, true);
