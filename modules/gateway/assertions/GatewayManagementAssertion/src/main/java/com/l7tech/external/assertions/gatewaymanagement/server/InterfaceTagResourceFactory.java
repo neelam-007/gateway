@@ -11,6 +11,8 @@ import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Option;
+import com.l7tech.util.Pair;
+import static com.l7tech.util.Pair.pair;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -87,7 +89,7 @@ public class InterfaceTagResourceFactory extends ClusterPropertyBackedResourceFa
 
     @NotNull
     @Override
-    InterfaceTag internalFromResource( @NotNull final Object resource ) throws InvalidResourceException {
+    Pair<InterfaceTag,Integer> internalFromResource( @NotNull final Object resource ) throws InvalidResourceException {
         if ( !(resource instanceof InterfaceTagMO) )
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.UNEXPECTED_TYPE, "expected interface tag");
 
@@ -109,7 +111,7 @@ public class InterfaceTagResourceFactory extends ClusterPropertyBackedResourceFa
             }
         });
 
-        return new InterfaceTag( name, ipPatterns );
+        return pair(new InterfaceTag( name, ipPatterns ), interfaceTagMO.getVersion());
     }
 
     @Override

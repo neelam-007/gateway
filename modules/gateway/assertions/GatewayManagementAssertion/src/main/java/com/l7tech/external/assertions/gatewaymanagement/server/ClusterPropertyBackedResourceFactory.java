@@ -24,6 +24,7 @@ import static com.l7tech.util.Functions.map;
 import static com.l7tech.util.Functions.partial;
 import com.l7tech.util.Option;
 import static com.l7tech.util.Option.optional;
+import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -45,13 +46,13 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
             @Override
             public Either<InvalidResourceException,String> execute() throws ObjectModelException {
                 try {
-                    final RI internalValue = internalFromResource( resource );
+                    final Pair<RI,Integer> internalValue = internalFromResource( resource );
                     final ClusterProperty property = getClusterPropertyForUpdate();
                     final Collection<RI> internalValues = parseProperty( property );
-                    final Collection<RI> updatedInternalValues = createInternal( internalValue, internalValues );
+                    final Collection<RI> updatedInternalValues = createInternal( internalValue.left, internalValues );
                     saveOrUpdateClusterProperty(property, formatProperty(updatedInternalValues));
 
-                    return right( getIdentifier( internalValue ) );
+                    return right( getIdentifier( internalValue.left ) );
                 } catch ( InvalidResourceException e ) {
                     return left( e );
                 }
@@ -106,10 +107,11 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
             @Override
             public E2<InvalidResourceException, ResourceNotFoundException, Option<Void>> execute() throws ObjectModelException {
                 try {
-                    final RI internalValue = internalFromResource( resource );
+                    final Pair<RI,Integer> internalValue = internalFromResource( resource );
                     final ClusterProperty property = getClusterPropertyForUpdate();
+                    verifyVersion( property.getVersion(), optional(internalValue.right).orSome(VERSION_NOT_PRESENT) );
                     final Collection<RI> internalValues = parseProperty( property );
-                    final Collection<RI> updatedInternalValues = putInternal( internalValue, internalValues );
+                    final Collection<RI> updatedInternalValues = putInternal( internalValue.left, internalValues );
                     saveOrUpdateClusterProperty( property, formatProperty( updatedInternalValues ) );
                     return right2( Option.<Void>none() );
                 } catch ( InvalidResourceException e ) {
@@ -362,10 +364,10 @@ abstract class ClusterPropertyBackedResourceFactory<R,RI> extends EntityManagerR
      * Convert the resource representation to the internal representation.
      *
      * @param resource The value to convert
-     * @return The identifier and internal representation
+     * @return The internal representation and it's version
      */
     @NotNull
-    abstract RI internalFromResource( @NotNull final Object resource ) throws InvalidResourceException;
+    abstract Pair<RI,Integer> internalFromResource( @NotNull final Object resource ) throws InvalidResourceException;
 
     //- PRIVATE
 
