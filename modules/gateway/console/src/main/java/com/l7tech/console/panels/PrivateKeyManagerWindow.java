@@ -331,28 +331,18 @@ public class PrivateKeyManagerWindow extends JDialog {
         final SigningCertificatePropertiesDialog signingCertPropertiesDialog;
 
         try {
-            // For security permission issue, if the client is running on an applet, send the request and let server side to finish the task.
-            if(TopComponents.getInstance().isApplet()) {
-                signingCertPropertiesDialog = new SigningCertificatePropertiesDialog(
-                    TopComponents.getInstance().getTopParent(),
-                    getTrustedCertAdmin().getCsrProperties(csrBytes[0]),  // Call Remote Admin API to process the task
-                    precheckingShortKeyFunc
-                );
-            }
-            // If the client is a standalone application,, the client side will directly process the task without the server involved.
-            else {
-                signingCertPropertiesDialog = new SigningCertificatePropertiesDialog(
-                    TopComponents.getInstance().getTopParent(),
-                    csrBytes[0],
-                    precheckingShortKeyFunc
-                );
-            }
+            // For security permission issue in applet, we send the server a request to finish the task.
+            signingCertPropertiesDialog = new SigningCertificatePropertiesDialog(
+                TopComponents.getInstance().getTopParent(),
+                getTrustedCertAdmin().getCsrProperties(csrBytes[0]),  // Call Remote Admin API to process the task
+                precheckingShortKeyFunc
+            );
         } catch (Exception e) {
             showErrorMessage("Unable to Sign Certificate", "Unable to process certificate signing request: " + ExceptionUtils.getMessage(e), e);
             return;
         }
 
-        Functions.Nullary<Void> postTaskFunc = new Functions.Nullary<Void>() {
+        signingCertPropertiesDialog.setPostTaskFunc(new Functions.Nullary<Void>() {
             @Override
             public Void call() {
                 // After the dialog is confirmed against the contents of the CSR, then generate a new certificate chain and save the new certificate.
@@ -387,8 +377,7 @@ public class PrivateKeyManagerWindow extends JDialog {
 
                 return null;
             }
-        };
-        signingCertPropertiesDialog.setPostTaskFunc(postTaskFunc);
+        });
 
         Utilities.centerOnParent(signingCertPropertiesDialog);
         DialogDisplayer.display(signingCertPropertiesDialog);

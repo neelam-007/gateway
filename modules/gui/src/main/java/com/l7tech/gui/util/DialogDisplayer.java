@@ -383,11 +383,10 @@ public class DialogDisplayer {
      * @param mess      message to display.  required
      * @param title     title for the dialog.  required
      * @param messType  message type.  required
-     * @param callback  callback to invoke when dialog is dismissed.  optional
+     * @param callback  callback to invoke when dialog is dismissed.  optional, so it can be null.
      */
-    public static void showMessageDialog(Component parent, Object mess, String title, int messType, Runnable callback) {
-        showMessageDialog(parent, mess, title, messType, null,
-                          callback == null ? null : callback);
+    public static void showMessageDialog(Component parent, Object mess, String title, int messType, @Nullable Runnable callback) {
+        showMessageDialog(parent, mess, title, messType, null, callback);
     }
 
     /**
@@ -667,7 +666,7 @@ public class DialogDisplayer {
                                        String title,
                                        int opType,
                                        int messType,
-                                       Icon icon,
+                                       @Nullable Icon icon,
                                        final Object[] options,
                                        Object initialValue,
                                        final OptionListener result)

@@ -1,6 +1,5 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.common.io.CertUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
@@ -8,25 +7,14 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.security.prov.bc.BouncyCastleRsaSignerEngine;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
-import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
-import org.bouncycastle.asn1.x509.X509Name;
-import org.bouncycastle.jce.PKCS10CertificationRequest;
 
 import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.security.PublicKey;
-import java.security.interfaces.ECPublicKey;
-import java.security.interfaces.RSAPublicKey;
-import java.security.spec.ECParameterSpec;
-import java.security.spec.ECPoint;
 import java.text.MessageFormat;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -36,7 +24,7 @@ import java.util.logging.Logger;
 /**
  * The dialog displays the contents of a CSR and allows user to set/modify some settings of signing certificate.
  *
- * @author: ghuang
+ * @author ghuang
  */
 public class SigningCertificatePropertiesDialog extends JDialog {
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.panels.SigningCertificatePropertiesDialog");
@@ -65,23 +53,6 @@ public class SigningCertificatePropertiesDialog extends JDialog {
     private Functions.Nullary<Void> postTaskFunc;
     private String publicKeyDetails;
 
-    public SigningCertificatePropertiesDialog(Frame owner, Functions.Nullary<Boolean> precheckingShortKeyFunc) {
-        super(owner, resources.getString("dialog.title"));
-        this.precheckingShortKeyFunc = precheckingShortKeyFunc;
-        initialize();
-    }
-
-    /**
-     * The constructor will process the given raw CSR bytes given and get the contents of the CSR.
-     * @param owner parent of this dialog
-     * @param csrBytes raw CSR bytes
-     * @param precheckingShortKeyFunc: the function to check if the CA key is a short key for signature alorightm
-     */
-    public SigningCertificatePropertiesDialog(Frame owner, byte[] csrBytes, Functions.Nullary<Boolean> precheckingShortKeyFunc) {
-        this(owner, precheckingShortKeyFunc);
-        modelToView(csrBytes);
-    }
-
     /**
      * The constructor will be given the contents of the CSR.
      * @param owner parent of this dialog
@@ -89,7 +60,9 @@ public class SigningCertificatePropertiesDialog extends JDialog {
      * @param precheckingShortKeyFunc: the function to check if the CA key is a short key for signature alorightm
      */
     public SigningCertificatePropertiesDialog(Frame owner, Map<String, String> csrProps, Functions.Nullary<Boolean> precheckingShortKeyFunc) {
-        this(owner, precheckingShortKeyFunc);
+        super(owner, resources.getString("dialog.title"));
+        this.precheckingShortKeyFunc = precheckingShortKeyFunc;
+        initialize();
         modelToView(csrProps);
     }
 
@@ -216,66 +189,6 @@ public class SigningCertificatePropertiesDialog extends JDialog {
         }
 
         return expiryAge;
-    }
-
-    /**
-     * Display the contents of the CSR
-     *
-     * @param csrBytes given CSR raw bytes
-     */
-    private void modelToView(final byte[] csrBytes) {
-        byte[] decodedCsrBytes;
-        try {
-            decodedCsrBytes = CertUtils.csrPemToBinary(csrBytes);
-        } catch (IOException e) {
-            // Try as DER
-            decodedCsrBytes = csrBytes;
-        }
-        PKCS10CertificationRequest pkcs10 = new PKCS10CertificationRequest(decodedCsrBytes);
-        CertificationRequestInfo certReqInfo = pkcs10.getCertificationRequestInfo();
-
-        @SuppressWarnings({"deprecation"})
-        String subjectDn = certReqInfo.getSubject().toString(true, X509Name.DefaultSymbols);
-        subjectDnTextField.setText(subjectDn);
-
-        final PublicKey publicKey;
-        try {
-            publicKey = BouncyCastleRsaSignerEngine.getPublicKey(pkcs10);
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Unable to get the public key from the CSR: " + ExceptionUtils.getMessage(e));
-            return;
-        }
-
-        final String briefDetails;
-        if (publicKey instanceof RSAPublicKey) {
-            final RSAPublicKey rsa = (RSAPublicKey) publicKey;
-            final BigInteger modulus = rsa.getModulus();
-
-            briefDetails = "RSA, " + modulus.bitLength() + " bits";
-
-            publicKeyDetails = "Key type: RSA public key\n" +
-                "Key size: " + modulus.bitLength() + " bits\n" +
-                "Modulus: " + modulus.toString(16) + "\n" +
-                "Public exponent: " + rsa.getPublicExponent().toString(16);
-        } else if (publicKey instanceof ECPublicKey) {
-            final ECPublicKey ec = (ECPublicKey) publicKey;
-            final ECParameterSpec params = ec.getParams();
-            final ECPoint w = ec.getW();
-            final String curveName = CertUtils.guessEcCurveName(publicKey);
-
-            briefDetails = "EC" + (curveName == null? "" : ", " + curveName);
-
-            publicKeyDetails = "Key type: EC public key\n" +
-                (curveName == null? "" : "Curve name: " + curveName + "\n") + // If curve name is know, then display curve name.
-                "Curve size: " + params.getCurve().getField().getFieldSize() + " bits\n" +
-                "Curve point-W (X): " + w.getAffineX() + "\n" +
-                "Curve point-W (Y): " + w.getAffineY();
-        } else {
-            briefDetails = publicKey.getAlgorithm();
-            publicKeyDetails = publicKey.toString();
-        }
-
-        publicKeyDetailsTextField.setText(briefDetails);
     }
 
     /**
