@@ -3,9 +3,14 @@ package com.l7tech.server.tomcat;
 import com.l7tech.common.io.SSLSocketWrapper;
 import com.l7tech.common.io.SocketWrapper;
 import com.l7tech.common.io.SocketWrapper.TraceSupport;
+import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.http.HttpTransportModule;
+import com.l7tech.util.ResourceUtils;
 import org.apache.tomcat.util.net.ServerSocketFactory;
 
+import javax.net.ssl.HandshakeCompletedEvent;
+import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.SSLSocket;
 import java.io.IOException;
 import java.io.InputStream;
@@ -112,6 +117,34 @@ public class SsgServerSocketFactory extends ServerSocketFactory {
 
         if (accepted instanceof SSLSocket) {
             final SSLSocket sslSocket = (SSLSocket)accepted;
+
+            // See if renegotiation should be enabled
+            boolean allowRenegotiation = false;
+            HttpTransportModule module = HttpTransportModule.getInstance(transportModuleId);
+            if (module != null) {
+                try {
+                    SsgConnector connector = module.getActiveConnectorByOid(connectorOid);
+                    if (connector.getBooleanProperty(SsgConnector.PROP_TLS_ALLOW_UNSAFE_LEGACY_RENEGOTIATION))
+                        allowRenegotiation = true;
+                } catch (ListenerException e) {
+                    /* FALLTHROUGH and assume renegotiation should not be permitted */
+                }
+            }
+
+            if (!allowRenegotiation) {
+                sslSocket.addHandshakeCompletedListener(new HandshakeCompletedListener() {
+                    boolean initialHandshakeCompleted = false;
+
+                    @Override
+                    public void handshakeCompleted(HandshakeCompletedEvent event) {
+                        if (initialHandshakeCompleted) {
+                            ResourceUtils.closeQuietly(sslSocket);
+                        }
+                        initialHandshakeCompleted = true;
+                    }
+                });
+            }
+
             wrapped = new SSLSocketWrapper(sslSocket) {
                 private final DispatchSupport ds = new DispatchSupport(transportModuleId, connectorOid, accepted);
                 private final TraceSupport ts = new TraceSupport(accepted, "http", traceLogger);
