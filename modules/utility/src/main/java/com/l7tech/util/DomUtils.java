@@ -189,13 +189,13 @@ public class DomUtils {
      *
      * @param parent the {@link Element} in which to search for children. Must be non-null.
      * @param nsuri the URI of the namespace to which the child must belong, NOT THE PREFIX!  Use null to match localName in any namespace.
-     * @param name the name of the element to find. Must be non-null.
-     * @return First matching child {@link Element}
+     * @param localName the local name of the element to find. Must be non-null.
+     * @return The only matching child {@link Element}.  Never null.
      * @throws TooManyChildElementsException if multiple matching child nodes are found
      * @throws MissingRequiredElementException if no matching child node is found
      */
-    public static Element findExactlyOneChildElementByName( Element parent, String nsuri, String name ) throws TooManyChildElementsException, MissingRequiredElementException {
-        return findOnlyOneChildElementByName0(parent, nsuri, name, true);
+    public static Element findExactlyOneChildElementByName( Element parent, String nsuri, String localName) throws TooManyChildElementsException, MissingRequiredElementException {
+        return findOnlyOneChildElementByName0(parent, nsuri, localName, true);
     }
 
     /**
