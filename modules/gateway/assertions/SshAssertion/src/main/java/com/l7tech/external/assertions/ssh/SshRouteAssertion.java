@@ -1,13 +1,15 @@
 package com.l7tech.external.assertions.ssh;
 
+import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.external.assertions.ssh.console.SftpPollingListenersWindow;
+import com.l7tech.gateway.common.security.rbac.AttemptedAnyOperation;
 import com.l7tech.gateway.common.transport.ftp.FtpCredentialsSource;
 import com.l7tech.gateway.common.transport.ftp.FtpFileNameSource;
 import com.l7tech.gateway.common.transport.ftp.FtpSecurity;
 import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.ImageCache;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -17,9 +19,8 @@ import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.WspEnumTypeMapping;
 
-import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.logging.Logger;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
@@ -292,13 +293,24 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
     }
 
     @SuppressWarnings({"UnusedDeclaration"})
-    public static class SftpPollingListenerCustomAction extends AbstractAction {
+    public static class SftpPollingListenerCustomAction extends SecureAction {
         public SftpPollingListenerCustomAction() {
-            super("Manage SFTP Polling Listeners", ImageCache.getInstance().getIconAsIcon("com/l7tech/console/resources/interface.gif"));
+            super(new AttemptedAnyOperation(EntityType.SSG_CONNECTOR), "service:Admin");
         }
 
-        @Override
-        public void actionPerformed(ActionEvent e) {
+        public String getName() {
+            return "Manage SFTP Polling Listeners";
+        }
+
+        public String getDescription() {
+            return "Create, edit and remove configurations for SFTP polling listeners.";
+        }
+
+        protected String iconResource() {
+            return "com/l7tech/console/resources/interface.gif";
+        }
+
+        protected void performAction() {
             SftpPollingListenersWindow splw = new SftpPollingListenersWindow(TopComponents.getInstance().getTopParent());
             splw.pack();
             Utilities.centerOnScreen(splw);
