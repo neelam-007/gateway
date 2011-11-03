@@ -418,11 +418,11 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     }
 
                     // enforce size restriction
-                    long sizeLimit = 0;
+                    long sizeLimit = 0L;
                     if (assertion.getResponseSize()== null)
                     {
                         long clusterPropValue = serverConfig.getLongProperty(ServerConfigParams.PARAM_JMS_MESSAGE_MAX_BYTES, DEFAULT_MESSAGE_MAX_BYTES);
-                        if(clusterPropValue < 0 ){
+                        if(clusterPropValue >= 0L ){
                             sizeLimit = clusterPropValue;
                         }else{
                             sizeLimit = com.l7tech.message.Message.getMaxBytes();
