@@ -6,8 +6,5 @@
         <Property key="certificateValidation">
             <StringValue>Validate Certificate Path</StringValue>
         </Property>
-        <Property key="adminEnabled">
-            <BooleanValue>true</BooleanValue>
-        </Property>
     </Properties>
 </IdentityProvider>
