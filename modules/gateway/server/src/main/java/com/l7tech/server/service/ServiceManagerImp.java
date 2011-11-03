@@ -228,6 +228,11 @@ public class ServiceManagerImp
     }
 
     @Override
+    public void updateRoles( final PublishedService entity ) throws UpdateException {
+        // handled in update method
+    }
+
+    @Override
     public void deleteRoles( final long serviceOid ) throws DeleteException {
         roleManager.deleteEntitySpecificRoles(SERVICE, serviceOid);
     }

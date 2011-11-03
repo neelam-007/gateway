@@ -112,6 +112,11 @@ public class IdProvConfManagerServer
     }
 
     @Override
+    public void updateRoles( final IdentityProviderConfig entity ) throws UpdateException {
+        // handled in update method
+    }
+
+    @Override
     public void deleteRoles( final long entityOid ) throws DeleteException {
         roleManager.deleteEntitySpecificRoles(ID_PROVIDER_CONFIG, entityOid);
     }

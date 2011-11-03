@@ -250,6 +250,11 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
     }
 
     @Override
+    public void updateRoles( final Policy entity ) throws UpdateException {
+        //handled in update method
+    }
+
+    @Override
     public void deleteRoles( final long policyOid ) throws DeleteException {
         roleManager.deleteEntitySpecificRoles(EntityType.POLICY, policyOid);        
     }

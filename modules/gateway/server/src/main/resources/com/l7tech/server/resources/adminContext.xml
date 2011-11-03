@@ -325,8 +325,7 @@
 
     <bean id="folderAdmin" class="com.l7tech.server.folder.FolderAdminImpl">
         <constructor-arg index="0" ref="folderManager"/>
-        <constructor-arg index="1" ref="roleManager"/>
-        <constructor-arg index="2">
+        <constructor-arg index="1">
             <map>
                 <entry key="com.l7tech.objectmodel.folder.Folder">
                     <ref bean="folderManager"/>

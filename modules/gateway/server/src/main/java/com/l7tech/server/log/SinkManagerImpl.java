@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
@@ -235,6 +236,11 @@ public class SinkManagerImpl
         role.setDescription("Users assigned to the {0} role have the ability to read the log sink and any associated log files.");
 
         roleManager.save(role);
+    }
+
+    @Override
+    public void updateRoles( final SinkConfiguration entity ) throws UpdateException {
+        //sinks cannot currently be renamed, no update necessary
     }
 
     @Override

@@ -192,6 +192,11 @@ public class PolicyVersioningServiceManager implements ServiceManager {
     }
 
     @Override
+    public void updateRoles( final PublishedService entity ) throws UpdateException {
+        serviceManager.updateRoles( entity );
+    }
+
+    @Override
     public void deleteRoles( final long entityOid ) throws DeleteException {
         serviceManager.deleteRoles( entityOid );
     }

@@ -185,6 +185,11 @@ public class VersioningPolicyManager implements PolicyManager {
     }
 
     @Override
+    public void updateRoles( final Policy entity ) throws UpdateException {
+        policyManager.updateRoles( entity );
+    }
+
+    @Override
     public void deleteRoles( final long entityOid ) throws DeleteException {
         policyManager.deleteRoles( entityOid );
     }

@@ -20,17 +20,21 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 import java.util.logging.Logger;
 import java.text.MessageFormat;
+import java.util.regex.Pattern;
 
 /**
  * Implementation of the service/policy folder manager.
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folder, FolderHeader> implements FolderManager {
+    @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
     private static final Logger logger = Logger.getLogger(FolderManagerImpl.class.getName());
 
-    private static final String ROLE_NAME_TYPE_SUFFIX = FolderAdmin.ROLE_NAME_TYPE_SUFFIX;   
+    private static final String ROLE_NAME_TYPE_SUFFIX = FolderAdmin.ROLE_NAME_TYPE_SUFFIX;
     private static final String ROLE_ADMIN_NAME_PATTERN = RbacAdmin.ROLE_NAME_PREFIX + " {0} " + ROLE_NAME_TYPE_SUFFIX + RbacAdmin.ROLE_NAME_OID_SUFFIX;
     private static final String ROLE_READ_NAME_PATTERN = RbacAdmin.ROLE_NAME_PREFIX_READ + " {0} " + ROLE_NAME_TYPE_SUFFIX + RbacAdmin.ROLE_NAME_OID_SUFFIX;
+    private static final Pattern replaceRoleName =
+            Pattern.compile(MessageFormat.format(RbacAdmin.RENAME_REGEX_PATTERN, ROLE_NAME_TYPE_SUFFIX));
 
     private final RoleManager roleManager;
 
@@ -165,6 +169,15 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
     public void createRoles( final Folder folder ) throws SaveException {
         addReadonlyFolderRole( folder );
         addManageFolderRole( folder );
+    }
+
+    @Override
+    public void updateRoles( final Folder folder ) throws UpdateException {
+        try {
+            roleManager.renameEntitySpecificRoles(FOLDER, folder, replaceRoleName);
+        } catch (FindException e) {
+            throw new UpdateException("Couldn't find Role to rename", e);
+        }
     }
 
     @Override

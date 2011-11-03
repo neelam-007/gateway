@@ -1,22 +1,17 @@
 package com.l7tech.server.folder;
 
 import com.l7tech.gateway.common.admin.FolderAdmin;
-import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.objectmodel.*;
-import static com.l7tech.objectmodel.EntityType.FOLDER;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.objectmodel.folder.FolderedEntityManager;
 import com.l7tech.server.ServerConfigParams;
-import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 
-import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 /**
  * @author darmstrong
@@ -25,18 +20,12 @@ public class FolderAdminImpl implements FolderAdmin {
     private static final int MAX_FOLDER_NAME_LENGTH = 128;
     private static final int MAX_FOLDER_DEPTH = ConfigFactory.getIntProperty( ServerConfigParams.PARAM_MAX_FOLDER_DEPTH, 8 );
 
-    private static final Pattern replaceRoleName =
-            Pattern.compile(MessageFormat.format(RbacAdmin.RENAME_REGEX_PATTERN, ROLE_NAME_TYPE_SUFFIX));
-
     private final FolderManager folderManager;
-    private final RoleManager roleManager;
     private final Map<Class<? extends Entity>, FolderedEntityManager> entityManagerMap;
 
     public FolderAdminImpl( final FolderManager folderManager,
-                            final RoleManager roleManager,
                             final Map<Class<? extends Entity>, FolderedEntityManager> entityManagerMap) {
         this.folderManager = folderManager;
-        this.roleManager = roleManager;
         this.entityManagerMap = entityManagerMap;
     }
 
@@ -104,11 +93,7 @@ public class FolderAdminImpl implements FolderAdmin {
                 }
             } else {
                 folderManager.update(folder);
-                try {
-                    roleManager.renameEntitySpecificRoles(FOLDER, folder, replaceRoleName);
-                } catch (FindException e) {
-                    throw new UpdateException("Couldn't find Role to rename", e);
-                }
+                folderManager.updateRoles( folder );
                 oid = folder.getOid();
             }
             return oid;

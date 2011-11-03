@@ -158,6 +158,7 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
         checkReadOnly();
 
         final String id = extract2( transactional( new TransactionalCallback<E2<ResourceNotFoundException, InvalidResourceException, String>>() {
+            @SuppressWarnings({ "unchecked" })
             @Override
             public E2<ResourceNotFoundException, InvalidResourceException, String> execute() throws ObjectModelException {
                 try {
@@ -186,6 +187,9 @@ abstract class EntityManagerResourceFactory<R, E extends PersistentEntity, EH ex
                         validate( entity );
                     }
 
+                    if ( manager instanceof RoleAwareEntityManager ) {
+                        ((RoleAwareEntityManager<E>)manager).updateRoles( oldEntityBag.getEntity() );
+                    }
                     manager.update( oldEntityBag.getEntity() );
                     afterUpdateEntity( oldEntityBag );
 
