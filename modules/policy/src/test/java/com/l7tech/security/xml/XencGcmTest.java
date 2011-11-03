@@ -7,6 +7,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.security.keys.FlexKey;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.test.BugNumber;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.HexUtils;
 import org.junit.Test;
@@ -89,16 +90,33 @@ public class XencGcmTest {
             XencUtil.decryptAndReplaceUsingKey(encryptedDataEl, flexKey, dc, new Functions.UnaryVoid<Throwable>() {
                 @Override
                 public void call(Throwable throwable) {
-                    throw new RuntimeException(throwable);
+                    fail("error handler should not have been invoked for failed GCM authentication (since alwaysSucceed should be ignored in GCM mode, where it isn't necessary or desirable)");
                 }
             });
             fail("expected exception not thrown");
         } catch (Throwable t) {
-            if (!t.getMessage().contains("GCM Authentication failed")) {
+            //noinspection ThrowableResultOfMethodCallIgnored
+            final String rootMessage = ExceptionUtils.unnestToRoot(t).getMessage();
+
+            boolean expectedMessage = false;
+            for (String message : GCM_AUTH_FAILED_MESSAGES) {
+                if (rootMessage.contains(message)) {
+                    expectedMessage = true;
+                }
+            }
+
+            if (!expectedMessage) {
                 t.printStackTrace(System.err);
                 fail("expected exception not thrown: saw this instead: " + t.getMessage());
             }
         }
     }
 
+    private static final String[] GCM_AUTH_FAILED_MESSAGES = {
+            // Bouncy Castle
+            "mac check in GCM failed",
+
+            // Crypto-J
+            "GCM Authentication failed"
+    };
 }

@@ -20,11 +20,8 @@ import java.security.spec.AlgorithmParameterSpec;
  * An EncryptionEngine that attempts to use AES-GCM.
  */
 public class AesGcmEncryptionEngine extends EncryptionEngine {
-    private static final String AES_GCM_NO_PADDING = "AES/GCM/NoPadding";
     private static final int IV_BYTES = 12;  // GCM always uses 12 byte IV
     private static final int AUTH_TAG_BYTES = 16;  // xenc 1.1 specific a 128 bit auth tag for GCM
-    private final String algUri;
-    private final KeySize keySize;
     private final Cipher cipher;
     private int cipherMode = 0;
     private Key key;
@@ -33,27 +30,20 @@ public class AesGcmEncryptionEngine extends EncryptionEngine {
     private int ivToCollectPosition;
     private int ivBytesRemainingToCollect;
 
-    public AesGcmEncryptionEngine(int keyBits, String uri) throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
-        this.algUri = uri;
-        this.keySize = new KeySize();
+    public AesGcmEncryptionEngine(int keyBits) throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
+        KeySize keySize = new KeySize();
         keySize.setSize(keyBits);
         this.cipher = JceProvider.getInstance().getAesGcmCipher();
     }
 
     @Override
     public EncryptionMethod getEncryptionMethod() {
-        EncryptionMethod encryptionMethod = new EncryptionMethod();
-        encryptionMethod.setAlgorithm(algUri);
-        encryptionMethod.setKeySize(keySize);
-        encryptionMethod.setOAEPParams(null);
         throw new UnsupportedOperationException("Not implemented");
-        //return encryptionMethod;
     }
 
     @Override
     public Provider getProvider() {
         throw new UnsupportedOperationException("Not implemented");
-        //return JceProvider.getInstance().getPreferredProvider(AES_GCM_NO_PADDING);
     }
 
     @Override
@@ -93,40 +83,40 @@ public class AesGcmEncryptionEngine extends EncryptionEngine {
     @Override
     public byte[] update(byte[] bytes, int offset, int len) {
         try{
-        switch (cipherMode) {
-            case Cipher.ENCRYPT_MODE:
-                byte[] ciphertext = cipher.update(bytes, offset, len);
-                if (ivToWrite != null) {
-                    ciphertext = ciphertext == null ? ivToWrite : ArrayUtils.concat(ivToWrite, ciphertext);
-                    ivToWrite = null;
-                }
-                return ciphertext;
-
-            case Cipher.DECRYPT_MODE:
-                if (ivBytesRemainingToCollect > 0) {
-                    if (len >= ivBytesRemainingToCollect) {
-                        // Collect last of the IV, initialize the cipher, and fall through to the first actual cipher update
-                        System.arraycopy(bytes, offset, ivToCollect, ivToCollectPosition, ivBytesRemainingToCollect);
-                        len -= ivBytesRemainingToCollect;
-                        offset += ivBytesRemainingToCollect;
-                        ivBytesRemainingToCollect = 0;
-
-                        cipher.init(Cipher.DECRYPT_MODE, key, JceProvider.getInstance().generateAesGcmParameterSpec(AUTH_TAG_BYTES, ivToCollect));
-                    } else {
-                        System.arraycopy(bytes, offset, ivToCollect, ivToCollectPosition, len);
-                        ivBytesRemainingToCollect -= len;
-                        ivToCollectPosition += len;
-                        len = 0;
-                        // all input consumed, don't have the IV yet, cipher not initialized yet; return null (signalling not enough input yet given to produce a block)
+            switch (cipherMode) {
+                case Cipher.ENCRYPT_MODE:
+                    byte[] ciphertext = cipher.update(bytes, offset, len);
+                    if (ivToWrite != null) {
+                        ciphertext = ciphertext == null ? ivToWrite : ArrayUtils.concat(ivToWrite, ciphertext);
+                        ivToWrite = null;
                     }
-                    if (len < 1)
-                        return null;
-                }
-                return cipher.update(bytes, offset, len);
+                    return ciphertext;
 
-            default:
-                throw new IllegalStateException("Mode not supported for AES-GCM: " + cipherMode);
-        }
+                case Cipher.DECRYPT_MODE:
+                    if (ivBytesRemainingToCollect > 0) {
+                        if (len >= ivBytesRemainingToCollect) {
+                            // Collect last of the IV, initialize the cipher, and fall through to the first actual cipher update
+                            System.arraycopy(bytes, offset, ivToCollect, ivToCollectPosition, ivBytesRemainingToCollect);
+                            len -= ivBytesRemainingToCollect;
+                            offset += ivBytesRemainingToCollect;
+                            ivBytesRemainingToCollect = 0;
+
+                            cipher.init(Cipher.DECRYPT_MODE, key, JceProvider.getInstance().generateAesGcmParameterSpec(AUTH_TAG_BYTES, ivToCollect));
+                        } else {
+                            System.arraycopy(bytes, offset, ivToCollect, ivToCollectPosition, len);
+                            ivBytesRemainingToCollect -= len;
+                            ivToCollectPosition += len;
+                            len = 0;
+                            // all input consumed, don't have the IV yet, cipher not initialized yet; return null (signalling not enough input yet given to produce a block)
+                        }
+                        if (len < 1)
+                            return null;
+                    }
+                    return cipher.update(bytes, offset, len);
+
+                default:
+                    throw new IllegalStateException("Mode not supported for AES-GCM: " + cipherMode);
+            }
         } catch (InvalidAlgorithmParameterException e) {
             throw new IllegalStateException("Decryption internal error", e);
         } catch (InvalidKeyException e) {

@@ -26,7 +26,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import javax.crypto.*;
+import javax.crypto.Cipher;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.spec.PSource;
 import javax.xml.parsers.ParserConfigurationException;
@@ -233,16 +234,24 @@ public class XencUtil {
         Throwable err = null;
         NodeList decryptedNodes = null;
 
-        // TODO omit blacklist check if alg URI uses GCM mode (in which case it is unnecessary)
-        final byte[] blacklistKeyBytes = new byte[16]; // We'll only use the first 16 bytes of the key for the blacklist, since we don't know the actual algorithm yet
-        flexKey.copyBytes(blacklistKeyBytes);
-        if (XencKeyBlacklist.isKeyBlacklisted(blacklistKeyBytes)) {
-            err = new InvalidKeyException("Error decrypting", new RuntimeException("Secret key is blacklisted due to too many decryption attempt failures"));
-        } else {
+        // omit blacklist check if alg URI uses GCM mode (in which case it is unnecessary)
+        final boolean usingGcm = doesEncryptionMethodUseGcm(encryptedDataEl);
+        final boolean useBlacklist = !usingGcm;
+
+        byte[] blacklistKeyBytes = null;
+        if (useBlacklist) {
+            // We'll only use the first 16 bytes of the key for the blacklist, since we don't know the actual algorithm yet
+            blacklistKeyBytes = new byte[16];
+            flexKey.copyBytes(blacklistKeyBytes);
+            if (XencKeyBlacklist.isKeyBlacklisted(blacklistKeyBytes))
+                err = new InvalidKeyException("Error decrypting", new RuntimeException("Secret key is blacklisted due to too many decryption attempt failures"));
+        }
+
+        if (err == null) {
             dc.setKey(flexKey);
 
-            // TODO omit alwaysSucceed if alg URI uses GCM mode (in which case it is unnecessary)
-            final boolean alwaysSucceed = shouldDecryptionAlwaysSucceed();
+            // Omit alwaysSucceed if alg URI uses GCM mode (in which case it is unnecessary and almost certainly undesirable)
+            final boolean alwaysSucceed = shouldDecryptionAlwaysSucceed() && !usingGcm;
 
             try {
                 dc.decrypt();
@@ -250,11 +259,11 @@ public class XencUtil {
             } catch (XSignatureException e) {
                 DsigUtil.repairXSignatureException(e);
                 err = e;
-                XencKeyBlacklist.recordDecryptionFailure(blacklistKeyBytes);
+                if (useBlacklist) XencKeyBlacklist.recordDecryptionFailure(blacklistKeyBytes);
                 if (!alwaysSucceed) throw new XencException("Error decrypting", e); // generify exception message
             } catch (Exception e) {
                 err = e;
-                XencKeyBlacklist.recordDecryptionFailure(blacklistKeyBytes);
+                if (useBlacklist) XencKeyBlacklist.recordDecryptionFailure(blacklistKeyBytes);
                 if (!alwaysSucceed) throw new XencException("Error decrypting", e); // generify exception message
             }
         }
@@ -289,6 +298,18 @@ public class XencUtil {
         }
 
         return decryptedNodes;
+    }
+
+    private static boolean doesEncryptionMethodUseGcm(Element encryptedDataEl) throws XencException {
+        try {
+            Element encMethod = DomUtils.findExactlyOneChildElementByName(encryptedDataEl, SoapConstants.XMLENC_NS, "EncryptionMethod");
+            String alg = encMethod.getAttribute("Algorithm");
+            return (AES_128_GCM.equals(alg) || AES_256_GCM.equals(alg));
+        } catch (MissingRequiredElementException e) {
+            throw new XencException(e);
+        } catch (TooManyChildElementsException e) {
+            throw new XencException(e);
+        }
     }
 
     /**

@@ -137,9 +137,9 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
     public EncryptionEngine getEncryptionEngine(EncryptionMethod encMeth) throws NoSuchAlgorithmException, NoSuchPaddingException, NoSuchProviderException, StructureException {
         final String algorithm = encMeth.getAlgorithm();
         if (XencUtil.AES_128_GCM.equals(algorithm)) {
-            return new AesGcmEncryptionEngine(128, algorithm);
+            return new AesGcmEncryptionEngine(128);
         } else if (XencUtil.AES_256_GCM.equals(algorithm)) {
-            return new AesGcmEncryptionEngine(256, algorithm);
+            return new AesGcmEncryptionEngine(256);
         }
 
         return super.getEncryptionEngine(encMeth);
