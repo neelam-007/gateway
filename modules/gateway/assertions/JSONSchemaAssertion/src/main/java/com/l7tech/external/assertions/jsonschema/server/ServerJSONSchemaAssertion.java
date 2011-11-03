@@ -385,7 +385,6 @@ public class ServerJSONSchemaAssertion extends AbstractServerAssertion<JSONSchem
      * This pattern is to match values like:
      * <em>&lt;http://json.com/my-hyper-schema&gt; rel="describedby"</em>
      *
-     * The only restriction on the url after http:// is that it is at least 5 characters long
      */
     static final String linkHeaderPattern = "<(.*)>\\s*;\\s*rel=\"describedby\"";
 
