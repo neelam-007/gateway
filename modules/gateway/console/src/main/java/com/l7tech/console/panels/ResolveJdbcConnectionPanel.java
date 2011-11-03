@@ -1,5 +1,8 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.EntityUtils;
+import com.l7tech.gateway.common.jdbc.JdbcConnection;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.exporter.JdbcConnectionReference;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
@@ -7,6 +10,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -14,6 +18,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.util.ResourceBundle;
 import java.util.Collections;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.text.MessageFormat;
 
@@ -100,21 +105,60 @@ public class ResolveJdbcConnectionPanel extends WizardStepPanel {
     }
 
     private void doManageJdbcConnections() {
-        JdbcConnectionManagerWindow connMgrWindow = new JdbcConnectionManagerWindow(TopComponents.getInstance().getTopParent());
-        connMgrWindow.pack();
-        Utilities.centerOnScreen(connMgrWindow);
+        final JdbcConnection newConnection = new JdbcConnection();
+        newConnection.setName(connectionReference.getConnectionName());
+        newConnection.setDriverClass(connectionReference.getDriverClass());
+        newConnection.setJdbcUrl(connectionReference.getJdbcUrl());
+        newConnection.setUserName(connectionReference.getUserName());
+
+        EntityUtils.resetIdentity(newConnection);
+        editAndSave(newConnection);
+    }
+
+    private void editAndSave(final JdbcConnection connection){
+        final JdbcConnectionPropertiesDialog dlg = new JdbcConnectionPropertiesDialog(TopComponents.getInstance().getTopParent(), connection);
         final boolean changeWasEnabled = changeRadioButton.isEnabled();
-        DialogDisplayer.display(connMgrWindow, new Runnable() {
+        dlg.pack();
+        Utilities.centerOnScreen(dlg);
+        DialogDisplayer.display(dlg, new Runnable() {
             @Override
             public void run() {
-                populateConnectionCombobox();
-                enableAndDisableComponents();
-                if ( changeRadioButton.isEnabled() && !changeWasEnabled ) {
-                    if (removeRadioButton.isSelected()) changeRadioButton.setSelected( true );
-                    connectionComboBox.setSelectedIndex( 0 );
+                if (dlg.isConfirmed()) {
+                    Runnable reedit = new Runnable() {
+                        public void run() {
+                            editAndSave(connection);
+                        }
+                    };
+
+                    // Save the connection
+                    JdbcAdmin admin = getJdbcConnectionAdmin();
+                    if (admin == null) return;
+                    try {
+                       admin.saveJdbcConnection(connection);
+                    } catch (UpdateException e) {
+                        showErrorMessage(resources.getString("errors.saveFailed.title"),
+                                resources.getString("errors.saveFailed.message") + " " + ExceptionUtils.getMessage(e),
+                                e,
+                                reedit);
+                        return;
+                    }
+
+                    // refresh controls
+                    populateConnectionCombobox();
+                    enableAndDisableComponents();
+                    if ( changeRadioButton.isEnabled() && !changeWasEnabled ) {
+                        if (removeRadioButton.isSelected())
+                            changeRadioButton.setSelected( true );
+                        connectionComboBox.setSelectedIndex(0);
+                    }
+
                 }
-            }
-        });
+            }});
+    }
+
+    private void showErrorMessage(String title, String msg, Throwable e, Runnable continuation) {
+        logger.log(Level.WARNING, msg, e);
+        DialogDisplayer.showMessageDialog(this, msg, title, JOptionPane.ERROR_MESSAGE, continuation);
     }
 
     private void populateConnectionCombobox() {
