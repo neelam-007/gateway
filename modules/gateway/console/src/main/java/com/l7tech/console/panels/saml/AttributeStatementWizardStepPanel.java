@@ -49,6 +49,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
     private JCheckBox failIfUnknownAttributeCheckBox;
     private JCheckBox failIfNoAttributesAddedCheckBox;
     private JCheckBox failIfAttributeValueExcludesAttributeCheckBox;
+    private JPanel variablePrefixPanel;
     private TargetVariablePanel variablePrefixTextField;
     private DefaultTableModelWithAssociatedBean<SamlAttributeStatement.Attribute> attributesTableModel;
     private int samlVersion;
@@ -177,6 +178,9 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
 
         if (issueMode) {
             attributeTableLabel.setText("Include the following attributes and values");
+            variablePrefixPanel.setVisible(true);
+        } else {
+            variablePrefixPanel.setVisible(false);
         }
 
         /** Set content pane */
