@@ -362,7 +362,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
                         if(assertionMap.containsKey(ancestor)) {
                             assertionsToSkip.add(node);
 
-                            immediateParent.add(node);
+                            immediateParent.add((AbstractTreeNode)node.clone());  // add copy, not move node
                             ((CompositeAssertion)immediateParent.asAssertion()).addChild(node.asAssertion());
 
                             if(assertionMap.get(ancestor) == ancestor) {
