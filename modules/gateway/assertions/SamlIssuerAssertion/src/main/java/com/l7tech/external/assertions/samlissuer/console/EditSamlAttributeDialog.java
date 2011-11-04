@@ -1,4 +1,4 @@
-package com.l7tech.console.panels.saml;
+package com.l7tech.external.assertions.samlissuer.console;
 
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.security.saml.SamlConstants;
@@ -24,8 +24,8 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class EditAttributeDialog extends JDialog {
-    static final Logger log = Logger.getLogger(EditAttributeDialog.class.getName());
+public class EditSamlAttributeDialog extends JDialog {
+    static final Logger log = Logger.getLogger(EditSamlAttributeDialog.class.getName());
 
     /**
      * Resource bundle with default locale
@@ -75,7 +75,7 @@ public class EditAttributeDialog extends JDialog {
      * @param parent the parent Frame. May be <B>null</B>
      * @param issueMode
      */
-    public EditAttributeDialog(JDialog parent, SamlAttributeStatement.Attribute attribute, int samlVersion, boolean issueMode) {
+    public EditSamlAttributeDialog(JDialog parent, SamlAttributeStatement.Attribute attribute, int samlVersion, boolean issueMode) {
         super(parent, true);
         this.attribute = attribute;
         this.issueMode = issueMode;
@@ -110,7 +110,7 @@ public class EditAttributeDialog extends JDialog {
      */
     private void initResources() {
         Locale locale = Locale.getDefault();
-        resources = ResourceBundle.getBundle("com.l7tech.console.panels.saml.resources.EditAttributeDialog", locale);
+        resources = ResourceBundle.getBundle("com.l7tech.console.panels.saml.resources.EditSamlAttributeDialog", locale);
     }
 
     /**

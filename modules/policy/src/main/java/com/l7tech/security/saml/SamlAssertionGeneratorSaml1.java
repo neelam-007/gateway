@@ -6,6 +6,7 @@ import com.l7tech.util.NamespaceFactory;
 import com.l7tech.util.SoapConstants;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
+import org.apache.xmlbeans.XmlString;
 import org.w3.x2000.x09.xmldsig.KeyInfoType;
 import org.w3.x2000.x09.xmldsig.X509DataType;
 import org.w3.x2000.x09.xmldsig.X509IssuerSerialType;
@@ -105,11 +106,8 @@ class SamlAssertionGeneratorSaml1 {
                 if (attribute.getNamespace() != null) {
                     attributeType.setAttributeNamespace(attribute.getNamespace());
                 }
-                final Object objValue = attribute.getValue();
-                final XmlObject xmlObject = GeneratorXmlBeansHelper.createXmlObjectForAttributeValueContents(objValue, attribute.getNullBehavior());
-                if (xmlObject != null) {
-                    attributeType.setAttributeValueArray(new XmlObject[]{xmlObject});
-                }
+                XmlString stringValue = XmlString.Factory.newValue(attribute.getValue());
+                attributeType.setAttributeValueArray(new XmlObject[]{stringValue});
             }
             subjectStatementAbstractType = attStatement;
         } else {

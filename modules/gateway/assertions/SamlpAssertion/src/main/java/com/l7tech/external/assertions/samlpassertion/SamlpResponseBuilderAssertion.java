@@ -4,8 +4,6 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
-import com.l7tech.util.Functions;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 
@@ -22,20 +20,6 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPri
         setSourceUsedByGateway(false);
     }
 
-    /**
-     * Create a new instance of SamlpResponseBuilderAssertion with default properties configured.
-     * <p/>
-     * Supports new validateWebSsoRules property default value of false for new assertion instances.
-     *
-     * @return A new instance with default properties. Never null.
-     */
-    @NotNull
-    public static SamlpResponseBuilderAssertion newInstance() {
-        SamlpResponseBuilderAssertion responseBuilderAssertion = new SamlpResponseBuilderAssertion();
-        responseBuilderAssertion.setValidateWebSsoRules(false);
-        return responseBuilderAssertion;
-    }
-    
     public SamlVersion getSamlVersion() {
         return samlVersion;
     }
@@ -156,22 +140,6 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPri
         this.addIssuer = addIssuer;
     }
 
-    public boolean isValidateWebSsoRules() {
-        return validateWebSsoRules;
-    }
-
-    public void setValidateWebSsoRules(boolean validateWebSsoRules) {
-        this.validateWebSsoRules = validateWebSsoRules;
-    }
-
-    public String getCustomIssuer() {
-        return customIssuer;
-    }
-
-    public void setCustomIssuer(String customIssuer) {
-        this.customIssuer = customIssuer;
-    }
-
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
@@ -180,8 +148,9 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPri
 
         final String baseName = "Build SAML Protocol Response";
         meta.put(SHORT_NAME, baseName);
-        meta.put(DESCRIPTION, "Build a SAML Protocol Response with optional signing. Optionally enable Web Browser SSO Profile rules validation.");
+        meta.put(DESCRIPTION, "Build a SAML Protocol Response with optional signing. This assertion is compatible with the Web Browser SSO Profile of SAML.");
         meta.put(PALETTE_FOLDERS, new String[]{"xmlSecurity"});
+        // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
         meta.put(POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(PROPERTIES_ACTION_NAME, "SAML Protocol Response Properties");
 
@@ -196,13 +165,6 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPri
             }
         } );
 
-        meta.put(ASSERTION_FACTORY, new Functions.Unary<SamlpResponseBuilderAssertion, SamlpResponseBuilderAssertion>(){
-            @Override
-            public SamlpResponseBuilderAssertion call(final SamlpResponseBuilderAssertion responseBuilderAssertion) {
-                return newInstance();
-            }
-        });
-        
         meta.put(FEATURE_SET_NAME, "(fromClass)");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlsignature.gif");
         meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder( Arrays.<TypeMapping>asList(
@@ -231,8 +193,7 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPri
                         getDestination(),
                         getConsent(),
                         getResponseExtensions(),
-                        getEncryptedAssertions(),
-                        getCustomIssuer());
+                        getEncryptedAssertions() );
                 break;
             case SAML1_1:
                 variablesUsed.addExpressions( getRecipient() );
@@ -259,18 +220,6 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPri
     private String responseAssertions;
     private String encryptedAssertions;
     private String responseExtensions;
-
-    /**
-     * Default of true for backwards compatibility, when Web SSO rules were validated by default.
-     *
-     * See {@link #newInstance()} which configures this to false for new instances.
-     */
-    private boolean validateWebSsoRules = true;
-
-    /**
-     * Allow a custom Issuer value via the assertion. Requires 'addIssuer' to be true.
-     */
-    private String customIssuer;
 
     private static final String META_INITIALIZED = SamlpResponseBuilderAssertion.class.getName() + ".metadataInitialized";
 }

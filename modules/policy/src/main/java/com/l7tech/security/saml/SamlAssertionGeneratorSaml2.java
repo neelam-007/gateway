@@ -89,11 +89,8 @@ public class SamlAssertionGeneratorSaml2 {
                 AttributeType attributeType = attStatement.addNewAttribute();
                 attributeType.setName(attribute.getName());
                 attributeType.setNameFormat(attribute.getNamespace());
-                final Object objValue = attribute.getValue();
-                final XmlObject xmlObject = GeneratorXmlBeansHelper.createXmlObjectForAttributeValueContents(objValue, attribute.getNullBehavior());
-                if (xmlObject != null) {
-                    attributeType.setAttributeValueArray(new XmlObject[]{xmlObject});
-                }
+                XmlString stringValue = XmlString.Factory.newValue(attribute.getValue());
+                attributeType.setAttributeValueArray(new XmlObject[]{stringValue});
             }
         } else {
             throw new IllegalArgumentException("Unknown statement class " + subjectStatement.getClass());
@@ -406,11 +403,8 @@ public class SamlAssertionGeneratorSaml2 {
                     AttributeType attributeType = attStatement.addNewAttribute();
                     attributeType.setName(attribute.getName());
                     attributeType.setNameFormat(attribute.getNamespace());
-                    final Object objValue = attribute.getValue();
-                    final XmlObject xmlObject = GeneratorXmlBeansHelper.createXmlObjectForAttributeValueContents(objValue, attribute.getNullBehavior());
-                    if (xmlObject != null) {
-                        attributeType.setAttributeValueArray(new XmlObject[]{xmlObject});
-                    }
+                    XmlString stringValue = XmlString.Factory.newValue(attribute.getValue());
+                    attributeType.setAttributeValueArray(new XmlObject[]{stringValue});
                 }
             } else {
                 throw new IllegalArgumentException("Unknown statement class " + subjectStatement.getClass());

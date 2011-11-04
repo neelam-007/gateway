@@ -61,9 +61,10 @@ public class ApplicationContexts {
      * @param bean The object to inject.
      * @param beans The injectable dependencies
      * @param <B> The bean type
+     * @param <T> Any type, typically Object
      */
-    public static <B> B inject( final B bean,
-                                  final Map<String,?> beans ) {
+    public static <B,T> B inject( final B bean,
+                                  final Map<String,T> beans ) {
         final DefaultListableBeanFactory factory = new DefaultListableBeanFactory();
         final AutowiredAnnotationBeanPostProcessor autowiredAnnotationBeanPostProcessor = new AutowiredAnnotationBeanPostProcessor();
         autowiredAnnotationBeanPostProcessor.setBeanFactory( factory );
@@ -75,9 +76,9 @@ public class ApplicationContexts {
             }
         };
         factory.registerSingleton( "injector", injector );
-        CollectionUtils.foreach( beans.entrySet(), false, new Functions.UnaryVoid<Map.Entry<String,?>>(){
+        CollectionUtils.foreach( beans.entrySet(), false, new Functions.UnaryVoid<Map.Entry<String,T>>(){
             @Override
-            public void call( final Map.Entry<String, ?> nameAndBean ) {
+            public void call( final Map.Entry<String, T> nameAndBean ) {
                 factory.registerSingleton( nameAndBean.getKey(), nameAndBean.getValue() );
             }
         } );

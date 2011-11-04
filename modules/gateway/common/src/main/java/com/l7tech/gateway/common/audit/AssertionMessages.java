@@ -832,7 +832,6 @@ public class AssertionMessages extends Messages {
     public static final M FTP_CREDENTIAL_NO_AUTH = m(8301, Level.FINE, "Not authenticated.");
     public static final M FTP_CREDENTIAL_AUTH_USER = m(8302, Level.FINE, "Found credentials for user ''{0}''.");
 
-    // Create SAML Token
     public static final M SAML_ISSUER_ISSUED_AUTHN = m(8400, Level.FINE, "Issued SAML Authentication statement");
     public static final M SAML_ISSUER_ISSUED_ATTR = m(8401, Level.FINE, "Issued SAML Attribute statement");
     public static final M SAML_ISSUER_ISSUED_AUTHZ = m(8402, Level.FINE, "Issued SAML Authorization Decision statement");
@@ -843,13 +842,6 @@ public class AssertionMessages extends Messages {
     public static final M SAML_ISSUER_BAD_XML = m(8407, Level.WARNING, "Message appeared to be SOAP but is not valid");
     public static final M SAML_ISSUER_CANT_DECORATE = m(8408, Level.WARNING, "WS-Security decoration failed");
     public static final M SAML_ISSUER_MISSING_NIVAL = m(8409, Level.WARNING, "Specified NameIdentifier chosen, but no value specified; using default");
-    public static final M SAML_ISSUER_ATTR_STMT_MISSING_ATTRIBUTE = m(8410, Level.FINE, "One or more configured attributes are missing: {0}");
-    public static final M SAML_ISSUER_ATTR_STMT_INVALID_FILTER_ATTRIBUTE = m(8411, Level.WARNING, "Ignoring invalid filter Attribute variable: {0}");
-    public static final M SAML_ISSUER_ATTR_STMT_FAIL_UNKNOWN_FILTER_ATTRIBUTE = m(8412, Level.FINE, "Attribute filter contained one or more unknown variables: {0}");
-    public static final M SAML_ISSUER_ATTR_STMT_DUPLICATE_FILTER_ATTRIBUTE = m(8413, Level.WARNING, "Attribute filter variables contained duplicate Attribute: {0}");
-    public static final M SAML_ISSUER_ATTR_STMT_FILTER_REMOVED_ALL_ATTRIBUTES = m(8414, Level.FINE, "No Attributes were available after SAML Attribute filter variables were applied.");
-    public static final M SAML_ISSUER_ATTR_STMT_EXCLUDED_ATTRIBUTES = m(8415, Level.FINE, "Attribute filter AttributeValue excluded some Attributes: {0}");
-    public static final M SAML_ISSUER_ATTR_STMT_FILTERED_ATTRIBUTES = m(8416, Level.FINE, "Attribute filter filtered some Attributes: {0}");
 
     public static final M IDENTITY_ATTRIBUTE_NO_USER = m(8450, Level.INFO, "No user from the expected identity provider has yet been authenticated");
     public static final M IDENTITY_ATTRIBUTE_MULTI_USERS = m(8451, Level.INFO, "Multiple users from the expected identity provider have been authenticated; choosing the first");
@@ -1023,11 +1015,6 @@ public class AssertionMessages extends Messages {
     public static final M SSH_CREDENTIAL_NO_AUTH = m(9431, Level.FINE, "Not authenticated.");
     public static final M SSH_CREDENTIAL_AUTH_USER = m(9432, Level.FINE, "Found credentials for user ''{0}''.");
     public static final M SSH_ROUTING_PASSTHRU_NO_USERNAME = m(9433, Level.WARNING, "No user name found for passing through to SSH server");
-
-    public static final Messages.M CERT_LOOKUP_NAME = m(9460, Level.FINE, "Looking up certificate for name ''{0}''.");
-    public static final Messages.M CERT_LOOKUP_NOTFOUND = m(9461, Level.WARNING, "Certificate not found for name ''{0}''." );
-    public static final Messages.M CERT_LOOKUP_MULTIPLE = m(9462, Level.WARNING, "Multiple certificates found for name ''{0}''." );
-    public static final Messages.M CERT_LOOKUP_ERROR = m(9463, Level.WARNING, "Error looking up certificate ''{0}''." );
 
     // Highest ID reserved for AssertionMessages = 99999
 }

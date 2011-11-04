@@ -38,14 +38,7 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
         if(TopComponents.getInstance().isApplet()){
             contentPane.setPreferredSize(new Dimension(510, 470));
         }
-
-        addIssuerCheckBox.addActionListener(new RunOnChangeListener(new Runnable() {
-            @Override
-            public void run() {
-                customIssuerTextField.setEnabled(addIssuerCheckBox.isSelected());
-            }
-        }));
-
+        
         samlVersionComboBox.setModel(new DefaultComboBoxModel(new SamlVersion[]{SAML2, SAML1_1}));
 
         final RunOnChangeListener versionListener = new RunOnChangeListener(new Runnable() {
@@ -111,7 +104,6 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
         responseIdTextField.addFocusListener(focusAdapter);
         issueInstantTextField.addFocusListener(focusAdapter);
         issueInstant1_1TextField.addFocusListener(focusAdapter);
-        customIssuerTextField.addFocusListener(focusAdapter);
 
         updateComponentsForVersion();
     }
@@ -131,7 +123,6 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
         }
 
         signResponseCheckBox.setSelected(assertion.isSignResponse());
-        validateWebSSORulesCheckBox.setSelected(assertion.isValidateWebSsoRules());
         statusMessageTextField.setText(assertion.getStatusMessage());
         statusDetailTextField.setText(assertion.getStatusDetail());
 
@@ -157,10 +148,6 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
 
         if(assertion.getSamlVersion() == SAML2){
             addIssuerCheckBox.setSelected(assertion.isAddIssuer());
-            customIssuerTextField.setEnabled(assertion.isAddIssuer());
-            final String customIssuer = assertion.getCustomIssuer();
-            final String customIdText = (customIssuer == null || customIssuer.trim().isEmpty()) ? autoString: customIssuer;
-            customIssuerTextField.setText(customIdText);
 
             final String destination = assertion.getDestination();
             if(destination != null && !destination.trim().isEmpty()) destinationTextField.setText(destination);
@@ -190,11 +177,7 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
         final SamlVersion samlVersion = (SamlVersion) samlVersionComboBox.getSelectedItem();
         assertion.setSamlVersion(samlVersion);
         assertion.setSignResponse(signResponseCheckBox.isSelected());
-        assertion.setValidateWebSsoRules(validateWebSSORulesCheckBox.isSelected());
         assertion.setAddIssuer(addIssuerCheckBox.isSelected());
-        final String customIssuer = customIssuerTextField.getText().trim();
-        assertion.setCustomIssuer(isNullOrEmptyOrAuto(autoString, customIssuer)? null: customIssuer);
-
         assertion.setSamlStatus((SamlStatus) statusCodeComboBox.getSelectedItem());
         assertion.setStatusMessage(statusMessageTextField.getText());
         assertion.setStatusDetail(statusDetailTextField.getText());
@@ -304,7 +287,6 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
             saml1_1Panel.setVisible(false);
             statusCodeComboBox.setModel(new DefaultComboBoxModel(SamlStatus.getSaml2xStatuses().toArray()));
             addIssuerCheckBox.setVisible(true);
-            customIssuerTextField.setVisible(true);
             extensionsTextField.setVisible(true);
             extensionsLabel.setVisible(true);
             encryptedAssertionsLabel.setVisible(true);
@@ -314,7 +296,6 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
             saml1_1Panel.setVisible(true);
             statusCodeComboBox.setModel(new DefaultComboBoxModel(SamlStatus.getSaml1xStatuses().toArray()));
             addIssuerCheckBox.setVisible(false);
-            customIssuerTextField.setVisible(false);
             extensionsTextField.setVisible(false);
             extensionsLabel.setVisible(false);
             encryptedAssertionsLabel.setVisible(false);
@@ -361,8 +342,6 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
     private JLabel extensionsLabel;
     private JLabel encryptedAssertionsLabel;
     private JTextField encryptedAssertionsTextField;
-    private JCheckBox validateWebSSORulesCheckBox;
-    private JTextField customIssuerTextField;
 
     private static final String autoString = "<auto>";
     private static final ResourceBundle resources = ResourceBundle.getBundle( SamlpResponseBuilderPropertiesDialog.class.getName() );

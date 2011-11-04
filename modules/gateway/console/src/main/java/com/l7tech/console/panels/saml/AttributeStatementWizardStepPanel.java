@@ -4,7 +4,6 @@
 package com.l7tech.console.panels.saml;
 
 import com.l7tech.console.beaneditor.BeanAdapter;
-import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.widgets.SquigglyTextField;
@@ -21,8 +20,8 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.*;
-import java.util.List;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * The SAML Conditions <code>WizardStepPanel</code>
@@ -43,15 +42,9 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
     private JButton editButton;
     private JLabel attributeTableLabel;
     private SquigglyTextField filterExpressionTextField;
+    private JLabel filterSamlAttributesLabel;
     private JPanel filterPanel;
-    private JCheckBox failIfAnyAttributeMissingCheckBox;
-    private JPanel variablePrefixTextFieldPanel;
-    private JCheckBox failIfUnknownAttributeCheckBox;
-    private JCheckBox failIfNoAttributesAddedCheckBox;
-    private JCheckBox failIfAttributeValueExcludesAttributeCheckBox;
-    private JPanel variablePrefixPanel;
-    private TargetVariablePanel variablePrefixTextField;
-    private DefaultTableModelWithAssociatedBean<SamlAttributeStatement.Attribute> attributesTableModel;
+    private DefaultTableModel attributesTableModel;
     private int samlVersion;
     private static final String ANY = "<any>";
 
@@ -115,16 +108,18 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
         int nrows = attributesTableModel.getRowCount();
         Collection attributes = new ArrayList();
         for (int i = 0; i < nrows; i++) {
-            final SamlAttributeStatement.Attribute attribute = attributesTableModel.getBeanForRow(i);
-            attributes.add(attribute);
+            String value = attributesTableModel.getValueAt(i, 3).toString();
+            boolean isAny = ANY.equals(value);
+            SamlAttributeStatement.Attribute att = new SamlAttributeStatement.Attribute(
+                    toString(attributesTableModel.getValueAt(i, 0)),
+                    toString(attributesTableModel.getValueAt(i, 1)),
+                    fromDisplayNameFormat(attributesTableModel.getValueAt(i, 2)),
+                    isAny ? null : value,
+                    isAny, Boolean.TRUE.equals(attributesTableModel.getValueAt(i,4)));
+            attributes.add(att);
         }
         statement.setAttributes((SamlAttributeStatement.Attribute[])attributes.toArray(new SamlAttributeStatement.Attribute[]{}));
-        statement.setFilterExpression(filterExpressionTextField.getText().trim());
-        statement.setFailIfAnyAttributeIsMissing(failIfAnyAttributeMissingCheckBox.isSelected());
-        statement.setVariablePrefix(variablePrefixTextField.getVariable());
-        statement.setFailIfAttributeValueExcludesAttribute(failIfAttributeValueExcludesAttributeCheckBox.isSelected());
-        statement.setFailIfNoAttributesAdded(failIfNoAttributesAddedCheckBox.isSelected());
-        statement.setFailIfUnknownAttributeInFilter(failIfUnknownAttributeCheckBox.isSelected());
+        statement.setFilterExpression(filterExpressionTextField.getText());
     }
 
     /**
@@ -153,7 +148,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
         SamlAttributeStatement.Attribute[] attributes = statement.getAttributes();
         for (int i = 0; i < attributes.length; i++) {
             SamlAttributeStatement.Attribute att = attributes[i];
-            attributesTableModel.addRow((SamlAttributeStatement.Attribute) att.clone(), new Object[]{
+            attributesTableModel.addRow(new Object[]{
                     att.getName(),
                     att.getNamespace(),
                     toDisplayNameFormat(att.getNameFormat(), samlVersion),
@@ -162,15 +157,6 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
         }
 
         filterExpressionTextField.setText(statement.getFilterExpression());
-        failIfAnyAttributeMissingCheckBox.setSelected(statement.isFailIfAnyAttributeIsMissing());
-        variablePrefixTextField.setVariable(statement.getVariablePrefix());
-        failIfAttributeValueExcludesAttributeCheckBox.setSelected(statement.isFailIfAttributeValueExcludesAttribute());
-        failIfNoAttributesAddedCheckBox.setSelected(statement.isFailIfNoAttributesAdded());
-        failIfUnknownAttributeCheckBox.setSelected(statement.isFailIfUnknownAttributeInFilter());
-
-        variablePrefixTextField.setSuffixes(SamlAttributeStatement.VARIABLE_SUFFIXES.toArray( new String[SamlAttributeStatement.VARIABLE_SUFFIXES.size()] ));
-
-        enableDisableComponents();
     }
 
     private void initialize() {
@@ -178,9 +164,6 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
 
         if (issueMode) {
             attributeTableLabel.setText("Include the following attributes and values");
-            variablePrefixPanel.setVisible(true);
-        } else {
-            variablePrefixPanel.setVisible(false);
         }
 
         /** Set content pane */
@@ -192,12 +175,13 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
         }
 
         filterPanel.setVisible(issueMode);
-        failIfAnyAttributeMissingCheckBox.setVisible(issueMode);
-        failIfAttributeValueExcludesAttributeCheckBox.setVisible(issueMode);
-        failIfNoAttributesAddedCheckBox.setVisible(issueMode);
-        failIfUnknownAttributeCheckBox.setVisible(issueMode);
 
-        attributesTableModel = new DefaultTableModelWithAssociatedBean<SamlAttributeStatement.Attribute>(new String[]{"Name", "Namespace", "Name Format", "Value", "Repeat?"}, 0);
+        attributesTableModel = new DefaultTableModel(new String[]{"Name", "Namespace", "Name Format", "Value", "Repeat?"}, 0){
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
         attributeTableScrollPane.getViewport().setBackground(attributeTable.getBackground());
         attributeTable.setModel(attributesTableModel);
         attributeTable.getTableHeader().setReorderingAllowed(false);
@@ -225,12 +209,20 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 final int row = attributeTable.getSelectedRow();
-                if (row < 0) {
-                    return;
+                final SamlAttributeStatement.Attribute attribute = new SamlAttributeStatement.Attribute();
+                attribute.setName(AttributeStatementWizardStepPanel.toString(attributesTableModel.getValueAt(row, 0)));
+                attribute.setNamespace(AttributeStatementWizardStepPanel.toString(attributesTableModel.getValueAt(row, 1)));
+                attribute.setNameFormat(AttributeStatementWizardStepPanel.fromDisplayNameFormat(attributesTableModel.getValueAt(row, 2)));
+                attribute.setRepeatIfMulti(Boolean.TRUE.equals(attributesTableModel.getValueAt(row, 4)));
+                String value = AttributeStatementWizardStepPanel.toString(attributesTableModel.getValueAt(row, 3));
+                if (ANY.equals(value)) {
+                    attribute.setAnyValue(true);
+                    //todo there may be cases where this value cannot be null.
+                    attribute.setValue(null);
+                } else {
+                    attribute.setAnyValue(false);
+                    attribute.setValue(value);
                 }
-
-                final SamlAttributeStatement.Attribute attribute = attributesTableModel.getBeanForRow(row);
-
                 EditAttributeDialog editAttributeDialog = new EditAttributeDialog(owner, attribute, samlVersion, issueMode);
                 editAttributeDialog.addBeanListener(new BeanAdapter() {
                     /**
@@ -246,15 +238,12 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
                         attributesTableModel.setValueAt(toDisplayNameFormat(attribute.getNameFormat(), samlVersion), row, 2);
                         attributesTableModel.setValueAt(attribute.isAnyValue() ? ANY : attribute.getValue(), row, 3);
                         attributesTableModel.setValueAt(attribute.isRepeatIfMulti(), row, 4);
-                        attributesTableModel.updateBeanForRow(row, (SamlAttributeStatement.Attribute) bean);
                         notifyListeners();
                     }
                 });
                 editAttributeDialog.setVisible(true);
             }
         });
-        com.l7tech.gui.util.Utilities.setDoubleClickAction(attributeTable, editButton);
-
         addAttributeButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -269,12 +258,13 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
                      */
                     @Override
                     public void onEditAccepted(Object source, Object bean) {
-                        attributesTableModel.addRow((SamlAttributeStatement.Attribute) bean, new Object[] {
+                        attributesTableModel.addRow(new Object[] {
                                 attribute.getName(),
                                 attribute.getNamespace(),
                                 toDisplayNameFormat(attribute.getNameFormat(), samlVersion),
                                 attribute.isAnyValue() ? ANY : attribute.getValue(),
-                                attribute.isRepeatIfMulti()});
+                                attribute.isRepeatIfMulti()
+                        });
                         notifyListeners();
                     }
                 });
@@ -287,13 +277,9 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
             @Override
             public void run() {
                 notifyListeners();
-                enableDisableComponents();
             }
         }));
 
-        variablePrefixTextField = new TargetVariablePanel();
-        variablePrefixTextFieldPanel.setLayout(new BorderLayout());
-        variablePrefixTextFieldPanel.add(variablePrefixTextField, BorderLayout.CENTER);
     }
 
     /**
@@ -329,7 +315,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
     @Override
     public boolean canAdvance() {
 
-        final String filterExp = filterExpressionTextField.getText().trim();
+        final String filterExp = filterExpressionTextField.getText();
         boolean invalid = false;
         if (!"".equals(filterExp)) {
             try {
@@ -351,23 +337,6 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
         }
 
         return attributesTableModel.getRowCount() > 0 && !invalid;
-    }
-
-    private void enableDisableComponents() {
-        final String filterExp = filterExpressionTextField.getText().trim();
-        boolean enableFilterFailCheckBoxes = false;
-        if (!"".equals(filterExp.trim())) {
-            try {
-                if (Syntax.validateStringOnlyReferencesVariables(filterExp)) {
-                    enableFilterFailCheckBoxes = true;
-                }
-            } catch (VariableNameSyntaxException e) {
-            }
-        }
-
-        failIfUnknownAttributeCheckBox.setEnabled(enableFilterFailCheckBoxes);
-        failIfNoAttributesAddedCheckBox.setEnabled(enableFilterFailCheckBoxes);
-        failIfAttributeValueExcludesAttributeCheckBox.setEnabled(enableFilterFailCheckBoxes);
     }
 
     /**
@@ -410,62 +379,5 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
         }
 
         return nameFormat;
-    }
-
-    /**
-     * Quick hack of a table model which will track a bean for each row. Ideally the columns and getValuesAt would
-     * be pulled from the bean, perhaps based on bean property annotations. For now this is the same as default table
-     * model except that a bean is tracked for each row.
-     *
-     * This allows for data not shown in the table columns to be stored.
-     * @param <T>
-     */
-    private class DefaultTableModelWithAssociatedBean<T extends Cloneable> extends DefaultTableModel {
-
-        private DefaultTableModelWithAssociatedBean(Object[] columnNames, int rowCount) {
-            super(columnNames, rowCount);
-        }
-
-        @Override
-        public boolean isCellEditable(int row, int column) {
-            return false;
-        }
-
-        public void addRow(T bean, Object[] columnDataForRow) {
-            super.addRow(columnDataForRow);
-            beanList.add(bean);
-        }
-
-        public void updateBeanForRow(int row, T bean) {
-            if (beanList.size() < row) {
-                throw new IllegalArgumentException("Unknown row.");
-            }
-            beanList.remove(row);
-            beanList.add(row , bean);
-        }
-
-        @Override
-        public void removeRow(int row) {
-            super.removeRow(row);
-            beanList.remove(row);
-        }
-
-        public T getBeanForRow(int row) {
-            return beanList.get(row);
-        }
-
-        @Override
-        public Object getValueAt(int row, int column) {
-            final T t = beanList.get(row);
-            if (t == null) {
-                throw new IllegalStateException("Unknown value at row " + row);
-            }
-            // proceed
-            return super.getValueAt(row, column);
-        }
-
-        // - PRIVATE
-
-        private final List<T> beanList = new ArrayList<T>();
     }
 }

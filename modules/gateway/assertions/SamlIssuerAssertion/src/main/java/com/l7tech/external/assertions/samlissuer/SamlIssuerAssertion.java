@@ -347,23 +347,6 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
 
     @Override
     public VariableMetadata[] getVariablesSet() {
-        final SamlAttributeStatement attStmt = getAttributeStatement();
-        List<VariableMetadata> allVars = new ArrayList<VariableMetadata>();
-        allVars.add(new VariableMetadata("issuedSamlAssertion", false, false, null, false, DataType.STRING));
-
-        if (attStmt != null) {
-            final String variablePrefix = attStmt.getVariablePrefix();
-            allVars.addAll(Arrays.asList(
-                    new VariableMetadata(variablePrefix + "." + SamlAttributeStatement.SUFFIX_UNKNOWN_ATTRIBUTE_NAMES, false, false, null, false, DataType.STRING),
-                    new VariableMetadata(variablePrefix + "." + SamlAttributeStatement.SUFFIX_MISSING_ATTRIBUTE_NAMES, false, false, null, false, DataType.STRING),
-                    new VariableMetadata(variablePrefix + "." + SamlAttributeStatement.SUFFIX_NO_ATTRIBUTES_ADDED, false, false, null, false, DataType.BOOLEAN),
-                    new VariableMetadata(variablePrefix + "." + SamlAttributeStatement.SUFFIX_FILTERED_ATTRIBUTES, false, false, null, false, DataType.STRING)));
-
-            if (getVersion() == 2) {
-                allVars.add(new VariableMetadata(variablePrefix + "." + SamlAttributeStatement.SUFFIX_EXCLUDED_ATTRIBUTES, false, false, null, false, DataType.STRING));
-            }
-        }
-
-        return allVars.toArray(new VariableMetadata[allVars.size()]);
+        return new VariableMetadata[] { new VariableMetadata("issuedSamlAssertion", false, false, null, false, DataType.STRING) };
     }
 }

@@ -3,7 +3,7 @@
   <grid id="a4abd" binding="mainPanel" layout-manager="GridLayoutManager" row-count="8" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="12" left="12" bottom="12" right="12"/>
     <constraints>
-      <xy x="32" y="62" width="560" height="551"/>
+      <xy x="32" y="62" width="560" height="399"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -48,6 +48,58 @@
           <toolTipText resource-bundle="com/l7tech/console/panels/saml/resources/EditAttributeDialog" key="attributeNamespaceField.tooltip"/>
         </properties>
       </component>
+      <grid id="160ce" layout-manager="GridLayoutManager" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <toolTipText resource-bundle="com/l7tech/console/panels/saml/resources/EditAttributeDialog" key="attributeValueField.tooltip"/>
+        </properties>
+        <border type="none" title-resource-bundle="com/l7tech/console/panels/saml/resources/EditAttributeDialog" title-key="attributeValueField.label"/>
+        <children>
+          <component id="2e05a" class="javax.swing.JRadioButton" binding="specificValueRadio">
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="Specific &amp;value:"/>
+            </properties>
+          </component>
+          <component id="1d90a" class="javax.swing.JRadioButton" binding="anyValueRadio">
+            <constraints>
+              <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="Allow &amp;any non-empty value"/>
+            </properties>
+          </component>
+          <component id="589fa" class="javax.swing.JCheckBox" binding="repeatIfMultivaluedCheckBox" default-binding="true">
+            <constraints>
+              <grid row="2" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="Repeat if &amp;Multivalued"/>
+            </properties>
+          </component>
+          <scrollpane id="22699">
+            <constraints>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="12f40" class="javax.swing.JTextArea" binding="attributeValueField">
+                <constraints/>
+                <properties>
+                  <rows value="4"/>
+                  <toolTipText resource-bundle="com/l7tech/console/panels/saml/resources/EditAttributeDialog" key="attributeValueField.tooltip"/>
+                </properties>
+              </component>
+            </children>
+          </scrollpane>
+        </children>
+      </grid>
       <grid id="50cf2" layout-manager="GridLayoutManager" row-count="1" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
@@ -153,158 +205,6 @@
               <enabled value="false"/>
             </properties>
           </component>
-        </children>
-      </grid>
-      <grid id="dca88" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-        <margin top="0" left="0" bottom="0" right="0"/>
-        <constraints>
-          <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-        </constraints>
-        <properties/>
-        <border type="none"/>
-        <children>
-          <grid id="160ce" layout-manager="GridLayoutManager" row-count="4" column-count="6" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-            <margin top="0" left="0" bottom="0" right="0"/>
-            <constraints>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <toolTipText resource-bundle="com/l7tech/console/panels/saml/resources/EditAttributeDialog" key="attributeValueField.tooltip"/>
-            </properties>
-            <border type="none" title-resource-bundle="com/l7tech/console/panels/saml/resources/EditAttributeDialog" title-key="attributeValueField.label"/>
-            <children>
-              <grid id="892f8" layout-manager="GridLayoutManager" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-                <margin top="0" left="0" bottom="0" right="0"/>
-                <constraints>
-                  <grid row="0" column="0" row-span="2" col-span="6" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties/>
-                <border type="none"/>
-                <children>
-                  <component id="2e05a" class="javax.swing.JRadioButton" binding="specificValueRadio">
-                    <constraints>
-                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                    <properties>
-                      <text value="Specific &amp;value:"/>
-                    </properties>
-                  </component>
-                  <component id="1d90a" class="javax.swing.JRadioButton" binding="anyValueRadio">
-                    <constraints>
-                      <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                    <properties>
-                      <text value="Allow &amp;any non-empty value"/>
-                    </properties>
-                  </component>
-                  <scrollpane id="22699">
-                    <constraints>
-                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                    <properties/>
-                    <border type="none"/>
-                    <children>
-                      <component id="12f40" class="javax.swing.JTextArea" binding="attributeValueField">
-                        <constraints/>
-                        <properties>
-                          <rows value="4"/>
-                          <toolTipText resource-bundle="com/l7tech/console/panels/saml/resources/EditAttributeDialog" key="attributeValueField.tooltip"/>
-                        </properties>
-                      </component>
-                    </children>
-                  </scrollpane>
-                </children>
-              </grid>
-              <grid id="5ba88" layout-manager="GridLayoutManager" row-count="5" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-                <margin top="0" left="0" bottom="0" right="0"/>
-                <constraints>
-                  <grid row="2" column="0" row-span="1" col-span="6" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties/>
-                <border type="none"/>
-                <children>
-                  <component id="a22d1" class="javax.swing.JLabel" binding="msgElmBehaviorLabel">
-                    <constraints>
-                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                        <preferred-size width="246" height="14"/>
-                      </grid>
-                    </constraints>
-                    <properties>
-                      <text value="If Message or Element variable referenced:"/>
-                    </properties>
-                  </component>
-                  <component id="1b348" class="javax.swing.JComboBox" binding="msgElmBehaviorComboBox">
-                    <constraints>
-                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                    <properties>
-                      <model/>
-                    </properties>
-                  </component>
-                  <component id="94870" class="javax.swing.JComboBox" binding="attValueComparisonComboBox">
-                    <constraints>
-                      <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                    <properties/>
-                  </component>
-                  <component id="7795" class="javax.swing.JLabel" binding="attValueComparisonLabel">
-                    <constraints>
-                      <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                        <preferred-size width="250" height="14"/>
-                      </grid>
-                    </constraints>
-                    <properties>
-                      <text value="Attribute Value Comparison:"/>
-                    </properties>
-                  </component>
-                  <component id="6205f" class="javax.swing.JLabel" binding="emptyVariableLabel">
-                    <constraints>
-                      <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                    <properties>
-                      <text value="If value resolves to empty string:"/>
-                    </properties>
-                  </component>
-                  <component id="4150d" class="javax.swing.JComboBox" binding="emptyVariableComboBox">
-                    <constraints>
-                      <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                    <properties/>
-                  </component>
-                  <component id="9ed29" class="javax.swing.JCheckBox" binding="missingWhenEmptyStringCheckBox" default-binding="true">
-                    <constraints>
-                      <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                    <properties>
-                      <text value="Missing when empty string"/>
-                    </properties>
-                  </component>
-                  <component id="59754" class="javax.swing.JLabel" binding="variableNotFoundLabel">
-                    <constraints>
-                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                    <properties>
-                      <text value="If variable not found:"/>
-                    </properties>
-                  </component>
-                  <component id="1b129" class="javax.swing.JComboBox" binding="variableNotFoundComboBox">
-                    <constraints>
-                      <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                    <properties/>
-                  </component>
-                </children>
-              </grid>
-              <component id="589fa" class="javax.swing.JCheckBox" binding="repeatIfMultivaluedCheckBox" default-binding="true">
-                <constraints>
-                  <grid row="3" column="0" row-span="1" col-span="6" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties>
-                  <text value="Repeat if &amp;Multivalued"/>
-                </properties>
-              </component>
-            </children>
-          </grid>
         </children>
       </grid>
     </children>

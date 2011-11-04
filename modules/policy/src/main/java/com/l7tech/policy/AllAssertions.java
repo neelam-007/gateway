@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
+ */
+
 package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.*;
@@ -114,7 +118,6 @@ public class AllAssertions {
         new ContentTypeAssertion(),
         new AddHeaderAssertion(),
         new ResolveServiceAssertion(),
-        new LookupTrustedCertificateAssertion(),
     };
 
 
@@ -212,6 +215,5 @@ public class AllAssertions {
         new ContentTypeAssertion(),
         new AddHeaderAssertion(),
         new ResolveServiceAssertion(),
-        new LookupTrustedCertificateAssertion(),
     };
 }

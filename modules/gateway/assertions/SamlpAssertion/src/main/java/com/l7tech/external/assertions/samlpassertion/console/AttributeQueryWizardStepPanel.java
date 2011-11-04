@@ -306,8 +306,7 @@ public class AttributeQueryWizardStepPanel extends SamlpWizardStepPanel {
      */
     private static String toDisplayNameFormat( final String nameFormat, final int samlVersion ) {
         String defaultNameFormat = DEFAULT_NAME_FORMAT;
-        //TODO - fix - this should likely mean - get the NameFormat IFF Version 2 and convert from null if necessary
-        //TODO - and not 'if not null use value otherwise check the saml version and set null if not 2' - this is wrong as if the value is not null, then the version will not be checked
+
         if ( nameFormat != null ) {
             defaultNameFormat = nameFormat;
         } else if ( samlVersion < 2 ) {
