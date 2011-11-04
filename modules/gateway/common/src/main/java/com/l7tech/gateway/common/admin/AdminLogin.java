@@ -29,6 +29,7 @@ import java.security.AccessControlException;
 @Secured
 @Administrative
 public interface AdminLogin {
+    public final static String ERR_MSG_USERNAME_PSWD_BOTH_REQUIRED = "Username and password are both required.";
     /**
      * Return value from {@link AdminLogin#getServerCertificateVerificationInfo(String, byte[])}.
      */

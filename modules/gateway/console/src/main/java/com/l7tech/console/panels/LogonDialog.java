@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.action.ChangePasswordAction;
+import com.l7tech.gateway.common.admin.AdminLogin;
 import com.l7tech.identity.CredentialExpiredPasswordDetailsException;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.gateway.common.VersionException;
@@ -1014,6 +1015,8 @@ public class LogonDialog extends JDialog {
                     changePasswordDialog.dispose();
                     doLogon(newPassword, newPasswordAuth);  //try again
                 }
+            } else if (AdminLogin.ERR_MSG_USERNAME_PSWD_BOTH_REQUIRED.equals(cause.getMessage())) {
+                JOptionPane.showMessageDialog(parentFrame, AdminLogin.ERR_MSG_USERNAME_PSWD_BOTH_REQUIRED, "Warning", JOptionPane.WARNING_MESSAGE);
             } else {
                 showInvalidCredentialsMessage();
             }
