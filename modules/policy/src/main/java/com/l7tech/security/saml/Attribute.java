@@ -13,17 +13,14 @@ import java.io.Serializable;
 */
 public class Attribute implements Serializable {
     private String name;
-    /**
-     * Pre 2.0 this is the namespace attribute, 2.0 it's the name format attribute.
-     */
     private String namespace;
     private String value;
 
     public Attribute() { }
 
-    public Attribute(String name, String nameSpaceOrNameFormat, String value) {
+    public Attribute(String name, String nameSpace, String value) {
         this.name = name;
-        this.namespace = nameSpaceOrNameFormat;
+        this.namespace = nameSpace;
         this.value = value;
     }
 

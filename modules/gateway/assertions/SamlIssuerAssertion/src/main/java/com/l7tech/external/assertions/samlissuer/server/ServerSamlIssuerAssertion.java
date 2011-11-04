@@ -28,11 +28,11 @@ import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertionUtils;
 import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.util.*;
-import static com.l7tech.util.Functions.grep;
+import com.l7tech.util.Config;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.context.ApplicationContext;
-import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -348,60 +348,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                                                     final String overrideNameFormat,
                                                     final String nameQualifier) throws PolicyAssertionException {
         List<Attribute> outAtts = new ArrayList<Attribute>();
-        final String filterExpression = assertion.getAttributeStatement().getFilterExpression();
-
-        // Support variables of Type Element or Message which resolve to saml:Attribute and warn logging anything else found.
-        final List<Object> objects = ExpandVariables.processNoFormat(filterExpression, vars, getAudit(), false);
-
-        //todo - check variables resolved from the filter expression for duplicates (name + nameformat)
-        //Remove any Elements which are not valid.
-        final List<Element> requestAttributeElements = grep(extractElements(objects), new Functions.Unary<Boolean, Element>() {
-            @Override
-            public Boolean call(Element element) {
-                return validateElementIsAttribute(element, version);
-            }
-        });
-
-        final boolean hasFilter = !requestAttributeElements.isEmpty();
-
-        final String samlNamespace;
-        final boolean hasNameFormat; // true for 2.0, false otherwise
-        final String nameAttributeName;
-        switch (version) {
-            case 1:
-                samlNamespace = SamlConstants.NS_SAML;
-                hasNameFormat = false;
-                nameAttributeName = "AttributeName";
-                break;
-            case 2:
-                samlNamespace = SamlConstants.NS_SAML2;
-                hasNameFormat = true;
-                nameAttributeName = "Name";
-                break;
-            default:
-                //this will likely have occurred before now but adding for future changes.
-                throw new IllegalStateException("Unknown version");
-        }
-
-        final List<SamlAttributeStatement.Attribute> configuredAttList;
-        if (!hasFilter) {
-            configuredAttList = new ArrayList<SamlAttributeStatement.Attribute>();
-            configuredAttList.addAll(Arrays.asList(assertion.getAttributeStatement().getAttributes()));
-        } else {
-            // Filter early to avoid misleading logging / auditing messages.
-            configuredAttList = grep(
-                    Arrays.asList(assertion.getAttributeStatement().getAttributes()),
-                    new Functions.Unary<Boolean, SamlAttributeStatement.Attribute>() {
-                @Override
-                public Boolean call(SamlAttributeStatement.Attribute configAttribute) {
-                    //we must find this static attribute in the request to include it
-                    //note: incomingElement only contains validated saml:Attribute elements
-                    return isConfigAttributeInRequest(configAttribute, requestAttributeElements, nameAttributeName, hasNameFormat, samlNamespace);
-                }
-            });
-        }
-
-        for (SamlAttributeStatement.Attribute attribute : configuredAttList) {
+        for (SamlAttributeStatement.Attribute attribute : assertion.getAttributeStatement().getAttributes()) {
 
             String name = ExpandVariables.process(attribute.getName(), vars, getAudit());
             String nameFormatOrNamespace;
@@ -446,159 +393,6 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
         return SubjectStatement.createAttributeStatement(
                 creds, confirmationMethod, outAtts.toArray(new Attribute[outAtts.size()]),
                 assertion.getSubjectConfirmationKeyInfoType(), assertion.getNameIdentifierType(), overrideNameValue, overrideNameFormat, nameQualifier);
-    }
-
-    private Boolean isConfigAttributeInRequest(final SamlAttributeStatement.Attribute configAttribute,
-                                               final List<Element> incomingElements,
-                                               final String nameAttributeName,
-                                               final boolean hasNameFormat,
-                                               final String samlNamespace) {
-        boolean isInIncoming = false;
-        for (Element incomingElement : incomingElements) {
-            final Attr nameAttr = incomingElement.getAttributeNode(nameAttributeName);
-
-            final String nameAttrValue = nameAttr.getValue();
-            if (!configAttribute.getName().equals(nameAttrValue)) {
-                continue;
-            }
-
-            if (hasNameFormat) {
-                // 2.0
-                final Attr nameFormatAttr = incomingElement.getAttributeNode("NameFormat");
-                final String nameFormatValue;
-                if (nameFormatAttr == null) {
-                    nameFormatValue = SamlConstants.ATTRIBUTE_NAME_FORMAT_UNSPECIFIED;
-                } else {
-                    nameFormatValue = nameFormatAttr.getValue();
-                }
-
-                String expectedNameFormat = configAttribute.getNameFormat();
-                if (expectedNameFormat == null || expectedNameFormat.length()==0) {
-                    expectedNameFormat = SamlConstants.ATTRIBUTE_NAME_FORMAT_UNSPECIFIED;
-                }
-
-                if (!expectedNameFormat.equals(nameFormatValue)) {
-                    continue;
-                }
-            } else {
-                // 1.x
-                final Attr attrNS = incomingElement.getAttributeNode("AttributeNamespace");
-                if (!configAttribute.getNamespace().equals(attrNS.getValue())) {
-                    continue;
-                }
-            }
-
-            //does the incoming element have any values to check against?
-            final List<Element> attributeValueElms = XmlUtil.findChildElementsByName(incomingElement, samlNamespace, "AttributeValue");
-            if (attributeValueElms.isEmpty()) {
-                //no values to check
-                isInIncoming = true;
-                break;
-            } else {
-                isInIncoming = true;
-                //todo element attribute value comparison
-            }
-        }
-        return isInIncoming;
-    }
-
-
-    private boolean validateElementIsAttribute(final Element elmToValidate, final int version) {
-        boolean isValid = false;
-
-        final String tagName = elmToValidate.getLocalName();
-        final String namespaceURI = elmToValidate.getNamespaceURI();
-        switch (version) {
-
-            case 1:
-                if (!"Attribute".equals(tagName)) {
-                    logger.warning("Expected SAML Attribute Element, found Element with name '" + tagName + "'");
-                    break;
-                }
-
-                if (!SamlConstants.NS_SAML.equals(namespaceURI)) {
-                    logger.warning("Expected Namespace '"+SamlConstants.NS_SAML+"' found Element with namespace '" + namespaceURI + "'");
-                    break;
-                }
-
-
-                final Attr nameNS = elmToValidate.getAttributeNode("AttributeNamespace");
-                if (nameNS == null) {
-                    logger.warning("Attribute element missing Name attribute.");
-                    break;
-                }
-
-                isValid = true;
-                break;
-            case 2:
-                if (!"Attribute".equals(tagName)) {
-                    logger.warning("Expected SAML Attribute Element, found Element with name '" + tagName + "'");
-                    break;
-                }
-
-                if (!SamlConstants.NS_SAML2.equals(namespaceURI)) {
-                    logger.warning("Expected Namespace '"+SamlConstants.NS_SAML2+"' found Element with namespace '" + namespaceURI + "'");
-                    break;
-                }
-
-                final Attr name = elmToValidate.getAttributeNode("Name");
-                if (name == null) {
-                    logger.warning("Attribute element missing Name attribute.");
-                    break;
-                }
-
-                isValid = true;
-                break;
-            default:
-                isValid = false;
-        }
-
-        return isValid;
-    }
-
-    private List<Element> extractElements(List<Object> objects) {
-        final List<Element> foundElements = new ArrayList<Element>();
-
-        for (Object object : objects) {
-            if (object instanceof List) {
-                foundElements.addAll(extractElements((List<Object>) object));
-            } else if (object instanceof Object[]) {
-                foundElements.addAll(extractElements(Arrays.asList((Object [])object)));
-            } else if (object instanceof Element) {
-                foundElements.add((Element) object);
-            } else if (object instanceof Message) {
-                final Element element = processMessageVariable((Message) object);
-                foundElements.add(element);
-            }
-        }
-
-        return foundElements;
-    }
-
-    /**
-     * Convert a Message into XML. No validation of Element's schema type is done.
-     *
-     * @param message Message to convert.
-     * @return Element representing the message. Null if the Message cannot be converted due to invalid content type
-     * of if XML is not well formed. If return value is null, then a warning will have been logged and audited.
-     */
-    private Element processMessageVariable(final Message message) {
-
-        try {
-            if (message.isXml()) {
-                final XmlKnob xmlKnob = message.getXmlKnob();
-                final Document doc = xmlKnob.getDocumentReadOnly();
-                return doc.getDocumentElement();
-            } else {
-                logAndAudit(AssertionMessages.MESSAGE_VARIABLE_NOT_XML_WARNING);
-            }
-        } catch (IOException e) {
-            logAndAudit(AssertionMessages.MESSAGE_VARIABLE_BAD_XML, new String[]{""}, e);
-        } catch (SAXException e) {
-            logAndAudit(AssertionMessages.MESSAGE_VARIABLE_BAD_XML, new String[]{""}, e);
-        }
-
-        return null;
     }
 
 }

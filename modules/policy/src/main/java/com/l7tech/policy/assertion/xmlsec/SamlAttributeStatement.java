@@ -1,31 +1,15 @@
 package com.l7tech.policy.assertion.xmlsec;
 
-import com.l7tech.util.Option;
-import org.jetbrains.annotations.Nullable;
-
 import java.io.Serializable;
 
 /**
- * The <code>SamlAttributeStatement</code> assertion describes
+ * The <code>SamlAttributeStatementAssertion</code> assertion describes
  * the SAML Attribute Statement constraints.
- *
- * This bean stores Attribute configuration for various purposes:
- * Validating an AttributeStatement in Require SAML Token
- * Validating a protocol response in SamlpAssertion.
- * Note: these use cases have the same core functionality except they differ on the location of where a SAML
- * token should be found.
  */
 public class SamlAttributeStatement implements Cloneable, Serializable {
    private static final long serialVersionUID = 1L;
 
     private Attribute[] attributes = new Attribute[]{};
-
-    /**
-     * An expression that may reference any number of variables. Only variables of types 'Element' or 'Message' are
-     * considered. Schema type should be an SAML Attribute. Used in the issuing use cases, where the set of
-     * Attributes issued may need to be filtered by elements from an Attribute Query request.
-     */
-    private String filterExpression = "";
 
     public Attribute[] getAttributes() {
         return attributes;
@@ -47,15 +31,6 @@ public class SamlAttributeStatement implements Cloneable, Serializable {
         }
     }
 
-    public String getFilterExpression() {
-        return filterExpression;
-    }
-
-    public void setFilterExpression(String filterExpression) {
-        this.filterExpression = filterExpression;
-    }
-
-    @Override
     public Object clone() {
         try {
             SamlAttributeStatement copy = (SamlAttributeStatement) super.clone();
@@ -161,7 +136,7 @@ public class SamlAttributeStatement implements Cloneable, Serializable {
         }
 
         public String toString() {
-            StringBuilder sb = new StringBuilder();
+            StringBuffer sb = new StringBuffer();
             sb.append("[ ")
               .append("namespace="+ (namespace == null ? "null" : namespace))
               .append(", nameFormat="+ (nameFormat == null ? "null" : nameFormat))
@@ -177,7 +152,6 @@ public class SamlAttributeStatement implements Cloneable, Serializable {
             return sb.toString();
         }
 
-        @Override
         public Object clone() {
             try {
                 return super.clone();
