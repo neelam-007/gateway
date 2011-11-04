@@ -24,38 +24,51 @@ import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.*;
+import static com.l7tech.util.CollectionUtils.caseInsensitiveSet;
+import static java.util.Collections.singletonList;
 import org.apache.commons.lang.StringUtils;
+import org.apache.mina.core.session.IoSession;
 import org.apache.sshd.SshServer;
+import org.apache.sshd.client.future.DefaultOpenFuture;
+import org.apache.sshd.client.future.OpenFuture;
 import org.apache.sshd.common.*;
+import org.apache.sshd.common.Session.AttributeKey;
 import org.apache.sshd.common.cipher.*;
 import org.apache.sshd.common.compression.CompressionDelayedZlib;
 import org.apache.sshd.common.compression.CompressionNone;
 import org.apache.sshd.common.compression.CompressionZlib;
+import org.apache.sshd.common.future.CloseFuture;
+import org.apache.sshd.common.future.SshFutureListener;
 import org.apache.sshd.common.mac.HMACSHA1;
 import org.apache.sshd.common.mac.HMACSHA196;
 import org.apache.sshd.common.random.JceRandom;
 import org.apache.sshd.common.random.SingletonRandomFactory;
+import org.apache.sshd.common.session.AbstractSession;
 import org.apache.sshd.common.signature.SignatureDSA;
 import org.apache.sshd.common.signature.SignatureRSA;
+import org.apache.sshd.common.util.Buffer;
 import org.apache.sshd.common.util.SecurityUtils;
 import org.apache.sshd.server.*;
-import org.apache.sshd.server.channel.ChannelDirectTcpip;
 import org.apache.sshd.server.channel.ChannelSession;
+import org.apache.sshd.server.channel.OpenChannelException;
 import org.apache.sshd.server.kex.DHG1;
 import org.apache.sshd.server.session.ServerSession;
+import org.apache.sshd.server.session.SessionFactory;
+import org.apache.sshd.server.sftp.SftpSubsystem;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
-import java.net.InetSocketAddress;
+import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.PublicKey;
 import java.security.Security;
 import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -64,25 +77,38 @@ import java.util.logging.Logger;
  * Supports SCP and SFTP over SSH2.
  */
 public class SshServerModule extends TransportModule implements ApplicationListener {
-    private static final String LISTEN_PROP_AUTHORIZED_USER_PASSWORD_LIST = "l7.ssh.authorizedUserPasswordList";
-    private static final String LISTEN_PROP_AUTHORIZED_USER_PUBLIC_KEY_LIST = "l7.ssh.authorizedUserPublicKeyList";
-    private static final String LISTEN_PROP_ENABLED_CIPHER_LIST = "l7.ssh.enabledCipherList";
-    private static final String LISTEN_PROP_IS_PASSWORD_CREDENTIAL_FORBIDDEN = "l7.ssh.isPasswordCredentialForbidden";
-    private static final String LISTEN_PROP_IS_PUBLIC_KEY_CREDENTIAL_REQUIRED = "l7.ssh.isPublicKeyCredentialRequired";
-    public static final String LISTEN_PROP_MESSAGE_PROCESSOR_THREAD_WAIT_SECONDS = "l7.ssh.messageProcessorThreadWaitSeconds";
+    // Listen port properties
+    static final String LISTEN_PROP_AUTHORIZED_USER_PASSWORD_LIST = "l7.ssh.authorizedUserPasswordList";
+    static final String LISTEN_PROP_AUTHORIZED_USER_PUBLIC_KEY_LIST = "l7.ssh.authorizedUserPublicKeyList";
+    static final String LISTEN_PROP_ENABLED_CIPHER_LIST = "l7.ssh.enabledCipherList";
+    static final String LISTEN_PROP_IS_PASSWORD_CREDENTIAL_FORBIDDEN = "l7.ssh.isPasswordCredentialForbidden";
+    static final String LISTEN_PROP_IS_PUBLIC_KEY_CREDENTIAL_REQUIRED = "l7.ssh.isPublicKeyCredentialRequired";
+    static final String LISTEN_PROP_MESSAGE_PROCESSOR_THREAD_WAIT_SECONDS = "l7.ssh.messageProcessorThreadWaitSeconds";
+    static final String LISTEN_PROP_ACCEPT_BACLKOG = "l7.ssh.acceptBacklog";
+    static final String LISTEN_PROP_MAX_CHANNELS = "l7.ssh.maxChannels";
+
+    // Session properties
+    static final AttributeKey<String> MINA_SESSION_ATTR_CRED_USERNAME = new AttributeKey<String>();
+    static final AttributeKey<String> MINA_SESSION_ATTR_CRED_PASSWORD = new AttributeKey<String>();
+    static final AttributeKey<String> MINA_SESSION_ATTR_CRED_PUBLIC_KEY = new AttributeKey<String>();
+    static final AttributeKey<AtomicInteger> MINA_SESSION_ATTR_CHANNEL_COUNT = new AttributeKey<AtomicInteger>();
+
     private static final Logger LOGGER = Logger.getLogger(SshServerModule.class.getName());
-    public static final String MINA_SESSION_ATTR_CRED_USERNAME = "com.l7tech.server.ssh.credential.username";
-    public static final String MINA_SESSION_ATTR_CRED_PASSWORD = "com.l7tech.server.ssh.credential.password";
-    public static final String MINA_SESSION_ATTR_CRED_PUBLIC_KEY = "com.l7tech.server.ssh.credential.key";
     private static final String SCHEME_SSH = "SSH2";
     private static final String SPLIT_DELIMITER = "<split>";
+    private static final Set<String> SUPPORTED_SCHEMES = caseInsensitiveSet( SCHEME_SSH );
+    private static final String SSHD_PROPERTY_PREFIX = "sshd.";
 
-    private static final Set<String> SUPPORTED_SCHEMES = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
-    static {
-        SUPPORTED_SCHEMES.addAll(Arrays.asList(SCHEME_SSH));
-    }
+    // Configuration defaults
+    private static final String DEFAULT_SERVER_VERSION = "GatewaySSH-1.0";
+    private static final String DEFAULT_AUTH_TIMEOUT_MILLIS = Integer.toString(30000);
+    private static final String DEFAULT_MAX_AUTH_ATTEMPTS = Integer.toString(3);
+    private static final String DEFAULT_MAX_OPEN_FILES = Integer.toString(1);
+    private static final int DEFAULT_ACCEPT_BACKLOG = 50;
+    private static final int DEFAULT_MAX_SESSIONS = 10;
+    private static final int DEFAULT_MAX_CHANNELS = 1;
 
-    private enum SupportedCiphers {AES128CBC, TripleDESCBC, BlowfishCBC, AES192CBC, AES256CBC};
+    private enum SupportedCiphers {AES128CBC, TripleDESCBC, BlowfishCBC, AES192CBC, AES256CBC}
 
     private final ApplicationEventProxy applicationEventProxy;
     private final GatewayState gatewayState;
@@ -266,8 +292,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
 
         // configure and start sshd
         try {
-            SshServer sshd = createSshServer();
-            configureSshServer(sshd, connector);
+            final SshServer sshd = buildSshServer( connector );
             auditStart("connector OID " + connector.getOid() + ", on port " + connector.getPort());
             sshd.start();
             activeConnectors.put(connector.getOid(), new Pair<SsgConnector, SshServer>(connector, sshd));
@@ -318,7 +343,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
     /*
      * This method is based on org.apache.sshd.SshServer.setUpDefaultServer(...).
      */
-    private SshServer createSshServer() {
+    private SshServer buildSshServer( final SsgConnector connector ) throws ListenerException, FindException, ParseException {
         // customized for Gateway, we don't want Apache's SecurityUtils to explicitly register BouncyCastle, let the Gateway decide
         if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) != null) {
             SecurityUtils.setRegisterBouncyCastle(true);
@@ -328,7 +353,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
             SecurityUtils.setSecurityProvider(null);
         }
 
-        SshServer sshd = new SshServer();
+        final SshServer sshd = new SshServer();
         sshd.setKeyExchangeFactories(Arrays.<NamedFactory<KeyExchange>>asList(new DHG1.Factory()));
         sshd.setRandomFactory(new SingletonRandomFactory(new JceRandom.Factory()));
 
@@ -342,46 +367,30 @@ public class SshServerModule extends TransportModule implements ApplicationListe
                 new HMACSHA1.Factory(),
                 new HMACSHA196.Factory()));
 
-        sshd.setChannelFactories(Arrays.<NamedFactory<Channel>>asList(
-                new ChannelSession.Factory(),
-                new ChannelDirectTcpip.Factory()));
+        final AtomicInteger maxSessions = new AtomicInteger( DEFAULT_MAX_SESSIONS );
+        final AtomicInteger maxChannels = new AtomicInteger( DEFAULT_MAX_CHANNELS );
+        final AtomicInteger sessionCount = new AtomicInteger( 0 );
+        sshd.setSessionFactory( buildResourceLimitingSessionFactory( maxSessions, sessionCount ) );
+        sshd.setChannelFactories( singletonList( buildResourceLimitingChannelFactory( maxChannels ) ) );
         sshd.setSignatureFactories(Arrays.<NamedFactory<Signature>>asList(
                 new SignatureDSA.Factory(),
                 new SignatureRSA.Factory()));
         sshd.setFileSystemFactory(new VirtualFileSystemFactory());   // customized for Gateway
 
-        // removed ShellFactory setup for Gateway
-
-        // set all forwards to false for Gateway
-        sshd.setForwardingFilter(new ForwardingFilter() {
-            @Override
-            public boolean canForwardAgent(ServerSession session) {
-                return false;
-            }
-
-            @Override
-            public boolean canForwardX11(ServerSession session) {
-                return false;
-            }
-
-            @Override
-            public boolean canListen(InetSocketAddress address, ServerSession session) {
-                return false;
-            }
-
-            @Override
-            public boolean canConnect(InetSocketAddress address, ServerSession session) {
-                return false;
-            }
-        });
+        configureSshServer( sshd, connector, maxSessions, maxChannels );
 
         return sshd;
     }
 
     /*
-     * configure SSH server using listener properties
+     * Configure SSH server using listener properties
      */
-    private void configureSshServer(SshServer sshd, final SsgConnector connector) throws FindException, ListenerException, ParseException {
+    private void configureSshServer( final SshServer sshd,
+                                     final SsgConnector connector,
+                                     final AtomicInteger maxSessions,
+                                     final AtomicInteger maxChannels ) throws FindException, ListenerException, ParseException {
+        final Map<String, String> sshdProperties = sshd.getProperties();
+
         // configure ciphers to enable
         setUpSshCiphers(sshd, connector);
 
@@ -394,43 +403,60 @@ public class SshServerModule extends TransportModule implements ApplicationListe
             sshd.setCommandFactory(configureMessageProcessingScpCommand(connector));
         }
         if (connector.getBooleanProperty(SshCredentialAssertion.LISTEN_PROP_ENABLE_SFTP)) {
-            sshd.setSubsystemFactories(Arrays.<NamedFactory<Command>>asList(configureMessageProcessingSftpSubsystem(connector)));
+            sshd.setSubsystemFactories(singletonList(configureMessageProcessingSftpSubsystem( connector )));
         }
 
         // set host and port
-        String bindAddress = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
-        if ( ! InetAddressUtil.isAnyHostAddress(bindAddress) ) {
-            bindAddress = ssgConnectorManager.translateBindAddress(bindAddress, connector.getPort());
+        final String bindAddressProperty = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
+        final String bindAddress;
+        if ( !InetAddressUtil.isAnyHostAddress(bindAddressProperty) ) {
+            bindAddress = ssgConnectorManager.translateBindAddress(bindAddressProperty, connector.getPort());
         } else {
             bindAddress = InetAddressUtil.getAnyHostAddress();
         }
         sshd.setHost(bindAddress);
-        sshd.setPort(connector.getPort());
+        sshd.setPort( connector.getPort() );
+        sshd.setBacklog( connector.getIntProperty( LISTEN_PROP_ACCEPT_BACLKOG, DEFAULT_ACCEPT_BACKLOG ) );
 
         // set server host private key
-        long hostPrivateKeyOid = connector.getLongProperty(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY, SecurePassword.DEFAULT_OID);
-        SecurePassword securePassword = securePasswordManager.findByPrimaryKey(hostPrivateKeyOid);
+        final long hostPrivateKeyOid = connector.getLongProperty(SshCredentialAssertion.LISTEN_PROP_HOST_PRIVATE_KEY, SecurePassword.DEFAULT_OID);
+        final SecurePassword securePassword = securePasswordManager.findByPrimaryKey(hostPrivateKeyOid);
         if (securePassword != null) {
-            String encryptedHostPrivateKey = securePassword.getEncodedPassword();
-            char[] hostPrivateKey = securePasswordManager.decryptPassword(encryptedHostPrivateKey);
+            final String encryptedHostPrivateKey = securePassword.getEncodedPassword();
+            final char[] hostPrivateKey = securePasswordManager.decryptPassword(encryptedHostPrivateKey);
             sshd.setKeyPairProvider(new PemSshHostKeyProvider(String.valueOf(hostPrivateKey)));
         } else {
             LOGGER.log(Level.WARNING, "Unable to find private key OID: " + hostPrivateKeyOid + ".  KeyPairProvider not set.");
         }
 
-
         // configure connection idle timeout in ms (min=60sec*1000ms)
-        String idleTimeoutMins = connector.getProperty(SshCredentialAssertion.LISTEN_PROP_IDLE_TIMEOUT_MINUTES);
-        if (!StringUtils.isEmpty(idleTimeoutMins)) {
-            long idleTimeoutMs = Long.parseLong(idleTimeoutMins) * 60 * 1000;
-            sshd.getProperties().put(SshServer.IDLE_TIMEOUT, String.valueOf(idleTimeoutMs));
+        final Long idleTimeoutMins = connector.getLongProperty( SshCredentialAssertion.LISTEN_PROP_IDLE_TIMEOUT_MINUTES, 0L );
+        if ( idleTimeoutMins > 0L ) {
+            final long idleTimeoutMs = TimeUnit.MINUTES.toMillis( idleTimeoutMins );
+            sshdProperties.put( SshServer.IDLE_TIMEOUT, String.valueOf( idleTimeoutMs ) );
         }
 
-        // configure maximum concurrent open session count per user
-        // 2011/08/03 TL: Apache SSHD does not currently support configurable max total connections
-        String maxConcurrentSessionsPerUser = connector.getProperty(SshCredentialAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER);
+        // configure resource limits
+        final String maxConcurrentSessionsPerUser = connector.getProperty(SshCredentialAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER);
         if (!StringUtils.isEmpty(maxConcurrentSessionsPerUser)) {
-            sshd.getProperties().put(SshServer.MAX_CONCURRENT_SESSIONS, maxConcurrentSessionsPerUser);
+            sshdProperties.put( SshServer.MAX_CONCURRENT_SESSIONS, maxConcurrentSessionsPerUser );
+        }
+        maxSessions.set( connector.getIntProperty( SshCredentialAssertion.LISTEN_PROP_MAX_SESSIONS, maxSessions.get() ) );
+        maxSessions.compareAndSet( 0, Integer.MAX_VALUE ); // zero for unlimited
+        maxChannels.set( connector.getIntProperty( LISTEN_PROP_MAX_CHANNELS, maxChannels.get() ) );
+        maxChannels.compareAndSet( 0, Integer.MAX_VALUE ); // zero for unlimited
+
+        // These defaults can be overridden by advanced properties on the connector (prefixed with "sshd.")
+        sshdProperties.put( ServerFactoryManager.SERVER_IDENTIFICATION, DEFAULT_SERVER_VERSION );
+        sshdProperties.put( ServerFactoryManager.AUTH_TIMEOUT, DEFAULT_AUTH_TIMEOUT_MILLIS );
+        sshdProperties.put( ServerFactoryManager.MAX_AUTH_REQUESTS, DEFAULT_MAX_AUTH_ATTEMPTS );
+        sshdProperties.put( SftpSubsystem.MAX_OPEN_HANDLES_PER_SESSION, DEFAULT_MAX_OPEN_FILES );
+        for ( final String property : connector.getPropertyNames() ) {
+            if ( property.startsWith( SSHD_PROPERTY_PREFIX ) && property.length() > SSHD_PROPERTY_PREFIX.length()+1 ) {
+                sshdProperties.put(
+                        property.substring( SSHD_PROPERTY_PREFIX.length() ),
+                        connector.getProperty( property ) );
+            }
         }
     }
 
@@ -498,6 +524,10 @@ public class SshServerModule extends TransportModule implements ApplicationListe
      */
     private PublickeyAuthenticator configurePublicKeyAuthentication(final SsgConnector connector) {
         return new PublickeyAuthenticator() {
+                /**
+                 * Note that this method can be called prior to key validation
+                 */
+                @Override
                 public boolean authenticate(String userName, PublicKey publicKey, ServerSession session) {
                     // if public key authentication is required and public key is empty, don't allow access
                     if (connector.getBooleanProperty(LISTEN_PROP_IS_PUBLIC_KEY_CREDENTIAL_REQUIRED) &&
@@ -552,6 +582,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
      */
     private PasswordAuthenticator configurePasswordAuthentication(final SsgConnector connector) {
         return new PasswordAuthenticator() {
+                @Override
                 public boolean authenticate(String userName, String password, ServerSession session) {
                     // if password authentication is forbidden or public key authentication is required, don't allow access
                     if (connector.getBooleanProperty(LISTEN_PROP_IS_PASSWORD_CREDENTIAL_FORBIDDEN)
@@ -597,8 +628,6 @@ public class SshServerModule extends TransportModule implements ApplicationListe
      */
     private CommandFactory configureMessageProcessingScpCommand(final SsgConnector connector) {
         return new CommandFactory() {
-            private CommandFactory delegate;
-
             /**
              * Parses a command string and verifies that the basic syntax is
              * correct. If parsing fails the responsibility is delegated to
@@ -608,16 +637,10 @@ public class SshServerModule extends TransportModule implements ApplicationListe
              * @return configured {@link org.apache.sshd.server.Command} instance
              * @throws IllegalArgumentException
              */
+            @Override
             public Command createCommand(String command) {
-                try {
-                    return new MessageProcessingScpCommand(splitCommandString(command), connector, messageProcessor,
-                            stashManagerFactory, soapFaultManager, messageProcessingEventChannel);
-                } catch (IllegalArgumentException iae) {
-                    if (delegate != null) {
-                        return delegate.createCommand(command);
-                    }
-                    throw iae;
-                }
+                return new MessageProcessingScpCommand(splitCommandString(command), connector, messageProcessor,
+                        stashManagerFactory, soapFaultManager, messageProcessingEventChannel);
             }
 
             private String[] splitCommandString(String command) {
@@ -643,7 +666,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
                 StringBuilder sb = new StringBuilder();
 
                 for (int i = from; i < args.length; i++) {
-                    sb.append(args[i] + " ");
+                    sb.append( args[i] ).append( " " );
                 }
                 return sb.toString().trim();
             }
@@ -655,13 +678,149 @@ public class SshServerModule extends TransportModule implements ApplicationListe
      */
     private NamedFactory<Command> configureMessageProcessingSftpSubsystem(final SsgConnector connector) {
         return new NamedFactory<Command>(){
+            @Override
             public Command create() {
                 return new MessageProcessingSftpSubsystem(connector, messageProcessor, stashManagerFactory, soapFaultManager, messageProcessingEventChannel);
             }
 
+            @Override
             public String getName() {
                 return "sftp";
             }
         };
+    }
+
+    /**
+     * Builds a session factory with a listener to track the number of active sessions
+     */
+    private SessionFactory buildResourceLimitingSessionFactory( final AtomicInteger maxSessions,
+                                                                final AtomicInteger sessionCount ) {
+        final SessionFactory sessionFactory = new GatewaySshSessionFactory( maxSessions, sessionCount );
+        sessionFactory.addListener( new SessionListener() {
+            @Override
+            public void sessionCreated( final Session session ) {
+                sessionCount.incrementAndGet();
+            }
+
+            @Override
+            public void sessionClosed( final Session session ) {
+                sessionCount.decrementAndGet();
+            }
+        } );
+        return sessionFactory;
+    }
+
+    /**
+     * Builds a factory for channels that limits the number of channels available per session
+     */
+    private NamedFactory<Channel> buildResourceLimitingChannelFactory( final AtomicInteger maxChannels ) {
+        return new NamedFactory<Channel>(){
+            @Override
+            public String getName() {
+                return "session";
+            }
+            @Override
+            public Channel create() {
+                return new GatewaySshChannelSession( maxChannels );
+            }
+        };
+    }
+
+    /**
+     * Session factory that limits the total number of sessions available
+     */
+    private static class GatewaySshSessionFactory extends SessionFactory {
+        private final AtomicInteger maxSessions;
+        private final AtomicInteger sessionCount;
+
+        private GatewaySshSessionFactory( final AtomicInteger maxSessions,
+                                          final AtomicInteger sessionCount ) {
+            this.maxSessions = maxSessions;
+            this.sessionCount = sessionCount;
+        }
+
+        /**
+         * Overridden to immediately close the connection if no more sessions are available.
+         */
+        @Override
+        public void sessionCreated( final IoSession ioSession ) throws Exception {
+            if ( sessionCount.get() >= maxSessions.get() ) {
+                // Create an abstract session to avoid key exchange messages
+                final AbstractSession session = new AbstractSession(server, ioSession){
+                    {
+                        sendIdentification( "SSH-2.0-" + DEFAULT_SERVER_VERSION );
+                    }
+
+                    @Override
+                    protected void handleMessage( final Buffer buffer ) throws Exception {
+                        // ignore any messages
+                    }
+
+                    @Override
+                    protected boolean readIdentification( final Buffer buffer ) throws IOException {
+                        // no need to read the client identification since we're closing the connection
+                        return false;
+                    }
+                };
+                AbstractSession.attachSession(ioSession, session);
+                session.disconnect(SshConstants.SSH2_DISCONNECT_TOO_MANY_CONNECTIONS, "Too many connections");
+            } else {
+                super.sessionCreated( ioSession );
+            }
+        }
+
+        /**
+         * Override to set attributes
+         */
+        @Override
+        protected AbstractSession doCreateSession( final IoSession ioSession ) throws Exception {
+            final AbstractSession session = super.doCreateSession( ioSession );
+            session.setAttribute( MINA_SESSION_ATTR_CHANNEL_COUNT, new AtomicInteger() );
+            return session;
+        }
+    }
+
+    private static class GatewaySshChannelSession extends ChannelSession {
+        private final AtomicInteger maxChannels;
+
+        private GatewaySshChannelSession( final AtomicInteger maxChannels ) {
+            this.maxChannels = maxChannels;
+        }
+
+        @Override
+        public OpenFuture open( final int recipient, final int rwsize, final int rmpsize, final Buffer buffer ) {
+            final AtomicInteger sessionChannelCount = getSessionChannelCount();
+            if ( sessionChannelCount.incrementAndGet() > maxChannels.get() ) {
+                DefaultOpenFuture openFuture = new DefaultOpenFuture(this);
+                openFuture.setException( new OpenChannelException( SshConstants.SSH_OPEN_RESOURCE_SHORTAGE, "Too many channels") );
+                return openFuture;
+            } else {
+                return super.open( recipient, rwsize, rmpsize, buffer );
+            }
+        }
+
+        @Override
+        protected void addEnvVariable( final String name, final String value ) {
+            // Ignore all variables
+            if ( log != null ) {
+                log.debug( "Ignoring environment variable: " + name );
+            }
+        }
+
+        @Override
+        public CloseFuture close( final boolean immediately ) {
+            return super.close( immediately ).addListener( new SshFutureListener<CloseFuture>() {
+                @Override
+                public void operationComplete( final CloseFuture closeFuture ) {
+                    final AtomicInteger sessionChannelCount = getSessionChannelCount();
+                    sessionChannelCount.decrementAndGet();
+                }
+            } );
+        }
+
+        private AtomicInteger getSessionChannelCount() {
+            final Session session = getSession();
+            return session.getAttribute( MINA_SESSION_ATTR_CHANNEL_COUNT );
+        }
     }
 }
