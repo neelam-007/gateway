@@ -79,4 +79,9 @@ public abstract class CompiledXpath {
             super("0=1", null);
         }
     }
+
+    @Override
+    public String toString() {
+        return expression;
+    }
 }
