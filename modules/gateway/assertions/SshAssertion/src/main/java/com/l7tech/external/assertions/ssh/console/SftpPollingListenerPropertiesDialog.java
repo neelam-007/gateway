@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.ssh.console;
 import com.l7tech.console.panels.SecurePasswordComboBox;
 import com.l7tech.console.panels.SecurePasswordManagerWindow;
 import com.l7tech.console.panels.ServiceComboBox;
+import com.l7tech.console.panels.ServiceComboItem;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.external.assertions.ssh.server.sftppollinglistener.SftpPollingListenerConstants;
@@ -15,6 +16,7 @@ import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.VersionException;
@@ -147,6 +149,7 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
             }
         });
 
+        serviceNameComboBox.setRenderer( TextListCellRenderer.<ServiceComboItem>basicComboBoxRenderer() );
         ServiceComboBox.populateAndSelect(serviceNameComboBox, false, 0);
         hardwiredServiceCheckBox.addActionListener(new ActionListener() {
             @Override
