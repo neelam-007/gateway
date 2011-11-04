@@ -313,6 +313,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
 
                     return AssertionStatus.NONE;
 
+                // TODO [jdk7] Multicatch
                 } catch (ConfigurationException e) {
                     thrown = e;
                     logAndAudit(AssertionMessages.HTTPROUTE_ACCESS_DENIED, null,e);
@@ -658,10 +659,10 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
             public SimpleHttpClient getHttpClient() {
                 return newRRLSimpleHttpClient(
                         context,
+                        bridgeRequest,
                         super.getHttpClient(),
                         context.getRoutingResultListener(),
-                        hh,
-                        bridgeRequest.getKnob(HttpOutboundRequestKnob.class));
+                        hh );
             }
         };
     }
@@ -707,37 +708,39 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
      * NOTE: this is NOT compatible with a non-sticky failover client.
      */
     private SimpleHttpClient newRRLSimpleHttpClient( final PolicyEnforcementContext context,
+                                                     final Message bridgeRequest,
                                                      final SimpleHttpClient client,
                                                      final RoutingResultListener rrl,
-                                                     final HeaderHolder hh,
-                                                     final HasOutboundHeaders oh ) {
-        return new BRASimpleHttpClient(client, context, rrl, hh ,oh);
+                                                     final HeaderHolder hh ) {
+        return new BRASimpleHttpClient(client, context, bridgeRequest, rrl, hh);
     }
 
     private class BRASimpleHttpClient extends SimpleHttpClient implements RerunnableGenericHttpClient {
         private final GenericHttpClient client;
         private final PolicyEnforcementContext context;
+        private final Message bridgeRequest;
         private final RoutingResultListener rrl;
         private final HeaderHolder hh;
         private final HasOutboundHeaders oh;
 
         private BRASimpleHttpClient(final GenericHttpClient client,
                                     final PolicyEnforcementContext context,
+                                    final Message bridgeRequest,
                                     final RoutingResultListener rrl,
-                                    final HeaderHolder hh,
-                                    final HasOutboundHeaders oh ) {
+                                    final HeaderHolder hh ) {
             super(client);
             this.client = client;
             this.context = context;
+            this.bridgeRequest = bridgeRequest;
             this.rrl = rrl;
             this.hh = hh;
-            this.oh = oh;
+            this.oh = bridgeRequest.getKnob(HttpOutboundRequestKnob.class);
         }
 
         @Override
         public GenericHttpRequest createRequest(final HttpMethod method, final GenericHttpRequestParams params)  {
             // enforce http outgoing rules here
-            HttpForwardingRuleEnforcer.handleRequestHeaders(oh, params, context, assertion.getRequestHeaderRules(),
+            HttpForwardingRuleEnforcer.handleRequestHeaders(oh, bridgeRequest, params, context, assertion.getRequestHeaderRules(),
                                                             getAudit(), null, varNames);
 
             if (assertion.isTaiCredentialChaining()) {

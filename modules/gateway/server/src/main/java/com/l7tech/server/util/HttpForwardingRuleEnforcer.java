@@ -11,6 +11,7 @@ import com.l7tech.server.policy.assertion.ServerBridgeRoutingAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.xml.soap.SoapUtil;
+import org.jetbrains.annotations.Nullable;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -36,6 +37,7 @@ public class HttpForwardingRuleEnforcer {
      * For forwarding request http headers downstream (from routing assertion)
      *
      * @param headerSource Source for HTTP Headers (in addition to the request Message, may be null)
+     * @param sourceMessage the sourceMessage
      * @param httpRequestParams Target for HTTP headers
      * @param context the pec
      * @param targetDomain name of domain used for cookie forwarding
@@ -44,14 +46,15 @@ public class HttpForwardingRuleEnforcer {
      * @param vars pre-populated map of context variables (pec.getVariableMap) or null
      * @param varNames the context variables used by the calling assertion used to populate vars if null
      */
-    public static void handleRequestHeaders( final HasOutboundHeaders headerSource,
+    public static void handleRequestHeaders( @Nullable final HasOutboundHeaders headerSource,
+                                             final Message sourceMessage,
                                              final GenericHttpRequestParams httpRequestParams,
                                              final PolicyEnforcementContext context,
                                              final String targetDomain,
                                              final HttpPassthroughRuleSet rules, 
                                              final Audit auditor,
-                                             Map<String,Object> vars,
-                                             final String[] varNames) throws IOException {
+                                             @Nullable  Map<String,?> vars,
+                                             @Nullable final String[] varNames) throws IOException {
         final HasOutboundHeaders source = headerSource == null ? new HttpOutboundRequestFacet() : headerSource;
 
         // we should only forward def user-agent if the rules are not going to insert own
@@ -59,7 +62,7 @@ public class HttpForwardingRuleEnforcer {
             flushExisting(HttpConstants.HEADER_USER_AGENT, httpRequestParams);
         }
 
-        final HttpRequestKnob knob = context.getRequest().getKnob(HttpRequestKnob.class);
+        final HttpRequestKnob knob = sourceMessage.getKnob( HttpRequestKnob.class );
         if (rules.isForwardAll()) {
             // forward everything
             source.writeHeaders( httpRequestParams );
@@ -68,7 +71,7 @@ public class HttpForwardingRuleEnforcer {
 
                 //but still try to get and set a SOAPAction If not already set.
                 if ( !source.containsHeader( SoapUtil.SOAPACTION ) ) {
-                    handleSoapActionHeader( httpRequestParams, context, source );
+                    handleSoapActionHeader( httpRequestParams, sourceMessage, source );
                 }
             } else {
                 String[] headerNames = knob.getHeaderNames();
@@ -96,7 +99,7 @@ public class HttpForwardingRuleEnforcer {
                     } else if (headerName.equalsIgnoreCase(SoapUtil.SOAPACTION)){
                         if ( !source.containsHeader( SoapUtil.SOAPACTION ) ) {
                             //special SOAPAction handling
-                            handleSoapActionHeader( httpRequestParams, context, source );
+                            handleSoapActionHeader( httpRequestParams, sourceMessage, source );
                         }
                     } else {
                         String[] values = knob.getHeaderValues(headerName);
@@ -142,7 +145,7 @@ public class HttpForwardingRuleEnforcer {
                                                                                          HttpCookie.getCookieHeader(res)));
                             }
                         } else if (headerNameFromRule.equalsIgnoreCase(SoapUtil.SOAPACTION)) {
-                            handleSoapActionHeader( httpRequestParams, context, source );
+                            handleSoapActionHeader( httpRequestParams, sourceMessage, source );
                         } else {
                             final String[] values = source.containsHeader(headerNameFromRule) ?
                                     source.getHeaderValues( headerNameFromRule ) :
@@ -155,7 +158,7 @@ public class HttpForwardingRuleEnforcer {
                     } else {
                         //we should still try to set a SOAPAction if possible
                         if ( headerNameFromRule.equalsIgnoreCase(SoapUtil.SOAPACTION) ) {
-                            handleSoapActionHeader( httpRequestParams, context, source );
+                            handleSoapActionHeader( httpRequestParams, sourceMessage, source );
                         } else {
                             final String[] values = source.getHeaderValues(headerNameFromRule);
                             for ( final String value : values ) {
@@ -169,16 +172,16 @@ public class HttpForwardingRuleEnforcer {
     }
 
     private static void handleSoapActionHeader( final GenericHttpRequestParams httpRequestParams,
-                                                final PolicyEnforcementContext context,
+                                                final Message sourceMessage,
                                                 final HasOutboundHeaders source ) {
-        final String soapAction = getSoapActionIfPossible(context, source);
+        final String soapAction = getSoapActionIfPossible(sourceMessage, source);
         if (soapAction != null) {
             //add the soap action header, using the original header case
             httpRequestParams.addExtraHeader(new GenericHttpHeader( SoapUtil.SOAPACTION, soapAction));
         }
     }
 
-    private static String getSoapActionIfPossible( final PolicyEnforcementContext context,
+    private static String getSoapActionIfPossible( final Message sourceMessage,
                                                    final HasOutboundHeaders headerSource ) {
         String soapAction = null;
 
@@ -188,12 +191,10 @@ public class HttpForwardingRuleEnforcer {
         }
 
         if ( soapAction == null ) {
-            Message request = context.getRequest();
-
             try {
-                if (request.isSoap()) {
+                if (sourceMessage.isSoap()) {
                     try {
-                        HasSoapAction haver = request.getKnob(HasSoapAction.class);
+                        HasSoapAction haver = sourceMessage.getKnob(HasSoapAction.class);
                         if (haver != null) {
                             soapAction = haver.getSoapAction();
                             if (soapAction == null)
@@ -229,6 +230,7 @@ public class HttpForwardingRuleEnforcer {
      * Handle request headers for Bridge Routing.
      *
      * @param headerSource The source for extra headers (may be null)
+     * @param sourceMessage The source message (required)
      * @param httpRequestParams The target for outbound headers (required)
      * @param context The current context (required)
      * @param rules The header processing rules (required)
@@ -236,15 +238,16 @@ public class HttpForwardingRuleEnforcer {
      * @param vars The relevant variables (may be null)
      * @param varNames The variables used in header rules (may be null)
      */
-    public static void handleRequestHeaders( final HasOutboundHeaders headerSource,
+    public static void handleRequestHeaders( @Nullable final HasOutboundHeaders headerSource,
+                                             final Message sourceMessage,
                                              final GenericHttpRequestParams httpRequestParams,
                                              final PolicyEnforcementContext context,
                                              final HttpPassthroughRuleSet rules,
                                              final Audit auditor,
-                                             Map<String,Object> vars,
-                                             final String[] varNames ) {
+                                             @Nullable Map<String,?> vars,
+                                             @Nullable final String[] varNames ) {
         final HasOutboundHeaders source = headerSource == null ? new HttpOutboundRequestFacet() : headerSource;
-        final HttpRequestKnob knob = context.getRequest().getKnob(HttpRequestKnob.class);
+        final HttpRequestKnob knob = sourceMessage.getKnob( HttpRequestKnob.class );
 
         if (rules.isForwardAll()) {
             // forward everything
@@ -322,12 +325,13 @@ public class HttpForwardingRuleEnforcer {
     }
 
     public static List<Param> handleRequestParameters( final PolicyEnforcementContext context,
+                                                       final Message sourceMessage,
                                                        final HttpPassthroughRuleSet rules,
                                                        final Audit auditor,
-                                                       Map<String,Object> vars,
-                                                       final String[] varNames ) throws IOException {
+                                                       @Nullable Map<String,?> vars,
+                                                       @Nullable final String[] varNames ) throws IOException {
         // 1st, make sure we have a HttpServletRequestKnob
-        HttpServletRequestKnob knob = context.getRequest().getKnob(HttpServletRequestKnob.class);
+        HttpServletRequestKnob knob = sourceMessage.getKnob( HttpServletRequestKnob.class );
         if (knob == null) {
             logger.log(Level.FINE, "no parameter to forward cause the incoming request is not http");
             return null;
@@ -384,8 +388,8 @@ public class HttpForwardingRuleEnforcer {
                                               final Audit auditor,
                                               final ServerBridgeRoutingAssertion.HeaderHolder hh,
                                               final HttpPassthroughRuleSet rules,
-                                              Map<String,Object> vars,
-                                              final String[] varNames,
+                                              @Nullable Map<String,?> vars,
+                                              @Nullable final String[] varNames,
                                               final PolicyEnforcementContext context ) {
         if (rules.isForwardAll()) {
             final HttpHeader[] headers = hh.getHeaders().toArray();
@@ -450,7 +454,7 @@ public class HttpForwardingRuleEnforcer {
                                               final boolean passThroughSpecialHeaders,
                                               final PolicyEnforcementContext context,
                                               final GenericHttpRequestParams routedRequestParams,
-                                              Map<String,Object> vars,
+                                              Map<String,?> vars,
                                               final String[] varNames) {
         boolean passIncomingCookies = false;
         if (rules.isForwardAll()) {

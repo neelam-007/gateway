@@ -459,7 +459,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     }
 
     private AssertionStatus reallyTryUrl(PolicyEnforcementContext context, Message requestMessage, final GenericHttpRequestParams routedRequestParams,
-                                         URL url, boolean allowRetry, Map vars) throws PolicyAssertionException {
+                                         URL url, boolean allowRetry, Map<String,?> vars) throws PolicyAssertionException {
         GenericHttpRequest routedRequest = null;
         GenericHttpResponse routedResponse = null;
         Message routedResponseDestination = null;
@@ -494,6 +494,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             // this will forward soapaction, content-type, cookies, etc based on assertion settings
             HttpForwardingRuleEnforcer.handleRequestHeaders(
                     requestMessage.getKnob( HttpOutboundRequestKnob.class ),
+                    requestMessage,
                     routedRequestParams,
                     context,
                     url.getHost(),
@@ -558,7 +559,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             routedRequest = httpClient.createRequest(method, routedRequestParams);
 
             List<HttpForwardingRuleEnforcer.Param> paramRes = HttpForwardingRuleEnforcer.
-                    handleRequestParameters(context, assertion.getRequestParamRules(), getAudit(), vars, varNames);
+                    handleRequestParameters(context, requestMessage, assertion.getRequestParamRules(), getAudit(), vars, varNames);
 
 
             if (paramRes != null && paramRes.size() > 0) {
