@@ -84,6 +84,7 @@ public class SftpPollingListenerFileHandler {
             PipedInputStream pis = new PipedInputStream();
             PipedOutputStream pos = new PipedOutputStream(pis);
             Message request = new Message();
+            //TODO [steve] SSH Polling listener must enforce size limit for inbound messages
             request.initialize(stashManagerFactory.createStashManager(), ctype, pis);
 
             request.attachKnob(SshKnob.class, MessageProcessingSshUtil.buildSshKnob("localhost", -1, settings.getHostname(),

@@ -25,6 +25,18 @@ import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.*;
 import static com.l7tech.util.CollectionUtils.caseInsensitiveSet;
+import static com.l7tech.util.CollectionUtils.list;
+import static com.l7tech.util.Either.left;
+import static com.l7tech.util.Either.right;
+import static com.l7tech.util.Eithers.lefts;
+import static com.l7tech.util.Eithers.rights;
+import com.l7tech.util.Functions.Unary;
+import static com.l7tech.util.Functions.grep;
+import static com.l7tech.util.Functions.map;
+import static com.l7tech.util.Option.optional;
+import static com.l7tech.util.Option.some;
+import static com.l7tech.util.TextUtils.isNotEmpty;
+import static com.l7tech.util.TextUtils.split;
 import static java.util.Collections.singletonList;
 import org.apache.commons.lang.StringUtils;
 import org.apache.mina.core.session.IoSession;
@@ -71,6 +83,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * Creates and controls an embedded SSH server for each configured SsgConnector with a SSH scheme.
@@ -88,14 +101,14 @@ public class SshServerModule extends TransportModule implements ApplicationListe
     static final String LISTEN_PROP_MAX_CHANNELS = "l7.ssh.maxChannels";
 
     // Session properties
-    static final AttributeKey<String> MINA_SESSION_ATTR_CRED_USERNAME = new AttributeKey<String>();
-    static final AttributeKey<String> MINA_SESSION_ATTR_CRED_PASSWORD = new AttributeKey<String>();
-    static final AttributeKey<String> MINA_SESSION_ATTR_CRED_PUBLIC_KEY = new AttributeKey<String>();
+    static final AttributeKey<Option<String>> MINA_SESSION_ATTR_CRED_USERNAME = new AttributeKey<Option<String>>();
+    static final AttributeKey<Option<String>> MINA_SESSION_ATTR_CRED_PASSWORD = new AttributeKey<Option<String>>();
+    static final AttributeKey<Option<String>> MINA_SESSION_ATTR_CRED_PUBLIC_KEY = new AttributeKey<Option<String>>();
     static final AttributeKey<AtomicInteger> MINA_SESSION_ATTR_CHANNEL_COUNT = new AttributeKey<AtomicInteger>();
 
     private static final Logger LOGGER = Logger.getLogger(SshServerModule.class.getName());
     private static final String SCHEME_SSH = "SSH2";
-    private static final String SPLIT_DELIMITER = "<split>";
+    private static final Pattern SPLIT_DELIMITER = Pattern.compile("<split>");
     private static final Set<String> SUPPORTED_SCHEMES = caseInsensitiveSet( SCHEME_SSH );
     private static final String SSHD_PROPERTY_PREFIX = "sshd.";
 
@@ -108,7 +121,23 @@ public class SshServerModule extends TransportModule implements ApplicationListe
     private static final int DEFAULT_MAX_SESSIONS = 10;
     private static final int DEFAULT_MAX_CHANNELS = 1;
 
-    private enum SupportedCiphers {AES128CBC, TripleDESCBC, BlowfishCBC, AES192CBC, AES256CBC}
+    private enum SupportedCipher {
+        AES128CBC(new AES128CBC.Factory()),
+        TripleDESCBC(new BlowfishCBC.Factory()),
+        BlowfishCBC(new TripleDESCBC.Factory()),
+        AES192CBC(new AES192CBC.Factory()),
+        AES256CBC(new AES256CBC.Factory());
+
+        private final NamedFactory<Cipher> factory;
+
+        private SupportedCipher( final NamedFactory<Cipher> factory ) {
+            this.factory = factory;
+        }
+
+        NamedFactory<Cipher> getFactory() {
+            return factory;
+        }
+    }
 
     private final ApplicationEventProxy applicationEventProxy;
     private final GatewayState gatewayState;
@@ -464,29 +493,23 @@ public class SshServerModule extends TransportModule implements ApplicationListe
      * This method is based on org.apache.sshd.SshServer.setUpDefaultCiphers(...)
      */
     private void setUpSshCiphers(SshServer sshd, final SsgConnector connector) {
-        List<NamedFactory<Cipher>> namedFactoryCipherList = new LinkedList<NamedFactory<Cipher>>();
-
-        // if enabledCiphers list exists, enable accordingly, otherwise enable all supported ciphers
-        String enabledCipherList = connector.getProperty(LISTEN_PROP_ENABLED_CIPHER_LIST);
-        if (enabledCipherList != null) {
-            String[] enabledCiphers = enabledCipherList.split(SPLIT_DELIMITER);
-             if (enabledCiphers != null && enabledCiphers.length > 0) {
-                 for (String enabledCipher : enabledCiphers) {
-                     try {
-                         namedFactoryCipherList.add(createNamedFactoryCipher(SupportedCiphers.valueOf(enabledCipher)));
-                     } catch (IllegalArgumentException iae) {
-                         LOGGER.log(Level.WARNING, "Unrecognized cipher: " + ExceptionUtils.getMessage(iae), ExceptionUtils.getDebugException(iae));
-                     }
-                 }
-             }
-        } else {
-            for (SupportedCiphers enabledCipher : SupportedCiphers.values()) {
-                namedFactoryCipherList.add(createNamedFactoryCipher(enabledCipher));
+        // If enabledCiphers list exists, enable accordingly, otherwise enable all supported ciphers
+        final List<Either<String,SupportedCipher>> configuredCiphers =
+                map( getListProperty( connector, LISTEN_PROP_ENABLED_CIPHER_LIST ), supportedCipher() );
+        final Collection<SupportedCipher> ciphers;
+        if ( configuredCiphers.isEmpty() ) {
+            ciphers = EnumSet.allOf( SupportedCipher.class );
+        }  else {
+            ciphers = rights( configuredCiphers );
+            final Collection<String> invalidCiphers = lefts( configuredCiphers );
+            if ( !invalidCiphers.isEmpty() ) {
+                 LOGGER.log(Level.WARNING, "Ignoring unrecognized ciphers " + invalidCiphers);
             }
         }
 
-        if (namedFactoryCipherList != null && !namedFactoryCipherList.isEmpty()) {
-            for (Iterator<NamedFactory<Cipher>> i = namedFactoryCipherList.iterator(); i.hasNext();) {
+        final List<NamedFactory<Cipher>> namedFactoryCipherList = map( ciphers, factory() );
+        if ( !namedFactoryCipherList.isEmpty() ) {
+            for ( final Iterator<NamedFactory<Cipher>> i = namedFactoryCipherList.iterator(); i.hasNext();) {
                 final NamedFactory<Cipher> f = i.next();
                 try {
                     final Cipher c = f.create();
@@ -503,26 +526,48 @@ public class SshServerModule extends TransportModule implements ApplicationListe
         }
     }
 
-    private NamedFactory<Cipher> createNamedFactoryCipher(SupportedCiphers cipher) {
-        switch(cipher) {
-            case AES128CBC:
-                return new AES128CBC.Factory();
-            case BlowfishCBC:
-                return new BlowfishCBC.Factory();
-            case TripleDESCBC:
-                return new TripleDESCBC.Factory();
-            case AES192CBC:
-                return new AES192CBC.Factory();
-            case AES256CBC:
-                return new AES256CBC.Factory();
-        }
-        throw new IllegalArgumentException(cipher.name());
+    private Collection<String> getListProperty( final SsgConnector connector, final String property ) {
+        final List<String> valueList = list(
+                optional( connector.getProperty( property ) )
+                        .orElse( some( "" ) )
+                        .map( split( SPLIT_DELIMITER ) )
+                        .some() );
+        return grep( valueList, isNotEmpty() );
+    }
+
+    private Unary<NamedFactory<Cipher>,SupportedCipher> factory() {
+        return new Unary<NamedFactory<Cipher>,SupportedCipher>(){
+            @Override
+            public NamedFactory<Cipher> call( final SupportedCipher supportedCipher ) {
+                return supportedCipher.getFactory();
+            }
+        };
+    }
+
+    private Unary<Either<String,SupportedCipher>,String> supportedCipher() {
+        return new Unary<Either<String,SupportedCipher>,String>(){
+            @Override
+            public Either<String, SupportedCipher> call( final String cipher ) {
+                try {
+                    return right( SupportedCipher.valueOf( cipher ) );
+                } catch (IllegalArgumentException iae) {
+                    return left( cipher );
+                }
+            }
+        };
+    }
+
+    private static void clearAuthenticationAttributes( final AbstractSession session ) {
+        session.setAttribute(MINA_SESSION_ATTR_CRED_USERNAME, Option.<String>none());
+        session.setAttribute(MINA_SESSION_ATTR_CRED_PASSWORD, Option.<String>none());
+        session.setAttribute(MINA_SESSION_ATTR_CRED_PUBLIC_KEY, Option.<String>none());
     }
 
     /*
      * public key authentication logic
      */
     private PublickeyAuthenticator configurePublicKeyAuthentication(final SsgConnector connector) {
+        final Collection<String> authorizedUserPublicKeys = getListProperty( connector, LISTEN_PROP_AUTHORIZED_USER_PUBLIC_KEY_LIST );
         return new PublickeyAuthenticator() {
                 /**
                  * Note that this method can be called prior to key validation
@@ -539,39 +584,23 @@ public class SshServerModule extends TransportModule implements ApplicationListe
                     boolean isAllowedAccess = true;
 
                     // if authorizedUserPublicKeys list exists, perform authentication against it
-                    String authorizedUserPublicKeyList = connector.getProperty(LISTEN_PROP_AUTHORIZED_USER_PUBLIC_KEY_LIST);
-                    if (authorizedUserPublicKeyList != null) {
-                        String[] authorizedUserPublicKeys = authorizedUserPublicKeyList.split(SPLIT_DELIMITER);
-                        if (authorizedUserPublicKeys != null && authorizedUserPublicKeys.length > 0 && publicKey != null) {
-                            isAllowedAccess = false;
-                            String publicKeyString = SshKeyUtil.writeKey(publicKey);
-                            if (!StringUtils.isEmpty(publicKeyString)) {
-                                publicKeyString = publicKeyString.replace( SyspropUtil.getProperty("line.separator"), "" );
-                                for (String authorizedUserPublicKey : authorizedUserPublicKeys) {
-                                    if (publicKeyString.equals(authorizedUserPublicKey)) {
-                                        isAllowedAccess = true;
-                                        break;
-                                    }
-                                }
-                            }
+                    if ( !authorizedUserPublicKeys.isEmpty() && publicKey != null) {
+                        isAllowedAccess = false;
+                        final String publicKeyString = SshKeyUtil.writeKey(publicKey);
+                        if (!StringUtils.isEmpty(publicKeyString)) {
+                            isAllowedAccess = authorizedUserPublicKeys.contains( publicKeyString );
                         }
                     }
 
                     // authenticating with public key, remove password (if any)
-                    session.getIoSession().removeAttribute(MINA_SESSION_ATTR_CRED_PASSWORD);
+                    clearAuthenticationAttributes( session );
 
-                    if (isAllowedAccess) {
-                        session.getIoSession().setAttribute(MINA_SESSION_ATTR_CRED_USERNAME, userName);
-
-                        String publicKeyStr = SshKeyUtil.writeKey(publicKey);
-                        if (!StringUtils.isEmpty(publicKeyStr)) {
-                            publicKeyStr = publicKeyStr.replace(SyspropUtil.getProperty("line.separator"), "");
-                        }
-                        session.getIoSession().setAttribute(MINA_SESSION_ATTR_CRED_PUBLIC_KEY, publicKeyStr);
-                    } else {
-                        session.getIoSession().removeAttribute(MINA_SESSION_ATTR_CRED_USERNAME);
-                        session.getIoSession().removeAttribute(MINA_SESSION_ATTR_CRED_PUBLIC_KEY);
+                    if ( isAllowedAccess ) {
+                        final String publicKeyStr = SshKeyUtil.writeKey(publicKey);
+                        session.setAttribute( MINA_SESSION_ATTR_CRED_USERNAME, optional(userName) );
+                        session.setAttribute( MINA_SESSION_ATTR_CRED_PUBLIC_KEY, optional(publicKeyStr) );
                     }
+
                     return isAllowedAccess;
                 }
             };
@@ -581,6 +610,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
      * password authentication logic
      */
     private PasswordAuthenticator configurePasswordAuthentication(final SsgConnector connector) {
+        final Collection<String> authorizedUserPasswords = getListProperty( connector, LISTEN_PROP_AUTHORIZED_USER_PASSWORD_LIST );
         return new PasswordAuthenticator() {
                 @Override
                 public boolean authenticate(String userName, String password, ServerSession session) {
@@ -591,32 +621,17 @@ public class SshServerModule extends TransportModule implements ApplicationListe
                     }
 
                     // by default allow all access, defer authentication to Gateway policy assertion
-                    boolean isAllowedAccess = true;
-
-                    // if authorizedUserPasswords list exists, perform authentication against it
-                    String authorizedUserPasswordList = connector.getProperty(LISTEN_PROP_AUTHORIZED_USER_PASSWORD_LIST);
-                    if (authorizedUserPasswordList != null) {
-                        String[] authorizedUserPasswords = authorizedUserPasswordList.split(SPLIT_DELIMITER);
-                        if (authorizedUserPasswords != null && authorizedUserPasswords.length > 0) {
-                            isAllowedAccess = false;
-                            for (String authorizedUserPassword : authorizedUserPasswords) {
-                                if (!StringUtils.isEmpty(authorizedUserPassword) && authorizedUserPassword.equals(password)) {
-                                    isAllowedAccess = true;
-                                    break;
-                                }
-                            }
-                        }
-                    }
+                    // if authorizedUserPasswords list is not empty, perform authentication against it
+                    final boolean isAllowedAccess =
+                            authorizedUserPasswords.isEmpty() ||
+                            authorizedUserPasswords.contains( password );
 
                     // authenticating with password, remove public key (if any)
-                    session.getIoSession().removeAttribute(MINA_SESSION_ATTR_CRED_PUBLIC_KEY);
+                    clearAuthenticationAttributes( session );
 
-                    if (isAllowedAccess) {
-                        session.getIoSession().setAttribute(MINA_SESSION_ATTR_CRED_USERNAME, userName);
-                        session.getIoSession().setAttribute(MINA_SESSION_ATTR_CRED_PASSWORD, password);
-                    } else {
-                        session.getIoSession().removeAttribute(MINA_SESSION_ATTR_CRED_USERNAME);
-                        session.getIoSession().removeAttribute(MINA_SESSION_ATTR_CRED_PASSWORD);
+                    if ( isAllowedAccess ) {
+                        session.setAttribute(MINA_SESSION_ATTR_CRED_USERNAME, optional(userName));
+                        session.setAttribute(MINA_SESSION_ATTR_CRED_PASSWORD, optional(password));
                     }
                     return isAllowedAccess;
                 }
@@ -776,6 +791,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
         protected AbstractSession doCreateSession( final IoSession ioSession ) throws Exception {
             final AbstractSession session = super.doCreateSession( ioSession );
             session.setAttribute( MINA_SESSION_ATTR_CHANNEL_COUNT, new AtomicInteger() );
+            clearAuthenticationAttributes( session );
             return session;
         }
     }

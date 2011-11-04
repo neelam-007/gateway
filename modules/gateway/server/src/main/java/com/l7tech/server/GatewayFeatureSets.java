@@ -161,7 +161,8 @@ public class GatewayFeatureSets {
 
         GatewayFeatureSet sshFront =
         fsr("set:SSH2:front", "Allow incoming SSH2 messages",
-            srv(SERVICE_SSH_MESSAGE_INPUT, "Accept incoming messages over SSH2"));
+            srv(SERVICE_SSH_MESSAGE_INPUT, "Accept incoming messages over SSH2"),
+            mass("assertion:SshCredential"));
 
         GatewayFeatureSet srvRawTcp = misc(SERVICE_L7RAWTCP_MESSAGE_INPUT, "Accept incoming messages over l7.raw.tcp", null);
         GatewayFeatureSet rawTcpFront =
@@ -443,7 +444,7 @@ public class GatewayFeatureSets {
 
         GatewayFeatureSet routingGateway =
         fsr("set:Routing:Gateway", "SecureSpan Gateway message routing",
-            "Adds BRA, JMS and FTP routing.",
+            "Adds BRA, JMS, FTP and SSH routing.",
             fs(routingFw),
             fs(ftpFront),
             fs(sshFront),
@@ -454,7 +455,8 @@ public class GatewayFeatureSets {
             fs(rawTcpBack),
             fs(uiEmailListenersDialog),
             ass(BridgeRoutingAssertion.class),
-            mass("assertion:FtpRouting"));
+            mass("assertion:FtpRouting"),
+            mass("assertion:SshRoute"));
 
         // Service availability
         GatewayFeatureSet availabilityAccel =

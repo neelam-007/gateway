@@ -49,14 +49,14 @@ public class PEMSshHostKeyProviderTest {
             "CQ4e4DWuCtp+UEf+AAwy7ilwfSlmBQuNZVMRUbEmPPS7LdwipqFI9SiflHkcpnY3" + lineSeparator +
             "mOX95u/xGpBzwgSt9CGoe1HF20+vrSdKjHUkiwFNdGlCvao9W0aIxP3M" + lineSeparator +
             "-----END RSA PRIVATE KEY-----";
-    final String sshRsaPemPublicKey = "-----BEGIN PUBLIC KEY-----" + lineSeparator +
-            "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA+fb6rRyNJZxlHbfa9ZhG" + lineSeparator +
-            "Jmz9gL4l24aJG6sFmx9imWmo+3EH9kCvt8HbhUWuJt4CkbMpuckjhu35t9hoS2+V" + lineSeparator +
-            "AEuR6/K7GTUQYO5SFIax4jmng3BVr0tpg1z3mCKJ4ZbRmXWhGdQtfyGcfYuw2kVY" + lineSeparator +
-            "vDmdAjOgDOdLmER+CUGkCdvRhWhNq8FTm3cQypf8nQN79IgacQPW648is4qqW7aY" + lineSeparator +
-            "jveNmBQyCCEnciUvfUbCND1fa96l1Dzhq8ESPPJ5UIFrUYucbVukziGOnZSVgbq6" + lineSeparator +
-            "5yHgoWEFYpJSwBd+CyugyuNaCccchyMPOf9sis6lKZvg4A/ERlocpVEjbDD24Bbu" + lineSeparator +
-            "qwIDAQAB" + lineSeparator +
+    final String sshRsaPemPublicKey = "-----BEGIN PUBLIC KEY-----" +
+            "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA+fb6rRyNJZxlHbfa9ZhG" +
+            "Jmz9gL4l24aJG6sFmx9imWmo+3EH9kCvt8HbhUWuJt4CkbMpuckjhu35t9hoS2+V" +
+            "AEuR6/K7GTUQYO5SFIax4jmng3BVr0tpg1z3mCKJ4ZbRmXWhGdQtfyGcfYuw2kVY" +
+            "vDmdAjOgDOdLmER+CUGkCdvRhWhNq8FTm3cQypf8nQN79IgacQPW648is4qqW7aY" +
+            "jveNmBQyCCEnciUvfUbCND1fa96l1Dzhq8ESPPJ5UIFrUYucbVukziGOnZSVgbq6" +
+            "5yHgoWEFYpJSwBd+CyugyuNaCccchyMPOf9sis6lKZvg4A/ERlocpVEjbDD24Bbu" +
+            "qwIDAQAB" +
             "-----END PUBLIC KEY-----";
     final String sshDsaPrivateKey = "-----BEGIN DSA PRIVATE KEY-----" + lineSeparator +
             "MIIBuwIBAAKBgQCotOa8d/U3olErx6qJ4KPp3Ol1bGfA1TSsPGmQ2r4V0sxZdOHX" + lineSeparator +
@@ -70,17 +70,17 @@ public class PEMSshHostKeyProviderTest {
             "Sv6xYSSFJexQQUeWcjzWnIcZ/2SiTzDPcADb+f8+zq0XQbd22v0QNQIVAIbSsqR2" + lineSeparator +
             "hoHLW6hd4HMkem4vqaqA" + lineSeparator +
             "-----END DSA PRIVATE KEY-----" + lineSeparator;
-    final String sshDsaPemPublicKey = "-----BEGIN PUBLIC KEY-----" + lineSeparator +
-            "MIIBtjCCASsGByqGSM44BAEwggEeAoGBAKi05rx39TeiUSvHqongo+nc6XVsZ8DV" + lineSeparator +
-            "NKw8aZDavhXSzFl04dc2nfhUXFc66BJkqkFGGRKye0Iq2rx5ySW/C3sdygBjuHT7" + lineSeparator +
-            "kle7im3bd28YHxVg1Owsx1BlEiCaiKUiKd4oSCLiy3SosF7CkKpAYGkyBhpndgZX" + lineSeparator +
-            "sPbjvdF/ZCd7AhUAyV8j6fGkCgPcnBUf/yz/p6gF9mUCgYBEK1XH893SNf0r7HZo" + lineSeparator +
-            "kCIoAZdFwPViP7rdGveeji2ZZI+0vFu57HbUTEI5kAvAHyZlre7rL3DUR+ZNdoAu" + lineSeparator +
-            "Fliw9U6Nz2KsVvqcvAZJCZkJaUb6E3AQu3IBSciItLlQE3HJYOyIY9rcipCkjMws" + lineSeparator +
-            "3VswHZQksf4k3fJDz354koNTPAOBhAACgYBPoksRewYwbLfXsbMPRQ0TT5Sz+Hp7" + lineSeparator +
-            "HT+LdKCjZ8kvpTTxxB/OnLJ76X6xauFmnAc3MJlxbwOYSCl8tJwpTiRUVCYAaCr3" + lineSeparator +
-            "BbGtEmophT2MveM426hNhoyuSv6xYSSFJexQQUeWcjzWnIcZ/2SiTzDPcADb+f8+" + lineSeparator +
-            "zq0XQbd22v0QNQ==" + lineSeparator +
+    final String sshDsaPemPublicKey = "-----BEGIN PUBLIC KEY-----"  +
+            "MIIBtjCCASsGByqGSM44BAEwggEeAoGBAKi05rx39TeiUSvHqongo+nc6XVsZ8DV"  +
+            "NKw8aZDavhXSzFl04dc2nfhUXFc66BJkqkFGGRKye0Iq2rx5ySW/C3sdygBjuHT7"  +
+            "kle7im3bd28YHxVg1Owsx1BlEiCaiKUiKd4oSCLiy3SosF7CkKpAYGkyBhpndgZX"  +
+            "sPbjvdF/ZCd7AhUAyV8j6fGkCgPcnBUf/yz/p6gF9mUCgYBEK1XH893SNf0r7HZo"  +
+            "kCIoAZdFwPViP7rdGveeji2ZZI+0vFu57HbUTEI5kAvAHyZlre7rL3DUR+ZNdoAu"  +
+            "Fliw9U6Nz2KsVvqcvAZJCZkJaUb6E3AQu3IBSciItLlQE3HJYOyIY9rcipCkjMws"  +
+            "3VswHZQksf4k3fJDz354koNTPAOBhAACgYBPoksRewYwbLfXsbMPRQ0TT5Sz+Hp7"  +
+            "HT+LdKCjZ8kvpTTxxB/OnLJ76X6xauFmnAc3MJlxbwOYSCl8tJwpTiRUVCYAaCr3"  +
+            "BbGtEmophT2MveM426hNhoyuSv6xYSSFJexQQUeWcjzWnIcZ/2SiTzDPcADb+f8+"  +
+            "zq0XQbd22v0QNQ==" +
             "-----END PUBLIC KEY-----";
 
     @Test

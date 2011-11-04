@@ -3,9 +3,11 @@ package com.l7tech.external.assertions.ssh.keyprovider;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.HexUtils;
 import static com.l7tech.util.Option.optional;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.SyspropUtil;
 import org.bouncycastle.openssl.PEMReader;
 import org.bouncycastle.openssl.PEMWriter;
 
@@ -66,20 +68,25 @@ public class SshKeyUtil {
         return (KeyPair) r.readObject();
     }
 
+    /**
+     * Writes key in a PEM format but without any linebreaks.
+     *
+     * @param publicKey The key to write
+     * @return The PEMish text or null
+     */
     public static String writeKey(PublicKey publicKey) {
         OutputStream os = new ByteArrayOutputStream();
-        String pemPublicKey = null;
         try {
             PEMWriter w = new PEMWriter(new OutputStreamWriter(os));
             w.writeObject(publicKey);
             w.flush();
-            return os.toString();
+            return os.toString().replace( SyspropUtil.getProperty( "line.separator" ), "");
         } catch (Exception e) {
             LOG.log(Level.INFO, "Unable to write key: ", ExceptionUtils.getDebugException(e));
         } finally {
             ResourceUtils.closeQuietly(os);
         }
-        return pemPublicKey;
+        return null;
     }
 
     /**

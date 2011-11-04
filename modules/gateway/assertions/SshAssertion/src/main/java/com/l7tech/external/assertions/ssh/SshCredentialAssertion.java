@@ -57,7 +57,7 @@ public class SshCredentialAssertion extends Assertion {
             meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "none");
 
             meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/authentication.gif");
-            meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
+            meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
             meta.put(META_INITIALIZED, Boolean.TRUE);
         }

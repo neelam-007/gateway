@@ -33,6 +33,7 @@ public class VirtualSshFile implements SshFile {
     /**
      * Get full name.
      */
+    @Override
     public String getAbsolutePath() {
         return fileName;
     }
@@ -40,6 +41,7 @@ public class VirtualSshFile implements SshFile {
     /**
      * Get short name.
      */
+    @Override
     public String getName() {
         String name = fileName;
 
@@ -53,6 +55,7 @@ public class VirtualSshFile implements SshFile {
     /**
      * Is it a directory?
      */
+    @Override
     public boolean isDirectory() {
         // Always return true to allow removal of directories
         return true;
@@ -61,6 +64,7 @@ public class VirtualSshFile implements SshFile {
     /**
      * Is it a file?
      */
+    @Override
     public boolean isFile() {
         return file && doesExist();
     }
@@ -68,6 +72,7 @@ public class VirtualSshFile implements SshFile {
     /**
      * Does this file exists?
      */
+    @Override
     public boolean doesExist() {
         return !file;
     }
@@ -75,13 +80,15 @@ public class VirtualSshFile implements SshFile {
     /**
      * Get file size.
      */
+    @Override
     public long getSize() {
-        return file ? 0 : 4096;
+        return file ? 0L : 4096L;
     }
 
     /**
      * Get last modified time.
      */
+    @Override
     public long getLastModified() {
         return date;
     }
@@ -89,6 +96,7 @@ public class VirtualSshFile implements SshFile {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean setLastModified(long time) {
         return true;
     }
@@ -96,6 +104,7 @@ public class VirtualSshFile implements SshFile {
     /**
      * Check read permission.
      */
+    @Override
     public boolean isReadable() {
         return true;
     }
@@ -103,6 +112,7 @@ public class VirtualSshFile implements SshFile {
     /**
      * Check file write permission.
      */
+    @Override
     public boolean isWritable() {
         return true;
     }
@@ -110,6 +120,7 @@ public class VirtualSshFile implements SshFile {
     /**
      * Check file exec permission.
      */
+    @Override
     public boolean isExecutable() {
         return false;
     }
@@ -117,10 +128,12 @@ public class VirtualSshFile implements SshFile {
     /**
      * Has delete permission.
      */
+    @Override
     public boolean isRemovable() {
         return true;
     }
 
+    @Override
     public SshFile getParentFile() {
         int indexOfSlash = getAbsolutePath().lastIndexOf('/');
         String parentFullName;
@@ -137,6 +150,7 @@ public class VirtualSshFile implements SshFile {
     /**
      * Delete file.
      */
+    @Override
     public boolean delete() {
         return true;
     }
@@ -144,6 +158,7 @@ public class VirtualSshFile implements SshFile {
     /**
      * Create a new file
      */
+    @Override
     public boolean create() throws IOException {
         return true;
     }
@@ -151,6 +166,7 @@ public class VirtualSshFile implements SshFile {
     /**
      * Truncate file to length 0.
      */
+    @Override
     public void truncate() throws IOException{
         // do nothing for virtual file
     }
@@ -158,6 +174,7 @@ public class VirtualSshFile implements SshFile {
     /**
      * Move file object.
      */
+    @Override
     public boolean move(final SshFile dest) {
         return false;
     }
@@ -165,6 +182,7 @@ public class VirtualSshFile implements SshFile {
     /**
      * Create directory.
      */
+    @Override
     public boolean mkdir() {
         return true;
     }
@@ -172,6 +190,7 @@ public class VirtualSshFile implements SshFile {
     /**
      * List files. If not a directory or does not exist, null will be returned.
      */
+    @Override
     public List<SshFile> listSshFiles() {
         SshFile[] virtualFiles = new SshFile[0];
         return Collections.unmodifiableList(Arrays.asList(virtualFiles));
@@ -180,6 +199,7 @@ public class VirtualSshFile implements SshFile {
     /**
      * Create output stream for writing.
      */
+    @Override
     public OutputStream createOutputStream(final long offset) throws IOException {
         throw new IOException();
     }
@@ -187,10 +207,12 @@ public class VirtualSshFile implements SshFile {
     /**
      * Create input stream for reading.
      */
+    @Override
     public InputStream createInputStream(final long offset) throws IOException {
         throw new IOException();
     }
 
+    @Override
     public void handleClose() {
         ResourceUtils.flushQuietly(pipedOutputStream);
         ResourceUtils.closeQuietly(pipedOutputStream);
@@ -199,7 +221,7 @@ public class VirtualSshFile implements SshFile {
     /**
      * Normalize separate character. Separate character should be '/' always.
      */
-    public final static String normalizeSeparateChar(final String pathName) {
+    public static String normalizeSeparateChar(final String pathName) {
         String normalizedPathName = pathName.replace(File.separatorChar, '/');
         normalizedPathName = normalizedPathName.replace('\\', '/');
         return normalizedPathName;
@@ -219,11 +241,11 @@ public class VirtualSshFile implements SshFile {
      * @return The return string will always begin with the root directory. It
      *         will never be null.
      */
-    public final static String getPhysicalName(final String rootDir, final String currDir, final String fileName) {
+    public static String getPhysicalName(final String rootDir, final String currDir, final String fileName) {
         return getPhysicalName(rootDir, currDir, fileName, false);
     }
 
-    public final static String getPhysicalName(final String rootDir,
+    public static String getPhysicalName(final String rootDir,
             final String currDir, final String fileName,
             final boolean caseInsensitive) {
 

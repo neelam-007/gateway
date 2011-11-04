@@ -1,15 +1,8 @@
 package com.l7tech.external.assertions.ssh;
 
-import com.l7tech.console.action.SecureAction;
-import com.l7tech.console.util.TopComponents;
-import com.l7tech.external.assertions.ssh.console.SftpPollingListenersWindow;
-import com.l7tech.gateway.common.security.rbac.AttemptedAnyOperation;
 import com.l7tech.gateway.common.transport.ftp.FtpCredentialsSource;
 import com.l7tech.gateway.common.transport.ftp.FtpFileNameSource;
 import com.l7tech.gateway.common.transport.ftp.FtpSecurity;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -39,8 +32,8 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
     private static final String baseName = "Route via SSH2";
 
     private String username;   // Username. Can contain context variables.
-    private Long privateKeyOid;   // privateKey. Can contain context variables.
-    private Long passwordOid = null;   // password. Can contain context variables.
+    private Long privateKeyOid;   // privateKey.
+    private Long passwordOid = null;   // password.
     private String hostName;   // SSH server host name. Can contain context variables.
     private String port = Integer.toString(DEFAULT_SSH_PORT);   // Port number. Can contain context variables.
     private String directory;   // Destination directory. Can contain context variables.
@@ -74,7 +67,7 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
 
         // wire up the SFTP Polling Listener here as well (to avoid using a dummy assertion)
         meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.ssh.server.sftppollinglistener.SftpPollingListenerModuleLoadListener");
-        meta.put(AssertionMetadata.GLOBAL_ACTION_CLASSNAMES, new String[] { getClass().getName() + "$SftpPollingListenerCustomAction" });
+        meta.put(AssertionMetadata.GLOBAL_ACTION_CLASSNAMES, new String[] { "com.l7tech.external.assertions.ssh.console.SftpPollingListenerCustomAction" });
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
@@ -115,7 +108,7 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
             new WspEnumTypeMapping(FtpCredentialsSource.class, "credentialsSource")
         )));
 
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
@@ -288,33 +281,8 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
             port,
             directory,
             username,
-            fileName
+            fileName,
+            sshPublicKey
         ).asArray();
-    }
-
-    @SuppressWarnings({"UnusedDeclaration"})
-    public static class SftpPollingListenerCustomAction extends SecureAction {
-        public SftpPollingListenerCustomAction() {
-            super(new AttemptedAnyOperation(EntityType.SSG_CONNECTOR), "service:Admin");
-        }
-
-        public String getName() {
-            return "Manage SFTP Polling Listeners";
-        }
-
-        public String getDescription() {
-            return "Create, edit and remove configurations for SFTP polling listeners.";
-        }
-
-        protected String iconResource() {
-            return "com/l7tech/console/resources/interface.gif";
-        }
-
-        protected void performAction() {
-            SftpPollingListenersWindow splw = new SftpPollingListenersWindow(TopComponents.getInstance().getTopParent());
-            splw.pack();
-            Utilities.centerOnScreen(splw);
-            DialogDisplayer.display(splw);
-        }
     }
 }

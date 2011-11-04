@@ -5,6 +5,8 @@ import java.io.*;
 /**
  * A version of InputStream for reading a truncated input stream.  This class is not synchronized.
  * The default chunk size is 512 kb.  Check lastRead for end of input stream or end of truncated stream
+ *
+ * Note that closing this stream will not close the underlying stream.
  * <p/>
  */
 public class TruncatingInputStream extends InputStream {

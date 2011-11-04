@@ -1,26 +1,20 @@
 package com.l7tech.external.assertions.ssh.server;
 
 import com.l7tech.common.log.HybridDiagnosticContext;
-import com.l7tech.common.mime.ContentTypeHeader;
+import static com.l7tech.external.assertions.ssh.server.MessageProcessingSshUtil.buildPolicyExecutionContext;
 import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
 import com.l7tech.gateway.common.transport.SsgConnector;
-import com.l7tech.message.HasServiceOid;
-import com.l7tech.message.HasServiceOidImpl;
-import com.l7tech.message.Message;
-import com.l7tech.message.SshKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.sshd.common.util.Buffer;
 import org.apache.sshd.server.SshFile;
 import org.apache.sshd.server.sftp.SftpSubsystem;
@@ -29,8 +23,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
-import java.net.PasswordAuthentication;
-import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.logging.Level;
@@ -60,7 +52,7 @@ public class MessageProcessingSftpSubsystem extends SftpSubsystem {
     @Override
     protected void process(Buffer buffer) throws IOException {
         int length = buffer.getInt();
-        int type = buffer.getByte();
+        int type = (int) buffer.getByte();
         int id = buffer.getInt();
 
         // customize support for selected SFTP functions on the Gateway
@@ -74,7 +66,7 @@ public class MessageProcessingSftpSubsystem extends SftpSubsystem {
                     version = Math.min(version, HIGHER_SFTP_IMPL);
                     buffer.clear();
                     buffer.putByte((byte) SSH_FXP_VERSION);
-                    buffer.putInt(version);
+                    buffer.putInt((long) version);
                     send(buffer);
                 } else {
                     // We only support version 3 (Version 1 and 2 are not common)
@@ -132,14 +124,11 @@ public class MessageProcessingSftpSubsystem extends SftpSubsystem {
     }
 
     protected void sshFxpOpen(Buffer buffer, int id) throws IOException {
-        if (session.getFactoryManager().getProperties() != null) {
-            String maxHandlesString = session.getFactoryManager().getProperties().get(MAX_OPEN_HANDLES_PER_SESSION);
-            if (maxHandlesString != null) {
-                int maxHandleCount = Integer.parseInt(maxHandlesString);
-                if (handles.size() > maxHandleCount) {
-                    sendStatus(id, SSH_FX_FAILURE, "Too many open handles");
-                    return;
-                }
+        final int maxHandleCount;
+        if ( (maxHandleCount = session.getIntProperty( MAX_OPEN_HANDLES_PER_SESSION, 0 )) > 0 ) {
+            if ( handles.size() >= maxHandleCount ) {
+                sendStatus(id, SSH_FX_FAILURE, "Too many open handles");
+                return;
             }
         }
 
@@ -164,8 +153,6 @@ public class MessageProcessingSftpSubsystem extends SftpSubsystem {
                         file.create();
                     }
                 }
-                String acc = ((pflags & (SSH_FXF_READ | SSH_FXF_WRITE)) != 0 ? "r" : "") +
-                        ((pflags & SSH_FXF_WRITE) != 0 ? "w" : "");
                 if ((pflags & SSH_FXF_TRUNC) != 0) {
                     file.truncate();
                 }
@@ -189,55 +176,12 @@ public class MessageProcessingSftpSubsystem extends SftpSubsystem {
             try {
                 file = resolveFile(path);
                 switch (flags & SSH_FXF_ACCESS_DISPOSITION) {
-                    case SSH_FXF_CREATE_NEW: {
-                        if (file.doesExist()) {
-                            sendStatus(id, SSH_FX_FILE_ALREADY_EXISTS, path);
-                            return;
-                        } else if (!file.isWritable()) {
-                            sendStatus(id, SSH_FX_FAILURE, "Can not create " + path);
-                        }
-                        file.create();
+                    case SSH_FXF_CREATE_TRUNCATE:
+                    case SSH_FXF_CREATE_NEW:
+                    case SSH_FXF_OPEN_EXISTING:
+                    case SSH_FXF_TRUNCATE_EXISTING:
+                    case SSH_FXF_OPEN_OR_CREATE:
                         break;
-                    }
-                    case SSH_FXF_CREATE_TRUNCATE: {
-                        if (file.doesExist()) {
-                            sendStatus(id, SSH_FX_FILE_ALREADY_EXISTS, path);
-                            return;
-                        } else if (!file.isWritable()) {
-                            sendStatus(id, SSH_FX_FAILURE, "Can not create " + path);
-                        }
-                        file.truncate();
-                        break;
-                    }
-                    case SSH_FXF_OPEN_EXISTING: {
-                        if (!file.doesExist()) {
-                            if (!file.getParentFile().doesExist()) {
-                                sendStatus(id, SSH_FX_NO_SUCH_PATH, path);
-                            } else {
-                                sendStatus(id, SSH_FX_NO_SUCH_FILE, path);
-                            }
-                            return;
-                        }
-                        break;
-                    }
-                    case SSH_FXF_OPEN_OR_CREATE: {
-                        if (!file.doesExist()) {
-                            file.create();
-                        }
-                        break;
-                    }
-                    case SSH_FXF_TRUNCATE_EXISTING: {
-                        if (!file.doesExist()) {
-                            if (!file.getParentFile().doesExist()) {
-                                sendStatus(id, SSH_FX_NO_SUCH_PATH, path);
-                            } else {
-                                sendStatus(id, SSH_FX_NO_SUCH_FILE, path);
-                            }
-                            return;
-                        }
-                        file.truncate();
-                        break;
-                    }
                     default:
                         throw new IllegalArgumentException("Unsupported open mode: " + flags);
                 }
@@ -265,17 +209,16 @@ public class MessageProcessingSftpSubsystem extends SftpSubsystem {
             if (!(p instanceof FileHandle)) {
                 sendStatus(id, SSH_FX_INVALID_HANDLE, handle);
             } else {
-                sshFile = ((FileHandle) p).getFile();
+                sshFile = p.getFile();
 
                 // write data
                 pipeDataToGatewayMessageProcessor(sshFile, data, 0);
 
-                sshFile.setLastModified(new Date().getTime());
                 sendStatus(id, SSH_FX_OK, "");
             }
         } catch (IOException e) {
-            sshFile.handleClose();
-            sendStatus(id, SSH_FX_FAILURE, e.getMessage());
+            if ( sshFile != null ) sshFile.handleClose();
+            sendStatus(id, SSH_FX_FAILURE, ExceptionUtils.getMessage( e ));
         }
     }
 
@@ -290,7 +233,7 @@ public class MessageProcessingSftpSubsystem extends SftpSubsystem {
                 h.close();
 
                 AssertionStatus status = getStatusFromGatewayMessageProcess(h.getFile(),
-                        connector.getIntProperty(SshServerModule.LISTEN_PROP_MESSAGE_PROCESSOR_THREAD_WAIT_SECONDS, 3));
+                        connector.getLongProperty( SshServerModule.LISTEN_PROP_MESSAGE_PROCESSOR_THREAD_WAIT_SECONDS, 60L ));
                 if (status == null || status == AssertionStatus.UNDEFINED) {
                     sendStatus(id, SSH_FX_FAILURE, "No status returned from Gateway message processing.");
                 } else if (status == AssertionStatus.NONE) {
@@ -317,7 +260,7 @@ public class MessageProcessingSftpSubsystem extends SftpSubsystem {
     /*
      * Start Gateway Message Process thread.  Thread will finish when there nothing left in the InputStream (e.g. when it has been closed).
      */
-    private void startGatewayMessageProcessThread(SsgConnector connector, SshFile file) throws IOException {
+    private void startGatewayMessageProcessThread( final SsgConnector connector, final SshFile file ) throws IOException {
         if (file instanceof VirtualSshFile) try {
             final VirtualSshFile virtualSshFile = (VirtualSshFile) file;
 
@@ -325,9 +268,10 @@ public class MessageProcessingSftpSubsystem extends SftpSubsystem {
             HybridDiagnosticContext.put( GatewayDiagnosticContextKeys.CLIENT_IP, MessageProcessingSshUtil.getRemoteAddress(session) );
 
             final PipedInputStream pis = new PipedInputStream();
-            PipedOutputStream pos = new PipedOutputStream(pis);
+            final PipedOutputStream pos = new PipedOutputStream(pis);
             virtualSshFile.setPipedOutputStream(pos);
 
+            final String fileName = virtualSshFile.getName();
             String path = virtualSshFile.getAbsolutePath();
             int pathLastIndex = path.lastIndexOf('/');
             if (pathLastIndex > 0) {
@@ -336,39 +280,13 @@ public class MessageProcessingSftpSubsystem extends SftpSubsystem {
                 path = "/";
             }
 
-            Message request = new Message();
-            final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, null, true);
-            final long requestSizeLimit = connector.getLongProperty(SsgConnector.PROP_REQUEST_SIZE_LIMIT, Message.getMaxBytes());
-            String ctypeStr = connector.getProperty(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE);
-            ContentTypeHeader ctype = ctypeStr == null ? ContentTypeHeader.XML_DEFAULT : ContentTypeHeader.create(ctypeStr);
-
-            request.initialize(stashManagerFactory.createStashManager(), ctype, pis, requestSizeLimit);
-
-            // attach ssh knob
-            String userName = (String) session.getIoSession().getAttribute(SshServerModule.MINA_SESSION_ATTR_CRED_USERNAME);
-            String userPublicKey = (String) session.getIoSession().getAttribute(SshServerModule.MINA_SESSION_ATTR_CRED_PUBLIC_KEY);
-            if (!StringUtils.isEmpty(userName) && !StringUtils.isEmpty(userPublicKey)) {
-                request.attachKnob(SshKnob.class, MessageProcessingSshUtil.buildSshKnob(session.getIoSession().getLocalAddress(),
-                        session.getIoSession().getRemoteAddress(), file.getName(), path, new SshKnob.PublicKeyAuthentication(userName, userPublicKey)));
-            } else {
-                userName = (String) session.getIoSession().getAttribute(SshServerModule.MINA_SESSION_ATTR_CRED_USERNAME);
-                String userPassword = (String) session.getIoSession().getAttribute(SshServerModule.MINA_SESSION_ATTR_CRED_PASSWORD);
-                if (!StringUtils.isEmpty(userName) && !StringUtils.isEmpty(userPassword)) {
-                    request.attachKnob(SshKnob.class, MessageProcessingSshUtil.buildSshKnob(session.getIoSession().getLocalAddress(),
-                        session.getIoSession().getRemoteAddress(), file.getName(), path, new PasswordAuthentication(userName, userPassword.toCharArray())));
-                } else {
-                    request.attachKnob(SshKnob.class, MessageProcessingSshUtil.buildSshKnob(session.getIoSession().getLocalAddress(),
-                        session.getIoSession().getRemoteAddress(), file.getName(), path, null, null));
-                }
-            }
-
-            long hardwiredServiceOid = connector.getLongProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, -1);
-            if (hardwiredServiceOid != -1) {
-                request.attachKnob(HasServiceOid.class, new HasServiceOidImpl(hardwiredServiceOid));
-            }
+            final PolicyEnforcementContext context =
+                    buildPolicyExecutionContext( connector, session, stashManagerFactory, pis, fileName, path );
 
             final CountDownLatch startedSignal = new CountDownLatch(1);
+            //TODO [steve] SFTP file transfer should use a thread pool
             final ExecutorService executorService = Executors.newSingleThreadExecutor(new ThreadFactory() {
+                @Override
                 public Thread newThread(Runnable r) {
                     Thread thread = new Thread(r, "GatewayMessageProcessThread-" + System.currentTimeMillis());
                     thread.setDaemon(true);
@@ -378,6 +296,7 @@ public class MessageProcessingSftpSubsystem extends SftpSubsystem {
 
             Future<AssertionStatus> future = executorService.submit(new Callable<AssertionStatus>()
             {
+                @Override
                 public AssertionStatus call() throws Exception {
                     AssertionStatus status = AssertionStatus.UNDEFINED;
                     String faultXml = null;

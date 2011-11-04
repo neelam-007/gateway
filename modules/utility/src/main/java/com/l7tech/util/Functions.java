@@ -493,7 +493,7 @@ public final class Functions {
      * @param predicate the filter to apply
      * @return a list of all input objects that matched the filter.  may be empty, but will never be null.
      */
-    public static <I> List<I> grep(Iterable<I> in, Unary<Boolean, I> predicate) {
+    public static <I> List<I> grep(Iterable<I> in, Unary<Boolean, ? super I> predicate) {
         return grep(new ArrayList<I>(), in, predicate);
     }
 
@@ -505,7 +505,7 @@ public final class Functions {
      * @param predicate the filter to apply
      * @return a reference to the out container.
      */
-    public static <T,C extends Collection<T>> C grep(C out, Iterable<T> in, Unary<Boolean, T> predicate) {
+    public static <T,C extends Collection<T>> C grep(C out, Iterable<T> in, Unary<Boolean, ? super T> predicate) {
         for (T i : in) {
             if (predicate.call(i))
                 out.add(i);

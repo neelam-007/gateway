@@ -23,11 +23,10 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.StashManagerFactory;
-import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.assertion.ServerRoutingAssertion;
@@ -37,6 +36,8 @@ import com.l7tech.util.*;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
+import javax.inject.Inject;
+import javax.inject.Named;
 import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
@@ -45,9 +46,7 @@ import java.net.SocketException;
 import java.text.ParseException;
 import java.util.Map;
 import java.util.concurrent.*;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Server side implementation of the SshRouteAssertion.
@@ -56,22 +55,22 @@ import java.util.logging.Logger;
  */
 public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAssertion> {
 
+    @Inject
     private SecurePasswordManager securePasswordManager;
-    private ClusterPropertyCache clusterPropertyCache;
-    private final StashManagerFactory stashManagerFactory;
+    @Inject
+    @Named("stashManagerFactory")
+    private StashManagerFactory stashManagerFactory;
+    private final String[] variablesUsed;
 
     public ServerSshRouteAssertion(SshRouteAssertion assertion, ApplicationContext context) throws PolicyAssertionException {
         super(assertion, context);
-
-        securePasswordManager = context.getBean("securePasswordManager", SecurePasswordManager.class);
-        clusterPropertyCache = context.getBean("clusterPropertyCache", ClusterPropertyCache.class);
-        stashManagerFactory = applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
+        this.variablesUsed = assertion.getVariablesUsed();
     }
 
     @Override
     public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
 
-        Message request;
+        final Message request;
         try {
             request = context.getTargetMessage(assertion.getRequestTarget());
         } catch (NoSuchVariableException e) {
@@ -92,11 +91,13 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             logger.log(Level.INFO, "Error processing security header, request XML invalid ''{0}''", se.getMessage());
         }
 
+        final Map<String,?> variables = context.getVariableMap( variablesUsed, getAudit() );
+
         // determine username and password based or if they were pass-through or specified
         String username = null;
         String password = null;
         if (assertion.isCredentialsSourceSpecified()) {
-            username = ExpandVariables.process(assertion.getUsername(), context.getVariableMap(Syntax.getReferencedNames(assertion.getUsername()), getAudit()), getAudit());
+            username = ExpandVariables.process(assertion.getUsername(), variables, getAudit());
             if(assertion.getPasswordOid() != null) {
                 try {
                     SecurePassword securePassword = securePasswordManager.findByPrimaryKey(assertion.getPasswordOid());
@@ -115,7 +116,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             }
         } else {
             final LoginCredentials credentials = context.getDefaultAuthenticationContext().getLastCredentials();
-            if (credentials != null) {
+            if ( credentials != null && credentials.getFormat() == CredentialFormat.CLEARTEXT ) {
                 username = credentials.getName();
                 password = new String(credentials.getCredentials());
             }
@@ -125,10 +126,10 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             }
         }
 
-        String host = ExpandVariables.process(assertion.getHost(), context.getVariableMap(Syntax.getReferencedNames(assertion.getHost()), getAudit()), getAudit());
+        final String host = ExpandVariables.process(assertion.getHost(), variables, getAudit());
         int port;
         try{
-            port = Integer.parseInt(ExpandVariables.process(assertion.getPort(), context.getVariableMap(Syntax.getReferencedNames(assertion.getPort()), getAudit()), getAudit()));
+            port = Integer.parseInt(ExpandVariables.process(assertion.getPort(), variables, getAudit()));
         } catch (Exception e){
             //use default port
             port = 22;
@@ -138,12 +139,11 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
         SshClient sshClient = null;
         try {
             SshParameters sshParams = new SshParameters(host, port, username, password);
-            sshParams.setConnectionTimeout(assertion.getConnectTimeout());
-            sshParams.setReadingTimeout(assertion.getReadTimeout());
+            sshParams.setConnectionTimeout( (long) assertion.getConnectTimeout() );
+            sshParams.setReadingTimeout( (long) assertion.getReadTimeout() );
 
             if (assertion.isUsePublicKey() && assertion.getSshPublicKey() != null){
-                String publicKeyFingerprint = ExpandVariables.process(assertion.getSshPublicKey().trim(), context.getVariableMap(
-                        Syntax.getReferencedNames(assertion.getSshPublicKey().trim()), getAudit()), getAudit());
+                final String publicKeyFingerprint = ExpandVariables.process(assertion.getSshPublicKey(), variables, getAudit());
 
                 // validate public key fingerprint
                 Pair<Boolean, String> fingerprintIsValid = SshKeyUtil.validateSshPublicKeyFingerprint(publicKeyFingerprint);
@@ -151,9 +151,8 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                     logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, SshAssertionMessages.SSH_INVALID_PUBLIC_KEY_FINGERPRINT_EXCEPTION);
                     return AssertionStatus.FAILED;
                 }
-                String hostPublicKey = publicKeyFingerprint;
                 SshHostKeys sshHostKeys = new SshHostKeys();
-                sshHostKeys.addKey(InetAddress.getByName(host), hostPublicKey);
+                sshHostKeys.addKey(InetAddress.getByName(host), publicKeyFingerprint );
                 sshParams.setHostKeyVerifier(new HostKeyFingerprintVerifier(sshHostKeys));
             }
 
@@ -184,7 +183,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                 sshClient = new SftpClient(new Sftp(sshParams));
             }
 
-            sshClient.setTimeout(assertion.getConnectTimeout());   // connect timeout value from assertion UI
+            sshClient.setTimeout( (long) assertion.getConnectTimeout() );   // connect timeout value from assertion UI
             sshClient.connect();
 
             if(!sshClient.isConnected()) {
@@ -194,44 +193,46 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             }
 
             // download / upload the file
+            final String filename = ExpandVariables.process( assertion.getFileName(), variables, getAudit() );
+            final String directory = ExpandVariables.process( assertion.getDirectory(), variables, getAudit() );
             try {
                 if (assertion.isDownloadCopyMethod()) {
-                    PipedInputStream pis = new PipedInputStream();
-                    PipedOutputStream pos = new PipedOutputStream(pis);
+                    final PipedInputStream pis = new PipedInputStream();
+                    final PipedOutputStream pos = new PipedOutputStream(pis);
 
                     // download file on a new thread
-                    Future<Boolean> future = sshDownloadOnNewThread(sshClient, expandVariables(context, assertion.getDirectory()),
-                            expandVariables(context, assertion.getFileName()), pos, logger);
+                    final Future<Void> future = sshDownloadOnNewThread(sshClient, directory, filename, pos);
 
-                    Message response = context.getResponse();
+                    // TODO [steve] SSH routing should support download to a specified message
+                    final Message response = context.getResponse();
+                    // TODO [steve] SSH routing must enforce a response size limit
                     response.initialize(stashManagerFactory.createStashManager(), ContentTypeHeader.create(assertion.getDownloadContentType()), pis);
-                    // TODO impose configurable max size limit on response
 
                     // force all message parts to be initialized, it is by default lazy
+                    logger.log(Level.FINER, "Reading SFTP/SCP response.");
                     response.getMimeKnob().getContentLength();
+                    logger.log(Level.FINER, "Read SFTP/SCP response.");
 
-                    logger.log(Level.FINE, "Waiting for read thread retrieve.");
-                    future.get(assertion.getReadTimeout(), TimeUnit.SECONDS);
-                    logger.log(Level.FINE, "Done read thread retrieve.");
+                    future.get();
                 } else {
-                    sshClient.upload(mimeKnob.getEntireMessageBodyAsInputStream(), expandVariables(context, assertion.getDirectory()),  expandVariables(context, assertion.getFileName()));
+                    sshClient.upload( mimeKnob.getEntireMessageBodyAsInputStream(), directory, filename );
                 }
             } catch (NoSuchPartException e) {
                 logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                        new String[] {SshAssertionMessages.SSH_NO_SUCH_PART_ERROR + ", server: " + getHostName(context, assertion)}, ExceptionUtils.getDebugException(e));
+                        new String[] {SshAssertionMessages.SSH_NO_SUCH_PART_ERROR + ", server: " + host}, ExceptionUtils.getDebugException(e));
                 return AssertionStatus.FAILED;
             } catch (ExecutionException e) {
                 if (ExceptionUtils.getMessage(e).contains("jscape")){
-                    return handleJscapeException(e, context, username);
+                    return handleJscapeException(e, username, host, directory);
                 }
                 throw e;
             } catch (ScpException e) {
-                return handleJscapeException(e, context, username);
+                return handleJscapeException(e, username, host, directory);
             } catch (SftpException e) {
-                return handleJscapeException(e, context, username);
+                return handleJscapeException(e, username, host, directory);
             } catch (IOException e) {
                 logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                        new String[]{SshAssertionMessages.SSH_IO_EXCEPTION + ", server: " + getHostName(context, assertion)}, ExceptionUtils.getDebugException(e));
+                        new String[]{SshAssertionMessages.SSH_IO_EXCEPTION + ", server: " + host}, ExceptionUtils.getDebugException(e));
                 return AssertionStatus.FAILED;
             } finally {
                 if (sshClient != null){
@@ -246,11 +247,11 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                 logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {SshAssertionMessages.SSH_CERT_ISSUE_EXCEPTION + ": " + ExceptionUtils.getMessage(ioe)}, ExceptionUtils.getDebugException(ioe));
             } else if ( ioe instanceof SocketException ){
                 logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                        new String[] {SshAssertionMessages.SSH_SOCKET_EXCEPTION + ", server: " + getHostName(context, assertion) + ", port:" + port + ", username: " + username + ". Failing Assertion with socket exception"},
+                        new String[] {SshAssertionMessages.SSH_SOCKET_EXCEPTION + ", server: " + host + ", port:" + port + ", username: " + username + ". Failing Assertion with socket exception"},
                         ExceptionUtils.getDebugException(ioe));
             } else {
                 logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                        new String[] {SshAssertionMessages.SSH_CONNECTION_EXCEPTION + ", server: " + getHostName(context, assertion) + ", port:" + port + ", username: " + username + ". Failing Assertion with exception"},
+                        new String[] {SshAssertionMessages.SSH_CONNECTION_EXCEPTION + ", server: " + host + ", port:" + port + ", username: " + username + ". Failing Assertion with exception"},
                         ExceptionUtils.getDebugException(ioe));
             }
             return AssertionStatus.FAILED;
@@ -268,35 +269,30 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
         }
     }
 
-    AssertionStatus handleJscapeException(final Exception e, final PolicyEnforcementContext context, final String username) {
+    AssertionStatus handleJscapeException(final Exception e, final String username, final String host, final String directory) {
         if (ExceptionUtils.getMessage(e).contains("No such file")){
             logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                    new String[] { SshAssertionMessages.SSH_DIR_DOESNT_EXIST_ERROR + ", directory: " + expandVariables(context, assertion.getDirectory())  + ", username: " + username},
+                    new String[] { SshAssertionMessages.SSH_DIR_DOESNT_EXIST_ERROR + ", directory: " + directory  + ", username: " + username},
                     ExceptionUtils.getDebugException(e));
         } else{
             logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                    new String[] { SshAssertionMessages.SSH_EXCEPTION_ERROR + ", server: " + getHostName(context, assertion)}, ExceptionUtils.getDebugException(e));
+                    new String[] { SshAssertionMessages.SSH_EXCEPTION_ERROR + ", server: " + host}, ExceptionUtils.getDebugException(e));
         }
         return AssertionStatus.FAILED;
-    }
-
-    private String expandVariables(PolicyEnforcementContext context, String pattern) {
-        final String[] variablesUsed = Syntax.getReferencedNames(pattern);
-        final Map<String, Object> vars = context.getVariableMap(variablesUsed, getAudit());
-        return ExpandVariables.process(pattern, vars, getAudit());
-    }
-
-    private String getHostName(PolicyEnforcementContext context, SshRouteAssertion assertion) {
-        return expandVariables(context, assertion.getHost());
     }
 
     /*
      * Download the given file on a new thread.
      */
-    private static Future<Boolean> sshDownloadOnNewThread(final SshClient sshClient, final String directory, final String fileName,
-                                                 final PipedOutputStream pos, final Logger logger) throws IOException {
+    private Future<Void> sshDownloadOnNewThread( final SshClient sshClient,
+                                                 final String directory,
+                                                 final String fileName,
+                                                 final PipedOutputStream pos ) throws IOException {
         final CountDownLatch startedSignal = new CountDownLatch(1);
+
+        //TODO [steve] SSH routing file transfer should use a thread pool
         final ExecutorService executorService = Executors.newSingleThreadExecutor(new ThreadFactory() {
+            @Override
             public Thread newThread(Runnable r) {
                 Thread thread = new Thread(r, "SshDownloadThread-" + System.currentTimeMillis());
                 thread.setDaemon(true);
@@ -306,10 +302,9 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
 
         logger.log(Level.FINE, "Start new thread for downloading");
 
-
-        Future<Boolean> future = executorService.submit(new Callable<Boolean>()
-        {
-            public Boolean call() throws IOException {
+        final Future<Void> future = executorService.submit(new Callable<Void>(){
+            @Override
+            public Void call() throws IOException {
                 try {
                     startedSignal.countDown();
                     sshClient.download(pos, directory, fileName);
@@ -319,7 +314,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                     ResourceUtils.closeQuietly(pos);
                     startedSignal.countDown();
                 }
-                return new Boolean(true);
+                return null;
             }
         });
 

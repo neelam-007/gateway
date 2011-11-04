@@ -133,7 +133,7 @@ public class Eithers {
      * @throws T4 If the corresponding either is left valued
      */
     @NotNull
-    public static <R, T1 extends Throwable, T2 extends Throwable, T3 extends Throwable, T4 extends Throwable>R extract4( @NotNull final Either<T1,Either<T2,Either<T3,Either<T4,R>>>> either ) throws T1, T2, T3,T3, T4 {
+    public static <R, T1 extends Throwable, T2 extends Throwable, T3 extends Throwable, T4 extends Throwable>R extract4( @NotNull final Either<T1,Either<T2,Either<T3,Either<T4,R>>>> either ) throws T1, T2, T3, T4 {
         return extract( extract3( either ) );
     }
 
@@ -159,7 +159,7 @@ public class Eithers {
      * @throws T5 If the corresponding either is left valued
      */
     @NotNull
-    public static <R, T1 extends Throwable, T2 extends Throwable, T3 extends Throwable, T4 extends Throwable, T5 extends Throwable>R extract5( @NotNull final Either<T1,Either<T2,Either<T3,Either<T4,Either<T5,R>>>>> either ) throws T1, T2, T3, T3, T4, T5 {
+    public static <R, T1 extends Throwable, T2 extends Throwable, T3 extends Throwable, T4 extends Throwable, T5 extends Throwable>R extract5( @NotNull final Either<T1,Either<T2,Either<T3,Either<T4,Either<T5,R>>>>> either ) throws T1, T2,  T3, T4, T5 {
         return extract( extract4( either ) );
     }
 
@@ -187,7 +187,7 @@ public class Eithers {
      * @throws T6 If the corresponding either is left valued
      */
     @NotNull
-    public static <R, T1 extends Throwable, T2 extends Throwable, T3 extends Throwable, T4 extends Throwable, T5 extends Throwable, T6 extends Throwable>R extract6( @NotNull final Either<T1,Either<T2,Either<T3,Either<T4,Either<T5,Either<T6,R>>>>>> either ) throws T1, T2, T3, T3, T4, T5, T6 {
+    public static <R, T1 extends Throwable, T2 extends Throwable, T3 extends Throwable, T4 extends Throwable, T5 extends Throwable, T6 extends Throwable>R extract6( @NotNull final Either<T1,Either<T2,Either<T3,Either<T4,Either<T5,Either<T6,R>>>>>> either ) throws T1, T2, T3, T4, T5, T6 {
         return extract( extract5( either ) );
     }
 
@@ -217,7 +217,7 @@ public class Eithers {
      * @throws T7 If the corresponding either is left valued
      */
     @NotNull
-    public static <R, T1 extends Throwable, T2 extends Throwable, T3 extends Throwable, T4 extends Throwable, T5 extends Throwable, T6 extends Throwable, T7 extends Throwable>R extract7( @NotNull final Either<T1,Either<T2,Either<T3,Either<T4,Either<T5,Either<T6,Either<T7,R>>>>>>> either ) throws T1, T2, T3, T3, T4, T5, T6, T7 {
+    public static <R, T1 extends Throwable, T2 extends Throwable, T3 extends Throwable, T4 extends Throwable, T5 extends Throwable, T6 extends Throwable, T7 extends Throwable>R extract7( @NotNull final Either<T1,Either<T2,Either<T3,Either<T4,Either<T5,Either<T6,Either<T7,R>>>>>>> either ) throws T1, T2, T3, T4, T5, T6, T7 {
         return extract( extract6( either ) );
     }
 
@@ -423,7 +423,7 @@ public class Eithers {
     public static class E2<L1, L2, R>
             extends Either<L1,Either<L2,R>> {
         private E2( final L1 left1, final L2 left2, final R right ) {
-            super( left1, new Either( left2, right ) );
+            super( left1, new Either<L2,R>( left2, right ) );
         }
     }
 
@@ -438,35 +438,35 @@ public class Eithers {
     public static class E3<L1, L2, L3, R>
             extends E2<L1,L2,Either<L3,R>> {
         private E3( final L1 left1, final L2 left2, final L3 left3, final R right ) {
-            super( left1, left2, new Either( left3, right ) );
+            super( left1, left2, new Either<L3,R>( left3, right ) );
         }
     }
 
     public static class E4<L1, L2, L3, L4,R>
             extends E3<L1,L2,L3,Either<L4,R>> {
         private E4( final L1 left1, final L2 left2, final L3 left3, final L4 left4, final R right ) {
-            super( left1, left2, left3, new Either( left4, right ) );
+            super( left1, left2, left3, new Either<L4,R>( left4, right ) );
         }
     }
 
     public static class E5<L1, L2, L3, L4, L5,R>
             extends E4<L1,L2,L3,L4,Either<L5,R>> {
         private E5( final L1 left1, final L2 left2, final L3 left3, final L4 left4, final L5 left5, final R right ) {
-            super( left1, left2, left3, left4, new Either( left5, right ) );
+            super( left1, left2, left3, left4, new Either<L5,R>( left5, right ) );
         }
     }
 
     public static class E6<L1, L2, L3, L4, L5, L6,R>
             extends E5<L1,L2,L3,L4,L5,Either<L6,R>> {
         private E6( final L1 left1, final L2 left2, final L3 left3, final L4 left4, final L5 left5, final L6 left6, final R right ) {
-            super( left1, left2, left3, left4, left5, new Either( left6, right ) );
+            super( left1, left2, left3, left4, left5, new Either<L6,R>( left6, right ) );
         }
     }
 
     public static class E7<L1, L2, L3, L4, L5, L6, L7,R>
             extends E6<L1,L2,L3,L4,L5,L6,Either<L7,R>> {
         private E7( final L1 left1, final L2 left2, final L3 left3, final L4 left4, final L5 left5, final L6 left6, final L7 left7, final R right ) {
-            super( left1, left2, left3, left4, left5, left6, new Either( left7, right ) );
+            super( left1, left2, left3, left4, left5, left6, new Either<L7,R>( left7, right ) );
         }
     }
 
