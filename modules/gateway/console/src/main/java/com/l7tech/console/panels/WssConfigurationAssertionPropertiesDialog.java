@@ -102,7 +102,9 @@ public class WssConfigurationAssertionPropertiesDialog extends AssertionProperti
                 XencUtil.TRIPLE_DES_CBC,
                 XencUtil.AES_128_CBC,
                 XencUtil.AES_192_CBC,
-                XencUtil.AES_256_CBC
+                XencUtil.AES_256_CBC,
+                XencUtil.AES_128_GCM,
+                XencUtil.AES_256_GCM
         }));
 
         keyEncryptionAlgCombo.setModel(new DefaultComboBoxModel(new String[] {
