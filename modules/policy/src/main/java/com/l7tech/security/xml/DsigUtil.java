@@ -18,11 +18,14 @@ import com.l7tech.util.DomUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.xml.soap.SoapUtil;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import javax.crypto.SecretKey;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.IOException;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -35,6 +38,8 @@ import java.util.List;
 import java.util.Map;
 
 import static com.l7tech.security.xml.SupportedDigestMethods.*;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 /**
  * Utility class to help with XML digital signatures.
@@ -66,6 +71,25 @@ public class DsigUtil {
     }
 
     /**
+     * Create a new SignatureContext with easonable defaults for validation.
+     *
+     * @return The new signature context.
+     */
+    @NotNull
+    public static SignatureContext createSignatureContextForValidation() {
+        final SignatureContext sigContext = new SignatureContext(){
+            @Override
+            protected Document parse( final InputSource src ) throws IOException, SAXException, ParserConfigurationException {
+                return XmlUtil.parse( src, false );
+            }
+        };
+
+        sigContext.setEntityResolver( XmlUtil.getXss4jEntityResolver() );
+
+        return sigContext;
+    }
+
+    /**
      * Delegates to  {@link #createEnvelopedSignature(org.w3c.dom.Element, String, java.security.cert.X509Certificate, java.security.PrivateKey, org.w3c.dom.Element, String, String)}
      * with the xsdIdAttribute set to the result of {@link #getIdAttribute(org.w3c.dom.Element)} 
      *
@@ -82,7 +106,7 @@ public class DsigUtil {
         String idValue = elementToSign.getAttribute(idAttr);
         if (idValue == null || idValue.length() < 1) {
             idValue = SoapUtil.generateUniqueId( "root", 0 );
-            elementToSign.setAttribute(idAttr, idValue);
+            elementToSign.setAttributeNS( null, idAttr, idValue );
         }
 
         return createEnvelopedSignature(elementToSign, idValue, senderSigningCert, senderSigningKey,

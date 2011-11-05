@@ -2035,11 +2035,11 @@ public class WssProcessorImpl implements WssProcessor {
         }
 
         // Validate signature
-        SignatureContext sigContext = new SignatureContext();
-        MimeKnob mimeKnob = message.getKnob(MimeKnob.class);
+        final SignatureContext sigContext = DsigUtil.createSignatureContextForValidation();
+        final MimeKnob mimeKnob = message.getKnob(MimeKnob.class);
         PartIterator iterator;
         iterator = mimeKnob == null ? null : mimeKnob.getParts();
-        Map<String,PartInfo> partMap = new HashMap<String,PartInfo>();
+        final Map<String,PartInfo> partMap = new HashMap<String,PartInfo>();
         sigContext.setEntityResolver(new AttachmentEntityResolver(iterator, XmlUtil.getXss4jEntityResolver(), partMap, signedAttachmentSizeLimit));
         sigContext.setIDResolver(new IDResolver() {
             @Override

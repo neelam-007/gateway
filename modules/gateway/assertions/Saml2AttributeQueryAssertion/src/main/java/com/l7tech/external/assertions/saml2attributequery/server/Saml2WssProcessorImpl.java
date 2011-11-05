@@ -821,7 +821,7 @@ public class Saml2WssProcessorImpl {
         }
 
         // Validate signature
-        SignatureContext sigContext = new SignatureContext();
+        SignatureContext sigContext = DsigUtil.createSignatureContextForValidation();
         MimeKnob mimeKnob = message.getKnob(MimeKnob.class);
         PartIterator iterator;
         iterator = (mimeKnob == null || !message.isInitialized()) ? null : mimeKnob.getParts();

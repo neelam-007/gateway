@@ -150,7 +150,7 @@ public class ServerNonSoapVerifyElementAssertion extends ServerNonSoapSecurityAs
         signingCert.checkValidity();
 
         // Validate signature
-        SignatureContext sigContext = new SignatureContext();
+        final SignatureContext sigContext = DsigUtil.createSignatureContextForValidation();
         sigContext.setIDResolver(new IDResolver() {
             @Override
             public Element resolveID(Document document, String s) {

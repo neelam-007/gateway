@@ -395,7 +395,7 @@ public class SamlAssertionV1 extends SamlAssertion {
 
             // Validate signature
             final boolean[] resolvedAssertionId = new boolean[1];
-            SignatureContext sigContext = new SignatureContext();
+            final SignatureContext sigContext = DsigUtil.createSignatureContextForValidation();
             sigContext.setIDResolver(new IDResolver() {
                 public Element resolveID(Document doc, String s) {
                     if (!s.equals(getAssertionId()))
@@ -404,7 +404,6 @@ public class SamlAssertionV1 extends SamlAssertion {
                     return assertionElement;
                 }
             });
-            sigContext.setEntityResolver(XmlUtil.getXss4jEntityResolver());
             WssProcessorAlgorithmFactory algFactory = new WssProcessorAlgorithmFactory(null);
             sigContext.setAlgorithmFactory(algFactory);
 

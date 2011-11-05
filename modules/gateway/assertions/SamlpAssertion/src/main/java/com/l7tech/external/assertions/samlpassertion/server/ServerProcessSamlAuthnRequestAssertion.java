@@ -293,8 +293,7 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
 
             // Validate signature
             final boolean[] resolvedAuthnRequestId = new boolean[1];
-            final SignatureContext sigContext = new SignatureContext();
-            sigContext.setEntityResolver( XmlUtil.getXss4jEntityResolver());
+            final SignatureContext sigContext = DsigUtil.createSignatureContextForValidation();
             sigContext.setIDResolver(new IDResolver() {
                 @Override
                 public Element resolveID( final Document doc, final String id ) {

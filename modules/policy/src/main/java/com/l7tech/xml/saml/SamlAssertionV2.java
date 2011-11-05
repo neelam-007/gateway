@@ -357,8 +357,7 @@ public final class SamlAssertionV2 extends SamlAssertion {
 
             // Validate signature
             final boolean[] resolvedAssertionId = new boolean[1];
-            SignatureContext sigContext = new SignatureContext();
-            sigContext.setEntityResolver(XmlUtil.getXss4jEntityResolver());
+            final SignatureContext sigContext = DsigUtil.createSignatureContextForValidation();
             sigContext.setIDResolver(new IDResolver() {
                 public Element resolveID(Document doc, String s) {
                     if (!s.equals(getAssertionId()))
