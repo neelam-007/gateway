@@ -78,7 +78,8 @@ public class AdminLoginImpl
     @Override
     public AdminLoginResult login(final String username, final String password)
             throws AccessControlException, LoginException {
-        if (username == null || password == null || password.isEmpty()) { // Don't trim password here, i.e., NOT use password.trim().isEmpty(), because white space password is probably valid and allowed.
+        final X509Certificate cert = RemoteUtils.getClientCertificate();
+        if (username == null || password == null || (cert == null && password.isEmpty())) { // Don't trim password here, i.e., NOT use password.trim().isEmpty(), because white space password is probably valid and allowed.
             throw new AccessControlException(ERR_MSG_USERNAME_PSWD_BOTH_REQUIRED);
         }
         String login = username;
@@ -89,7 +90,6 @@ public class AdminLoginImpl
                 creds = LoginCredentials.makeLoginCredentials(
                         new UsernamePasswordSecurityToken(SecurityTokenType.UNKNOWN, username, password.toCharArray()), null);
             } else {
-                X509Certificate cert = RemoteUtils.getClientCertificate();
                 if (cert == null) {
                     throw new AccessControlException("Username and password or certificate is required.");
                 }
