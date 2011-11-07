@@ -548,7 +548,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         }
         responseTargetVariable.setAssertion(assertion,getPreviousAssertion());
 
-        responseByteLimitPanel.setValue(assertion.getResponseSize(), Registry.getDefault().getPolicyAdmin().getXmlMaxBytes());
+        responseByteLimitPanel.setValue(assertion.getResponseSize(), Registry.getDefault().getJmsManager().getDefaultJmsMessageMaxBytes());
     }
 
     private boolean isReplyToQueue( final JmsEndpoint jmsEndpoint ) {
