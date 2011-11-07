@@ -82,6 +82,7 @@ public class LogViewer extends JFrame {
     private SsmPreferences preferences = TopComponents.getInstance().getPreferences();
     private final AtomicReference<LogWorker> workerReference = new AtomicReference<LogWorker>();
     private java.util.List<String> cachedData = new java.util.ArrayList<String>();
+    private InputValidator tailTextValidator;
 
     private long lastReadByte = 0L;
     private long lastReadTime = 0L;
@@ -128,7 +129,7 @@ public class LogViewer extends JFrame {
 
         Utilities.setEscKeyStrokeDisposes(this);
 
-        final InputValidator tailTextValidator = new InputValidator(this,getTitle());
+        tailTextValidator = new InputValidator(this,getTitle());
         tailTextValidator.disableButtonWhenInvalid(refreshButton);
         tailTextValidator.constrainTextFieldToNumberRange(resources.getString("tail.checkbox.text"),tailTextField,1,100);
 
@@ -528,6 +529,9 @@ public class LogViewer extends JFrame {
     }
 
     public void loadLogs(boolean isAutoRefresh)  {
+        if(tailTextValidator.validate()!=null)
+            return;
+
         int tail  = -1 ;
         if(tailCheckBox.isSelected()){
             try{
