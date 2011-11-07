@@ -104,11 +104,6 @@ ALTER TABLE secure_password MODIFY COLUMN encoded_password mediumtext NOT NULL;
 ALTER TABLE secure_password ADD COLUMN type varchar(64) NOT NULL DEFAULT 'PASSWORD';
 
 --
--- Bug 11055: Ping servlet should be an optional built-in service
---
-UPDATE connector SET endpoints = CONCAT(endpoints, ', PING') WHERE scheme = 'HTTP';
-
---
 --
 -- Reenable FK at very end of script
 --
