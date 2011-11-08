@@ -96,11 +96,9 @@ public class HttpForwardingRuleEnforcer {
 
                             cookieAlreadyHandled = true;
                         }
-                    } else if (headerName.equalsIgnoreCase(SoapUtil.SOAPACTION)){
-                        if ( !source.containsHeader( SoapUtil.SOAPACTION ) ) {
-                            //special SOAPAction handling
-                            handleSoapActionHeader( httpRequestParams, sourceMessage, source );
-                        }
+                    } else if (headerName.equalsIgnoreCase(SoapUtil.SOAPACTION) && !source.containsHeader( SoapUtil.SOAPACTION )){
+                        //special SOAPAction handling
+                        handleSoapActionHeader( httpRequestParams, sourceMessage, source );
                     } else {
                         String[] values = knob.getHeaderValues(headerName);
                         for (String value : values) {
@@ -208,6 +206,14 @@ public class HttpForwardingRuleEnforcer {
                 logger.info("Will not add a SOAPAction to the message since the request message was not SOAP.");
             } catch (SAXException e1) {
                 logger.info("Will not add a SOAPAction to the message since the request message was not SOAP.");
+            }
+        }
+
+        if ( soapAction == null ) {
+            // Maybe the default requets is a non-SOAP or even non-XML content type that just happens to have a SOAPAction header (Bug #10629)
+            HttpRequestKnob hrk = sourceMessage.getKnob(HttpRequestKnob.class);
+            if ( hrk != null ) {
+                soapAction = hrk.getHeaderFirstValue(SoapUtil.SOAPACTION);
             }
         }
 

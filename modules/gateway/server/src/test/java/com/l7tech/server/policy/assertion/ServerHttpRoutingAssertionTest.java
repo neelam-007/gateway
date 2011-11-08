@@ -4,8 +4,10 @@
  */
 package com.l7tech.server.policy.assertion;
 
+import com.l7tech.common.TestDocuments;
 import com.l7tech.common.http.*;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.message.HttpResponseKnob;
 import com.l7tech.message.HttpServletRequestKnob;
@@ -228,6 +230,55 @@ public class ServerHttpRoutingAssertionTest {
 
         assertEquals("<bar/>", new String(pec.getResponse().getMimeKnob().getFirstPart().getBytesIfAvailableOrSmallerThan(Integer.MAX_VALUE)));
         assertEquals(0, pec.getResponse().getHttpResponseKnob().getHeaderValues("content-encoding").length);
+    }
+
+    @Test
+    @BugNumber(10629)
+    public void testSoapHeaderPassthroughForNonSoapMessage() throws Exception {
+        HttpRoutingAssertion hra = new HttpRoutingAssertion();
+        hra.setProtectedServiceUrl("http://localhost:17380/testContentEncodingNotPassedThrough");
+
+        // Pass through all request headers
+        hra.setRequestHeaderRules(new HttpPassthroughRuleSet(true, new HttpPassthroughRule[]{}));
+
+        // An incoming octet-stream request that happens to contain a SOAP envelope as its body, along with a SOAPAction header
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+        Message request = new Message(new ByteArrayStashManager(), ContentTypeHeader.OCTET_STREAM_DEFAULT, TestDocuments.getInputStream(TestDocuments.PLACEORDER_CLEARTEXT));
+        final MockHttpServletRequest hrequest = new MockHttpServletRequest(new MockServletContext());
+        final String placeOrderSoapActionHeaderValue = "\"http://warehouse.acme.com/ws/placeOrder\"";
+        hrequest.addHeader("SOAPAction", placeOrderSoapActionHeaderValue);
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
+
+        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
+
+        final Object[] requestRecordedExtraHeaders = { null };
+
+        final GenericHttpHeaders responseHeaders = new GenericHttpHeaders(new GenericHttpHeader[0]);
+        final MockGenericHttpClient mockClient = new MockGenericHttpClient(200, responseHeaders, ContentTypeHeader.XML_DEFAULT, 6L, "<bar/>".getBytes());
+        mockClient.setCreateRequestListener(new MockGenericHttpClient.CreateRequestListener() {
+            @Override
+            public MockGenericHttpClient.MockGenericHttpRequest onCreateRequest(HttpMethod method, GenericHttpRequestParams params, MockGenericHttpClient.MockGenericHttpRequest request) {
+                requestRecordedExtraHeaders[0] = params.getExtraHeaders();
+                return request;
+            }
+        });
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+
+        final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(hra, appContext);
+        routingAssertion.checkRequest(pec);
+
+        @SuppressWarnings({"unchecked"}) List<HttpHeader> reqExtraHeaders = (List<HttpHeader>) requestRecordedExtraHeaders[0];
+
+        int numSoapAction = 0;
+        for (HttpHeader header : reqExtraHeaders) {
+            if ("soapaction".equalsIgnoreCase(header.getName())) {
+                numSoapAction++;
+                assertEquals(placeOrderSoapActionHeaderValue, header.getFullValue());
+            }
+        }
+
+        assertEquals("A SOAPAction header shall have been passed through", 1, numSoapAction);
     }
 
 }
