@@ -124,7 +124,7 @@ public class ExtensionInterfaceManager implements ApplicationListener {
     }
 
     @NotNull
-    public Either<Throwable,Option<Object>> invokeExtensionMethod(@NotNull String interfaceClassname, @Nullable String targetObjectId, @NotNull String methodName, @NotNull Class[] parameterTypes, @NotNull Object[] arguments)
+    public Either<Throwable,Option<Object>> invokeExtensionMethod(@NotNull String interfaceClassname, @Nullable String targetObjectId, @NotNull String methodName, @NotNull Class[] parameterTypes, @Nullable Object[] arguments)
             throws ClassNotFoundException, NoSuchMethodException
     {
         try {

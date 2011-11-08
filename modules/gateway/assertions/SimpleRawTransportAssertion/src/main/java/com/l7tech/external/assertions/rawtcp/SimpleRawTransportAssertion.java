@@ -1,8 +1,14 @@
 package com.l7tech.external.assertions.rawtcp;
 
+import com.l7tech.external.assertions.rawtcp.server.SimpleRawTransportAdminImpl;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.Functions;
+import org.springframework.context.ApplicationContext;
+
+import java.util.Collection;
+import java.util.Collections;
 
 /**
  * Bean for configuring outbound raw TCP (and someday TLS) single-shot message.
@@ -170,6 +176,16 @@ public class SimpleRawTransportAssertion extends RoutingAssertion implements Use
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Raw TCP Routing Properties");
 
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
+        meta.put(AssertionMetadata.EXTENSION_INTERFACES_FACTORY, new Functions.Unary<Collection<ExtensionInterfaceBinding>, ApplicationContext>() {
+            @Override
+            public Collection<ExtensionInterfaceBinding> call(ApplicationContext appContext) {
+                final ExtensionInterfaceBinding<SimpleRawTransportAdmin> binding = new ExtensionInterfaceBinding<SimpleRawTransportAdmin>(
+                        SimpleRawTransportAdmin.class,
+                        null,
+                        new SimpleRawTransportAdminImpl());
+                return Collections.<ExtensionInterfaceBinding>singletonList(binding);
+            }
+        });
 
         return meta;
     }

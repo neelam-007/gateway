@@ -4,6 +4,7 @@ import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.ByteLimitPanel;
 import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.util.Registry;
+import com.l7tech.external.assertions.rawtcp.SimpleRawTransportAdmin;
 import com.l7tech.external.assertions.rawtcp.SimpleRawTransportAssertion;
 import com.l7tech.gui.NumberField;
 import com.l7tech.gui.util.InputValidator;
@@ -164,7 +165,8 @@ public class SimpleRawTransportAssertionPropertiesDialog extends AssertionProper
         }
         responseContextVariableField.setAssertion(assertion,getPreviousAssertion());
 
-        responseLimitPanel.setValue(assertion.getMaxResponseBytesText(),Registry.getDefault().getPolicyAdmin().getXmlMaxBytes());
+        SimpleRawTransportAdmin admin = Registry.getDefault().getExtensionInterface(SimpleRawTransportAdmin.class, null);
+        responseLimitPanel.setValue(assertion.getMaxResponseBytesText(),admin.getDefaultResponseSizeLimit());
 
         enableOrDisableComponents();
     }
