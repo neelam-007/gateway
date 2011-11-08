@@ -155,6 +155,14 @@ public class LogViewer extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 refreshTailButtons();
+                if(!autoRefreshCheckBox.isSelected())
+                {
+                    Date date = new Date(System.currentTimeMillis());
+                    SimpleDateFormat sdf = new SimpleDateFormat("MMM d yyyy hh:mm:ss aaa");
+                    Calendar cal = Calendar.getInstance();
+                    cal.setTime(date);
+                    lastUpdatedLabel.setText(MessageFormat.format(resources.getString("last.update.text"),sdf.format(cal.getTime()),""));
+                }
             }
         });
 
@@ -254,6 +262,12 @@ public class LogViewer extends JFrame {
             getLogsRefreshTimer().restart();
         }else if (getLogsRefreshTimer().isRunning()){
             getLogsRefreshTimer().stop();
+            // stop loading prev
+            if(workerReference.get()!=null){
+                workerReference.get().interrupt();
+                workerReference.get().cancel();
+                workerReference.set(null);
+            }
         }
         lastReadByte = 0L;
     }
