@@ -81,7 +81,7 @@ public interface ServiceMetricsManager {
     Collection<ServiceHeader> findAllServiceHeaders() throws FindException;
 
     /**
-     * The database work for the MetricsBin flush.
+     * The database work for the MetricsBin flush for FINE metrics.
      */
     void doFlush(ServiceMetrics.MetricsCollectorSet metricsSet, MetricsBin bin);
 

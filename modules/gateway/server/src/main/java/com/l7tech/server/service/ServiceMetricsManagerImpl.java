@@ -303,6 +303,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
     @Override
     @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
     public void doFlush(final ServiceMetrics.MetricsCollectorSet metricsSet, final MetricsBin bin) {
+        //todo Add retry attempts to attempt to recover from expected database failures such as deadlocks.
         try {
             getHibernateTemplate().execute(new HibernateCallback() {
                 @Override

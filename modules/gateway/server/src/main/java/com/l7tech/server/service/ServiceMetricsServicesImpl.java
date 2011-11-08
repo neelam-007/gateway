@@ -44,6 +44,13 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
     private static final Logger logger = Logger.getLogger(ServiceMetricsServicesImpl.class.getName());
     private static final Random random = new Random();
 
+    /**
+     * When a daily task is scheduled for the next day, this is the required delay it must wait before executing to
+     * ensure all hourly tasks for the last hour of the previous day have had a good chance of completing.
+     * The delay takes the hourly tasks retry attempts and sleep periods into consideration.
+     */
+    private static final long DAILY_TASK_START_DELAY_MILLIS = TimeUnit.MINUTES.toMillis(1) * 5;
+
     public ServiceMetricsServicesImpl(String clusterNodeId) {
         this.clusterNodeId = clusterNodeId;
     }
@@ -155,15 +162,17 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
 
             final long now = System.currentTimeMillis();
 
-            // Sets fine resolution timer to excecute every fine interval; starting at the next fine period.
+            // Sets fine resolution timer to execute every fine interval; starting at the next fine period.
             logger.config("Fine resolution bin interval is " + fineBinInterval + " ms");
             final Date nextFineStart = new Date(MetricsBin.periodEndFor(MetricsBin.RES_FINE, fineBinInterval, now));
             _fineArchiver = new FineTask();
             timer.scheduleAtFixedRate(_fineArchiver, nextFineStart, fineBinInterval);
             logger.config("Scheduled first fine archive task for " + nextFineStart);
 
-            // Sets hourly resolution timer to excecute every hour; starting at the next hourly period.
+            // Sets hourly resolution timer to execute every hour; starting at the next hourly period.
             // Run slightly after the period end to allow all fine bins to be persisted
+            // Schedule at a random period over a 2.5 minute window
+            // WARNING: If this schedule is increased, the scheduling of daily tasks must be delayed to ensure hourly tasks are finished first.
             long hourlyRandomScheduleDelay = 15000L * random.nextInt(10);
             final Date nextHourlyStart = new Date(MetricsBin.periodEndFor(MetricsBin.RES_HOURLY, 0, now) + hourlyRandomScheduleDelay);
             _hourlyArchiver = new HourlyTask();
@@ -174,7 +183,7 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
             // But can't just schedule at fixed rate of 24-hours interval because a
             // calender day varies, e.g., when switching Daylight Savings Time.
             // Run slightly after the period end to allow all hourly bins to be persisted
-            final Date nextDailyStart = new Date(MetricsBin.periodEndFor(MetricsBin.RES_DAILY, 0, now) + hourlyRandomScheduleDelay + TimeUnit.MINUTES.toMillis(1) );
+            final Date nextDailyStart = new Date(MetricsBin.periodEndFor(MetricsBin.RES_DAILY, 0, now) + DAILY_TASK_START_DELAY_MILLIS);
             _dailyArchiver = new DailyTask();
             timer.schedule(_dailyArchiver, nextDailyStart);
             logger.config("Scheduled first daily archive task for " + nextDailyStart);
@@ -500,7 +509,7 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
             if ( reschedule ) {
                 // Schedule the next timer execution at the end of current period
                 // (with a new task instance because a task cannot be reused).
-                Date nextTimerDate = new Date(MetricsBin.periodEndFor(MetricsBin.RES_DAILY, 0, System.currentTimeMillis()));
+                Date nextTimerDate = new Date(MetricsBin.periodEndFor(MetricsBin.RES_DAILY, 0, System.currentTimeMillis()) + DAILY_TASK_START_DELAY_MILLIS);
                 timer.schedule(new DailyTask(), nextTimerDate);
                 if (logger.isLoggable(Level.FINE))
                     logger.fine("Scheduled next daily flush task for " + nextTimerDate);
@@ -534,7 +543,7 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
                             });
                 }
             } catch (Exception e) {
-                logger.log(Level.WARNING, "Couldn't delete MetricsBins", e);
+                logger.log(Level.WARNING, "Couldn't delete MetricsBins for resolution '" + _resolution + "'", e);
             }
         }
 
