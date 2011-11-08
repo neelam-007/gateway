@@ -1673,7 +1673,7 @@
         <pack-mac jarfile="${build.dir}/managerapplet/lib/xmlpad-res-3.7.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/xmlsec-1.4.4.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/xom-1.2.6.jar"/>
-        <pack-mac jarfile="${build.dir}/managerapplet/lib/xss4j.00.patch-1.0.jar"/>
+        <pack-mac jarfile="${build.dir}/managerapplet/lib/xss4j.00.patch-1.1.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/xss4j-1.0.jar"/>
 
         <fail if="pack-mac.fail">Missing files for pac-mac, see "Nothing to do" messages above.</fail>
