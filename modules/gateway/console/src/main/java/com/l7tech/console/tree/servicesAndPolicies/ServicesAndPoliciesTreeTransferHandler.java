@@ -8,6 +8,7 @@ import com.l7tech.console.util.EntityUtils;
 import com.l7tech.console.util.PolicyRevisionUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.UserCancelledException;
 import com.l7tech.gateway.common.admin.AliasAdmin;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdateAll;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -193,6 +194,9 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                     }
                 }
                 return false;
+            } catch (UserCancelledException e) {
+                // copy cancelled as user declined selection of a policy revision
+                return false;
             } catch(Exception e){
                 if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)){
                     if(tree != null){
@@ -220,7 +224,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
     private boolean copyNode( final AbstractTreeNode transferNode,
                               final FolderNode newParent,
                               final ServicesAndPoliciesTree tree)
-            throws FindException, ConstraintViolationException, UpdateException, VersionException, PolicyAssertionException, SaveException {
+            throws FindException, ConstraintViolationException, UpdateException, VersionException, PolicyAssertionException, SaveException, UserCancelledException {
 
 
         EntityWithPolicyNode childTransferNode = (EntityWithPolicyNode) transferNode;
@@ -333,7 +337,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
     private boolean copyPolicy( final AbstractTreeNode parentNode,
                                 final ServicesAndPoliciesTree tree,
                                 final Folder newParentFolder,
-                                final Policy policy ) {
+                                final Policy policy ) throws UserCancelledException {
         // Only policy include fragments can be copied
         if ( policy.getType() != PolicyType.INCLUDE_FRAGMENT ) {
             return false;
@@ -350,7 +354,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
     }
 
     private void ensureActivePolicy( final Policy originalPolicy,
-                                     final Policy copiedPolicy ) {
+                                     final Policy copiedPolicy ) throws UserCancelledException {
         if ( originalPolicy.isDisabled() ) {
             String policyXml = WspWriter.getPolicyXml(new AllAssertion());
             final Option<PolicyVersion> version;
@@ -434,7 +438,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
         } );
     }
 
-    private boolean copyService(final AbstractTreeNode parentNode, final ServicesAndPoliciesTree tree, Folder newParentFolder, PublishedService service) {
+    private boolean copyService(final AbstractTreeNode parentNode, final ServicesAndPoliciesTree tree, Folder newParentFolder, PublishedService service) throws UserCancelledException {
 
         final PublishedService newService = new PublishedService(service);
         EntityUtils.updateCopy( newService );

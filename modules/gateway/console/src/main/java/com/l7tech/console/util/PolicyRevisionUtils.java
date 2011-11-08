@@ -27,9 +27,10 @@ public class PolicyRevisionUtils {
      * @param action The action (e.g. "edit", "copy")
      * @return The selected policy version or none
      * @throws FindException If an error occurs
+     * @throws UserCancelledException If the user cancels revision selection
      */
     public static Option<PolicyVersion> selectRevision( final long policyOid,
-                                                        @NotNull final String action ) throws FindException {
+                                                        @NotNull final String action ) throws FindException, UserCancelledException {
         final List<PolicyVersion> versions = Registry.getDefault().getPolicyAdmin().findPolicyVersionHeadersByPolicy(policyOid);
 
         // Sort more recent revisions to the top
@@ -84,7 +85,7 @@ public class PolicyRevisionUtils {
                                                     none );
 
         if (result == null)
-            return null;
+            throw new UserCancelledException();
 
         //noinspection unchecked
         return ((Nullary<Option<PolicyVersion>>)result).call();

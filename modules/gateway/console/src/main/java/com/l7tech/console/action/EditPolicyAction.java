@@ -12,6 +12,7 @@ import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.PolicyRevisionUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.UserCancelledException;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Entity;
@@ -142,6 +143,9 @@ public class EditPolicyAction extends NodeAction {
                 log.log(Level.INFO, "cannot get service or policy", ExceptionUtils.getMessage(e));
                 JOptionPane.showMessageDialog(null, "Service or policy does not exist.", "Cannot find service or policy", JOptionPane.ERROR_MESSAGE);
                 return;
+            } catch ( UserCancelledException e ) {
+                wpanel.setComponent(new HomePagePanel());
+                return;
             }
 
             final Assertion startingPolicyAssertion = startingAssertion;
@@ -235,8 +239,9 @@ public class EditPolicyAction extends NodeAction {
      * @return the policy assertion tree on which to base this edit, or null to cancel the edit
      * @throws java.io.IOException if there is a problem parsing policy XML
      * @throws com.l7tech.objectmodel.FindException if there is a problem finding the selected revision's policy XML
+     * @throws UserCancelledException If the user cancels revision selection
      */
-    private static Assertion findStartingAssertion(Policy policy) throws IOException, FindException {
+    private static Assertion findStartingAssertion(Policy policy) throws IOException, FindException, UserCancelledException {
         final Option<PolicyVersion> version;
         try {
             version = PolicyRevisionUtils.selectRevision( policy.getOid(), "edit" );
