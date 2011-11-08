@@ -1,5 +1,6 @@
 package com.l7tech.server.identity.ldap;
 
+import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.ldap.BindOnlyLdapIdentityProviderConfig;
@@ -14,8 +15,10 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.server.Lifecycle;
 import com.l7tech.server.LifecycleException;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.ConfigurableIdentityProvider;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.BeansException;
@@ -27,7 +30,6 @@ import java.math.BigInteger;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.EnumSet;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -39,6 +41,7 @@ public class BindOnlyLdapIdentityProviderImpl implements BindOnlyLdapIdentityPro
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.auditor = new Auditor(this, applicationContext, logger);
     }
 
     @Override
@@ -50,11 +53,16 @@ public class BindOnlyLdapIdentityProviderImpl implements BindOnlyLdapIdentityPro
     public AuthenticationResult authenticate(LoginCredentials pc, boolean allowUserUpgrade) throws AuthenticationException {
         final CredentialFormat format = pc.getFormat();
         if (format == CredentialFormat.CLEARTEXT) {
-            return userManager.authenticatePasswordCredentials(pc);
+            try {
+                return userManager.authenticatePasswordCredentials(pc);
+            } catch (BindOnlyLdapUserManager.BadUsernamePatternException e) {
+                auditor.logAndAudit(SystemMessages.EXCEPTION_INFO_WITH_MORE_INFO, "Username contains characters disallowed by current Simple LDAP username pattern");
+                throw new BadCredentialsException("credentials did not authenticate");
+            }
         }
 
-        String msg = "Attempt to authenticate using unsupported credential type on this provider: " + pc.getFormat();
-        logger.log(Level.SEVERE, msg);
+        String msg = "Attempt to authenticate using unsupported credential type on Simple LDAP provider: " + pc.getFormat();
+        auditor.logAndAudit(SystemMessages.EXCEPTION_WARNING_WITH_MORE_INFO, msg);
         throw new AuthenticationException(msg);
     }
 
@@ -148,7 +156,9 @@ public class BindOnlyLdapIdentityProviderImpl implements BindOnlyLdapIdentityPro
             // We don't care about the AuthenticationResult, just that it succeeded
 
         } catch (BadCredentialsException e) {
-            throw new InvalidIdProviderCfgException("Test credentials failed to authenticate.", e);
+            throw new InvalidIdProviderCfgException("Test credentials failed to authenticate: " + ExceptionUtils.getMessage(e), e);
+        } catch (BindOnlyLdapUserManager.BadUsernamePatternException e) {
+            throw new InvalidIdProviderCfgException("Test credentials failed to authenticate: " + ExceptionUtils.getMessage(e), e);
         }
     }
 
@@ -189,6 +199,7 @@ public class BindOnlyLdapIdentityProviderImpl implements BindOnlyLdapIdentityPro
         this.ldapRuntimeConfig = ldapRuntimeConfig;
     }
 
+    private Auditor auditor;
     private LdapRuntimeConfig ldapRuntimeConfig;
     private BindOnlyLdapIdentityProviderConfig config;
     private BindOnlyLdapUserManager userManager;

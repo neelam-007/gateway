@@ -12,7 +12,7 @@ import com.l7tech.server.identity.AuthenticationResult;
 public interface BindOnlyLdapUserManager extends UserManager<BindOnlyLdapUser> {
     boolean authenticateBasic(String dn, String passwd);
 
-    AuthenticationResult authenticatePasswordCredentials(LoginCredentials pc) throws BadCredentialsException;
+    AuthenticationResult authenticatePasswordCredentials(LoginCredentials pc) throws BadCredentialsException, BadUsernamePatternException;
 
     String makeDn(String login) throws BadUsernamePatternException;
 

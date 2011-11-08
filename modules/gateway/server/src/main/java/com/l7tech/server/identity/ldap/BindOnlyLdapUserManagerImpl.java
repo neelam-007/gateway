@@ -15,7 +15,6 @@ import com.l7tech.util.ConfigFactory;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -118,16 +117,10 @@ public class BindOnlyLdapUserManagerImpl implements BindOnlyLdapUserManager {
     }
 
     @Override
-    public AuthenticationResult authenticatePasswordCredentials(LoginCredentials pc) throws BadCredentialsException {
+    public AuthenticationResult authenticatePasswordCredentials(LoginCredentials pc) throws BadCredentialsException, BadUsernamePatternException {
         // basic authentication
         final String login = pc.getLogin();
-        final String dn;
-        try {
-            dn = makeDn(login);
-        } catch (BadUsernamePatternException e) {
-            logger.log(Level.INFO, "Username contains characters disallowed by current Simple LDAP username pattern");
-            throw new BadCredentialsException("credentials did not authenticate");
-        }
+        final String dn = makeDn(login);
         boolean res = authenticateBasic(dn, new String(pc.getCredentials()));
         if (res) {
             // success.  Include actual expanded DN in the auth result.
