@@ -3869,8 +3869,10 @@ public class MainWindow extends JFrame implements SheetHolder {
         // Find and destroy dialogs
         Window[] owned = TopComponents.getInstance().getTopParent().getOwnedWindows();
         if (owned != null) {
-            for (Window window : owned) {
-                window.dispose();
+            for ( final Window window : owned ) {
+                if ( window.isDisplayable() ) {
+                    window.dispose();
+                }
             }
         }
 
