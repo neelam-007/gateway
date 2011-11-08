@@ -230,7 +230,7 @@ public class SamlAssertionGenerator {
         template.addReference(ref);
 
         SignatureContext context = new SignatureContext();
-        context.setAlgorithmFactory(new WssProcessorAlgorithmFactory(null));
+        context.setAlgorithmFactory(new WssProcessorAlgorithmFactory());
         context.setEntityResolver( XmlUtil.getXss4jEntityResolver());
         context.setIDResolver(new IDResolver() {
             @Override

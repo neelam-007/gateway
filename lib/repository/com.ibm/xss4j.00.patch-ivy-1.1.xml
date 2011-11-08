@@ -2,9 +2,9 @@
 <ivy-module version="1.0">
 	<info organisation="com.ibm"
 		module="xss4j.00.patch"
-		revision="1.0"
+		revision="1.1"
 		status="release"
-		publication="20080707125028"
+		publication="20111107162000"
 		default="true"
 	/>
 	<configurations>

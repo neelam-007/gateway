@@ -9,8 +9,14 @@ import com.ibm.xml.enc.EncryptionEngine;
 import com.ibm.xml.enc.StructureException;
 import com.ibm.xml.enc.type.EncryptionMethod;
 import com.l7tech.security.xml.*;
+import static com.l7tech.util.CollectionUtils.set;
 import com.l7tech.util.ConfigFactory;
+import static com.l7tech.util.ConfigFactory.getProperty;
+import com.l7tech.util.Option;
+import static com.l7tech.util.Option.optional;
+import static com.l7tech.util.TextUtils.split;
 import com.l7tech.xml.soap.SoapUtil;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Node;
 
 import javax.crypto.NoSuchPaddingException;
@@ -18,25 +24,48 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * An XSS4J AlgorithmFactory that adds some additonal features:
  * <ul>
  * <li>Exclusive canonicalization (xml-exc-c14n) now supports a non-empty PrefixList attribute
- * <li>The XSLT, XPATH, and xmldsig-filter2 transforms are disallowed
+ * <li>The XSLT, XPATH, and xmldsig-filter2, Base64 and Decryption transforms are disallowed
  * <li>The STR-Transform is supported (if a lookup map is provided)
  * </ul>
  *
  */
 public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
+    public static final java.lang.String TRANSFORM_DECRYPT = "http://www.w3.org/2001/04/decrypt#";
+    public static final java.lang.String TRANSFORM_DECRYPT_XML = "http://www.w3.org/2002/07/decrypt#XML";
+    public static final java.lang.String TRANSFORM_DECRYPT_BINARY = "http://www.w3.org/2002/07/decrypt#Binary";
+
+    private static final Pattern LIST_SPLITTER = Pattern.compile( "," );
     private static final boolean USE_IBM_EXC_C11R = ConfigFactory.getBooleanProperty( "com.l7tech.common.security.xml.c14n.useIbmExcC11r", false );
     private static final String PROP_PERMITTED_DIGEST_ALGS = "com.l7tech.security.xml.dsig.permittedDigestAlgorithms";
+    private static final String PROP_PERMITTED_TRANSFORM_ALGS = "com.l7tech.security.xml.dsig.permittedTransformAlgorithms";
+    private static final String DEFAULT_PERMITTED_DIGEST_ALGS = "SHA,SHA-1,SHA-256,SHA-384,SHA-512";
+    private static final String DEFAULT_PERMITTED_TRANSFORM_ALGS =
+            "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#STR-Transform," +
+            "http://docs.oasis-open.org/wss/2004/XX/oasis-2004XX-wss-swa-profile-1.0#Attachment-Complete-Transform," +
+            "http://docs.oasis-open.org/wss/2004/XX/oasis-2004XX-wss-swa-profile-1.0#Attachment-Content-Only-Transform," +
+            "http://www.w3.org/2000/09/xmldsig#enveloped-signature," +
+            "http://www.w3.org/2001/10/xml-exc-c14n#," +
+            "http://www.w3.org/2001/10/xml-exc-c14n#WithComments";
 
     private final Map<Node, Node> strToTarget;
     private boolean sawEnvelopedTransform = false;
 
-    private Map<String, String> ecdsaSignatureMethodTable = new HashMap<String, String>();
+    private final Map<String, String> ecdsaSignatureMethodTable = new HashMap<String, String>();
     private final Set<String> enabledDigestSet;
+    private final Set<String> enabledTransformSet;
+
+    /**
+     * Create a basic algorithm factory
+     */
+    public WssProcessorAlgorithmFactory() {
+        this( null );
+    }
 
     /**
      * Create an algorithm factory that will allow the STR-Transform.
@@ -44,7 +73,7 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
      * @param strToTarget a map of SecurityTokenReference -> target nodes.  If null, STR-Transform will not be supported.
      */
     @SuppressWarnings("unchecked")
-    public WssProcessorAlgorithmFactory(Map<Node, Node> strToTarget) {
+    public WssProcessorAlgorithmFactory( @Nullable final Map<Node, Node> strToTarget) {
         this.strToTarget = strToTarget;
         this.signatureMethodTable.put(SupportedSignatureMethods.RSA_SHA256.getAlgorithmIdentifier(), "SHA256withRSA");
         this.signatureMethodTable.put(SupportedSignatureMethods.RSA_SHA384.getAlgorithmIdentifier(), "SHA384withRSA");
@@ -54,14 +83,19 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
         this.ecdsaSignatureMethodTable.put(SupportedSignatureMethods.ECDSA_SHA384.getAlgorithmIdentifier(), "SHA384withECDSA");
         this.ecdsaSignatureMethodTable.put(SupportedSignatureMethods.ECDSA_SHA512.getAlgorithmIdentifier(), "SHA512withECDSA");
 
-        String enabledDigestStr = ConfigFactory.getProperty( PROP_PERMITTED_DIGEST_ALGS, "SHA,SHA-1,SHA-256,SHA-384,SHA-512" );
-        String[] enabledDigests = enabledDigestStr == null ? new String[0] : enabledDigestStr.toUpperCase().split(",");
+        final String enabledDigestStr = getProperty( PROP_PERMITTED_DIGEST_ALGS, DEFAULT_PERMITTED_DIGEST_ALGS );
+        final String[] enabledDigests = enabledDigestStr == null ? new String[0] : LIST_SPLITTER.split( enabledDigestStr.toUpperCase() );
         enabledDigestSet = new HashSet<String>();
-        for (String digest : enabledDigests) {
+        for ( final String digest : enabledDigests) {
             Collection<String> aliases = SupportedDigestMethods.getAliases(digest);
             if (aliases != null)
                 enabledDigestSet.addAll(aliases);
         }
+
+        final Option<String[]> transformsOption =
+                optional(getProperty( PROP_PERMITTED_TRANSFORM_ALGS, DEFAULT_PERMITTED_TRANSFORM_ALGS ))
+                        .map( split( LIST_SPLITTER ) );
+        enabledTransformSet = transformsOption.isSome() ? set( transformsOption.some() ) : Collections.<String>emptySet();
     }
 
     @Override
@@ -92,23 +126,23 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
     }
 
     @Override
-    public Transform getTransform(String s) throws NoSuchAlgorithmException {
-        if (Transform.ENVELOPED.equals(s)) {
+    public Transform getTransform( final String uri ) throws NoSuchAlgorithmException {
+        if ( !enabledTransformSet.contains( uri ) )
+            throw new NoSuchAlgorithmException( uri );
+
+        if (Transform.ENVELOPED.equals(uri)) {
             sawEnvelopedTransform = true;
-        } else if (SoapUtil.TRANSFORM_STR.equals(s) && strToTarget != null) {
+        } else if (SoapUtil.TRANSFORM_STR.equals(uri) && strToTarget != null) {
             return new STRTransform(strToTarget);
-        } else if (Transform.XSLT.equals(s)
-                   || Transform.XPATH.equals(s)
-                   || Transform.XPATH2.equals(s)) {
-            throw new NoSuchAlgorithmException(s);
-        } else if (SoapUtil.TRANSFORM_ATTACHMENT_CONTENT.equals(s)) {
+        }else if (SoapUtil.TRANSFORM_ATTACHMENT_CONTENT.equals(uri)) {
             return new AttachmentContentTransform();
-        } else if (SoapUtil.TRANSFORM_ATTACHMENT_COMPLETE.equals(s)) {
+        } else if (SoapUtil.TRANSFORM_ATTACHMENT_COMPLETE.equals(uri)) {
             return new AttachmentCompleteTransform();
-        } else if (Transform.C14N_EXCLUSIVE.equals(s) && !USE_IBM_EXC_C11R) {
+        } else if (Transform.C14N_EXCLUSIVE.equals(uri) && !USE_IBM_EXC_C11R) {
             return new ApacheExclusiveC14nAdaptor();
         }
-        return super.getTransform(s);
+
+        return super.getTransform(uri);
     }
 
     /** @return true if an #enveloped-signature transform algorithm has ever been requested. */

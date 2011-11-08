@@ -159,7 +159,7 @@ public class XmlElementEncryptor {
 
         // Create encryption context and encrypt the header subtree
         EncryptionContext ec = new EncryptionContext();
-        AlgorithmFactoryExtn af = new WssProcessorAlgorithmFactory(null);
+        AlgorithmFactoryExtn af = new WssProcessorAlgorithmFactory();
         // TODO we'll assume it's the same Provider for all symmetric crypto
         Provider symmetricProvider = JceProvider.getInstance().getProviderFor("Cipher.AES");
         if (symmetricProvider != null)

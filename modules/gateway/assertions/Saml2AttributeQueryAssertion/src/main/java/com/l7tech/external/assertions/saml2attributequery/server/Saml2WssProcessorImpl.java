@@ -1,7 +1,6 @@
 package com.l7tech.external.assertions.saml2attributequery.server;
 
 import com.ibm.xml.dsig.*;
-import com.ibm.xml.enc.AlgorithmFactoryExtn;
 import com.ibm.xml.enc.DecryptionContext;
 import com.ibm.xml.enc.type.EncryptedData;
 import com.l7tech.common.io.XmlUtil;
@@ -15,6 +14,7 @@ import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.token.*;
 import com.l7tech.security.xml.*;
+import com.l7tech.security.xml.XencUtil.EncryptionEngineAlgorithmCollectingAlgorithmFactory;
 import com.l7tech.security.xml.processor.*;
 import com.l7tech.util.*;
 import com.l7tech.xml.InvalidDocumentSignatureException;
@@ -1096,14 +1096,14 @@ public class Saml2WssProcessorImpl {
 
         // Create decryption context and decrypt the EncryptedData subtree. Note that this effects the
         // soapMsg document
-        final DecryptionContext dc = new DecryptionContext();
         final List<String> algorithm = new ArrayList<String>();
 
         // Support "flexible" answers to getAlgorithm() query when using 3des with HSM (Bug #3705)
         final FlexKey flexKey = new FlexKey(key);
 
         // override getEncryptionEngine to collect the encryptionmethod algorithm
-        AlgorithmFactoryExtn af = new XencUtil.EncryptionEngineAlgorithmCollectingAlgorithmFactory(flexKey, algorithm);
+        final EncryptionEngineAlgorithmCollectingAlgorithmFactory af =
+                new EncryptionEngineAlgorithmCollectingAlgorithmFactory(flexKey, algorithm);
 
         Element encMethod = XmlUtil.findFirstChildElementByName(encryptedDataElement, SoapUtil.XMLENC_NS, "EncryptionMethod");
         Element keyInfo = XmlUtil.findFirstChildElementByName(encryptedDataElement, SoapUtil.DIGSIG_URI, "KeyInfo");
@@ -1112,7 +1112,7 @@ public class Saml2WssProcessorImpl {
         Provider symmetricProvider = JceProvider.getInstance().getBlockCipherProvider();
         if (symmetricProvider != null)
             af.setProvider(symmetricProvider.getName());
-        dc.setAlgorithmFactory(af);
+        final DecryptionContext dc = XencUtil.createContextForDecryption( af );
         dc.setEncryptedType(encryptedDataElement, EncryptedData.CONTENT,
                             encMethod, keyInfo);
 

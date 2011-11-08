@@ -12,6 +12,7 @@ import com.l7tech.server.util.SimpleSingletonBeanFactory;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.FullQName;
 import com.l7tech.util.SoapConstants;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.xpath.XpathExpression;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -176,9 +177,14 @@ public class ServerNonSoapVerifyElementAssertionTest {
 
     @Test
     public void testVerifyApacheSignedEcdsa() throws Exception {
-        ServerNonSoapVerifyElementAssertion.CERT_PARSE_BC_FALLBACK = true;
-        verifyAndCheck(ass(), APACHE_SAMPLE_SIGNED_XML, false, null,
-                "http://www.w3.org/2000/09/xmldsig#sha1", "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1", null);
+        SyspropUtil.setProperty( "com.l7tech.security.xml.dsig.permittedTransformAlgorithms", "http://www.w3.org/2000/09/xmldsig#enveloped-signature,http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments" );
+        try {
+            ServerNonSoapVerifyElementAssertion.CERT_PARSE_BC_FALLBACK = true;
+            verifyAndCheck(ass(), APACHE_SAMPLE_SIGNED_XML, false, null,
+                    "http://www.w3.org/2000/09/xmldsig#sha1", "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1", null);
+        } finally {
+            SyspropUtil.clearProperty( "com.l7tech.security.xml.dsig.permittedTransformAlgorithms" );
+        }
     }
 
     @Test

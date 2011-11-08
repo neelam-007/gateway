@@ -35,7 +35,7 @@ public class AttachmentEntityResolver implements EntityResolver {
      */
     public AttachmentEntityResolver(final PartIterator partIterator,
                                     final EntityResolver delegate) throws IOException {
-        this(partIterator, delegate, new HashMap<String,PartInfo>(), 0);
+        this(partIterator, delegate, new HashMap<String,PartInfo>(), 0L);
     }
 
     /**
@@ -69,11 +69,12 @@ public class AttachmentEntityResolver implements EntityResolver {
      * @return the InputSource from which the part can be read.
      * @throws IOException if the part is not found
      */
+    @Override
     public InputSource resolveEntity(final String publicId,
                                      final String systemId) throws SAXException, IOException {
         InputSource is;
 
-        if ( partIterator != null && systemId != null && systemId.startsWith(CONTENTID_PREFIX) ) {
+        if ( partIterator != null && systemId != null && systemId.toLowerCase().startsWith( CONTENTID_PREFIX ) ) {
             Collection<PartInfo> parts = getParts();
 
             String partId = getPartId(systemId);
@@ -184,7 +185,7 @@ public class AttachmentEntityResolver implements EntityResolver {
      *
      */
     private Collection<PartInfo> toParts(final PartIterator partIterator) throws IOException {
-        List<PartInfo> parts = new ArrayList();
+        List<PartInfo> parts = new ArrayList<PartInfo>();
 
         try {
             if ( partIterator != null ) {
@@ -203,7 +204,7 @@ public class AttachmentEntityResolver implements EntityResolver {
      * Ignore all attachments if content-ids look dubious 
      */
     private void ensureNoDuplicates(Collection<PartInfo> parts) {
-        Set<String> identifiers = new HashSet();
+        Set<String> identifiers = new HashSet<String>();
 
         for ( PartInfo partInfo : parts ) {
             String partIdentifier = partInfo.getContentId(true);
@@ -242,7 +243,7 @@ public class AttachmentEntityResolver implements EntityResolver {
             //noinspection IOResourceOpenedButNotSafelyClosed
             InputStream is = new SequenceInputStream(headersIn, bodyIn);
 
-            if ( sizeLimit > 0 ) {
+            if ( sizeLimit > 0L ) {
                 is = new ByteLimitInputStream(is, 16, sizeLimit);
             }
 

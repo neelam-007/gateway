@@ -22,6 +22,7 @@ import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.token.*;
 import com.l7tech.security.xml.*;
+import com.l7tech.security.xml.XencUtil.EncryptionEngineAlgorithmCollectingAlgorithmFactory;
 import com.l7tech.security.xml.decorator.WssDecoratorUtils;
 import com.l7tech.util.*;
 import com.l7tech.xml.InvalidDocumentSignatureException;
@@ -1420,20 +1421,20 @@ public class WssProcessorImpl implements WssProcessor {
 
         // Create decryption context and decrypt the EncryptedData subtree. Note that this effects the
         // soapMsg document
-        final DecryptionContext dc = new DecryptionContext();
         final List<String> algorithm = new ArrayList<String>();
 
         // Support "flexible" answers to getAlgorithm() query when using 3des with HSM (Bug #3705)
         final FlexKey flexKey = new FlexKey(key);
 
         // override getEncryptionEngine to collect the encryptionmethod algorithm
-        AlgorithmFactoryExtn af = new XencUtil.EncryptionEngineAlgorithmCollectingAlgorithmFactory(flexKey, algorithm);
+        final EncryptionEngineAlgorithmCollectingAlgorithmFactory af =
+                new EncryptionEngineAlgorithmCollectingAlgorithmFactory(flexKey, algorithm);
 
         // TODO we won't know the actual cipher until the EncryptionMethod is created, so we'll hope that the Provider will be the same for all symmetric crypto
         Provider symmetricProvider = JceProvider.getInstance().getBlockCipherProvider();
         if (symmetricProvider != null)
             af.setProvider(symmetricProvider.getName());
-        dc.setAlgorithmFactory(af);
+        final DecryptionContext dc = XencUtil.createContextForDecryption( af );
         dc.setEncryptedType(encryptedDataElement, EncryptedData.CONTENT,
                             null, null);
 

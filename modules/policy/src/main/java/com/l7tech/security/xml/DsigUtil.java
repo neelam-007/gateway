@@ -236,7 +236,7 @@ public class DsigUtil {
         } catch (CertificateException e) {
             throw new SignatureException(e);
         }
-        sigContext.setAlgorithmFactory(new WssProcessorAlgorithmFactory(null));
+        sigContext.setAlgorithmFactory(new WssProcessorAlgorithmFactory());
         try {
             return sigContext.sign(sigElement, senderSigningKey);
         } catch (XSignatureException e) {

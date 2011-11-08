@@ -305,7 +305,7 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
                     }
                 }
             });
-            final WssProcessorAlgorithmFactory algFactory = new WssProcessorAlgorithmFactory(null);
+            final WssProcessorAlgorithmFactory algFactory = new WssProcessorAlgorithmFactory();
             sigContext.setAlgorithmFactory(algFactory);
             try {
                 KeyUsageChecker.requireActivity( KeyUsageActivity.verifyXml, signingCert);

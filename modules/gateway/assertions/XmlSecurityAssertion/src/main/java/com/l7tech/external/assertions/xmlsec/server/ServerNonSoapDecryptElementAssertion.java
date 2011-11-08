@@ -1,6 +1,5 @@
 package com.l7tech.external.assertions.xmlsec.server;
 
-import com.ibm.xml.enc.AlgorithmFactoryExtn;
 import com.ibm.xml.enc.DecryptionContext;
 import com.ibm.xml.enc.KeyInfoResolvingException;
 import com.ibm.xml.enc.type.EncryptedData;
@@ -14,6 +13,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.security.keys.FlexKey;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.xml.*;
+import com.l7tech.security.xml.XencUtil.EncryptionEngineAlgorithmCollectingAlgorithmFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.*;
 import com.l7tech.xml.InvalidXpathException;
@@ -93,17 +93,17 @@ public class ServerNonSoapDecryptElementAssertion extends ServerNonSoapSecurityA
 
         // Create decryption context and decrypt the EncryptedData subtree. Note that this effects the
         // soapMsg document
-        final DecryptionContext dc = new DecryptionContext();
         final List<String> algorithm = new ArrayList<String>();
 
         // override getEncryptionEngine to collect the encryptionmethod algorithm
-        AlgorithmFactoryExtn af = new XencUtil.EncryptionEngineAlgorithmCollectingAlgorithmFactory(flexKey, algorithm);
+        final EncryptionEngineAlgorithmCollectingAlgorithmFactory af =
+                new EncryptionEngineAlgorithmCollectingAlgorithmFactory(flexKey, algorithm);
 
         // TODO we won't know the actual cipher until the EncryptionMethod is created, so we'll hope that the Provider will be the same for all symmetric crypto
         Provider symmetricProvider = JceProvider.getInstance().getProviderFor("Cipher.AES");
         if (symmetricProvider != null)
             af.setProvider(symmetricProvider.getName());
-        dc.setAlgorithmFactory(af);
+        final DecryptionContext dc = XencUtil.createContextForDecryption( af );
         dc.setEncryptedType(encryptedDataEl, EncryptedData.ELEMENT, null, null);
 
         final NodeList decryptedNodes;

@@ -1,10 +1,6 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.security.xml;
 
+import com.ibm.xml.dsig.IDResolver;
 import com.ibm.xml.dsig.XSignatureException;
 import com.ibm.xml.enc.*;
 import com.ibm.xml.enc.type.CipherData;
@@ -19,6 +15,7 @@ import com.l7tech.security.keys.UnsupportedKeyTypeException;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.util.*;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -60,6 +57,44 @@ public class XencUtil {
         public XencException(String message) { super(message); }
         public XencException(String message, Throwable cause) { super(message, cause); }
         public XencException(Throwable cause) { super(cause); }
+    }
+
+    /**
+     * Create a DecryptionContext configured for safety.
+     *
+     * <p>The returned context is configured to fail when used to resolve
+     * external entities or identifier references.</p>
+     *
+     * @param algorithmFactory The algorithm factory to use
+     * @return A partially configured DecryptionContext
+     */
+    public static DecryptionContext createContextForDecryption( @NotNull final WssProcessorAlgorithmFactory algorithmFactory ) {
+        final DecryptionContext context = new DecryptionContext();
+
+        // We require an algorithm factory that disables insecure transforms.
+        // The easiest way to enforce this is to require the user to pass in
+        // the factory in order to create the context. A way to run transforms
+        // without an entity or ID resolver is to use the following:
+        //
+        //  <CipherData>
+        //    <CipherReference URI="#xpointer(/)">
+        //      <Transforms>
+        //        <Transform Algorithm="http://www.w3.org/TR/1999/REC-xslt-19991116" xmlns="http://www.w3.org/2000/09/xmldsig#">
+        //          ...
+        //
+        context.setAlgorithmFactory( algorithmFactory );
+
+        // Resolvers will be used if there is a CipherReference, since we don't
+        // support references we'll disable resolution.
+        context.setEntityResolver( XmlUtil.getXss4jEntityResolver() );
+        context.setIdResolver( new IDResolver(){
+            @Override
+            public Element resolveID( final Document document, final String id ) {
+                return null;
+            }
+        } );
+
+        return context;
     }
 
     /**
@@ -174,7 +209,7 @@ public class XencUtil {
 
         // Create encryption context and encrypt the header subtree
         EncryptionContext ec = new EncryptionContext();
-        AlgorithmFactoryExtn af = new WssProcessorAlgorithmFactory(null);
+        AlgorithmFactoryExtn af = new WssProcessorAlgorithmFactory();
         // TODO we'll assume it's the same Provider for all symmetric crypto
         Provider symmetricProvider = JceProvider.getInstance().getProviderFor("Cipher.AES");
         if (symmetricProvider != null)
@@ -594,12 +629,12 @@ public class XencUtil {
 
         byte[] padded = new byte[modulusBytes - 1];
         int pos = 0;
-        padded[pos++] = 2;
+        padded[pos++] = (byte) 2;
         while (padbytes > 0) {
             padded[pos++] = (byte)(rand.nextInt(255) + 1);
             padbytes--;
         }
-        padded[pos++] = 0;
+        padded[pos++] = (byte) 0;
         System.arraycopy(keyBytes, 0, padded, pos, keyBytes.length);
         return padded;
     }
@@ -751,6 +786,7 @@ public class XencUtil {
             this.collectAlgorithms = collectAlgorithms;
         }
 
+        @Override
         public EncryptionEngine getEncryptionEngine(EncryptionMethod encryptionMethod)
                 throws NoSuchAlgorithmException, NoSuchPaddingException, NoSuchProviderException, StructureException {
             final String alguri = encryptionMethod.getAlgorithm();

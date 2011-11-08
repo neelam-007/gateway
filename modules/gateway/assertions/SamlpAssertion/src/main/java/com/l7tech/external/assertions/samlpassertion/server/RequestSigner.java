@@ -58,7 +58,7 @@ public class RequestSigner {
         template.addReference(ref);
 
         SignatureContext context = new SignatureContext();
-        context.setAlgorithmFactory( new WssProcessorAlgorithmFactory(null) );
+        context.setAlgorithmFactory( new WssProcessorAlgorithmFactory() );
         context.setEntityResolver(XmlUtil.getXss4jEntityResolver());
         context.setIDResolver(new IDResolver() {
             public Element resolveID(Document document, String s) {
