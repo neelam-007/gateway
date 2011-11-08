@@ -35,6 +35,9 @@ import java.util.Map;
  *   required for FTP listeners (integer)</li>
  *   <li><code>portRangeStart</code>: The first passive port to use, required
  *   for FTP listeners (integer)</li>
+ *   <li><code>requestSizeLimit</code>: Optional, limit request messages to the
+ *   specified size (in bytes) or "0" for no size limit. When not set
+ *   a default size limit will be used (integer)</li>
  *   <li><code>threadPoolSize</code>: Optional, use a private thread pool of
  *   the given size (integer)</li>
  * </ul>
