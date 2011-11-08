@@ -1,9 +1,6 @@
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.message.HasOutboundHeaders;
-import com.l7tech.message.HttpOutboundRequestFacet;
-import com.l7tech.message.Message;
-import com.l7tech.message.OutboundHeadersKnob;
+import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AddHeaderAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -47,6 +44,17 @@ public class ServerAddHeaderAssertion extends AbstractMessageTargetableServerAss
         if (assertion.isRemoveExisting()) {
             oh.setHeader(name, value);
         } else {
+            HttpRequestKnob hrk = message.getKnob(HttpRequestKnob.class);
+            if (hrk != null && hrk != oh && !oh.containsHeader(name)) {
+                // If the message has an HttpRequestKnob, the presence of a header in the OutboundHeadersKnob
+                // will block any existing values.  We'll need to copy them over to preserve them, the first time we shadow them,
+                // if we are configured to not overwrite any existing values. (Bug #11365)
+                String[] oldValues = hrk.getHeaderValues(name);
+                for (String oldValue : oldValues) {
+                    oh.addHeader(name, oldValue);
+                }
+            }
+
             oh.addHeader(name, value);
         }
 

@@ -7,6 +7,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.Charsets;
 import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -62,6 +63,81 @@ public class ServerAddHeaderAssertionTest {
         final String[] headers = ohk.getHeaderValues("foo");
         assertEquals(1, headers.length);
         assertEquals("bar", headers[0]);
+    }
+
+    @Test
+    @BugNumber(11365)
+    public void testAddHeader_servletRequest_noreplace() throws Exception {
+        ass.setHeaderName("foo");
+        ass.setHeaderValue("bar");
+        ass.setRemoveExisting(false);
+        ServerAddHeaderAssertion sass = new ServerAddHeaderAssertion(ass);
+
+        MockServletContext servletContext = new MockServletContext();
+        MockHttpServletRequest hrequest = new MockHttpServletRequest(servletContext);
+        hrequest.addHeader("foo", "orig");
+        mess.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));
+        mess.initialize(ContentTypeHeader.TEXT_DEFAULT, "blah".getBytes(Charsets.UTF8));
+
+        assertNull(mess.getKnob(OutboundHeadersKnob.class));
+
+        assertEquals(AssertionStatus.NONE, sass.checkRequest(pec));
+
+        OutboundHeadersKnob ohk = mess.getKnob(OutboundHeadersKnob.class);
+        assertNotNull(ohk);
+        assertTrue(ohk instanceof HttpOutboundRequestFacet);
+        final String[] headers = ohk.getHeaderValues("foo");
+        assertEquals(2, headers.length);
+        assertEquals("orig", headers[0]);
+        assertEquals("bar", headers[1]);
+    }
+
+    @Test
+    @BugNumber(11365)
+    public void testAddHeader_servletRequest_replace_then_noreplace() throws Exception {
+        // Original incoming request contained "foo: orig"
+        MockServletContext servletContext = new MockServletContext();
+        MockHttpServletRequest hrequest = new MockHttpServletRequest(servletContext);
+        hrequest.addHeader("foo", "orig");
+        mess.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));
+        mess.initialize(ContentTypeHeader.TEXT_DEFAULT, "blah".getBytes(Charsets.UTF8));
+
+
+        // We now add a "foo: bar", replacing existing
+        {
+            ass.setHeaderName("foo");
+            ass.setHeaderValue("bar");
+            ass.setRemoveExisting(true);
+            ServerAddHeaderAssertion sass = new ServerAddHeaderAssertion(ass);
+
+            assertEquals(AssertionStatus.NONE, sass.checkRequest(pec));
+            OutboundHeadersKnob ohk = mess.getKnob(OutboundHeadersKnob.class);
+            assertNotNull(ohk);
+            assertTrue(ohk instanceof HttpOutboundRequestFacet);
+            String[] headers = ohk.getHeaderValues("foo");
+            assertEquals(1, headers.length);
+            assertEquals("bar", headers[0]);
+        }
+
+
+        // We now add a "foo: bar2", keeping existing
+        {
+            ass.setHeaderName("foo");
+            ass.setHeaderValue("bar2");
+            ass.setRemoveExisting(false);
+            ServerAddHeaderAssertion sass = new ServerAddHeaderAssertion(ass);
+
+            assertEquals(AssertionStatus.NONE, sass.checkRequest(pec));
+            OutboundHeadersKnob ohk = mess.getKnob(OutboundHeadersKnob.class);
+            assertNotNull(ohk);
+            assertTrue(ohk instanceof HttpOutboundRequestFacet);
+            String[] headers = ohk.getHeaderValues("foo");
+            assertEquals(2, headers.length);
+            assertEquals("bar", headers[0]);
+            assertEquals("bar2", headers[1]);
+        }
+
+
     }
 
     @Test
