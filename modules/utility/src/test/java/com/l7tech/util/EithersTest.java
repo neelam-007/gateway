@@ -2,6 +2,7 @@ package com.l7tech.util;
 
 import static com.l7tech.util.CollectionUtils.list;
 import static com.l7tech.util.Either.left;
+import static com.l7tech.util.Either.right;
 import static com.l7tech.util.Eithers.*;
 import static org.junit.Assert.*;
 import org.junit.Test;
@@ -14,6 +15,18 @@ import java.util.List;
 public class EithersTest {
 
     //- PUBLIC
+
+    @Test
+    public void testIsSuccess() {
+        assertTrue( "Null is success", isSuccess( null ) );
+        assertTrue( "Object is success", isSuccess( new Object() ) );
+        assertTrue( "Right is success", isSuccess( right( Boolean.FALSE ) ) );
+        assertFalse( "Left is failure", isSuccess( left( Boolean.TRUE ) ) );
+        assertTrue( "Nested right is success", isSuccess( right( right( Boolean.FALSE ) ) ) );
+        assertFalse( "Nested left 1 is success", isSuccess( right( left( Boolean.FALSE ) ) ) );
+        assertFalse( "Nested left 2 is success", isSuccess( left( left( Boolean.FALSE ) ) ) );
+        assertFalse( "Nested left 3 is success", isSuccess( left( right( Boolean.FALSE ) ) ) );
+    }
 
     @Test
     public void testLists() {

@@ -4,6 +4,7 @@ import static com.l7tech.util.CollectionUtils.foreach;
 import com.l7tech.util.Functions.BinaryVoid;
 import static com.l7tech.util.Functions.partial;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +15,24 @@ import java.util.List;
 public class Eithers {
 
     //- PUBLIC
+
+    /**
+     * Is the given value something other than a left valued either.
+     *
+     * <p>Conventionally a left valued either represents failure. This method
+     * can be used to check for failure values for arbitrary objects where this
+     * convention is observed.</p>
+     *
+     * @param value The value which may be null.
+     * @return True if the value is not an either or is (recursively) right valued
+     */
+    public static boolean isSuccess( @Nullable final Object value ) {
+        if ( value instanceof Either ) {
+            final Either<?,?> eitherValue = (Either<?,?>) value;
+            return eitherValue.isRight() && isSuccess( eitherValue.right() );
+        }
+        return true;
+    }
 
     /**
      * Get the left values from the given list of eithers.

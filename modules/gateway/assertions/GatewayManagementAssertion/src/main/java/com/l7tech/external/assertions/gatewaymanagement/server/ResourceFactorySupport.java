@@ -14,6 +14,7 @@ import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.BeanUtils;
 import com.l7tech.util.ConfigFactory;
+import static com.l7tech.util.Eithers.isSuccess;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.UnaryThrows;
 import com.l7tech.util.Option;
@@ -382,7 +383,11 @@ abstract class ResourceFactorySupport<R> implements ResourceFactory<R> {
                 @Override
                 public Object doInTransaction( final TransactionStatus transactionStatus ) {
                     try {
-                        return callback.execute();
+                        final R result = callback.execute();
+                        if ( !isSuccess( result ) ) {
+                            transactionStatus.setRollbackOnly();
+                        }
+                        return result;
                     } catch (ObjectModelException e) {
                         transactionStatus.setRollbackOnly();
                         handleObjectModelException(e);
