@@ -118,6 +118,13 @@ public class BindOnlyLdapIdentityProviderImpl implements BindOnlyLdapIdentityPro
         if (searchString != null) {
             String login = searchString.trim().replace("*", "");
             if (login.length() > 0 && typeset.contains(EntityType.USER)) {
+
+                try {
+                    userManager.makeDn(login);
+                } catch (BindOnlyLdapUserManager.BadUsernamePatternException e) {
+                    throw new FindException("Unable to create stub user: " + ExceptionUtils.getMessage(e));
+                }
+
                 ret.add(new IdentityHeader(config.getOid(), login, EntityType.USER, login, "Template username \"" + login + "\"", login, null));
             }
         }

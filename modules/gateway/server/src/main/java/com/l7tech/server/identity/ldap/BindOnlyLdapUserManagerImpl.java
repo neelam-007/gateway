@@ -32,12 +32,13 @@ public class BindOnlyLdapUserManagerImpl implements BindOnlyLdapUserManager {
 
     @Override
     public BindOnlyLdapUser findByPrimaryKey(String identifier) throws FindException {
-        // Do not include DN as it will be expanded at runtime, when authentication is attempted.
-        return makeUser(identifier, null);
+        return findByLogin(identifier);
     }
 
     @Override
     public BindOnlyLdapUser findByLogin(String login) throws FindException {
+        assertUsernameMatchesRegexFindException(login);
+
         // Do not include DN as it will be expanded at runtime, when authentication is attempted.
         return makeUser(login, null);
     }
@@ -132,12 +133,7 @@ public class BindOnlyLdapUserManagerImpl implements BindOnlyLdapUserManager {
 
     @Override
     public String makeDn(String login) throws BadUsernamePatternException {
-        String regex = config.getProperty(ServerConfigParams.PARAM_BIND_ONLY_LDAP_USERNAME_PATTERN);
-        Pattern pattern = Pattern.compile(regex == null || regex.trim().length() < 1 ? "^.+$" : regex);
-
-        if (!pattern.matcher(login).matches()) {
-            throw new BadUsernamePatternException();
-        }
+        assertUsernameMatchesRegex(login);
 
         String prefix = identityProviderConfig.getBindPatternPrefix();
         if (prefix == null) prefix = "";
@@ -146,6 +142,23 @@ public class BindOnlyLdapUserManagerImpl implements BindOnlyLdapUserManager {
         if (suffix == null) suffix = "";
 
         return prefix + login + suffix;
+    }
+
+    private void assertUsernameMatchesRegex(String login) throws BadUsernamePatternException {
+        String regex = config.getProperty(ServerConfigParams.PARAM_BIND_ONLY_LDAP_USERNAME_PATTERN);
+        Pattern pattern = Pattern.compile(regex == null || regex.trim().length() < 1 ? "^.+$" : regex);
+
+        if (!pattern.matcher(login).matches()) {
+            throw new BadUsernamePatternException();
+        }
+    }
+
+    private void assertUsernameMatchesRegexFindException(String login) throws FindException {
+        try {
+            assertUsernameMatchesRegex(login);
+        } catch (BadUsernamePatternException e) {
+            throw new FindException(e.getMessage(), e);
+        }
     }
 
     @Override
