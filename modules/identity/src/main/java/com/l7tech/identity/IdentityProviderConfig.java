@@ -5,6 +5,7 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.security.types.CertificateValidationType;
 import com.l7tech.util.*;
 import org.hibernate.annotations.Proxy;
+import org.jetbrains.annotations.Nullable;
 
 import javax.persistence.*;
 import javax.validation.constraints.Size;
@@ -272,7 +273,7 @@ public class IdentityProviderConfig extends NamedEntityImp {
         return (T)props.get(name);
     }
 
-    protected void setProperty(String name, Object value) {
+    protected void setProperty(String name, @Nullable Object value) {
         if ( value == null ) {
             props.remove( name );
         } else {

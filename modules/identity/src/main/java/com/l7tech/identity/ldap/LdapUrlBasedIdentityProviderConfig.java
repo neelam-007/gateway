@@ -2,6 +2,7 @@ package com.l7tech.identity.ldap;
 
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
+import org.jetbrains.annotations.Nullable;
 
 import javax.persistence.Transient;
 import java.io.Serializable;
@@ -61,7 +62,7 @@ public abstract class LdapUrlBasedIdentityProviderConfig extends IdentityProvide
         return (Long) getProperty(KEYSTORE_ID);
     }
 
-    public void setKeystoreId(Long keystoreId) {
+    public void setKeystoreId(@Nullable Long keystoreId) {
         setProperty(KEYSTORE_ID, keystoreId);
     }
 
@@ -73,7 +74,7 @@ public abstract class LdapUrlBasedIdentityProviderConfig extends IdentityProvide
         return (String) getProperty(KEY_ALIAS);
     }
 
-    public void setKeyAlias(String keyAlias) {
+    public void setKeyAlias(@Nullable String keyAlias) {
         setProperty(KEY_ALIAS, keyAlias);
     }
 }

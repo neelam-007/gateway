@@ -76,6 +76,8 @@ public class BindOnlyLdapGeneralPanel extends IdentityProviderStepPanel {
             BindOnlyLdapIdentityProviderConfig config = (BindOnlyLdapIdentityProviderConfig) settings;
             providerNameField.setText(config.getName());
             ldapUrlListPanel.setUrlList(config.getLdapUrl());
+            ldapUrlListPanel.setClientAuthEnabled(config.isClientAuthEnabled());
+            ldapUrlListPanel.selectPrivateKey(config.getKeystoreId(), config.getKeyAlias());
             dnPrefixField.setText(config.getBindPatternPrefix());
             dnSuffixField.setText(config.getBindPatternSuffix());
 
@@ -93,8 +95,19 @@ public class BindOnlyLdapGeneralPanel extends IdentityProviderStepPanel {
             BindOnlyLdapIdentityProviderConfig config = (BindOnlyLdapIdentityProviderConfig) settings;
             config.setName(providerNameField.getText());
             config.setLdapUrl(ldapUrlListPanel.getUrlList());
+            config.setClientAuthEnabled(ldapUrlListPanel.isClientAuthEnabled());
             config.setBindPatternPrefix(dnPrefixField.getText());
             config.setBindPatternSuffix(dnSuffixField.getText());
+
+            boolean clientAuth = ldapUrlListPanel.isClientAuthEnabled();
+            config.setClientAuthEnabled(clientAuth);
+            if (clientAuth) {
+                config.setKeystoreId(ldapUrlListPanel.getSelectedKeystoreId());
+                config.setKeyAlias(ldapUrlListPanel.getSelectedKeyAlias());
+            } else {
+                config.setKeystoreId(null);
+                config.setKeyAlias(null);
+            }
         }
     }
 
