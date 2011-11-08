@@ -9,7 +9,9 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.message.HttpResponseKnob;
 import com.l7tech.message.HttpServletRequestKnob;
+import com.l7tech.message.HttpServletResponseKnob;
 import com.l7tech.message.Message;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpPassthroughRule;
 import com.l7tech.policy.assertion.HttpPassthroughRuleSet;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
@@ -24,15 +26,14 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
 
 import java.io.InputStream;
 import java.net.PasswordAuthentication;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 
 public class ServerHttpRoutingAssertionTest {
 
@@ -197,4 +198,36 @@ public class ServerHttpRoutingAssertionTest {
         assertEquals("No authorization headers shall be passed through if request is configured with explicit HTTP Basic credentials",
                 0, numAuthHeaders);
     }
+
+    @Test
+    @BugNumber(10712)
+    public void testContentEncodingNotPassedThrough() throws Exception {
+        HttpRoutingAssertion hra = new HttpRoutingAssertion();
+        hra.setProtectedServiceUrl("http://localhost:17380/testContentEncodingNotPassedThrough");
+
+        // Pass through all response headers
+        hra.setResponseHeaderRules(new HttpPassthroughRuleSet(true, new HttpPassthroughRule[]{}));
+
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+        Message request = new Message(XmlUtil.stringAsDocument("<foo/>"));
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(new MockHttpServletRequest(new MockServletContext())));
+        Message response = new Message();
+        response.attachHttpResponseKnob(new HttpServletResponseKnob(new MockHttpServletResponse()));
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
+
+        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
+
+        final byte[] expectedResponse = IOUtils.compressGzip("<bar/>".getBytes());
+        final GenericHttpHeaders responseHeaders = new GenericHttpHeaders(new GenericHttpHeader[] { new GenericHttpHeader("Content-Encoding", "gzip") });
+        final MockGenericHttpClient mockClient = new MockGenericHttpClient(200, responseHeaders, ContentTypeHeader.XML_DEFAULT, 6L, expectedResponse);
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+
+        final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(hra, appContext);
+        AssertionStatus result = routingAssertion.checkRequest(pec);
+        assertEquals(AssertionStatus.NONE, result);
+
+        assertEquals("<bar/>", new String(pec.getResponse().getMimeKnob().getFirstPart().getBytesIfAvailableOrSmallerThan(Integer.MAX_VALUE)));
+        assertEquals(0, pec.getResponse().getHttpResponseKnob().getHeaderValues("content-encoding").length);
+    }
+
 }

@@ -25,7 +25,7 @@ public class HttpPassthroughRuleSet implements Cloneable, Serializable  {
 
     public static final String[] HEADERS_NOT_TO_IMPLICITELY_FORWARD = {"keep-alive", "connection",
                                                                        "server", "content-type", "date",
-                                                                       "content-length", "transfer-encoding"};
+                                                                       "content-length", "transfer-encoding", "content-encoding"};
 
     private boolean forwardAll;
     private HttpPassthroughRule[] rules;

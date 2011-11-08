@@ -783,6 +783,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             if (maybegzipencoding != null && maybegzipencoding.contains("gzip")) { // case of value ?
                 if (responseStream != null ){
                     // logger.info("Compression #4");
+                    // If decoding is later changed to be optional, ensure the content-encoding header gets passed on when decoding is not performed, ie, remove it from HttpPassthroughRuleSet#HEADERS_NOT_TO_IMPLICITELY_FORWARD
                     logger.fine("detected compression on incoming response");
                     responseStream = new GZIPInputStream(responseStream);
                 }
