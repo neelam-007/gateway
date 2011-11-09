@@ -362,7 +362,7 @@ public abstract class JceProvider {
      * @throws NoSuchAlgorithmException if AES-GCM mode is not supported by this JceProvider.
      */
     public AlgorithmParameterSpec generateAesGcmParameterSpec(int authTagLenBytes, @NotNull byte[] iv) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException {
-        // TODO update to use javax.crypto.spec.GCMParameterSpec when we switch to Java 7
+        // TODO [jdk7] update to use javax.crypto.spec.GCMParameterSpec when we switch to Java 7
         throw new NoSuchAlgorithmException("AES-GCM not supported when using the current crypto provider");
     }
 
