@@ -2789,8 +2789,11 @@ public class MainWindow extends JFrame implements SheetHolder {
         JTree tree = getServicesAndPoliciesTree();
         final AbstractTreeNode node = (AbstractTreeNode) searchComboBox.getSelectedItem();
         if (node == null) return;
-        tree.setSelectionPath(new TreePath(node.getPath()));
-        tree.makeVisible(new TreePath(node.getPath()));
+
+        //make the node visible by scroll to it
+        TreePath path = new TreePath(node.getPath());
+        tree.scrollPathToVisible(path);
+        tree.setSelectionPath(path);
 
         SwingUtilities.invokeLater(new Runnable() {
             @Override
