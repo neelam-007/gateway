@@ -2,9 +2,9 @@
 <ivy-module version="2.0">
 	<info organisation="org.apache.sshd"
 		module="sshd-core"
-		revision="0.6.0-l7p1"
+		revision="0.6.0-l7p2"
 		status="release"
-		publication="20111003163942"
+		publication="20111108163500"
 		default="true"
 	/>
 	<configurations>

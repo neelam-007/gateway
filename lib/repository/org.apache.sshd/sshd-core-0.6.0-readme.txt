@@ -1,8 +1,7 @@
-l7p1
-	Nov 02, 2011
+l7p2
+	Nov 08, 2011
 	    Layer 7 patch:
 	     - make SftpSubsystem extensible for customization
-	     - don't disclose SSH server implementation (e.g. don't display Apache SSHD's "SSHD-0.6.0" when client use -v option)
-	     - fix uncaught exception in ScpCommand when wildcard base directory does not exist
-	     - write ScpCommand exit conditions separately in an method that can be overridden
+         - update ScpCommand to remove directory scanning (bug 11040)
+         - add checks on buffer resizing to prevent looping/OOM (bug 11046)
 	    Use Maven to build and package: mvn package -Dmaven.test.skip=true

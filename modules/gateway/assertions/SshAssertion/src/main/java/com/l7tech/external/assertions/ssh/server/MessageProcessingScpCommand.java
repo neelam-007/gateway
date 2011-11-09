@@ -120,28 +120,6 @@ public class MessageProcessingScpCommand extends ScpCommand implements SessionAw
         throw new IOException("Unsupported mode");
     }
 
-    @Override
-    protected void writeExit(IOException e, int exitValue, String exitMessage) {
-        try {
-            exitValue = ERROR;
-            exitMessage = e.getMessage();
-
-            // intercept any messages that may reveal which files are present on the Gateway
-            if (!StringUtils.isEmpty(exitMessage) &&
-                    (exitMessage.contains("java.lang.IllegalStateException: basedir") && exitMessage.contains("does not exist"))) {
-                exitMessage = "Unsupported mode";
-            }
-
-            out.write(exitValue);
-            out.write(exitMessage.getBytes());
-            out.write( (int) '\n' );
-            out.flush();
-        } catch (IOException e2) {
-            // Ignore
-        }
-        log.info("Error in scp command", e);
-    }
-
     private boolean sendFileToMessageProcessor( final SsgConnector connector,
                                                 final String path,
                                                 final String file,
