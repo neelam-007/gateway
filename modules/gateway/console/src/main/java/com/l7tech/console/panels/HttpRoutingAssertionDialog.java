@@ -285,6 +285,8 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         inputValidator.addRule(new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
+                if(connectTimeoutDefaultCheckBox.isSelected()) return null;
+
                 if(ValidationUtils.isValidInteger(connectTimeoutTextField.getText(), false, 1,86400)) return null;
 
                 if(Syntax.getReferencedNames(connectTimeoutTextField.getText()).length > 0)
@@ -297,6 +299,8 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         inputValidator.addRule(new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
+                if(readTimeoutDefaultCheckBox.isSelected()) return null;
+
                 if(ValidationUtils.isValidInteger(readTimeoutTextField.getText(), false, 1,86400)) return null;
 
                 if(Syntax.getReferencedNames(readTimeoutTextField.getText()).length > 0)
