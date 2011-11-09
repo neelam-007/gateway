@@ -125,7 +125,7 @@ public class SigningCertificatePropertiesDialog extends JDialog {
             }
         });
 
-        pack();
+        DialogDisplayer.pack(this);
     }
 
     private void validatePropertiesAndExecutePostTask() {
@@ -253,7 +253,7 @@ public class SigningCertificatePropertiesDialog extends JDialog {
                 }
             });
 
-            pack();
+            DialogDisplayer.pack(PublicKeyDetailsDialog.this);
         }
     }
 }

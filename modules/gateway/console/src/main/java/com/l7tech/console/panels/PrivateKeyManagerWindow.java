@@ -379,7 +379,7 @@ public class PrivateKeyManagerWindow extends JDialog {
             }
         });
 
-        Utilities.centerOnParent(signingCertPropertiesDialog);
+        Utilities.centerOnScreen(signingCertPropertiesDialog);
         DialogDisplayer.display(signingCertPropertiesDialog);
     }
 
