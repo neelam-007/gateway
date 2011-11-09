@@ -727,7 +727,9 @@ public class MessageProcessor {
 
             response.initialize(Managers.createStashManager(),
                                 outerContentType,
-                                responseBodyAsStream);
+                                responseBodyAsStream,
+                                response.getMimeKnob().getContentLengthLimit());
+
             response.attachKnob(HttpHeadersKnob.class, new HttpHeadersKnob(responseHeaders));
             if (interceptor != null)
                 interceptor.onBackEndReply(context);

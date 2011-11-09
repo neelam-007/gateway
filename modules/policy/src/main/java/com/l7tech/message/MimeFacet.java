@@ -62,6 +62,9 @@ class MimeFacet extends MessageFacet {
         public void setContentLengthLimit(long sizeLimit) throws IOException {
             getMimeBody().setBodyLengthLimit(sizeLimit);
         }
+        public long getContentLengthLimit()  {
+            return getMimeBody().getBodyLengthLimit();
+        }
 
         public ContentTypeHeader getOuterContentType() {
             return getMimeBody().getOuterContentType();

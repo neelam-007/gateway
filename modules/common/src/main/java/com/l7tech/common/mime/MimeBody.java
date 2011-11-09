@@ -821,6 +821,10 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
         mainInputStream.setSizeLimit(sizeLimit);
     }
 
+    public long getBodyLengthLimit() {
+        return mainInputStream.getSizeLimit();
+    }
+
     /** Our PartInfo implementation. */
     private class PartInfoImpl implements PartInfo {
         protected final int ordinal;

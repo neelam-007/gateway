@@ -88,6 +88,7 @@ public interface MimeKnob extends MessageKnob,Iterable<PartInfo> {
      *                     rest of the message.
      */
     void setContentLengthLimit(long sizeLimit) throws IOException;
+    long getContentLengthLimit();
 
     /**
      * @return the outer content type of the request, or a default.  never null.

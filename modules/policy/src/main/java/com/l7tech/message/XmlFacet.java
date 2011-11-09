@@ -94,6 +94,9 @@ public class XmlFacet extends MessageFacet {
         public void setContentLengthLimit(long sizeLimit) throws IOException {
             mk.setContentLengthLimit(sizeLimit);
         }
+        public long getContentLengthLimit () {
+            return mk.getContentLengthLimit();
+        }
 
         public ContentTypeHeader getOuterContentType() throws IOException {
             return mk.getOuterContentType();
