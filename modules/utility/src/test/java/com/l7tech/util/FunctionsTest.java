@@ -1,12 +1,12 @@
 package com.l7tech.util;
 
-import static com.l7tech.util.Functions.*;
 import org.junit.Test;
-import static org.junit.Assert.*;
-
 
 import java.util.*;
 import java.util.regex.Pattern;
+
+import static com.l7tech.util.Functions.*;
+import static org.junit.Assert.*;
 
 /**
  * Test cases for Functions and its inner classes.
@@ -284,5 +284,21 @@ public class FunctionsTest {
         assertEquals( "Named cached counter a 4a", 4L, (long) namedCounterC.call("a") );
         assertEquals( "Named cached counter b 4", 4L, (long) namedCounterC.call("b") );
         assertEquals( "Named cached counter b 4a", 4L, (long) namedCounterC.call("b") );
+    }
+
+    @Test
+    public void testFlatMap() throws Exception {
+        List<String> result = flatmap(Arrays.asList("foo", null, "bob&joe"), new UnaryThrows<Iterable<String>, String, RuntimeException>() {
+            @Override
+            public Iterable<String> call(String o) {
+                if (o == null)
+                    return Collections.emptyList();
+                else if ("bob&joe".equals(o))
+                    return Arrays.asList("bob", "joe");
+                else
+                    return Arrays.asList(o);
+            }
+        });
+        assertTrue(result.equals(Arrays.asList("foo", "bob", "joe")));
     }
 }

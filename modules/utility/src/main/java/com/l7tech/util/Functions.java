@@ -460,6 +460,31 @@ public final class Functions {
     }
 
     /**
+     * Transforms, flattens, or filters a collection by applying a map function to each value.
+     *
+     * @param in a collection of input items
+     * @param transformation a transformation to apply to each input item to produce the corresponding output item.  all elements returned by the transformation
+     *                       will be added to the output.  A null return from the transformation will be treated the same as an empty Iterable.
+     * @param <I> the item input type
+     * @param <O> the item output type
+     * @param <E> an exception type that may be thrown by the mapper
+     * @return a collection of output items.  never null
+     * @throws E if the mapper throws an exception
+     */
+    @NotNull
+    public static <I,O,E extends Throwable> List<O> flatmap( final Iterable<I> in,
+                                                             final UnaryThrows<Iterable<O>,? super I,E> transformation ) throws E {
+        List<O> ret = new ArrayList<O>();
+        for (I i : in) {
+            Iterable<O> mapped = transformation.call(i);
+            if (mapped != null) for (O o : mapped) {
+                ret.add(o);
+            }
+        }
+        return ret;
+    }
+
+    /**
      * Search the specified collection for the first object matching predicate.
      *
      * @param in the collection to search
