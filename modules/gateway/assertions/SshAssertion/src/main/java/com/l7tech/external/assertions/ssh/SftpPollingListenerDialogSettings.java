@@ -1,4 +1,4 @@
-package com.l7tech.external.assertions.ssh.console;
+package com.l7tech.external.assertions.ssh;
 
 /**
  * SFTP polling listener configuration.

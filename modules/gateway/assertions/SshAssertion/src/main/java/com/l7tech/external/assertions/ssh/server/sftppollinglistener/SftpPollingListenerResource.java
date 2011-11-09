@@ -1,6 +1,6 @@
 package com.l7tech.external.assertions.ssh.server.sftppollinglistener;
 
-import com.l7tech.external.assertions.ssh.console.SftpPollingListenerDialogSettings;
+import com.l7tech.external.assertions.ssh.SftpPollingListenerDialogSettings;
 
 /**
  * SFTP polling listener resource

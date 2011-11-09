@@ -1,8 +1,7 @@
 package com.l7tech.external.assertions.ssh.server.sftppollinglistener;
 
-import com.l7tech.external.assertions.ssh.console.SftpPollingListenerDialogSettings;
-import com.l7tech.external.assertions.ssh.console.SftpPollingListenerPropertiesDialog;
-import com.l7tech.external.assertions.ssh.console.SftpPollingListenerXmlUtilities;
+import com.l7tech.external.assertions.ssh.SftpPollingListenerDialogSettings;
+import com.l7tech.external.assertions.ssh.SftpPollingListenerXmlUtilities;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.cluster.ClusterPropertyManager;
@@ -109,7 +108,7 @@ public class SftpPollingListenerResourceManager {
             //load the listener configurations from the property string!
             final ClassLoader currentContextClassLoader = Thread.currentThread().getContextClassLoader();
             try {
-                Thread.currentThread().setContextClassLoader(SftpPollingListenerPropertiesDialog.class.getClassLoader());
+                Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
                 SftpPollingListenerXmlUtilities xmlUtil = new SftpPollingListenerXmlUtilities();
                 listenerConfigurations = xmlUtil.unmarshallFromXMLString(configProp);
             } finally {

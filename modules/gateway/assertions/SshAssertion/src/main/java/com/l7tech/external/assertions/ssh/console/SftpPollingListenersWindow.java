@@ -2,6 +2,8 @@ package com.l7tech.external.assertions.ssh.console;
 
 import com.l7tech.console.util.EntityUtils;
 import com.l7tech.console.util.Registry;
+import com.l7tech.external.assertions.ssh.SftpPollingListenerDialogSettings;
+import com.l7tech.external.assertions.ssh.SftpPollingListenerXmlUtilities;
 import com.l7tech.external.assertions.ssh.server.sftppollinglistener.SftpPollingListenerConstants;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
