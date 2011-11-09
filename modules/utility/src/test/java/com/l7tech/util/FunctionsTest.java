@@ -292,7 +292,7 @@ public class FunctionsTest {
             @Override
             public Iterable<String> call(String o) {
                 if (o == null)
-                    return Collections.emptyList();
+                    return null;
                 else if ("bob&joe".equals(o))
                     return Arrays.asList("bob", "joe");
                 else
