@@ -266,7 +266,7 @@ public class RoleManagementDialog extends JDialog {
             showEditDialog(getSelectedRole(), new Functions.UnaryVoid<Role>() {
                 @Override
                 public void call(Role r) {
-                    if (r != null) populateList();
+                    if (r != null)setUpRoleAssignmentTable(r);
                     updatePropertiesSummary();
                 }
             });
@@ -309,11 +309,6 @@ public class RoleManagementDialog extends JDialog {
             @Override
             public void run() {
                 Role updated = dlg.getRole();
-                if (updated != null) {
-                    RoleModel sel = (RoleModel) roleList.getSelectedValue();
-                    populateList();
-                    roleList.setSelectedValue(sel, true);
-                }
                 result.call(updated);
             }
         });
