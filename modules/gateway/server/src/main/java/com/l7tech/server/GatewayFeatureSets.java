@@ -780,6 +780,32 @@ public class GatewayFeatureSets {
             fs(esmAssertions),
             fs(uiFw));
 
+        GatewayFeatureSet profileApi =
+        fsp("set:Profile:Api", "Layer 7 API Proxy",
+            "Same as Data Screen with some additional features",
+             // start data screen
+            fs(core),
+            fs(adminAndEms),
+            fs(routingAccel),
+            fs(threatIps),
+            fs(availabilityFw),
+            fs(validationDs),
+            fs(auditAccel),
+            fs(policyAccel),
+            fs(uiDs),
+            fs(customDs),
+            fs(uddiNotificationAssertions),
+            fs(esmAssertions),
+            ass(SslAssertion.class),
+            srv(SERVICE_WSDLPROXY, "WSDL proxy service"),
+            // end of data screen
+            fs(nonSoapXmlSigning),
+            fs(nonSoapXmlEncryption),
+            fs(accessFw),
+            fs(xmlsecFw),
+            fs(samlpSsoAssertions),
+            fs(modularAssertions));
+
         PROFILE_ALL =
         fsp("set:Profile:Development", "Development Mode",
                 "Everything everywhere, including experimental features.",
@@ -787,7 +813,8 @@ public class GatewayFeatureSets {
                 fs(profileFederal),
                 fs(profileUs),
                 fs(experimental),
-                fs(flagPermaFips));
+                fs(flagPermaFips),
+                fs(profileApi));
 
         // For now, if a license names no features explicitly, we will enable all features.
         // TODO we should enable only those features that existed in 3.5.
