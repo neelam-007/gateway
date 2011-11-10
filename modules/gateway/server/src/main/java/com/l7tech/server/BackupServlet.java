@@ -188,6 +188,7 @@ public class BackupServlet extends AuthenticatableHttpServlet {
             out.println("<html>");
             out.println("<head>");
             out.println("<title>Gateway Backup Service</title>");
+            out.println("<link rel=\"icon\" type=\"image/png\" href=\"/ssg/webadmin/favicon.ico\" />");
             out.println("<style type=\"text/css\">");
             out.println("a.button {");
             out.println("    background-color: #E8E8E8;");
