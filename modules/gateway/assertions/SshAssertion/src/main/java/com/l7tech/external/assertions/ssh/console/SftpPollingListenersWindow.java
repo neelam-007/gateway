@@ -84,6 +84,7 @@ public class SftpPollingListenersWindow extends JDialog {
                             i.copyPropertiesToResource(newListener);
                             newListener.setName(EntityUtils.getNameForCopy( newListener.getName() ));
                             newListener.setVersion( 0 );
+                            newListener.setResId( -1 );
 
                             final SftpPollingListenerPropertiesDialog dialog =
                                 new SftpPollingListenerPropertiesDialog(SftpPollingListenersWindow.this, newListener, true);

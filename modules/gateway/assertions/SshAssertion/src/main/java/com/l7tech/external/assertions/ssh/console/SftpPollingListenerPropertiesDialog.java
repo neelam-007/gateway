@@ -244,7 +244,7 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
     private void setData() {
         nameField.setText(configuration.getName() == null ? "" : configuration.getName().trim());
 
-        enabledCheckBox.setSelected(isNew ? true : configuration.isActive());
+        enabledCheckBox.setSelected( configuration.isActive());
 
         hostField.setText(configuration.getHostname() == null ? "" : configuration.getHostname().trim());
         portField.setText(Integer.toString(configuration.getPort()));
