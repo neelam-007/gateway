@@ -64,7 +64,7 @@ public class JsonTransformationPropertiesDialog extends AssertionPropertiesOkCan
             public void actionPerformed(final ActionEvent e) {
                 if(rootTagTextField.isEnabled()){
                     if(Syntax.getReferencedNames(rootTagTextField.getText()).length > 0){
-                        JOptionPane.showMessageDialog(parent, "Cannot test using context variable as root tag name.", "Error", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(parent, "Cannot test using context variable as Root Tag name.", "Error", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
                     if(rootTagTextField.getText().trim().isEmpty()){
@@ -72,7 +72,7 @@ public class JsonTransformationPropertiesDialog extends AssertionPropertiesOkCan
                         return;
                     }
                     if(!JsonTransformationAssertion.ROOT_TAG_VERIFIER.matcher(rootTagTextField.getText()).matches()){
-                        JOptionPane.showMessageDialog(parent, "Invalid root tag specified.", "Error", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(parent, "Invalid Root Tag specified.", "Error", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
                 }
@@ -130,7 +130,7 @@ public class JsonTransformationPropertiesDialog extends AssertionPropertiesOkCan
             @Override
             public String getValidationError() {
                 if (rootTagTextField.isEnabled() && rootTagTextField.getText().trim().isEmpty()) {
-                    return "Root tag text is required";
+                    return "Root Tag text is required";
                 }
                 return null;
             }
@@ -189,7 +189,7 @@ public class JsonTransformationPropertiesDialog extends AssertionPropertiesOkCan
         }
         if(Syntax.getReferencedNames(rootTagTextField.getText()).length == 0 &&
                 !JsonTransformationAssertion.ROOT_TAG_VERIFIER.matcher(rootTagTextField.getText()).matches()){
-            throw new ValidationException("Invalid root tag specified.");
+            throw new ValidationException("Invalid Root Tag specified.");
         }
         assertion.setRootTagString(rootTagTextField.getText());
         sourcePanel.updateModel(assertion);
