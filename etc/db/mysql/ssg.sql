@@ -1414,7 +1414,7 @@ INSERT INTO rbac_permission VALUES (-437,0,-400,'CREATE',NULL,'UDDI_SERVICE_CONT
 INSERT INTO rbac_permission VALUES (-438,0,-400,'READ',NULL,'JDBC_CONNECTION');
 INSERT INTO rbac_permission VALUES (-439,0,-400,'READ',NULL,'HTTP_CONFIGURATION');
 
-INSERT INTO rbac_role VALUES (-450,0,'View Audit Records and Logs', null,null,null, 'Users assigned to the {0} role have the ability to view audit and log details in manager.');
+INSERT INTO rbac_role VALUES (-450,0,'View Audit Records', null,null,null, 'Users assigned to the {0} role have the ability to view audits in the manager.');
 INSERT INTO rbac_permission VALUES (-451,0,-450,'READ',NULL,'CLUSTER_INFO');
 INSERT INTO rbac_permission VALUES (-452,0,-450,'READ',NULL,'AUDIT_RECORD');
 

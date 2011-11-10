@@ -45,6 +45,7 @@ ALTER IGNORE TABLE policy_version ADD UNIQUE KEY i_policy_ordinal (policy_oid, o
 -- Bug 6407: Specify max xml size for messages going into gateway
 --
 ALTER TABLE jms_endpoint ADD COLUMN request_max_size bigint NOT NULL default -1 AFTER use_message_id_for_correlation;
+
 --
 -- Register upgrade task for Gateway Management internal service WSDL upgrades
 --
@@ -79,6 +80,11 @@ INSERT INTO rbac_permission VALUES (-814,0,-800,'READ',NULL,'EMAIL_LISTENER');
 INSERT INTO cluster_properties
     (objectid, version, propkey, propvalue)
     values (-600201, 0, "upgrade.task.600201", "com.l7tech.server.upgrade.Upgrade61To62AddRoles");
+
+--
+-- Update audit viewing role name and description
+--
+UPDATE rbac_role SET name='View Audit Records', description='Users assigned to the {0} role have the ability to view audits in the manager.' WHERE objectid=-450;
 
 --
 -- Bug 9860: "Throughput Quota Enhancement" Feature Request
