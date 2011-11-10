@@ -28,9 +28,8 @@ import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertionUtils;
 import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.util.Config;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.server.util.ContextVariableUtils;
+import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
@@ -46,6 +45,7 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 
 import static com.l7tech.policy.assertion.SamlIssuerConfiguration.DecorationType.*;
+import static com.l7tech.util.Functions.grep;
 
 /**
  * @author alex
@@ -60,6 +60,8 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
     private final SamlAssertionGenerator samlAssertionGenerator;
     private final SignerInfo signerInfo;
     private final String authMethodUri; // overridden auth method URI or null
+
+    private final boolean validateUris = ConfigFactory.getBooleanProperty( "com.l7tech.external.assertions.samlissuer.validateUris", true );
 
     public ServerSamlIssuerAssertion(SamlIssuerAssertion assertion, ApplicationContext spring) throws ServerPolicyException {
         super(assertion);
@@ -111,7 +113,25 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
         final SamlAssertionGenerator.Options options = new SamlAssertionGenerator.Options();
         final String testAudienceRestriction = assertion.getAudienceRestriction();
         if( testAudienceRestriction != null && !testAudienceRestriction.isEmpty() ) {
-            options.setAudienceRestriction(ExpandVariables.process(testAudienceRestriction, vars, getAudit()));
+            final List<String> allResolvedStrings = grep(ContextVariableUtils.getAllResolvedStrings(testAudienceRestriction,
+                    vars, getAudit(), TextUtils.URI_STRING_SPLIT_PATTERN,
+                    new Functions.UnaryVoid<Object>() {
+                        @Override
+                        public void call(Object unexpectedNonString) {
+                            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Found non string value for audience restriction: " + unexpectedNonString);
+                        }
+                    }), new Functions.Unary<Boolean, String>() {
+                @Override
+                public Boolean call(String possibleUri) {
+                    final boolean isValidUri = ValidationUtils.isValidUri(possibleUri);
+                    if (validateUris && !isValidUri) {
+                        logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Ignoring invalid URI value for audience restriction '" + possibleUri + "'");
+                    }
+                    return !validateUris || isValidUri;
+                }
+            });
+
+            options.setAudienceRestriction(allResolvedStrings);
         }
         if (clientAddress != null) try {
             options.setClientAddress(InetAddress.getByName(clientAddress));

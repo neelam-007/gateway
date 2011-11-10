@@ -97,9 +97,9 @@
               <text value="&amp;Audience Restriction"/>
             </properties>
           </component>
-          <component id="88805" class="javax.swing.JTextField" binding="textFieldAudienceRestriction">
+          <component id="d61df" class="com.l7tech.gui.widgets.SquigglyTextField" binding="textFieldAudienceRestriction">
             <constraints>
-              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties/>
           </component>

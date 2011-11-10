@@ -17,6 +17,7 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.ISO8601Date;
 import com.l7tech.util.Pair;
+import com.l7tech.util.TextUtils;
 import com.l7tech.xml.saml.SamlAssertionV2;
 import com.l7tech.xml.soap.SoapUtil;
 import org.junit.Assert;
@@ -314,11 +315,11 @@ public class ServerRequireWssSaml2Test {
     @Test
     public void testSplitPattern() throws Exception {
         String test = "urn:oasis:names:tc:SAML:2.0:ac:classes:XMLDSig1 urn:oasis:names:tc:SAML:2.0:ac:classes:XMLDSig2 urn:oasis:names:tc:SAML:2.0:ac:classes:XMLDSig";
-        String[] tokens = RequireWssSaml.CUSTOM_AUTH_SPLITTER.split(test);
+        String[] tokens = TextUtils.URI_STRING_SPLIT_PATTERN.split(test);
         Assert.assertEquals(3, tokens.length);
 
         String val = "one  two three   four";
-        tokens = RequireWssSaml.CUSTOM_AUTH_SPLITTER.split(val);
+        tokens = TextUtils.URI_STRING_SPLIT_PATTERN.split(val);
         Assert.assertEquals(4, tokens.length);
 
         String s = "urn:oasis:names:tc:SAML:2.0:ac:classes:XMLDSig1 \n  " +
@@ -326,7 +327,7 @@ public class ServerRequireWssSaml2Test {
                 "urn:oasis:names:tc:SAML:2.0:ac:classes:XMLDSig3  \n" +
                 "urn:oasis:names:tc:SAML:2.0:ac:classes:Password";
 
-        tokens = RequireWssSaml.CUSTOM_AUTH_SPLITTER.split(s);
+        tokens = TextUtils.URI_STRING_SPLIT_PATTERN.split(s);
         for (String token : tokens) {
             System.out.println(token);
         }

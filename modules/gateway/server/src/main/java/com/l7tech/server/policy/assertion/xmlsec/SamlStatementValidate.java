@@ -8,9 +8,8 @@ package com.l7tech.server.policy.assertion.xmlsec;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
-import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.util.Pair;
-import com.l7tech.util.ValidationUtils;
+import com.l7tech.server.util.ContextVariableUtils;
+import com.l7tech.util.*;
 import org.w3c.dom.Document;
 import org.apache.xmlbeans.XmlObject;
 
@@ -94,7 +93,16 @@ public abstract class SamlStatementValidate {
         List<String> allCustomMethods = new ArrayList<String>();
         final boolean hasCustom = customAuthMethods != null && !customAuthMethods.trim().isEmpty();
         if (!methodMatches && hasCustom) {
-            final List<String> customAuthMethodsResolved = getAllCustomMethods(customAuthMethods, serverVariables, auditor);
+            final List<String> customAuthMethodsResolved = ContextVariableUtils.getAllResolvedStrings(customAuthMethods,
+                    serverVariables,
+                    auditor,
+                    TextUtils.URI_STRING_SPLIT_PATTERN, new Functions.UnaryVoid<Object>() {
+                @Override
+                public void call(Object unexpectedNonString) {
+                    //todo get an auditor and audit warning for this configuration error.
+                    logger.log(Level.WARNING, "Found non string value for custom authentication method: " + unexpectedNonString);
+                }
+            });
             allCustomMethods.addAll(customAuthMethodsResolved);
             methodMatches = matchesCustomValue(authenticationMethod, customAuthMethodsResolved);
         }
@@ -108,33 +116,6 @@ public abstract class SamlStatementValidate {
                             hasCustom ? allCustomMethods.toString() : ""));
         }
 
-    }
-
-    /**
-     * Get all String values referenced from a custom authentication method value.
-     * @param customMethodExpression The expression to extract strings from. This may contain space or comma seperated
-     * strings, context variables, which themselves may be multi valued or contain spare / comma separated values to split.
-     * @param serverVariables Map of available variables.
-     * @param auditor The auditor to audit to.
-     * @return The list of Strings extracted from the customMethodExpression.
-     */
-    protected List<String> getAllCustomMethods(String customMethodExpression, Map<String, Object> serverVariables, Audit auditor) {
-        final List<String> returnList = new ArrayList<String>();
-
-        if (customMethodExpression != null && !customMethodExpression.trim().isEmpty()) {
-            final String[] tokens = RequireWssSaml.CUSTOM_AUTH_SPLITTER.split(customMethodExpression);
-
-            for (String token : tokens) {
-                if (token.trim().isEmpty()) {
-                    continue;
-                }
-                final List<Object> varValueList = ExpandVariables.processNoFormat(token, serverVariables, auditor, false);
-                final List<String> customMethods = getStringsFromList(varValueList);
-                returnList.addAll(customMethods);
-            }
-        }
-
-        return returnList;
     }
 
     protected boolean matchesCustomValue(String valueToCheck, List<String> customAuthMethods) {
@@ -157,24 +138,4 @@ public abstract class SamlStatementValidate {
         }
         return false;
     }
-
-
-    private static List<String> getStringsFromList(List<Object> objectList) {
-        final List<String> returnList = new ArrayList<String>();
-        for (Object val : objectList) {
-            if (val instanceof String) {
-                String customVal = (String) val;
-                if (!customVal.trim().isEmpty()) {
-                    final String[] authMethods = RequireWssSaml.CUSTOM_AUTH_SPLITTER.split(customVal);
-                    for (String authMethod : authMethods) {
-                        if (!authMethod.trim().isEmpty()) {
-                            returnList.add(authMethod);
-                        }
-                    }
-                }
-            }
-        }
-        return returnList;
-    }
-
 }

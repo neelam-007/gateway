@@ -15,6 +15,7 @@ import com.l7tech.util.*;
 import com.l7tech.xml.MessageNotSoapException;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -25,6 +26,7 @@ import java.net.InetAddress;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
 
@@ -323,7 +325,7 @@ public class SamlAssertionGenerator {
         }
     }
 
-    public static String generateAssertionId(String prefix) {
+    public static String generateAssertionId(@Nullable String prefix) {
         byte[] disambig = new byte[16];
         random.nextBytes(disambig);
         return (prefix != null ? prefix : DEFAULT_PREFIX) + "-" + HexUtils.hexDump(disambig);
@@ -435,11 +437,11 @@ public class SamlAssertionGenerator {
             this.issuerKeyInfoType = issuerKeyInfoType;
         }
 
-        public String getAudienceRestriction() {
+        public List<String> getAudienceRestriction() {
             return audienceRestriction;
         }
 
-        public void setAudienceRestriction(String audienceRestriction) {
+        public void setAudienceRestriction(List<String> audienceRestriction) {
             this.audienceRestriction = audienceRestriction;
         }
 
@@ -505,10 +507,10 @@ public class SamlAssertionGenerator {
         private boolean clientAddressDNS = ConfigFactory.getBooleanProperty( SUBJECT_ENABLE_DNS_SYSTEM_PROPERTY, false );
         private boolean signAssertion = true;
         private SignerInfo attestingEntity;
-        private String id = null;
+        private String id;
         private int samlVersion = VERSION_1;
-        private String securityHeaderActor = null;
-        private String audienceRestriction = null;
+        private String securityHeaderActor;
+        private List<String> audienceRestriction;
         private String subjectConfirmationDataRecipient;
         private String subjectConfirmationDataAddress;
         private String subjectConfirmationDataInResponseTo;

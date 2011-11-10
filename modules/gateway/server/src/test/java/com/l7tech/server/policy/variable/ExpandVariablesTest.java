@@ -697,6 +697,13 @@ public class ExpandVariablesTest {
     }
 
     @Test
+    public void testProcessNoFormat_EmptyString() throws Exception {
+        final List<Object> objects = ExpandVariables.processNoFormat("", new HashMap<String, Object>(), audit);
+        Assert.assertNotNull(objects);
+        Assert.assertTrue(objects.isEmpty());
+    }
+
+    @Test
     public void testPartInfoSelector() throws Exception {
         final byte[] partBody = "test part content".getBytes();
         final Map<String, Object> vars = new HashMap<String,Object>();

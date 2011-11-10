@@ -3,12 +3,15 @@ package com.l7tech.server;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.log.LoggingPrintStream;
-import com.l7tech.util.Config;
-import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.*;
 import com.l7tech.util.Functions.UnaryVoid;
-import com.l7tech.util.Option;
+
+import static com.l7tech.util.CollectionUtils.list;
+import static com.l7tech.util.Functions.flatmap;
+import static com.l7tech.util.Option.optional;
 import static com.l7tech.util.Option.some;
-import com.l7tech.util.TextUtils;
+
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.InitializingBean;
 
 import javax.inject.Inject;
@@ -17,10 +20,12 @@ import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * Class to put cluster property event handling code for monitoring cluster properties where no other bean exists which
@@ -64,11 +69,48 @@ public class SimplePropertyChangeHandler implements PropertyChangeListener, Init
         }
     }
 
+    // - PROTECTED
+
+    /**
+     * Get any content types which have been configured as textual via a cluster property.
+     *
+     * @return List of ContentTypeHeaders. Never null.
+     */
+    @NotNull
+    ContentTypeHeader[] getConfiguredContentTypes() {
+        final String otherTypes = config.getProperty(ServerConfigParams.PARAM_OTHER_TEXTUAL_CONTENT_TYPES);
+        final Either<ArrayList<String>, String[]> either = optional(otherTypes)
+                .toEither(new ArrayList<String>())
+                .mapRight(TextUtils.split(TEXTUAL_CONTENT_TYPES_SPLIT_PATTERN));
+
+        final List<String> types = either.isLeft()? either.left(): list(either.right());
+
+        final List<ContentTypeHeader> contentTypeHeaderList = flatmap(types, new Functions.UnaryThrows<Iterable<ContentTypeHeader>, String, RuntimeException>() {
+            @Override
+            public Iterable<ContentTypeHeader> call(String type) throws RuntimeException {
+                try {
+                    return Arrays.asList(ContentTypeHeader.parseValue(type));
+                } catch (IOException e) {
+                    if (logger.isLoggable(Level.INFO)) {
+                        logger.log(Level.INFO, "Cannot parse content-type value '" + type + "' from cluster property. " +
+                                "Reason: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    }
+                }
+
+                return Collections.emptyList();
+            }
+        });
+
+        return contentTypeHeaderList.toArray(new ContentTypeHeader[contentTypeHeaderList.size()]);
+    }
+
     // - PRIVATE
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 
     private static final String DEFAULT_SSL_DEBUG_VALUE = "ssl";
+
+    private final Pattern TEXTUAL_CONTENT_TYPES_SPLIT_PATTERN = Pattern.compile("\\n+|\\r+|\\f+");
 
     @Inject
     private Config config;
@@ -129,28 +171,5 @@ public class SimplePropertyChangeHandler implements PropertyChangeListener, Init
         }
     }
 
-    /**
-     * Get any content types which have been configured as textual via a cluster property.
-     *
-     * @return List of ContentTypeHeaders. Never null.
-     */
-    private ContentTypeHeader[] getConfiguredContentTypes() {
-        final String otherTypes = config.getProperty( ServerConfigParams.PARAM_OTHER_TEXTUAL_CONTENT_TYPES );
-
-        List<String> types = TextUtils.getTokensFromString(otherTypes, "\n\r\f");
-        List<ContentTypeHeader> returnList = new ArrayList<ContentTypeHeader>();
-        for (String type : types) {
-            try {
-                returnList.add(ContentTypeHeader.parseValue(type));
-            } catch (IOException e) {
-                if (logger.isLoggable(Level.INFO)) {
-                    logger.log(Level.INFO, "Cannot parse content-type value '" + type + "' from cluster property. " +
-                            "Reason: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                }
-            }
-        }
-
-        return returnList.toArray(new ContentTypeHeader[returnList.size()]);
-    }
 }
 

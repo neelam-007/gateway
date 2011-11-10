@@ -3,6 +3,7 @@ package com.l7tech.common.mime;
 import com.l7tech.common.io.UncheckedIOException;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ConfigFactory;
+import org.jetbrains.annotations.Nullable;
 
 import javax.mail.internet.HeaderTokenizer;
 import javax.mail.internet.MimeUtility;
@@ -406,7 +407,7 @@ public class ContentTypeHeader extends MimeHeader {
      *  
      * @param typeHeaders Array of ContentTypeHeader's which represent textual data. Pass in null to clear the list.
      */
-    public static void setConfigurableTextualContentTypes(ContentTypeHeader ... typeHeaders) {
+    public static void setConfigurableTextualContentTypes(@Nullable ContentTypeHeader ... typeHeaders) {
         if (typeHeaders == null || typeHeaders.length == 0) {
             refToContentTypes.set(new CopyOnWriteArrayList<ContentTypeHeader>());
         } else {

@@ -233,7 +233,7 @@ public class SamlAssertionGeneratorSaml2 {
                                                final String assertionId,
                                                final String caDn,
                                                final int beforeOffsetSeconds,
-                                               final String audienceRestriction ) {
+                                               final Iterable<String> audienceRestriction ) {
         final Map caMap = CertUtils.dnToAttributeMap(caDn);
         final String caCn = (String)((List)caMap.get("CN")).get(0);
 
@@ -257,7 +257,10 @@ public class SamlAssertionGeneratorSaml2 {
             final ConditionsType ct = ConditionsType.Factory.newInstance(getXmlOptions());
 
             if ( audienceRestriction != null ) {
-                ct.addNewAudienceRestriction().addAudience(audienceRestriction);
+                final AudienceRestrictionType audienceRestrictionType = ct.addNewAudienceRestriction();
+                for (String audRestriction : audienceRestriction) {
+                    audienceRestrictionType.addAudience(audRestriction);
+                }
             }
 
             if ( beforeOffsetSeconds > -1 ) {

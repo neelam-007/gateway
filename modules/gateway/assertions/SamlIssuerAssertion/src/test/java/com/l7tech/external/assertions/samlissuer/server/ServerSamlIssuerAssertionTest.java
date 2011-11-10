@@ -1,7 +1,3 @@
-/**
- * Copyright (C) 2008, Layer 7 Technologies Inc.
- * @author darmstrong
- */
 package com.l7tech.external.assertions.samlissuer.server;
 
 import com.l7tech.common.io.XmlUtil;
@@ -19,16 +15,20 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.test.BugNumber;
+import com.l7tech.util.DomUtils;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
 import org.w3c.dom.Document;
 import org.junit.*;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.List;
 
 public class ServerSamlIssuerAssertionTest {
 
@@ -154,6 +154,102 @@ public class ServerSamlIssuerAssertionTest {
         final Calendar subConfNotBeforeCal = DatatypeConverter.parseDate(subConfNotBefore);
         System.out.println(subConfNotBefore + " subject confirmation data not before");
         Assert.assertTrue("Subject confirmation data's not before should be after the issue instant.", issueInstantCal.before(subConfNotBeforeCal) || issueInstantCal.equals(subConfNotBeforeCal));
+    }
+
+    /**
+     * Higher level test case for bug 10276 - validates the runtime behavior of audience variable value
+     */
+    @BugNumber(10276)
+    @Test
+    public void testMultipleAudienceElements_Version2() throws Exception {
+        SamlIssuerAssertion assertion = new SamlIssuerAssertion();
+        final SamlAuthenticationStatement authStmt = new SamlAuthenticationStatement();
+        assertion.setAuthenticationStatement(authStmt);
+        assertion.setVersion(2);
+        assertion.setSignAssertion(false);//don't need
+        //also test the subject confirmation not before date
+        assertion.setSubjectConfirmationMethodUri(SamlConstants.CONFIRMATION_BEARER);
+
+        assertion.setAudienceRestriction("Audience1 ${singleValued} \f audience2 ${multiValued} \n    \t   \r  ${singleVarManyUris} ");
+
+        ServerSamlIssuerAssertion serverAssertion = new ServerSamlIssuerAssertion(assertion,
+                ApplicationContexts.getTestApplicationContext());
+
+        final PolicyEnforcementContext context = getContext();
+        context.setVariable("singleValued", "singleAudience");
+        context.setVariable("multiValued", Arrays.asList("multiAudience1", "multiAudience2 multiAudience3"));
+        context.setVariable("singleVarManyUris", "many1 many2  \n   many3");
+
+        //set credentials
+        final AuthenticationContext authContext = context.getDefaultAuthenticationContext();
+        final HttpBasicToken basicToken = new HttpBasicToken("testuser", new char[]{'p', 'a', 's', 's'});
+
+        authContext.addCredentials(LoginCredentials.makeLoginCredentials(basicToken, HttpBasic.class));
+        context.getRequest().initialize(XmlUtil.parse("<xml></xml>"));
+
+        serverAssertion.checkRequest(context);
+        final String issuedSamlAssertion = (String) context.getVariable("issuedSamlAssertion");
+
+        Message samlAssertion = new Message(XmlUtil.stringAsDocument(issuedSamlAssertion));
+        final Document document = samlAssertion.getXmlKnob().getDocumentReadOnly();
+        System.out.println(XmlUtil.nodeToFormattedString(document));
+
+        final Node audienceRestrictionNode = document.getElementsByTagNameNS(SamlConstants.NS_SAML2, "AudienceRestriction").item(0);
+        Assert.assertEquals("Wrong number of Audience elements found", 9, audienceRestrictionNode.getChildNodes().getLength());
+
+        final List<String> expectedValues = Arrays.asList("Audience1", "singleAudience", "audience2", "multiAudience1", "multiAudience2", "multiAudience3", "many1", "many2", "many3");
+        for (int i = 0, expectedValuesSize = expectedValues.size(); i < expectedValuesSize; i++) {
+            String expectedValue = expectedValues.get(i);
+            Assert.assertEquals("Unexpected value found", expectedValue, DomUtils.getTextValue((Element) audienceRestrictionNode.getChildNodes().item(i)));
+        }
+    }
+
+    /**
+     * Higher level test case for bug 10276 - validates the runtime behavior of audience variable value
+     */
+    @BugNumber(10276)
+    @Test
+    public void testMultipleAudienceElements_Version1() throws Exception {
+        SamlIssuerAssertion assertion = new SamlIssuerAssertion();
+        final SamlAuthenticationStatement authStmt = new SamlAuthenticationStatement();
+        assertion.setAuthenticationStatement(authStmt);
+        assertion.setVersion(1);
+        assertion.setSignAssertion(false);//don't need
+        //also test the subject confirmation not before date
+        assertion.setSubjectConfirmationMethodUri(SamlConstants.CONFIRMATION_BEARER);
+
+        assertion.setAudienceRestriction("Audience1 ${singleValued} \f audience2 ${multiValued} \n    \t   \r  ${singleVarManyUris} ");
+
+        ServerSamlIssuerAssertion serverAssertion = new ServerSamlIssuerAssertion(assertion,
+                ApplicationContexts.getTestApplicationContext());
+
+        final PolicyEnforcementContext context = getContext();
+        context.setVariable("singleValued", "singleAudience");
+        context.setVariable("multiValued", Arrays.asList("multiAudience1", "multiAudience2 multiAudience3"));
+        context.setVariable("singleVarManyUris", "many1 many2  \n   many3");
+
+        //set credentials
+        final AuthenticationContext authContext = context.getDefaultAuthenticationContext();
+        final HttpBasicToken basicToken = new HttpBasicToken("testuser", new char[]{'p', 'a', 's', 's'});
+
+        authContext.addCredentials(LoginCredentials.makeLoginCredentials(basicToken, HttpBasic.class));
+        context.getRequest().initialize(XmlUtil.parse("<xml></xml>"));
+
+        serverAssertion.checkRequest(context);
+        final String issuedSamlAssertion = (String) context.getVariable("issuedSamlAssertion");
+
+        Message samlAssertion = new Message(XmlUtil.stringAsDocument(issuedSamlAssertion));
+        final Document document = samlAssertion.getXmlKnob().getDocumentReadOnly();
+        System.out.println(XmlUtil.nodeToFormattedString(document));
+
+        final Node audienceRestrictionNode = document.getElementsByTagNameNS(SamlConstants.NS_SAML, "AudienceRestrictionCondition").item(0);
+        Assert.assertEquals("Wrong number of Audience elements found", 9, audienceRestrictionNode.getChildNodes().getLength());
+
+        final List<String> expectedValues = Arrays.asList("Audience1", "singleAudience", "audience2", "multiAudience1", "multiAudience2", "multiAudience3", "many1", "many2", "many3");
+        for (int i = 0, expectedValuesSize = expectedValues.size(); i < expectedValuesSize; i++) {
+            String expectedValue = expectedValues.get(i);
+            Assert.assertEquals("Unexpected value found", expectedValue, DomUtils.getTextValue((Element) audienceRestrictionNode.getChildNodes().item(i)));
+        }
     }
 
     private PolicyEnforcementContext getContext() throws IOException {

@@ -6,7 +6,9 @@
 package com.l7tech.console.panels.saml;
 
 import com.l7tech.console.panels.WizardStepPanel;
+import com.l7tech.console.util.SquigglyFieldUtils;
 import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.policy.assertion.SamlIssuerConfiguration;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlPolicyAssertion;
@@ -30,7 +32,7 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
     private JPanel mainPanel;
     private JLabel titleLabel;
     private JCheckBox checkBoxCheckAssertionValidity;
-    private JTextField textFieldAudienceRestriction;
+    private SquigglyTextField textFieldAudienceRestriction;
     private JSpinner notBeforeSpinner;
     private JSpinner notOnOrAfterSpinner;
     private JPanel validityPanel;
@@ -180,6 +182,14 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
         } else {
             titleLabel.getParent().remove(titleLabel);
         }
+
+        textFieldAudienceRestriction.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                notifyListeners();
+            }
+        }));
+
     }
 
     private void initMaxExpiryPanel() {
@@ -239,12 +249,14 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
 
     @Override
     public boolean canFinish() {
-        return validateMaxExpiry();
+        return canAdvance();
     }
 
     @Override
     public boolean canAdvance() {
-        return validateMaxExpiry();
+
+        final boolean validated = SquigglyFieldUtils.validateSquigglyFieldForUris(textFieldAudienceRestriction);
+        return validateMaxExpiry() && validated;
     }
 
     /**

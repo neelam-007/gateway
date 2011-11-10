@@ -80,6 +80,7 @@ public class SamlProtocolAssertion extends MessageTargetableAssertion {
     /**
      * @return the audience restriction string or <b>null</b> if not set
      */
+    //todo fyi: This class was copied from SamlPolicyAssertion - if these are ever used, then clients will need to support multiple values. See bug 10276
     public String getAudienceRestriction() {
         return audienceRestriction;
     }

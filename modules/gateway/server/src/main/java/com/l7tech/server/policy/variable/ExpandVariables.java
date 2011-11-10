@@ -396,9 +396,11 @@ public final class ExpandVariables {
      * @throws com.l7tech.policy.variable.VariableNameSyntaxException throw if strict and an unknown variable is referenced.
      */
     @NotNull
-    public static List<Object> processNoFormat(String s, Map<String,?> vars, Audit audit, boolean strict)
+    public static List<Object> processNoFormat(@NotNull final String s,
+                                               @NotNull final Map<String,?> vars,
+                                               @NotNull final Audit audit,
+                                               final boolean strict)
             throws VariableNameSyntaxException{
-        if (s == null) throw new IllegalArgumentException();
 
         Matcher matcher = Syntax.regexPattern.matcher(s);
         List<Object> result = new ArrayList<Object>();
@@ -423,6 +425,13 @@ public final class ExpandVariables {
         if (previousMatchEndIndex < s.length())
             result.add(s.substring(previousMatchEndIndex, s.length()));
         return result;
+    }
+
+    @NotNull
+    public static List<Object> processNoFormat(@NotNull final String s,
+                                               @NotNull final Map<String,?> vars,
+                                               @NotNull final Audit audit) {
+        return processNoFormat(s, vars, audit, strict());
     }
 
     private ExpandVariables() {
