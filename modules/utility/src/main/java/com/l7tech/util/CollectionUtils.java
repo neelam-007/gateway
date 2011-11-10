@@ -101,7 +101,7 @@ public final class CollectionUtils {
         if ( collectionType.isInstance( collection ) ) {
             boolean itemTypesValid = true;
             for ( final Object item : (CT) collection ) {
-                if ( item != null && !type.isInstance( item ) ) {
+                if ( item == null || !type.isInstance( item ) ) {
                     itemTypesValid = false;
                     break;
                 }
@@ -147,7 +147,7 @@ public final class CollectionUtils {
         if ( mapType.isInstance( map ) ) {
             boolean entryTypesValid = true;
             for ( final Map.Entry<?,?> entry : ((MT) map).entrySet() ) {
-                if ( (entry.getKey()!=null && !keyType.isInstance( entry.getKey() ) ) ||
+                if ( (entry.getKey()==null || !keyType.isInstance( entry.getKey() ) ) ||
                      (entry.getValue()!=null && !valueType.isInstance( entry.getValue() )) ) {
                     entryTypesValid = false;
                     break;

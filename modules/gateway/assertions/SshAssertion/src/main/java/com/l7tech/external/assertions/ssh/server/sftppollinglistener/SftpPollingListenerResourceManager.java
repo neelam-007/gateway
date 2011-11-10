@@ -1,7 +1,7 @@
 package com.l7tech.external.assertions.ssh.server.sftppollinglistener;
 
 import com.l7tech.external.assertions.ssh.SftpPollingListenerDialogSettings;
-import com.l7tech.external.assertions.ssh.SftpPollingListenerXmlUtilities;
+import static com.l7tech.external.assertions.ssh.SftpPollingListenerXmlUtilities.unmarshallFromXMLString;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.cluster.ClusterPropertyManager;
@@ -96,7 +96,7 @@ public class SftpPollingListenerResourceManager {
     {
         newConfigurations.clear();
 
-        ArrayList<SftpPollingListenerDialogSettings> listenerConfigurations = null;
+        List<SftpPollingListenerDialogSettings> listenerConfigurations = null;
         String configProp = null;
         try{
             configProp = cpManager.getProperty(SftpPollingListenerConstants.SFTP_POLLING_CONFIGURATION_UI_PROPERTY);
@@ -106,14 +106,7 @@ public class SftpPollingListenerResourceManager {
 
         if( configProp != null && configProp.length() > 0 ) {
             //load the listener configurations from the property string!
-            final ClassLoader currentContextClassLoader = Thread.currentThread().getContextClassLoader();
-            try {
-                Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
-                SftpPollingListenerXmlUtilities xmlUtil = new SftpPollingListenerXmlUtilities();
-                listenerConfigurations = xmlUtil.unmarshallFromXMLString(configProp);
-            } finally {
-                Thread.currentThread().setContextClassLoader(currentContextClassLoader);
-            }
+            listenerConfigurations = unmarshallFromXMLString( configProp );
         }
 
         if(listenerConfigurations != null){

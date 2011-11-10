@@ -8,6 +8,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.external.assertions.ssh.SftpPollingListenerDialogSettings;
 import com.l7tech.external.assertions.ssh.SftpPollingListenerXmlUtilities;
+import static com.l7tech.external.assertions.ssh.SftpPollingListenerXmlUtilities.unmarshallFromXMLString;
 import com.l7tech.external.assertions.ssh.server.sftppollinglistener.SftpPollingListenerConstants;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
@@ -340,15 +341,7 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
 
         if(property!=null){
             //load the MqResources from the property string!
-            final ClassLoader currentContextClassLoader = Thread.currentThread().getContextClassLoader();
-            try {
-                Thread.currentThread().setContextClassLoader(SftpPollingListenerPropertiesDialog.class.getClassLoader());
-
-                SftpPollingListenerXmlUtilities xmlUtil = new SftpPollingListenerXmlUtilities();
-                configurations = xmlUtil.unmarshallFromXMLString(property.getValue());
-            } finally {
-                Thread.currentThread().setContextClassLoader(currentContextClassLoader);
-            }
+            configurations = unmarshallFromXMLString( property.getValue() );
         }
 
         return configurations;
