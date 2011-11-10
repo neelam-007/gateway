@@ -108,7 +108,7 @@ public class SftpPollingListenerPollThread extends Thread {
                         // max oops reached .. sleep for a longer period of time before retrying
                         int sleepTime = oopsSleep.get();
                         sftpPollingListener.log(Level.WARNING, SftpPollingListenerMessages.WARN_LISTENER_MAX_OOPS_REACHED,
-                                new Object[]{resourceConfig, SftpPollingListener.MAXIMUM_OOPSES, sleepTime});
+                                new Object[]{resourceConfig.getName(), SftpPollingListener.MAXIMUM_OOPSES, sleepTime});
                         try {
                             Thread.sleep(sleepTime);
                         } catch ( InterruptedException e1 ) {
