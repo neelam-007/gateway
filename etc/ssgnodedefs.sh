@@ -5,8 +5,8 @@ function extractProperty() {
     declare EP_PROP=$1
     declare EP_ENV=$2
     declare EP_FILE=$3
-    declare EP_EXPR=$(grep "${EP_PROP}" "${EP_FILE}" | sed "s/[ ]*${EP_PROP}[ ]*=//" )
-    EP_TMP="$(echo ${EP_EXPR} | sed 's/^[ ]*//g')"
+    declare EP_EXPR=$(grep "${EP_PROP}" "${EP_FILE}" 2>/dev/null | sed "s/[ ]*${EP_PROP}[ ]*=//" )
+    declare EP_TMP="$(echo ${EP_EXPR} | sed 's/^[ ]*//g')"
     export "${EP_ENV}"="${EP_TMP//\\}"
 }
 

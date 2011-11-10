@@ -6,14 +6,16 @@ function extractProperty() {
     declare EP_ENV=$2
     declare EP_FILE=$3
     declare EP_EXPR=$(grep "${EP_PROP}" "${EP_FILE}" 2>/dev/null | sed "s/[ ]*${EP_PROP}[ ]*=//" )
-    export "${EP_ENV}"="$(echo ${EP_EXPR} | sed 's/^[ ]*//g')"
+    declare EP_TMP="$(echo ${EP_EXPR} | sed 's/^[ ]*//g')"
+    export "${EP_ENV}"="${EP_TMP//\\}"
 }
 
 if [ -e /usr/local/Tarari ]; then
-	TARARIROOT=/usr/local/Tarari
+    NODE_PROPS_PATH="${SSG_HOME}/node/${SSGNODE}/etc/conf/node.properties"
+    TARARIROOT=/usr/local/Tarari
     SSGTARARI=""
     if [ -f "/opt/SecureSpan/Controller/etc/host.properties" ] ; then
-        extractProperty "host.tarari" SSGTARARI "/opt/SecureSpan/Controller/etc/host.properties"
+        extractProperty "node.tarari.enabled" SSGTARARI "${NODE_PROPS_PATH}"
     fi
     if [ -z "${SSGTARARI}" ] ; then
         SSGTARARI="true"
@@ -23,13 +25,13 @@ if [ -e /usr/local/Tarari ]; then
         PATH=$TARARIROOT/bin:$PATH
     fi
 
-	if [ -z "${LD_LIBRARY_PATH}" ] ; then
-	    LD_LIBRARY_PATH=$TARARIROOT/lib
-	elif ! echo $LD_LIBRARY_PATH | /bin/egrep -q "(^|:)$TARARIROOT/lib($|:)" ; then
+    if [ -z "${LD_LIBRARY_PATH}" ] ; then
+        LD_LIBRARY_PATH=$TARARIROOT/lib
+    elif ! echo $LD_LIBRARY_PATH | /bin/egrep -q "(^|:)$TARARIROOT/lib($|:)" ; then
         LD_LIBRARY_PATH=$TARARIROOT/lib:$LD_LIBRARY_PATH
     fi                                 
 
-	export TARARIROOT
+    export TARARIROOT
     export SSGTARARI
     export LD_LIBRARY_PATH
     export PATH
