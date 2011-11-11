@@ -13,6 +13,7 @@ import com.l7tech.message.Message;
 import static com.l7tech.message.Message.getMaxBytes;
 import com.l7tech.message.SshKnob;
 import com.l7tech.message.SshKnob.PublicKeyAuthentication;
+import com.l7tech.message.TcpKnob;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import static com.l7tech.server.message.PolicyEnforcementContextFactory.createPolicyEnforcementContext;
@@ -79,15 +80,15 @@ public class MessageProcessingSshUtil {
             passwordAuthentication = null;
         }
 
-        request.attachKnob( SshKnob.class,
-                buildSshKnob(
+        final SshKnob knob = buildSshKnob(
                         session.getIoSession().getLocalAddress(),
                         session.getIoSession().getRemoteAddress(),
                         file,
                         path,
                         publicKeyAuthentication,
-                        passwordAuthentication ));
-
+                        passwordAuthentication );
+        request.attachKnob( TcpKnob.class, knob );
+        request.attachKnob( SshKnob.class, knob );
 
         final long hardwiredServiceOid = connector.getLongProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, -1L);
         if (hardwiredServiceOid != -1L) {
