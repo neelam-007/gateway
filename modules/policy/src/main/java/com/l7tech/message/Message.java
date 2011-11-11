@@ -687,7 +687,7 @@ public final class Message implements Closeable {
      * @throws IllegalStateException if this message already offers an implementation of the specified knobClass
      * @throws IllegalArgumentException if knob is not an instance of knobClass
      */
-    public void attachKnob(@NotNull MessageKnob knob, @NotNull Class[] knobClasses) {
+    public void attachKnob(@NotNull MessageKnob knob, @NotNull Class... knobClasses) {
         for (Class knobClass : knobClasses) {
             if (!knobClass.isAssignableFrom(knob.getClass()))
                 throw new IllegalArgumentException("knob was not an implementation of knobClass " + knobClass);

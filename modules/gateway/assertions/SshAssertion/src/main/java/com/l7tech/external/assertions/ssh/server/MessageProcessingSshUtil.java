@@ -87,8 +87,7 @@ public class MessageProcessingSshUtil {
                         path,
                         publicKeyAuthentication,
                         passwordAuthentication );
-        request.attachKnob( TcpKnob.class, knob );
-        request.attachKnob( SshKnob.class, knob );
+        request.attachKnob( knob, SshKnob.class, TcpKnob.class );
 
         final long hardwiredServiceOid = connector.getLongProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, -1L);
         if (hardwiredServiceOid != -1L) {

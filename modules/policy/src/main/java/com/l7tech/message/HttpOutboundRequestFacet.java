@@ -72,7 +72,7 @@ public class HttpOutboundRequestFacet implements HttpOutboundRequestKnob {
 
         if ( httpOutboundRequestKnob == null ) {
             httpOutboundRequestKnob = new HttpOutboundRequestFacet();
-            message.attachKnob(httpOutboundRequestKnob, new Class[] { HttpOutboundRequestKnob.class, OutboundHeadersKnob.class });
+            message.attachKnob(httpOutboundRequestKnob, HttpOutboundRequestKnob.class, OutboundHeadersKnob.class);
         }
 
         return httpOutboundRequestKnob;
