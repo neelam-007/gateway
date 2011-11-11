@@ -312,28 +312,6 @@ public class ServerRequireWssSaml2Test {
         assertEquals(AssertionStatus.NONE, result);
     }
 
-    @Test
-    public void testSplitPattern() throws Exception {
-        String test = "urn:oasis:names:tc:SAML:2.0:ac:classes:XMLDSig1 urn:oasis:names:tc:SAML:2.0:ac:classes:XMLDSig2 urn:oasis:names:tc:SAML:2.0:ac:classes:XMLDSig";
-        String[] tokens = TextUtils.URI_STRING_SPLIT_PATTERN.split(test);
-        Assert.assertEquals(3, tokens.length);
-
-        String val = "one  two three   four";
-        tokens = TextUtils.URI_STRING_SPLIT_PATTERN.split(val);
-        Assert.assertEquals(4, tokens.length);
-
-        String s = "urn:oasis:names:tc:SAML:2.0:ac:classes:XMLDSig1 \n  " +
-                "urn:oasis:names:tc:SAML:2.0:ac:classes:XMLDSig\n  " +
-                "urn:oasis:names:tc:SAML:2.0:ac:classes:XMLDSig3  \n" +
-                "urn:oasis:names:tc:SAML:2.0:ac:classes:Password";
-
-        tokens = TextUtils.URI_STRING_SPLIT_PATTERN.split(s);
-        for (String token : tokens) {
-            System.out.println(token);
-        }
-        Assert.assertEquals(4, tokens.length);
-    }
-
     private AssertionStatus verifyExpiration(String issueInstant, String notBefore, String notOnOrAfter, boolean checkAssertionValidity, int maxExpiryTime) throws Exception {
         // Create doc
         Document samlAssertionDoc = XmlUtil.stringToDocument(buildSamlDocWithDynamicTime(issueInstant, notBefore, notOnOrAfter));

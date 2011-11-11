@@ -9,9 +9,8 @@ import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.WssTimestamp;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.util.Pair;
+import com.l7tech.server.util.ContextVariableUtils;
+import com.l7tech.util.*;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
@@ -25,6 +24,7 @@ import java.io.StringWriter;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -416,9 +416,18 @@ public class SamlAssertionValidate {
             }
         }
 
-        final String audienceResTest = requestWssSaml.getAudienceRestriction();
-        final String audienceRestriction = (audienceResTest == null) ? audienceResTest : ExpandVariables.process(audienceResTest, serverVariables, auditor);
-        if (audienceRestriction == null || "".equals(audienceRestriction)) {
+        final Option<String> option = Option.optional(requestWssSaml.getAudienceRestriction());
+        final List<String> allAudienceRestrictions = (!option.isSome()) ?
+                Collections.<String>emptyList() :
+                ContextVariableUtils.getAllResolvedStrings(option.some(), serverVariables, auditor, TextUtils.URI_STRING_SPLIT_PATTERN, new Functions.UnaryVoid<Object>() {
+                    @Override
+                    public void call(Object unexpectedNonString) {
+                        //todo get an auditor
+                        logger.warning("Found non string value for audience restriction: " + unexpectedNonString);
+                    }
+                });
+
+        if (allAudienceRestrictions.isEmpty()) {
             logger.finer("No audience restriction requested");
             return;
         }
@@ -433,20 +442,17 @@ public class SamlAssertionValidate {
         }
 
         AudienceRestrictionConditionType[] audienceRestrictionArray = conditionsType.getAudienceRestrictionConditionArray();
-        boolean audienceRestrictionMatch = false;
         for (AudienceRestrictionConditionType audienceRestrictionConditionType : audienceRestrictionArray) {
-            String[] audienceArray = audienceRestrictionConditionType.getAudienceArray();
-            for (String s : audienceArray) {
-                if (audienceRestriction.equals(s)) {
-                    audienceRestrictionMatch = true;
-                    break;
-                }
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine("Validating audience restrictions against resolved list: " + allAudienceRestrictions);
             }
-        }
-        if (!audienceRestrictionMatch) {
-            Error result = new Error("Audience Restriction Check Failed", null, audienceRestriction);
-            logger.finer(result.toString());
-            validationResults.add(result);
+
+            final String[] incomingAudienceValues = audienceRestrictionConditionType.getAudienceArray();
+            if (!ArrayUtils.containsAny(incomingAudienceValues, allAudienceRestrictions.toArray(new String[allAudienceRestrictions.size()]))) {
+                SamlAssertionValidate.Error error = new SamlAssertionValidate.Error("Audience Restriction Check Failed received {0} expected one of {1}", null, Arrays.asList(incomingAudienceValues), allAudienceRestrictions);
+                logger.finer(error.toString());
+                validationResults.add(error);
+            }
         }
     }
 

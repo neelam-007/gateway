@@ -169,9 +169,7 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
                     sb2.append(error.toString());
                     firstPass = false;
                 }
-                String error = "SAML Assertion Validation Errors:" + sb2.toString();
                 logAndAudit(AssertionMessages.SAML_STMT_VALIDATE_FAILED, sb2.toString());
-                logger.log(Level.INFO, error);
                 return AssertionStatus.FALSIFIED;
             }
 

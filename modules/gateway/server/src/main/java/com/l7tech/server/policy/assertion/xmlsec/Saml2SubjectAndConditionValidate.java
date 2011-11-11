@@ -4,9 +4,9 @@ import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.util.ArrayUtils;
+import com.l7tech.server.util.ContextVariableUtils;
+import com.l7tech.util.*;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
-import com.l7tech.util.ConfigFactory;
 import x0Assertion.oasisNamesTcSAML2.*;
 
 import java.util.*;
@@ -264,8 +264,18 @@ class Saml2SubjectAndConditionValidate {
                                                     final Map<String, Object> serverVariables,
                                                     final Audit auditor) {
         final String audienceResTest = requestWssSaml.getAudienceRestriction();
-        final String audienceRestriction = (audienceResTest == null) ? audienceResTest : ExpandVariables.process(audienceResTest, serverVariables, auditor);
-        if (audienceRestriction == null || "".equals(audienceRestriction)) {
+        final Option<String> option = Option.optional(requestWssSaml.getAudienceRestriction());
+        final List<String> allAudienceRestrictions = (!option.isSome()) ?
+                Collections.<String>emptyList() :
+                ContextVariableUtils.getAllResolvedStrings(audienceResTest, serverVariables, auditor, TextUtils.URI_STRING_SPLIT_PATTERN, new Functions.UnaryVoid<Object>() {
+            @Override
+            public void call(Object unexpectedNonString) {
+                //todo get an auditor
+                logger.warning("Found non string value for audience restriction: " + unexpectedNonString);
+            }
+        });
+
+        if (allAudienceRestrictions.isEmpty()) {
             logger.finer("No audience restriction requested");
             return;
         }
@@ -279,15 +289,20 @@ class Saml2SubjectAndConditionValidate {
 
         final AudienceRestrictionType[] audienceRestrictionArray = conditionsType.getAudienceRestrictionArray();
         if (audienceRestrictionArray == null || audienceRestrictionArray.length <= 0) {
-            SamlAssertionValidate.Error error = new SamlAssertionValidate.Error("Audience Restriction Check Failed (assertion does not specify audience)", null, audienceRestriction);
+            SamlAssertionValidate.Error error = new SamlAssertionValidate.Error("Audience Restriction Check Failed (assertion does not specify audience)", null, allAudienceRestrictions);
             logger.finer(error.toString());
             validationResults.add(error);
             return;
         }
 
         for (AudienceRestrictionType val : audienceRestrictionArray) {
-            if (!ArrayUtils.contains(val.getAudienceArray(), audienceRestriction)) {
-                SamlAssertionValidate.Error error = new SamlAssertionValidate.Error("Audience Restriction Check Failed", null, audienceRestriction);
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine("Validating audience restrictions against resolved list: " + allAudienceRestrictions);
+            }
+
+            final String[] incomingAudienceValues = val.getAudienceArray();
+            if (!ArrayUtils.containsAny(incomingAudienceValues, allAudienceRestrictions.toArray(new String[allAudienceRestrictions.size()]))) {
+                SamlAssertionValidate.Error error = new SamlAssertionValidate.Error("Audience Restriction Check Failed received {0} expected one of {1}", null, Arrays.asList(incomingAudienceValues), allAudienceRestrictions);
                 logger.finer(error.toString());
                 validationResults.add(error);
             }
