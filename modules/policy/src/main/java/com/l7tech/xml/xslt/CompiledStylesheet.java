@@ -6,14 +6,9 @@ import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.tarari.TarariCompiledStylesheet;
 import com.l7tech.xml.tarari.TarariMessageContext;
-import org.w3c.dom.Document;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import javax.xml.transform.ErrorListener;
-import javax.xml.transform.Templates;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
+import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamResult;
@@ -100,8 +95,16 @@ public class CompiledStylesheet {
     {
         final ElementCursor ec = t.getXmlKnob().getElementCursor();
         ec.moveToDocumentElement();
-        final Document doctotransform = ec.asDomElement().getOwnerDocument();
+        final Source source = new DOMSource(ec.asDomElement().getOwnerDocument());
+        transformUsingSoftwareStylesheet(source, t, output, errorListener);
+    }
 
+    private void transformSax(TransformInput t, TransformOutput output, ErrorListener errorListener) throws SAXException, IOException, TransformerException {
+        final Source source = new SAXSource(t.getXmlKnob().getInputSource(true));
+        transformUsingSoftwareStylesheet(source, t, output, errorListener);
+    }
+
+    private void transformUsingSoftwareStylesheet(Source source, TransformInput t, TransformOutput output, ErrorListener errorListener) throws TransformerException, IOException {
         final PoolByteArrayOutputStream os = new PoolByteArrayOutputStream(4096);
         final StreamResult sr = new StreamResult(os);
 
@@ -113,38 +116,11 @@ public class CompiledStylesheet {
                 Object value = t.getVariableValue(variableName);
                 if (value != null) transformer.setParameter(variableName, value);
             }
-            transformer.transform(new DOMSource(doctotransform), sr);
+            transformer.transform(source, sr);
             output.setBytes(os.toByteArray());
             logger.finest("software xsl transformation completed");
         } finally {
             os.close();
         }
     }
-
-    private void transformSax(TransformInput t,
-                              TransformOutput output,
-                              ErrorListener errorListener)
-            throws SAXException, IOException, TransformerException
-    {
-        InputSource inputSource = t.getXmlKnob().getInputSource(true);
-
-        final PoolByteArrayOutputStream os = new PoolByteArrayOutputStream(4096);
-        final StreamResult sr = new StreamResult(os);
-
-        try {
-            Transformer transformer = softwareStylesheet.newTransformer();
-            transformer.setURIResolver(XmlUtil.getSafeURIResolver());
-            if (errorListener != null) transformer.setErrorListener(errorListener);
-            for (String variableName : varsUsed) {
-                Object value = t.getVariableValue(variableName);
-                if (value != null) transformer.setParameter(variableName, value);
-            }
-            transformer.transform(new SAXSource(inputSource), sr);
-            output.setBytes(os.toByteArray());
-            logger.finest("software xsl transformation completed");
-        } finally {
-            os.close();
-        }
-    }
-
 }
