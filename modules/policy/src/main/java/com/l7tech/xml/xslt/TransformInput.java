@@ -1,29 +1,32 @@
 package com.l7tech.xml.xslt;
 
+import com.l7tech.message.XmlKnob;
 import com.l7tech.util.Functions;
-import com.l7tech.xml.ElementCursor;
-import org.xml.sax.SAXException;
+import org.jetbrains.annotations.Nullable;
 
+import java.io.Closeable;
 import java.io.IOException;
 
 /**
  * Represents an input document for an XSL transformation using {@link CompiledStylesheet}.
  */
-public class TransformInput {
+public class TransformInput implements Closeable {
     private final Functions.Unary<Object, String> variableGetter;
-    private final ElementCursor elementCursor;
+    private final XmlKnob xmlKnob;
+    private final @Nullable Closeable closeable;
 
     /**
      * Create a TransformInput that uses the specified ElementCursor and variables array.
      *
-     * @param elementCursor ElementCursor open against the document to be transformed.  Required.
-     *                      This can be either a DOM or Tarari ElementCursor.
+     * @param xmlKnob XmlKnob for the document to be transformed.  Required.
+     * @param resourceToClose optional Closeable to close after the transformation is finished, or null.
      * @param variableGetter getter for variables to make visible to the template code, or null to offer none.
      */
-    public TransformInput(ElementCursor elementCursor, Functions.Unary<Object, String> variableGetter) {
-        if (elementCursor == null) throw new NullPointerException();
+    public TransformInput(XmlKnob xmlKnob, @Nullable Closeable resourceToClose, Functions.Unary<Object, String> variableGetter) {
+        if (xmlKnob == null) throw new NullPointerException();
         this.variableGetter = variableGetter;
-        this.elementCursor = elementCursor;
+        this.xmlKnob = xmlKnob;
+        this.closeable = resourceToClose;
     }
 
     /**
@@ -46,13 +49,16 @@ public class TransformInput {
     }
 
     /**
-     * Get an ElementCursor view of the input document.  This may be either a Tarari or DOM element cursor.
+     * Get an XmlKnob view of the input document.
      *
-     * @return an ElementCursor instance.  Never null.
-     * @throws IOException if there is a problem reading the source document
-     * @throws SAXException if there is a problem parsing the source document
+     * @return an XmlKnob.  Never null.
      */
-    public ElementCursor getElementCursor() throws SAXException, IOException {
-        return elementCursor;
+    public XmlKnob getXmlKnob() {
+        return xmlKnob;
+    }
+
+    @Override
+    public void close() throws IOException {
+        if (closeable != null) closeable.close();
     }
 }

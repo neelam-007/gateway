@@ -1,11 +1,13 @@
 package com.l7tech.xml.xslt;
 
-import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.message.XmlKnob;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.xml.ElementCursor;
-import com.l7tech.xml.tarari.TarariMessageContext;
 import com.l7tech.xml.tarari.TarariCompiledStylesheet;
+import com.l7tech.xml.tarari.TarariMessageContext;
 import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.xml.transform.ErrorListener;
@@ -13,6 +15,7 @@ import javax.xml.transform.Templates;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.IOException;
 import java.util.logging.Logger;
@@ -32,6 +35,7 @@ public class CompiledStylesheet {
      * Produce a CompiledStylesheet using the specified software stylesheet and Tarari compiled stylesheet.
      *
      * @param softwareStylesheet  a software stylesheet to use when Tarari can't be used for whatever reason.  Required.
+     * @param varsUsed     context variables used by the stylesheet
      * @param tarariStylesheet   a Tarari compiled stylesheet to use when possible, or null to always use software.
      */
     CompiledStylesheet(Templates softwareStylesheet, String[] varsUsed, TarariCompiledStylesheet tarariStylesheet) {
@@ -56,16 +60,21 @@ public class CompiledStylesheet {
      */
     public void transform(TransformInput input, TransformOutput output, ErrorListener errorListener)
             throws SAXException, IOException, TransformerException {
-        if (tarariStylesheet != null) {
-            ElementCursor ec = input.getElementCursor();
-            TarariMessageContext tmc = ec.getTarariMessageContext();
-            if (tmc != null) {
-                transformTarari(input, tmc, output, errorListener);
-                return;
+        XmlKnob xmlKnob = input.getXmlKnob();
+        if (xmlKnob.isDomParsed() || xmlKnob.isTarariParsed()) {
+            if (tarariStylesheet != null) {
+                ElementCursor ec = xmlKnob.getElementCursor();
+                TarariMessageContext tmc = ec.getTarariMessageContext();
+                if (tmc != null) {
+                    transformTarari(input, tmc, output, errorListener);
+                    return;
+                }
             }
-        }
 
-        transformDom(input, output, errorListener);
+            transformDom(input, output, errorListener);
+        } else {
+            transformSax(input, output, errorListener);
+        }
     }
 
     private void transformTarari(TransformInput t, TarariMessageContext tmc, TransformOutput output, ErrorListener errorListener )
@@ -89,7 +98,7 @@ public class CompiledStylesheet {
                               ErrorListener errorListener)
             throws SAXException, IOException, TransformerException
     {
-        final ElementCursor ec = t.getElementCursor();
+        final ElementCursor ec = t.getXmlKnob().getElementCursor();
         ec.moveToDocumentElement();
         final Document doctotransform = ec.asDomElement().getOwnerDocument();
 
@@ -105,6 +114,32 @@ public class CompiledStylesheet {
                 if (value != null) transformer.setParameter(variableName, value);
             }
             transformer.transform(new DOMSource(doctotransform), sr);
+            output.setBytes(os.toByteArray());
+            logger.finest("software xsl transformation completed");
+        } finally {
+            os.close();
+        }
+    }
+
+    private void transformSax(TransformInput t,
+                              TransformOutput output,
+                              ErrorListener errorListener)
+            throws SAXException, IOException, TransformerException
+    {
+        InputSource inputSource = t.getXmlKnob().getInputSource(true);
+
+        final PoolByteArrayOutputStream os = new PoolByteArrayOutputStream(4096);
+        final StreamResult sr = new StreamResult(os);
+
+        try {
+            Transformer transformer = softwareStylesheet.newTransformer();
+            transformer.setURIResolver(XmlUtil.getSafeURIResolver());
+            if (errorListener != null) transformer.setErrorListener(errorListener);
+            for (String variableName : varsUsed) {
+                Object value = t.getVariableValue(variableName);
+                if (value != null) transformer.setParameter(variableName, value);
+            }
+            transformer.transform(new SAXSource(inputSource), sr);
             output.setBytes(os.toByteArray());
             logger.finest("software xsl transformation completed");
         } finally {

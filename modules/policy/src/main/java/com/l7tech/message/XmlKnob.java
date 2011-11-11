@@ -8,6 +8,7 @@ package com.l7tech.message;
 
 import com.l7tech.xml.ElementCursor;
 import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -99,6 +100,18 @@ public interface XmlKnob extends MessageKnob {
     Document getOriginalDocument() throws SAXException, IOException;
 
     /**
+     * Get an input source suitable for SAX or StAX parsing.  This can be used as an alternative to one of the Document or ElementCursor
+     * accessors if the document will only be used once and then discarded (as when overwriting a part with the result of
+     * an XSL transformation).
+     *
+     * @param destroyAsRead true if the underlying MIME part will no longer be needed and can be destructively read (if it hasn't already been stashed).
+     * @return an InputSource fed by an InputStream, with no system ID or encoding specified.  Never null.
+     * @throws java.io.IOException if there is a problem obtaining the first part body
+     * @throws org.xml.sax.SAXException if the content type of the first part is not XML
+     */
+    InputSource getInputSource(boolean destroyAsRead) throws IOException, SAXException;
+
+    /**
      * set the Document.  Also invalidates the first MIME part.
      *
      * @param document the new Document.  Must not be null.
@@ -109,6 +122,11 @@ public interface XmlKnob extends MessageKnob {
      * Indicate whether this XmlKnob holds an already-parsed DOM tree.
      */
     boolean isDomParsed();
+
+    /**
+     * @return true if this XmlKnob holds an already-parsed Tarari RAX document.
+     */
+    boolean isTarariParsed();
 
     /**
      * Indicate whether the policy that will be processing this message has any assertions that rely so heavily on

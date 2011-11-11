@@ -1,13 +1,12 @@
 package com.l7tech.server.policy.assertion.xml;
 
 import com.l7tech.common.http.GenericHttpClientFactory;
-import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
-import com.l7tech.message.TarariMessageContextFactory;
 import com.l7tech.message.XmlKnob;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.MessageUrlResourceInfo;
@@ -27,15 +26,9 @@ import com.l7tech.server.url.UrlResolver;
 import com.l7tech.server.util.res.ResourceGetter;
 import com.l7tech.server.util.res.ResourceObjectFactory;
 import com.l7tech.server.util.res.UrlFinder;
-import com.l7tech.util.CausedIOException;
-import com.l7tech.util.Config;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.util.Resolver;
-import com.l7tech.util.ValidatedConfig;
-import com.l7tech.xml.*;
-import com.l7tech.xml.tarari.TarariMessageContext;
+import com.l7tech.util.*;
+import com.l7tech.xml.ElementCursor;
+import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.xpath.CompiledXpath;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathResult;
@@ -56,13 +49,12 @@ import javax.xml.transform.ErrorListener;
 import javax.xml.transform.TransformerException;
 import javax.xml.xpath.XPathExpressionException;
 import java.io.ByteArrayInputStream;
-import java.io.Closeable;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.text.ParseException;
-import java.util.Map;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -103,7 +95,7 @@ public class ServerXslTransformation
     /** A cache for remotely loaded stylesheets. */
     private static UrlResolver<CompiledStylesheet> httpObjectCache = null;
 
-    private final ResourceGetter<CompiledStylesheet, ElementCursor> resourceGetter;
+    private final ResourceGetter<CompiledStylesheet, XmlKnob> resourceGetter;
     private final boolean allowMessagesWithNoProcessingInstruction;
     private final String[] urlVarsUsed;
 
@@ -144,20 +136,22 @@ public class ServerXslTransformation
                     }
                 };
 
-        UrlFinder<ElementCursor> urlFinder = new UrlFinder<ElementCursor>() {
+        UrlFinder<XmlKnob> urlFinder = new UrlFinder<XmlKnob>() {
             /**
              *
-             * @param message the ElementCursor to inspect.  Never null. The cursor may be moved by this method.
+             * @param message the XmlKnob to inspect.  Never null. The knob's ElementCursor may be moved by this method.
              * @return String URL found from the message
              * @throws ResourceGetter.InvalidMessageException
              */
             @Override
-            public String findUrl(ElementCursor message) throws ResourceGetter.InvalidMessageException {
+            public String findUrl(XmlKnob message) throws ResourceGetter.InvalidMessageException {
                 try {
                     return findXslHref(message);
                 } catch (SAXException e) {
                     throw new ResourceGetter.InvalidMessageException(e);
                 } catch (InvalidDocumentFormatException e) {
+                    throw new ResourceGetter.InvalidMessageException(e);
+                } catch (IOException e) {
                     throw new ResourceGetter.InvalidMessageException(e);
                 }
             }
@@ -331,8 +325,8 @@ public class ServerXslTransformation
             Map<String,Object> urlVars = context.getVariableMap(urlVarsUsed, getAudit());
             return transform(transformInput, transformOutput, urlVars, xsltMessages);
         } finally {
-            if (transformInput instanceof Closeable) {
-                ((Closeable)transformInput).close();
+            if (transformInput != null) {
+                transformInput.close();
             }
         }
     }
@@ -345,8 +339,7 @@ public class ServerXslTransformation
             throws IOException, PolicyAssertionException
     {
         try {
-            final ElementCursor ec = input.getElementCursor();
-            CompiledStylesheet resource = resourceGetter.getResource(ec, urlVars);
+            CompiledStylesheet resource = resourceGetter.getResource(input.getXmlKnob(), urlVars);
 
             if (resource == null) {
                 if (allowMessagesWithNoProcessingInstruction) {
@@ -375,9 +368,11 @@ public class ServerXslTransformation
             logAndAudit(AssertionMessages.XSLT_BAD_URL, e.getUrl());
             return AssertionStatus.BAD_REQUEST;
         } catch (ResourceGetter.ResourceIOException e) {
+            //noinspection ThrowableResultOfMethodCallIgnored
             logAndAudit(AssertionMessages.XSLT_CANT_READ_XSL, new String[]{e.getUrl(), ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
         } catch (ResourceGetter.ResourceParseException e) {
+            //noinspection ThrowableResultOfMethodCallIgnored
             logAndAudit(AssertionMessages.XSLT_BAD_EXT_XSL, new String[]{e.getUrl(), ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
         } catch (GeneralSecurityException e) {
@@ -394,6 +389,7 @@ public class ServerXslTransformation
                 status = AssertionStatus.FALSIFIED; // Stylesheet directed termination, already audited
             } else {
                 String msg = "Error transforming document: " + ExceptionUtils.getMessage( e );
+                //noinspection ThrowableResultOfMethodCallIgnored
                 logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, ExceptionUtils.getDebugException(e));
                 // bug #6486 - Do not re-throw transform exception as a PolicyAssertionException
             }
@@ -431,13 +427,21 @@ public class ServerXslTransformation
     /**
      * Get the URL of the xml-stylesheet processing instruction in this document, if any.
      *
-     * @param ec  the cursor to check for processing instructions.
+     * @param knob the XmlKnob to check for processing instructions.  Required.
      * @return the href attribute of the singular xml-stylesheet PI with type text/xsl, or null
      *         if no xml-stylesheet processing instructions were found
      * @throws SAXException if there was an xml-stylesheet PI that was not well-formed
      * @throws InvalidDocumentFormatException if there was more than one xml-stylesheet with type text/xsl
+     * @throws java.io.IOException if there is a problem reading the source document
      */
-    private String findXslHref(ElementCursor ec) throws SAXException, InvalidDocumentFormatException {
+    private String findXslHref(XmlKnob knob) throws SAXException, InvalidDocumentFormatException, IOException {
+        if (!knob.isDomParsed() && !knob.isTarariParsed()) {
+            // TODO use StAX to find URL without parsing the whole document, if it hasn't already been parsed (and hence we are going to end up streaming it into the actual transform)
+            // the goal is to avoid forcing a DOM or Tarari parse when we are just going to throw it all away after the transform anyway
+            //return findXslHrefWithoutDomOrTarariParse_perhapsUsingStAX(knob);
+        }
+
+        ElementCursor ec = knob.getElementCursor();
         ec.moveToRoot();
         XpathResult pxr = null;
         try {
@@ -511,23 +515,7 @@ public class ServerXslTransformation
     }
 
     private static TransformInput makeFirstPartTransformInput(XmlKnob xmlKnob, Functions.Unary<Object, String> variableGetter) throws IOException, SAXException {
-        return new TransformInput(xmlKnob.getElementCursor(), variableGetter);
-    }
-
-    // Builds a TarariMessageContext for the specified PartInfo, if possible, or returns null
-    private TarariMessageContext makeTarariMessageContext(PartInfo partInfo) throws IOException, SAXException {
-        TarariMessageContextFactory mcf = TarariLoader.getMessageContextFactory();
-        if (mcf == null) return null;
-        try {
-            return  mcf.makeMessageContext(partInfo.getInputStream(false));
-        } catch (SoftwareFallbackException e) {
-            if (logger.isLoggable(Level.INFO))
-                logger.log(Level.INFO, "Falling back from Tarari to software processing for XSLT on MIME part #" +
-                        partInfo.getPosition(), e);
-            return null;
-        } catch (NoSuchPartException e) {
-            throw new RuntimeException(e); // can't happen -- we never destructively read MIME parts currently
-        }
+        return new TransformInput(xmlKnob, null, variableGetter);
     }
 
     /*
@@ -535,25 +523,12 @@ public class ServerXslTransformation
      * of a MIME part other than the first part.
      */
     private TransformInput makePartInfoTransformInput(PartInfo partInfo, Functions.Unary<Object, String> variableGetter) throws IOException, SAXException {
-        final TarariMessageContext tmc = makeTarariMessageContext(partInfo);
-        if (tmc != null)
-            return new CloseableTransformInput(tmc.getElementCursor(), variableGetter) {
-                @Override
-                public void close() {
-                    tmc.close();
-                }
-            };
-
         try {
-            return new TransformInput(new DomElementCursor( XmlUtil.parse(partInfo.getInputStream(false))), variableGetter);
+            // Destructively parse the part, since it will be overwritten with the transformation output
+            Message partMessage = new Message(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, partInfo.getInputStream(true));
+            return new TransformInput(partMessage.getXmlKnob(), partMessage, variableGetter);
         } catch (NoSuchPartException e) {
-            throw new RuntimeException(e); // can't happen -- we never destructively read MIME parts currently
-        }
-    }
-
-    private static abstract class CloseableTransformInput extends TransformInput implements Closeable {
-        private CloseableTransformInput(ElementCursor elementCursor, Functions.Unary<Object, String> variableGetter) {
-            super(elementCursor, variableGetter);
+            throw new IOException("MIME part has already been destructively read");
         }
     }
 }

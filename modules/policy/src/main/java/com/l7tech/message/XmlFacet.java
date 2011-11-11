@@ -11,6 +11,7 @@ import com.l7tech.xml.DomElementCursor;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.tarari.TarariMessageContext;
 import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -346,6 +347,18 @@ public class XmlFacet extends MessageFacet {
             return originalDocument;
         }
 
+        @Override
+        public InputSource getInputSource(boolean destroyAsRead) throws IOException, SAXException {
+            final PartInfo firstPart = getMessage().getMimeKnob().getFirstPart();
+            if (!firstPart.getContentType().isXml())
+                throw new SAXException("Content type of first part of message is not XML");
+            try {
+                return new InputSource(firstPart.getInputStream(destroyAsRead));
+            } catch (NoSuchPartException e) {
+                throw new IOException("Unable to access first part of message: " + ExceptionUtils.getMessage(e), e);
+            }
+        }
+
         public void setDocument(Document document) {
             firstPartValid = false;
             workingDocument = new DomElementCursor(document);
@@ -354,6 +367,12 @@ public class XmlFacet extends MessageFacet {
 
         public boolean isDomParsed() {
             return workingDocument != null;
+        }
+
+        @Override
+        public boolean isTarariParsed() {
+            TarariKnob tarariKnob = getMessage().getKnob(TarariKnob.class);
+            return tarariKnob != null && tarariKnob.isContextPresent();
         }
 
         public void setTarariWanted(boolean pref) {

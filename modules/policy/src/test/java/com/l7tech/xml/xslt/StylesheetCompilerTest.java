@@ -1,16 +1,19 @@
 package com.l7tech.xml.xslt;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.mime.ByteArrayStashManager;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.message.Message;
 import com.l7tech.test.BugNumber;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.Functions;
-import com.l7tech.xml.DomElementCursor;
-
 import org.junit.Assert;
 import org.junit.Test;
 
 import javax.xml.transform.ErrorListener;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
+import java.io.ByteArrayInputStream;
 
 /**
  * Tests the StylesheetCompiler through teh ServerXslTransformation assertion.
@@ -27,7 +30,7 @@ public class StylesheetCompilerTest {
     public void testTransformWithXalanExtension() throws Exception {
         try {
             Assert.assertTrue("Xalan XSLT present", isXalan());
-            String after = doTransform(XALAN_TEST_XSL, XALAN_TEST_MSG);
+            String after = doTransform(XALAN_TEST_XSL, XALAN_TEST_MSG, false);
             Assert.assertEquals(XALAN_TEST_RESULT, after);
         } catch (Exception ex) {
             Assert.fail("Unexpected exception encountered. " + ex);
@@ -42,7 +45,7 @@ public class StylesheetCompilerTest {
     public void testTransformWithXalanExtensionOutputNS() {
         try {
             Assert.assertTrue("Xalan XSLT present", isXalan());
-            String after = doTransform(XALAN_TEST_XSL2, XALAN_TEST_MSG);
+            String after = doTransform(XALAN_TEST_XSL2, XALAN_TEST_MSG, false);
             Assert.assertEquals(XALAN_TEST_RESULT, after);
         } catch (Exception ex) {
             Assert.fail("Unexpected exception encountered. " + ex);
@@ -84,7 +87,7 @@ public class StylesheetCompilerTest {
     public void testXalanExsltEvaluateExtensionFails() {
         try {
             Assert.assertTrue("Xalan XSLT present", isXalan());
-            doTransform( XALAN_EXSLT_EXTENSION_EVAL_XSL, XALAN_TEST_MSG );
+            doTransform( XALAN_EXSLT_EXTENSION_EVAL_XSL, XALAN_TEST_MSG, false );
             Assert.fail("Expected compilation or transformation failure.");
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -95,7 +98,7 @@ public class StylesheetCompilerTest {
     public void testXalanRedirectExtensionFails() {
         try {
             Assert.assertTrue("Xalan XSLT present", isXalan());
-            doTransform( XALAN_EXTENSION_ERROR_XSL, XALAN_REDIRECT_MSG );
+            doTransform( XALAN_EXTENSION_ERROR_XSL, XALAN_REDIRECT_MSG, false );
             Assert.fail("Expected compilation or transformation failure.");
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -106,10 +109,22 @@ public class StylesheetCompilerTest {
     public void testXalanJavaExtensionFails() {
         try {
             Assert.assertTrue("Xalan XSLT present", isXalan());
-            doTransform( XALAN_SECURE_PROCESSING, "<test/>" );            
+            doTransform( XALAN_SECURE_PROCESSING, "<test/>", false );
             Assert.fail("Expected compilation or transformation failure.");
         } catch (Exception ex) {
             ex.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testTransformWithXalanUsingSax() throws Exception {
+        try {
+            Assert.assertTrue("Xalan XSLT present", isXalan());
+            String after = doTransform(XALAN_TEST_XSL, XALAN_TEST_MSG, true);
+            Assert.assertEquals(XALAN_TEST_RESULT, after);
+        } catch (Exception ex) {
+            ex.printStackTrace(System.err);
+            Assert.fail("Unexpected exception encountered. " + ex);
         }
     }
 
@@ -125,11 +140,14 @@ public class StylesheetCompilerTest {
         return TransformerFactory.newInstance().getClass().getName().equals("org.apache.xalan.processor.TransformerFactoryImpl");
     }
 
-    private String doTransform(String xslt, String xml) throws Exception {
+    private String doTransform(String xslt, String xml, boolean useSax) throws Exception {
         CompiledStylesheet xsl = StylesheetCompiler.compileStylesheet(xslt);
         TransformOutput to = new TransformOutput();
+        final Message mess = useSax
+                ? new Message(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(xml.getBytes(Charsets.UTF8)))
+                : new Message(XmlUtil.stringAsDocument(xml));
         xsl.transform(
-                new TransformInput(new DomElementCursor(XmlUtil.stringAsDocument(xml)), new Functions.Unary<Object, String>() {
+                new TransformInput(mess.getXmlKnob(), null, new Functions.Unary<Object, String>() {
                     public Object call(String s) {
                         return null;
                     }

@@ -35,6 +35,14 @@ public class TarariKnob implements MessageKnob, Closeable {
     }
 
     /**
+     * @return true if a Tarari RAX document is already present in this knob.  false if the XML has not yet been parsed,
+     *         or if the parsed form has been invalidated (such as by a change to the underlying MIME part bytes).
+     */
+    public boolean isContextPresent() {
+        return context != null;
+    }
+
+    /**
      * Get the TarariMessageContext for this message.  If the original TMC that located the SoapInfo has since
      * been invalidated, this method will try to create a new one by running the message through the hardware
      * again.  If a TarariMessageContext cannot be created, returns null.
@@ -60,6 +68,7 @@ public class TarariKnob implements MessageKnob, Closeable {
             } catch (SoftwareFallbackException e) {
                 // TODO if this happens a lot for perfectly reasonable reasons, downgrade to something below INFO
                 logger.log(Level.INFO, "Falling back from hardware to software processing", e);
+                context = null;
                 giveup = true;
                 return null;
             }
