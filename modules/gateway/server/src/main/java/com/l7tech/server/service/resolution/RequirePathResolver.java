@@ -76,6 +76,6 @@ public class RequirePathResolver extends ServiceResolver<Void> {
     private final AtomicBoolean requirePath = new AtomicBoolean(false);
 
     private boolean appliesToMessage( final Message message ) {
-        return requirePath.get() && (message.getKnob(HttpRequestKnob.class) != null) || (message.getKnob(FtpRequestKnob.class) != null);
+        return requirePath.get() && UriResolver.canResolveByURI(message);
     }
 }
