@@ -6,6 +6,7 @@
 
 package com.l7tech.gui.util;
 
+import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.JTextComponent;
@@ -16,6 +17,7 @@ import java.awt.event.InputMethodListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.*;
+import java.util.Timer;
 
 /**
  * @author alex
@@ -52,20 +54,20 @@ public class TextComponentPauseListenerManager {
         }
 
         private void notifyPause(long howlong) {
-            for (Iterator i = _listeners.iterator(); i.hasNext();) {
-                PauseListener listener = (PauseListener)i.next();
+            for (Object _listener : _listeners) {
+                PauseListener listener = (PauseListener) _listener;
                 listener.textEntryPaused(_component, howlong);
             }
         }
 
         private void notifyResume() {
-            for (Iterator i = _listeners.iterator(); i.hasNext();) {
-                PauseListener listener = (PauseListener)i.next();
+            for (Object _listener : _listeners) {
+                PauseListener listener = (PauseListener) _listener;
                 listener.textEntryResumed(_component);
             }
         }
 
-        public void start() {
+        public synchronized void start() {
             if (_task != null) _task.cancel();
             _task = new MyTimerTask();
             // bugzilla #2615
@@ -74,80 +76,96 @@ public class TextComponentPauseListenerManager {
             _updated = System.currentTimeMillis();
         }
 
-        public void updated() {
+        public synchronized void updated() {
             _updated = System.currentTimeMillis();
             if (_paused) notifyResume();
             _paused = false;
         }
 
-        public void stop() {
+        public synchronized void stop() {
             if (_task != null) _task.cancel();
             _paused = true;
         }
 
+        @Override
         public void insertUpdate(DocumentEvent e) {
             updated();
         }
 
+        @Override
         public void removeUpdate(DocumentEvent e) {
             updated();
         }
 
+        @Override
         public void changedUpdate(DocumentEvent e) {
             updated();
         }
 
+        @Override
         public void propertyChange(PropertyChangeEvent evt) {
             String pname = evt.getPropertyName();
             if ("editable".equals(pname)) {
                 Boolean b = (Boolean)evt.getNewValue();
-                if (b.booleanValue())
+                if (b)
                     start();
                 else
                     stop();
             }
         }
 
+        @Override
         public void componentShown(ComponentEvent e) {
             start();
         }
 
+        @Override
         public void componentHidden(ComponentEvent e) {
             stop();
         }
 
         private final JTextComponent _component;
-        private List _listeners = new ArrayList();
+        private List<PauseListener> _listeners = new ArrayList<PauseListener>();
         private MyTimerTask _task;
-        private long _updated;
-        private long _notifyDelay;
-        private boolean _paused;
+        private volatile long _updated;
+        private volatile long _notifyDelay;
+        private volatile boolean _paused;
 
+        @Override
         public void inputMethodTextChanged(InputMethodEvent event) {
             updated();
         }
 
+        @Override
         public void caretPositionChanged(InputMethodEvent event) {
             // Don't care
         }
 
+        @Override
         public void componentResized(ComponentEvent e) {
             // Don't care
         }
 
+        @Override
         public void componentMoved(ComponentEvent e) {
             // Don't care
         }
 
         private class MyTimerTask extends TimerTask {
+            @Override
             public void run() {
                 long now = System.currentTimeMillis();
-                long howlong = now - _updated;
+                final long howlong = now - _updated;
                 if (howlong >= _notifyDelay && !_paused) {
                     _paused = true;
-                    notifyPause(howlong);
-                    stop();
-                    start();
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            notifyPause(howlong);
+                            stop();
+                            start();
+                        }
+                    });
                 }
             }
         }
@@ -156,6 +174,8 @@ public class TextComponentPauseListenerManager {
     /**
      * Warning - be careful of usages where pause events will be fired before the text component's panel / dialog
      * is ready for usage. See WizardStepPanel canAdvance().
+     *
+     * Invoke only from the UI thread.
      */
     public static void registerPauseListener(JTextComponent component, PauseListener pl, int notifyDelay) {
         TextComponentPauseNotifier holder = new TextComponentPauseNotifier(component, notifyDelay);
