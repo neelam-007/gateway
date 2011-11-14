@@ -76,6 +76,7 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
     }
 
     public void copyFrom(RequireWssSaml requestWssSaml) {
+        this.setAssertionComment(requestWssSaml.getAssertionComment());
         this.setAttributeStatement(requestWssSaml.getAttributeStatement());
         this.setAudienceRestriction(requestWssSaml.getAudienceRestriction());
         this.setAuthenticationStatement(requestWssSaml.getAuthenticationStatement());

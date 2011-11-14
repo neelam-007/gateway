@@ -63,6 +63,7 @@ public abstract class WsFederationPassiveTokenAssertion extends Assertion {
     }
 
     public void copyFrom(WsFederationPassiveTokenAssertion source) {
+        this.setAssertionComment(source.getAssertionComment());
         this.setIpStsUrl(source.getIpStsUrl());
         this.setAuthenticate(source.isAuthenticate());
         this.setReplyUrl(source.getReplyUrl());
