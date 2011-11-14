@@ -128,8 +128,8 @@ public class TextComponentPauseListenerManager {
         private List<PauseListener> _listeners = new ArrayList<PauseListener>();
         private MyTimerTask _task;
         private volatile long _updated;
-        private volatile long _notifyDelay;
-        private volatile boolean _paused;
+        private final long _notifyDelay;
+        private boolean _paused;
 
         @Override
         public void inputMethodTextChanged(InputMethodEvent event) {
@@ -157,7 +157,10 @@ public class TextComponentPauseListenerManager {
                 long now = System.currentTimeMillis();
                 final long howlong = now - _updated;
                 if (howlong >= _notifyDelay && !_paused) {
-                    _paused = true;
+                    synchronized (TextComponentPauseNotifier.this) {
+                        _paused = true;
+                    }
+
                     SwingUtilities.invokeLater(new Runnable() {
                         @Override
                         public void run() {
@@ -176,6 +179,9 @@ public class TextComponentPauseListenerManager {
      * is ready for usage. See WizardStepPanel canAdvance().
      *
      * Invoke only from the UI thread.
+     * @param component The text component to register.
+     * @param pl The listener to invoke when paused.
+     * @param notifyDelay The delay between notifications.
      */
     public static void registerPauseListener(JTextComponent component, PauseListener pl, int notifyDelay) {
         TextComponentPauseNotifier holder = new TextComponentPauseNotifier(component, notifyDelay);
