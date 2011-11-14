@@ -178,7 +178,7 @@ public class JsonTransformationAssertion extends MessageTargetableAssertion {
         @Override
         public void validate(final AssertionPath path, final PolicyValidationContext pvc, final PolicyValidatorResult result) {
             if(assertion.getTarget() == TargetMessageType.RESPONSE && assertion.getDestinationMessageTarget().getTarget() == TargetMessageType.REQUEST){
-                result.addError(new PolicyValidatorResult.Error(assertion,
+                result.addWarning(new PolicyValidatorResult.Warning(assertion,
                     "Destination can not be Request when Response is selected as Source.", null));
             }
         }

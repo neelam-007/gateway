@@ -187,7 +187,9 @@ public class JsonTransformationPropertiesDialog extends AssertionPropertiesOkCan
         if(error != null){
             throw new ValidationException(error);
         }
-        if(Syntax.getReferencedNames(rootTagTextField.getText()).length == 0 &&
+        if(getTransformation() == JsonTransformationAssertion.Transformation.JSON_to_XML &&
+                getConvention() == JsonTransformationAssertion.TransformationConvention.STANDARD &&
+                Syntax.getReferencedNames(rootTagTextField.getText()).length == 0 &&
                 !JsonTransformationAssertion.ROOT_TAG_VERIFIER.matcher(rootTagTextField.getText()).matches()){
             throw new ValidationException("Invalid Root Tag specified.");
         }
