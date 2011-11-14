@@ -5,6 +5,7 @@ package com.l7tech.security.saml;
 
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.xml.KeyInfoInclusionType;
+import org.jetbrains.annotations.NotNull;
 
 /**
  *
@@ -14,7 +15,7 @@ public class AttributeStatement extends SubjectStatement {
 
     public AttributeStatement() { }
 
-    public AttributeStatement(LoginCredentials credentials,
+    public AttributeStatement(@NotNull LoginCredentials credentials,
                               Confirmation confirmation,
                               Attribute[] attributes,
                               KeyInfoInclusionType keyInfoType,

@@ -5,6 +5,7 @@ package com.l7tech.security.saml;
 
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.xml.KeyInfoInclusionType;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author emil
@@ -14,7 +15,7 @@ public class AuthorizationStatement extends SubjectStatement {
     private String action;
     private String actionNamespace;
 
-    public AuthorizationStatement(LoginCredentials credentials,
+    public AuthorizationStatement(@NotNull LoginCredentials credentials,
                                   Confirmation confirmation,
                                   String resource, String action,
                                   String actionNamespace,

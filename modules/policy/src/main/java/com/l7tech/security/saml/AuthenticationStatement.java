@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.security.xml.KeyInfoInclusionType;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -21,7 +22,7 @@ public class AuthenticationStatement extends SubjectStatement {
     private Calendar authenticationInstant = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
     private boolean includeAuthnContextDecl;
 
-    public AuthenticationStatement(LoginCredentials credentials, Confirmation confirmation,
+    public AuthenticationStatement(@NotNull LoginCredentials credentials, Confirmation confirmation,
                                    KeyInfoInclusionType keyInfoType, NameIdentifierInclusionType nameIdType,
                                    String overrideNameValue, String overrideNameFormat, String nameQualifier,
                                    String overrideAuthnMethodUri, boolean includeAuthnContextDecl) {

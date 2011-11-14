@@ -3,6 +3,7 @@ package com.l7tech.security.saml;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.xml.KeyInfoInclusionType;
+import org.jetbrains.annotations.NotNull;
 
 import java.security.cert.X509Certificate;
 import java.util.Map;
@@ -171,7 +172,7 @@ public abstract class SubjectStatement {
      * @param overrideNameFormat
      * @param nameQualifier
      */
-    public static SubjectStatement createAuthorizationStatement(LoginCredentials credentials,
+    public static SubjectStatement createAuthorizationStatement(@NotNull LoginCredentials credentials,
                                                                 Confirmation confirmation,
                                                                 KeyInfoInclusionType keyInfoType,
                                                                 String resource, String action, String actionNamespace,
@@ -183,7 +184,7 @@ public abstract class SubjectStatement {
     }
 
     /**
-     * Protected cxonstructor for subclassing that populates the subject statement properties
+     * Protected constructor for subclassing that populates the subject statement properties
      *
      * @param credentials  the source of this subject statement
      * @param confirmation the cvo
@@ -192,7 +193,7 @@ public abstract class SubjectStatement {
      * @param overrideNameValue
      * @param overrideNameFormat
      */
-    protected SubjectStatement(LoginCredentials credentials,
+    protected SubjectStatement(@NotNull LoginCredentials credentials,
                                Confirmation confirmation,
                                KeyInfoInclusionType keyInfoType,
                                NameIdentifierInclusionType nameIdType,
@@ -200,8 +201,6 @@ public abstract class SubjectStatement {
                                String overrideNameFormat,
                                String nameQualifier)
     {
-        if (credentials == null) throw new IllegalArgumentException("Credentials are required");
-
         this.nameQualifier = nameQualifier;
 
         CredentialFormat format = credentials.getFormat();

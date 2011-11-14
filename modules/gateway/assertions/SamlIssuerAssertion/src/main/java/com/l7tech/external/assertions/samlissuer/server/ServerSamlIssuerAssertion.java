@@ -31,6 +31,7 @@ import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.util.ContextVariableUtils;
 import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -204,6 +205,12 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                 break;
         }
 
+        if (creds == null) {
+            // if creds are null, then they are missing and required. Fail early.
+            logAndAudit(AssertionMessages.IDENTITY_NO_CREDS);
+            return AssertionStatus.FALSIFIED;
+        }
+
         final List<SubjectStatement> statements = new LinkedList<SubjectStatement>();
         if (assertion.getAttributeStatement() != null)
             statements.add(makeAttributeStatement(creds, version, vars, nameValue, nameFormat, nameQualifier));
@@ -331,7 +338,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
         }
     }
 
-    private SubjectStatement makeAuthorizationStatement(LoginCredentials creds, Map<String, Object> vars, String overrideNameValue, String overrideNameFormat, String nameQualifier) {
+    private SubjectStatement makeAuthorizationStatement(@NotNull LoginCredentials creds, Map<String, Object> vars, String overrideNameValue, String overrideNameFormat, String nameQualifier) {
         final SamlAuthorizationStatement authz = assertion.getAuthorizationStatement();
         return SubjectStatement.createAuthorizationStatement(
                 creds,
