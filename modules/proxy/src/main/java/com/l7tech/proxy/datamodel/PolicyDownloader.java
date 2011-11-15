@@ -1,6 +1,7 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.util.CausedIOException;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.kerberos.KerberosUtils;
@@ -73,9 +74,11 @@ public class PolicyDownloader {
             // FALLTHROUGH and try again using credentials
             log.info("Policy service declined our anonymous download; will try again using credentials");
         } catch (InvalidDocumentFormatException e) {
-            throw new CausedIOException("Unable to download new policy", e);
+            //noinspection ThrowableResultOfMethodCallIgnored
+            throw new CausedIOException("Unable to download new policy (is policy download service enabled?): " + ExceptionUtils.getMessage(e), e);
         } catch (IOException e) {
-            throw new CausedIOException("Unable to download new policy", e);
+            //noinspection ThrowableResultOfMethodCallIgnored
+            throw new CausedIOException("Unable to download new policy: " + ExceptionUtils.getMessage(e), e);
         }
 
         boolean useX509 = false; // true = x.509; false = use saml holder-of-key

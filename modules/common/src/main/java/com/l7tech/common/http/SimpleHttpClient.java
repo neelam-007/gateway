@@ -229,8 +229,10 @@ public class SimpleHttpClient implements GenericHttpClient {
             request.setInputStream(new ByteArrayInputStream(requestBody));
             response = request.getResponse();
             final ContentTypeHeader contentType = response.getContentType();
-            if (contentType == null || !contentType.isXml())
-                throw new SAXException("Response from server was non-XML content type: " + contentType);
+            if (contentType == null)
+                throw new SAXException("Response from server did not include a Content-Type header");
+            if (!contentType.isXml())
+                throw new SAXException("Response from server was non-XML content type: " + contentType.getFullValue());
             Document responseDoc = XmlUtil.parse(response.getInputStream());
             return new SimpleXmlResponseImpl(response, responseDoc);
         } catch (IOException e) {

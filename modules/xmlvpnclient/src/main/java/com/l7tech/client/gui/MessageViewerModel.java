@@ -4,13 +4,10 @@ import com.l7tech.gui.widgets.ContextMenuTextArea;
 import com.l7tech.common.http.GenericHttpHeaders;
 import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.http.HttpHeaders;
-import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.PoolByteArrayOutputStream;
+import com.l7tech.util.*;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.message.HttpHeadersKnob;
 import com.l7tech.message.Message;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.ResourceUtils;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.Policy;
@@ -511,21 +508,7 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
      */
     public void onMessageError(final Throwable t) {
         if (!isRecordErrors()) return;
-        final PoolByteArrayOutputStream b = new PoolByteArrayOutputStream(2048);
-        PrintStream p = null;
-        try {
-            //noinspection IOResourceOpenedButNotSafelyClosed
-            p = new PrintStream(b, true, "UTF-8");
-            t.printStackTrace(p);
-            p.flush();
-            appendMessage(new SavedTextMessage("Client Error", b.toString(Charsets.UTF8), perMessageStorageSize));
-        } catch (UnsupportedEncodingException e) {
-            log.log(Level.SEVERE, e.getMessage(), e);
-            appendMessage(new SavedTextMessage("Client Error", t.getMessage(), perMessageStorageSize));
-        } finally {
-            ResourceUtils.closeQuietly(p);
-            ResourceUtils.closeQuietly(b);
-        }
+        appendMessage(new SavedTextMessage("Client Error", getMessageForException(t), perMessageStorageSize));
     }
 
     /**
@@ -534,21 +517,7 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
      */
     public void onReplyError(final Throwable t) {
         if (!isRecordErrors()) return;
-        final PoolByteArrayOutputStream b = new PoolByteArrayOutputStream(2048);
-        PrintStream p = null;
-        try {
-            //noinspection IOResourceOpenedButNotSafelyClosed
-            p = new PrintStream(b, true, "UTF-8");
-            t.printStackTrace(p);
-            p.flush();            
-            appendMessage(new SavedTextMessage(SERVER_ERROR, t.getMessage(), perMessageStorageSize));
-        } catch (UnsupportedEncodingException e) {
-            log.log(Level.SEVERE, e.getMessage(), e);
-            appendMessage(new SavedTextMessage(SERVER_ERROR, t.getMessage(), perMessageStorageSize));
-        } finally {
-            ResourceUtils.closeQuietly(p);
-            ResourceUtils.closeQuietly(b);
-        }
+        appendMessage(new SavedTextMessage(SERVER_ERROR, getMessageForException(t), perMessageStorageSize));
     }
 
     // can be called from any thread
@@ -566,24 +535,29 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
     // can be called from any thread
     public void onPolicyError(Ssg ssg, PolicyAttachmentKey binding, Throwable error) {
         if (!isRecordErrors()) return;
+        appendMessage(new PolicyErrorMessage(POLICY_DOWNLOAD_ERROR, binding, getMessageForException(error)));
+    }
+
+    private String getMessageForException(Throwable t) {
         final PoolByteArrayOutputStream b = new PoolByteArrayOutputStream(2048);
         PrintStream p = null;
         try {
-            //noinspection IOResourceOpenedButNotSafelyClosed
-            p = new PrintStream(b, true, "UTF-8");
-            error.printStackTrace(p);
-            p.flush();
-            String mess = b.toString(Charsets.UTF8);
-            appendMessage(new PolicyErrorMessage(POLICY_DOWNLOAD_ERROR, binding, mess));
+            if (JdkLoggerConfigurator.debugState()) {
+                p = new PrintStream(b, true, "UTF-8");
+                t.printStackTrace(p);
+                p.flush();
+                return b.toString(Charsets.UTF8);
+            }
+            /* FALLTHROUGH and return exception message without stack */
         } catch (UnsupportedEncodingException e) {
-            log.log(Level.SEVERE, e.getMessage(), e);
-            appendMessage(new SavedTextMessage(POLICY_DOWNLOAD_ERROR, error == null ? "null" : error.getMessage(), perMessageStorageSize));
+            log.log(Level.SEVERE, ExceptionUtils.getMessage(e), e);
+            /* FALLTHROUGH and return exception message without stack */
         } finally {
             ResourceUtils.closeQuietly(p);
             ResourceUtils.closeQuietly(b);
         }
+        return ExceptionUtils.getMessage(t);
     }
-
 
     public boolean isRecordFromClient() {
         return recordFromClient;
