@@ -6,6 +6,7 @@ import com.l7tech.xml.SoapFaultDetail;
 import com.l7tech.xml.SoapFaultDetailImpl;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.util.DomUtils;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -114,8 +115,8 @@ public class SoapFaultUtils {
 
     public static Document generateSoapFaultDocument(SoapVersion soapVersion,
                                              String faultCode,
-                                             String faultString,
-                                             Element faultDetails,
+                                             @Nullable String faultString,
+                                             @Nullable Element faultDetails,
                                              String faultActor) throws IOException, SAXException {
         Document tmpDoc;
         if(soapVersion == SoapVersion.SOAP_1_2) {
@@ -271,8 +272,8 @@ public class SoapFaultUtils {
 
     public static String generateSoapFaultXml(SoapVersion soapVersion,
                                               String faultCode,
-                                              String faultString,
-                                              Element faultDetails,
+                                              @Nullable String faultString,
+                                              @Nullable Element faultDetails,
                                               String faultActor) throws IOException, SAXException {
 
         Document doc = generateSoapFaultDocument(soapVersion, faultCode, faultString, faultDetails, faultActor);

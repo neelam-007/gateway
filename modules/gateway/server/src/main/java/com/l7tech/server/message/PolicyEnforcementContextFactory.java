@@ -1,6 +1,7 @@
 package com.l7tech.server.message;
 
 import com.l7tech.message.Message;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.concurrent.Callable;
 
@@ -19,8 +20,8 @@ public class PolicyEnforcementContextFactory {
      * @return The new PEC
      * @see #getCurrent
      */
-    public static PolicyEnforcementContext createPolicyEnforcementContext( final Message request,
-                                                                           final Message response ) {
+    public static PolicyEnforcementContext createPolicyEnforcementContext( @Nullable final Message request,
+                                                                           @Nullable final Message response ) {
         return createPolicyEnforcementContext( request, response, true );
     }
 
@@ -33,8 +34,8 @@ public class PolicyEnforcementContextFactory {
      * @return The new PEC
      * @see #getCurrent
      */
-    public static PolicyEnforcementContext createPolicyEnforcementContext( final Message request,
-                                                                           final Message response,
+    public static PolicyEnforcementContext createPolicyEnforcementContext( @Nullable final Message request,
+                                                                           @Nullable final Message response,
                                                                            final boolean replyExpected ) {
         // Construct PEC
         final PolicyEnforcementContext context =
@@ -52,8 +53,8 @@ public class PolicyEnforcementContextFactory {
      * @param replyExpected True if a reply is expected for the context
      * @return The new unregistered PEC
      */
-    public static PolicyEnforcementContext createUnregisteredPolicyEnforcementContext( final Message request,
-                                                                                       final Message response,
+    public static PolicyEnforcementContext createUnregisteredPolicyEnforcementContext( @Nullable final Message request,
+                                                                                       @Nullable final Message response,
                                                                                        final boolean replyExpected ) {
         // Construct PEC
         final PolicyEnforcementContextImpl context = new PolicyEnforcementContextImpl( request, response );
