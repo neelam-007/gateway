@@ -35,6 +35,7 @@ import java.util.Map;
  */
 public class XmlElementEncryptor {
     private static final SecureRandom random = new SecureRandom();
+    public static final String PROP_ENCRYPT_FOR_EXPIRED_CERT = "com.l7tech.security.xml.encryptForExpiredCert";
 
     private final X509Certificate recipientCert;
     private final String xencAlgorithm;
@@ -117,6 +118,8 @@ public class XmlElementEncryptor {
         final SecretKey secretKey = xek.getSecretKey();
         final byte[] encryptedKeyBytes;
         encryptionMethod.setAttribute("Algorithm", SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO);
+        if (!ConfigFactory.getCachedConfig().getBooleanProperty(PROP_ENCRYPT_FOR_EXPIRED_CERT, false))
+            recipientCert.checkValidity();
         encryptedKeyBytes = XencUtil.encryptKeyWithRsaAndPad(secretKey.getEncoded(), recipientCert, recipientCert.getPublicKey());
         final String base64 = HexUtils.encodeBase64(encryptedKeyBytes, true);
         cipherValue.appendChild(DomUtils.createTextNode(factory, base64));

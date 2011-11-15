@@ -155,6 +155,17 @@ public class TestCertificateGenerator {
     }
 
     /**
+     * Use the specified keypair for the cert instead of generating a new one.
+     *
+     * @param keyPair key pair to use, or null to generate one when needed.
+     * @return this TestCertificateGenerator instance, for further parameter chaining
+     */
+    public TestCertificateGenerator keyPair(KeyPair keyPair) {
+        this.keyPair = keyPair;
+        return this;
+    }
+
+    /**
      * Configure the next certificate generation to use the specified provider for the Signature implementation
      * when signing the certificate.
      *
@@ -287,6 +298,16 @@ public class TestCertificateGenerator {
 
     public TestCertificateGenerator daysUntilExpiry(int daysUntilExpiry) {
         c.setDaysUntilExpiry(daysUntilExpiry);
+        return this;
+    }
+
+    public TestCertificateGenerator notBefore(Date date) {
+        c.setNotBefore(date);
+        return this;
+    }
+
+    public TestCertificateGenerator notAfter(Date date) {
+        c.setNotAfter(date);
         return this;
     }
 

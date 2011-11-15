@@ -16,7 +16,7 @@ import com.l7tech.util.Pair;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.xpath.XpathExpression;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -24,8 +24,11 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
@@ -49,15 +52,16 @@ public class ServerNonSoapEncryptElementAssertionTest {
             "  <par:notice_id>12345</par:notice_id> \n" +
             "</par:GetNoaParties>";
 
-    @BeforeClass
-    public static void setUpCert() throws Exception {
+    @Before
+    public void setUpCert() throws Exception {
         Pair<X509Certificate, PrivateKey> got = TestKeys.getCertAndKey("RSA_1024");
         recipCert = got.left;
+        recipCert.checkValidity();
         recipPrivateKey = got.right;
         recipb64 = HexUtils.encodeBase64(recipCert.getEncoded());
         logger.info("Recipient certificate PKCS#12 keystore: \n" + TestCertificateGenerator.convertToBase64Pkcs12(got.left, got.right));
     }
-        
+
     @Test
     public void testEncryptElement() throws Exception {
         Message req = makeReq();
@@ -66,6 +70,27 @@ public class ServerNonSoapEncryptElementAssertionTest {
         AssertionStatus result = sass.checkRequest( PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, new Message()) );
         assertEquals(AssertionStatus.NONE, result);
         checkResult(req, 1);
+    }
+
+    @Test
+    @BugNumber(10270)
+    public void testEncryptForExpiredCert() throws Exception {
+        Calendar cal = Calendar.getInstance();
+        cal.set(2005,1,1);
+        Date notBefore = cal.getTime();
+        cal.set(2006,1,1);
+        Date notAfter = cal.getTime();
+
+        Pair<X509Certificate, PrivateKey> got = new TestCertificateGenerator().keyPair(new KeyPair(recipCert.getPublicKey(), recipPrivateKey)).notBefore(notBefore).notAfter(notAfter).generateWithKey();
+        recipCert = got.left;
+        recipPrivateKey = got.right;
+        recipb64 = HexUtils.encodeBase64(recipCert.getEncoded());
+
+        Message req = makeReq();
+        NonSoapEncryptElementAssertion ass = makeAss();
+        ServerNonSoapEncryptElementAssertion sass = new ServerNonSoapEncryptElementAssertion(ass);
+        AssertionStatus result = sass.checkRequest( PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, new Message()) );
+        assertEquals(AssertionStatus.SERVER_ERROR, result);
     }
 
     @Test
