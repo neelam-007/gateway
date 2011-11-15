@@ -234,19 +234,19 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
         final String[] referencedVars = Syntax.getReferencedNamesIndexedVarsNotOmitted(maxRequestsPerSecond);
         if (referencedVars.length > 0) {
             if (referencedVars.length != 1) {
-                return "Only a single context variable can be supplied for max requests per second.";
+                return "Only a single context variable can be supplied for Maximum requests per second.";
             }
             if (!maxRequestsPerSecond.trim().equals("${" + referencedVars[0] + "}")) {
-                return "If a context variable is supplied for maximum requests per second it must be a reference to exactly one context variable.";
+                return "If a context variable is supplied for Maximum requests per second it must be a reference to exactly one context variable.";
             }
         } else {
             final int maxRequests;
             try {
                 maxRequests = Integer.parseInt(maxRequestsPerSecond);
             } catch (NumberFormatException e) {
-                return "Invalid value for maximum requests per second.";
+                return "Invalid value for Maximum requests per second.";
             }
-            if (maxRequests < 1) return "Max requests per second cannot be less than 1.";
+            if (maxRequests < 1) return "Maximum requests per second cannot be less than 1.";
         }
 
         return null;
@@ -256,19 +256,19 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
         final String[] referencedVars = Syntax.getReferencedNamesIndexedVarsNotOmitted(maxConcurrency);
         if (referencedVars.length > 0) {
             if (referencedVars.length != 1) {
-                return "Only a single context variable can be supplied for max concurrency.";
+                return "Only a single context variable can be supplied for Maximum concurrent requests.";
             }
             if (!maxConcurrency.trim().equals("${" + referencedVars[0] + "}")) {
-                return "If a context variable is supplied for maximum concurrency it must be a reference to exactly one context variable.";
+                return "If a context variable is supplied for Maximum concurrent requests it must be a reference to exactly one context variable.";
             }
         } else {
             final int maxConnurencyInt;
             try {
                 maxConnurencyInt = Integer.parseInt(maxConcurrency);
             } catch (NumberFormatException e) {
-                return "Invalid value for maximum concurrency";
+                return "Invalid value for Maximum concurrent requests";
             }
-            if (maxConnurencyInt < 0) return "Max concurrency cannot be less than 0";
+            if (maxConnurencyInt < 0) return "Maximum concurrent requests cannot be less than 0";
         }
 
         return null;

@@ -105,11 +105,11 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
         this.config = context.getBean("serverConfig", Config.class);
         if ( config == null) throw new PolicyAssertionException(assertion, "Missing serverConfig bean");
 
-        this.windowSizeInSecondsFinder = makeBigIntFinder(assertion.getWindowSizeInSeconds(), "windowSizeInSeconds", getAudit(), 1L );
-        this.maxConcurrencyFinder = makeBigIntFinder(assertion.getMaxConcurrency(), "maxConcurrency", getAudit(), 0L );
-        this.maxRequestsPerSecondFinder = makeBigIntFinder(assertion.getMaxRequestsPerSecond(), "maxRequestsPerSecond", getAudit(), 1L );
+        this.windowSizeInSecondsFinder = makeBigIntFinder(assertion.getWindowSizeInSeconds(), "Burst spread limit", getAudit(), 1L );
+        this.maxConcurrencyFinder = makeBigIntFinder(assertion.getMaxConcurrency(), "Maximum concurrent requests", getAudit(), 0L );
+        this.maxRequestsPerSecondFinder = makeBigIntFinder(assertion.getMaxRequestsPerSecond(), "Maximum requests per second", getAudit(), 1L );
         final String blackout = assertion.getBlackoutPeriodInSeconds();
-        this.blackoutSecondsFinder = blackout == null ? null : makeBigIntFinder(blackout, "blackoutPeriodInSeconds", getAudit(), 1L );
+        this.blackoutSecondsFinder = blackout == null ? null : makeBigIntFinder(blackout, "Blackout period in seconds", getAudit(), 1L );
     }
 
     @Override
@@ -416,12 +416,12 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
                     try {
                         longVal = Long.valueOf(str);
                     } catch (NumberFormatException e) {
-                        audit.logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Variable value for rate limit field " + fieldName + " is not a valid integer" );
+                        audit.logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Variable value for rate limit field '" + fieldName + "' is not a valid integer" );
                         throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
                     }
 
                     if (longVal < min) {
-                        audit.logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Variable value for rate limit field " + fieldName + " is below minimum of " + min );
+                        audit.logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Variable value for rate limit field '" + fieldName + "' is below minimum of " + min );
                         throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
                     }
 

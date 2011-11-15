@@ -190,10 +190,10 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
         if(err == null) err = RateLimitAssertion.validateMaxRequestsPerSecond(maxRequestsPerSecondField.getText());
 
         if (err == null && burstWindowSizeField.isEnabled() && !validNumOrVar(burstWindowSizeField.getText()))
-            err = "Burst traffic window size must be at least 1 second (if not using variables)";
+            err = "Burst spread limit must be at least 1 second (if not using variables)";
 
         if (err == null && blackoutForCheckBox.isEnabled() && !validNumOrVar(blackoutSecField.getText()))
-            err = "Blackout time must be a least 1 second (if not using variables)";
+            err = "Blackout period in seconds must be a least 1 second (if not using variables)";
 
         if (err != null)
             DialogDisplayer.showMessageDialog(this, err, "Error", JOptionPane.ERROR_MESSAGE, null);
