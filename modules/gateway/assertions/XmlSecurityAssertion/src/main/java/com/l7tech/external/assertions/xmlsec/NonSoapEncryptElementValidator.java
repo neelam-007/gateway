@@ -15,8 +15,10 @@ public class NonSoapEncryptElementValidator extends ElementSelectingXpathBasedAs
     public NonSoapEncryptElementValidator(final NonSoapEncryptElementAssertion assertion) {
         super(assertion);
         vs = new AssertionValidatorSupport<NonSoapEncryptElementAssertion>(assertion);
-        elementSelectingXpathValidator = new ElementSelectingXpathValidator(assertion);
-        requireValidCertificate(vs, assertion);
+        elementSelectingXpathValidator = new ElementSelectingXpathValidator<NonSoapEncryptElementAssertion>(assertion);
+        if (assertion.getRecipientCertContextVariableName() == null || assertion.getRecipientCertContextVariableName().trim().length() < 1) {
+            requireValidCertificate(vs, assertion);
+        }
     }
 
     private static void requireValidCertificate(AssertionValidatorSupport vs, NonSoapEncryptElementAssertion assertion) {
