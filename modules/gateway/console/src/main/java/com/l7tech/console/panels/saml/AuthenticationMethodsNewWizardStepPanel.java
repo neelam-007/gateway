@@ -14,10 +14,12 @@ import java.awt.*;
 import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
+import javax.swing.text.JTextComponent;
 
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.util.SquigglyFieldUtils;
-import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.PauseListenerAdapter;
+import com.l7tech.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
@@ -28,7 +30,7 @@ import com.l7tech.gui.util.ImageCache;
  * The <code>WizardStepPanel</code> that allows selection of SAML
  * authentication methods.
  */
-public class AuthenticationMethodsNewWizardStepPanel extends WizardStepPanel {
+public class AuthenticationMethodsNewWizardStepPanel extends WizardStepPanel{
     public static final String RESOURCE_PATH = "com/l7tech/console/resources";
 
     private JPanel mainPanel;
@@ -90,6 +92,7 @@ public class AuthenticationMethodsNewWizardStepPanel extends WizardStepPanel {
      * @throws IllegalArgumentException if the the data provided
      *                                  by the wizard are not valid.
      */
+    @Override
     public void readSettings(Object settings) throws IllegalArgumentException {
         RequireWssSaml assertion = (RequireWssSaml)settings;
         SamlAuthenticationStatement statement = assertion.getAuthenticationStatement();
@@ -98,18 +101,17 @@ public class AuthenticationMethodsNewWizardStepPanel extends WizardStepPanel {
             return;
         }
 
-        enableForVersion(assertion.getVersion()==null ? 1 : assertion.getVersion().intValue());
+        enableForVersion(assertion.getVersion() == null ? 1 : assertion.getVersion());
 
         unselectedList.removeAll(authenticationsMap.values());
         unselectedList.addAll(enabledAuthenticationsMap.values());
         selectedList.removeAll(authenticationsMap.values());
 
         String[] methods = statement.getAuthenticationMethods();
-        for (int i = 0; i < methods.length; i++) {
-            String method = methods[i];
-            String methodText = (String)authenticationsMap.get(method);
+        for (String method : methods) {
+            String methodText = (String) authenticationsMap.get(method);
             if (methodText == null) {
-                throw new IllegalArgumentException("Unknown authentication method: "+method);
+                throw new IllegalArgumentException("Unknown authentication method: " + method);
             }
             if (enabledAuthenticationsMap.keySet().contains(method))
                 selectedList.addAll(Collections.singleton(methodText));
@@ -135,6 +137,7 @@ public class AuthenticationMethodsNewWizardStepPanel extends WizardStepPanel {
      * @throws IllegalArgumentException if the the data provided
      *                                  by the wizard are not valid.
      */
+    @Override
     public void storeSettings(Object settings) throws IllegalArgumentException {
         RequireWssSaml assertion = (RequireWssSaml)settings;
         SamlAuthenticationStatement statement = assertion.getAuthenticationStatement();
@@ -144,7 +147,7 @@ public class AuthenticationMethodsNewWizardStepPanel extends WizardStepPanel {
         Map authMap = new HashMap(authenticationsMap);
         authMap.values().retainAll(selectedList.getItems());
         statement.setAuthenticationMethods((String[])authMap.keySet().toArray(new String[] {}));
-        statement.setCustomAuthenticationMethods(customAuthMethodTextField.getText());
+        statement.setCustomAuthenticationMethods(customAuthMethodTextField.getText().trim());
     }
 
     private void initialize() {
@@ -208,12 +211,14 @@ public class AuthenticationMethodsNewWizardStepPanel extends WizardStepPanel {
 
         // enable add/remove buttons based on list selections
         listSelected.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
+            @Override
             public void valueChanged(ListSelectionEvent e) {
                 buttonRemove.setEnabled(listSelected.getSelectedValues().length > 0);
             }
         });
 
         listAvailable.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
+            @Override
             public void valueChanged(ListSelectionEvent e) {
                 buttonAdd.setEnabled(listAvailable.getSelectedValues().length > 0);
             }
@@ -221,6 +226,7 @@ public class AuthenticationMethodsNewWizardStepPanel extends WizardStepPanel {
 
         // button listeners
         buttonSelectAll.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 unselectedList.removeAll(authenticationsMap.values());
                 selectedList.addAll(enabledAuthenticationsMap.values());
@@ -229,6 +235,7 @@ public class AuthenticationMethodsNewWizardStepPanel extends WizardStepPanel {
             }
         });
         buttonSelectNone.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 selectedList.removeAll(authenticationsMap.values());
                 unselectedList.addAll(enabledAuthenticationsMap.values());
@@ -237,6 +244,7 @@ public class AuthenticationMethodsNewWizardStepPanel extends WizardStepPanel {
             }
         });
         buttonAdd.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 Collection toAdd = Arrays.asList(listAvailable.getSelectedValues());
                 selectedList.addAll(toAdd);
@@ -245,6 +253,7 @@ public class AuthenticationMethodsNewWizardStepPanel extends WizardStepPanel {
             }
         });
         buttonRemove.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 Collection toAdd = Arrays.asList(listSelected.getSelectedValues());
                 unselectedList.addAll(toAdd);
@@ -253,13 +262,12 @@ public class AuthenticationMethodsNewWizardStepPanel extends WizardStepPanel {
             }
         });
 
-        //Do not use TextComponentPauseListenerManager.registerPauseListener. See it's java doc for warning.
-        customAuthMethodTextField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
+        TextComponentPauseListenerManager.registerPauseListenerWhenFocused(customAuthMethodTextField, new PauseListenerAdapter() {
             @Override
-            public void run() {
+            public void textEntryPaused(JTextComponent component, long msecs) {
                 notifyListeners();
             }
-        }));
+        }, 300);
     }
 
     /**
@@ -322,8 +330,7 @@ public class AuthenticationMethodsNewWizardStepPanel extends WizardStepPanel {
         public Object getElementAt(int index) {
             Object item = null;
             int count = 0;
-            for (Iterator itemIter=items.iterator(); itemIter.hasNext(); ) {
-                Object current = itemIter.next();
+            for (Object current : items) {
                 if (count == index) {
                     item = current;
                     break;

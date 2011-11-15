@@ -10,10 +10,7 @@ import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.JTextComponent;
-import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
-import java.awt.event.InputMethodEvent;
-import java.awt.event.InputMethodListener;
+import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.*;
@@ -30,7 +27,7 @@ public class TextComponentPauseListenerManager {
       implements DocumentListener, PropertyChangeListener, ComponentListener,
       InputMethodListener {
 
-        public TextComponentPauseNotifier(JTextComponent component, int notifyDelay) {
+        public TextComponentPauseNotifier(final JTextComponent component, final int notifyDelay, final boolean focusControlled) {
             _component = component;
             _notifyDelay = notifyDelay;
 
@@ -38,7 +35,25 @@ public class TextComponentPauseListenerManager {
             component.addComponentListener(this);
             component.getDocument().addDocumentListener(this);
 
-            if (component.isEnabled() && component.isVisible()) start();
+            if (focusControlled) {
+                this._component.addFocusListener(new FocusListener() {
+                    @Override
+                    public void focusGained(FocusEvent e) {
+                        start();
+                    }
+
+                    @Override
+                    public void focusLost(FocusEvent e) {
+                        stop();
+                    }
+                });
+            } else {
+                if (component.isEnabled() && component.isVisible()) start();
+            }
+        }
+
+        private TextComponentPauseNotifier(final JTextComponent _component, final int notifyDelay) {
+            this(_component, notifyDelay, false);
         }
 
         public JTextComponent getComponent() {
@@ -176,7 +191,8 @@ public class TextComponentPauseListenerManager {
 
     /**
      * Warning - be careful of usages where pause events will be fired before the text component's panel / dialog
-     * is ready for usage. See WizardStepPanel canAdvance().
+     * is ready for usage. See WizardStepPanel canAdvance(). In these cases use {@link #registerPauseListenerWhenFocused(javax.swing.text.JTextComponent, PauseListener, int)}
+     * instead.
      *
      * Invoke only from the UI thread.
      * @param component The text component to register.
@@ -187,6 +203,23 @@ public class TextComponentPauseListenerManager {
         TextComponentPauseNotifier holder = new TextComponentPauseNotifier(component, notifyDelay);
         holder.addPauseListener(pl);
     }
+
+    /**
+     * Register a pause listener which is only active when the text component registered is focused.
+     *
+     * Note: If you want to catch a validation error with this PauseListener, then the notifyDelay must either be very
+     * short or your code must check independently before accepting input.
+     *
+     * Invoke from UI thread.
+     * @param component The text component to register.
+     * @param pl The listener to invoke when paused.
+     * @param notifyDelay The delay between notifications.
+     */
+    public static void registerPauseListenerWhenFocused(JTextComponent component, PauseListener pl, int notifyDelay) {
+        TextComponentPauseNotifier holder = new TextComponentPauseNotifier(component, notifyDelay, true);
+        holder.addPauseListener(pl);
+    }
+
     // bugzilla #2615
     //private static Timer _timer = new Timer(true);
 }

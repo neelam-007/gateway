@@ -7,7 +7,9 @@ package com.l7tech.console.panels.saml;
 
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.util.SquigglyFieldUtils;
+import com.l7tech.gui.util.PauseListenerAdapter;
 import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.policy.assertion.SamlIssuerConfiguration;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
@@ -17,6 +19,7 @@ import com.l7tech.util.TimeUnit;
 import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
+import javax.swing.text.JTextComponent;
 import javax.swing.text.NumberFormatter;
 import java.awt.*;
 import java.awt.event.ActionListener;
@@ -183,13 +186,12 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
             titleLabel.getParent().remove(titleLabel);
         }
 
-        textFieldAudienceRestriction.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
+        TextComponentPauseListenerManager.registerPauseListenerWhenFocused(textFieldAudienceRestriction, new PauseListenerAdapter() {
             @Override
-            public void run() {
+            public void textEntryPaused(JTextComponent component, long msecs) {
                 notifyListeners();
             }
-        }));
-
+        }, 300);
     }
 
     private void initMaxExpiryPanel() {
@@ -254,7 +256,6 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
 
     @Override
     public boolean canAdvance() {
-
         final boolean validated = SquigglyFieldUtils.validateSquigglyFieldForUris(textFieldAudienceRestriction);
         return validateMaxExpiry() && validated;
     }
