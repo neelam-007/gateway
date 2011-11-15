@@ -35,7 +35,7 @@ checkForNcipher() {
 checkForEm() {
     EM_PRESENT=""
     EM_ENABLED=""
-    if [ -d "/opt/SecureSpan/EnterpriseManager" ] ; then
+    if [ -r "/opt/SecureSpan/EnterpriseManager/config/emconfig.sh" ] ; then
         EM_PRESENT="true"
     fi
 }
