@@ -175,7 +175,7 @@ public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
         return ascending;
     }
 
-    /** //todo this is not working. truncated is never updated.
+    /**
      * @return true if displayed logs are truncated to {@link #MAX_NUMBER_OF_LOG_MESSAGES}.
      */
     public boolean isTruncated() {
@@ -832,6 +832,10 @@ public class AuditLogTableSorterModel extends FilteredDefaultTableModel {
                                     });
 
                         } else {
+                            truncated = unfilledRequest != null;
+                            if (truncated) {
+                                logPane.updateMsgTotal();
+                            }
                             hideProgressAndRestart(logPane, restartTimer);
                         }
                     } else {

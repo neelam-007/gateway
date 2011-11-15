@@ -75,10 +75,6 @@ public class AuditRecordManagerImpl
             return returnMap;
         }
 
-        //hibernate knows about all subclasses which are mapped. Searching for the interface class
-        //will find all known subclasses - they are all left outer joined.
-        final Class<AuditRecord> interfaceClass = getInterfaceClass();
-
         Session session = null;
         try {
 
