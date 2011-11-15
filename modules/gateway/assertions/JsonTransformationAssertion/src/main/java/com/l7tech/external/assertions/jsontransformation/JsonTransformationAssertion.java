@@ -1,11 +1,7 @@
 package com.l7tech.external.assertions.jsontransformation;
 
 import com.l7tech.external.assertions.jsontransformation.server.JsonTransformationAdminImpl;
-import com.l7tech.policy.AssertionPath;
-import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.validator.AssertionValidator;
-import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
@@ -51,7 +47,7 @@ public class JsonTransformationAssertion extends MessageTargetableAssertion {
 
     public JsonTransformationAssertion() {
         super(TargetMessageType.RESPONSE, false);
-        destinationMessageTarget = new MessageTargetableSupport(TargetMessageType.REQUEST, true);
+        destinationMessageTarget = new MessageTargetableSupport(TargetMessageType.RESPONSE, true);
     }
 
     public void setRootTagString(String rootTagString) {
@@ -141,8 +137,6 @@ public class JsonTransformationAssertion extends MessageTargetableAssertion {
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
 
-        meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, JsonTransformationAssertion.Validator.class.getName());
-
         Collection<TypeMapping> otherMappings = new ArrayList<TypeMapping>();
         otherMappings.add(new Java5EnumTypeMapping(JsonTransformationAssertion.Transformation.class, "transformation"));
         otherMappings.add(new Java5EnumTypeMapping(JsonTransformationAssertion.TransformationConvention.class, "convention"));
@@ -160,27 +154,5 @@ public class JsonTransformationAssertion extends MessageTargetableAssertion {
         });
 
         return meta;
-    }
-
-    /**
-     * The assertion validator.
-     */
-    public static class Validator implements AssertionValidator {
-        private final JsonTransformationAssertion assertion;
-
-        public Validator(final JsonTransformationAssertion assertion) {
-            if (assertion == null) {
-                throw new IllegalArgumentException("assertion is required");
-            }
-            this.assertion = assertion;
-        }
-
-        @Override
-        public void validate(final AssertionPath path, final PolicyValidationContext pvc, final PolicyValidatorResult result) {
-            if(assertion.getTarget() == TargetMessageType.RESPONSE && assertion.getDestinationMessageTarget().getTarget() == TargetMessageType.REQUEST){
-                result.addWarning(new PolicyValidatorResult.Warning(assertion,
-                    "Destination can not be Request when Response is selected as Source.", null));
-            }
-        }
     }
 }
