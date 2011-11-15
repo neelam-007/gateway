@@ -10,7 +10,6 @@ import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.gateway.common.transport.jms.JmsReplyType;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
-import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.JmsDynamicProperties;
@@ -162,7 +161,6 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private JRadioButton defaultResponseRadioButton;
     private JRadioButton saveAsContextVariableRadioButton;
     private TargetVariablePanel responseTargetVariable;
-    private JLabel messageDestinationStatusLabel;
     private JPanel responseTargetVariablePanel;
     private JCheckBox useRequestSettingsCheckBox;
     private JLabel requestDeliveryModeLabel;
@@ -313,7 +311,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             @Override
             public String getValidationError() {
                 if (!validateResMsgDest()) {
-                    return "Message destination error: " + messageDestinationStatusLabel.getText();
+                    return "Invalid context variable for the message destination";
                 }
                 return null;
             }
