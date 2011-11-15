@@ -38,6 +38,7 @@ public class SplitAssertion extends Assertion implements UsesVariables, SetsVari
     private String inputVariable;
     private String outputVariable;
     private boolean isSplitPatternRegEx = true;//true by default for backwards compatibility
+    private boolean isIgnoreEmptyValues;
 
     public String getSplitPattern() {
         return splitPattern;
@@ -71,6 +72,14 @@ public class SplitAssertion extends Assertion implements UsesVariables, SetsVari
         isSplitPatternRegEx = splitPatternRegEx;
     }
 
+    public boolean isIgnoreEmptyValues() {
+        return isIgnoreEmptyValues;
+    }
+
+    public void setIgnoreEmptyValues(boolean ignoreEmptyValues) {
+        isIgnoreEmptyValues = ignoreEmptyValues;
+    }
+
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
@@ -95,7 +104,10 @@ public class SplitAssertion extends Assertion implements UsesVariables, SetsVari
         @Override
         public String getAssertionName( final SplitAssertion assertion, final boolean decorate) {
             if(!decorate) return baseName;
-            return "Split variable " + assertion.getInputVariable() + " into " + assertion.getOutputVariable() + " on \"" + assertion.getSplitPattern() + "\"";
+            return "Split variable " + assertion.getInputVariable() +
+                    " into " + assertion.getOutputVariable() +
+                    " on \"" + assertion.getSplitPattern() + "\" " +
+                    ((assertion.isIgnoreEmptyValues())?" [Ignore empty values]":"");
         }
     };
 

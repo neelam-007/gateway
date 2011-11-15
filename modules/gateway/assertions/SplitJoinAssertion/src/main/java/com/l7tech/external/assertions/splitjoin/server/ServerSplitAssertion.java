@@ -9,9 +9,12 @@ import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
+import com.l7tech.util.TextUtils;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -56,7 +59,15 @@ public class ServerSplitAssertion extends AbstractServerAssertion<SplitAssertion
             } else {
                 output = value.toString().split(literalSplitPattern);
             }
-            context.setVariable(assertion.getOutputVariable(), Arrays.asList(output));
+
+            final List<String> outputList;
+            if (assertion.isIgnoreEmptyValues()) {
+                outputList = Functions.grep(Arrays.asList(output), TextUtils.isNotEmpty());
+            } else {
+                outputList = Arrays.asList(output);
+            }
+
+            context.setVariable(assertion.getOutputVariable(), outputList);
             return AssertionStatus.NONE;
         } catch (NoSuchVariableException e) {
             logAndAudit( AssertionMessages.NO_SUCH_VARIABLE_WARNING, e.getVariable() );

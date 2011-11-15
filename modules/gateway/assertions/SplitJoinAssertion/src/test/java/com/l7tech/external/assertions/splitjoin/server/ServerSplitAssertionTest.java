@@ -218,4 +218,97 @@ public class ServerSplitAssertionTest {
             Assert.assertEquals("Wrong value found", String.valueOf(value.charAt(i - 1)), coll.get(i));
         }
    }
+
+    /**
+     * Test for existing behavior before enhancement for bug.
+     */
+    @Test
+    @BugNumber(10898)
+    public void testTrailingDefaultBehavior() throws Exception {
+        SplitAssertion sa = new SplitAssertion();
+        sa.setInputVariable("input");
+        sa.setOutputVariable("output");
+        sa.setSplitPattern(",");
+
+        ServerSplitAssertion serverSa = new ServerSplitAssertion(sa);
+        final PolicyEnforcementContext context1 = getContext();
+        context1.setVariable("input", ",,,,,,");
+        serverSa.checkRequest(context1);
+
+        // When input consists solely of delimiter characters = empty list.
+        Object output = context1.getVariable("output");
+        System.out.println(output);
+        List<String> outputList = (List<String>) output;
+        Assert.assertTrue("List should be empty", outputList.isEmpty());
+
+        // When first match is after a delimiter character = results in an empty string and subsequent matches.
+        context1.setVariable("input", ", ,,,,,");
+        serverSa.checkRequest(context1);
+        output = context1.getVariable("output");
+        System.out.println(output);
+        outputList = (List<String>) output;
+
+        Assert.assertEquals("Incorrect number of items found", 2, outputList.size());
+        Assert.assertEquals("Incorrect value found", "", outputList.get(0));
+        Assert.assertEquals("Incorrect value found", " ", outputList.get(1));
+
+        // When a non empty match is found after a sequence of delimiter characters = output has an empty string for each delimiter.
+        context1.setVariable("input", ", ,,, ,,");
+        serverSa.checkRequest(context1);
+        output = context1.getVariable("output");
+        System.out.println(output);
+        outputList = (List<String>) output;
+
+        Assert.assertEquals("Incorrect number of items found", 5, outputList.size());
+        Assert.assertEquals("Incorrect value found", "", outputList.get(0));
+        Assert.assertEquals("Incorrect value found", " ", outputList.get(1));
+        Assert.assertEquals("Incorrect value found", "", outputList.get(2));
+        Assert.assertEquals("Incorrect value found", "", outputList.get(3));
+        Assert.assertEquals("Incorrect value found", " ", outputList.get(4));
+    }
+
+    /**
+     * Tests that empty strings are removed when configured.
+     */
+    @Test
+    @BugNumber(10898)
+    public void testTrailingRemoveEmpty() throws Exception {
+        SplitAssertion sa = new SplitAssertion();
+        sa.setInputVariable("input");
+        sa.setOutputVariable("output");
+        sa.setSplitPattern(",");
+        sa.setIgnoreEmptyValues(true);
+
+        ServerSplitAssertion serverSa = new ServerSplitAssertion(sa);
+        final PolicyEnforcementContext context1 = getContext();
+        context1.setVariable("input", ",,,,,,");
+        serverSa.checkRequest(context1);
+
+        // When input consists solely of delimiter characters = empty list.
+        Object output = context1.getVariable("output");
+        System.out.println(output);
+        List<String> outputList = (List<String>) output;
+        Assert.assertTrue("List should be empty", outputList.isEmpty());
+
+        // When first match is after a delimiter character = empty strings ignored.
+        context1.setVariable("input", ", ,,,,,");
+        serverSa.checkRequest(context1);
+        output = context1.getVariable("output");
+        System.out.println(output);
+        outputList = (List<String>) output;
+
+        Assert.assertEquals("Incorrect number of items found", 1, outputList.size());
+        Assert.assertEquals("Incorrect value found", " ", outputList.get(0));
+
+        // When a non empty match is found after a sequence of delimiter characters = empty strings ignored.
+        context1.setVariable("input", ", ,,, ,,");
+        serverSa.checkRequest(context1);
+        output = context1.getVariable("output");
+        System.out.println(output);
+        outputList = (List<String>) output;
+
+        Assert.assertEquals("Incorrect number of items found", 2, outputList.size());
+        Assert.assertEquals("Incorrect value found", " ", outputList.get(0));
+        Assert.assertEquals("Incorrect value found", " ", outputList.get(1));
+    }
 }
