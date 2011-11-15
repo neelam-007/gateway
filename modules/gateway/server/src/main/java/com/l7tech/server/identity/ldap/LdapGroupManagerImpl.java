@@ -13,13 +13,8 @@ import com.l7tech.server.Lifecycle;
 import com.l7tech.server.LifecycleException;
 import com.whirlycott.cache.Cache;
 
+import javax.naming.*;
 import javax.naming.ldap.LdapName;
-import javax.naming.NamingException;
-import javax.naming.OperationNotSupportedException;
-import javax.naming.SizeLimitExceededException;
-import javax.naming.AuthenticationException;
-import javax.naming.NameNotFoundException;
-import javax.naming.NamingEnumeration;
 import javax.naming.directory.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -137,15 +132,19 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
                 ldapTemplate.search( filter, 2L, null, new LdapUtils.LdapListener(){
                     @Override
                     void searchResults( final NamingEnumeration<SearchResult> results ) throws NamingException {
-                        if ( results.hasMore() ) {
-                            SearchResult result = results.next();
-                            groupHolder[0] = buildGroup( result.getNameInNamespace(), result.getAttributes() );
-                            cacheGroup( groupHolder[0] );
-                        }
+                        try {
+                            if ( results.hasMore() ) {
+                                SearchResult result = results.next();
+                                groupHolder[0] = buildGroup( result.getNameInNamespace(), result.getAttributes() );
+                                cacheGroup( groupHolder[0] );
+                            }
 
-                        if ( results.hasMore() ) {
-                            logger.warning("search on group name returned more than one " +
-                              "result. returning 1st one");
+                            if ( results.hasMore() ) {
+                                logger.warning("search on group name returned more than one " +
+                                        "result. returning 1st one");
+                            }
+                        } catch (PartialResultException e) {
+                            LdapUtils.handlePartialResultException(e);
                         }
                     }
                 } );

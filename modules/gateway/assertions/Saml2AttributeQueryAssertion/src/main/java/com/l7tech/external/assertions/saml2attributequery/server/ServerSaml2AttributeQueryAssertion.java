@@ -16,6 +16,7 @@ import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.ldap.LdapIdentityProvider;
+import com.l7tech.server.identity.ldap.LdapUtils;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
@@ -31,6 +32,7 @@ import org.xml.sax.SAXException;
 import javax.naming.NameNotFoundException;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
+import javax.naming.PartialResultException;
 import javax.naming.directory.*;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -243,43 +245,47 @@ public class ServerSaml2AttributeQueryAssertion extends AbstractServerAssertion<
             queryString = sb.toString();
         }
 
-        DirContext ldapcontext = ldapProvider.getBrowseContext();
-        SearchControls sc = new SearchControls();
-        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-        String[] ldapAttributeNames = attributeQuery.getLdapAttributeNames();
-        if(ldapAttributeNames.length > 0) {
-            sc.setReturningAttributes(attributeQuery.getLdapAttributeNames());
-        }
-        NamingEnumeration answer = ldapcontext.search(providerConfig.getSearchBase(), queryString, sc);
-
-        if(answer.hasMore()) {
-            SearchResult searchResult = (SearchResult)answer.next();
-            Attributes attributes = searchResult.getAttributes();
-
-            values = new HashMap<String, Object>();
-            for(NamingEnumeration attrs = attributes.getAll();attrs.hasMore();) {
-                Attribute attribute = (Attribute)attrs.next();
-                List<String> valueList = new ArrayList<String>();
-
-                for(NamingEnumeration ne = attribute.getAll();ne.hasMore();) {
-                    valueList.add(ne.next().toString());
-                }
-
-                if(valueList.size() == 1) {
-                    values.put(attribute.getID(), valueList.get(0));
-                } else {
-                    values.put(attribute.getID(), valueList);
-                }
+        values = new HashMap<String, Object>();
+        try {
+            DirContext ldapcontext = ldapProvider.getBrowseContext();
+            SearchControls sc = new SearchControls();
+            sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+            String[] ldapAttributeNames = attributeQuery.getLdapAttributeNames();
+            if(ldapAttributeNames.length > 0) {
+                sc.setReturningAttributes(attributeQuery.getLdapAttributeNames());
             }
-        } else {
+            NamingEnumeration answer = ldapcontext.search(providerConfig.getSearchBase(), queryString, sc);
+
+            if(answer.hasMore()) {
+                SearchResult searchResult = (SearchResult)answer.next();
+                Attributes attributes = searchResult.getAttributes();
+
+                for(NamingEnumeration attrs = attributes.getAll();attrs.hasMore();) {
+                    Attribute attribute = (Attribute)attrs.next();
+                    List<String> valueList = new ArrayList<String>();
+
+                    for(NamingEnumeration ne = attribute.getAll();ne.hasMore();) {
+                        valueList.add(ne.next().toString());
+                    }
+
+                    if(valueList.size() == 1) {
+                        values.put(attribute.getID(), valueList.get(0));
+                    } else {
+                        values.put(attribute.getID(), valueList);
+                    }
+                }
+            } else {
+                answer.close();
+                ldapcontext.close();
+
+                throw new NameNotFoundException();
+            }
+
             answer.close();
             ldapcontext.close();
-
-            throw new NameNotFoundException();
+        } catch (PartialResultException e) {
+            LdapUtils.handlePartialResultException(e);
         }
-
-        answer.close();
-        ldapcontext.close();
         return values;
     }
 

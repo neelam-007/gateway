@@ -15,21 +15,14 @@ import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.util.ManagedTimerTask;
-import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.TimeUnit;
+import com.l7tech.util.*;
 import org.apache.commons.collections.map.LRUMap;
 import org.springframework.beans.factory.BeanFactory;
 
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
-import javax.naming.directory.Attribute;
-import javax.naming.directory.Attributes;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.SearchControls;
-import javax.naming.directory.SearchResult;
+import javax.naming.PartialResultException;
+import javax.naming.directory.*;
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
@@ -186,12 +179,18 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
             } catch (AssertionStatusException e) {
                 throw e;
             } catch (Exception e) {
-                if (ExceptionUtils.causedBy(e, NamingException.class)) {
-                    String extraDetail = "";
-                    if ( e instanceof NamingException && ((NamingException)e).getRemainingName()!=null ) {
-                        extraDetail = "; remaining name '" + ((NamingException)e).getRemainingName().toString().trim() + "'";
+                @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
+                Exception cause = ExceptionUtils.getCauseIfCausedBy(e, NamingException.class);
+                if (cause instanceof NamingException) {
+                    if (!(cause instanceof PartialResultException) || !LdapUtils.isIgnorePartialResultException()) {
+                        String extraDetail = "";
+                        if ( e instanceof NamingException && ((NamingException)e).getRemainingName()!=null ) {
+                            extraDetail = "; remaining name '" + ((NamingException)e).getRemainingName().toString().trim() + "'";
+                        }
+                        throw new FindException("Error searching for LDAP entry: " + e.getMessage() + extraDetail, e);
+                    } else {
+                        /* FALLTHROUGH and ignore the PartialResultException */
                     }
-                    throw new FindException("Error searching for LDAP entry: " + e.getMessage() + extraDetail, e);
                 } else {
                     throw new FindException("Error searching for LDAP entry", e);
                 }

@@ -12,6 +12,7 @@ import com.whirlycott.cache.Cache;
 
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
+import javax.naming.PartialResultException;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.DirContext;
@@ -125,9 +126,13 @@ public class LdapUrlObjectCache<PT> extends AbstractUrlObjectCache<LdapUrlObject
                 String name = interestingAttributeName + (binary ? ";binary" : ""); 
                 Attribute attr = attributes.get(name);
                 List<Object> vals = new ArrayList<Object>();
-                for (NamingEnumeration<?> ne = attr.getAll(); ne.hasMore();) {
-                    Object o = ne.next();
-                    vals.add(o);
+                try {
+                    for (NamingEnumeration<?> ne = attr.getAll(); ne.hasMore();) {
+                        Object o = ne.next();
+                        vals.add(o);
+                    }
+                } catch (PartialResultException e) {
+                    LdapUtils.handlePartialResultException(e);
                 }
                 this.interestingAttributeValues = Collections.unmodifiableList(vals);
             }

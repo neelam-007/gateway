@@ -139,6 +139,8 @@ public interface ServerConfigParams {
     String PARAM_LDAP_COMPARISON_CASE_INSENSITIVE="ldapCaseInsensitiveComparison";
     String PARAM_LDAP_CONNECTION_TIMEOUT = "ldapConnectionTimeout";
     String PARAM_LDAP_READ_TIMEOUT = "ldapReadTimeout";
+    String PARAM_LDAP_REFERRAL = "ldapReferral";
+    String PARAM_LDAP_IGNORE_PARTIAL_RESULTS = "ldapIgnorePartialResultException";
     String PARAM_TIMESTAMP_CREATED_FUTURE_GRACE = "timestampCreatedFutureGrace";
     String PARAM_TIMESTAMP_EXPIRES_PAST_GRACE = "timestampExpiresPastGrace";
     String PARAM_KEY_USAGE = "pkix.keyUsage";

@@ -4,25 +4,17 @@ import com.l7tech.identity.ldap.LdapUrlBasedIdentityProviderConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
-import com.sun.jndi.ldap.LdapURL;
 import com.l7tech.util.ResourceUtils;
+import com.sun.jndi.ldap.LdapURL;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.naming.*;
-import javax.naming.directory.Attribute;
-import javax.naming.directory.Attributes;
-import javax.naming.directory.InitialDirContext;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.SearchResult;
-import javax.naming.directory.SearchControls;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import javax.naming.directory.*;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import java.util.Hashtable;
-import java.util.Set;
 
 /**
  * @author alex
@@ -220,7 +212,7 @@ public final class LdapUtils {
                                              final String pass,
                                              final long connectTimeout,
                                              final long readTimeout ) throws NamingException {
-        return getLdapContext(url, true, null, null, login, pass, connectTimeout, readTimeout, true);
+        return getLdapContext(url, true, null, null, login, pass, connectTimeout, readTimeout, null, true);
     }
 
     /**
@@ -236,18 +228,20 @@ public final class LdapUtils {
      * @param pass  The password to use (may be null)
      * @param connectTimeout The TCP connection timeout
      * @param readTimeout The TCP read timeout
+     * @param referral whether to ignore, follow, or throw on referrals, or null to use the previous default behavior.
      * @param useConnectionPooling True to use connection pool
      * @return The context
      * @throws NamingException If an error occurs
      */
     public static DirContext getLdapContext( final String url,
                                              final boolean useClientAuth,
-                                             final Long keystoreId,
-                                             final String keyAlias,
+                                             @Nullable final Long keystoreId,
+                                             @Nullable final String keyAlias,
                                              final String login,
                                              final String pass,
                                              final long connectTimeout,
                                              final long readTimeout,
+                                             @Nullable String referral,
                                              final boolean useConnectionPooling ) throws NamingException {
         final ClassLoader originalContextClassLoader = Thread.currentThread().getContextClassLoader();
         try {
@@ -263,7 +257,8 @@ public final class LdapUtils {
             }
             env.put(ENV_PROP_LDAP_CONNECT_TIMEOUT, Long.toString(connectTimeout));
             env.put(ENV_PROP_LDAP_READ_TIMEOUT, Long.toString(readTimeout));
-            env.put(Context.REFERRAL, ENV_VALUE_REFERRAL);
+            if (null == referral) referral = ConfigFactory.getCachedConfig().getProperty(ServerConfigParams.PARAM_LDAP_REFERRAL, LdapUtils.ENV_VALUE_REFERRAL);
+            env.put(Context.REFERRAL, referral );
 
             if (lurl.useSsl()) {
                 env.put(ENV_PROP_LDAP_FACTORY_SOCKET, LdapSslCustomizerSupport.getSSLSocketFactoryClassname( useClientAuth, keystoreId, keyAlias ));
@@ -310,7 +305,7 @@ public final class LdapUtils {
                 boolean clientAuth = providerConfig.isClientAuthEnabled();
                 Long keystoreId = providerConfig.getKeystoreId();
                 String keyAlias = providerConfig.getKeyAlias();
-                userCtx = getLdapContext(ldapurl, clientAuth, keystoreId, keyAlias, dn, passwd, ldapRuntimeConfig.getLdapConnectionTimeout(), ldapRuntimeConfig.getLdapReadTimeout(), false);
+                userCtx = getLdapContext(ldapurl, clientAuth, keystoreId, keyAlias, dn, passwd, ldapRuntimeConfig.getLdapConnectionTimeout(), ldapRuntimeConfig.getLdapReadTimeout(), null, false);
                 logger.info("User: " + dn + " authenticated successfully in provider " + providerConfig.getName());
                 return true;
             } catch (CommunicationException e) {
@@ -329,6 +324,25 @@ public final class LdapUtils {
         }
         logger.warning("Could not establish context on any of the ldap urls.");
         return false;
+    }
+
+    /**
+     * Ignore or rethrow the specified exception, depending on whether it is a PartialResultException and
+     * whether we are configured to ignore such exceptions.
+     *
+     * @param e a NamingException to examine.  Required.
+     * @throws NamingException rethrown e unless the e exception is a {@link PartialResultException} and {@link ServerConfigParams#PARAM_LDAP_IGNORE_PARTIAL_RESULTS} is true.
+     */
+    public static void handlePartialResultException(@NotNull NamingException e) throws NamingException {
+        if (e instanceof PartialResultException && isIgnorePartialResultException()) {
+            logger.fine("Ignoring PartialResultException (ignored referral?)");
+            return;
+        }
+        throw e;
+    }
+
+    public static boolean isIgnorePartialResultException() {
+        return ConfigFactory.getCachedConfig().getBooleanProperty(ServerConfigParams.PARAM_LDAP_IGNORE_PARTIAL_RESULTS, true);
     }
 
     //- PACKAGE
@@ -350,8 +364,12 @@ public final class LdapUtils {
          * @throws NamingException If an error occurs
          */
         void searchResults( final NamingEnumeration<SearchResult> results ) throws NamingException {
-            while ( results.hasMore() ) {
-                if (!searchResult( results.next() )) break;
+            try {
+                while ( results.hasMore() ) {
+                    if (!searchResult( results.next() )) break;
+                }
+            } catch (PartialResultException e) {
+                handlePartialResultException(e);
             }
         }
 

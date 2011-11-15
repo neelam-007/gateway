@@ -3,20 +3,22 @@
  */
 package com.l7tech.server.identity.mapping;
 
-import com.l7tech.identity.mapping.LdapAttributeMapping;
-import com.l7tech.objectmodel.AttributeHeader;
 import com.l7tech.identity.Identity;
+import com.l7tech.identity.ldap.LdapGroup;
 import com.l7tech.identity.ldap.LdapIdentity;
 import com.l7tech.identity.ldap.LdapUser;
-import com.l7tech.identity.ldap.LdapGroup;
+import com.l7tech.identity.mapping.LdapAttributeMapping;
+import com.l7tech.objectmodel.AttributeHeader;
+import com.l7tech.server.identity.ldap.LdapUtils;
 
-import javax.naming.directory.Attributes;
-import javax.naming.directory.Attribute;
-import javax.naming.directory.NoSuchAttributeException;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
-import java.util.List;
+import javax.naming.PartialResultException;
+import javax.naming.directory.Attribute;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.NoSuchAttributeException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -61,9 +63,13 @@ public class LdapAttributeExtractor extends DefaultAttributeExtractor<LdapAttrib
 
                 if (mapping.isMultivalued() && att.size() > 1) {
                     List<Object> vals = new ArrayList<Object>();
-                    for (NamingEnumeration ne = att.getAll(); ne.hasMore(); ) {
-                        Object val = ne.next();
-                        if (val != null) vals.add(val);
+                    try {
+                        for (NamingEnumeration ne = att.getAll(); ne.hasMore(); ) {
+                            Object val = ne.next();
+                            if (val != null) vals.add(val);
+                        }
+                    } catch (PartialResultException pre) {
+                        LdapUtils.handlePartialResultException(pre);
                     }
                     return vals.toArray();
                 } else {

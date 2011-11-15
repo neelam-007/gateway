@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.server.Lifecycle;
 import com.l7tech.server.LifecycleException;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.ConfigurableIdentityProvider;
@@ -628,7 +629,7 @@ public class LdapIdentityProviderImpl
             env.put(LdapUtils.ENV_PROP_LDAP_CONNECT_POOL, "true");
             env.put(LdapUtils.ENV_PROP_LDAP_CONNECT_TIMEOUT, Long.toString(ldapRuntimeConfig.getLdapConnectionTimeout()));
             env.put(LdapUtils.ENV_PROP_LDAP_READ_TIMEOUT, Long.toString(ldapRuntimeConfig.getLdapReadTimeout()));
-            env.put( Context.REFERRAL, LdapUtils.ENV_VALUE_REFERRAL );
+            env.put( Context.REFERRAL, ConfigFactory.getCachedConfig().getProperty(ServerConfigParams.PARAM_LDAP_REFERRAL, LdapUtils.ENV_VALUE_REFERRAL) );
             String dn = config.getBindDN();
             if (dn != null && dn.length() > 0) {
                 final String pass;
