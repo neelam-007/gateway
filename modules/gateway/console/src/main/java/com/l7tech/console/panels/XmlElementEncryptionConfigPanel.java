@@ -172,10 +172,6 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
 
     public XmlElementEncryptionConfig getData() throws AssertionPropertiesOkCancelSupport.ValidationException {
         doUpdateModel();
-        if (useContextVariableRadioButton.isSelected()) {
-            String err = contextVariableField.getErrorMessage();
-            if (err != null) throw new AssertionPropertiesOkCancelSupport.ValidationException(err);
-        }
         return model;
     }
 
