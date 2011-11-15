@@ -1,5 +1,8 @@
 package com.l7tech.policy.variable;
 
+import com.l7tech.message.TcpKnob;
+import com.l7tech.util.Functions;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -209,6 +212,15 @@ public class BuiltinVariables {
             new VariableMetadata("response.authenticateddn", true, false, null, false),
             new VariableMetadata("response.authenticateddns", true, false, null, false),
             new VariableMetadata("response.soap", true, false, null, false),
+
+            new VariableMetadata("request.tcp.remoteaddress", true, false, null, false),
+            new VariableMetadata("request.tcp.remoteip", true, false, null, false),
+            new VariableMetadata("request.tcp.remotehost", true, false, null, false),
+            new VariableMetadata("request.tcp.remoteport", true, false, null, false),
+            new VariableMetadata("request.tcp.localaddress", true, false, null, false),
+            new VariableMetadata("request.tcp.localip", true, false, null, false),
+            new VariableMetadata("request.tcp.localhost", true, false, null, false),
+            new VariableMetadata("request.tcp.localport", true, false, null, false),
 
             new VariableMetadata("request.compression.gzip.found", false, false, null, true, DataType.BOOLEAN),
 
