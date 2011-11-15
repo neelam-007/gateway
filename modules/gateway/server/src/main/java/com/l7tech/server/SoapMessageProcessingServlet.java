@@ -3,9 +3,7 @@ package com.l7tech.server;
 import com.l7tech.common.http.CookieUtils;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpCookie;
-import static com.l7tech.server.ServerConfigParams.*;
-import com.l7tech.util.Config;
-import com.l7tech.util.InetAddressUtil;
+import com.l7tech.common.http.HttpHeaderUtil;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
@@ -31,22 +29,15 @@ import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.server.util.DelegatingServletInputStream;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.SoapFaultManager;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.IOUtils;
+import com.l7tech.util.*;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.soap.SoapVersion;
-import static java.util.Collections.list;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.xml.sax.SAXException;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletInputStream;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.ServletResponse;
+import javax.servlet.*;
 import javax.servlet.http.*;
 import javax.xml.soap.SOAPConstants;
 import java.io.IOException;
@@ -64,6 +55,9 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import static com.l7tech.server.GatewayFeatureSets.SERVICE_HTTP_MESSAGE_INPUT;
+import static com.l7tech.server.ServerConfigParams.PARAM_IO_HTTP_RESPONSE_STREAMING;
+import static com.l7tech.server.ServerConfigParams.PARAM_IO_HTTP_RESPONSE_STREAM_UNLIMITED;
+import static java.util.Collections.list;
 
 /**
  * TODO: update class name and javadoc as this class processes non soap requests e.g. XML and JSON
@@ -163,6 +157,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         GZIPInputStream gis = null;
         String maybegzipencoding = hrequest.getHeader(HttpConstants.HEADER_CONTENT_ENCODING);
         boolean gzipEncodedTransaction = false;
+        boolean wantsGzipResponse = false;
         if (maybegzipencoding != null) { // case of value ?
             if (maybegzipencoding.contains("gzip")) {
                 if( !config.getBooleanProperty("request.compress.gzip.allow", true) ) {
@@ -184,6 +179,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 }
 
                 gzipEncodedTransaction = true;
+                wantsGzipResponse = true;
                 logger.fine("request with gzip content-encoding detected " + hrequest.getContentLength());
                 //logger.info("Compression #2");
                 try {
@@ -206,6 +202,8 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         } else {
             logger.fine("no content-encoding specified");
         }
+
+        wantsGzipResponse = wantsGzipResponse || HttpHeaderUtil.acceptsGzipResponse(hrequest.getHeader("accept-encoding"));
 
         // Initialize processing context
         final Message response = new Message();
@@ -323,7 +321,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     }
                 }
                 OutputStream responseos = hresponse.getOutputStream();
-                if (gzipEncodedTransaction) {
+                if (wantsGzipResponse) {
                     logger.fine("zipping response back to requester");
                     hresponse.setHeader(HttpConstants.HEADER_CONTENT_ENCODING, "gzip");
                     responseos = new GZIPOutputStream(responseos);
