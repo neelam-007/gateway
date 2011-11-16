@@ -82,6 +82,7 @@ public class RoleManagementDialog extends JDialog {
         Utilities.setButtonAccelerator(this, buttonHelp, KeyEvent.VK_F1);
         Utilities.centerOnParentWindow(this);
         Utilities.setEscKeyStrokeDisposes(this);
+        Utilities.setDoubleClickAction(roleList,editRole);
     }
 
     private void enableRoleManagmentButtons(boolean enable) {
@@ -97,14 +98,6 @@ public class RoleManagementDialog extends JDialog {
                     //Uncomment this to allow double click editing and enable/disable of the buttons
                     if (e.getClickCount() == 1)
                         enableEditRemoveButtons();
-                    else if (e.getClickCount() >= 2) {
-                        showEditDialog(getSelectedRole(), new Functions.UnaryVoid<Role>() {
-                            @Override
-                            public void call(Role role) {
-                                updatePropertiesSummary();
-                            }
-                        });
-                    }
             }
 
         });
@@ -266,8 +259,14 @@ public class RoleManagementDialog extends JDialog {
             showEditDialog(getSelectedRole(), new Functions.UnaryVoid<Role>() {
                 @Override
                 public void call(Role r) {
-                    if (r != null)setUpRoleAssignmentTable(r);
-                    updatePropertiesSummary();
+
+                    if (r != null){
+                        populateList();
+                        RoleModel sel = (RoleModel) roleList.getSelectedValue();
+                        roleList.setSelectedValue(sel, true);
+                        updatePropertiesSummary();
+                        setUpRoleAssignmentTable(r);
+                    }
                 }
             });
         } else if (srcButton == removeRole) {
@@ -366,6 +365,14 @@ public class RoleManagementDialog extends JDialog {
         @Override
         public String toString() {
             return name;
+        }
+
+        @Override
+        public boolean equals(Object o){
+            if (o instanceof RoleModel) {
+                return name.equals(((RoleModel)o).name);
+            }
+            return false;
         }
     }
 
