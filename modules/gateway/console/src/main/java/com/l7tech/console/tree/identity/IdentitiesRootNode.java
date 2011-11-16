@@ -100,9 +100,9 @@ public class IdentitiesRootNode extends AbstractTreeNode {
     @Override
     public Action[] getActions() {
         return new Action[]{
-            new NewFederatedIdentityProviderAction(this),
             new NewLdapProviderAction(this),
             new NewBindOnlyLdapProviderAction(this),
+            new NewFederatedIdentityProviderAction(this),
             new RevokeCertificatesAction(),
             //     new NewSamlProviderAction(this),
             new RefreshTreeNodeAction(this)};
