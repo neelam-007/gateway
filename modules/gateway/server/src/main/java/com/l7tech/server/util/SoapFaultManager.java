@@ -1,7 +1,9 @@
 package com.l7tech.server.util;
 
+import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
+import static com.l7tech.common.mime.ContentTypeHeader.TEXT_DEFAULT;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.message.Message;
@@ -29,11 +31,13 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertionUtils;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.*;
+import static com.l7tech.util.Option.optional;
 import com.l7tech.xml.MessageNotSoapException;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -84,7 +88,7 @@ public class SoapFaultManager implements ApplicationContextAware {
      */
     public SoapFaultLevel getDefaultBehaviorSettings() {
         // cache at least one minute
-        if (fromSettings == null || (System.currentTimeMillis() - lastParsedFromSettings) > 60000) {
+        if (fromSettings == null || (System.currentTimeMillis() - lastParsedFromSettings) > 60000L) {
             return constructFaultLevelFromServerConfig();
         }
         return fromSettings;
@@ -131,6 +135,43 @@ public class SoapFaultManager implements ApplicationContextAware {
     }
 
     /**
+     * Construct a general purpose fault.
+     *
+     * @param useSoap12 True to use SOAP 1.2, false for SOAP 1.1
+     * @param actor The faultactor
+     * @param isClientFault True if this is a client fault
+     * @param faultstring The fault text to use
+     * @return The fault response
+     */
+    public FaultResponse constructFault( final boolean useSoap12,
+                                         final String actor,
+                                         final boolean isClientFault,
+                                         final String faultstring ) {
+        final Pair<ContentTypeHeader,Document> faultInfo =
+                buildGenericFault( useSoap12,
+                                   actor,
+                                   isClientFault,
+                                   faultstring,
+                                   "",
+                                   false );
+
+        String output;
+        try {
+            output = XmlUtil.nodeToFormattedString(faultInfo.right);
+        } catch ( IOException e ) {
+            logger.log(Level.WARNING, "Could not construct fault", e);
+            output = "";
+        }
+        ContentTypeHeader contentTypeHeader = optional(faultInfo.left).orSome( TEXT_DEFAULT );
+
+        return new FaultResponse(
+                HttpConstants.STATUS_SERVER_ERROR,
+                contentTypeHeader,
+                output,
+                Collections.<Pair<String,String>>emptyList());
+    }
+
+    /**
      * Convenience method that will pass any extra headers to the specified HTTP servlet response.
      *
      * @param fault fault response that may include HTTP headers.  Required.
@@ -159,7 +200,7 @@ public class SoapFaultManager implements ApplicationContextAware {
                 }
             }
         };
-        checker.schedule(task, 10000, 56893);
+        checker.schedule(task, 10000L, 56893L);
     }
 
     /**
@@ -300,9 +341,9 @@ public class SoapFaultManager implements ApplicationContextAware {
                                           final PolicyEnforcementContext pec,
                                           final boolean isClientFault,
                                           final String faultString,
-                                          final String statusTextOverride ) {
+                                          @Nullable final String statusTextOverride ) {
         final SoapFaultLevel faultLevelInfo = inFaultLevelInfo==null ? getDefaultBehaviorSettings() : inFaultLevelInfo;
-        int httpStatus = 500;
+        int httpStatus = HttpConstants.STATUS_SERVER_ERROR;
         String output = "";
         List<Pair<String, String>> extraHeaders = new ArrayList<Pair<String, String>>();
         AssertionStatus globalStatus = pec.getPolicyResult();
@@ -333,7 +374,7 @@ public class SoapFaultManager implements ApplicationContextAware {
                     try {
                         contentTypeHeader = ContentTypeHeader.parseValue( contentTypeText );
                     } catch ( IOException e ) {
-                        contentTypeHeader = ContentTypeHeader.TEXT_DEFAULT;
+                        contentTypeHeader = TEXT_DEFAULT;
                         logger.warning( "Ignoring invalid content type for fault '"+contentTypeText+"', "+ExceptionUtils.getMessage( e )+"." );
                     }
                 } else {
@@ -383,7 +424,7 @@ public class SoapFaultManager implements ApplicationContextAware {
         }
 
         if ( contentTypeHeader == null ) {
-            contentTypeHeader = ContentTypeHeader.TEXT_DEFAULT;
+            contentTypeHeader = TEXT_DEFAULT;
         }
 
         return new FaultResponse(httpStatus, contentTypeHeader, output, extraHeaders);
@@ -414,7 +455,7 @@ public class SoapFaultManager implements ApplicationContextAware {
                 if ( fromSettings.isSignSoapFault() && keyAlias!=null && !keyAlias.trim().isEmpty() ) {
                     keyAlias = keyAlias.trim();
                     fromSettings.setUsesDefaultKeyStore( false );
-                    fromSettings.setNonDefaultKeystoreId( -1 );
+                    fromSettings.setNonDefaultKeystoreId( -1L );
                     fromSettings.setKeyAlias( keyAlias );
                     int index = keyAlias.indexOf( ':' );
                     if ( index > 0 && index < keyAlias.length()-1 ) {
@@ -572,18 +613,40 @@ public class SoapFaultManager implements ApplicationContextAware {
                                                                 final boolean isClientFault,
                                                                 final String faultString,
                                                                 final String statusTextOverride,
-                                                                final boolean declarePolicyNS ) throws SAXException {
+                                                                final boolean declarePolicyNS ) {
         final boolean useSoap12 = isSoap12(pec);
-        final Document faultDocument = XmlUtil.stringToDocument(useSoap12 ? FAULT_TEMPLATE_SOAP_1_2 : FAULT_TEMPLATE_SOAP_1_1 );
+        final String actor = getRequestUrlVariable(pec);
+        final String statusText = statusTextOverride!=null ? statusTextOverride : globalStatus.getMessage();
+        return buildGenericFault( useSoap12, actor, isClientFault, faultString, statusText, declarePolicyNS );
+    }
+
+    /**
+     * Build a generic fault from a template.
+     *
+     * @param useSoap12 True to use SOAP 1.2
+     * @param actor The faultactor
+     * @param isClientFault True for client faults (for the faultcode)
+     * @param faultString The faultstring to use in the fault
+     * @param statusText The policyResult/@status value to use
+     * @return The fault document
+     * @throws SAXException If the template cannot be processed.
+     */
+    private Pair<ContentTypeHeader,Document> buildGenericFault( final boolean useSoap12,
+                                                                final String actor,
+                                                                final boolean isClientFault,
+                                                                final String faultString,
+                                                                final String statusText,
+                                                                final boolean declarePolicyNS ) {
+        final Document faultDocument = XmlUtil.stringAsDocument( useSoap12 ? FAULT_TEMPLATE_SOAP_1_2 : FAULT_TEMPLATE_SOAP_1_1 );
 
         // populate @status element
         NodeList res = faultDocument.getElementsByTagNameNS(FAULT_NS, "policyResult");
         Element policyResultEl = (Element)res.item(0);
-        if ( "".equals(statusTextOverride) ) {
+        if ( "".equals(statusText) ) {
             // remove details
             policyResultEl.getParentNode().getParentNode().removeChild( policyResultEl.getParentNode() );
         } else {
-            policyResultEl.setAttribute("status", statusTextOverride!=null ? statusTextOverride : globalStatus.getMessage());
+            policyResultEl.setAttributeNS( null, "status", statusText );
             if ( declarePolicyNS ) {
                 policyResultEl.setAttributeNS( DomUtils.XMLNS_NS, "xmlns:l7p", WspConstants.L7_POLICY_NS);
             }
@@ -613,7 +676,6 @@ public class SoapFaultManager implements ApplicationContextAware {
         faultstring.setTextContent(faultString);
 
         // populate the faultactor value
-        String actor = getRequestUrlVariable(pec);
         if(useSoap12) {
             res = faultDocument.getElementsByTagNameNS(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Role");
         } else {
@@ -665,9 +727,9 @@ public class SoapFaultManager implements ApplicationContextAware {
                     continue;
                 }
                 Element assertionResultEl = faultDocument.createElementNS(FAULT_NS, "l7:assertionResult");
-                assertionResultEl.setAttribute("status", result.getStatus().getMessage());
+                assertionResultEl.setAttributeNS( null, "status", result.getStatus().getMessage() );
                 String assertionAttribute = "l7p:" + TypeMappingUtils.findTypeMappingByClass(result.getAssertion().getClass(), null).getExternalName();
-                assertionResultEl.setAttribute("assertion", assertionAttribute);
+                assertionResultEl.setAttributeNS( null, "assertion", assertionAttribute );
                 List<AuditDetail> details = auditContext.getDetails().get( result.getDetailsKey() );
                 if (details != null) {
                     for (AuditDetail detail : details) {
@@ -676,7 +738,7 @@ public class SoapFaultManager implements ApplicationContextAware {
                         // only show details FINE and higher for medium details, show all details for full details
                         if (includeSuccesses || (MessagesUtil.getAuditDetailMessageById(messageId).getLevel().intValue() >= Level.INFO.intValue())) {
                             Element detailMsgEl = faultDocument.createElementNS(FAULT_NS, "l7:detailMessage");
-                            detailMsgEl.setAttribute("id", Long.toString(detail.getMessageId()));
+                            detailMsgEl.setAttributeNS(null, "id", Integer.toString(detail.getMessageId()));
                             // add text node with actual message.
                             StringBuffer messageBuffer = new StringBuffer();
                             MessageFormat mf = new MessageFormat(getMessageById(messageId));
@@ -722,8 +784,8 @@ public class SoapFaultManager implements ApplicationContextAware {
                     // only display the messages that have not already been shown in the assertion status loop
                     if ((MessagesUtil.getAuditDetailMessageById(messageId).getLevel().intValue() >= Level.INFO.intValue()) && !usedMsgDetails.contains(messageId)) {
                         Element detailMsgEl = faultDocument.createElementNS(FAULT_NS, "l7:detailMessage");
-                        detailMsgEl.setAttribute("id", Long.toString(detail.getMessageId()));
-                        detailMsgEl.setAttribute("ordinal", Integer.toString(detail.getOrdinal()));
+                        detailMsgEl.setAttributeNS( null, "id", Integer.toString( detail.getMessageId() ) );
+                        detailMsgEl.setAttributeNS( null, "ordinal", Integer.toString( detail.getOrdinal() ) );
                         // add text node with actual message.
                         StringBuffer messageBuffer = new StringBuffer();
                         MessageFormat mf = new MessageFormat(getMessageById(messageId));
@@ -744,8 +806,6 @@ public class SoapFaultManager implements ApplicationContextAware {
             try {
                 Pair<ContentTypeHeader,Document> faultInfo = buildGenericFault( pec, globalStatus, isClientFault, faultString, statusTextOverride, false );
                 return new Pair<ContentTypeHeader,String>( faultInfo.left, XmlUtil.nodeToFormattedString(faultInfo.right) );
-            } catch ( SAXException e1 ) {
-                logger.log(Level.WARNING, "could not construct generic fault", e1);
             } catch ( IOException e1 ) {
                 logger.log(Level.WARNING, "could not construct generic fault", e1);
             }

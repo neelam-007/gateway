@@ -737,7 +737,7 @@ public class SoapFaultManagerTest {
         } );
 
         final SoapFaultManager.FaultResponse fault = sfm.constructReturningFault( level, context );
-        System.out.println(fault);
+        System.out.println(fault.getContent());
         Document doc = XmlUtil.parse( fault.getContent() );
         assertEquals( "Http Status", 500, fault.getHttpStatus() );
         assertTrue("Service URL in fault", fault.getContent().contains( SERVICE_URL ));
@@ -745,6 +745,27 @@ public class SoapFaultManagerTest {
         assertNotNull( "Security header", SoapUtil.getSecurityElement(doc) );
         assertTrue("Valid signature", isValidSignature(doc, getBobKey()));
         assertEquals( "SOAP 1.1 Content Type", ContentTypeHeader.XML_DEFAULT, fault.getContentType() );
+    }
+
+    @Test
+    public void testGeneralFault() throws Exception {
+        final SoapFaultManager sfm = buildSoapFaultManager();
+
+        final SoapFaultManager.FaultResponse fault = sfm.constructFault( false, "http://actor", true, "faultstringtext" );
+        System.out.println(fault.getContent());
+        assertEquals( "Http Status", 500, fault.getHttpStatus() );
+        assertEquals( "SOAP 1.1 Content Type", ContentTypeHeader.XML_DEFAULT, fault.getContentType() );
+        assertTrue("Actor in fault", fault.getContent().contains( "http://actor"));
+        assertTrue("Is client fault", fault.getContent().contains( "soapenv:Client"));
+        assertTrue("Faultstring in falut", fault.getContent().contains( "faultstringtext"));
+
+        final SoapFaultManager.FaultResponse fault12 = sfm.constructFault( true, "http://actor", true, "faultstringtext" );
+        System.out.println(fault12.getContent());
+        assertEquals( "Http Status", 500, fault12.getHttpStatus() );
+        assertEquals( "SOAP 1.2 Content Type", ContentTypeHeader.SOAP_1_2_DEFAULT, fault12.getContentType() );
+        assertTrue("Actor in fault", fault12.getContent().contains( "http://actor"));
+        assertTrue("Is client fault", fault12.getContent().contains( "soapenv:Sender"));
+        assertTrue("Faultstring in falut", fault12.getContent().contains( "faultstringtext"));
     }
 
     private NodeList getL7AddInfoNodeElements(String fault) throws Exception {

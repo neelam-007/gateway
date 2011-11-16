@@ -4,9 +4,6 @@ import com.l7tech.common.mime.MimeUtil;
 
 /**
  * Constants useful when working with HTTP, add as required ...
- *
- * @author $Author$
- * @version $Revision$
  */
 public final class HttpConstants {
 
@@ -37,8 +34,10 @@ public final class HttpConstants {
     public static final int STATUS_FOUND = 302;
     public static final int STATUS_SEE_OTHER = 303;
     public static final int STATUS_NOT_MODIFIED = 304;
+    public static final int STATUS_BAD_REQUEST = 400;
     public static final int STATUS_UNAUTHORIZED = 401;
     public static final int STATUS_REQUEST_TIMEOUT = 408;
+    public static final int STATUS_UNSUPPORTED_MEDIA_TYPE = 415;
     public static final int STATUS_SERVER_ERROR = 500;
     public static final int STATUS_SERVICE_UNAVAILABLE = 503;
 
