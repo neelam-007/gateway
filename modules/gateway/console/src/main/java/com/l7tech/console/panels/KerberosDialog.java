@@ -226,7 +226,8 @@ public class KerberosDialog extends JDialog {
                                         errorMessageLabel.setText( errorMessage );
                                     }
 
-                                    KerberosDialog.this.pack();
+                                    // use DialogDisplayer so that applet resizes correctly - bug 11050
+                                    DialogDisplayer.pack(KerberosDialog.this);
                                 }
                             } );
                         }
