@@ -6,7 +6,9 @@ import com.l7tech.policy.assertion.xmlsec.RequireWssEncryptedElement;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.xml.ElementEncryptionConfig;
+import com.l7tech.security.xml.XencUtil;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.xml.xpath.XpathExpression;
 import org.jaxen.JaxenException;
@@ -16,6 +18,7 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.logging.Logger;
@@ -35,6 +38,8 @@ import java.util.logging.Logger;
  */
 public class ClientRequestWssConfidentiality extends ClientDomXpathBasedAssertion<RequireWssEncryptedElement> {
     private static final Logger log = Logger.getLogger(ClientRequestWssConfidentiality.class.getName());
+
+    private static final boolean gcmSupported = isGcmSupported();
 
     public ClientRequestWssConfidentiality(RequireWssEncryptedElement data) {
         super(data);
@@ -70,7 +75,14 @@ public class ClientRequestWssConfidentiality extends ClientDomXpathBasedAssertio
             for (Element element : elements) {
                 wssReqs.addElementToEncrypt(element, new ElementEncryptionConfig(data.isEncryptContentsOnly()));
             }
-            if (data.getXEncAlgorithm() !=null) {
+            if (data.getXEncAlgorithmList() != null) {
+                for (String uri : data.getXEncAlgorithmList()) {
+                    if (isXencAlgorithmSupported(uri)) {
+                        wssReqs.setEncryptionAlgorithm(uri);
+                        break;
+                    }
+                }
+            } else if (data.getXEncAlgorithm() !=null) {
                 wssReqs.setEncryptionAlgorithm(data.getXEncAlgorithm());
             }
             if (data.getKeyEncryptionAlgorithm() != null) {
@@ -88,5 +100,27 @@ public class ClientRequestWssConfidentiality extends ClientDomXpathBasedAssertio
     public AssertionStatus unDecorateReply(PolicyApplicationContext context) {
         // no action on response
         return AssertionStatus.NONE;
+    }
+
+    private boolean isXencAlgorithmSupported(String algUri) {
+        try {
+            if (XencUtil.doesEncryptionAlgorithmRequireGcm(algUri) && !gcmSupported)
+                return false;
+            XencUtil.getFlexKeyAlg(algUri);
+            return true;
+        } catch (NoSuchAlgorithmException e) {
+            return false;
+        }
+    }
+
+    private static boolean isGcmSupported() {
+        try {
+            JceProvider.getInstance().getAesGcmCipher();
+            log.fine("AES GCM support is available");
+            return true;
+        } catch (Exception e) {
+            log.info("AES GCM support is not available with the current security provider configuration");
+            return false;
+        }
     }
 }

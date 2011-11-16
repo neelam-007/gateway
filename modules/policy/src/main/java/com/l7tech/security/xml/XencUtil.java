@@ -339,12 +339,16 @@ public class XencUtil {
         try {
             Element encMethod = DomUtils.findExactlyOneChildElementByName(encryptedDataEl, SoapConstants.XMLENC_NS, "EncryptionMethod");
             String alg = encMethod.getAttribute("Algorithm");
-            return (AES_128_GCM.equals(alg) || AES_256_GCM.equals(alg));
+            return doesEncryptionAlgorithmRequireGcm(alg);
         } catch (MissingRequiredElementException e) {
             throw new XencException(e);
         } catch (TooManyChildElementsException e) {
             throw new XencException(e);
         }
+    }
+
+    public static boolean doesEncryptionAlgorithmRequireGcm(String algUri) {
+        return (AES_128_GCM.equals(algUri) || AES_256_GCM.equals(algUri));
     }
 
     /**
