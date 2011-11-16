@@ -129,7 +129,12 @@ public class IOUtils {
      * @throws java.io.IOException if there was a problem decompressing the bytes.
      */
     public static byte[] decompressGzip(byte[] bytes) throws IOException {
-        return slurpStream(new GZIPInputStream(new ByteArrayInputStream(bytes)));
+        GZIPInputStream gzipIn = null;
+        try {
+            return slurpStream(gzipIn = new GZIPInputStream(new ByteArrayInputStream(bytes)));
+        } finally {
+            ResourceUtils.closeQuietly( gzipIn );
+        }
     }
 
     /**
