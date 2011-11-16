@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.ssh.console;
 
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.console.panels.SecurePasswordComboBox;
 import com.l7tech.console.panels.SecurePasswordManagerWindow;
 import com.l7tech.console.panels.ServiceComboBox;
@@ -8,7 +9,6 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
-import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
@@ -19,6 +19,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+
+import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 
 /**
  * SFTP polling listener properties dialog.
@@ -38,7 +40,7 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
     private SecurePasswordComboBox privateKeyField;
     private JButton managePasswordsPrivateKeysButton;
     private JTextField directoryField;
-    private JTextField contentTypeField;
+    private JComboBox contentTypeComboBox;
     private JSpinner pollingIntervalField;
     private JCheckBox enableResponsesCheckBox;
     private JCheckBox deleteProcessedMessagesCheckBox;
@@ -73,13 +75,13 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
         hostField.getDocument().addDocumentListener(enableDisableListener);
         portField.setDocument(new MaxLengthDocument(5));
         portField.getDocument().addDocumentListener(enableDisableListener);
-        validateServersHostCheckBox.addActionListener((enableDisableListener));
+        validateServersHostCheckBox.addActionListener(enableDisableListener);
         usernameField.setDocument(new MaxLengthDocument(255));
         usernameField.getDocument().addDocumentListener(enableDisableListener);
         passwordField.addActionListener(enableDisableListener);
         privateKeyField.addActionListener(enableDisableListener);
-        directoryField.getDocument().addDocumentListener( enableDisableListener );
-        contentTypeField.getDocument().addDocumentListener( enableDisableListener );
+        directoryField.getDocument().addDocumentListener(enableDisableListener);
+        contentTypeComboBox.addActionListener(enableDisableListener);
 
         pollingIntervalField.setModel(new SpinnerNumberModel(60, 1, Integer.MAX_VALUE, 5));
 
@@ -126,6 +128,19 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
                 pack();
             }
         });
+
+        DefaultComboBoxModel contentTypeComboBoxModel = new DefaultComboBoxModel();
+        ContentTypeHeader[] offeredTypes = new ContentTypeHeader[] {
+                ContentTypeHeader.XML_DEFAULT,
+                ContentTypeHeader.TEXT_DEFAULT,
+                ContentTypeHeader.SOAP_1_2_DEFAULT,
+                ContentTypeHeader.APPLICATION_JSON,
+                ContentTypeHeader.OCTET_STREAM_DEFAULT,
+        };
+        for (ContentTypeHeader offeredType : offeredTypes) {
+            contentTypeComboBoxModel.addElement(offeredType.getFullValue());
+        }
+        contentTypeComboBox.setModel(contentTypeComboBoxModel);
 
         serviceNameComboBox.setRenderer( TextListCellRenderer.<ServiceComboItem>basicComboBoxRenderer() );
         ServiceComboBox.populateAndSelect(serviceNameComboBox, false, 0L);
@@ -205,7 +220,8 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
             enableOkButton = false;
         }
 
-        if(contentTypeField.getText() == null || contentTypeField.getText().trim().length() == 0) {
+        Object ctypeObj = contentTypeComboBox.getSelectedItem();
+        if(ctypeObj == null || ctypeObj.toString().trim().length() == 0) {
             enableOkButton = false;
         }
 
@@ -217,8 +233,8 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
     }
 
     private void modelToView( final SsgActiveConnector connector ) {
-        nameField.setText( connector.getName() == null ? "" : connector.getName().trim());
-        enabledCheckBox.setSelected( connector.isEnabled());
+        nameField.setText( connector.getName() == null ? "" : connector.getName().trim() );
+        enabledCheckBox.setSelected( connector.isEnabled() );
 
         hostField.setText( connector.getProperty( PROPERTIES_KEY_SFTP_HOST, "" ) );
         portField.setText( connector.getProperty( PROPERTIES_KEY_SFTP_PORT, "" ) );
@@ -245,7 +261,18 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
         }
 
         directoryField.setText( connector.getProperty( PROPERTIES_KEY_SFTP_DIRECTORY, "" ) );
-        contentTypeField.setText( connector.getProperty( PROPERTIES_KEY_OVERRIDE_CONTENT_TYPE, "" ));
+
+        String ctype = connector.getProperty(PROPERTIES_KEY_OVERRIDE_CONTENT_TYPE);
+        if (ctype == null) {
+            contentTypeComboBox.setSelectedIndex(-1);
+        } else {
+            contentTypeComboBox.setSelectedItem(ctype);
+            if (!ctype.equalsIgnoreCase((String)contentTypeComboBox.getSelectedItem())) {
+                ((DefaultComboBoxModel)contentTypeComboBox.getModel()).addElement(ctype);
+                contentTypeComboBox.setSelectedItem(ctype);
+            }
+        }
+
         pollingIntervalField.setValue( connector.getIntegerProperty( PROPERTIES_KEY_POLLING_INTERVAL, 60 ));
         enableResponsesCheckBox.setSelected( connector.getBooleanProperty( PROPERTIES_KEY_ENABLE_RESPONSE_MESSAGES ) );
         deleteProcessedMessagesCheckBox.setSelected( connector.getBooleanProperty( PROPERTIES_KEY_SFTP_DELETE_ON_RECEIVE ) );
@@ -291,7 +318,7 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
         }
 
         setProperty( connector, PROPERTIES_KEY_SFTP_DIRECTORY, directoryField.getText() );
-        setProperty( connector, PROPERTIES_KEY_OVERRIDE_CONTENT_TYPE, contentTypeField.getText() );
+        setProperty( connector, PROPERTIES_KEY_OVERRIDE_CONTENT_TYPE, contentTypeComboBox.getSelectedItem().toString() );
         setProperty( connector, PROPERTIES_KEY_POLLING_INTERVAL, pollingIntervalField.getValue().toString() );
         setProperty( connector, PROPERTIES_KEY_ENABLE_RESPONSE_MESSAGES, Boolean.toString( enableResponsesCheckBox.isSelected() ) );
         setProperty( connector, PROPERTIES_KEY_SFTP_DELETE_ON_RECEIVE, Boolean.toString( deleteProcessedMessagesCheckBox.isSelected() ) );
