@@ -47,7 +47,6 @@ public class CertManagerWindow extends JDialog {
 
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
     private static Logger logger = Logger.getLogger(CertManagerWindow.class.getName());
-    private static int maxNameLength = EntityUtil.getMaxFieldLength(TrustedCert.class, "name", 128);
 
     private JPanel mainPanel;
     private JButton addButton;
@@ -136,12 +135,13 @@ public class CertManagerWindow extends JDialog {
             }
         }, "Add"));
 
-        importButton.addActionListener( new ActionListener() {
+        importButton.addActionListener( new ImportTrustedCertificateAction(new CertListener(){
             @Override
-            public void actionPerformed(final ActionEvent e) {
-                importTrustedCerts();
+            public void certSelected(CertEvent ce) {
+                // reload all certs from server
+                loadTrustedCerts();
             }
-        } );
+        }, "Import"));
 
         propertiesButton.addActionListener(new ActionListener() {
             @Override
@@ -238,202 +238,6 @@ public class CertManagerWindow extends JDialog {
         pack();
         enableOrDisableButtons();
         Utilities.setEscKeyStrokeDisposes(this);
-    }
-
-    /**
-     * Import certificates from a PKCS#12 keystore.
-     */
-    private void importTrustedCerts() {
-        final java.util.List<X509Certificate[]> certificateChains = new ArrayList<X509Certificate[]>();
-        GuiCertUtil.importCertificates( this, false, new GuiPasswordCallbackHandler(this),  new Functions.Unary<Boolean,GuiCertUtil.ImportedData>(){
-            @Override
-            public Boolean call( final GuiCertUtil.ImportedData importedData ) {
-                certificateChains.add( importedData.getCertificateChain() );
-                return true;
-            }
-        } );
-
-        // If there are no certificates then a warning should already have been displayed
-        if ( certificateChains.size() > 0 ) {
-            final CertificateImportDialog dialog = new CertificateImportDialog( this, certificateChains );
-            DialogDisplayer.display( dialog, new Runnable() {
-                @Override
-                public void run() {
-                    if ( dialog.wasOk() ) {
-                        final JProgressBar progressBar = new JProgressBar();
-                        progressBar.setIndeterminate(true);
-                        final CancelableOperationDialog cancelDialog =
-                                new CancelableOperationDialog( CertManagerWindow.this, 
-                                                               resources.getString("importing.title"),
-                                                               resources.getString("importing.label"),
-                                                               progressBar);
-                        cancelDialog.pack();
-                        cancelDialog.setModal(true);
-                        Utilities.centerOnParentWindow(cancelDialog);
-
-                        final Collection<String> duplicateCerts = new LinkedHashSet<String>();
-                        final Collection<String> errorCerts = new LinkedHashSet<String>();
-                        Callable<Boolean> callable = new Callable<Boolean>() {
-                            @Override
-                            public Boolean call() throws Exception {
-                                final boolean importAsTrustAnchor = dialog.isImportAsTrustAnchor();
-                                final boolean importChain = dialog.isImportChain();
-                                final Collection<X509Certificate[]> certificates = dialog.getCertificateChains();
-                                importCertificates(importAsTrustAnchor, importChain, certificates, duplicateCerts, errorCerts );
-                                return Boolean.TRUE;
-                            }
-                        };
-
-                        try {
-                            Utilities.doWithDelayedCancelDialog( callable, cancelDialog, 500L );
-                        } catch (InterruptedException e) {
-                            logger.finer("Import operation interrupted (cancelled)");
-                        } catch (InvocationTargetException e) {
-                            // we have handled any expected exceptions elsewhere
-                            if ( cancelDialog.wasCancelled() ) {
-                                logger.log( Level.WARNING, "Error during (cancelled) certificate import.", e );
-                            } else {
-                                throw ExceptionUtils.wrap( e.getTargetException() );
-                            }
-                        }
-
-                        if ( !cancelDialog.wasCancelled() ) {
-                            handleImportResult( duplicateCerts, errorCerts );                            
-                        }
-                    }
-                }
-            });
-        }
-    }
-
-    private void importCertificates( final boolean importAsTrustAnchor,
-                                     final boolean importChain,
-                                     final Collection<X509Certificate[]> certificates,
-                                     final Collection<String> duplicateCerts,
-                                     final Collection<String> errorCerts ) {
-        final Collection<String> importedCertificateThumprints = new ArrayList<String>();
-        for ( X509Certificate[] certificateChain : certificates ) {
-            if ( Thread.interrupted() ) break;
-
-            if ( importChain ) {
-                List<X509Certificate> reverseCertificateChain = Arrays.asList(certificateChain);
-                Collections.reverse( reverseCertificateChain );
-                boolean first = true;
-                for ( X509Certificate certificate : reverseCertificateChain ) {
-                    boolean isTrustAnchor = false;
-                    if ( first ) {
-                        isTrustAnchor =  importAsTrustAnchor;
-                        first = false;
-                    }
-                    saveCert( certificate, isTrustAnchor, duplicateCerts, errorCerts, importedCertificateThumprints );
-                }
-            } else {
-                saveCert( certificateChain[0], importAsTrustAnchor, duplicateCerts, errorCerts, importedCertificateThumprints );
-            }
-        }
-    }
-
-    private String describeCertificate( X509Certificate certificate ) {
-        String thumbprint;
-        try {
-            thumbprint = CertUtils.getCertificateFingerprint( certificate, "SHA1" );
-        } catch ( CertificateEncodingException e ) {
-            thumbprint = "<Unknown>";
-        } catch ( NoSuchAlgorithmException e ) {
-            thumbprint = "<Unknown>";
-        }
-
-        return certificate.getSubjectX500Principal().getName() + " [SHA-1 Thumbprint: "+thumbprint+"]";
-    }
-
-    private void handleImportResult( final Collection<String> duplicateCerts,
-                                     final Collection<String> errorCerts ) {
-        if ( !duplicateCerts.isEmpty() || !errorCerts.isEmpty() ) {
-            StringBuilder errorMessage = new StringBuilder();
-
-            errorMessage.append( resources.getString("error.header") );
-            errorMessage.append( "\n\n  " );
-            if ( !duplicateCerts.isEmpty() ) {
-                errorMessage.append( resources.getString("error.duplicates") );
-                for ( String certDn : duplicateCerts ) {
-                    errorMessage.append( "\n" );
-                    errorMessage.append( "    " );
-                    errorMessage.append( certDn );
-                }
-                errorMessage.append( "\n\n  " );
-            }
-            if ( !errorCerts.isEmpty() ) {
-                errorMessage.append( resources.getString("error.failures") );
-                for ( String certDn : errorCerts ) {
-                    errorMessage.append( "\n" );
-                    errorMessage.append( "    " );
-                    errorMessage.append( certDn );
-                }
-                errorMessage.append( "\n" );
-            }
-
-            final JTextArea textArea = new JTextArea();
-            textArea.setEditable( false );
-            textArea.setText( errorMessage.toString() );
-            final JScrollPane scrollPane = new JScrollPane(textArea);
-            scrollPane.setPreferredSize(new Dimension(400, 200));
-            DialogDisplayer.showMessageDialog(this, scrollPane, "Certificate Import Failures", JOptionPane.WARNING_MESSAGE, new Runnable(){
-                @Override
-                public void run() {
-                    // reload all certs from server
-                    loadTrustedCerts();
-                }
-            });
-        } else {
-            // reload all certs from server
-            loadTrustedCerts();
-        }
-    }
-
-    private void saveCert( final X509Certificate certificate,
-                           final boolean isTrustAnchor,
-                           final Collection<String> duplicateCerts,
-                           final Collection<String> errorCerts,
-                           final Collection<String> importedCertificateThumprints ) {
-
-        String thumbprint = null;
-        try {
-            thumbprint = CertUtils.getThumbprintSHA1( certificate );
-        } catch (CertificateEncodingException e) {
-            errorCerts.add( describeCertificate( certificate ) );
-            logger.log( Level.WARNING, "Certificate import failed", e);
-        }
-
-        if ( thumbprint != null && !importedCertificateThumprints.contains(thumbprint) ) {
-            TrustedCert cert = new TrustedCert();
-            String name = CertUtils.extractFirstCommonNameFromCertificate( certificate );
-            if ( name == null ) {
-                name = certificate.getSubjectX500Principal().getName().trim();
-            } else {
-                name = name.trim();
-            }
-            cert.setName( truncName( name ) );
-            cert.setCertificate( certificate );
-            cert.setTrustAnchor( isTrustAnchor );
-
-            try {
-                getTrustedCertAdmin().saveCert( cert );
-                importedCertificateThumprints.add( thumbprint );
-            } catch ( DuplicateObjectException doe ) {
-                duplicateCerts.add( describeCertificate( certificate ) );
-            } catch ( ObjectModelException e) {
-                errorCerts.add( describeCertificate( certificate ) );
-                logger.log( Level.WARNING, "Certificate import failed", e);
-            } catch ( VersionException e) {
-                // doesn't happen for new certs
-                errorCerts.add( describeCertificate( certificate ) );
-                logger.log( Level.WARNING, "Certificate import failed", e);
-            }
-        }
-    }
-
-    private String truncName(String s) {
-        return s == null || s.length() < maxNameLength ? s : s.substring(0, maxNameLength);
     }
 
     /**

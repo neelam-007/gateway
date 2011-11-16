@@ -37,6 +37,7 @@ public class ResolveForeignTrustedCertificatePanel extends WizardStepPanel {
     private JRadioButton ignoreRadio;
     private JButton selectCert;
     private JButton createCert;
+    private JButton importCert;
     private JScrollPane selectCertScrollPane;
     private TrustedCertsTable trustedCertTable;
 
@@ -78,7 +79,7 @@ public class ResolveForeignTrustedCertificatePanel extends WizardStepPanel {
 
         createCert.setEnabled(true);
         createCert.addActionListener( new NewTrustedCertificateAction(certListener, "Add"));
-
+        importCert.addActionListener( new ImportTrustedCertificateAction(certListener, "Import"));
         selectCert.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
