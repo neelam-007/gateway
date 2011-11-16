@@ -1,17 +1,18 @@
 package com.l7tech.external.assertions.ssh.console;
 
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.util.EntityUtils;
 import com.l7tech.console.util.Registry;
-import com.l7tech.external.assertions.ssh.SftpPollingListenerDialogSettings;
-import com.l7tech.external.assertions.ssh.SftpPollingListenerXmlUtilities;
-import static com.l7tech.external.assertions.ssh.SftpPollingListenerXmlUtilities.unmarshallFromXMLString;
-import com.l7tech.external.assertions.ssh.server.sftppollinglistener.SftpPollingListenerConstants;
-import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
-import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gateway.common.transport.SsgActiveConnector;
+import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
+import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.UpdateException;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -20,14 +21,20 @@ import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.gui.util.DialogDisplayer.display;
+import static com.l7tech.gui.util.DialogDisplayer.showMessageDialog;
 
 /**
  * SFTP polling listeners dialog window.
  */
 public class SftpPollingListenersWindow extends JDialog {
-    private static final Logger logger = Logger.getLogger(SftpPollingListenersWindow.class.getName());
+    private static final Logger logger = Logger.getLogger( SftpPollingListenersWindow.class.getName() );
 
     private JPanel mainPanel;
     private JTable listenersTable;
@@ -43,11 +50,6 @@ public class SftpPollingListenersWindow extends JDialog {
         initialize();
     }
 
-    public SftpPollingListenersWindow(Dialog owner) {
-        super(owner, "Manage SFTP Polling Listeners", true);
-        initialize();
-    }
-
     private void initialize() {
         loadListenerConfigurations();
         tableModel = new ListenerConfigurationsTableModel();
@@ -58,16 +60,11 @@ public class SftpPollingListenersWindow extends JDialog {
         addButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                final SftpPollingListenerPropertiesDialog dialog = new SftpPollingListenerPropertiesDialog(SftpPollingListenersWindow.this, new SftpPollingListenerDialogSettings(), true);
-                Utilities.centerOnScreen(dialog);
-                DialogDisplayer.display(dialog, new Runnable() {
-                    @Override
-                    public void run() {
-                        if(dialog.isConfirmed()) {
-                            updateListenersList(dialog.getConfiguration());
-                        }
-                    }
-                });
+                final SsgActiveConnector connector = new SsgActiveConnector();
+                connector.setEnabled( true );
+                connector.setProperty( PROPERTIES_KEY_SFTP_SERVER_FINGER_PRINT, "" );
+                connector.setType( "SFTP" );
+                editAndSave( connector, false, true );
             }
         });
 
@@ -78,32 +75,17 @@ public class SftpPollingListenersWindow extends JDialog {
                     int viewRow = listenersTable.getSelectedRow();
                     if(viewRow >= 0) {
                         int modelRow = listenersTable.convertRowIndexToModel(viewRow);
-                        SftpPollingListenerDialogSettings i = tableModel.getListenerConfigurations().get(modelRow);
+                        SsgActiveConnector i = tableModel.getConnectors().get(modelRow);
                         if(i != null) {
-                            SftpPollingListenerDialogSettings newListener =  new SftpPollingListenerDialogSettings();
-                            i.copyPropertiesToResource(newListener);
-                            newListener.setName(EntityUtils.getNameForCopy( newListener.getName() ));
-                            newListener.setVersion( 0 );
-                            newListener.setResId( -1 );
-
-                            final SftpPollingListenerPropertiesDialog dialog =
-                                new SftpPollingListenerPropertiesDialog(SftpPollingListenersWindow.this, newListener, true);
-                            dialog.selectNameField();
-                            Utilities.centerOnScreen(dialog);
-                            DialogDisplayer.display(dialog, new Runnable() {
-                                @Override
-                                public void run() {
-                                    if (dialog.isConfirmed()) {
-                                        updateListenersList(dialog.getConfiguration());
-                                    }
-                                }
-                            });
-
+                            final SsgActiveConnector connector =  new SsgActiveConnector(i);
+                            EntityUtils.updateCopy( connector );
+                            editAndSave( connector, true, true );
                         }
                     }
                 }
             }
         });
+
         modifyButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -111,22 +93,13 @@ public class SftpPollingListenersWindow extends JDialog {
                     int viewRow = listenersTable.getSelectedRow();
                     if(viewRow >= 0) {
                         int modelRow = listenersTable.convertRowIndexToModel(viewRow);
-                        SftpPollingListenerDialogSettings i = tableModel.getListenerConfigurations().get(modelRow);
-                        if(i != null) {
-                            //grab the latest version from the list
-                            long connectionOid = i.getResId();
-
-                            //Here need to find the connection using the resId from the cluster property
-                            SftpPollingListenerDialogSettings configuration = i;
-                            if(configuration == null) {
-                                // the listener has been removed some how
-                                DialogDisplayer.showMessageDialog(SftpPollingListenersWindow.this, "SFTP polling listener configuration not found.", refreshListenerConfigurations(null));
-                            } else {
-                                final SftpPollingListenerPropertiesDialog dialog =
-                                    new SftpPollingListenerPropertiesDialog(SftpPollingListenersWindow.this, i, false);
-                                Utilities.centerOnScreen(dialog);
-                                DialogDisplayer.display(dialog, refreshListenerConfigurations(configuration)); //refresh after any changes
-                            }
+                        final SsgActiveConnector connector = tableModel.getConnectors().get(modelRow);
+                        if( connector != null) {
+                            editAndSave( connector, false, false );
+                        } else {
+                            // the listener has been removed some how
+                            showMessageDialog(SftpPollingListenersWindow.this, "SFTP polling listener configuration not found.", null);
+                            updateListenersList( null );
                         }
                     }
                 }
@@ -139,9 +112,9 @@ public class SftpPollingListenersWindow extends JDialog {
                     int viewRow = listenersTable.getSelectedRow();
                     if (viewRow >= 0) {
                         int modelRow = listenersTable.convertRowIndexToModel(viewRow);
-                        SftpPollingListenerDialogSettings i = tableModel.getListenerConfigurations().get(modelRow);
-                        if (i != null) {
-                            String name = i.getName();
+                        SsgActiveConnector configuration = tableModel.getConnectors().get(modelRow);
+                        if (configuration != null) {
+                            String name = configuration.getName();
 
                             Object[] options = {"Remove", "Cancel"};
 
@@ -156,7 +129,7 @@ public class SftpPollingListenersWindow extends JDialog {
                               null, options, options[1]);
                             if (result == 0) {
                                 try {
-                                    deleteResourceFromClusterProperty(i);
+                                    deleteConfiguration(configuration);
                                 } catch (Exception e1) {
                                     throw new RuntimeException("Unable to delete SFTP polling listener " + name, e1);
                                 }
@@ -191,8 +164,49 @@ public class SftpPollingListenersWindow extends JDialog {
         pack();
     }
 
+    private void editAndSave( final SsgActiveConnector connector,
+                              final boolean isClone,
+                              final boolean isNew ) {
+        final SftpPollingListenerPropertiesDialog dialog =
+            new SftpPollingListenerPropertiesDialog(SftpPollingListenersWindow.this, connector, isNew);
+        if (isClone) dialog.selectNameField();
+        Utilities.centerOnParentWindow( dialog );
+        display(dialog, new Runnable() {
+            @Override
+            public void run() {
+                if (dialog.isConfirmed()) {
+                    final TransportAdmin admin = getTransportAdmin();
+                    if ( admin != null ) {
+                        try {
+                            admin.saveSsgActiveConnector( connector );
+                        } catch ( DuplicateObjectException e ) {
+                            showMessageDialog( SftpPollingListenersWindow.this,
+                                    "Listener already exists",
+                                    "Unable to save listener '" + connector.getName() + "'\n" +
+                                    "because an existing listener is already using the name.",
+                                    null,
+                                    new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            editAndSave( connector, false, isNew );
+                                        }
+                                    } );
+
+                        } catch ( SaveException e ) {
+                            ErrorManager.getDefault().notify( Level.WARNING, e, "Error saving Polling Listener" );
+                        } catch ( UpdateException e ) {
+                            ErrorManager.getDefault().notify( Level.WARNING, e, "Error saving Polling Listener" );
+                        }
+                        updateListenersList( connector );
+                    }
+                }
+            }
+        });
+    }
+
     private class ListenerConfigurationsTableModel extends AbstractTableModel {
-        private List<SftpPollingListenerDialogSettings> listenerConfigurations = loadListenerConfigurations();
+        private static final long serialVersionUID = 1L;
+        private List<SsgActiveConnector> listenerConfigurations = loadListenerConfigurations();
 
         @Override
         public int getColumnCount() {
@@ -201,10 +215,10 @@ public class SftpPollingListenersWindow extends JDialog {
 
         @Override
         public int getRowCount() {
-            if(getListenerConfigurations() == null) {
+            if( getConnectors() == null) {
                 return 0;
             } else {
-                return getListenerConfigurations().size();
+                return getConnectors().size();
             }
         }
 
@@ -223,20 +237,22 @@ public class SftpPollingListenersWindow extends JDialog {
 
         @Override
         public Object getValueAt(int rowIndex, int columnIndex) {
-            SftpPollingListenerDialogSettings i = listenerConfigurations.get(rowIndex);
-            
+            final SsgActiveConnector connector = listenerConfigurations.get(rowIndex);
+
             switch (columnIndex) {
                 case 0:
-                    return i.getName();
+                    return connector.getName();
                 case 1:
-                    return "sftp://" + i.getUsername() + "@" + i.getHostname() + i.getDirectory();
+                    return "sftp://" + connector.getProperty(PROPERTIES_KEY_SFTP_USERNAME) + "@" +
+                            connector.getProperty(PROPERTIES_KEY_SFTP_HOST) +
+                            connector.getProperty(PROPERTIES_KEY_SFTP_DIRECTORY);
                 case 2:
-                    return i.isActive() ? "Yes" : "No";
+                    return connector.isEnabled() ? "Yes" : "No";
             }
             return "?";
         }
 
-        public List<SftpPollingListenerDialogSettings> getListenerConfigurations() {
+        public List<SsgActiveConnector> getConnectors() {
             return listenerConfigurations;
         }
 
@@ -246,25 +262,11 @@ public class SftpPollingListenersWindow extends JDialog {
     }
 
     /**
-     * Generate a runnable object to refresh listener in the table.
-     *
-     * @param selectedConfiguration: the listener saved or updated will be highlighted in the table.
-     * @return  A runnable that will refresh the configuration list
-     */
-    private Runnable refreshListenerConfigurations(final SftpPollingListenerDialogSettings selectedConfiguration) {
-        return new Runnable() {
-            @Override
-            public void run() {
-                updateListenersList(selectedConfiguration);
-            }
-        };
-    }
-
-    /**
      * Rebuild the listener table model, reloading the list from the server.  If an listener argument is
      * given, the row containing the specified configuration will be selected in the new table.
+     * @param selectedConfiguration the selected configuration
      */
-    private void updateListenersList(SftpPollingListenerDialogSettings selectedConfiguration) {
+    private void updateListenersList(@Nullable SsgActiveConnector selectedConfiguration) {
         // Update the listener configuration list in the table model.
         tableModel.refreshListenerConfigurationsList();
 
@@ -273,110 +275,48 @@ public class SftpPollingListenersWindow extends JDialog {
 
         // Set the selection highlight for the saved/updated configuration.
         if (selectedConfiguration != null) {
-            List<SftpPollingListenerDialogSettings> rows = tableModel.getListenerConfigurations();
-            for (int i = 0; i < rows.size(); ++i) {
-                SftpPollingListenerDialogSettings item = rows.get(i);
-                if (item != null && item.getResId() == selectedConfiguration.getResId()) {
+            List<SsgActiveConnector> modelRows = tableModel.getConnectors();
+            for (int i = 0; i < modelRows.size(); ++i) {
+                SsgActiveConnector modelItem = modelRows.get(i);
+                if (modelItem != null && modelItem.getOid() == selectedConfiguration.getOid()) {
                     int viewRow = listenersTable.convertRowIndexToView(i);
                     if (viewRow >= 0) {
                         listenersTable.getSelectionModel().setSelectionInterval(viewRow, viewRow);
                     }
-                    break;
                 }
             }
         }
     }
 
-    private List<SftpPollingListenerDialogSettings> loadListenerConfigurations() {
-        List<SftpPollingListenerDialogSettings> listenerConfigurations = null;
 
-        ClusterStatusAdmin admin = Registry.getDefault().getClusterStatusAdmin();
-        ClusterProperty property = null;
-        try {
-            property = admin.findPropertyByName(SftpPollingListenerConstants.SFTP_POLLING_CONFIGURATION_UI_PROPERTY);
-        } catch(FindException fe) {
-            logger.warning("Could not find any cluster properties for property >" + SftpPollingListenerConstants.SFTP_POLLING_CONFIGURATION_UI_PROPERTY + "<");
+    private TransportAdmin getTransportAdmin() {
+        final Registry registry = Registry.getDefault();
+        if (!registry.isAdminContextPresent()) {
+            logger.warning("Admin context not present.");
+            return null;
         }
+        return registry.getTransportAdmin();
+    }
 
-        if(property != null) {
-            // load the resources from the property string
-            listenerConfigurations = unmarshallFromXMLString( property.getValue() );
+    private List<SsgActiveConnector> loadListenerConfigurations() {
+        List<SsgActiveConnector> listenerConfigurations = Collections.emptyList();
+        try {
+            final TransportAdmin transportAdmin = getTransportAdmin();
+            if ( transportAdmin != null ) {
+                listenerConfigurations = new ArrayList<SsgActiveConnector>(transportAdmin.findSsgActiveConnectorsByType("SFTP"));
+            }
+        } catch (FindException e) {
+            throw new RuntimeException( e );
         }
 
         return listenerConfigurations;
     }
 
-    private void saveClusterPropertyList(List<SftpPollingListenerDialogSettings> list) {
-        ClusterStatusAdmin admin = Registry.getDefault().getClusterStatusAdmin();
-        boolean clusterPropExists = false;
-        //existing connections in the cluster properties
-        ClusterProperty property = getClusterProperty();
-        if(property != null)
-            clusterPropExists = true;
-
-        //if the list passed in is null, delete the cluster property.
-        //otherwise, marshall the list and write the property.
-        if(list == null || list.size()==0) {
-            if(clusterPropExists){
-                try {
-                    admin.deleteProperty(property);
-                } catch(DeleteException de){
-                    logger.warning("Could not delete cluster property " + SftpPollingListenerConstants.SFTP_POLLING_CONFIGURATION_UI_PROPERTY + " most likely does not exist");
-                }
-            }
-        } else {
-            String xml = marshallToXMLClassLoaderSafe(list);
-            if(property != null) {
-                property.setValue(xml);
-            } else {
-                property = new ClusterProperty(SftpPollingListenerConstants.SFTP_POLLING_CONFIGURATION_UI_PROPERTY, xml);
-            }
-            try {
-                admin.saveProperty(property);
-            } catch(Exception e) {
-                logger.warning("Could not save the cluster property " + SftpPollingListenerConstants.SFTP_POLLING_CONFIGURATION_UI_PROPERTY);
-            }
+    private void deleteConfiguration( final SsgActiveConnector configuration ) throws FindException, DeleteException {
+        final TransportAdmin transportAdmin = getTransportAdmin();
+        if (transportAdmin != null) {
+            transportAdmin.deleteSsgActiveConnector( configuration.getOid() );
         }
-    }
-
-    private String marshallToXMLClassLoaderSafe(List<SftpPollingListenerDialogSettings> listenerConfigurations) {
-          String xml = null;
-            final ClassLoader currentContextClassLoader = Thread.currentThread().getContextClassLoader();
-            try {
-                Thread.currentThread().setContextClassLoader(SftpPollingListenerPropertiesDialog.class.getClassLoader());
-
-                SftpPollingListenerXmlUtilities xmlUtil = new SftpPollingListenerXmlUtilities();
-                xml = xmlUtil.marshallToXMLString(listenerConfigurations);
-            } finally {
-                Thread.currentThread().setContextClassLoader(currentContextClassLoader);
-            }
-        return xml;
-    }
-
-    private ClusterProperty getClusterProperty(){
-        ClusterStatusAdmin admin = Registry.getDefault().getClusterStatusAdmin();
-        ClusterProperty property = null;
-        try {
-            property = admin.findPropertyByName(SftpPollingListenerConstants.SFTP_POLLING_CONFIGURATION_UI_PROPERTY);
-        } catch(FindException fe) {
-            logger.warning("Could not find any cluster properties for property >" + SftpPollingListenerConstants.SFTP_POLLING_CONFIGURATION_UI_PROPERTY + "<");
-        }
-        return property;
-    }
-
-    private void deleteResourceFromClusterProperty(SftpPollingListenerDialogSettings resource) {
-        List<SftpPollingListenerDialogSettings> list = loadListenerConfigurations();
-
-        for(int i = 0; i < list.size(); i++) {
-            SftpPollingListenerDialogSettings configuration = list.get(i);
-            if(configuration.getResId() == resource.getResId()) {
-                //remove it from the list.
-                list.remove(i);
-                break;
-            }
-        }
-
-        saveClusterPropertyList(list);
     }
 
     private void enableOrDisableButtons() {

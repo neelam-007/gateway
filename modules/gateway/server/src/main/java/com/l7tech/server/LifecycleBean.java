@@ -4,6 +4,8 @@ import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.server.event.system.LicenseEvent;
 import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -123,10 +125,10 @@ public abstract class LifecycleBean implements Lifecycle, InitializingBean, Appl
 
     //- PROTECTED
 
-    protected LifecycleBean(final String name,
-                            final Logger logger,
-                            final String licenseFeature,
-                            final LicenseManager licenseManager) {
+    protected LifecycleBean( @NotNull  final String name,
+                             @NotNull  final Logger logger,
+                             @NotNull  final String licenseFeature,
+                             @Nullable final LicenseManager licenseManager) {
         this.componentName = name;
         this.logger = logger;
         this.licenseFeature = licenseFeature;
@@ -137,6 +139,12 @@ public abstract class LifecycleBean implements Lifecycle, InitializingBean, Appl
             this.started = false;
         } finally {
             startedRwLock.writeLock().unlock();
+        }
+    }
+
+    protected void setLicenseManager( final LicenseManager licenseManager ) {
+        if ( this.licenseManager == null ) {
+            this.licenseManager = licenseManager;
         }
     }
 
@@ -178,8 +186,8 @@ public abstract class LifecycleBean implements Lifecycle, InitializingBean, Appl
     private final Logger logger;
     private final String componentName;
     private final String licenseFeature;
-    private final LicenseManager licenseManager;
     private boolean started;
     private final ReadWriteLock startedRwLock = new ReentrantReadWriteLock(false);
     private ApplicationContext applicationContext;
+    private LicenseManager licenseManager;
 }

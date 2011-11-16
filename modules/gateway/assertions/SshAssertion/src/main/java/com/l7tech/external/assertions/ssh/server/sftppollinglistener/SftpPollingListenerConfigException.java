@@ -5,12 +5,12 @@ package com.l7tech.external.assertions.ssh.server.sftppollinglistener;
  *
  * @author njordan
  */
-public class SftpPollingListenerConfigException extends Exception {
-    public SftpPollingListenerConfigException(String message) {
+class SftpPollingListenerConfigException extends Exception {
+    SftpPollingListenerConfigException(String message) {
         super( message );
     }
 
-    public SftpPollingListenerConfigException(String message, Throwable cause) {
+    SftpPollingListenerConfigException(String message, Throwable cause) {
         super(message, cause);
     }
 }

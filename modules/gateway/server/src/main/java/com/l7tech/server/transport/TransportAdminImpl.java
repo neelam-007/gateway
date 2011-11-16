@@ -1,6 +1,7 @@
 package com.l7tech.server.transport;
 
 import com.l7tech.gateway.common.transport.ResolutionConfiguration;
+import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.Message;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.util.Config;
@@ -38,16 +39,19 @@ import java.util.concurrent.ConcurrentMap;
  * Server-side implementation of the TransportAdmin API.
  */
 public class TransportAdminImpl implements TransportAdmin {
+    private final SsgActiveConnectorManager ssgActiveConnectorManager;
     private final SsgConnectorManager connectorManager;
     private final ResolutionConfigurationManager resolutionConfigurationManager;
     private final DefaultKey defaultKeystore;
     private final Config config;
     private ConcurrentMap<String, SSLContext> testSslContextByProviderName = new ConcurrentHashMap<String, SSLContext>();
 
-    public TransportAdminImpl( final SsgConnectorManager connectorManager,
+    public TransportAdminImpl( final SsgActiveConnectorManager ssgActiveConnectorManager,
+                               final SsgConnectorManager connectorManager,
                                final ResolutionConfigurationManager resolutionConfigurationManager,
                                final DefaultKey defaultKeystore,
                                final Config config ) {
+        this.ssgActiveConnectorManager = ssgActiveConnectorManager;
         this.connectorManager = connectorManager;
         this.resolutionConfigurationManager = resolutionConfigurationManager;
         this.defaultKeystore = defaultKeystore;
@@ -92,6 +96,31 @@ public class TransportAdminImpl implements TransportAdmin {
         if (isCurrentAdminConnection(oid))
             throw new CurrentAdminConnectionException("Unable to delete connector for current admin connection");
         connectorManager.delete(oid);
+    }
+
+    @Override
+    public SsgActiveConnector findSsgActiveConnectorByPrimaryKey( final long oid ) throws FindException {
+        return ssgActiveConnectorManager.findByPrimaryKey(oid);
+    }
+
+    @Override
+    public Collection<SsgActiveConnector> findSsgActiveConnectorsByType( final String type ) throws FindException {
+        return ssgActiveConnectorManager.findSsgActiveConnectorsByType(type);
+    }
+
+    @Override
+    public long saveSsgActiveConnector( final SsgActiveConnector activeConnector ) throws SaveException, UpdateException {
+        if ( activeConnector.getOid() == SsgActiveConnector.DEFAULT_OID) {
+            return ssgActiveConnectorManager.save( activeConnector );
+        } else {
+            ssgActiveConnectorManager.update( activeConnector );
+            return activeConnector.getOid();
+        }
+    }
+
+    @Override
+    public void deleteSsgActiveConnector( final long oid ) throws DeleteException, FindException {
+        ssgActiveConnectorManager.delete(oid);
     }
 
     @Override

@@ -146,8 +146,8 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                 final String publicKeyFingerprint = ExpandVariables.process(assertion.getSshPublicKey(), variables, getAudit());
 
                 // validate public key fingerprint
-                Pair<Boolean, String> fingerprintIsValid = SshKeyUtil.validateSshPublicKeyFingerprint(publicKeyFingerprint);
-                if(!fingerprintIsValid.left){
+                final Option<String> fingerprintIsValid = SshKeyUtil.validateSshPublicKeyFingerprint(publicKeyFingerprint);
+                if( fingerprintIsValid.isSome() ){
                     logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, SshAssertionMessages.SSH_INVALID_PUBLIC_KEY_FINGERPRINT_EXCEPTION);
                     return AssertionStatus.FAILED;
                 }

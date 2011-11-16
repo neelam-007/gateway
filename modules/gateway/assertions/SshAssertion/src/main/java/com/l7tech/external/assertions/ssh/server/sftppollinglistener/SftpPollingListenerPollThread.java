@@ -1,7 +1,13 @@
 package com.l7tech.external.assertions.ssh.server.sftppollinglistener;
 
+import com.jscape.inet.sftp.Sftp;
+import com.l7tech.gateway.common.transport.SsgActiveConnector;
+import static com.l7tech.gateway.common.transport.SsgActiveConnector.PROPERTIES_KEY_POLLING_INTERVAL;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions.UnaryThrows;
+import static java.text.MessageFormat.format;
 
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
@@ -11,15 +17,18 @@ import java.util.logging.Level;
 /*
  * Polling thread logic.
  */
-public class SftpPollingListenerPollThread extends Thread {
+class SftpPollingListenerPollThread extends Thread {
     /** The amount of time the thread sleeps when the MAXIMUM_OOPSES limit is reached */
     protected final AtomicInteger oopsSleep = new AtomicInteger(SftpPollingListener.DEFAULT_OOPS_SLEEP);
 
-    private SftpPollingListener sftpPollingListener;
+    private final SftpPollingListener sftpPollingListener;
+    private final String connectorInfo;
 
-    public SftpPollingListenerPollThread(SftpPollingListener sftpPollingListener, String threadName) {
+    SftpPollingListenerPollThread(SftpPollingListener sftpPollingListener, String threadName) {
         super(threadName);
+        setDaemon( true );
         this.sftpPollingListener = sftpPollingListener;
+        this.connectorInfo = sftpPollingListener.getDisplayName();
     }
 
     /**
@@ -27,27 +36,35 @@ public class SftpPollingListenerPollThread extends Thread {
      */
     @Override
     public final void run() {
-        sftpPollingListener.log(Level.INFO, SftpPollingListenerMessages.INFO_LISTENER_POLLING_START, sftpPollingListener.getResourceConfig().getName());
+        sftpPollingListener.log(Level.INFO, SftpPollingListenerMessages.INFO_LISTENER_POLLING_START, connectorInfo);
+
+        final SsgActiveConnector ssgActiveConnector = sftpPollingListener.getSsgActiveConnector();
+        final long pollInterval = ssgActiveConnector.getLongProperty( PROPERTIES_KEY_POLLING_INTERVAL, 60L ) * 1000L;
 
         int oopses = 0;
         String messageFilename;
         String lastMessageFilename = null;
         boolean retryLastMsg = false;
-        SftpPollingListenerResource resourceConfig = sftpPollingListener.getResourceConfig();
         try {
-            List<String> fileNames = new LinkedList<String>();
+            final List<String> fileNames = new LinkedList<String>();
             while(!sftpPollingListener.isStop()) {
                 try {
                     if(!retryLastMsg || lastMessageFilename == null) {
                         // look for files to process
-                        if(fileNames.isEmpty()) {
-                            sftpPollingListener.scanDirectoryForFiles(fileNames);
+                        if( fileNames.isEmpty() ) {
+                            sftpPollingListener.doWithSftpClient( new UnaryThrows<Void, Sftp, IOException>() {
+                                @Override
+                                public Void call( final Sftp sftp ) throws IOException {
+                                    fileNames.addAll( sftpPollingListener.scanDirectoryForFiles( sftp ) );
+                                    return null;
+                                }
+                            } );
                         }
 
                         // if still empty, sleep then check again for files
                         if(fileNames.isEmpty()) {
                             try {
-                                Thread.sleep(resourceConfig.getPollingInterval() * 1000);
+                                Thread.sleep( pollInterval );
                             } catch(InterruptedException ie) {
                                 // ignore
                             }
@@ -58,7 +75,7 @@ public class SftpPollingListenerPollThread extends Thread {
                         messageFilename = fileNames.remove(0);
 
                         sftpPollingListener.log(Level.FINE, SftpPollingListenerMessages.INFO_LISTENER_RECEIVE_MSG,
-                                new Object[]{resourceConfig.getName(), messageFilename});
+                                connectorInfo, messageFilename );
 
                         retryLastMsg = false;
                         lastMessageFilename = null;
@@ -73,20 +90,18 @@ public class SftpPollingListenerPollThread extends Thread {
                         // process the message
                         lastMessageFilename = messageFilename;
                         sftpPollingListener.handleFile(messageFilename);
-                        messageFilename = null;
                     }
                 } catch ( Throwable e ) {
                     if (ExceptionUtils.causedBy(e, InterruptedException.class)) {
                         sftpPollingListener.log(Level.FINE, "SFTP polling listener on {0} caught throwable: " + ExceptionUtils.getMessage(e),
                                 ExceptionUtils.getDebugException(e));
-                        messageFilename = null;
                         continue;
                     }
 
                     if (!ExceptionUtils.causedBy(e, RejectedExecutionException.class)) {
-                        sftpPollingListener.log(Level.WARNING, sftpPollingListener.formatMessage(
+                        sftpPollingListener.log(Level.WARNING, format(
                                 SftpPollingListenerMessages.WARN_LISTENER_RECEIVE_ERROR,
-                                resourceConfig.getName()),
+                                connectorInfo, ExceptionUtils.getMessage( e ) ),
                                 ExceptionUtils.getDebugException(e));
                         sftpPollingListener.cleanup();
                     } else {
@@ -97,28 +112,28 @@ public class SftpPollingListenerPollThread extends Thread {
 
                     if ( ++oopses < SftpPollingListener.MAXIMUM_OOPSES ) {
                         // sleep for a short period of time before retrying
-                        sftpPollingListener.log(Level.FINE, "SFTP polling listener on {0} sleeping for {1} milliseconds.",
-                                new Object[]{resourceConfig, sftpPollingListener.OOPS_RETRY});
+                        sftpPollingListener.log(Level.FINE, "SFTP polling listener ''{0}'' sleeping for {1} milliseconds.",
+                                connectorInfo, SftpPollingListener.OOPS_RETRY );
                         try {
-                            Thread.sleep(SftpPollingListener.OOPS_RETRY);
+                            Thread.sleep( (long) SftpPollingListener.OOPS_RETRY );
                         } catch ( InterruptedException e1 ) {
-                            sftpPollingListener.log(Level.INFO, SftpPollingListenerMessages.INFO_LISTENER_POLLING_INTERRUPTED, new Object[]{"retry interval"});
+                            sftpPollingListener.log(Level.INFO, SftpPollingListenerMessages.INFO_LISTENER_POLLING_INTERRUPTED, "retry interval" );
                         }
                     } else {
                         // max oops reached .. sleep for a longer period of time before retrying
                         int sleepTime = oopsSleep.get();
                         sftpPollingListener.log(Level.WARNING, SftpPollingListenerMessages.WARN_LISTENER_MAX_OOPS_REACHED,
-                                new Object[]{resourceConfig.getName(), SftpPollingListener.MAXIMUM_OOPSES, sleepTime});
+                                connectorInfo, SftpPollingListener.MAXIMUM_OOPSES, sleepTime );
                         try {
-                            Thread.sleep(sleepTime);
+                            Thread.sleep( (long) sleepTime );
                         } catch ( InterruptedException e1 ) {
-                            sftpPollingListener.log(Level.INFO, SftpPollingListenerMessages.INFO_LISTENER_POLLING_INTERRUPTED, new Object[]{"sleep interval"});
+                            sftpPollingListener.log(Level.INFO, SftpPollingListenerMessages.INFO_LISTENER_POLLING_INTERRUPTED, "sleep interval" );
                         }
                     }
                 }
             }
         } finally {
-            sftpPollingListener.log(Level.INFO, SftpPollingListenerMessages.INFO_LISTENER_POLLING_STOP, resourceConfig.getName());
+            sftpPollingListener.log( Level.INFO, SftpPollingListenerMessages.INFO_LISTENER_POLLING_STOP, connectorInfo );
             sftpPollingListener.cleanup();
         }
     }

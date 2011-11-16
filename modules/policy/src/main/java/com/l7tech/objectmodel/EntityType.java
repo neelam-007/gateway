@@ -59,6 +59,8 @@ public enum EntityType implements Comparable<EntityType> {
 
     EMAIL_LISTENER("Email Listener", true),
 
+    SSG_ACTIVE_CONNECTOR("Polling Listener", true),
+
     LOG_SINK("Log Sink", true),
 
     SERVICE_TEMPLATE("Service Template", true),

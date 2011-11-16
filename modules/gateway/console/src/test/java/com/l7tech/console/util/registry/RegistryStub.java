@@ -24,6 +24,7 @@ import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.transport.ResolutionConfiguration;
+import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
@@ -162,7 +163,7 @@ public class RegistryStub extends Registry {
             private final Role role = new Role();
             {
                 role.setName("Stub role");
-                role.setOid(-777);
+                role.setOid(-777L);
                 role.setDescription("Fake role for testing");
             }
 
@@ -248,6 +249,26 @@ public class RegistryStub extends Registry {
             }
 
             @Override
+            public void deleteSsgActiveConnector( final long oid ) throws DeleteException, FindException {
+                throw new FindException("Not implemented");
+            }
+
+            @Override
+            public SsgActiveConnector findSsgActiveConnectorByPrimaryKey( final long oid ) throws FindException {
+                throw new FindException("Not implemented");
+            }
+
+            @Override
+            public Collection<SsgActiveConnector> findSsgActiveConnectorsByType( final String type ) throws FindException {
+                throw new FindException("Not implemented");
+            }
+
+            @Override
+            public long saveSsgActiveConnector( final SsgActiveConnector activeConnector ) throws SaveException, UpdateException {
+                throw new SaveException("Not implemented");
+            }
+
+            @Override
             public String[] getAllProtocolVersions(boolean defaultProvderOnly) {
                 return new String[0];
             }
@@ -289,12 +310,12 @@ public class RegistryStub extends Registry {
 
             @Override
             public long saveResolutionConfiguration( final ResolutionConfiguration configuration ) {
-                return 0;
+                return 0L;
             }
 
             @Override
             public long getXmlMaxBytes(){
-                return 0;
+                return 0L;
             }
 
             @Override
@@ -448,7 +469,7 @@ public class RegistryStub extends Registry {
 
             @Override
             public long getXmlMaxBytes() {
-                return 0;
+                return 0L;
             }
 
             @Override

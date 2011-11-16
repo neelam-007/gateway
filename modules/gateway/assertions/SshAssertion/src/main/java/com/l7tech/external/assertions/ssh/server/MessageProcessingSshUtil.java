@@ -21,6 +21,7 @@ import com.l7tech.util.Option;
 import com.l7tech.util.Pair;
 import static com.l7tech.util.TextUtils.isNotEmpty;
 import org.apache.sshd.server.session.ServerSession;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -123,11 +124,14 @@ public class MessageProcessingSshUtil {
     /*
      * Create an SshKnob for SCP and SFTP.
      */
-    public static SshKnob buildSshKnob(final String localHost, final int localPort,
-                                       final String remoteHost, final int remotePort,
-                                       final String file, final String path,
-                                       final PublicKeyAuthentication publicKeyCredential,
-                                       final PasswordAuthentication passwordCredential) {
+    public static SshKnob buildSshKnob( @Nullable final String localHost,
+                                        final int localPort,
+                                        @Nullable final String remoteHost,
+                                        final int remotePort,
+                                        final String file,
+                                        final String path,
+                                        @Nullable final PublicKeyAuthentication publicKeyCredential,
+                                        @Nullable final PasswordAuthentication passwordCredential) {
 
         return new SshKnob(){
             @Override
@@ -211,7 +215,7 @@ public class MessageProcessingSshUtil {
      * @return the host and port determined as described above
      */
     private static Pair<String,String> getHostAndPort(String hostAndPossiblyPort) {
-        boolean startsWithForwardSlash = hostAndPossiblyPort.charAt(0) == '/';
+        boolean startsWithForwardSlash = (int) hostAndPossiblyPort.charAt( 0 ) == (int) '/';
         int colonIndex = hostAndPossiblyPort.indexOf(':');
         String host;
         if (startsWithForwardSlash && colonIndex > 1) {

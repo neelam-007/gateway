@@ -6,7 +6,8 @@ import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.IOUtils;
-import com.l7tech.util.Pair;
+import com.l7tech.util.Option;
+import static com.l7tech.util.Option.some;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
@@ -85,6 +86,7 @@ public class HostKeyDialog extends JDialog {
         });
 
         loadFromFileButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 readFromFile(validationType);
             }
@@ -103,15 +105,15 @@ public class HostKeyDialog extends JDialog {
                         }
                         break;
                     case VALIDATE_SSH_PUBLIC_KEY_FINGERPRINT_FORMAT:
-                        Pair<Boolean, String> hostKeyFormatIsValid;
+                        final Option<String> hostKeyFormatIsValid;
                         if (hostKeyField == null || hostKeyField.getText().equalsIgnoreCase("")){
-                            hostKeyFormatIsValid = new Pair<Boolean, String>(false, "Server key cannot be blank, please enter a value or cancel");
+                            hostKeyFormatIsValid = some("Server key cannot be blank, please enter a value or cancel");
                         } else {
                             hostKeyFormatIsValid = SshKeyUtil.validateSshPublicKeyFingerprint(hostKeyField.getText());
                         }
-                        if(!hostKeyFormatIsValid.left.booleanValue()){
+                        if( hostKeyFormatIsValid.isSome() ){
                             JOptionPane.showMessageDialog(HostKeyDialog.this, MessageFormat.format(
-                                    getResourceString("sshHostKeyFormatError"), hostKeyFormatIsValid.right));
+                                    getResourceString("sshHostKeyFormatError"), hostKeyFormatIsValid.some()));
                             return;
                         }
                         break;

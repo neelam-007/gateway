@@ -89,6 +89,54 @@ public interface TransportAdmin {
     void deleteSsgConnector(long oid) throws DeleteException, FindException, CurrentAdminConnectionException;
 
     /**
+     * Finds a particular {@link SsgActiveConnector} with the specified OID, or null if no such connector can be found.
+     *
+     * @param oid the OID of the SsgActiveConnector to retrieve
+     * @return the SsgActiveConnector with the specified OID, or null if no such connector can be found.
+     * @throws FindException If there was a problem accessing the requested information.
+     */
+    @Secured(stereotype=FIND_ENTITY, types=SSG_ACTIVE_CONNECTOR)
+    @Transactional(readOnly=true)
+    SsgActiveConnector findSsgActiveConnectorByPrimaryKey( long oid ) throws FindException;
+
+    /**
+     * Retrieve all active connectors of the given type.
+     *
+     * @param type The active connector type
+     * @return a Collection of SsgActiveConnector instances.  Never null.
+     * @throws FindException If there was a problem accessing the requested information.
+     */
+    @Secured(stereotype=FIND_HEADERS, types=SSG_ACTIVE_CONNECTOR)
+    @Transactional(readOnly=true)
+    Collection<SsgActiveConnector> findSsgActiveConnectorsByType( String type ) throws FindException;
+
+    /**
+     * Store the specified new or updated SsgActiveConnector.
+     *
+     * <p>If the specified {@link SsgActiveConnector} contains a unique object
+     * ID that already exists, this will replace the objects current
+     * configuration with the new configuration. Otherwise, a new object will
+     * be created.</p>
+     *
+     * @param activeConnector  the active connector to save.  Required.
+     * @return the unique object ID that was updated or created.
+     * @throws SaveException   if the requested information could not be saved
+     * @throws UpdateException if the requested information could not be updated
+     */
+    @Secured(stereotype=SAVE_OR_UPDATE, types=SSG_ACTIVE_CONNECTOR)
+    long saveSsgActiveConnector( SsgActiveConnector activeConnector ) throws SaveException, UpdateException;
+
+    /**
+     * Delete the active connector for the given primary key.
+     *
+     * @param oid the object ID of the active connector to delete.  Required.
+     * @throws DeleteException if there is some other problem deleting the object
+     * @throws FindException if the object cannot be found
+     */
+    @Secured(stereotype=DELETE_BY_ID, types=SSG_ACTIVE_CONNECTOR)
+    void deleteSsgActiveConnector( long oid ) throws DeleteException, FindException;
+
+    /**
      * Get the names of all protocols supported by the default TLS provider on the current node.
      *
      * @param defaultProviderOnly if true, only those protocols supported by the default TLS provider will be included.  If false, all protocols supported by any known provider will be included.

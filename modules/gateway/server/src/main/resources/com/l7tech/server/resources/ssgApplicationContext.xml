@@ -1566,6 +1566,7 @@
                 <ref bean="jdbcConnectionManager"/>
                 <ref bean="trustedCertManager"/>
                 <ref bean="revocationCheckPolicyManager"/>
+                <ref bean="ssgActiveConnectorManager"/>
                 <ref bean="ssgConnectorManager"/>
                 <ref bean="sinkManager"/>
                 <ref bean="policyManager"/>
@@ -1699,6 +1700,8 @@
           parent="hibernateBean">
         <constructor-arg ref="sharedKeyManager"/>
     </bean>
+
+    <bean id="ssgActiveConnectorManager" class="com.l7tech.server.transport.SsgActiveConnectorManagerImpl" parent="hibernateBean"/>
 
     <bean id="ssgConnectorManager" class="com.l7tech.server.transport.SsgConnectorManagerImpl" parent="hibernateBean">
         <constructor-arg ref="serverConfig"/>

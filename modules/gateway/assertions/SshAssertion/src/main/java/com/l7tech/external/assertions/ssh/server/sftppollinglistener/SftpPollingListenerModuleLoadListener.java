@@ -1,17 +1,12 @@
 package com.l7tech.external.assertions.ssh.server.sftppollinglistener;
 
-import com.l7tech.gateway.common.LicenseManager;
+import com.l7tech.external.assertions.ssh.SftpPollingListenerConstants;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.cluster.ClusterPropertyManager;
-import com.l7tech.server.event.system.ReadyForMessages;
-import com.l7tech.server.util.ApplicationEventProxy;
+import com.l7tech.server.util.Injector;
 import com.l7tech.server.util.ThreadPoolBean;
 import com.l7tech.util.ExceptionUtils;
-import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,62 +21,36 @@ public class SftpPollingListenerModuleLoadListener implements SftpPollingListene
     private static final Logger logger = Logger.getLogger(SftpPollingListenerModuleLoadListener.class.getName());
 
     // Manages all SFTP polling listener processes
-    private static SftpPollingListenerModule sftpPollingListenerProcess;
-
-    // SSG Application event proxy
-    private static ApplicationEventProxy applicationEventProxy;
-
-    // SSG cluster property manager
-    private static ClusterPropertyManager clusterPropertyManager;
+    private static SftpPollingListenerModule sftpPollingListenerModule;
 
     @SuppressWarnings({"UnusedDeclaration"})
     public static synchronized void onModuleLoaded(final ApplicationContext context) {
-        if (applicationEventProxy == null)
-            applicationEventProxy = getBean(context, "applicationEventProxy", ApplicationEventProxy.class);
-
-        if (clusterPropertyManager == null)
-            clusterPropertyManager = getBean(context, "clusterPropertyManager", ClusterPropertyManager.class);
-
-        if (sftpPollingListenerProcess != null) {
+        if ( sftpPollingListenerModule != null) {
             logger.log(Level.WARNING, "SFTP polling listener module is already initialized");
         } else {
             // (1) Create (if does not exist) all context variables used by this module
-            initializeModuleClusterProperties(ServerConfig.getInstance());
+            initializeModuleClusterProperties( context.getBean( "serverConfig", ServerConfig.class ) );
 
             // (2) Instantiate the SFTP polling boot process
-            LicenseManager lm = context.getBean("licenseManager", LicenseManager.class);
             ThreadPoolBean pool = new ThreadPoolBean(
                     ServerConfig.getInstance(),
                     "SFTP polling Listener Pool",
                     LISTENER_THREAD_LIMIT_PROPERTY,
                     LISTENER_THREAD_LIMIT_UI_PROPERTY,
                     25);
-            sftpPollingListenerProcess = new SftpPollingListenerModule(pool, clusterPropertyManager, lm, SftpPollingListenerResourceManager.getInstance(context));
-            sftpPollingListenerProcess.setApplicationContext(context);
-            applicationEventProxy.addApplicationListener(sftpPollingListenerProcess);
+            final Injector injector = context.getBean( "injector", Injector.class );
+            sftpPollingListenerModule = new SftpPollingListenerModule(pool);
+            injector.inject( sftpPollingListenerModule );
+            sftpPollingListenerModule.setApplicationContext( context );
 
             // (3) Start the module
             try {
                 // Start the boot process which will start the listeners
                 logger.log(Level.INFO, "SftpPollingListenerModuleLoadListener - starting SftpPollingListenerModule...");
-                sftpPollingListenerProcess.doStart();
+                sftpPollingListenerModule.start();
             } catch (LifecycleException e) {
                 logger.log(Level.WARNING, "SFTP polling listener module threw exception during startup: " + ExceptionUtils.getMessage(e), e);
             }
-
-            // Only initialize all the resource managers when the SSG is "ready for messages"
-            applicationEventProxy.addApplicationListener( new ApplicationListener() {
-                @Override
-                public void onApplicationEvent(ApplicationEvent event) {
-
-                    // only do this when the SSG is ready for messages
-                    if (event instanceof ReadyForMessages) {
-                        // initialize the config resource manager (queue config persistent store)
-                        SftpPollingListenerResourceManager resMgr = SftpPollingListenerResourceManager.getInstance(context);
-                        resMgr.init();
-                    }
-                }
-            } );
         }
     }
 
@@ -91,25 +60,17 @@ public class SftpPollingListenerModuleLoadListener implements SftpPollingListene
      */
     @SuppressWarnings({"UnusedDeclaration"})
     public static synchronized void onModuleUnloaded() {
-        if (sftpPollingListenerProcess != null) {
+        if ( sftpPollingListenerModule != null) {
             logger.log(Level.INFO, "Shutdown SFTP polling listener module");
             try {
-                sftpPollingListenerProcess.doStop();
-                sftpPollingListenerProcess.destroy();
-
+                sftpPollingListenerModule.stop();
+                sftpPollingListenerModule.destroy();
             } catch (Exception e) {
                 logger.log(Level.WARNING, "SFTP polling listener module threw exception during shutdown: " + ExceptionUtils.getMessage(e), e);
             } finally {
-                sftpPollingListenerProcess = null;
+                sftpPollingListenerModule = null;
             }
         }
-    }
-
-    private static <T> T getBean(BeanFactory beanFactory, String beanName, Class<T> beanClass) {
-        T got = beanFactory.getBean(beanName, beanClass);
-        if (got != null && beanClass.isAssignableFrom(got.getClass()))
-            return got;
-        throw new IllegalStateException("Unable to get bean from application context: " + beanName);
     }
 
     /**

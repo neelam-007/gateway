@@ -227,15 +227,24 @@ public class ThreadPool {
      *
      */
     public void submitTask(final Runnable newTask) throws ThreadPoolShutDownException, RejectedExecutionException{
-        if(workerPool.isShutdown() || workerPool.isTerminating()){
-            throw new ThreadPoolShutDownException();
-        }
+        submitCheck();
+        workerPool.execute( newTask );
+    }
 
-        workerPool.execute(newTask);
+    /**
+     * As per submitTask(Runnable) but returns a future.
+     *
+     * @param newTask The callable to submit.
+     * @param <T> The result type.
+     * @return  The future
+     */
+    public <T> Future<T> submitTask( final Callable<T> newTask ) throws ThreadPoolShutDownException, RejectedExecutionException {
+        submitCheck();
+        return workerPool.submit( newTask );
     }
 
     public boolean isShutdown(){
-        return workerPool.isShutdown();
+        return workerPool==null || workerPool.isShutdown();
     }
 
     public static class ThreadPoolShutDownException extends Exception{}
@@ -277,4 +286,11 @@ public class ThreadPool {
     private static final long MAX_SHUTDOWN_TIME = 8000l; // 8 sec
     private static final java.util.concurrent.TimeUnit TIME_UNIT = TimeUnit.MILLISECONDS;
     private static final Logger logger = Logger.getLogger(ThreadPool.class.getName());
+
+    private void submitCheck() throws ThreadPoolShutDownException {
+        if(workerPool.isShutdown() || workerPool.isTerminating()){
+            throw new ThreadPoolShutDownException();
+        }
+    }
+
 }

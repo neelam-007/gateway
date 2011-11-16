@@ -704,6 +704,22 @@ public class TextUtils {
         };
     }
 
+    /**
+     * Function that matches a string using the given pattern.
+     *
+     * @param pattern The pattern to use
+     * @return The matching function
+     */
+    @NotNull
+    public static Unary<Boolean,CharSequence> matches( @NotNull final Pattern pattern ) {
+        return new Unary<Boolean,CharSequence>(){
+            @Override
+            public Boolean call( final CharSequence text ) {
+                return pattern.matcher( text ).matches();
+            }
+        };
+    }
+
     private static final Unary<String,CharSequence> FUNC_TRIM = new Unary<String,CharSequence>() {
             @Override
             public String call( final CharSequence charSequence ) {

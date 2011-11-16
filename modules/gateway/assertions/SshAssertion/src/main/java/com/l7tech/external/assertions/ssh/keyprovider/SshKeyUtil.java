@@ -3,11 +3,13 @@ package com.l7tech.external.assertions.ssh.keyprovider;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.HexUtils;
+import com.l7tech.util.Option;
+import static com.l7tech.util.Option.none;
 import static com.l7tech.util.Option.optional;
-import com.l7tech.util.Pair;
+import static com.l7tech.util.Option.some;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.SyspropUtil;
+import static com.l7tech.util.TextUtils.matches;
 import org.bouncycastle.openssl.PEMReader;
 import org.bouncycastle.openssl.PEMWriter;
 
@@ -16,7 +18,6 @@ import java.io.*;
 import java.security.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -29,6 +30,11 @@ public class SshKeyUtil {
     private static final String ALGORITHM_DSA = "DSA";
     private static final String ALGORITHM_RSA = "RSA";
     private static final String PEM_BEGIN = "-----BEGIN ";
+    private static final Pattern FINGERPRINT_PATTERN = Pattern.compile(
+            "^[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]\\:" +
+            "[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]\\:" +
+            "[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]\\:" +
+            "[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]$");
 
     /**
      * Determine algorithm of a given private key.
@@ -91,31 +97,22 @@ public class SshKeyUtil {
 
     /**
      * Validate the format of an SSH public key fingerprint
+     *
      * @param fingerPrint SSH public key fingerprint format string
-     * @return Return a PAIR <true, empty string> if the fingerprint is valid,
-     * otherwise Return a PAIR <false, error message> if the fingerprint is invalid.
+     * @return Returns an optional validation error message
      */
-    public static Pair<Boolean, String> validateSshPublicKeyFingerprint(String fingerPrint) {
-        boolean isValid = false;
-        String errorText = "The SSH public key fingerprint entered is not valid.";
-        if (fingerPrint != null) {
-            Pattern p = Pattern.compile("^[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]\\:" +
-                    "[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]\\:" +
-                    "[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]\\:" +
-                    "[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]\\:[0-9a-f][0-9a-f]$");
-            Matcher m = p.matcher(fingerPrint);
-            isValid = m.matches();
+    public static Option<String> validateSshPublicKeyFingerprint( final String fingerPrint ) {
+        final Option<String> message;
 
-            // could be a context variable
-            if (!isValid) {
-                isValid = Syntax.getReferencedNames(fingerPrint).length > 0;
-            }
-
-            if (isValid){
-                errorText = "";
-            }
+        // fingerprint must match or contain context variables
+        if ( !optional(fingerPrint).exists(matches(FINGERPRINT_PATTERN)) &&
+                Syntax.getReferencedNames(fingerPrint).length == 0 ) {
+            message = some( "The SSH public key fingerprint entered is not valid." );
+        } else {
+            message = none();
         }
-        return new Pair<Boolean, String>(isValid, errorText);
+
+        return message;
     }
 
     private static String getProviderNameForService( final String service ) {

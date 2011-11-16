@@ -6,7 +6,6 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.util.BeanUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
-import org.hibernate.annotations.CollectionOfElements;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.Proxy;
@@ -17,8 +16,6 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlEnumValue;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.logging.Level;
@@ -31,7 +28,6 @@ import java.util.regex.Pattern;
 @Entity
 @Proxy(lazy=false)
 @Table(name="connector")
-@XmlRootElement
 public class SsgConnector extends NamedEntityImp implements PortOwner {
     protected static final Logger logger = Logger.getLogger(SsgConnector.class.getName());
 
@@ -236,8 +232,6 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     private Long keystoreOid;
     private String keyAlias;
 
-    // TODO this field should probably not be XmlTransient any more, but need to double check serialization first
-    @XmlTransient
     private Map<String,String> properties = new HashMap<String,String>();
 
     // Fields not saved by hibernate
@@ -582,11 +576,11 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      *
      * @return a Set containing the extra connector properties.  May be empty but never null.
      */
-    @CollectionOfElements(fetch=FetchType.EAGER)
     @Fetch(FetchMode.SUBSELECT)
+    @ElementCollection(fetch=FetchType.EAGER)
     @JoinTable(name="connector_property",
                joinColumns=@JoinColumn(name="connector_oid", referencedColumnName="objectid"))
-    @org.hibernate.annotations.MapKey(columns={@Column(name="name",length=128)})
+    @MapKeyColumn(name="name",length=128)
     @Column(name="value", nullable=false, length=Integer.MAX_VALUE)
     protected Map<String,String> getProperties() {
         //noinspection ReturnOfCollectionOrArrayField

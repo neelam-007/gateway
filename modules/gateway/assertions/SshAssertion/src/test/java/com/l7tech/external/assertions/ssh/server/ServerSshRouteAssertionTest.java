@@ -2,11 +2,8 @@ package com.l7tech.external.assertions.ssh.server;
 
 import com.l7tech.external.assertions.ssh.SshRouteAssertion;
 import com.l7tech.external.assertions.ssh.keyprovider.SshKeyUtil;
-import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.assertion.TargetMessageType;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -16,9 +13,7 @@ import static org.junit.Assert.*;
  * Test SshRouteAssertion
  */
 public class ServerSshRouteAssertionTest {
-    private PolicyEnforcementContext context;
     private SshRouteAssertion assertion;
-
 
     private MessageTargetableSupport requestTarget = defaultRequestTarget();
 
@@ -28,7 +23,6 @@ public class ServerSshRouteAssertionTest {
 
     @Before
     public void setUp() throws Exception {
-        context = getContext();
         assertion = new SshRouteAssertion();
         assertion.setRequestTarget(requestTarget);
         assertion.setUsePublicKey(true);
@@ -41,20 +35,16 @@ public class ServerSshRouteAssertionTest {
         assertion.setUsername("root");
     }
 
-    private PolicyEnforcementContext getContext() {
-            return PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
-    }
-
     @Test
     public void testSshPublicKeyFingerprintValidation() throws Exception {
-        assertTrue(SshKeyUtil.validateSshPublicKeyFingerprint("54:45:5e:ec:80:cb:d3:a8:01:a1:b0:7b:9f:82:80:9e").left);
-        assertTrue(SshKeyUtil.validateSshPublicKeyFingerprint("95:53:22:67:42:28:54:0d:86:0e:98:73:05:3f:d1:84").left);
-        assertTrue(SshKeyUtil.validateSshPublicKeyFingerprint("85:d9:2d:45:cf:50:ed:0f:1e:61:d5:38:9a:18:4d:c0").left);
-        assertTrue(SshKeyUtil.validateSshPublicKeyFingerprint("${contextVariable}").left);
-        assertFalse(SshKeyUtil.validateSshPublicKeyFingerprint("54:45:5e:zz:80:cb:d3:a8:01:a1:b0:7b:9f:82:80:9e").left);
-        assertFalse(SshKeyUtil.validateSshPublicKeyFingerprint("54:45:5e:ec:80").left);
-        assertFalse(SshKeyUtil.validateSshPublicKeyFingerprint("").left);
-        assertFalse(SshKeyUtil.validateSshPublicKeyFingerprint(null).left);
+        assertFalse(SshKeyUtil.validateSshPublicKeyFingerprint("54:45:5e:ec:80:cb:d3:a8:01:a1:b0:7b:9f:82:80:9e").isSome());
+        assertFalse(SshKeyUtil.validateSshPublicKeyFingerprint("95:53:22:67:42:28:54:0d:86:0e:98:73:05:3f:d1:84").isSome());
+        assertFalse(SshKeyUtil.validateSshPublicKeyFingerprint("85:d9:2d:45:cf:50:ed:0f:1e:61:d5:38:9a:18:4d:c0").isSome());
+        assertFalse(SshKeyUtil.validateSshPublicKeyFingerprint("${contextVariable}").isSome());
+        assertTrue(SshKeyUtil.validateSshPublicKeyFingerprint("54:45:5e:zz:80:cb:d3:a8:01:a1:b0:7b:9f:82:80:9e").isSome());
+        assertTrue(SshKeyUtil.validateSshPublicKeyFingerprint("54:45:5e:ec:80").isSome());
+        assertTrue(SshKeyUtil.validateSshPublicKeyFingerprint("").isSome());
+        assertTrue(SshKeyUtil.validateSshPublicKeyFingerprint(null).isSome());
     }
 
     @Test

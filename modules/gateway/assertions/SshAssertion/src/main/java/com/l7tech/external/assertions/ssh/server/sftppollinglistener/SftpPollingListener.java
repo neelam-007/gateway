@@ -3,26 +3,38 @@ package com.l7tech.external.assertions.ssh.server.sftppollinglistener;
 import com.jscape.inet.sftp.Sftp;
 import com.jscape.inet.sftp.SftpException;
 import com.jscape.inet.sftp.SftpFile;
-import com.jscape.inet.sftp.SftpFileNotFoundException;
 import com.jscape.inet.ssh.util.HostKeyFingerprintVerifier;
 import com.jscape.inet.ssh.util.SshHostKeys;
 import com.jscape.inet.ssh.util.SshParameters;
-import com.jscape.inet.ssh.util.keyreader.FormatException;
 import com.l7tech.external.assertions.ssh.keyprovider.SshKeyUtil;
-import com.l7tech.external.assertions.ssh.server.SshAssertionMessages;
+import static com.l7tech.external.assertions.ssh.server.SshAssertionMessages.*;
+import com.l7tech.external.assertions.ssh.server.sftppollinglistener.SftpClient.SftpConnectionListener;
 import com.l7tech.gateway.common.Component;
+import com.l7tech.gateway.common.security.password.SecurePassword;
+import com.l7tech.gateway.common.transport.SsgActiveConnector;
+import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.event.system.TransportEvent;
+import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Pair;
+import com.l7tech.util.Functions.UnaryThrows;
+import com.l7tech.util.Option;
+import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.TimeUnit;
+import static java.text.MessageFormat.format;
+import static java.util.Collections.list;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.context.ApplicationEventPublisher;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -33,47 +45,58 @@ import java.util.logging.Logger;
  * All request messages are delegated to the handleFile() method.
  * Currently SftpPollingListenerThreadPoolFileHandler is the only file handler implementation.
  */
-public abstract class SftpPollingListener implements PropertyChangeListener {
-    public static final String RESPONSE_FILE_EXTENSION = ".response";
-    public static final String PROCESSED_FILE_EXTENSION = ".processed";
-    public static final String PROCESSING_FILE_EXTENSION = ".processing";
+abstract class SftpPollingListener {
+    private static final Logger logger = Logger.getLogger(SftpPollingListener.class.getName());
 
-    private static final Logger _logger = Logger.getLogger(SftpPollingListener.class.getName());
+    static final String RESPONSE_FILE_EXTENSION = ".response";
+    static final String PROCESSED_FILE_EXTENSION = ".processed";
+    static final String PROCESSING_FILE_EXTENSION = ".processing";
 
-    protected static final int MAXIMUM_OOPSES = 5;
-    protected static final long SHUTDOWN_TIMEOUT = 7 * 1000;
-    protected static final int OOPS_RETRY = 5000; // Five seconds
-    protected static final int DEFAULT_OOPS_SLEEP = 60 * 1000; // One minute
-    protected static final int OOPS_AUDIT = 15 * 60 * 1000; // 15 mins;
+    static final int MAXIMUM_OOPSES = 5;
+    static final long SHUTDOWN_TIMEOUT = 7L * 1000L;
+    static final int OOPS_RETRY = 5000; // Five seconds
+    static final int DEFAULT_OOPS_SLEEP = 60 * 1000; // One minute
+    static final int OOPS_AUDIT = 15 * 60 * 1000; // 15 mins;
 
     /** The properties for the SFTP resource that the listener is processing files on */
-    protected final SftpPollingListenerConfig _sftpPollingListenerCfg;
+    protected final SsgActiveConnector ssgActiveConnector;
+    protected final ApplicationEventPublisher eventPublisher;
+    private final SecurePasswordManager securePasswordManager;
 
     /** The listener thread that performs the polling loop, it's responsible for looking for messages on the SFTP server */
-    protected final SftpPollingListenerPollThread _listenerThread;
-
-    /** Flag specifying whether the listener has started */
-    private boolean _connected;
-
-    private ThreadSafeSftpClient sftpClient;
+    protected final SftpPollingListenerPollThread listenerThread;
+    protected final SftpClient sftpClient;
 
     // Runtime stuff
-    private boolean _threadStopped;
+    private boolean threadStopped;
     private final Object sync = new Object();
     private long lastStopRequestedTime;
     private long lastAuditErrorTime;
 
-    public SftpPollingListener(final SftpPollingListenerConfig sftpPollingListenerCfg) {
-        this._sftpPollingListenerCfg = sftpPollingListenerCfg;
-        _listenerThread = new SftpPollingListenerPollThread(this, toString());
-        _listenerThread.setDaemon(true);
+    SftpPollingListener( @NotNull final SsgActiveConnector ssgActiveConnector,
+                         @NotNull final ApplicationEventPublisher eventPublisher,
+                         @NotNull final SecurePasswordManager securePasswordManager ) throws SftpPollingListenerConfigException {
+        this.ssgActiveConnector = ssgActiveConnector;
+        this.eventPublisher = eventPublisher;
+        this.securePasswordManager = securePasswordManager;
+        this.sftpClient = buildSftpClient();
+        this.listenerThread = new SftpPollingListenerPollThread(this, toString());
+    }
+
+    public String getDisplayName() {
+        final StringBuilder stringBuilder = new StringBuilder(128);
+        stringBuilder.append( ssgActiveConnector.getName() );
+        stringBuilder.append( " (#" );
+        stringBuilder.append( ssgActiveConnector.getOid() );
+        stringBuilder.append( ",v" );
+        stringBuilder.append( ssgActiveConnector.getVersion() );
+        stringBuilder.append( ")" );
+        return stringBuilder.toString();
     }
 
     @Override
     public String toString() {
-        StringBuffer s = new StringBuffer("SftpPollingListener-");
-        s.append(_sftpPollingListenerCfg.getDisplayName());
-        return s.toString();
+        return "SftpPollingListener; " + getDisplayName();
     }
 
     /**
@@ -81,17 +104,17 @@ public abstract class SftpPollingListener implements PropertyChangeListener {
      * of the SftpPollingListener would override.
      *
      * @param filename the file to process
-     * @throws SftpPollingListenerRuntimeException error encountered while processing the file
+     * @throws SftpPollingListenerException error encountered while processing the file
      */
-    protected abstract void handleFile(String filename) throws SftpPollingListenerRuntimeException;
+    abstract void handleFile(String filename) throws SftpPollingListenerException;
 
     /**
      * Starts the listener thread.
      */
-    public void start() throws LifecycleException {
+    void start() throws LifecycleException {
         synchronized(sync) {
             log(Level.FINE, SftpPollingListenerMessages.INFO_LISTENER_START, toString());
-            _listenerThread.start();
+            listenerThread.start();
             log(Level.FINE, SftpPollingListenerMessages.INFO_LISTENER_STARTED, toString());
         }
     }
@@ -99,10 +122,10 @@ public abstract class SftpPollingListener implements PropertyChangeListener {
     /**
      * Tells the listener thread to stop.
      */
-    public void stop() {
+    void stop() {
         synchronized(sync) {
             log(Level.FINE, SftpPollingListenerMessages.INFO_LISTENER_STOP, toString());
-            _threadStopped = true;
+            threadStopped = true;
             lastStopRequestedTime = System.currentTimeMillis();
         }
     }
@@ -110,9 +133,8 @@ public abstract class SftpPollingListener implements PropertyChangeListener {
     /**
      * Give the listener thread a set amount of time to shutdown, before it gets interrupted.
      */
-    public void ensureStopped() {
+    void ensureStopped() {
         long stopRequestedTime;
-
         synchronized(sync) {
             stop();
             stopRequestedTime = lastStopRequestedTime;
@@ -120,14 +142,14 @@ public abstract class SftpPollingListener implements PropertyChangeListener {
 
         try {
             long waitTime = SHUTDOWN_TIMEOUT - (System.currentTimeMillis() - stopRequestedTime);
-            if ( waitTime > 10 ) {
-                _listenerThread.join( SHUTDOWN_TIMEOUT );
+            if ( waitTime > 10L ) {
+                listenerThread.join( SHUTDOWN_TIMEOUT );
             }
         } catch ( InterruptedException ie ) {
             Thread.currentThread().interrupt();
         }
 
-        if ( _listenerThread.isAlive() ) {
+        if ( listenerThread.isAlive() ) {
             log(Level.WARNING, SftpPollingListenerMessages.WARN_LISTENER_THREAD_ALIVE, this);
         }
     }
@@ -137,39 +159,21 @@ public abstract class SftpPollingListener implements PropertyChangeListener {
      *
      * @return boolean flag
      */
-    protected boolean isStop() {
+    boolean isStop() {
         synchronized(sync) {
-            return _threadStopped;
+            return threadStopped;
         }
     }
 
     /**
      * Perform cleanup of resources and reset the listener status.
      */
-    protected void cleanup() {
-        if (sftpClient != null) {
-            sftpClient.close();
-            sftpClient = null;
-        }
-        _connected = false;
+    void cleanup() {
+        ResourceUtils.closeQuietly( sftpClient );
     }
 
-    @Override
-    public void propertyChange(PropertyChangeEvent evt)
-    {
-        // currently not implemented
-    }
-
-    public SftpPollingListenerConfig getSftpPollingListenerConfig() {
-        return this._sftpPollingListenerCfg;
-    }
-
-    public SftpPollingListenerResource getResourceConfig() {
-        return this._sftpPollingListenerCfg.getSftpPollingListenerResource();
-    }
-
-    public long getSftpPollingListenerResourceId() {
-        return getResourceConfig().getResId();
+    SsgActiveConnector getSsgActiveConnector() {
+        return this.ssgActiveConnector;
     }
 
     /**
@@ -179,160 +183,123 @@ public abstract class SftpPollingListener implements PropertyChangeListener {
      * @throws java.io.IOException
      * @throws SftpPollingListenerConfigException
      */
-    protected ThreadSafeSftpClient getSftpClient() throws SftpPollingListenerConfigException, IOException {
-        if (this.sftpClient == null) {
-            synchronized (sync) {
-                if (this.sftpClient == null) {
-                    try {
-                        final SftpPollingListenerResource settings = getResourceConfig();
+    @NotNull
+    private SftpClient buildSftpClient() throws SftpPollingListenerConfigException {
+        final String host = getConnectorProperty( PROPERTIES_KEY_SFTP_HOST );
+        final int port = getConnectorIntegerProperty( PROPERTIES_KEY_SFTP_PORT, 0 );
+        final String username = getConnectorProperty( PROPERTIES_KEY_SFTP_USERNAME );
+        final long pollingInterval = getConnectorLongProperty( PROPERTIES_KEY_POLLING_INTERVAL, 60L );
+        final long passwordOid = getConnectorLongProperty( PROPERTIES_KEY_SFTP_SECURE_PASSWORD_OID, -1L );
+        final String password = passwordOid==-1L ? null : getDecryptedPassword( passwordOid );
+        final String directory = getConnectorProperty( PROPERTIES_KEY_SFTP_DIRECTORY );
+        final long timeout = TimeUnit.SECONDS.toMillis( pollingInterval + 3L );
 
-                        String host = settings.getHostname();
-                        String password = settings.getPassword();
-                        SshParameters sshParams = new SshParameters(host, settings.getPort(), settings.getUsername(), password);
+        if ( host == null ) throw new SftpPollingListenerConfigException( "Host name is not set" );
+        if ( port == 0 ) throw new SftpPollingListenerConfigException( "Port is not set" );
+        if ( directory == null ) throw new SftpPollingListenerConfigException( "Directory is not set" );
 
-                        if (settings.getHostKey() != null){
-                            String publicKeyFingerprint = settings.getHostKey().trim();
+        final SshParameters sshParams = new SshParameters(host, port, username, password);
+        sshParams.setConnectionTimeout( timeout );
+        sshParams.setReadingTimeout( timeout );
 
-                            // validate public key fingerprint
-                            Pair<Boolean, String> fingerprintIsValid = SshKeyUtil.validateSshPublicKeyFingerprint(publicKeyFingerprint);
-                            if(!fingerprintIsValid.left){
-                                _logger.log(Level.WARNING, SshAssertionMessages.SSH_INVALID_PUBLIC_KEY_FINGERPRINT_EXCEPTION);
-                                throw new SftpPollingListenerConfigException(SshAssertionMessages.SSH_INVALID_PUBLIC_KEY_FINGERPRINT_EXCEPTION);
-                            }
-                            String hostPublicKey = publicKeyFingerprint;
-                            SshHostKeys sshHostKeys = new SshHostKeys();
-                            sshHostKeys.addKey(InetAddress.getByName(host), hostPublicKey);
-                            sshParams.setHostKeyVerifier(new HostKeyFingerprintVerifier(sshHostKeys));
-                        }
+        if ( getConnectorProperty( PROPERTIES_KEY_SFTP_SERVER_FINGER_PRINT ) != null){
+            final String publicKeyFingerprint = getConnectorProperty( PROPERTIES_KEY_SFTP_SERVER_FINGER_PRINT ).trim();
 
-                        String privateKeyText = settings.getPrivateKey();
-                        if(privateKeyText != null) {
-                            sshParams.setSshPassword(null);
-                            if(password == null) {
-                                sshParams.setPrivateKey(privateKeyText);
-                            } else {
-                                sshParams.setPrivateKey(privateKeyText, password);
-                            }
-                        }
-
-                        Sftp sftpClient = new Sftp(sshParams);
-                        sftpClient.setTimeout(settings.getPollingInterval() * 1000L + 3000);   // use polling interval with a 3 second buffer
-                        sftpClient.connect();
-                        sftpClient.setDir(settings.getDirectory());
-
-                        ThreadSafeSftpClient threadSafeSftpClient = new ThreadSafeSftpClient(sftpClient);
-                        this.sftpClient = threadSafeSftpClient;
-                        if (this.sftpClient == null) {
-                            throw new SftpPollingListenerConfigException("Failed to instantiate SFTP polling listener: SFTP client is null");
-                        }
-                    } catch (IOException ioe) {
-                        _logger.log(Level.WARNING, "Error while attempting to access SFTP destination.", ExceptionUtils.getDebugException(ioe));
-                        throw ioe;
-                    }
-                }
+            // validate public key fingerprint
+            final Option<String> fingerprintValidationError = SshKeyUtil.validateSshPublicKeyFingerprint(publicKeyFingerprint);
+            if( fingerprintValidationError.isSome() ){
+                logger.log(Level.WARNING, SSH_INVALID_PUBLIC_KEY_FINGERPRINT_EXCEPTION);
+                throw new SftpPollingListenerConfigException(SSH_INVALID_PUBLIC_KEY_FINGERPRINT_EXCEPTION);
             }
-        } else if (!this.sftpClient.isConnected()) {
-            synchronized (sync) {
-                if (!this.sftpClient.isConnected()) {
-                    this.sftpClient.connect();
-                    this.sftpClient.setDir(getResourceConfig().getDirectory());
-                }
+            SshHostKeys sshHostKeys = new SshHostKeys();
+            try {
+                sshHostKeys.addKey(InetAddress.getByAddress( host, null ), publicKeyFingerprint );
+            } catch ( UnknownHostException e ) {
+                // we're not passing an ip address so this should never occur
+                throw new SftpPollingListenerConfigException("Host key error", e);
+            }
+            sshParams.setHostKeyVerifier(new HostKeyFingerprintVerifier(sshHostKeys));
+        }
+
+        final long privateKeyOid = getConnectorLongProperty( PROPERTIES_KEY_SFTP_SECURE_PASSWORD_KEY_OID, -1L );
+        final String privateKeyText = passwordOid==-1L ? null : getDecryptedPassword( privateKeyOid );
+        if( privateKeyText != null ) {
+            sshParams.setSshPassword(null);
+            if( password == null ) {
+                sshParams.setPrivateKey(privateKeyText);
             }
         }
-        return sftpClient;
+
+        return new SftpClient(sshParams, directory, new SftpConnectionListener(){
+            @Override
+            public void notifyConnected() {
+                fireConnected();
+            }
+
+            @Override
+            public void notifyConnectionError( final String message ) {
+                fireConnectError( message );
+            }
+        });
+    }
+
+    String getConnectorProperty( final String name ) {
+        return ssgActiveConnector.getProperty( name );
+    }
+
+    long getConnectorLongProperty( final String name, final long defaultValue ) {
+        return ssgActiveConnector.getLongProperty( name, defaultValue );
+    }
+
+    int getConnectorIntegerProperty( final String name, final int defaultValue ) {
+        return ssgActiveConnector.getIntegerProperty( name, defaultValue );
     }
 
     /**
      * Looks in the given directory for files to process.
      *
-     * @param fileNames list of files to process
+     * @return collection of files to process
      * @throws SftpPollingListenerConfigException if there's misconfiguration
      * @throws java.io.IOException caused by an error while reading the directory
      */
-    protected void scanDirectoryForFiles(List<String> fileNames) throws SftpPollingListenerConfigException, IOException
+    @SuppressWarnings({ "unchecked" })
+    Collection<String> scanDirectoryForFiles( final Sftp sftp ) throws IOException
     {
-        ensureSftpClientConnected();
-
-        // get directory listing
-        ThreadSafeSftpClient sftpClient = getSftpClient();
-        Enumeration dirListing = sftpClient.getDirListing();
+        final Collection<String> fileNames = new ArrayList<String>();
 
         // build a set of already processed files
-        HashSet<String> processedFiles = new HashSet<String>();
-        while(dirListing.hasMoreElements()) {
-            SftpFile file = (SftpFile) dirListing.nextElement();
-            if(!file.isDirectory() && file.exists()) {
-                String fileName = file.getFilename();
+        final Collection<String> processedFiles = new HashSet<String>();
+        for( final SftpFile file : list((Enumeration<SftpFile>) sftp.getDirListing()) ) {
+            if( !file.isDirectory() && file.exists() ) {
+                final String fileName = file.getFilename();
                 if(fileName.endsWith(PROCESSED_FILE_EXTENSION)) {
-                    processedFiles.add(fileName.substring(0, fileName.length() - 10));
+                    processedFiles.add(fileName.substring(0, fileName.length() - PROCESSED_FILE_EXTENSION.length()));
                 }
             }
         }
 
         // look for any unprocessed files
-        dirListing = sftpClient.getDirListing();
-        while(dirListing.hasMoreElements()) {
-            SftpFile file = (SftpFile) dirListing.nextElement();
-            String fileName = file.getFilename();
+        for ( final SftpFile file : list((Enumeration<SftpFile>) sftp.getDirListing()) ) {
+            final String fileName = file.getFilename();
             if(!file.isDirectory() && file.exists() && !fileName.endsWith(PROCESSING_FILE_EXTENSION) && !fileName.endsWith(PROCESSED_FILE_EXTENSION)
                     && !fileName.endsWith(RESPONSE_FILE_EXTENSION) && !processedFiles.contains(fileName)) {
                 try {
-                    sftpClient.renameFile(fileName, fileName + PROCESSING_FILE_EXTENSION);
+                    sftp.renameFile(fileName, fileName + PROCESSING_FILE_EXTENSION);
                     fileNames.add(fileName);
                 } catch(SftpException sftpe) {
                     // exception means that the file no longer exists
-                    continue;
                 }
             }
         }
+
+        return fileNames;
     }
 
     /**
-     * Method used to ensure that the SFTP client used has been connected.
      *
-     * @throws SftpPollingListenerConfigException when a ThreadSafeSftpClient could not be properly obtained
-     * @throws java.io.IOException when a ThreadSafeSftpClient could not be properly obtained
      */
-    private void ensureSftpClientConnected() throws SftpPollingListenerConfigException, IOException {
-        synchronized(sync) {
-            boolean ok = false;
-            String message = null;
-            try {
-                if (getSftpClient() != null) {
-                    ok = true;
-                }
-            } catch (SftpPollingListenerConfigException cex) {
-                message = ExceptionUtils.getMessage(cex);
-                throw cex;
-            } catch (SftpFileNotFoundException fnf) {
-                message = "Directory not found.";
-                throw fnf;
-            } catch (FormatException fe) {
-                message = "Invalid private key, cannot restore.";
-                throw fe;
-            } catch (SftpException se) {
-                message = ExceptionUtils.getMessage(se);
-                if ("com.jscape.inet.sftp.SftpException".equals(message)) {
-                    message = "Unable to connect to " + getResourceConfig().getHostname() + ":" + getResourceConfig().getPort();
-                }
-                throw se;
-            } catch (IOException ioe) {
-                message = ExceptionUtils.getMessage(ioe);
-                throw ioe;
-            } catch (RuntimeException e) {
-                message = ExceptionUtils.getMessage(e);
-                throw e;
-            } finally {
-                if (ok) {
-                    if (!_connected) {
-                        _connected = true;
-                        fireConnected();
-                    }
-                } else {
-                    fireConnectError(message);
-                }
-            }
-        }
+    <R> R doWithSftpClient( final UnaryThrows<R,Sftp,IOException> callback ) throws IOException {
+        return sftpClient.doWork( callback );
     }
 
     /**
@@ -353,49 +320,67 @@ public abstract class SftpPollingListener implements PropertyChangeListener {
     private void fireConnected() {
         lastAuditErrorTime = 0L;
         fireEvent(new SftpPollingEvent(this, Level.INFO, null,
-                formatMessage(SftpPollingListenerMessages.INFO_EVENT_CONNECT_SUCCESS, _sftpPollingListenerCfg.getDisplayName())));
+                format(SftpPollingListenerMessages.INFO_EVENT_CONNECT_SUCCESS, getDisplayName())));
     }
 
     private void fireConnectError(String message) {
-        fireEvent(new SftpPollingEvent(this, Level.WARNING,  null, formatMessage(
-                        SftpPollingListenerMessages.INFO_EVENT_CONNECT_FAIL,
-                        new Object[] {_sftpPollingListenerCfg.getDisplayName(), message})));
+        fireEvent(new SftpPollingEvent(this, Level.WARNING,  null, format(
+                SftpPollingListenerMessages.INFO_EVENT_CONNECT_FAIL,
+                getDisplayName(), message )));
     }
 
     private void fireEvent(TransportEvent event) {
-        if (_sftpPollingListenerCfg.getApplicationContext() != null) {
+        if ( eventPublisher != null) {
             long timeNow = System.currentTimeMillis();
-            if ((lastAuditErrorTime+OOPS_AUDIT) < timeNow) {
+            if ((lastAuditErrorTime+ (long) OOPS_AUDIT) < timeNow) {
                 lastAuditErrorTime = timeNow;
-                _sftpPollingListenerCfg.getApplicationContext().publishEvent(event);
+                eventPublisher.publishEvent( event );
             } else {
-                log(Level.INFO, SftpPollingListenerMessages.INFO_EVENT_NOT_PUBLISHED, new Object[0]);
+                log(Level.INFO, SftpPollingListenerMessages.INFO_EVENT_NOT_PUBLISHED);
             }
         } else {
             log(Level.WARNING, SftpPollingListenerMessages.INFO_EVENT_NOT_PUBLISHABLE, event.getMessage());
         }
     }
 
-    protected void log(Level level, String messageKey, Object parm) {
-        if (parm == null)
-            log(level, messageKey, new Object[0]);
-        else
-            log(level, messageKey, new Object[] {parm});
+    void log(Level level, String messageKey, Object... parm) {
+        logger.log(level, messageKey, parm);
     }
 
-    protected void log(Level level, String messageKey, Object[] parm) {
-        _logger.log(level, messageKey, parm);
+    void log(Level level, String messageKey, Throwable ex) {
+        logger.log(level, messageKey, ex);
     }
 
-    protected void log(Level level, String messageKey, Throwable ex) {
-        _logger.log(level, messageKey, ex);
+    private SecurePassword getSecurePassword( final long passwordOid ) {
+        SecurePassword securePassword = null;
+        try {
+            securePassword = securePasswordManager.findByPrimaryKey(passwordOid);
+        } catch (FindException fe) {
+            logger.log( Level.WARNING, "The password could not be found in the password manager storage.  The password should be fixed or set in the password manager."
+                    + ExceptionUtils.getMessage( fe ), ExceptionUtils.getDebugException( fe ) );
+        }
+        return securePassword;
     }
 
-    protected String formatMessage(String messageKey, Object[] parm) {
-        return java.text.MessageFormat.format(messageKey, parm);
-    }
-
-    protected String formatMessage(String messageKey, Object parm) {
-        return formatMessage(messageKey, new Object[] {parm});
+    private String getDecryptedPassword( final long passwordOid ) {
+        String decrypted = null;
+        try {
+            final SecurePassword securePassword = getSecurePassword( passwordOid );
+            if ( securePassword != null ) {
+                final String encrypted = securePassword.getEncodedPassword();
+                final char[] pwd = securePasswordManager.decryptPassword(encrypted);
+                decrypted = new String(pwd);
+            }
+        } catch (ParseException pe) {
+            logger.log( Level.WARNING, "The password could not be parsed, the stored password is corrupted. "
+                    + ExceptionUtils.getMessage( pe ), ExceptionUtils.getDebugException( pe ) );
+        } catch (FindException fe) {
+            logger.log( Level.WARNING, "The password could not be found in the password manager storage.  The password should be fixed or set in the password manager."
+                    + ExceptionUtils.getMessage( fe ), ExceptionUtils.getDebugException( fe ) );
+        } catch (NullPointerException npe) {
+            logger.log( Level.WARNING, "The password could not be found in the password manager storage.  The password should be fixed or set in the password manager."
+                    + ExceptionUtils.getMessage( npe ), ExceptionUtils.getDebugException( npe ) );
+        }
+        return decrypted;
     }
 }

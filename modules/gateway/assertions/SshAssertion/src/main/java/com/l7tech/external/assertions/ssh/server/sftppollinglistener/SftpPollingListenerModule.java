@@ -1,113 +1,116 @@
 package com.l7tech.external.assertions.ssh.server.sftppollinglistener;
 
-import com.l7tech.gateway.common.LicenseManager;
-import com.l7tech.gateway.common.audit.AuditDetailEvent;
-import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.mime.ContentTypeHeader;
+import static com.l7tech.external.assertions.ssh.SftpPollingListenerConstants.*;
+import com.l7tech.external.assertions.ssh.server.MessageProcessingSshUtil;
+import static com.l7tech.external.assertions.ssh.server.sftppollinglistener.SftpPollingListener.*;
+import com.l7tech.gateway.common.transport.SsgActiveConnector;
+import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
+import com.l7tech.message.HasServiceOid;
+import com.l7tech.message.HasServiceOidImpl;
+import com.l7tech.message.Message;
+import com.l7tech.message.MimeKnob;
+import com.l7tech.message.SshKnob;
+import com.l7tech.message.XmlKnob;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.LifecycleBean;
+import com.l7tech.policy.assertion.AssertionStatus;
+import static com.l7tech.server.GatewayFeatureSets.SERVICE_SSH_MESSAGE_INPUT;
+import com.l7tech.server.GatewayState;
 import com.l7tech.server.LifecycleException;
-import com.l7tech.server.cluster.ClusterPropertyManager;
-import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.MessageProcessor;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.event.FaultProcessed;
-import com.l7tech.server.event.MessageProcessed;
-import com.l7tech.server.event.system.ReadyForMessages;
-import com.l7tech.server.event.system.Stopping;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.policy.PolicyVersionException;
+import com.l7tech.server.security.password.SecurePasswordManager;
+import com.l7tech.server.transport.ActiveTransportModule;
+import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.util.ThreadPoolBean;
-import com.l7tech.util.ExceptionUtils;
-import org.springframework.context.ApplicationEvent;
+import com.l7tech.util.Charsets;
+import static com.l7tech.util.CollectionUtils.caseInsensitiveSet;
+import static com.l7tech.util.ExceptionUtils.getDebugException;
+import static com.l7tech.util.ExceptionUtils.getMessage;
+import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.ThreadPool.ThreadPoolShutDownException;
+import com.l7tech.xml.soap.SoapFaultUtils;
+import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.xml.soap.SoapVersion;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationListener;
+import org.xml.sax.SAXException;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
+import javax.inject.Inject;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * SFTP polling listener module (aka boot process).
  */
-public class SftpPollingListenerModule extends LifecycleBean implements PropertyChangeListener, ApplicationListener {
+public class SftpPollingListenerModule extends ActiveTransportModule implements ApplicationListener {
+    @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
     private static final Logger logger = Logger.getLogger(SftpPollingListenerModule.class.getName());
 
-    //Thread pool for tasks. Managed by this module.
-    private final ThreadPoolBean threadPoolBean;
+    private static final String TYPE_POLLING_SFTP = "SFTP";
+    private static final Set<String> SUPPORTED_TYPES = caseInsensitiveSet( TYPE_POLLING_SFTP );
 
-    /** The ClusterPropertyManager - used to determine whether the configurations have been modified*/
-    private final ClusterPropertyManager clusterPropertyManager;
+    private final Map<Long, SftpPollingListener> activeListeners = new ConcurrentHashMap<Long, SftpPollingListener>();
+    private ThreadPoolBean threadPoolBean;
 
-    /** Persisted/configured inbound config manager */
-    private final SftpPollingListenerResourceManager sftpPollingResourceManager;
-
-    /** Mutex */
-    private final Object listenerLock = new Object();
-
-    /** Set of all active listeners */
-    private Set<SftpPollingListener> activeListeners = new HashSet<SftpPollingListener>();
-
-    /** Boolean flag specifying whether the listeners have been started */
-    private boolean started = false;
+    @Inject
+    private GatewayState gatewayState;
+    @Inject
+    private SecurePasswordManager securePasswordManager;
+    @Inject
+    private MessageProcessor messageProcessor;
+    @Inject
+    private StashManagerFactory stashManagerFactory;
+    @Inject
+    private ApplicationEventPublisher messageProcessingEventChannel;
+    @Inject
+    private ServerConfig serverConfig;
 
     /**
      * Single constructor for module.
-     *
-     * @param threadPoolBean inbound listener thread pool
-     * @param cpManager cluster property manager
-     * @param licenseManager license manager
-     * @param resourceManager configuration manager (interfaces with cfg persistence store)
      */
-    public SftpPollingListenerModule(final ThreadPoolBean threadPoolBean,
-                                     final ClusterPropertyManager cpManager,
-                                     final LicenseManager licenseManager,
-                                     final SftpPollingListenerResourceManager resourceManager)
-    {
-        // set feature as modular assertion
-        super("SFTP Polling Listener module", logger, "set:modularAssertions", licenseManager);
-
+    public SftpPollingListenerModule( @NotNull final ThreadPoolBean threadPoolBean ) {
+        super("SFTP Polling Listener module", logger, SERVICE_SSH_MESSAGE_INPUT);
         this.threadPoolBean = threadPoolBean;
-        this.clusterPropertyManager = cpManager;
-        this.sftpPollingResourceManager = resourceManager;
     }
 
     @Override
-    protected void init() {
-        if(threadPoolBean == null) throw new IllegalStateException("threadPoolBean is required.");
-        if(sftpPollingResourceManager == null) throw new IllegalStateException("resourceManager is required.");
+    protected boolean isInitialized() {
+        return !threadPoolBean.isShutdown();
     }
 
     /**
-     * Simply log the start, doesn't really do anything.  See onApplicationEvent(...) for start logic.
+     * Starts {@link com.l7tech.external.assertions.ssh.server.sftppollinglistener.SftpPollingListener}s using
+     * configuration in {@link com.l7tech.gateway.common.transport.SsgActiveConnector}.
      */
     @Override
     protected void doStart() throws LifecycleException {
-        if (isStarted())
-            return;
-        logger.info("The SFTP polling subsystem will not start until the gateway is ready to process messages.");
-    }
-
-    @Override
-    public void onApplicationEvent(ApplicationEvent event) {
-        if ( isEventIgnorable(event) ) {
-            return;
-        }
-
-        super.onApplicationEvent(event);
-
-        if (!isStarted())
-            return;
-
-        if (event instanceof Stopping) {
-            // do stop?
-        } else if (event instanceof ReadyForMessages) {
+        super.doStart();
+        if (gatewayState.isReadyForMessages()) {
             try {
                 threadPoolBean.start();
-                startListeners();
-            } catch (LifecycleException e) {
-                logger.log(Level.SEVERE, "Unable to start SFTP polling Listener", e);
-            }
-        } else if (event instanceof EntityInvalidationEvent) {
-            EntityInvalidationEvent eiEvent = (EntityInvalidationEvent) event;
-            if (ClusterProperty.class.equals(eiEvent.getEntityClass())) {
-                handleClusterPropertyChange(eiEvent);
+                startInitialListeners();
+            } catch (FindException e) {
+                logger.log(Level.SEVERE, "Unable to access initial SFTP listener(s): " + getMessage( e ), getDebugException( e ));
             }
         }
     }
@@ -115,83 +118,25 @@ public class SftpPollingListenerModule extends LifecycleBean implements Property
     /**
      * Starts all configured listeners.
      *
-     * @throws com.l7tech.server.LifecycleException when problems occur during subsystem startup
+     * @throws com.l7tech.objectmodel.FindException when problems occur during subsystem startup
      */
-    private void startListeners() throws LifecycleException {
-        synchronized(listenerLock) {
-            if (!started) {
-                // this section needs to lookup all inbound settings and start the listeners
-                try {
-                    started = true;  // "started" just means that we have already once attempted to start the listener subsystem
-                    logger.info("SFTP polling listener starting.");
-
-                    // Start up listeners for initial configuration
-                    List<Long> staleListeners = new ArrayList<Long>();
-                    SftpPollingListenerConfig sftpPollingListenerCfg;
-
-                    // initialize ResourceManager from cluster properties
-                    sftpPollingResourceManager.init();
-
-                    for (SftpPollingListenerResource sftpPollingCfg : sftpPollingResourceManager.getListenerConfigurations()) {
-                        if (sftpPollingCfg.isActive()) {
-                            sftpPollingListenerCfg = new SftpPollingListenerConfig(sftpPollingCfg, getApplicationContext());
-
-                            logger.info("Instantiating SFTP polling listener for " + sftpPollingCfg.toString());
-                            SftpPollingListener sftpPollListener = new SftpPollingListenerThreadPoolFileHandler(sftpPollingListenerCfg, threadPoolBean);
-
-                            try {
-                                sftpPollListener.start();
-                                activeListeners.add(sftpPollListener);
-                            } catch (LifecycleException e) {
-                                logger.log(Level.WARNING, "Couldn't start listener for " + sftpPollingCfg.getName() + ".  Will retry periodically", e);
-
-                                // what to do when we encounter bad stuff
-                                staleListeners.add(sftpPollingCfg.getResId());
-                            }
-                        }
+    private void startInitialListeners() throws FindException {
+        final boolean wasSystem = AuditContextUtils.isSystem();
+        try {
+            AuditContextUtils.setSystem(true);
+            final Collection<SsgActiveConnector> connectors = ssgActiveConnectorManager.findSsgActiveConnectorsByType( "SFTP" );
+            for ( final SsgActiveConnector connector : connectors ) {
+                if ( connector.isEnabled() && connectorIsOwnedByThisModule( connector ) ) {
+                    try {
+                        addConnector( connector.getReadOnlyCopy() );
+                    } catch ( Exception e ) {
+                        logger.log(Level.WARNING, "Unable to start polling SFTP connector " + connector.getName() +
+                                        ": " + getMessage( e ), e);
                     }
-                } catch ( Exception e ) {
-                    // this catch needs to be done to ensure we have all the configurations required for the listeners to function properly
-                    String msg = "Couldn't start SFTP polling listener subsystem! This functionality will be disabled.";
-                    logger.log( Level.SEVERE, msg, e );
-                    throw new LifecycleException( msg, e );
                 }
-
-                logger.info("SFTP polling connector started.");
-
-                // add debug as needed
             }
-        }
-    }
-
-    /**
-     * For handling cluster property changes to the following properties.
-     *
-     * @param evt the change event
-     */
-    @Override
-    public void propertyChange(PropertyChangeEvent evt) {
-        synchronized(listenerLock) {
-            for (SftpPollingListener listener : activeListeners) {
-                listener.propertyChange(evt);
-            }
-        }
-    }
-
-    private void handleClusterPropertyChange(EntityInvalidationEvent eiEvent) {
-        for (long oid : eiEvent.getEntityIds()) {
-            try {
-                ClusterProperty cp = clusterPropertyManager.findByPrimaryKey(oid);
-
-                // call update when cluster property oid matches
-                // or call update when in the process of deleting last poll listener in the list
-                if ((cp != null && cp.getOid() == sftpPollingResourceManager.getConfigPropertyOid())
-                        || (cp == null && sftpPollingResourceManager.getConfigPropertyOid() > 0)) {
-                    resourceUpdated();
-                }
-            } catch (FindException e) {
-                logger.log(Level.FINE, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            }
+        } finally {
+            AuditContextUtils.setSystem(wasSystem);
         }
     }
     
@@ -200,102 +145,289 @@ public class SftpPollingListenerModule extends LifecycleBean implements Property
      */
     @Override
     protected void doStop() {
-        synchronized(listenerLock) {
-            for (SftpPollingListener listener : activeListeners) {
-                logger.info("Stopping SFTP polling receiver '" + listener.toString() + "'");
-                listener.stop();
-            }
-            for (SftpPollingListener listener : activeListeners) {
-                logger.info("Waiting for SFTP polling receiver to stop '" + listener.toString() + "'");
-                listener.ensureStopped();
-            }
-            activeListeners.clear();
-
-            threadPoolBean.shutdown();
+        for ( final SftpPollingListener listener : activeListeners.values() ) {
+            logger.info("Stopping SFTP polling receiver '" + listener.getDisplayName() + "'");
+            listener.stop();
         }
-    }
-
-    private boolean isEventIgnorable(ApplicationEvent applicationEvent) {
-        return applicationEvent instanceof AuditDetailEvent ||
-                applicationEvent instanceof MessageProcessed ||
-                applicationEvent instanceof FaultProcessed;
-    }
-
-    /**
-     * Handles the event fired by update of a resource.
-     */
-    private void resourceUpdated() {
-        synchronized(listenerLock) {
-            try {
-                SftpPollingListenerResourceManager.UpdateStatus[] changed = sftpPollingResourceManager.onUpdate();
-                if (changed != null && changed.length > 0) {
-                    StringBuffer sb = new StringBuffer("SFTP polling listener(s) changed: ");
-                    for (SftpPollingListenerResourceManager.UpdateStatus resource : changed) {
-                        sb.append(resource.status + " - ").append(resource.name + "(id ").append(resource.resId).append(").  ");
-                    }
-                    logger.info(sb.toString());
-
-                    SftpPollingListenerResource res;
-                    for (SftpPollingListenerResourceManager.UpdateStatus one : changed) {
-                        if (one.status == SftpPollingListenerResourceManager.UpdateStatus.DELETE) {
-                            deleteListener( one.resId );
-                        } else {
-                            res = sftpPollingResourceManager.getResourceByResId( one.resId );
-                            updateListener(res);
-                        }
-                    }
-                }
-            } catch ( Exception e ) { // FindException
-                logger.log( Level.SEVERE, "Caught exception finding a listener!", e );
-            }
+        for ( final SftpPollingListener listener : activeListeners.values() ) {
+            logger.info("Waiting for SFTP polling receiver to stop '" + listener.getDisplayName() + "'");
+            listener.ensureStopped();
         }
+
+        activeListeners.clear();
+        threadPoolBean.shutdown();
     }
 
-    /**
-     * Handles the event generated by the discovery of the deletion of a listener.
-     *
-     * @param deletedOid the OID of the listener that has been deleted.
-     */
-    private void deleteListener( long deletedOid ) {
-        synchronized(listenerLock) {
-            SftpPollingListener listener;
-            for (Iterator<SftpPollingListener> i = activeListeners.iterator(); i.hasNext();) {
-                listener = i.next();
-                if ( listener.getSftpPollingListenerResourceId() == deletedOid ) {
-                    listener.stop();
-                    i.remove();
-                }
-            }
-        }
-    }
-
-    /**
-     * Handles the event fired by the update or creation of a listener.
-     *
-     * Calls deleteListener to shut down any listener(s) that might already be listening to that configuration.
-     *
-     * @param updated the resource that has been created or updated.
-     */
-    private void updateListener( SftpPollingListenerResource updated ) {
-        // Stop any existing listener for this configuration
-        deleteListener( updated.getResId() );
-
-        if (!updated.isActive())
-            return;
-
+    @Override
+    protected void addConnector( @NotNull final SsgActiveConnector ssgActiveConnector ) throws ListenerException {
         SftpPollingListener newListener = null;
         try {
-            SftpPollingListenerConfig newCfg = new SftpPollingListenerConfig(updated, getApplicationContext());
-            newListener = new SftpPollingListenerThreadPoolFileHandler(newCfg, threadPoolBean);
-
-            SftpPollingListenerResource resource = newCfg.getSftpPollingListenerResource();
-            logger.info("Starting SFTP polling listener " + resource.getName() + " on " + resource.getHostname());
+            newListener = new SftpPollingListener( ssgActiveConnector, getApplicationContext(), securePasswordManager ) {
+                @Override
+                void handleFile( final String filename ) throws SftpPollingListenerException {
+                    try {
+                        final Future<SftpPollingListenerException> result = threadPoolBean.submitTask( new Callable<SftpPollingListenerException>(){
+                            @Override
+                            public SftpPollingListenerException call() {
+                                try {
+                                    handleFileForConnector( ssgActiveConnector, sftpClient, filename );
+                                } catch ( SftpPollingListenerException e ) {
+                                    return e;
+                                } catch ( Exception e ) {
+                                    return new SftpPollingListenerException(e);
+                                }
+                                return null;
+                            }
+                        } );
+                        final SftpPollingListenerException exception = result.get();
+                        if ( exception != null ) {
+                            throw exception;
+                        }
+                    } catch ( InterruptedException e ) {
+                        Thread.currentThread().interrupt();
+                    } catch ( ThreadPoolShutDownException e ) {
+                        logger.log( Level.WARNING,
+                                "Error handling file, thread pool is shutdown.",
+                                getDebugException( e ) );
+                    } catch ( ExecutionException e ) {
+                        logger.log( Level.WARNING,
+                                "Error handling file: " + getMessage( e ),
+                                getDebugException( e ) );
+                    }
+                }
+            };
             newListener.start();
-            synchronized(listenerLock) {
-                activeListeners.add(newListener);
-            }
+            activeListeners.put( ssgActiveConnector.getOid(), newListener );
         } catch (LifecycleException e) {
-            logger.warning("Exception while initializing receiver " + newListener + "; will try again later: " + e.toString());
+            logger.log( Level.WARNING,
+                    "Exception while initializing polling listener " + newListener.getDisplayName() + ": " + getMessage( e ),
+                    getDebugException( e ) );
+        } catch ( SftpPollingListenerConfigException e ) {
+            logger.log( Level.WARNING,
+                    "Exception while initializing polling listener " + ssgActiveConnector.getName() + ": " + getMessage( e ),
+                    getDebugException( e ) );
+        }
+    }
+
+    @Override
+    protected void removeConnector( long oid ) {
+        final SftpPollingListener listener = activeListeners.remove( oid );
+        if  ( listener != null  ) {
+            listener.stop();
+        }
+    }
+
+    @Override
+    protected Set<String> getSupportedTypes() {
+        return SUPPORTED_TYPES;
+    }
+
+    /**
+     * Handle an incoming file.  Also takes care of sending the reply if appropriate.
+     *
+     * @param connector The SFTP listener configuration that this handler operates on
+     * @param sftpClient The SFTP client connection
+     * @param fileName The file to process
+     * @throws SftpPollingListenerException if an error occurs
+     */
+    public void handleFileForConnector( final SsgActiveConnector connector,
+                                        final SftpClient sftpClient,
+                                        final String fileName ) throws SftpPollingListenerException {
+        final ContentTypeHeader ctype;
+        boolean fileTooLarge = false;
+        final String directory = connector.getProperty( PROPERTIES_KEY_SFTP_DIRECTORY );
+        final String processingFileName = fileName + PROCESSING_FILE_EXTENSION;
+        try {
+            // get the content type
+            ctype = ContentTypeHeader.parseValue( connector.getProperty( PROPERTIES_KEY_OVERRIDE_CONTENT_TYPE ) );
+
+            // enforce size restriction
+            final long size = sftpClient.getFilesize(processingFileName);
+            int sizeLimit = serverConfig.getIntProperty( SFTP_POLLING_MESSAGE_MAX_BYTES_PROPERTY, 5242880);
+            if ( sizeLimit > 0 && size > (long) sizeLimit ) {
+                fileTooLarge = true;
+            }
+        } catch (IOException ioe) {
+            throw new SftpPollingListenerException("Error processing request message.  " + getMessage( ioe ), ioe);
+        }
+
+        final boolean replyExpected = connector.getBooleanProperty( PROPERTIES_KEY_ENABLE_RESPONSE_MESSAGES );
+
+        PolicyEnforcementContext context = null;
+        String faultMessage = null;
+        String faultCode = null;
+        try {
+            PipedInputStream pis = new PipedInputStream();
+            PipedOutputStream pos = new PipedOutputStream(pis);
+            Message request = new Message();
+            //TODO [steve] SSH Polling listener should enforce size limit for inbound messages here
+            request.initialize(stashManagerFactory.createStashManager(), ctype, pis);
+
+            request.attachKnob(SshKnob.class, MessageProcessingSshUtil.buildSshKnob( null, 0, null,
+                    0, processingFileName, directory, null, null ));
+
+            final Long hardwiredServiceOid = connector.getHardwiredServiceOid();
+            if ( hardwiredServiceOid != null ) {
+                request.attachKnob(HasServiceOid.class, new HasServiceOidImpl(hardwiredServiceOid));
+            }
+
+            context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( request, null, replyExpected );
+            boolean stealthMode = false;
+            InputStream responseStream = null;
+            AssertionStatus status = AssertionStatus.UNDEFINED;
+            if ( !fileTooLarge ) {
+                try {
+                    // download file on a new thread
+                    Thread thread = sshDownloadOnNewThread(sftpClient, directory, processingFileName, pos, logger);
+
+                    status = messageProcessor.processMessage(context);
+
+                    context.setPolicyResult(status);
+                    logger.finest("Policy resulted in status " + status);
+
+                    Message contextResponse = context.getResponse();
+                    if (contextResponse.getKnob(XmlKnob.class) != null || contextResponse.getKnob(MimeKnob.class) != null) {
+                        // if the policy is not successful AND the stealth flag is on, drop connection
+                        if (status != AssertionStatus.NONE && context.isStealthResponseMode()) {
+                            logger.info("Policy returned error and stealth mode is set. " +
+                                    "Not sending response message.");
+                            stealthMode = true;
+                        } else {
+                            // add more detailed diagnosis message
+                            if (!contextResponse.isXml()) {
+                                responseStream = contextResponse.getMimeKnob().getEntireMessageBodyAsInputStream();
+                            } else {
+                                responseStream = new ByteArrayInputStream( XmlUtil.nodeToString(
+                                        contextResponse.getXmlKnob().getDocumentReadOnly() ).getBytes());
+                            }
+                        }
+                    } else {
+                        logger.finer("No response received");
+                        responseStream = null;
+
+                        // make sure to close input pipe if there's no response from the Gateway
+                        // e.g. invalid path causing service not found status
+                        pis.close();
+                    }
+
+                    logger.log(Level.FINE, "Waiting for read thread join().");
+                    int waitSeconds = serverConfig.getIntProperty( SFTP_POLLING_DOWNLOAD_THREAD_WAIT_SECONDS_PROPERTY, 3);
+                    thread.join( (long) waitSeconds * 1000L);
+                    logger.log(Level.FINE, "Done read thread join().");
+                } catch ( PolicyVersionException pve ) {
+                    String msg1 = "Request referred to an outdated version of policy";
+                    logger.log( Level.INFO, msg1 );
+                    faultMessage = msg1;
+                    faultCode = SoapUtil.FC_CLIENT;
+                } catch ( Throwable t ) {
+                    logger.warning("Exception while processing file via SFTP: " + getMessage( t ));
+                    faultMessage = t.getMessage();
+                    if ( faultMessage == null ) faultMessage = t.toString();
+                } finally {
+                    try {
+                        if( connector.getBooleanProperty( PROPERTIES_KEY_SFTP_DELETE_ON_RECEIVE )) {
+                            sftpClient.deleteFile(processingFileName);
+                        } else {
+                            sftpClient.renameFile(processingFileName, fileName + PROCESSED_FILE_EXTENSION);
+                        }
+                    } catch (IOException ioe) {
+                        logger.log( Level.SEVERE, "Could not delete or rename file.  Error: " + getDebugException( ioe ) );
+                    }
+                }
+            } else {
+                String msg1 = "File too large";
+                logger.log( Level.INFO, msg1 );
+                faultMessage = msg1;
+                faultCode = SoapUtil.FC_CLIENT;
+            }
+
+            if ( responseStream == null ) {
+                if (context.isStealthResponseMode()) {
+                    logger.info("No response data available and stealth mode is set. " + "Not sending response message.");
+                    stealthMode = true;
+                } else {
+                    if ( faultMessage == null ) {
+                        faultMessage = status.getMessage();
+                    }
+                    try {
+                        String faultXml = SoapFaultUtils.generateSoapFaultXml(
+                                (context.getService() != null) ? context.getService().getSoapVersion() : SoapVersion.UNKNOWN,
+                                faultCode == null ? SoapUtil.FC_SERVER : faultCode,
+                                faultMessage, null, "" );
+
+                        responseStream = new ByteArrayInputStream(faultXml.getBytes( Charsets.UTF8));
+
+                        if (faultXml != null) {
+                            messageProcessingEventChannel.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
+                        }
+                    } catch (SAXException e) {
+                        throw new SftpPollingListenerException(e);
+                    }
+                }
+            }
+
+            if (!stealthMode && replyExpected) {
+                long startResp = System.currentTimeMillis();
+                sendResponse( responseStream, sftpClient, directory, fileName );
+                logger.log(Level.INFO, "Send response took {0} millis; {1}; {2}", new Object[] {
+                        (System.currentTimeMillis() - startResp), connector.getName(), fileName + RESPONSE_FILE_EXTENSION});
+            }
+        } catch (IOException e) {
+            throw new SftpPollingListenerException(e);
+        } finally {
+            ResourceUtils.closeQuietly( context );
+        }
+    }
+
+    /*
+     * Download the given file on a new thread.
+     */
+    private static Thread sshDownloadOnNewThread(final SftpClient sftpClient, final String directory,
+                                                 final String fileName, final PipedOutputStream pos, final Logger logger) throws IOException {
+        final CountDownLatch startedSignal = new CountDownLatch(1);
+        logger.log(Level.FINE, "Start new thread for downloading ...");
+        Thread thread = new Thread(new Runnable(){
+            @Override
+            public void run() {
+                try {
+                    startedSignal.countDown();
+                    sftpClient.download(pos, directory, fileName);
+                }
+                catch (Exception e) {
+                    logger.log(Level.SEVERE, getMessage( e ), getDebugException( e ));
+                }
+                finally {
+                    logger.log(Level.FINE, "... downloading thread stopped.");
+                    try {
+                        pos.flush();
+                        pos.close();
+                    } catch(IOException ioe) {
+                        logger.log(Level.SEVERE, getMessage( ioe ), getDebugException( ioe ));
+                    }
+                    startedSignal.countDown();
+                }
+            }
+        }, "SshDownloadThread-" + System.currentTimeMillis());
+
+        thread.setDaemon(true);
+        thread.start();
+
+        try {
+            startedSignal.await();
+        }
+        catch(InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            logger.log(Level.SEVERE, getMessage( ie ), getDebugException( ie ));
+        }
+
+        return thread;
+    }
+
+    private void sendResponse( final InputStream responseIn, SftpClient client, String directory, String filename) {
+        try {
+            client.upload(responseIn, directory, filename + RESPONSE_FILE_EXTENSION);
+        } catch ( IOException e ) {
+            logger.log( Level.WARNING, "Caught IOException while sending response", getDebugException( e ) );
         }
     }
 }

@@ -7,6 +7,8 @@ import com.l7tech.util.ValidatedConfig;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -40,6 +42,10 @@ public class ThreadPoolBean implements PropertyChangeListener {
         threadPool.shutdown();
     }
 
+    public boolean isShutdown() {
+        return threadPool.isShutdown();
+    }
+
     /**
      * Submit a task for execution.
      *
@@ -48,7 +54,19 @@ public class ThreadPoolBean implements PropertyChangeListener {
      *
      */
     public void submitTask(final Runnable task) throws ThreadPool.ThreadPoolShutDownException {
-        threadPool.submitTask(task);
+        threadPool.submitTask( task );
+    }
+
+    /**
+     * Submit a task for execution.
+     *
+     * @param task to process asynchronously
+     * @return A future for the result
+     * @throws ThreadPool.ThreadPoolShutDownException if the underlying thread pool has already been shut down.
+     *
+     */
+    public <T> Future<T> submitTask( final Callable<T> task ) throws ThreadPool.ThreadPoolShutDownException {
+        return threadPool.submitTask(task);
     }
 
     @Override
