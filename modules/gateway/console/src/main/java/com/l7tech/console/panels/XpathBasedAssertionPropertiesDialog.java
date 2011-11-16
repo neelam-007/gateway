@@ -943,6 +943,10 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             wssEncryptElement.setEncryptContentsOnly(encryptElementContentsOnlyRadioButton.isSelected());
         } else if (assertion instanceof RequireWssEncryptedElement) {
             List<String> xencAlgorithmList = new ArrayList<String>();
+            if (aes128GcmCheckBox.isSelected())
+                xencAlgorithmList.add(XencAlgorithm.AES_128_GCM.getXEncName());
+            if (aes256GcmCheckBox.isSelected())
+                xencAlgorithmList.add(XencAlgorithm.AES_256_GCM.getXEncName());
             if (aes128CheckBox.isSelected()) {
                 xencAlgorithmList.add(XencAlgorithm.AES_128_CBC.getXEncName());
             }
@@ -955,10 +959,6 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             if (tripleDESCheckBox.isSelected()) {
                 xencAlgorithmList.add(XencAlgorithm.TRIPLE_DES_CBC.getXEncName());
             }
-            if (aes128GcmCheckBox.isSelected())
-                xencAlgorithmList.add(XencAlgorithm.AES_128_GCM.getXEncName());
-            if (aes256GcmCheckBox.isSelected())
-                xencAlgorithmList.add(XencAlgorithm.AES_256_GCM.getXEncName());
 
             // Check if there are invalid configurations.
             if (xencAlgorithmList.isEmpty()) {
