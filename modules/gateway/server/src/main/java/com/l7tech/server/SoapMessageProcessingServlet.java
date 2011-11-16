@@ -1,7 +1,7 @@
 package com.l7tech.server;
 
 import com.l7tech.common.http.CookieUtils;
-import com.l7tech.common.http.HttpConstants;
+import static com.l7tech.common.http.HttpConstants.*;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.HttpHeaderUtil;
 import com.l7tech.common.io.XmlUtil;
@@ -74,18 +74,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     private static final String PARAM_POLICYSERVLET_URI = "PolicyServletUri";
     private static final String DEFAULT_POLICYSERVLET_URI = "/policy/disco?serviceoid=";
 
-    private static final String GZIP_REQUESTS_FORBIDDEN_SOAP_FAULT = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                                                                     "    <soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
-                                                                     "    <soapenv:Body>\n" +
-                                                                     "        <soapenv:Fault>\n" +
-                                                                     "            <faultcode>soapenv:Server</faultcode>\n" +
-                                                                     "            <faultstring>Rejecting GZIP compressed request</faultstring>\n" +
-                                                                     "            <faultactor>http://soong:8080/xml/blub</faultactor>\n" +
-                                                                     "            <detail>This server does not accept GZIP compressed requests.</detail>\n" +
-                                                                     "        </soapenv:Fault>\n" +
-                                                                     "    </soapenv:Body>\n" +
-                                                                     "</soapenv:Envelope>";
-
     private final Logger logger = Logger.getLogger(getClass().getName());
 
     private Config config;
@@ -155,46 +143,29 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         }
 
         GZIPInputStream gis = null;
-        String maybegzipencoding = hrequest.getHeader(HttpConstants.HEADER_CONTENT_ENCODING);
+        String maybegzipencoding = hrequest.getHeader(HEADER_CONTENT_ENCODING);
         boolean gzipEncodedTransaction = false;
-        boolean wantsGzipResponse = false;
-        if (maybegzipencoding != null) { // case of value ?
-            if (maybegzipencoding.contains("gzip")) {
+        boolean gzipResponse = false;
+        final boolean allowGzipResponse = config.getBooleanProperty("response.compress.gzip.allow", true);
+        if ( maybegzipencoding != null ) {
+            if (maybegzipencoding.toLowerCase().contains("gzip")) {
                 if( !config.getBooleanProperty("request.compress.gzip.allow", true) ) {
-                    logger.log(Level.WARNING, "Rejecting GZIP compressed request.");
-                    String soapFault = GZIP_REQUESTS_FORBIDDEN_SOAP_FAULT.replace("http://soong:8080/xml/blub",
-                            hrequest.getScheme() + "://" + InetAddressUtil.getHostForUrl(hrequest.getServerName()) +
-                            (hrequest.getServerPort() == 80 ? "" : ":" + hrequest.getServerPort()) +
-                            hrequest.getRequestURI());
-                    OutputStream responseStream = null;
-                    try {
-                        responseStream = hresponse.getOutputStream();
-                        hresponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                        hresponse.setContentType(DEFAULT_CONTENT_TYPE);
-                        responseStream.write(soapFault.getBytes(DEFAULT_CONTENT_ENCODING));
-                    } finally {
-                        if(responseStream != null) responseStream.close();
-                    }
+                    logger.log( Level.INFO, "Rejecting GZIP compressed request.");
+                    rejectGzipRequest( hrequest, hresponse, STATUS_UNSUPPORTED_MEDIA_TYPE, "Rejecting GZIP compressed request" );
                     return;
                 }
 
                 gzipEncodedTransaction = true;
-                wantsGzipResponse = true;
+                gzipResponse = allowGzipResponse;
                 logger.fine("request with gzip content-encoding detected " + hrequest.getContentLength());
-                //logger.info("Compression #2");
                 try {
-                    InputStream original = hrequest.getInputStream();
+                    final InputStream original = hrequest.getInputStream();
                     gis = new GZIPInputStream(original);
                 } catch (Exception e) {
-                    String exceptionMessage = ExceptionUtils.getMessage(e);
-                    logger.log(Level.WARNING, "Cannot decompress the incoming request. " + exceptionMessage);
-                    if (logger.isLoggable(Level.FINE)) {
-                        byte[] bytes = IOUtils.slurpStream(hrequest.getInputStream());
-                        logger.fine("Read this instead: " + new String(bytes));
-                    }
-                    if(e instanceof IOException && exceptionMessage.contains("Not in GZIP format")){
-                        gzipEncodedTransaction = false; //do this for all exceptions here?
-                    }
+                    final String exceptionMessage = ExceptionUtils.getMessage(e);
+                    logger.log(Level.INFO, "Cannot decompress the incoming request: " + exceptionMessage, ExceptionUtils.getDebugException( e ));
+                    rejectGzipRequest( hrequest, hresponse, STATUS_BAD_REQUEST, "Invalid GZIP compressed request" );
+                    return;
                 }
             } else {
                 logger.fine("content-encoding not gzip " + maybegzipencoding);
@@ -203,16 +174,14 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             logger.fine("no content-encoding specified");
         }
 
-        wantsGzipResponse = wantsGzipResponse || HttpHeaderUtil.acceptsGzipResponse(hrequest.getHeader("accept-encoding"));
+        gzipResponse = gzipResponse ||
+                (allowGzipResponse && HttpHeaderUtil.acceptsGzipResponse(hrequest.getHeader( HEADER_ACCEPT_ENCODING)));
 
         // Initialize processing context
         final Message response = new Message();
         final Message request = new Message();
 
-        final String rawct = hrequest.getContentType();
-        ContentTypeHeader ctype = rawct != null && rawct.length() > 0
-          ? ContentTypeHeader.create(rawct)
-          : ContentTypeHeader.XML_DEFAULT;
+        ContentTypeHeader ctype = getRequestContentType( hrequest );
 
         final String overrideContentType = connector.getProperty(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE);
         if (overrideContentType != null) {
@@ -230,11 +199,8 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         try {
             long maxBytes = connector.getLongProperty(SsgConnector.PROP_REQUEST_SIZE_LIMIT,Message.getMaxBytes());
 
-            if (gzipEncodedTransaction) {
-                request.initialize(stashManager, ctype, gis,maxBytes);
-            } else {
-                request.initialize(stashManager, ctype, hrequest.getInputStream(),maxBytes);
-            }
+            final InputStream requestInput = gzipEncodedTransaction ? gis : hrequest.getInputStream();
+            request.initialize(stashManager, ctype, requestInput, maxBytes);
 
             final long hardwiredServiceOid = connector.getLongProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, -1L );
             if (hardwiredServiceOid != -1L ) {
@@ -310,20 +276,20 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
                 // Transmit the response and return
                 hresponse.setStatus(routeStat);
-                String[] ct = response.getHttpResponseKnob().getHeaderValues(HttpConstants.HEADER_CONTENT_TYPE);
+                String[] ct = response.getHttpResponseKnob().getHeaderValues(HEADER_CONTENT_TYPE);
                 if (ct == null || ct.length <= 0) {
                     final ContentTypeHeader mimeKnobCt = responseMimeKnob.getOuterContentType();
                     final String toset = mimeKnobCt == ContentTypeHeader.NONE ? null : mimeKnobCt.getFullValue();
                     hresponse.setContentType(toset);
                     if (toset == null) {
                         // Omit content length if no content type
-                        hresponse.setHeader(HttpConstants.HEADER_CONTENT_LENGTH, null);
+                        hresponse.setHeader(HEADER_CONTENT_LENGTH, null);
                     }
                 }
                 OutputStream responseos = hresponse.getOutputStream();
-                if (wantsGzipResponse) {
+                if (gzipResponse) {
                     logger.fine("zipping response back to requester");
-                    hresponse.setHeader(HttpConstants.HEADER_CONTENT_ENCODING, "gzip");
+                    hresponse.setHeader( HEADER_CONTENT_ENCODING, "gzip");
                     responseos = new GZIPOutputStream(responseos);
                 }
                 boolean destroyAsRead =
@@ -413,6 +379,31 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         }
     }
 
+    private ContentTypeHeader getRequestContentType( final HttpServletRequest hrequest ) {
+        final String rawct = hrequest.getContentType();
+        return rawct != null && rawct.length() > 0
+          ? ContentTypeHeader.create(rawct)
+          : ContentTypeHeader.XML_DEFAULT;
+    }
+
+    private void rejectGzipRequest( final HttpServletRequest hrequest,
+                                    final HttpServletResponse hresponse,
+                                    final int statusCode,
+                                    final String detail ) throws IOException {
+        if ( config.getBooleanProperty( "request.compress.gzip.soapFaultRejection", true ) ) {
+            final String actor = hrequest.getScheme() + "://" + InetAddressUtil.getHostForUrl( hrequest.getServerName() ) +
+                    (hrequest.getServerPort() == 80 ? "" : ":" + hrequest.getServerPort()) +
+                    hrequest.getRequestURI();
+            final ContentTypeHeader ctype = getRequestContentType( hrequest );
+            final SoapVersion version = SoapVersion.contentTypeToSoapVersion( ctype.getMainValue() );
+            final SoapFaultManager.FaultResponse fault =
+                    soapFaultManager.constructFault( version==SoapVersion.SOAP_1_2, actor, false, detail );
+            writeFault( fault, hresponse );
+        } else {
+            hresponse.sendError( statusCode );
+        }
+    }
+
     private SoapFaultLevel getSoapFaultLevel( final PolicyEnforcementContext context ) {
         SoapFaultLevel faultLevelInfo = context.getFaultlevel();
         if ( faultLevelInfo==null ) faultLevelInfo = soapFaultManager.getDefaultBehaviorSettings();
@@ -466,22 +457,28 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     private void returnFault(PolicyEnforcementContext context,
                              HttpServletRequest hreq,
                              HttpServletResponse hresp) throws IOException, SAXException {
+        final SoapFaultLevel faultLevelInfo = getSoapFaultLevel( context );
+        if (faultLevelInfo.isIncludePolicyDownloadURL()) {
+            if (shouldSendBackPolicyUrl(context)) {
+                PublishedService pserv = context.getService();
+                if (pserv != null) {
+                    String purl = makePolicyUrl(hreq, pserv.getOid());
+                    hresp.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
+                }
+            }
+        }
+        final SoapFaultManager.FaultResponse fault = soapFaultManager.constructReturningFault(faultLevelInfo, context);
+        final String faultXml = writeFault( fault, hresp );
+
+        messageProcessingEventChannel.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
+    }
+
+    private String writeFault( final SoapFaultManager.FaultResponse fault,
+                               final HttpServletResponse hresp ) throws IOException {
         OutputStream responseStream = null;
         String faultXml = null;
         try {
             responseStream = hresp.getOutputStream();
-
-            final SoapFaultLevel faultLevelInfo = getSoapFaultLevel( context );
-            if (faultLevelInfo.isIncludePolicyDownloadURL()) {
-                if (shouldSendBackPolicyUrl(context)) {
-                    PublishedService pserv = context.getService();
-                    if (pserv != null) {
-                        String purl = makePolicyUrl(hreq, pserv.getOid());
-                        hresp.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
-                    }
-                }
-            }
-            final SoapFaultManager.FaultResponse fault = soapFaultManager.constructReturningFault(faultLevelInfo, context);
             hresp.setStatus( fault.getHttpStatus() );
             if ( fault.getContentBytes() != null ) {
                 soapFaultManager.sendExtraHeaders(fault, hresp);
@@ -492,13 +489,13 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         } finally {
             if (responseStream != null) responseStream.close();
         }
-
-        messageProcessingEventChannel.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
+        return faultXml;
     }
+
 
     private void sendExceptionFault(PolicyEnforcementContext context, Throwable e,
                                     HttpServletRequest hreq, HttpServletResponse hresp) throws IOException, SAXException {
-        final SoapFaultManager.FaultResponse faultInfo = soapFaultManager.constructExceptionFault(e, context.getFaultlevel(), context);
+        final SoapFaultManager.FaultResponse faultInfo = soapFaultManager.constructExceptionFault( e, context.getFaultlevel(), context );
         sendExceptionFault(context,
                 faultInfo,
                 hreq,
