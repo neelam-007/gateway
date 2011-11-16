@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.ssh.console;
 import com.l7tech.console.panels.CustomTransportPropertiesPanel;
 import com.l7tech.console.panels.SecurePasswordComboBox;
 import com.l7tech.console.panels.SecurePasswordManagerWindow;
+import com.l7tech.console.panels.SsgConnectorPropertiesDialog;
 import com.l7tech.external.assertions.ssh.SshCredentialAssertion;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -133,15 +134,19 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
         managePasswordsPrivateKeysButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
-                final Window parentWindow = SwingUtilities.getWindowAncestor(SshTransportPropertiesPanel.this);
-                final SecurePasswordManagerWindow dialog = new SecurePasswordManagerWindow(parentWindow);
+                final SsgConnectorPropertiesDialog ownerJDialog = getSsgConnectorPropertiesDialog();
+                final SecurePasswordManagerWindow dialog = new SecurePasswordManagerWindow(ownerJDialog);
                 dialog.pack();
                 Utilities.centerOnParentWindow(dialog);
-                DialogDisplayer.display(dialog);
-                privateKeyField.reloadPasswordList(SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY);
-                if (parentWindow != null) {
-                    parentWindow.pack();
-                }
+                DialogDisplayer.display(dialog, new Runnable() {
+                    @Override
+                    public void run() {
+                        privateKeyField.reloadPasswordList(SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY);
+                        if (ownerJDialog != null) {
+                            DialogDisplayer.pack(ownerJDialog);
+                        }
+                    }
+                });
             }
         });
     }

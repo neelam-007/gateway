@@ -18,6 +18,7 @@ import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.*;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -598,6 +599,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         try {
             //noinspection unchecked
             panel = (CustomTransportPropertiesPanel) panelLoader.loadClass(customPropertiesPanelClassname).newInstance();
+            panel.setSsgConnectorPropertiesDialog(SsgConnectorPropertiesDialog.this);
             customGuisByScheme.put(scheme, panel);
             String[] reservedPropertyNames = panel.getAdvancedPropertyNamesUsedByGui();
             if (reservedPropertyNames == null) {
@@ -608,13 +610,13 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
             return panel;
         } catch (InstantiationException e) {
-            logger.log(Level.WARNING, "Unablet to load custom panel for " + descriptor + ": " + ExceptionUtils.getMessage(e), e);
+            logger.log(Level.WARNING, "Unable to load custom panel for " + descriptor + ": " + ExceptionUtils.getMessage(e), e);
             return null;
         } catch (IllegalAccessException e) {
-            logger.log(Level.WARNING, "Unablet to load custom panel for " + descriptor + ": " + ExceptionUtils.getMessage(e), e);
+            logger.log(Level.WARNING, "Unable to load custom panel for " + descriptor + ": " + ExceptionUtils.getMessage(e), e);
             return null;
         } catch (ClassNotFoundException e) {
-            logger.log(Level.WARNING, "Unablet to load custom panel for " + descriptor + ": " + ExceptionUtils.getMessage(e), e);
+            logger.log(Level.WARNING, "Unable to load custom panel for " + descriptor + ": " + ExceptionUtils.getMessage(e), e);
             return null;
         }
     }
@@ -627,7 +629,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         return cipherList == null || cipherList.indexOf("RSA_") > 0;
     }
 
-    private void editProperty(final Pair<String, String> origPair) {
+    private void editProperty(@Nullable final Pair<String, String> origPair) {
         final SimplePropertyDialog dlg = origPair == null ? new SimplePropertyDialog(this) : new SimplePropertyDialog(this, origPair);
         dlg.pack();
         Utilities.centerOnParentWindow(dlg);
@@ -680,7 +682,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         }
     }
 
-    private void populateInterfaceComboBox(String interfaceTags) {
+    private void populateInterfaceComboBox(@Nullable String interfaceTags) {
         List<String> entries = new ArrayList<String>();
 
         entries.add(INTERFACE_ANY);

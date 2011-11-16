@@ -37,4 +37,14 @@ public abstract class CustomTransportPropertiesPanel extends JPanel {
      *         May be empty, but must never be null.
      */
     public abstract String[] getAdvancedPropertyNamesUsedByGui();
+
+    private SsgConnectorPropertiesDialog ssgConnectorPropertiesDialog;
+
+    public SsgConnectorPropertiesDialog getSsgConnectorPropertiesDialog() {
+        return ssgConnectorPropertiesDialog;
+    }
+
+    public void setSsgConnectorPropertiesDialog(SsgConnectorPropertiesDialog ssgConnectorPropertiesDialog) {
+        this.ssgConnectorPropertiesDialog = ssgConnectorPropertiesDialog;
+    }
 }
