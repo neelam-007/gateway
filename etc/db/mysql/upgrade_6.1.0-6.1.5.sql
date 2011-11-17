@@ -1,5 +1,5 @@
 --
--- Script to update mysql ssg database from 6.1.0 to 6.2.0
+-- Script to update mysql ssg database from 6.1.0 to 6.1.5
 --
 -- Layer 7 Technologies, inc
 --
@@ -12,7 +12,7 @@ SET FOREIGN_KEY_CHECKS=0;
 --
 -- Update the version
 --
-UPDATE ssg_version SET current_version = '6.2.0';
+UPDATE ssg_version SET current_version = '6.1.5';
 
 --
 -- Table for stored secure conversation sessions
