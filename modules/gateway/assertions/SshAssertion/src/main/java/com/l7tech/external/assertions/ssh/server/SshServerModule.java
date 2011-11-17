@@ -24,20 +24,7 @@ import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.*;
-import static com.l7tech.util.CollectionUtils.caseInsensitiveSet;
-import static com.l7tech.util.CollectionUtils.list;
-import static com.l7tech.util.Either.left;
-import static com.l7tech.util.Either.right;
-import static com.l7tech.util.Eithers.lefts;
-import static com.l7tech.util.Eithers.rights;
 import com.l7tech.util.Functions.Unary;
-import static com.l7tech.util.Functions.grep;
-import static com.l7tech.util.Functions.map;
-import static com.l7tech.util.Option.optional;
-import static com.l7tech.util.Option.some;
-import static com.l7tech.util.TextUtils.isNotEmpty;
-import static com.l7tech.util.TextUtils.split;
-import static java.util.Collections.singletonList;
 import org.apache.commons.lang.StringUtils;
 import org.apache.mina.core.session.IoSession;
 import org.apache.sshd.SshServer;
@@ -84,6 +71,20 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+
+import static com.l7tech.util.CollectionUtils.caseInsensitiveSet;
+import static com.l7tech.util.CollectionUtils.list;
+import static com.l7tech.util.Either.left;
+import static com.l7tech.util.Either.right;
+import static com.l7tech.util.Eithers.lefts;
+import static com.l7tech.util.Eithers.rights;
+import static com.l7tech.util.Functions.grep;
+import static com.l7tech.util.Functions.map;
+import static com.l7tech.util.Option.optional;
+import static com.l7tech.util.Option.some;
+import static com.l7tech.util.TextUtils.isNotEmpty;
+import static com.l7tech.util.TextUtils.split;
+import static java.util.Collections.singletonList;
 
 /**
  * Creates and controls an embedded SSH server for each configured SsgConnector with a SSH scheme.
@@ -229,7 +230,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
                                         ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                         } else {
                             LOGGER.log(Level.WARNING, "Unable to start " + connector.getScheme() + " connector on port " + connector.getPort() +
-                                        ": " + ExceptionUtils.getMessage(e), e);
+                                        ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                         }
                     }
                 }
@@ -342,7 +343,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
                 auditStop("connector OID " + oid + ", on port " + entry.left.getPort());
                 sshd.stop();
             } catch (InterruptedException e) {
-                LOGGER.log(Level.SEVERE, "Unable to remove sshd: " + ExceptionUtils.getMessage(e), e);
+                LOGGER.log(Level.SEVERE, "Unable to remove sshd: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 auditError("Error while shutting down, unable to remove sshd.", e);
             }
         }
@@ -362,7 +363,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
     }
 
     private void auditError(String message, Exception exception) {
-        getAuditor().logAndAudit(SystemMessages.SSH_SERVER_ERROR, new String[]{message}, exception);
+        getAuditor().logAndAudit(SystemMessages.SSH_SERVER_ERROR, new String[]{message}, ExceptionUtils.getDebugException(exception));
     }
 
     private Audit getAuditor() {
@@ -707,6 +708,9 @@ public class SshServerModule extends TransportModule implements ApplicationListe
 
     /**
      * Builds a session factory with a listener to track the number of active sessions
+     * @param maxSessions max sessions
+     * @param sessionCount session count
+     * @return session factory
      */
     private SessionFactory buildResourceLimitingSessionFactory( final AtomicInteger maxSessions,
                                                                 final AtomicInteger sessionCount ) {
@@ -727,6 +731,8 @@ public class SshServerModule extends TransportModule implements ApplicationListe
 
     /**
      * Builds a factory for channels that limits the number of channels available per session
+     * @param maxChannels max channels
+     * @return named channel factory
      */
     private NamedFactory<Channel> buildResourceLimitingChannelFactory( final AtomicInteger maxChannels ) {
         return new NamedFactory<Channel>(){
