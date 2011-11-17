@@ -110,6 +110,27 @@ ALTER TABLE secure_password MODIFY COLUMN encoded_password mediumtext NOT NULL;
 ALTER TABLE secure_password ADD COLUMN type varchar(64) NOT NULL DEFAULT 'PASSWORD';
 
 --
+-- Create tables for active connectors.
+--
+DROP TABLE IF EXISTS active_connector;
+CREATE TABLE active_connector (
+  objectid bigint(20) NOT NULL,
+  version integer NOT NULL,
+  enabled tinyint(1) NOT NULL,
+  name varchar(128) NOT NULL,
+  type varchar(128) NOT NULL,
+  hardwired_service_oid bigint(20),
+  PRIMARY KEY (objectid)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
+DROP TABLE IF EXISTS active_connector_property;
+CREATE TABLE active_connector_property (
+  connector_oid bigint(20) NOT NULL,
+  name varchar(128) NOT NULL,
+  value MEDIUMTEXT NOT NULL,
+  FOREIGN KEY (connector_oid) REFERENCES active_connector (objectid) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
 --
 -- Reenable FK at very end of script
 --
