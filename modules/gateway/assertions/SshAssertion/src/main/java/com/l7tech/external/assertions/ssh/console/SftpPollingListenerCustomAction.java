@@ -10,7 +10,7 @@ import com.l7tech.objectmodel.EntityType;
 public class SftpPollingListenerCustomAction extends SecureAction {
 
     public SftpPollingListenerCustomAction() {
-        super(new AttemptedAnyOperation( EntityType.SSG_CONNECTOR), "service:Admin");
+        super(new AttemptedAnyOperation(EntityType.SSG_ACTIVE_CONNECTOR));
     }
 
     @Override
