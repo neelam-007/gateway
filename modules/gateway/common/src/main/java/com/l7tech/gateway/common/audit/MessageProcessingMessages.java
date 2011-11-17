@@ -57,6 +57,7 @@ public class MessageProcessingMessages extends Messages {
     public static final M ERROR_MESSAGE_RECEIVED           = m(3044, Level.WARNING, "Error processing message-received policy: {0}");
     public static final M RUNNING_MESSAGE_COMPLETED_POLICY = m(3045, Level.FINEST, "Processing message-completed server policies");
     public static final M ERROR_MESSAGE_COMPLETED          = m(3046, Level.WARNING, "Error processing message-completed policy: {0}");
+    public static final M ERROR_XML_DECRYPTION        = m(3047, Level.WARNING, "Error while decrypting encrypted XML");
 
     // Service resolver messages
     public static final M SR_HTTPURI_CACHEDFAIL      = m(3100, Level.FINE, "Using cached failure @\"{0}\"");

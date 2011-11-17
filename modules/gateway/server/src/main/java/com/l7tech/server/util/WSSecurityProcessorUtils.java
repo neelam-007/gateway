@@ -97,6 +97,12 @@ public class WSSecurityProcessorUtils {
                 impl.setPermitMultipleTimestampSignatures(settings.permitMultipleTimestampSignatures);
                 impl.setPermitUnknownBinarySecurityTokens(settings.permitUnknownBinarySecurityTokens);
                 impl.setStrictSignatureConfirmationValidation(settings.strictSignatureConfirmationValidation);
+                impl.setErrorHandler(new WssProcessorErrorHandler() {
+                    @Override
+                    public void onDecryptionError(Throwable t) {
+                        audit.logAndAudit(MessageProcessingMessages.ERROR_XML_DECRYPTION);
+                    }
+                });
 
                 ProcessorResult wssResults = impl.processMessage();
                 msg.getSecurityKnob().setProcessorResult(wssResults); // In case someone else needs it later

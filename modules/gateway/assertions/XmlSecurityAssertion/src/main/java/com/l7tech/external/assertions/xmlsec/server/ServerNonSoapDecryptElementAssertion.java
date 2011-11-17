@@ -7,6 +7,7 @@ import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.xmlsec.NonSoapDecryptElementAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -35,7 +36,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 
 import static com.l7tech.external.assertions.xmlsec.NonSoapDecryptElementAssertion.*;
 
@@ -111,10 +111,11 @@ public class ServerNonSoapDecryptElementAssertion extends ServerNonSoapSecurityA
             decryptedNodes = XencUtil.decryptAndReplaceUsingKey(encryptedDataEl, flexKey, dc, new Functions.UnaryVoid<Throwable>() {
                 @Override
                 public void call(Throwable throwable) {
-                    logger.log(Level.FINE, "Error decrypting", throwable);
+                    logAndAudit(MessageProcessingMessages.ERROR_XML_DECRYPTION);
                 }
             });
         } catch (XencUtil.XencException e) {
+            logAndAudit(MessageProcessingMessages.ERROR_XML_DECRYPTION);
             throw new GeneralSecurityException("Error decrypting", e);
         }
 

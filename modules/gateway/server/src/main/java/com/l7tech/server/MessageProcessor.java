@@ -13,7 +13,6 @@ import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceStatistics;
 import com.l7tech.message.*;
-import static com.l7tech.objectmodel.EntityUtil.id;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -30,8 +29,6 @@ import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.MessageProcessed;
 import com.l7tech.server.event.MessageReceived;
-import static com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys.FOLDER_ID;
-import static com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys.SERVICE_ID;
 import com.l7tech.server.log.TrafficLogger;
 import com.l7tech.server.message.HttpSessionPolicyContextCache;
 import com.l7tech.server.message.PolicyContextCache;
@@ -50,7 +47,6 @@ import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.util.*;
-import static com.l7tech.util.Functions.map;
 import com.l7tech.xml.InvalidDocumentSignatureException;
 import com.l7tech.xml.MessageNotSoapException;
 import com.l7tech.xml.SoapFaultLevel;
@@ -69,12 +65,20 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Set;
+import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys.FOLDER_ID;
+import static com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys.SERVICE_ID;
+import static com.l7tech.objectmodel.EntityUtil.id;
+import static com.l7tech.util.Functions.map;
 
 /**
  * The server side component processing messages from any transport layer.
@@ -738,6 +742,12 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 trogdor.setPermitMultipleTimestampSignatures(settings.permitMultipleTimestampSignatures);
                 trogdor.setPermitUnknownBinarySecurityTokens(settings.permitUnknownBinarySecurityTokens);
                 trogdor.setStrictSignatureConfirmationValidation(settings.strictSignatureConfirmationValidation);
+                trogdor.setErrorHandler(new WssProcessorErrorHandler() {
+                    @Override
+                    public void onDecryptionError(Throwable t) {
+                        auditor.logAndAudit(MessageProcessingMessages.ERROR_XML_DECRYPTION);
+                    }
+                });
                 try {
                     final Message request = context.getRequest();
                     final SecurityKnob reqSec = request.getSecurityKnob();

@@ -20,6 +20,7 @@ import com.l7tech.util.*;
 import com.l7tech.xml.InvalidDocumentSignatureException;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
@@ -71,6 +72,8 @@ public class Saml2WssProcessorImpl {
     private Resolver<String,X509Certificate> messageX509TokenResolver = null;
     boolean checkSigningCertValidity = true;
 
+    private Functions.TernaryVoid<Level,String,Throwable> errorHandler = null; // optional error handler invoked when certain failures occur (for now only for failed decryption attempts)
+
     /**
      * Create a WssProcessorImpl context bound to the specified message.
      *
@@ -85,6 +88,20 @@ public class Saml2WssProcessorImpl {
      */
     public void setSecurityTokenResolver(SecurityTokenResolver securityTokenResolver) {
         this.securityTokenResolver = securityTokenResolver;
+    }
+
+    /**
+     * @return current error handler, or null if one is not set.
+     */
+    public Functions.TernaryVoid<Level, String, Throwable> getErrorHandler() {
+        return errorHandler;
+    }
+
+    /**
+     * @param errorHandler error handler to invoke when certain errors occur, or null.
+     */
+    public void setErrorHandler(@Nullable Functions.TernaryVoid<Level, String, Throwable> errorHandler) {
+        this.errorHandler = errorHandler;
     }
 
     /**
@@ -1121,7 +1138,10 @@ public class Saml2WssProcessorImpl {
             dataList = XencUtil.decryptAndReplaceUsingKey(encryptedDataElement, flexKey, dc, new Functions.UnaryVoid<Throwable>() {
                 @Override
                 public void call(Throwable throwable) {
-                    logger.log(Level.FINE, "Error decrypting", throwable);
+                    if (errorHandler != null) {
+                        errorHandler.call(Level.WARNING, "Error decrypting", throwable);
+                    } else
+                        logger.log(Level.FINE, "Error decrypting", throwable);
                 }
             });
         } catch (XencUtil.XencException e) {

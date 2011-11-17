@@ -1,33 +1,33 @@
 package com.l7tech.external.assertions.saml2attributequery.server;
 
-import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.security.xml.SecurityTokenResolver;
-import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.external.assertions.saml2attributequery.DecryptElementAssertion;
-import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.processor.ProcessorException;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.util.xml.PolicyEnforcementContextXpathVariableFinder;
-import com.l7tech.xml.ElementCursor;
+import com.l7tech.util.Functions;
+import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.DomElementCursor;
+import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.xpath.XpathResult;
 import com.l7tech.xml.xpath.XpathResultIterator;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.message.Message;
-
-import java.io.IOException;
-import java.security.SignatureException;
-import java.security.GeneralSecurityException;
-
+import org.bouncycastle.jce.X509Principal;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
-import org.bouncycastle.jce.X509Principal;
 
 import javax.xml.xpath.XPathExpressionException;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.security.SignatureException;
+import java.util.logging.Level;
 
 /**
  * Created by IntelliJ IDEA.
@@ -51,6 +51,12 @@ public class ServerDecryptElementAssertion extends AbstractServerAssertion<Decry
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         Saml2WssProcessorImpl securityProcessor = new Saml2WssProcessorImpl(context.getRequest());
         securityProcessor.setSecurityTokenResolver(securityTokenResolver);
+        securityProcessor.setErrorHandler(new Functions.TernaryVoid<Level, String, Throwable>() {
+            @Override
+            public void call(Level level, String s, Throwable throwable) {
+                logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { s }, throwable);
+            }
+        });
 
         try {
             Document doc = null;

@@ -4,7 +4,6 @@ import com.ibm.xml.dsig.IDResolver;
 import com.ibm.xml.dsig.KeyInfo;
 import com.ibm.xml.dsig.SignatureContext;
 import com.ibm.xml.dsig.Validity;
-import com.ibm.xml.enc.AlgorithmFactoryExtn;
 import com.ibm.xml.enc.DecryptionContext;
 import com.ibm.xml.enc.type.EncryptedData;
 import com.l7tech.common.io.CertUtils;
@@ -29,6 +28,7 @@ import com.l7tech.xml.InvalidDocumentSignatureException;
 import com.l7tech.xml.UnsupportedDocumentFormatException;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
@@ -106,6 +106,8 @@ public class WssProcessorImpl implements WssProcessor {
     private String lastKeyEncryptionAlgorithm = null;
     private boolean isWsse11Seen = false;
     private boolean isDerivedKeySeen = false; // If we see any derived keys, we'll assume we can derive our own keys in reponse
+
+    private WssProcessorErrorHandler errorHandler = null; // optional error handler invoked when certain failures occur (for now only for failed decryption attempts)
 
     /**
      * Create a WssProcessorImpl context not bound to any message.
@@ -257,6 +259,20 @@ public class WssProcessorImpl implements WssProcessor {
      */
     public void setIdAttributeConfig(IdAttributeConfig idAttributeConfig) {
         this.idAttributeConfig = idAttributeConfig;
+    }
+
+    /**
+     * @return current error handler, or null if one is not set.
+     */
+    public WssProcessorErrorHandler getErrorHandler() {
+        return errorHandler;
+    }
+
+    /**
+     * @param errorHandler error handler to invoke when certain errors occur, or null.
+     */
+    public void setErrorHandler(@Nullable WssProcessorErrorHandler errorHandler) {
+        this.errorHandler = errorHandler;
     }
 
     /**
@@ -1443,11 +1459,16 @@ public class WssProcessorImpl implements WssProcessor {
             dataList = XencUtil.decryptAndReplaceUsingKey(encryptedDataElement, flexKey, dc, new Functions.UnaryVoid<Throwable>() {
                 @Override
                 public void call(Throwable throwable) {
-                    // TODO must arrange to have this audited somehow
-                    logger.log(Level.FINE, "Error decrypting", throwable);
+                    if (errorHandler != null) {
+                        errorHandler.onDecryptionError(throwable);
+                    } else {
+                        logger.log(Level.FINE, "Error decrypting", throwable);
+                    }
                 }
             });
         } catch (XencUtil.XencException e) {
+            if (errorHandler != null)
+                errorHandler.onDecryptionError(e);
             throw new ProcessorException("Error decrypting", e);
         }
 

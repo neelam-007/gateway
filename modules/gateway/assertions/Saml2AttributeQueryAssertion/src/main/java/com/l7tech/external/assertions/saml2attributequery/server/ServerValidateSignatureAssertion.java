@@ -12,6 +12,7 @@ import com.l7tech.security.xml.processor.ProcessorException;
 import com.l7tech.security.xml.processor.BadSecurityContextException;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.token.SignedElement;
+import com.l7tech.util.Functions;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.context.ApplicationContext;
@@ -21,6 +22,7 @@ import org.w3c.dom.NodeList;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.util.logging.Level;
 
 /**
  * Created by IntelliJ IDEA.
@@ -44,6 +46,12 @@ public class ServerValidateSignatureAssertion extends AbstractServerAssertion<Va
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         Saml2WssProcessorImpl securityProcessor = new Saml2WssProcessorImpl(context.getRequest());
         securityProcessor.setSecurityTokenResolver(securityTokenResolver);
+        securityProcessor.setErrorHandler(new Functions.TernaryVoid<Level, String, Throwable>() {
+            @Override
+            public void call(Level level, String s, Throwable throwable) {
+                logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { s }, throwable);
+            }
+        });
 
         try {
             Object obj = context.getVariable(assertion.getVariableName());
