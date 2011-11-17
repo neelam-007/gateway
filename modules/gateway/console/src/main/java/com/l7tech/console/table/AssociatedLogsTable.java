@@ -427,7 +427,12 @@ public class AssociatedLogsTable extends JTable {
         public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
             this.value = (String) value;
             this.row = row;
-            fireEditingStopped();
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    fireEditingStopped();
+                }
+            });
             // Case 1: for "Message" tab in the 5th Column (index = 4)
             if (column == 4) {
                 JComponent tempButtonComponent = buildButtonComponent(button);
