@@ -7,12 +7,10 @@ import com.jscape.inet.ssh.util.HostKeyFingerprintVerifier;
 import com.jscape.inet.ssh.util.SshHostKeys;
 import com.jscape.inet.ssh.util.SshParameters;
 import com.l7tech.external.assertions.ssh.keyprovider.SshKeyUtil;
-import static com.l7tech.external.assertions.ssh.server.SshAssertionMessages.*;
 import com.l7tech.external.assertions.ssh.server.sftppollinglistener.SftpClient.SftpConnectionListener;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
-import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.event.system.TransportEvent;
@@ -22,8 +20,6 @@ import com.l7tech.util.Functions.UnaryThrows;
 import com.l7tech.util.Option;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.TimeUnit;
-import static java.text.MessageFormat.format;
-import static java.util.Collections.list;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationEventPublisher;
 
@@ -38,12 +34,16 @@ import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.external.assertions.ssh.server.SshAssertionMessages.SSH_INVALID_PUBLIC_KEY_FINGERPRINT_EXCEPTION;
+import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
+import static java.text.MessageFormat.format;
+import static java.util.Collections.list;
+
 /**
  * Abstract base class for SftpPollingListener implementations.  This class provides the common thread life-cycle operations,
  * plus code that listens to a SFTP directory.
  * <br/>
  * All request messages are delegated to the handleFile() method.
- * Currently SftpPollingListenerThreadPoolFileHandler is the only file handler implementation.
  */
 abstract class SftpPollingListener {
     private static final Logger logger = Logger.getLogger(SftpPollingListener.class.getName());
@@ -110,6 +110,7 @@ abstract class SftpPollingListener {
 
     /**
      * Starts the listener thread.
+     * @throws com.l7tech.server.LifecycleException caused by any problems during start
      */
     void start() throws LifecycleException {
         synchronized(sync) {
@@ -180,8 +181,7 @@ abstract class SftpPollingListener {
      * Returns an SFTP client with connection to the destination directory for polling.
      *
      * @return SFTP client
-     * @throws java.io.IOException
-     * @throws SftpPollingListenerConfigException
+     * @throws SftpPollingListenerConfigException if there's a misconfiguration causing problems connecting to the server
      */
     @NotNull
     private SftpClient buildSftpClient() throws SftpPollingListenerConfigException {
@@ -190,7 +190,7 @@ abstract class SftpPollingListener {
         final String username = getConnectorProperty( PROPERTIES_KEY_SFTP_USERNAME );
         final long pollingInterval = getConnectorLongProperty( PROPERTIES_KEY_POLLING_INTERVAL, 60L );
         final long passwordOid = getConnectorLongProperty( PROPERTIES_KEY_SFTP_SECURE_PASSWORD_OID, -1L );
-        final String password = passwordOid==-1L ? null : getDecryptedPassword( passwordOid );
+        final String password = passwordOid == -1L ? null : getDecryptedPassword( passwordOid );
         final String directory = getConnectorProperty( PROPERTIES_KEY_SFTP_DIRECTORY );
         final long timeout = TimeUnit.SECONDS.toMillis( pollingInterval + 3L );
 
@@ -222,7 +222,7 @@ abstract class SftpPollingListener {
         }
 
         final long privateKeyOid = getConnectorLongProperty( PROPERTIES_KEY_SFTP_SECURE_PASSWORD_KEY_OID, -1L );
-        final String privateKeyText = passwordOid==-1L ? null : getDecryptedPassword( privateKeyOid );
+        final String privateKeyText = privateKeyOid == -1L ? null : getDecryptedPassword( privateKeyOid );
         if( privateKeyText != null ) {
             sshParams.setSshPassword(null);
             if( password == null ) {
@@ -258,8 +258,8 @@ abstract class SftpPollingListener {
     /**
      * Looks in the given directory for files to process.
      *
+     * @param sftp SFTP client with directory set for scanning
      * @return collection of files to process
-     * @throws SftpPollingListenerConfigException if there's misconfiguration
      * @throws java.io.IOException caused by an error while reading the directory
      */
     @SuppressWarnings({ "unchecked" })
@@ -296,7 +296,10 @@ abstract class SftpPollingListener {
     }
 
     /**
-     *
+     * Execute work in a callback function that requires a SFTP client.
+     * @param callback the work logic requiring a SFTP client
+     * @return the any result(s) from the work done
+     * @throws java.io.IOException if there's an error
      */
     <R> R doWithSftpClient( final UnaryThrows<R,Sftp,IOException> callback ) throws IOException {
         return sftpClient.doWork( callback );
