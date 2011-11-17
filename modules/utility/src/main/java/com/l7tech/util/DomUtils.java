@@ -481,15 +481,25 @@ public class DomUtils {
         return true;
     }
 
-
-
+    /**
+     * Gets the child text node value for an element.
+     *
+     * @param node node whose child text to collect.  Required.
+     * @return a String consisting of all text and cdata nodes glued together and then trimmed.  May be empty but never null.
+     */
+    public static String getTextValue(Element node) {
+        return getTextValue(node, true);
+    }
 
     /**
      * Gets the child text node value for an element.
-     * @return a String consisting of all text nodes glued together and then trimmed.  May be empty but never null.
+     *
+     * @param node node whose child text to collect.  Required.
+     * @param trimResult true if the collected value should have leading and trailing whitespace trimmed before it is returned.
+     * @return a String consisting of all text and cdata nodes glued together and (optionally) trimmed.  May be empty but never null.
      */
-    public static String getTextValue(Element node) {
-        StringBuffer output = new StringBuffer();
+    public static String getTextValue(Element node, boolean trimResult) {
+        StringBuilder output = new StringBuilder();
         NodeList children = node.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
             Node kid = children.item(i);
@@ -499,7 +509,7 @@ public class DomUtils {
                     output.append(thisTxt);
             }
         }
-        return output.toString().trim();
+        return trimResult ? output.toString().trim() : output.toString();
     }
 
     /**

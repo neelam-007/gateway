@@ -24,6 +24,9 @@ import java.util.Date;
  * once the instance is created.
  */
 public class UsernameTokenImpl implements UsernameToken {
+    public static final String PROP_TRIM_USERNAME = "com.l7tech.security.token.UsernameToken.trimUsername";
+    public static final String PROP_TRIM_PASSWORD = "com.l7tech.security.token.UsernameToken.trimPassword";
+
     private Element element;
     private String username; // username to include, must not be null
     private PasswordAuthentication passwordAuth; // plaintext password to include, or null to not include one (or if using digest)
@@ -99,9 +102,14 @@ public class UsernameTokenImpl implements UsernameToken {
         // Get the Username child element
         Element usernameEl = DomUtils.findOnlyOneChildElementByName(utok, wsseUri, SoapConstants.UNTOK_USERNAME_EL_NAME);
         if (usernameEl == null) throw new InvalidDocumentFormatException("The usernametoken element does not contain a username element");
-        String username = DomUtils.getTextValue(usernameEl).trim();
+        String username = DomUtils.getTextValue(usernameEl, false);
+        if (shouldTrimUsername()) username = username.trim();
         if (username.length() < 1)throw new UnsupportedDocumentFormatException("The usernametoken has an empty username element");
         return username;
+    }
+
+    private static boolean shouldTrimUsername() {
+        return ConfigFactory.getCachedConfig().getBooleanProperty(PROP_TRIM_USERNAME, false);
     }
 
     // Sets password, passwordDigest
@@ -115,7 +123,8 @@ public class UsernameTokenImpl implements UsernameToken {
         if (passwdEl == null)
             return; // No password
 
-        String value = DomUtils.getTextValue(passwdEl).trim();
+        String value = DomUtils.getTextValue(passwdEl, false);
+        if (shouldTrimPassword()) value = value.trim();
         if (value.length() < 1) throw new InvalidDocumentFormatException("The usernametoken has an empty password element");
 
         // Verify the password type to be supported
@@ -136,6 +145,10 @@ public class UsernameTokenImpl implements UsernameToken {
         throw new UnsupportedDocumentFormatException("This username token password type is not supported: " + passwdType);
     }
 
+    private boolean shouldTrimPassword() {
+        return ConfigFactory.getCachedConfig().getBooleanProperty(PROP_TRIM_PASSWORD, false);
+    }
+
     private static String extractCreated(Element utok) throws InvalidDocumentFormatException {
         return extractOptionalElement(utok, SoapConstants.WSU_URIS_ARRAY, SoapConstants.UNTOK_CREATED_EL_NAME);
     }
@@ -148,7 +161,7 @@ public class UsernameTokenImpl implements UsernameToken {
         Element elem = DomUtils.findOnlyOneChildElementByName(utok, nsUris, elemName);
         if (elem == null) // Timestamp is optional
             return null;
-        String value = DomUtils.getTextValue(elem).trim();
+        String value = DomUtils.getTextValue(elem);
         if (value.length() < 1)
             throw new InvalidDocumentFormatException("Bad UsernameToken: empty " + elemName + " element");
         return value;

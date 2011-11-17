@@ -198,6 +198,24 @@ public class WssProcessorTest {
     }
 
     @Test
+    @BugNumber(10786)
+    public void testUsernameTokenWithTrailingWhitespace() throws Exception {
+        doTest(makeUsernameTokenWithTrailingWhitespaceTestDocument(), new WssProcessorImpl(), new Functions.UnaryVoid<ProcessorResult>() {
+            @Override
+            public void call(ProcessorResult pr) {
+                UsernameToken utok = (UsernameToken) pr.getXmlSecurityTokens()[0];
+                assertEquals("joe", utok.getUsername());
+                assertEquals(" spacebeforeandafter ", new String(utok.getPassword()));
+            }
+        });
+    }
+
+    public TestDocument makeUsernameTokenWithTrailingWhitespaceTestDocument() throws Exception {
+        Document doc = TestDocuments.getTestDocument(TestDocuments.DIR + "/bug10786UtokPasswdWhitespace.xml");
+        return new TestDocument("testUsernameTokenWithTrailingWhitespace", doc, null, null, null, null, null);
+    }
+
+    @Test
     public void testEttkSignedRequest() throws Exception {
         doTest(makeEttkTestDocument("ettk signed request", TestDocuments.ETTK_SIGNED_REQUEST));
     }
