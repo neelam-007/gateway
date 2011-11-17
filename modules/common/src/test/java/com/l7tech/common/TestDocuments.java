@@ -175,6 +175,8 @@ public final class TestDocuments {
         if (resourcetoread == null) {
             resourcetoread = TestDocuments.TEST_SOAP_XML;
         }
+        if (resourcetoread.contains("//"))
+            throw new FileNotFoundException("Double slash in path will not work on some platforms (even if test passes on others)");
         ClassLoader cl = TestDocuments.class.getClassLoader();
         InputStream i = cl.getResourceAsStream(resourcetoread);
         if (i == null) {

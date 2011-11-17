@@ -211,7 +211,7 @@ public class WssProcessorTest {
     }
 
     public TestDocument makeUsernameTokenWithTrailingWhitespaceTestDocument() throws Exception {
-        Document doc = TestDocuments.getTestDocument(TestDocuments.DIR + "/bug10786UtokPasswdWhitespace.xml");
+        Document doc = TestDocuments.getTestDocument(TestDocuments.DIR + "bug10786UtokPasswdWhitespace.xml");
         return new TestDocument("testUsernameTokenWithTrailingWhitespace", doc, null, null, null, null, null);
     }
 
