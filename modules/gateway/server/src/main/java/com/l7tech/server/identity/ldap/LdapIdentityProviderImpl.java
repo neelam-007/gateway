@@ -629,7 +629,7 @@ public class LdapIdentityProviderImpl
             env.put(LdapUtils.ENV_PROP_LDAP_CONNECT_POOL, "true");
             env.put(LdapUtils.ENV_PROP_LDAP_CONNECT_TIMEOUT, Long.toString(ldapRuntimeConfig.getLdapConnectionTimeout()));
             env.put(LdapUtils.ENV_PROP_LDAP_READ_TIMEOUT, Long.toString(ldapRuntimeConfig.getLdapReadTimeout()));
-            env.put( Context.REFERRAL, ConfigFactory.getCachedConfig().getProperty(ServerConfigParams.PARAM_LDAP_REFERRAL, LdapUtils.ENV_VALUE_REFERRAL) );
+            env.put( Context.REFERRAL, ConfigFactory.getProperty(ServerConfigParams.PARAM_LDAP_REFERRAL, LdapUtils.ENV_VALUE_REFERRAL) );
             String dn = config.getBindDN();
             if (dn != null && dn.length() > 0) {
                 final String pass;

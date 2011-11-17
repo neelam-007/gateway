@@ -118,7 +118,7 @@ public class XmlElementEncryptor {
         final SecretKey secretKey = xek.getSecretKey();
         final byte[] encryptedKeyBytes;
         encryptionMethod.setAttribute("Algorithm", SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO);
-        if (!ConfigFactory.getCachedConfig().getBooleanProperty(PROP_ENCRYPT_FOR_EXPIRED_CERT, false))
+        if (!ConfigFactory.getBooleanProperty(PROP_ENCRYPT_FOR_EXPIRED_CERT, false))
             recipientCert.checkValidity();
         encryptedKeyBytes = XencUtil.encryptKeyWithRsaAndPad(secretKey.getEncoded(), recipientCert, recipientCert.getPublicKey());
         final String base64 = HexUtils.encodeBase64(encryptedKeyBytes, true);

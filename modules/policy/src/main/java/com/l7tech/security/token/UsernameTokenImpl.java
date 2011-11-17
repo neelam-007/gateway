@@ -109,7 +109,7 @@ public class UsernameTokenImpl implements UsernameToken {
     }
 
     private static boolean shouldTrimUsername() {
-        return ConfigFactory.getCachedConfig().getBooleanProperty(PROP_TRIM_USERNAME, false);
+        return ConfigFactory.getBooleanProperty(PROP_TRIM_USERNAME, false);
     }
 
     // Sets password, passwordDigest
@@ -146,7 +146,7 @@ public class UsernameTokenImpl implements UsernameToken {
     }
 
     private boolean shouldTrimPassword() {
-        return ConfigFactory.getCachedConfig().getBooleanProperty(PROP_TRIM_PASSWORD, false);
+        return ConfigFactory.getBooleanProperty(PROP_TRIM_PASSWORD, false);
     }
 
     private static String extractCreated(Element utok) throws InvalidDocumentFormatException {

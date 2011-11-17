@@ -257,7 +257,7 @@ public final class LdapUtils {
             }
             env.put(ENV_PROP_LDAP_CONNECT_TIMEOUT, Long.toString(connectTimeout));
             env.put(ENV_PROP_LDAP_READ_TIMEOUT, Long.toString(readTimeout));
-            if (null == referral) referral = ConfigFactory.getCachedConfig().getProperty(ServerConfigParams.PARAM_LDAP_REFERRAL, LdapUtils.ENV_VALUE_REFERRAL);
+            if (null == referral) referral = ConfigFactory.getProperty(ServerConfigParams.PARAM_LDAP_REFERRAL, LdapUtils.ENV_VALUE_REFERRAL);
             env.put(Context.REFERRAL, referral );
 
             if (lurl.useSsl()) {
@@ -342,7 +342,7 @@ public final class LdapUtils {
     }
 
     public static boolean isIgnorePartialResultException() {
-        return ConfigFactory.getCachedConfig().getBooleanProperty(ServerConfigParams.PARAM_LDAP_IGNORE_PARTIAL_RESULTS, true);
+        return ConfigFactory.getBooleanProperty(ServerConfigParams.PARAM_LDAP_IGNORE_PARTIAL_RESULTS, true);
     }
 
     //- PACKAGE
