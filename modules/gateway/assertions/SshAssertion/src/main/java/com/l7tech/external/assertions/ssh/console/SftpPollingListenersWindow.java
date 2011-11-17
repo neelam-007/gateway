@@ -4,14 +4,10 @@ import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.util.EntityUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
-import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.DuplicateObjectException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
+import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -27,6 +23,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static com.l7tech.gui.util.DialogDisplayer.display;
 import static com.l7tech.gui.util.DialogDisplayer.showMessageDialog;
 
@@ -51,7 +48,6 @@ public class SftpPollingListenersWindow extends JDialog {
     }
 
     private void initialize() {
-        loadListenerConfigurations();
         tableModel = new ListenerConfigurationsTableModel();
         listenersTable.setModel(tableModel);
         listenersTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -71,17 +67,11 @@ public class SftpPollingListenersWindow extends JDialog {
         cloneButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if(listenersTable.getSelectedRow() > -1) {
-                    int viewRow = listenersTable.getSelectedRow();
-                    if(viewRow >= 0) {
-                        int modelRow = listenersTable.convertRowIndexToModel(viewRow);
-                        SsgActiveConnector i = tableModel.getConnectors().get(modelRow);
-                        if(i != null) {
-                            final SsgActiveConnector connector =  new SsgActiveConnector(i);
-                            EntityUtils.updateCopy( connector );
-                            editAndSave( connector, true, true );
-                        }
-                    }
+                SsgActiveConnector selectedConnector = tableModel.getSelectedConnector(listenersTable);
+                if(selectedConnector != null) {
+                    final SsgActiveConnector connector =  new SsgActiveConnector(selectedConnector);
+                    EntityUtils.updateCopy( connector );
+                    editAndSave( connector, true, true );
                 }
             }
         });
@@ -89,55 +79,45 @@ public class SftpPollingListenersWindow extends JDialog {
         modifyButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if(listenersTable.getSelectedRow() > -1) {
-                    int viewRow = listenersTable.getSelectedRow();
-                    if(viewRow >= 0) {
-                        int modelRow = listenersTable.convertRowIndexToModel(viewRow);
-                        final SsgActiveConnector connector = tableModel.getConnectors().get(modelRow);
-                        if( connector != null) {
-                            editAndSave( connector, false, false );
-                        } else {
-                            // the listener has been removed some how
-                            showMessageDialog(SftpPollingListenersWindow.this, "SFTP polling listener configuration not found.", null);
-                            updateListenersList( null );
-                        }
-                    }
+                SsgActiveConnector connector = tableModel.getSelectedConnector(listenersTable);
+                if( connector != null) {
+                    editAndSave( connector, false, false );
+                } else {
+                    // the listener has been removed some how
+                    showMessageDialog(SftpPollingListenersWindow.this, "SFTP polling listener configuration not found.", null);
+                    updateListenersList( null );
                 }
             }
         });
 
         removeButton.addActionListener(new ActionListener() {
             @Override
-                public void actionPerformed(ActionEvent e) {
-                    int viewRow = listenersTable.getSelectedRow();
-                    if (viewRow >= 0) {
-                        int modelRow = listenersTable.convertRowIndexToModel(viewRow);
-                        SsgActiveConnector configuration = tableModel.getConnectors().get(modelRow);
-                        if (configuration != null) {
-                            String name = configuration.getName();
+            public void actionPerformed(ActionEvent e) {
+                SsgActiveConnector configuration = tableModel.getSelectedConnector(listenersTable);
+                if (configuration != null) {
+                    String name = configuration.getName();
 
-                            Object[] options = {"Remove", "Cancel"};
+                    Object[] options = {"Remove", "Cancel"};
 
-                            int result = JOptionPane.showOptionDialog(null,
-                              "<HTML>Are you sure you want to remove the " +
-                              "configuration for the SFTP polling listener " +
-                              name + "?<br>" +
-                              "<center>This action cannot be undone." +
-                              "</center></html>",
-                              "Remove SFTP polling listener?",
-                              0, JOptionPane.WARNING_MESSAGE,
-                              null, options, options[1]);
-                            if (result == 0) {
-                                try {
-                                    deleteConfiguration(configuration);
-                                } catch (Exception e1) {
-                                    throw new RuntimeException("Unable to delete SFTP polling listener " + name, e1);
-                                }
-                                updateListenersList(null);
-                            }
+                    int result = JOptionPane.showOptionDialog(null,
+                            "<HTML>Are you sure you want to remove the " +
+                                    "configuration for the SFTP polling listener " +
+                                    name + "?<br>" +
+                                    "<center>This action cannot be undone." +
+                                    "</center></html>",
+                            "Remove SFTP polling listener?",
+                            0, JOptionPane.WARNING_MESSAGE,
+                            null, options, options[1]);
+                    if (result == 0) {
+                        try {
+                            deleteConfiguration(configuration);
+                        } catch (Exception e1) {
+                            throw new RuntimeException("Unable to delete SFTP polling listener " + name, e1);
                         }
+                        updateListenersList(null);
                     }
                 }
+            }
         });
 
         closeButton.addActionListener(new ActionListener() {
@@ -177,9 +157,22 @@ public class SftpPollingListenersWindow extends JDialog {
                 if (dialog.isConfirmed()) {
                     final TransportAdmin admin = getTransportAdmin();
                     if ( admin != null ) {
+                        boolean duplicate = false;
                         try {
                             admin.saveSsgActiveConnector( connector );
                         } catch ( DuplicateObjectException e ) {
+                            duplicate = true;
+                        } catch ( SaveException e ) {
+                            ErrorManager.getDefault().notify( Level.WARNING, e, "Error saving Polling Listener" );
+                        } catch ( UpdateException e ) {
+                            if ( ExceptionUtils.causedBy( e, DuplicateObjectException.class ) ) {
+                                duplicate = true;
+                            } else {
+                                ErrorManager.getDefault().notify( Level.WARNING, e, "Error saving Polling Listener" );
+                            }
+                        }
+
+                        if ( duplicate ) {
                             showMessageDialog( SftpPollingListenersWindow.this,
                                     "Listener already exists",
                                     "Unable to save listener '" + connector.getName() + "'\n" +
@@ -188,16 +181,13 @@ public class SftpPollingListenersWindow extends JDialog {
                                     new Runnable() {
                                         @Override
                                         public void run() {
+                                            updateListenersList( connector );
                                             editAndSave( connector, false, isNew );
                                         }
                                     } );
-
-                        } catch ( SaveException e ) {
-                            ErrorManager.getDefault().notify( Level.WARNING, e, "Error saving Polling Listener" );
-                        } catch ( UpdateException e ) {
-                            ErrorManager.getDefault().notify( Level.WARNING, e, "Error saving Polling Listener" );
+                        } else {
+                            updateListenersList( connector );
                         }
-                        updateListenersList( connector );
                     }
                 }
             }
@@ -256,6 +246,16 @@ public class SftpPollingListenersWindow extends JDialog {
             return listenerConfigurations;
         }
 
+        public SsgActiveConnector getSelectedConnector(JTable listenersTable) {
+            SsgActiveConnector selectedConnector = null;
+            int viewRow = listenersTable.getSelectedRow();
+            if(viewRow > -1) {
+                int modelRow = listenersTable.convertRowIndexToModel(viewRow);
+                selectedConnector = tableModel.getConnectors().get(modelRow);
+            }
+            return selectedConnector;
+        }
+
         public void refreshListenerConfigurationsList() {
             listenerConfigurations = loadListenerConfigurations();
         }
@@ -288,7 +288,6 @@ public class SftpPollingListenersWindow extends JDialog {
         }
     }
 
-
     private TransportAdmin getTransportAdmin() {
         final Registry registry = Registry.getDefault();
         if (!registry.isAdminContextPresent()) {
@@ -298,6 +297,9 @@ public class SftpPollingListenersWindow extends JDialog {
         return registry.getTransportAdmin();
     }
 
+    /*
+     * Load list of listener configurations from the server.
+     */
     private List<SsgActiveConnector> loadListenerConfigurations() {
         List<SsgActiveConnector> listenerConfigurations = Collections.emptyList();
         try {
