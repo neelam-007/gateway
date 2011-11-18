@@ -58,6 +58,17 @@ public class ThroughputQuotaQueryAssertion extends Assertion implements SetsVari
         return ret.toArray(new VariableMetadata[ret.size()]);
     }
 
+    public static String[] getVariableSuffixes() {
+        return new String[] {
+            COUNTER_NAME,
+            COUNTER_SEC,
+            COUNTER_MIN,
+            COUNTER_HR,
+            COUNTER_DAY,
+            COUNTER_MNT,
+            COUNTER_LASTUPDATE
+        };
+    }
     private VariableMetadata prefix(String name) {
         String fullname = variablePrefix == null ? name : variablePrefix + "." + name;
         return new VariableMetadata(fullname);
@@ -114,4 +125,6 @@ public class ThroughputQuotaQueryAssertion extends Assertion implements SetsVari
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
+
+
 }

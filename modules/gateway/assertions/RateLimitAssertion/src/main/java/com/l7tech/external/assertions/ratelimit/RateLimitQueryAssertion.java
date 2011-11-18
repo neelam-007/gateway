@@ -81,6 +81,16 @@ public class RateLimitQueryAssertion extends Assertion implements UsesVariables,
         return ret.toArray(new VariableMetadata[ret.size()]);
     }
 
+
+    public static String[] getVariableSuffixes() {
+        return new String[] {
+            COUNTER_NAME,
+            COUNTER_REQUESTSREMAINING,
+            COUNTER_CONCURRENCY,
+            COUNTER_BLACKOUTMILLISREMAINING
+        };
+    }
+
     private VariableMetadata prefix(String name) {
         String fullname = variablePrefix == null ? name : variablePrefix + "." + name;
         return new VariableMetadata(fullname);
@@ -132,4 +142,5 @@ public class RateLimitQueryAssertion extends Assertion implements UsesVariables,
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
+
 }
