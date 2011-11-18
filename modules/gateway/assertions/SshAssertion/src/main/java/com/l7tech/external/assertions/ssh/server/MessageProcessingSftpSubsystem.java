@@ -1,7 +1,6 @@
 package com.l7tech.external.assertions.ssh.server;
 
 import com.l7tech.common.log.HybridDiagnosticContext;
-import static com.l7tech.external.assertions.ssh.server.MessageProcessingSshUtil.buildPolicyExecutionContext;
 import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -27,6 +26,8 @@ import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.external.assertions.ssh.server.MessageProcessingSshUtil.buildPolicyExecutionContext;
 
 /**
  * Message processing SFTP subsystem (heavily borrowed from org.apache.sshd.server.sftp.SftpSubsystem).
@@ -247,12 +248,16 @@ public class MessageProcessingSftpSubsystem extends SftpSubsystem {
                 }
             }
         } catch (IOException e) {
+            logger.log(Level.WARNING, "Error occurred: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             sendStatus(id, SSH_FX_FAILURE, ExceptionUtils.getMessage( e ));
         } catch (InterruptedException e) {
+            logger.log(Level.WARNING, "Error occurred: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             sendStatus(id, SSH_FX_FAILURE, ExceptionUtils.getMessage( e ));
         } catch (ExecutionException e) {
+            logger.log(Level.WARNING, "Error occurred: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             sendStatus(id, SSH_FX_FAILURE, ExceptionUtils.getMessage( e ));
         } catch (TimeoutException e) {
+            logger.log(Level.WARNING, "Error occurred: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             sendStatus(id, SSH_FX_FAILURE, ExceptionUtils.getMessage( e ));
         }
     }

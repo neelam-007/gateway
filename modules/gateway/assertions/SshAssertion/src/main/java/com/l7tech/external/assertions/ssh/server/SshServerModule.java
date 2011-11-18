@@ -467,9 +467,9 @@ public class SshServerModule extends TransportModule implements ApplicationListe
         }
 
         // configure resource limits
-        final String maxConcurrentSessionsPerUser = connector.getProperty(SshCredentialAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER);
-        if (!StringUtils.isEmpty(maxConcurrentSessionsPerUser)) {
-            sshdProperties.put( SshServer.MAX_CONCURRENT_SESSIONS, maxConcurrentSessionsPerUser );
+        final int maxConcurrentSessionsPerUser = connector.getIntProperty( SshCredentialAssertion.LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER, 0 );
+        if (maxConcurrentSessionsPerUser > 0) {
+            sshdProperties.put( SshServer.MAX_CONCURRENT_SESSIONS, Integer.toString(maxConcurrentSessionsPerUser) );
         }
         maxSessions.set( connector.getIntProperty( SshCredentialAssertion.LISTEN_PROP_MAX_SESSIONS, maxSessions.get() ) );
         maxSessions.compareAndSet( 0, Integer.MAX_VALUE ); // zero for unlimited
