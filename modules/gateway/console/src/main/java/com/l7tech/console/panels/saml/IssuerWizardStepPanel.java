@@ -56,7 +56,7 @@ public class IssuerWizardStepPanel extends WizardStepPanel {
                         "Note: If enabled a Name Format attribute will always be added to the Issuer element.<br><br>" +
                         defaultMsg + "</html>";
             default:
-                return "<html>Customize the Issuer element.<br><br>" +
+                return "<html>Customize the Issuer attribute.<br><br>" +
                         defaultMsg + "</html>";
         }
     }
