@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * User: megery
  */
-public abstract class AuthTypeView {
+public abstract class AuthTypeSettings {
     public abstract List<String> asConfigLines();
 
     public abstract List<String> describe();

@@ -1,27 +1,57 @@
 package com.l7tech.server.config.systemconfig;
 
-import com.l7tech.util.Pair;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * User: megery
  */
-public class LdapAuthTypeView extends AuthTypeView {
+public class LdapAuthTypeSettings extends AuthTypeSettings {
 
-    public Map<String, Pair<String, String>> reqCertActions = new TreeMap<String, Pair<String, String>>() {{
-       put("1", new Pair<String, String>("The client will not request or check the server certificate", "never"));
-       put("2", new Pair<String, String>("The client proceeds if no certificate or a bad certificate is presented", "allow"));
-       put("3", new Pair<String, String>("The session is immediately terminated if a bad certificate is presented", "try"));
-       put("4", new Pair<String, String>("The session is immediately terminated if no certificate or a bad certificate is presented", "demand"));
-    }};
+    public static enum CertAction {
+       CERT_NEVER("never","The client will not request or check the server certificate"),
+       CERT_ALLOW("allow","The client proceeds if no certificate or a bad certificate is presented"),
+       CERT_TRY("try","The session is immediately terminated if a bad certificate is presented"),
+       CERT_DEMAND("demand","The session is immediately terminated if no certificate or a bad certificate is presented");
+        private String action;
+        private String description;
+
+        CertAction(String action, String description) {
+            this.action = action;
+            this.description = description;
+        }
+
+        final public String getAction() {
+            return action;
+        }
+
+        final public String getDescription() {
+            return description;
+        }
+    }
 
 
-    public Map<String, Pair<String, String>> crlCheckActions = new TreeMap<String, Pair<String, String>>() {{
-       put("1", new Pair<String, String>("No CRL checks are performed", "none"));
-       put("2", new Pair<String, String>("Only check the CRL of the peer certificate", "peer"));
-       put("3", new Pair<String, String>("Check the CRL for the whole certificate chain", "all"));
-    }};
+    public static enum CrlAction {
+        CRL_NONE("none", "No CRL checks are performed"),
+        CRL_PEER("peer", "Only check the CRL of the peer certificate"),
+        CRL_ALL("all", "Check the CRL for the whole certificate chain");
+
+        private String description;
+        private String action;
+
+        CrlAction(String action, String description) {
+            this.action = action;
+            this.description = description;
+        }
+
+        final public String getAction() {
+            return action;
+        }
+
+        final public String getDescription() {
+            return description;
+        }
+    }
 
 
     private boolean ldapSecure;
@@ -38,8 +68,8 @@ public class LdapAuthTypeView extends AuthTypeView {
     private String passHashAlg="md5";
     private String serverCaCertUrl ="";
     private String serverCaCertFile ="/home/ssgconfig/certificate.pem";
-    private String ldapTlsReqCert="never";
-    private String ldapTlsCrlCheck="none";
+    private CertAction ldapTlsReqCert= CertAction.CERT_NEVER;
+    private CrlAction ldapTlsCrlCheck= CrlAction.CRL_NONE;
     private boolean ldapTlsClientAuth =false;
     private String ldapTlsClientCertFile="";
     private String ldapTlsClientKeyFile="";
@@ -104,8 +134,8 @@ public class LdapAuthTypeView extends AuthTypeView {
             //TLS Options
             configLines.add(makeNameValuePair("LDAP_CACERT_URL", getServerCaCertUrl()));
             configLines.add(makeNameValuePair("LDAP_CACERT_FILE", getServerCaCertFile()));
-            configLines.add(makeNameValuePair("LDAP_TLS_REQCERT", reqCertActions.get(getLdapTlsReqCert()).right));
-            configLines.add(makeNameValuePair("LDAP_TLS_CRLCHECK", crlCheckActions.get(getLdapTlsCrlCheck()).right));
+            configLines.add(makeNameValuePair("LDAP_TLS_REQCERT", getLdapTlsReqCert().getAction()));
+            configLines.add(makeNameValuePair("LDAP_TLS_CRLCHECK", getLdapTlsCrlCheck().getAction()));
             configLines.add(makeNameValuePair("CLT_TLS_AUTH", convertToYesNo(isLdapTlsClientAuth())));
             configLines.add(makeNameValuePair("LDAP_TLS_CERT", getLdapTlsClientCertFile()));
             configLines.add(makeNameValuePair("LDAP_TLS_KEY", getLdapTlsClientKeyFile()));
@@ -153,13 +183,14 @@ public class LdapAuthTypeView extends AuthTypeView {
                 descs.add("\t\tCA Certificate File : " + getServerCaCertFile());
             }
 
-            if (reqCertActions.get(getLdapTlsReqCert()) != null) {
+            if (getLdapTlsReqCert() != null) {
                 descs.add("\t\tClient Handling of server certificates");
-                descs.add("\t\t\t" + reqCertActions.get(getLdapTlsReqCert()).left);
+                descs.add("\t\t\t" + getLdapTlsReqCert().getDescription());
             }
-            if (crlCheckActions.get(getLdapTlsCrlCheck()) != null) {
+
+            if (getLdapTlsCrlCheck() != null) {
                 descs.add("\t\tClient CRL Checking");
-                descs.add("\t\t\t" + crlCheckActions.get(getLdapTlsCrlCheck()).left);
+                descs.add("\t\t\t" + getLdapTlsCrlCheck().getDescription());
             }
 
             if (! isLdapTlsClientAuth()) {
@@ -272,19 +303,19 @@ public class LdapAuthTypeView extends AuthTypeView {
         return serverCaCertFile;
     }
 
-    public void setLdapTlsReqCert(String ldapTlsReqCert) {
+    public void setLdapTlsReqCert(CertAction ldapTlsReqCert) {
         this.ldapTlsReqCert = ldapTlsReqCert;
     }
 
-    public String getLdapTlsReqCert() {
+    public CertAction getLdapTlsReqCert() {
         return ldapTlsReqCert;
     }
 
-    public void setLdapTlsCrlCheck(String ldapTlsCrlCheck) {
+    public void setLdapTlsCrlCheck(CrlAction ldapTlsCrlCheck) {
         this.ldapTlsCrlCheck = ldapTlsCrlCheck;
     }
 
-    public String getLdapTlsCrlCheck() {
+    public CrlAction getLdapTlsCrlCheck() {
         return ldapTlsCrlCheck;
     }
 

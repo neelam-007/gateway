@@ -2,7 +2,6 @@ package com.l7tech.server.config.systemconfig;
 
 import com.l7tech.server.config.exceptions.WizardNavigationException;
 import com.l7tech.server.config.wizard.BaseConsoleStep;
-import com.l7tech.util.Pair;
 
 import java.io.IOException;
 import java.util.*;
@@ -87,16 +86,16 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
                 "*** Invalid Entry: Please enter a valid timeout in seconds ***"
         );
 
-        RadiusAuthTypeView radiusView = new RadiusAuthTypeView();
-        radiusView.setRadiusServer(srvIp);
-        radiusView.setRadiusSecret(sharedSecret);
-        radiusView.setRadiusTimeout(radiusTimeout);
-        configBean.addAuthTypeView(radiusView);
+        RadiusAuthTypeSettings radiusSettings = new RadiusAuthTypeSettings();
+        radiusSettings.setRadiusServer(srvIp);
+        radiusSettings.setRadiusSecret(sharedSecret);
+        radiusSettings.setRadiusTimeout(radiusTimeout);
+        configBean.addAuthTypeView(radiusSettings);
     }
 
     private void doLdapPrompts(boolean isLdapOnly) throws IOException, WizardNavigationException {
 
-        LdapAuthTypeView ldapView = new LdapAuthTypeView();
+        LdapAuthTypeSettings ldapView = new LdapAuthTypeSettings();
 
         doLdapServerPrompts(ldapView);
         doLdapBindPrompts(ldapView);
@@ -115,14 +114,14 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
         configBean.addAuthTypeView(ldapView);
     }
 
-    private void doCustomizeAdvancedLdapPrompts(LdapAuthTypeView ldapView) {
+    private void doCustomizeAdvancedLdapPrompts(LdapAuthTypeSettings ldapView) {
         //TODO not implemented yet
         //this is a chance to have the user customize any of the very advanced options that we didn't prompt them for
         //PAM_MIN_UID="0"
         //PAM_MAX_UID="0"
     }
 
-    private void doLdapPamOptionsPrompts(LdapAuthTypeView ldapView) throws IOException, WizardNavigationException {
+    private void doLdapPamOptionsPrompts(LdapAuthTypeSettings ldapView) throws IOException, WizardNavigationException {
         String defaultPamAttr = "uid";
         String pamLoginAttr = defaultPamAttr;
         if (getConfirmationFromUser("Do you want to customize the PAM login attribute name?","n")) {
@@ -136,7 +135,7 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
         ldapView.setPamLoginAttr(pamLoginAttr);
     }
 
-    private void doLdapSecurePrompts(LdapAuthTypeView ldapView) throws IOException, WizardNavigationException {
+    private void doLdapSecurePrompts(LdapAuthTypeSettings ldapView) throws IOException, WizardNavigationException {
         printText(EOL + "You have chosen to use LDAPS." + EOL);
         printText("The following configuration items are needed in order to enable LDAPS" + EOL + EOL);
 
@@ -163,8 +162,8 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
         ldapView.setLdapCaCertFile(caCertFile);
         ldapView.setLdapCaCertURL(caCertUrl);
 
-        String ldapTlsReqCert = "never";
-        String ldapTlsCrlCheck = "none";
+        LdapAuthTypeSettings.CertAction ldapTlsReqCert = LdapAuthTypeSettings.CertAction.CERT_NEVER;
+        LdapAuthTypeSettings.CrlAction ldapTlsCrlCheck = LdapAuthTypeSettings.CrlAction.CRL_NONE;
         boolean isldapTlsClientAuth = false;
         String ldapTlsClientCertFile = "";
         String ldapTlsClientKeyFile = "";
@@ -179,8 +178,8 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
 
         boolean doTlsOptions = getConfirmationFromUser("Configure LDAPS TLS options?","n");
         if (doTlsOptions) {
-            ldapTlsReqCert = maybeDoTlsReqCertPrompts(ldapView, ldapTlsReqCert);
-            ldapTlsCrlCheck = maybeDoTlsCrlCheckPrompts(ldapView, ldapTlsCrlCheck);
+            ldapTlsReqCert = maybeDoTlsReqCertPrompts(ldapTlsReqCert);
+            ldapTlsCrlCheck = maybeDoTlsCrlCheckPrompts(ldapTlsCrlCheck);
             isldapTlsClientAuth = doIsClientAuthPrompts();
             if (isldapTlsClientAuth) {
                 ldapTlsClientCertFile = doTlsClientCertFilePrompt();
@@ -253,49 +252,72 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
         return getConfirmationFromUser("Configure Client Authentication?","n");
     }
 
-    private String maybeDoTlsCrlCheckPrompts(LdapAuthTypeView ldapView, String ldapTlsCrlCheck) throws IOException, WizardNavigationException {
+    private LdapAuthTypeSettings.CrlAction maybeDoTlsCrlCheckPrompts(LdapAuthTypeSettings.CrlAction ldapTlsCrlCheck) throws IOException, WizardNavigationException {
          if (getConfirmationFromUser("Specify how CRL checking is performed??" , "n")) {
-            Map<String, Pair<String, String>> crlCheckActions = ldapView.crlCheckActions;
-            List<String> promptList = new ArrayList<String>();
-            for (Map.Entry<String, Pair<String, String>> entry : crlCheckActions.entrySet()) {
-                promptList.add(entry.getKey() + ") " + entry.getValue().left + EOL);
+
+             int index = 1;
+             Map<String,LdapAuthTypeSettings.CrlAction> actionMap = new TreeMap<String,LdapAuthTypeSettings.CrlAction>();
+             for (LdapAuthTypeSettings.CrlAction crlAction : LdapAuthTypeSettings.CrlAction.values()) {
+                 actionMap.put(String.valueOf(index++),crlAction);
+             }
+
+             List<String> promptList = new ArrayList<String>();
+             for (Map.Entry<String, LdapAuthTypeSettings.CrlAction> entry : actionMap.entrySet()) {
+                 promptList.add(entry.getKey() + ") " + entry.getValue().getDescription()+ EOL);
             }
             String defaultChoice = "1";
             promptList.add("Make a selection : " + "[" + defaultChoice + "] ");
-            List<String> allowedEntries = new ArrayList<String>(crlCheckActions.keySet());
+            List<String> allowedEntries = new ArrayList<String>(actionMap.keySet());
 
             printText(EOL + "Choose an option to specify how CRL checking will be performed" + EOL);
-            ldapTlsCrlCheck = getData(
+            String whichChoice = getData(
                     promptList.toArray(new String[promptList.size()]),
                     defaultChoice,
                     allowedEntries.toArray(new String[allowedEntries.size()]),
                     "");
+
+            if (actionMap.get(whichChoice) != null) {
+                ldapTlsCrlCheck = actionMap.get(whichChoice);
+            }
         }
         return ldapTlsCrlCheck;
     }
 
-    private String maybeDoTlsReqCertPrompts(LdapAuthTypeView ldapView, String ldapTlsReqCert) throws IOException, WizardNavigationException {
+    private LdapAuthTypeSettings.CertAction maybeDoTlsReqCertPrompts(LdapAuthTypeSettings.CertAction ldapTlsReqCert) throws IOException, WizardNavigationException {
+
         if (getConfirmationFromUser("Specify client handling of server certificates?" , "n")) {
-            Map<String, Pair<String, String>> reqCertActions = ldapView.reqCertActions;
-            List<String> promptList = new ArrayList<String>();
-            for (Map.Entry<String, Pair<String, String>> entry : reqCertActions.entrySet()) {
-                promptList.add(entry.getKey() + ") " + entry.getValue().left + EOL);
+
+            Map<String, LdapAuthTypeSettings.CertAction> actionMap = new TreeMap<String, LdapAuthTypeSettings.CertAction>();
+
+            int index = 1;
+            for (LdapAuthTypeSettings.CertAction certAction : LdapAuthTypeSettings.CertAction.values()) {
+                actionMap.put(String.valueOf(index++), certAction);
             }
+
+            List<String> promptList = new ArrayList<String>();
+            for (Map.Entry<String, LdapAuthTypeSettings.CertAction> entry : actionMap.entrySet()) {
+                promptList.add(entry.getKey() + ") " + entry.getValue().getDescription() + EOL);
+            }
+
             String defaultChoice = "1";
             promptList.add("Make a selection : " + "[" + defaultChoice + "] ");
-            List<String> allowedEntries = new ArrayList<String>(reqCertActions.keySet());
+            List<String> allowedEntries = new ArrayList<String>(actionMap.keySet());
 
             printText(EOL + "Choose an option for how the client will handle the server's certificate" + EOL);
-            ldapTlsReqCert = getData(
+            String whichChoice = getData(
                     promptList.toArray(new String[promptList.size()]),
                     defaultChoice,
                     allowedEntries.toArray(new String[allowedEntries.size()]),
                     "");
+
+            if (actionMap.get(whichChoice) != null) {
+                ldapTlsReqCert = actionMap.get(whichChoice);
+            }
         }
         return ldapTlsReqCert;
     }
 
-    private void doLdapAccessControlPrompts(LdapAuthTypeView ldapView, boolean isLdapOnly) throws IOException, WizardNavigationException {
+    private void doLdapAccessControlPrompts(LdapAuthTypeSettings ldapView, boolean isLdapOnly) throws IOException, WizardNavigationException {
         /* collects for the following always (ldap_only or radius_ldap):
            LDAP_GROUP_NAME
            PASS_HASH_ALGO
@@ -385,7 +407,7 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
         }
     }
 
-    private void doLdapServerPrompts(LdapAuthTypeView ldapView) throws IOException, WizardNavigationException {
+    private void doLdapServerPrompts(LdapAuthTypeSettings ldapView) throws IOException, WizardNavigationException {
         boolean isLdapSecure = getConfirmationFromUser("Do you want to use LDAPS (secure)?", "n");
         String ldapServer = getData(
                 new String[] {"Enter the address of the LDAP server: "},
@@ -414,12 +436,11 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
         ldapView.setLdapBaseDn(ldapBaseDn);
     }
 
-    private void doLdapBindPrompts(LdapAuthTypeView ldapView) throws IOException, WizardNavigationException {
+    private void doLdapBindPrompts(LdapAuthTypeSettings ldapView) throws IOException, WizardNavigationException {
         boolean isAnonBind = getConfirmationFromUser("Do you want to enable LDAP Anonymous Bind?", "n");
         ldapView.setLdapAnonBind(isAnonBind);
 
         if (!ldapView.isAnonBind()) {
-            String defaultBindDn = "";
             String ldapBindDn = getData(
                     new String[] {"Enter the LDAP bind DN : "},
                     "",

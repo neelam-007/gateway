@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * User: megery
  */
-public class RadiusAuthTypeView extends AuthTypeView {
+public class RadiusAuthTypeSettings extends AuthTypeSettings {
     String radiusServer;
     String radiusSecret;
     String radiusTimeout;

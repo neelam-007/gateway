@@ -26,8 +26,8 @@ public class AuthenticationConfigurationBean extends BaseConfigurationBean{
 
     private List<String> describe() {
         List<String> descs = new ArrayList<String>();
-        for (AuthTypeView authTypeView : authTypeViews) {
-            descs.add(concatConfigLines(EOL + "\t", authTypeView.describe()));
+        for (AuthTypeSettings authTypeSettings : authTypeSettingses) {
+            descs.add(concatConfigLines(EOL + "\t", authTypeSettings.describe()));
             descs.add(EOL);
         }
         return descs;
@@ -37,15 +37,15 @@ public class AuthenticationConfigurationBean extends BaseConfigurationBean{
         this.authType = authType;
     }
 
-    public void addAuthTypeView(AuthTypeView authType) {
-        authTypeViews.add(authType);
+    public void addAuthTypeView(AuthTypeSettings authType) {
+        authTypeSettingses.add(authType);
     }
 
     public String asConfigFile() {
         StringBuilder sb = new StringBuilder();
         sb.append("CFG_TYPE=").append("\"").append(authType.getConfigTypeName()).append("\"").append(EOL);
-        for (AuthTypeView authTypeView : authTypeViews) {
-            List<String> configLines = authTypeView.asConfigLines();
+        for (AuthTypeSettings authTypeSettings : authTypeSettingses) {
+            List<String> configLines = authTypeSettings.asConfigLines();
             if (configLines != null) {
                 for (String configLine : configLines) {
                     sb.append(configLine).append(EOL);
@@ -81,5 +81,5 @@ public class AuthenticationConfigurationBean extends BaseConfigurationBean{
 
 
     private AuthType authType = null;
-    private Set<AuthTypeView > authTypeViews = new HashSet<AuthTypeView>();
+    private Set<AuthTypeSettings> authTypeSettingses = new HashSet<AuthTypeSettings>();
 }
