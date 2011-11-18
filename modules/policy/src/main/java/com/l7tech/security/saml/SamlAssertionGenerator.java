@@ -502,12 +502,12 @@ public class SamlAssertionGenerator {
         }
 
         @Nullable
-        public String getCustomIssuerNameFormatUri() {
-            return customIssuerNameFormatUri;
+        public String getCustomIssuerFormat() {
+            return customIssuerFormat;
         }
 
-        public void setCustomIssuerNameFormatUri(String customIssuerNameFormatUri) {
-            this.customIssuerNameFormatUri = customIssuerNameFormatUri;
+        public void setCustomIssuerFormat(String customIssuerFormat) {
+            this.customIssuerFormat = customIssuerFormat;
         }
 
         @Nullable
@@ -537,7 +537,7 @@ public class SamlAssertionGenerator {
         private int subjectConfirmationDataNotBeforeSecondsInPast = -1;
         private int subjectConfirmationDataNotOnOrAfterExpirySeconds = -1;
         private String customIssuer;
-        private String customIssuerNameFormatUri;
+        private String customIssuerFormat;
         private String customIssuerNameQualifier;
     }
 

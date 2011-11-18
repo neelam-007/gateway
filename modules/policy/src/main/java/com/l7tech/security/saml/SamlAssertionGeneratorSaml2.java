@@ -326,7 +326,7 @@ class SamlAssertionGeneratorSaml2 extends SamlVersionAssertionGenerator {
             throw new IllegalStateException("No issuer configured"); // coding error
         }
 
-        final String nameFormatUri = options.getCustomIssuerNameFormatUri();
+        final String nameFormatUri = options.getCustomIssuerFormat();
         final String nameQualifier = options.getCustomIssuerNameQualifier();
 
         Calendar now = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);

@@ -3,6 +3,7 @@ package com.l7tech.console.panels.saml;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.util.SquigglyFieldUtils;
 import com.l7tech.gui.util.PauseListenerAdapter;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.policy.assertion.SamlIssuerConfiguration;
@@ -14,8 +15,6 @@ import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
 
 /**
  * Step to customize the Issuer value.
@@ -30,33 +29,44 @@ public class IssuerWizardStepPanel extends WizardStepPanel {
     @Override
     public boolean canAdvance() {
 
-        boolean fieldsAreValid = true;
         if (version == 2) {
-            fieldsAreValid = SquigglyFieldUtils.validateSquigglyFieldForVariableReference(nameQualifierSquigglyTextField);
+            if (!SquigglyFieldUtils.validateSquigglyFieldForVariableReference(nameQualifierSquigglyTextField)) {
+                return false;
+            }
         }
 
-        if (!issuerValueSquigglyTextField.getText().trim().equals(autoString)) {
-            fieldsAreValid = fieldsAreValid && SquigglyFieldUtils.validateSquigglyFieldForVariableReference(issuerValueSquigglyTextField);
+        if (issuerFromTemplateRadioButton.isSelected()) {
+            final boolean hasIssuerValue = !issuerValueSquigglyTextField.getText().trim().isEmpty();
+            if (!hasIssuerValue) {
+                return false;
+            }
+
+            if (!SquigglyFieldUtils.validateSquigglyFieldForVariableReference(issuerValueSquigglyTextField)) {
+                return false;
+            }
         }
 
-        return fieldsAreValid;
+        return true;
     }
 
     @Override
     public String getStepLabel() {
-        return "Customize Issuer";
+        return "Issuer";
     }
 
     @Override
     public String getDescription() {
-        final String defaultMsg = "Default value is the subject distinguished name of the configured private key's corresponding public key.";
+
+        final String defaultValMsg = "subject distinguished name of the configured private key's corresponding public key.";
+        final String defaultMsg;
         switch (version) {
             case 2:
-                return "<html>Customize the Issuer element.<br>" +
-                        "Note: If enabled a Name Format attribute will always be added to the Issuer element.<br><br>" +
-                        defaultMsg + "</html>";
+                defaultMsg = "Default value for Issuer element is the " + defaultValMsg;
+                return "<html>Configure the Issuer element value and attributes.<br><br>" +
+                        defaultMsg + " No attributes are set by default.</html>";
             default:
-                return "<html>Customize the Issuer attribute.<br><br>" +
+                defaultMsg = "Default value for the Issuer attribute is the " + defaultValMsg;
+                return "<html>Configure the Issuer attribute value.<br><br>" +
                         defaultMsg + "</html>";
         }
     }
@@ -68,30 +78,38 @@ public class IssuerWizardStepPanel extends WizardStepPanel {
 
         final SamlIssuerConfiguration issuerConfig = (SamlIssuerConfiguration) samlPolicyAssertion;
 
-        final String customNameFormatUri = issuerConfig.getCustomizedIssuerNameFormat();
-        final String customIssuerValueTest = issuerConfig.getCustomizedIssuerValue();
-        final String customIssuerValue = (customIssuerValueTest != null)? customIssuerValueTest : autoString;
-        final boolean hasCustomIssuer = (customNameFormatUri != null && version == 2) || customIssuerValueTest != null;
-        customizeIssuerCheckBox.setSelected(hasCustomIssuer);
-
-        issuerValueSquigglyTextField.setText(customIssuerValue);
+        final String customIssuerValue = issuerConfig.getCustomIssuerValue();
+        if (customIssuerValue != null) {
+            issuerFromTemplateRadioButton.setSelected(true);
+            issuerValueSquigglyTextField.setText(customIssuerValue);
+        } else {
+            issuerDefaultRadioButton.setSelected(true);
+        }
 
         if (version == 2) {
-            if (SamlConstants.NAMEIDENTIFIER_UNSPECIFIED.equals(customNameFormatUri)) {
-                unspecifiedRadioButton.setSelected(true);
-            } else if (SamlConstants.NAMEIDENTIFIER_EMAIL.equals(customNameFormatUri)) {
-                emailAddressRadioButton.setSelected(true);
-            } else if (SamlConstants.NAMEIDENTIFIER_X509_SUBJECT.equals(customNameFormatUri)) {
-                x509SubjectRadioButton.setSelected(true);
-            } else if (SamlConstants.NAMEIDENTIFIER_WINDOWS.equals(customNameFormatUri)) {
-                windowsDomainRadioButton.setSelected(true);
-            } else if (SamlConstants.NAMEIDENTIFIER_KERBEROS.equals(customNameFormatUri)) {
-                kerberosRadioButton.setSelected(true);
+            final String customIssuerFormat = issuerConfig.getCustomIssuerFormat();
+            if (customIssuerFormat != null) {
+                includeFormatAttributeCheckBox.setSelected(true);
+
+                if (SamlConstants.NAMEIDENTIFIER_UNSPECIFIED.equals(customIssuerFormat)) {
+                    unspecifiedRadioButton.setSelected(true);
+                } else if (SamlConstants.NAMEIDENTIFIER_EMAIL.equals(customIssuerFormat)) {
+                    emailAddressRadioButton.setSelected(true);
+                } else if (SamlConstants.NAMEIDENTIFIER_X509_SUBJECT.equals(customIssuerFormat)) {
+                    x509SubjectRadioButton.setSelected(true);
+                } else if (SamlConstants.NAMEIDENTIFIER_WINDOWS.equals(customIssuerFormat)) {
+                    windowsDomainRadioButton.setSelected(true);
+                } else if (SamlConstants.NAMEIDENTIFIER_KERBEROS.equals(customIssuerFormat)) {
+                    kerberosRadioButton.setSelected(true);
+                } else {
+                    entityFormatRadioButton.setSelected(true);
+                }
             } else {
+                //set selected so if Format check box is enabled there will be a default selection.
                 entityFormatRadioButton.setSelected(true);
             }
 
-            final String customNameQualifier = issuerConfig.getCustomizedIssuerNameQualifier();
+            final String customNameQualifier = issuerConfig.getCustomIssuerNameQualifier();
             if (customNameQualifier != null) {
                 nameQualifierSquigglyTextField.setText(customNameQualifier);
             }
@@ -103,46 +121,50 @@ public class IssuerWizardStepPanel extends WizardStepPanel {
     @Override
     public void storeSettings(Object settings) throws IllegalArgumentException {
         SamlIssuerConfiguration issuerConfig = (SamlIssuerConfiguration) settings;
-        final boolean customize = customizeIssuerCheckBox.isSelected();
-        if (customize) {
 
-            final String issuerCustomValue = issuerValueSquigglyTextField.getText().trim();
-            issuerConfig.setCustomizedIssuerValue((issuerCustomValue.isEmpty() || issuerCustomValue.equals(autoString)) ? null : issuerCustomValue);
-
-            final String nameQualifier = nameQualifierSquigglyTextField.getText().trim();
-            issuerConfig.setCustomizedIssuerNameQualifier((nameQualifier.isEmpty() || version != 2) ? null : nameQualifier);
-
-            final String nameFormatUri;
-            if (version != 2) {
-                nameFormatUri = null;
-            } else if (unspecifiedRadioButton.isSelected()) {
-                nameFormatUri = SamlConstants.NAMEIDENTIFIER_UNSPECIFIED;
-            } else if (emailAddressRadioButton.isSelected()) {
-                nameFormatUri = SamlConstants.NAMEIDENTIFIER_EMAIL;
-            } else if (x509SubjectRadioButton.isSelected()) {
-                nameFormatUri = SamlConstants.NAMEIDENTIFIER_X509_SUBJECT;
-            } else if (windowsDomainRadioButton.isSelected()) {
-                nameFormatUri = SamlConstants.NAMEIDENTIFIER_WINDOWS;
-            } else if (kerberosRadioButton.isSelected()) {
-                nameFormatUri = SamlConstants.NAMEIDENTIFIER_KERBEROS;
-            } else {
-                //default is entity as per SAML Core 2.0
-                nameFormatUri = SamlConstants.NAMEIDENTIFIER_ENTITY;
-            }
-
-            issuerConfig.setCustomizedIssuerNameFormat(nameFormatUri);
-
-
+        if (!issuerDefaultRadioButton.isSelected()) {
+            issuerConfig.setCustomIssuerValue(issuerValueSquigglyTextField.getText().trim());
         } else {
-            issuerConfig.setCustomizedIssuerValue(null);
-            issuerConfig.setCustomizedIssuerNameFormat(null);
-            issuerConfig.setCustomizedIssuerNameQualifier(null);
+            issuerConfig.setCustomIssuerValue(null);
+        }
+
+        if (version == 2) {
+            final String nameFormatUri;
+            if (includeFormatAttributeCheckBox.isSelected()) {
+                if (unspecifiedRadioButton.isSelected()) {
+                    nameFormatUri = SamlConstants.NAMEIDENTIFIER_UNSPECIFIED;
+                } else if (emailAddressRadioButton.isSelected()) {
+                    nameFormatUri = SamlConstants.NAMEIDENTIFIER_EMAIL;
+                } else if (x509SubjectRadioButton.isSelected()) {
+                    nameFormatUri = SamlConstants.NAMEIDENTIFIER_X509_SUBJECT;
+                } else if (windowsDomainRadioButton.isSelected()) {
+                    nameFormatUri = SamlConstants.NAMEIDENTIFIER_WINDOWS;
+                } else if (kerberosRadioButton.isSelected()) {
+                    nameFormatUri = SamlConstants.NAMEIDENTIFIER_KERBEROS;
+                } else {
+                    //default is entity as per SAML Core 2.0
+                    nameFormatUri = SamlConstants.NAMEIDENTIFIER_ENTITY;
+                }
+            } else {
+                nameFormatUri = null;
+            }
+            issuerConfig.setCustomIssuerFormat(nameFormatUri);
+
+            final String customNameQualifier = nameQualifierSquigglyTextField.getText().trim();
+            if (!customNameQualifier.isEmpty()) {
+                issuerConfig.setCustomIssuerNameQualifier(customNameQualifier);
+            } else {
+                issuerConfig.setCustomIssuerNameQualifier(null);
+            }
+        } else {
+            issuerConfig.setCustomIssuerFormat(null);
+            issuerConfig.setCustomIssuerNameQualifier(null);
         }
     }
 
     // - PRIVATE
 
-    private JCheckBox customizeIssuerCheckBox;
+    private JCheckBox includeFormatAttributeCheckBox;
     private JPanel formatsButtonPanel;
     private JRadioButton entityFormatRadioButton;
     private JRadioButton unspecifiedRadioButton;
@@ -153,12 +175,15 @@ public class IssuerWizardStepPanel extends WizardStepPanel {
     private SquigglyTextField issuerValueSquigglyTextField;
     private SquigglyTextField nameQualifierSquigglyTextField;
     private JPanel mainPanel;
-    private JPanel customizePanel;
+    private JPanel formatPanel;
     private JLabel nameQualifierLabel;
     private JLabel titleLabel;
+    private JRadioButton issuerDefaultRadioButton;
+    private JRadioButton issuerFromTemplateRadioButton;
+    private JPanel nameQualifierPanel;
+    private JPanel issuerPanel;
     private JLabel issuerValueLabel;
     private int version;
-    private static final String autoString = "<auto>";
 
     private void initialize() {
         setLayout(new BorderLayout());
@@ -166,53 +191,19 @@ public class IssuerWizardStepPanel extends WizardStepPanel {
 
         titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
 
-        customizeIssuerCheckBox.addActionListener(new ActionListener() {
+        includeFormatAttributeCheckBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 enableDisable();
             }
         });
 
-        final FocusAdapter focusAdapter = new FocusAdapter() {
-            @Override
-            public void focusLost(final FocusEvent e) {
-                final Object source = e.getSource();
-                if (!(source instanceof JTextField)) return;
-                final JTextField sourceField = (JTextField) source;
-
-                SwingUtilities.invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        if(sourceField.getText().trim().isEmpty()){
-                            sourceField.setText(autoString);
-                        }
-                    }
-                });
-            }
-
-            @Override
-            public void focusGained(FocusEvent e) {
-                final Object source = e.getSource();
-                if (!(source instanceof JTextField)) return;
-                final JTextField sourceField = (JTextField) source;
-
-                SwingUtilities.invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        if(sourceField.getText().equals(autoString)){
-                            sourceField.setText("");
-                        }
-                    }
-                });
-            }
-        };
-
         TextComponentPauseListenerManager.registerPauseListenerWhenFocused(issuerValueSquigglyTextField, new PauseListenerAdapter() {
             @Override
             public void textEntryPaused(JTextComponent component, long msecs) {
                 notifyListeners();
             }
-        }, 300, focusAdapter);
+        }, 300);
 
         TextComponentPauseListenerManager.registerPauseListenerWhenFocused(nameQualifierSquigglyTextField, new PauseListenerAdapter() {
             @Override
@@ -220,34 +211,37 @@ public class IssuerWizardStepPanel extends WizardStepPanel {
                 notifyListeners();
             }
         }, 300);
+
+        final RunOnChangeListener onChangeListener = new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                enableDisable();
+                notifyListeners();
+            }
+        });
+
+        issuerDefaultRadioButton.addActionListener(onChangeListener);
+        issuerFromTemplateRadioButton.addActionListener(onChangeListener);
     }
 
     private void enableDisable() {
-        boolean enablePanel = customizeIssuerCheckBox.isSelected();
-        customizePanel.setEnabled(enablePanel);
+        //can't do this in initialize as at that point we don't know what version were configuring for
+        final boolean isVersion2 = version == 2;
+        formatPanel.setVisible(isVersion2);
+        nameQualifierPanel.setVisible(isVersion2);
 
         if (version == 2) {
-            formatsButtonPanel.setVisible(true);
-            nameQualifierSquigglyTextField.setVisible(true);
-            nameQualifierLabel.setVisible(true);
+            final boolean includeNameFormat = includeFormatAttributeCheckBox.isSelected();
 
-            formatsButtonPanel.setEnabled(enablePanel);
-            nameQualifierSquigglyTextField.setEnabled(enablePanel);
-            nameQualifierLabel.setEnabled(enablePanel);
-
-            entityFormatRadioButton.setEnabled(enablePanel);
-            unspecifiedRadioButton.setEnabled(enablePanel);
-            emailAddressRadioButton.setEnabled(enablePanel);
-            x509SubjectRadioButton.setEnabled(enablePanel);
-            windowsDomainRadioButton.setEnabled(enablePanel);
-            kerberosRadioButton.setEnabled(enablePanel);
-        } else {
-            formatsButtonPanel.setVisible(false);
-            nameQualifierSquigglyTextField.setVisible(false);
-            nameQualifierLabel.setVisible(false);
+            formatsButtonPanel.setEnabled(includeNameFormat);
+            entityFormatRadioButton.setEnabled(includeNameFormat);
+            unspecifiedRadioButton.setEnabled(includeNameFormat);
+            emailAddressRadioButton.setEnabled(includeNameFormat);
+            x509SubjectRadioButton.setEnabled(includeNameFormat);
+            windowsDomainRadioButton.setEnabled(includeNameFormat);
+            kerberosRadioButton.setEnabled(includeNameFormat);
         }
 
-        issuerValueLabel.setEnabled(enablePanel);
-        issuerValueSquigglyTextField.setEnabled(enablePanel);
+        issuerValueSquigglyTextField.setEnabled(issuerFromTemplateRadioButton.isSelected());
     }
 }

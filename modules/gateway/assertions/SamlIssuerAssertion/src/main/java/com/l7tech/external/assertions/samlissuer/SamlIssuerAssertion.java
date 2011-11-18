@@ -46,9 +46,9 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
     private boolean usesDefaultKeyStore = true;
     private long nonDefaultKeystoreId = -1;
     private String keyAlias = "SSL";
-    private String customizedIssuerValue;
-    private String customizedIssuerNameFormat;
-    private String customizedIssuerNameQualifier;
+    private String customIssuerValue;
+    private String customIssuerFormat;
+    private String customIssuerNameQualifier;
 
     private static final String META_INITIALIZED = SamlIssuerAssertion.class.getName() + ".metadataInitialized";
 
@@ -100,33 +100,33 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
     }
 
     @Override
-    public String getCustomizedIssuerValue() {
-        return customizedIssuerValue;
+    public String getCustomIssuerValue() {
+        return customIssuerValue;
     }
 
     @Override
-    public void setCustomizedIssuerValue(String customizedIssuerValue) {
-        this.customizedIssuerValue = customizedIssuerValue;
+    public void setCustomIssuerValue(String customIssuerValue) {
+        this.customIssuerValue = customIssuerValue;
     }
 
     @Override
-    public String getCustomizedIssuerNameFormat() {
-        return customizedIssuerNameFormat;
+    public String getCustomIssuerFormat() {
+        return customIssuerFormat;
     }
 
     @Override
-    public void setCustomizedIssuerNameFormat(String customizedIssuerNameFormat) {
-        this.customizedIssuerNameFormat = customizedIssuerNameFormat;
+    public void setCustomIssuerFormat(String customIssuerFormat) {
+        this.customIssuerFormat = customIssuerFormat;
     }
 
     @Override
-    public String getCustomizedIssuerNameQualifier() {
-        return customizedIssuerNameQualifier;
+    public String getCustomIssuerNameQualifier() {
+        return customIssuerNameQualifier;
     }
 
     @Override
-    public void setCustomizedIssuerNameQualifier(String customizedIssuerNameQualifier) {
-        this.customizedIssuerNameQualifier = customizedIssuerNameQualifier;
+    public void setCustomIssuerNameQualifier(String customIssuerNameQualifier) {
+        this.customIssuerNameQualifier = customIssuerNameQualifier;
     }
 
     @Override
@@ -223,8 +223,8 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         Set<String> varNames = new HashSet<String>();
-        collectVars(varNames, customizedIssuerValue);
-        collectVars(varNames, customizedIssuerNameQualifier);
+        collectVars(varNames, customIssuerValue);
+        collectVars(varNames, customIssuerNameQualifier);
         collectVars(varNames, nameIdentifierFormat);
         collectVars(varNames, nameIdentifierValue);
         collectVars(varNames, subjectConfirmationMethodUri);

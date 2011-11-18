@@ -181,7 +181,7 @@ public class SamlAssertionGeneratorTest {
         opts.setVersion(2);
         final String customIssuer = "Custom Issuer Value";
         opts.setCustomIssuer(customIssuer);
-        opts.setCustomIssuerNameFormatUri(SamlConstants.NAMEIDENTIFIER_ENTITY);
+        opts.setCustomIssuerFormat(SamlConstants.NAMEIDENTIFIER_ENTITY);
         final String customIssuerNameQualifier = "Custom Name Qualifier";
         opts.setCustomIssuerNameQualifier(customIssuerNameQualifier);
 
@@ -206,7 +206,7 @@ public class SamlAssertionGeneratorTest {
         SubjectStatement stmt = getStatement();
         SamlAssertionGenerator.Options opts = getOptsForAudience();
         opts.setVersion(2);
-        opts.setCustomIssuerNameFormatUri(SamlConstants.NAMEIDENTIFIER_ENTITY);
+        opts.setCustomIssuerFormat(SamlConstants.NAMEIDENTIFIER_ENTITY);
         final String customIssuerNameQualifier = "Custom Name Qualifier";
         opts.setCustomIssuerNameQualifier(customIssuerNameQualifier);
 

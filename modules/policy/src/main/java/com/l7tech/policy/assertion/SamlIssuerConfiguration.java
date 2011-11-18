@@ -13,14 +13,14 @@ import java.util.EnumSet;
  */
 public interface SamlIssuerConfiguration {
 
-    String getCustomizedIssuerValue();
-    void setCustomizedIssuerValue(@Nullable String customizedIssuerValue);
+    String getCustomIssuerValue();
+    void setCustomIssuerValue(@Nullable String customIssuerValue);
 
-    String getCustomizedIssuerNameFormat();
-    void setCustomizedIssuerNameFormat(@Nullable String customizedIssuerNameFormat);
+    String getCustomIssuerFormat();
+    void setCustomIssuerFormat(@Nullable String customIssuerFormat);
 
-    String getCustomizedIssuerNameQualifier();
-    void setCustomizedIssuerNameQualifier(@Nullable String customizedIssuerNameQualifier);
+    String getCustomIssuerNameQualifier();
+    void setCustomIssuerNameQualifier(@Nullable String customIssuerNameQualifier);
 
     boolean isSignAssertion();
     void setSignAssertion(boolean selected);

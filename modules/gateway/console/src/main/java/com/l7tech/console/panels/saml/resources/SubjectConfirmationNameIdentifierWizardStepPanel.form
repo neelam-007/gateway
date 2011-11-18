@@ -92,7 +92,7 @@
             </constraints>
             <properties>
               <labelFor value="e5470"/>
-              <text value="Name &amp;Qualifier"/>
+              <text value="Name &amp;Qualifier:"/>
             </properties>
           </component>
           <component id="e5470" class="javax.swing.JTextField" binding="nameQualifierTextField">
