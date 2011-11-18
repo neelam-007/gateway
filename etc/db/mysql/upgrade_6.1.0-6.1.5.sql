@@ -51,7 +51,7 @@ ALTER TABLE jms_endpoint ADD COLUMN request_max_size bigint NOT NULL default -1 
 --
 INSERT INTO cluster_properties
     (objectid, version, propkey, propvalue)
-    values (-600200, 0, "upgrade.task.600200", "com.l7tech.server.upgrade.Upgrade61to62UpdateGatewayManagementWsdl");
+    values (-600150, 0, "upgrade.task.600150", "com.l7tech.server.upgrade.Upgrade61to615UpdateGatewayManagementWsdl");
 
 --
 -- Add generic "properties" field for a persistent identity
@@ -79,7 +79,7 @@ INSERT INTO rbac_permission VALUES (-814,0,-800,'READ',NULL,'EMAIL_LISTENER');
 --
 INSERT INTO cluster_properties
     (objectid, version, propkey, propvalue)
-    values (-600201, 0, "upgrade.task.600201", "com.l7tech.server.upgrade.Upgrade61To62AddRoles");
+    values (-600151, 0, "upgrade.task.600151", "com.l7tech.server.upgrade.Upgrade61To615AddRoles");
 
 --
 -- Update audit viewing role name and description

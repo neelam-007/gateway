@@ -16,8 +16,8 @@ import static com.l7tech.objectmodel.EntityType.LOG_SINK;
 /**
  * A database upgrade task that adds roles to the database.
  */
-public class Upgrade61To62AddRoles implements UpgradeTask {
-    private static final Logger logger = Logger.getLogger(Upgrade61To62AddRoles.class.getName());
+public class Upgrade61To615AddRoles implements UpgradeTask {
+    private static final Logger logger = Logger.getLogger(Upgrade61To615AddRoles.class.getName());
     private ApplicationContext applicationContext;
 
     /**
