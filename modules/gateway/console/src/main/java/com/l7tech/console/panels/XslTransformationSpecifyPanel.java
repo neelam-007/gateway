@@ -24,14 +24,12 @@ import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
+import org.apache.xml.utils.DefaultErrorHandler;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
-import javax.xml.transform.Source;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.URIResolver;
+import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamSource;
 import java.awt.*;
@@ -340,11 +338,12 @@ public class XslTransformationSpecifyPanel extends JPanel {
     private static void docIsXsl(Document doc) throws SAXException {
         try {
             TransformerFactory tf = TransformerFactory.newInstance();
+            tf.setErrorListener(new DefaultErrorHandler(true));
             tf.setURIResolver( new URIResolver(){
                 public Source resolve( String href, String base ) throws TransformerException {
                     return new StreamSource(new StringReader("<a xsl:version=\"1.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\"/>"));
                 }
-            } );            
+            } );
             tf.newTemplates(new DOMSource(XmlUtil.parse(new StringReader(XmlUtil.nodeToString(doc)), false)));
         } catch (Exception e) {
             throw new SAXException("Document is not valid XSLT: " + ExceptionUtils.getMessage(e), e);
