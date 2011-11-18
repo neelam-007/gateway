@@ -187,6 +187,8 @@ public abstract class WizardStepPanel<ST> extends JPanel {
      * the default data or already-modified settings. This is a
      * no-op version that subclasses implement.
      *
+     * This method is called every time the step is displayed.
+     *
      * @param settings the object representing wizard panel state
      * @throws IllegalArgumentException if the the data provided
      *                                  by the wizard are not valid.
@@ -225,6 +227,8 @@ public abstract class WizardStepPanel<ST> extends JPanel {
      * by this method.
      * <p/>
      * This is a no-op version that subclasses implement.
+     *
+     * This method is called every time the step is displayed.
      *
      * @param settings the object representing wizard panel state
      * @throws IllegalArgumentException if the the data provided

@@ -7,6 +7,8 @@ import com.l7tech.util.SoapConstants;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 import org.apache.xmlbeans.XmlString;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.w3.x2000.x09.xmldsig.KeyInfoType;
 import org.w3.x2000.x09.xmldsig.X509DataType;
 import org.w3.x2000.x09.xmldsig.X509IssuerSerialType;
@@ -19,49 +21,26 @@ import java.net.InetAddress;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * SAML Assertion Generator for SAML 1.x assertions.
  *
  * <p>This code is moved from the SamlAssertionGenerator.</p>
  */
-class SamlAssertionGeneratorSaml1 {
+class SamlAssertionGeneratorSaml1 extends SamlVersionAssertionGenerator{
 
-    //- PACKAGE
+    //- PUBLIC
 
-    Document createStatementDocument(SubjectStatement subjectStatement, SamlAssertionGenerator.Options options, String caDn) throws SignatureException, CertificateException  {
-        return assertionToDocument(createXmlBeansAssertion(subjectStatement, options, caDn));
-    }
-
-    Document createStatementDocument(SubjectStatement[] subjectStatements, SamlAssertionGenerator.Options options, String caDn) throws SignatureException, CertificateException  {
+    @Override
+    public Document createStatementDocument(@NotNull final SamlAssertionGenerator.Options options,
+                                            @Nullable final String caDn,
+                                            @NotNull final SubjectStatement... subjectStatements)
+            throws SignatureException, CertificateException, IllegalStateException {
         return assertionToDocument(createXmlBeansAssertion(subjectStatements, options, caDn));
     }
 
     //- PRIVATE
-
-    /**
-     * Create the statement depending on the SubjectStatement subclass and populating the subject
-     *
-     * @param subjectStatement the subject statament subclass (authenticatiom, authorization, attribute
-     *                         statement
-     * @param options          the options, with expiry minutes
-     * @return the assertion type containing the requested statement
-     * @throws java.security.cert.CertificateException
-     */
-    private AssertionType createXmlBeansAssertion(SubjectStatement subjectStatement, SamlAssertionGenerator.Options options, String caDn)
-      throws CertificateException {
-        Calendar now = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
-        AssertionType assertionType = getGenericAssertion(
-                now, options.getNotAfterSeconds(),
-                options.getId() != null ? options.getId() : SamlAssertionGenerator.generateAssertionId(null),
-                caDn, options.getNotBeforeSeconds(), options.getAudienceRestriction());
-        buildSubjectStatement( subjectStatement, options, assertionType );
-        return assertionType;
-    }
 
     private void buildSubjectStatement( final SubjectStatement subjectStatement,
                                         final SamlAssertionGenerator.Options options,
@@ -118,23 +97,30 @@ class SamlAssertionGeneratorSaml1 {
     }
 
     /**
-     * Create the statement depending on the SubjectStatement subclass and populating the subject
+     * Create an SAML Assertion containing Subject Statements for those supplied. This method converts our
+     * internal SAML version independent configuration model into the XML beans types created from the SAML schemas.
      *
-     * @param subjectStatements the subject statament subclasses (authenticatiom, authorization, attribute statement
-     * @param options          the options, with expiry minutes
+     * @param subjectStatements the subject statement subclass (authentication, authorization, attribute)
+     * @param options    the options, with expiry minutes
+     * @param caDn public certs dn. May be null if custom issuer from options should be used.
      * @return the assertion type containing the requested statement
-     * @throws java.security.cert.CertificateException
+     * @throws CertificateException if problem with signing.
      */
-    private AssertionType createXmlBeansAssertion(SubjectStatement[] subjectStatements,
-                                                  SamlAssertionGenerator.Options options,
-                                                  String caDn)
+    private AssertionType createXmlBeansAssertion(@NotNull SubjectStatement[] subjectStatements,
+                                                  @NotNull SamlAssertionGenerator.Options options,
+                                                  @Nullable String caDn)
       throws CertificateException
     {
         Calendar now = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
+        final String issuer = (caDn != null) ? getSubjectCn(caDn) : options.getCustomIssuer();
+        if (issuer == null) {
+            throw new IllegalStateException("No issuer configured"); // coding error
+        }
+
         AssertionType assertionType = getGenericAssertion(
                 now, options.getNotAfterSeconds(),
                 options.getId() != null ? options.getId() : SamlAssertionGenerator.generateAssertionId(null),
-                caDn, options.getNotBeforeSeconds(), options.getAudienceRestriction());
+                issuer, options.getNotBeforeSeconds(), options.getAudienceRestriction());
 
         for (SubjectStatement subjectStatement : subjectStatements) {
             buildSubjectStatement( subjectStatement, options, assertionType );
@@ -219,14 +205,12 @@ class SamlAssertionGeneratorSaml1 {
         }
     }
 
-    private AssertionType getGenericAssertion( final Calendar now,
+    private AssertionType getGenericAssertion( @NotNull final Calendar now,
                                                final int expirySeconds,
-                                               final String assertionId,
-                                               final String caDn,
+                                               @Nullable final String assertionId,
+                                               @NotNull final String issuer,
                                                final int beforeOffsetSeconds,
-                                               final Iterable<String> audienceRestriction ) {
-        final Map caMap = CertUtils.dnToAttributeMap(caDn);
-        final String caCn = (String)((List)caMap.get("CN")).get(0);
+                                               @Nullable final Iterable<String> audienceRestriction ) {
 
         final AssertionType assertion = AssertionType.Factory.newInstance();
 
@@ -236,7 +220,7 @@ class SamlAssertionGeneratorSaml1 {
             assertion.setAssertionID(SamlAssertionGenerator.generateAssertionId(null));
         else
             assertion.setAssertionID(assertionId);
-        assertion.setIssuer(caCn);
+        assertion.setIssuer(issuer);
         assertion.setIssueInstant(now);
 
         if ( beforeOffsetSeconds > -1 ||

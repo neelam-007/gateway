@@ -21,8 +21,9 @@ public class SquigglyFieldUtils {
      *
      * @param squigglyTextField field to validate and manage UI state for.
      * @param textSplitPattern if not null, the pattern will be applied to the contents of the field.
-     * @param validateFunction function to validate contents. If splitPatter was supplied, then this function will be
-     * called once for each value after conents of text field are split.
+     * @param validateFunction function to validate contents. If textSplitPattern was supplied, then this function will be
+     * called once for each value after contents of text field are split. validateFunction should return null when there
+     * are no errors with the resolved string value.
      * @return true if the field contains no validation errors.
      */
     public static boolean validateSquigglyTextFieldState(@NotNull final SquigglyTextField squigglyTextField,
@@ -58,6 +59,11 @@ public class SquigglyFieldUtils {
         return !invalid;
     }
 
+    public static boolean validateSquigglyTextFieldState(@NotNull final SquigglyTextField squigglyTextField,
+                                                         @NotNull final Functions.Unary<String, String> validateFunction) {
+        return validateSquigglyTextFieldState(squigglyTextField, null, validateFunction);
+    }
+
     /**
      * Convenience method to validate URIs contained in a text field. Variable references are allowed and are validated.
      *
@@ -77,6 +83,27 @@ public class SquigglyFieldUtils {
                                     return "Invalid URI: '" + s + "'";
                                 }
                             }
+                        } catch (VariableNameSyntaxException e) {
+                            return "Invalid variable reference '" + s + "'";
+                        }
+                        return null;
+                    }
+                });
+    }
+
+    /**
+     * Convenience method to validate a SquigglyTextField for variable reference.
+     *
+     * @param squigglyTextField field to validate
+     * @return true if the field contains no invalid variable references
+     */
+    public static boolean validateSquigglyFieldForVariableReference(@NotNull final SquigglyTextField squigglyTextField) {
+        return SquigglyFieldUtils.validateSquigglyTextFieldState(squigglyTextField,
+                new Functions.Unary<String, String>() {
+                    @Override
+                    public String call(String s) {
+                        try {
+                            Syntax.getReferencedNames(s);
                         } catch (VariableNameSyntaxException e) {
                             return "Invalid variable reference '" + s + "'";
                         }

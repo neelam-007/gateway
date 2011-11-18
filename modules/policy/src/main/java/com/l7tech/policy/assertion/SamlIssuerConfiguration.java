@@ -2,6 +2,7 @@ package com.l7tech.policy.assertion;
 
 import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.xml.KeyInfoInclusionType;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.EnumSet;
 
@@ -11,6 +12,15 @@ import java.util.EnumSet;
  * @author jbufu
  */
 public interface SamlIssuerConfiguration {
+
+    String getCustomizedIssuerValue();
+    void setCustomizedIssuerValue(@Nullable String customizedIssuerValue);
+
+    String getCustomizedIssuerNameFormat();
+    void setCustomizedIssuerNameFormat(@Nullable String customizedIssuerNameFormat);
+
+    String getCustomizedIssuerNameQualifier();
+    void setCustomizedIssuerNameQualifier(@Nullable String customizedIssuerNameQualifier);
 
     boolean isSignAssertion();
     void setSignAssertion(boolean selected);
@@ -28,10 +38,10 @@ public interface SamlIssuerConfiguration {
     void setNameIdentifierType(NameIdentifierInclusionType fromCreds);
 
     String getNameIdentifierValue();
-    void setNameIdentifierValue(String text);
+    void setNameIdentifierValue(@Nullable String text);
 
     String getNameIdentifierFormat();
-    void setNameIdentifierFormat(String s);
+    void setNameIdentifierFormat(@Nullable String s);
 
     int getConditionsNotBeforeSecondsInPast();
     void setConditionsNotBeforeSecondsInPast(int seconds);

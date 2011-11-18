@@ -45,8 +45,8 @@ public class SamlAssertionGenerator {
     private static final String DEFAULT_PREFIX = "SamlAssertion";
     private static final SecureRandom random = new SecureRandom();
     private final SignerInfo assertionSigner;
-    private final SamlAssertionGeneratorSaml1 sag1;
-    private final SamlAssertionGeneratorSaml2 sag2;
+    private final SamlVersionAssertionGenerator sag1;
+    private final SamlVersionAssertionGenerator sag2;
     private static final IndentConfig nullIndentConfig = new IndentConfig() {
         @Override
         public boolean doIndentation() {
@@ -84,38 +84,31 @@ public class SamlAssertionGenerator {
      */
     public Document createAssertion(SubjectStatement subjectStatement, Options options)
             throws SignatureException, CertificateException, UnrecoverableKeyException {
-        final String caDn = assertionSigner.getCertificateChain()[0].getSubjectDN().getName();
-
-        Document doc = options.getVersion()==Options.VERSION_1 ?
-                sag1.createStatementDocument(subjectStatement, options, caDn) :
-                sag2.createStatementDocument(subjectStatement, options, caDn);
-
-        if (options.isSignAssertion()) signAssertion(
-                options,
-                doc,
-                assertionSigner.getPrivate(),
-                assertionSigner.getCertificateChain(),
-                options.getIssuerKeyInfoType());
-        return doc;
+        return createAssertion(new SubjectStatement[]{subjectStatement}, options);
     }
 
     /**
-     * Create and return the SAML Authentication Statement assertion The SAML assertion
+     * Create and return the SAML Authentication Statement assertion. The SAML assertion
      * is signed by assertion signer in this Assertion Generator.
      *
-     * @param statements the Subject Statement(s) to include in the assertion
+     * @param subjectStatements the Subject Statement(s) to include in the assertion
      * @param options the options
      * @return the holder of key assertion for the
      * @throws SignatureException   on signature related error
      * @throws CertificateException on certificate error
+     * @throws java.security.UnrecoverableKeyException on key exception
      */
-    public Document createAssertion(SubjectStatement[] statements, Options options)
+    public Document createAssertion(SubjectStatement[] subjectStatements, Options options)
             throws SignatureException, CertificateException, UnrecoverableKeyException {
-        final String caDn = assertionSigner.getCertificateChain()[0].getSubjectDN().getName();
+
+        final String customIssuer = options.getCustomIssuer();
+        // Only create caDn as non null when customIssuer is null.
+        final String caDn = (customIssuer != null) ?
+                null : assertionSigner.getCertificateChain()[0].getSubjectDN().getName();
 
         Document doc = options.getVersion()==Options.VERSION_1 ?
-                sag1.createStatementDocument(statements, options, caDn) :
-                sag2.createStatementDocument(statements, options, caDn);
+                sag1.createStatementDocument(options, caDn, subjectStatements) :
+                sag2.createStatementDocument(options, caDn, subjectStatements);
 
         if (options.isSignAssertion()) signAssertion(
                 options,
@@ -131,23 +124,23 @@ public class SamlAssertionGenerator {
      * is signed by assertion signer in this Assertion Generator.
      *
      * @param document the soap message the subject the statement is about
-     * @param subject  the subject the statement is about
+     * @param subjectStatement  the subject the statement is about
      * @param options  the options
      * @return the document representing the authentication assertion
      * @throws SignatureException   on signature related error
      * @throws CertificateException on certificate error
      */
-    public Document attachStatement(Document document, SubjectStatement subject, Options options)
+    public Document attachStatement(Document document, SubjectStatement subjectStatement, Options options)
             throws SignatureException, CertificateException, UnrecoverableKeyException {
         final String caDn = assertionSigner.getCertificateChain()[0].getSubjectDN().getName();
 
         Document doc = options.getVersion()==Options.VERSION_1 ?
-                sag1.createStatementDocument(subject, options, caDn) :
-                sag2.createStatementDocument(subject, options, caDn);
+                sag1.createStatementDocument(options, caDn, subjectStatement) :
+                sag2.createStatementDocument(options, caDn, subjectStatement);
 
         // sign only if requested and if the confirmation is holder of key.
         // according to WSS SAML interop scenarios the sender vouches is not signed
-        if (options.isSignAssertion() && subject.isConfirmationHolderOfKey()) {
+        if (options.isSignAssertion() && subjectStatement.isConfirmationHolderOfKey()) {
             signAssertion(options,
                     doc,
                     assertionSigner.getPrivate(),
@@ -499,6 +492,33 @@ public class SamlAssertionGenerator {
             this.subjectConfirmationDataNotOnOrAfterExpirySeconds = subjectConfirmationDataNotOnOrAfterExpirySeconds;
         }
 
+        @Nullable
+        public String getCustomIssuer() {
+            return customIssuer;
+        }
+
+        public void setCustomIssuer(String customIssuer) {
+            this.customIssuer = customIssuer;
+        }
+
+        @Nullable
+        public String getCustomIssuerNameFormatUri() {
+            return customIssuerNameFormatUri;
+        }
+
+        public void setCustomIssuerNameFormatUri(String customIssuerNameFormatUri) {
+            this.customIssuerNameFormatUri = customIssuerNameFormatUri;
+        }
+
+        @Nullable
+        public String getCustomIssuerNameQualifier() {
+            return customIssuerNameQualifier;
+        }
+
+        public void setCustomIssuerNameQualifier(String customIssuerNameQualifier) {
+            this.customIssuerNameQualifier = customIssuerNameQualifier;
+        }
+
         private KeyInfoInclusionType issuerKeyInfoType = KeyInfoInclusionType.CERT;
         private boolean proofOfPosessionRequired = true;
         private int notBeforeSeconds = DEFAULT_NOT_BEFORE_SECONDS;
@@ -516,6 +536,9 @@ public class SamlAssertionGenerator {
         private String subjectConfirmationDataInResponseTo;
         private int subjectConfirmationDataNotBeforeSecondsInPast = -1;
         private int subjectConfirmationDataNotOnOrAfterExpirySeconds = -1;
+        private String customIssuer;
+        private String customIssuerNameFormatUri;
+        private String customIssuerNameQualifier;
     }
 
     static final int DEFAULT_NOT_BEFORE_SECONDS = 120;

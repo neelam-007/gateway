@@ -236,6 +236,10 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
         options.setSubjectConfirmationDataNotBeforeSecondsInPast( assertion.getSubjectConfirmationDataNotBeforeSecondsInPast() );
         options.setSubjectConfirmationDataNotOnOrAfterExpirySeconds( assertion.getSubjectConfirmationDataNotOnOrAfterExpirySeconds() );
 
+        options.setCustomIssuer(nullSafeExpand(assertion.getCustomizedIssuerValue(), vars));
+        options.setCustomIssuerNameQualifier(nullSafeExpand(assertion.getCustomizedIssuerNameQualifier(), vars));
+        options.setCustomIssuerNameFormatUri(assertion.getCustomizedIssuerNameFormat());
+
         try {
             final Element assertionEl = samlAssertionGenerator.createAssertion(statements.toArray(new SubjectStatement[statements.size()]), options).getDocumentElement();
             context.setVariable("issuedSamlAssertion", XmlUtil.nodeToString(assertionEl));

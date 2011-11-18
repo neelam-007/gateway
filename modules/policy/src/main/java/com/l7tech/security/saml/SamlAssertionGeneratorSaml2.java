@@ -7,6 +7,8 @@ import com.l7tech.util.SoapConstants;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 import org.apache.xmlbeans.XmlString;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.w3.x2000.x09.xmldsig.KeyInfoType;
 import org.w3.x2000.x09.xmldsig.X509DataType;
 import org.w3.x2000.x09.xmldsig.X509IssuerSerialType;
@@ -22,83 +24,24 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Calendar;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
  * SAML Assertion Generator for SAML 2.x assertions.
  */
-public class SamlAssertionGeneratorSaml2 {
-    //- PACKAGE
+class SamlAssertionGeneratorSaml2 extends SamlVersionAssertionGenerator {
 
-    Document createStatementDocument(SubjectStatement subjectStatement, SamlAssertionGenerator.Options options, String caDn) throws SignatureException, CertificateException  {
-        return assertionToDocument(createStatementType(subjectStatement, options, caDn));
+    //- PUBLIC
+
+    @Override
+    public Document createStatementDocument(@NotNull final SamlAssertionGenerator.Options options,
+                                            @Nullable final String caDn,
+                                            @NotNull final SubjectStatement ... subjectStatements)
+            throws SignatureException, CertificateException, IllegalStateException {
+        return assertionToDocument(createXmlBeansAssertion(subjectStatements, options, caDn));
     }
 
     //- PRIVATE
-
-    /**
-     * Create the statement depending on the SubjectStatement subclass and populating the subject
-     *
-     * @param subjectStatement the subject statament subclass (authenticatiom, authorization, attribute
-     *                         statement
-     * @param options          the options, with expiry minutes
-     * @return the assertion type containing the requested statement
-     * @throws CertificateEncodingException
-     */
-    private AssertionType createStatementType(SubjectStatement subjectStatement,
-                                              SamlAssertionGenerator.Options options,
-                                              String caDn) throws CertificateException {
-        Calendar now = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
-        AssertionType assertionType = getGenericAssertion(
-                now, options.getNotAfterSeconds(),
-                options.getId() != null ? options.getId() : SamlAssertionGenerator.generateAssertionId(null),
-                caDn, options.getNotBeforeSeconds(), options.getAudienceRestriction());
-        final SubjectType subjectStatementAbstractType = assertionType.addNewSubject();
-
-        if (subjectStatement instanceof AuthenticationStatement) {
-            AuthenticationStatement authenticationStatement = (AuthenticationStatement) subjectStatement;
-            AuthnStatementType as = assertionType.addNewAuthnStatement();
-            as.setAuthnInstant(authenticationStatement.getAuthenticationInstant());
-
-            addAuthenticationMethod( authenticationStatement, as );
-
-            InetAddress clientAddress = options.getClientAddress();
-            if (clientAddress != null) {
-                final SubjectLocalityType subjectLocality = as.addNewSubjectLocality();
-                subjectLocality.setAddress(clientAddress.getHostAddress());
-                if ( options.isClientAddressDNS() )
-                    subjectLocality.setDNSName(clientAddress.getCanonicalHostName());
-            }
-        } else if (subjectStatement instanceof AuthorizationStatement) {
-            AuthorizationStatement as = (AuthorizationStatement)subjectStatement;
-            AuthzDecisionStatementType atzStatement = assertionType.addNewAuthzDecisionStatement();
-            atzStatement.setResource(as.getResource());
-            atzStatement.setDecision(DecisionType.PERMIT);
-            if (as.getAction() != null) {
-                ActionType actionType = atzStatement.addNewAction();
-                actionType.setStringValue(as.getAction());
-                if (as.getActionNamespace() != null) {
-                    actionType.setNamespace(as.getActionNamespace());
-                }
-            }
-        } else if (subjectStatement instanceof AttributeStatement) {
-            AttributeStatement as = (AttributeStatement)subjectStatement;
-            AttributeStatementType attStatement = assertionType.addNewAttributeStatement();
-            for (Attribute attribute : as.getAttributes()) {
-                AttributeType attributeType = attStatement.addNewAttribute();
-                attributeType.setName(attribute.getName());
-                attributeType.setNameFormat(attribute.getNamespace());
-                XmlString stringValue = XmlString.Factory.newValue(attribute.getValue());
-                attributeType.setAttributeValueArray(new XmlObject[]{stringValue});
-            }
-        } else {
-            throw new IllegalArgumentException("Unknown statement class " + subjectStatement.getClass());
-        }
-
-        populateSubjectStatement(subjectStatementAbstractType, subjectStatement, caDn, options);
-        return assertionType;
-    }
 
     /**
      * Populate the subject statement assertion properties such as subject name, name qualifier
@@ -228,14 +171,14 @@ public class SamlAssertionGeneratorSaml2 {
         }
     }
 
-    private AssertionType getGenericAssertion( final Calendar now,
-                                               final int expirySeconds,
-                                               final String assertionId,
-                                               final String caDn,
-                                               final int beforeOffsetSeconds,
-                                               final Iterable<String> audienceRestriction ) {
-        final Map caMap = CertUtils.dnToAttributeMap(caDn);
-        final String caCn = (String)((List)caMap.get("CN")).get(0);
+    private AssertionType getGenericAssertion(@NotNull final Calendar now,
+                                              final int expirySeconds,
+                                              @Nullable final String assertionId,
+                                              @NotNull final String issuer,
+                                              @Nullable final String issuerNameFormat,
+                                              @Nullable final String issuerNameQualifier,
+                                              final int beforeOffsetSeconds,
+                                              @Nullable final Iterable<String> audienceRestriction) {
 
         final AssertionType assertion = AssertionType.Factory.newInstance(getXmlOptions());
 
@@ -246,9 +189,18 @@ public class SamlAssertionGeneratorSaml2 {
             assertion.setID(assertionId);
         assertion.setIssueInstant(now);
 
-        final NameIDType issuer = NameIDType.Factory.newInstance(getXmlOptions());
-        issuer.setStringValue(caCn);
-        assertion.setIssuer(issuer);
+        final NameIDType issuerNameIdType = NameIDType.Factory.newInstance(getXmlOptions());
+        issuerNameIdType.setStringValue(issuer);
+
+        if (issuerNameFormat != null) {
+            issuerNameIdType.setFormat(issuerNameFormat);
+        }
+
+        if (issuerNameQualifier != null) {
+            issuerNameIdType.setNameQualifier(issuerNameQualifier);
+        }
+
+        assertion.setIssuer(issuerNameIdType);
 
         if ( beforeOffsetSeconds > -1 ||
              expirySeconds > -1 ||
@@ -356,38 +308,54 @@ public class SamlAssertionGeneratorSaml2 {
         }
     }
 
-    public Document createStatementDocument(SubjectStatement[] statements, SamlAssertionGenerator.Options options, String caDn) throws CertificateException {
-        return assertionToDocument(createXmlBeansAssertion(statements, options, caDn));
-    }
+    /**
+     * Create an SAML Assertion containing Subject Statements for those supplied. This method converts our
+     * internal SAML version independent configuration model into the XML beans types created from the SAML schemas.
+     *
+     * @param subjectStatements the subject statement subclass (authentication, authorization, attribute)
+     * @param options    the options, with expiry minutes
+     * @param caDn public certs dn. May be null if custom issuer from options should be used.
+     * @return the assertion type containing the requested statement
+     * @throws CertificateEncodingException if problem with signing.
+     */
+    private AssertionType createXmlBeansAssertion(@NotNull final SubjectStatement[] subjectStatements,
+                                                  @NotNull final SamlAssertionGenerator.Options options,
+                                                  @Nullable final String caDn) throws CertificateException {
+        final String issuer = (caDn != null) ? getSubjectCn(caDn) : options.getCustomIssuer();
+        if (issuer == null) {
+            throw new IllegalStateException("No issuer configured"); // coding error
+        }
 
-    private AssertionType createXmlBeansAssertion(SubjectStatement[] statements, SamlAssertionGenerator.Options options, String caDn) throws CertificateException {
+        final String nameFormatUri = options.getCustomIssuerNameFormatUri();
+        final String nameQualifier = options.getCustomIssuerNameQualifier();
+
         Calendar now = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
         AssertionType assertionType = getGenericAssertion(
                 now, options.getNotAfterSeconds(),
                 options.getId() != null ? options.getId() : SamlAssertionGenerator.generateAssertionId(null),
-                caDn, options.getNotBeforeSeconds(), options.getAudienceRestriction()
+                issuer, nameFormatUri, nameQualifier, options.getNotBeforeSeconds(), options.getAudienceRestriction()
         );
         final SubjectType subjectStatementAbstractType = assertionType.addNewSubject();
 
-        populateSubjectStatement(subjectStatementAbstractType, statements[0], caDn, options);
+        populateSubjectStatement(subjectStatementAbstractType, subjectStatements[0], caDn, options);
 
-        for (SubjectStatement subjectStatement : statements) {
+        for (SubjectStatement subjectStatement : subjectStatements) {
             if (subjectStatement instanceof AuthenticationStatement) {
                 AuthenticationStatement authenticationStatement = (AuthenticationStatement) subjectStatement;
                 AuthnStatementType as = assertionType.addNewAuthnStatement();
                 as.setAuthnInstant(authenticationStatement.getAuthenticationInstant());
 
-                addAuthenticationMethod( authenticationStatement, as );
+                addAuthenticationMethod(authenticationStatement, as);
 
                 InetAddress clientAddress = options.getClientAddress();
                 if (clientAddress != null) {
                     final SubjectLocalityType subjectLocality = as.addNewSubjectLocality();
                     subjectLocality.setAddress(clientAddress.getHostAddress());
-                    if ( options.isClientAddressDNS() )
+                    if (options.isClientAddressDNS())
                         subjectLocality.setDNSName(clientAddress.getCanonicalHostName());
                 }
             } else if (subjectStatement instanceof AuthorizationStatement) {
-                AuthorizationStatement as = (AuthorizationStatement)subjectStatement;
+                AuthorizationStatement as = (AuthorizationStatement) subjectStatement;
                 AuthzDecisionStatementType atzStatement = assertionType.addNewAuthzDecisionStatement();
                 atzStatement.setResource(as.getResource());
                 atzStatement.setDecision(DecisionType.PERMIT);
@@ -399,7 +367,7 @@ public class SamlAssertionGeneratorSaml2 {
                     }
                 }
             } else if (subjectStatement instanceof AttributeStatement) {
-                AttributeStatement as = (AttributeStatement)subjectStatement;
+                AttributeStatement as = (AttributeStatement) subjectStatement;
                 AttributeStatementType attStatement = assertionType.addNewAttributeStatement();
                 Attribute[] attributes = as.getAttributes();
                 for (Attribute attribute : attributes) {
