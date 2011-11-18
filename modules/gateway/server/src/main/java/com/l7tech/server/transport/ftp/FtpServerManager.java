@@ -1,15 +1,18 @@
 package com.l7tech.server.transport.ftp;
 
+import com.l7tech.gateway.common.*;
+import com.l7tech.gateway.common.Component;
+import static com.l7tech.gateway.common.transport.SsgConnector.*;
+import static com.l7tech.server.GatewayFeatureSets.SERVICE_FTP_MESSAGE_INPUT;
+import com.l7tech.server.event.system.ReadyForMessages;
+import static com.l7tech.util.CollectionUtils.caseInsensitiveSet;
 import com.l7tech.util.Config;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.gateway.common.LicenseManager;
-import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.*;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.SsgConnectorManager;
@@ -17,6 +20,8 @@ import com.l7tech.server.transport.TransportModule;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
+import static com.l7tech.util.Pair.pair;
 import org.apache.ftpserver.ConfigurableFtpServerContext;
 import org.apache.ftpserver.FtpServer;
 import org.apache.ftpserver.FtpSessionImpl;
@@ -31,6 +36,7 @@ import org.apache.ftpserver.listener.ConnectionManager;
 import org.apache.ftpserver.listener.Listener;
 import org.apache.ftpserver.listener.mina.MinaConnection;
 import org.apache.mina.common.support.BaseIoSession;
+import org.springframework.context.ApplicationEvent;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,6 +55,7 @@ public class FtpServerManager extends TransportModule {
     //- PUBLIC
 
     public FtpServerManager(final Config config,
+                            final GatewayState gatewayState,
                             final MessageProcessor messageProcessor,
                             final SoapFaultManager soapFaultManager,
                             final StashManagerFactory stashManagerFactory,
@@ -58,14 +65,33 @@ public class FtpServerManager extends TransportModule {
                             final SsgConnectorManager ssgConnectorManager,
                             final EventChannel messageProcessingEventChannel,
                             final Timer timer) {
-        super("FTP Server Manager", logger, GatewayFeatureSets.SERVICE_FTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager, trustedCertServices, defaultKeystore, config );
-
+        super("FTP Server Manager", Component.GW_FTPSERVER, logger, SERVICE_FTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager, trustedCertServices, defaultKeystore, config );
+        this.gatewayState = gatewayState;
         this.messageProcessor = messageProcessor;
         this.soapFaultManager = soapFaultManager;
         this.stashManagerFactory = stashManagerFactory;
-        this.ssgConnectorManager = ssgConnectorManager;
         this.messageProcessingEventChannel = messageProcessingEventChannel;
         this.timer = timer;
+    }
+
+    @Override
+    public void onApplicationEvent( final ApplicationEvent applicationEvent ) {
+        if (TransportModule.isEventIgnorable(applicationEvent)) {
+            return;
+        }
+
+        super.onApplicationEvent(applicationEvent);
+
+        if (!isStarted())
+            return;
+
+        if (applicationEvent instanceof ReadyForMessages && ftpServers.isEmpty()) {
+            try {
+                startInitialConnectors();
+            } catch (LifecycleException e) {
+                auditError( "FTP(S)", "Error during startup.", e );
+            }
+        }
     }
 
     //- PROTECTED
@@ -77,7 +103,7 @@ public class FtpServerManager extends TransportModule {
             public void run() {
                 updateControlConnectionAccessTimes();
             }
-        }, 30000, 30000 );
+        }, 30000L, 30000L );
     }
 
     @Override
@@ -98,26 +124,26 @@ public class FtpServerManager extends TransportModule {
         removeConnector(connector.getOid());
         if (!connectorIsOwnedByThisModule(connector))
             return;
-        FtpServer ftpServer = createFtpServer(connector);
-        auditStart(connector);
+        final FtpServer ftpServer = createFtpServer(connector);
+        auditStart( connector.getScheme(), describe( connector ) );
         try {
             ftpServer.start();
-            ftpServers.put(connector.getOid(), ftpServer);
+            ftpServers.put(connector.getOid(), pair(connector,ftpServer));
         } catch (Exception e) {
-            throw new ListenerException("Unable to start FTP server " + toString(connector) + ": " + ExceptionUtils.getMessage(e), e);
+            throw new ListenerException("Unable to start FTP server " + describe( connector ) + ": " + ExceptionUtils.getMessage(e), e);
         }
     }
 
     @Override
     protected void removeConnector(long oid) {
-        FtpServer ftpServer = ftpServers.remove(oid);
+        Pair<SsgConnector,FtpServer> ftpServer = ftpServers.remove(oid);
         if (ftpServer == null)
             return;
 
-        String listener = "connector OID " + oid;
-        auditStop(listener);
+        String listener = describe( ftpServer.left );
+        auditStop( ftpServer.left.getScheme(), listener);
         try {
-            ftpServer.stop();
+            ftpServer.right.stop();
         } catch (Exception e) {
             logger.log(Level.WARNING, "Error stopping FTP server for " + listener + ": " + ExceptionUtils.getMessage(e), e);
         }
@@ -134,9 +160,11 @@ public class FtpServerManager extends TransportModule {
         // refresh is completed
         try {
             registerProtocols();
-            startInitialConnectors();
+            if (gatewayState.isReadyForMessages()) {
+                startInitialConnectors();
+            }
         } catch(Exception e) {
-            auditError("Error during startup.", e);
+            auditError("FTP(S)", "Error during startup.", e);
         }
     }
 
@@ -151,7 +179,7 @@ public class FtpServerManager extends TransportModule {
             }
         }
         catch(Exception e) {
-            auditError("Error while shutting down.", e);
+            auditError("FTP(S)", "Error while shutting down.", e);
         }
     }
 
@@ -163,15 +191,14 @@ public class FtpServerManager extends TransportModule {
     private static final String SSL_PROPS = "com/l7tech/server/transport/ftp/ftpserver-ssl.properties";
     private static final String PROP_FTP_LISTENER = "config.listeners.";
 
-    private final Set<String> schemes = new HashSet<String>(Arrays.asList(SsgConnector.SCHEME_FTP, SsgConnector.SCHEME_FTPS));
+    private final Set<String> schemes = caseInsensitiveSet( SCHEME_FTP, SCHEME_FTPS );
+    private final GatewayState gatewayState;
     private final MessageProcessor messageProcessor;
     private final SoapFaultManager soapFaultManager;
     private final StashManagerFactory stashManagerFactory;
     private final EventChannel messageProcessingEventChannel;
-    private final SsgConnectorManager ssgConnectorManager;
     private final Timer timer;
-    private final Map<Long, FtpServer> ftpServers = new ConcurrentHashMap<Long, FtpServer>();
-    private Auditor auditor;
+    private final Map<Long, Pair<SsgConnector,FtpServer>> ftpServers = new ConcurrentHashMap<Long, Pair<SsgConnector,FtpServer>>();
 
     private int toInt(String str, String name) throws ListenerException {
         try {
@@ -239,8 +266,8 @@ public class FtpServerManager extends TransportModule {
      * @throws com.l7tech.server.transport.ListenerException if there is a problem creating the specified FTP server
      */
     private FtpServer createFtpServer(SsgConnector connector) throws ListenerException {
-        long hardwiredServiceOid = connector.getLongProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, -1);
-        long maxRequestSize = connector.getLongProperty(SsgConnector.PROP_REQUEST_SIZE_LIMIT, -1);
+        long hardwiredServiceOid = connector.getLongProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, -1L);
+        long maxRequestSize = connector.getLongProperty(SsgConnector.PROP_REQUEST_SIZE_LIMIT, -1L);
         String overrideContentTypeStr = connector.getProperty(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE);
         ContentTypeHeader overrideContentType = null;
         try {
@@ -343,42 +370,19 @@ public class FtpServerManager extends TransportModule {
             throw new IllegalStateException("Unexpected Ssl implementation of class: " + ssl.getClass());
     }
 
-    private void auditStart(SsgConnector connector) {
-        getAuditor().logAndAudit(SystemMessages.FTPSERVER_START, toString(connector));
-    }
-
-    private String toString(SsgConnector connector) {
-        return "FTP connector OID " + connector.getOid() + " (control port " + connector.getPort() + ")";
-
-    }
-
-    private void auditStop(String listener) {
-        getAuditor().logAndAudit(SystemMessages.FTPSERVER_STOP, listener);
-    }
-
-    private void auditError(String message, Exception exception) {
-        getAuditor().logAndAudit(SystemMessages.FTPSERVER_ERROR, new String[]{message}, exception);
-    }
-
-    private Auditor getAuditor() {
-        Auditor auditor = this.auditor;
-
-        if (auditor == null) {
-            auditor = new Auditor(this, getApplicationContext(), logger);
-            this.auditor = auditor;
-        }
-
-        return auditor;
+    @Override
+    protected String describe( final SsgConnector connector ) {
+        return connector.getName() + " (#" +connector.getOid() + ",v" + connector.getVersion() + ") on control port " + connector.getPort();
     }
 
     private void registerProtocols() {
-        final TransportDescriptor ftp = new TransportDescriptor("FTP", false);
+        final TransportDescriptor ftp = new TransportDescriptor( SCHEME_FTP, false);
         ftp.setFtpBased(true);
         ftp.setSupportsHardwiredServiceResolution(true);
         ftp.setSupportsSpecifiedContentType(true);
         ssgConnectorManager.registerTransportProtocol(ftp, this);
 
-        final TransportDescriptor ftps = new TransportDescriptor("FTPS", true);
+        final TransportDescriptor ftps = new TransportDescriptor( SCHEME_FTPS, true);
         ftps.setFtpBased(true);
         ftps.setSupportsHardwiredServiceResolution(true);
         ftps.setSupportsSpecifiedContentType(true);
@@ -386,8 +390,8 @@ public class FtpServerManager extends TransportModule {
     }
 
     private void unregisterProtocols() {
-        ssgConnectorManager.unregisterTransportProtocol("FTP");
-        ssgConnectorManager.unregisterTransportProtocol("FTPS");
+        ssgConnectorManager.unregisterTransportProtocol(SCHEME_FTP);
+        ssgConnectorManager.unregisterTransportProtocol(SCHEME_FTPS);
     }
 
     /**
@@ -411,9 +415,9 @@ public class FtpServerManager extends TransportModule {
         }
 
         if ( field != null) {
-            for ( FtpServer server : ftpServers.values() ) {
-                if ( !server.isStopped() && !server.isSuspended() ) {
-                    ConnectionManager cm = server.getServerContext().getConnectionManager();
+            for ( final Pair<SsgConnector,FtpServer> server : ftpServers.values() ) {
+                if ( !server.right.isStopped() && !server.right.isSuspended() ) {
+                    ConnectionManager cm = server.right.getServerContext().getConnectionManager();
                     List<Connection> connections = cm.getAllConnections();
 
                     for ( Connection connection : connections ) {

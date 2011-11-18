@@ -4,15 +4,14 @@ import com.l7tech.external.assertions.ssh.SshCredentialAssertion;
 import com.l7tech.external.assertions.ssh.SshRouteAssertion;
 import com.l7tech.external.assertions.ssh.keyprovider.SshKeyUtil;
 import com.l7tech.external.assertions.ssh.server.keyprovider.PemSshHostKeyProvider;
+import static com.l7tech.gateway.common.Component.GW_SSHRECV;
 import com.l7tech.gateway.common.LicenseManager;
-import com.l7tech.gateway.common.audit.Audit;
-import com.l7tech.gateway.common.audit.AuditFactory;
-import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.*;
+import static com.l7tech.server.GatewayFeatureSets.SERVICE_SSH_MESSAGE_INPUT;
 import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.identity.cert.TrustedCertServices;
@@ -24,6 +23,8 @@ import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.*;
+import static com.l7tech.util.ExceptionUtils.getDebugException;
+import static com.l7tech.util.ExceptionUtils.getMessage;
 import com.l7tech.util.Functions.Unary;
 import org.apache.commons.lang.StringUtils;
 import org.apache.mina.core.session.IoSession;
@@ -147,7 +148,6 @@ public class SshServerModule extends TransportModule implements ApplicationListe
     private final SoapFaultManager soapFaultManager;
     private final StashManagerFactory stashManagerFactory;
     private final Map<Long, Pair<SsgConnector, SshServer>> activeConnectors = new ConcurrentHashMap<Long, Pair<SsgConnector, SshServer>>();
-    private final Audit auditor;
     private final SecurePasswordManager securePasswordManager;
 
     public SshServerModule(ApplicationEventProxy applicationEventProxy,
@@ -161,17 +161,15 @@ public class SshServerModule extends TransportModule implements ApplicationListe
                            StashManagerFactory stashManagerFactory,
                            SoapFaultManager soapFaultManager,
                            EventChannel messageProcessingEventChannel,
-                           AuditFactory auditFactory,
                            SecurePasswordManager securePasswordManager)
     {
-        super("SSH server module", LOGGER, GatewayFeatureSets.SERVICE_SSH_MESSAGE_INPUT, licenseManager, ssgConnectorManager, trustedCertServices, defaultKey, config );
+        super("SSH server module", GW_SSHRECV, LOGGER, SERVICE_SSH_MESSAGE_INPUT, licenseManager, ssgConnectorManager, trustedCertServices, defaultKey, config );
         this.applicationEventProxy = applicationEventProxy;
         this.gatewayState = gatewayState;
         this.messageProcessor = messageProcessor;
         this.messageProcessingEventChannel = messageProcessingEventChannel;
         this.soapFaultManager = soapFaultManager;
         this.stashManagerFactory = stashManagerFactory;
-        this.auditor = auditFactory.newInstance( this, LOGGER);
         this.securePasswordManager = securePasswordManager;
     }
 
@@ -183,34 +181,34 @@ public class SshServerModule extends TransportModule implements ApplicationListe
     }
 
     static SshServerModule createModule(ApplicationContext appContext) {
-        LicenseManager licenseManager = getBean(appContext, "licenseManager", LicenseManager.class);
-        SsgConnectorManager ssgConnectorManager = getBean(appContext, "ssgConnectorManager", SsgConnectorManager.class);
-        TrustedCertServices trustedCertServices = getBean(appContext, "trustedCertServices", TrustedCertServices.class);
-        DefaultKey defaultKey = getBean(appContext, "defaultKey", DefaultKey.class);
-        Config config = getBean(appContext, "serverConfig", ServerConfig.class);
-        GatewayState gatewayState = getBean(appContext, "gatewayState", GatewayState.class);
-        MessageProcessor messageProcessor = getBean(appContext, "messageProcessor", MessageProcessor.class);
-        StashManagerFactory stashManagerFactory = getBean(appContext, "stashManagerFactory", StashManagerFactory.class);
-        ApplicationEventProxy applicationEventProxy = getBean(appContext, "applicationEventProxy", ApplicationEventProxy.class);
-        SoapFaultManager soapFaultManager = getBean(appContext, "soapFaultManager", SoapFaultManager.class);
-        EventChannel messageProcessingEventChannel = getBean(appContext, "messageProcessingEventChannel", EventChannel.class);
-        AuditFactory auditFactory = getBean(appContext, "auditFactory", AuditFactory.class);
-        SecurePasswordManager securePasswordManager = getBean(appContext,"securePasswordManager", SecurePasswordManager.class);
-
-        return new SshServerModule(applicationEventProxy, licenseManager, ssgConnectorManager, trustedCertServices,
+        final LicenseManager licenseManager = getBean(appContext, "licenseManager", LicenseManager.class);
+        final SsgConnectorManager ssgConnectorManager = getBean(appContext, "ssgConnectorManager", SsgConnectorManager.class);
+        final TrustedCertServices trustedCertServices = getBean(appContext, "trustedCertServices", TrustedCertServices.class);
+        final DefaultKey defaultKey = getBean(appContext, "defaultKey", DefaultKey.class);
+        final Config config = getBean(appContext, "serverConfig", ServerConfig.class);
+        final GatewayState gatewayState = getBean(appContext, "gatewayState", GatewayState.class);
+        final MessageProcessor messageProcessor = getBean(appContext, "messageProcessor", MessageProcessor.class);
+        final StashManagerFactory stashManagerFactory = getBean(appContext, "stashManagerFactory", StashManagerFactory.class);
+        final ApplicationEventProxy applicationEventProxy = getBean(appContext, "applicationEventProxy", ApplicationEventProxy.class);
+        final SoapFaultManager soapFaultManager = getBean(appContext, "soapFaultManager", SoapFaultManager.class);
+        final EventChannel messageProcessingEventChannel = getBean(appContext, "messageProcessingEventChannel", EventChannel.class);
+        final SecurePasswordManager securePasswordManager = getBean(appContext,"securePasswordManager", SecurePasswordManager.class);
+        final SshServerModule module = new SshServerModule(applicationEventProxy, licenseManager, ssgConnectorManager, trustedCertServices,
                 defaultKey, config, gatewayState, messageProcessor, stashManagerFactory, soapFaultManager,
-                messageProcessingEventChannel, auditFactory, securePasswordManager);
+                messageProcessingEventChannel, securePasswordManager);
+        module.setApplicationContext( appContext );
+        return module;
     }
 
     @Override
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
-        super.onApplicationEvent(applicationEvent);
+        super.onApplicationEvent( applicationEvent );
 
-        if (applicationEvent instanceof ReadyForMessages) {
+        if (applicationEvent instanceof ReadyForMessages && activeConnectors.isEmpty()) {
             try {
                 startInitialConnectors();
             } catch (FindException e) {
-                LOGGER.log(Level.SEVERE, "Unable to access initial SSH connectors: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                auditError( SCHEME_SSH, "Unable to access initial SSH connectors: " + getMessage( e ), e );
             }
         }
     }
@@ -225,13 +223,8 @@ public class SshServerModule extends TransportModule implements ApplicationListe
                     try {
                         addConnector(connector);
                     } catch ( Exception e ) {
-                        if ( ExceptionUtils.getMessage(e).contains("java.net.BindException: ") ) { // The exception cause is not chained ...
-                            LOGGER.log(Level.WARNING, "Unable to start " + connector.getScheme() + " connector on port " + connector.getPort() +
-                                        ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                        } else {
-                            LOGGER.log(Level.WARNING, "Unable to start " + connector.getScheme() + " connector on port " + connector.getPort() +
-                                        ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                        }
+                        auditError( SCHEME_SSH, "Unable to start " + connector.getScheme() + " connector on port " + connector.getPort() +
+                                    ": " + getMessage( e ), getDebugException( e ) );
                     }
                 }
             }
@@ -243,19 +236,27 @@ public class SshServerModule extends TransportModule implements ApplicationListe
 
     @Override
     protected void doStart() throws LifecycleException {
-        super.doStart();
         registerCustomProtocols();
         if (gatewayState.isReadyForMessages()) {
             try {
                 startInitialConnectors();
             } catch (FindException e) {
-                LOGGER.log(Level.SEVERE, "Unable to access initial SSH connectors: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                auditError( SCHEME_SSH, "Unable to access initial SSH connectors: " + getMessage( e ), e );
             }
         }
     }
 
-    void registerApplicationEventListener() {
-        applicationEventProxy.addApplicationListener(this);
+    @Override
+    protected void doStop() throws LifecycleException {
+        try {
+            final List<Long> oidsToStop = new ArrayList<Long>(activeConnectors.keySet());
+            for ( final Long oid : oidsToStop) {
+                removeConnector(oid);
+            }
+        }
+        catch(Exception e) {
+            auditError( SCHEME_SSH, "Error while shutting down.", e);
+        }
     }
 
     private void registerCustomProtocols() {
@@ -323,12 +324,12 @@ public class SshServerModule extends TransportModule implements ApplicationListe
         // configure and start sshd
         try {
             final SshServer sshd = buildSshServer( connector );
-            auditStart("connector OID " + connector.getOid() + ", on port " + connector.getPort());
+            auditStart( connector.getScheme(), describe( connector ) );
             sshd.start();
             activeConnectors.put(connector.getOid(), new Pair<SsgConnector, SshServer>(connector, sshd));
         } catch (Exception e) {
-            auditError("Error during startup, unable to create sshd.", e);
-            throw new ListenerException("Unable to create sshd: " + ExceptionUtils.getMessage(e), e);
+            auditError( connector.getScheme(), "Error starting connector " + describe( connector ), e);
+            throw new ListenerException("Unable to create sshd: " + getMessage( e ), e);
         }
     }
 
@@ -340,11 +341,11 @@ public class SshServerModule extends TransportModule implements ApplicationListe
         SshServer sshd = entry.right;
         if (sshd != null) {
             try {
-                auditStop("connector OID " + oid + ", on port " + entry.left.getPort());
+                auditStop( entry.left.getScheme(), describe( entry.left ) );
                 sshd.stop();
             } catch (InterruptedException e) {
-                LOGGER.log(Level.SEVERE, "Unable to remove sshd: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                auditError("Error while shutting down, unable to remove sshd.", e);
+                LOGGER.log(Level.SEVERE, "Unable to remove sshd: " + getMessage( e ), getDebugException( e ));
+                auditError( entry.left.getScheme(), "Error while shutting down, unable to remove sshd.", e);
             }
         }
     }
@@ -352,22 +353,6 @@ public class SshServerModule extends TransportModule implements ApplicationListe
     @Override
     protected Set<String> getSupportedSchemes() {
         return SUPPORTED_SCHEMES;
-    }
-
-    private void auditStart(String msg) {
-        getAuditor().logAndAudit(SystemMessages.SSH_SERVER_START, msg);
-    }
-
-    private void auditStop(String listener) {
-        getAuditor().logAndAudit(SystemMessages.SSH_SERVER_STOP, listener);
-    }
-
-    private void auditError(String message, Exception exception) {
-        getAuditor().logAndAudit(SystemMessages.SSH_SERVER_ERROR, new String[]{message}, ExceptionUtils.getDebugException(exception));
-    }
-
-    private Audit getAuditor() {
-        return auditor;
     }
 
     /*

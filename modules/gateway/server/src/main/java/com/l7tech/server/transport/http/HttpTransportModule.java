@@ -1,13 +1,14 @@
 package com.l7tech.server.transport.http;
 
-import com.l7tech.gateway.common.Component;
+import static com.l7tech.gateway.common.Component.GW_HTTPRECV;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.transport.SsgConnector;
+import static com.l7tech.gateway.common.transport.SsgConnector.*;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.DefaultKey;
-import com.l7tech.server.GatewayFeatureSets;
+import static com.l7tech.server.GatewayFeatureSets.SERVICE_HTTP_MESSAGE_INPUT;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
@@ -21,6 +22,8 @@ import com.l7tech.server.transport.SsgConnectorActivationListener;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.server.transport.TransportModule;
 import com.l7tech.util.*;
+import static com.l7tech.util.CollectionUtils.caseInsensitiveSet;
+import static com.l7tech.util.ExceptionUtils.getDebugException;
 import org.apache.catalina.Engine;
 import org.apache.catalina.Host;
 import org.apache.catalina.connector.Connector;
@@ -74,7 +77,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     public static final String CONNECTOR_ATTR_CONNECTOR_OID = "ssgConnectorOid";
     public static final String INIT_PARAM_INSTANCE_ID = "httpTransportModuleInstanceId";
 
-    private static final AtomicLong nextInstanceId = new AtomicLong(1);
+    private static final AtomicLong nextInstanceId = new AtomicLong(1L);
     private static final Map<Long, Reference<HttpTransportModule>> instancesById =
             new ConcurrentHashMap<Long, Reference<HttpTransportModule>>();
 
@@ -104,7 +107,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
                                 final TrustedCertServices trustedCertServices,
                                 final Set<SsgConnectorActivationListener> endpointListeners )
     {
-        super("HTTP Transport Module", logger, GatewayFeatureSets.SERVICE_HTTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager, trustedCertServices, defaultKey, serverConfig);
+        super("HTTP Transport Module", GW_HTTPRECV, logger, SERVICE_HTTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager, trustedCertServices, defaultKey, serverConfig);
         this.serverConfig = serverConfig;
         this.masterPasswordManager = masterPasswordManager;
         this.instanceId = nextInstanceId.getAndIncrement();
@@ -134,7 +137,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             executor.start();
         } catch (org.apache.catalina.LifecycleException e) {
             final String msg = "Unable to start executor for HTTP/HTTPS connections: " + ExceptionUtils.getMessage(e);
-            getApplicationContext().publishEvent(new TransportEvent(this, Component.GW_HTTPRECV, null, Level.WARNING, "Error", msg));
+            auditError( "HTTP(S)", msg, getDebugException( e ) );
             throw new LifecycleException(msg, e);
         }
 
@@ -246,7 +249,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             } catch (org.apache.catalina.LifecycleException e) {
                 final String msg = "Unable to restart executor after changing property " + evt.getPropertyName() + ": " + ExceptionUtils.getMessage(e);
                 logger.log(Level.SEVERE, msg, e);
-                getApplicationContext().publishEvent(new TransportEvent(this, Component.GW_HTTPRECV, null, Level.WARNING, "Error", msg));
+                getApplicationContext().publishEvent(new TransportEvent(this, GW_HTTPRECV, null, Level.WARNING, "Error", msg));
             }
         }
     }
@@ -369,7 +372,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             itworked = true;
         } catch (org.apache.catalina.LifecycleException e) {
             String msg = "Unable to start HTTP listener subsystem: " + ExceptionUtils.getMessage(e);
-            getApplicationContext().publishEvent(new TransportEvent(this, Component.GW_HTTPRECV, null, Level.WARNING, "Error", msg));
+            auditError( "HTTP(S)", msg, getDebugException( e ) );
             throw new LifecycleException(e);
         } finally {
             if (!itworked)
@@ -387,6 +390,17 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     protected void doStop() throws LifecycleException {
         if (!running.get())
             return;
+
+        try {
+            final List<Long> oidsToStop = new ArrayList<Long>(activeConnectors.keySet());
+            for ( final Long oid : oidsToStop) {
+                removeConnector(oid);
+            }
+        }
+        catch(Exception e) {
+            auditError( "HTTP(S)", "Error while shutting down.", e);
+        }
+
         try {
             embedded.stop();
             running.set(false);
@@ -429,20 +443,15 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
                     foundHttp = true;
                     try {
                         if (actuallyStartThem) addConnector(connector);
-                    } catch (ListenerException e) {
-                        //noinspection ThrowableResultOfMethodCallIgnored
-                        logger.log(Level.WARNING, "Unable to start " + connector.getScheme() + " connector on port " + connector.getPort() +
-                                    ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-
                     } catch ( Exception e ) {
-                        if ( ExceptionUtils.getMessage(e).contains("java.net.BindException: ") ) { // The exception cause is not chained ...
-                            //noinspection ThrowableResultOfMethodCallIgnored
-                            logger.log(Level.WARNING, "Unable to start " + connector.getScheme() + " connector on port " + connector.getPort() +
-                                        ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                        final Exception auditException;
+                        if ( e instanceof ListenerException || ExceptionUtils.getMessage(e).contains("java.net.BindException: ") ) { // The exception cause is not chained ...
+                            auditException = ExceptionUtils.getDebugException(e);
                         } else {
-                            logger.log(Level.WARNING, "Unable to start " + connector.getScheme() + " connector on port " + connector.getPort() +
-                                        ": " + ExceptionUtils.getMessage(e), e);
+                            auditException = e;
                         }
+                        auditError( "HTTP(S)", "Unable to start " + connector.getScheme() + " connector on port " + connector.getPort() +
+                                    ": " + ExceptionUtils.getMessage(e), auditException );
                     }
                 }
             }
@@ -530,9 +539,9 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         Map<String, Object> connectorAttrs = asTomcatConnectorAttrs(connector);
         connectorAttrs.remove("scheme");
         final String scheme = connector.getScheme();
-        if (SsgConnector.SCHEME_HTTP.equals(scheme)) {
+        if ( SCHEME_HTTP.equals(scheme)) {
             addHttpConnector(connector, connector.getPort(), connectorAttrs);
-        } else if (SsgConnector.SCHEME_HTTPS.equals(scheme)) {
+        } else if ( SCHEME_HTTPS.equals(scheme)) {
             addHttpsConnector(connector, connector.getPort(), connectorAttrs);
         } else {
             // It's not an HTTP connector; ignore it.  This shouldn't be possible
@@ -571,7 +580,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         m.put(CONNECTOR_ATTR_TRANSPORT_MODULE_ID, Long.toString(instanceId));
         m.put(CONNECTOR_ATTR_CONNECTOR_OID, Long.toString(c.getOid()));
 
-        if (SsgConnector.SCHEME_HTTPS.equals(c.getScheme())) {
+        if ( SCHEME_HTTPS.equals(c.getScheme())) {
             // SSL
             m.put("SSLImplementation", "com.l7tech.server.tomcat.SsgSSLImplementation");
             m.put("secure", Boolean.toString(c.isSecure()));
@@ -612,12 +621,12 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         entry = activeConnectors.remove(oid);
         if (entry == null) return;
         Connector connector = entry.right;
-        logger.info("Removing " + connector.getScheme() + " connector on port " + connector.getPort());
+        auditStop( entry.left.getScheme(), describe(entry.left) );
         embedded.removeConnector(connector);
         try {
             connector.destroy();
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Exception while destroying connector for port " + entry.left.getPort() + ": " + ExceptionUtils.getMessage(e), e);
+            auditError( entry.left.getScheme(), "Exception while destroying connector for port " + entry.left.getPort() + ": " + ExceptionUtils.getMessage(e), e );
         }
 
         org.apache.catalina.Executor connectorExecutor = embedded.getExecutor( executorName(entry.left) );
@@ -626,14 +635,14 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             try {
                 connectorExecutor.stop();
             } catch (Exception e) {
-                logger.log(Level.WARNING, "Exception while destroying thread pool for port " + entry.left.getPort() + ": " + ExceptionUtils.getMessage(e), e);
+                auditError( entry.left.getScheme(), "Exception while destroying thread pool for port " + entry.left.getPort() + ": " + ExceptionUtils.getMessage(e), e );
             }
         }
 
         notifyEndpointDeactivation( entry.left );
     }
 
-    private final Set<String> schemes = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(SsgConnector.SCHEME_HTTP, SsgConnector.SCHEME_HTTPS)));
+    private final Set<String> schemes = caseInsensitiveSet( SCHEME_HTTP, SCHEME_HTTPS );
     @Override
     protected Set<String> getSupportedSchemes() {
         //noinspection ReturnOfCollectionOrArrayField
@@ -792,20 +801,20 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     }
 
     private void unregisterProtocols() {
-        ssgConnectorManager.unregisterTransportProtocol("HTTP");
-        ssgConnectorManager.unregisterTransportProtocol("HTTPS");
+        ssgConnectorManager.unregisterTransportProtocol( SCHEME_HTTP );
+        ssgConnectorManager.unregisterTransportProtocol( SCHEME_HTTPS );
     }
 
     private void activateConnector(SsgConnector connector, Connector c) throws ListenerException {
         activeConnectors.put(connector.getOid(), new Pair<SsgConnector, Connector>(connector, c));
         embedded.addConnector(c);
         try {
-            logger.info("Starting " + c.getScheme() + " connector on port " + c.getPort());
+            auditStart( connector.getScheme(), describe( connector ) );
             c.start();
         } catch (org.apache.catalina.LifecycleException e) {
             embedded.removeConnector(c);
-            final String msg = "Unable to start " + c.getScheme() + " listener on port " + c.getPort() + ": " + ExceptionUtils.getMessage(e);
-            getApplicationContext().publishEvent(new TransportEvent(this, Component.GW_HTTPRECV, null, Level.WARNING, "Error", msg));
+            final String msg = "Unable to start " + describe( connector ) + ": " + ExceptionUtils.getMessage(e);
+            auditError( connector.getScheme(), msg, getDebugException(e) );
             throw new ListenerException(msg, e);
         }
     }
@@ -959,7 +968,6 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
     public static final class WebappClassLoaderEx extends WebappClassLoader {
         public WebappClassLoaderEx() {
-            super();
         }
 
         public WebappClassLoaderEx( final ClassLoader parent ) {

@@ -18,6 +18,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.server.ServerConfigParams.*;
+import org.springframework.core.Ordered;
 
 /**
  * Check the status of Audit Cluster Properties such as audit sink properties ("audit.sink.alwaysSaveInternal" and "audit.sink.policy.guid",
@@ -26,7 +27,7 @@ import static com.l7tech.server.ServerConfigParams.*;
  *
  * @author ghuang
  */
-public class AuditClusterPropertiesChecker implements ApplicationContextAware, ApplicationListener {
+public class AuditClusterPropertiesChecker implements ApplicationContextAware, ApplicationListener, Ordered {
     public static final String CLUSTER_PROP_ADMIN_AUDIT_THRESHOLD = "audit.adminThreshold";
     public static final String INTERNAL_AUDIT_SYSTEM = "Internal Audit System";
     public static final String AUDIT_SINK_POLICY = "Audit Sink Policy";
@@ -116,6 +117,11 @@ public class AuditClusterPropertiesChecker implements ApplicationContextAware, A
                 }
             }
         }
+    }
+
+    @Override
+    public int getOrder() {
+        return 50000;
     }
 
     /**

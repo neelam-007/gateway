@@ -2,8 +2,11 @@ package com.l7tech.external.assertions.rawtcp.server;
 
 import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.log.HybridDiagnosticContext;
-import com.l7tech.common.log.HybridDiagnosticContextKeys;
+import static com.l7tech.gateway.common.Component.GW_GENERIC_CONNECTOR;
 import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
+import static com.l7tech.server.GatewayFeatureSets.SERVICE_L7RAWTCP_MESSAGE_INPUT;
+import com.l7tech.server.audit.AuditContextUtils;
+import static com.l7tech.util.CollectionUtils.caseInsensitiveSet;
 import com.l7tech.util.Config;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -15,7 +18,6 @@ import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.*;
-import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -51,15 +53,12 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
     private static final Logger logger = Logger.getLogger(SimpleRawTransportModule.class.getName());
     private static final String SCHEME_RAW_TCP = "l7.raw.tcp";
 
-    private static final Set<String> SUPPORTED_SCHEMES = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
-    static {
-        SUPPORTED_SCHEMES.addAll(Arrays.asList(SCHEME_RAW_TCP));
-    }
+    private static final Set<String> SUPPORTED_SCHEMES = caseInsensitiveSet(SCHEME_RAW_TCP);
 
     private static BlockingQueue<Runnable> requestQueue = new LinkedBlockingQueue<Runnable>();
     private static final int CORE_POOL_SIZE = 25;
     private static final int MAX_POOL_SIZE = 50;
-    private static final long KEEPALIVE_SECONDS = 5 * 60;
+    private static final long KEEPALIVE_SECONDS = 5L * 60L;
     private static ExecutorService requestExecutor = new ThreadPoolExecutor(CORE_POOL_SIZE, MAX_POOL_SIZE, KEEPALIVE_SECONDS, TimeUnit.SECONDS, requestQueue);
 
     private class ServerSock implements Closeable {
@@ -166,7 +165,7 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
                                     MessageProcessor messageProcessor,
                                     StashManagerFactory stashManagerFactory)
     {
-        super("Simple raw transport module", logger, GatewayFeatureSets.SERVICE_L7RAWTCP_MESSAGE_INPUT, licenseManager, ssgConnectorManager, trustedCertServices, defaultKey, config );
+        super("Simple raw transport module", GW_GENERIC_CONNECTOR, logger, SERVICE_L7RAWTCP_MESSAGE_INPUT, licenseManager, ssgConnectorManager, trustedCertServices, defaultKey, config );
         this.applicationEventProxy = applicationEventProxy;
         this.gatewayState = gatewayState;
         this.messageProcessor = messageProcessor;
@@ -181,7 +180,7 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
 
     }
 
-    static SimpleRawTransportModule createModule(ApplicationContext appContext) {
+    static SimpleRawTransportModule createModule( final ApplicationContext appContext ) {
         LicenseManager licenseManager = getBean(appContext, "licenseManager", LicenseManager.class);
         SsgConnectorManager ssgConnectorManager = getBean(appContext, "ssgConnectorManager", SsgConnectorManager.class);
         TrustedCertServices trustedCertServices = getBean(appContext, "trustedCertServices", TrustedCertServices.class);
@@ -191,7 +190,9 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
         MessageProcessor messageProcessor = getBean(appContext, "messageProcessor", MessageProcessor.class);
         StashManagerFactory stashManagerFactory = getBean(appContext, "stashManagerFactory", StashManagerFactory.class);
         ApplicationEventProxy applicationEventProxy = getBean(appContext, "applicationEventProxy", ApplicationEventProxy.class);
-        return new SimpleRawTransportModule(applicationEventProxy, licenseManager, ssgConnectorManager, trustedCertServices, defaultKey, config, gatewayState, messageProcessor, stashManagerFactory);
+        final SimpleRawTransportModule module = new SimpleRawTransportModule(applicationEventProxy, licenseManager, ssgConnectorManager, trustedCertServices, defaultKey, config, gatewayState, messageProcessor, stashManagerFactory);
+        module.setApplicationContext( appContext );
+        return module;
     }
 
     @Override
@@ -202,7 +203,7 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
             try {
                 startInitialConnectors();
             } catch (FindException e) {
-                logger.log(Level.SEVERE, "Unable to access initial raw connectors: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                auditError( SCHEME_RAW_TCP, "Unable to access initial raw connectors: " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
             }
         }
     }
@@ -217,13 +218,14 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
                     try {
                         addConnector(connector);
                     } catch ( Exception e ) {
+                        final Exception auditException;
                         if ( ExceptionUtils.getMessage(e).contains("java.net.BindException: ") ) { // The exception cause is not chained ...
-                            logger.log(Level.WARNING, "Unable to start " + connector.getScheme() + " connector on port " + connector.getPort() +
-                                        ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                            auditException = ExceptionUtils.getDebugException(e);
                         } else {
-                            logger.log(Level.WARNING, "Unable to start " + connector.getScheme() + " connector on port " + connector.getPort() +
-                                        ": " + ExceptionUtils.getMessage(e), e);
+                            auditException = e;
                         }
+                        auditError( SCHEME_RAW_TCP, "Unable to start " + connector.getScheme() + " connector on port " + connector.getPort() +
+                                    ": " + ExceptionUtils.getMessage(e), auditException );
                     }
                 }
             }
@@ -235,13 +237,12 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
 
     @Override
     protected void doStart() throws LifecycleException {
-        super.doStart();
         registerCustomProtocols();
         if (gatewayState.isReadyForMessages()) {
             try {
                 startInitialConnectors();
             } catch (FindException e) {
-                logger.log(Level.SEVERE, "Unable to access initial raw connectors: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                auditError( SCHEME_RAW_TCP, "Unable to access initial raw connectors: " + ExceptionUtils.getMessage(e), e );
             }
         }
     }
@@ -265,8 +266,20 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
     }
 
     @Override
+    protected void doStop() throws LifecycleException {
+        try {
+            final List<Long> oidsToStop = new ArrayList<Long>(activeConnectors.keySet());
+            for ( final Long oid : oidsToStop) {
+                removeConnector(oid);
+            }
+        }
+        catch(Exception e) {
+            auditError( SCHEME_RAW_TCP, "Error while shutting down.", e);
+        }
+    }
+
+    @Override
     protected void doClose() throws LifecycleException {
-        super.doClose();
         unregisterApplicationEventListenerAndCustomProtocols();
     }
 
@@ -277,6 +290,7 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
         applicationEventProxy.removeApplicationListener(this);
     }
 
+    @Override
     protected boolean isCurrent( long oid, int version ) {
         boolean current;
 
@@ -334,7 +348,7 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
             serverSocket.setReuseAddress(true);
             serverSocket.bind(new InetSocketAddress(InetAddress.getByName(bindAddress), connector.getPort()), backlog);
             final ServerSock serverSock = new ServerSock(connector, serverSocket, executor, executorNeedsClose);
-            logger.info("Starting " + connector.getScheme() + " connector on port " + connector.getPort());
+            auditStart( SCHEME_RAW_TCP, describe(connector) );
             serverSock.start();
             activeConnectors.put(connector.getOid(), new Pair<SsgConnector, ServerSock>(connector, serverSock));
 
@@ -349,7 +363,7 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
         entry = activeConnectors.remove(oid);
         if (entry == null) return;
         ServerSock serverSock = entry.right;
-        logger.info("Removing " + entry.left.getScheme() + " connector on port " + entry.left.getPort());
+        auditStop( SCHEME_RAW_TCP, describe( entry.left ) );
         try {
             if (serverSock != null) serverSock.close();
         } catch (IOException e) {
@@ -363,7 +377,7 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
     }
 
     private void handleRawTcpRequest(final Socket sock, SsgConnector connector) {
-        long hardwiredServiceOid = connector.getLongProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, -1);
+        long hardwiredServiceOid = connector.getLongProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, -1L);
 
         PolicyEnforcementContext context = null;
         InputStream responseStream = null;
@@ -387,7 +401,7 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
             ContentTypeHeader ctype = ctypeStr == null ? ContentTypeHeader.OCTET_STREAM_DEFAULT : ContentTypeHeader.create(ctypeStr);
             request.initialize(stashManagerFactory.createStashManager(), ctype, new ByteArrayInputStream(bytes), requestSizeLimit);
             request.attachKnob(TcpKnob.class, new SocketTcpKnob(sock));
-            if (hardwiredServiceOid != -1) {
+            if (hardwiredServiceOid != -1L) {
                 request.attachKnob(HasServiceOid.class, new HasServiceOidImpl(hardwiredServiceOid));
             }
 

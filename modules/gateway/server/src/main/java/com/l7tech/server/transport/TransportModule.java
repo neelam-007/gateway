@@ -1,20 +1,27 @@
 package com.l7tech.server.transport;
 
+import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.LicenseManager;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.AuditDetailEvent;
+import static com.l7tech.gateway.common.audit.SystemMessages.*;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.LifecycleBean;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.event.MessageProcessed;
+import com.l7tech.server.event.system.AuditAwareConnectorTransportEvent;
 import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.util.Background;
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEvent;
 
 import java.io.IOException;
@@ -32,28 +39,31 @@ import java.util.logging.Logger;
  */
 public abstract class TransportModule extends LifecycleBean {
     protected final Logger logger;
+    protected final Component component;
     protected final SsgConnectorManager ssgConnectorManager;
     private final TrustedCertServices trustedCertServices;
     private final DefaultKey defaultKey;
     private final Config config;
+    private final Object invalidationSync = new Object();
+    private Audit audit;
 
-    protected TransportModule(String name,
-                              Logger logger,
-                              String licenseFeature,
-                              LicenseManager licenseManager,
-                              SsgConnectorManager ssgConnectorManager,
-                              TrustedCertServices trustedCertServices,
-                              DefaultKey defaultKey,
-                              Config config )
+    protected TransportModule( @NotNull  final String name,
+                               @NotNull  final Component component,
+                               @NotNull  final Logger logger,
+                               @NotNull  final String licenseFeature,
+                               @Nullable final LicenseManager licenseManager,
+                               @NotNull  final SsgConnectorManager ssgConnectorManager,
+                               @NotNull  final TrustedCertServices trustedCertServices,
+                               @NotNull  final DefaultKey defaultKey,
+                               @NotNull  final Config config )
     {
         super(name, logger, licenseFeature, licenseManager);
+        this.component = component;
         this.logger = logger;
         this.ssgConnectorManager = ssgConnectorManager;
         this.trustedCertServices = trustedCertServices;
         this.defaultKey = defaultKey;
         this.config = config;
-        if ( config == null || defaultKey == null || trustedCertServices == null || ssgConnectorManager == null || logger == null)
-            throw new NullPointerException("A required bean was not provided to the TransportModule");
     }
 
     /**
@@ -144,7 +154,8 @@ public abstract class TransportModule extends LifecycleBean {
                 applicationEvent instanceof FaultProcessed;
     }
 
-    public void onApplicationEvent(ApplicationEvent applicationEvent) {
+    @Override
+    public void onApplicationEvent( final ApplicationEvent applicationEvent ) {
         if (TransportModule.isEventIgnorable(applicationEvent)) {
             return;
         }
@@ -155,17 +166,40 @@ public abstract class TransportModule extends LifecycleBean {
             return;
 
         if (applicationEvent instanceof EntityInvalidationEvent) {
-            EntityInvalidationEvent event = (EntityInvalidationEvent)applicationEvent;
-            if (SsgConnector.class.equals(event.getEntityClass()))
-                handleSsgConnectorInvalidationEvent(event);
+            final EntityInvalidationEvent event = (EntityInvalidationEvent)applicationEvent;
+            if (SsgConnector.class.equals(event.getEntityClass())) {
+                Background.scheduleOneShot( new TimerTask() {
+                    @Override
+                    public void run() {
+                        // Run invalidation on another thread in case it does
+                        // it's own auditing
+                        handleSsgConnectorInvalidationEvent( event );
+                    }
+                }, 0L );
+            }
         }
     }
 
     private void handleSsgConnectorInvalidationEvent(EntityInvalidationEvent event) {
-        long[] ids = event.getEntityIds();
-        char[] operations = event.getEntityOperations();
-        for (int i = 0; i < ids.length; i++)
-            handleSsgConnectorOperation(operations[i], ids[i]);
+        synchronized ( invalidationSync ) {
+            long[] ids = event.getEntityIds();
+            char[] operations = event.getEntityOperations();
+            for (int i = 0; i < ids.length; i++) {
+                handleSsgConnectorOperation(operations[i], ids[i]);
+            }
+            perhapsConnectorStateChanged();
+        }
+    }
+
+    private void perhapsConnectorStateChanged() {
+        getApplicationContext().publishEvent(
+                new AuditAwareConnectorTransportEvent(
+                        this,
+                        component,
+                        null,
+                        Level.INFO,
+                        "State Changed",
+                        "Listener state changed" ) );
     }
 
     private void handleSsgConnectorOperation(char operation, long connectorId) {
@@ -208,6 +242,7 @@ public abstract class TransportModule extends LifecycleBean {
                 public void run() {
                     try {
                         addConnector(roc);
+                        perhapsConnectorStateChanged();
                     } catch (Exception e) {
                         //noinspection ThrowableResultOfMethodCallIgnored
                         logger.log(Level.WARNING, "Unable to start " + roc.getScheme() + " connector on port " + roc.getPort() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
@@ -293,4 +328,33 @@ public abstract class TransportModule extends LifecycleBean {
 
         return certs.toArray(new X509Certificate[certs.size()]);
     }
+
+    protected String describe( final SsgConnector connector ) {
+        return connector.getName() + " (#" + connector.getOid() + ",v" + connector.getVersion() + ") on port " + connector.getPort();
+    }
+
+    protected final void auditStart( final String scheme, final String connectorDescription ) {
+        getAudit().logAndAudit( CONNECTOR_START, scheme, connectorDescription);
+    }
+
+    protected final void auditStop( final String scheme, String connectorDescription) {
+        getAudit().logAndAudit( CONNECTOR_STOP, scheme, connectorDescription);
+    }
+
+    protected final void auditError( final String schemes, final String message, @Nullable final Throwable exception ) {
+        getAudit().logAndAudit( CONNECTOR_ERROR, new String[]{schemes, message}, exception);
+    }
+
+    private Audit getAudit() {
+        Audit audit = this.audit;
+
+        if (audit == null) {
+            audit = new Auditor(this, getApplicationContext(), logger);
+            this.audit = audit;
+        }
+
+        return audit;
+    }
+
+
 }

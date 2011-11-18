@@ -44,6 +44,8 @@ public class Component {
     public static final Component     GW_PASSWD_POLICY_MGR= new Component(  90050, "Password Policy Service", GW_SERVER);
     public static final Component     GW_ACCOUNT_MANAGER  = new Component(  90060, "Administrator account maintenance", GW_SERVER);
     public static final Component     GW_SFTP_POLL_RECV   = new Component(  90070, "SFTP Polling Listeners", GW_SERVER);
+    public static final Component     GW_SSHRECV          = new Component(  90080, "SSH2 Listeners", GW_SERVER);
+    public static final Component     GW_GENERIC_CONNECTOR= new Component(  90090, "Other Listeners", GW_SERVER);
     // TODO find a way to atomically renumber these in an SQL script or UpgradeTask, this is ridiculous
     public static final Component   GW_CLUSTER            = new Component( 300000, "Cluster", GATEWAY);
     public static final Component   GW_DATABASE           = new Component( 400000, "Database", GATEWAY);

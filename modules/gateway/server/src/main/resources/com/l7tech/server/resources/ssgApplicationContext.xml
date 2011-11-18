@@ -1732,6 +1732,7 @@
 
     <bean id="ftpServerManager" class="com.l7tech.server.transport.ftp.FtpServerManager">
         <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="gatewayState"/>
         <constructor-arg ref="messageProcessor"/>
         <constructor-arg ref="soapFaultManager"/>
         <constructor-arg ref="stashManagerFactory"/>

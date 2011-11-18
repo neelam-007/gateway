@@ -30,10 +30,10 @@ public class SystemMessages extends Messages {
 
     public static final M SOCKET_TIMEOUT                = m(2017, Level.WARNING, "A remote network connection timed out");
 
-    public static final M FTPSERVER_NOT_CONFIGURED      = m(2020, Level.INFO, "Not starting FTP server (no listeners enabled)."); // NO LONGER USED
-    public static final M FTPSERVER_START               = m(2021, Level.INFO, "Starting FTP server: ''{0}''");
-    public static final M FTPSERVER_STOP                = m(2022, Level.INFO, "Stopping FTP server: ''{0}''");
-    public static final M FTPSERVER_ERROR               = m(2023, Level.WARNING, "FTP server error ''{0}''");
+    /** @deprecated */ @Deprecated public static final M __UNUSED__FTPSERVER_NOT_CONFIGURED = m(2020, Level.INFO, "Not starting FTP server (no listeners enabled).");
+    /** @deprecated */ @Deprecated public static final M __UNUSED__FTPSERVER_START          = m(2021, Level.INFO, "Starting FTP server: ''{0}''");
+    /** @deprecated */ @Deprecated public static final M __UNUSED__FTPSERVER_STOP           = m(2022, Level.INFO, "Stopping FTP server: ''{0}''");
+    /** @deprecated */ @Deprecated public static final M __UNUSED__FTPSERVER_ERROR          = m(2023, Level.WARNING, "FTP server error ''{0}''");
 
     public static final M HTTPSERVER_START              = m(2026, Level.INFO, "Starting HTTP server: ''{0}''");
     public static final M HTTPSERVER_STOP               = m(2027, Level.INFO, "Stopping HTTP server: ''{0}''");
@@ -155,10 +155,10 @@ public class SystemMessages extends Messages {
     public static final M MONITOR_DB_REPLICATION_FAILED      = m( 2381, Level.WARNING, "Replication failing for host/database {0}: {1}" );
     public static final M MONITOR_DB_REPLICATION_RECOVERED   = m( 2382, Level.WARNING, "Replication recovered for host/database {0}" );
 
-    // SFTP
-    public static final M SSH_SERVER_START = m(2400, Level.INFO, "Starting SSH server: {0}");
-    public static final M SSH_SERVER_STOP = m(2401, Level.INFO, "Stopping SSH server: {0}");
-    public static final M SSH_SERVER_ERROR = m(2402, Level.WARNING, "SSH server error: {0}");
+    // Connectors ( NOTE: see related list in AuditAwareConnectorTransportEvent )
+    public static final M CONNECTOR_START = m(2400, Level.INFO, "Starting {0} listener: {1}");
+    public static final M CONNECTOR_STOP  = m(2401, Level.INFO, "Stopping {0} listener: {1}");
+    public static final M CONNECTOR_ERROR = m(2402, Level.WARNING, "{0} listener error: {1}");
 
     // MAX -                                      m(2999
 }

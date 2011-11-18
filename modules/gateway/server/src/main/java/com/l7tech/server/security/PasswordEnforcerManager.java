@@ -26,6 +26,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.core.Ordered;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -41,7 +42,7 @@ import java.util.logging.Logger;
  * User: dlee
  * Date: Jun 18, 2008
  */
-public class PasswordEnforcerManager implements PropertyChangeListener, ApplicationContextAware, ApplicationListener {
+public class PasswordEnforcerManager implements PropertyChangeListener, ApplicationContextAware, ApplicationListener, Ordered {
 
     private static final Logger logger = Logger.getLogger(PasswordEnforcerManager.class.getName());
 
@@ -87,6 +88,11 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
                 auditPasswordPolicyMinimums(!config.getBooleanProperty( ServerConfigParams.PARAM_PCIDSS_ENABLED, false), internalIdpPasswordPolicy);
             }
         }
+    }
+
+    @Override
+    public int getOrder() {
+        return 50000;
     }
 
     @Override

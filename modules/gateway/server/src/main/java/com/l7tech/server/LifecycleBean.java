@@ -2,6 +2,8 @@ package com.l7tech.server;
 
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.server.event.system.LicenseEvent;
+import com.l7tech.server.event.system.Stopped;
+import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
@@ -13,7 +15,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
-import org.springframework.context.event.ApplicationEventMulticaster;
 
 import java.util.TimerTask;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -37,16 +38,17 @@ public abstract class LifecycleBean implements Lifecycle, InitializingBean, Appl
 
     @Override
     public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
-        if(this.applicationContext!=null) throw new IllegalStateException("applicationContext already initialized!");
-        this.applicationContext = applicationContext;
+        if ( this.applicationContext == null ) {
+            this.applicationContext = applicationContext;
 
-        ApplicationEventMulticaster eventMulticaster = applicationContext.getBean( "applicationEventMulticaster", ApplicationEventMulticaster.class );
-        eventMulticaster.addApplicationListener( new ApplicationListener(){
-            @Override
-            public void onApplicationEvent(ApplicationEvent event) {
-                LifecycleBean.this.onApplicationEvent( event );
-            }
-        } );
+            final ApplicationEventProxy eventProxy = applicationContext.getBean( "applicationEventProxy", ApplicationEventProxy.class );
+            eventProxy.addApplicationListener( new ApplicationListener() {
+                @Override
+                public void onApplicationEvent( ApplicationEvent event ) {
+                    LifecycleBean.this.onApplicationEvent( event );
+                }
+            } );
+        }
     }
 
     public boolean isLicensed() {
@@ -81,7 +83,7 @@ public abstract class LifecycleBean implements Lifecycle, InitializingBean, Appl
     }
 
     @Override
-    public void stop() throws LifecycleException {
+    public final void stop() throws LifecycleException {
         if (!isStarted())
             return;
 
@@ -157,7 +159,7 @@ public abstract class LifecycleBean implements Lifecycle, InitializingBean, Appl
         return applicationContext;
     }
 
-    protected void onApplicationEvent(ApplicationEvent applicationEvent) {
+    protected void onApplicationEvent(final ApplicationEvent applicationEvent) {
         if ( licenseFeature != null ) {
             if (applicationEvent instanceof LicenseEvent) {
                 // If the subsystem becomes licensed after bootup, start it now
@@ -175,7 +177,18 @@ public abstract class LifecycleBean implements Lifecycle, InitializingBean, Appl
                                 logger.log(Level.SEVERE, "Unable to start subsystem: " + ExceptionUtils.getMessage(e), e);
                             }
                         }
-                    }, 250);
+                    }, 250L);
+                }
+            } else {
+                // Generally lifecycle beans will be explicitly stopped during
+                // shutdown. This catches any lifecycle beans that are not in
+                // the application context.
+                if ( applicationEvent instanceof Stopped ) {
+                    try {
+                        stop();
+                    } catch (LifecycleException e) {
+                        logger.log(Level.SEVERE, "Unable to stop subsystem: " + ExceptionUtils.getMessage(e), e);
+                    }
                 }
             }
         }

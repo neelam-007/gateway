@@ -1,14 +1,10 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.server.util;
 
 import com.l7tech.server.policy.AssertionModuleUnregistrationEvent;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationListener;
+import org.springframework.core.Ordered;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +17,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * handler gets wrapped in expensive Spring TX-checking plumbing, which was otherwise going to cause
  * a 30% performance decrease system-wide between Gateway versions 3.5 and 3.6.
  */
-public class ApplicationEventProxy implements ApplicationListener, ApplicationEventPublisher {
+public class ApplicationEventProxy implements ApplicationListener, ApplicationEventPublisher, Ordered {
     final Set<ApplicationListener> subscribers = new CopyOnWriteArraySet<ApplicationListener>();
     final boolean primaryChannel;
 
@@ -92,12 +88,18 @@ public class ApplicationEventProxy implements ApplicationListener, ApplicationEv
      *
      * @param event the application event from the primary Spring application event channel. Required.
      */
+    @Override
     public void onApplicationEvent(ApplicationEvent event) {
         if (event instanceof AssertionModuleUnregistrationEvent)
             removeListenersFromClassLoader(((AssertionModuleUnregistrationEvent)event).getModule().getModuleClassLoader());
 
         if (isPrimaryChannel())
             deliverEventToSubscribers(event);
+    }
+
+    @Override
+    public int getOrder() {
+        return 0;
     }
 
     private void deliverEventToSubscribers(ApplicationEvent event) {
@@ -120,6 +122,7 @@ public class ApplicationEventProxy implements ApplicationListener, ApplicationEv
      *
      * @param event
      */
+    @Override
     public void publishEvent(ApplicationEvent event) {
         deliverEventToSubscribers(event);
     }

@@ -1,22 +1,19 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.SystemAuditRecord;
 import com.l7tech.server.event.system.*;
+import static com.l7tech.util.CollectionUtils.join;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.core.Ordered;
 
 import java.util.logging.Level;
 
 /**
  * @author alex
  */
-public class SystemAuditListener implements ApplicationListener {
+public class SystemAuditListener implements ApplicationListener, Ordered {
     private final String nodeId;
     private AuditContext auditContext;
 
@@ -41,6 +38,12 @@ public class SystemAuditListener implements ApplicationListener {
                     ape.setSystemAuditRecord(record);
                 }
             } else {
+                if ( event instanceof AuditAwareSystemEvent ) {
+                    final AuditAwareSystemEvent aase = (AuditAwareSystemEvent) event;
+                    if ( !aase.shouldBeAudited( join( auditContext.getDetails().values() ) ) ) {
+                        return;
+                    }
+                }
                 record = createSystemAuditRecord(se);
             }
 
@@ -48,6 +51,11 @@ public class SystemAuditListener implements ApplicationListener {
             auditContext.flush();
             auditContext.setUpdate(false);
         }
+    }
+
+    @Override
+    public int getOrder() {
+        return 10000;
     }
 
     private SystemAuditRecord createSystemAuditRecord(SystemEvent event) {

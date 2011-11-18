@@ -30,6 +30,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.*;
 import org.springframework.context.event.ApplicationEventMulticaster;
+import org.springframework.core.Ordered;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.orm.hibernate3.HibernateTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -48,7 +49,7 @@ import java.util.logging.Logger;
 /**
  * The UDDICoordinator handles events and task processing for UDDI
  */
-public class UDDICoordinator implements ApplicationContextAware, InitializingBean {
+public class UDDICoordinator implements ApplicationContextAware, InitializingBean, Ordered {
 
     //- PUBLIC
 
@@ -225,6 +226,11 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
                 UDDICoordinator.this.onApplicationEvent( event );
             }
         } );
+    }
+
+    @Override
+    public int getOrder() {
+        return 0;
     }
 
     //- PRIVATE

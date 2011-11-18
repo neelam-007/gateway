@@ -19,7 +19,6 @@ public class SshServerModuleLoadListener {
             logger.log(Level.WARNING, "SSH module is already initialized");
         } else {
             instance = SshServerModule.createModule(context);
-            instance.registerApplicationEventListener();
             try {
                 instance.start();
             } catch (LifecycleException e) {
