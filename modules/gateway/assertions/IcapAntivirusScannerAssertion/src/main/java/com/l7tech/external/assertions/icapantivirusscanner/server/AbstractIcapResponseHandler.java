@@ -3,7 +3,7 @@ package com.l7tech.external.assertions.icapantivirusscanner.server;
 import ch.mimo.netty.handler.codec.icap.IcapResponse;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.jboss.netty.handler.timeout.IdleStateAwareChannelHandler;
 
 import java.io.IOException;
 
@@ -13,7 +13,7 @@ import java.io.IOException;
  *
  * @author Ken Diep
  */
-public abstract class AbstractIcapResponseHandler extends SimpleChannelUpstreamHandler {
+public abstract class AbstractIcapResponseHandler extends IdleStateAwareChannelHandler {
 
     public AbstractIcapResponseHandler() {
         super();

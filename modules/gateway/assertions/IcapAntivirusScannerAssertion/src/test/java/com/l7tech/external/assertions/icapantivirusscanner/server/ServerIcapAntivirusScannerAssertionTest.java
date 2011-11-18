@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.icapantivirusscanner.server;
 
+
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -10,6 +11,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import org.jboss.netty.bootstrap.ClientBootstrap;
+import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.local.DefaultLocalClientChannelFactory;
@@ -33,8 +35,6 @@ public class ServerIcapAntivirusScannerAssertionTest {
     private static final byte[] CLEAN_PAYLOAD = "ServerIcapAntivirusScannerAssertionTest".getBytes();
 
     private static final String ICAP_URI = "icap://nowhere:1344/avscan";
-
-    private static final String FAKE_HOST = "nowhere";
 
     private static final String MESS2_BOUNDARY = "----=Part_-763936460.00306951464153826";
 
@@ -92,6 +92,8 @@ public class ServerIcapAntivirusScannerAssertionTest {
 
     private PolicyEnforcementContext policyEnforcementContext;
 
+    private Channel channel;
+
     @Before
     public void setUp() {
         assertion = new IcapAntivirusScannerAssertion();
@@ -101,7 +103,7 @@ public class ServerIcapAntivirusScannerAssertionTest {
         try {
             policyEnforcementContext = makeContext("<myrequest/>", "<myresponse/>");
             serverAssertion = new ServerIcapAntivirusScannerAssertion(assertion);
-            serverAssertion.setClient(new ClientBootstrap(){
+            ClientBootstrap client = new ClientBootstrap(){
                 @Override
                 public ChannelFuture connect() {
                     return Channels.succeededFuture(new DefaultLocalClientChannelFactory().newChannel(new MockIcapChannelPipeline().getPipeline()));
@@ -116,7 +118,9 @@ public class ServerIcapAntivirusScannerAssertionTest {
                 public ChannelFuture connect(final SocketAddress remoteAddress, final SocketAddress localAddress) {
                     return connect();
                 }
-            });
+            };
+            serverAssertion.setClient(client);
+            channel = serverAssertion.getChannel(policyEnforcementContext);
         } catch (PolicyAssertionException e) {
             Assert.fail("Error creating server assertion: " + e.getMessage());
         }
@@ -137,7 +141,7 @@ public class ServerIcapAntivirusScannerAssertionTest {
             ByteArrayStashManager basm = new ByteArrayStashManager();
             basm.stash(0, CLEAN_PAYLOAD);
             Message message = new Message(basm, ContentTypeHeader.TEXT_DEFAULT, new ByteArrayInputStream(CLEAN_PAYLOAD));
-            AssertionStatus status = serverAssertion.scanMessage(policyEnforcementContext, message);
+            AssertionStatus status = serverAssertion.scanMessage(policyEnforcementContext, message, channel);
             Assert.assertEquals("testScanMessageSingleCleanPayload()", AssertionStatus.NONE, status);
         } catch (Exception e) {
             Assert.fail("testScanMessageSingleCleanPayload failed: " + e.getMessage());
@@ -151,7 +155,7 @@ public class ServerIcapAntivirusScannerAssertionTest {
             ByteArrayStashManager basm = new ByteArrayStashManager();
             basm.stash(0, EICAR_PAYLOAD);
             Message message = new Message(basm, ContentTypeHeader.TEXT_DEFAULT, new ByteArrayInputStream(EICAR_PAYLOAD));
-            AssertionStatus status = serverAssertion.scanMessage(policyEnforcementContext, message);
+            AssertionStatus status = serverAssertion.scanMessage(policyEnforcementContext, message, channel);
             String[] infectedFiles = (String[]) policyEnforcementContext.getVariable(IcapAntivirusScannerAssertion.INFECTED_PARTS);
             Assert.assertEquals("Expected infection size", 1, infectedFiles.length);
             String[] headerNames   = (String[]) policyEnforcementContext.getVariable(IcapAntivirusScannerAssertion.VARIABLE_NAMES +".0");
@@ -171,7 +175,7 @@ public class ServerIcapAntivirusScannerAssertionTest {
             ByteArrayStashManager basm = new ByteArrayStashManager();
             basm.stash(0, EICAR_PAYLOAD);
             Message message = new Message(basm, ContentTypeHeader.TEXT_DEFAULT, new ByteArrayInputStream(EICAR_PAYLOAD));
-            AssertionStatus status = serverAssertion.scanMessage(policyEnforcementContext, message);
+            AssertionStatus status = serverAssertion.scanMessage(policyEnforcementContext, message, channel);
             Assert.assertEquals("testInfectedMessageWithoutContinue()", AssertionStatus.FAILED, status);
         } catch (Exception e) {
             Assert.fail("testInfectedMessageWithoutContinue failed: " + e.getMessage());
@@ -185,7 +189,7 @@ public class ServerIcapAntivirusScannerAssertionTest {
             Message request = new Message(new ByteArrayStashManager(),
                     ContentTypeHeader.parseValue(MESS2_CONTENT_TYPE),
                     new ByteArrayInputStream(MESS2.getBytes()));
-            AssertionStatus status = serverAssertion.scanMessage(policyEnforcementContext, request);
+            AssertionStatus status = serverAssertion.scanMessage(policyEnforcementContext, request, channel);
             Assert.assertEquals("testMimePartsInfected()", AssertionStatus.FAILED, status);
         } catch (Exception e) {
             Assert.fail("testMimePartsInfected failed: " + e.getMessage());
@@ -199,7 +203,7 @@ public class ServerIcapAntivirusScannerAssertionTest {
             Message request = new Message(new ByteArrayStashManager(),
                     ContentTypeHeader.parseValue(MESS2_CONTENT_TYPE),
                     new ByteArrayInputStream(MESS2.getBytes()));
-            AssertionStatus status = serverAssertion.scanMessage(policyEnforcementContext, request);
+            AssertionStatus status = serverAssertion.scanMessage(policyEnforcementContext, request, channel);
             Assert.assertEquals("testMimePartsInfected()", AssertionStatus.NONE, status);
         } catch (Exception e) {
             Assert.fail("testMimePartsInfected failed: " + e.getMessage());
