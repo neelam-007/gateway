@@ -78,6 +78,17 @@ public class IdProviderPasswordPolicyDialog extends JDialog {
         getRootPane().setDefaultButton(okButton);
 
         final InputValidator inputValidator = new InputValidator(this, DIALOG_TITLE);
+        initSpinner(minPasswordLengthSpinner,getResourceString("minlength.label"),3,128,inputValidator);
+        initSpinner(maxPasswordLengthSpinner,getResourceString("maxlength.label"),3,128,inputValidator);
+        maxPasswordLengthSpinner.setValue(3);
+        initSpinner(repeatFrequencySpinner,getResourceString("repeatfrequency.label"),1,50,inputValidator);
+        initSpinner(passwordExpirySpinner,getResourceString("password.expire.label"),1,365,inputValidator);
+        initSpinner(upperCaseSpinner,getResourceString("upperchars.label"),1,128,inputValidator);
+        initSpinner(lowerCaseSpinner,getResourceString("lowerchars.label"),1,128,inputValidator);
+        initSpinner(numberSpinner,getResourceString("numbers.label"),1,128,inputValidator);
+        initSpinner(symbolSpinner,getResourceString("symbol.label"),1,128,inputValidator);
+        initSpinner(nonNumericSpinner,getResourceString("nonnumeric.label"),1,128,inputValidator);
+        initSpinner(charDifferenceSpinner,getResourceString("characterdiff.label"),1,128,inputValidator);
 
         inputValidator.addRule(new InputValidator.ValidationRule() {
             @Override
@@ -196,21 +207,6 @@ public class IdProviderPasswordPolicyDialog extends JDialog {
                 enableOrDisableComponents();
             }
         });
-        ((SpinnerNumberModel) minPasswordLengthSpinner.getModel()).setMinimum(3);
-        ((SpinnerNumberModel) minPasswordLengthSpinner.getModel()).setMaximum(128);
-        ((SpinnerNumberModel) maxPasswordLengthSpinner.getModel()).setMinimum(3);
-        maxPasswordLengthSpinner.setValue(3);
-        ((SpinnerNumberModel) maxPasswordLengthSpinner.getModel()).setMaximum(128);
-        ((SpinnerNumberModel) repeatFrequencySpinner.getModel()).setMinimum(1);
-        ((SpinnerNumberModel) repeatFrequencySpinner.getModel()).setMaximum(50);
-        ((SpinnerNumberModel) passwordExpirySpinner.getModel()).setMinimum(1);
-        ((SpinnerNumberModel) passwordExpirySpinner.getModel()).setMaximum(365);
-        ((SpinnerNumberModel) upperCaseSpinner.getModel()).setMinimum(1);
-        ((SpinnerNumberModel) lowerCaseSpinner.getModel()).setMinimum(1);
-        ((SpinnerNumberModel) numberSpinner.getModel()).setMinimum(1);
-        ((SpinnerNumberModel) symbolSpinner.getModel()).setMinimum(1);
-        ((SpinnerNumberModel) nonNumericSpinner.getModel()).setMinimum(1);
-        ((SpinnerNumberModel) charDifferenceSpinner.getModel()).setMinimum(1);
 
         maxPasswordLengthCheckBox.addActionListener(enableDisableListener);
         upperCaseCheckBox.addActionListener(enableDisableListener);
@@ -268,6 +264,12 @@ public class IdProviderPasswordPolicyDialog extends JDialog {
         Utilities.setEscKeyStrokeDisposes(this);
 
         modelToView(passwordPolicy);
+    }
+
+    private void initSpinner(JSpinner spinner, String resourceString, int min, int max, InputValidator inputValidator) {
+        ((SpinnerNumberModel) spinner.getModel()).setMinimum(min);
+        ((SpinnerNumberModel) spinner.getModel()).setMaximum(max);
+        inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(spinner, resourceString));
     }
 
     private void updateRequirementWarning() {
