@@ -18,10 +18,10 @@ import java.awt.*;
  * Dialog for editing UUIDGeneratorAssertion properties.
  */
 public class UUIDGeneratorPropertiesDialog extends AssertionPropertiesOkCancelSupport<UUIDGeneratorAssertion> {
-    private static final String AMOUNT = "amount";
+    private static final String QUANTITY = "quantity";
     private JPanel contentPane;
     private JPanel variableNamePanel;
-    private JTextField amountTextField;
+    private JTextField quantityTextField;
     private TargetVariablePanel targetVariablePanel;
     private InputValidator validators;
     private IntegerOrContextVariableValidationRule integerOrContextVariableRule;
@@ -48,8 +48,8 @@ public class UUIDGeneratorPropertiesDialog extends AssertionPropertiesOkCancelSu
         variableNamePanel.add(targetVariablePanel, BorderLayout.CENTER);
 
         validators = new InputValidator(this, getTitle());
-        validators.constrainTextFieldToBeNonEmpty(AMOUNT, amountTextField, null);
-        integerOrContextVariableRule = new IntegerOrContextVariableValidationRule(UUIDGeneratorAssertion.MINIMUM_AMOUNT, adminLogin.getGatewayConfiguration().getUuidAmountMax(), AMOUNT);
+        validators.constrainTextFieldToBeNonEmpty(QUANTITY, quantityTextField, null);
+        integerOrContextVariableRule = new IntegerOrContextVariableValidationRule(UUIDGeneratorAssertion.MINIMUM_QUANTITY, adminLogin.getGatewayConfiguration().getUuidQuantityMax(), QUANTITY);
         validators.addRule(integerOrContextVariableRule);
     }
 
@@ -61,18 +61,18 @@ public class UUIDGeneratorPropertiesDialog extends AssertionPropertiesOkCancelSu
     public void setData(final UUIDGeneratorAssertion assertion) {
         targetVariablePanel.setAssertion(assertion, getPreviousAssertion());
         targetVariablePanel.setVariable(assertion.getTargetVariable());
-        amountTextField.setText(assertion.getAmount());
+        quantityTextField.setText(assertion.getQuantity());
     }
 
     public UUIDGeneratorAssertion getData(final UUIDGeneratorAssertion assertion) {
-        final String amount = amountTextField.getText();
-        integerOrContextVariableRule.setTextToValidate((amount == null)? null : amount.trim());
+        final String quantity = quantityTextField.getText();
+        integerOrContextVariableRule.setTextToValidate((quantity == null)? null : quantity.trim());
         final String error = validators.validate();
         if(error != null){
             throw new ValidationException(error);
         }
         assertion.setTargetVariable(targetVariablePanel.getVariable());
-        assertion.setAmount(amountTextField.getText().trim());
+        assertion.setQuantity(quantityTextField.getText().trim());
         return assertion;
     }
 }

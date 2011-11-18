@@ -298,8 +298,8 @@ public class AdminLoginImpl
     @Override
     public GatewayConfiguration getGatewayConfiguration(){
         final GatewayConfiguration configuration = new GatewayConfiguration();
-        final int max = config.getIntProperty(ServerConfigParams.PARAM_UUID_AMOUNT_MAX, 100);
-        configuration.setUuidAmountMax(max);
+        final int max = config.getIntProperty(ServerConfigParams.PARAM_UUID_QUANTITY_MAX, 100);
+        configuration.setUuidQuantityMax(max);
         return configuration;
     }
 

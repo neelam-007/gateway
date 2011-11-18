@@ -27,11 +27,11 @@ public class AdminLoginImplTest {
 
     @Test
     public void getNetworkConfigurationDelegatesToConfig() throws Exception {
-        when(config.getIntProperty(ServerConfigParams.PARAM_UUID_AMOUNT_MAX, 100)).thenReturn(500);
+        when(config.getIntProperty(ServerConfigParams.PARAM_UUID_QUANTITY_MAX, 100)).thenReturn(500);
 
         final GatewayConfiguration result = adminLogin.getGatewayConfiguration();
 
-        assertEquals(500, result.getUuidAmountMax());
-        verify(config).getIntProperty(ServerConfigParams.PARAM_UUID_AMOUNT_MAX, 100);
+        assertEquals(500, result.getUuidQuantityMax());
+        verify(config).getIntProperty(ServerConfigParams.PARAM_UUID_QUANTITY_MAX, 100);
     }
 }

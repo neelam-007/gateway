@@ -32,7 +32,7 @@ public class ServerUUIDGeneratorAssertionTest {
     @Before
     public void setup() throws Exception {
         assertion = new UUIDGeneratorAssertion();
-        assertion.setAmount(String.valueOf(UUIDGeneratorAssertion.MINIMUM_AMOUNT));
+        assertion.setQuantity(String.valueOf(UUIDGeneratorAssertion.MINIMUM_QUANTITY));
         assertion.setTargetVariable(TARGET_VARIABLE);
         serverAssertion = new ServerUUIDGeneratorAssertion(assertion);
         inject( serverAssertion );
@@ -52,14 +52,14 @@ public class ServerUUIDGeneratorAssertionTest {
     }
 
     @Test(expected= PolicyAssertionException.class)
-    public void constructorNullAmount() throws Exception{
-        assertion.setAmount(null);
+    public void constructorNullQuantity() throws Exception{
+        assertion.setQuantity(null);
         new ServerUUIDGeneratorAssertion(assertion);
     }
 
     @Test(expected= PolicyAssertionException.class)
-    public void constructorEmptyAmount() throws Exception{
-        assertion.setAmount("");
+    public void constructorEmptyQuantity() throws Exception{
+        assertion.setQuantity("");
         new ServerUUIDGeneratorAssertion(assertion);
     }
 
@@ -73,8 +73,8 @@ public class ServerUUIDGeneratorAssertionTest {
     }
 
     @Test
-    public void checkRequestMultipleAmount() throws Exception {
-        assertion.setAmount("2");
+    public void checkRequestMultipleQuantity() throws Exception {
+        assertion.setQuantity("2");
 
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 
@@ -86,8 +86,8 @@ public class ServerUUIDGeneratorAssertionTest {
     }
 
     @Test
-    public void checkRequestAmountLessThanMin() throws Exception {
-        assertion.setAmount(String.valueOf(UUIDGeneratorAssertion.MINIMUM_AMOUNT - 1));
+    public void checkRequestQuantityLessThanMin() throws Exception {
+        assertion.setQuantity(String.valueOf(UUIDGeneratorAssertion.MINIMUM_QUANTITY - 1));
 
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 
@@ -96,8 +96,8 @@ public class ServerUUIDGeneratorAssertionTest {
     }
 
     @Test
-    public void checkRequestAmountOverMax() throws Exception {
-        assertion.setAmount(String.valueOf(UUIDGeneratorAssertion.MAXIMUM_AMOUNT + 1));
+    public void checkRequestQuantityOverMax() throws Exception {
+        assertion.setQuantity(String.valueOf(UUIDGeneratorAssertion.MAXIMUM_QUANTITY + 1));
 
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 
@@ -106,8 +106,8 @@ public class ServerUUIDGeneratorAssertionTest {
     }
 
     @Test
-    public void checkRequestAmountInvalid() throws Exception {
-        assertion.setAmount("invalid");
+    public void checkRequestQuantityInvalid() throws Exception {
+        assertion.setQuantity("invalid");
         assertion.setTargetVariable(TARGET_VARIABLE);
 
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
@@ -117,9 +117,9 @@ public class ServerUUIDGeneratorAssertionTest {
     }
 
     @Test
-    public void checkRequestAmountAsContextVariable() throws Exception {
-        policyContext.setVariable("amount", 2);
-        assertion.setAmount("${amount}");
+    public void checkRequestQuantityAsContextVariable() throws Exception {
+        policyContext.setVariable("quantity", 2);
+        assertion.setQuantity("${quantity}");
 
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 

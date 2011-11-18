@@ -166,7 +166,7 @@ public interface ServerConfigParams {
     String PARAM_AUDIT_EXPORT_GROUP_CONCAT_MAX_LEN = "audit.export.group_concat_max_len";
     String PARAM_AUDIT_MESSAGE_LIMIT_SIZE = "audit.messageSizeLimit";
     String PARAM_MAX_FOLDER_DEPTH = "policyorganization.maxFolderDepth";
-    String PARAM_UUID_AMOUNT_MAX = "uuid.amount.max";
+    String PARAM_UUID_QUANTITY_MAX = "uuid.quantity.max";
     String PARAM_BIND_ONLY_LDAP_USERNAME_PATTERN = "ldapSimpleUsernamePattern";
     String PARAM_DEBUG_SSL = "ioDebugSsl";
     String PARAM_DEBUG_SSL_VALUE = "ioDebugSslValue";

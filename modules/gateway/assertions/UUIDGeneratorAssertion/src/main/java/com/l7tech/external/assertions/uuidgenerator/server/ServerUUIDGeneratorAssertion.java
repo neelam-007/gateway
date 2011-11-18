@@ -31,43 +31,43 @@ public class ServerUUIDGeneratorAssertion extends AbstractServerAssertion<UUIDGe
 
     @Override
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        int amount;
-        final String amountStr = ExpandVariables.process(assertion.getAmount(), context.getVariableMap(assertion.getVariablesUsed(), getAudit()), getAudit());
+        int quantity;
+        final String quantityStr = ExpandVariables.process(assertion.getQuantity(), context.getVariableMap(assertion.getVariablesUsed(), getAudit()), getAudit());
         try {
-            amount = Integer.parseInt(amountStr);
+            quantity = Integer.parseInt(quantityStr);
         } catch (final NumberFormatException e) {
-            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{ "The amount cannot be resolved: " + e.getMessage() }, ExceptionUtils.getDebugException(e));
+            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{ "The quantity cannot be resolved: " + e.getMessage() }, ExceptionUtils.getDebugException(e));
             return AssertionStatus.FAILED;
         }
 
-        if (amount < UUIDGeneratorAssertion.MINIMUM_AMOUNT) {
-            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "No UUID generated. Amount less than minimum: " + amount );
+        if (quantity < UUIDGeneratorAssertion.MINIMUM_QUANTITY) {
+            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "No UUID generated. Quantity less than minimum: " + quantity );
             return AssertionStatus.FAILED;
         }
 
-        final int maxAmount = config.getIntProperty(ServerConfigParams.PARAM_UUID_AMOUNT_MAX, UUIDGeneratorAssertion.MAXIMUM_AMOUNT);
-        if (amount > maxAmount) {
-            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "No UUID generated. Amount more than maximum: " + amount );
+        final int maxQuantity = config.getIntProperty(ServerConfigParams.PARAM_UUID_QUANTITY_MAX, UUIDGeneratorAssertion.MAXIMUM_QUANTITY);
+        if (quantity > maxQuantity) {
+            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "No UUID generated. Quantity more than maximum: " + quantity );
             return AssertionStatus.FAILED;
         }
 
-        context.setVariable(assertion.getTargetVariable(), generateUUIDs(amount));
+        context.setVariable(assertion.getTargetVariable(), generateUUIDs(quantity));
 
         return AssertionStatus.NONE;
     }
 
     /**
-     * @param amount the amount of UUIDs to generate.
-     * @return a uuid String if amount is equal to one or an array of UUID Strings if amount is more than one.
+     * @param quantity the quantity of UUIDs to generate.
+     * @return a uuid String if quantity is equal to one or an array of UUID Strings if quantity is more than one.
      */
-    private Object generateUUIDs(int amount) {
+    private Object generateUUIDs(int quantity) {
         Object value = null;
-        if(amount == UUIDGeneratorAssertion.MINIMUM_AMOUNT){
+        if(quantity == UUIDGeneratorAssertion.MINIMUM_QUANTITY){
             //if we only need one uuid, store it in a string instead of an array
             value = UUID.randomUUID().toString();
         }else{
-            final String[] uuids = new String[amount];
-            for (int i = 0; i < amount; ++i) {
+            final String[] uuids = new String[quantity];
+            for (int i = 0; i < quantity; ++i) {
                 final UUID uuid = UUID.randomUUID();
                 uuids[i] = uuid.toString();
             }
@@ -77,9 +77,9 @@ public class ServerUUIDGeneratorAssertion extends AbstractServerAssertion<UUIDGe
     }
 
     private void validateAssertion(UUIDGeneratorAssertion assertion) throws PolicyAssertionException {
-        if (assertion.getAmount() == null || assertion.getAmount().isEmpty()) {
-            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "The amount is not set." );
-            throw new PolicyAssertionException(assertion, "Amount is not set.");
+        if (assertion.getQuantity() == null || assertion.getQuantity().isEmpty()) {
+            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "The quantity is not set." );
+            throw new PolicyAssertionException(assertion, "Quantity is not set.");
         }
 
         if (assertion.getTargetVariable() == null || assertion.getTargetVariable().isEmpty()) {

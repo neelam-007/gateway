@@ -8,13 +8,13 @@ import java.io.Serializable;
  * @author alee
  */
 public class GatewayConfiguration implements Serializable{
-    private int uuidAmountMax;
+    private int uuidQuantityMax;
 
-    public int getUuidAmountMax() {
-        return uuidAmountMax;
+    public int getUuidQuantityMax() {
+        return uuidQuantityMax;
     }
 
-    public void setUuidAmountMax(final int uuidAmountMax) {
-        this.uuidAmountMax = uuidAmountMax;
+    public void setUuidQuantityMax(final int uuidQuantityMax) {
+        this.uuidQuantityMax = uuidQuantityMax;
     }
 }
