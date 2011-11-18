@@ -156,32 +156,31 @@ public final class CipherSuiteGuiUtil {
     /**
      * Check if the specified cipher suite should be shown or hidden in the UI.
      * <P/>
-     * Currently a cipher suite is shown if is RSA based, as long as it is neither _WITH_NULL_ (which
-     * does no encryption) or _anon_ (which does no authentication).
+     * Currently a cipher suite is shown if is RSA or ECDSA based, as long as it is neither _WITH_NULL_ (which
+     * does no encryption) nor _anon_ (which does no authentication) nor _EXPORT_ (which uses a 40 bit key so weak it is
+     * nowadays effectively equivalent to _WITH_NULL_).
      *
      * @param cipherSuiteName the name of an SSL cipher suite to check, ie "TLS_RSA_WITH_AES_128_CBC_SHA".  Required.
      * @return true if this cipher suite should be shown in the UI (regardless of whether it should be checked by default
      *         in new connectors).  False if this cipher suite should be hidden in the UI.
      */
     public static boolean cipherSuiteShouldBeVisible(String cipherSuiteName) {
-        return !contains(cipherSuiteName, "_WITH_NULL_") && !contains(cipherSuiteName, "_anon_") && (
-                contains(cipherSuiteName, "_RSA_") ||
-                contains(cipherSuiteName, "_ECDSA_")
+        return !cipherSuiteName.contains("_WITH_NULL_") && !cipherSuiteName.contains("_anon_") && !cipherSuiteName.contains("_EXPORT_") && (
+                cipherSuiteName.contains("_RSA_") ||
+                cipherSuiteName.contains("_ECDSA_")
         );
     }
 
     /**
      * Check if the specified cipher suite should be checked by default in newly created listen ports.
+     * <p/>
+     * Currently we enable by default any cipher suite that is visible in the GUI.
      *
      * @param cipherSuiteName the name of an SSL cipher suite to check, ie "TLS_RSA_WITH_AES_128_CBC_SHA".  Required.
      * @return true if this cipher suite should be checked by default in the UI.
      */
     public static boolean cipherSuiteShouldBeCheckedByDefault(String cipherSuiteName) {
-        return cipherSuiteShouldBeVisible(cipherSuiteName) && !contains(cipherSuiteName, "_EXPORT_");
-    }
-
-    public static boolean contains(String string, String substr) {
-        return string.indexOf(substr) > 0;
+        return cipherSuiteShouldBeVisible(cipherSuiteName);
     }
 
     /**
