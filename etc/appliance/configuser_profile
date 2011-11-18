@@ -121,6 +121,7 @@ doSystemConfiguration() {
             case $choice in
                 1) clear                                                      ;
                    (${SYSWIZARD} -systemConfig)
+                   confirmedMessage ""
                    clear;;
                 2) clear
                    (${SYSWIZARD} -printConfig)
