@@ -188,7 +188,7 @@ public class Saml2ValidationTest {
         RequireWssSaml templateSaml = new RequireWssSaml();
         templateSaml.setVersion(2);
         templateSaml.setCheckAssertionValidity(false);
-        templateSaml.setAudienceRestriction("http://restricted.audience.com/");
+        templateSaml.setAudienceRestriction("http://restricted.audience.com_DOES_NOT_EXIST_IN_ANY_CONFIGURED/");
         templateSaml.setSubjectConfirmations(new String[]{SamlConstants.CONFIRMATION_SAML2_HOLDER_OF_KEY});
         templateSaml.setRequireHolderOfKeyWithMessageSignature(true);
         templateSaml.setNameFormats(SamlConstants.ALL_NAMEIDENTIFIERS_SAML2);
@@ -591,6 +591,17 @@ public class Saml2ValidationTest {
         samlValidationCommon.testAudienceRestriction_AudienceValidation_MultiIn_MultiConfigured_NoMatch(ASSERTION_WITH_MULTIPLE_AUDIENCES);
     }
 
+    /**
+     * Validates that within a Conditions element that multi audience restriction elements are treated as a disjunction ("OR")
+     * and not a conjunction ("AND").
+     *
+     */
+    @BugNumber(11455)
+    @Test
+    public void testAudienceRestriction_AudienceValidation_MultiAudienceRestrictionElementsInIncoming() throws Exception {
+        samlValidationCommon.testAudienceRestriction_ValidationAgainstMultipleConfiguredAudienceValues(ASSERTION_WITH_AUDIENCE_MULTIPLE_RESTRICTION_ELEMENTS);
+    }
+
     private ProcessorResult fakeProcessorResults(final SamlAssertion assertion, final boolean overrideGetSigningTokens) {
         return new MockProcessorResult() {
             @Override
@@ -884,6 +895,31 @@ public class Saml2ValidationTest {
             "                    <saml:Action>Get</saml:Action>\n" +
             "                </saml:AuthzDecisionStatement>\n" +
             "            </saml:Assertion>";
+
+    private String ASSERTION_WITH_AUDIENCE_MULTIPLE_RESTRICTION_ELEMENTS = "<saml2:Assertion Version=\"2.0\" ID=\"SamlAssertion-28d0cfc161dc39a8636145362a9f592c\"\n" +
+            "                 IssueInstant=\"2011-11-11T00:01:55.767Z\" xmlns:saml2=\"urn:oasis:names:tc:SAML:2.0:assertion\">\n" +
+            "    <saml2:Issuer>irishman2.l7tech.local</saml2:Issuer>\n" +
+            "    <saml2:Subject>\n" +
+            "        <saml2:NameID Format=\"urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified\" NameQualifier=\"NameQualifierValue\"/>\n" +
+            "        <saml2:SubjectConfirmation Method=\"urn:oasis:names:tc:SAML:2.0:cm:sender-vouches\">\n" +
+            "            <saml2:NameID>CN=irishman2.l7tech.local</saml2:NameID>\n" +
+            "        </saml2:SubjectConfirmation>\n" +
+            "    </saml2:Subject>\n" +
+            "    <saml2:Conditions NotBefore=\"2011-11-10T23:59:55.825Z\" NotOnOrAfter=\"2011-11-11T00:06:55.825Z\">\n" +
+            "        <saml2:AudienceRestriction>\n" +
+            "            <saml2:Audience>http://restriction.com</saml2:Audience>\n" +
+            "        </saml2:AudienceRestriction>\n" +
+            "        <saml2:AudienceRestriction>\n" +
+            "            <saml2:Audience>http://restriction2.com</saml2:Audience>\n" +
+            "        </saml2:AudienceRestriction>\n" +
+            "    </saml2:Conditions>\n" +
+            "    <saml2:AuthnStatement AuthnInstant=\"2011-11-11T00:01:55.767Z\">\n" +
+            "        <saml2:SubjectLocality Address=\"127.0.0.1\"/>\n" +
+            "        <saml2:AuthnContext>\n" +
+            "            <saml2:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:unspecified</saml2:AuthnContextClassRef>\n" +
+            "        </saml2:AuthnContext>\n" +
+            "    </saml2:AuthnStatement>\n" +
+            "</saml2:Assertion>";
 
     private String ASSERTION_WITH_AUDIENCE = "<saml2:Assertion Version=\"2.0\" ID=\"SamlAssertion-28d0cfc161dc39a8636145362a9f592c\"\n" +
             "                 IssueInstant=\"2011-11-11T00:01:55.767Z\" xmlns:saml2=\"urn:oasis:names:tc:SAML:2.0:assertion\">\n" +

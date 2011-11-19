@@ -288,12 +288,16 @@ class Saml2SubjectAndConditionValidate {
         }
 
         final AudienceRestrictionType[] audienceRestrictionArray = conditionsType.getAudienceRestrictionArray();
-        if (audienceRestrictionArray == null || audienceRestrictionArray.length <= 0) {
+        if (audienceRestrictionArray.length <= 0) {
             SamlAssertionValidate.Error error = new SamlAssertionValidate.Error("Audience Restriction Check Failed (assertion does not specify audience restriction condition)", null, allAudienceRestrictions);
             logger.finer(error.toString());
             validationResults.add(error);
             return;
         }
+
+        boolean audienceRestrictionMatch = false;
+        final StringBuilder builder = new StringBuilder();
+        // SAML only requires a disjunction - If we find the configured audience values in any set of audience elements, then it passes validation for this Condition
 
         for (AudienceRestrictionType val : audienceRestrictionArray) {
             if (logger.isLoggable(Level.FINE)) {
@@ -301,11 +305,19 @@ class Saml2SubjectAndConditionValidate {
             }
 
             final String[] incomingAudienceValues = val.getAudienceArray();
-            if (!ArrayUtils.containsAny(incomingAudienceValues, allAudienceRestrictions.toArray(new String[allAudienceRestrictions.size()]))) {
-                SamlAssertionValidate.Error error = new SamlAssertionValidate.Error("Audience Restriction Check Failed received {0} expected one of {1}", null, Arrays.asList(incomingAudienceValues), allAudienceRestrictions);
-                logger.finer(error.toString());
-                validationResults.add(error);
+            if (ArrayUtils.containsAny(incomingAudienceValues, allAudienceRestrictions.toArray(new String[allAudienceRestrictions.size()]))) {
+                audienceRestrictionMatch = true;
+                break;
+            } else {
+                builder.append(Arrays.asList(incomingAudienceValues));
             }
+        }
+        if (!audienceRestrictionMatch) {
+            SamlAssertionValidate.Error error =
+                    new SamlAssertionValidate.Error("Audience Restriction Check Failed received {0} expected one of {1}",
+                            null, builder, allAudienceRestrictions);
+            logger.finer(error.toString());
+            validationResults.add(error);
         }
     }
 

@@ -85,6 +85,17 @@ public class Saml1ValidationTest {
         samlValidationCommon.testAudienceRestriction_AudienceValidation_MultiIn_MultiConfigured_NoMatch(ASSERTION_WITH_MULTIPLE_AUDIENCES);
     }
 
+    /**
+     * Validates that within a Conditions element that multi audience restriction elements are treated as a disjunction ("OR")
+     * and not a conjunction ("AND").
+     *
+     */
+    @BugNumber(11455)
+    @Test
+    public void testAudienceRestriction_AudienceValidation_MultiAudienceRestrictionElementsInIncoming() throws Exception {
+        samlValidationCommon.testAudienceRestriction_ValidationAgainstMultipleConfiguredAudienceValues(ASSERTION_WITH_AUDIENCE_MULTIPLE_RESTRICTION_ELEMENTS);
+    }
+
     private static final String ASSERTION_WITH_AUDIENCE =
             "<saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:1.0:assertion\" MinorVersion=\"1\" MajorVersion=\"1\"\n" +
                     "                AssertionID=\"SamlAssertion-f90a22365f67ea5024d91f960ead8ad1\" Issuer=\"irishman2.l7tech.local\"\n" +
@@ -92,6 +103,30 @@ public class Saml1ValidationTest {
                     "    <saml:Conditions NotBefore=\"2011-11-10T21:44:12.285Z\" NotOnOrAfter=\"2011-11-10T21:51:12.285Z\">\n" +
                     "        <saml:AudienceRestrictionCondition>\n" +
                     "            <saml:Audience>http://restriction.com</saml:Audience>\n" +
+                    "        </saml:AudienceRestrictionCondition>\n" +
+                    "    </saml:Conditions>\n" +
+                    "    <saml:AuthenticationStatement AuthenticationMethod=\"urn:oasis:names:tc:SAML:1.0:am:unspecified\"\n" +
+                    "                                  AuthenticationInstant=\"2011-11-10T21:46:12.283Z\">\n" +
+                    "        <saml:Subject>\n" +
+                    "            <saml:NameIdentifier Format=\"urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified\" NameQualifier=\"NameQualifierValue\"/>\n" +
+                    "            <saml:SubjectConfirmation>\n" +
+                    "                <saml:ConfirmationMethod>urn:oasis:names:tc:SAML:1.0:cm:sender-vouches</saml:ConfirmationMethod>\n" +
+                    "            </saml:SubjectConfirmation>\n" +
+                    "        </saml:Subject>\n" +
+                    "        <saml:SubjectLocality IPAddress=\"127.0.0.1\"/>\n" +
+                    "    </saml:AuthenticationStatement>\n" +
+                    "</saml:Assertion>";
+
+    private static final String ASSERTION_WITH_AUDIENCE_MULTIPLE_RESTRICTION_ELEMENTS =
+            "<saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:1.0:assertion\" MinorVersion=\"1\" MajorVersion=\"1\"\n" +
+                    "                AssertionID=\"SamlAssertion-f90a22365f67ea5024d91f960ead8ad1\" Issuer=\"irishman2.l7tech.local\"\n" +
+                    "                IssueInstant=\"2011-11-10T21:46:12.283Z\">\n" +
+                    "    <saml:Conditions NotBefore=\"2011-11-10T21:44:12.285Z\" NotOnOrAfter=\"2011-11-10T21:51:12.285Z\">\n" +
+                    "        <saml:AudienceRestrictionCondition>\n" +
+                    "            <saml:Audience>http://restriction.com</saml:Audience>\n" +
+                    "        </saml:AudienceRestrictionCondition>\n" +
+                    "        <saml:AudienceRestrictionCondition>\n" +
+                    "            <saml:Audience>http://restriction2.com</saml:Audience>\n" +
                     "        </saml:AudienceRestrictionCondition>\n" +
                     "    </saml:Conditions>\n" +
                     "    <saml:AuthenticationStatement AuthenticationMethod=\"urn:oasis:names:tc:SAML:1.0:am:unspecified\"\n" +
