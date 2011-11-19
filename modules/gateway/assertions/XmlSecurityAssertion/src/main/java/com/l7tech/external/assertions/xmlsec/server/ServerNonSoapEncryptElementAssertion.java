@@ -7,6 +7,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.security.xml.XmlElementEncryptor;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.InvalidXpathException;
 import org.w3c.dom.Document;
@@ -28,12 +29,14 @@ public class ServerNonSoapEncryptElementAssertion extends ServerNonSoapSecurityA
 
     private final XmlElementEncryptor elementEncryptor;
     private final String[] varsUsed;
+    private final String recipCertVarName;
 
     public ServerNonSoapEncryptElementAssertion(NonSoapEncryptElementAssertion assertion)
             throws PolicyAssertionException, InvalidXpathException, IOException, CertificateException, NoSuchAlgorithmException, NoSuchVariableException {
         super(assertion);
         this.elementEncryptor = assertion.getRecipientCertContextVariableName() == null ? new XmlElementEncryptor(assertion.config(), null) : null;
         this.varsUsed = assertion.getVariablesUsed();
+        this.recipCertVarName = assertion.getRecipientCertContextVariableName();
     }
 
     @Override
@@ -42,8 +45,12 @@ public class ServerNonSoapEncryptElementAssertion extends ServerNonSoapSecurityA
         if (this.elementEncryptor != null) {
             elementEncryptor = this.elementEncryptor;
         } else {
-            Map<String, ?> variableMap = context.getVariableMap(varsUsed, getAudit());
-            elementEncryptor = new XmlElementEncryptor(assertion.config(), variableMap);
+            Object certValue = null;
+            if (recipCertVarName != null) {
+                Map<String, ?> variableMap = context.getVariableMap(varsUsed, getAudit());
+                certValue = ExpandVariables.processSingleVariableAsObject("${" + recipCertVarName + "}", variableMap, getAudit());
+            }
+            elementEncryptor = new XmlElementEncryptor(assertion.config(), certValue);
         }
 
         Pair<Element, SecretKey> ek = elementEncryptor.createEncryptedKey(doc);

@@ -44,26 +44,24 @@ public class XmlElementEncryptor {
      * Create an encryptor that will encrypt elements according to the specified configuration.
      *
      * @param config the configuration to use.  Required.
-     * @param variableMap a map of variable name to value.  Required if config specifies a certificate context variable.
+     * @param certVariableValue an object to use as the recipient cert.  Required if config specifies a certificate context variable.  May be either an X509Certificate instance of a String in PEM format.
      * @throws IOException if there is a problem decoding the recipient certificate.
      * @throws CertificateException if there is a problem decoding the recipient certificate.
      * @throws NoSuchAlgorithmException if the specified encryption algorithm URI is missing or unrecognized.
      * @throws NoSuchVariableException if the config specifies a recipient cert context variable, but no matching key is present in the variable map, or no variable map was provided.
      */
-    public XmlElementEncryptor(@NotNull XmlElementEncryptionConfig config, @Nullable Map<String, ?> variableMap) throws IOException, CertificateException, NoSuchAlgorithmException, NoSuchVariableException {
+    public XmlElementEncryptor(@NotNull XmlElementEncryptionConfig config, @Nullable Object certVariableValue) throws IOException, CertificateException, NoSuchAlgorithmException, NoSuchVariableException {
         X509Certificate cert;
 
         final String varName = config.getRecipientCertContextVariableName();
         if (varName != null && varName.trim().length() > 0) {
-            if (variableMap == null || !variableMap.containsKey(varName))
-                throw new NoSuchVariableException(varName);
-
-            Object value = variableMap.get(varName);
-            if (value instanceof X509Certificate) {
-                cert = (X509Certificate) value;
-            } else if (value instanceof String) {
+            if (certVariableValue instanceof Map)
+                throw new IllegalArgumentException("Must pass variable value object, not variable map");
+            if (certVariableValue instanceof X509Certificate) {
+                cert = (X509Certificate) certVariableValue;
+            } else if (certVariableValue instanceof String) {
                 // Assume PEM or raw base64 encoded
-                cert = CertUtils.decodeFromPEM(String.valueOf(value), false);
+                cert = CertUtils.decodeFromPEM(String.valueOf(certVariableValue), false);
             } else {
                 throw new NoSuchVariableException(varName, "Recipient certificate variable was neither an X509Certificate nor a string in PEM or Base-64 format.");
             }

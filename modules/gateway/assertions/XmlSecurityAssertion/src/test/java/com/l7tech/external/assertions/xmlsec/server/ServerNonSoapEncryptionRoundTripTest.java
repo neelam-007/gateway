@@ -115,11 +115,11 @@ public class ServerNonSoapEncryptionRoundTripTest {
         if (algUri != null) ass.setXencAlgorithm(algUri);
         ass.setRecipientCertificateBase64(recipb64);
         if (useCertVar) {
-            ass.setRecipientCertContextVariableName(encodeCertAsString ? "recipCertString" : "recipCert");
+            ass.setRecipientCertContextVariableName(encodeCertAsString ? "recipCertString" : "recipCert[3]");
         }
         ServerNonSoapEncryptElementAssertion sass = new ServerNonSoapEncryptElementAssertion(ass);
         final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, new Message());
-        context.setVariable("recipCert", recipCert);
+        context.setVariable("recipCert", new X509Certificate[] { null, null, null, recipCert, null, null });
         context.setVariable("recipCertString", recipb64);
         AssertionStatus encryptResult = sass.checkRequest(context);
         assertEquals(AssertionStatus.NONE, encryptResult);
