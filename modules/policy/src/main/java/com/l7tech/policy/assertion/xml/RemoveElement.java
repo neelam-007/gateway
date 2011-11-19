@@ -1,19 +1,13 @@
 package com.l7tech.policy.assertion.xml;
 
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.RequiresXML;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
@@ -143,9 +137,8 @@ public class RemoveElement extends MessageTargetableAssertion {
 
     @Override
     protected VariablesUsed doGetVariablesUsed() {
-        return super.doGetVariablesUsed().withVariables(
-                elementFromVariable,
-                insertedElementLocation != null ? elementToInsertVariable : null
-        );
+        return super.doGetVariablesUsed()
+                .withExpressions(elementFromVariable != null ? "${" + elementFromVariable + "}" : null)
+                .withVariables(insertedElementLocation != null ? elementToInsertVariable : null);
     }
 }

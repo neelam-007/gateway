@@ -14,6 +14,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.MissingRequiredElementException;
@@ -52,6 +53,26 @@ public class ServerRemoveElementTest {
         assertEquals(AssertionStatus.NONE, result);
 
         assertEquals("<a/>", toString(mess.getXmlKnob()));
+    }
+
+    @Test
+    @BugNumber(10749)
+    public void testRemoveSingleElementUsingIndex() throws Exception {
+        Message mess = makemess("<a><b/><c/><d/></a>");
+        Element b = XmlUtil.findOnlyOneChildElementByName(mess.getXmlKnob().getDocumentWritable().getDocumentElement(), (String)null, "b");
+        Element c = XmlUtil.findOnlyOneChildElementByName(mess.getXmlKnob().getDocumentWritable().getDocumentElement(), (String)null, "c");
+        Element d = XmlUtil.findOnlyOneChildElementByName(mess.getXmlKnob().getDocumentWritable().getDocumentElement(), (String)null, "d");
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(mess, new Message());
+        context.setVariable("remel", new Element[] { b, c, d });
+
+        RemoveElement ass = new RemoveElement();
+        ass.setElementFromVariable("remel[1]");
+
+        ServerRemoveElement sass = new ServerRemoveElement(ass);
+        AssertionStatus result = sass.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+
+        assertEquals("<a><b/><d/></a>", toString(mess.getXmlKnob()));
     }
 
     @Test
