@@ -378,6 +378,9 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
             else if (assertion.getAttributeStatement() != null)
                 sb.append(" (Attribute Query)");
 
+            if (assertion.isSignRequest()) {
+                sb.append("; Sign Request");
+            }
             return AssertionUtils.decorateName(assertion, sb);
         }
     };
