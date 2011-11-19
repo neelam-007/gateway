@@ -132,6 +132,13 @@ CREATE TABLE active_connector_property (
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
+-- Add permissions to Publish External Identity Providers role for creating Simple LDAP identity provider
+--
+INSERT INTO rbac_permission VALUES (-258,0,-250,'CREATE',NULL,'ID_PROVIDER_CONFIG');
+INSERT INTO rbac_predicate VALUES (-259,0,-258);
+INSERT INTO rbac_predicate_attribute VALUES (-259,'typeVal','4');
+
+--
 -- Reenable FK at very end of script
 --
 SET FOREIGN_KEY_CHECKS=1;
