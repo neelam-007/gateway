@@ -260,7 +260,7 @@ public class VariableUseSupport {
      * <p>This ensures subclasses call the superclass method to aggregate
      * variables set.</p>
      *
-     * @param <VUS> The VariablesUsedSupport concrete subclass
+     * @param <VSS> The VariablesSetSupport concrete subclass
      */
     public static abstract class VariablesSetSupport<VSS extends VariablesSetSupport<VSS>> {
         private final List<VariableMetadata> variablesSet = new ArrayList<VariableMetadata>();
