@@ -111,8 +111,6 @@ public class Saml1ValidationTest {
                     "                AssertionID=\"SamlAssertion-f90a22365f67ea5024d91f960ead8ad1\" Issuer=\"irishman2.l7tech.local\"\n" +
                     "                IssueInstant=\"2011-11-10T21:46:12.283Z\">\n" +
                     "    <saml:Conditions NotBefore=\"2011-11-10T21:44:12.285Z\" NotOnOrAfter=\"2011-11-10T21:51:12.285Z\">\n" +
-                    "        <saml:AudienceRestrictionCondition>\n" +
-                    "        </saml:AudienceRestrictionCondition>\n" +
                     "    </saml:Conditions>\n" +
                     "    <saml:AuthenticationStatement AuthenticationMethod=\"urn:oasis:names:tc:SAML:1.0:am:unspecified\"\n" +
                     "                                  AuthenticationInstant=\"2011-11-10T21:46:12.283Z\">\n" +

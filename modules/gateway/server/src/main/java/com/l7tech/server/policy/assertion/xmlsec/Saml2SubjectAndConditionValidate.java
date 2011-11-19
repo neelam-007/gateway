@@ -289,7 +289,7 @@ class Saml2SubjectAndConditionValidate {
 
         final AudienceRestrictionType[] audienceRestrictionArray = conditionsType.getAudienceRestrictionArray();
         if (audienceRestrictionArray == null || audienceRestrictionArray.length <= 0) {
-            SamlAssertionValidate.Error error = new SamlAssertionValidate.Error("Audience Restriction Check Failed (assertion does not specify audience)", null, allAudienceRestrictions);
+            SamlAssertionValidate.Error error = new SamlAssertionValidate.Error("Audience Restriction Check Failed (assertion does not specify audience restriction condition)", null, allAudienceRestrictions);
             logger.finer(error.toString());
             validationResults.add(error);
             return;

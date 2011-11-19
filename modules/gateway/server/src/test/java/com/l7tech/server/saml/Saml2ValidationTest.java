@@ -917,8 +917,6 @@ public class Saml2ValidationTest {
             "        </saml2:SubjectConfirmation>\n" +
             "    </saml2:Subject>\n" +
             "    <saml2:Conditions NotBefore=\"2011-11-10T23:59:55.825Z\" NotOnOrAfter=\"2011-11-11T00:06:55.825Z\">\n" +
-            "        <saml2:AudienceRestriction>\n" +
-            "        </saml2:AudienceRestriction>\n" +
             "    </saml2:Conditions>\n" +
             "    <saml2:AuthnStatement AuthnInstant=\"2011-11-11T00:01:55.767Z\">\n" +
             "        <saml2:SubjectLocality Address=\"127.0.0.1\"/>\n" +
