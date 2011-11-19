@@ -17,7 +17,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  * @author flascell
  * @version Aug 27, 2003<br/>
  */
-public class RequireWssEncryptedElement extends XmlSecurityAssertionBase {
+public class RequireWssEncryptedElement extends XmlSecurityAssertionBase implements HasPermittedXencAlgorithmList {
     public RequireWssEncryptedElement() {
         this(compatOrigDefaultXpathValue());
     }
@@ -36,6 +36,7 @@ public class RequireWssEncryptedElement extends XmlSecurityAssertionBase {
         return xEncAlgorithmList == null || xEncAlgorithmList.isEmpty() ? XencUtil.AES_128_CBC : xEncAlgorithmList.iterator().next();
     }
 
+    @Override
     public List<String> getXEncAlgorithmList() {
         return xEncAlgorithmList == null ? null : new ArrayList<String>(xEncAlgorithmList);
     }
@@ -56,10 +57,7 @@ public class RequireWssEncryptedElement extends XmlSecurityAssertionBase {
         }
     }
 
-    /**
-     * Update the encryption algorithm list.  It is important to update the algorithm with the highest preference.
-     * @param newList the new list of algorithms to use.  Required.
-     */
+    @Override
     public void setXEncAlgorithmList(List<String> newList) {
         if (newList == null) throw new IllegalArgumentException();
         initXEncAlgorithmList(newList);

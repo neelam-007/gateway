@@ -5,16 +5,31 @@
 
 package com.l7tech.policy.assertion.credential.wss;
 
-import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.AssertionNodeNameFactory;
 import com.l7tech.policy.assertion.AssertionUtils;
+import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.xmlsec.HasPermittedXencAlgorithmList;
+import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
+
+import java.util.List;
 
 /**
  * @author mike
  */
-public class EncryptedUsernameTokenAssertion extends WssBasic implements SecurityHeaderAddressable {
+public class EncryptedUsernameTokenAssertion extends WssBasic implements SecurityHeaderAddressable, HasPermittedXencAlgorithmList {
+
+    private List<String> xEncAlgorithmList;
+
+    @Override
+    public List<String> getXEncAlgorithmList() {
+        return xEncAlgorithmList;
+    }
+
+    @Override
+    public void setXEncAlgorithmList(List<String> xEncAlgorithmList) {
+        this.xEncAlgorithmList = xEncAlgorithmList;
+    }
 
     final static String baseName = "Require Encrypted UsernameToken Profile Credentials";
 
@@ -35,6 +50,7 @@ public class EncryptedUsernameTokenAssertion extends WssBasic implements Securit
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
         meta.putNull(AssertionMetadata.PROPERTIES_EDITOR_FACTORY);
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/authentication.gif");
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.HasPermittedXencAlgorithmListValidator");
 
         meta.put(AssertionMetadata.CLIENT_ASSERTION_POLICY_ICON, "com/l7tech/proxy/resources/tree/authentication.gif");
         meta.put(AssertionMetadata.USED_BY_CLIENT, Boolean.TRUE);

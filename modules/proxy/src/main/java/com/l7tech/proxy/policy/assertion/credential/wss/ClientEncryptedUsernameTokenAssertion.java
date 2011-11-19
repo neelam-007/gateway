@@ -13,14 +13,20 @@ import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
+import com.l7tech.proxy.policy.assertion.xmlsec.ClientRequestWssConfidentiality;
 import com.l7tech.security.token.UsernameTokenImpl;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
+import com.l7tech.util.Functions;
+import com.l7tech.util.Option;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.util.Option.optional;
 
 /**
  * Decorates a request with an ephemeral EncryptedKey addressed to the server, and a UsernameToken
@@ -49,6 +55,13 @@ public class ClientEncryptedUsernameTokenAssertion extends ClientWssCredentialSo
         final String username = context.getUsername();
         final char[] password = context.getPassword();
 
+        final Option<String> algUri = optional(data.getXEncAlgorithmList()).map(new Functions.Unary<String, List<String>>() {
+            @Override
+            public String call(List<String> strings) {
+                return ClientRequestWssConfidentiality.selectMostPreferredSupportedAlgorithm(strings);
+            }
+        });
+
         context.getPendingDecorations().put(this, new ClientDecorator() {
             public AssertionStatus decorateRequest(PolicyApplicationContext context)
                                                         throws PolicyAssertionException, IOException {
@@ -61,6 +74,7 @@ public class ClientEncryptedUsernameTokenAssertion extends ClientWssCredentialSo
                 wssReqs.setSignTimestamp(true);
                 // TODO reuse existing encrypted key?
                 wssReqs.setUseDerivedKeys(true);
+                if (algUri.isSome()) wssReqs.setEncryptionAlgorithm(algUri.some());
 
                 return AssertionStatus.NONE;
             }

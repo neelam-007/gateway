@@ -12,6 +12,7 @@ import com.l7tech.security.xml.XencUtil;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.xml.xpath.XpathExpression;
 import org.jaxen.JaxenException;
+import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -76,12 +77,9 @@ public class ClientRequestWssConfidentiality extends ClientDomXpathBasedAssertio
                 wssReqs.addElementToEncrypt(element, new ElementEncryptionConfig(data.isEncryptContentsOnly()));
             }
             if (data.getXEncAlgorithmList() != null) {
-                for (String uri : data.getXEncAlgorithmList()) {
-                    if (isXencAlgorithmSupported(uri)) {
-                        wssReqs.setEncryptionAlgorithm(uri);
-                        break;
-                    }
-                }
+                String chosenUri = selectMostPreferredSupportedAlgorithm(data.getXEncAlgorithmList());
+                if (chosenUri != null)
+                    wssReqs.setEncryptionAlgorithm(chosenUri);
             } else if (data.getXEncAlgorithm() !=null) {
                 wssReqs.setEncryptionAlgorithm(data.getXEncAlgorithm());
             }
@@ -102,7 +100,24 @@ public class ClientRequestWssConfidentiality extends ClientDomXpathBasedAssertio
         return AssertionStatus.NONE;
     }
 
-    private boolean isXencAlgorithmSupported(String algUri) {
+    /**
+     * Return the first algorithm on the specified list that is supported by this XVC.
+     *
+     * @param algList algorithm list to examine.  Required, but may be empty.
+     * @return the first supported xenc algorithm URI, or null.
+     */
+    public static String selectMostPreferredSupportedAlgorithm(@NotNull Iterable<String> algList) {
+        String chosenUri = null;
+        for (String uri : algList) {
+            if (isXencAlgorithmSupported(uri)) {
+                chosenUri = uri;
+                break;
+            }
+        }
+        return chosenUri;
+    }
+
+    public static boolean isXencAlgorithmSupported(String algUri) {
         try {
             if (XencUtil.doesEncryptionAlgorithmRequireGcm(algUri) && !gcmSupported)
                 return false;
@@ -113,7 +128,7 @@ public class ClientRequestWssConfidentiality extends ClientDomXpathBasedAssertio
         }
     }
 
-    private static boolean isGcmSupported() {
+    public static boolean isGcmSupported() {
         try {
             JceProvider.getInstance().getAesGcmCipher();
             log.fine("AES GCM support is available");

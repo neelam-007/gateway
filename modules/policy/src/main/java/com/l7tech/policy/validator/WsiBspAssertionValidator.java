@@ -4,9 +4,11 @@ import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.WsiBspAssertion;
-import com.l7tech.policy.assertion.xmlsec.RequireWssEncryptedElement;
+import com.l7tech.policy.assertion.xmlsec.HasPermittedXencAlgorithmList;
 import com.l7tech.policy.assertion.xmlsec.WssEncryptElement;
 import com.l7tech.security.xml.XencUtil;
+
+import java.util.List;
 
 /**
  * Assertion validator for WS-I Basic Security Profile compliance.
@@ -34,8 +36,8 @@ public class WsiBspAssertionValidator implements AssertionValidator {
             for(int p=0; p<count; p++) {
                 Assertion assertion = path.getPathAssertion(p);
 
-                if(assertion instanceof RequireWssEncryptedElement) {
-                    checkAssertion((RequireWssEncryptedElement)assertion, path, result);
+                if(assertion instanceof HasPermittedXencAlgorithmList) {
+                    checkAssertion((HasPermittedXencAlgorithmList)assertion, path, result);
                 }
                 else if(assertion instanceof WssEncryptElement) {
                     checkAssertion((WssEncryptElement)assertion, path, result);
@@ -46,9 +48,11 @@ public class WsiBspAssertionValidator implements AssertionValidator {
 
     //- PRIVATE
 
-    private void checkAssertion(RequireWssEncryptedElement assertion, AssertionPath path, PolicyValidatorResult result) {
-        if(!permittedEncryptionAlgorithm(assertion.getXEncAlgorithm())) {
-            result.addWarning(new PolicyValidatorResult.Warning(assertion,
+    private void checkAssertion(HasPermittedXencAlgorithmList assertion, AssertionPath path, PolicyValidatorResult result) {
+        List<String> algList = assertion.getXEncAlgorithmList();
+        String alg = algList == null ? null : algList.iterator().next();
+        if(!permittedEncryptionAlgorithm(alg)) {
+            result.addWarning(new PolicyValidatorResult.Warning((Assertion)assertion,
                     "Encryption is not WS-I Basic Security Profile compliant.", null));
         }
     }

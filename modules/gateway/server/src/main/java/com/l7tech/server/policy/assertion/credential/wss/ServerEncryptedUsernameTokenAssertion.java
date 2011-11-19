@@ -1,15 +1,6 @@
 package com.l7tech.server.policy.assertion.credential.wss;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.security.token.EncryptedKey;
-import com.l7tech.security.token.SigningSecurityToken;
-import com.l7tech.security.token.UsernameToken;
-import com.l7tech.security.token.XmlSecurityToken;
-import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.security.xml.processor.ProcessorResultUtil;
-import com.l7tech.security.xml.SecurityTokenResolver;
-import com.l7tech.server.ServerConfigParams;
-import com.l7tech.util.CausedIOException;
 import com.l7tech.message.Message;
 import com.l7tech.message.MessageRole;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -17,15 +8,21 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.security.token.*;
+import com.l7tech.security.xml.SecurityTokenResolver;
+import com.l7tech.security.xml.processor.ProcessorResult;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.message.AuthenticationContext;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
+import com.l7tech.util.CausedIOException;
 import com.l7tech.util.Config;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.util.*;
 
 /**
  * Ensures that a UsernameToken was present in the request, was encrypted, and was signed with the same token that
@@ -41,6 +38,7 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractMessageTarget
         this.data = data;
         this.config = springContext.getBean("serverConfig", Config.class);
         this.securityTokenResolver = springContext.getBean("securityTokenResolver", SecurityTokenResolver.class);
+        this.permittedXencAlgUris = data.getXEncAlgorithmList() == null ? null : new HashSet<String>(data.getXEncAlgorithmList());
     }
 
     @Override
@@ -93,8 +91,8 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractMessageTarget
             if (token instanceof UsernameToken) {
                 UsernameToken utok = (UsernameToken) token;
 
-                if (!ProcessorResultUtil.nodeIsPresent(utok.asElement(), wssResults.getElementsThatWereEncrypted())) {
-                    logger.fine("Ignoring UsernameToken that was not encrypted");
+                if (!wasProperlyEncrypted(wssResults, utok)) {
+                    logger.fine("Ignoring UsernameToken that was not properly encrypted");
                     continue;
                 }
 
@@ -134,10 +132,21 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractMessageTarget
         return AssertionStatus.AUTH_REQUIRED;
     }
 
+    private boolean wasProperlyEncrypted(ProcessorResult wssResults, UsernameToken utok) {
+        for (EncryptedElement anElementFoundByProcessor : wssResults.getElementsThatWereEncrypted()) {
+            if (anElementFoundByProcessor.asElement() == utok.asElement()) {
+                if (permittedXencAlgUris == null || permittedXencAlgUris.contains(anElementFoundByProcessor.getAlgorithm()))
+                    return true;
+            }
+        }
+        return false;
+    }
+
     //- PRIVATE
 
     private final EncryptedUsernameTokenAssertion data;
     private final Config config;
     private final SecurityTokenResolver securityTokenResolver;
+    private final Set<String> permittedXencAlgUris;
 
 }
