@@ -4,7 +4,6 @@ import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.AuditDetailEvent;
-import static com.l7tech.gateway.common.audit.SystemMessages.*;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.objectmodel.FindException;
@@ -30,6 +29,8 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.gateway.common.audit.SystemMessages.*;
 
 /**
  * Abstract superclass for transport modules for connectors for incoming FTP, HTTP, etc.
@@ -329,6 +330,14 @@ public abstract class TransportModule extends LifecycleBean {
         return certs.toArray(new X509Certificate[certs.size()]);
     }
 
+    /**
+     * Called by transport level code to notify that a particular connector has a configuration problem that prevents it from being opened in its current configuration.
+     *
+     * @param connector the connector that won't open. Required.
+     */
+    public abstract void reportMisconfiguredConnector(@NotNull SsgConnector connector);
+    
+
     protected String describe( final SsgConnector connector ) {
         return connector.getName() + " (#" + connector.getOid() + ",v" + connector.getVersion() + ") on port " + connector.getPort();
     }
@@ -355,6 +364,4 @@ public abstract class TransportModule extends LifecycleBean {
 
         return audit;
     }
-
-
 }

@@ -2,22 +2,17 @@ package com.l7tech.external.assertions.rawtcp.server;
 
 import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.log.HybridDiagnosticContext;
-import static com.l7tech.gateway.common.Component.GW_GENERIC_CONNECTOR;
-import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
-import static com.l7tech.server.GatewayFeatureSets.SERVICE_L7RAWTCP_MESSAGE_INPUT;
-import com.l7tech.server.audit.AuditContextUtils;
-import static com.l7tech.util.CollectionUtils.caseInsensitiveSet;
-import com.l7tech.util.Config;
-import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.external.assertions.rawtcp.SimpleRawTransportAssertion;
 import com.l7tech.gateway.common.LicenseManager;
+import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.*;
+import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -26,10 +21,8 @@ import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.server.transport.TransportModule;
 import com.l7tech.server.util.ApplicationEventProxy;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.Pair;
-import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.*;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
@@ -39,12 +32,20 @@ import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.*;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.gateway.common.Component.GW_GENERIC_CONNECTOR;
+import static com.l7tech.server.GatewayFeatureSets.SERVICE_L7RAWTCP_MESSAGE_INPUT;
+import static com.l7tech.util.CollectionUtils.caseInsensitiveSet;
 
 /**
  *
@@ -206,6 +207,12 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
                 auditError( SCHEME_RAW_TCP, "Unable to access initial raw connectors: " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
             }
         }
+    }
+
+    @Override
+    public void reportMisconfiguredConnector(@NotNull SsgConnector connector) {
+        // Ignore, can't currently happen for simple raw
+        logger.log(Level.WARNING, "Raw connector reported misconfigured: OID " + connector.getOid());
     }
 
     private void startInitialConnectors() throws FindException {

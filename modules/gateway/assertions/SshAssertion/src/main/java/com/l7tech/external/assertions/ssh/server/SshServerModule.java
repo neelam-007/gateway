@@ -56,6 +56,7 @@ import org.apache.sshd.server.session.ServerSession;
 import org.apache.sshd.server.session.SessionFactory;
 import org.apache.sshd.server.sftp.SftpSubsystem;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
@@ -211,6 +212,12 @@ public class SshServerModule extends TransportModule implements ApplicationListe
                 auditError( SCHEME_SSH, "Unable to access initial SSH connectors: " + getMessage( e ), e );
             }
         }
+    }
+
+    @Override
+    public void reportMisconfiguredConnector(@NotNull SsgConnector connector) {
+        // Ignore, can't currently happen for SSH
+        logger.log(Level.WARNING, "SSH connector reported misconfigured: OID " + connector.getOid());
     }
 
     private void startInitialConnectors() throws FindException {

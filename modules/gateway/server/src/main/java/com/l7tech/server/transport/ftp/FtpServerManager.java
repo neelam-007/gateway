@@ -1,27 +1,23 @@
 package com.l7tech.server.transport.ftp;
 
-import com.l7tech.gateway.common.*;
-import com.l7tech.gateway.common.Component;
-import static com.l7tech.gateway.common.transport.SsgConnector.*;
-import static com.l7tech.server.GatewayFeatureSets.SERVICE_FTP_MESSAGE_INPUT;
-import com.l7tech.server.event.system.ReadyForMessages;
-import static com.l7tech.util.CollectionUtils.caseInsensitiveSet;
-import com.l7tech.util.Config;
-import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.gateway.common.Component;
+import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.*;
+import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.server.transport.TransportModule;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.SoapFaultManager;
+import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.util.Pair;
-import static com.l7tech.util.Pair.pair;
 import org.apache.ftpserver.ConfigurableFtpServerContext;
 import org.apache.ftpserver.FtpServer;
 import org.apache.ftpserver.FtpSessionImpl;
@@ -36,6 +32,7 @@ import org.apache.ftpserver.listener.ConnectionManager;
 import org.apache.ftpserver.listener.Listener;
 import org.apache.ftpserver.listener.mina.MinaConnection;
 import org.apache.mina.common.support.BaseIoSession;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationEvent;
 
 import java.io.IOException;
@@ -45,6 +42,12 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.gateway.common.transport.SsgConnector.SCHEME_FTP;
+import static com.l7tech.gateway.common.transport.SsgConnector.SCHEME_FTPS;
+import static com.l7tech.server.GatewayFeatureSets.SERVICE_FTP_MESSAGE_INPUT;
+import static com.l7tech.util.CollectionUtils.caseInsensitiveSet;
+import static com.l7tech.util.Pair.pair;
 
 /**
  * Creates and controls an embedded FTP server for each configured SsgConnector
@@ -116,6 +119,12 @@ public class FtpServerManager extends TransportModule {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public void reportMisconfiguredConnector(@NotNull SsgConnector connector) {
+        logger.log(Level.WARNING, "Shutting down FTP connector for control port " + connector.getPort() + " because it cannot be opened with its current configuration");
+        removeConnector(connector.getOid());
     }
 
     @Override

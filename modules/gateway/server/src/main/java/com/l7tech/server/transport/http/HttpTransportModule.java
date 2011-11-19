@@ -39,6 +39,7 @@ import org.apache.coyote.ProtocolHandler;
 import org.apache.coyote.http11.Http11Protocol;
 import org.apache.naming.resources.FileDirContext;
 import org.apache.tomcat.util.IntrospectionUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 
@@ -639,7 +640,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             }
         }
 
-        notifyEndpointDeactivation( entry.left );
+        notifyEndpointDeactivation(entry.left);
     }
 
     private final Set<String> schemes = caseInsensitiveSet( SCHEME_HTTP, SCHEME_HTTPS );
@@ -757,9 +758,9 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
                 builder.append(character);                
             }
         }
-        builder.append( "-" );
-        builder.append( connector.getOid() );
-        builder.append( "-executor" );
+        builder.append("-");
+        builder.append(connector.getOid());
+        builder.append("-executor");
 
         return builder.toString();
     }
@@ -964,6 +965,12 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     @Override
     public Config getServerConfig() {
         return serverConfig;
+    }
+
+    @Override
+    public void reportMisconfiguredConnector(@NotNull SsgConnector connector) {
+        logger.log(Level.WARNING, "Shutting down HTTP connector for port " + connector.getPort() + " because it cannot be opened with its current configuration");
+        removeConnector(connector.getOid());
     }
 
     public static final class WebappClassLoaderEx extends WebappClassLoader {

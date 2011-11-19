@@ -519,7 +519,7 @@ public class SsgConnectorSslHelper {
         }
     }
 
-    private static String[] getEnabledTlsVersionsAndCheckSocketConfig(SSLServerSocketFactory sslServerSocketFactory,
+    private String[] getEnabledTlsVersionsAndCheckSocketConfig(SSLServerSocketFactory sslServerSocketFactory,
                                                                         Set<String> desiredTlsVersions,
                                                                         String[] enabledCiphers,
                                                                         int clientAuth)
@@ -537,6 +537,7 @@ public class SsgConnectorSslHelper {
             socket.accept();
             /* NEVER REACHED */
         } catch (SSLException e) {
+            transportModule.reportMisconfiguredConnector(ssgConnector);
             throw new IOException(e);
         } catch (Exception e) {
             // Ignore it; it's either the expected SocketTimeoutException, or else something that will recur and
