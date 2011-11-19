@@ -44,8 +44,9 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
 
     private Counter getLockedCounter(Connection conn, String counterName) throws SQLException {
         PreparedStatement ps = conn.prepareStatement("SELECT cnt_sec, cnt_min, cnt_hr, cnt_day, cnt_mnt, last_update" +
-                " FROM counters WHERE countername='" + counterName + "'" +
+                " FROM counters WHERE countername=?" +
                 " FOR UPDATE");
+        ps.setString(1, counterName);
         ResultSet rs = ps.executeQuery();
         Counter output = null;
         while (rs.next()) {
@@ -295,7 +296,8 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
 
                     Connection conn = session.connection();
                     PreparedStatement ps = conn.prepareStatement("SELECT " + fieldstr +
-                                                                 " FROM counters WHERE countername='" + counterName + "'");
+                                                                 " FROM counters WHERE countername=?");
+                    ps.setString(1, counterName);
                     ResultSet rs = ps.executeQuery();
                     long desiredval = -1;
                     while (rs.next()) {
@@ -338,7 +340,8 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
                 try {
                     Connection conn = session.connection();
                     ps = conn.prepareStatement("SELECT counterid,countername,cnt_sec,cnt_min,cnt_hr,cnt_day,cnt_mnt,last_update" +
-                            " FROM counters WHERE countername='" + counterName + "'");
+                            " FROM counters WHERE countername=?");
+                    ps.setString(1, counterName);
                     rs = ps.executeQuery();
                     CounterInfo info = null;
                     if (rs.next()) {
@@ -349,8 +352,8 @@ public class CounterManagerImpl extends HibernateDaoSupport implements CounterMa
                         long hr = rs.getLong(5);
                         long day = rs.getLong(6);
                         long mnt = rs.getLong(7);
-                        Date lastUpdate = rs.getDate(8);
-                        info = new CounterInfo(oid, name, sec, min, hr, day, mnt, lastUpdate);
+                        long lastUpdate = rs.getLong(8);
+                        info = new CounterInfo(oid, name, sec, min, hr, day, mnt, new Date(lastUpdate));
                     }
                     rs.close();
                     ps.close();
