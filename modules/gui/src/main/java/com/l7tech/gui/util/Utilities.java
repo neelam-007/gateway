@@ -1279,25 +1279,27 @@ public class Utilities {
     }
 
     /**
-     * Configure the specified component to change its foreground color to Gray whenever it is disabled.
+     * Configure the specified components to change the foreground color to Gray whenever one is disabled.
      *
-     * @param component the component whose behaviour will be altered
+     * @param components the components whose behaviour will be altered
      */
-    public static void enableGrayOnDisabled(JComponent component) {
-        final Color defaultForeground = component.getForeground();
-        final Color defaultBackground = component.getBackground();
-        component.addPropertyChangeListener("enabled", new PropertyChangeListener() {
-            public void propertyChange(PropertyChangeEvent evt) {
-                if (evt.getSource() instanceof JComponent && "enabled".equals(evt.getPropertyName())) {
-                    JComponent component = (JComponent)evt.getSource();
-                    boolean enabled = ((Boolean)evt.getNewValue()).booleanValue();
-                    component.setForeground(enabled ? defaultForeground : DISABLED_FOREGROUND_COLOR);
-                    component.setBackground(enabled ? defaultBackground : DISABLED_BACKGROUND_COLOR);
+    public static void enableGrayOnDisabled(JComponent... components) {
+        for (JComponent component : components) {
+            final Color defaultForeground = component.getForeground();
+            final Color defaultBackground = component.getBackground();
+            component.addPropertyChangeListener("enabled", new PropertyChangeListener() {
+                public void propertyChange(PropertyChangeEvent evt) {
+                    if (evt.getSource() instanceof JComponent && "enabled".equals(evt.getPropertyName())) {
+                        JComponent component = (JComponent)evt.getSource();
+                        boolean enabled = ((Boolean)evt.getNewValue()).booleanValue();
+                        component.setForeground(enabled ? defaultForeground : DISABLED_FOREGROUND_COLOR);
+                        component.setBackground(enabled ? defaultBackground : DISABLED_BACKGROUND_COLOR);
+                    }
                 }
-            }
-        });
-        component.setForeground(component.isEnabled() ? defaultForeground : DISABLED_FOREGROUND_COLOR);
-        component.setBackground(component.isEnabled() ? defaultBackground : DISABLED_BACKGROUND_COLOR);
+            });
+            component.setForeground(component.isEnabled() ? defaultForeground : DISABLED_FOREGROUND_COLOR);
+            component.setBackground(component.isEnabled() ? defaultBackground : DISABLED_BACKGROUND_COLOR);
+        }
     }
 
     /**

@@ -48,7 +48,7 @@ public class EncryptedUsernameTokenAssertion extends WssBasic implements Securit
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
         meta.put(AssertionMetadata.DESCRIPTION, "The requestor must provide BASIC credentials in a WSS Username Token, encrypted and signed using an ephemeral EncryptedKey");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
-        meta.putNull(AssertionMetadata.PROPERTIES_EDITOR_FACTORY);
+        meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.EncryptedUsernameTokenAssertionPropertiesDialog");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/authentication.gif");
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.HasPermittedXencAlgorithmListValidator");
 

@@ -10,7 +10,7 @@ public interface HasPermittedXencAlgorithmList {
 
     /**
      * Update the encryption algorithm list.  It is important to update the algorithm with the highest preference.
-     * @param newList the new list of algorithms to use.  Required.
+     * @param newList the new list of algorithms to use.  May or may not be nullable depending on subclass.
      */
     void setXEncAlgorithmList(List<String> newList);
 }
