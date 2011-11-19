@@ -44,6 +44,7 @@ public class UnsupportedExceptionsThrowsAdvice extends ThrowsAdviceSupport {
     private static final Class[] REQUIRED_BLACKLIST = new Class[] {
             // our own server side exceptions
             com.l7tech.server.policy.ServerPolicyException.class,
+            com.l7tech.server.identity.ldap.BindOnlyLdapUserManager.BadUsernamePatternException.class,
             // java
             javax.naming.NamingException.class, // can contain non-serializable objects, see bug 4738
             // java internals
