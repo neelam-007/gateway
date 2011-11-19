@@ -1,24 +1,25 @@
 package com.l7tech.external.assertions.ssh.console;
 
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.console.panels.SecurePasswordComboBox;
-import com.l7tech.console.panels.SecurePasswordManagerWindow;
-import com.l7tech.console.panels.ServiceComboBox;
-import com.l7tech.console.panels.ServiceComboItem;
+import com.l7tech.console.panels.*;
+import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
+import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
+import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.logging.Logger;
 
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 
@@ -26,6 +27,8 @@ import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
  * SFTP polling listener properties dialog.
  */
 public class SftpPollingListenerPropertiesDialog extends JDialog {
+    private static final Logger logger = Logger.getLogger( SftpPollingListenerPropertiesDialog.class.getName() );
+
     private JPanel mainPanel;
     private JTextField nameField;
     private JCheckBox enabledCheckBox;
@@ -48,6 +51,8 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
     private JComboBox serviceNameComboBox;
     private JButton cancelButton;
     private JButton okButton;
+    private JPanel byteLimitHolderPanel;
+    private ByteLimitPanel byteLimitPanel;
 
     private String hostKey;
     private SsgActiveConnector connector;
@@ -166,6 +171,11 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
 
         Utilities.equalizeButtonSizes(new JButton[]{okButton, cancelButton});
 
+        byteLimitPanel = new ByteLimitPanel();
+        byteLimitPanel.setAllowContextVars(true);
+        byteLimitHolderPanel.setLayout(new BorderLayout());
+        byteLimitHolderPanel.add(byteLimitPanel, BorderLayout.CENTER);
+
         pack();
         modelToView( connector );
         enableOrDisableComponents();
@@ -229,6 +239,10 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
             enableOkButton = false;
         }
 
+        if (!StringUtils.isEmpty(byteLimitPanel.validateFields())) {
+            enableOkButton = false;
+        }
+
         okButton.setEnabled(enableOkButton);
     }
 
@@ -285,6 +299,11 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
         }
         serviceNameComboBox.setEnabled(hardwiredServiceCheckBox.isSelected());
 
+        final TransportAdmin transportAdmin = getTransportAdmin();
+        if ( transportAdmin != null ) {
+            byteLimitPanel.setValue( connector.getProperty(PROPERTIES_KEY_REQUEST_SIZE_LIMIT), transportAdmin.getXmlMaxBytes() );
+        }
+
         enableOrDisableComponents();
     }
 
@@ -327,6 +346,12 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
             ServiceComboBox.getSelectedPublishedService(serviceNameComboBox) :
             null;
         connector.setHardwiredServiceOid( service == null ? null : service.getOid() );
+
+        connector.removeProperty( PROPERTIES_KEY_REQUEST_SIZE_LIMIT );
+        String requestByteLimit = byteLimitPanel.getValue();
+        if (!StringUtils.isEmpty(requestByteLimit)) {
+            setProperty( connector, PROPERTIES_KEY_REQUEST_SIZE_LIMIT, requestByteLimit );
+        }
     }
 
     private void setProperty( final SsgActiveConnector connector, final String name, final String value ) {
@@ -360,5 +385,14 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
     public void selectNameField() {
         nameField.requestFocus();
         nameField.selectAll();
+    }
+
+    private TransportAdmin getTransportAdmin() {
+        final Registry registry = Registry.getDefault();
+        if (!registry.isAdminContextPresent()) {
+            logger.warning("Admin context not present.");
+            return null;
+        }
+        return registry.getTransportAdmin();
     }
 }

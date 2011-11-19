@@ -27,11 +27,14 @@ public class SsgActiveConnector extends NamedEntityImp {
     /** If specified, incoming messages should be assumed to use the specified content type. */
     public static final String PROPERTIES_KEY_OVERRIDE_CONTENT_TYPE = "overrideContentType";
 
-    /** If specified and true then response messages should be sent.. */
+    /** If specified and true then response messages should be sent. */
     public static final String PROPERTIES_KEY_ENABLE_RESPONSE_MESSAGES = "enableResponseMessages";
 
-    /** If specified, the interval to use when polling for messages */
+    /** If specified, the interval to use when polling for messages. */
     public static final String PROPERTIES_KEY_POLLING_INTERVAL = "pollingInterval";
+
+    /** If specified, the size limit of the request message. */
+    public static final String PROPERTIES_KEY_REQUEST_SIZE_LIMIT = "requestSizeLimit";
 
     public static final String PROPERTIES_KEY_SFTP_HOST = "SftpHost";
     public static final String PROPERTIES_KEY_SFTP_PORT = "SftpPort";

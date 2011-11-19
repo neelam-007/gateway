@@ -2,25 +2,12 @@ package com.l7tech.external.assertions.ssh.server.sftppollinglistener;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
-import static com.l7tech.external.assertions.ssh.SftpPollingListenerConstants.*;
 import com.l7tech.external.assertions.ssh.server.MessageProcessingSshUtil;
-import static com.l7tech.external.assertions.ssh.server.sftppollinglistener.SftpPollingListener.*;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
-import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
-import com.l7tech.message.HasServiceOid;
-import com.l7tech.message.HasServiceOidImpl;
-import com.l7tech.message.Message;
-import com.l7tech.message.MimeKnob;
-import com.l7tech.message.SshKnob;
-import com.l7tech.message.XmlKnob;
+import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
-import static com.l7tech.server.GatewayFeatureSets.SERVICE_SSH_MESSAGE_INPUT;
-import com.l7tech.server.GatewayState;
-import com.l7tech.server.LifecycleException;
-import com.l7tech.server.MessageProcessor;
-import com.l7tech.server.ServerConfig;
-import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.*;
 import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -31,9 +18,6 @@ import com.l7tech.server.transport.ActiveTransportModule;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.util.ThreadPoolBean;
 import com.l7tech.util.Charsets;
-import static com.l7tech.util.CollectionUtils.caseInsensitiveSet;
-import static com.l7tech.util.ExceptionUtils.getDebugException;
-import static com.l7tech.util.ExceptionUtils.getMessage;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.ThreadPool.ThreadPoolShutDownException;
 import com.l7tech.xml.soap.SoapFaultUtils;
@@ -45,19 +29,23 @@ import org.springframework.context.ApplicationListener;
 import org.xml.sax.SAXException;
 
 import javax.inject.Inject;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
-import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import java.io.*;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.external.assertions.ssh.SftpPollingListenerConstants.SFTP_POLLING_DOWNLOAD_THREAD_WAIT_SECONDS_PROPERTY;
+import static com.l7tech.external.assertions.ssh.SftpPollingListenerConstants.SFTP_POLLING_MESSAGE_MAX_BYTES_PROPERTY;
+import static com.l7tech.external.assertions.ssh.server.sftppollinglistener.SftpPollingListener.*;
+import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
+import static com.l7tech.message.Message.getMaxBytes;
+import static com.l7tech.server.GatewayFeatureSets.SERVICE_SSH_MESSAGE_INPUT;
+import static com.l7tech.util.CollectionUtils.caseInsensitiveSet;
+import static com.l7tech.util.ExceptionUtils.getDebugException;
+import static com.l7tech.util.ExceptionUtils.getMessage;
 
 /**
  * SFTP polling listener module (aka boot process).
@@ -260,8 +248,8 @@ public class SftpPollingListenerModule extends ActiveTransportModule implements 
             PipedInputStream pis = new PipedInputStream();
             PipedOutputStream pos = new PipedOutputStream(pis);
             Message request = new Message();
-            //TODO [steve] SSH Polling listener should enforce size limit for inbound messages here
-            request.initialize(stashManagerFactory.createStashManager(), ctype, pis);
+            final long requestSizeLimit = connector.getLongProperty( PROPERTIES_KEY_REQUEST_SIZE_LIMIT, getMaxBytes() );
+            request.initialize(stashManagerFactory.createStashManager(), ctype, pis, requestSizeLimit);
 
             request.attachKnob(SshKnob.class, MessageProcessingSshUtil.buildSshKnob( null, 0, null,
                     0, processingFileName, directory, null, null ));
