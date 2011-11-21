@@ -84,6 +84,9 @@ public class ServerRegex extends AbstractServerAssertion<Regex> {
     {
         Pair<RegexInput, RegexOutput> inputAndOutput = getInputAndOutput(context);
         final Pattern pattern = getPattern(context);
+        if(assertion.getRegexVar()!=null)
+            context.setVariable(assertion.getRegexVar(),pattern.pattern());
+
         return isReplacement
                 ? doReplace(context, pattern, inputAndOutput.left, inputAndOutput.right)
                 : doMatch(context, pattern.matcher(inputAndOutput.left.getInput()));

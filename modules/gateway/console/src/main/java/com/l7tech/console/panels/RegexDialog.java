@@ -63,6 +63,7 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
     private JCheckBox repeatReplacementCheckBox;
     private JTextField repeatCountField;
     private JCheckBox stopAfterSuccessfulMatchCheckBox;
+    private TargetVariablePanel regexContextVarPanel;
     private TargetVariablePanel captureVariablePrefix;
     private final boolean postRouting;
     private final boolean readOnly;
@@ -103,6 +104,7 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
         captureVariablePrefixPanel.setLayout(new BorderLayout());
         captureVariablePrefixPanel.add(captureVariablePrefix, BorderLayout.CENTER);
         captureVariablePrefix.setAcceptEmpty(true);
+        regexContextVarPanel.setAcceptEmpty(true);
 
         RunOnChangeListener buttonStateUpdateListener = new RunOnChangeListener( new Runnable(){
             @Override
@@ -116,6 +118,7 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
         matchAndReplaceRadioButton.addItemListener(radioButtonListener);
         proceedIfNoMatchRadioButton.addItemListener(radioButtonListener);
         captureVariablePrefix.addChangeListener(buttonStateUpdateListener);
+        regexContextVarPanel.addChangeListener(buttonStateUpdateListener);
         repeatReplacementCheckBox.addChangeListener(buttonStateUpdateListener);
 
         cancelButton.addActionListener(new ActionListener() {
@@ -240,7 +243,11 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
         repeatCountField.setEnabled(repeatReplacementCheckBox.isEnabled() && repeatReplacementCheckBox.isSelected());
         stopAfterSuccessfulMatchCheckBox.setEnabled(proceedIfMatchRadioButton.isSelected() || proceedIfNoMatchRadioButton.isSelected());
 
-        okButton.setEnabled( !readOnly && pattern != null && targetMessagePanel.isValidTarget() && captureVariablePrefix.isEntryValid());
+        okButton.setEnabled( !readOnly &&
+                             pattern != null &&
+                             targetMessagePanel.isValidTarget() &&
+                             captureVariablePrefix.isEntryValid() &&
+                             regexContextVarPanel.isEntryValid());
     }
 
     private void updateEncodingEnabledState() {
@@ -270,6 +277,7 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
         }
 
         regexAssertion.setCaptureVar(emptyToNull(captureVariablePrefix.getVariable()));
+        regexAssertion.setRegexVar(emptyToNull(regexContextVarPanel.getVariable()));
 
         regexAssertion.setAutoTarget(false);
         targetMessagePanel.updateModel(regexAssertion);
@@ -318,6 +326,9 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
 
         captureVariablePrefix.setVariable(nullToEmpty(regexAssertion.getCaptureVar()));
         captureVariablePrefix.setAssertion(regexAssertion,getPreviousAssertion());
+
+        regexContextVarPanel.setVariable(nullToEmpty(regexAssertion.getRegexVar()));
+        regexContextVarPanel.setAssertion(regexAssertion,getPreviousAssertion());
 
         Integer mimePartIndex;
         try {

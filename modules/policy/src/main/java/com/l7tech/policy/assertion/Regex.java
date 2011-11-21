@@ -25,6 +25,7 @@ public class Regex extends MessageTargetableAssertion implements UsesVariables, 
     private String encoding;
     private @Nullable String regexName;
     private String captureVar = null;
+    private String regexVar = null;
     private boolean autoTarget = true;
 
     /**
@@ -233,6 +234,24 @@ public class Regex extends MessageTargetableAssertion implements UsesVariables, 
         return captureVar;
     }
 
+
+    /**
+     * Set the variable for saving the actual regex pattern
+     *
+     * @param regexVar the variable name or null for none
+     */
+    public void setRegexVar(@Nullable String regexVar) {
+        this.regexVar = regexVar;
+    }
+
+    /**
+     * @return variable to which to save the actual regex pattern, or null to skip doing so.
+     */
+    public String getRegexVar() {
+        return regexVar;
+    }
+
+
     /**
      * Set the variable prefix to be used for capture groups caught by the regex.
      *
@@ -255,7 +274,8 @@ public class Regex extends MessageTargetableAssertion implements UsesVariables, 
     @Override
     protected VariablesSet doGetVariablesSet() {
         return super.doGetVariablesSet().withVariables(
-                captureVar == null ? null : new VariableMetadata( captureVar, false, true, captureVar, true, DataType.STRING )
+                captureVar == null ? null : new VariableMetadata( captureVar, false, true, captureVar, true, DataType.STRING ),
+                regexVar == null ? null :  new VariableMetadata( regexVar, false, true, regexVar, true, DataType.STRING )
         );
     }
 
