@@ -3,9 +3,7 @@ package com.l7tech.external.assertions.uuidgenerator.console;
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.util.IntegerOrContextVariableValidationRule;
-import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.uuidgenerator.UUIDGeneratorAssertion;
-import com.l7tech.gateway.common.admin.AdminLogin;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.policy.assertion.AssertionMetadata;
 
@@ -19,17 +17,18 @@ import java.awt.*;
  */
 public class UUIDGeneratorPropertiesDialog extends AssertionPropertiesOkCancelSupport<UUIDGeneratorAssertion> {
     private static final String QUANTITY = "quantity";
+    private static final String MAX_QUANTITY = "max quantity";
     private JPanel contentPane;
     private JPanel variableNamePanel;
     private JTextField quantityTextField;
+    private JTextField maxQuantityTextField;
     private TargetVariablePanel targetVariablePanel;
     private InputValidator validators;
     private IntegerOrContextVariableValidationRule integerOrContextVariableRule;
-    private final AdminLogin adminLogin;
 
-    public UUIDGeneratorPropertiesDialog(Frame parent, UUIDGeneratorAssertion assertion) {
+    public UUIDGeneratorPropertiesDialog(final Frame parent, final UUIDGeneratorAssertion assertion) {
         super(assertion.getClass(), parent, (String) assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME), true);
-        adminLogin = Registry.getDefault().getAdminLogin();
+        integerOrContextVariableRule = new IntegerOrContextVariableValidationRule(UUIDGeneratorAssertion.MINIMUM_QUANTITY, assertion.getMaximumQuantity(), QUANTITY);
         initComponents();
     }
 
@@ -49,7 +48,7 @@ public class UUIDGeneratorPropertiesDialog extends AssertionPropertiesOkCancelSu
 
         validators = new InputValidator(this, getTitle());
         validators.constrainTextFieldToBeNonEmpty(QUANTITY, quantityTextField, null);
-        integerOrContextVariableRule = new IntegerOrContextVariableValidationRule(UUIDGeneratorAssertion.MINIMUM_QUANTITY, adminLogin.getGatewayConfiguration().getUuidQuantityMax(), QUANTITY);
+        validators.constrainTextFieldToNumberRange(MAX_QUANTITY, maxQuantityTextField, UUIDGeneratorAssertion.MINIMUM_QUANTITY, Integer.MAX_VALUE);
         validators.addRule(integerOrContextVariableRule);
     }
 
@@ -62,17 +61,26 @@ public class UUIDGeneratorPropertiesDialog extends AssertionPropertiesOkCancelSu
         targetVariablePanel.setAssertion(assertion, getPreviousAssertion());
         targetVariablePanel.setVariable(assertion.getTargetVariable());
         quantityTextField.setText(assertion.getQuantity());
+        maxQuantityTextField.setText(String.valueOf(assertion.getMaximumQuantity()));
     }
 
     public UUIDGeneratorAssertion getData(final UUIDGeneratorAssertion assertion) {
+        int max = UUIDGeneratorAssertion.MAXIMUM_QUANTITY;
+        try {
+            max = Integer.valueOf(maxQuantityTextField.getText());
+        } catch (final NumberFormatException e) {
+            // error will be caught by number range validation
+        }
+        integerOrContextVariableRule.setMaximum(max);
         final String quantity = quantityTextField.getText();
-        integerOrContextVariableRule.setTextToValidate((quantity == null)? null : quantity.trim());
+        integerOrContextVariableRule.setTextToValidate((quantity == null) ? null : quantity.trim());
         final String error = validators.validate();
-        if(error != null){
+        if (error != null) {
             throw new ValidationException(error);
         }
         assertion.setTargetVariable(targetVariablePanel.getVariable());
         assertion.setQuantity(quantityTextField.getText().trim());
+        assertion.setMaximumQuantity(Integer.valueOf(maxQuantityTextField.getText()));
         return assertion;
     }
 }

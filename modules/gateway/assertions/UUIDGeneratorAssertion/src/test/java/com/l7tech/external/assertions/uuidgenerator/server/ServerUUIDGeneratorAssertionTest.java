@@ -106,6 +106,46 @@ public class ServerUUIDGeneratorAssertionTest {
     }
 
     @Test
+    public void checkRequestQuantityEqualToOverriddenMax() throws Exception{
+        assertion.setMaximumQuantity(5);
+        assertion.setQuantity("5");
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        final String[] contextVariable = (String[]) policyContext.getVariable(TARGET_VARIABLE);
+        assertEquals(5, contextVariable.length);
+        assertTrue(allUnique(contextVariable));
+        assertTrue(allValid(contextVariable));
+    }
+
+    @Test
+    public void checkRequestQuantityUnderOverriddenMax() throws Exception{
+        assertion.setMaximumQuantity(5);
+        assertion.setQuantity("4");
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        final String[] contextVariable = (String[]) policyContext.getVariable(TARGET_VARIABLE);
+        assertEquals(4, contextVariable.length);
+        assertTrue(allUnique(contextVariable));
+        assertTrue(allValid(contextVariable));
+    }
+
+    @Test
+    public void checkRequestQuantityOverOverriddenMax() throws Exception{
+        assertion.setMaximumQuantity(5);
+        assertion.setQuantity("6");
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        assertEquals(AssertionStatus.FAILED, assertionStatus);
+        checkContextVariableDoesNotExist();
+
+    }
+
+    @Test
     public void checkRequestQuantityInvalid() throws Exception {
         assertion.setQuantity("invalid");
         assertion.setTargetVariable(TARGET_VARIABLE);

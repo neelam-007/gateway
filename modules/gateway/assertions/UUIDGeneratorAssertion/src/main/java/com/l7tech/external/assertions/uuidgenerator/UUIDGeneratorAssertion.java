@@ -21,12 +21,25 @@ public class UUIDGeneratorAssertion extends Assertion implements UsesVariables, 
      */
     private String quantity = String.valueOf(MINIMUM_QUANTITY);
 
+    /**
+     * The maximum number of UUIDs that the assertion can generate.
+     */
+    private int maximumQuantity = MAXIMUM_QUANTITY;
+
     public String getQuantity() {
         return quantity;
     }
 
     public void setQuantity(final String quantity) {
         this.quantity = quantity;
+    }
+
+    public int getMaximumQuantity() {
+        return maximumQuantity;
+    }
+
+    public void setMaximumQuantity(final int maximumQuantity) {
+        this.maximumQuantity = maximumQuantity;
     }
 
     public String getTargetVariable() {

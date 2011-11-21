@@ -145,12 +145,4 @@ public interface AdminLogin {
      */
     @Administrative(licensed=false)
     void ping();
-
-    /**
-     * Retrieve the GatewayConfiguration.
-     *
-     * @return the GatewayConfiguration.
-     */
-    @Administrative
-    GatewayConfiguration getGatewayConfiguration();
 }

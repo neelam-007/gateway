@@ -45,8 +45,7 @@ public class ServerUUIDGeneratorAssertion extends AbstractServerAssertion<UUIDGe
             return AssertionStatus.FAILED;
         }
 
-        final int maxQuantity = config.getIntProperty(ServerConfigParams.PARAM_UUID_QUANTITY_MAX, UUIDGeneratorAssertion.MAXIMUM_QUANTITY);
-        if (quantity > maxQuantity) {
+        if (quantity > assertion.getMaximumQuantity()) {
             logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "No UUID generated. Quantity more than maximum: " + quantity );
             return AssertionStatus.FAILED;
         }

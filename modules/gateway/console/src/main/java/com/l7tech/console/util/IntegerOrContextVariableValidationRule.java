@@ -13,7 +13,7 @@ import java.text.MessageFormat;
  */
 public class IntegerOrContextVariableValidationRule implements InputValidator.ValidationRule {
     private final int minimum;
-    private final int maximum;
+    private int maximum;
     private final String fieldName;
     private String textToValidate;
 
@@ -26,6 +26,10 @@ public class IntegerOrContextVariableValidationRule implements InputValidator.Va
 
     public void setTextToValidate(final String textToValidate) {
         this.textToValidate = (textToValidate == null)? null : textToValidate.trim();
+    }
+
+    public void setMaximum(final int maximum) {
+        this.maximum = maximum;
     }
 
     @Override

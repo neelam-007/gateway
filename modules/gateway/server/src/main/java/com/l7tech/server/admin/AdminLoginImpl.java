@@ -295,14 +295,6 @@ public class AdminLoginImpl
         return new byte[0];
     }
 
-    @Override
-    public GatewayConfiguration getGatewayConfiguration(){
-        final GatewayConfiguration configuration = new GatewayConfiguration();
-        final int max = config.getIntProperty(ServerConfigParams.PARAM_UUID_QUANTITY_MAX, 100);
-        configuration.setUuidQuantityMax(max);
-        return configuration;
-    }
-
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
     private AccessControlException buildAccessControlException(final String message, final Throwable cause) {
         return (AccessControlException) new AccessControlException(message).initCause(cause);
