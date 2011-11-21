@@ -20,8 +20,9 @@ import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.server.transport.TransportModule;
 import com.l7tech.server.util.ApplicationEventProxy;
-import com.l7tech.server.util.EventChannel;
-import com.l7tech.server.util.SoapFaultManager;
+import com.l7tech.server.util.InjectingConstructor;
+import com.l7tech.server.util.Injector;
+import com.l7tech.server.util.ThreadPoolBean;
 import com.l7tech.util.*;
 import static com.l7tech.util.ExceptionUtils.getDebugException;
 import static com.l7tech.util.ExceptionUtils.getMessage;
@@ -57,7 +58,6 @@ import org.apache.sshd.server.session.SessionFactory;
 import org.apache.sshd.server.sftp.SftpSubsystem;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -73,6 +73,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import javax.inject.Inject;
+import javax.inject.Named;
 
 import static com.l7tech.util.CollectionUtils.caseInsensitiveSet;
 import static com.l7tech.util.CollectionUtils.list;
@@ -144,61 +146,39 @@ public class SshServerModule extends TransportModule implements ApplicationListe
 
     private final ApplicationEventProxy applicationEventProxy;
     private final GatewayState gatewayState;
-    private final MessageProcessor messageProcessor;
-    private final EventChannel messageProcessingEventChannel;
-    private final SoapFaultManager soapFaultManager;
-    private final StashManagerFactory stashManagerFactory;
-    private final Map<Long, Pair<SsgConnector, SshServer>> activeConnectors = new ConcurrentHashMap<Long, Pair<SsgConnector, SshServer>>();
     private final SecurePasswordManager securePasswordManager;
+    private final ThreadPoolBean sftpMessageProcessingThreadPool;
+    private final ThreadPoolBean sshResponseDownloadThreadPool;
+    private final Injector injector;
+    private final Map<Long, Pair<SsgConnector, SshServer>> activeConnectors = new ConcurrentHashMap<Long, Pair<SsgConnector, SshServer>>();
 
-    public SshServerModule(ApplicationEventProxy applicationEventProxy,
-                           LicenseManager licenseManager,
-                           SsgConnectorManager ssgConnectorManager,
-                           TrustedCertServices trustedCertServices,
-                           DefaultKey defaultKey,
-                           Config config,
-                           GatewayState gatewayState,
-                           MessageProcessor messageProcessor,
-                           StashManagerFactory stashManagerFactory,
-                           SoapFaultManager soapFaultManager,
-                           EventChannel messageProcessingEventChannel,
-                           SecurePasswordManager securePasswordManager)
+    @Inject
+    public SshServerModule( final ApplicationEventProxy applicationEventProxy,
+                            final LicenseManager licenseManager,
+                            final SsgConnectorManager ssgConnectorManager,
+                            final TrustedCertServices trustedCertServices,
+                            final DefaultKey defaultKey,
+                            final Config config,
+                            final GatewayState gatewayState,
+                            final SecurePasswordManager securePasswordManager,
+                            @Named("sftpMessageProcessingThreadPool") final ThreadPoolBean sftpMessageProcessingThreadPool,
+                            @Named("sshResponseDownloadThreadPool") final ThreadPoolBean sshResponseDownloadThreadPool,
+                            final Injector injector,
+                            final ApplicationContext applicationContext )
     {
         super("SSH server module", GW_SSHRECV, LOGGER, SERVICE_SSH_MESSAGE_INPUT, licenseManager, ssgConnectorManager, trustedCertServices, defaultKey, config );
         this.applicationEventProxy = applicationEventProxy;
         this.gatewayState = gatewayState;
-        this.messageProcessor = messageProcessor;
-        this.messageProcessingEventChannel = messageProcessingEventChannel;
-        this.soapFaultManager = soapFaultManager;
-        this.stashManagerFactory = stashManagerFactory;
         this.securePasswordManager = securePasswordManager;
+        this.sftpMessageProcessingThreadPool = sftpMessageProcessingThreadPool;
+        this.sshResponseDownloadThreadPool = sshResponseDownloadThreadPool;
+        this.injector = injector;
+        setApplicationContext( applicationContext );
     }
 
-    private static <T> T getBean(BeanFactory beanFactory, String beanName, Class<T> beanClass) {
-        T got = beanFactory.getBean(beanName, beanClass);
-        if (got != null)
-            return got;
-        throw new IllegalStateException("Unable to get bean from application context: " + beanName);
-    }
-
-    static SshServerModule createModule(ApplicationContext appContext) {
-        final LicenseManager licenseManager = getBean(appContext, "licenseManager", LicenseManager.class);
-        final SsgConnectorManager ssgConnectorManager = getBean(appContext, "ssgConnectorManager", SsgConnectorManager.class);
-        final TrustedCertServices trustedCertServices = getBean(appContext, "trustedCertServices", TrustedCertServices.class);
-        final DefaultKey defaultKey = getBean(appContext, "defaultKey", DefaultKey.class);
-        final Config config = getBean(appContext, "serverConfig", ServerConfig.class);
-        final GatewayState gatewayState = getBean(appContext, "gatewayState", GatewayState.class);
-        final MessageProcessor messageProcessor = getBean(appContext, "messageProcessor", MessageProcessor.class);
-        final StashManagerFactory stashManagerFactory = getBean(appContext, "stashManagerFactory", StashManagerFactory.class);
-        final ApplicationEventProxy applicationEventProxy = getBean(appContext, "applicationEventProxy", ApplicationEventProxy.class);
-        final SoapFaultManager soapFaultManager = getBean(appContext, "soapFaultManager", SoapFaultManager.class);
-        final EventChannel messageProcessingEventChannel = getBean(appContext, "messageProcessingEventChannel", EventChannel.class);
-        final SecurePasswordManager securePasswordManager = getBean(appContext,"securePasswordManager", SecurePasswordManager.class);
-        final SshServerModule module = new SshServerModule(applicationEventProxy, licenseManager, ssgConnectorManager, trustedCertServices,
-                defaultKey, config, gatewayState, messageProcessor, stashManagerFactory, soapFaultManager,
-                messageProcessingEventChannel, securePasswordManager);
-        module.setApplicationContext( appContext );
-        return module;
+    static SshServerModule createModule( final ApplicationContext appContext ) {
+        final InjectingConstructor injector = appContext.getBean( InjectingConstructor.class );
+        return injector.injectNew( SshServerModule.class );
     }
 
     @Override
@@ -244,6 +224,8 @@ public class SshServerModule extends TransportModule implements ApplicationListe
     @Override
     protected void doStart() throws LifecycleException {
         registerCustomProtocols();
+        sftpMessageProcessingThreadPool.start();
+        sshResponseDownloadThreadPool.start();
         if (gatewayState.isReadyForMessages()) {
             try {
                 startInitialConnectors();
@@ -267,7 +249,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
     }
 
     private void registerCustomProtocols() {
-        TransportDescriptor ssh = new TransportDescriptor();
+        final TransportDescriptor ssh = new TransportDescriptor();
         ssh.setScheme(SCHEME_SSH);
         ssh.setSupportsSpecifiedContentType(true);
         ssh.setRequiresSpecifiedContentType(true);
@@ -281,7 +263,8 @@ public class SshServerModule extends TransportModule implements ApplicationListe
 
     @Override
     protected void doClose() throws LifecycleException {
-        super.doClose();
+        sftpMessageProcessingThreadPool.shutdown();
+        sshResponseDownloadThreadPool.shutdown();
         unregisterApplicationEventListenerAndCustomProtocols();
     }
 
@@ -647,8 +630,9 @@ public class SshServerModule extends TransportModule implements ApplicationListe
              */
             @Override
             public Command createCommand(String command) {
-                return new MessageProcessingScpCommand(splitCommandString(command), connector, messageProcessor,
-                        stashManagerFactory, soapFaultManager, messageProcessingEventChannel);
+                final MessageProcessingScpCommand scpCommand = new MessageProcessingScpCommand( splitCommandString(command), connector );
+                injector.inject( scpCommand );
+                return scpCommand;
             }
 
             private String[] splitCommandString(String command) {
@@ -688,7 +672,9 @@ public class SshServerModule extends TransportModule implements ApplicationListe
         return new NamedFactory<Command>(){
             @Override
             public Command create() {
-                return new MessageProcessingSftpSubsystem(connector, messageProcessor, stashManagerFactory, soapFaultManager, messageProcessingEventChannel);
+                final MessageProcessingSftpSubsystem sftpSubsystem = new MessageProcessingSftpSubsystem(connector);
+                injector.inject( sftpSubsystem );
+                return sftpSubsystem;
             }
 
             @Override

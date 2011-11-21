@@ -11,9 +11,11 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.SoapFaultManager;
+import com.l7tech.server.util.ThreadPoolBean;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.ThreadPool.ThreadPoolShutDownException;
 import org.apache.sshd.common.util.Buffer;
 import org.apache.sshd.server.SshFile;
 import org.apache.sshd.server.sftp.SftpSubsystem;
@@ -29,25 +31,29 @@ import java.util.logging.Logger;
 
 import static com.l7tech.external.assertions.ssh.server.MessageProcessingSshUtil.buildPolicyExecutionContext;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+
 /**
  * Message processing SFTP subsystem (heavily borrowed from org.apache.sshd.server.sftp.SftpSubsystem).
  */
-public class MessageProcessingSftpSubsystem extends SftpSubsystem {
+class MessageProcessingSftpSubsystem extends SftpSubsystem {
     private static final Logger logger = Logger.getLogger(MessageProcessingSftpSubsystem.class.getName());
 
-    private SsgConnector connector;
+    private final SsgConnector connector;
+    @Inject
     private MessageProcessor messageProcessor;
+    @Inject
     private EventChannel messageProcessingEventChannel;
+    @Inject
     private SoapFaultManager soapFaultManager;
+    @Inject
     private StashManagerFactory stashManagerFactory;
+    @Inject @Named("sftpMessageProcessingThreadPool")
+    private ThreadPoolBean threadPool;
 
-    public MessageProcessingSftpSubsystem(SsgConnector c, MessageProcessor mp, StashManagerFactory smf,
-                                          SoapFaultManager sfm, EventChannel mpec) {
-        connector = c;
-        messageProcessor = mp;
-        messageProcessingEventChannel = mpec;
-        soapFaultManager = sfm;
-        stashManagerFactory = smf;
+    MessageProcessingSftpSubsystem( final SsgConnector connector ) {
+        this.connector = connector;
     }
 
     @Override
@@ -160,13 +166,17 @@ public class MessageProcessingSftpSubsystem extends SftpSubsystem {
                 String handle = UUID.randomUUID().toString();
 
                 // start thread to process Gateway request message
-                startGatewayMessageProcessThread(connector, file);
+                submitMessageProcessingTask( connector, file );
 
                 handles.put(handle, new FileHandle(file, pflags)); // handle flags conversion
                 sendHandle(id, handle);
             } catch (IOException e) {
                 file.handleClose();
                 sendStatus(id, SSH_FX_FAILURE, e.getMessage());
+            } catch ( ThreadPoolShutDownException e ) {
+                file.handleClose();
+                logger.warning( "SFTP thread pool shutdown." );
+                sendStatus( id, SSH_FX_FAILURE, "Server error" );
             }
         } else {
             String path = buffer.getString();
@@ -189,13 +199,17 @@ public class MessageProcessingSftpSubsystem extends SftpSubsystem {
                 String handle = UUID.randomUUID().toString();
 
                 // start thread to process Gateway request message
-                startGatewayMessageProcessThread(connector, file);
+                submitMessageProcessingTask( connector, file );
 
                 handles.put(handle, new FileHandle(file, flags));
                 sendHandle(id, handle);
             } catch (IOException e) {
                 file.handleClose();
                 sendStatus(id, SSH_FX_FAILURE, e.getMessage());
+            } catch ( ThreadPoolShutDownException e ) {
+                file.handleClose();
+                logger.warning( "SFTP thread pool shutdown." );
+                sendStatus( id, SSH_FX_FAILURE, "Server error" );
             }
         }
     }
@@ -263,9 +277,9 @@ public class MessageProcessingSftpSubsystem extends SftpSubsystem {
     }
 
     /*
-     * Start Gateway Message Process thread.  Thread will finish when there nothing left in the InputStream (e.g. when it has been closed).
+     * Start Gateway Message Process task.  The task will finish when there nothing left in the InputStream (e.g. when it has been closed).
      */
-    private void startGatewayMessageProcessThread( final SsgConnector connector, final SshFile file ) throws IOException {
+    private void submitMessageProcessingTask( final SsgConnector connector, final SshFile file ) throws IOException, ThreadPoolShutDownException {
         if (file instanceof VirtualSshFile) try {
             final VirtualSshFile virtualSshFile = (VirtualSshFile) file;
 
@@ -289,18 +303,7 @@ public class MessageProcessingSftpSubsystem extends SftpSubsystem {
                     buildPolicyExecutionContext( connector, session, stashManagerFactory, pis, fileName, path );
 
             final CountDownLatch startedSignal = new CountDownLatch(1);
-            //TODO [steve] SFTP file transfer should use a thread pool
-            final ExecutorService executorService = Executors.newSingleThreadExecutor(new ThreadFactory() {
-                @Override
-                public Thread newThread(Runnable r) {
-                    Thread thread = new Thread(r, "GatewayMessageProcessThread-" + System.currentTimeMillis());
-                    thread.setDaemon(true);
-                    return thread;
-                }
-            });
-
-            Future<AssertionStatus> future = executorService.submit(new Callable<AssertionStatus>()
-            {
+            final Future<AssertionStatus> future = threadPool.submitTask(new Callable<AssertionStatus>() {
                 @Override
                 public AssertionStatus call() throws Exception {
                     AssertionStatus status = AssertionStatus.UNDEFINED;

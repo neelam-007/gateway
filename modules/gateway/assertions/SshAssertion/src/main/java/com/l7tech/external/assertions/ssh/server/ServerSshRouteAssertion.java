@@ -32,7 +32,9 @@ import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.assertion.ServerRoutingAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.security.password.SecurePasswordManager;
+import com.l7tech.server.util.ThreadPoolBean;
 import com.l7tech.util.*;
+import com.l7tech.util.ThreadPool.ThreadPoolShutDownException;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -58,8 +60,9 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
     @Inject
     private SecurePasswordManager securePasswordManager;
     @Inject
-    @Named("stashManagerFactory")
     private StashManagerFactory stashManagerFactory;
+    @Inject @Named("sshResponseDownloadThreadPool")
+    private ThreadPoolBean threadPool;
     private final String[] variablesUsed;
 
     public ServerSshRouteAssertion(SshRouteAssertion assertion, ApplicationContext context) throws PolicyAssertionException {
@@ -200,8 +203,8 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                     final PipedInputStream pis = new PipedInputStream();
                     final PipedOutputStream pos = new PipedOutputStream(pis);
 
-                    // download file on a new thread
-                    final Future<Void> future = sshDownloadOnNewThread(sshClient, directory, filename, pos);
+                    // start download task
+                    final Future<Void> future = startSshDownloadTask( sshClient, directory, filename, pos );
 
                     // TODO [steve] SSH routing should support download to a specified message
                     final Message response = context.getResponse();
@@ -284,44 +287,29 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
     /*
      * Download the given file on a new thread.
      */
-    private Future<Void> sshDownloadOnNewThread( final SshClient sshClient,
-                                                 final String directory,
-                                                 final String fileName,
-                                                 final PipedOutputStream pos ) throws IOException {
+    private Future<Void> startSshDownloadTask( final SshClient sshClient,
+                                               final String directory,
+                                               final String fileName,
+                                               final PipedOutputStream pos ) throws IOException, ThreadPoolShutDownException {
         final CountDownLatch startedSignal = new CountDownLatch(1);
 
-        //TODO [steve] SSH routing file transfer should use a thread pool
-        final ExecutorService executorService = Executors.newSingleThreadExecutor(new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread thread = new Thread(r, "SshDownloadThread-" + System.currentTimeMillis());
-                thread.setDaemon(true);
-                return thread;
-            }
-        });
-
-        logger.log(Level.FINE, "Start new thread for downloading");
-
-        final Future<Void> future = executorService.submit(new Callable<Void>(){
+        final Future<Void> future = threadPool.submitTask( new Callable<Void>() {
             @Override
             public Void call() throws IOException {
                 try {
                     startedSignal.countDown();
-                    sshClient.download(pos, directory, fileName);
+                    sshClient.download( pos, directory, fileName );
                 } finally {
-                    logger.log(Level.FINE, "... downloading thread stopped.");
-                    ResourceUtils.closeQuietly(pos);
-                    ResourceUtils.closeQuietly(pos);
+                    ResourceUtils.closeQuietly( pos );
                     startedSignal.countDown();
                 }
                 return null;
             }
-        });
+        } );
 
         try {
             startedSignal.await();
-        }
-        catch(InterruptedException ie) {
+        } catch( InterruptedException ie ) {
             Thread.currentThread().interrupt();
             throw new CausedIOException("Interrupted waiting for download.", ie);
         }

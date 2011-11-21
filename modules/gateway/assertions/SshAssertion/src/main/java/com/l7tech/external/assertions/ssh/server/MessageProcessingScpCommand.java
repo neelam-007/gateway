@@ -23,6 +23,7 @@ import org.apache.sshd.server.SshFile;
 import org.apache.sshd.server.command.ScpCommand;
 import org.apache.sshd.server.session.ServerSession;
 
+import javax.inject.Inject;
 import java.io.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -30,24 +31,23 @@ import java.util.logging.Logger;
 /**
  * Message processing for SCP support (heavily borrowed from org.apache.sshd.server.command.ScpCommand).
  */
-public class MessageProcessingScpCommand extends ScpCommand implements SessionAware {
+class MessageProcessingScpCommand extends ScpCommand implements SessionAware {
     protected static final Logger logger = Logger.getLogger(MessageProcessingScpCommand.class.getName());
 
     private ServerSession session;
-    private SsgConnector connector;
+    private final SsgConnector connector;
+    @Inject
     private MessageProcessor messageProcessor;
+    @Inject
     private EventChannel messageProcessingEventChannel;
+    @Inject
     private SoapFaultManager soapFaultManager;
+    @Inject
     private StashManagerFactory stashManagerFactory;
 
-    public MessageProcessingScpCommand(String[] args, SsgConnector c, MessageProcessor mp, StashManagerFactory smf,
-                                       SoapFaultManager sfm, EventChannel mpec) {
+    MessageProcessingScpCommand( final String[] args, final SsgConnector connector) {
         super(args);
-        connector = c;
-        messageProcessor = mp;
-        messageProcessingEventChannel = mpec;
-        soapFaultManager = sfm;
-        stashManagerFactory = smf;
+        this.connector = connector;
     }
 
     @Override

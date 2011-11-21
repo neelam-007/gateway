@@ -1658,7 +1658,7 @@
 
     <bean id="exceptionLogger" class="com.l7tech.util.UncaughtExceptionLogger" factory-method="createAndInstall"/>
 
-    <bean id="stashManagerFactory" class="com.l7tech.server.DefaultStashManagerFactory" factory-method="getInstance"/>
+    <bean id="stashManagerFactory" class="com.l7tech.server.DefaultStashManagerFactory" factory-method="getInstance" primary="true"/>
 
     <bean id="messageCacheStashManagerFactory" class="com.l7tech.server.MessageCacheStashManagerFactory"
           factory-method="getInstance"/>
@@ -1699,6 +1699,22 @@
     <bean id="securePasswordManager" class="com.l7tech.server.security.password.SecurePasswordManagerImpl"
           parent="hibernateBean">
         <constructor-arg ref="sharedKeyManager"/>
+    </bean>
+
+    <bean id="sftpMessageProcessingThreadPool" class="com.l7tech.server.util.ThreadPoolBean">
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" value="SFTP Message Processing Thread Pool"/>
+        <constructor-arg index="2" value="sftpMessageProcessingThreadLimit"/>
+        <constructor-arg index="3" value="sftp.messageProcessingThreadLimit"/>
+        <constructor-arg index="4" value="20"/>
+    </bean>
+
+    <bean id="sshResponseDownloadThreadPool" class="com.l7tech.server.util.ThreadPoolBean">
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" value="SSH2 Routing Response Download Thread Pool"/>
+        <constructor-arg index="2" value="sshResponseDownloadThreadLimit"/>
+        <constructor-arg index="3" value="ssh.responseDownloadThreadLimit"/>
+        <constructor-arg index="4" value="20"/>
     </bean>
 
     <bean id="ssgActiveConnectorManager" class="com.l7tech.server.transport.SsgActiveConnectorManagerImpl" parent="hibernateBean"/>

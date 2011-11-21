@@ -8,7 +8,7 @@ import org.springframework.context.ApplicationContextAware;
 /**
  * Injector implementation that uses the ApplicationContext
  */
-public class ApplicationContextInjector implements ApplicationContextAware, Injector {
+public class ApplicationContextInjector implements ApplicationContextAware, Injector, InjectingConstructor {
 
     //- PUBLIC
 
@@ -19,7 +19,13 @@ public class ApplicationContextInjector implements ApplicationContextAware, Inje
 
     @Override
     public void inject( final Object target ) {
-        autowireCapableBeanFactory.autowireBeanProperties( target, AutowireCapableBeanFactory.AUTOWIRE_NO, true );
+        autowireCapableBeanFactory.autowireBeanProperties( target, AutowireCapableBeanFactory.AUTOWIRE_NO, false );
+    }
+
+    @SuppressWarnings({ "unchecked" })
+    @Override
+    public <T> T injectNew( final Class<T> type ) {
+        return (T) autowireCapableBeanFactory.autowire( type, AutowireCapableBeanFactory.AUTOWIRE_CONSTRUCTOR, false );
     }
 
     /**

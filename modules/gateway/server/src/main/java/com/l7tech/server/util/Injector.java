@@ -5,5 +5,10 @@ package com.l7tech.server.util;
  */
 public interface Injector {
 
+    /**
+     * Inject values into an existing object.
+     *
+     * @param target The target object.
+     */
     void inject( Object target );
 }
