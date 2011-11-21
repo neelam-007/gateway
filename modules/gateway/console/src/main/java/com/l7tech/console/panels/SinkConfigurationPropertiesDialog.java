@@ -106,7 +106,7 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         protected FilterInfo buildFilterInfo( final String value ) {
             return buildFilterInfo(
                     resolveFilterSelection( value )
-                            .orSome( new FilterSelection( typeId, value, "Unknown '" + value + "'" ) )
+                            .orSome( new FilterSelection( typeId, value, "Not Found/Inaccessible '" + value + "'" ) )
             );
         }
         protected Option<FilterSelection> resolveFilterSelection( final String value ) {
