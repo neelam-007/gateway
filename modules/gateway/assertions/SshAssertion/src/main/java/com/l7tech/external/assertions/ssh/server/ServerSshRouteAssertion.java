@@ -50,6 +50,8 @@ import java.util.Map;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 
+import static com.l7tech.message.Message.getMaxBytes;
+
 /**
  * Server side implementation of the SshRouteAssertion.
  *
@@ -208,8 +210,8 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
 
                     // TODO [steve] SSH routing should support download to a specified message
                     final Message response = context.getResponse();
-                    // TODO [steve] SSH routing must enforce a response size limit
-                    response.initialize(stashManagerFactory.createStashManager(), ContentTypeHeader.create(assertion.getDownloadContentType()), pis);
+                    final long byteLimit = assertion.getLongResponseByteLimit(getMaxBytes());
+                    response.initialize(stashManagerFactory.createStashManager(), ContentTypeHeader.create(assertion.getDownloadContentType()), pis, byteLimit);
 
                     // force all message parts to be initialized, it is by default lazy
                     logger.log(Level.FINER, "Reading SFTP/SCP response.");
@@ -236,6 +238,10 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             } catch (IOException e) {
                 logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
                         new String[]{SshAssertionMessages.SSH_IO_EXCEPTION + ", server: " + host}, ExceptionUtils.getDebugException(e));
+                return AssertionStatus.FAILED;
+            } catch (Throwable t) {
+                logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                        new String[]{ExceptionUtils.getMessage(t)}, ExceptionUtils.getDebugException(t));
                 return AssertionStatus.FAILED;
             } finally {
                 if (sshClient != null){

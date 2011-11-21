@@ -11,9 +11,12 @@ import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.WspEnumTypeMapping;
+import com.l7tech.util.ExceptionUtils;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
@@ -47,6 +50,7 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
     private boolean isScpProtocol;   // SCP? if not, assume SFTP
     private boolean isCredentialsSourceSpecified;   // login credentials specified?  if not, assume pass through
     private boolean isDownloadCopyMethod;   // download copy method?  if not, assume upload
+    private String responseByteLimit;
 
     private MessageTargetableSupport requestTarget = defaultRequestTarget();
 
@@ -167,7 +171,7 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
         return privateKeyOid;
     }
 
-    public void setPrivateKeyOid(Long privateKeyOid) {
+    public void setPrivateKeyOid(@Nullable Long privateKeyOid) {
         this.privateKeyOid = privateKeyOid;
     }
 
@@ -175,7 +179,7 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
         return sshPublicKey;
     }
 
-    public void setSshPublicKey(String sshPublicKey) {
+    public void setSshPublicKey(@Nullable String sshPublicKey) {
         this.sshPublicKey = sshPublicKey;
     }
 
@@ -183,7 +187,7 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
         return passwordOid;
     }
 
-    public void setPasswordOid(Long passwordOid) {
+    public void setPasswordOid(@Nullable Long passwordOid) {
         this.passwordOid = passwordOid;
     }
 
@@ -284,5 +288,29 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
             fileName,
             sshPublicKey
         ).asArray();
+    }
+
+    public String getResponseByteLimit() {
+        return responseByteLimit;
+    }
+
+    public long getLongResponseByteLimit(long defaultValue) {
+        long result = defaultValue;
+        if (responseByteLimit != null) {
+            try {
+                result = Long.parseLong(responseByteLimit);
+                logger.log(Level.INFO, "Response byte limit: " + result + ".");
+            } catch (NumberFormatException e) {
+                logger.log(Level.WARNING, "Used default response byte limit: " + result + ".  " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            }
+        } else {
+            logger.log(Level.INFO, "Used default response byte limit: " + result + ".");
+        }
+
+        return result;
+    }
+
+    public void setResponseByteLimit(String responseByteLimit) {
+        this.responseByteLimit = responseByteLimit;
     }
 }

@@ -172,7 +172,7 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
         Utilities.equalizeButtonSizes(new JButton[]{okButton, cancelButton});
 
         byteLimitPanel = new ByteLimitPanel();
-        byteLimitPanel.setAllowContextVars(true);
+        byteLimitPanel.setAllowContextVars(false);
         byteLimitHolderPanel.setLayout(new BorderLayout());
         byteLimitHolderPanel.add(byteLimitPanel, BorderLayout.CENTER);
 

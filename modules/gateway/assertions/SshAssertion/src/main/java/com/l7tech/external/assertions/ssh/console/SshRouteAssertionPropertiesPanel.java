@@ -1,10 +1,8 @@
 package com.l7tech.external.assertions.ssh.console;
 
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
-import com.l7tech.console.panels.RoutingDialogUtils;
-import com.l7tech.console.panels.SecurePasswordComboBox;
-import com.l7tech.console.panels.SecurePasswordManagerWindow;
+import com.l7tech.console.panels.*;
+import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.external.assertions.ssh.SshRouteAssertion;
 import com.l7tech.gateway.common.security.password.SecurePassword;
@@ -56,6 +54,8 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
     private JPanel specifyUserCredentialsPanel;
     private JLabel userNameLabel;
     private SecurePasswordComboBox privateKeyField;
+    private JPanel responseLimitHolderPanel;
+    private ByteLimitPanel responseLimitPanel;
     private InputValidator validators;
     private AbstractButton[] secHdrButtons = { wssIgnoreButton, wssCleanupButton, wssRemoveButton, null };
     private String hostKey;
@@ -142,6 +142,11 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         }
         contentTypeComboBox.setModel(contentTypeComboBoxModel);
 
+        responseLimitPanel = new ByteLimitPanel();
+        responseLimitPanel.setAllowContextVars(false);
+        responseLimitHolderPanel.setLayout(new BorderLayout());
+        responseLimitHolderPanel.add(responseLimitPanel, BorderLayout.CENTER);
+
         //validators
         validators = new InputValidator(this, getResourceString("errorTitle"));
         validators.addRule(validators.constrainTextFieldToBeNonEmpty(getResourceString("hostNameLabel"), hostField, null));
@@ -203,6 +208,13 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
             }
         });
 
+        validators.addRule(new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                return responseLimitPanel.validateFields();
+            }
+        });
+
         super.initComponents();
     }   // initComponents()
 
@@ -213,38 +225,22 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
 
     private void enableDisableFields() {
         // connection tab
-        if(!validateServerSHostCheckBox.isSelected()) {
-                manageHostKeyButton.setEnabled(false);
-            } else {
-                manageHostKeyButton.setEnabled(true);
-            }
-            if (downloadFromRadioButton.isSelected()) {
-                contentTypeComboBox.setEnabled(true);
-                messageSource.setEnabled(false);
-            } else {
-                contentTypeComboBox.setEnabled(false);
-                messageSource.setEnabled(true);
-            }
+        manageHostKeyButton.setEnabled(validateServerSHostCheckBox.isSelected());
+        boolean isDownloadFrom = downloadFromRadioButton.isSelected();
+        contentTypeComboBox.setEnabled(isDownloadFrom);
+        messageSource.setEnabled(!isDownloadFrom);
+        responseLimitPanel.setEnabled(isDownloadFrom);
 
         // authentication tab
-        specifyUserCredentialsPanel.setEnabled(specifyUserCredentialsRadioButton.isSelected());
-        if (specifyUserCredentialsRadioButton.isSelected()) {
-            userNameLabel.setEnabled(true);
-            usernameField.setEnabled(true);
-            passwordRadioButton.setEnabled(true);
-            privateKeyRadioButton.setEnabled(true);
-            privateKeyField.setEnabled(privateKeyRadioButton.isSelected());
-            passwordField.setEnabled(passwordRadioButton.isSelected());
-            managePasswordsButton.setEnabled(true);
-        } else {
-            userNameLabel.setEnabled(false);
-            usernameField.setEnabled(false);
-            passwordRadioButton.setEnabled(false);
-            privateKeyRadioButton.setEnabled(false);
-            privateKeyField.setEnabled(false);
-            passwordField.setEnabled(false);
-            managePasswordsButton.setEnabled(false);
-        }
+        boolean isSpecifyUserCredentials = specifyUserCredentialsRadioButton.isSelected();
+        specifyUserCredentialsPanel.setEnabled(isSpecifyUserCredentials);
+        userNameLabel.setEnabled(isSpecifyUserCredentials);
+        usernameField.setEnabled(isSpecifyUserCredentials);
+        passwordRadioButton.setEnabled(isSpecifyUserCredentials);
+        privateKeyRadioButton.setEnabled(isSpecifyUserCredentials);
+        privateKeyField.setEnabled(isSpecifyUserCredentials && privateKeyRadioButton.isSelected());
+        passwordField.setEnabled(isSpecifyUserCredentials && passwordRadioButton.isSelected());
+        managePasswordsButton.setEnabled(isSpecifyUserCredentials);
     }
 
     /*
@@ -310,6 +306,8 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
             hostKey = null;
         }
 
+        responseLimitPanel.setValue(assertion.getResponseByteLimit(), Registry.getDefault().getPolicyAdmin().getXmlMaxBytes());
+
         enableDisableFields();
 
         RoutingDialogUtils.configSecurityHeaderRadioButtons(assertion, -1, null, secHdrButtons);
@@ -354,6 +352,8 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
             assertion.setUsePublicKey(false);
             assertion.setSshPublicKey(null);
         }
+
+        assertion.setResponseByteLimit(responseLimitPanel.getValue());
 
         // populate authorization settings
 
@@ -400,7 +400,6 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
     }
 
      private int getDefaultPortNumber() {
-        int port = DEFAULT_PORT_SSH;
-        return port;
+        return DEFAULT_PORT_SSH;
     }
 }

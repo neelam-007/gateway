@@ -3,8 +3,9 @@
  */
 package com.l7tech.console.panels;
 
-import com.l7tech.console.util.IntegerOrContextVariableValidationRule;
-import com.l7tech.gui.util.*;
+import com.l7tech.gui.util.InputValidator;
+import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.ValidationUtils;
 
@@ -185,6 +186,18 @@ public class ByteLimitPanel extends JPanel {
         bytesRadioButton.setEnabled(isChecked );
         bytesTextBox.setEnabled(isChecked && bytesRadioButton.isSelected());
         unlimitedRadioButton.setEnabled(isChecked );
+    }
+
+    @Override
+    public void setEnabled(boolean enabled) {
+        setMaxCheckbox.setEnabled(enabled);
+        bytesRadioButton.setEnabled(enabled);
+        bytesTextBox.setEnabled(enabled);
+        unlimitedRadioButton.setEnabled(enabled);
+        if (enabled) {
+            enableDisableComponents();
+        }
+        super.setEnabled(enabled);
     }
 
     public String validateFields() {
