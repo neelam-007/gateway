@@ -438,6 +438,7 @@ doInitializeHsm() {
     echo "What would like to do?"
     echo "1) Create a new master key"
     echo "2) Restore an existing master key"
+    echo "X) Exit menu"
     echo -n "Please make a selection: "
     read choice
     case $choice in
