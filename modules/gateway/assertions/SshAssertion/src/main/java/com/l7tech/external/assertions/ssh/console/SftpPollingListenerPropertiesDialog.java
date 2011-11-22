@@ -210,7 +210,8 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
             }
         }
 
-        if(usernameField.getText() == null || usernameField.getText().length() == 0) {
+        String userName = usernameField.getText();
+        if(StringUtils.isEmpty(userName) || "root".equals(userName)) {
             enableOkButton = false;
         }
 
@@ -364,9 +365,34 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
     }
 
     private void onSave() {
-        viewToModel( connector );
-        confirmed = true;
-        dispose();
+        String directory = directoryField.getText();
+        if (!StringUtils.isEmpty(directory) && ("/".equals(directory) || "c:\\\\".equals(directory.toLowerCase()))) {
+            DialogDisplayer.showSafeConfirmDialog(
+                    this,
+                    "<html><center>Root directory is currently set as the scan directory. System files <p>" +
+                            "may be deleted or renamed causing unexpected system behavior.<p>" +
+                            "Do you really to continue with this?</center></html>",
+                    "Confirm Use of Root Directory",
+                    JOptionPane.OK_CANCEL_OPTION,
+                    JOptionPane.WARNING_MESSAGE,
+                    465, 180,
+                    new DialogDisplayer.OptionListener() {
+                        @Override
+                        public void reportResult(int option) {
+                            if (option == JOptionPane.CANCEL_OPTION) {
+                                return;
+                            }
+                            viewToModel( connector );
+                            confirmed = true;
+                            dispose();
+                        }
+                    }
+            );
+        } else {
+            viewToModel( connector );
+            confirmed = true;
+            dispose();
+        }
     }
 
     private void onCancel() {
