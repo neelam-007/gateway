@@ -118,7 +118,7 @@ public class DialogDisplayer {
      * @param parent  the parent to use instead of the dialog's parent.
      * @param continuation  code to invoke when the dialog is disposed.
      */
-    public static void display(JDialog dialog, Container parent, Runnable continuation) {
+    public static void display(JDialog dialog, Container parent, @Nullable Runnable continuation) {
         SheetHolder holder = getSheetHolderAncestor(parent);
         display(dialog, holder, continuation);
     }
@@ -132,7 +132,7 @@ public class DialogDisplayer {
      * @param holder  the sheet holder to use instead of searching up the dialog's parent, or null to force native display.
      * @param continuation  code to invoke when the dialog is disposed.
      */
-    public static void display(JDialog dialog, SheetHolder holder, Runnable continuation) {
+    public static void display(JDialog dialog, @Nullable SheetHolder holder, @Nullable Runnable continuation) {
         if (holder != null) {
             if (mustShowNative(dialog, holder)) {
                 displayNatively(dialog, continuation);
@@ -160,21 +160,24 @@ public class DialogDisplayer {
             }
             final JLayeredPane layers = holder.getLayeredPane();
             final SheetStack sheetStack = getOrCreateSheetStack(layers);
-            final JInternalFrame sheet = sheetStack.peek().sheet;
+            final SheetState sheetState = sheetStack.peek();
+            final JInternalFrame sheet = sheetState != null ? sheetState.sheet : null;
 
-            // in Sheet.layoutComponents(...) content "stolen" from dialog
-            // we swap content back temporarily so pack() will resize with the dialog's components
-            final Container dialogContentPane = dialog.getContentPane();
-            dialog.setContentPane(sheet.getContentPane());
-            sheet.setContentPane(dialogContentPane);
-            dialog.pack();
+            if ( sheet != null ) {
+                // in Sheet.layoutComponents(...) content "stolen" from dialog
+                // we swap content back temporarily so pack() will resize with the dialog's components
+                final Container dialogContentPane = dialog.getContentPane();
+                dialog.setContentPane(sheet.getContentPane());
+                sheet.setContentPane(dialogContentPane);
+                dialog.pack();
 
-            // undo temporary content swap
-            sheet.setContentPane(dialog.getContentPane());
-            dialog.setContentPane(dialogContentPane);
+                // undo temporary content swap
+                sheet.setContentPane(dialog.getContentPane());
+                dialog.setContentPane(dialogContentPane);
 
-            sheet.setSize(dialog.getSize());
-            return;
+                sheet.setSize(dialog.getSize());
+                return;
+            }
         }
 
         dialog.pack();
@@ -196,9 +199,10 @@ public class DialogDisplayer {
         Dimension holderSize = holder.getLayeredPane().getSize();
         if (holderSize == null) return false;
 
-        Dimension sheetSize;
-        sheetSize = dialog instanceof JDialog ? ((JDialog)dialog).getSize() : dialog.getLayeredPane().getSize();
-        if (sheetSize == null || sheetSize.getWidth() < 1 || sheetSize.getHeight() < 1) {
+        Dimension sheetSize = dialog instanceof JDialog ?
+                ((JDialog)dialog).getSize() :
+                dialog.getLayeredPane().getSize();
+        if (sheetSize == null || sheetSize.width < 1 || sheetSize.height < 1) {
             if (dialog instanceof JDialog) {
                 JDialog jd = (JDialog)dialog;
                 if (jd.isMinimumSizeSet())
@@ -270,11 +274,12 @@ public class DialogDisplayer {
      * @param dialog  the dialog to display.  Must not be null.
      * @param continuation  code to invoke when the dialog is disposed.
      */
-    private static void displayNatively(JDialog dialog, Runnable continuation) {
+    private static void displayNatively(JDialog dialog, @Nullable Runnable continuation) {
         if (continuation != null) {
             final Runnable[] continuationHolder = new Runnable[]{continuation};
             final Window window = dialog;
             final WindowAdapter windowAdapter = new WindowAdapter() {
+                @Override
                 public void windowClosed(WindowEvent e) {
                     window.removeWindowListener(this);
                     Runnable runnable = continuationHolder[0];
@@ -405,9 +410,15 @@ public class DialogDisplayer {
      * @param callback  callback to invoke when dialog is dismissed.  optional
      * @param icon      icon to display.  optional
      */
-    public static void showMessageDialog(Component parent, Object mess, String title, int messType, Icon icon, final Runnable callback) {
+    public static void showMessageDialog( Component parent,
+                                          Object mess,
+                                          String title,
+                                          int messType,
+                                          @Nullable Icon icon,
+                                          @Nullable final Runnable callback ) {
         showOptionDialog(parent, mess, title, JOptionPane.DEFAULT_OPTION, messType, icon, null, null,
                          callback == null ? null : new OptionListener() {
+                             @Override
                              public void reportResult(int result) {
                                  callback.run();
                              }
@@ -427,7 +438,7 @@ public class DialogDisplayer {
                                          final String title,
                                          final String message,
                                          final Throwable throwable,
-                                         final Runnable callback) {
+                                         @Nullable final Runnable callback) {
         Window parent;
         if (component instanceof Window) {
             parent = (Window) component;
@@ -637,7 +648,7 @@ public class DialogDisplayer {
      * @param result    callback to invoke with the result when dialog is dismissed.  optional
      */
     public static void showConfirmDialog(Component parent, Object mess, String title, int opType, int messType,
-                                        Icon icon, OptionListener result)
+                                        @Nullable Icon icon, OptionListener result)
     {
         showOptionDialog(parent, mess, title, opType, messType, icon, null, null, result);
     }
@@ -657,7 +668,7 @@ public class DialogDisplayer {
      * @param opType    operation type per JOptionPane
      * @param messType  message type per JOptionPane.  required
      * @param icon          icon per JOptionPane. optional
-     * @param options       options array.  required.  may not contain null entries.
+     * @param options       options array. may not contain null entries.
      * @param initialValue  initial value to use.  Should compare equals with one of the options.
      * @param result    callback to invoke with the result when dialog is dismissed.  optional
      */
@@ -667,14 +678,15 @@ public class DialogDisplayer {
                                        int opType,
                                        int messType,
                                        @Nullable Icon icon,
-                                       final Object[] options,
-                                       Object initialValue,
+                                       @Nullable final Object[] options,
+                                       @Nullable Object initialValue,
                                        final OptionListener result)
     {
         final JOptionPane pane = new JOptionPane(mess, messType, opType, icon, options, initialValue);
         pane.setInitialValue(initialValue);
 
         display(pane, parent, title, result == null ? null : new Runnable() {
+            @Override
             public void run() {
                 result.reportResult(getValue());
             }
@@ -749,10 +761,10 @@ public class DialogDisplayer {
             final Sheet sheet = new Sheet(safeConfirmationDialog, null);
             // Ugly hack (until fixed properly) to work around horizontal truncation of hacked JOptionPane's guts when displayed as sheet
             Dimension s = sheet.getSize();
-            if (s.getWidth() > 0)
-                s = new Dimension((int)s.getWidth() + 25, (int) s.getHeight());
-            if (s.getHeight() > 0)
-                s = new Dimension((int)s.getWidth(), (int)s.getHeight() + 16);
+            if (s.width > 0)
+                s = new Dimension(s.width + 25, s.height);
+            if (s.height > 0)
+                s = new Dimension(s.width, s.height + 16);
             sheet.setPreferredSize(s);
             sheet.pack();
             holder.showSheet(sheet);
@@ -832,6 +844,7 @@ public class DialogDisplayer {
         cancelButton.setText("Cancel");
 
         enableOkCheckBox.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 okButton.setEnabled(enableOkCheckBox.isSelected());
             }
@@ -839,6 +852,7 @@ public class DialogDisplayer {
 
         okButton.setEnabled(enableOkCheckBox.isSelected());
         okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 safeConfirmationDialog.dispose();
                 result.reportResult(JOptionPane.OK_OPTION);
@@ -846,6 +860,7 @@ public class DialogDisplayer {
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 safeConfirmationDialog.dispose();
                 result.reportResult(JOptionPane.CANCEL_OPTION);
@@ -893,6 +908,7 @@ public class DialogDisplayer {
         pane.selectInitialValue();
 
         display(pane, parent, title, new Runnable() {
+            @Override
             public void run() {
                 Object value = pane.getInputValue();
                 result.reportResult(value == JOptionPane.UNINITIALIZED_VALUE ? null : value);
@@ -915,7 +931,7 @@ public class DialogDisplayer {
         private final Component focusOwner;
         private final JInternalFrame sheet;
 
-        public SheetState(int layer, Component focusOwner, JInternalFrame sheet) {
+        private SheetState(int layer, Component focusOwner, JInternalFrame sheet) {
             this.layer = layer;
             this.focusOwner = focusOwner;
             this.sheet = sheet;
@@ -926,6 +942,7 @@ public class DialogDisplayer {
         private final LinkedList stack = new LinkedList();
 
         /** @return the sheet state on top of the stack, or null if the stack is empty. */
+        @Nullable
         private SheetState peek() {
             if (stack.isEmpty()) return null;
             Object top = stack.getLast();
@@ -1015,6 +1032,7 @@ public class DialogDisplayer {
         Utilities.centerOnParent(sheet);
 
         final ComponentListener resizeListener = new ComponentAdapter() {
+            @Override
             public void componentResized(ComponentEvent e) {
                 int pw = layers.getParent().getWidth();
                 int ph = layers.getParent().getHeight();
@@ -1033,6 +1051,7 @@ public class DialogDisplayer {
         layers.getParent().addComponentListener(resizeListener);
 
         sheet.addInternalFrameListener(new InternalFrameAdapter() {
+            @Override
             public void internalFrameClosed(InternalFrameEvent e) {
                 SheetBlocker sheetBlocker = blocker[0];
                 blocker[0] = null;
@@ -1070,6 +1089,7 @@ public class DialogDisplayer {
             setEnabled(false);
         }
 
+        @Override
         protected void paintComponent(Graphics g) {
             if (!translucentSheets) return;
             Graphics2D gg = (Graphics2D)g;
@@ -1080,6 +1100,7 @@ public class DialogDisplayer {
             gg.setComposite(oldComp);
         }
 
+        @Override
         public void setVisible(boolean vis) {
             boolean wasVis = isVisible();
             super.setVisible(vis);
