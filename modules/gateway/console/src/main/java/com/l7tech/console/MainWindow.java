@@ -2128,7 +2128,19 @@ public class MainWindow extends JFrame implements SheetHolder {
         if (customGlobalActionsMenu != null)
             return customGlobalActionsMenu;
 
-        JMenu menu = new JMenu("Additional Actions");
+        final JMenu menu = new JMenu("Additional Actions"){
+            private final LicenseListener listener = new LicenseListener() {
+                    @Override
+                    public void licenseChanged( final ConsoleLicenseManager licenseManager ) {
+                        if ( licenseManager.getLicense() != null )
+                            updateCustomGlobalActionsMenu();
+                    }
+                };
+            {
+                Registry.getDefault().getLicenseManager().addLicenseListener( listener );
+            }
+        };
+
         return customGlobalActionsMenu = menu;
     }
 
