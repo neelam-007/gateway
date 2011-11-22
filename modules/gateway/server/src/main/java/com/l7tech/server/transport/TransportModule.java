@@ -301,7 +301,8 @@ public abstract class TransportModule extends LifecycleBean {
         if (connector.getClientAuth() == SsgConnector.CLIENT_AUTH_NEVER)
             return new X509Certificate[0];
 
-        String protocols = connector.getProperty(SsgConnector.PROP_TLS_PROTOCOLS);
+        String protocols = connector.getProperty(SsgConnector.PROP_TLS_OVERRIDE_PROTOCOLS);
+        if (protocols == null) protocols = connector.getProperty(SsgConnector.PROP_TLS_PROTOCOLS);
         boolean onlyTls10 = protocols == null || (!protocols.contains("TLSv1.1") && !protocols.contains("TLSv1.2"));
 
         // If only TLS 1.0 is enabled, behave as we did pre-5.3, unless "acceptedIssuers" is forced to "true" (Bug #8727)

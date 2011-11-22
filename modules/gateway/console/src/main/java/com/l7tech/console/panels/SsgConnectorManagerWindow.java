@@ -55,7 +55,7 @@ public class SsgConnectorManagerWindow extends JDialog {
         flags = PermissionFlags.get(EntityType.SSG_CONNECTOR);
 
         setContentPane(contentPane);
-        setModal(true);
+        setModalityType(ModalityType.DOCUMENT_MODAL);
         getRootPane().setDefaultButton(closeButton);
 
         closeButton.addActionListener(new ActionListener() {

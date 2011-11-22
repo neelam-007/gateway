@@ -155,7 +155,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private Map<String, Set<String>> reservedPropertyNamesByScheme = new TreeMap<String, Set<String>>(String.CASE_INSENSITIVE_ORDER);
 
     public SsgConnectorPropertiesDialog(Window owner, SsgConnector connector, boolean isCluster) {
-        super(owner, DIALOG_TITLE, SsgConnectorPropertiesDialog.DEFAULT_MODALITY_TYPE);
+        super(owner, DIALOG_TITLE, ModalityType.DOCUMENT_MODAL);
         this.isCluster = isCluster;
         initialize(connector);
     }
