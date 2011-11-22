@@ -23,114 +23,117 @@ MYSQL_SVCCTL="/etc/init.d/mysql"
 # Clean up temporary files end exit with status
 
 clean_up() {
-	rm -f /tmp/mb_*.$$
-	exit $1
+    rm -f /tmp/mb_*.$$
+    exit $1
 }
 
 ##################################################
 # Message to display whenever a MySQL error occurs
 
 mysql_fail() {
-	cat <<-EOM
+    cat <<EOM
 
-		==> $1
+==> $1
 
-		Message: `cat /tmp/mb_error.$$`
+Message: `cat /tmp/mb_error.$$`
 
-		Refer to http://dev.mysql.com/doc/refman/5.0/en/error-messages-client.html
-		for more information.
+Refer to http://dev.mysql.com/doc/refman/5.0/en/error-messages-client.html
+for more information.
 
-	EOM
-	clean_up 1
+EOM
+    clean_up 1
 }
 
 ##########################################################
 # Confirm that MySQL is properly configured to be a master
 
 confirm_master() {
-	echo ""
-	echo "Checking configuration of running MySQL..."
+    echo ""
+    echo "Checking configuration of running MySQL..."
 
-	CMD="SHOW VARIABLES LIKE 'log_%' ; SHOW VARIABLES LIKE 'server_id'"
-	RESULT=`$MYSQL -e "$CMD" 2>/tmp/mb_error.$$ | grep -v 'Variable_name'`
+    CMD="SHOW VARIABLES LIKE 'log_%' ; SHOW VARIABLES LIKE 'server_id'"
+    RESULT=`$MYSQL -e "$CMD" 2>/tmp/mb_error.$$ | grep -v 'Variable_name'`
 
-	if test $? -ne 0 ; then
-		mysql_fail "Error getting variables"
-	fi
+    if test $? -ne 0 ; then
+        mysql_fail "Error getting variables"
+    fi
 
-	# Evaluate the response into variables
-	evaluate_result "$RESULT"
+    # Evaluate the response into variables
+    evaluate_result "$RESULT"
 
-	if test "$server_id" == "0" \
-		-o "$log_bin" == "OFF" \
-		-o "$log_slave_update" == "OFF" ; then
+    if test "$server_id" == "0" \
+        -o "$log_bin" == "OFF" \
+        -o "$log_slave_update" == "OFF" \
+        -o "$log_bin_trust_function_creators" == "OFF" ; then
 
-		cat <<-EOM
-			==> MySQL is not configured for replication
+        cat <<EOM
+==> MySQL is not configured for replication
 
-		    	server_id = $server_id
-		    	log_bin = $log_bin
-		    	log_slave_updates = $log_slave_updates
+server_id = $server_id
+log_bin = $log_bin
+log_bin_trust_function_creators = $log_bin_trust_function_creators
+log_slave_updates = $log_slave_updates
 
-		EOM
-	
-		return 1
-	else
-		return 0
-	fi
+EOM
+    
+        return 1
+    else
+        return 0
+    fi
 }
 
 #################################################
 # Configure MySQL to be a master node and restart
 
 configure_my_cnf() {
-	while test -z $DB_NODE_ID ; do
-		echo -n "Is this the Primary (1) or Secondary (2) database node? "
-		read -e DB_NODE_ID
-		case $DB_NODE_ID in
-			1 )	echo -n "  --> Setting as Primary DB node... "
-				;;
+    while test -z $DB_NODE_ID ; do
+        echo -n "Is this the Primary (1) or Secondary (2) database node? "
+        read -e DB_NODE_ID
+        case $DB_NODE_ID in
+            1 )    echo -n "  --> Setting as Primary DB node... "
+                ;;
 
-			2 )	echo -n "  --> Setting as Secondary DB node... "
-				;;
+            2 )    echo -n "  --> Setting as Secondary DB node... "
+                ;;
 
-        		* )	echo "Please enter 1 or 2"
-				;;
-		esac
-	done
+                * )    echo "Please enter 1 or 2"
+                ;;
+        esac
+    done
 
-	sed -in -e "s/^#\(server-id=$DB_NODE_ID\)/\1/g" \
-		-e 's/^#log-bin/log-bin/g' \
-		-e 's/^#log-slave-update/log-slave-update/g' /etc/my.cnf
+    sed -in -e "s/^#\(server-id=$DB_NODE_ID\)/\1/g" \
+        -e 's/^#log-bin/log-bin/g' \
+        -e 's/^#log_bin_trust_function_creators/log_bin_trust_function_creators/g' \
+        -e 's/^#log-slave-update/log-slave-update/g' /etc/my.cnf
 
-	if test $? -ne 0 ; then
-		echo "Error updating /etc/my.cnf"
-		clean_up 1
-	else
-		echo "OK"
-	fi
+    if test $? -ne 0 ; then
+        echo "Error updating /etc/my.cnf"
+        clean_up 1
+    else
+        echo "OK"
+    fi
 
-	echo "Restarting the database"
-	$MYSQL_SVCCTL restart
+    echo "Restarting the database"
+    $MYSQL_SVCCTL restart
 }
 
 ######################################################
 # Evaluate the result from a MySQL call into variables
 
 evaluate_result() {
-	eval `echo "$1" | \
-		sed 's/\t\(.*\)/=\1/'`
+    eval `echo "$1" | \
+        sed 's/\t\(.*\)/=\1/'`
 }
 
 #################
 # Check if -v set
 
 if test "$1" == "-v" ; then
-	VERBOSE="yes"
+    VERBOSE="yes"
 else
-	VERBOSE="no"
-	echo "--> For verbose output run with -v"
-	echo ""
+    VERBOSE="no"
+    echo "--> For verbose output run with -v"
+    echo ""
 fi
 
 ##################
@@ -139,12 +142,12 @@ fi
 echo
 echo "Gathering information for SLAVE user"
 while test -z $SLAVE ; do
-	echo -n "Enter hostname or IP for the SLAVE: "
-	read -e SLAVE
+    echo -n "Enter hostname or IP for the SLAVE: "
+    read -e SLAVE
 
-	if test -z $SLAVE ; then
-        	echo "You must enter a SLAVE"
-	fi
+    if test -z $SLAVE ; then
+            echo "You must enter a SLAVE"
+    fi
 done
 
 echo -n "Enter replication user: [$DBUSER] "
@@ -178,9 +181,9 @@ MYSQL="mysql $ROOT $ROOT_PWD"
 confirm_master
 
 while test $? -ne 0 ; do
-	configure_my_cnf
-	sleep 1
-	confirm_master
+    configure_my_cnf
+    sleep 1
+    confirm_master
 done
 
 echo "MySQL appears to be properly configured with server_id=$server_id"
@@ -188,11 +191,11 @@ echo -n "Do you want to continue? [Y] "
 read -e
 
 if test -z $REPLY ; then
-	REPLY="Y"
+    REPLY="Y"
 fi
 
 if test $REPLY != "y" -a $REPLY != "Y" -a $REPLY != "yes" ; then
-	clean_up 0
+    clean_up 0
 fi
 
 
