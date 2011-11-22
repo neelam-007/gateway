@@ -96,7 +96,7 @@ public class ServiceResolutionDialog extends JDialog {
         useSoapBodyChildCheckBox.setEnabled( editable );
 
         pack();
-        setMinimumSize( getContentPane().getMinimumSize() );
+        Utilities.setMinimumSize( this );
         Utilities.setEscKeyStrokeDisposes( this );
         Utilities.centerOnParentWindow( this );
     }
