@@ -1,13 +1,9 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.gui.util.ImageCache;
 import com.l7tech.policy.assertion.RoutingAssertion;
-import com.l7tech.policy.variable.BuiltinVariables;
-import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.VariableMetadata;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import java.util.Set;
 
 /**
  *
@@ -49,7 +45,7 @@ public class RoutingDialogUtils {
      */
     public static void configSecurityHeaderRadioButtons(RoutingAssertion ass,
                                                         int defaultAction,
-                                                        JComponent promoteComponent,
+                                                        @Nullable JComponent promoteComponent,
                                                         AbstractButton[] buttons)
     {
         if (!configSecurityHeaderRadioButtons(ass.getCurrentSecurityHeaderHandling(), promoteComponent, buttons))

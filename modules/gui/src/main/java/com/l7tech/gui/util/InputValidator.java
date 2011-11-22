@@ -1,6 +1,7 @@
 package com.l7tech.gui.util;
 
 import com.l7tech.gui.NumberField;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -352,7 +353,7 @@ public class InputValidator implements FocusListener {
      */
     public ValidationRule constrainTextFieldToBeNonEmpty(final String fieldName,
                                                          final JTextComponent comp,
-                                                         final ValidationRule additionalConstraints)
+                                                         @Nullable final ValidationRule additionalConstraints)
     {
         if (comp == null) throw new NullPointerException();
         final String mess = "The " + fieldName + " field must not be empty.";

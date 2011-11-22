@@ -207,9 +207,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
 
                     // start download task
                     final Future<Void> future = startSshDownloadTask( sshClient, directory, filename, pos );
-
-                    // TODO [steve] SSH routing should support download to a specified message
-                    final Message response = context.getResponse();
+                    final Message response = context.getOrCreateTargetMessage( assertion.getResponseTarget(), false );
                     final long byteLimit = assertion.getLongResponseByteLimit(getMaxBytes());
                     response.initialize(stashManagerFactory.createStashManager(), ContentTypeHeader.create(assertion.getDownloadContentType()), pis, byteLimit);
 

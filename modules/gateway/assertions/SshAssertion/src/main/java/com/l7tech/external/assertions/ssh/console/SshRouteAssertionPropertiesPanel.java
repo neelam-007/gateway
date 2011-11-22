@@ -13,6 +13,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
+import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.variable.Syntax;
 
 import javax.swing.*;
@@ -23,7 +24,6 @@ import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
 public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCancelSupport<SshRouteAssertion> {
-    public static final int DEFAULT_PORT_SSH = 22;
     private static final ResourceBundle resources = ResourceBundle.getBundle( SshRouteAssertionPropertiesPanel.class.getName());
 
     private JPanel mainPanel;
@@ -35,6 +35,9 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
     private JButton managePasswordsButton;
     private JTextField directoryTextField;
     private JComboBox messageSource;
+    private JComboBox messageTarget;
+    private JPanel messageTargetVariableNamePanel;
+    private TargetVariablePanel messageTargetVariablePanel;
     private JTextField fileNameTextField;
     private JTextField connectTimeoutTextField;
     private JTextField portNumberTextField;
@@ -44,7 +47,6 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
     private JCheckBox validateServerSHostCheckBox;
     private JButton manageHostKeyButton;
     private JRadioButton SCPRadioButton;
-    private JRadioButton SFTPRadioButton;
     private JRadioButton uploadToRadioButton;
     private JRadioButton downloadFromRadioButton;
     private JRadioButton passThroughCredentialsInRadioButton;
@@ -106,6 +108,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         privateKeyField.reloadPasswordList(SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY);
 
         managePasswordsButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 SecurePasswordManagerWindow dialog = new SecurePasswordManagerWindow(TopComponents.getInstance().getTopParent());
                 dialog.pack();
@@ -117,16 +120,16 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
             }
         });
 
-        final ActionListener downloadUploadRadioListener = new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                enableDisableFields();
-            }
-        };
-        downloadFromRadioButton.addActionListener(downloadUploadRadioListener);
-        uploadToRadioButton.addActionListener(downloadUploadRadioListener);
+        downloadFromRadioButton.addActionListener(enableDisableListener);
+        uploadToRadioButton.addActionListener(enableDisableListener);
         
         messageSource.setRenderer( new TextListCellRenderer<MessageTargetable>( getMessageNameFunction("Default", null), null, false ) );
+        messageTarget.setRenderer( new TextListCellRenderer<MessageTargetable>( getMessageNameFunction("Default", "Target Variable"), null, true ) );
+        messageTarget.addActionListener( enableDisableListener );
+        messageTargetVariablePanel = new TargetVariablePanel();
+        messageTargetVariableNamePanel.setLayout(new BorderLayout());
+        messageTargetVariableNamePanel.add( messageTargetVariablePanel, BorderLayout.CENTER );
+        messageTargetVariablePanel.addChangeListener( enableDisableListener );
         RoutingDialogUtils.tagSecurityHeaderHandlingButtons(secHdrButtons);
 
         DefaultComboBoxModel contentTypeComboBoxModel = new DefaultComboBoxModel();
@@ -152,8 +155,8 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         validators.addRule(validators.constrainTextFieldToBeNonEmpty(getResourceString("hostNameLabel"), hostField, null));
         validators.addRule(validators.constrainTextFieldToBeNonEmpty(getResourceString("fileNameLabel"), fileNameTextField, null));
         validators.addRule(validators.constrainTextFieldToBeNonEmpty(getResourceString("usernameLabel"), usernameField, null));
-        validators.addRule(validators.constrainTextFieldToNumberRange(getResourceString("sshTimeoutLabel"), connectTimeoutTextField, 1, Short.MAX_VALUE));
-        validators.addRule(validators.constrainTextFieldToNumberRange(getResourceString("sshTimeoutLabel"), readTimeoutTextField, 1, Short.MAX_VALUE));
+        validators.addRule(validators.constrainTextFieldToNumberRange(getResourceString("sshTimeoutLabel"), connectTimeoutTextField, 1L, (long) Short.MAX_VALUE ));
+        validators.addRule(validators.constrainTextFieldToNumberRange(getResourceString("sshTimeoutLabel"), readTimeoutTextField, 1L, (long) Short.MAX_VALUE ));
 
         validators.addRule(new InputValidator.ComponentValidationRule(portNumberTextField) {
             @Override
@@ -211,6 +214,13 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         validators.addRule(new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
+                return messageTargetVariablePanel.getErrorMessage();
+            }
+        });
+
+        validators.addRule(new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
                 return responseLimitPanel.validateFields();
             }
         });
@@ -229,6 +239,11 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         boolean isDownloadFrom = downloadFromRadioButton.isSelected();
         contentTypeComboBox.setEnabled(isDownloadFrom);
         messageSource.setEnabled(!isDownloadFrom);
+        messageTarget.setEnabled( isDownloadFrom );
+        messageTargetVariablePanel.setEnabled(
+                messageTarget.isEnabled() &&
+                messageTarget.getSelectedItem()!=null &&
+                ((MessageTargetable)messageTarget.getSelectedItem()).getTarget()== TargetMessageType.OTHER );
         responseLimitPanel.setEnabled(isDownloadFrom);
 
         // authentication tab
@@ -250,6 +265,15 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
     public void setData(SshRouteAssertion assertion) {
         messageSource.setModel(buildMessageSourceComboBoxModel(assertion));
         messageSource.setSelectedItem(new MessageTargetableSupport(assertion.getRequestTarget()));
+        messageTarget.setModel( buildMessageTargetComboBoxModel(false) );
+        final MessageTargetableSupport responseTarget = new MessageTargetableSupport( assertion.getResponseTarget() );
+        messageTarget.setSelectedItem( new MessageTargetableSupport( responseTarget.getTarget() ) );
+        if ( responseTarget.getTarget() == TargetMessageType.OTHER ){
+            messageTargetVariablePanel.setVariable( responseTarget.getOtherTargetMessageVariable() );
+        } else {
+            messageTargetVariablePanel.setVariable( "" );
+        }
+        messageTargetVariablePanel.setAssertion(assertion, getPreviousAssertion());
         RoutingDialogUtils.configSecurityHeaderRadioButtons(assertion, -1, null, secHdrButtons);
 
         SCPRadioButton.setSelected(assertion.isScpProtocol());
@@ -323,7 +347,6 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
 
         // populate SSH settings
 
-        assertion.setRequestTarget((MessageTargetableSupport) messageSource.getSelectedItem());
         assertion.setHost(hostField.getText().trim());
         assertion.setPort(portNumberTextField.getText().trim());
         assertion.setDirectory(directoryTextField.getText());
@@ -352,6 +375,16 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
             assertion.setUsePublicKey(false);
             assertion.setSshPublicKey(null);
         }
+
+        assertion.setRequestTarget((MessageTargetableSupport) messageSource.getSelectedItem());
+        final MessageTargetableSupport responseTarget =
+                new MessageTargetableSupport((MessageTargetable) messageTarget.getSelectedItem());
+        if ( responseTarget.getTarget()==TargetMessageType.OTHER ) {
+            responseTarget.setOtherTargetMessageVariable( messageTargetVariablePanel.getVariable());
+            responseTarget.setSourceUsedByGateway( false );
+            responseTarget.setTargetModifiedByGateway( true );
+        }
+        assertion.setResponseTarget( responseTarget );
 
         assertion.setResponseByteLimit(responseLimitPanel.getValue());
 
@@ -383,7 +416,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         String portStr = portNumberTextField.getText();
         try {
             int port = Integer.parseInt(portStr);
-            isValid = port > 0 && port < 65535;
+            isValid = port > 0 && port <= 65535;
         } catch (NumberFormatException e) {
             // must be using context variable
             isValid = Syntax.getReferencedNames(portStr).length > 0;
@@ -400,6 +433,6 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
     }
 
      private int getDefaultPortNumber() {
-        return DEFAULT_PORT_SSH;
+        return SshRouteAssertion.DEFAULT_SSH_PORT;
     }
 }

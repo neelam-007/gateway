@@ -6,6 +6,7 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.Functions;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
@@ -178,9 +179,9 @@ public abstract class AssertionPropertiesEditorSupport<AT extends Assertion> ext
         return comboBoxModel;
     }
 
-    protected ComboBoxModel buildMessageTargetComboBoxModel() {
+    protected ComboBoxModel buildMessageTargetComboBoxModel( final boolean includeDefault ) {
         final DefaultComboBoxModel comboBoxModel = new DefaultComboBoxModel();
-        comboBoxModel.addElement( null );
+        if (includeDefault) comboBoxModel.addElement( null );
         comboBoxModel.addElement( new MessageTargetableSupport( TargetMessageType.REQUEST ) );
         comboBoxModel.addElement( new MessageTargetableSupport( TargetMessageType.RESPONSE ) );
         comboBoxModel.addElement( new MessageTargetableSupport( TargetMessageType.OTHER ) );
@@ -188,13 +189,13 @@ public abstract class AssertionPropertiesEditorSupport<AT extends Assertion> ext
     }
 
     protected Functions.Unary<String, MessageTargetable> getMessageNameFunction( final String defaultName,
-                                                                                 final String variableName ) {
+                                                                                 @Nullable final String variableName ) {
         return getMessageNameFunction( defaultName, variableName, null );
     }
 
     protected Functions.Unary<String, MessageTargetable> getMessageNameFunction( final String defaultName,
-                                                                                 final String variableName,
-                                                                                 final String variablePrefix ) {
+                                                                                 @Nullable final String variableName,
+                                                                                 @Nullable final String variablePrefix ) {
         return new Functions.Unary<String,MessageTargetable>(){
             @Override
             public String call( final MessageTargetable messageTargetable ) {

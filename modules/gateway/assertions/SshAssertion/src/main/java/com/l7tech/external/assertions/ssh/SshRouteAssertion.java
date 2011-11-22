@@ -12,6 +12,7 @@ import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.WspEnumTypeMapping;
 import com.l7tech.util.ExceptionUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
@@ -33,6 +34,8 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
     public static final int DEFAULT_SSH_PORT = 22;   // Default port for SSH
 
     private static final String baseName = "Route via SSH2";
+    private static final String META_INITIALIZED = SshRouteAssertion.class.getName() + ".metadataInitialized";
+    private static final Logger logger = Logger.getLogger(SshRouteAssertion.class.getName());
 
     private String username;   // Username. Can contain context variables.
     private Long privateKeyOid;   // privateKey.
@@ -51,17 +54,10 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
     private boolean isCredentialsSourceSpecified;   // login credentials specified?  if not, assume pass through
     private boolean isDownloadCopyMethod;   // download copy method?  if not, assume upload
     private String responseByteLimit;
-
-    private MessageTargetableSupport requestTarget = defaultRequestTarget();
-
-    private MessageTargetableSupport defaultRequestTarget() {
-        return new MessageTargetableSupport(TargetMessageType.REQUEST, false);
-    }
-    //
-    // Metadata
-    //
-    private static final String META_INITIALIZED = SshRouteAssertion.class.getName() + ".metadataInitialized";
-    protected static final Logger logger = Logger.getLogger(SshRouteAssertion.class.getName());
+    @NotNull
+    private MessageTargetableSupport requestTarget = new MessageTargetableSupport(TargetMessageType.REQUEST, false);
+    @NotNull
+    private MessageTargetableSupport responseTarget = new MessageTargetableSupport(TargetMessageType.RESPONSE, true);
 
     @Override
     public AssertionMetadata meta() {
@@ -120,7 +116,7 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
 
     @Override
     public VariableMetadata[] getVariablesSet() {
-        return requestTarget.getMessageTargetVariablesSet().asArray();
+        return requestTarget.getMessageTargetVariablesSet().with( responseTarget.getMessageTargetVariablesSet() ).asArray();
     }
 
      public String getPropertiesDialogTitle() {
@@ -221,12 +217,22 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
         this.readTimeout = readTimeout;
     }
     
+    @NotNull
     public MessageTargetableSupport getRequestTarget() {
-        return requestTarget != null ? requestTarget : defaultRequestTarget();
+        return requestTarget;
     }
 
-    public void setRequestTarget(MessageTargetableSupport requestTarget) {
+    public void setRequestTarget( @NotNull final MessageTargetableSupport requestTarget ) {
         this.requestTarget = requestTarget;
+    }
+
+    @NotNull
+    public MessageTargetableSupport getResponseTarget() {
+        return responseTarget;
+    }
+
+    public void setResponseTarget( @NotNull final MessageTargetableSupport responseTarget ) {
+        this.responseTarget = responseTarget;
     }
 
     public String getDownloadContentType() {
@@ -264,23 +270,25 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
 
     @Override
     public boolean needsInitializedRequest() {
-        return requestTarget == null || TargetMessageType.REQUEST == requestTarget.getTarget();
+        return TargetMessageType.REQUEST == requestTarget.getTarget();
     }
 
     @Override
     public boolean initializesResponse() {
-        return false;
+        return isDownloadCopyMethod() && TargetMessageType.RESPONSE == responseTarget.getTarget();
     }
 
     @Override
     public boolean needsInitializedResponse() {
-        return requestTarget != null && TargetMessageType.RESPONSE == requestTarget.getTarget();
+        return false;
     }
 
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        return requestTarget.getMessageTargetVariablesUsed().withExpressions(
+        return requestTarget.getMessageTargetVariablesUsed()
+        .with( responseTarget.getMessageTargetVariablesUsed() )
+        .withExpressions(
             hostName,
             port,
             directory,

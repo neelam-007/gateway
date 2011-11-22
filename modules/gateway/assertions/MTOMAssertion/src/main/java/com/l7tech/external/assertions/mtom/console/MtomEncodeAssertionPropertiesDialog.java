@@ -87,7 +87,7 @@ public class MtomEncodeAssertionPropertiesDialog extends MtomAssertionProperties
         final String variableName = bundle.getString( "target.messageVariable" );
         messageSourceComboBox.setRenderer( new TextListCellRenderer<MessageTargetable>( getMessageNameFunction(defaultName, null), null, false ) );
         messageTargetComboBox.setRenderer( new TextListCellRenderer<MessageTargetable>( getMessageNameFunction(defaultName, variableName), null, true ) );
-        messageTargetComboBox.setModel( buildMessageTargetComboBoxModel() );
+        messageTargetComboBox.setModel( buildMessageTargetComboBoxModel(true) );
 
         messageTargetVariableNameTextField = new TargetVariablePanel();
         messageTargetVariableNamePanel.setLayout(new BorderLayout());
