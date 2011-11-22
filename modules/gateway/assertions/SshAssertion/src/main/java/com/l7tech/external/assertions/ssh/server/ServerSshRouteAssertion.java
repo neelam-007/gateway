@@ -20,9 +20,7 @@ import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.variable.NoSuchVariableException;
@@ -89,8 +87,8 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             return AssertionStatus.BAD_REQUEST;
         }
 
-        // if uploading from the Gateway, delete current security header if necessary
-        if (!assertion.isDownloadCopyMethod()) {
+        // if uploading from the Gateway and message source is request, delete current security header if necessary
+        if (!assertion.isDownloadCopyMethod() && assertion.getRequestTarget() != null && assertion.getRequestTarget().getTarget() == TargetMessageType.REQUEST) {
             try {
                 handleProcessedSecurityHeader(request);
             } catch(SAXException se) {
