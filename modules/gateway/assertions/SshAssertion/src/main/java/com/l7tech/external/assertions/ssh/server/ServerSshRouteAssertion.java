@@ -89,11 +89,13 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             return AssertionStatus.BAD_REQUEST;
         }
 
-        // DELETE CURRENT SECURITY HEADER IF NECESSARY
-        try {
-            handleProcessedSecurityHeader(request);
-        } catch(SAXException se) {
-            logger.log(Level.INFO, "Error processing security header, request XML invalid ''{0}''", se.getMessage());
+        // if uploading from the Gateway, delete current security header if necessary
+        if (!assertion.isDownloadCopyMethod()) {
+            try {
+                handleProcessedSecurityHeader(request);
+            } catch(SAXException se) {
+                logger.log(Level.INFO, "Error processing security header, request XML invalid ''{0}''", se.getMessage());
+            }
         }
 
         final Map<String,?> variables = context.getVariableMap( variablesUsed, getAudit() );

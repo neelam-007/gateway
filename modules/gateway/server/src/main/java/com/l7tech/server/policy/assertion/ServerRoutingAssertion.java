@@ -78,7 +78,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
     }
 
     /**
-     * Perform security header pocessing ont he specified message according to the current assertion's
+     * Perform security header processing on the specified message according to the current assertion's
      * secHeaderHandlingOption.
      *
      * @param message  the message whose Security headers to manipulate.  Required.

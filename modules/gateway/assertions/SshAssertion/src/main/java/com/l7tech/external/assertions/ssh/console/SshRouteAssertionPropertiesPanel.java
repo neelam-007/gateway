@@ -245,6 +245,9 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
                 messageTarget.getSelectedItem()!=null &&
                 ((MessageTargetable)messageTarget.getSelectedItem()).getTarget()== TargetMessageType.OTHER );
         responseLimitPanel.setEnabled(isDownloadFrom);
+        wssIgnoreButton.setEnabled(!isDownloadFrom);
+        wssCleanupButton.setEnabled(!isDownloadFrom);
+        wssRemoveButton.setEnabled(!isDownloadFrom);
 
         // authentication tab
         boolean isSpecifyUserCredentials = specifyUserCredentialsRadioButton.isSelected();
