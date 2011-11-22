@@ -10,8 +10,6 @@ import com.l7tech.util.ConfigFactory;
 import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 
 /**
@@ -35,9 +33,6 @@ public class ServerWatchdogAssertion extends AbstractServerAssertion<WatchdogAss
 
     @Override
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        final AtomicBoolean timerExpired = new AtomicBoolean();
-        final AtomicReference<StackTraceElement[]> stackTrace = new AtomicReference<StackTraceElement[]>();
-
         // TODO:  To work properly with situations like Concurrent All, or other places where work is handed off
         // to a thread pool and the original thread blocks, change the context to keep track of the thread that
         // currently owns it, and use that one when the watchdog goes off
@@ -47,9 +42,17 @@ public class ServerWatchdogAssertion extends AbstractServerAssertion<WatchdogAss
             @Override
             public void run() {
                 cancel();
-                timerExpired.set(true);
-                if (logStackTrace)
-                    stackTrace.set(requestThread.getStackTrace());
+                if (logStackTrace) {
+                    StringBuilder sb = new StringBuilder("Request watchdog timer expired after " + milliseconds + "ms for request " + context.getRequestId() + " on " + requestThread.toString());
+
+                    StackTraceElement[] stack = requestThread.getStackTrace();
+                    sb.append("\n\nRequest stack at time of watchdog expiry: \n");
+                    for (StackTraceElement element : stack) {
+                        sb.append("  - ").append(element).append("\n");
+                    }
+
+                    logger.log(Level.WARNING, sb.toString());
+                }
                 if (interruptRequest)
                     requestThread.interrupt();
             }
@@ -59,21 +62,6 @@ public class ServerWatchdogAssertion extends AbstractServerAssertion<WatchdogAss
             @Override
             public void run() {
                 alarmTask.cancel();
-                if (!timerExpired.get()) {
-                    return;
-                }
-
-                StringBuilder sb = new StringBuilder("Request watchdog timer expired after " + milliseconds + "ms for request " + context.getRequestId() + " on " + requestThread.toString());
-
-                StackTraceElement[] stack = stackTrace.get();
-                if (stack != null) {
-                    sb.append("\n\nRequest stack at time of watchdog expiry: \n");
-                    for (StackTraceElement element : stack) {
-                        sb.append("  - ").append(element).append("\n");
-                    }
-                }
-
-                logger.log(Level.WARNING, sb.toString());
             }
         });
 
