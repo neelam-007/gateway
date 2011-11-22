@@ -362,6 +362,19 @@ public class FindIdentitiesDialog extends JDialog {
                 tableModelHeaders = headers;
             }
             setTableModel(Collections.enumeration(tableModelHeaders), headers.size());
+
+            //Set up tool tips for the Description cells.
+            DefaultTableCellRenderer renderer = new DefaultTableCellRenderer(){
+                public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                    Component comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                    if((comp instanceof JComponent) && (value instanceof String)) {
+                       ((JComponent)comp).setToolTipText((String) value);
+                    }
+                    return comp;
+                }
+            };
+            searchResultTable.getColumnModel().getColumn(2).setCellRenderer(renderer);
+
         } catch (Exception e) {
             setTableModel(Collections.enumeration(Collections.emptyList()), 0);
             if (e instanceof FindException && e.getCause()==null) {
