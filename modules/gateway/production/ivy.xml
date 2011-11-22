@@ -62,7 +62,6 @@
         <dependency name="SimpleRawTransportAssertion" rev="latest.integration" conf="module"/>
         <dependency name="EncodeDecodeAssertion" rev="latest.integration" conf="module"/>
         <dependency name="CsrfProtectionAssertion" rev="latest.integration" conf="module"/>
-        <dependency name="Api3ScaleAssertion" rev="latest.integration" conf="module"/>
         <dependency name="JsonTransformationAssertion" rev="latest.integration" conf="module"/>
         <dependency name="IcapAntivirusScannerAssertion" rev="latest.integration" conf="module"/>
         <dependency name="UUIDGeneratorAssertion" rev="latest.integration" conf="module"/>
