@@ -124,7 +124,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         uploadToRadioButton.addActionListener(enableDisableListener);
         
         messageSource.setRenderer( new TextListCellRenderer<MessageTargetable>( getMessageNameFunction("Default", null), null, false ) );
-        messageTarget.setRenderer( new TextListCellRenderer<MessageTargetable>( getMessageNameFunction("Default", "Target Variable"), null, true ) );
+        messageTarget.setRenderer( new TextListCellRenderer<MessageTargetable>( getMessageNameFunction("Default", "Message Variable"), null, true ) );
         messageTarget.addActionListener( enableDisableListener );
         messageTargetVariablePanel = new TargetVariablePanel();
         messageTargetVariableNamePanel.setLayout(new BorderLayout());
@@ -376,15 +376,20 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
             assertion.setSshPublicKey(null);
         }
 
-        assertion.setRequestTarget((MessageTargetableSupport) messageSource.getSelectedItem());
-        final MessageTargetableSupport responseTarget =
-                new MessageTargetableSupport((MessageTargetable) messageTarget.getSelectedItem());
-        if ( responseTarget.getTarget()==TargetMessageType.OTHER ) {
-            responseTarget.setOtherTargetMessageVariable( messageTargetVariablePanel.getVariable());
-            responseTarget.setSourceUsedByGateway( false );
-            responseTarget.setTargetModifiedByGateway( true );
+        assertion.setRequestTarget( new MessageTargetableSupport(TargetMessageType.REQUEST, false) );
+        assertion.setResponseTarget( new MessageTargetableSupport(TargetMessageType.RESPONSE, true) );
+        if ( assertion.isDownloadCopyMethod() ) {
+            final MessageTargetableSupport responseTarget =
+                    new MessageTargetableSupport((MessageTargetable) messageTarget.getSelectedItem());
+            if ( responseTarget.getTarget()==TargetMessageType.OTHER ) {
+                responseTarget.setOtherTargetMessageVariable( messageTargetVariablePanel.getVariable());
+                responseTarget.setSourceUsedByGateway( false );
+                responseTarget.setTargetModifiedByGateway( true );
+            }
+            assertion.setResponseTarget( responseTarget );
+        } else {
+            assertion.setRequestTarget((MessageTargetableSupport) messageSource.getSelectedItem());
         }
-        assertion.setResponseTarget( responseTarget );
 
         assertion.setResponseByteLimit(responseLimitPanel.getValue());
 
