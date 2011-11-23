@@ -452,6 +452,18 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     List<SecurePassword> findAllSecurePasswords() throws FindException;
 
     /**
+     * Retrieves the public PEM key for PEM private key stored password.
+     *
+     * @param securePasswordOid the objectid of the SecurePassword to access. Required.
+     * @return the PEM encoded public key
+     * @throws ObjectNotFoundException If the referenced secure password could not be found.
+     * @throws FindException If there was an error accessing the password
+     */
+    @Transactional(propagation=Propagation.REQUIRED, readOnly=true)
+    @Secured(types=SECURE_PASSWORD,stereotype=GET_PROPERTY_BY_ID,relevantArg=0)
+    String getSecurePasswordPublicKey( long securePasswordOid ) throws FindException;
+
+    /**
      * Save a new or updated SecurePassword.
      *
      * @param securePassword the new or updated SecurePassword to save.  Required.
@@ -481,6 +493,20 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(types=SECURE_PASSWORD,stereotype=SET_PROPERTY_BY_ID,relevantArg=0)
     void setSecurePassword(long securePasswordOid, char[] newPassword) throws FindException, UpdateException;
+
+    /**
+     * Set or update the password fields for the specified SecurePassword.
+     *
+     * <p>Generates an RSA key and assigns to the secure password. As a
+     * side-effect, this will set the lastUpdate timestamp.</p>
+     *
+     * @param securePasswordOid the objectid of the SecurePassword to modify. Required.
+     * @param keybits The size in bits of the RSA key to generate
+     * @return The asynchronous job identifier
+     * @throws FindException If the referenced secure password could not be found.
+     * @throws UpdateException If the referenced secure password is not of the expected type.
+     */
+    public JobId<Boolean> setGeneratedSecurePassword( final long securePasswordOid, final int keybits ) throws FindException, UpdateException;
 
     /**
      * Destroy a SecurePassword instance.

@@ -171,6 +171,11 @@ public class TrustedCertAdminStub implements TrustedCertAdmin {
     }
 
     @Override
+    public String getSecurePasswordPublicKey( final long securePasswordOid ) throws FindException {
+        return null;
+    }
+
+    @Override
     public long saveSecurePassword(SecurePassword securePassword) throws UpdateException, SaveException, FindException {
         if (securePassword.getOid() == SecurePassword.DEFAULT_OID)
             securePassword.setOid(nextId++);
@@ -180,6 +185,11 @@ public class TrustedCertAdminStub implements TrustedCertAdmin {
 
     @Override
     public void setSecurePassword(long securePasswordOid, char[] newPassword) throws FindException, UpdateException {
+    }
+
+    @Override
+    public JobId<Boolean> setGeneratedSecurePassword( final long securePasswordOid, final int keybits ) throws FindException, UpdateException {
+        return null;
     }
 
     @Override

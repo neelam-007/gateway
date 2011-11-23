@@ -1,6 +1,6 @@
 package com.l7tech.external.assertions.ssh.server.keyprovider;
 
-import com.l7tech.external.assertions.ssh.keyprovider.SshKeyUtil;
+import com.l7tech.security.keys.PemUtils;
 
 import java.security.KeyPair;
 
@@ -14,7 +14,7 @@ public class PemSshHostKeyProvider extends AbstractSshHostKeyProvider {
 
     public PemSshHostKeyProvider(String privateKey) {
         super(privateKey);
-        String algorithm = SshKeyUtil.getPemPrivateKeyAlgorithm(privateKey);
+        String algorithm = PemUtils.getPemPrivateKeyAlgorithm( privateKey );
         if (algorithm != null) {
             setAlgorithm(algorithm);
         }
@@ -28,7 +28,8 @@ public class PemSshHostKeyProvider extends AbstractSshHostKeyProvider {
         super(privateKey, algorithm, keySize);
     }
 
+    @Override
     protected KeyPair doReadKeyPair(String privateKey) throws Exception {
-        return SshKeyUtil.doReadKeyPair(privateKey);
+        return PemUtils.doReadKeyPair( privateKey );
     }
 }

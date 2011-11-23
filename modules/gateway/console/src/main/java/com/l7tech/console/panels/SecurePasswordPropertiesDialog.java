@@ -1,12 +1,17 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.SsmApplication;
+import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.security.password.SecurePassword.SecurePasswordType;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.PasswordDoubleEntryDialog;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.EntityUtil;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectNotFoundException;
+import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -17,11 +22,15 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Date;
 import java.util.ResourceBundle;
 
 public class SecurePasswordPropertiesDialog extends JDialog {
     private static ResourceBundle resources = ResourceBundle.getBundle( SecurePasswordPropertiesDialog.class.getName() );
+
+    @SuppressWarnings({ "RedundantTypeArguments" })
+    private static final Collection<Integer> RSA_KEY_SIZES = CollectionUtils.<Integer>list( 512, 768, 1024, 1280, 2048 );
 
     private JPanel contentPane;
     private JButton buttonOK;
@@ -42,12 +51,17 @@ public class SecurePasswordPropertiesDialog extends JDialog {
     private JLabel pemPrivateKeyLabel;
     private JComboBox typeComboBox;
     private JLabel typeLabel;
+    private JButton viewPublicKeyButton;
+    private JCheckBox generateCheckBox;
+    private JComboBox generateKeyBitsComboBox;
 
     private final SecurePassword securePassword;
     private final boolean newRecord;
 
     private boolean confirmed = false;
-    private char[] enteredPassword = null;
+    private char[] enteredPassword;
+    private String pemPublicKey;
+    private int generateKeybits;
 
     public SecurePasswordPropertiesDialog( final Window owner, final SecurePassword securePassword) {
         super(owner, "Stored Password Properties");
@@ -83,6 +97,10 @@ public class SecurePasswordPropertiesDialog extends JDialog {
                     }
                 } ) );
         typeComboBox.setSelectedItem(securePassword.getType() != null ? securePassword.getType() : SecurePassword.SecurePasswordType.PASSWORD);
+
+        generateCheckBox.addActionListener( enableDisableListener );
+        generateKeyBitsComboBox.setModel( Utilities.comboBoxModel( RSA_KEY_SIZES ) );
+        generateKeyBitsComboBox.setSelectedIndex( generateKeyBitsComboBox.getModel().getSize()-1 );
 
         loadFromFileButton.addActionListener(new ActionListener() {
             @Override
@@ -131,11 +149,13 @@ public class SecurePasswordPropertiesDialog extends JDialog {
                 SecurePassword.SecurePasswordType type = newRecord ? (SecurePassword.SecurePasswordType) typeComboBox.getSelectedItem() : securePassword.getType();
                 if (type == SecurePasswordType.PEM_PRIVATE_KEY) {
                     if (newRecord) {
-                        String passToSave = pemPrivateKeyField.getText();
-                        if (StringUtils.isEmpty(passToSave)) {
-                            return "PEM private key must not be empty.";
-                        } else if (!SecurePasswordPemPrivateKeyDialog.simplePemPrivateKeyValidation(passToSave)) {
-                            return "The key must be in PEM private key format.";
+                        if ( !generateCheckBox.isSelected() ) {
+                            String passToSave = pemPrivateKeyField.getText();
+                            if (StringUtils.isEmpty(passToSave)) {
+                                return "PEM private key must not be empty.";
+                            } else if (!SecurePasswordPemPrivateKeyDialog.simplePemPrivateKeyValidation(passToSave)) {
+                                return "The key must be in PEM private key format.";
+                            }
                         }
                     } else {
                         if (enteredPassword != null && !SecurePasswordPemPrivateKeyDialog.simplePemPrivateKeyValidation(new String(enteredPassword))) {
@@ -148,28 +168,19 @@ public class SecurePasswordPropertiesDialog extends JDialog {
         });
 
         final int maxPasswordLength = EntityUtil.getMaxFieldLength(SecurePassword.class, "encodedPassword", 128);
-
         changePasswordButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                char[] got = null;
-                switch ((SecurePassword.SecurePasswordType) typeComboBox.getSelectedItem()) {
-                    case PASSWORD:
-                        got = PasswordDoubleEntryDialog.getPassword(SecurePasswordPropertiesDialog.this, "Enter Password", maxPasswordLength);
-                        break;
-                    case PEM_PRIVATE_KEY:
-                        got = SecurePasswordPemPrivateKeyDialog.getPemPrivateKey(SecurePasswordPropertiesDialog.this, "Enter PEM Private Key", maxPasswordLength);
-                        break;
-                    default:
-                        break;
-                }
-
-                if (got == null)
-                    return;
-                enteredPassword = got;
-                lastUpdateLabel.setText(new Date().toString());
+                changePassword( maxPasswordLength );
             }
         });
+
+        viewPublicKeyButton.addActionListener( new ActionListener(){
+            @Override
+            public void actionPerformed( final ActionEvent e ) {
+                viewPublicKey();
+            }
+        } );
 
         Utilities.setMaxLength(nameField.getDocument(), EntityUtil.getMaxFieldLength(SecurePassword.class, "name", 128));
         Utilities.setMaxLength(descriptionField.getDocument(), EntityUtil.getMaxFieldLength(SecurePassword.class, "description", 128));
@@ -179,6 +190,48 @@ public class SecurePasswordPropertiesDialog extends JDialog {
 
         enableOrDisableComponents();
         modelToView();
+    }
+
+    private void changePassword( final int maxPasswordLength ) {
+        char[] got = null;
+        switch ((SecurePasswordType) typeComboBox.getSelectedItem()) {
+            case PASSWORD:
+                got = PasswordDoubleEntryDialog.getPassword( this, "Enter Password", maxPasswordLength );
+                break;
+            case PEM_PRIVATE_KEY:
+                got = SecurePasswordPemPrivateKeyDialog.getPemPrivateKey( this, "Enter PEM Private Key", maxPasswordLength );
+                break;
+            default:
+                break;
+        }
+
+        if (got == null)
+            return;
+        pemPublicKey = null;
+        enteredPassword = got;
+        lastUpdateLabel.setText(new Date().toString());
+        enableOrDisableComponents();
+    }
+
+    private void viewPublicKey() {
+        String publicKey = pemPublicKey;
+
+        if ( publicKey == null ) {
+            try {
+                publicKey = pemPublicKey = Registry.getDefault().getTrustedCertManager().getSecurePasswordPublicKey( securePassword.getOid() );
+            } catch ( IllegalStateException e ) {
+                // not connected
+            } catch ( ObjectNotFoundException e ) {
+                DialogDisplayer.showMessageDialog( this, "Public Key Error", "The stored password could not be found.", null );
+            } catch ( FindException e ) {
+                DialogDisplayer.showMessageDialog( this, "Public Key Error", "Error accessing public key:\n" + ExceptionUtils.getMessage( e ), e );
+            }
+        }
+
+        if ( publicKey != null ) {
+            final Object message = Utilities.getTextDisplayComponent( publicKey, 600, 240, -1, -1 );
+            DialogDisplayer.showMessageDialog( this, message, "PEM Public Key", JOptionPane.PLAIN_MESSAGE, null );
+        }
     }
 
     private void doConfirm() {
@@ -192,7 +245,8 @@ public class SecurePasswordPropertiesDialog extends JDialog {
             lastUpdateLabel.setVisible(false);
             lastUpdateLabelLabel.setVisible(false);
             changePasswordButton.setVisible(false);
-            final SecurePassword.SecurePasswordType type = (SecurePassword.SecurePasswordType) typeComboBox.getSelectedItem();
+            viewPublicKeyButton.setVisible(false);
+            final SecurePasswordType type = (SecurePasswordType) typeComboBox.getSelectedItem();
             switch (type) {
                 case PASSWORD:
                     passwordField.setVisible(true);
@@ -206,15 +260,18 @@ public class SecurePasswordPropertiesDialog extends JDialog {
                     pemPrivateKeyLabel.setVisible(false);
                     break;
                 case PEM_PRIVATE_KEY:
-                    passwordField.setVisible(false);
-                    passwordField.setEnabled(false);
-                    confirmPasswordField.setVisible(false);
-                    confirmPasswordField.setEnabled(false);
-                    passwordLabel.setVisible(false);
-                    confirmPasswordLabel.setVisible(false);
-                    pemPrivateKeyFieldPanel.setVisible(true);
-                    pemPrivateKeyFieldPanel.setEnabled(true);
-                    pemPrivateKeyLabel.setVisible(true);
+                    passwordField.setVisible( false );
+                    passwordField.setEnabled( false );
+                    confirmPasswordField.setVisible( false );
+                    confirmPasswordField.setEnabled( false );
+                    passwordLabel.setVisible( false );
+                    confirmPasswordLabel.setVisible( false );
+                    pemPrivateKeyFieldPanel.setVisible( true );
+                    pemPrivateKeyFieldPanel.setEnabled( true );
+                    pemPrivateKeyLabel.setVisible( true );
+                    generateKeyBitsComboBox.setEnabled( generateCheckBox.isSelected() );
+                    pemPrivateKeyField.setEnabled( !generateCheckBox.isSelected() );
+                    loadFromFileButton.setEnabled( !generateCheckBox.isSelected() );
                     break;
                 default:
                     break;
@@ -224,10 +281,12 @@ public class SecurePasswordPropertiesDialog extends JDialog {
             typeLabel.setEnabled(false);
 
             pemPrivateKeyFieldPanel.setVisible(false);
-            pemPrivateKeyFieldPanel.setEnabled(false);
-            pemPrivateKeyLabel.setVisible(false);
+            pemPrivateKeyFieldPanel.setEnabled( false );
+            pemPrivateKeyLabel.setVisible( false );
+            viewPublicKeyButton.setVisible( securePassword.getType() == SecurePasswordType.PEM_PRIVATE_KEY );
+            viewPublicKeyButton.setEnabled( viewPublicKeyButton.isVisible() && enteredPassword==null );
 
-            passwordField.setVisible(false);
+            passwordField.setVisible( false );
             passwordField.setEnabled(false);
             confirmPasswordField.setVisible(false);
             confirmPasswordField.setEnabled(false);
@@ -251,7 +310,7 @@ public class SecurePasswordPropertiesDialog extends JDialog {
 
     private void viewToModel() {
         final SecurePassword.SecurePasswordType type = (SecurePassword.SecurePasswordType) typeComboBox.getSelectedItem();
-        if (newRecord) {
+        if (newRecord && !generateCheckBox.isSelected()) {
             switch (type) {
                 case PASSWORD:
                     enteredPassword = passwordField.getPassword();
@@ -265,6 +324,7 @@ public class SecurePasswordPropertiesDialog extends JDialog {
         securePassword.setDescription(descriptionField.getText());
         securePassword.setType(type);
         securePassword.setUsageFromVariable(allowVariableCheckBox.isSelected());
+        generateKeybits = generateCheckBox.isSelected() ? (Integer)generateKeyBitsComboBox.getSelectedItem() : 0;
     }
 
     private String nn(String s) {
@@ -277,11 +337,20 @@ public class SecurePasswordPropertiesDialog extends JDialog {
 
     /**
      * Get the plaintext password.  Only meaningful if {@link #isConfirmed()}.
-     * @return For a new SecurePassword entity: the password entered (and confirmed) by the user.  Never null.
+     * @return For a new SecurePassword entity: the password entered (and confirmed) by the user.  Or null if a PEM key should be generated.
      *         For an existing SecurePassword:  the new password, if the user requested a password change, otherwise null.
      */
     public char[] getEnteredPassword() {
         return enteredPassword;
+    }
+
+    /**
+     * The number of bits to use in the generated RSA key.
+     *
+     * @return The key bits
+     */
+    public int getGenerateKeybits() {
+        return generateKeybits;
     }
 
     private void readFromFile() {

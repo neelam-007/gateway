@@ -12,9 +12,11 @@ import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.password.SecurePassword;
+import com.l7tech.gateway.common.security.password.SecurePassword.SecurePasswordType;
 import com.l7tech.objectmodel.*;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
+import com.l7tech.security.keys.PemUtils;
 import com.l7tech.security.prov.CertificateRequest;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.prov.RsaSignerEngine;
@@ -22,18 +24,21 @@ import com.l7tech.security.prov.bc.BouncyCastleRsaSignerEngine;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.cluster.ClusterPropertyManager;
+import static com.l7tech.server.event.AdminInfo.find;
 import com.l7tech.server.identity.cert.RevocationCheckPolicyManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.util.ArrayUtils;
+import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SslCertificateSniffer;
 import com.l7tech.util.SyspropUtil;
 import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 
@@ -48,7 +53,9 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -578,6 +585,56 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         existing.setEncodedPassword(securePasswordManager.encryptPassword(newPassword));
         existing.setLastUpdate(System.currentTimeMillis());
         securePasswordManager.update( existing );
+    }
+
+    @Override
+    public JobId<Boolean> setGeneratedSecurePassword( final long securePasswordOid,
+                                                      final int keybits ) throws FindException, UpdateException  {
+        if ( keybits < 512 || keybits > 16384 ) throw new UpdateException("Invalid key size " + keybits);
+        final SecurePassword existing = securePasswordManager.findByPrimaryKey(securePasswordOid);
+        if (existing == null) throw new ObjectNotFoundException();
+        if (existing.getType() != SecurePasswordType.PEM_PRIVATE_KEY) throw new UpdateException("Cannot generate password for type");
+
+        final FutureTask<Boolean> keyGenerator = new FutureTask<Boolean>( find( false ).wrapCallable( new Callable<Boolean>(){
+            @Override
+            public Boolean call() throws Exception {
+                final KeyPairGenerator generator = KeyPairGenerator.getInstance( "RSA", new BouncyCastleProvider() );
+                generator.initialize( keybits, JceProvider.getInstance().getSecureRandom() );
+                final String pemKey = PemUtils.doWriteKeyPair( generator.genKeyPair().getPrivate() );
+                existing.setEncodedPassword(securePasswordManager.encryptPassword(pemKey.toCharArray()));
+                existing.setLastUpdate(System.currentTimeMillis());
+                securePasswordManager.update( existing );
+                return true;
+            }
+        } ) );
+
+        Background.scheduleOneShot( new TimerTask(){
+            @Override
+            public void run() {
+                keyGenerator.run();
+            }
+        }, 0L );
+
+        return registerJob( keyGenerator, Boolean.class );
+    }
+
+    @Override
+    public String getSecurePasswordPublicKey( final long securePasswordOid ) throws FindException  {
+        final SecurePassword existing = securePasswordManager.findByPrimaryKey(securePasswordOid);
+        if (existing == null) throw new ObjectNotFoundException();
+        if (existing.getType() != SecurePasswordType.PEM_PRIVATE_KEY) throw new FindException("Unexpected password type");
+
+        try {
+            final String encodedPassword = existing.getEncodedPassword();
+            if ( encodedPassword != null ) {
+                final KeyPair keyPair = PemUtils.doReadKeyPair( new String(securePasswordManager.decryptPassword( encodedPassword ) ) );
+                return PemUtils.writeKey( keyPair.getPublic(), true );
+            }
+        } catch ( Exception e ) {
+            throw new FindException( "Error accessing key: " + ExceptionUtils.getMessage(e) );
+        }
+
+        throw new FindException( "Key not available" );
     }
 
     @Override

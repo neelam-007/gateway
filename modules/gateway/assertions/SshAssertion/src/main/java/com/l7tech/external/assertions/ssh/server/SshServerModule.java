@@ -2,7 +2,6 @@ package com.l7tech.external.assertions.ssh.server;
 
 import com.l7tech.external.assertions.ssh.SshCredentialAssertion;
 import com.l7tech.external.assertions.ssh.SshRouteAssertion;
-import com.l7tech.external.assertions.ssh.keyprovider.SshKeyUtil;
 import com.l7tech.external.assertions.ssh.server.keyprovider.PemSshHostKeyProvider;
 import static com.l7tech.gateway.common.Component.GW_SSHRECV;
 import com.l7tech.gateway.common.LicenseManager;
@@ -10,6 +9,7 @@ import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.security.keys.PemUtils;
 import com.l7tech.server.*;
 import static com.l7tech.server.GatewayFeatureSets.SERVICE_SSH_MESSAGE_INPUT;
 import com.l7tech.server.audit.AuditContextUtils;
@@ -562,7 +562,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
                     // if authorizedUserPublicKeys list exists, perform authentication against it
                     if ( !authorizedUserPublicKeys.isEmpty() && publicKey != null) {
                         isAllowedAccess = false;
-                        final String publicKeyString = SshKeyUtil.writeKey(publicKey);
+                        final String publicKeyString = PemUtils.writeKey( publicKey );
                         if (!StringUtils.isEmpty(publicKeyString)) {
                             isAllowedAccess = authorizedUserPublicKeys.contains( publicKeyString );
                         }
@@ -572,7 +572,7 @@ public class SshServerModule extends TransportModule implements ApplicationListe
                     clearAuthenticationAttributes( session );
 
                     if ( isAllowedAccess ) {
-                        final String publicKeyStr = SshKeyUtil.writeKey(publicKey);
+                        final String publicKeyStr = PemUtils.writeKey( publicKey );
                         session.setAttribute( MINA_SESSION_ATTR_CRED_USERNAME, optional(userName) );
                         session.setAttribute( MINA_SESSION_ATTR_CRED_PUBLIC_KEY, optional(publicKeyStr) );
                     }

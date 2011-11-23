@@ -1,7 +1,7 @@
 package com.l7tech.external.assertions.ssh.server;
 
 import com.l7tech.external.assertions.ssh.server.keyprovider.PemSshHostKeyProvider;
-import com.l7tech.external.assertions.ssh.keyprovider.SshKeyUtil;
+import com.l7tech.security.keys.PemUtils;
 import com.l7tech.util.SyspropUtil;
 import org.apache.sshd.common.KeyPairProvider;
 import org.bouncycastle.openssl.PEMReader;
@@ -109,12 +109,12 @@ public class PEMSshHostKeyProviderTest {
     public void testRsaPemReadWrite() throws Exception {
         // pem read rsa private key
         InputStream is = new ByteArrayInputStream(sshRsaPrivateKey.getBytes());
-        PEMReader r = new PEMReader(new InputStreamReader(is), null, SshKeyUtil.getSymProvider(), SshKeyUtil.getAsymProvider());
+        PEMReader r = new PEMReader(new InputStreamReader(is), null, PemUtils.getSymProvider(), PemUtils.getAsymProvider());
         KeyPair keyPair =  (KeyPair) r.readObject();
         PublicKey publicKey = keyPair.getPublic();
 
         // pem write rsa public key should match
-        String writtenRemRsaPublicKey = SshKeyUtil.writeKey(publicKey);
+        String writtenRemRsaPublicKey = PemUtils.writeKey( publicKey );
         assertTrue(writtenRemRsaPublicKey.contains(sshRsaPemPublicKey));
     }
 
@@ -122,18 +122,18 @@ public class PEMSshHostKeyProviderTest {
     public void testDsaPemReadWrite() throws Exception {
         // pem read dsa private key
         InputStream is = new ByteArrayInputStream(sshDsaPrivateKey.getBytes());
-        PEMReader r = new PEMReader(new InputStreamReader(is), null, SshKeyUtil.getSymProvider(), SshKeyUtil.getAsymProvider());
+        PEMReader r = new PEMReader(new InputStreamReader(is), null, PemUtils.getSymProvider(), PemUtils.getAsymProvider());
         KeyPair keyPair =  (KeyPair) r.readObject();
         PublicKey publicKey = keyPair.getPublic();
 
         // pem write dsa public key should match
-        String writtenRemDsaPublicKey = SshKeyUtil.writeKey(publicKey);
+        String writtenRemDsaPublicKey = PemUtils.writeKey( publicKey );
         assertTrue(writtenRemDsaPublicKey.contains(sshDsaPemPublicKey));
     }
 
     @Test
     public void testGetPemPrivateKeyAlgorithm() throws Exception {
-        assertNotNull(SshKeyUtil.getPemPrivateKeyAlgorithm(sshRsaPrivateKey));
-        assertNotNull(SshKeyUtil.getPemPrivateKeyAlgorithm(sshDsaPrivateKey));
+        assertNotNull( PemUtils.getPemPrivateKeyAlgorithm( sshRsaPrivateKey ));
+        assertNotNull( PemUtils.getPemPrivateKeyAlgorithm( sshDsaPrivateKey ));
     }
 }

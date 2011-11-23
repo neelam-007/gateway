@@ -1,7 +1,9 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.action.Actions;
+import static com.l7tech.console.util.AdminGuiUtils.doAsyncAdmin;
 import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.security.password.SecurePassword.SecurePasswordType;
 import com.l7tech.gui.SimpleTableModel;
@@ -21,6 +23,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
@@ -80,19 +83,35 @@ public class SecurePasswordManagerWindow extends JDialog {
                         if (dlg.isConfirmed()) {
                             Long oid = null;
                             try {
-                                oid = Registry.getDefault().getTrustedCertManager().saveSecurePassword(securePassword);
+                                final TrustedCertAdmin admin = Registry.getDefault().getTrustedCertManager();
+                                oid = admin.saveSecurePassword( securePassword );
                                 securePassword.setOid(oid);
 
                                 // Update password field, if necessary
                                 char[] newpass = dlg.getEnteredPassword();
                                 if (newpass != null)
-                                    Registry.getDefault().getTrustedCertManager().setSecurePassword(oid, newpass);
+                                    admin.setSecurePassword( oid, newpass );
+
+                                int keybits = dlg.getGenerateKeybits();
+                                if ( keybits > 0 ) {
+                                    doAsyncAdmin(
+                                            admin,
+                                            SecurePasswordManagerWindow.this,
+                                            "Generating Key",
+                                            "Generating PEM private key ...",
+                                            admin.setGeneratedSecurePassword( oid, keybits )
+                                    );
+                                }
                             } catch (UpdateException e1) {
                                 showError("save stored password", e1);
                             } catch (SaveException e1) {
                                 showError("save stored password", e1);
                             } catch (FindException e1) {
                                 showError("save stored password", e1);
+                            } catch ( InterruptedException e1 ) {
+                                showError( "Generate stored password key", e1 );
+                            } catch ( InvocationTargetException e1 ) {
+                                showError( "Generate stored password key", e1.getCause() );
                             } finally {
                                 loadSecurePasswords(oid);
                             }

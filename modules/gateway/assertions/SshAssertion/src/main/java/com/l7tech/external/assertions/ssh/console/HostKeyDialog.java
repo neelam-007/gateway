@@ -5,6 +5,7 @@ import com.l7tech.external.assertions.ssh.keyprovider.SshKeyUtil;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.security.keys.PemUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.Option;
 import static com.l7tech.util.Option.some;
@@ -98,7 +99,7 @@ public class HostKeyDialog extends JDialog {
                 switch (validationType)
                 {
                     case VALIDATE_PEM_PRIVATE_KEY_FORMAT:
-                        if (SshKeyUtil.getPemPrivateKeyAlgorithm(hostKeyField.getText().trim()) == null) {
+                        if ( PemUtils.getPemPrivateKeyAlgorithm( hostKeyField.getText().trim() ) == null) {
                             JOptionPane.showMessageDialog(HostKeyDialog.this, MessageFormat.format(
                                     getResourceString("sshHostKeyFormatError"), "The key must be in PEM private key format."));
                             return;

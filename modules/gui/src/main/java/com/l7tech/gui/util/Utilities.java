@@ -1401,6 +1401,7 @@ public class Utilities {
         tp.setEditable(false);
         tp.setText(text);
         tp.setCaretPosition( 0 );
+        tp.addMouseListener( Utilities.createContextMenuMouseListener(tp, new Utilities.DefaultContextMenuFactory()));
 
         final JScrollPane sp = new JScrollPane(tp);
         sp.setPreferredSize(new Dimension(preferredWidth, preferredHeight));
