@@ -65,8 +65,8 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
         }
     };
 
-    public SftpPollingListenerPropertiesDialog(Dialog owner, SsgActiveConnector connector, boolean isNew) {
-        super(owner, isNew ? "Create a New SFTP Polling Listener" : "Edit an SFTP Polling Listener", true);
+    public SftpPollingListenerPropertiesDialog(Dialog owner, SsgActiveConnector connector) {
+        super(owner, "SFTP Polling Listener Properties", true);
         this.connector = connector;
         initialize();
     }

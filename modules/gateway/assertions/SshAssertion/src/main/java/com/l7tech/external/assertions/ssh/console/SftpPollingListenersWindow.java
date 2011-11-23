@@ -60,7 +60,7 @@ public class SftpPollingListenersWindow extends JDialog {
                 connector.setEnabled( true );
                 connector.setProperty( PROPERTIES_KEY_SFTP_SERVER_FINGER_PRINT, "" );
                 connector.setType( "SFTP" );
-                editAndSave( connector, false, true );
+                editAndSave( connector, false );
             }
         });
 
@@ -71,7 +71,7 @@ public class SftpPollingListenersWindow extends JDialog {
                 if(selectedConnector != null) {
                     final SsgActiveConnector connector =  new SsgActiveConnector(selectedConnector);
                     EntityUtils.updateCopy( connector );
-                    editAndSave( connector, true, true );
+                    editAndSave( connector, true );
                 }
             }
         });
@@ -81,7 +81,7 @@ public class SftpPollingListenersWindow extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 SsgActiveConnector connector = tableModel.getSelectedConnector(listenersTable);
                 if( connector != null) {
-                    editAndSave( connector, false, false );
+                    editAndSave( connector, false );
                 } else {
                     // the listener has been removed some how
                     showMessageDialog(SftpPollingListenersWindow.this, "SFTP polling listener configuration not found.", null);
@@ -145,10 +145,9 @@ public class SftpPollingListenersWindow extends JDialog {
     }
 
     private void editAndSave( final SsgActiveConnector connector,
-                              final boolean isClone,
-                              final boolean isNew ) {
+                              final boolean isClone) {
         final SftpPollingListenerPropertiesDialog dialog =
-            new SftpPollingListenerPropertiesDialog(SftpPollingListenersWindow.this, connector, isNew);
+            new SftpPollingListenerPropertiesDialog(SftpPollingListenersWindow.this, connector);
         if (isClone) dialog.selectNameField();
         Utilities.centerOnParentWindow( dialog );
         display(dialog, new Runnable() {
@@ -182,7 +181,7 @@ public class SftpPollingListenersWindow extends JDialog {
                                         @Override
                                         public void run() {
                                             updateListenersList( connector );
-                                            editAndSave( connector, false, isNew );
+                                            editAndSave( connector, false );
                                         }
                                     } );
                         } else {
