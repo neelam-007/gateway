@@ -50,13 +50,15 @@ public final class IcapResponseHandler extends AbstractIcapResponseHandler {
         boolean interrupted = false;
         try {
             ChannelFuture fut = channel.write(request);
-            //short pause to detect channel status as channel.write will attempt to return as quickly as possible
-            //due to it's async nature.
-            //if the channel is closed then we'll be able to detect it and handle the error accordingly.
-            Thread.sleep(100);
-            if(!fut.getChannel().isConnected()){
-                responses.offer(new DefaultIcapResponse(IcapVersion.ICAP_1_0, IcapResponseStatus.SERVICE_UNAVAILABLE));
-            }
+            fut.addListener(new ChannelFutureListener() {
+                @Override
+                public void operationComplete(final ChannelFuture channelFuture) throws Exception {
+                    if(channelFuture.isDone() && channelFuture.isSuccess()){
+                        return;
+                    }
+                    responses.offer(new DefaultIcapResponse(IcapVersion.ICAP_1_0, IcapResponseStatus.SERVICE_UNAVAILABLE));
+                }
+            });
             response = responses.take();
         } catch (InterruptedException e) {
             interrupted = true;
