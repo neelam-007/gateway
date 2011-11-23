@@ -69,7 +69,7 @@ public class ServiceManagerStub extends EntityManagerStub<PublishedService, Serv
         long oid = super.save(service);
         try {
             ServiceCache serviceCache = getServiceCache();
-            serviceCache.cache(service);
+            serviceCache.cache(new PublishedService(service, true));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -118,7 +118,7 @@ public class ServiceManagerStub extends EntityManagerStub<PublishedService, Serv
         try {
             ServiceCache serviceCache = getServiceCache();
             serviceCache.removeFromCache(service);
-            serviceCache.cache(service);
+            serviceCache.cache(new PublishedService(service, true));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

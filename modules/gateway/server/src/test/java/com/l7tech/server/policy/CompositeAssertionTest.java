@@ -8,29 +8,30 @@ package com.l7tech.server.policy;
 
 //import com.l7tech.server.ApplicationContexts;
 import com.l7tech.common.io.EmptyInputStream;
-import com.l7tech.message.Message;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
-import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.composite.ServerAllAssertion;
 import com.l7tech.server.policy.assertion.composite.ServerExactlyOneAssertion;
 import com.l7tech.server.policy.assertion.composite.ServerOneOrMoreAssertion;
-import com.l7tech.server.ApplicationContexts;
 import org.junit.Test;
-import static org.junit.Assert.*;
-
 import org.springframework.context.ApplicationContext;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
+
+import static org.junit.Assert.*;
 
 /**
  * Test the logic of composite assertions.
@@ -145,5 +146,31 @@ public class CompositeAssertionTest {
                 return null;
             }
         });
+    }
+
+    @Test
+    public void testCantChangeChildrenIfLocked() throws Exception {
+        CompositeAssertion ca = new AllAssertion(Arrays.asList(new TrueAssertion(), new FalseAssertion()));
+        ca.getChildren().add(new TrueAssertion());
+        ca.addChild(new FalseAssertion());
+        assertEquals(4, ca.getChildren().size());
+
+        ca.lock();
+
+        try {
+            ca.getChildren().add(new TrueAssertion());
+            fail("Expected exception not thrown -- locked composite should forbid modifying children");
+        } catch (RuntimeException e) {
+            // Ok
+        }
+
+        try {
+            ca.addChild(new FalseAssertion());
+            fail("Expected exception not thrown -- locked composite should forbid adding children");
+        } catch (RuntimeException e) {
+            // Ok
+        }
+
+        assertEquals(4, ca.getChildren().size());
     }
 }

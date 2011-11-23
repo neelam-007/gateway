@@ -12,6 +12,7 @@ import com.l7tech.util.EmptyIterator;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.Nullable;
 
+import javax.persistence.Transient;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
@@ -48,6 +49,7 @@ public abstract class Assertion implements Cloneable, Serializable {
     protected transient CompositeAssertion parent;
     private transient int ordinal;
     private transient Long ownerPolicyOid = null;
+    private transient boolean locked = false;
     private boolean enabled = true;
     private @Nullable Comment assertionComment;
 
@@ -74,6 +76,7 @@ public abstract class Assertion implements Cloneable, Serializable {
      * @param parent the new parent
      */
     protected void setParent(@Nullable CompositeAssertion parent) {
+        checkLocked();
         this.parent = parent;
     }
 
@@ -82,6 +85,7 @@ public abstract class Assertion implements Cloneable, Serializable {
     }
 
     public void setEnabled(boolean enabled) {
+        checkLocked();
         this.enabled = enabled;
     }
 
@@ -91,6 +95,7 @@ public abstract class Assertion implements Cloneable, Serializable {
     }
 
     public void setAssertionComment(@Nullable Comment comment) {
+        checkLocked();
         this.assertionComment = comment;
     }
 
@@ -172,6 +177,7 @@ public abstract class Assertion implements Cloneable, Serializable {
      * @return the lowest unused ordinal after this assertion and any children have been renumbered.
      */
     protected int renumber(int newStartingOrdinal) {
+        checkLocked();
         this.ordinal = newStartingOrdinal;
         return newStartingOrdinal + 1;
     }
@@ -304,6 +310,7 @@ public abstract class Assertion implements Cloneable, Serializable {
     }
 
     public void ownerPolicyOid(Long ownerPolicyOid) {
+        checkLocked();
         if (ownerPolicyOid != null && ownerPolicyOid == -1) ownerPolicyOid = null;
         this.ownerPolicyOid = ownerPolicyOid;
     }
@@ -886,6 +893,31 @@ public abstract class Assertion implements Cloneable, Serializable {
     private void readObject( final ObjectInputStream in ) throws ClassNotFoundException, IOException {
         ObjectInputStream.GetField fields = in.readFields();
         enabled = fields.get("enabled", true);
+    }
+
+    /**
+     * Mark this assertion (and any children) as locked.  Assertion properties will enforce read-only mode on a best-effort
+     * basis, to detect bugs (such as accidentally editing a live copy of a policy inside a policy cache).
+     * <p/>
+     * Composite assertions will forbid any modification of their children if they are locked.
+     * <p/>
+     * The locked flag cannot be turned off once it is enabled.
+     */
+    public void lock() {
+        locked = true;
+    }
+
+    @Transient
+    protected boolean isLocked() {
+        return locked;
+    }
+
+    /**
+     * Throws IllegalStateException if {@link #isLocked}.
+     */
+    protected void checkLocked() {
+        if (isLocked())
+            throw new IllegalStateException("Cannot update locked assertion");
     }
 
     /**

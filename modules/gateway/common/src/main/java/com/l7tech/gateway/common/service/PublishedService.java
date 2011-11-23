@@ -4,6 +4,7 @@ import com.l7tech.common.http.HttpMethod;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.imp.PersistentEntityUtil;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.Policy;
@@ -74,6 +75,19 @@ public class PublishedService extends NamedEntityImp implements Flushable, HasFo
      * @param objToCopy source object.  required
      */
     public PublishedService( final PublishedService objToCopy ) {
+        this(objToCopy, false);
+    }
+
+    /**
+     * Create a PublishedService that is a copy of the given PublishedService.
+     *
+     * <p>This will copy the identity of the original, if you don't want
+     * this you will need to reset the id and version (and the id and version
+     * of the policy).</p>
+     * @param objToCopy source object.  required
+     * @param lock true to create a read-only service
+     */
+    public PublishedService( final PublishedService objToCopy, boolean lock) {
         super(objToCopy);
         setDisabled(objToCopy.isDisabled());
         setHttpMethods(objToCopy.getHttpMethodsReadOnly());
@@ -88,6 +102,10 @@ public class PublishedService extends NamedEntityImp implements Flushable, HasFo
         setFolder(objToCopy.getFolder());
         _wsdlUrl = objToCopy._wsdlUrl;
         setWsdlXml(objToCopy.getWsdlXml());
+        if (lock) {
+            PersistentEntityUtil.lock(policy);
+            lock();
+        }
     }
 
     @Override

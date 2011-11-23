@@ -223,7 +223,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                     if (targetService == null || (targetService.isDisabled() && !allowDisabled)) 
                         throw new IllegalStateException("Service not found ("+serviceId+")"); // caught by us in doGet and doPost
 
-                    final Assertion servicePolicy = targetService.getPolicy().getAssertion();
+                    final Assertion servicePolicy = new Policy(targetService.getPolicy()).getAssertion(); // copy policy since we may be modifying it (simplification, filters, etc)
                     final String servicePolicyVersion = policyCache.getUniquePolicyVersionIdentifer( targetService.getPolicy().getOid() );
 
                     return new PolicyService.ServiceInfo() {

@@ -5,7 +5,6 @@ import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
-import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CommentAssertion;
 import com.l7tech.policy.assertion.FalseAssertion;
@@ -24,6 +23,8 @@ import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.logging.Logger;
+
+import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 
 /**
  * @author alex
@@ -105,6 +106,8 @@ public class Policy extends NamedEntityImp implements Flushable, HasFolder {
         if (assertion == null) {
             assertion = WspReader.getDefault().parsePermissively(xml, WspReader.INCLUDE_DISABLED);
             assertion.ownerPolicyOid(getOid());
+            if (isLocked())
+                assertion.lock();
         }
 
         return assertion;
@@ -297,6 +300,13 @@ public class Policy extends NamedEntityImp implements Flushable, HasFolder {
         result = 31 * result + (type != null ? type.hashCode() : 0);
         result = 31 * result + (internalTag != null ? internalTag.hashCode() : 0);
         return result;
+    }
+
+    @Override
+    protected void lock() {
+        if (assertion != null)
+            assertion.lock();
+        super.lock();
     }
 
     @Override

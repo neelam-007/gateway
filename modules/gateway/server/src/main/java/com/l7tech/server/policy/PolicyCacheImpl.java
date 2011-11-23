@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.objectmodel.imp.PersistentEntityUtil;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.PolicyVariableUtils;
@@ -20,8 +21,6 @@ import com.l7tech.server.folder.FolderCache;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import static com.l7tech.util.ArrayUtils.box;
-import static com.l7tech.util.ArrayUtils.zipI;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.Nullary;
 import com.l7tech.util.Pair;
@@ -48,6 +47,9 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.util.ArrayUtils.box;
+import static com.l7tech.util.ArrayUtils.zipI;
 
 /**
  * Policy cache maintains ServerPolcies / Policies and their metadata.
@@ -779,6 +781,8 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
      * Add an item to the cache, update the usage structure (usedBy)
      */
     private void cacheReplace( final PolicyCacheEntry pce ) {
+        if (!PersistentEntityUtil.isLocked(pce.policy))
+            throw new IllegalArgumentException("Unlocked policy may not be placed into the policy cache");
         PolicyCacheEntry replaced = policyCache.put( pce.policyId, pce );
         if ( replaced != null ) {
             ResourceUtils.closeQuietly( replaced );
@@ -1111,15 +1115,15 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
 
             PolicyCacheEntry pce;
             if ( serverAssertion != null ) {
-                ServerPolicy ServerPolicy = new ServerPolicy( thisPolicy, meta, descendentPolicies, dependentVersions, serverAssertion, new Nullary<Collection<Folder>>(){
+                ServerPolicy serverPolicy = new ServerPolicy( thisPolicy, meta, descendentPolicies, dependentVersions, serverAssertion, new Nullary<Collection<Folder>>(){
                     @Override
                     public Collection<Folder> call() {
                         return getFolderPath( thisPolicyId );
                     }
                 } );
-                pce = new PolicyCacheEntry( thisPolicy, ServerPolicy, null );
+                pce = new PolicyCacheEntry( new Policy(thisPolicy, true), serverPolicy, null );
             } else {
-                pce = new PolicyCacheEntry( thisPolicy, usedInvalidPolicyId );
+                pce = new PolicyCacheEntry( new Policy(thisPolicy, true), usedInvalidPolicyId );
             }
 
             cacheReplace(pce);

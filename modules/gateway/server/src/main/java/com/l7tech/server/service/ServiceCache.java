@@ -8,6 +8,7 @@ import com.l7tech.message.Message;
 import com.l7tech.message.XmlKnob;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.imp.PersistentEntityUtil;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.assertion.Assertion;
@@ -217,6 +218,8 @@ public class ServiceCache
 
         if (publishedService != null) {
             try {
+                PersistentEntityUtil.lock(publishedService);
+                PersistentEntityUtil.lock(publishedService.getPolicy());
                 cache(publishedService);
                 TarariLoader.compile();
             } catch (Exception e) {
@@ -236,7 +239,7 @@ public class ServiceCache
                 for (PublishedService service : services) {
                     try {
                         // cache a copy not bound to hibernate session
-                        cache(  new PublishedService( service ));
+                        cache(  new PublishedService( service, true ));
                     } catch (ServerPolicyException e) {
                         Assertion ass = e.getAssertion();
 
@@ -633,11 +636,16 @@ public class ServiceCache
         }
 
         // cache the service
+        if (!PersistentEntityUtil.isLocked(service))
+            throw new IllegalArgumentException("Unlocked service may not be placed into the service cache");
         services.put(oid, service);
 
         // cache the server policy for this service
         final Policy policy = service.getPolicy();
-        if (policy == null) throw new ServerPolicyException(null, "Service #" + service.getOid() + " (" + service.getName() + ") has no policy");
+        if (policy == null)
+            throw new ServerPolicyException(null, "Service #" + service.getOid() + " (" + service.getName() + ") has no policy");
+        if (!PersistentEntityUtil.isLocked(policy))
+            throw new IllegalArgumentException("Unlocked service policy may not be placed into the service cache");
         policyCache.update(policy);
     }
 
@@ -942,7 +950,7 @@ public class ServiceCache
                                 if (throwingVersion == null || !throwingVersion.equals( newVersionUID ))
                                 {
                                     // Try to cache it again
-                                    cacheNoLock(new PublishedService( newService ), notificationMap);
+                                    cacheNoLock(new PublishedService( newService, true ), notificationMap);
                                     if (throwingVersion != null) {
                                         logger.log(Level.INFO, "Policy for service #" + oid + " is no longer invalid");
                                         servicesThatAreThrowing.remove(oid);

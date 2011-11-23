@@ -9,7 +9,8 @@ import java.util.*;
  * @author alex
  */
 public abstract class CompositeAssertion extends Assertion implements Cloneable, Serializable {
-    protected List<Assertion> children = new ArrayList<Assertion>();
+    private List<Assertion> children = new ArrayList<Assertion>();
+    private transient List<Assertion> lockedChildren = null;
 
     public CompositeAssertion() {
     }
@@ -43,26 +44,30 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
      * @return List of child assertions
      */
     public List<Assertion> getChildren() {
-        return children;
+        return lockedChildren != null ? lockedChildren : children;
     }
 
     public void clearChildren() {
+        checkLocked();
         children.clear();
     }
 
     public void addChild(Assertion kid) {
+        checkLocked();
         children.add(kid);
         setParent(kid, this);        
         super.treeChanged();
     }
 
     public void addChild(int index, Assertion kid) {
+        checkLocked();
         children.add(index, kid);
         setParent(kid, this);
         super.treeChanged();
     }
 
     public void replaceChild(Assertion oldKid, Assertion newKid) {
+        checkLocked();
         int index = children.indexOf(oldKid);
         if (index >= 0) {
             children.remove(index);
@@ -74,11 +79,13 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
     }
 
     public void removeChild(Assertion kid) {
+        checkLocked();
         children.remove(kid);
         super.treeChanged();
     }
 
     public void setChildren(List<? extends Assertion> children) {
+        checkLocked();
         this.children = reparentedChildren(this, children);
         super.treeChanged();
     }
@@ -183,16 +190,6 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
         return newKids;
     }
 
-    void simplify() {
-        List<Assertion> newKids = new ArrayList<Assertion>();
-        for ( Assertion assertion : children ) {
-            assertion = simplify( assertion, true, false);
-            if ( assertion != null )
-                newKids.add( assertion );
-        }
-        setChildren(newKids);
-    }
-
     @Override
     public String toIndentedString(int indentLevel) {
         StringBuffer b = new StringBuffer();
@@ -209,5 +206,14 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
     @Override
     public String toString() {
         return toIndentedString(0);
+    }
+
+    @Override
+    public void lock() {
+        for (Assertion child : children) {
+            child.lock();
+        }
+        lockedChildren = Collections.unmodifiableList(children);
+        super.lock();
     }
 }
