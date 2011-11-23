@@ -270,7 +270,7 @@ public class XslTransformationSpecifyPanel extends JPanel {
         try {
             docIsXsl(contents);
         } catch (SAXException e) {
-            return resources.getString("error.notxslt") + ": " + ExceptionUtils.getMessage(e);
+            return resources.getString("error.notxslt") + " " + ExceptionUtils.getMessage(e);
         }
 
         return null;
@@ -346,7 +346,7 @@ public class XslTransformationSpecifyPanel extends JPanel {
             } );
             tf.newTemplates(new DOMSource(XmlUtil.parse(new StringReader(XmlUtil.nodeToString(doc)), false)));
         } catch (Exception e) {
-            throw new SAXException("Document is not valid XSLT: " + ExceptionUtils.getMessage(e), e);
+            throw new SAXException(ExceptionUtils.getMessage(e), e);
         }
     }
 
