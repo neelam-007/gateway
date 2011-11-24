@@ -19,6 +19,9 @@ public class SshCredentialAssertion extends Assertion {
     public static final String LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER = "l7.ssh.maxConcurrentSessionsPerUser";
     public static final String LISTEN_PROP_MAX_SESSIONS = "l7.ssh.maxSessions";
 
+    private Boolean permitPasswordCredential;
+    private Boolean permitPublicKeyCredential;
+
     /**
      * The SSH Credential assertion is always a credential source
      *
@@ -57,6 +60,8 @@ public class SshCredentialAssertion extends Assertion {
             meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "none");
 
             meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/authentication.gif");
+            meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.ssh.console.SshCredentialAssertionPropertiesDialog");
+            meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
             meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
             meta.put(META_INITIALIZED, Boolean.TRUE);
@@ -65,4 +70,33 @@ public class SshCredentialAssertion extends Assertion {
         return meta;
     }
 
+    public Boolean getPermitPasswordCredential() {
+        return permitPasswordCredential;
+    }
+
+    public boolean isPermitPasswordCredential() {
+        if (permitPasswordCredential != null) {
+            return permitPasswordCredential;
+        }
+        return false;
+    }
+
+    public void setPermitPasswordCredential(Boolean permitPasswordCredential) {
+        this.permitPasswordCredential = permitPasswordCredential;
+    }
+
+    public Boolean getPermitPublicKeyCredential() {
+        return permitPublicKeyCredential;
+    }
+
+    public boolean isPermitPublicKeyCredential() {
+        if (permitPublicKeyCredential != null ) {
+            return permitPublicKeyCredential;
+        }
+        return false;
+    }
+
+    public void setPermitPublicKeyCredential(Boolean permitPublicKeyCredential) {
+        this.permitPublicKeyCredential = permitPublicKeyCredential;
+    }
 }

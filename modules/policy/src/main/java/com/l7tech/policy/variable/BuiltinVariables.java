@@ -1,8 +1,5 @@
 package com.l7tech.policy.variable;
 
-import com.l7tech.message.TcpKnob;
-import com.l7tech.util.Functions;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -137,8 +134,8 @@ public class BuiltinVariables {
             new VariableMetadata("request.ftp.file", false, false, null, false),
             new VariableMetadata("request.ftp.unique", false, false, null, false),
             new VariableMetadata("request.ftp.secure", false, false, null, false),
-            new VariableMetadata("request.sftp.path", false, false, null, false),
-            new VariableMetadata("request.sftp.file", false, false, null, false),
+            new VariableMetadata("request.ssh.path", false, false, null, false),
+            new VariableMetadata("request.ssh.file", false, false, null, false),
             new VariableMetadata("auditLevel", false, false, null, true),
             new VariableMetadata("request.soap.operation", false, false, null, false),
             new VariableMetadata("request.soap.operationname", false, false, "request.soap.operation", false),

@@ -63,14 +63,14 @@ public class ServerSshCredentialAssertion extends ServerCredentialSourceAssertio
 
     private LoginCredentials findCredentials(PasswordAuthentication passwordAuthentication,
                                              SshKnob.PublicKeyAuthentication publicKeyAuthentication) throws IOException {
-        if (publicKeyAuthentication != null) {
+        if (assertion.isPermitPublicKeyCredential() && publicKeyAuthentication != null) {
             logAndAudit(AssertionMessages.SSH_CREDENTIAL_AUTH_USER, publicKeyAuthentication.getUserName());
             return LoginCredentials.makeLoginCredentials( new SshSecurityToken(
                 SecurityTokenType.SSH_CREDENTIAL, publicKeyAuthentication),
                 assertion.getClass());
         }
 
-        if (passwordAuthentication != null) {
+        if (assertion.isPermitPasswordCredential() && passwordAuthentication != null) {
             logAndAudit(AssertionMessages.SSH_CREDENTIAL_AUTH_USER, passwordAuthentication.getUserName());
              return LoginCredentials.makeLoginCredentials( new UsernamePasswordSecurityToken(
                 SecurityTokenType.SSH_CREDENTIAL, passwordAuthentication.getUserName(), passwordAuthentication.getPassword()),

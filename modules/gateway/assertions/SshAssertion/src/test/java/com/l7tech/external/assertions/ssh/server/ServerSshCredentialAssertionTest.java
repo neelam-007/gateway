@@ -20,7 +20,7 @@ import static org.junit.Assert.assertNotNull;
  */
 public class ServerSshCredentialAssertionTest {
 
-    private PolicyEnforcementContext makeContext(boolean addSshKnob, final boolean withCreds) throws Exception {
+    private PolicyEnforcementContext makeContext(boolean addSshKnob, final boolean withPasswordCreds, final boolean withPublicKeyCreds) throws Exception {
         // create messages
         Message request = new Message(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT));
         Message response = new Message();
@@ -48,7 +48,7 @@ public class ServerSshCredentialAssertionTest {
                 public PasswordAuthentication getPasswordAuthentication() {
                     PasswordAuthentication passwordAuthentication = null;
 
-                    if (withCreds) {
+                    if (withPasswordCreds) {
                         passwordAuthentication = new PasswordAuthentication("user", "password".toCharArray());
                     }
 
@@ -57,7 +57,15 @@ public class ServerSshCredentialAssertionTest {
 
                 @Override
                 public PublicKeyAuthentication getPublicKeyAuthentication() {
-                    return null;
+                    PublicKeyAuthentication publicKeyAuthentication = null;
+                    if (withPublicKeyCreds) {
+                        publicKeyAuthentication = new PublicKeyAuthentication("user",
+                                "-----BEGIN PUBLIC KEY-----\n" +
+                                "MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAIW6mPdh9KfTBBS0dsNQ6gdNh2W1nBlV\n" +
+                                "NY/dYBknJGsD6+U6We2AGAmgT9TpQ4vaqbqF/+VgtMVJm6aztUuknLsCAwEAAQ==\n" +
+                                "-----END PUBLIC KEY-----");
+                    }
+                    return publicKeyAuthentication;
                 }
 
                 @Override
@@ -107,9 +115,11 @@ public class ServerSshCredentialAssertionTest {
     @Test
     public void testNotSshRequest() throws Exception {
         SshCredentialAssertion fca = new SshCredentialAssertion();
+        fca.setPermitPasswordCredential(true);
+        fca.setPermitPublicKeyCredential(true);
         ServerAssertion ass = makePolicy(fca);
 
-        PolicyEnforcementContext pec = makeContext(false, false);
+        PolicyEnforcementContext pec = makeContext(false, false, false);
         AssertionStatus result = ass.checkRequest(pec);
 
         assertEquals("Incorrect assertion status", AssertionStatus.AUTH_REQUIRED, result);
@@ -118,10 +128,21 @@ public class ServerSshCredentialAssertionTest {
     @Test
     public void testCredentials() throws Exception {
         SshCredentialAssertion fca = new SshCredentialAssertion();
+        fca.setPermitPasswordCredential(true);
+        fca.setPermitPublicKeyCredential(true);
         ServerAssertion ass = makePolicy(fca);
 
-        PolicyEnforcementContext pec = makeContext(true, true);
+        // use password credentials
+        PolicyEnforcementContext pec = makeContext(true, true, false);
         AssertionStatus result = ass.checkRequest(pec);
+
+        assertEquals("Incorrect assertion status", AssertionStatus.NONE, result);
+        assertNotNull("Credentials missing", pec.getDefaultAuthenticationContext().getLastCredentials());
+        assertEquals("Incorrect login found", "user", pec.getDefaultAuthenticationContext().getLastCredentials().getLogin());
+
+        // use public key credentials
+        pec = makeContext(true, false, true);
+        result = ass.checkRequest(pec);
 
         assertEquals("Incorrect assertion status", AssertionStatus.NONE, result);
         assertNotNull("Credentials missing", pec.getDefaultAuthenticationContext().getLastCredentials());
@@ -131,11 +152,33 @@ public class ServerSshCredentialAssertionTest {
     @Test
     public void testMissingCredentials() throws Exception {
         SshCredentialAssertion fca = new SshCredentialAssertion();
+        fca.setPermitPasswordCredential(true);
+        fca.setPermitPublicKeyCredential(true);
         ServerAssertion ass = makePolicy(fca);
 
-        PolicyEnforcementContext pec = makeContext(true, false);
+        PolicyEnforcementContext pec = makeContext(true, false, false);
         AssertionStatus result = ass.checkRequest(pec);
 
+        assertEquals("Incorrect assertion status", AssertionStatus.AUTH_REQUIRED, result);
+    }
+
+    @Test
+    public void testNotPermittedCredentials() throws Exception {
+        SshCredentialAssertion fca = new SshCredentialAssertion();
+
+        // not permitted
+        fca.setPermitPasswordCredential(false);
+        fca.setPermitPublicKeyCredential(false);
+        ServerAssertion ass = makePolicy(fca);
+
+        // use password credentials
+        PolicyEnforcementContext pec = makeContext(true, true, false);
+        AssertionStatus result = ass.checkRequest(pec);
+        assertEquals("Incorrect assertion status", AssertionStatus.AUTH_REQUIRED, result);
+
+        // use public key credentials
+        pec = makeContext(true, false, true);
+        result = ass.checkRequest(pec);
         assertEquals("Incorrect assertion status", AssertionStatus.AUTH_REQUIRED, result);
     }
 }
