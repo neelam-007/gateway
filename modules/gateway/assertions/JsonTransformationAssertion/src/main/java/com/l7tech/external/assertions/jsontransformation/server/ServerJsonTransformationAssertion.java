@@ -63,13 +63,15 @@ public class ServerJsonTransformationAssertion extends AbstractServerAssertion<J
             } else {
                 Map<String, Object> vars = context.getVariableMap(assertion.getVariablesUsed(), getAudit());
                 String rootTag = ExpandVariables.process(assertion.getRootTagString(), vars, getAudit(), true);
-                if(rootTag == null || rootTag.trim().isEmpty()){
-                    logAndAudit( AssertionMessages.USERDETAIL_WARNING, "Root Tag is required.");
-                    return AssertionStatus.FAILED;
-                }
-                if(!JsonTransformationAssertion.ROOT_TAG_VERIFIER.matcher(rootTag).matches()){
-                    logAndAudit( AssertionMessages.USERDETAIL_WARNING, "Invalid root tag specified: " + rootTag );
-                    return AssertionStatus.FAILED;
+                if(assertion.getConvention().equals(JsonTransformationAssertion.TransformationConvention.STANDARD)){
+                    if(rootTag == null || rootTag.trim().isEmpty()){
+                        logAndAudit( AssertionMessages.USERDETAIL_WARNING, "Root Tag is required.");
+                        return AssertionStatus.FAILED;
+                    }
+                    if(!JsonTransformationAssertion.ROOT_TAG_VERIFIER.matcher(rootTag).matches()){
+                        logAndAudit( AssertionMessages.USERDETAIL_WARNING, "Invalid root tag specified: " + rootTag );
+                        return AssertionStatus.FAILED;
+                    }
                 }
                 String source = getFirstPartString(sourceMessage);
                 targetValue = doTransformation(source, assertion.getTransformation(), assertion.getConvention(),
@@ -128,13 +130,13 @@ public class ServerJsonTransformationAssertion extends AbstractServerAssertion<J
     	} else {
             if('{' == source.charAt(0)){
                 jsonObject = new JSONObject(source);
-                targetValue = convention == JsonTransformationAssertion.TransformationConvention.STANDARD ?
+                targetValue = convention.equals(JsonTransformationAssertion.TransformationConvention.STANDARD) ?
                         XML.toString(jsonObject, rootTag.trim().isEmpty()? null: rootTag) :
                         JSONML.toString(jsonObject);
             }
             else if('[' == source.charAt(0)){
                 JSONArray jsonArray = new JSONArray(source);
-                targetValue = convention == JsonTransformationAssertion.TransformationConvention.STANDARD ?
+                targetValue = convention.equals(JsonTransformationAssertion.TransformationConvention.STANDARD) ?
                         XML.toString(jsonArray, rootTag.trim().isEmpty() ? null: rootTag) :
                         JSONML.toString(jsonArray);
             }
