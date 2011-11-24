@@ -24,6 +24,7 @@ import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAsserti
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.UnaryVoid;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.util.ValidationUtils;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
@@ -41,6 +42,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URLEncoder;
 import java.util.*;
@@ -178,7 +180,8 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
                 String currentService = String.format("icap://%s:%s/%s", hostname, Integer.parseInt(portText), serviceName);
                 channel = getChannelForEndpoint(selectedService);
                 if(channel == null){
-                    ChannelFuture future = client.connect(new InetSocketAddress(hostname, Integer.parseInt(portText)));
+                    InetAddress address = InetAddressUtil.getAddress(hostname);
+                    ChannelFuture future = client.connect(new InetSocketAddress(address, Integer.parseInt(portText)));
                     channel = future.awaitUninterruptibly().getChannel();
                     channelGroup.add(channel);//add newly created channels to the channel group
                     if (!future.isSuccess()) {
