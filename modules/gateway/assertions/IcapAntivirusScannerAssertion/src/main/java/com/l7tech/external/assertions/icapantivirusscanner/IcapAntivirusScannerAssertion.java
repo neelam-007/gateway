@@ -14,6 +14,7 @@ import com.l7tech.util.Functions;
 import org.springframework.context.ApplicationContext;
 
 import java.util.*;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -250,5 +251,20 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
                 new VariableMetadata(VARIABLE_VALUES, true, true, null, false),
                 new VariableMetadata(VARIABLE_NAME, true, false, null, false)
         );
+    }
+
+    @Override
+    protected MessageTargetableAssertion.VariablesUsed doGetVariablesUsed() {
+        VariablesUsed vars = super.doGetVariablesUsed().withExpressions(connectionTimeout, readTimeout);
+        for(String server : icapServers){
+            Matcher matcher = ICAP_URI.matcher(server);
+            if(matcher.matches()){
+                vars.withExpressions(matcher.group(1), matcher.group(2), matcher.group(3));
+            }
+        }
+        for (Map.Entry<String, String> ent : serviceParameters.entrySet()) {
+            vars.withExpressions(ent.getKey(), ent.getValue());
+        }
+        return vars;
     }
 }
