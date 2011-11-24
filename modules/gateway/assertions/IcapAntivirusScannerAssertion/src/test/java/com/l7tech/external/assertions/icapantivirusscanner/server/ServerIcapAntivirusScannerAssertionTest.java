@@ -119,8 +119,7 @@ public class ServerIcapAntivirusScannerAssertionTest {
                     return connect();
                 }
             };
-            serverAssertion.setClient(client);
-            channel = serverAssertion.getChannel(policyEnforcementContext);
+            channel = serverAssertion.getChannel(client, policyEnforcementContext);
         } catch (PolicyAssertionException e) {
             Assert.fail("Error creating server assertion: " + e.getMessage());
         }

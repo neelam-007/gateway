@@ -27,7 +27,7 @@ public class IcapChunkSeparator implements ChannelDownstreamHandler {
 
     @Override
     public void handleDownstream(ChannelHandlerContext ctx, ChannelEvent e) throws Exception {
-        if (e instanceof MessageEvent) {
+        if (e instanceof MessageEvent && (ctx.getChannel().isOpen() && ctx.getChannel().isConnected() && ctx.getChannel().isWritable())) {
             MessageEvent msgEvent = (MessageEvent) e;
             Object msg = msgEvent.getMessage();
             if (msg instanceof IcapMessage) {
@@ -77,9 +77,11 @@ public class IcapChunkSeparator implements ChannelDownstreamHandler {
     }
 
     private void fireDownstreamEvent(ChannelHandlerContext ctx, Object message, MessageEvent messageEvent) {
-        DownstreamMessageEvent downstreamMessageEvent =
-                new DownstreamMessageEvent(ctx.getChannel(), messageEvent.getFuture(), message, messageEvent.getRemoteAddress());
-        ctx.sendDownstream(downstreamMessageEvent);
+        if(ctx.getChannel().isOpen() && ctx.getChannel().isConnected() && ctx.getChannel().isWritable()){
+            DownstreamMessageEvent downstreamMessageEvent =
+                    new DownstreamMessageEvent(ctx.getChannel(), messageEvent.getFuture(), message, messageEvent.getRemoteAddress());
+            ctx.sendDownstream(downstreamMessageEvent);
+        }
     }
 }
 

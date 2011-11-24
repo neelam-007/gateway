@@ -4,7 +4,7 @@ package com.l7tech.external.assertions.icapantivirusscanner.server;
 import ch.mimo.netty.handler.codec.icap.IcapChunkAggregator;
 import ch.mimo.netty.handler.codec.icap.IcapRequestEncoder;
 import ch.mimo.netty.handler.codec.icap.IcapResponseDecoder;
-import com.l7tech.util.Functions;
+import com.l7tech.util.Functions.UnaryVoid;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
@@ -22,17 +22,20 @@ public class IcapClientChannelPipeline implements ChannelPipelineFactory {
     private static final int DEFAULT_BUFFER_SIZE = 4096;
 
     private final Timer timer;
-    private final Functions.Unary<Void, Integer> callback;
+    private final UnaryVoid<Integer> callback;
 
-    public IcapClientChannelPipeline(Timer timer, Functions.Unary<Void, Integer> callback){
+    private final int idleTimeout;
+
+    public IcapClientChannelPipeline(Timer timer, UnaryVoid<Integer> callback, int idleTimeout){
         this.timer = timer;
         this.callback = callback;
+        this.idleTimeout = idleTimeout;
     }
 
     @Override
     public ChannelPipeline getPipeline() throws Exception {
         ChannelPipeline pipeline = Channels.pipeline();
-        pipeline.addLast("idleHandler", new IdleStateHandler(timer, 0, 0, 60)); //1 minute idle time
+        pipeline.addLast("idleHandler", new IdleStateHandler(timer, 0, 0, idleTimeout));
         pipeline.addLast("encoder", new IcapRequestEncoder());
         pipeline.addLast("chunkSeparator", new IcapChunkSeparator(DEFAULT_BUFFER_SIZE));
         pipeline.addLast("decoder", new IcapResponseDecoder());

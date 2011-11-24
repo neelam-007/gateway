@@ -15,10 +15,6 @@ import java.io.IOException;
  */
 public abstract class AbstractIcapResponseHandler extends IdleStateAwareChannelHandler {
 
-    public AbstractIcapResponseHandler() {
-        super();
-    }
-
     /**
      * Send the options command to the ICAP server.
      *
