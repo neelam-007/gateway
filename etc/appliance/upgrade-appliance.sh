@@ -70,6 +70,8 @@ fi
 
 # Ensure that configuration for a database with binary logging enabled will
 # permit creation of the "next_hi" database identifier generator function.
+# If binary logging is not currently enabled then add disabled configuration
+# for later use.
 if [ -f "${MY_CNF}" ] ; then
     grep '^log-bin=' "${MY_CNF}" &>/dev/null
     if [ ${?} -eq 0 ] ; then
@@ -78,6 +80,13 @@ if [ -f "${MY_CNF}" ] ; then
             echo "Updating ${MY_CNF} to permit function creation (log_bin_trust_function_creators=1)"
             sed -i "/^log-bin=/a log_bin_trust_function_creators=1" "${MY_CNF}"
         fi
+    else
+        grep '^#log_bin_trust_function_creators=' "${MY_CNF}" &>/dev/null
+        if [ ${?} -ne 0 ] ; then
+            echo "Updating ${MY_CNF} with function creation disabled (#log_bin_trust_function_creators=1)"
+            sed -i "/^#log-bin=/a #log_bin_trust_function_creators=1" "${MY_CNF}"
+        fi
+        #log-bin=
     fi
 fi
 
