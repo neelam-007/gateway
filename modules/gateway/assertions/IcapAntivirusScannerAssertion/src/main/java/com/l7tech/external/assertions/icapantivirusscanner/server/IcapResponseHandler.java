@@ -87,7 +87,7 @@ public final class IcapResponseHandler extends AbstractIcapResponseHandler {
     @Override
     public void channelOpen(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
         channel = e.getChannel();
-        LOGGER.info("opened channel " + channel);
+        LOGGER.finer("opened channel " + channel);
     }
 
     @Override
@@ -104,7 +104,7 @@ public final class IcapResponseHandler extends AbstractIcapResponseHandler {
 
     @Override
     public void channelIdle(final ChannelHandlerContext ctx, final IdleStateEvent e) throws Exception {
-        LOGGER.info("closing idle channel " + channel);
+        LOGGER.finer("closing idle channel " + channel);
         callback.call(channel.getId());
         channel.close();
     }
