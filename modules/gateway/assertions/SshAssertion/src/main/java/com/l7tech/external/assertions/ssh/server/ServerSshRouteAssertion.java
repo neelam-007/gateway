@@ -213,10 +213,21 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                     final PipedInputStream pis = new PipedInputStream();
                     final PipedOutputStream pos = new PipedOutputStream(pis);
 
+                    // response byte limit
+                    long byteLimit = getMaxBytes();
+                    if (assertion.getResponseByteLimit() != null) {
+                        String byteLimitStr = ExpandVariables.process(assertion.getResponseByteLimit(), variables, getAudit());
+                        try {
+                            byteLimit = Long.parseLong(byteLimitStr);
+                        } catch (NumberFormatException e) {
+                            logger.log(Level.WARNING, "Used default response byte limit: " + byteLimit + ".  " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                        }
+                    }
+                    logger.log(Level.FINE, "Response byte limit: " + byteLimit + ".");
+
                     // start download task
                     final Future<Void> future = startSshDownloadTask( sshClient, directory, filename, pos );
                     final Message response = context.getOrCreateTargetMessage( assertion.getResponseTarget(), false );
-                    final long byteLimit = assertion.getLongResponseByteLimit(getMaxBytes());
                     response.initialize(stashManagerFactory.createStashManager(), ContentTypeHeader.create(assertion.getDownloadContentType()), pis, byteLimit);
 
                     // force all message parts to be initialized, it is by default lazy

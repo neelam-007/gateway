@@ -11,13 +11,11 @@ import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.WspEnumTypeMapping;
-import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
@@ -294,28 +292,13 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
             directory,
             username,
             fileName,
-            sshPublicKey
+            sshPublicKey,
+            responseByteLimit
         ).asArray();
     }
 
     public String getResponseByteLimit() {
         return responseByteLimit;
-    }
-
-    public long getLongResponseByteLimit(long defaultValue) {
-        long result = defaultValue;
-        if (responseByteLimit != null) {
-            try {
-                result = Long.parseLong(responseByteLimit);
-                logger.log(Level.INFO, "Response byte limit: " + result + ".");
-            } catch (NumberFormatException e) {
-                logger.log(Level.WARNING, "Used default response byte limit: " + result + ".  " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            }
-        } else {
-            logger.log(Level.INFO, "Used default response byte limit: " + result + ".");
-        }
-
-        return result;
     }
 
     public void setResponseByteLimit(String responseByteLimit) {

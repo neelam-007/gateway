@@ -146,7 +146,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         contentTypeComboBox.setModel(contentTypeComboBoxModel);
 
         responseLimitPanel = new ByteLimitPanel();
-        responseLimitPanel.setAllowContextVars(false);
+        responseLimitPanel.setAllowContextVars(true);
         responseLimitHolderPanel.setLayout(new BorderLayout());
         responseLimitHolderPanel.add(responseLimitPanel, BorderLayout.CENTER);
 

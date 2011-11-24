@@ -74,26 +74,12 @@ public class SshCredentialAssertion extends Assertion {
         return permitPasswordCredential;
     }
 
-    public boolean isPermitPasswordCredential() {
-        if (permitPasswordCredential != null) {
-            return permitPasswordCredential;
-        }
-        return false;
-    }
-
     public void setPermitPasswordCredential(Boolean permitPasswordCredential) {
         this.permitPasswordCredential = permitPasswordCredential;
     }
 
     public Boolean getPermitPublicKeyCredential() {
         return permitPublicKeyCredential;
-    }
-
-    public boolean isPermitPublicKeyCredential() {
-        if (permitPublicKeyCredential != null ) {
-            return permitPublicKeyCredential;
-        }
-        return false;
     }
 
     public void setPermitPublicKeyCredential(Boolean permitPublicKeyCredential) {
