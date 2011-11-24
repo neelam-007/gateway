@@ -38,7 +38,9 @@ import org.jboss.netty.util.HashedWheelTimer;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
+import java.net.URLEncoder;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
@@ -50,6 +52,7 @@ import java.util.regex.Matcher;
  * @see com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAssertion
  */
 public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetableServerAssertion<IcapAntivirusScannerAssertion> {
+    private static final String URL_ENCODING = "UTF-8";
     private static final int MAX_PORT = 65535;
     private static final int DEFAULT_TIMEOUT = 30000;
 
@@ -351,12 +354,16 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
 
     private String getServiceQueryString(final PolicyEnforcementContext context) {
         StringBuilder sb = new StringBuilder("?");
-        for (Map.Entry<String, String> ent : assertion.getServiceParameters().entrySet()) {
-            String key = getContextVariable(context, ent.getKey());
-            String value = getContextVariable(context, ent.getValue());
-            sb.append(key).append("=").append(value).append("&");
+        try {
+            for (Map.Entry<String, String> ent : assertion.getServiceParameters().entrySet()) {
+                String key = getContextVariable(context, ent.getKey());
+                String value = getContextVariable(context, ent.getValue());
+                sb.append(URLEncoder.encode(key, URL_ENCODING)).append("=").append(URLEncoder.encode(value, URL_ENCODING)).append("&");
+            }
+            sb = sb.delete(sb.length() - 1, sb.length());
+        } catch (UnsupportedEncodingException e) {
+            logAndAudit(AssertionMessages.USERDETAIL_WARNING, new String[]{assertion.getTargetName(), ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
         }
-        sb = sb.delete(sb.length() - 1, sb.length());
         return sb.toString();
     }
 
