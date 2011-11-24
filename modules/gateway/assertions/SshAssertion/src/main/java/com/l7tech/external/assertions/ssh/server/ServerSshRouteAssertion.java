@@ -20,7 +20,9 @@ import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.variable.NoSuchVariableException;
@@ -31,7 +33,10 @@ import com.l7tech.server.policy.assertion.ServerRoutingAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.util.ThreadPoolBean;
-import com.l7tech.util.*;
+import com.l7tech.util.CausedIOException;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Option;
+import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.ThreadPool.ThreadPoolShutDownException;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
@@ -45,7 +50,10 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.text.ParseException;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.logging.Level;
 
 import static com.l7tech.message.Message.getMaxBytes;
@@ -87,8 +95,8 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             return AssertionStatus.BAD_REQUEST;
         }
 
-        // if uploading from the Gateway and message source is request, delete current security header if necessary
-        if (!assertion.isDownloadCopyMethod() && assertion.getRequestTarget() != null && assertion.getRequestTarget().getTarget() == TargetMessageType.REQUEST) {
+        // if uploading from the Gateway, delete current security header if necessary
+        if (!assertion.isDownloadCopyMethod()) {
             try {
                 handleProcessedSecurityHeader(request);
             } catch(SAXException se) {

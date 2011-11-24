@@ -124,7 +124,6 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         uploadToRadioButton.addActionListener(enableDisableListener);
         
         messageSource.setRenderer( new TextListCellRenderer<MessageTargetable>( getMessageNameFunction("Default", null), null, false ) );
-        messageSource.addActionListener( enableDisableListener );
         messageTarget.setRenderer( new TextListCellRenderer<MessageTargetable>( getMessageNameFunction("Default", "Message Variable"), null, true ) );
         messageTarget.addActionListener( enableDisableListener );
         messageTargetVariablePanel = new TargetVariablePanel();
@@ -246,12 +245,9 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
                 messageTarget.getSelectedItem()!=null &&
                 ((MessageTargetable)messageTarget.getSelectedItem()).getTarget()== TargetMessageType.OTHER );
         responseLimitPanel.setEnabled(isDownloadFrom);
-        boolean showWssButtons = !isDownloadFrom &&
-                messageSource.getSelectedItem() != null &&
-                ((MessageTargetable)messageSource.getSelectedItem()).getTarget()== TargetMessageType.REQUEST;
-        wssIgnoreButton.setEnabled(showWssButtons);
-        wssCleanupButton.setEnabled(showWssButtons);
-        wssRemoveButton.setEnabled(showWssButtons);
+        wssIgnoreButton.setEnabled(!isDownloadFrom);
+        wssCleanupButton.setEnabled(!isDownloadFrom);
+        wssRemoveButton.setEnabled(!isDownloadFrom);
 
         // authentication tab
         boolean isSpecifyUserCredentials = specifyUserCredentialsRadioButton.isSelected();
