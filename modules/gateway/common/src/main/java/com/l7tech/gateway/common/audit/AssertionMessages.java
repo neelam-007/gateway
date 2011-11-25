@@ -273,9 +273,6 @@ public class AssertionMessages extends Messages {
     public static final M SOPHOS_RESPONSE_INFO = m(4873, Level.INFO, "Sophos AV detected a virus name ( {0} ), type ( {1} ), location ( {2} ), disinfectable ( {3} ). ");
     public static final M SOPHOS_RESPONSE_WARNING = m(4874, Level.WARNING, "Sophos AV detected a virus name ( {0} ), type ( {1} ), location ( {2} ), disinfectable ( {3} ). ");
 
-    // ICAP modular assertion messages
-    public static final M ICAP_RESPONSE_WARNING = m(4890, Level.WARNING, "The ( {0} ) detected the ( {1} ) virus in the part name ( {2} ) this message {3}.");
-
     // ServerRequestWssReplayProtection messages
     public static final M REQUEST_WSS_REPLAY_NON_SOAP = m(4900, Level.INFO, "{0} not SOAP; cannot check for replayed signed WS-Security message");
     public static final M REQUEST_WSS_REPLAY_NO_WSS_LEVEL_SECURITY = m(4901, Level.INFO, "{0} did not contain any WSS level security");
@@ -1014,6 +1011,22 @@ public class AssertionMessages extends Messages {
     public static final M SSH_CREDENTIAL_NO_AUTH = m(9431, Level.FINE, "Not authenticated.");
     public static final M SSH_CREDENTIAL_AUTH_USER = m(9432, Level.FINE, "Found credentials for user ''{0}''.");
     public static final M SSH_ROUTING_PASSTHRU_NO_USERNAME = m(9433, Level.WARNING, "No user name found for passing through to SSH server");
+
+    // ICAP modular assertion messages
+    public static final M ICAP_INVALID_TIMEOUT = m(9445, Level.INFO, "Invalid timeout value from timeout ({0}).  Timeout value must be a valid integer with range 1 to 3600 inclusive.");
+    public static final M ICAP_INVALID_PORT = m(9446, Level.WARNING, "Invalid port specified, port must be between 1 and 63353: {0}.");
+    public static final M ICAP_INVALID_URI = m(9447, Level.WARNING, "Invalid ICAP URI: {0}.");
+    public static final M ICAP_CONNECTION_FAILED = m(9448, Level.WARNING, "Unable to connect to the specified server: {0}.");
+    public static final M ICAP_IO_ERROR = m(9449, Level.WARNING, "I/O error occurred while scanning message {0}.");
+    public static final M ICAP_MIME_ERROR = m(9450, Level.WARNING, "Error reading MIME content from {0} : {1}.");
+    public static final M ICAP_SCAN_ERROR = m(9451, Level.WARNING, "Error occurred while scanning content {0} : {1}.");
+    public static final M ICAP_SERVICE_UNAVAILABLE = m(9452, Level.WARNING, "Service not available {0}.");
+    public static final M ICAP_NO_VALID_SERVER = m(9453, Level.WARNING, "No valid ICAP server entries found.");
+    public static final M ICAP_VIRUS_DETECTED = m(9454, Level.WARNING, "Virus detected in {0} ({1}).");
+    public static final M ICAP_VIRUS_RESPONSE_STATUS = m(9455, Level.WARNING, "ICAP Status: ({0}: {1}).");
+    public static final M ICAP_VIRUS_RESPONSE_HEADERS = m(9456, Level.WARNING, "{0}");
+    public static final M ICAP_NO_RESPONSE = m(9457, Level.WARNING, "No ICAP response received.");
+    public static final M ICAP_UNSUPPORTED_ENCODING = m(9458, Level.WARNING, "Unsupported encoding: {0}.");
 
     // Highest ID reserved for AssertionMessages = 99999
 }
