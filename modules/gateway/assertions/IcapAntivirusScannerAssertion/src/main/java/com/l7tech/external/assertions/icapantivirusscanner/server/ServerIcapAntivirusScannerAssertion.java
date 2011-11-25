@@ -73,9 +73,9 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
     @Inject @Named("stashManagerFactory")
     private StashManagerFactory stashManagerFactory;
 
-    private String currentIcapUri = null;
-    private String currentHost = null;
-    private String selectedService = null;
+    private volatile String currentIcapUri = null;
+    private volatile String currentHost = null;
+    private volatile String selectedService = null;
 
     private final Map<String, Queue<Channel>> channelPool = new HashMap<String, Queue<Channel>>();
 
@@ -169,6 +169,11 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
             Matcher matcher = IcapAntivirusScannerAssertion.ICAP_URI.matcher(selectedService);
             if (matcher.matches()) {
                 String hostname = getContextVariable(context, matcher.group(1).trim());
+                if(hostname == null || hostname.trim().isEmpty()){
+                    logAndAudit(AssertionMessages.ICAP_INVALID_URI, "missing required host name");
+                    failoverStrategy.reportFailure(selectedService);
+                    continue;
+                }
                 String portText = getContextVariable(context, matcher.group(2).trim());
                 if (!ValidationUtils.isValidInteger(portText, false, 1, MAX_PORT)) {
                     logAndAudit(AssertionMessages.ICAP_INVALID_PORT, selectedService);
@@ -176,22 +181,26 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
                     continue;
                 }
                 String serviceName = getContextVariable(context, matcher.group(3).trim());
-                String currentService = String.format("icap://%s:%s/%s", hostname, Integer.parseInt(portText), serviceName);
-                channel = getChannelForEndpoint(selectedService);
+                if(serviceName == null || serviceName.trim().isEmpty()){
+                    logAndAudit(AssertionMessages.ICAP_INVALID_URI, "missing required service name");
+                    failoverStrategy.reportFailure(selectedService);
+                    continue;
+                }
+                String currentService = String.format("icap://%s:%s/%s%s", hostname, Integer.parseInt(portText), serviceName, getServiceQueryString(context));
+                currentHost = hostname;
+                currentIcapUri = currentService;
+                channel = getChannelForEndpoint(currentService);
                 if(channel == null){
                     ChannelFuture future = client.connect(new InetSocketAddress(InetAddressUtil.getHostForUrl(hostname), Integer.parseInt(portText)));
                     channel = future.awaitUninterruptibly().getChannel();
                     channelGroup.add(channel);//add newly created channels to the channel group
                     if (!future.isSuccess()) {
                         future.addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
-                        logAndAudit(AssertionMessages.ICAP_CONNECTION_FAILED, selectedService);
+                        logAndAudit(AssertionMessages.ICAP_CONNECTION_FAILED, currentService);
                         failoverStrategy.reportFailure(selectedService);
                         channel = null;
                         continue;
                     }
-                    currentHost = hostname;
-                    currentIcapUri = currentService + getServiceQueryString(context);
-                    break;
                 }
                 return channel;
             } else {
