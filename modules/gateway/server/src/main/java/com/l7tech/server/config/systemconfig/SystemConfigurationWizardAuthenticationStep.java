@@ -192,10 +192,10 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
                ldapTlsCiphers = maybeDoTlsCiphersPrompts(ldapTlsCiphers);
                isldapTlsCheckPeer = doIsTlsCheckPeerPrompts(isldapTlsCheckPeer);
             }
+        }
 
-            if (shouldDoNssOptions()) {
-                //TODO: collect the NSS Options. Using defaults for now.
-            }
+        if (shouldDoNssOptions()) {
+            //TODO: collect the NSS Options. Using defaults for now.
         }
 
         //set all properties - may be defaults

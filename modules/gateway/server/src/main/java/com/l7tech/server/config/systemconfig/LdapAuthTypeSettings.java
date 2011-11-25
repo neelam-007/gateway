@@ -144,13 +144,13 @@ public class LdapAuthTypeSettings extends AuthTypeSettings {
             configLines.add(makeNameValuePair("ADVANCED_TLS_CONF", convertToYesNo(isLdapTlsAdvanced())));
             configLines.add(makeNameValuePair("LDAP_TLS_CIPHER_SUITE", getLdapTlsCiphers()));
             configLines.add(makeNameValuePair("LDAP_TLS_CHECKPEER", convertToYesNo(isldapTlsCheckPeer())));
-
-            //NSS Options go here
-            configLines.add(makeNameValuePair("NSS_BIND_POLICY", getNssBindPolicy()));
-            configLines.add(makeNameValuePair("NSS_TIMELIMIT", getNssTimeLimit()));
-            configLines.add(makeNameValuePair("NSS_BIND_TIMELIMIT", getNssBindTimeLimit()));
-            configLines.add(makeNameValuePair("NSS_IDLE_TIMELIMIT", getNssIdleTimeLimit()));
         }
+        //NSS Options go here
+        configLines.add(makeNameValuePair("NSS_BIND_POLICY", getNssBindPolicy()));
+        configLines.add(makeNameValuePair("NSS_TIMELIMIT", getNssTimeLimit()));
+        configLines.add(makeNameValuePair("NSS_BIND_TIMELIMIT", getNssBindTimeLimit()));
+        configLines.add(makeNameValuePair("NSS_IDLE_TIMELIMIT", getNssIdleTimeLimit()));
+
         configLines.add(makeNameValuePair("PAM_FILTER", getPamFilter()));
         configLines.add(makeNameValuePair("PAM_LOGIN_ATTR", getPamLoginAttr()));
         configLines.add(makeNameValuePair("PAM_MAX_UID", getPamMaxUid()));
