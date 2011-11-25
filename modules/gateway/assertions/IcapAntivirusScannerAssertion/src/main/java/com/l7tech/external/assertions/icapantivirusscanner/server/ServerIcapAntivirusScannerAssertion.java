@@ -176,7 +176,7 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
                 }
                 String portText = getContextVariable(context, matcher.group(2).trim());
                 if (!ValidationUtils.isValidInteger(portText, false, 1, MAX_PORT)) {
-                    logAndAudit(AssertionMessages.ICAP_INVALID_PORT, selectedService);
+                    logAndAudit(AssertionMessages.ICAP_INVALID_PORT, portText);
                     failoverStrategy.reportFailure(selectedService);
                     continue;
                 }
