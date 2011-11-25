@@ -42,7 +42,6 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URLEncoder;
 import java.util.*;
@@ -180,8 +179,7 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
                 String currentService = String.format("icap://%s:%s/%s", hostname, Integer.parseInt(portText), serviceName);
                 channel = getChannelForEndpoint(selectedService);
                 if(channel == null){
-                    InetAddress address = InetAddressUtil.getAddress(hostname);
-                    ChannelFuture future = client.connect(new InetSocketAddress(address, Integer.parseInt(portText)));
+                    ChannelFuture future = client.connect(new InetSocketAddress(InetAddressUtil.getHostForUrl(hostname), Integer.parseInt(portText)));
                     channel = future.awaitUninterruptibly().getChannel();
                     channelGroup.add(channel);//add newly created channels to the channel group
                     if (!future.isSuccess()) {

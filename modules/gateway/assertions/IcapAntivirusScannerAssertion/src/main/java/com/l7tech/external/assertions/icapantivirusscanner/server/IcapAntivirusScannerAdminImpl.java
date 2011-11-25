@@ -7,7 +7,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.regex.Matcher;
@@ -28,10 +27,9 @@ public class IcapAntivirusScannerAdminImpl implements IcapAntivirusScannerAdmin 
         OutputStream out = null;
         BufferedReader br = null;
         try {
-            InetAddress address = InetAddressUtil.getAddress(host);
             //testing the server is trivial enough that we can do it by hand.
             //using the netty & icap framework is rather expensive
-            sock.connect(new InetSocketAddress(address, port), 30000);
+            sock.connect(new InetSocketAddress(InetAddressUtil.getHostForUrl(host), port), 30000);
             out = sock.getOutputStream();
             String icapUri = "icap://" + host + ":" + port + "/" + serviceName;
             out.write(String.format("OPTIONS %1$s %2$s %3$s%3$s", icapUri, "ICAP/1.0", "\r\n").getBytes());
