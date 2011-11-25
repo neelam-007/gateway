@@ -4,6 +4,7 @@ import com.japisoft.xmlpad.PopupModel;
 import com.japisoft.xmlpad.UIAccessibility;
 import com.japisoft.xmlpad.XMLContainer;
 import com.japisoft.xmlpad.action.ActionModel;
+import com.japisoft.xmlpad.action.XMLActionForSelection;
 import com.japisoft.xmlpad.editor.XMLEditor;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
@@ -11,10 +12,7 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.action.CreateServiceWsdlAction;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.WsdlComposer;
-import com.l7tech.console.util.WsdlDependenciesResolver;
+import com.l7tech.console.util.*;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceDocument;
@@ -22,6 +20,7 @@ import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import com.l7tech.gui.FilterDocument;
+import com.l7tech.gui.util.ClipboardActions;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
@@ -36,9 +35,12 @@ import org.w3c.dom.Document;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.*;
 import java.io.IOException;
 import java.io.StringReader;
+import java.lang.Exception;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
@@ -254,6 +256,43 @@ public class ServicePropertiesDialog extends JDialog {
             noURIRadio.setEnabled(false);
             customURIRadio.setSelected(true);
         } else {
+
+             // replace copy action
+            ActionModel.replaceActionByName(ActionModel.COPY_ACTION, new XMLActionForSelection("Copy") {
+                @Override
+                protected String getDefaultLabel() {
+                    return "Copy";
+                }
+
+                public boolean isEnabled() {
+                    return true;
+                }
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    Clipboard clipboard = ClipboardActions.getClipboard();
+                    String name = (String) getValue(Action.NAME);
+                    if (name == null) return;
+
+                    if (clipboard == null) {
+                        return;
+                    }
+                    String text = null;
+                    try {
+                        Component component = ((JPopupMenu) ((Component) e.getSource()).getParent()).getInvoker();
+                        if (component instanceof XMLEditor) {
+                            XMLEditor o = (XMLEditor) component;
+                            text = o.getSelectedText();
+                        }
+                        if (text == null) {
+                            return;
+                        }
+                        clipboard.setContents(new StringSelection(text), null);
+                    } catch (Exception ex) {
+                        return;
+                    }
+                }
+            });
+
             XMLContainer xmlContainer = new XMLContainer(true);
             final UIAccessibility uiAccessibility = xmlContainer.getUIAccessibility();
             editor = uiAccessibility.getEditor();
