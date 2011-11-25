@@ -1,5 +1,9 @@
 package com.l7tech.console.panels;
 
+import com.japisoft.xmlpad.action.XMLActionForSelection;
+import com.japisoft.xmlpad.editor.XMLEditor;
+import com.l7tech.console.util.XmlpadUtils;
+import com.l7tech.gui.util.ClipboardActions;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.util.TopComponents;
@@ -15,6 +19,8 @@ import org.xml.sax.SAXParseException;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
@@ -42,6 +48,38 @@ public class SelectWsdlSchemaDialog extends JDialog {
 
     private void initializeXmlContainer() {
         assert(xmlContainer == null);
+
+        // replace copy action
+        ActionModel.replaceActionByName(ActionModel.COPY_ACTION, new XMLActionForSelection("Copy") {
+
+            public boolean isEnabled() {
+                return true;
+            }
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Clipboard clipboard = ClipboardActions.getClipboard();
+                String name = (String) getValue(Action.NAME);
+                if (name == null) return;
+
+                if (clipboard == null) {
+                    return;
+                }
+                String text = null;
+                try {
+                    Component component = ((JPopupMenu) ((Component) e.getSource()).getParent()).getInvoker();
+                    if (component instanceof XMLEditor) {
+                        XMLEditor o = (XMLEditor) component;
+                        text = o.getSelectedText();
+                    }
+                    if (text == null) {
+                        return;
+                    }
+                    clipboard.setContents(new StringSelection(text), null);
+                } catch (Exception ex) {
+                    return;
+                }
+            }
+        });
         xmlContainer = new XMLContainer(true);
         final UIAccessibility uiAccessibility = xmlContainer.getUIAccessibility();
         uiAccessibility.setTreeAvailable(false);
