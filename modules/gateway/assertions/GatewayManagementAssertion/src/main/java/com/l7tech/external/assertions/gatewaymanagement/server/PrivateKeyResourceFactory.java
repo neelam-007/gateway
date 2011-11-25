@@ -252,7 +252,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
             public E2<ResourceNotFoundException, InvalidResourceException, PrivateKeyMO> execute() throws ObjectModelException {
                 try {
                     final SsgKeyEntry entry = getSsgKeyEntry( getKeyId( selectorMap ) );
-                    checkPermitted( OperationType.READ, null, entry );
+                    checkPermittedForAnyEntity( OperationType.DELETE, EntityType.SSG_KEY_ENTRY ); // constent with TrustedCertAdmin.setDefaultKey
 
                     final List<String> specialPurposes = resource.getSpecialPurposes();
                     final List<Either<String, SpecialKeyType>> processedPurposes = map( specialPurposes, new Unary<Either<String, SpecialKeyType>, String>() {
@@ -336,7 +336,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
             public E2<ResourceNotFoundException, InvalidResourceException, PrivateKeyGenerateCsrResult> execute() throws ObjectModelException {
                 try {
                     final SsgKeyEntry entry = getSsgKeyEntry( getKeyId( selectorMap ) );
-                    checkPermitted( OperationType.READ, null, entry );
+                    checkPermittedForAnyEntity( OperationType.UPDATE, EntityType.SSG_KEY_ENTRY );  // Consistent with TrustedCertAdmin.generateCSR
 
                     final byte[] csrData;
                     final String dn = optional( resource.getDn() ).orSome( entry.getSubjectDN() );
@@ -384,7 +384,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
             @Override
             public Either<InvalidResourceException,PrivateKeyMO> execute() throws ObjectModelException {
                 try {
-                    checkPermitted( OperationType.CREATE, null, null );
+                    checkPermittedForSomeEntity( OperationType.CREATE, EntityType.SSG_KEY_ENTRY );
 
                     final long keystoreId = keyId.left;
                     final String alias = keyId.right;
@@ -437,7 +437,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
         return extract( transactional( new TransactionalCallback<Either<InvalidResourceException, PrivateKeyMO>>() {
             @Override
             public Either<InvalidResourceException, PrivateKeyMO> execute() throws ObjectModelException {
-                checkPermitted( OperationType.CREATE, null, null );
+                checkPermittedForSomeEntity( OperationType.CREATE, EntityType.SSG_KEY_ENTRY );
 
                 final long keystoreId = keyId.left;
                 final String alias = keyId.right;
@@ -484,7 +484,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
             public Either<ResourceNotFoundException, PrivateKeyExportResult> execute() throws ObjectModelException {
                 try {
                     final SsgKeyEntry entry = getSsgKeyEntry( keyId );
-                    checkPermitted( OperationType.DELETE, null, entry );
+                    checkPermittedForAnyEntity( OperationType.DELETE, EntityType.SSG_KEY_ENTRY ); // constent with TrustedCertAdmin.exportKey
 
                     final char[] exportPassword = resource.getPassword().toCharArray();
                     final String exportAlias = resource.getAlias() == null ? entry.getAlias() : resource.getAlias();
