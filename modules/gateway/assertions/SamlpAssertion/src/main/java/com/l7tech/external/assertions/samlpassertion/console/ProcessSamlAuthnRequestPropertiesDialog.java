@@ -125,7 +125,7 @@ public class ProcessSamlAuthnRequestPropertiesDialog extends AssertionProperties
     }
 
     private void enableDisableComponents() {
-        boolean enableAny = !isReadOnly()  && variablePrefixTextField.isEntryValid();
+        boolean enableAny = !isReadOnly();
 
         boolean enableBindingSelection = extractSAMLRequestFromCheckBox.isSelected();
         bindingComboBox.setEnabled( enableAny && enableBindingSelection );
@@ -133,7 +133,7 @@ public class ProcessSamlAuthnRequestPropertiesDialog extends AssertionProperties
         boolean enableSignature = !bindingComboBox.isEnabled() || ProcessSamlAuthnRequestAssertion.SamlProtocolBinding.HttpRedirect != bindingComboBox.getSelectedItem();
         verifySignatureCheckBox.setEnabled( enableSignature );
 
-        getOkButton().setEnabled( enableAny );
+        getOkButton().setEnabled( enableAny && variablePrefixTextField.isEntryValid());
     }
 
 }
