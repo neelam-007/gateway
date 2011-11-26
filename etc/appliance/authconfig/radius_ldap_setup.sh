@@ -166,7 +166,7 @@ if [ $# -eq 1 ]; then
 	else
 		local FILE=$1
 	fi
-	cp --preserve=mode,ownership $FILE $BK_DIR"/"$(basename $FILE)"_bk_"$BK_TIME
+	cp --preserve=mode,ownership $FILE $BK_DIR"/"$(echo $F | sed -e 's|/|+|g')"_bk_"$BK_TIME
 	if [ "X$?" == "X0" ]; then
 		toLog "  Success - Backup of current $FILE file created."
 		RETVAL=0
