@@ -1,25 +1,16 @@
 package com.l7tech.external.assertions.ssh.server;
 
+import com.l7tech.common.io.NullOutputStream;
 import com.l7tech.common.mime.ContentTypeHeader;
-import static com.l7tech.common.mime.ContentTypeHeader.XML_DEFAULT;
-import static com.l7tech.common.mime.ContentTypeHeader.parseValue;
-import static com.l7tech.external.assertions.ssh.server.SshServerModule.*;
 import com.l7tech.gateway.common.transport.SsgConnector;
-import static com.l7tech.gateway.common.transport.SsgConnector.PROP_OVERRIDE_CONTENT_TYPE;
-import static com.l7tech.gateway.common.transport.SsgConnector.PROP_REQUEST_SIZE_LIMIT;
-import com.l7tech.message.HasServiceOid;
-import com.l7tech.message.HasServiceOidImpl;
-import com.l7tech.message.Message;
-import static com.l7tech.message.Message.getMaxBytes;
-import com.l7tech.message.SshKnob;
+import com.l7tech.message.*;
 import com.l7tech.message.SshKnob.PublicKeyAuthentication;
-import com.l7tech.message.TcpKnob;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import static com.l7tech.server.message.PolicyEnforcementContextFactory.createPolicyEnforcementContext;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.util.Option;
 import com.l7tech.util.Pair;
-import static com.l7tech.util.TextUtils.isNotEmpty;
 import org.apache.sshd.server.session.ServerSession;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,11 +19,35 @@ import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.SocketAddress;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static com.l7tech.common.mime.ContentTypeHeader.XML_DEFAULT;
+import static com.l7tech.common.mime.ContentTypeHeader.parseValue;
+import static com.l7tech.external.assertions.ssh.server.SshServerModule.*;
+import static com.l7tech.gateway.common.transport.SsgConnector.PROP_OVERRIDE_CONTENT_TYPE;
+import static com.l7tech.gateway.common.transport.SsgConnector.PROP_REQUEST_SIZE_LIMIT;
+import static com.l7tech.message.Message.getMaxBytes;
+import static com.l7tech.server.message.PolicyEnforcementContextFactory.createPolicyEnforcementContext;
+import static com.l7tech.util.TextUtils.isNotEmpty;
 
 /**
  * Utility methods for SSH support.
  */
 public class MessageProcessingSshUtil {
+
+    /**
+     * Read any remaining input after policy evaluation to ensure input can close without error.
+     * @param inputStream The input to read
+     * @param logger Log any IOException
+     */
+    public static void prepareInputStreamForClosing(InputStream inputStream, Logger logger) {
+        try {
+            IOUtils.copyStream(inputStream, new NullOutputStream());
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Exception while preparing to close input stream.  " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        }
+    }
 
     /**
      * Build a policy execution context for processing a message with an SSH knob

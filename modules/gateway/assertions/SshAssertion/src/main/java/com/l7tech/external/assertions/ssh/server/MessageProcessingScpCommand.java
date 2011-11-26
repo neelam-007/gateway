@@ -2,7 +2,6 @@ package com.l7tech.external.assertions.ssh.server;
 
 import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.log.HybridDiagnosticContext;
-import static com.l7tech.external.assertions.ssh.server.MessageProcessingSshUtil.buildPolicyExecutionContext;
 import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -24,9 +23,13 @@ import org.apache.sshd.server.command.ScpCommand;
 import org.apache.sshd.server.session.ServerSession;
 
 import javax.inject.Inject;
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.external.assertions.ssh.server.MessageProcessingSshUtil.buildPolicyExecutionContext;
+import static com.l7tech.external.assertions.ssh.server.MessageProcessingSshUtil.prepareInputStreamForClosing;
 
 /**
  * Message processing for SCP support (heavily borrowed from org.apache.sshd.server.command.ScpCommand).
@@ -150,6 +153,7 @@ class MessageProcessingScpCommand extends ScpCommand implements SessionAware {
                 faultXml = soapFaultManager.constructReturningFault(context.getFaultlevel(), context).getContent();
             } else {
                 success = true;
+                prepareInputStreamForClosing(inputStream, logger);
             }
 
             if (faultXml != null) {

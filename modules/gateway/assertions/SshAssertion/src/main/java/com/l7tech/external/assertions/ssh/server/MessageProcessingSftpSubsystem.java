@@ -20,6 +20,8 @@ import org.apache.sshd.common.util.Buffer;
 import org.apache.sshd.server.SshFile;
 import org.apache.sshd.server.sftp.SftpSubsystem;
 
+import javax.inject.Inject;
+import javax.inject.Named;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PipedInputStream;
@@ -30,9 +32,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.external.assertions.ssh.server.MessageProcessingSshUtil.buildPolicyExecutionContext;
-
-import javax.inject.Inject;
-import javax.inject.Named;
+import static com.l7tech.external.assertions.ssh.server.MessageProcessingSshUtil.prepareInputStreamForClosing;
 
 /**
  * Message processing SFTP subsystem (heavily borrowed from org.apache.sshd.server.sftp.SftpSubsystem).
@@ -326,6 +326,8 @@ class MessageProcessingSftpSubsystem extends SftpSubsystem {
 
                         if ( status != AssertionStatus.NONE ) {
                             faultXml = soapFaultManager.constructReturningFault(context.getFaultlevel(), context).getContent();
+                        } else {
+                            prepareInputStreamForClosing(pis, logger);
                         }
                         if (faultXml != null) {
                             messageProcessingEventChannel.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
