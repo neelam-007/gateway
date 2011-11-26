@@ -3,8 +3,11 @@ package com.l7tech.external.assertions.ssh;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.util.Functions;
 
 import java.util.logging.Logger;
+
+import static com.l7tech.policy.assertion.AssertionMetadata.ASSERTION_FACTORY;
 
 /**
  * Assertion that requires SSH credentials are present.
@@ -19,8 +22,8 @@ public class SshCredentialAssertion extends Assertion {
     public static final String LISTEN_PROP_MAX_CONCURRENT_SESSIONS_PER_USER = "l7.ssh.maxConcurrentSessionsPerUser";
     public static final String LISTEN_PROP_MAX_SESSIONS = "l7.ssh.maxSessions";
 
-    private Boolean permitPasswordCredential;
-    private Boolean permitPublicKeyCredential;
+    private boolean permitPasswordCredential;
+    private boolean permitPublicKeyCredential;
 
     /**
      * The SSH Credential assertion is always a credential source
@@ -36,6 +39,17 @@ public class SshCredentialAssertion extends Assertion {
     // Metadata
     //
     private static final String META_INITIALIZED = SshCredentialAssertion.class.getName() + ".metadataInitialized";
+
+    /**
+     * Create a new SshCredentialAssertion with default properties.
+     * @return a new instance with default properties.  Never null.
+     */
+    public static SshCredentialAssertion newInstance() {
+        SshCredentialAssertion sshCredentialAssertion = new SshCredentialAssertion();
+        sshCredentialAssertion.setPermitPasswordCredential(true);
+        sshCredentialAssertion.setPermitPublicKeyCredential(true);
+        return sshCredentialAssertion;
+    }
 
     @Override
     public AssertionMetadata meta() {
@@ -59,6 +73,12 @@ public class SshCredentialAssertion extends Assertion {
             // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
             meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "none");
 
+            meta.put(ASSERTION_FACTORY, new Functions.Unary<SshCredentialAssertion, SshCredentialAssertion>(){
+                @Override
+                public SshCredentialAssertion call(final SshCredentialAssertion sshCredentialAssertion) {
+                    return newInstance();
+                }
+            });
             meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/authentication.gif");
             meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.ssh.console.SshCredentialAssertionPropertiesDialog");
             meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
@@ -70,19 +90,21 @@ public class SshCredentialAssertion extends Assertion {
         return meta;
     }
 
-    public Boolean getPermitPasswordCredential() {
+    public boolean isPermitPasswordCredential() {
         return permitPasswordCredential;
     }
 
-    public void setPermitPasswordCredential(Boolean permitPasswordCredential) {
+    public void setPermitPasswordCredential(boolean permitPasswordCredential) {
         this.permitPasswordCredential = permitPasswordCredential;
     }
 
-    public Boolean getPermitPublicKeyCredential() {
+    public boolean isPermitPublicKeyCredential() {
         return permitPublicKeyCredential;
     }
 
-    public void setPermitPublicKeyCredential(Boolean permitPublicKeyCredential) {
+    public void setPermitPublicKeyCredential(boolean permitPublicKeyCredential) {
         this.permitPublicKeyCredential = permitPublicKeyCredential;
     }
+
+
 }

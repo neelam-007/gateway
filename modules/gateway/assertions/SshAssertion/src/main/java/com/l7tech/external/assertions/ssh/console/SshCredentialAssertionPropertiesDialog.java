@@ -15,15 +15,12 @@ public class SshCredentialAssertionPropertiesDialog extends AssertionPropertiesO
     public SshCredentialAssertionPropertiesDialog(Window owner, SshCredentialAssertion assertion) {
         super(SshCredentialAssertion.class, owner, assertion, true);
         initComponents();
-        setData(assertion);
     }
 
     @Override
     public void setData(SshCredentialAssertion assertion) {
-        Boolean permitPassword = assertion.getPermitPasswordCredential();
-        passwordCheckBox.setSelected(permitPassword == null || permitPassword);
-        Boolean permitPublicKey = assertion.getPermitPublicKeyCredential();
-        publicKeyCheckBox.setSelected(permitPublicKey == null || permitPublicKey);
+        passwordCheckBox.setSelected(assertion.isPermitPasswordCredential());
+        publicKeyCheckBox.setSelected(assertion.isPermitPublicKeyCredential());
     }
 
     @Override
