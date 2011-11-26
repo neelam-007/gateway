@@ -8,6 +8,7 @@ import com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerA
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import org.jboss.netty.bootstrap.ClientBootstrap;
@@ -102,7 +103,7 @@ public class ServerIcapAntivirusScannerAssertionTest {
 
         try {
             policyEnforcementContext = makeContext("<myrequest/>", "<myresponse/>");
-            serverAssertion = new ServerIcapAntivirusScannerAssertion(assertion);
+            serverAssertion = new ServerIcapAntivirusScannerAssertion(assertion, ApplicationContexts.getTestApplicationContext());
             ClientBootstrap client = new ClientBootstrap(){
                 @Override
                 public ChannelFuture connect() {

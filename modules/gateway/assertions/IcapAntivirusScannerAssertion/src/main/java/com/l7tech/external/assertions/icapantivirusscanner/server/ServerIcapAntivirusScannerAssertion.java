@@ -16,16 +16,13 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.variable.Syntax;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.*;
 import com.l7tech.util.Functions.UnaryVoid;
-import com.l7tech.util.InetAddressUtil;
-import com.l7tech.util.ValidationUtils;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
@@ -37,6 +34,7 @@ import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.oio.OioClientSocketChannelFactory;
 import org.jboss.netty.util.HashedWheelTimer;
+import org.springframework.context.ApplicationContext;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -58,10 +56,6 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
     private static final int MAX_PORT = 65535;
     private static final int DEFAULT_TIMEOUT = 30000;
     private static final String URL_ENCODING = "UTF-8";
-    private static final int DEFAULT_CHANNEL_IDLE_TIMEOUT = 60;
-    private static final String CHANNEL_TIMEOUT_PROPERTY = "gateway.icap.channelIdleTimeout";
-    private static final int DEFAULT_CHANNEL_THREAD_POOL_SIZE = 10;
-    private static final String CHANNEL_THREAD_POOL_SIZE_PROPERTY = "gateway.icap.threadPoolSize";
 
     /**
      * The max timeout value in terms of seconds.  This is defined as 1 hour.
@@ -85,18 +79,51 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
 
     private final ClientSocketChannelFactory socketFactory;
 
-    public ServerIcapAntivirusScannerAssertion(final IcapAntivirusScannerAssertion assertion) throws PolicyAssertionException {
+    private final Config config;
+
+    public ServerIcapAntivirusScannerAssertion(final IcapAntivirusScannerAssertion assertion, final ApplicationContext applicationContext) throws PolicyAssertionException {
         super(assertion);
+        config = validated( applicationContext.getBean( "serverConfig", Config.class ) );
+
         failoverStrategy = AbstractFailoverStrategy.makeSynchronized(FailoverStrategyFactory.createFailoverStrategy(
                 assertion.getFailoverStrategy(),
                 assertion.getIcapServers().toArray(new String[assertion.getIcapServers().size()])));
-        int poolSize = ServerConfig.getInstance().getIntProperty(CHANNEL_THREAD_POOL_SIZE_PROPERTY, DEFAULT_CHANNEL_THREAD_POOL_SIZE);
+        final int poolSize = config.getIntProperty(IcapAntivirusScannerAssertion.THREADPOOL_SIZE_PROPERTY_NAME,
+                IcapAntivirusScannerAssertion.DEFAULT_CHANNEL_THREAD_POOL_SIZE);
         socketFactory = new OioClientSocketChannelFactory(Executors.newFixedThreadPool(poolSize));
     }
 
+    private Config validated( final Config config ) {
+        final ValidatedConfig vc = new ValidatedConfig( config, logger, new Resolver<String,String>(){
+            @Override
+            public String resolve( final String key ) {
+                String resolved = key;
+                if(IcapAntivirusScannerAssertion.CHANNEL_TIMEOUT_PROPERTY_NAME.equals(key)){
+                    resolved = IcapAntivirusScannerAssertion.CLUSTER_PROPERTY_CHANNEL_TIMEOUT;
+                }
+                else if(IcapAntivirusScannerAssertion.THREADPOOL_SIZE_PROPERTY_NAME.equals(key)){
+                    resolved = IcapAntivirusScannerAssertion.CLUSTER_PROPERTY_THREADPOOL_SIZE;
+                }
+                return resolved;
+            }
+        } );
+        vc.setMinimumValue(IcapAntivirusScannerAssertion.CHANNEL_TIMEOUT_PROPERTY_NAME,
+                IcapAntivirusScannerAssertion.MIN_CHANNEL_IDLE_TIMEOUT);
+        vc.setMaximumValue(IcapAntivirusScannerAssertion.CHANNEL_TIMEOUT_PROPERTY_NAME,
+                IcapAntivirusScannerAssertion.MAX_CHANNEL_IDLE_TIMEOUT);
+
+        vc.setMinimumValue(IcapAntivirusScannerAssertion.THREADPOOL_SIZE_PROPERTY_NAME,
+                IcapAntivirusScannerAssertion.MIN_THREAD_POOL_SIZE);
+        vc.setMaximumValue(IcapAntivirusScannerAssertion.THREADPOOL_SIZE_PROPERTY_NAME,
+                IcapAntivirusScannerAssertion.MAX_THREAD_POOL_SIZE);
+
+        return vc;
+    }
+
     private ClientBootstrap intializeClient(final PolicyEnforcementContext context) {
-        ClientBootstrap client = new ClientBootstrap(socketFactory);
-        int channelIdleTimeout = ServerConfig.getInstance().getIntProperty(CHANNEL_TIMEOUT_PROPERTY, DEFAULT_CHANNEL_IDLE_TIMEOUT);
+        final ClientBootstrap client = new ClientBootstrap(socketFactory);
+        final long channelIdleTimeout = config.getTimeUnitProperty(IcapAntivirusScannerAssertion.CHANNEL_TIMEOUT_PROPERTY_NAME,
+                TimeUnit.MINUTES.toMillis(1));
         client.setPipelineFactory(new IcapClientChannelPipeline(idleTimer, new UnaryVoid <Integer>() {
             @Override
             public void call(final Integer channelId) {

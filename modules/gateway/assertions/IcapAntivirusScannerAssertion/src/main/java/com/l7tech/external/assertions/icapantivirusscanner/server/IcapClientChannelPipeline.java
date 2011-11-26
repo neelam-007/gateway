@@ -11,6 +11,8 @@ import org.jboss.netty.channel.Channels;
 import org.jboss.netty.handler.timeout.IdleStateHandler;
 import org.jboss.netty.util.Timer;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * An implementation of the {@link org.jboss.netty.channel.ChannelPipelineFactory} to create the components required
  * to operate with the ICAP protocol.
@@ -24,9 +26,9 @@ public class IcapClientChannelPipeline implements ChannelPipelineFactory {
     private final Timer timer;
     private final UnaryVoid<Integer> callback;
 
-    private final int idleTimeout;
+    private final long idleTimeout;
 
-    public IcapClientChannelPipeline(Timer timer, UnaryVoid<Integer> callback, int idleTimeout){
+    public IcapClientChannelPipeline(Timer timer, UnaryVoid<Integer> callback, long idleTimeout){
         this.timer = timer;
         this.callback = callback;
         this.idleTimeout = idleTimeout;
@@ -35,7 +37,7 @@ public class IcapClientChannelPipeline implements ChannelPipelineFactory {
     @Override
     public ChannelPipeline getPipeline() throws Exception {
         ChannelPipeline pipeline = Channels.pipeline();
-        pipeline.addLast("idleHandler", new IdleStateHandler(timer, 0, 0, idleTimeout));
+        pipeline.addLast("idleHandler", new IdleStateHandler(timer, 0L, 0L, idleTimeout, TimeUnit.MILLISECONDS));
         pipeline.addLast("encoder", new IcapRequestEncoder());
         pipeline.addLast("chunkSeparator", new IcapChunkSeparator(DEFAULT_BUFFER_SIZE));
         pipeline.addLast("decoder", new IcapResponseDecoder());
