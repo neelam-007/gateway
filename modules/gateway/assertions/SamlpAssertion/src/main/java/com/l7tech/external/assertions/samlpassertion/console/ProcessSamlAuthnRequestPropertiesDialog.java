@@ -133,8 +133,6 @@ public class ProcessSamlAuthnRequestPropertiesDialog extends AssertionProperties
         boolean enableSignature = !bindingComboBox.isEnabled() || ProcessSamlAuthnRequestAssertion.SamlProtocolBinding.HttpRedirect != bindingComboBox.getSelectedItem();
         verifySignatureCheckBox.setEnabled( enableSignature );
 
-        // WARNING: If adding validation that can mean the button is optionally
-        // disabled then the textEntryPaused method will also need updating.
         getOkButton().setEnabled( enableAny );
     }
 
