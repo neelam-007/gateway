@@ -1238,6 +1238,18 @@ elif [ $# -eq 2 ]; then
 								toLog "Success - Home directories will be automatically created at first successful login."
 								toLog "Info - /etc/skel_ssg is the directory holding the skeleton files for new users."
 							fi
+							if [ $STATUS -eq 1 ]; then
+								#roll back the changes
+								toLog "  Info - Rolling back the changes..."
+								getOriginalFiles radius_only
+								if [ $RETVAL -ne 0 ]; then
+									toLog "  ERROR - Rolling back changes failed! Exiting..."
+									exit 1
+								else
+									toLog "  Success - Rolling back changes successful. Exiting..."
+									exit 1
+								fi
+							fi
 						fi
 						;;
 
@@ -1279,7 +1291,19 @@ elif [ $# -eq 2 ]; then
 								exit 1
 							else
 								toLog "Success - Home directories will be automatically created at first successful login."
-							fi							
+							fi
+							if [ $STATUS -eq 1 ]; then
+								#roll back the changes
+								toLog "  Info - Rolling back the changes..."
+								getOriginalFiles radius_with_ldap
+								if [ $RETVAL -ne 0 ]; then
+									toLog "  ERROR - Rolling back changes failed! Exiting..."
+									exit 1
+								else
+									toLog "  Success - Rolling back changes successful. Exiting..."
+									exit 1
+								fi
+							fi
 						fi
 						;;
 
