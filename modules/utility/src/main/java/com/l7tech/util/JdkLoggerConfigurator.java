@@ -29,12 +29,16 @@ public class JdkLoggerConfigurator {
             new AtomicReference<Properties>();
 
     static {
-        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable(){
-            @Override
-            public void run() {
-                configureShutdownLoggers();
-            }
-        }));
+        try {
+            Runtime.getRuntime().addShutdownHook(new Thread(new Runnable(){
+                @Override
+                public void run() {
+                    configureShutdownLoggers();
+                }
+            }));
+        } catch ( SecurityException se ) {
+            // not permitted, but don't log during (potential) logging initialization
+        }
     }
 
     /**

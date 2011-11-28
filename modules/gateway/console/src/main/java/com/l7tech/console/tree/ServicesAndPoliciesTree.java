@@ -104,25 +104,28 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
         addKeyListener(new TreeKeyListener());
         addMouseListener(new TreeMouseListener());
         setCellRenderer(new EntityTreeCellRenderer());
-        Toolkit.getDefaultToolkit().getSystemClipboard().addFlavorListener(new FlavorListener() {
-            @Override
-            public void flavorsChanged(FlavorEvent e) {
-                if(e.getSource() instanceof Clipboard){
-                    Clipboard clip = (Clipboard)e.getSource();
-                    DataFlavor[] flavours;
-                    try {
-                        flavours = clip.getAvailableDataFlavors();
-                    } catch (IllegalStateException ise) {
-                        // Clipboard busy, give up for now
-                        return;
-                    }
-                    if(!ArrayUtils.contains(flavours, FolderAndNodeTransferable.ALLOWED_DATA_FLAVOR)){
-                        setAllChildrenUnCut();
-                        setIgnoreCurrentClipboard(true);
+        final Clipboard clipboard = ClipboardActions.getClipboard();
+        if ( clipboard != null ) {
+            clipboard.addFlavorListener(new FlavorListener() {
+                @Override
+                public void flavorsChanged(FlavorEvent e) {
+                    if(e.getSource() instanceof Clipboard){
+                        Clipboard clip = (Clipboard)e.getSource();
+                        DataFlavor[] flavours;
+                        try {
+                            flavours = clip.getAvailableDataFlavors();
+                        } catch (IllegalStateException ise) {
+                            // Clipboard busy, give up for now
+                            return;
+                        }
+                        if(!ArrayUtils.contains(flavours, FolderAndNodeTransferable.ALLOWED_DATA_FLAVOR)){
+                            setAllChildrenUnCut();
+                            setIgnoreCurrentClipboard(true);
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
 
         setDragEnabled(true);
         setTransferHandler(new ServicesAndPoliciesTreeTransferHandler());
