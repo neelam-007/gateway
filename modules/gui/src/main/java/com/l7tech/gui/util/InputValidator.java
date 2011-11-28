@@ -14,6 +14,7 @@ import java.awt.event.FocusListener;
 import java.awt.event.FocusEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
 
@@ -23,6 +24,7 @@ import java.util.List;
  * TODO i18n
  */
 public class InputValidator implements FocusListener {
+    public static final String MUST_BE_NUMERIC = "The {0} field must be a number between {1,number,#} and {2,number,#}.";
     private final String dialogTitle;
     private final Component dialogParent;
     private final List<ValidationRule> rules = new ArrayList<ValidationRule>();
@@ -310,7 +312,7 @@ public class InputValidator implements FocusListener {
                                                                    final long min,
                                                                    final long max,
                                                                    final boolean allowEmpty ) {
-        final String mess = "The " + fieldName + " field must be a number between " + min + " and " + max + ".";
+        final String mess = MessageFormat.format(MUST_BE_NUMERIC, fieldName, min, max);
         return new ComponentValidationRule(comp) {
             @Override
             public String getValidationError() {

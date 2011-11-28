@@ -23,7 +23,7 @@ public class IntegerOrContextVariableValidationRuleTest {
 
         final String error = rule.getValidationError();
 
-        assertEquals("The " + FIELD_NAME + " must be between " + MIN + " and " + MAX + ".", error);
+        assertEquals("The " + FIELD_NAME + " field must be a number between " + MIN + " and " + MAX + ".", error);
     }
 
     @Test
@@ -50,7 +50,7 @@ public class IntegerOrContextVariableValidationRuleTest {
 
         final String error = rule.getValidationError();
 
-        assertEquals("The " + FIELD_NAME + " must be between " + MIN + " and " + MAX + ".", error);
+        assertEquals("The " + FIELD_NAME + " field must be a number between " + MIN + " and " + MAX + ".", error);
     }
 
     @Test

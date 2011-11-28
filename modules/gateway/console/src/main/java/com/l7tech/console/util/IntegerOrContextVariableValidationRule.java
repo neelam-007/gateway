@@ -37,7 +37,7 @@ public class IntegerOrContextVariableValidationRule implements InputValidator.Va
         String errorMessage = null;
         if(textToValidate != null && !textToValidate.isEmpty()){
             if(StringUtils.isNumeric(textToValidate) && !ValidationUtils.isValidInteger(textToValidate, false, minimum, maximum)){
-                errorMessage = MessageFormat.format("The {0} must be between {1} and {2}.", fieldName, minimum, maximum);
+                errorMessage = MessageFormat.format(InputValidator.MUST_BE_NUMERIC, fieldName, minimum, maximum);
             } else if(!StringUtils.isNumeric(textToValidate) && !Syntax.validateStringOnlyReferencesVariables(textToValidate)){
                 errorMessage = MessageFormat.format("Invalid syntax used for {0}.", fieldName);
             }
