@@ -692,15 +692,17 @@ public class PrivateKeyManagerWindow extends JDialog {
             }
 
             keyTableScrollPane.setViewport(null);
-            keyTableScrollPane.setViewportView(showingInScrollPane = keypairJobViewportView);
+            showingInScrollPane = keypairJobViewportView;
+            keyTableScrollPane.setViewportView(showingInScrollPane);
             keyTableScrollPane.getViewport().setBackground(keypairJobViewportView.getBackground());
             disableManagementButtons();
             return Collections.emptyList();
         }
 
         if (showingInScrollPane != keyTable) {
+            showingInScrollPane = keyTable;
             keyTableScrollPane.setViewport(null);
-            keyTableScrollPane.setViewportView(showingInScrollPane = keyTable);
+            keyTableScrollPane.setViewportView(keyTable);
             keyTableScrollPane.getViewport().setBackground(Color.white);
         }
 
