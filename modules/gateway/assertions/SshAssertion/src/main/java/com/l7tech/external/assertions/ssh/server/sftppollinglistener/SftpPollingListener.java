@@ -213,7 +213,7 @@ abstract class SftpPollingListener {
             }
             SshHostKeys sshHostKeys = new SshHostKeys();
             try {
-                sshHostKeys.addKey(InetAddress.getByAddress( host, null ), publicKeyFingerprint );
+                sshHostKeys.addKey(InetAddress.getByName( host ), publicKeyFingerprint );
             } catch ( UnknownHostException e ) {
                 // we're not passing an ip address so this should never occur
                 throw new SftpPollingListenerConfigException("Host key error", e);
