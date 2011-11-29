@@ -1631,7 +1631,7 @@
         </property>
     </bean>
 
-    <bean id="applicationEventProxy" class="com.l7tech.server.util.ApplicationEventProxy"/>
+    <bean id="applicationEventProxy" class="com.l7tech.server.util.ApplicationEventProxy" primary="true"/>
 
     <!-- A fast event channel just for MessageProcessingEvent subclasses. -->
     <bean id="messageProcessingEventChannel" class="com.l7tech.server.util.EventChannel"/>
