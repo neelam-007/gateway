@@ -12,7 +12,6 @@ import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import org.jboss.netty.bootstrap.ClientBootstrap;
-import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.local.DefaultLocalClientChannelFactory;
@@ -93,7 +92,7 @@ public class ServerIcapAntivirusScannerAssertionTest {
 
     private PolicyEnforcementContext policyEnforcementContext;
 
-    private Channel channel;
+    private ChannelInfo channel;
 
     @Before
     public void setUp() {
