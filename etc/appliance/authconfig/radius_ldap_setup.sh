@@ -974,6 +974,7 @@ else
 				STATUS=1
 			else
 				toLog "    Success - the /etc/sudoers file was updated."
+				doBackup /etc/sudoers.before*
 			fi
 		else
 			toLog "    ERROR - The value of 'LDAP_GROUP_NAME' directive is not valid! Exiting..."
@@ -1033,23 +1034,32 @@ fi
 
 # pam.d services configuration:
 # sshd
-sed -i "s|\(^#%PAM-1.0.*$\)|\1\n#Added by $0 on $DATE_TIME:\nauth sufficient pam_ldap.so|" $PAM_SSHD_CONF_FILE
-if [ $? -ne 0 ] || [ "X$(grep "^auth" $PAM_SSHD_CONF_FILE | head -n 1 | cut -d" " -f3)" != "Xpam_ldap.so" ]; then
-	toLog "    ERROR - Configuration of $PAM_SSHD_CONF_FILE to use pam_ldap.so library failed. Exiting..."
-	STATUS=1
+# if radius is already configured than we don't need to configure this anymore for ldap:
+if [ $(grep "$PAM_RADIUS_CONF_FILE" $PAM_SSHD_CONF_FILE | awk '{print $4}' | cut -d"=" -f2) == "$PAM_RADIUS_CONF_FILE" ]; then
+	toLog "    Info - Looks like PAM is already configured to use Radius for SSH authentication. No need to configure PAM for LDAP authentication."
 else
-	toLog "    Success - $PAM_SSHD_CONF_FILE configured to use pam_ldap.so library."
+	sed -i "s|\(^#%PAM-1.0.*$\)|\1\n#Added by $0 on $DATE_TIME:\nauth sufficient pam_ldap.so|" $PAM_SSHD_CONF_FILE
+	if [ $? -ne 0 ] || [ "X$(grep "^auth" $PAM_SSHD_CONF_FILE | head -n 1 | cut -d" " -f3)" != "Xpam_ldap.so" ]; then
+		toLog "    ERROR - Configuration of $PAM_SSHD_CONF_FILE to use pam_ldap.so library failed. Exiting..."
+		STATUS=1
+	else
+		toLog "    Success - $PAM_SSHD_CONF_FILE configured to use pam_ldap.so library."
+	fi
 fi
 
 # login
-sed -i "s|\(.*pam_securetty.so.*$\)|\1\n#Added by $0 on $DATE_TIME:\nauth sufficient pam_ldap.so|" $PAM_LOGIN_CONF_FILE
-if [ $? -ne 0 ] || [ "X$(grep "^auth" $PAM_LOGIN_CONF_FILE | head -n 2 | tail -n 1 | cut -d" " -f3)" != "Xpam_ldap.so" ]; then
-	toLog "    ERROR - Configuration of $PAM_LOGIN_CONF_FILE to use pam_ldap.so library failed. Exiting..."
-	STATUS=1
+# if radius is already configured than we don't need to configure this anymore for ldap:
+if [ $(grep "$PAM_RADIUS_CONF_FILE" $PAM_LOGIN_CONF_FILE | awk '{print $4}' | cut -d"=" -f2) != "$PAM_RADIUS_CONF_FILE" ]; then
+	toLog "    Info - Looks like PAM is already configured to use Radius for console authentication. No need to configure PAM for LDAP authentication."
 else
-	toLog "    Success - $PAM_LOGIN_CONF_FILE configured to use pam_ldap.so library."
+	sed -i "s|\(.*pam_securetty.so.*$\)|\1\n#Added by $0 on $DATE_TIME:\nauth sufficient pam_ldap.so|" $PAM_LOGIN_CONF_FILE
+	if [ $? -ne 0 ] || [ "X$(grep "^auth" $PAM_LOGIN_CONF_FILE | head -n 2 | tail -n 1 | cut -d" " -f3)" != "Xpam_ldap.so" ]; then
+		toLog "    ERROR - Configuration of $PAM_LOGIN_CONF_FILE to use pam_ldap.so library failed. Exiting..."
+		STATUS=1
+	else
+		toLog "    Success - $PAM_LOGIN_CONF_FILE configured to use pam_ldap.so library."
+	fi
 fi
-
 # END of 'doConfigureLDAPonly' function
 }
 
