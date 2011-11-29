@@ -29,9 +29,10 @@ public class IcapAntivirusScannerAdminImpl implements IcapAntivirusScannerAdmin 
         try {
             //testing the server is trivial enough that we can do it by hand.
             //using the netty & icap framework is rather expensive
-            sock.connect(new InetSocketAddress(InetAddressUtil.getHostForUrl(host), port), 30000);
+            final String targetHost = InetAddressUtil.getHostForUrl(host);
+            sock.connect(new InetSocketAddress(targetHost, port), 30000);
             out = sock.getOutputStream();
-            String icapUri = "icap://" + host + ":" + port + "/" + serviceName;
+            String icapUri = "icap://" + targetHost + ":" + port + "/" + serviceName;
             out.write(String.format("OPTIONS %1$s %2$s %3$s%3$s", icapUri, "ICAP/1.0", "\r\n").getBytes());
             br = new BufferedReader(new InputStreamReader(sock.getInputStream()));
             String line = br.readLine();

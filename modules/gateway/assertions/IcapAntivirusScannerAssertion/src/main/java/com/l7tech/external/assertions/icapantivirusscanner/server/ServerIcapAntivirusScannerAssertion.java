@@ -201,6 +201,7 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
                     failoverStrategy.reportFailure(selectedService);
                     continue;
                 }
+                hostname = InetAddressUtil.getHostForUrl(hostname);
                 String portText = getContextVariable(context, matcher.group(2).trim());
                 if (!ValidationUtils.isValidInteger(portText, false, 1, MAX_PORT)) {
                     logAndAudit(AssertionMessages.ICAP_INVALID_PORT, portText);
@@ -218,7 +219,7 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
                 currentIcapUri = currentService;
                 channel = getChannelForEndpoint(currentService);
                 if(channel == null){
-                    ChannelFuture future = client.connect(new InetSocketAddress(InetAddressUtil.getHostForUrl(hostname), Integer.parseInt(portText)));
+                    ChannelFuture future = client.connect(new InetSocketAddress(hostname, Integer.parseInt(portText)));
                     channel = future.awaitUninterruptibly().getChannel();
                     channelGroup.add(channel);//add newly created channels to the channel group
                     if (!future.isSuccess()) {
