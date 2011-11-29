@@ -417,7 +417,7 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
     }
     
     /**
-     * @return Return true iff the port number is between 1 and 65535 or references a context variable.
+     * @return Return true if the port number is between 1 and 65535 or references a context variable.
      */
     private boolean isPortValid() {
         boolean isValid;

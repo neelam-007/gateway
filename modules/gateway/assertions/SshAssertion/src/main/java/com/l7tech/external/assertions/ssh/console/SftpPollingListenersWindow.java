@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.ssh.console;
 
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.util.EntityUtils;
 import com.l7tech.console.util.Registry;
@@ -23,6 +24,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.external.assertions.ssh.SftpPollingListenerConstants.SFTP_POLLING_DEFAULT_PORT;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static com.l7tech.gui.util.DialogDisplayer.display;
 import static com.l7tech.gui.util.DialogDisplayer.showMessageDialog;
@@ -58,9 +60,11 @@ public class SftpPollingListenersWindow extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 final SsgActiveConnector connector = new SsgActiveConnector();
                 connector.setEnabled( true );
-                connector.setProperty( PROPERTIES_KEY_SFTP_SERVER_FINGER_PRINT, "" );
-                connector.setType( "SFTP" );
-                editAndSave( connector, false );
+                connector.setProperty( PROPERTIES_KEY_ENABLE_RESPONSE_MESSAGES, Boolean.TRUE.toString() );
+                connector.setProperty( PROPERTIES_KEY_OVERRIDE_CONTENT_TYPE, ContentTypeHeader.XML_DEFAULT.getFullValue() );
+                connector.setProperty( PROPERTIES_KEY_SFTP_PORT, SFTP_POLLING_DEFAULT_PORT );
+                connector.setType("SFTP");
+                editAndSave(connector, false);
             }
         });
 
