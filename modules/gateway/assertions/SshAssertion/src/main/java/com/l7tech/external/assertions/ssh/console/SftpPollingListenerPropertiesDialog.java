@@ -371,7 +371,7 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
                     this,
                     "<html><center>Root directory is currently set as the scan directory. System files <p>" +
                             "may be deleted or renamed causing unexpected system behavior.<p>" +
-                            "Do you really to continue with this?</center></html>",
+                            "Do you really want to continue with this?</center></html>",
                     "Confirm Use of Root Directory",
                     JOptionPane.OK_CANCEL_OPTION,
                     JOptionPane.WARNING_MESSAGE,
