@@ -1034,7 +1034,7 @@ fi
 
 # pam.d services configuration:
 # sshd
-# if radius is already configured than we don't need to configure this anymore for ldap:
+# if radius is already configured than we don't need to configure this file for ldap:
 if [ $(grep "$PAM_RADIUS_CONF_FILE" $PAM_SSHD_CONF_FILE | awk '{print $4}' | cut -d"=" -f2) == "$PAM_RADIUS_CONF_FILE" ]; then
 	toLog "    Info - Looks like PAM is already configured to use Radius for SSH authentication. No need to configure PAM for LDAP authentication."
 else
@@ -1048,7 +1048,7 @@ else
 fi
 
 # login
-# if radius is already configured than we don't need to configure this anymore for ldap:
+# if radius is already configured than we don't need to configure this file for ldap:
 if [ $(grep "$PAM_RADIUS_CONF_FILE" $PAM_LOGIN_CONF_FILE | awk '{print $4}' | cut -d"=" -f2) != "$PAM_RADIUS_CONF_FILE" ]; then
 	toLog "    Info - Looks like PAM is already configured to use Radius for console authentication. No need to configure PAM for LDAP authentication."
 else
