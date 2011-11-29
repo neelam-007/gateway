@@ -349,7 +349,8 @@ public class  NewPrivateKeyDialog extends JDialog {
             logger.log(Level.WARNING, "Unexpected InterruptedException", e);
             return false;
         }
-        final String mess = "Unable to generate key pair: " + ExceptionUtils.getMessage(ouch);
+        Throwable ex = ExceptionUtils.unnestToRoot(ouch);
+        final String mess = "Unable to generate key pair: " + ExceptionUtils.getMessage(ex);
         logger.log(Level.WARNING, mess, ouch);
         JOptionPane.showMessageDialog(this, mess, "Key Pair Error", JOptionPane.ERROR_MESSAGE);
         return false;
