@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.ValidatorUtils;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gui.FilterDocument;
 
@@ -50,7 +51,13 @@ public class ServiceResolutionPanel extends WizardStepPanel {
 
             if (customURIRadio.isSelected()) {
                 String routingUri = uriField.getText().trim();
+                //bug 11529 check if the uri is using one of the reserved path elements
                 if (! routingUri.isEmpty()) {
+                    final String message = ValidatorUtils.validateResolutionPath(routingUri, subject.getService().isSoap(), subject.getService().isInternal());
+                    if ( message != null ) {
+                        JOptionPane.showMessageDialog(this, message);
+                        return false;
+                    }
                     service.setRoutingUri(routingUri);
                 }
             }

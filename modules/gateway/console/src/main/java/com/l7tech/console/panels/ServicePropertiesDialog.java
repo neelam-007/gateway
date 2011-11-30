@@ -8,7 +8,6 @@ import com.japisoft.xmlpad.action.XMLActionForSelection;
 import com.japisoft.xmlpad.editor.XMLEditor;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.action.CreateServiceWsdlAction;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
@@ -46,8 +45,6 @@ import java.net.URL;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * SSM Dialog for editing properties of a PublishedService object.
@@ -891,7 +888,7 @@ public class ServicePropertiesDialog extends JDialog {
             }
         }
         // validate resolution path
-        final String message = validateResolutionPath( newURI, subject.isSoap(), subject.isInternal() );
+        final String message = ValidatorUtils.validateResolutionPath(newURI, subject.isSoap(), subject.isInternal());
         if ( message != null ) {
             JOptionPane.showMessageDialog(this, message);
             return;
@@ -1036,48 +1033,6 @@ public class ServicePropertiesDialog extends JDialog {
             return subject;
     }
 
-    public static String validateResolutionPath( final String path, final boolean soap, final boolean internal ) {
-        String message = null;
-        if ( !soap || internal ) {
-            if (path == null || path.length() <= 0 || path.equals("/")) { // non-soap service cannot have null routing uri
-                String serviceType = internal ? "an internal" : "non-soap";
-                message = "Cannot set empty URI on " + serviceType + " service";
-            } else if (path.startsWith( SecureSpanConstants.SSG_RESERVEDURI_PREFIX)) {
-                message = "Custom resolution path cannot start with " + SecureSpanConstants.SSG_RESERVEDURI_PREFIX;
-            } else if (uriConflictsWithServiceOIDResolver(path)) {
-                message = "This custom resolution path conflicts with an internal resolution mechanism.";
-            }
-        } else {
-            if (path != null && path.length() > 0 && path.startsWith(SecureSpanConstants.SSG_RESERVEDURI_PREFIX)) {
-                message = "Custom resolution path cannot start with " + SecureSpanConstants.SSG_RESERVEDURI_PREFIX;
-            }  else if (path != null && path.length() > 0 && uriConflictsWithServiceOIDResolver(path)) {
-                message = "This custom resolution path conflicts with an internal resolution mechanism.";
-            }
-        }
-        return message;
-    }
-
-    private static boolean uriConflictsWithServiceOIDResolver(String newURI) {
-        java.util.List<Pattern> compiled = new ArrayList<Pattern>();
-
-        try {
-            for (String s : SecureSpanConstants.RESOLUTION_BY_OID_REGEXES) {
-                compiled.add(Pattern.compile(s));
-            }
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "A Regular Expression failed to compile. " +
-                                      "This resolver is disabled.", e);
-            compiled.clear();
-        }
-
-        for (Pattern regexPattern : compiled) {
-            Matcher matcher = regexPattern.matcher(newURI);
-            if (matcher.find() && matcher.groupCount() == 1) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     private String updateURL() {
         String currentValue = null;

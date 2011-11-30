@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.ValidatorUtils;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceTemplate;
 import com.l7tech.gui.util.RunOnChangeListener;
@@ -198,6 +199,6 @@ public class InternalServiceSelectionPanel extends WizardStepPanel<PublishIntern
         }
 
         return servicesChooser.getModel().getSize() > 0 &&
-                ServicePropertiesDialog.validateResolutionPath( servicePath, true, true ) == null;
+                ValidatorUtils.validateResolutionPath(servicePath, true, true) == null;
     }
 }
