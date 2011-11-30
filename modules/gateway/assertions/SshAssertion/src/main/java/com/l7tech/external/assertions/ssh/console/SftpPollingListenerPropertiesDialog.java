@@ -118,8 +118,12 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
             }
         });
 
-        passwordField.reloadPasswordList(SecurePassword.SecurePasswordType.PASSWORD);
+        passwordField.setRenderer(TextListCellRenderer.<SecurePasswordComboBox>basicComboBoxRenderer());
+        privateKeyField.setRenderer(TextListCellRenderer.<SecurePasswordComboBox>basicComboBoxRenderer());
+
+        // load private key type (password type loaded by default by SecurePasswordComboBox constructor)
         privateKeyField.reloadPasswordList(SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY);
+
         managePasswordsPrivateKeysButton.addActionListener(enableDisableListener);
         managePasswordsPrivateKeysButton.addActionListener(new ActionListener() {
             @Override

@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.util.ConfigFactory;
 
 import javax.swing.*;
@@ -129,6 +130,9 @@ public class SshTransportPropertiesPanel extends CustomTransportPropertiesPanel 
         validator.addRule(validator.constrainTextFieldToNumberRange(
                 "Idle timeout (in minutes)", maxConcurrentSessionsPerUserField, 0L, (long) Integer.MAX_VALUE ));
 
+        privateKeyField.setRenderer(TextListCellRenderer.<SecurePasswordComboBox>basicComboBoxRenderer());
+
+        // load private key type (password type loaded by default by SecurePasswordComboBox constructor)
         privateKeyField.reloadPasswordList(SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY);
 
         managePasswordsPrivateKeysButton.addActionListener(new ActionListener() {

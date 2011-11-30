@@ -104,7 +104,10 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
             }
         });
 
-        // load private keys to this combo box
+        passwordField.setRenderer(TextListCellRenderer.<SecurePasswordComboBox>basicComboBoxRenderer());
+        privateKeyField.setRenderer(TextListCellRenderer.<SecurePasswordComboBox>basicComboBoxRenderer());
+
+        // load private key type (password type loaded by default by SecurePasswordComboBox constructor)
         privateKeyField.reloadPasswordList(SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY);
 
         managePasswordsButton.addActionListener(new ActionListener() {
@@ -113,10 +116,14 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
                 SecurePasswordManagerWindow dialog = new SecurePasswordManagerWindow(TopComponents.getInstance().getTopParent());
                 dialog.pack();
                 Utilities.centerOnScreen(dialog);
-                DialogDisplayer.display(dialog);
-                passwordField.reloadPasswordList(SecurePassword.SecurePasswordType.PASSWORD);
-                privateKeyField.reloadPasswordList(SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY);
-                pack();
+                DialogDisplayer.display(dialog, new Runnable() {
+                    @Override
+                    public void run() {
+                        passwordField.reloadPasswordList(SecurePassword.SecurePasswordType.PASSWORD);
+                        privateKeyField.reloadPasswordList(SecurePassword.SecurePasswordType.PEM_PRIVATE_KEY);
+                        pack();
+                    }
+                });
             }
         });
 
