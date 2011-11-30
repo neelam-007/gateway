@@ -10,6 +10,7 @@ import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
@@ -28,6 +29,7 @@ import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
  */
 public class SftpPollingListenerPropertiesDialog extends JDialog {
     private static final Logger logger = Logger.getLogger( SftpPollingListenerPropertiesDialog.class.getName() );
+    private static final String DIALOG_TITLE = "SFTP Polling Listener Properties";
 
     private JPanel mainPanel;
     private JTextField nameField;
@@ -66,7 +68,7 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
     };
 
     public SftpPollingListenerPropertiesDialog(Dialog owner, SsgActiveConnector connector) {
-        super(owner, "SFTP Polling Listener Properties", true);
+        super(owner, DIALOG_TITLE, true);
         this.connector = connector;
         initialize();
     }
@@ -160,12 +162,14 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
             }
         });
 
-        okButton.addActionListener(new ActionListener() {
+        InputValidator inputValidator = new InputValidator(this, DIALOG_TITLE);
+        inputValidator.attachToButton(okButton, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 onSave();
             }
         });
+
         cancelButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -179,6 +183,12 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
         byteLimitPanel.setAllowContextVars(false);
         byteLimitHolderPanel.setLayout(new BorderLayout());
         byteLimitHolderPanel.add(byteLimitPanel, BorderLayout.CENTER);
+        inputValidator.addRule(new InputValidator.ValidationRule(){
+            @Override
+            public String getValidationError() {
+                return byteLimitPanel.validateFields();
+            }
+        });
 
         pack();
         modelToView( connector );

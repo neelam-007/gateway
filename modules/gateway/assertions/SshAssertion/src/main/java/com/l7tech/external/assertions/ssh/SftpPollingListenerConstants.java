@@ -4,29 +4,29 @@ package com.l7tech.external.assertions.ssh;
  * SFTP Polling Listener constants
  */
 public interface SftpPollingListenerConstants {
-    public static final String SFTP_POLLING_DEFAULT_PORT = "22";
+    String SFTP_POLLING_DEFAULT_PORT = "22";
 
     // Context variables used
-    final static String SFTP_POLLING_MESSAGE_MAX_BYTES_PROPERTY = "l7.ssh.sftpPolling.messageMaxBytes";
-    final static String SFTP_POLLING_MESSAGE_MAX_BYTES_UI_PROPERTY = "sftpPolling.messageMaxBytes";
-    final static String SFTP_POLLING_MESSAGE_MAX_BYTES_DESC = "Maximum number of bytes permitted for an SFTP message, or 0 for unlimited (Integer)";
+    String SFTP_POLLING_MESSAGE_MAX_BYTES_PROPERTY = "l7.ssh.sftpPolling.messageMaxBytes";
+    String SFTP_POLLING_MESSAGE_MAX_BYTES_UI_PROPERTY = "sftpPolling.messageMaxBytes";
+    String SFTP_POLLING_MESSAGE_MAX_BYTES_DESC = "Maximum number of bytes permitted for an SFTP message, or 0 for unlimited (Integer)";
 
-    final static String LISTENER_THREAD_LIMIT_PROPERTY = "l7.ssh.sftpPolling.listenerThreadLimit";
-    final static String LISTENER_THREAD_LIMIT_UI_PROPERTY = "sftpPolling.listenerThreadLimit";
-    final static String LISTENER_THREAD_LIMIT_DESC = "The global limit on the number of processing threads that can be created to work off all SFTP polling listeners. Value must be >= 5.";
+    String LISTENER_THREAD_LIMIT_PROPERTY = "l7.ssh.sftpPolling.listenerThreadLimit";
+    String LISTENER_THREAD_LIMIT_UI_PROPERTY = "sftpPolling.listenerThreadLimit";
+    String LISTENER_THREAD_LIMIT_DESC = "The global limit on the number of processing threads that can be created to work off all SFTP polling listeners. Value must be >= 5.";
 
-    final static String SFTP_POLLING_CONNECT_ERROR_SLEEP_PROPERTY = "l7.ssh.sftpPolling.connectErrorSleep";
-    final static String SFTP_POLLING_CONNECT_ERROR_SLEEP_UI_PROPERTY = "sftpPolling.connectErrorSleep";
-    final static String SFTP_POLLING_CONNECT_ERROR_SLEEP_DESC = "Time to sleep after a connection error for an SFTP polling listener (timeunit)";
+    String SFTP_POLLING_CONNECT_ERROR_SLEEP_PROPERTY = "l7.ssh.sftpPolling.connectErrorSleep";
+    String SFTP_POLLING_CONNECT_ERROR_SLEEP_UI_PROPERTY = "sftpPolling.connectErrorSleep";
+    String SFTP_POLLING_CONNECT_ERROR_SLEEP_DESC = "Time to sleep after a connection error for an SFTP polling listener (timeunit)";
 
-    final static String SFTP_POLLING_DOWNLOAD_THREAD_WAIT_SECONDS_PROPERTY = "l7.ssh.sftpPolling.downloadThreadWait";
-    final static String SFTP_POLLING_DOWNLOAD_THREAD_WAIT_SECONDS_UI_PROPERTY = "sftpPolling.downloadThreadWait";
-    final static String SFTP_POLLING_DOWNLOAD_THREAD_WAIT_SECONDS_DESC = "Maximum wait time limit for file download thread to run (in seconds).";
+    String SFTP_POLLING_DOWNLOAD_THREAD_WAIT_SECONDS_PROPERTY = "l7.ssh.sftpPolling.downloadThreadWait";
+    String SFTP_POLLING_DOWNLOAD_THREAD_WAIT_SECONDS_UI_PROPERTY = "sftpPolling.downloadThreadWait";
+    String SFTP_POLLING_DOWNLOAD_THREAD_WAIT_SECONDS_DESC = "Maximum wait time limit for file download thread to run (in seconds).";
 
     /**
      * This is a complete list of cluster-wide properties used by the SFTP polling listener module.
      */
-    final static String[][] MODULE_CLUSTER_PROPERTIES = new String[][] {
+    String[][] MODULE_CLUSTER_PROPERTIES = new String[][] {
             new String[] { SFTP_POLLING_MESSAGE_MAX_BYTES_PROPERTY, SFTP_POLLING_MESSAGE_MAX_BYTES_UI_PROPERTY, SFTP_POLLING_MESSAGE_MAX_BYTES_DESC, "5242880" },
             new String[] { LISTENER_THREAD_LIMIT_PROPERTY, LISTENER_THREAD_LIMIT_UI_PROPERTY, LISTENER_THREAD_LIMIT_DESC, "25" },
             new String[] { SFTP_POLLING_CONNECT_ERROR_SLEEP_PROPERTY, SFTP_POLLING_CONNECT_ERROR_SLEEP_UI_PROPERTY, SFTP_POLLING_CONNECT_ERROR_SLEEP_DESC, "10s",},
