@@ -1049,7 +1049,7 @@ fi
 
 # login
 # if radius is already configured than we don't need to configure this file for ldap:
-if [ $(grep "$PAM_RADIUS_CONF_FILE" $PAM_LOGIN_CONF_FILE | awk '{print $4}' | cut -d"=" -f2) != "$PAM_RADIUS_CONF_FILE" ]; then
+if [ $(grep "$PAM_RADIUS_CONF_FILE" $PAM_LOGIN_CONF_FILE | awk '{print $4}' | cut -d"=" -f2) == "$PAM_RADIUS_CONF_FILE" ]; then
 	toLog "    Info - Looks like PAM is already configured to use Radius for console authentication. No need to configure PAM for LDAP authentication."
 else
 	sed -i "s|\(.*pam_securetty.so.*$\)|\1\n#Added by $0 on $DATE_TIME:\nauth sufficient pam_ldap.so|" $PAM_LOGIN_CONF_FILE
