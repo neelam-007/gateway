@@ -84,9 +84,7 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
         failoverStrategy = AbstractFailoverStrategy.makeSynchronized(FailoverStrategyFactory.createFailoverStrategy(
                 assertion.getFailoverStrategy(),
                 assertion.getIcapServers().toArray(new String[assertion.getIcapServers().size()])));
-        final int poolSize = config.getIntProperty(IcapAntivirusScannerAssertion.THREADPOOL_SIZE_PROPERTY_NAME,
-                IcapAntivirusScannerAssertion.DEFAULT_CHANNEL_THREAD_POOL_SIZE);
-        socketFactory = new OioClientSocketChannelFactory(Executors.newFixedThreadPool(poolSize));
+        socketFactory = new OioClientSocketChannelFactory(Executors.newCachedThreadPool());
     }
 
     private Config validated( final Config config ) {
@@ -97,9 +95,6 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
                 if(IcapAntivirusScannerAssertion.CHANNEL_TIMEOUT_PROPERTY_NAME.equals(key)){
                     resolved = IcapAntivirusScannerAssertion.CLUSTER_PROPERTY_CHANNEL_TIMEOUT;
                 }
-                else if(IcapAntivirusScannerAssertion.THREADPOOL_SIZE_PROPERTY_NAME.equals(key)){
-                    resolved = IcapAntivirusScannerAssertion.CLUSTER_PROPERTY_THREADPOOL_SIZE;
-                }
                 return resolved;
             }
         } );
@@ -107,12 +102,6 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
                 IcapAntivirusScannerAssertion.MIN_CHANNEL_IDLE_TIMEOUT);
         vc.setMaximumValue(IcapAntivirusScannerAssertion.CHANNEL_TIMEOUT_PROPERTY_NAME,
                 IcapAntivirusScannerAssertion.MAX_CHANNEL_IDLE_TIMEOUT);
-
-        vc.setMinimumValue(IcapAntivirusScannerAssertion.THREADPOOL_SIZE_PROPERTY_NAME,
-                IcapAntivirusScannerAssertion.MIN_THREAD_POOL_SIZE);
-        vc.setMaximumValue(IcapAntivirusScannerAssertion.THREADPOOL_SIZE_PROPERTY_NAME,
-                IcapAntivirusScannerAssertion.MAX_THREAD_POOL_SIZE);
-
         return vc;
     }
 

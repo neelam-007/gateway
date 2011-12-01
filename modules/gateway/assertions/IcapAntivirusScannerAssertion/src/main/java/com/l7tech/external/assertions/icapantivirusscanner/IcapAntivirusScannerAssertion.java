@@ -58,19 +58,9 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
     public static final String CLUSTER_PROPERTY_CHANNEL_TIMEOUT = "icap.channelIdleTimeout";
 
     /**
-     * The thread pool size cluster entry.
-     */
-    public static final String CLUSTER_PROPERTY_THREADPOOL_SIZE = "icap.threadPoolSize";
-
-    /**
      * The channel idle timeout property name.
      */
     public static final String CHANNEL_TIMEOUT_PROPERTY_NAME = ClusterProperty.asServerConfigPropertyName(CLUSTER_PROPERTY_CHANNEL_TIMEOUT);
-
-    /**
-     * The thread pool size property name.
-     */
-    public static final String THREADPOOL_SIZE_PROPERTY_NAME = ClusterProperty.asServerConfigPropertyName(CLUSTER_PROPERTY_THREADPOOL_SIZE);
 
     /**
      * The default channel idle timeout (1 minute).
@@ -86,21 +76,6 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
      * The minimum channel idle timeout (1 minute).
      */
     public static final long MIN_CHANNEL_IDLE_TIMEOUT = TimeUnit.MINUTES.toMillis(1);
-
-    /**
-     * The default channel thread pool size (10).
-     */
-    public static final int DEFAULT_CHANNEL_THREAD_POOL_SIZE = 10;
-
-    /**
-     * The maxium channel thread pool size (20).
-     */
-    public static final int MAX_THREAD_POOL_SIZE = 20;
-
-    /**
-     * The minimum channel thread pool size (1).
-     */
-    public static final int MIN_THREAD_POOL_SIZE = 1;
 
     private static final String META_INITIALIZED = IcapAntivirusScannerAssertion.class.getName() + ".metadataInitialized";
 
@@ -157,11 +132,6 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
                 "The maximum idle time for a connected channel in the connection pool.  Any channels exceeding this timeout value will be disconnected and removed from " +
                         "the pool.  The value is expressed as a TimeUnit and its accepted range is between one second and one hour.  The default channel idle time is one minute.",
                 DEFAULT_CHANNEL_IDLE_TIMEOUT
-        });
-        props.put(CLUSTER_PROPERTY_THREADPOOL_SIZE, new String[] {
-                "The maximum number of concurrent connections allowable to the ICAP server for a single request.  If all connections are currently in use, " +
-                        "it will wait until a connection is available.  This value is epxressed as an Integer and its value must be between 1 and 20.  This property have a default value of 10.",
-                String.valueOf(DEFAULT_CHANNEL_THREAD_POOL_SIZE)
         });
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
         meta.put(META_INITIALIZED, Boolean.TRUE);
