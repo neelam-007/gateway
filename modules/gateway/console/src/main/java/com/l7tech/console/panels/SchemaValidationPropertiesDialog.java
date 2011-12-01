@@ -13,6 +13,7 @@ import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.ResourceAdminEntityResolver;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.XMLContainerFactory;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.resources.ResourceType;
@@ -1193,44 +1194,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
     private void initControls() {
         // configure xml editing widget
         cbSchemaLocation.setModel(new DefaultComboBoxModel(MODES));
-        xmlContainer = new XMLContainer(true);
-        uiAccessibility = xmlContainer.getUIAccessibility();
-        uiAccessibility.setTreeAvailable(false);
-        uiAccessibility.setToolBarAvailable(false);
-        xmlContainer.setStatusBarAvailable(false);
-        PopupModel popupModel = xmlContainer.getPopupModel();
-        // remove the unwanted actions
-        popupModel.removeAction(ActionModel.getActionByName(ActionModel.LOAD_ACTION));
-        popupModel.removeAction(ActionModel.getActionByName(ActionModel.SAVE_ACTION));
-        popupModel.removeAction(ActionModel.getActionByName(ActionModel.SAVEAS_ACTION));
-        popupModel.removeAction(ActionModel.getActionByName(ActionModel.NEW_ACTION));
-        popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_SELECTNODE_ACTION));
-        popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_COMMENTNODE_ACTION));
-        popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_COPYNODE_ACTION));
-        popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_CUTNODE_ACTION));
-        popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_EDITNODE_ACTION));
-        popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_CLEANHISTORY_ACTION));
-        popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_ADDHISTORY_ACTION));
-        popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_PREVIOUS_ACTION));
-        popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_NEXT_ACTION));
-        popupModel.removeAction(ActionModel.getActionByName(ActionModel.PARSE_ACTION));
-
-        if (TopComponents.getInstance().isApplet()) {
-            // Search action tries to get the class loader
-            popupModel.removeAction(ActionModel.getActionByName(ActionModel.INSERT_ACTION));
-            popupModel.removeAction(ActionModel.getActionByName(ActionModel.SEARCH_ACTION));
-            popupModel.removeAction(ActionModel.getActionByName(ActionModel.COMMENT_ACTION));
-        }
-
-        boolean lastWasSeparator = true; // remove trailing separator
-        for (int i=popupModel.size()-1; i>=0; i--) {
-            boolean isSeparator = popupModel.isSeparator(i);
-            if (isSeparator && (i==0 || lastWasSeparator)) {
-                popupModel.removeSeparator(i);
-            } else {
-                lastWasSeparator = isSeparator;    
-            }
-        }
+        xmlContainer = XMLContainerFactory.createXmlContainer(true);
 
         ButtonGroup bg = new ButtonGroup();
         bg.add(rbApplyToEnvelope);

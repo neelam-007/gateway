@@ -1,9 +1,7 @@
 package com.l7tech.external.assertions.xacmlpdp.console;
 
-import com.japisoft.xmlpad.PopupModel;
 import com.japisoft.xmlpad.UIAccessibility;
 import com.japisoft.xmlpad.XMLContainer;
-import com.japisoft.xmlpad.action.ActionModel;
 import com.japisoft.xmlpad.editor.XMLEditor;
 import com.l7tech.common.io.ByteOrderMarkInputStream;
 import com.l7tech.common.io.XmlUtil;
@@ -14,8 +12,8 @@ import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.panels.UrlPanel;
 import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.VariablePrefixUtil;
+import com.l7tech.console.util.XMLContainerFactory;
 import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
 import com.l7tech.external.assertions.xacmlpdp.XacmlPdpAssertion;
 import com.l7tech.gateway.common.service.ServiceAdmin;
@@ -170,49 +168,9 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
                 enableDisableComponents();
             }
         });
-
-        XMLContainer xmlContainer = new XMLContainer(true);
+        XMLContainer xmlContainer = XMLContainerFactory.createXmlContainer(true);
         final JComponent xmlEditor = xmlContainer.getView();
-
         uiAccessibility = xmlContainer.getUIAccessibility();
-        uiAccessibility.setTreeAvailable(false);
-        uiAccessibility.setToolBarAvailable(false);
-        xmlContainer.setStatusBarAvailable(false);
-        PopupModel popupModel = xmlContainer.getPopupModel();
-        // remove the unwanted actions
-        popupModel.removeAction(ActionModel.getActionByName(ActionModel.LOAD_ACTION));
-        popupModel.removeAction(ActionModel.getActionByName(ActionModel.SAVE_ACTION));
-        popupModel.removeAction(ActionModel.getActionByName(ActionModel.SAVEAS_ACTION));
-        popupModel.removeAction(ActionModel.getActionByName(ActionModel.NEW_ACTION));
-        popupModel.removeAction(ActionModel.getActionByName(ActionModel.PARSE_ACTION));
-
-        if (TopComponents.getInstance().isApplet()) {
-            // Search action tries to get the class loader
-            popupModel.removeAction(ActionModel.getActionByName(ActionModel.INSERT_ACTION));
-            popupModel.removeAction(ActionModel.getActionByName(ActionModel.SEARCH_ACTION));
-            popupModel.removeAction(ActionModel.getActionByName(ActionModel.COMMENT_ACTION));
-        }
-
-        xmlContainer.getTreePopupModel().removeAction(ActionModel.getActionByName(ActionModel.TREE_SELECTNODE_ACTION));
-        xmlContainer.getTreePopupModel().removeAction(ActionModel.getActionByName(ActionModel.TREE_COMMENTNODE_ACTION));
-        xmlContainer.getTreePopupModel().removeAction(ActionModel.getActionByName(ActionModel.TREE_COPYNODE_ACTION));
-        xmlContainer.getTreePopupModel().removeAction(ActionModel.getActionByName(ActionModel.TREE_CUTNODE_ACTION));
-        xmlContainer.getTreePopupModel().removeAction(ActionModel.getActionByName(ActionModel.TREE_EDITNODE_ACTION));
-        xmlContainer.getTreePopupModel().removeAction(ActionModel.getActionByName(ActionModel.TREE_CLEANHISTORY_ACTION));
-        xmlContainer.getTreePopupModel().removeAction(ActionModel.getActionByName(ActionModel.TREE_ADDHISTORY_ACTION));
-        xmlContainer.getTreePopupModel().removeAction(ActionModel.getActionByName(ActionModel.TREE_PREVIOUS_ACTION));
-        xmlContainer.getTreePopupModel().removeAction(ActionModel.getActionByName(ActionModel.TREE_NEXT_ACTION));
-        uiAccessibility.getEditor().setText("");
-
-        boolean lastWasSeparator = true; // remove trailing separator
-        for (int i=popupModel.size()-1; i>=0; i--) {
-            boolean isSeparator = popupModel.isSeparator(i);
-            if (isSeparator && (i==0 || lastWasSeparator)) {
-                popupModel.removeSeparator(i);
-            } else {
-                lastWasSeparator = isSeparator;
-            }
-        }
 
         Utilities.equalizeButtonSizes(new JButton[] {okButton, cancelButton});
 

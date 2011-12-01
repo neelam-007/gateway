@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.japisoft.xmlpad.XMLContainer;
+import com.l7tech.console.util.XMLContainerFactory;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.common.io.XmlUtil;
@@ -47,11 +48,7 @@ public class SampleMessageDialog extends JDialog {
     }
 
     private void init() {
-        xmlContainer = new XMLContainer(true);
-        xmlContainer.setErrorPanelAvailable(false);
-        xmlContainer.setStatusBarAvailable(false);
-        xmlContainer.getUIAccessibility().setTreeAvailable(false);
-        xmlContainer.getUIAccessibility().setToolBarAvailable(false);
+        xmlContainer = XMLContainerFactory.createXmlContainer(true);
 
         xmlEditorPanel.setLayout(new BorderLayout());
         xmlEditorPanel.add(xmlContainer.getView(), BorderLayout.CENTER);

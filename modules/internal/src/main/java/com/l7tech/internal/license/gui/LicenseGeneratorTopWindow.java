@@ -4,6 +4,7 @@ import com.japisoft.xmlpad.XMLContainer;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.panels.EulaDialog;
 import com.l7tech.console.panels.LicensePanel;
+import com.l7tech.console.util.XMLContainerFactory;
 import com.l7tech.gateway.common.License;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.Utilities;
@@ -112,11 +113,7 @@ public class LicenseGeneratorTopWindow extends JFrame {
         specHolderPanel.setLayout(new BoxLayout(specHolderPanel, BoxLayout.X_AXIS));
         specHolderPanel.add(specPanel);
 
-        xmlContainer = new XMLContainer(true);
-        xmlContainer.setErrorPanelAvailable(false);
-        xmlContainer.setStatusBarAvailable(false);
-        xmlContainer.getUIAccessibility().setTreeAvailable(false);
-        xmlContainer.getUIAccessibility().setToolBarAvailable(false);
+        xmlContainer = XMLContainerFactory.createXmlContainer(true);
         xmlContainer.setAutoFocus(false);
 
         xmlEditorPanel.setLayout(new BorderLayout());
