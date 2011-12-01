@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.icapantivirusscanner.server;
 
 import com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAdmin;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InetAddressUtil;
 
 import java.io.BufferedReader;
@@ -44,7 +45,7 @@ public class IcapAntivirusScannerAdminImpl implements IcapAntivirusScannerAdmin 
                 throw new IcapAntivirusScannerTestException("Invalid server connection: " + line);
             }
         } catch (IOException ex) {
-            throw new IcapAntivirusScannerTestException("Error connecting to server: " + ex.getMessage());
+            throw new IcapAntivirusScannerTestException("Error connecting to server: " + ex.getMessage(), ExceptionUtils.getDebugException(ex));
         } finally {
             try {
                 if (out != null) {

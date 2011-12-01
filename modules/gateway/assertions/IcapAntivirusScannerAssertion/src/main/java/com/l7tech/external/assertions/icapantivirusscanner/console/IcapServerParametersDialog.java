@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.icapantivirusscanner.console;
 
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import org.jetbrains.annotations.NotNull;
 
@@ -75,18 +76,27 @@ public class IcapServerParametersDialog extends JDialog {
 
     private void onOK() {
         if (paramNameField.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please enter valid parameter name.", "Error", JOptionPane.ERROR_MESSAGE);
+            DialogDisplayer.showMessageDialog(this,
+                    "Please enter valid parameter name.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE, null);
             return;
         }
         if (serviceParamExists(getParameterName())) {
             //adding a new param
             if (previousName == null) {
-                JOptionPane.showMessageDialog(this, "The parameter '" + getParameterName() + "' already exists.", "ERROR", JOptionPane.PLAIN_MESSAGE);
+                DialogDisplayer.showMessageDialog(this,
+                    "The parameter '" + getParameterName() + "' already exists.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE, null);
                 return;
             }
             //editting an existing param
             else if (!previousName.equalsIgnoreCase(getParameterName())) {
-                JOptionPane.showMessageDialog(this, "The parameter '" + getParameterName() + "' already exists.", "ERROR", JOptionPane.PLAIN_MESSAGE);
+                DialogDisplayer.showMessageDialog(this,
+                    "The parameter '" + getParameterName() + "' already exists.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE, null);
                 return;
             }
         }

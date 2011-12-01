@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.icapantivirusscanner.console;
 
 import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAdmin;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.ValidationUtils;
@@ -69,7 +70,10 @@ public final class IcapServerPropertiesDialog extends JDialog {
                     if (isContextVariable(serverHostnameField.getText()) ||
                             isContextVariable(serverPortNumberField.getText()) ||
                             isContextVariable(serverServiceNameField.getText())) {
-                        JOptionPane.showMessageDialog(owner, "Unable to test connection containing context variable(s).", "WARNING", JOptionPane.PLAIN_MESSAGE);
+                        DialogDisplayer.showMessageDialog(owner,
+                                "Unable to test connection containing context variable(s).",
+                                "WARNING",
+                                JOptionPane.PLAIN_MESSAGE, null);
                         btnOk.setEnabled(true);
                     } else {
                         testServerEntry();
@@ -88,10 +92,17 @@ public final class IcapServerPropertiesDialog extends JDialog {
         try {
             IcapAntivirusScannerAdmin admin = Registry.getDefault().getExtensionInterface(IcapAntivirusScannerAdmin.class, null);
             admin.testConnection(serverHostnameField.getText().trim(), Integer.parseInt(serverPortNumberField.getText().trim()), serverServiceNameField.getText().trim());
-            JOptionPane.showMessageDialog(this, "Connection is successful.", "Success", JOptionPane.INFORMATION_MESSAGE);
+            DialogDisplayer.showMessageDialog(this,
+                    "Connection is successful.",
+                    "Success",
+                    JOptionPane.INFORMATION_MESSAGE, null);
             enableSave = true;
-        } catch (IcapAntivirusScannerAdmin.IcapAntivirusScannerTestException e) {
-            JOptionPane.showMessageDialog(this, e.getMessage(), "Connection failed.", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception e) {
+            String msg = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
+            DialogDisplayer.showMessageDialog(this,
+                    msg,
+                    "Connection failed",
+                    JOptionPane.ERROR_MESSAGE, null);
         }
         btnOk.setEnabled(enableSave);
     }
@@ -105,17 +116,26 @@ public final class IcapServerPropertiesDialog extends JDialog {
     private boolean validateData() {
         String hostname = serverHostnameField.getText().trim();
         if (hostname.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please enter valid hostname.", "Error", JOptionPane.ERROR_MESSAGE);
+            DialogDisplayer.showMessageDialog(this,
+                    "Please enter valid hostname.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE, null);
             return false;
         }
         String serviceName = serverServiceNameField.getText().trim();
         if (serviceName.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please enter valid service name.", "Error", JOptionPane.ERROR_MESSAGE);
+            DialogDisplayer.showMessageDialog(this,
+                    "Please enter valid service name.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE, null);
             return false;
         }
         String portText = serverPortNumberField.getText().trim();
         if (portText.isEmpty() || (!isContextVariable(portText)) && !ValidationUtils.isValidInteger(portText, false, 1, 65535)) {
-            JOptionPane.showMessageDialog(this, "Please enter a port number between 1 and 65535..", "Error", JOptionPane.ERROR_MESSAGE);
+            DialogDisplayer.showMessageDialog(this,
+                    "Please enter a port number between 1 and 65535.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE, null);
             return false;
         }
         return true;
