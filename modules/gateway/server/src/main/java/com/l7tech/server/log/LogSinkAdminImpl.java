@@ -61,6 +61,7 @@ public class LogSinkAdminImpl implements LogSinkAdmin {
 
     @Override
     public Collection<LogFileInfo> findAllFilesForSinkByNode(final String nodeId, final long sinkId) throws FindException{
+        if ( nodeId == null ) throw new FindException("Missing node identifier");
         return sinkManager.findAllFilesForSinkByNode(nodeId, sinkId);
     }
 

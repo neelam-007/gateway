@@ -31,6 +31,7 @@ import static com.l7tech.util.Functions.grepFirst;
 import static com.l7tech.util.Functions.map;
 import static com.l7tech.util.Option.none;
 import static com.l7tech.util.Option.optional;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
@@ -257,7 +258,7 @@ public class SinkManagerImpl
     }
 
     @Override
-    public Collection<LogFileInfo> findAllFilesForSinkByNode(final String nodeId, final long sinkId) throws FindException {
+    public Collection<LogFileInfo> findAllFilesForSinkByNode( @NotNull final String nodeId, final long sinkId) throws FindException {
         final Collection<LogFileInfo> files = new ArrayList<LogFileInfo>();
         if(isThisNodeMe(nodeId)){
             final SinkConfiguration config = findByPrimaryKey(sinkId);
