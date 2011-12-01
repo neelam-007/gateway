@@ -591,15 +591,15 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     public JobId<Boolean> setGeneratedSecurePassword( final long securePasswordOid,
                                                       final int keybits ) throws FindException, UpdateException  {
         if ( keybits < 512 || keybits > 16384 ) throw new UpdateException("Invalid key size " + keybits);
-        final SecurePassword existing = securePasswordManager.findByPrimaryKey(securePasswordOid);
-        if (existing == null) throw new ObjectNotFoundException();
-        if (existing.getType() != SecurePasswordType.PEM_PRIVATE_KEY) throw new UpdateException("Cannot generate password for type");
+        // Verify that password exists and is the correct type
+        getSecurePasswordOfType( securePasswordOid, SecurePasswordType.PEM_PRIVATE_KEY );
 
         final FutureTask<Boolean> keyGenerator = new FutureTask<Boolean>( find( false ).wrapCallable( new Callable<Boolean>(){
             @Override
             public Boolean call() throws Exception {
                 final KeyPairGenerator generator = KeyPairGenerator.getInstance( "RSA", new BouncyCastleProvider() );
                 generator.initialize( keybits, JceProvider.getInstance().getSecureRandom() );
+                final SecurePassword existing = getSecurePasswordOfType( securePasswordOid, SecurePasswordType.PEM_PRIVATE_KEY );
                 final String pemKey = PemUtils.doWriteKeyPair( generator.genKeyPair().getPrivate() );
                 existing.setEncodedPassword(securePasswordManager.encryptPassword(pemKey.toCharArray()));
                 existing.setLastUpdate(System.currentTimeMillis());
@@ -616,6 +616,13 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         }, 0L );
 
         return registerJob( keyGenerator, Boolean.class );
+    }
+
+    private SecurePassword getSecurePasswordOfType( final long securePasswordOid, final SecurePasswordType type ) throws FindException, UpdateException {
+        final SecurePassword existing = securePasswordManager.findByPrimaryKey(securePasswordOid);
+        if (existing == null) throw new ObjectNotFoundException();
+        if (existing.getType() != type) throw new UpdateException("Cannot generate password for type");
+        return existing;
     }
 
     @Override
