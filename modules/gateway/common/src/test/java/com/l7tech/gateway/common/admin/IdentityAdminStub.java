@@ -309,6 +309,11 @@ public class IdentityAdminStub implements IdentityAdmin {
     }
 
     @Override
+    public Map<String, AccountMinimums> getAccountMinimumsMap() {
+        return null;
+    }
+
+    @Override
     public Map<String, IdentityProviderPasswordPolicy> getPasswordPolicyMinimums() {
         return null;
     }

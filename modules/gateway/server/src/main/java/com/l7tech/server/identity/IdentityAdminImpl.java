@@ -632,6 +632,22 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     }
 
     @Override
+    public Map<String, AccountMinimums> getAccountMinimumsMap() {
+        return Functions.reduce(
+                policyMinimums,
+                new HashMap<String, AccountMinimums>(),
+                new Functions.Binary<Map<String, AccountMinimums>, Map<String, AccountMinimums>, Pair<AccountMinimums, IdentityProviderPasswordPolicy>>() {
+                    @Override
+                    public Map<String, AccountMinimums> call(
+                            final Map<String, AccountMinimums> accountsMinimumMap,
+                            final Pair<AccountMinimums, IdentityProviderPasswordPolicy> minimumsPair) {
+                        accountsMinimumMap.put(minimumsPair.left.getName(), minimumsPair.left);
+                        return accountsMinimumMap;
+                    }
+                });
+    }
+
+    @Override
     public Map<String, IdentityProviderPasswordPolicy> getPasswordPolicyMinimums() {
         return Functions.reduce(
                 policyMinimums,

@@ -461,6 +461,14 @@ public interface IdentityAdmin {
     AccountMinimums getAccountMinimums();
 
     /**
+     * Gtet the account minimum maps or null if there are none.
+     *
+     * @return the account minimums map
+     */
+    @Transactional(readOnly = true)
+    Map<String, AccountMinimums> getAccountMinimumsMap();
+
+    /**
      * Get the Map of password policy minimums.
      * <p/>
      * <p>The Map is of names to password policies.</p>
