@@ -724,7 +724,7 @@ else
 	# nss_base_passwd
 	if [ "X$NSS_BASE_PASSWD" != "X" ]; then
 		sed -i "s|\(^#nss_base_passwd.*$\)|\1\n# Added by $0 on $DATE_TIME:\nnss_base_passwd $NSS_BASE_PASSWD,$LDAP_BASE?one\n|" $NSS_LDAP_CONF_FILE
-		if [ $? -ne 0 ] || [ "X$(grep "^nss_base_passwd" $NSS_LDAP_CONF_FILE | head -n 1 | cut -d" " -f2)" != "X$NSS_BASE_PASSWD,$LDAP_BASE?one" ]; then
+		if [ $? -ne 0 ] || [ "X$(grep "^nss_base_passwd" $NSS_LDAP_CONF_FILE | head -n 1)" != "Xnss_base_passwd $NSS_BASE_PASSWD,$LDAP_BASE?one" ]; then
 			toLog "    ERROR - Configuring 'nss_base_passwd' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
 			STATUS=1
 		else
@@ -738,7 +738,7 @@ else
 	# nss_base_group
 	if [ "X$NSS_BASE_GROUP" != "X" ]; then
 		sed -i "s|\(^#nss_base_group.*$\)|\1\n# Added by $0 on $DATE_TIME:\nnss_base_group $NSS_BASE_GROUP,$LDAP_BASE?one\n|" $NSS_LDAP_CONF_FILE
-		if [ $? -ne 0 ] || [ "X$(grep "^nss_base_group" $NSS_LDAP_CONF_FILE | head -n 1 | cut -d" " -f2)" != "X$NSS_BASE_GROUP,$LDAP_BASE?one" ]; then
+		if [ $? -ne 0 ] || [ "X$(grep "^nss_base_group" $NSS_LDAP_CONF_FILE | head -n 1)" != "Xnss_base_group $NSS_BASE_GROUP,$LDAP_BASE?one" ]; then
 			toLog "    ERROR - Configuring 'nss_base_group' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
 			STATUS=1
 		else
@@ -752,7 +752,7 @@ else
 	# nss_base_shadow
 	if [ "X$NSS_BASE_SHADOW" != "X" ]; then
 		sed -i "s|\(^#nss_base_shadow.*$\)|\1\n# Added by $0 on $DATE_TIME:\nnss_base_shadow $NSS_BASE_SHADOW,$LDAP_BASE?one\n|" $NSS_LDAP_CONF_FILE
-		if [ $? -ne 0 ] || [ "X$(grep "^nss_base_shadow" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$NSS_BASE_SHADOW,$LDAP_BASE?one" ]; then
+		if [ $? -ne 0 ] || [ "X$(grep "^nss_base_shadow" $NSS_LDAP_CONF_FILE)" != "Xnss_base_shadow $NSS_BASE_SHADOW,$LDAP_BASE?one" ]; then
 			toLog "    ERROR - Configuring 'nss_base_shadow' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
 			STATUS=1
 		else
@@ -924,7 +924,7 @@ else
 		# binddn field
 		if [ "X$LDAP_BINDDN" != "X" ]; then
 			sed -i "s|\(^#binddn.*$\)|\1\n# Added by $0 on $DATE_TIME:\nbinddn $LDAP_BINDDN\n|" $NSS_LDAP_CONF_FILE
-			if [ $? -ne 0 ] || [ "$(grep "^binddn" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "$LDAP_BINDDN" ]; then
+			if [ $? -ne 0 ] || [ "$(grep "^binddn" $NSS_LDAP_CONF_FILE)" != "binddn $LDAP_BINDDN" ]; then
 				toLog "    ERROR - Configuring 'binddn' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
 				STATUS=1
 			else
