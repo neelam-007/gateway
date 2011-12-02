@@ -3,6 +3,9 @@ package com.l7tech.console.util;
 import com.l7tech.common.protocol.SecureSpanConstants;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -16,7 +19,14 @@ import java.util.regex.Pattern;
  */
 public class ValidatorUtils {
 
-    private static final Logger logger = Logger.getLogger(ValidatorUtils.class.getName());
+    private static final List<Pattern> compiled;
+    static {
+        List<Pattern> allCompiled = new ArrayList<Pattern>();
+        for (String s : SecureSpanConstants.RESOLUTION_BY_OID_REGEXES) {
+            allCompiled.add(Pattern.compile(s));
+        }
+        compiled = Collections.unmodifiableList(allCompiled);
+    }
 
     /**
      * validates url relative path against reserved path fragments such as /ssg and /service
@@ -47,17 +57,6 @@ public class ValidatorUtils {
     }
 
     private static boolean uriConflictsWithServiceOIDResolver(String newURI) {
-        java.util.List<Pattern> compiled = new ArrayList<Pattern>();
-
-        try {
-            for (String s : SecureSpanConstants.RESOLUTION_BY_OID_REGEXES) {
-                compiled.add(Pattern.compile(s));
-            }
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "A Regular Expression failed to compile. " +
-                    "This resolver is disabled.", e);
-            compiled.clear();
-        }
 
         for (Pattern regexPattern : compiled) {
             Matcher matcher = regexPattern.matcher(newURI);
