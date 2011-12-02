@@ -302,8 +302,8 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
            fileNameTextField.setText(assertion.getFileName());
         }
 
-        connectTimeoutTextField.setText(Integer.toString(assertion.getConnectTimeout() / 1000));
-        readTimeoutTextField.setText(Integer.toString(assertion.getReadTimeout() / 1000));
+        connectTimeoutTextField.setText(Integer.toString(assertion.getConnectTimeout()));
+        readTimeoutTextField.setText(Integer.toString(assertion.getReadTimeout()));
 
         String contentType = assertion.getDownloadContentType();
         if (contentType == null) {
@@ -362,17 +362,17 @@ public class SshRouteAssertionPropertiesPanel extends AssertionPropertiesOkCance
         assertion.setDirectory(directoryTextField.getText());
         assertion.setFileName(fileNameTextField.getText());
         if (connectTimeoutTextField.getText().trim().isEmpty()) {
-            connectTimeoutTextField.setText(Integer.toString(SshRouteAssertion.DEFAULT_CONNECT_TIMEOUT / 1000));
+            connectTimeoutTextField.setText(Integer.toString(SshRouteAssertion.DEFAULT_CONNECT_TIMEOUT));
         }
-        assertion.setConnectTimeout(Integer.parseInt(connectTimeoutTextField.getText()) * 1000);
+        assertion.setConnectTimeout(Integer.parseInt(connectTimeoutTextField.getText()));
 
         assertion.setScpProtocol(SCPRadioButton.isSelected());
         assertion.setDownloadCopyMethod(downloadFromRadioButton.isSelected());
 
         if (readTimeoutTextField.getText().trim().isEmpty()) {
-            readTimeoutTextField.setText(Integer.toString(SshRouteAssertion.DEFAULT_READ_TIMEOUT / 1000));
+            readTimeoutTextField.setText(Integer.toString(SshRouteAssertion.DEFAULT_READ_TIMEOUT));
         }
-        assertion.setReadTimeout(Integer.parseInt(readTimeoutTextField.getText()) * 1000);
+        assertion.setReadTimeout(Integer.parseInt(readTimeoutTextField.getText()));
 
         if (contentTypeComboBox.getSelectedItem() != null) {
             assertion.setDownloadContentType(contentTypeComboBox.getSelectedItem().toString());

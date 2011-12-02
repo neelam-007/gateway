@@ -27,8 +27,8 @@ import static com.l7tech.policy.assertion.AssertionMetadata.WSP_TYPE_MAPPING_INS
  */
 public class SshRouteAssertion extends RoutingAssertion implements UsesVariables, SetsVariables {
 
-    public static final int DEFAULT_CONNECT_TIMEOUT = 10000;  // Timeout (in milliseconds) when opening SSH Connection.
-    public static final int DEFAULT_READ_TIMEOUT = 1000 * 60;   // Timeout (in milliseconds) when reading a remote file.
+    public static final int DEFAULT_CONNECT_TIMEOUT = 10;  // Timeout (in seconds) when opening SSH Connection.
+    public static final int DEFAULT_READ_TIMEOUT = 60;   // Timeout (in seconds) when reading a remote file.
     public static final int DEFAULT_SSH_PORT = 22;   // Default port for SSH
 
     private static final String baseName = "Route via SSH2";
@@ -45,7 +45,7 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
     private String sshPublicKey;   // SSH Public Key. Can contain context variables.
     private boolean usePrivateKey = false;
     private boolean usePublicKey = false;
-    private int connectTimeout = DEFAULT_CONNECT_TIMEOUT;   // Timeout for opening connection to SFTP server (in milliseconds).
+    private int connectTimeout = DEFAULT_CONNECT_TIMEOUT;   // Timeout for opening connection to SFTP server (in seconds).
     private int readTimeout = DEFAULT_READ_TIMEOUT;
     private String downloadContentType;
     private boolean isScpProtocol;   // SCP? if not, assume SFTP

@@ -33,10 +33,7 @@ import com.l7tech.server.policy.assertion.ServerRoutingAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.util.ThreadPoolBean;
-import com.l7tech.util.CausedIOException;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Option;
-import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.*;
 import com.l7tech.util.ThreadPool.ThreadPoolShutDownException;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
@@ -152,8 +149,8 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
         SshClient sshClient = null;
         try {
             SshParameters sshParams = new SshParameters(host, port, username, password);
-            sshParams.setConnectionTimeout( (long) assertion.getConnectTimeout() );
-            sshParams.setReadingTimeout( (long) assertion.getReadTimeout() );
+            sshParams.setConnectionTimeout( TimeUnit.SECONDS.toMillis((long) assertion.getConnectTimeout()) );
+            sshParams.setReadingTimeout( TimeUnit.SECONDS.toMillis((long) assertion.getReadTimeout()) );
 
             if (assertion.isUsePublicKey() && assertion.getSshPublicKey() != null){
                 final String publicKeyFingerprint = ExpandVariables.process(assertion.getSshPublicKey(), variables, getAudit());
@@ -195,8 +192,6 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             } else {
                 sshClient = new SftpClient(new Sftp(sshParams));
             }
-
-            sshClient.setTimeout( (long) assertion.getConnectTimeout() );   // connect timeout value from assertion UI
             sshClient.connect();
 
             if(!sshClient.isConnected()) {

@@ -12,7 +12,6 @@ import java.io.OutputStream;
  * Currently intended to make common JSCAPE's SCP and SFTP client methods, which does not implement a common interface.
  */
 public interface SshClient {
-    public void setTimeout(long timeOut);
     public void connect() throws ScpException, SftpException ;
     public boolean isConnected();
     public void disconnect();

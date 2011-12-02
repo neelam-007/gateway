@@ -19,10 +19,6 @@ public class SftpClient implements SshClient {
         this.sftpClient = sftpClient;
     }
 
-    public void setTimeout(long timeOut) {
-        sftpClient.setTimeout(timeOut);
-    }
-
     public void connect() throws ScpException, SftpException {
         sftpClient.connect();
     }

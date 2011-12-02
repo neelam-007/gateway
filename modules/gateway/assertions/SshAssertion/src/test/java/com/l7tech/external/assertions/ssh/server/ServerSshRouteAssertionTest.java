@@ -31,7 +31,8 @@ public class ServerSshRouteAssertionTest {
         assertion.setHost("testmycompany.com");
         assertion.setPort("22");
         assertion.setUsePrivateKey(true);
-        assertion.setConnectTimeout(10000);
+        assertion.setConnectTimeout(10);
+        assertion.setReadTimeout(10);
         assertion.setUsername("root");
     }
 
@@ -52,6 +53,7 @@ public class ServerSshRouteAssertionTest {
         assertNotNull(assertion.getHost());
         assertNotNull(assertion.getPort());
         assertNotNull(assertion.getConnectTimeout());
+        assertNotNull(assertion.getReadTimeout());
         assertNotNull(assertion.getUsername());
         assertNotNull(assertion.getFileName());
         assertNotNull(assertion.getDirectory());

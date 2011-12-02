@@ -19,10 +19,6 @@ public class ScpClient implements SshClient {
         this.scpClient = scpClient;
     }
 
-    public void setTimeout(long timeOut) {
-        // JSCAPE's Scp client does not support timeout
-    }
-
     public void connect() throws ScpException, SftpException {
         scpClient.connect();
     }
