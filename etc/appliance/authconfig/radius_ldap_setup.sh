@@ -975,6 +975,9 @@ else
 			else
 				toLog "    Success - the /etc/sudoers file was updated."
 				doBackup /etc/sudoers.before*
+				if [ "X$RETVAL" == "X0" ]; then
+					rm -f /etc/sudoers.before*
+				fi
 			fi
 		else
 			toLog "    ERROR - The value of 'LDAP_GROUP_NAME' directive is not valid! Exiting..."
