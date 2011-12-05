@@ -1,9 +1,7 @@
 package com.l7tech.console.panels;
 
-import com.japisoft.xmlpad.PopupModel;
 import com.japisoft.xmlpad.UIAccessibility;
 import com.japisoft.xmlpad.XMLContainer;
-import com.japisoft.xmlpad.action.ActionModel;
 import com.japisoft.xmlpad.editor.XMLEditor;
 import com.l7tech.common.io.*;
 import com.l7tech.console.SsmApplication;
@@ -115,7 +113,6 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
     // Other fields
     private final EntityResolver schemaEntityResolver;
     private final boolean readOnly;
-    private UIAccessibility uiAccessibility;
     private SchemaValidation schemaValidationAssertion;
     private PublishedService service;
 
@@ -788,7 +785,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         if ( uri.isEmpty() ) {
             uri = null;            
         }
-        String contents = uiAccessibility.getEditor().getText();
+        String contents = xmlContainer.getUIAccessibility().getEditor().getText();
 
         if ( !ValidationUtils.isValidUrl(uri, true) ) {
             displayError(resources.getString("error.badurl"), null);
@@ -1025,7 +1022,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
     }
 
     private void setEditorText( final String content ) {
-        final XMLEditor editor = uiAccessibility.getEditor();
+        final XMLEditor editor = xmlContainer.getUIAccessibility().getEditor();
         editor.setText(content);
         editor.setLineNumber(1);
     }

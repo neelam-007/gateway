@@ -1,6 +1,10 @@
 package com.l7tech.console.panels;
 
+import com.japisoft.xmlpad.PopupModel;
+import com.japisoft.xmlpad.UIAccessibility;
 import com.japisoft.xmlpad.XMLContainer;
+import com.japisoft.xmlpad.action.ActionModel;
+import com.japisoft.xmlpad.action.XMLActionForSelection;
 import com.japisoft.xmlpad.editor.XMLEditor;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
@@ -15,6 +19,7 @@ import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import com.l7tech.gui.FilterDocument;
+import com.l7tech.gui.util.ClipboardActions;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
@@ -29,6 +34,8 @@ import org.w3c.dom.Document;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.*;
 import java.io.IOException;
 import java.io.StringReader;
@@ -248,10 +255,11 @@ public class ServicePropertiesDialog extends JDialog {
         } else {
 
             XMLContainer xmlContainer = XMLContainerFactory.createXmlContainer(true);
-            xmlContainer.setEditable(false);
             editor = xmlContainer.getUIAccessibility().getEditor();
-
             setWsdl( editor, null, subject.getWsdlXml(), subject.isInternal() );
+            Action reformatAction = ActionModel.getActionByName(ActionModel.FORMAT_ACTION);
+            reformatAction.actionPerformed(null);
+            xmlContainer.setEditable(false);
 
             wsdlPanel.setLayout(new BorderLayout());
             wsdlPanel.add(xmlContainer.getView(), BorderLayout.CENTER);

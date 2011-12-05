@@ -101,6 +101,7 @@ public class ResourceEntryEditor extends JDialog {
         if ( resourceEntry.getType() == ResourceType.XML_SCHEMA ) {
             // set xml view
             xmlContainer = XMLContainerFactory.createXmlContainer(true);
+            uiAccessibility = xmlContainer.getUIAccessibility();
 
             xmlDisplayPanel.removeAll();
             xmlDisplayPanel.setLayout(new BorderLayout());
