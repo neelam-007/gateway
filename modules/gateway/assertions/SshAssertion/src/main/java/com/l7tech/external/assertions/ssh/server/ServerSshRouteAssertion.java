@@ -239,14 +239,14 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                         new String[] {SshAssertionMessages.SSH_NO_SUCH_PART_ERROR + ", server: " + host}, ExceptionUtils.getDebugException(e));
                 return AssertionStatus.FAILED;
             } catch (ExecutionException e) {
-                if (ExceptionUtils.getMessage(e).contains("jscape")){
-                    return handleJscapeException(e, username, host, directory);
+                if (ExceptionUtils.getMessage(e).contains("jscape") || ExceptionUtils.getMessage(e).contains("No such file or directory")){
+                    return handleJscapeException(e, username, host, directory, filename);
                 }
                 throw e;
             } catch (ScpException e) {
-                return handleJscapeException(e, username, host, directory);
+                return handleJscapeException(e, username, host, directory, filename);
             } catch (SftpException e) {
-                return handleJscapeException(e, username, host, directory);
+                return handleJscapeException(e, username, host, directory, filename);
             } catch (IOException e) {
                 logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
                         new String[]{SshAssertionMessages.SSH_IO_EXCEPTION + ", server: " + host}, ExceptionUtils.getDebugException(e));
@@ -290,10 +290,10 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
         }
     }
 
-    AssertionStatus handleJscapeException(final Exception e, final String username, final String host, final String directory) {
-        if (ExceptionUtils.getMessage(e).contains("No such file")){
+    AssertionStatus handleJscapeException(final Exception e, final String username, final String host, final String directory, String filename) {
+        if (ExceptionUtils.getMessage(e).contains("No such file or directory") || ExceptionUtils.getMessage(e).contains("FileNotFoundException")){
             logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                    new String[] { SshAssertionMessages.SSH_DIR_DOESNT_EXIST_ERROR + ", directory: " + directory  + ", username: " + username},
+                    new String[] { SshAssertionMessages.SSH_DIR_FILE_DOESNT_EXIST_ERROR + ", directory: " + directory  + ", file: " + filename  +", username: " + username},
                     ExceptionUtils.getDebugException(e));
         } else{
             logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,

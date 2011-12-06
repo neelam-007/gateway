@@ -10,7 +10,7 @@ public class SshAssertionMessages extends Messages{
     /* Warning messages */
     public static final String SSH_NO_SUCH_PART_ERROR = "Connection established, but operation failed with NoSuchPartException";
     public static final String SSH_EXCEPTION_ERROR = "Connection established, but failed with exception. SSH client issue";
-    public static final String SSH_DIR_DOESNT_EXIST_ERROR = "Connection established, but failed with exception. Ensure directory exists and user has correct permissions";
+    public static final String SSH_DIR_FILE_DOESNT_EXIST_ERROR = "Connection established, but failed with exception. Ensure directory or file exists and user has correct permissions";
     public static final String SSH_IO_EXCEPTION = "Connection established, but failed with IOException";
     public static final String SSH_SOCKET_EXCEPTION = "Error while attempting to connect";
     public static final String SSH_CONNECTION_EXCEPTION = "Error while attempting to connect";
