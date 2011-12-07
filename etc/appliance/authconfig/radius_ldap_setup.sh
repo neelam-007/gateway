@@ -244,7 +244,7 @@ if [ ! -d $ORIG_CONF_FILES_DIR ]; then
 		exit 1
 	fi
 fi
-if [ $(ls -1A $ORIG_CONF_FILES_DIR | wc -l) -eq 0 ]; then
+if [ ! "$(ls -A $ORIG_CONF_FILES_DIR)" ]; then
 	for F in $RADIUS_WITH_LDAP_FILES; do
 		checkFileExists $F
 		if [ "X$RETVAL" == "X1" ]; then
