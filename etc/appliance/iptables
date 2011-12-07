@@ -42,7 +42,10 @@ COMMIT
 
 [0:0] -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 
-# allow all on localhost 
+# out of sequence packets get silently dropped
+[0:0] -A INPUT -m state --state INVALID -j DROP
+
+# allow all on localhost
 [0:0] -A INPUT -i lo -m state --state NEW -j ACCEPT
 
 # Block bad tcp flags on all interfaces
