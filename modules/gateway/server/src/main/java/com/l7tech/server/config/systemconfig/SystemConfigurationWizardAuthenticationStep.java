@@ -17,6 +17,8 @@ import static com.l7tech.server.config.systemconfig.AuthenticationConfigurationB
  */
 public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep<AuthenticationConfigurationBean, AuthenticationConfigurationCommand> {
 
+    private static final Pattern DN_PATTERN = Pattern.compile("[\\S\\s]+");
+
     public SystemConfigurationWizardAuthenticationStep(SystemConfigurationWizard authWizard) {
         super(authWizard);
         configBean = new AuthenticationConfigurationBean("Authentication Configuration", "");
@@ -427,7 +429,7 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
         String ldapBaseDn = getData(
                 new String[] {"Enter the LDAP base DN: "},
                 "",
-                Pattern.compile("\\S+"),
+                DN_PATTERN,
                 "*** Invalid Entry: Please enter a valid LDAP base DN ***"
         );
         ldapView.setLdapSecure(isLdapSecure);
@@ -444,7 +446,7 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
             String ldapBindDn = getData(
                     new String[] {"Enter the LDAP bind DN : "},
                     "",
-                    Pattern.compile("\\S+"),
+                    DN_PATTERN,
                     "*** Invalid Entry: Please enter a valid LDAP bind DN ***"
             );
 
