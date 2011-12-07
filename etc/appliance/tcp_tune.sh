@@ -40,18 +40,16 @@ start() {
 	echo "Increasing SYN packet Backlog"
 	echo 8192 > /proc/sys/net/ipv4/tcp_max_syn_backlog
 	echo "Setting higher tcp memory limits"
-	echo 16777216 > /proc/sys/net/core/wmem_max
+    echo 16777216 > /proc/sys/net/core/wmem_max
 	echo 16777216 > /proc/sys/net/core/rmem_max
 	# This is in PAGES, not bytes
-	# I want about 1000 messages, up to 100 kbytes in size in flight
-	# at once. This number is fully invented as a straw man.
-	# thats 100 Mbytes. This number should use a power of 2
-	# So we'll allocate 128Mbytes
-	# 128*(1024*1024)/4096=32768
-	echo "32768 32768 32768" > /proc/sys/net/ipv4/tcp_mem
-	echo "Setting socket sizes for best cpu usage"
-	echo "4096 4096 16777216" > /proc/sys/net/ipv4/tcp_rmem
-	echo "4096 4096 16777216" > /proc/sys/net/ipv4/tcp_wmem
+	echo "8388608 8388608 16777216" > /proc/sys/net/ipv4/tcp_mem
+    echo "Setting socket sizes for best cpu usage"
+    echo "131072" > /proc/sys/net/core/wmem_default
+    echo "131072" > /proc/sys/net/core/rmem_default
+    echo "8192 131072 16777216" > /proc/sys/net/ipv4/tcp_rmem
+    echo "8192 131072 16777216" > /proc/sys/net/ipv4/tcp_wmem
+
 	echo "Turning on TIME_WAIT recyle and reuse"
 	echo 1 > /proc/sys/net/ipv4/tcp_tw_recycle
 	echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse
