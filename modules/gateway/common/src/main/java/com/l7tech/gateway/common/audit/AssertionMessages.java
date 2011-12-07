@@ -1013,7 +1013,7 @@ public class AssertionMessages extends Messages {
     public static final M SSH_ROUTING_PASSTHRU_NO_USERNAME = m(9433, Level.WARNING, "No user name found for passing through to SSH server");
 
     // ICAP modular assertion messages
-    public static final M ICAP_INVALID_TIMEOUT = m(9445, Level.INFO, "Invalid timeout value from timeout ({0}).  Timeout value must be a valid integer with range 1 to 3600 inclusive.");
+    public static final M ICAP_INVALID_TIMEOUT = m(9445, Level.WARNING, "Invalid timeout value from timeout ({0}).  Timeout value must be a valid integer with range 1 to 3600 inclusive.");
     public static final M ICAP_INVALID_PORT = m(9446, Level.WARNING, "Invalid port specified, port must be between 1 and 63353: {0}.");
     public static final M ICAP_INVALID_URI = m(9447, Level.WARNING, "Invalid ICAP URI: {0}.");
     public static final M ICAP_CONNECTION_FAILED = m(9448, Level.WARNING, "Unable to connect to the specified server: {0}.");
