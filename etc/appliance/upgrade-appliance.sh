@@ -90,3 +90,16 @@ if [ -f "${MY_CNF}" ] ; then
     fi
 fi
 
+# Update MySQL configuration to remove use of deprecated names
+if [ -f "${MY_CNF}" ] ; then
+    grep '^\[safe_mysqld\]' "${MY_CNF}" &>/dev/null
+    if [ ${?} -eq 0 ] ; then
+        echo "Updating ${MY_CNF} mysqld_safe section name"
+        sed -i "s/^\[safe_mysqld\]/[mysqld_safe]/" "${MY_CNF}"
+    fi
+    grep '^err-log=' "${MY_CNF}" &>/dev/null
+    if [ ${?} -eq 0 ] ; then
+        echo "Updating ${MY_CNF} log file configuration"
+        sed -i "s/^err-log=/log-error=/" "${MY_CNF}"
+    fi
+fi
