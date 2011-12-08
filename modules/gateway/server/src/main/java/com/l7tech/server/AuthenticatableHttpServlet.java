@@ -41,6 +41,8 @@ import com.l7tech.util.CausedIOException;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.Config;
 import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.Functions.Unary;
+import static com.l7tech.util.Functions.grepFirst;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -274,6 +276,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
                 }
 
                 final User u = authResult.getUser();
+                provider = getProviderForUser( authResult.getUser(), providers );
                 logger.fine("Authentication success for user " + creds.getLogin() +
                         " on identity provider: " + provider.getConfig().getName());
 
@@ -342,6 +345,29 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
             throw new IssuedCertNotPresentedException(msg);
         }
         return new AhsAuthResult(sawCreds, authResults.toArray(new AuthenticationResult[authResults.size()]));
+    }
+
+    private IdentityProvider getProviderForUser( final User user, final Collection<IdentityProvider> providers ) throws AuthenticationException {
+        IdentityProvider provider = null;
+
+        if ( user != null ) {
+            provider = grepFirst( providers, providerOidPredicate( user.getProviderId() ) );
+        }
+
+        if ( provider == null ) {
+            throw new AuthenticationException("Provider not found for user");
+        }
+
+        return provider;
+    }
+
+    private Unary<Boolean, IdentityProvider> providerOidPredicate( final long providerOid ) {
+        return new Unary<Boolean,IdentityProvider>(){
+            @Override
+            public Boolean call( final IdentityProvider identityProvider ) {
+                return providerOid == identityProvider.getConfig().getOid();
+            }
+        };
     }
 
     private boolean isLdapCerts( final IdentityProvider provider ) {
