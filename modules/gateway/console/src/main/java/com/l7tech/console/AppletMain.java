@@ -346,7 +346,7 @@ public class AppletMain extends JApplet implements SheetHolder {
         }
 
         this.hostAndPort = hostname;
-        this.helpTarget = "managerAppletHelp_" + hostname;
+        this.helpTarget = "managerAppletHelp_" + hostname.replaceAll( "[^a-zA-Z0-9_]", "_" );
 
         String helpRootUrl = getParameter("helpRootUrl");
         if (helpRootUrl != null && helpRootUrl.trim().length() > 0) {
