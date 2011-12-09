@@ -801,7 +801,8 @@ public class GatewayFeatureSets {
                 ass(RequireWssSignedElement.class),
                 ass(WssSignElement.class),
                 mass("assertion:ProcessSamlAuthnRequest"),
-                mass("assertion:SetSamlStatus"));
+                mass("assertion:SetSamlStatus"),
+                fs(modularAssertions));
 
         PROFILE_ALL =
         fsp("set:Profile:Development", "Development Mode",
