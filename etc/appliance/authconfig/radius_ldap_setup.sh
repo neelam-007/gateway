@@ -435,7 +435,7 @@ else
 	# BASE field
 	if [ "X$LDAP_BASE" != "X" ]; then
 		sed -i "s|\(^#BASE.*$\)|\1\n# Added by $0 on $DATE_TIME:\nBASE $LDAP_BASE\n|" $OPENLDAP_CONF_FILE
-		if [ $? -ne 0 ] || [ "$(grep "^BASE" $OPENLDAP_CONF_FILE | cut -d" " -f2)" != "$LDAP_BASE" ]; then
+		if [ $? -ne 0 ] || [ "$(grep "^BASE" $OPENLDAP_CONF_FILE)" != "BASE $LDAP_BASE" ]; then
 			toLog "    ERROR - Configuring 'BASE' field in $OPENLDAP_CONF_FILE failed. Exiting..."
 			STATUS=1
 		else
@@ -556,7 +556,7 @@ else
 	# base field
 	if [ "X$LDAP_BASE" != "X" ]; then
 		sed -i "s|\(^base dc=example,dc=com.*$\)|# Commented by 0$ on $DATE_TIME:\n#\1\n# Added by $0 on $DATE_TIME:\nbase $LDAP_BASE\n|" $NSS_LDAP_CONF_FILE
-		if [ $? -ne 0 ] || [ "$(grep "^base" $NSS_LDAP_CONF_FILE | cut -d" " -f 2)" != "$LDAP_BASE" ]; then
+		if [ $? -ne 0 ] || [ "$(grep "^base" $NSS_LDAP_CONF_FILE)" != "base $LDAP_BASE" ]; then
 			toLog "    ERROR - Configuring the 'base' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
 			STATUS=1
 		else
@@ -598,7 +598,7 @@ else
 	# pam_filter field
 	if [ "X$PAM_FILTER" != "X" ]; then
 		sed -i "s|\(^# Filter to AND with.*$\)|\1\n# Added by $0 on $DATE_TIME:\npam_filter $PAM_FILTER\n|" $NSS_LDAP_CONF_FILE
-		if [ $? -ne 0 ] || [ "X$(grep "^pam_filter" $NSS_LDAP_CONF_FILE | cut -d" " -f2)" != "X$PAM_FILTER" ]; then
+		if [ $? -ne 0 ] || [ "X$(grep "^pam_filter" $NSS_LDAP_CONF_FILE)" != "Xpam_filter $PAM_FILTER" ]; then
 			toLog "    ERROR - Configuring 'pam_filter' field in $NSS_LDAP_CONF_FILE failed. Exiting..."
 			STATUS=1
 		else
