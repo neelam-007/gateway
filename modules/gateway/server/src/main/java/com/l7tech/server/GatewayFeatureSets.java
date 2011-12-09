@@ -640,6 +640,7 @@ public class GatewayFeatureSets {
         //  complete product in its own right.)
         // Naming convention:   set:Profile:ProfileName
         //
+        GatewayFeatureSet dataScreen =
         fsp("set:Profile:Datascreen", "SecureSpan Data Screen",
             "HTTP/HTML/AJAX/JSON/XML gateway",
             fs(core),
@@ -783,28 +784,24 @@ public class GatewayFeatureSets {
         GatewayFeatureSet profileApi =
         fsp("set:Profile:Api", "Layer 7 API Proxy",
             "Same as Data Screen with some additional features",
-             // start data screen
-            fs(core),
-            fs(adminAndEms),
-            fs(routingAccel),
-            fs(threatIps),
-            fs(availabilityFw),
-            fs(validationDs),
-            fs(auditAccel),
-            fs(policyAccel),
-            fs(uiDs),
-            fs(customDs),
-            fs(uddiNotificationAssertions),
-            fs(esmAssertions),
-            ass(SslAssertion.class),
-            srv(SERVICE_WSDLPROXY, "WSDL proxy service"),
-            // end of data screen
-            fs(nonSoapXmlSigning),
-            fs(nonSoapXmlEncryption),
-            fs(accessFw),
-            fs(xmlsecFw),
-            fs(samlpSsoAssertions),
-            fs(modularAssertions));
+                fs(dataScreen),
+                ass(SpecificUser.class),
+                ass(MemberOfGroup.class),
+                ass(AuthenticationAssertion.class),
+                ass(HttpBasic.class),
+                ass(CookieCredentialSourceAssertion.class),
+                ass(HttpDigest.class),
+                ass(XpathCredentialSource.class),
+                ass(SamlBrowserArtifact.class),
+                mass("assertion:LDAPQuery"),
+                mass("assertion:CertificateAttributes"),
+                fs(nonSoapXmlSigning),
+                fs(nonSoapXmlEncryption),
+                ass(RequireWssEncryptedElement.class),
+                ass(RequireWssSignedElement.class),
+                ass(WssSignElement.class),
+                mass("assertion:ProcessSamlAuthnRequest"),
+                mass("assertion:SetSamlStatus"));
 
         PROFILE_ALL =
         fsp("set:Profile:Development", "Development Mode",
