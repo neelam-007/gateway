@@ -2959,6 +2959,7 @@
         <property name="module.obfuscate" value="true"/>
         <property name="module.official.build" value="true"/>
         <property name="pack200" value="true"/>
+        <property name="module.pack200" value="true"/>
     </target>
 
     <!--
