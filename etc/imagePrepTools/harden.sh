@@ -243,7 +243,7 @@ auth       requisite    pam_listfile.so item=user sense=allow file=/etc/tty_user
   chgrp sys /etc/snmp/snmpd.conf
 
   # GEN005400
-  chmod 640 /etc/syslog.conf
+  chmod 640 /etc/rsyslog.conf
 
   # GEN005540, GEN006620
   sed -i -e '/ALL:\s*ALL/d' /etc/hosts.deny
@@ -360,7 +360,11 @@ halt:*:13637:0:99999:7:::' /etc/shadow
   # SSH set either protocol (Reverse Bug #6371)
   sed -i -e '/Protocol/d' /etc/ssh/sshd_config
   echo "# Protocol 2,1" >> /etc/ssh/sshd_config
-
+  
+  # Disabling GSSAPI authentication
+  sed -i '/^GSSAPIAuthentication yes/d' /etc/ssh/sshd_config
+  sed -i '/^GSSAPICleanupCredentials yes/d' /etc/ssh/sshd_config
+    
   # GEN000480
   sed -i -e '/FAIL_DELAY 4/d' /etc/login.defs
 
@@ -465,7 +469,7 @@ halt:*:13637:0:99999:7:::' /etc/shadow
   chgrp root /etc/snmp/snmpd.conf
 
   # GEN005400
-  chmod 644 /etc/syslog.conf
+  chmod 640 /etc/rsyslog.conf
 
   # GEN005540
   sed -i -e '/sshd1: ALL/d' -e 'sshd2: ALL' -e '/sshdfwd-x11: ALL/d' /etc/hosts.deny
@@ -786,8 +790,8 @@ if [ -e /etc/snmp/snmpd.conf_example ] ; then
 fi
 
 # GEN005400
-if [ ! "`stat --format=%a /etc/syslog.conf | grep 640`" ] ; then
-	echo "Error - bad permissions on /etc/syslog.conf"
+if [ ! "`stat --format=%a /etc/rsyslog.conf | grep 640`" ] ; then
+	echo "Error - bad permissions on /etc/rsyslog.conf"
 fi
 
 # GEN005540
