@@ -2,6 +2,7 @@ package com.l7tech.server.transport.ftp;
 
 import com.l7tech.common.log.HybridDiagnosticContext;
 import com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.message.FtpRequestKnob;
@@ -298,7 +299,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
                     logger.log( Level.INFO, "Request referred to an outdated version of policy" );
                     faultXml = soapFaultManager.constructExceptionFault(pve, context.getFaultlevel(), context).getContent();
                 } catch ( Throwable t ) {
-                    logger.log( Level.WARNING, "Exception while processing FTP message", t );
+                    logger.log( Level.WARNING, "Exception while processing FTP message: "+ ExceptionUtils.getMessage(t) );
                     faultXml = soapFaultManager.constructExceptionFault(t, context.getFaultlevel(), context).getContent();
                 }
 
