@@ -21,6 +21,7 @@ import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ResourceUtils;
 import org.apache.ftpserver.DefaultFtpReply;
+import org.apache.ftpserver.FtpSessionImpl;
 import org.apache.ftpserver.ServerDataConnectionFactory;
 import org.apache.ftpserver.ftplet.*;
 import org.apache.ftpserver.interfaces.FtpServerSession;
@@ -73,6 +74,11 @@ class MessageProcessingFtplet extends DefaultFtplet {
      */
     @Override
     public FtpletEnum onConnect(FtpSession ftpSession, FtpReplyOutput ftpReplyOutput) throws FtpException, IOException {
+        // TODO This addresses bug 11570 and can (probably) be removed once we update the Apache FTP library
+        if ( ftpSession instanceof FtpSessionImpl ) {
+            ((FtpSessionImpl)ftpSession).updateLastAccessTime();
+        }
+
         DataConnectionFactory dataConnectionFactory = ftpSession.getDataConnection();
         if (dataConnectionFactory instanceof ServerDataConnectionFactory) {
             ServerDataConnectionFactory sdcf = (ServerDataConnectionFactory) dataConnectionFactory;
@@ -299,7 +305,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
                     logger.log( Level.INFO, "Request referred to an outdated version of policy" );
                     faultXml = soapFaultManager.constructExceptionFault(pve, context.getFaultlevel(), context).getContent();
                 } catch ( Throwable t ) {
-                    logger.log( Level.WARNING, "Exception while processing FTP message: "+ ExceptionUtils.getMessage(t) );
+                    logger.log( Level.WARNING, "Exception while processing FTP message: "+ ExceptionUtils.getMessage(t), ExceptionUtils.getDebugException( t ) );
                     faultXml = soapFaultManager.constructExceptionFault(t, context.getFaultlevel(), context).getContent();
                 }
 
