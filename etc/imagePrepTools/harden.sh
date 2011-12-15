@@ -128,6 +128,9 @@ auth       requisite    pam_listfile.so item=user sense=allow file=/etc/tty_user
   echo "# Only allow Protocol 2 as per bug #6371" >> /etc/ssh/sshd_config
   echo "Protocol 2" >> /etc/ssh/sshd_config
 
+  # Disabling GSSAPI authentication
+  sed -i -e '/^GSSAPIAuthentication yes/d' /etc/ssh/sshd_config
+  sed -i -e '/^GSSAPICleanupCredentials yes/d' /etc/ssh/sshd_config
 
   # GEN000480
   echo 'FAIL_DELAY 4' >> /etc/login.defs
@@ -361,9 +364,9 @@ halt:*:13637:0:99999:7:::' /etc/shadow
   sed -i -e '/Protocol/d' /etc/ssh/sshd_config
   echo "# Protocol 2,1" >> /etc/ssh/sshd_config
   
-  # Disabling GSSAPI authentication
-  sed -i '/^GSSAPIAuthentication yes/d' /etc/ssh/sshd_config
-  sed -i '/^GSSAPICleanupCredentials yes/d' /etc/ssh/sshd_config
+  # Enabling GSSAPI authentication (reverse)
+  sed -i -e 's/\(^#GSSAPIAuthentication.*$\)/\1\nGSSAPIAuthentication yes/' /etc/ssh/sshd_config
+  sed -i -e 's/\(^#GSSAPICleanupCredentials.*$\)/\1\nGSSAPICleanupCredentials yes/' /etc/ssh/sshd_config
     
   # GEN000480
   sed -i -e '/FAIL_DELAY 4/d' /etc/login.defs
