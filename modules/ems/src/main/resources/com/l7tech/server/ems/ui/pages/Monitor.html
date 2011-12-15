@@ -1075,7 +1075,7 @@
                 } else {
                     // Flashes the error icon for 400ms.
                     var toolTip = 'Unable to refresh monitored property values';
-                    if ( (result && !result.success && !result.isException && !result.isJson && !result.isSessionExpired)) {
+                    if ( xhrException || (result && !result.success && !result.isException && !result.isJson && !result.isSessionExpired) ) {
                         // Because the exception name and message is mysteriously worded,
                         // we won't display that.
                         toolTip += ': cannot communicate with server';

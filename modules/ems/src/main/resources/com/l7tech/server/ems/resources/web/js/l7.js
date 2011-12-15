@@ -854,7 +854,7 @@ if (!l7.Connection) {
                 xhr.open( method, uri );
                 setXmlHttpRequestContentType( xhr, method, isJSON );
                 xhr.onreadystatechange = function() {
-                    if (xhr.readyState == 4 ) {
+                    if ( xhr.readyState == 4 ) {
                         callback( xhr );
                     }
                 };

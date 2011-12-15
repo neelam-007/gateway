@@ -471,21 +471,21 @@ public class Monitor extends EsmStandardWebPage {
      * Data provider for getting entities monitoring properties.
      */
     private final class GettingCurrentEntitiesPropertyValuesDataProvider implements JsonDataProvider {
-
         @Override
         public Object getData() {
             // Use MonitoringService to call MonitoringApi to get current property statuses
-            List<EntityMonitoringPropertyValues> entitiesList = new ArrayList<EntityMonitoringPropertyValues>();
+            final List<EntityMonitoringPropertyValues> entitiesList = new ArrayList<EntityMonitoringPropertyValues>();
             try {
-                for (SsgCluster ssgCluster: ssgClusterManager.findOnlineClusters()) {
-                    boolean toFetchClusterStatuses = toFetchStatuses(ssgCluster.getGuid());
+                for ( final SsgCluster ssgCluster: ssgClusterManager.findOnlineClusters() ) {
+                    final boolean toFetchClusterStatuses = toFetchStatuses(ssgCluster.getGuid());
                     // First get the current values for each SSG node.
-                    for (SsgNode ssgNode: ssgCluster.getNodes()) {
+                    for ( final SsgNode ssgNode: ssgCluster.getNodes() ) {
                         // If a SSG cluster has property to monitor, no matter if its SSG nodes have monitored properties or not, the ESM needs to
                         // fetch properties statuses, because the ESM gets the statuses of a SSG cluster, while fetching SSG nodes properties statuses.
-                        if (toFetchClusterStatuses || toFetchStatuses(ssgNode.getGuid())) {
+                        if ( !JSONConstants.SsgNodeOnlineState.OFFLINE.equals(ssgNode.getOnlineStatus()) &&
+                             (toFetchClusterStatuses || toFetchStatuses(ssgNode.getGuid())) ) {
                             final EntityMonitoringPropertyValues statuses = monitoringService.getCurrentSsgNodePropertiesStatus(ssgNode);
-                            if (statuses != null) {
+                            if ( statuses != null ) {
                                 statuses.setEntityType(EntityMonitoringPropertyValues.EntityType.SSG_NODE);
                                 entitiesList.add(statuses);
                             }
@@ -493,9 +493,9 @@ public class Monitor extends EsmStandardWebPage {
                     }
 
                     // Then, get the current value (audit size) for the SSG cluster.
-                    if (toFetchClusterStatuses) {
+                    if ( toFetchClusterStatuses ) {
                         final EntityMonitoringPropertyValues statuses = monitoringService.getCurrentSsgClusterPropertyStatus(ssgCluster.getGuid());
-                        if (statuses != null) {
+                        if ( statuses != null ) {
                             statuses.setEntityType(EntityMonitoringPropertyValues.EntityType.SSG_CLUSTER);
                             entitiesList.add(statuses);
                         }
@@ -506,7 +506,7 @@ public class Monitor extends EsmStandardWebPage {
                 return new JSONException("Failed to get entity property values due to data access failure.");
             }
 
-            Map<String, Object> jsonDataMap = new HashMap<String, Object>();
+            final Map<String, Object> jsonDataMap = new HashMap<String, Object>();
             jsonDataMap.put("nextRefreshInterval", Long.valueOf( config.getProperty( EsmConfigParams.PARAM_MONITORING_NEXTREFRESH_INTERVAL ) ));
             jsonDataMap.put("entities", entitiesList);
 
