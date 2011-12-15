@@ -769,24 +769,7 @@ if (!l7.Util) {
 // -----------------------------------------------------------------------------
 if (!l7.Connection) {
     (function(){
-        l7.Connection = {};
-
-        /**
-         * Sends a synchronous request via the XMLHttpRequest object.
-         * The instantiated XMLHttpRequest object is returned for caller to
-         * check its status and parse its responseText.
-         *
-         * @static
-         * @param {string} method       HTTP method; 'GET' or 'POST'
-         * @param {string} uri          resource path (include any parameters if method is 'GET')
-         * @param {string} postData     POST body, if method is 'POST'
-         * @param {boolean} isJSON      whether postData is JSON;
-         *                              used for setting the HTTP request content type;
-         *                              true will result in 'application/json';
-         *                              false will result in 'application/x-www-form-urlencoded'
-         * @return {object} the XMLHttpRequest object; null if fail to instantiate XMLHttpRequest object
-         */
-        l7.Connection.syncRequest = function( method, uri, postData, isJSON ) {
+        newXmlHttpRequest = function() {
             var MSXML_PROGIDS = [
                 'Microsoft.XMLHTTP',
                 'MSXML2.XMLHTTP.3.0',
@@ -808,12 +791,10 @@ if (!l7.Connection) {
                 }
             }
 
-            if ( !xhr ) {
-                return null;
-            }
+            return xhr;
+        }
 
-            xhr.open( method, uri, false );
-
+        setXmlHttpRequestContentType = function( xhr, method, isJSON ) {
             if ( method.toUpperCase() === 'POST' ) {
                 if ( isJSON ) {
                     xhr.setRequestHeader( 'Content-Type', 'application/json; charset=UTF-8' );
@@ -821,10 +802,67 @@ if (!l7.Connection) {
                     xhr.setRequestHeader( 'Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8' );
                 }
             }
+        }
 
-            xhr.send( postData || '' );
+        l7.Connection = {};
+
+        /**
+         * Sends a synchronous request via the XMLHttpRequest object.
+         * The instantiated XMLHttpRequest object is returned for caller to
+         * check its status and parse its responseText.
+         *
+         * @static
+         * @param {string} method       HTTP method; 'GET' or 'POST'
+         * @param {string} uri          resource path (include any parameters if method is 'GET')
+         * @param {string} postData     POST body, if method is 'POST'
+         * @param {boolean} isJSON      whether postData is JSON;
+         *                              used for setting the HTTP request content type;
+         *                              true will result in 'application/json';
+         *                              false will result in 'application/x-www-form-urlencoded'
+         * @return {object} the XMLHttpRequest object; null if fail to instantiate XMLHttpRequest object
+         */
+        l7.Connection.syncRequest = function( method, uri, postData, isJSON ) {
+            var xhr = newXmlHttpRequest();
+            if ( xhr ) {
+                xhr.open( method, uri, false );
+                setXmlHttpRequestContentType( xhr, method, isJSON );
+                xhr.send( postData || '' );
+            }
             return xhr;
         };
+
+        /**
+         * Sends an asynchronous request via the XMLHttpRequest object.
+         *
+         * The instantiated XMLHttpRequest object is passed to the callback function so the user can
+         * check its status and parse its responseText.
+         *
+         * @static
+         * @param {string} method       HTTP method; 'GET' or 'POST'
+         * @param {string} uri          resource path (include any parameters if method is 'GET')
+         * @param {string} postData     POST body, if method is 'POST'
+         * @param {boolean} isJSON      whether postData is JSON;
+         *                              used for setting the HTTP request content type;
+         *                              true will result in 'application/json';
+         *                              false will result in 'application/x-www-form-urlencoded'
+         * @param {object} callback     the callback function, the XMLHttpRequest object will
+         *                              be passed, or null if it cannot be instantiated
+         */
+        l7.Connection.asyncRequest = function( method, uri, postData, isJSON, callback ) {
+            var xhr = newXmlHttpRequest();
+            if ( xhr ) {
+                xhr.open( method, uri );
+                setXmlHttpRequestContentType( xhr, method, isJSON );
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState == 4 ) {
+                        callback( xhr );
+                    }
+                };
+                xhr.send( postData || '' );
+            } else {
+                callback();
+            }
+        }
 
         /**
          * Parses JSON data from AJAX response and pops up appropriate error dialog when neccessary.
