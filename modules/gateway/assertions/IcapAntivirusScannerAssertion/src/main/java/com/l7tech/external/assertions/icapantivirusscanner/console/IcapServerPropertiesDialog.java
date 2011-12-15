@@ -143,9 +143,10 @@ public final class IcapServerPropertiesDialog extends JDialog {
                 return false;
             }
         } else {
+            final String maybeUpdatedHostname = InetAddressUtil.getHostForUrl(hostname);
             //Make a URL with this hostname
             try {
-                new URL("http://" + hostname);
+                new URL("http://" + maybeUpdatedHostname);
             } catch (MalformedURLException e) {
                 DialogDisplayer.showMessageDialog(this,
                         "Invalid Hostname: " + ExceptionUtils.getMessage(e),
@@ -174,7 +175,6 @@ public final class IcapServerPropertiesDialog extends JDialog {
                 return false;
             }
         }
-
 
         String portText = serverPortNumberField.getText().trim();
         if (portText.isEmpty() || (!isContextVariable(portText)) && !ValidationUtils.isValidInteger(portText, false, 1, 65535)) {
