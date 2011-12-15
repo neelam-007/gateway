@@ -12,7 +12,7 @@ public interface IcapAntivirusScannerAdmin {
      *
      * @param host        the ICAP host.
      * @param port        the ICAP port.
-     * @param serviceName the ICAP service name.
+     * @param serviceName the ICAP service name. Should not begin with a slash.
      * @throws IcapAntivirusScannerTestException
      *          if any error(s) occur during testing.
      */

@@ -11,6 +11,8 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.test.BugNumber;
+import com.l7tech.util.Triple;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.Channels;
@@ -21,7 +23,12 @@ import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.net.SocketAddress;
+import java.net.URL;
 import java.util.Collections;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static org.junit.Assert.*;
 
 /**
  * <p>The test coverage for the {@link ServerIcapAntivirusScannerAssertion} class.</p>
@@ -131,6 +138,30 @@ public class ServerIcapAntivirusScannerAssertionTest {
         Message response = new Message();
         response.initialize(XmlUtil.stringAsDocument(res));
         return PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
+    }
+
+    @Test
+    public void testParseContextVariableURL() throws Exception {
+        // all vars
+        String is = "icap://${host}:${port}/${serviceName}";
+        Triple<String,String,String> triple = IcapAntivirusScannerAssertion.getUrlPartsWhenVarsReferenced(is);
+        assertEquals("Incorrect host found", "${host}", triple.left);
+        assertEquals("Incorrect port found", "${port}", triple.middle);
+        assertEquals("Incorrect serviceName found", "${serviceName}", triple.right);
+
+        //some vars
+        is = "icap://${host}:1344/service/name";
+        triple = IcapAntivirusScannerAssertion.getUrlPartsWhenVarsReferenced(is);
+        assertEquals("Incorrect host found", "${host}", triple.left);
+        assertEquals("Incorrect port found", "1344", triple.middle);
+        assertEquals("Incorrect serviceName found", "service/name", triple.right);
+    }
+
+    @Test
+    public void testServiceName() throws Exception {
+        String sName = "serviceName";
+        assertEquals(sName, IcapAntivirusScannerAssertion.getServiceName(sName));
+        assertEquals(sName, IcapAntivirusScannerAssertion.getServiceName("/" + sName));
     }
 
     @Test

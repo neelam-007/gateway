@@ -125,6 +125,7 @@ public abstract class Syntax {
      * @return all the variable names which are contained within our variable reference syntax of ${...} in String s.  May be empty but never null.
      * @throws VariableNameSyntaxException If an error occurs
      */
+    @NotNull
     public static String[] getReferencedNames(final @Nullable String s) {
         if (s == null) return new String[0];
         return getReferencedNames( s, true );

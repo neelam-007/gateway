@@ -5,8 +5,10 @@ import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAssertion;
 import com.l7tech.external.assertions.icapantivirusscanner.server.ServerIcapAntivirusScannerAssertion;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.util.Triple;
 import com.l7tech.util.ValidationUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -19,10 +21,14 @@ import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
+
+import static com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAssertion.getUrlPartsWhenVarsReferenced;
 
 /**
  * <p>
@@ -176,9 +182,36 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
             if (matcher.matches()) {
                 IcapServerPropertiesDialog ispd = new IcapServerPropertiesDialog(owner,
                         DIALOG_TITLE_EDIT_SERVER_PROPERTIES);
-                ispd.setHostname(matcher.group(1).trim());
-                ispd.setPort(matcher.group(2).trim());
-                ispd.setServiceName(matcher.group(3));
+                final String is = matcher.group(1).trim();
+                final String[] referencedNames = Syntax.getReferencedNames(is);
+                final String hostName;
+                final String portNumber;
+                final String serviceName;
+                if (referencedNames.length > 0) {
+                    final Triple<String,String,String> triple = getUrlPartsWhenVarsReferenced(is);
+                    hostName = triple.left;
+                    portNumber = triple.middle;
+                    serviceName = triple.right;
+                } else {
+                    final String testUrl = "http" + is;
+                    try {
+
+                        final URL url = new URL(testUrl);
+                        hostName = url.getHost();
+                        portNumber = String.valueOf(url.getPort());
+                        serviceName = url.getPath();
+                    } catch (MalformedURLException e) {
+                        //unexpected - such an error must be caught when the value is saved
+                        DialogDisplayer.showMessageDialog(this,
+                                                    "Invalid ICAP Server configuration. Please remove and recreate.",
+                                                    "Error",
+                                                    JOptionPane.ERROR_MESSAGE, null);
+                        return;
+                    }
+                }
+                ispd.setHostname(hostName);
+                ispd.setPort(portNumber);
+                ispd.setServiceName(serviceName);
                 ispd.pack();
                 Utilities.centerOnScreen(ispd);
                 ispd.setVisible(true);

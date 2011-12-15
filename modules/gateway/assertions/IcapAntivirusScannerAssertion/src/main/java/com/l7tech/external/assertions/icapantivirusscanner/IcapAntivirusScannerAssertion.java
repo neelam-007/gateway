@@ -12,6 +12,8 @@ import com.l7tech.policy.wsp.CollectionTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.util.Functions;
+import com.l7tech.util.Triple;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 
 import java.util.*;
@@ -48,9 +50,9 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
     public static final String VARIABLE_NAME = VARIABLE_PREFIX + "header.value";
 
     /**
-     * The pattern to match and extract various parts of the ICAP uri.
+     * Pattern to match the icap scheme - URL is used to validate the first group from a match
      */
-    public static final Pattern ICAP_URI = Pattern.compile("(?i)icap://(.*):(.*)/(.*)");
+    public static final Pattern ICAP_URI = Pattern.compile("(?i)icap(.*)");
 
     /**
      * The channel idle timeout cluster entry.
@@ -93,6 +95,37 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
 
     private String connectionTimeout = "30";
 
+    /**
+     * Get a path value for serviceName removing any leading '/' character.
+     *
+     * @param value serverName value to remove leading slash from
+     * @return serviceName, same as value if no leading slash.
+     */
+    public static String getServiceName(@NotNull String value) {
+        String path = value.trim();
+        if (path.startsWith("/")) {
+            path = path.substring(1, path.length());
+        }
+
+        return path;
+    }
+
+    /**
+     * Get the host, port and path parts from a URL with variable referneces.
+     * @param is input string to extract values from
+     * @return triple of host, port and path. Runtime exception thrown if they cannot be found.
+     */
+    public static Triple<String, String, String> getUrlPartsWhenVarsReferenced(@NotNull String is) {
+        final int firstColon = is.indexOf("://") + 3;
+        final String host = is.substring(firstColon, is.indexOf(":", firstColon));
+        final int startOfPath = is.indexOf("/", firstColon);
+        final String port = is.substring(is.indexOf(":", firstColon) + 1, startOfPath);
+        final String path = is.substring(startOfPath + 1, is.length());
+
+        return new Triple<String, String, String>(host, port, path);
+    }
+
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
@@ -294,7 +327,7 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
         for(String server : icapServers){
             Matcher matcher = ICAP_URI.matcher(server);
             if(matcher.matches()){
-                vars.withExpressions(matcher.group(1), matcher.group(2), matcher.group(3));
+                vars.withExpressions(matcher.group(1));
             }
         }
         for (Map.Entry<String, String> ent : serviceParameters.entrySet()) {

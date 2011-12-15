@@ -5,12 +5,19 @@ import com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerA
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.util.ValidationUtils;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.net.MalformedURLException;
+import java.net.URL;
+
+import static com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAssertion.getServiceName;
 
 /**
  * <p>The GUI for adding/modifying the server connection information.</p>
@@ -46,8 +53,8 @@ public final class IcapServerPropertiesDialog extends JDialog {
 
     private void initComponents(final Window owner) {
         Utilities.setEscKeyStrokeDisposes(this);
-        btnOk.setEnabled(false);
         btnOk.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 if (validateData()) {
                     confirmed = true;
@@ -56,6 +63,7 @@ public final class IcapServerPropertiesDialog extends JDialog {
             }
         });
         btnCancel.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 confirmed = false;
                 dispose();
@@ -74,7 +82,6 @@ public final class IcapServerPropertiesDialog extends JDialog {
                                 "Unable to test connection containing context variable(s).",
                                 "WARNING",
                                 JOptionPane.PLAIN_MESSAGE, null);
-                        btnOk.setEnabled(true);
                     } else {
                         testServerEntry();
                     }
@@ -91,7 +98,7 @@ public final class IcapServerPropertiesDialog extends JDialog {
         boolean enableSave = false;
         try {
             IcapAntivirusScannerAdmin admin = Registry.getDefault().getExtensionInterface(IcapAntivirusScannerAdmin.class, null);
-            admin.testConnection(serverHostnameField.getText().trim(), Integer.parseInt(serverPortNumberField.getText().trim()), serverServiceNameField.getText().trim());
+            admin.testConnection(serverHostnameField.getText().trim(), Integer.parseInt(serverPortNumberField.getText().trim()), getServiceName(serverServiceNameField.getText()));
             DialogDisplayer.showMessageDialog(this,
                     "Connection is successful.",
                     "Success",
@@ -108,20 +115,46 @@ public final class IcapServerPropertiesDialog extends JDialog {
     }
 
     public String getIcapUri() {
-        return new StringBuilder("icap://").append(serverHostnameField.getText().trim()).append(":")
+        final String path = getServiceName(serverServiceNameField.getText());
+        final String hostName = InetAddressUtil.getHostForUrl(serverHostnameField.getText().trim());
+
+        return new StringBuilder("icap://").append(hostName).append(":")
                 .append(serverPortNumberField.getText().trim()).append("/").
-                        append(serverServiceNameField.getText().trim()).toString();
+                        append(path).toString();
     }
 
     private boolean validateData() {
         String hostname = serverHostnameField.getText().trim();
         if (hostname.isEmpty()) {
             DialogDisplayer.showMessageDialog(this,
-                    "Please enter valid hostname.",
+                    "Please enter valid Hostname.",
                     "Error",
                     JOptionPane.ERROR_MESSAGE, null);
             return false;
         }
+
+        if (Syntax.getReferencedNames(hostname).length != 0) {
+            final boolean onlyVarRef = Syntax.validateStringOnlyReferencesVariables(hostname);
+            if (!onlyVarRef) {
+                DialogDisplayer.showMessageDialog(this,
+                        "Hostname may not reference a variable and text.",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE, null);
+                return false;
+            }
+        } else {
+            //Make a URL with this hostname
+            try {
+                new URL("http://" + hostname);
+            } catch (MalformedURLException e) {
+                DialogDisplayer.showMessageDialog(this,
+                        "Invalid Hostname: " + ExceptionUtils.getMessage(e),
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE, null);
+                return false;
+            }
+        }
+
         String serviceName = serverServiceNameField.getText().trim();
         if (serviceName.isEmpty()) {
             DialogDisplayer.showMessageDialog(this,
@@ -130,6 +163,19 @@ public final class IcapServerPropertiesDialog extends JDialog {
                     JOptionPane.ERROR_MESSAGE, null);
             return false;
         }
+
+        if (Syntax.getReferencedNames(serviceName).length != 0) {
+            final boolean onlyVarRef = Syntax.validateStringOnlyReferencesVariables(serviceName);
+            if (!onlyVarRef) {
+                DialogDisplayer.showMessageDialog(this,
+                        "Service Name may not reference a variable and text.",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE, null);
+                return false;
+            }
+        }
+
+
         String portText = serverPortNumberField.getText().trim();
         if (portText.isEmpty() || (!isContextVariable(portText)) && !ValidationUtils.isValidInteger(portText, false, 1, 65535)) {
             DialogDisplayer.showMessageDialog(this,
@@ -138,6 +184,18 @@ public final class IcapServerPropertiesDialog extends JDialog {
                     JOptionPane.ERROR_MESSAGE, null);
             return false;
         }
+
+        if (Syntax.getReferencedNames(portText).length != 0) {
+            final boolean onlyVarRef = Syntax.validateStringOnlyReferencesVariables(portText);
+            if (!onlyVarRef) {
+                DialogDisplayer.showMessageDialog(this,
+                        "Port Number may not reference a variable and text.",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE, null);
+                return false;
+            }
+        }
+
         return true;
     }
 
@@ -156,8 +214,8 @@ public final class IcapServerPropertiesDialog extends JDialog {
         serverHostnameField.setText(hostname);
     }
 
-    public void setServiceName(final String serviceName) {
-        serverServiceNameField.setText(serviceName);
+    public void setServiceName(@NotNull final String serviceName) {
+        serverServiceNameField.setText(getServiceName(serviceName));
     }
 
     public void setPort(String port) {

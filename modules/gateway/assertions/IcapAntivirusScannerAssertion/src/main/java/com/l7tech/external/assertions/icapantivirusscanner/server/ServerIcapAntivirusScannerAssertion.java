@@ -41,10 +41,14 @@ import javax.inject.Named;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
+
+import static com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAssertion.getServiceName;
 
 /**
  * <p>Server side implementation of the IcapAntivirusScannerAssertion.</p>
@@ -153,7 +157,7 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
 
     private int getTimeoutValue(final PolicyEnforcementContext context, String value) {
         int timeout = DEFAULT_TIMEOUT;
-        String timeoutStr = getContextVariable(context, value);
+        String timeoutStr = getContextVariableValue(context, value);
         if (ValidationUtils.isValidInteger(timeoutStr, false, 1, MAX_TIMEOUT)) {
             timeout = Integer.parseInt(timeoutStr) * 1000;
         } else {
@@ -162,7 +166,7 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
         return timeout;
     }
 
-    private String getContextVariable(final PolicyEnforcementContext context, final String conVar) {
+    private String getContextVariableValue(final PolicyEnforcementContext context, final String conVar) {
         String retVal = conVar;
         if (retVal != null && retVal.length() > 0) {
             Map<String, Object> vars = context.getVariableMap(Syntax.getReferencedNames(conVar), getAudit());
@@ -173,33 +177,50 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
 
     ChannelInfo getChannel(ClientBootstrap client, PolicyEnforcementContext context) {
 
-        for (int i = 0; i < assertion.getIcapServers().size(); ++i) {
+        allServers: for (int i = 0; i < assertion.getIcapServers().size(); ++i) {
             String selectedService = failoverStrategy.selectService();
             if (selectedService == null) {
                 continue;
             }
             Matcher matcher = IcapAntivirusScannerAssertion.ICAP_URI.matcher(selectedService);
             if (matcher.matches()) {
-                String hostname = getContextVariable(context, matcher.group(1).trim());
-                if(hostname == null || hostname.trim().isEmpty()){
-                    logAndAudit(AssertionMessages.ICAP_INVALID_URI, "missing required host name");
+                final String fullExpression = matcher.group(1).trim();
+                //what vars are referenced? - find out and resolve each value to enable more useful log / audit message
+                final String[] referencedNames = Syntax.getReferencedNames(fullExpression);
+                for (final String referencedName : referencedNames) {
+                    final String varExpression = Syntax.getVariableExpression(referencedName);
+                    final String varValue = getContextVariableValue(context, varExpression);
+                    if (varValue == null || varValue.trim().isEmpty()) {
+                        logAndAudit(AssertionMessages.ICAP_INVALID_URI, "URI referenced variable '" + referencedName + "' resolved to no value");
+                        failoverStrategy.reportFailure(selectedService);
+                        continue allServers;
+                    }
+                }
+
+                final String testUrl = "http" + getContextVariableValue(context, fullExpression);
+                final URL url;
+                try {
+                    url = new URL(testUrl);
+                    //We assume a service name e.g. a path, this requirement could be removed later.
+                    if (url.getPath().isEmpty()) {
+                        throw new MalformedURLException("A service name is required.");
+                    }
+
+                } catch (MalformedURLException e) {
+                    logAndAudit(AssertionMessages.ICAP_INVALID_URI, "Invalid resolved URI for ICAP Server: '" + testUrl + "'");
                     failoverStrategy.reportFailure(selectedService);
                     continue;
                 }
-                hostname = InetAddressUtil.getHostForUrl(hostname);
-                String portText = getContextVariable(context, matcher.group(2).trim());
-                if (!ValidationUtils.isValidInteger(portText, false, 1, MAX_PORT)) {
-                    logAndAudit(AssertionMessages.ICAP_INVALID_PORT, portText);
-                    failoverStrategy.reportFailure(selectedService);
-                    continue;
-                }
-                String serviceName = getContextVariable(context, matcher.group(3).trim());
-                if(serviceName == null || serviceName.trim().isEmpty()){
-                    logAndAudit(AssertionMessages.ICAP_INVALID_URI, "missing required service name");
-                    failoverStrategy.reportFailure(selectedService);
-                    continue;
-                }
+
+                final String hostname = url.getHost();
+                // port should always have a value, protect against this changing here
+                final int port = (url.getPort() != -1)? url.getPort(): 1344;
+                final String portText = String.valueOf(port);
                 final String hostAndPort = String.format("%s:%s", hostname, portText);
+
+                final String serviceName = getServiceName(url.getPath());
+                //its possible the context variable itself has a leading '/' - if this is the case it will show in logs and the user will need to fix the variable value.
+
                 Channel channel = getChannelForEndpoint(hostAndPort);
                 if(channel == null){
                     ChannelFuture future = client.connect(new InetSocketAddress(hostname, Integer.parseInt(portText)));
@@ -385,8 +406,8 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
         StringBuilder sb = new StringBuilder("?");
         try {
             for (Map.Entry<String, String> ent : assertion.getServiceParameters().entrySet()) {
-                String key = getContextVariable(context, ent.getKey());
-                String value = getContextVariable(context, ent.getValue());
+                String key = getContextVariableValue(context, ent.getKey());
+                String value = getContextVariableValue(context, ent.getValue());
                 sb.append(URLEncoder.encode(key, URL_ENCODING)).append("=").append(URLEncoder.encode(value, URL_ENCODING)).append("&");
             }
             sb = sb.delete(sb.length() - 1, sb.length());
