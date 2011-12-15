@@ -165,6 +165,30 @@ public class ServerIcapAntivirusScannerAssertionTest {
     }
 
     @Test
+    public void testDisplayableHostName() throws Exception {
+        String hostname = IcapAntivirusScannerAssertion.getDisplayableHostname("hostname");
+        assertEquals("hostname should not have been modified", "hostname", hostname);
+
+        hostname = IcapAntivirusScannerAssertion.getDisplayableHostname("[hostname");
+        assertEquals("hostname should not have been modified", "[hostname", hostname);
+
+        hostname = IcapAntivirusScannerAssertion.getDisplayableHostname("hostname]");
+        assertEquals("hostname should not have been modified", "hostname]", hostname);
+
+        hostname = IcapAntivirusScannerAssertion.getDisplayableHostname("[hostname]");
+        assertEquals("hostname should not have been modified as not IPV6", "[hostname]", hostname);
+
+        hostname = IcapAntivirusScannerAssertion.getDisplayableHostname("[::1]");
+        assertEquals("hostname should not had brackets removed", "::1", hostname);
+
+        hostname = IcapAntivirusScannerAssertion.getDisplayableHostname("");
+        assertEquals("empty string is supported", "", hostname);
+
+        hostname = IcapAntivirusScannerAssertion.getDisplayableHostname("[]");
+        assertEquals("no host is supported", "[]", hostname);
+    }
+
+    @Test
     public void testScanMessageSingleCleanPayload() {
         assertion.setContinueOnVirusFound(false);
         try {

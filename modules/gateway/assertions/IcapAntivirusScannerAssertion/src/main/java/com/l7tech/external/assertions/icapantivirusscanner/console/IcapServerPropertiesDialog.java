@@ -17,6 +17,7 @@ import java.awt.event.ActionListener;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import static com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAssertion.getDisplayableHostname;
 import static com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAssertion.getServiceName;
 
 /**
@@ -211,7 +212,7 @@ public final class IcapServerPropertiesDialog extends JDialog {
     }
 
     public void setHostname(final String hostname) {
-        serverHostnameField.setText(hostname);
+        serverHostnameField.setText(getDisplayableHostname(hostname));
     }
 
     public void setServiceName(@NotNull final String serviceName) {

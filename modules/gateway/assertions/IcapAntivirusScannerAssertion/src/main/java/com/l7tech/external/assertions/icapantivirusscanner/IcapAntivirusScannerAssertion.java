@@ -12,6 +12,7 @@ import com.l7tech.policy.wsp.CollectionTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.util.Functions;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.util.Triple;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
@@ -123,6 +124,27 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
         final String path = is.substring(startOfPath + 1, is.length());
 
         return new Triple<String, String, String>(host, port, path);
+    }
+
+    /**
+     * Get a displayable IPV6 string with any opening [ and closing ] removed when they contain an IPV6 literal address.
+     *
+     * @param hostname String hostname to check
+     * @return hostname if not surrounded with [ and ], otherwise the hostname minus these characters.
+     */
+    public static String getDisplayableHostname(@NotNull String hostname) {
+        if (hostname.isEmpty()) {
+            return hostname;
+        }
+
+        if (hostname.charAt(0) == '[' && hostname.charAt(hostname.length() - 1) == ']') {
+            final String maybeIpV6Literal = hostname.substring(1, hostname.length() - 1);
+            if (InetAddressUtil.isValidIpv6Address(maybeIpV6Literal)) {
+                return maybeIpV6Literal;
+            }
+        }
+
+        return hostname;
     }
 
     @Override
