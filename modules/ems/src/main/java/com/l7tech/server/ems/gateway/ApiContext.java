@@ -4,6 +4,7 @@ import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.TextUtils;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.endpoint.Client;
 import org.apache.cxf.frontend.ClientProxy;
@@ -81,6 +82,26 @@ public abstract class ApiContext {
         }
 
         return isConfigurationException;
+    }
+
+    /**
+     * Build a "user friendly" error message for the given throwable.
+     */
+    public static String buildStatusMessage( final String prefix,
+                                             final Throwable e ) {
+        final StringBuilder messageBuilder = new StringBuilder( 200 );
+        messageBuilder.append( prefix );
+        messageBuilder.append( ": '" );
+        messageBuilder.append( removePeriod(ExceptionUtils.getMessage( e )) );
+        messageBuilder.append( "'" );
+        final Throwable causedBy = ExceptionUtils.unnestToRoot( e );
+        if ( causedBy != e ) {
+            messageBuilder.append( ", due to '" );
+            messageBuilder.append( removePeriod(ExceptionUtils.getMessage( causedBy )) );
+            messageBuilder.append( "'" );
+        }
+        messageBuilder.append( "." );
+        return TextUtils.truncateStringAtEnd( messageBuilder.toString(), 200 );
     }
 
     /**
@@ -215,5 +236,20 @@ public abstract class ApiContext {
             }
         };
         return (T) factory.create();
+    }
+
+    /**
+     * If the given text ends with a period and has no other period then remove it
+     *
+     * e.g. "Could not send message." -> "Could not send message"
+     */
+    private static String removePeriod( final String text ) {
+        String result = text;
+        int periodIndex = text.indexOf( "." );
+        if ( periodIndex == text.length()-1 ) {
+            result = text.substring( 0, text.length()-1 );
+        }
+
+        return result;
     }
 }

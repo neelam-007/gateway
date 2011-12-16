@@ -21,7 +21,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.io.IOException;
 
 /**
  * The implementation of Monitoring Service Interface.
@@ -33,7 +32,7 @@ public class MonitoringServiceImpl implements MonitoringService {
     private EntityMonitoringPropertySetupManager entityMonitoringPropertySetupManager;
 
     // Keep tracking if the warning message for properties statuses unavailable has been logged or not.
-    private boolean statusesUnavailableWarningMsgLogged;
+    private ConcurrentMap<String,Boolean> statusesUnavailableWarningMsgLogged = new ConcurrentHashMap<String,Boolean>();
     // Keep tracking of SSG cluster property status
     private ConcurrentMap<Pair<String,String>,Pair<Object,Boolean>> latestSsgClusterMonitoredValues = new ConcurrentHashMap<Pair<String,String>,Pair<Object,Boolean>>();
 
@@ -65,7 +64,7 @@ public class MonitoringServiceImpl implements MonitoringService {
             final EntityMonitoringPropertyValues.PropertyValues currentPropertyValues =
                 new EntityMonitoringPropertyValues.PropertyValues(
                     emps.isMonitoringEnabled(),
-                    value == null ?  JSONConstants.NA : value.left==null ? null : value.left.toString(),
+                    value == null || value.left==null ? JSONConstants.NA : value.left.toString(),
                     emps.getUnit(),
                     value == null || value.right==null ? false : value.right
                 );
@@ -94,15 +93,17 @@ public class MonitoringServiceImpl implements MonitoringService {
             statuses = monitoringApi.getCurrentPropertyStatuses();
 
             // Reset this flag as false.  If property statuses are unavailable again, then the logger will work again.
-            statusesUnavailableWarningMsgLogged = false;
+            statusesUnavailableWarningMsgLogged.put( ssgNode.getGuid(), false);
          } catch (Throwable t) {
-            if (! statusesUnavailableWarningMsgLogged) {
-                if (t instanceof IOException || t instanceof GatewayException || t instanceof javax.xml.ws.ProtocolException) {
-                    logger.log(Level.WARNING, "Current entity property statuses unavailable at this moment: " + ExceptionUtils.getMessage(t));
+            final Boolean warningMessageLogged = statusesUnavailableWarningMsgLogged.get( ssgNode.getGuid() );
+            if ( warningMessageLogged==null || !warningMessageLogged ) {
+                final String messageSuffix = ProcessControllerContext.buildStatusMessage( " for node '"+ssgNode.getIpAddress()+"'", t );
+                if ( t instanceof GatewayException || t instanceof javax.xml.ws.ProtocolException ) {
+                    logger.log(Level.WARNING, "Current entity property statuses unavailable at this moment" + messageSuffix);
                 } else {
-                    logger.log(Level.WARNING, "Failed to retrieve current entity property statuses: " + ExceptionUtils.getMessage(t), ExceptionUtils.getDebugException(t));
+                    logger.log(Level.WARNING, "Failed to retrieve current entity property statuses" + messageSuffix, ExceptionUtils.getDebugException(t));
                 }
-                statusesUnavailableWarningMsgLogged = true;
+                statusesUnavailableWarningMsgLogged.put( ssgNode.getGuid(), true);
             }
             return new EntityMonitoringPropertyValues(ssgNodeGuid, ssgNodePropertyValuesMap);
         }
