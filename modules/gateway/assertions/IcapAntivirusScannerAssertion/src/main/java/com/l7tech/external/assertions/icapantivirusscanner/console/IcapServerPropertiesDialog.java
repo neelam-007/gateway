@@ -96,7 +96,6 @@ public final class IcapServerPropertiesDialog extends JDialog {
     }
 
     private void testServerEntry() {
-        boolean enableSave = false;
         try {
             IcapAntivirusScannerAdmin admin = Registry.getDefault().getExtensionInterface(IcapAntivirusScannerAdmin.class, null);
             admin.testConnection(serverHostnameField.getText().trim(), Integer.parseInt(serverPortNumberField.getText().trim()), getServiceName(serverServiceNameField.getText()));
@@ -104,7 +103,6 @@ public final class IcapServerPropertiesDialog extends JDialog {
                     "Connection is successful.",
                     "Success",
                     JOptionPane.INFORMATION_MESSAGE, null);
-            enableSave = true;
         } catch (Exception e) {
             String msg = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
             DialogDisplayer.showMessageDialog(this,
@@ -112,7 +110,6 @@ public final class IcapServerPropertiesDialog extends JDialog {
                     "Connection failed",
                     JOptionPane.ERROR_MESSAGE, null);
         }
-        btnOk.setEnabled(enableSave);
     }
 
     public String getIcapUri() {
