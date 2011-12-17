@@ -18,6 +18,8 @@ import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.ResourceBundle;
 
 
@@ -28,7 +30,7 @@ public class XMLContainerFactory {
     public static XMLContainer createXmlContainer(boolean autoDisposeMode) {
         replaceClipboardActions();
 
-        XMLContainer xmlContainer =  new XMLContainer(autoDisposeMode);
+        final XMLContainer xmlContainer =  new XMLContainer(autoDisposeMode);
 
         UIAccessibility uiAccessibility = xmlContainer.getUIAccessibility();
         uiAccessibility.setTreeAvailable(false);
@@ -36,6 +38,13 @@ public class XMLContainerFactory {
         uiAccessibility.setToolBarAvailable(false);
         xmlContainer.setStatusBarAvailable(false);
         xmlContainer.setErrorPanelAvailable(false);
+
+        uiAccessibility.getEditor().addPropertyChangeListener("editable",new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt) {
+                ActionModel.resetActionState(xmlContainer);
+            }
+        });
 
         PopupModel popupModel = xmlContainer.getPopupModel();
         popupModel.removeAction(ActionModel.getActionByName(ActionModel.LOAD_ACTION));
@@ -91,9 +100,11 @@ public class XMLContainerFactory {
 
             @Override
             public void setXMLEditor(XMLEditor editor) {
-                if (editor != null)
-                    editor.setAction(getDefaultAccelerator(), this);
                 super.setXMLEditor(editor);
+                if (editor != null){
+                    editor.setAction(getDefaultAccelerator(), this);
+                    setEnabled(editor.isEditable());
+                }
             }
 
             @Override
@@ -194,6 +205,11 @@ public class XMLContainerFactory {
                 if (editor != null)
                     editor.setAction(getDefaultAccelerator(), this);
                 super.setXMLEditor(editor);
+            }
+
+            @Override
+            public void setEnabled(boolean newValue) {
+                super.setEnabled( editor==null ? newValue: (editor.isEditable() && newValue));
             }
 
             public void actionPerformed(ActionEvent e) {
