@@ -112,21 +112,6 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
     }
 
     /**
-     * Get the host, port and path parts from a URL with variable referneces.
-     * @param is input string to extract values from
-     * @return triple of host, port and path. Runtime exception thrown if they cannot be found.
-     */
-    public static Triple<String, String, String> getUrlPartsWhenVarsReferenced(@NotNull String is) {
-        final int firstColon = is.indexOf("://") + 3;
-        final String host = is.substring(firstColon, is.indexOf(":", firstColon));
-        final int startOfPath = is.indexOf("/", firstColon);
-        final String port = is.substring(is.indexOf(":", firstColon) + 1, startOfPath);
-        final String path = is.substring(startOfPath + 1, is.length());
-
-        return new Triple<String, String, String>(host, port, path);
-    }
-
-    /**
      * Get a displayable IPV6 string with any opening [ and closing ] removed when they contain an IPV6 literal address.
      *
      * @param hostname String hostname to check

@@ -10,13 +10,11 @@ public interface IcapAntivirusScannerAdmin {
     /**
      * Test the connection to the specified ICAP server and service.
      *
-     * @param host        the ICAP host.
-     * @param port        the ICAP port.
-     * @param serviceName the ICAP service name. Should not begin with a slash.
+     * @param icapServerUrl        the ICAP icapServerUrl.
      * @throws IcapAntivirusScannerTestException
      *          if any error(s) occur during testing.
      */
-    public void testConnection(String host, int port, String serviceName) throws IcapAntivirusScannerTestException;
+    public void testConnection(String icapServerUrl) throws IcapAntivirusScannerTestException;
 
     static public class IcapAntivirusScannerTestException extends Exception {
 

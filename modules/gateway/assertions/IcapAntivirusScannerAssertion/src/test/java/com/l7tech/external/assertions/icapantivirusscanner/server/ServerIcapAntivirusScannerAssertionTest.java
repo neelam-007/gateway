@@ -141,23 +141,6 @@ public class ServerIcapAntivirusScannerAssertionTest {
     }
 
     @Test
-    public void testParseContextVariableURL() throws Exception {
-        // all vars
-        String is = "icap://${host}:${port}/${serviceName}";
-        Triple<String,String,String> triple = IcapAntivirusScannerAssertion.getUrlPartsWhenVarsReferenced(is);
-        assertEquals("Incorrect host found", "${host}", triple.left);
-        assertEquals("Incorrect port found", "${port}", triple.middle);
-        assertEquals("Incorrect serviceName found", "${serviceName}", triple.right);
-
-        //some vars
-        is = "icap://${host}:1344/service/name";
-        triple = IcapAntivirusScannerAssertion.getUrlPartsWhenVarsReferenced(is);
-        assertEquals("Incorrect host found", "${host}", triple.left);
-        assertEquals("Incorrect port found", "1344", triple.middle);
-        assertEquals("Incorrect serviceName found", "service/name", triple.right);
-    }
-
-    @Test
     public void testServiceName() throws Exception {
         String sName = "serviceName";
         assertEquals(sName, IcapAntivirusScannerAssertion.getServiceName(sName));

@@ -5,10 +5,8 @@ import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAssertion;
 import com.l7tech.external.assertions.icapantivirusscanner.server.ServerIcapAntivirusScannerAssertion;
-import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.variable.Syntax;
-import com.l7tech.util.Triple;
 import com.l7tech.util.ValidationUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -21,14 +19,9 @@ import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Matcher;
-
-import static com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAssertion.getUrlPartsWhenVarsReferenced;
 
 /**
  * <p>
@@ -94,8 +87,6 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
             @Override
             public void actionPerformed(final ActionEvent e) {
                 IcapServerPropertiesDialog ispd = new IcapServerPropertiesDialog(owner, DIALOG_TITLE_NEW_SERVER);
-                ispd.setPort("1344");
-                ispd.setServiceName("avscan");
                 ispd.pack();
                 Utilities.centerOnScreen(ispd);
                 ispd.setVisible(true);
@@ -178,47 +169,16 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
         final int selectedIndex = serverList.getSelectedIndex();
         if (selectedIndex >= 0) {
             String icapUri = (String) serverListModel.get(selectedIndex);
-            Matcher matcher = IcapAntivirusScannerAssertion.ICAP_URI.matcher(icapUri);
-            if (matcher.matches()) {
-                IcapServerPropertiesDialog ispd = new IcapServerPropertiesDialog(owner,
-                        DIALOG_TITLE_EDIT_SERVER_PROPERTIES);
-                final String is = matcher.group(1).trim();
-                final String[] referencedNames = Syntax.getReferencedNames(is);
-                final String hostName;
-                final String portNumber;
-                final String serviceName;
-                if (referencedNames.length > 0) {
-                    final Triple<String,String,String> triple = getUrlPartsWhenVarsReferenced(is);
-                    hostName = triple.left;
-                    portNumber = triple.middle;
-                    serviceName = triple.right;
-                } else {
-                    final String testUrl = "http" + is;
-                    try {
+            IcapServerPropertiesDialog ispd = new IcapServerPropertiesDialog(owner,
+                    DIALOG_TITLE_EDIT_SERVER_PROPERTIES);
+            ispd.setIcapServerURL(icapUri);
 
-                        final URL url = new URL(testUrl);
-                        hostName = url.getHost();
-                        portNumber = String.valueOf(url.getPort());
-                        serviceName = url.getPath();
-                    } catch (MalformedURLException e) {
-                        //unexpected - such an error must be caught when the value is saved
-                        DialogDisplayer.showMessageDialog(this,
-                                                    "Invalid ICAP Server configuration. Please remove and recreate.",
-                                                    "Error",
-                                                    JOptionPane.ERROR_MESSAGE, null);
-                        return;
-                    }
-                }
-                ispd.setHostname(hostName);
-                ispd.setPort(portNumber);
-                ispd.setServiceName(serviceName);
-                ispd.pack();
-                Utilities.centerOnScreen(ispd);
-                ispd.setVisible(true);
-                if (ispd.isConfirmed()) {
-                    serverListModel.removeElement(icapUri);
-                    serverListModel.addElement(ispd.getIcapUri());
-                }
+            ispd.pack();
+            Utilities.centerOnScreen(ispd);
+            ispd.setVisible(true);
+            if (ispd.isConfirmed()) {
+                serverListModel.removeElement(icapUri);
+                serverListModel.addElement(ispd.getIcapUri());
             }
         }
     }

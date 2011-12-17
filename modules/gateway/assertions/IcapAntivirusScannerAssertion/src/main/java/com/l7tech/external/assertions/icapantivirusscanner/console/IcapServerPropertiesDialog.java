@@ -2,13 +2,12 @@ package com.l7tech.external.assertions.icapantivirusscanner.console;
 
 import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAdmin;
+import com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAssertion;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.InetAddressUtil;
-import com.l7tech.util.ValidationUtils;
-import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
@@ -16,9 +15,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.MalformedURLException;
 import java.net.URL;
-
-import static com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAssertion.getDisplayableHostname;
-import static com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAssertion.getServiceName;
+import java.util.regex.Matcher;
 
 /**
  * <p>The GUI for adding/modifying the server connection information.</p>
@@ -30,16 +27,12 @@ public final class IcapServerPropertiesDialog extends JDialog {
 
     private JPanel contentPane;
 
-    private JTextField serverHostnameField;
-    private JTextField serverPortNumberField;
-    private JTextField serverServiceNameField;
+    private JTextField icapServerUrlField;
 
     private JButton btnCancel;
     private JButton btnOk;
 
-    private JLabel lbHost;
-    private JLabel lbPort;
-    private JLabel lbServiceName;
+    private JLabel icapServerUrl;
     private JButton testConnectionButton;
 
     private boolean confirmed;
@@ -76,9 +69,17 @@ public final class IcapServerPropertiesDialog extends JDialog {
             @Override
             public void actionPerformed(final ActionEvent e) {
                 if (validateData()) {
-                    if (isContextVariable(serverHostnameField.getText()) ||
-                            isContextVariable(serverPortNumberField.getText()) ||
-                            isContextVariable(serverServiceNameField.getText())) {
+                    final String[] referencedNames;
+                    try {
+                        referencedNames = Syntax.getReferencedNames(icapServerUrlField.getText().trim());
+                    } catch (VariableNameSyntaxException e1) {
+                        DialogDisplayer.showMessageDialog(owner,
+                                "Invalid context variable reference in ICAP Server URL",
+                                "WARNING",
+                                JOptionPane.PLAIN_MESSAGE, null);
+                        return;
+                    }
+                    if (referencedNames.length > 0) {
                         DialogDisplayer.showMessageDialog(owner,
                                 "Unable to test connection containing context variable(s).",
                                 "WARNING",
@@ -91,14 +92,10 @@ public final class IcapServerPropertiesDialog extends JDialog {
         });
     }
 
-    private boolean isContextVariable(final String text) {
-        return Syntax.getReferencedNames(text).length > 0;
-    }
-
     private void testServerEntry() {
         try {
             IcapAntivirusScannerAdmin admin = Registry.getDefault().getExtensionInterface(IcapAntivirusScannerAdmin.class, null);
-            admin.testConnection(serverHostnameField.getText().trim(), Integer.parseInt(serverPortNumberField.getText().trim()), getServiceName(serverServiceNameField.getText()));
+            admin.testConnection(icapServerUrlField.getText().trim());
             DialogDisplayer.showMessageDialog(this,
                     "Connection is successful.",
                     "Success",
@@ -113,83 +110,51 @@ public final class IcapServerPropertiesDialog extends JDialog {
     }
 
     public String getIcapUri() {
-        final String path = getServiceName(serverServiceNameField.getText());
-        final String hostName = InetAddressUtil.getHostForUrl(serverHostnameField.getText().trim());
-
-        return new StringBuilder("icap://").append(hostName).append(":")
-                .append(serverPortNumberField.getText().trim()).append("/").
-                        append(path).toString();
+        return icapServerUrlField.getText().trim();
     }
 
     private boolean validateData() {
-        String hostname = serverHostnameField.getText().trim();
-        if (hostname.isEmpty()) {
+        String icapServerUrl = icapServerUrlField.getText().trim();
+        if (icapServerUrl.isEmpty()) {
             DialogDisplayer.showMessageDialog(this,
-                    "Please enter valid Hostname.",
+                    "Please enter an ICAP Server URL",
                     "Error",
                     JOptionPane.ERROR_MESSAGE, null);
             return false;
         }
 
-        if (Syntax.getReferencedNames(hostname).length != 0) {
-            final boolean onlyVarRef = Syntax.validateStringOnlyReferencesVariables(hostname);
-            if (!onlyVarRef) {
+        final String[] referencedNames;
+        try {
+            referencedNames = Syntax.getReferencedNames(icapServerUrl);
+        } catch (VariableNameSyntaxException e) {
+            DialogDisplayer.showMessageDialog(this,
+                    "Invalid context variable reference in ICAP Server URL",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE, null);
+
+            return false;
+        }
+
+        if (referencedNames.length == 0) {
+            final Matcher matcher = IcapAntivirusScannerAssertion.ICAP_URI.matcher(icapServerUrl);
+            if (!matcher.matches()) {
                 DialogDisplayer.showMessageDialog(this,
-                        "Hostname may not reference a variable and text.",
+                        "ICAP Server URL must begin with 'icap'",
                         "Error",
                         JOptionPane.ERROR_MESSAGE, null);
                 return false;
             }
-        } else {
-            final String maybeUpdatedHostname = InetAddressUtil.getHostForUrl(hostname);
-            //Make a URL with this hostname
+
+            final String nonSchemePart = matcher.group(1);
+            //validate URL
             try {
-                new URL("http://" + maybeUpdatedHostname);
+                new URL("http" + nonSchemePart);
             } catch (MalformedURLException e) {
                 DialogDisplayer.showMessageDialog(this,
-                        "Invalid Hostname: " + ExceptionUtils.getMessage(e),
+                        "Invalid ICAP Server URL: " + ExceptionUtils.getMessage(e),
                         "Error",
                         JOptionPane.ERROR_MESSAGE, null);
-                return false;
-            }
-        }
 
-        String serviceName = serverServiceNameField.getText().trim();
-        if (serviceName.isEmpty()) {
-            DialogDisplayer.showMessageDialog(this,
-                    "Please enter valid service name.",
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE, null);
-            return false;
-        }
-
-        if (Syntax.getReferencedNames(serviceName).length != 0) {
-            final boolean onlyVarRef = Syntax.validateStringOnlyReferencesVariables(serviceName);
-            if (!onlyVarRef) {
-                DialogDisplayer.showMessageDialog(this,
-                        "Service Name may not reference a variable and text.",
-                        "Error",
-                        JOptionPane.ERROR_MESSAGE, null);
-                return false;
-            }
-        }
-
-        String portText = serverPortNumberField.getText().trim();
-        if (portText.isEmpty() || (!isContextVariable(portText)) && !ValidationUtils.isValidInteger(portText, false, 1, 65535)) {
-            DialogDisplayer.showMessageDialog(this,
-                    "Please enter a port number between 1 and 65535.",
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE, null);
-            return false;
-        }
-
-        if (Syntax.getReferencedNames(portText).length != 0) {
-            final boolean onlyVarRef = Syntax.validateStringOnlyReferencesVariables(portText);
-            if (!onlyVarRef) {
-                DialogDisplayer.showMessageDialog(this,
-                        "Port Number may not reference a variable and text.",
-                        "Error",
-                        JOptionPane.ERROR_MESSAGE, null);
                 return false;
             }
         }
@@ -208,15 +173,7 @@ public final class IcapServerPropertiesDialog extends JDialog {
         return confirmed;
     }
 
-    public void setHostname(final String hostname) {
-        serverHostnameField.setText(getDisplayableHostname(hostname));
-    }
-
-    public void setServiceName(@NotNull final String serviceName) {
-        serverServiceNameField.setText(getServiceName(serviceName));
-    }
-
-    public void setPort(String port) {
-        serverPortNumberField.setText(port);
+    public void setIcapServerURL(final String icapServerURL) {
+        icapServerUrlField.setText(icapServerURL);
     }
 }
