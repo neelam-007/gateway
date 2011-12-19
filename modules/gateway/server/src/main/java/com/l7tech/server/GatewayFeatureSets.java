@@ -554,12 +554,29 @@ public class GatewayFeatureSets {
             mass("assertion:EsmMetrics"),
             mass("assertion:EsmSubscription"));
 
+        /**
+         * Outbound in the sense that these assertions allow for the Gateway to initiate a SAMLP exchange and to
+         * process a response.
+         */
         GatewayFeatureSet samlpAssertions =
-        fsr("set:SAMLP:Assertions", "The necessary assertions to enable SAMLP functionality",
+        fsr("set:SAMLP:Assertions", "The necessary assertions to enable outbound SAMLP functionality",
             mass("assertion:SamlpRequestBuilder"),
-            mass("assertion:SamlpResponseEvaluation"),
-            mass("assertion:ProcessSamlAttributeQueryRequest"));
+            mass("assertion:SamlpResponseEvaluation"));
 
+        /**
+         * Inbound in the sense that these assertions allow for an incoming request to be processed and a samlp
+         * response to be sent in reply.
+         */
+        GatewayFeatureSet samlpInboundAssertions =
+        fsr("set:SAMLP_Inbound:Assertions", "The necessary assertions to enable inbound SAMLP functionality",
+            mass("assertion:ProcessSamlAttributeQueryRequest"),
+            mass("assertion:SetSamlStatus"),
+            mass("assertion:ProcessSamlAuthnRequest"),
+            mass("assertion:SamlpResponseBuilder"));
+
+        /**
+         * Set of SAMLP assertions needed to support SAMLP Web SSO
+         */
         GatewayFeatureSet samlpSsoAssertions =
         fsr("set:SAMLPSSO:Assertions", "The necessary assertions to enable SAMLP SSO functionality",
             mass("assertion:SetSamlStatus"),
@@ -699,7 +716,8 @@ public class GatewayFeatureSets {
             fs(mtomValidateAssertions),
             fs(customFw),
             fs(esmAssertions),
-            fs(samlpSsoAssertions));
+            fs(samlpSsoAssertions),
+            fs(samlpInboundAssertions));
 
         fsp("set:Profile:CloudConnect", "CloudSpan CloudConnect",
             "Same features as XML Firewall for now.",
@@ -728,6 +746,7 @@ public class GatewayFeatureSets {
             fs(modularAssertions),
             fs(samlpAssertions),
             fs(samlpSsoAssertions),
+            fs(samlpInboundAssertions),
             fs(xacmlAssertions),
             fs(jdbcQueryAssertions),
             fs(uddiNotificationAssertions),
@@ -773,6 +792,8 @@ public class GatewayFeatureSets {
             fs(ssb),
             fs(modularAssertions),
             fs(samlpSsoAssertions),
+            fs(samlpInboundAssertions),
+            fs(samlpAssertions),
             fs(wssp),
             fs(jdbcQueryAssertions),
             fs(uddiNotificationAssertions),
