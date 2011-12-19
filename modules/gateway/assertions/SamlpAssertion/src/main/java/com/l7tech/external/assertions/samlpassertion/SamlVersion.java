@@ -11,8 +11,8 @@ public enum SamlVersion {
         this.versionString = versionString;
     }
 
-    private int versionInt;
-    private String versionString;
+    private final int versionInt;
+    private final String versionString;
 
     /**
      * @return version integer -- 1 for SAML 1.1, 2 for SAML 2.0

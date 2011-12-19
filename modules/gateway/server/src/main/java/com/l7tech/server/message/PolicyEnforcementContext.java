@@ -18,6 +18,7 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.SoapFaultLevel;
+import org.jetbrains.annotations.Nullable;
 import org.xml.sax.SAXException;
 
 import javax.wsdl.Binding;
@@ -196,7 +197,7 @@ public interface PolicyEnforcementContext extends Closeable {
      * @param value may be null.
      * @throws VariableNotSettableException if the variable is known, but not settable.
      */
-    void setVariable(String name, Object value) throws VariableNotSettableException;
+    void setVariable(@Nullable String name, @Nullable Object value) throws VariableNotSettableException;
 
     /**
      * Get the value of a context variable if it's set, otherwise throw.

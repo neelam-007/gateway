@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.samlpassertion;
 
+import com.l7tech.external.assertions.samlpassertion.server.ProtocolRequestUtilities;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.AssertionNodeNameFactory;
 import com.l7tech.policy.assertion.AssertionUtils;
@@ -15,6 +16,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
+import static com.l7tech.external.assertions.samlpassertion.server.ProtocolRequestUtilities.*;
+
 /**
  * Assertion for processing SAML protocol AuthnRequest messages.
  */
@@ -22,25 +25,6 @@ public class ProcessSamlAuthnRequestAssertion extends MessageTargetableAssertion
 
     //- PUBLIC
 
-    public static final String SUFFIX_SUBJECT = "subject";
-    public static final String SUFFIX_SUBJECT_NAME_QUALIFIER = "subject.nameQualifier";
-    public static final String SUFFIX_SUBJECT_SP_NAME_QUALIFIER = "subject.spNameQualifier";
-    public static final String SUFFIX_SUBJECT_FORMAT = "subject.format";
-    public static final String SUFFIX_SUBJECT_SP_PROVIDED_ID = "subject.spProvidedId";
-    public static final String SUFFIX_X509CERT_BASE64 = "x509CertBase64";
-    public static final String SUFFIX_X509CERT = "x509Cert";
-    public static final String SUFFIX_ACS_URL = "acsUrl";
-    public static final String SUFFIX_ID = "id";
-    public static final String SUFFIX_VERSION = "version";
-    public static final String SUFFIX_ISSUE_INSTANT = "issueInstant";
-    public static final String SUFFIX_DESTINATION = "destination";
-    public static final String SUFFIX_CONSENT = "consent";
-    public static final String SUFFIX_ISSUER = "issuer";
-    public static final String SUFFIX_ISSUER_NAME_QUALIFIER = "issuer.nameQualifier";
-    public static final String SUFFIX_ISSUER_SP_NAME_QUALIFIER = "issuer.spNameQualifier";
-    public static final String SUFFIX_ISSUER_FORMAT = "issuer.format";
-    public static final String SUFFIX_ISSUER_SP_PROVIDED_ID = "issuer.spProvidedId";
-    public static final String SUFFIX_REQUEST = "request";
     public static final Collection<String> VARIABLE_SUFFIXES = Collections.unmodifiableCollection( Arrays.asList(
         SUFFIX_SUBJECT,
         SUFFIX_SUBJECT_NAME_QUALIFIER,

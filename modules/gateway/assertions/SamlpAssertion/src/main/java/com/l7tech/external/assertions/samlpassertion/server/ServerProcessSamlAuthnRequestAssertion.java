@@ -7,6 +7,7 @@ import com.l7tech.common.io.ByteOrderMarkInputStream;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.samlpassertion.ProcessSamlAuthnRequestAssertion;
 import static com.l7tech.external.assertions.samlpassertion.ProcessSamlAuthnRequestAssertion.*;
+import static com.l7tech.external.assertions.samlpassertion.server.ProtocolRequestUtilities.*;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Messages;
@@ -34,7 +35,6 @@ import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
-import com.l7tech.util.ISO8601Date;
 import com.l7tech.util.MissingRequiredElementException;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
@@ -57,7 +57,6 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.ValidationEventHandler;
-import javax.xml.datatype.XMLGregorianCalendar;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -144,8 +143,6 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
 
     private static final String URL_ENCODING_DEFLATE = "urn:oasis:names:tc:SAML:2.0:bindings:URL-Encoding:DEFLATE";
 
-    private static final String CONSENT_UNSPECIFIED = "urn:oasis:names:tc:SAML:2.0:consent:unspecified";
-    
     private static final String ELEMENT_AUTHN_REQUEST = "AuthnRequest";
 
     private static final boolean allowMultipleCertificates = ConfigFactory.getBooleanProperty( "com.l7tech.external.assertions.samlpassertion.allowMultipleCertificates", false );
@@ -436,94 +433,6 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
             throw new AssertionStatusException( AssertionStatus.FAILED );
         }
         return requestMessage;
-    }
-
-    @SuppressWarnings({ "unchecked" })
-    private String getSubject( final SubjectType subjectType ) {
-        String subject = null;
-
-        final NameIDType nameIDType = getSubjectNameID(subjectType);
-        if ( nameIDType != null ) {
-            subject = nameIDType.getValue();
-        }
-
-        return subject;
-    }
-
-    @SuppressWarnings({ "unchecked" })
-    private NameIDType getSubjectNameID( final SubjectType subjectType ) {
-        NameIDType subjectNameID = null;
-
-        if ( subjectType != null  ) {
-            final List<JAXBElement<?>> content = subjectType.getContent();
-            if ( content != null && !content.isEmpty() ) {
-                JAXBElement<?> contentElement = content.get( 0 );
-                if ( NameIDType.class.isAssignableFrom(contentElement.getDeclaredType()) ) {
-                    final JAXBElement<NameIDType> nameIDType = (JAXBElement<NameIDType>) contentElement;
-                    subjectNameID = nameIDType.getValue();
-                }
-            }
-        }
-
-        return subjectNameID;
-    }
-
-    private String getName( final NameIDType nameIDType ) {
-        String name = null;
-        if ( nameIDType != null  ) {
-            name = nameIDType.getValue();
-        }
-        return name;
-    }
-
-    private String getNameQualifier( final NameIDType nameIDType ) {
-        String nameQualifier = null;
-        if ( nameIDType != null  ) {
-            nameQualifier = nameIDType.getNameQualifier();
-        }
-        return nameQualifier;
-    }
-
-    private String getSPNameQualifier( final NameIDType nameIDType ) {
-        String spNameQualifier = null;
-        if ( nameIDType != null  ) {
-            spNameQualifier = nameIDType.getSPNameQualifier();
-        }
-        return spNameQualifier;
-    }
-
-    private String getSPProvidedID( final NameIDType nameIDType ) {
-        String format = null;
-        if ( nameIDType != null  ) {
-            format = nameIDType.getSPProvidedID();
-        }
-        return format;
-    }
-
-    private String getNameFormat( final NameIDType nameIDType ) {
-        String format = null;
-        if ( nameIDType != null  ) {
-            format = nameIDType.getFormat();
-        }
-        return format;
-    }
-
-    private String getIsoTime( final XMLGregorianCalendar xmlCalendar ) {
-        String time = null;
-        if ( xmlCalendar != null ) {
-            time = ISO8601Date.format(xmlCalendar.toGregorianCalendar().getTime());
-        }
-        return time;
-    }
-
-    private String getConsent( final AuthnRequestType authnRequest ) {
-        String consent = authnRequest.getConsent();
-
-        if ( consent == null ) {
-            consent = CONSENT_UNSPECIFIED;
-        }
-
-        return consent;
     }
 
     private String getCertBase64( final SignatureType signature ) {

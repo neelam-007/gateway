@@ -557,7 +557,8 @@ public class GatewayFeatureSets {
         GatewayFeatureSet samlpAssertions =
         fsr("set:SAMLP:Assertions", "The necessary assertions to enable SAMLP functionality",
             mass("assertion:SamlpRequestBuilder"),
-            mass("assertion:SamlpResponseEvaluation"));
+            mass("assertion:SamlpResponseEvaluation"),
+            mass("assertion:ProcessSamlAttributeQueryRequest"));
 
         GatewayFeatureSet samlpSsoAssertions =
         fsr("set:SAMLPSSO:Assertions", "The necessary assertions to enable SAMLP SSO functionality",

@@ -1,0 +1,389 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.external.assertions.samlpassertion.console.ProcessSamlAttributeQueryRequestPropertiesDialog">
+  <grid id="27dc6" binding="mainPanel" layout-manager="GridLayoutManager" row-count="6" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+    <margin top="0" left="0" bottom="0" right="0"/>
+    <constraints>
+      <xy x="20" y="20" width="606" height="811"/>
+    </constraints>
+    <properties/>
+    <border type="none" title-resource-bundle="com/l7tech/external/assertions/samlpassertion/console/ProcessSamlAttributeQueryRequestPropertiesDialog" title-key="attributeQueryValidation"/>
+    <children>
+      <grid id="3e002" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties/>
+        <border type="none" title-resource-bundle="com/l7tech/external/assertions/samlpassertion/console/ProcessSamlAttributeQueryRequestPropertiesDialog" title-key="subjectPanel"/>
+        <children>
+          <grid id="5aaec" layout-manager="GridLayoutManager" row-count="1" column-count="5" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="b6bf6" class="javax.swing.JLabel">
+                <constraints>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/ProcessSamlAttributeQueryRequestPropertiesDialog" key="subjectIdentifiers_Allow"/>
+                </properties>
+              </component>
+              <component id="93dd6" class="javax.swing.JCheckBox" binding="nameIDCheckBox" default-binding="true">
+                <constraints>
+                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/ProcessSamlAttributeQueryRequestPropertiesDialog" key="subjectIdentifier_NameId"/>
+                </properties>
+              </component>
+              <hspacer id="df8dc">
+                <constraints>
+                  <grid row="0" column="4" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                </constraints>
+              </hspacer>
+              <component id="52d46" class="javax.swing.JCheckBox" binding="encryptedIDCheckBox" default-binding="true">
+                <constraints>
+                  <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/ProcessSamlAttributeQueryRequestPropertiesDialog" key="subjectIdentifier_EncryptedId"/>
+                </properties>
+              </component>
+              <component id="8ea4a" class="javax.swing.JCheckBox" binding="decryptCheckBox" default-binding="true">
+                <constraints>
+                  <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/ProcessSamlAttributeQueryRequestPropertiesDialog" key="subjectIdentifier_Decrypt"/>
+                </properties>
+              </component>
+            </children>
+          </grid>
+          <grid id="f75c0" layout-manager="GridLayoutManager" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="42a53" class="javax.swing.JLabel">
+                <constraints>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/ProcessSamlAttributeQueryRequestPropertiesDialog" key="subjectIdentifier_AllowedNameIdFormats"/>
+                  <verticalAlignment value="0"/>
+                  <verticalTextPosition value="0"/>
+                </properties>
+              </component>
+              <component id="71386" class="javax.swing.JCheckBox" binding="requireSubjectFormatCheckBox">
+                <constraints>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/ProcessSamlAttributeQueryRequestPropertiesDialog" key="subjectIdentifier_RequireNameIdFormat"/>
+                </properties>
+              </component>
+              <scrollpane id="ed18">
+                <constraints>
+                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="c18d9" class="javax.swing.JList" binding="subjectFormatList">
+                    <constraints/>
+                    <properties>
+                      <visibleRowCount value="3"/>
+                    </properties>
+                  </component>
+                </children>
+              </scrollpane>
+              <grid id="4b7b4" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                <margin top="0" left="0" bottom="0" right="0"/>
+                <constraints>
+                  <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="6e6c9" class="com.l7tech.gui.widgets.SquigglyTextField" binding="customSubjectFormatsSquigglyTextField">
+                    <constraints>
+                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="7" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties/>
+                  </component>
+                  <component id="640c6" class="javax.swing.JLabel">
+                    <constraints>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/ProcessSamlAttributeQueryRequestPropertiesDialog" key="customLabel"/>
+                    </properties>
+                  </component>
+                </children>
+              </grid>
+            </children>
+          </grid>
+        </children>
+      </grid>
+      <grid id="e7c64" layout-manager="GridLayoutManager" row-count="5" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties/>
+        <border type="none" title-resource-bundle="com/l7tech/external/assertions/samlpassertion/console/ProcessSamlAttributeQueryRequestPropertiesDialog" title-key="attributeValidation"/>
+        <children>
+          <grid id="dcabf" layout-manager="GridLayoutManager" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="bf68" class="javax.swing.JCheckBox" binding="requireAttributesCheckBox" default-binding="true">
+                <constraints>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/ProcessSamlAttributeQueryRequestPropertiesDialog" key="attributeValidation_RequireAttributes"/>
+                </properties>
+              </component>
+              <component id="12d82" class="javax.swing.JCheckBox" binding="verifyUniqueNameNameFormatCheckBox" default-binding="true">
+                <constraints>
+                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/ProcessSamlAttributeQueryRequestPropertiesDialog" key="attributeValidation_VerifyUnique"/>
+                </properties>
+              </component>
+              <hspacer id="a5fd7">
+                <constraints>
+                  <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                </constraints>
+              </hspacer>
+            </children>
+          </grid>
+          <component id="3df42" class="javax.swing.JCheckBox" binding="requireAttrNameFormatCheckBox">
+            <constraints>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/ProcessSamlAttributeQueryRequestPropertiesDialog" key="attributeValidation_RequireNameFormat"/>
+            </properties>
+          </component>
+          <component id="61ae8" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/ProcessSamlAttributeQueryRequestPropertiesDialog" key="attributeValidation_AllowedNameFormats"/>
+              <verticalAlignment value="0"/>
+            </properties>
+          </component>
+          <scrollpane id="cc066">
+            <constraints>
+              <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="993c0" class="javax.swing.JList" binding="allowedAttributeNameFormatsList">
+                <constraints/>
+                <properties>
+                  <visibleRowCount value="3"/>
+                </properties>
+              </component>
+            </children>
+          </scrollpane>
+          <grid id="50a71" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints>
+              <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="55a18" class="com.l7tech.gui.widgets.SquigglyTextField" binding="customAttributeNameFormatsSquigglyTextField">
+                <constraints>
+                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="7" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties/>
+              </component>
+              <component id="f6319" class="javax.swing.JLabel">
+                <constraints>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/ProcessSamlAttributeQueryRequestPropertiesDialog" key="customLabel"/>
+                </properties>
+              </component>
+            </children>
+          </grid>
+        </children>
+      </grid>
+      <grid id="7373e" layout-manager="GridLayoutManager" row-count="3" column-count="5" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties/>
+        <border type="none" title-resource-bundle="com/l7tech/external/assertions/samlpassertion/console/ProcessSamlAttributeQueryRequestPropertiesDialog" title-key="requestRequirements"/>
+        <children>
+          <component id="fec68" class="javax.swing.JCheckBox" binding="iDCheckBox" default-binding="true">
+            <constraints>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/ProcessSamlAttributeQueryRequestPropertiesDialog" key="requireId"/>
+            </properties>
+          </component>
+          <hspacer id="85f69">
+            <constraints>
+              <grid row="1" column="4" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+            </constraints>
+          </hspacer>
+          <component id="109a0" class="javax.swing.JCheckBox" binding="versionCheckBox" default-binding="true">
+            <constraints>
+              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/ProcessSamlAttributeQueryRequestPropertiesDialog" key="requireVersion"/>
+            </properties>
+          </component>
+          <component id="758fb" class="javax.swing.JCheckBox" binding="issueInstantCheckBox" default-binding="true">
+            <constraints>
+              <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/ProcessSamlAttributeQueryRequestPropertiesDialog" key="requireIssueInstant"/>
+            </properties>
+          </component>
+          <component id="1eeb0" class="javax.swing.JCheckBox" binding="consentCheckBox" default-binding="true">
+            <constraints>
+              <grid row="1" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/ProcessSamlAttributeQueryRequestPropertiesDialog" key="requireConsent"/>
+            </properties>
+          </component>
+          <component id="b6895" class="javax.swing.JCheckBox" binding="destinationCheckBox" default-binding="true">
+            <constraints>
+              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/ProcessSamlAttributeQueryRequestPropertiesDialog" key="requireDestination"/>
+            </properties>
+          </component>
+          <component id="61dfe" class="com.l7tech.gui.widgets.SquigglyTextField" binding="destinationSquigglyTextField">
+            <constraints>
+              <grid row="2" column="1" row-span="1" col-span="4" vsize-policy="3" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties/>
+          </component>
+          <component id="9edab" class="javax.swing.JCheckBox" binding="requireIssuerCheckBox" default-binding="true">
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/ProcessSamlAttributeQueryRequestPropertiesDialog" key="requireIssuer"/>
+            </properties>
+          </component>
+          <component id="f604" class="javax.swing.JCheckBox" binding="requireSignatureCheckBox" default-binding="true">
+            <constraints>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/ProcessSamlAttributeQueryRequestPropertiesDialog" key="requireSignature"/>
+            </properties>
+          </component>
+        </children>
+      </grid>
+      <vspacer id="f1493">
+        <constraints>
+          <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+        </constraints>
+      </vspacer>
+      <grid id="5e4c1" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <component id="b93f6" class="com.l7tech.console.panels.TargetVariablePanel" binding="targetVariablePanel">
+            <constraints>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="7" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties/>
+          </component>
+          <component id="eedf8" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/ProcessSamlAttributeQueryRequestPropertiesDialog" key="variablePrefix"/>
+              <verticalAlignment value="0"/>
+            </properties>
+          </component>
+        </children>
+      </grid>
+      <grid id="f1a2f" layout-manager="GridLayoutManager" row-count="1" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <hspacer id="f5705">
+            <constraints>
+              <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+            </constraints>
+          </hspacer>
+          <component id="8e485" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/ProcessSamlAttributeQueryRequestPropertiesDialog" key="samlVersion"/>
+            </properties>
+          </component>
+          <component id="863ce" class="javax.swing.JComboBox" binding="samlVersionComboBox" default-binding="true">
+            <constraints>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <model>
+                <item value="2.0"/>
+                <item value="1.1"/>
+              </model>
+            </properties>
+          </component>
+          <component id="597c" class="javax.swing.JCheckBox" binding="soapEncapsulatedCheckBox" default-binding="true">
+            <constraints>
+              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/samlpassertion/console/ProcessSamlAttributeQueryRequestPropertiesDialog" key="soapEncapsulated"/>
+            </properties>
+          </component>
+        </children>
+      </grid>
+    </children>
+  </grid>
+  <buttonGroups>
+    <group name="supportedNameFormatButtonGroup">
+      <member id="45e04"/>
+      <member id="9087a"/>
+    </group>
+  </buttonGroups>
+</form>

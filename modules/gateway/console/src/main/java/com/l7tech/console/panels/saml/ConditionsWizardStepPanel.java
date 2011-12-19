@@ -256,7 +256,7 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
 
     @Override
     public boolean canAdvance() {
-        final boolean validated = SquigglyFieldUtils.validateSquigglyFieldForUris(textFieldAudienceRestriction);
+        final boolean validated = (SquigglyFieldUtils.validateSquigglyFieldForUris(textFieldAudienceRestriction) == null);
         return validateMaxExpiry() && validated;
     }
 

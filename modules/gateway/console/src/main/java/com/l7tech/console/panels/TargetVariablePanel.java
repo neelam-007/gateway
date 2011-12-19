@@ -12,16 +12,17 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
-import java.util.EventListener;
-import java.util.ResourceBundle;
-import java.util.Set;
-import java.util.TreeSet;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.util.*;
+import java.util.List;
 import java.util.regex.Matcher;
 
 /**
@@ -30,21 +31,21 @@ import java.util.regex.Matcher;
  * Usage:
  *     - the following fields must be set to work properly:
  *         - assertion
- *         - suffixes ( if avaliable)
+ *         - suffixes ( if available)
  */
 
 public class TargetVariablePanel  extends JPanel {
-    private JTextField suffixField;
+    private JTextField prefixOrVariableField;
     private JLabel prefixLabel;
     private JLabel statusLabel;
 
     private String prefix = "";
     private Set<String> predecessorVariables = new TreeSet<String>();
-    private boolean entryValid = false;
+    private boolean entryValid;
 
-    private String[] suffixes = null;
-    private boolean acceptEmpty = false;
-    private boolean valueWillBeRead = false;
+    private final List<String> suffixes = new ArrayList<String>();
+    private boolean acceptEmpty;
+    private boolean valueWillBeRead;
     private boolean valueWillBeWritten = true;
 
     private static ResourceBundle resources = ResourceBundle.getBundle(TargetVariablePanel.class.getName());
@@ -52,12 +53,23 @@ public class TargetVariablePanel  extends JPanel {
     private final ImageIcon OK_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Check16.png"));
     private final ImageIcon WARNING_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Warning16.png"));
 
+    private String defaultVariableOrPrefix;
 
     public TargetVariablePanel() {
 
-        suffixField = new JTextField();
+        prefixOrVariableField = new JTextField();
         prefixLabel = new JLabel("");
         statusLabel = new JLabel("");
+        prefixOrVariableField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent e) {
+                if (defaultVariableOrPrefix != null) {
+                    if (prefixOrVariableField.getText().trim().isEmpty()) {
+                        prefixOrVariableField.setText(TargetVariablePanel.this.defaultVariableOrPrefix);
+                    }
+                }
+            }
+        });
 
         setLayout(new GridBagLayout());
         GridBagConstraints c = new GridBagConstraints();
@@ -79,7 +91,7 @@ public class TargetVariablePanel  extends JPanel {
         c.weightx = 1;
         c.anchor = GridBagConstraints.LINE_START ;
         c.fill = GridBagConstraints.HORIZONTAL ;
-        add(suffixField,c);
+        add(prefixOrVariableField,c);
 
         c.gridx = 1;
         c.gridy = 1;
@@ -92,12 +104,12 @@ public class TargetVariablePanel  extends JPanel {
         c.insets.top = 4;
         add(statusLabel,c);
 
-        Utilities.attachDefaultContextMenu(suffixField);
-        Utilities.enableGrayOnDisabled(suffixField);
+        Utilities.attachDefaultContextMenu(prefixOrVariableField);
+        Utilities.enableGrayOnDisabled(prefixOrVariableField);
         clearVariableNameStatus();
         
         TextComponentPauseListenerManager.registerPauseListener(
-                suffixField,
+                prefixOrVariableField,
                 new PauseListener() {
                     @Override
                     public void textEntryPaused(JTextComponent component, long msecs) {
@@ -117,12 +129,12 @@ public class TargetVariablePanel  extends JPanel {
     @Override
     public void setEnabled(boolean enabled) {
         super.setEnabled(enabled);
-        suffixField.setEnabled(enabled);
+        prefixOrVariableField.setEnabled(enabled);
         if (!enabled){
             // clear status and tooltips
             clearVariableNameStatus();
             //mainPanel.setToolTipText(null);
-            suffixField.setToolTipText(null);
+            prefixOrVariableField.setToolTipText(null);
             entryValid = true;
         }
         else validateFields();
@@ -142,8 +154,25 @@ public class TargetVariablePanel  extends JPanel {
         }
     }
 
-    public void setSuffixes(String[] suffixes) {
-        this.suffixes = suffixes;
+    public void setSuffixes(@NotNull String[] suffixes) {
+        setSuffixes(Arrays.asList(suffixes));
+    }
+
+    public void setSuffixes(@NotNull Collection<String> suffixes) {
+        this.suffixes.clear();
+        this.suffixes.addAll(suffixes);
+    }
+
+    /**
+     * Set a default value for the variable prefix or variable name.
+     * <p/>
+     * If set, then TargetVariablePanel will ensure the default value is always shown when there is no input.
+     *
+     * @param defaultVariableOrPrefix if set, then the target variable panel will always show this default value when
+     *                                nothing is entered.
+     */
+    public void setDefaultVariableOrPrefix(String defaultVariableOrPrefix) {
+        this.defaultVariableOrPrefix = defaultVariableOrPrefix;
     }
 
     public String getErrorMessage(){
@@ -180,8 +209,14 @@ public class TargetVariablePanel  extends JPanel {
     }
 
 
+    /**
+     * Set the variable or the prefix depending on the usage. If suffixes are defined, then a prefix is being set,
+     * otherwise a variable is.
+     *
+     * @param var name of variable or prefix
+     */
     public void setVariable(String var){
-        suffixField.setText(var);
+        prefixOrVariableField.setText(var);
         validateFields();
     }
 
@@ -189,7 +224,7 @@ public class TargetVariablePanel  extends JPanel {
      * @return the entire variable, including the prefix if available
      */
     public String getVariable(){
-        String ret = prefix.isEmpty()? suffixField.getText(): prefix + '.' + suffixField.getText();
+        String ret = prefix.isEmpty()? prefixOrVariableField.getText(): prefix + '.' + prefixOrVariableField.getText();
 
         Matcher m = Syntax.oneVarPattern.matcher(ret.trim());
         if (m.matches()) {
@@ -204,10 +239,10 @@ public class TargetVariablePanel  extends JPanel {
      * @return just the user edited part
      */
     public String getSuffix(){
-        return suffixField.getText();
+        return prefixOrVariableField.getText();
     }
 
-    public void setPrefix(String prefix ) {
+    public void setPrefix(@NotNull String prefix ) {
         this.prefix = prefix;
         prefixLabel.setText(prefix + '.');
         validateFields();
@@ -246,7 +281,7 @@ public class TargetVariablePanel  extends JPanel {
         String validateNameResult;
         entryValid = true;
         //mainPanel.setToolTipText(null);
-        suffixField.setToolTipText(null);
+        prefixOrVariableField.setToolTipText(null);
 
         // check empty
         if( acceptEmpty && getSuffix().trim().isEmpty())
@@ -259,7 +294,7 @@ public class TargetVariablePanel  extends JPanel {
             statusLabel.setIcon(WARNING_ICON);        
             statusLabel.setText("Invalid Syntax");
             statusLabel.setToolTipText(reconstructLongStringByAddingLineBreakTags(validateNameResult, 58));
-            suffixField.setToolTipText(reconstructLongStringByAddingLineBreakTags(validateNameResult, 58));
+            prefixOrVariableField.setToolTipText(reconstructLongStringByAddingLineBreakTags(validateNameResult, 58));
         }
         else {
             final boolean exists;
@@ -277,7 +312,7 @@ public class TargetVariablePanel  extends JPanel {
                 unsettable = false;
             }
 
-            final String okPrefix = suffixes != null ? "ok.prefix" : "label.ok";
+            final String okPrefix = !suffixes.isEmpty() ? "ok.prefix" : "label.ok";
             final String label;
             if (valueWillBeWritten) {
                 if (unsettable) {
@@ -307,13 +342,11 @@ public class TargetVariablePanel  extends JPanel {
 
     private boolean isAtLeastOneSuffixOverwritten() {
         boolean ret = false;
-        if (suffixes != null) {
-            final String variablePrefix = getVariable();
-            for (String suffix: suffixes) {
-                if (predecessorVariables.contains(variablePrefix + "." + suffix)) {
-                    ret = true;
-                    break;
-                }
+        final String variablePrefix = getVariable();
+        for (String suffix: suffixes) {
+            if (predecessorVariables.contains(variablePrefix + "." + suffix)) {
+                ret = true;
+                break;
             }
         }
         return ret;
@@ -321,13 +354,11 @@ public class TargetVariablePanel  extends JPanel {
 
     private boolean isEverySuffixPresentInPredecessors() {
         boolean ret = true;
-        if (suffixes != null) {
-            final String variablePrefix = getVariable();
-            for (String suffix: suffixes) {
-                if (!predecessorVariables.contains(variablePrefix + "." + suffix)) {
-                    ret = false;
-                    break;
-                }
+        final String variablePrefix = getVariable();
+        for (String suffix: suffixes) {
+            if (!predecessorVariables.contains(variablePrefix + "." + suffix)) {
+                ret = false;
+                break;
             }
         }
         return ret;

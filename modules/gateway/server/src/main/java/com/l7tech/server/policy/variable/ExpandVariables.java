@@ -347,7 +347,7 @@ public final class ExpandVariables {
      * @param valueFilter    A filter to call on each substituted value (or null for no filtering)
      * @return the message with expanded/resolved variables
      */
-    public static String process(String s, Map<String,?> vars, Audit audit, boolean strict, Functions.Unary<String,String> valueFilter) {
+    public static String process(String s, Map<String,?> vars, Audit audit, boolean strict, @Nullable Functions.Unary<String,String> valueFilter) {
         if (s == null) throw new IllegalArgumentException();
 
         Matcher matcher = Syntax.regexPattern.matcher(s);

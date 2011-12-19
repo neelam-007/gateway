@@ -287,7 +287,7 @@ public class AuthenticationMethodsNewWizardStepPanel extends WizardStepPanel{
     @Override
     public boolean canAdvance() {
 
-        final boolean validated = SquigglyFieldUtils.validateSquigglyFieldForUris(customAuthMethodTextField);
+        final boolean validated = (SquigglyFieldUtils.validateSquigglyFieldForUris(customAuthMethodTextField) == null);
         final boolean hasCustom = !customAuthMethodTextField.getText().trim().isEmpty();
 
         return (!hasCustom)? selectedList.getSize() != 0: validated;

@@ -68,10 +68,12 @@ public class SquigglyFieldUtils {
      * Convenience method to validate URIs contained in a text field. Variable references are allowed and are validated.
      *
      * @param squigglyTextField squiggly text field to validate.
-     * @return true if text field only contains valid URI values or contains valid variable references.
+     * @return null String when text field only contains valid URI values or contains valid variable references,
+     * otherwise an error String is returned.
      */
-    public static boolean validateSquigglyFieldForUris(@NotNull final SquigglyTextField squigglyTextField) {
-        return SquigglyFieldUtils.validateSquigglyTextFieldState(squigglyTextField,
+    public static String validateSquigglyFieldForUris(@NotNull final SquigglyTextField squigglyTextField) {
+        final String [] errorCollected = new String[1];
+        SquigglyFieldUtils.validateSquigglyTextFieldState(squigglyTextField,
                 TextUtils.URI_STRING_SPLIT_PATTERN,
                 new Functions.Unary<String, String>() {
                     @Override
@@ -80,15 +82,20 @@ public class SquigglyFieldUtils {
                             final String[] referencedNames = Syntax.getReferencedNames(s);
                             if (referencedNames.length == 0) {
                                 if (!ValidationUtils.isValidUri(s)) {
-                                    return "Invalid URI: '" + s + "'";
+                                    final String error = "Invalid URI: '" + s + "'";
+                                    errorCollected[0] = error;
+                                    return error;
                                 }
                             }
                         } catch (VariableNameSyntaxException e) {
-                            return "Invalid variable reference '" + s + "'";
+                            final String error = "Invalid variable reference '" + s + "'";
+                            errorCollected[0] = error;
+                            return error;
                         }
                         return null;
                     }
                 });
+        return errorCollected[0];
     }
 
     /**

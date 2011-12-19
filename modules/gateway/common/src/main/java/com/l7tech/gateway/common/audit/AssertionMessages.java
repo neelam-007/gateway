@@ -15,9 +15,11 @@ public class AssertionMessages extends Messages {
     // Generic Assertion Messages (4330- 4399 reserved for use here)
     public static final M REQUESTWSS_NO_SECURITY = m(4302, Level.INFO, "Request did not contain any WSS level security");
     public static final M ASSERTION_MISCONFIGURED = m(4304, Level.WARNING, false, false, "Assertion configuration error: {0}"); // Provided as less-drastic alternative to throwing PolicyAssertionException
-    public static final M MESSAGE_NOT_SOAP = m(4305, Level.WARNING, "{0} message not soap; {1}");
+    public static final M MESSAGE_NOT_SOAP = m(4305, Level.WARNING, "{0} message not soap. {1}");
     public static final M NO_SUCH_PART = m(4306, Level.WARNING, "{0} message has no part {1}");
+
     public static final M MESSAGE_TARGET_ERROR = m(4330, Level.WARNING, "Invalid target message, variable \"{0}\": {1}");
+    public static final M MESSAGE_NOT_XML = m(4331, Level.WARNING, "{0} message not XML. {1}");
 
     // ServerHttpRoutingAssertion messages
     public static final M HTTPROUTE_SSL_INIT_FAILED = m(4000, Level.WARNING, "Could not initialize SSL Context");
@@ -258,12 +260,33 @@ public class AssertionMessages extends Messages {
     public static final M WSS_X509_NO_PROVEN_CERT = m(4812, Level.INFO, "No proven {0} X.509 certificate to use as credentials - returning {1}");
 
     // Saml2AttributeQuery modular assertion messages
+    /**
+     * @deprecated Message only used by tactical SAML Attribute Query implementation which is deprecated.
+     */
     public static final M SAML2_AQ_REQUEST_DIGSIG_NO_SIG = m(4850, Level.WARNING, "No signature found for element.");
+    /**
+     * @deprecated Message only used by tactical SAML Attribute Query implementation which is deprecated.
+     */
     public static final M SAML2_AQ_REQUEST_DIGSIG_VAR_UNUSABLE = m(4851, Level.WARNING, "The input variable was not set properly.");
+    /**
+     * @deprecated Message only used by tactical SAML Attribute Query implementation which is deprecated.
+     */
     public static final M SAML2_AQ_REQUEST_SAML_ATTR_FORBIDDEN = m(4852, Level.WARNING, "Requester tried to access a forbidden attribute");
+    /**
+     * @deprecated Message only used by tactical SAML Attribute Query implementation which is deprecated.
+     */
     public static final M SAML2_AQ_REQUEST_SAML_ATTR_UNKNOWN = m(4853, Level.WARNING, "Requester tried to access an unknown attribute");
+    /**
+     * @deprecated Message only used by tactical SAML Attribute Query implementation which is deprecated.
+     */
     public static final M SAML2_AQ_RESPONSE_ENCRYPT_SAML_ASSERTION_VAR_UNUSABLE = m(4854, Level.WARNING, "The variable saml2.encrypt.cert.subjectDN was not set properly.");
+    /**
+     * @deprecated Message only used by tactical SAML Attribute Query implementation which is deprecated.
+     */
     public static final M SAML2_AQ_RESPONSE_ENCRYPT_SAML_ASSERTION_CERT_NOT_FOUND = m(4855, Level.WARNING, "The certificate \"{0}\" was not found.");
+    /**
+     * @deprecated Message only used by tactical SAML Attribute Query implementation which is deprecated.
+     */
     public static final M SAML2_AQ_RESPONSE_ENCRYPT_SAML_ASSERTION_PK_NOT_FOUND = m(4856, Level.WARNING, "The private key \"{0}\" was not found.");
 
     // / Sophos  modular assertion messages
@@ -1027,6 +1050,10 @@ public class AssertionMessages extends Messages {
     public static final M ICAP_VIRUS_RESPONSE_HEADERS = m(9456, Level.WARNING, "{0}");
     public static final M ICAP_NO_RESPONSE = m(9457, Level.WARNING, "No ICAP response received.");
     public static final M ICAP_UNSUPPORTED_ENCODING = m(9458, Level.WARNING, "Unsupported encoding: {0}.");
+
+    public static final M SAMLP_ATTRIBUTE_QUERY_INVALID = m(9500, Level.INFO, "Invalid AttributeQuery: ''{0}''.");
+    public static final M SAMLP_ATTRIBUTE_QUERY_NOT_SOAP_ENCAPSULATED = m(9501, Level.INFO, "AttributeQuery request is not SOAP encapsulated");
+    public static final M SAMLP_ATTRIBUTE_QUERY_NOT_SUPPORTED_VALUE = m(9502, Level.INFO, "Unsupported value found for {0} in AttributeQuery. Found {1} expected one of {2}");
 
     // Highest ID reserved for AssertionMessages = 99999
 }
