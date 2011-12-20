@@ -338,6 +338,20 @@ public class ServerProcessSamlAttributeQueryAssertionTest {
         }
     }
 
+    @Test(expected = AssertionStatusException.class)
+    public void testErrorCase_DuplicateAttributes() throws Exception {
+        Message request = new Message(XmlUtil.parse(requestWithDuplicateAttributes));
+
+        final PolicyEnforcementContext context = getContext(request);
+        final ProcessSamlAttributeQueryRequestAssertion assertion = new ProcessSamlAttributeQueryRequestAssertion();
+        assertion.setVerifyAttributesAreUnique(true);
+
+        final ServerProcessSamlAttributeQueryRequestAssertion serverAssertion =
+                new ServerProcessSamlAttributeQueryRequestAssertion(assertion);
+
+        serverAssertion.checkRequest(context);
+    }
+
     private String prefix(@NotNull final String variableName) {
         return DEFAULT_PREFIX + "." + variableName;
     }
@@ -400,6 +414,39 @@ public class ServerProcessSamlAttributeQueryAssertionTest {
             "     >\n" +
             "  </saml:Attribute>\n" +
             "  <saml:Attribute Name=\"nc:PersonMiddleName\"\n" +
+            "     >\n" +
+            "  </saml:Attribute>\n" +
+            "  <saml:Attribute Name=\"nc:PersonSurName\"\n" +
+            "     >\n" +
+            "  </saml:Attribute>\n" +
+            "</samlp:AttributeQuery>";
+
+    private final static String requestWithDuplicateAttributes = "<samlp:AttributeQuery\n" +
+            "  xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\"\n" +
+            "  xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\"\n" +
+            "  ID=\"aaf23196-1773-2113-474a-fe114412ab72\"\n" +
+            "  Destination=\"urn:idmanagement.gov:icam:bae:v2:1:7000:0000\"\n" +
+            "  Version=\"2.0\"\n" +
+            "  IssueInstant=\"2006-07-17T22:26:40Z\">\n" +
+            "  <saml:Issuer>urn:idmanagement.gov:icam:bae:v2:1:2100:1700</saml:Issuer>\n" +
+            "  <saml:Subject>\n" +
+            "    <saml:NameID\n" +
+            "      >\n" +
+            "          70001234000002110000000000000000\n" +
+            "    </saml:NameID>\n" +
+            "  </saml:Subject>\n" +
+            "  <saml:Attribute Name=\"nc:PersonGivenName\"\n" +
+            "      NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\">\n" +
+            "     >\n" +
+            "  </saml:Attribute>\n" +
+            "  <saml:Attribute Name=\"nc:PersonGivenName\"\n" +
+            "      NameFormat=\"urn:oasis:names:tc:SAML:2.0:attrname-format:basic\">\n" +
+            "     >\n" +
+            "  </saml:Attribute>\n" +
+            "  <saml:Attribute Name=\"nc:PersonMiddleName\"\n" +
+            "     >\n" +
+            "  </saml:Attribute>\n" +
+            "  <saml:Attribute Name=\"nc:PersonSurName\"\n" +
             "     >\n" +
             "  </saml:Attribute>\n" +
             "  <saml:Attribute Name=\"nc:PersonSurName\"\n" +

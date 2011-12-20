@@ -323,9 +323,7 @@ public class ServerProcessSamlAttributeQueryRequestAssertion extends AbstractMes
             final List<AttributeType> duplicates = getDuplicates(attributes);
 
             if (!duplicates.isEmpty()) {
-                StringBuilder sb = getDuplicateNames(duplicates);
-
-                logAndAudit(AssertionMessages.SAMLP_ATTRIBUTE_QUERY_INVALID, "Duplicate Attribute elements found:" + sb);
+                logAndAudit(AssertionMessages.SAMLP_ATTRIBUTE_QUERY_INVALID, "Duplicate Attribute elements found:" + getDuplicateNames(duplicates));
                 throw new AssertionStatusException(AssertionStatus.FALSIFIED);
             }
         }
@@ -351,26 +349,24 @@ public class ServerProcessSamlAttributeQueryRequestAssertion extends AbstractMes
         }
     }
 
-    private StringBuilder getDuplicateNames(List<AttributeType> duplicates) {
-        StringBuilder sb = new StringBuilder("[");
-        boolean first = true;
-        for (AttributeType duplicate : duplicates) {
-            if (!first) {
-                sb.append(", ");
+    private String getDuplicateNames(List<AttributeType> duplicates) {
+        final List<Object> dupList = Functions.map(duplicates, new Functions.Unary<Object, AttributeType>() {
+            @Override
+            public Object call(AttributeType duplicate) {
+                StringBuilder sb = new StringBuilder("[");
+                sb.append("Name=");
+                sb.append(duplicate.getName());
+                final String nameFormat = duplicate.getNameFormat();
+                if (nameFormat != null) {
+                    sb.append(" NameFormat=");
+                    sb.append(nameFormat);
+                }
+                sb.append("]");
+                return sb.toString();
             }
-            sb.append("{");
-            sb.append("Name: ");
-            sb.append(duplicate.getName());
-            final String nameFormat = duplicate.getNameFormat();
-            if (nameFormat != null) {
-                sb.append(" NameFormat: ");
-                sb.append(nameFormat);
-            }
-            sb.append("}");
-            first = false;
-        }
-        sb.append("]");
-        return sb;
+        });
+
+        return CollectionUtils.mkString(dupList, ", ");
     }
 
     private List<AttributeType> getDuplicates(List<AttributeType> attributes) {
