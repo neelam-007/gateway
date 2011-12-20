@@ -57,10 +57,18 @@
     <bean id="clusterContextFactory" class="com.l7tech.server.cluster.ClusterContextFactory">
         <constructor-arg index="0">
             <list>
-                <ref bean="logAccessAdmin"/>
+                <bean class="com.l7tech.gateway.common.spring.factory.config.LazyProxyFactoryBean">
+                    <constructor-arg value="logAccessAdmin"/>
+                    <constructor-arg value="com.l7tech.gateway.common.log.LogAccessAdmin"/>
+                </bean>
             </list>
         </constructor-arg>
-        <constructor-arg index="1" ref="clusterHttpRequestExecutor"/>
+        <constructor-arg index="1">
+            <bean class="com.l7tech.gateway.common.spring.factory.config.LazyProxyFactoryBean">
+                <constructor-arg value="clusterHttpRequestExecutor"/>
+                <constructor-arg value="com.l7tech.gateway.common.spring.remoting.http.ConfigurableHttpInvokerRequestExecutor"/>
+            </bean>
+        </constructor-arg>
         <constructor-arg index="2" value="ADMIN"/>
     </bean>
 
