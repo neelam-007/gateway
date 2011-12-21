@@ -6,7 +6,6 @@ import com.l7tech.util.NamespaceFactory;
 import com.l7tech.util.SoapConstants;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
-import org.apache.xmlbeans.XmlString;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3.x2000.x09.xmldsig.KeyInfoType;
@@ -21,7 +20,9 @@ import java.net.InetAddress;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.*;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * SAML Assertion Generator for SAML 1.x assertions.
@@ -30,7 +31,7 @@ import java.util.*;
  */
 class SamlAssertionGeneratorSaml1 extends SamlVersionAssertionGenerator{
 
-    //- PUBLIC
+    //- PACKAGE
 
     @Override
     public Document createStatementDocument(@NotNull final SamlAssertionGenerator.Options options,
@@ -85,8 +86,11 @@ class SamlAssertionGeneratorSaml1 extends SamlVersionAssertionGenerator{
                 if (attribute.getNamespace() != null) {
                     attributeType.setAttributeNamespace(attribute.getNamespace());
                 }
-                XmlString stringValue = XmlString.Factory.newValue(attribute.getValue());
-                attributeType.setAttributeValueArray(new XmlObject[]{stringValue});
+                final Object objValue = attribute.getValue();
+                final XmlObject xmlObject = GeneratorXmlBeansHelper.createXmlObjectForAttributeValueContents(objValue, attribute.getNullBehavior());
+                if (xmlObject != null) {
+                    attributeType.setAttributeValueArray(new XmlObject[]{xmlObject});
+                }
             }
             subjectStatementAbstractType = attStatement;
         } else {

@@ -1,9 +1,12 @@
 package com.l7tech.console.panels.saml;
 
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.widgets.TextListCellRenderer;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.console.beaneditor.BeanListener;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
+import com.l7tech.util.Functions;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -14,9 +17,20 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.util.EnumSet;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
+
+import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.*;
+import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.AttributeValueAddBehavior.*;
+import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.AttributeValueComparison.CANONICALIZE;
+import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.AttributeValueComparison.STRING_COMPARE;
+import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.EmptyBehavior.EMPTY_STRING;
+import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.EmptyBehavior.EXISTS_NO_VALUE;
+import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.EmptyBehavior.NULL_VALUE;
+import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.VariableNotFoundBehavior.REPLACE_EMPTY_STRING;
+import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.VariableNotFoundBehavior.REPLACE_EXPRESSION_EMPTY_STRING;
 
 /**
  * Edits the SAML Attribute: name, namespace, value.
@@ -67,6 +81,15 @@ public class EditAttributeDialog extends JDialog {
     private JPanel nameFormatPanel;
     private JPanel mainPanel;
     private JCheckBox repeatIfMultivaluedCheckBox;
+    private JComboBox msgElmBehaviorComboBox;
+    private JComboBox attValueComparisonComboBox;
+    private JLabel msgElmBehaviorLabel;
+    private JLabel attValueComparisonLabel;
+    private JComboBox emptyVariableComboBox;
+    private JLabel emptyVariableLabel;
+    private JComboBox variableNotFoundComboBox;
+    private JLabel variableNotFoundLabel;
+    private JCheckBox missingWhenEmptyStringCheckBox;
 
     private final SamlAttributeStatement.Attribute attribute;
     private final boolean issueMode;
@@ -121,11 +144,69 @@ public class EditAttributeDialog extends JDialog {
         setTitle(resources.getString(issueMode ? "issueDialog.title" : "dialog.title"));
 
         addWindowListener(new WindowAdapter() {
+            @Override
             public void windowClosing(WindowEvent event) {
                 // user hit window manager close button
                 windowAction(CMD_CANCEL);
             }
         });
+
+        msgElmBehaviorComboBox.setModel(
+                new DefaultComboBoxModel(
+                        EnumSet.of(
+                                STRING_CONVERT,
+                                ADD_AS_XML).toArray()));
+
+        msgElmBehaviorComboBox.setRenderer(new TextListCellRenderer<AttributeValueAddBehavior>(
+                new Functions.Unary<String, AttributeValueAddBehavior>() {
+                    @Override
+                    public String call(final AttributeValueAddBehavior dataType) {
+                        return dataType.getValue();
+                    }
+                }));
+
+        attValueComparisonComboBox.setModel(
+                new DefaultComboBoxModel(
+                        EnumSet.of(
+                                STRING_COMPARE,
+                                CANONICALIZE).toArray()));
+
+        attValueComparisonComboBox.setRenderer(new TextListCellRenderer<AttributeValueComparison>(
+                new Functions.Unary<String, AttributeValueComparison>() {
+                    @Override
+                    public String call(final AttributeValueComparison dataType) {
+                        return dataType.getValue();
+                    }
+                }));
+
+        emptyVariableComboBox.setModel(
+                new DefaultComboBoxModel(
+                        EnumSet.of(
+                                EMPTY_STRING,
+                                EXISTS_NO_VALUE,
+                                NULL_VALUE).toArray()));
+
+        emptyVariableComboBox.setRenderer(new TextListCellRenderer<EmptyBehavior>(
+                new Functions.Unary<String, EmptyBehavior>() {
+                    @Override
+                    public String call(final EmptyBehavior dataType) {
+                        return dataType.getValue();
+                    }
+                }));
+
+        variableNotFoundComboBox.setModel(
+                new DefaultComboBoxModel(
+                        EnumSet.of(
+                                REPLACE_EMPTY_STRING,
+                                REPLACE_EXPRESSION_EMPTY_STRING).toArray()));
+
+        variableNotFoundComboBox.setRenderer(new TextListCellRenderer<VariableNotFoundBehavior>(
+                new Functions.Unary<String, VariableNotFoundBehavior>() {
+                    @Override
+                    public String call(final VariableNotFoundBehavior dataType) {
+                        return dataType.getValue();
+                    }
+                }));
 
         ButtonGroup buttonGroup = new ButtonGroup();
         buttonGroup.add(nameFormatUnspecifiedRadioButton);
@@ -137,6 +218,11 @@ public class EditAttributeDialog extends JDialog {
         attributeNamespaceField.setText(attribute.getNamespace());
         attributeValueField.setText(attribute.getValue());
         repeatIfMultivaluedCheckBox.setSelected(attribute.isRepeatIfMulti());
+        msgElmBehaviorComboBox.setSelectedItem(attribute.getAddBehavior());
+        attValueComparisonComboBox.setSelectedItem(attribute.getValueComparison());
+        emptyVariableComboBox.setSelectedItem(attribute.getEmptyBehavior());
+        variableNotFoundComboBox.setSelectedItem(attribute.getVariableNotFoundBehavior());
+        missingWhenEmptyStringCheckBox.setSelected(attribute.isMissingWhenEmpty());
 
         String nameFormat = attribute.getNameFormat();
         if (nameFormat == null || nameFormat.length()==0 ||
@@ -159,6 +245,7 @@ public class EditAttributeDialog extends JDialog {
         // login button (global variable)
         okButton.setActionCommand(CMD_OK);
         okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 windowAction(event);
             }
@@ -167,6 +254,7 @@ public class EditAttributeDialog extends JDialog {
         // cancel button
         cancelButton.setActionCommand(CMD_CANCEL);
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 windowAction(event);
             }
@@ -177,12 +265,14 @@ public class EditAttributeDialog extends JDialog {
         radioButtons.add(anyValueRadio);
 
         ActionListener buttonEnabler = new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 enableButtons();
             }
         };
 
         nameFormatOtherRadioButton.addChangeListener(new ChangeListener(){
+            @Override
             public void stateChanged(ChangeEvent e) {
                 attributeNameFormatTextField.setEnabled(nameFormatOtherRadioButton.isSelected());
                 if (attributeNameFormatTextField.isEnabled()) {
@@ -192,6 +282,7 @@ public class EditAttributeDialog extends JDialog {
             }
         });
         ChangeListener nameFormatChangeLister = new ChangeListener(){
+            @Override
             public void stateChanged(ChangeEvent e) {
                 if (nameFormatUnspecifiedRadioButton.isSelected()) {
                     attributeNameFormatTextField.setText(SamlConstants.ATTRIBUTE_NAME_FORMAT_UNSPECIFIED);
@@ -217,8 +308,26 @@ public class EditAttributeDialog extends JDialog {
             anyValueRadio.setVisible(false);
             specificValueRadio.setVisible(false);
             repeatIfMultivaluedCheckBox.setVisible(true);
+            msgElmBehaviorComboBox.setVisible(true);
+            msgElmBehaviorLabel.setVisible(true);
+            attValueComparisonComboBox.setVisible(enableNameFormat); // Comparison for Version 2 only
+            attValueComparisonLabel.setVisible(enableNameFormat);
+            emptyVariableLabel.setVisible(true);
+            emptyVariableComboBox.setVisible(true);
+            variableNotFoundLabel.setVisible(true);
+            variableNotFoundComboBox.setVisible(true);
+            missingWhenEmptyStringCheckBox.setVisible(true);
         } else {
             repeatIfMultivaluedCheckBox.setVisible(false);
+            msgElmBehaviorComboBox.setVisible(false);
+            msgElmBehaviorLabel.setVisible(false);
+            attValueComparisonComboBox.setVisible(false);
+            attValueComparisonLabel.setVisible(false);
+            emptyVariableLabel.setVisible(false);
+            emptyVariableComboBox.setVisible(false);
+            variableNotFoundLabel.setVisible(false);
+            variableNotFoundComboBox.setVisible(false);
+            missingWhenEmptyStringCheckBox.setVisible(false);
         }
 
         if (attribute.isAnyValue()) {
@@ -282,9 +391,15 @@ public class EditAttributeDialog extends JDialog {
                     attribute.setAnyValue(true);
                 } else {
                     attribute.setAnyValue(false);
-                    attribute.setValue(attributeValueField.getText());
+                    attribute.setValue(attributeValueField.getText().trim());
                 }
                 attribute.setRepeatIfMulti(repeatIfMultivaluedCheckBox.isSelected());
+                attribute.setAddBehavior((AttributeValueAddBehavior) msgElmBehaviorComboBox.getSelectedItem());
+                attribute.setValueComparison((AttributeValueComparison) attValueComparisonComboBox.getSelectedItem());
+                attribute.setEmptyBehavior((EmptyBehavior) emptyVariableComboBox.getSelectedItem());
+                attribute.setVariableNotFoundBehavior((VariableNotFoundBehavior) variableNotFoundComboBox.getSelectedItem());
+                attribute.setMissingWhenEmpty(missingWhenEmptyStringCheckBox.isSelected());
+
                 fireEditAccepted();
                 dispose();
             }
@@ -308,7 +423,7 @@ public class EditAttributeDialog extends JDialog {
     /**
      * validate the username and context
      *
-     * @return true validated, false othwerwise
+     * @return true validated, false otherwise
      */
     private boolean validateInput() {
         String name = attributeNameField.getText();
@@ -337,8 +452,8 @@ public class EditAttributeDialog extends JDialog {
             }
         }
 
-        String value = attributeValueField.getText();
-        if (specificValueRadio.isSelected() && (value == null || "".equals(value.trim()) )) {
+        String value = attributeValueField.getText().trim();
+        if (specificValueRadio.isSelected() && "".equals(value.trim()) ) {
             JOptionPane.
             showMessageDialog(this,
                               resources.getString("attributeValueField.error.empty"),
@@ -347,6 +462,22 @@ public class EditAttributeDialog extends JDialog {
             attributeValueField.requestFocus();
             return false;
         }
+
+        // validate configuration when repeat if Multivalued is on
+        if (repeatIfMultivaluedCheckBox.isSelected()) {
+            if (!Syntax.isOnlyASingleVariableReferenced(value)) {
+                JOptionPane.
+                showMessageDialog(this,
+                        resources.getString("attributeValueField.error.moreThanOneVariableReferenced"),
+                        resources.getString("attributeValueField.error.title"),
+                        JOptionPane.ERROR_MESSAGE);
+                attributeValueField.requestFocus();
+
+                return false;
+            }
+
+        }
+
         return true;
     }
 }

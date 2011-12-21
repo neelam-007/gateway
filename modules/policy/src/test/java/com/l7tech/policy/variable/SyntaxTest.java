@@ -111,6 +111,65 @@ public class SyntaxTest {
         Assert.assertFalse("Not only variables are referenced", Syntax.validateStringOnlyReferencesVariables(var));
 
         var = "${issuedSamlAssertion saml2}";
-        Syntax.validateStringOnlyReferencesVariables(var);
+        Assert.assertFalse(Syntax.validateStringOnlyReferencesVariables(var));
+
+        var = "${issuedSamlAssertionsaml2}test";
+        Assert.assertFalse(Syntax.validateStringOnlyReferencesVariables(var));
+
+        var = "test${issuedSamlAssertionsaml2}";
+        Assert.assertFalse(Syntax.validateStringOnlyReferencesVariables(var));
+    }
+    
+    @Test
+    public void testVariableExpression() throws Exception {
+        final String varName = Syntax.getVariableExpression("varName");
+        Assert.assertEquals("Incorrect variable name generated.", "${varName}", varName);
+    }
+    
+    @Test
+    public void testOnlySingleVariableReferenced() throws Exception {
+        String var = "${host}";
+        Assert.assertTrue(Syntax.isOnlyASingleVariableReferenced(var));
+
+        var = "${host[0]}";
+        Assert.assertTrue(Syntax.isOnlyASingleVariableReferenced(var));
+
+        var = "${host}one";
+        Assert.assertFalse(Syntax.isOnlyASingleVariableReferenced(var));
+
+        var = "no ${host}";
+        Assert.assertFalse(Syntax.isOnlyASingleVariableReferenced(var));
+
+        var = "host,${host}";
+        Assert.assertFalse(Syntax.isOnlyASingleVariableReferenced(var));
+
+        var = "host, ${host}";
+        Assert.assertFalse(Syntax.isOnlyASingleVariableReferenced(var));
+
+        var = "host host";
+        Assert.assertFalse(Syntax.isOnlyASingleVariableReferenced(var));
+
+        var = "${host}, ${host}";
+        Assert.assertFalse(Syntax.isOnlyASingleVariableReferenced(var));
+
+        var = "${host[0][1]}";
+        Assert.assertTrue(Syntax.isOnlyASingleVariableReferenced(var));
+
+        var = "${host[0][1]} no";
+        Assert.assertFalse(Syntax.isOnlyASingleVariableReferenced(var));
+
+        var = "${host.1} no";
+        Assert.assertFalse(Syntax.isOnlyASingleVariableReferenced(var));
+
+        var = "${host.1}";
+        Assert.assertTrue(Syntax.isOnlyASingleVariableReferenced(var));
+
+        try {
+            var = "${host[0}";
+            Syntax.isOnlyASingleVariableReferenced(var);
+            Assert.fail("Should have thrown");
+        } catch (Exception e) {
+            //success
+        }
     }
 }

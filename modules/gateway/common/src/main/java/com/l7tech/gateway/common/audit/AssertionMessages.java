@@ -753,6 +753,7 @@ public class AssertionMessages extends Messages {
     public static final M MESSAGE_VARIABLE_NOT_XML = m(7245, Level.INFO, "Message variable {0} does not contain XML");
     public static final M OVERSIZEDTEXT_NS_DECLARATION_EXCEEDED = m(7246, Level.WARNING, "{0} exceeds namespace declaration limit");
     public static final M OVERSIZEDTEXT_NS_PREFIX_DECLARATION_EXCEEDED = m(7247, Level.WARNING, "{0} exceeds namespace prefix declaration limit");
+    public static final M MESSAGE_VARIABLE_NOT_XML_WARNING = m(7248, Level.WARNING, "Message variable {0} does not contain XML");
 
     // ServerWsTrustCredentialExchange
     public static final M WSFEDPASS_NO_SUITABLE_CREDENTIALS = m(7300, Level.INFO, "The current request did not contain credentials of any supported type");
@@ -861,6 +862,13 @@ public class AssertionMessages extends Messages {
     public static final M SAML_ISSUER_BAD_XML = m(8407, Level.WARNING, "Message appeared to be SOAP but is not valid");
     public static final M SAML_ISSUER_CANT_DECORATE = m(8408, Level.WARNING, "WS-Security decoration failed");
     public static final M SAML_ISSUER_MISSING_NIVAL = m(8409, Level.WARNING, "Specified NameIdentifier chosen, but no value specified; using default");
+    public static final M SAML_ISSUER_ATTR_STMT_MISSING_ATTRIBUTE = m(8410, Level.FINE, "One or more configured Attributes are missing: {0}");
+    public static final M SAML_ISSUER_ATTR_STMT_INVALID_FILTER_ATTRIBUTE = m(8411, Level.WARNING, "Ignoring invalid filter Attribute / AttributeDesignator value: {0}");
+    public static final M SAML_ISSUER_ATTR_STMT_FAIL_UNKNOWN_FILTER_ATTRIBUTE = m(8412, Level.FINE, "Attribute filter contained one or more unknown Attribute / AttributeDesignator elements: {0}");
+    public static final M SAML_ISSUER_ATTR_STMT_DUPLICATE_FILTER_ATTRIBUTE = m(8413, Level.WARNING, "Attribute filter values contained duplicate Attribute / AttributeDesignator elements: {0}");
+    public static final M SAML_ISSUER_ATTR_STMT_FILTER_REMOVED_ALL_ATTRIBUTES = m(8414, Level.FINE, "No Attributes were available after SAML Attribute filter was applied.");
+    public static final M SAML_ISSUER_ATTR_STMT_EXCLUDED_ATTRIBUTES = m(8415, Level.FINE, "Attribute filter AttributeValue excluded some Attributes: {0}");
+    public static final M SAML_ISSUER_ATTR_STMT_FILTERED_ATTRIBUTES = m(8416, Level.FINE, "Attribute filter filtered some Attributes: {0}");
 
     public static final M IDENTITY_ATTRIBUTE_NO_USER = m(8450, Level.INFO, "No user from the expected identity provider has yet been authenticated");
     public static final M IDENTITY_ATTRIBUTE_MULTI_USERS = m(8451, Level.INFO, "Multiple users from the expected identity provider have been authenticated; choosing the first");

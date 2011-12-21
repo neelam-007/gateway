@@ -200,6 +200,8 @@ public abstract class Syntax {
 
     /**
      * Validate that a string value contains only context variable references.
+     * <p/>
+     * " \t\n\r\f" characters are ignored and allowed.
      *
      * @param toValidate String which should only reference variables. Cannot be null
      * @return true if only variables are referenced.
@@ -213,13 +215,35 @@ public abstract class Syntax {
         for (; st.hasMoreTokens(); index++) {
             if (index >= numNames) return false;
 
-            final String[] vars = Syntax.getReferencedNamesIndexedVarsNotOmitted(st.nextToken());
+            final String nextToken = st.nextToken();
+            final String[] vars = Syntax.getReferencedNamesIndexedVarsNotOmitted(nextToken);
             if(vars.length == 0) return false;
-            
+
+            // check for values like var${var} or ${var}var
+            if (!nextToken.equals(Syntax.getVariableExpression(vars[0]))) {
+                return false;
+            }
+
             final String token = vars[0];
             if (!token.equals(refNames[index])) return false;
         }
         return true;
+    }
+
+    /**
+     * Validate a user supplied string only contains a single variable and nothing else. Supports
+     * array syntax.
+     *
+     * @param value user input to validate for a single reference.
+     * @return true if parameter only contains a single single reference to a variable
+     */
+    public static boolean isOnlyASingleVariableReferenced(final @NotNull String value) {
+        final String[] referencedNames = Syntax.getReferencedNamesIndexedVarsNotOmitted(value);
+        try {
+            return referencedNames.length == 1 && value.equals(Syntax.getVariableExpression(referencedNames[0]));
+        } catch (VariableNameSyntaxException e) {
+            return false;
+        }
     }
 
     /**

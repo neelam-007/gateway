@@ -29,6 +29,7 @@ public final class ExpandVariables {
         return processSingleVariableAsObject(expr, vars, audit, strict());
     }
 
+    @Nullable
     public static Object processSingleVariableAsDisplayableObject(final String expr, final Map<String,?> vars, final Audit audit) {
         return processSingleVariableAsDisplayableObject(expr, vars, audit, strict());
     }
@@ -55,6 +56,26 @@ public final class ExpandVariables {
         }
     }
 
+    /**
+     * This is a convenience method which delegates to {@link #process(String, java.util.Map, com.l7tech.gateway.common.audit.Audit, boolean)}
+     * when the expression does not reference a single value.
+     * <p>
+     * When a single variable is referenced, then this method provides convenient support for multi valued variables,
+     * by returning an Object [] of formatted Strings.
+     * <p>
+     * This provides the ability to process the formatted value of individual values independently of each other.
+     * This is different to {@link #process(String, java.util.Map, com.l7tech.gateway.common.audit.Audit, boolean)}
+     * which would concatenate the joined values when the variable is multi valued.
+     *
+     * @param expr String expression to evaluate.
+     * @param vars the caller supplied variables map that is consulted first
+     * @param audit an audit instance to catch warnings
+     * @param strict true if failures to resolve variables should throw exceptions rather than log warnings
+     * @return if the expression references a single reference, then either null (does not exist - depends on strict = false)
+     * or a String or an Object [] of formatted Strings. If an Object [] it is never null or empty, otherwise see
+     * {@link #process(String, java.util.Map, com.l7tech.gateway.common.audit.Audit, boolean)}
+     */
+    @Nullable
     public static Object processSingleVariableAsDisplayableObject(final String expr, final Map<String,?> vars, final Audit audit, final boolean strict) {
         if (expr == null) throw new IllegalArgumentException();
 
@@ -166,6 +187,31 @@ public final class ExpandVariables {
             }
         }
     }});
+
+    /**
+     * Determine if any variable in the expression does not exist.
+     *
+     * Note: this method will not cause WARNING logging associated with a non existent variable.
+     *
+     * @param expression String expression to check
+     * @param vars all available variables
+     * @param audit Auditor to audit to
+     * @return true if any referenced variable does not exist, false otherwise.
+     */
+    public static boolean isVariableReferencedNotFound(@Nullable final String expression,
+                                                       @NotNull final Map<String, Object> vars,
+                                                       @NotNull Audit audit) {
+        final String[] referencedNames = Syntax.getReferencedNames(expression);
+        for (String referencedName : referencedNames) {
+            try {
+                ExpandVariables.process(Syntax.getVariableExpression(referencedName), vars, audit, true);
+            } catch (VariableNameSyntaxException e) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     @Nullable
     private static Object[] getAndFilter(Map<String,?> vars, Syntax syntax, Audit audit, boolean strict) {
@@ -284,6 +330,7 @@ public final class ExpandVariables {
         throw new IllegalStateException("Unable to select " + name + " from " + contextObject.getClass().getName());
     }
 
+    @NotNull
     public static String process(String s, Map<String,?> vars, Audit audit) {
         return process(s, vars, audit, strict(), null);
     }
@@ -347,6 +394,7 @@ public final class ExpandVariables {
      * @param valueFilter    A filter to call on each substituted value (or null for no filtering)
      * @return the message with expanded/resolved variables
      */
+    @NotNull
     public static String process(String s, Map<String,?> vars, Audit audit, boolean strict, @Nullable Functions.Unary<String,String> valueFilter) {
         if (s == null) throw new IllegalArgumentException();
 
