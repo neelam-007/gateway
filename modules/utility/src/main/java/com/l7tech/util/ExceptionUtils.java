@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * 
- */
-
 package com.l7tech.util;
 
 import java.io.PrintWriter;
@@ -92,6 +86,32 @@ public class ExceptionUtils {
      */
     public static String getMessage(final Throwable t) {
         return getMessage(t, 2, null);
+    }
+
+    /**
+     * Get the message for the specified exception that is at least 2 characters long.
+     * If the exception itself has a null message or it is too short,
+     * checks for a message in its cause.  If all causes have been exhaused, returns the
+     * classname of the original exception.
+     *
+     * If the ultimate cause of the error is not the resulting message then the error
+     * message is enhanced by adding " Caused by: " followed by the message for the ultimate
+     * cause.
+     *
+     * @param t the Throwable to examine.  Must not be null.
+     * @return a diagnostic message that can be displayed.  Never null.
+     */
+    public static String getMessageWithCause(final Throwable t) {
+        final String message = getMessage(t, 2, null);
+        final Throwable cause = unnestToRoot( t );
+        if ( cause != t ) {
+            final String causeMessage = getMessage( cause, 2, null );
+            if ( !message.equals( causeMessage ) ) {
+                final String messageTerminator = message.endsWith( "." ) ? "" : ".";
+                return message + messageTerminator + " Caused by: " + causeMessage;
+            }
+        }
+        return message;
     }
 
     /**

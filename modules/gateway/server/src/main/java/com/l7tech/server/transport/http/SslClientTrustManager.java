@@ -1,5 +1,6 @@
 package com.l7tech.server.transport.http;
 
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.security.cert.KeyUsageActivity;
 import com.l7tech.security.cert.KeyUsageChecker;
@@ -20,7 +21,6 @@ import java.util.logging.Logger;
 
 /**
  * @author alex
- * @version $Revision$
  */
 public class SslClientTrustManager implements X509TrustManager {
     private final Logger logger = Logger.getLogger(this.getClass().getName());
@@ -52,6 +52,10 @@ public class SslClientTrustManager implements X509TrustManager {
 
     @Override
     public void checkServerTrusted(final X509Certificate[] certs, final String authType) throws CertificateException {
+        // bug 10751, fail early with a clear message when the servers certificate is invalid
+        if ( !CertUtils.isValid( certs[0] ) )
+            throw new CertificateException( "Certificate expired or not yet valid: " + certs[0].getSubjectDN().getName() );
+
         boolean isCartel = false;
         try {
             trustedCertServices.checkSslTrust(certs);

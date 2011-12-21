@@ -91,4 +91,27 @@ public class ExceptionUtilsTest {
         assertFalse(ExceptionUtils.causedBy(cantmove, SmellException.class));
         assertFalse(ExceptionUtils.causedBy(cantmove, smelly.getClass()));
     }
+
+    @Test
+    public void testGetMessageWithCause() {
+        final Exception exception1 = new Exception();
+        assertEquals( "No cause in message",
+                ExceptionUtils.getMessage( exception1 ),
+                ExceptionUtils.getMessageWithCause( exception1 ) );
+
+        final Exception exception2 = new Exception(exception1);
+        assertEquals( "No cause in message (no message in caused exception)",
+                ExceptionUtils.getMessage( exception2 ),
+                ExceptionUtils.getMessageWithCause( exception2 ) );
+
+        final Exception exception3 = new Exception("Exception!", exception1);
+        assertEquals( "Basic cause in message",
+                "Exception!. Caused by: java.lang.Exception",
+                ExceptionUtils.getMessageWithCause( exception3 ) );
+
+        final Exception exception4 = new Exception("Exception with a full message.", exception1);
+        assertEquals( "Full cause in message (only one '.')",
+                "Exception with a full message. Caused by: java.lang.Exception",
+                ExceptionUtils.getMessageWithCause( exception4 ) );
+    }
 }

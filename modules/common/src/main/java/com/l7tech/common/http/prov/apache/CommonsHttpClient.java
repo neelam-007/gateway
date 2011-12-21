@@ -384,7 +384,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                 } catch (UnsupportedTlsVersionsException e) {
                     throw new GenericHttpException("Unable to obtain HTTP response" + getTargetDescription(hconf, method, " from ") + ": " + ExceptionUtils.getMessage(e), e);
                 } catch (IOException e) {
-                    throw new GenericHttpException("Unable to obtain HTTP response" + getTargetDescription(hconf, method, " from ") + ": " + ExceptionUtils.getMessage(e), e);
+                    throw new GenericHttpException("Unable to obtain HTTP response" + getTargetDescription(hconf, method, " from ") + ": " + ExceptionUtils.getMessageWithCause(e), e);
                 } catch (NumberFormatException e) {
                     throw new GenericHttpException("Unable to obtain HTTP response" + getTargetDescription(hconf, method, " from ") + ", invalid content length: " + ExceptionUtils.getMessage(e), e);
                 }
