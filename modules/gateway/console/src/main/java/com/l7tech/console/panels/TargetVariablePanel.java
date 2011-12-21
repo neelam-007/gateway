@@ -60,6 +60,7 @@ public class TargetVariablePanel  extends JPanel {
         prefixOrVariableField = new JTextField();
         prefixLabel = new JLabel("");
         statusLabel = new JLabel("");
+        prefixOrVariableField.setColumns(20);
         prefixOrVariableField.addFocusListener(new FocusAdapter() {
             @Override
             public void focusLost(FocusEvent e) {
@@ -217,6 +218,7 @@ public class TargetVariablePanel  extends JPanel {
      */
     public void setVariable(String var){
         prefixOrVariableField.setText(var);
+        prefixOrVariableField.setCaretPosition(0);
         validateFields();
     }
 
