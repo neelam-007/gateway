@@ -25,6 +25,7 @@ import java.util.List;
  */
 public class InputValidator implements FocusListener {
     public static final String MUST_BE_NUMERIC = "The {0} field must be a number between {1,number,#} and {2,number,#}.";
+    public static final String MUST_BE_INTEGER = "The {0} field must be an integer between {1,number,#} and {2,number,#}.";
     private final String dialogTitle;
     private final Component dialogParent;
     private final List<ValidationRule> rules = new ArrayList<ValidationRule>();

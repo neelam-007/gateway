@@ -3,8 +3,7 @@ package com.l7tech.console.util;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 public class IntegerOrContextVariableValidationRuleTest {
     private static final int MIN = 1;
@@ -23,7 +22,7 @@ public class IntegerOrContextVariableValidationRuleTest {
 
         final String error = rule.getValidationError();
 
-        assertEquals("The " + FIELD_NAME + " field must be a number between " + MIN + " and " + MAX + ".", error);
+        validateNonIntegerError(error);
     }
 
     @Test
@@ -50,7 +49,7 @@ public class IntegerOrContextVariableValidationRuleTest {
 
         final String error = rule.getValidationError();
 
-        assertEquals("The " + FIELD_NAME + " field must be a number between " + MIN + " and " + MAX + ".", error);
+        assertEquals("The " + FIELD_NAME + " field must be an integer between " + MIN + " and " + MAX + ".", error);
     }
 
     @Test
@@ -79,7 +78,16 @@ public class IntegerOrContextVariableValidationRuleTest {
 
         final String error = rule.getValidationError();
 
-        assertEquals("Invalid syntax used for " + FIELD_NAME + ".", error);
+        validateNonIntegerError(error);
+    }
+
+    @Test
+    public void invalidContextVariableReference(){
+        rule.setTextToValidate("${myVar[}");
+
+        final String error = rule.getValidationError();
+
+        assertTrue(error.startsWith("Invalid variable referenced for " + FIELD_NAME + " field"));
     }
 
     @Test
@@ -88,7 +96,7 @@ public class IntegerOrContextVariableValidationRuleTest {
 
         final String error = rule.getValidationError();
 
-        assertEquals("Invalid syntax used for " + FIELD_NAME + ".", error);
+        validateNonIntegerError(error);
     }
 
     @Test
@@ -97,7 +105,11 @@ public class IntegerOrContextVariableValidationRuleTest {
 
         final String error = rule.getValidationError();
 
-        assertEquals("Invalid syntax used for " + FIELD_NAME + ".", error);
+        validateNonIntegerError(error);
+    }
+
+    private void validateNonIntegerError(String error) {
+        assertEquals("The " + FIELD_NAME + " field must be an integer between " + MIN + " and " + MAX + ".", error);
     }
 
     @Test

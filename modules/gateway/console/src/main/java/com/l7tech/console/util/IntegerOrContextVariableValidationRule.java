@@ -2,13 +2,16 @@ package com.l7tech.console.util;
 
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableNameSyntaxException;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ValidationUtils;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.Nullable;
 
 import java.text.MessageFormat;
 
 /**
- * Validation Rule for fields that must either be an integer or a context variable.
+ * Validation Rule for fields that must either be an integer or a context variable expression.
  * @author alee
  */
 public class IntegerOrContextVariableValidationRule implements InputValidator.ValidationRule {
@@ -24,7 +27,7 @@ public class IntegerOrContextVariableValidationRule implements InputValidator.Va
         this.textToValidate = StringUtils.EMPTY;
     }
 
-    public void setTextToValidate(final String textToValidate) {
+    public void setTextToValidate(@Nullable final String textToValidate) {
         this.textToValidate = (textToValidate == null)? null : textToValidate.trim();
     }
 
@@ -36,10 +39,17 @@ public class IntegerOrContextVariableValidationRule implements InputValidator.Va
     public String getValidationError() {
         String errorMessage = null;
         if(textToValidate != null && !textToValidate.isEmpty()){
-            if(StringUtils.isNumeric(textToValidate) && !ValidationUtils.isValidInteger(textToValidate, false, minimum, maximum)){
-                errorMessage = MessageFormat.format(InputValidator.MUST_BE_NUMERIC, fieldName, minimum, maximum);
-            } else if(!StringUtils.isNumeric(textToValidate) && !Syntax.validateStringOnlyReferencesVariables(textToValidate)){
-                errorMessage = MessageFormat.format("Invalid syntax used for {0}.", fieldName);
+            final String[] referencedNames;
+            try {
+                referencedNames = Syntax.getReferencedNames(textToValidate, true);
+                if (referencedNames.length == 0) {
+                    //it's not a variable expression
+                    if(!ValidationUtils.isValidInteger(textToValidate, false, minimum, maximum)){
+                        errorMessage = MessageFormat.format(InputValidator.MUST_BE_INTEGER, fieldName, minimum, maximum);
+                    }
+                }
+            } catch (VariableNameSyntaxException e) {
+                errorMessage = MessageFormat.format("Invalid variable referenced for {0} field: {1}.", fieldName, ExceptionUtils.getMessage(e));
             }
         }else{
             errorMessage = MessageFormat.format("The {0} must not be empty.", fieldName);

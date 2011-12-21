@@ -1,5 +1,7 @@
 package com.l7tech.gui.util;
 
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Interface implemented by components that are capable of showing modeless feedback.
  * Examples include SquigglyTextArea and SquigglyTextField.
@@ -17,5 +19,5 @@ public interface ModelessFeedback {
      *
      * @param feedback  the feedback to make available, or null to clear modeless feedback.
      */
-    void setModelessFeedback(String feedback);
+    void setModelessFeedback(@Nullable String feedback);
 }
