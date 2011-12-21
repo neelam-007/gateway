@@ -1079,7 +1079,7 @@
         <property name="connectionManagerParameters">
             <map>
                 <entry key="http.connection.stalecheck">
-                    <value type="java.lang.Boolean">false</value>
+                    <value type="java.lang.Boolean">true</value>
                 </entry>
             </map>
         </property>
