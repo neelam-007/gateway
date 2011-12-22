@@ -1,7 +1,6 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.http.HttpMethod;
-import com.l7tech.util.IOUtils;
 import com.l7tech.common.mime.*;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.HttpRequestKnob;
@@ -10,6 +9,7 @@ import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.util.IOUtils;
 
 import javax.mail.internet.ContentDisposition;
 import javax.mail.internet.ParseException;
@@ -23,31 +23,45 @@ import java.util.logging.Logger;
  * Enforces the HTML Form Data Assertion.
  *
  * @author rmak
- * @since SecureSpan 3.7
  * @see <a href="http://www.w3.org/TR/html4/interact/forms.html#h-17.13">HTML 4.0 Form Submisssion specification</a>
+ * @since SecureSpan 3.7
  */
 public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFormDataAssertion> {
 
-    /** An HTML Form field value. */
+    /**
+     * An HTML Form field value.
+     */
     private static class FieldValue {
-        /** String value of the field; or file name if {@link #isFile} is true. */
+        /**
+         * String value of the field; or file name if {@link #isFile} is true.
+         */
         public final String value;
         public final boolean isFile;
+
         public FieldValue(final String value, final boolean isFile) {
             this.value = value;
             this.isFile = isFile;
         }
     }
 
-    /** An HTML Form field. */
+    /**
+     * An HTML Form field.
+     */
     private static class Field {
         public final String name;
-        /** An HTML Form can submit multiple values with the same field name. */
+        /**
+         * An HTML Form can submit multiple values with the same field name.
+         */
         public final List<FieldValue> fieldValues = new ArrayList<FieldValue>();
-        /** Does field has any value that exists in request message URI? */
+        /**
+         * Does field has any value that exists in request message URI?
+         */
         public boolean inUri;
-        /** Does field has any value that exists in request message body? */
+        /**
+         * Does field has any value that exists in request message body?
+         */
         public boolean inBody;
+
         public Field(final String name) {
             this.name = name;
         }
@@ -75,15 +89,15 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
         final HttpMethod httpMethod = httpRequestKnob.getMethod();
         final ContentTypeHeader outerContentType = mimeKnob.getOuterContentType();
         if (httpMethod == HttpMethod.POST) {
-            if (!(   outerContentType.matches("application", "x-www-form-urlencoded")
-                  || outerContentType.matches("multipart", "form-data"))) {
+            if (!(outerContentType.matches("application", "x-www-form-urlencoded")
+                    || outerContentType.matches("multipart", "form-data"))) {
                 logAndAudit(AssertionMessages.HTTP_POST_NOT_FORM_DATA, outerContentType.getMainValue());
                 return AssertionStatus.NOT_APPLICABLE;
             }
         }
 
         // Enforces HTTP method(s) allowed:
-        if ( httpMethod == HttpMethod.GET  && assertion.isAllowGet() || httpMethod == HttpMethod.POST && assertion.isAllowPost()) {
+        if (httpMethod == HttpMethod.GET && assertion.isAllowGet() || httpMethod == HttpMethod.POST && assertion.isAllowPost()) {
             if (_logger.isLoggable(Level.FINER)) {
                 _logger.finer("Verified: HTTP request method (" + httpMethod + ")");
             }
@@ -113,7 +127,7 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
 
         // Converts array of allowed fields into a map for faster lookup.
         final Map<String, HtmlFormDataAssertion.FieldSpec> fieldSpecs = new HashMap<String, HtmlFormDataAssertion.FieldSpec>();
-        for (HtmlFormDataAssertion.FieldSpec fieldSpec : assertion.getFieldSpecs()){
+        for (HtmlFormDataAssertion.FieldSpec fieldSpec : assertion.getFieldSpecs()) {
             fieldSpecs.put(fieldSpec.getName(), fieldSpec);
         }
 
@@ -145,6 +159,11 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
                     } else if (allowedDataType == HtmlFormDataType.FILE) {
                         if (!fieldValue.isFile) {
                             logAndAudit(AssertionMessages.HTMLFORMDATA_FAIL_DATATYPE, field.name, fieldValue.value, allowedDataType.getWspName());
+                        }
+                    } else if (allowedDataType == HtmlFormDataType.STRING) {
+                        if(fieldValue.isFile){
+                            logAndAudit(AssertionMessages.HTMLFORMDATA_FAIL_DATATYPE, field.name, fieldValue.value, allowedDataType.getWspName());
+                            return AssertionStatus.FALSIFIED;
                         }
                     } else {
                         throw new IllegalArgumentException("Internal Error: Missing handler for data type " + allowedDataType);
@@ -201,9 +220,9 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
     /**
      * Adds elements of a parameter map into a {@link Field} map.
      *
-     * @param params        parameter map
-     * @param fields        <code>Field</code>s map
-     * @param fromUri       whether the parameters comes from the URI
+     * @param params  parameter map
+     * @param fields  <code>Field</code>s map
+     * @param fromUri whether the parameters comes from the URI
      */
     private static void paramsToFields(final Map<String, String[]> params, final Map<String, Field> fields, final boolean fromUri) {
         final boolean fromBody = !fromUri;
@@ -225,8 +244,8 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
     /**
      * Parses multipart/form-data for fields; in particular, scan for file uploads.
      *
-     * @param holder    map to add results into
-     * @param mimeKnob  the request MIME knob
+     * @param holder   map to add results into
+     * @param mimeKnob the request MIME knob
      * @throws IOException if parsing error
      * @see <a href="http://www.w3.org/TR/html4/interact/forms.html#h-17.13.4.2">HTML 4.0 specification for Form submission using multipart/form-data</a>
      */
@@ -234,7 +253,7 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
             throws IOException {
         try {
             final PartIterator itor = mimeKnob.getParts();
-            for (int partPosition = 0; itor.hasNext(); ++ partPosition) {
+            for (int partPosition = 0; itor.hasNext(); ++partPosition) {
                 PartInfo partInfo;
                 try {
                     partInfo = itor.next();
@@ -299,16 +318,16 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
      * Parses for file upload in a multipart/mixed subpart embedded within a
      * multipart/form-data.
      *
-     * @param field                 where to save parsed filename(s)
-     * @param is                    input stream for the multipart/mixed MIME part
-     * @param outerContentType      content type of the multipart/mixed
+     * @param field            where to save parsed filename(s)
+     * @param is               input stream for the multipart/mixed MIME part
+     * @param outerContentType content type of the multipart/mixed
      * @throws IOException if parsing error
      */
     private void parseMultipartMixed(final Field field, final InputStream is, final ContentTypeHeader outerContentType) throws IOException {
         try {
-            final MimeBody mimeBody = new MimeBody(new ByteArrayStashManager(), outerContentType, is,0);
+            final MimeBody mimeBody = new MimeBody(new ByteArrayStashManager(), outerContentType, is, 0);
             final PartIterator itor = mimeBody.iterator();
-            for (int subpartPosition = 0; itor.hasNext(); ++ subpartPosition) {
+            for (int subpartPosition = 0; itor.hasNext(); ++subpartPosition) {
                 PartInfo subpartInfo;
                 try {
                     subpartInfo = itor.next();

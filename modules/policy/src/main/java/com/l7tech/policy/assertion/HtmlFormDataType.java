@@ -41,8 +41,9 @@ public class HtmlFormDataType implements Serializable {
     public static final HtmlFormDataType ANY = new HtmlFormDataType("any", "<any>");
     public static final HtmlFormDataType NUMBER = new HtmlFormDataType("number", "number");
     public static final HtmlFormDataType FILE = new HtmlFormDataType("file", "file");
+    public static final HtmlFormDataType STRING = new HtmlFormDataType("string", "string");
 
-    private static final HtmlFormDataType[] _values = new HtmlFormDataType[]{ANY, NUMBER, FILE};
+    private static final HtmlFormDataType[] _values = new HtmlFormDataType[]{ANY, NUMBER, FILE, STRING};
 
     public static HtmlFormDataType[] values() {
         return (HtmlFormDataType[])_values.clone();
