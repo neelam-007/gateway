@@ -30,13 +30,15 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
     private final String moduleName;
     private final Map<NestedZipFile, Object> nestedJarFiles;
     private final Set<ClassLoader> delegates = Collections.synchronizedSet(new LinkedHashSet<ClassLoader>());
+    private final String resourceLoadPrefix;
 
-    public AssertionModuleClassLoader(String moduleName, URL jarUrl, ClassLoader parent, Set<NestedZipFile> nestedJarFiles) {
+    AssertionModuleClassLoader(String moduleName, URL jarUrl, ClassLoader parent, Set<NestedZipFile> nestedJarFiles, boolean useApplicationClasspath ) {
         super(new URL[] { jarUrl }, parent);
         this.moduleName = moduleName;
         this.nestedJarFiles = new ConcurrentHashMap<NestedZipFile, Object>();
         for (NestedZipFile file : nestedJarFiles)
             this.nestedJarFiles.put(file, new Object());
+        this.resourceLoadPrefix = useApplicationClasspath ? "com.l7tech.external.assertions" : null;
     }
 
     /**
@@ -64,10 +66,31 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
     }
 
     @Override
+    protected synchronized Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+        Class c = findLoadedClass(name);
+
+        if ( c == null ) {
+            if ( shouldLoadFromParentResources( name ) ) {
+                c = findClass( name );
+            } else {
+                c = super.loadClass( name, resolve );
+            }
+        }
+
+        if ( resolve ) {
+            resolveClass(c);
+        }
+
+        return c;
+    }
+
+    @Override
     protected Class<?> findClass(final String name) throws ClassNotFoundException {
         Class<?> found = null;
         try {
-            if (name.startsWith("com.l7tech.external.") || (!name.startsWith("com.l7tech.") && !name.startsWith("java.")))
+            if ( shouldLoadFromParentResources( name ) )
+                found = findClassFromParentResource( name );
+            else if (name.startsWith("com.l7tech.external.") || (!name.startsWith("com.l7tech.") && !name.startsWith("java.")))
                 found = findClassFromNestedJars(name, false);
             if (found == null)
                 found = super.findClass(name);
@@ -82,9 +105,38 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
         return found;
     }
 
+    private boolean shouldLoadFromParentResources( final String name ) {
+        return resourceLoadPrefix != null && name.startsWith( resourceLoadPrefix + "." );
+    }
+
+    private Class findClassFromParentResource( final String name ) {
+        final String path = toResourcePath( name );
+        return define( name, super.getResourceAsStream( path ) );
+    }
+
     private Class findClassFromNestedJars(String name, boolean hidePrivate) {
-        String path = name.replace('.', '/').concat(".class");
-        byte[] bytecode = getResourceBytesFromNestedJars(path, hidePrivate);
+        final String path = toResourcePath( name );
+        return define( name, getResourceBytesFromNestedJars(path, hidePrivate) );
+    }
+
+    private String toResourcePath( final String name ) {
+        return name.replace('.', '/').concat(".class");
+    }
+
+    private Class define( final String name, final InputStream bytecode ) {
+        if ( bytecode != null ) {
+            try {
+                return define( name, IOUtils.slurpStream( bytecode ) );
+            } catch ( IOException e ) {
+                logger.log(Level.SEVERE, "Unable to read resource for class " + name + " in module " +
+                                         moduleName + ": " + ExceptionUtils.getMessage(e), e);
+            }
+        }
+
+        return null;
+    }
+
+    private Class define( final String name, final byte[] bytecode ) {
         if (bytecode == null)
             return null;
 

@@ -53,6 +53,7 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
 
     // Install the default getters that are specific to the Gateway
     private static final AtomicBoolean gatewayMetadataDefaultsInstalled = new AtomicBoolean(false);
+    private static final boolean useApplicationClasspath = ConfigFactory.getBooleanProperty( "ssg.modularAssertions.useApplicationClasspath", false );
 
     static {
         installGatewayMetadataDefaults();
@@ -482,10 +483,10 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
             }
 
             //noinspection ClassLoaderInstantiation
-            AssertionModuleClassLoader assloader = new AssertionModuleClassLoader(filename, file.toURI().toURL(), getClass().getClassLoader(), nestedJarfiles);
+            AssertionModuleClassLoader assloader = new AssertionModuleClassLoader(filename, file.toURI().toURL(), getClass().getClassLoader(), nestedJarfiles, useApplicationClasspath);
             Set<Assertion> protos = new HashSet<Assertion>();
             for (String assertionClassname : assertionClassnames) {
-                if (classExists(getClass().getClassLoader(), assertionClassname))
+                if (!useApplicationClasspath && classExists(getClass().getClassLoader(), assertionClassname))
                     throw new InstantiationException("Declared class already exists in parent classloader: " + assertionClassname);
                 Class assclass = assloader.loadClass(assertionClassname);
                 if (!Assertion.class.isAssignableFrom(assclass))

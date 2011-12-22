@@ -15,6 +15,7 @@
     <xsl:param name="test.resources">false</xsl:param>
     <xsl:param name="build.output">false</xsl:param>
     <xsl:param name="idea.scala">false</xsl:param>
+    <xsl:param name="scope"/><!-- default scope for library dependencies -->
 
     <!-- Global settings -->
     <xsl:output method="xml" encoding="utf-8" indent="yes"/>
@@ -99,6 +100,9 @@
                               </xsl:when>
                               <xsl:otherwise>
                                 <orderEntry type="module-library"  exported="">
+                                  <xsl:if test="$scope and $scope != ''">
+                                      <xsl:attribute name="scope"><xsl:value-of select="$scope"/></xsl:attribute>
+                                  </xsl:if>
                                   <library name="{@organisation}.{@name}">
                                     <CLASSES>
                                         <!-- direct jars -->
@@ -149,7 +153,11 @@
                     <xsl:for-each select="$ivy-module-report/module[artifact/@type = 'jar']">
                       <xsl:choose>
                           <xsl:when test="@organisation != 'com.l7tech'">
-                              <orderEntry type="library" name="{@organisation}.{@name}.{@rev}" level="project" />
+                              <orderEntry type="library" name="{@organisation}.{@name}.{@rev}" level="project">
+                                  <xsl:if test="$scope and $scope != ''">
+                                      <xsl:attribute name="scope"><xsl:value-of select="$scope"/></xsl:attribute>
+                                  </xsl:if>
+                              </orderEntry>
                           </xsl:when>
                       </xsl:choose>
                     </xsl:for-each>

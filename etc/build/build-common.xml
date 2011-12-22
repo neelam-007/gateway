@@ -51,6 +51,7 @@
     <property name="module.resources.allow.forms" value="false"/>
     <property name="module.official.build" value="true"/> <!-- Remove for dev Jar versioning -->
     <property name="module.idea.configurations" value="default,test"/>
+    <property name="module.idea.dependencies.scope" value=""/>
 
     <!--
       Classpath for Idea form compiler
@@ -691,6 +692,7 @@
             <param name="test.resources" expression="${module.testresources.available}"/>
             <param name="build.output" expression="${module.build.output}"/>
             <param name="idea.scala" expression="${idea.scala}" if="idea.scala"/>
+            <param name="scope" expression="${module.idea.dependencies.scope}"/>
         </xslt>
     </target>
 

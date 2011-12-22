@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project>
-  <!--
-    This is the common module build file. It is included into each
-    modules build.xml.
+    <!--
+      This is the common assertion module build file. It is included into each
+      assertion modules build.xml.
 
-    Do not invoke it directly.
-  -->
+      Do not invoke it directly.
+    -->
     <property name="moduleName" value="${ant.project.name}"/>
     <property name="moduleFileExtension" value="aar"/>
     <property name="module.package.jar.disabled" value="true"/>
     <property name="module.compile.optimize" value="on"/>
+    <property name="module.idea.dependencies.scope" value="PROVIDED"/>
     <property name="jar.sign.pattern" value="*.${moduleFileExtension}"/>
 
     <property name="src.root" value="../../../../"/>
