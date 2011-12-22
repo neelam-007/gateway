@@ -176,7 +176,7 @@ public class ProcessSamlAttributeQueryRequestPropertiesDialog extends AssertionP
 
             final String customValue = customSubjectFormatsSquigglyTextField.getText().trim();
             if (subjectFormatBuilder.toString().isEmpty() && customValue.isEmpty()) {
-                throw new ValidationException("Subject name formats must be configured when it is required.");
+                throw new ValidationException("At least one Subject Format or Custom value must be configured.");
             }
 
             assertion.setSubjectFormats(subjectFormatBuilder.toString());
@@ -202,7 +202,7 @@ public class ProcessSamlAttributeQueryRequestPropertiesDialog extends AssertionP
 
             final String customNameFormat = customAttributeNameFormatsSquigglyTextField.getText().trim();
             if (attributeNameFormatBuilder.toString().isEmpty() && customNameFormat.isEmpty()) {
-                throw new ValidationException("Attribute NameFormat must be configured.");
+                throw new ValidationException("At least one Attribute NameFormat or Custom value must be configured.");
             }
 
             assertion.setAttributeNameFormats(attributeNameFormatBuilder.toString());
