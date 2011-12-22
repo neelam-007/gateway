@@ -238,6 +238,11 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
         final SamlStatus samlStatus = assertion.getSamlStatus();
         responseContext.statusCode = samlStatus.getValue();
 
+        final String customIssuer = assertion.getCustomIssuer();
+        if (customIssuer != null && !customIssuer.trim().isEmpty()) {
+            responseContext.customIssuer = getStringVariable(vars, customIssuer, true);
+        }
+
         final String statusMessage = assertion.getStatusMessage();
         if (statusMessage != null && !statusMessage.trim().isEmpty()) {
             responseContext.statusMessage = getStringVariable(vars, statusMessage, true);
@@ -361,7 +366,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
 
         final boolean isEmpty = value.trim().isEmpty();
         if(isEmpty && strict) {
-            throw new InvalidRuntimeValueException("Value for field '" + maybeAVariable + "'resolved to nothing.");
+            throw new InvalidRuntimeValueException("Value for field '" + maybeAVariable + "' resolved to nothing.");
         } else if (isEmpty) {
             logger.log(Level.INFO, "Value for field '" + maybeAVariable + "' resolved to nothing.");
         }
@@ -444,6 +449,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
         }
 
         private final String requestId;//from SSG
+        private String customIssuer; // V2 only
         private String statusCode;
         private String statusMessage;
         private Collection statusDetail = new ArrayList();//Message, Element or String
@@ -550,7 +556,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
             response.getAssertion().add(value);
         }
         final JAXBElement<saml.v1.protocol.ResponseType> typeJAXBElement = v1SamlpFactory.createResponse(response);
-        if(validateSSOProfileDetails){
+        if(assertion.isValidateWebSsoRules() && validateSSOProfileDetails){
             validateV1Response(typeJAXBElement.getValue());
         }
         return typeJAXBElement;
@@ -572,7 +578,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
             final NameIDType idType = v2SamlpAssnFactory.createNameIDType();
             final JAXBElement<NameIDType> nameIdElement = v2SamlpAssnFactory.createIssuer(idType);
             final NameIDType value = nameIdElement.getValue();
-            value.setValue(issuer);
+            value.setValue(responseContext.customIssuer == null ? issuer : responseContext.customIssuer);
             response.setIssuer(value);
         }
         
@@ -683,7 +689,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
         }
 
         final JAXBElement<ResponseType> typeJAXBElement = v2SamlpFactory.createResponse(response);
-        if(validateSSOProfileDetails){
+        if(assertion.isValidateWebSsoRules() && validateSSOProfileDetails){
             validateV2Response(typeJAXBElement.getValue());
         }
         return typeJAXBElement;
