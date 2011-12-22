@@ -4,6 +4,7 @@
 package com.l7tech.util;
 
 import org.apache.commons.codec.binary.Base64;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -224,6 +225,26 @@ public class HexUtils {
         }
         return new String(buffer);
     }
+
+
+    /**
+     * Convert a byte array into a Java byte array literal expression.
+     *
+     * @param bytes bytes to convert.  Required.
+     * @return a byte array literal expression, e.g. "{ -17, 71, 87, 57 }".  Never null.
+     */
+    public static String javaDump(@NotNull byte[] bytes) {
+        StringBuilder out = new StringBuilder("{ ");
+        boolean first = true;
+        for (byte b : bytes) {
+            if (!first) out.append(", ");
+            first = false;
+            out.append(b);
+        }
+        out.append(" }");
+        return out.toString();
+    }
+
 
     /**
      * Convert a string of hexidecimal digits in the form "FF0E7BCC"... into a byte array.
