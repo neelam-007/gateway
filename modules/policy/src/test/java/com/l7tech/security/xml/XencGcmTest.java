@@ -71,6 +71,54 @@ public class XencGcmTest {
     }
 
     @Test
+    public void testDecryptGcmFromNcipherNcoreApi() throws Exception {
+        // This test attempts to decrypt some ciphertext that was encrypted with AES-GCM (128 bit key, 12 byte IV, 128 bit auth tag)
+        // by a standalone test program using nCipher's nCore API.
+
+        FlexKey flexKey = new FlexKey(new byte[]{ -17, 71, 87, 73, 2, -3, 66, 52, 44, 90, -23, 57, -92, -10, -4, 57 });
+        flexKey.setAlgorithm(FlexKey.AES128);
+        Document doc = XmlUtil.parse("<foo><EncryptedData Type=\"http://www.w3.org/2001/04/xmlenc#Element\" xmlns=\"http://www.w3.org/2001/04/xmlenc#\"><EncryptionMethod Algorithm=\"http://www.w3.org/2009/xmlenc11#aes128-gcm\"/><CipherData><CipherValue>" +
+                "G32GbjZOOMy23789" +
+                "c5KS6eLexPUoII93+YRA1t2mB9Lh9AkC6Uaco2ek8KuaB5OQXMufZ5wQZpMa2yFRBygZXRPYghoJ\n" +
+                "KdVwX7Ht07+ovBLqC6TUweCDVdavNsP6XIeXmqYvNOLz2QrrvFwVggUdY7igJY1aYKe8mig6NUof\n" +
+                "gLkrHkf6o1jE915ZWhgST996WKQplLPk8YXDpa2dUrYq9XkMJYkB1wsbjCCh6z15Tdz97NbEhWCc\n" +
+                "/xLnWAvrHTIVCVV3oAWYrDX28WnV20BT/5rAjssaW+kQ/mnJeyz7JV79thw60kxmngpdN7/uYxaq\n" +
+                "jLRam7AlB5VbiPykNdFRWyLezdbBeDag6zcTbYzEQc5Q3OXCVbmYW7sOND0j9plvzXE80KbMYf/W\n" +
+                "T/JYqSTxVDtjxtmFdRCIU77hMBn/2aaoRLwA/+xQ4z7GI+R06a2RqTSj3/1yXiNKuhEWezskMwts\n" +
+                "3szl5n9V9SN1AFVVIIuCavStcTtkFbbbAOoS8iY7XyjPgwDDpdUoxRHIcW+IfAagarKRaALvfDSj\n" +
+                "ZMbh6j3/0Jt8srfpGF67N5IuxqbOhDVKtDZsNE1ejQgOQzIX2Y1hUpgWf4VVUBgFP9s7VeS91B4V\n" +
+                "aawmpw9e5G06MBYnUegSl4aserH/H76zs3WQOfdqKxdkPR5ItfGVzEc/6u6M2Cokw0SHkAW7odac" +
+                "</CipherValue></CipherData></EncryptedData></foo>");
+
+        Element encryptedDataEl = XmlUtil.findExactlyOneChildElement(doc.getDocumentElement());
+
+        final DecryptionContext dc = new DecryptionContext();
+        final List<String> algorithm = new ArrayList<String>();
+        AlgorithmFactoryExtn af = new XencUtil.EncryptionEngineAlgorithmCollectingAlgorithmFactory(flexKey, algorithm);
+        Provider symmetricProvider = JceProvider.getInstance().getProviderFor("Cipher.AES");
+        if (symmetricProvider != null)
+            af.setProvider(symmetricProvider.getName());
+        dc.setAlgorithmFactory(af);
+        dc.setEncryptedType(encryptedDataEl, EncryptedData.ELEMENT, null, null);
+
+        XencUtil.decryptAndReplaceUsingKey(encryptedDataEl, flexKey, dc, new Functions.UnaryVoid<Throwable>() {
+            @Override
+            public void call(Throwable throwable) {
+                throw new RuntimeException(throwable);
+            }
+        });
+
+        assertEquals("<foo><tag>Test of some stuff to encrypt that should be decrypted OK.  Long blah blah blah more long blah.\n" +
+                "Extra stuff to make it longer than one channel chunk.\n" +
+                "Extra stuff to make it longer than one channel chunk.\n" +
+                "Extra stuff to make it longer than one channel chunk.\n" +
+                "Extra stuff to make it longer than one channel chunk.\n" +
+                "Extra stuff to make it longer than one channel chunk.\n" +
+                "Extra stuff to make it longer than one channel chunk.\n" +
+                "Extra stuff to make it longer than one channel chunk. END of stuff</tag></foo>", XmlUtil.nodeToString(doc, false));
+    }
+
+    @Test
     @BugNumber(11320)
     public void testDecryptGcmModifiedCiphertext() throws Exception {
         FlexKey flexKey = new FlexKey(HexUtils.unHexDump("e65f2b0f06f70e4e3d35dd52aecffa19"));
