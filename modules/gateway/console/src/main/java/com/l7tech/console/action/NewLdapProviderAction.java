@@ -80,7 +80,7 @@ public class NewLdapProviderAction extends NewProviderAction {
         } else {
             ldapConfig = this.ldapConfig;
             ldapConfig.setTypeVal(IdentityProviderType.LDAP.toVal());
-            readSettings = false;
+            readSettings = true;
         }
 
         final Runnable duplicateCallback = new Runnable() {
