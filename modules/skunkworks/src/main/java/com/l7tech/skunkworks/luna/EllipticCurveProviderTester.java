@@ -1,6 +1,5 @@
 package com.l7tech.skunkworks.luna;
 
-import com.l7tech.util.ConfigFactory;
 import sun.misc.BASE64Decoder;
 
 import javax.crypto.KeyAgreement;
@@ -30,8 +29,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import com.chrysalisits.crypto.LunaTokenManager;
 
 /**
  * Standalone test of various functionality required to do ECC key generation, key import, message level
@@ -570,7 +567,7 @@ public class EllipticCurveProviderTester {
             String tokenPin = getRequiredSystemProperty("lunaTokenPin");
             final Object lunaTokenManager = invokeStaticMethod("com.chrysalisits.crypto.LunaTokenManager", "getInstance", new Class[0]);
             invokeMethod(lunaTokenManager, "Login", new Class[] { String.class }, tokenPin);
-            LunaTokenManager.getInstance().SetSecretKeysExtractable(true);
+            invokeMethod(lunaTokenManager, "SetSecretKeysExtractable", new Class[] { boolean.class }, true);
             super.install();
         }
     }
@@ -848,7 +845,7 @@ public class EllipticCurveProviderTester {
     }
 
     static String getRequiredSystemProperty(String prop) {
-        String val = ConfigFactory.getProperty( prop, null );
+        String val = System.getProperty( prop, null );
         if (val == null)
             throw new IllegalStateException("The system property \"" + prop + "\" must be set for this provider.");
         return val;
@@ -910,7 +907,7 @@ public class EllipticCurveProviderTester {
     }
 
     static PrivateKey getTestEccPrivateKey() throws Exception {
-        KeySpec spec = new PKCS8EncodedKeySpec(decodeBase64(CERTICOM_KEY_COMPRESSED_FORMAT));
+        KeySpec spec = new PKCS8EncodedKeySpec(decodeBase64(EC_secp384r1_KEY_PKCS8_B64));
         KeyFactory kf = KeyFactory.getInstance("EC", getBouncyCastleProvider());
         PrivateKey privateKey = kf.generatePrivate(spec);
         assertTrue(privateKey.getAlgorithm().equals("EC") || privateKey.getAlgorithm().equals("ECDSA"), "private key type must be EC or ECDSA");
@@ -919,7 +916,7 @@ public class EllipticCurveProviderTester {
 
     static X509Certificate[] getTestEccCert() throws CertificateException {
         Collection<? extends Certificate> certs = CertificateFactory.getInstance("X.509").generateCertificates(
-                new ByteArrayInputStream(CERTICOM_KEY_COMPRESSED_FORMAT_CERT_CHAIN.getBytes()));
+                new ByteArrayInputStream(EC_secp521r1_CERT_X509_B64.getBytes()));
         X509Certificate[] chain = certs.toArray(new X509Certificate[certs.size()]);
         assertTrue(chain != null, "certificate factory failed to produce a certificate chain");
         assertTrue(chain.length > 0, "certificate factory produced an empty certificate chain");
@@ -1138,38 +1135,23 @@ public class EllipticCurveProviderTester {
             "ebptgkG91o3NHiHntMsKMD0wITAJBgUrDgMCGgUABBRWjntPaly/wxOW7GVJkhBTTs/1vAQUnXLA\n" +
             "iRfKZ/+m3lf5L/vahSx7GokCAgQA");
 
-    static final String CERTICOM_KEY_COMPRESSED_FORMAT =
-            "MGICAQAwEAYHKoZIzj0CAQYFK4EEAAEESzBJAgEBBBRQieICGuF1jSJ4tU3R9yCh\n" +
-            "NV8g5qEuAywABAE814kv8euQhqkuB/zb93UYu4NS5AV1c/4SU86koMXBQL1pNymX\n" +
-            "gAVp9w==";
+    public static final String EC_secp384r1_KEY_PKCS8_B64 =
+        "ME4CAQAwEAYHKoZIzj0CAQYFK4EEACIENzA1AgEBBDAhyd5V2T6UYn8t8G4Lj1qaICzJAxNNheJT" +
+        "Z1cvDsRYKxdMmcmMGh6Yl5slgqjUXZE=";
 
-    static final String CERTICOM_KEY_COMPRESSED_FORMAT_CERT_CHAIN =
+    public static final String EC_secp521r1_CERT_X509_B64 =
             "-----BEGIN CERTIFICATE-----\n" +
-            "MIIB4TCCAZ6gAwIBAgIBAjALBgcqhkjOPQQBBQAwgY8xCzAJBgNVBAYTAkNBMRAw\n" +
-            "DgYDVQQIEwdPbnRhcmlvMRAwDgYDVQQHEwdUb3JvbnRvMRcwFQYDVQQKEw5DZXJ0\n" +
-            "aWNvbSBDb3JwLjEUMBIGA1UECxMLU0FNUExFIE9OTFkxLTArBgNVBAMTJFNTTCBQ\n" +
-            "bHVzIFNhbXBsZSBFQ0RTQSBDQSBDZXJ0aWZpY2F0ZTAeFw0wNTAzMjgyMTU2MzRa\n" +
-            "Fw0xNDAzMjgyMTU2MzRaMIGTMQswCQYDVQQGEwJDQTEQMA4GA1UECBMHT250YXJp\n" +
-            "bzEQMA4GA1UEBxMHVG9yb250bzEXMBUGA1UEChMOQ2VydGljb20gQ29ycC4xFDAS\n" +
-            "BgNVBAsTC1NBTVBMRSBPTkxZMTEwLwYDVQQDEyhTU0wgUGx1cyBTYW1wbGUgRUNE\n" +
-            "U0EgU2VydmVyIENlcnRpZmljYXRlMCswEAYHKoZIzj0CAQYFK4EEAAEDFwACATzX\n" +
-            "iS/x65CGqS4H/Nv3dRi7g1LkoxIwEDAOBgNVHQ8BAf8EBAMCA4gwCwYHKoZIzj0E\n" +
-            "AQUAAzAAMC0CFBrN8h6Om95rkdem2EHXKA/yPADZAhUAvVrPmzlVCRTHA9pkEGa8\n" +
-            "PlrQUNU=\n" +
-            "-----END CERTIFICATE-----\n" +
-            "-----BEGIN CERTIFICATE-----\n" +
-            "MIIB7jCCAaugAwIBAgIBATALBgcqhkjOPQQBBQAwgY8xCzAJBgNVBAYTAkNBMRAw\n" +
-            "DgYDVQQIEwdPbnRhcmlvMRAwDgYDVQQHEwdUb3JvbnRvMRcwFQYDVQQKEw5DZXJ0\n" +
-            "aWNvbSBDb3JwLjEUMBIGA1UECxMLU0FNUExFIE9OTFkxLTArBgNVBAMTJFNTTCBQ\n" +
-            "bHVzIFNhbXBsZSBFQ0RTQSBDQSBDZXJ0aWZpY2F0ZTAeFw0wNTAzMTgyMDI1MDda\n" +
-            "Fw0xNTAzMTgyMDI1MDdaMIGPMQswCQYDVQQGEwJDQTEQMA4GA1UECBMHT250YXJp\n" +
-            "bzEQMA4GA1UEBxMHVG9yb250bzEXMBUGA1UEChMOQ2VydGljb20gQ29ycC4xFDAS\n" +
-            "BgNVBAsTC1NBTVBMRSBPTkxZMS0wKwYDVQQDEyRTU0wgUGx1cyBTYW1wbGUgRUNE\n" +
-            "U0EgQ0EgQ2VydGlmaWNhdGUwKzAQBgcqhkjOPQIBBgUrgQQAAQMXAAMDbRQ6oDC1\n" +
-            "BhglM8sPLTMWsYGr/WCjIzAhMA8GA1UdEwEB/wQFMAMBAf8wDgYDVR0PAQH/BAQD\n" +
-            "AgEGMAsGByqGSM49BAEFAAMwADAtAhQ+JPKNNm1YzWuR9C828e5NxPlmRgIVAtU6\n" +
-            "bFQi9PAMnBB/dLFrMANvSCvK\n" +
-            "-----END CERTIFICATE-----";
+        "MIICHTCCAX2gAwIBAgIIeFK5zGM+HrYwCgYIKoZIzj0EAwMwHDEaMBgGA1UEAwwRdGVzdF9lY19z" +
+        "ZWNwNTIxcjEwHhcNMDkxMjE2MjM0MTIwWhcNMzQxMjEwMjM0MTIwWjAcMRowGAYDVQQDDBF0ZXN0" +
+        "X2VjX3NlY3A1MjFyMTCBmzAQBgcqhkjOPQIBBgUrgQQAIwOBhgAEAPf/TOVk1tC7kdV8K3dqEEdp" +
+        "K26CQ7zyar1eVCbiVRGU+mrYs0262FGsE+A4zGjqWAIxb5Lssw6VarQ4ORVwR+2DAM23LruoY1Sx" +
+        "YAAmf/eiI55flmNjcrl/zpVIu/7vUAgPKGpBeslQQEyG4JlqFxP5Qg6yLJNzBI5JAsS2QlaqvSgN" +
+        "o2YwZDAOBgNVHQ8BAf8EBAMCBeAwEgYDVR0lAQH/BAgwBgYEVR0lADAdBgNVHQ4EFgQUu2bmgS+E" +
+        "vXvBVUndCmtjP3hf5QowHwYDVR0jBBgwFoAUu2bmgS+EvXvBVUndCmtjP3hf5QowCgYIKoZIzj0E" +
+        "AwMDgY0AMIGHAkIB7cJgTC75sMZ+u78W2vWzOeuvMbAYM/34F7KU3CkwwKmEPThN/Ek4ZvIxqPC7" +
+        "qxxTlqLwl1w5Z74qMDIztItXe5ICQSYKuWlyc9VdrtCuWd7T7OXPziov0TxYTl01ey9y9QYRdsMR" +
+        "l/OCf5dwQpGuRoYfosHGGOGN9KuyB00pVgwGeaJwAAA=\n" +
+                    "-----END CERTIFICATE-----";
 
     static final String TEST_KEY2 =
             "ME4CAQAwEAYHKoZIzj0CAQYFK4EEACIENzA1AgEBBDC3OXy5j5VeLqqzLwqBQRddKxxiVjUKmRFp\n" +
