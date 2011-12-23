@@ -14,6 +14,7 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.*;
+import javax.swing.tree.DefaultTreeCellEditor;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
@@ -107,6 +108,7 @@ public class HtmlFormDataAssertionDialog extends LegacyAssertionPropertyDialog i
                 setValueAt(fieldSpec.getMinOccurs(), row, FIELD_MIN_OCCURS_COLUMN.index);
                 setValueAt(fieldSpec.getMaxOccurs(), row, FIELD_MAX_OCCURS_COLUMN.index);
                 setValueAt(fieldSpec.getAllowedLocation(), row, FIELD_LOCATION_COLUMN.index);
+                setValueAt(fieldSpec.isAllowEmpty(), row, FIELD_ALLOW_EMPTY_COLUMN.index);
                 ++ row;
             }
 
@@ -330,6 +332,7 @@ public class HtmlFormDataAssertionDialog extends LegacyAssertionPropertyDialog i
     private static final FieldColumn FIELD_MIN_OCCURS_COLUMN = new FieldColumn(2, "Min Occurs", "Minimum number of occurrences", Integer.class);
     private static final FieldColumn FIELD_MAX_OCCURS_COLUMN = new FieldColumn(3, "Max Occurs", "Maximum number of occurrences", Integer.class);
     private static final FieldColumn FIELD_LOCATION_COLUMN = new FieldColumn(4, "Location", "Location in the request message where the field is allowed", HtmlFormDataLocation.class);
+    private static final FieldColumn FIELD_ALLOW_EMPTY_COLUMN = new FieldColumn(5, "Allow Empty", "Whether the field is allowed to have an empty value", Boolean.class);
 
     private JPanel _contentPane;
     private JCheckBox _allowGetCheckbox;
@@ -422,6 +425,13 @@ public class HtmlFormDataAssertionDialog extends LegacyAssertionPropertyDialog i
         locationCellEditor.setClickCountToStart(2);
         locationColumn.setCellEditor(locationCellEditor);
 
+        final TableColumn allowEmptyColumn = _fieldTable.getColumn(FIELD_ALLOW_EMPTY_COLUMN.name);
+        final JCheckBox allowEmptyCb = new JCheckBox();
+        allowEmptyCb.setHorizontalAlignment(JLabel.CENTER);
+        final DefaultCellEditor allowEmptyEditor = new DefaultCellEditor(allowEmptyCb);
+        allowEmptyEditor.setClickCountToStart(1);
+        allowEmptyColumn.setCellEditor(allowEmptyEditor);
+
         // Provides sorting by field name. (i.e., no sorting by other columns)
         final JTableHeader hdr = _fieldTable.getTableHeader();
         hdr.addMouseListener(new MouseAdapter(){
@@ -437,7 +447,7 @@ public class HtmlFormDataAssertionDialog extends LegacyAssertionPropertyDialog i
 
         _addButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                _fieldTableModel.addRow(new Object[]{"New Field", HtmlFormDataType.ANY, 1, 1, HtmlFormDataLocation.ANYWHERE});
+                _fieldTableModel.addRow(new Object[]{"New Field", HtmlFormDataType.ANY, 1, 1, HtmlFormDataLocation.ANYWHERE, Boolean.FALSE});
                 final int row = _fieldTable.getRowCount() - 1;
                 if (_fieldTable.editCellAt(row, FIELD_NAME_COLUMN.index)) {
                     _fieldTable.changeSelection(row, FIELD_NAME_COLUMN.index, false, false);     // so that the view scrolls automatically to make this row visible
@@ -523,8 +533,9 @@ public class HtmlFormDataAssertionDialog extends LegacyAssertionPropertyDialog i
             final int minOccurs = ((Integer) _fieldTable.getValueAt(i, FIELD_MIN_OCCURS_COLUMN.index)).intValue();
             final int maxOccurs = ((Integer) _fieldTable.getValueAt(i, FIELD_MAX_OCCURS_COLUMN.index)).intValue();
             final HtmlFormDataLocation allowedLocation = (HtmlFormDataLocation) _fieldTable.getValueAt(i, FIELD_LOCATION_COLUMN.index);
+            final boolean allowEmpty = (Boolean)_fieldTable.getValueAt(i, FIELD_ALLOW_EMPTY_COLUMN.index);
             fieldSpecs[i] = new HtmlFormDataAssertion.FieldSpec(
-                    name, dataType, minOccurs, maxOccurs, allowedLocation
+                    name, dataType, minOccurs, maxOccurs, allowedLocation, allowEmpty
             );
         }
         _assertion.setFieldSpecs(fieldSpecs);

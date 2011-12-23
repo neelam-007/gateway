@@ -647,6 +647,7 @@ public class AssertionMessages extends Messages {
     public static final M HTMLFORMDATA_FAIL_MINOCCURS = m(6856, Level.WARNING, "Form field occurrences < min allowed. (name={0}, occurs={1}, min occurs allowed={2})");
     public static final M HTMLFORMDATA_FAIL_MAXOCCURS = m(6857, Level.WARNING, "Form field occurrences > max allowed. (name={0}, occurs={1}, max occurs allowed={2})");
     public static final M HTMLFORMDATA_LOCATION_NOT_ALLOWED = m(6858, Level.WARNING, "Form field is found in location not allowed. (name={0}, location not allowed={1})");
+    public static final M HTMLFORMDATA_EMPTY_NOT_ALLOWED = m(6589, Level.WARNING, "A required Form field is empty. (name={0})");
 
     // ServerThroughputQuota
     public static final M THROUGHPUT_QUOTA_EXCEEDED = m(6900, Level.INFO, "Quota exceeded on counter {0}. Assertion limit is {1} current counter value is {2}");
