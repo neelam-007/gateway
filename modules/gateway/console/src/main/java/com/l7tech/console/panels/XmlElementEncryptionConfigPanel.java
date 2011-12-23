@@ -156,6 +156,7 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
         } else {
             model.setRecipientCertContextVariableName(contextVariableField.getVariable());
         }
+        validateModel();
     }
 
     public void setData(XmlElementEncryptionConfig model) {
@@ -173,6 +174,13 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
     public XmlElementEncryptionConfig getData() throws AssertionPropertiesOkCancelSupport.ValidationException {
         doUpdateModel();
         return model;
+    }
+
+    private void validateModel() {
+        if (useContextVariableRadioButton.isSelected()) {
+            String err = contextVariableField.getErrorMessage();
+            if (err != null) throw new AssertionPropertiesOkCancelSupport.ValidationException("Unable to save: " + err);
+        }
     }
 
     private void updateRecipientCertLabel() {

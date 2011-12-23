@@ -12,7 +12,15 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
 /**
- * @param <V> the payload value type
+ * Utility class to display a ValidatedPanel with an Ok and Cancel button.
+ *
+ * Clicking on 'Ok' causes a call to {@link com.l7tech.gui.widgets.ValidatedPanel#doUpdateModel()} which if throws
+ * will cause a warning dialog with the throwable's message to be displayed to the user and the dialog will remain visible,
+ * otherwise the dialog will dismiss.
+ *
+ * Additionally after such an exception {@link #wasOKed()} will return false, until doUpdateModel() successfully returns.
+ *
+ * @param <V> the payload value type - the model for the Validated Panel.
  */
 public class OkCancelDialog<V> extends JDialog {
     private V value;

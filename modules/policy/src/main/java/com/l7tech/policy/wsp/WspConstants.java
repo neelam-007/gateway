@@ -28,6 +28,7 @@ import com.l7tech.policy.assertion.xmlsec.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.types.CertificateValidationType;
+import com.l7tech.security.xml.XmlElementEncryptionConfig;
 import com.l7tech.util.FullQName;
 import com.l7tech.util.NameValuePair;
 import com.l7tech.util.SoapConstants;
@@ -126,6 +127,7 @@ public class WspConstants {
         // Basic types
         typeMappingString,
         new BasicTypeMapping(long.class, "longValue") {
+            @Override
             protected Object stringToObject(String in) {
                 return new Long(in);
             }
@@ -133,6 +135,7 @@ public class WspConstants {
         new BasicTypeMapping(Long.class, "boxedLongValue"),
 
         new BasicTypeMapping(double.class, "doubleValue") {
+            @Override
             protected Object stringToObject(String in) {
                 return new Double(in);
             }
@@ -140,6 +143,7 @@ public class WspConstants {
         new BasicTypeMapping(Double.class, "boxedDoubleValue"),
 
         new BasicTypeMapping(int.class, "intValue") {
+            @Override
             protected Object stringToObject(String in) {
                 return new Integer(in);
             }
@@ -147,6 +151,7 @@ public class WspConstants {
         new BasicTypeMapping(Integer.class, "boxedIntegerValue"),
 
         new BasicTypeMapping(boolean.class, "booleanValue") {
+            @Override
             protected Object stringToObject(String in) {
                 return Boolean.valueOf(in);
             }
@@ -197,6 +202,7 @@ public class WspConstants {
                                           SecurityTokenType.SAML2_ASSERTION),
         new AssertionMapping(new RequestXpathAssertion(), "RequestXpathAssertion") { // thaw pre32 form
             // Compatibility with old 2.1 instances of this assertion
+            @Override
             public void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
                 super.populateObject(object, source, new WspUpgradeUtilFrom21.RequestXpathAssertionPropertyVisitor(visitor));
             }
@@ -220,6 +226,7 @@ public class WspConstants {
         new AssertionMapping(new SslAssertion(), "SslAssertion"),
         new AssertionMapping(new JmsRoutingAssertion(), "JmsRoutingAssertion"),
         new AssertionMapping(new HttpRoutingAssertion(), "HttpRoutingAssertion") {
+            @Override
             public void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
                 super.populateObject(object, source, new WspUpgradeUtilFrom365.HttpRoutingPropertyVisitor(visitor));
             }
@@ -238,11 +245,13 @@ public class WspConstants {
         new AssertionMapping(new WssReplayProtection(), "RequestWssReplayProtection"),
         new AssertionMapping(new ResponseXpathAssertion(), "ResponseXpathAssertion"),
         new AssertionMapping(new SchemaValidation(), "SchemaValidation") {
+            @Override
             public void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
                 super.populateObject(object, source, new WspUpgradeUtilFrom35.SchemaValidationPropertyVisitor(visitor));
             }
         },
         new AssertionMapping(new XslTransformation(), "XslTransformation") {
+            @Override
             public void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
                 super.populateObject(object, source, new WspUpgradeUtilFrom35.XslTransformationPropertyVisitor(visitor));
             }
@@ -254,6 +263,7 @@ public class WspConstants {
         new SerializedJavaClassMapping(CustomAssertionHolder.class, "CustomAssertion"),
         new AssertionMapping(new Regex(), "Regex"),
         new AssertionMapping(new EmailAlertAssertion(), "EmailAlert") {
+            @Override
             public void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
                 if (source == null) { throw new IllegalArgumentException("Source cannot be null");}
                 NodeList messageNodes = source.getElementsByTagName("L7p:Message");
@@ -271,6 +281,7 @@ public class WspConstants {
                 }
             }
 
+            @Override
             protected void populateElement(WspWriter wspWriter, Element element, TypedReference object) {
                 super.populateElement(wspWriter, element, object);
             }
@@ -366,7 +377,8 @@ public class WspConstants {
             public Element freeze(WspWriter wspWriter, TypedReference object, Element container) {
                 return super.freeze(wspWriter, object, container);
             }
-        }
+        },
+        new BeanTypeMapping(XmlElementEncryptionConfig.class, "xmlElementEncryptionConfig")
     };
 
     final static TypeMapping[] readOnlyTypeMappings = new TypeMapping[] {

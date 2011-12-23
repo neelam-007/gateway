@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.samlpassertion.server;
 
 import com.l7tech.external.assertions.samlpassertion.SamlProtocolAssertion;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * @author: vchan
@@ -21,6 +22,7 @@ public abstract class NameIdentifierResolver {
         return nameValue;
     }
 
+    @Nullable
     public String getNameFormat() {
         return nameFormat;
     }

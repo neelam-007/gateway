@@ -5,13 +5,18 @@
  */
 package com.l7tech.external.assertions.samlpassertion.console;
 
+import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.WizardStepPanel;
+import com.l7tech.console.panels.XmlElementEncryptionConfigPanel;
 import com.l7tech.external.assertions.samlpassertion.SamlProtocolAssertion;
 import com.l7tech.external.assertions.samlpassertion.SamlpRequestBuilderAssertion;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.saml.SamlConstants;
+import com.l7tech.security.xml.XmlElementEncryptionConfig;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -22,7 +27,10 @@ import java.awt.event.ActionListener;
 import java.util.*;
 
 /**
- * The SAML Subject Confirmatioin selections <code>WizardStepPanel</code>
+ * The SAML Subject Confirmation selections <code>WizardStepPanel</code>
+ *
+ * Main difference between this class and com.l7tech.console.panels.saml.SubjectConfirmationNameIdentifierWizardStepPanel
+ * is issue mode versus request mode.
  *
  * @author emil
  * @version Jan 20, 2005
@@ -39,6 +47,9 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends SamlpWizar
     private JRadioButton valueSpecifiedRadio;
     private JRadioButton valueFromUserRadioButton;
     private JLabel nameQualifierLabel;
+    private JCheckBox encryptNameIdentifierCheckBox;
+    private JButton configureEncryptionButton;
+    private XmlElementEncryptionConfig xmlElementEncryptionConfig = new XmlElementEncryptionConfig();
 
     private Map<String, JToggleButton> nameFormatsMap;
     private boolean showTitleLabel;
@@ -54,6 +65,7 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends SamlpWizar
     private static final String UNSPECIFIED = "Unspecified";
     private int version;
     private final ActionListener enableDisableListener = new ActionListener() {
+        @Override
         public void actionPerformed(ActionEvent e) {
             enableDisable();
         }
@@ -94,6 +106,7 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends SamlpWizar
      * @throws IllegalArgumentException if the the data provided
      *                                  by the wizard are not valid.
      */
+    @Override
     public void readSettings(Object settings) throws IllegalArgumentException {
         final SamlProtocolAssertion assertion = SamlProtocolAssertion.class.cast(settings);
         version = assertion.getSamlVersion() == null ? 1 : assertion.getSamlVersion();
@@ -140,6 +153,9 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends SamlpWizar
 
             if (!chose) nameFormatsMap.get(FAKE_URI_AUTOMATIC).setSelected(true);
 
+            encryptNameIdentifierCheckBox.setSelected(sia.isEncryptNameIdentifier());
+            xmlElementEncryptionConfig = sia.getXmlEncryptConfig();
+
             enableDisable();
         } else {
             RequireWssSaml requestWssSaml = (RequireWssSaml)settings;
@@ -170,6 +186,7 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends SamlpWizar
      * @throws IllegalArgumentException if the the data provided
      *                                  by the wizard are not valid.
      */
+    @Override
     public void storeSettings(Object settings) throws IllegalArgumentException {
         SamlProtocolAssertion assertion = SamlProtocolAssertion.class.cast(settings);
         assertion.setNameQualifier(nameQualifierTextField.getText());
@@ -202,6 +219,10 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends SamlpWizar
                 sia.setNameIdentifierFormat(null);
                 sia.setNameIdentifierValue(null);
             }
+            final boolean configuredToEncrypt = includeNameCheckBox.isSelected() && encryptNameIdentifierCheckBox.isSelected();
+            sia.setEncryptNameIdentifier(configuredToEncrypt);
+            // If not configured to encrypt, then remove any previously encryption configuration so it is not persisted.
+            sia.setXmlEncryptConfig((configuredToEncrypt)? xmlElementEncryptionConfig: new XmlElementEncryptionConfig());
         } else {
             RequireWssSaml requestWssSaml = (RequireWssSaml)settings;
             Collection<String> formats = new ArrayList<String>();
@@ -250,9 +271,39 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends SamlpWizar
             valueFromCredsRadioButton.addActionListener(enableDisableListener);
             valueFromUserRadioButton.addActionListener(enableDisableListener);
             valueSpecifiedRadio.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     enableDisableListener.actionPerformed(e);
                     valueTextField.requestFocus();
+                }
+            });
+
+            encryptNameIdentifierCheckBox.addActionListener(enableDisableListener);
+
+            configureEncryptionButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    final XmlElementEncryptionConfigPanel encryptionConfigPanel = new XmlElementEncryptionConfigPanel();
+                    encryptionConfigPanel.setData(xmlElementEncryptionConfig);
+                    final OkCancelDialog dlg = new OkCancelDialog<XmlElementEncryptionConfig>(
+                            SubjectConfirmationNameIdentifierWizardStepPanel.this.owner,
+                            "EncryptedID Encryption Properties", true, encryptionConfigPanel);
+                    dlg.pack();
+                    com.l7tech.gui.util.Utilities.centerOnParentWindow(dlg);
+                    DialogDisplayer.display(dlg, new Runnable() {
+                        @Override
+                        public void run() {
+                            if (dlg.wasOKed()) {
+                                try {
+                                    xmlElementEncryptionConfig = encryptionConfigPanel.getData();
+                                } catch (AssertionPropertiesOkCancelSupport.ValidationException e1) {
+                                    // OkCancelDialog can only dismiss when doUpdateModel has successfully been called.
+                                    // If getData also throws it means the contract was broken.
+                                    throw new IllegalStateException("getData() should not throw after dialog is dismissed.");
+                                }
+                            }
+                        }
+                    });
                 }
             });
         } else {
@@ -271,6 +322,8 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends SamlpWizar
             valueSpecifiedRadio.setVisible(false);
             valueFromCredsRadioButton.setVisible(false);
             valueFromUserRadioButton.setVisible(false);
+            encryptNameIdentifierCheckBox.setVisible(false);
+            configureEncryptionButton.setVisible(false);
         }
 
         RC rc = new RC(0,0);
@@ -308,6 +361,7 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends SamlpWizar
         for (Map.Entry<String, JToggleButton> entry : nameFormatsMap.entrySet()) {
             JToggleButton jc = entry.getValue();
             jc.addChangeListener(new ChangeListener() {
+                @Override
                 public void stateChanged(ChangeEvent e) {
                     notifyListeners();
                 }
@@ -340,7 +394,6 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends SamlpWizar
     }
 
     private void enableDisable() {
-        if (!isResponseMode()) return;
         final boolean enable = includeNameCheckBox.isSelected();
         formatsButtonPanel.setEnabled(enable);
         if (enable) {
@@ -350,6 +403,9 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends SamlpWizar
                 tb.setEnabled(false); // Disable all buttons
             }
         }
+
+        encryptNameIdentifierCheckBox.setEnabled(enable);
+        configureEncryptionButton.setEnabled(enable && encryptNameIdentifierCheckBox.isSelected());
 
         nameQualifierTextField.setEnabled(enable);
         nameQualifierLabel.setEnabled(enable);
@@ -364,10 +420,12 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends SamlpWizar
     /**
      * @return the wizard step label
      */
+    @Override
     public String getStepLabel() {
         return "Name Identifier";
     }
 
+    @Override
     public String getDescription() {
         return
         "<html>Specify one or more name formats that will be accepted by the gateway " +
@@ -380,6 +438,7 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends SamlpWizar
      *
      * @return true if the panel is valid, false otherwis
      */
+    @Override
     public boolean canAdvance() {
         if (isRequestMode() && !includeNameCheckBox.isSelected()) return true;
         for (Map.Entry<String, JToggleButton> entry : nameFormatsMap.entrySet()) {
@@ -411,5 +470,8 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends SamlpWizar
             JToggleButton autobutton = nameFormatsMap.get(FAKE_URI_AUTOMATIC);
             if (autobutton != null) autobutton.setEnabled(true);
         }
+
+        encryptNameIdentifierCheckBox.setVisible(version == 2);
+        configureEncryptionButton.setVisible(version == 2);
     }
 }

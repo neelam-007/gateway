@@ -14,6 +14,10 @@ import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.variable.VariableNotSettableException;
+import com.l7tech.security.saml.NameIdentifierInclusionType;
+import com.l7tech.security.xml.XmlElementEncryptionConfig;
+import com.l7tech.security.xml.XmlElementEncryptor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.AuthenticationContext;
@@ -23,30 +27,33 @@ import com.l7tech.server.policy.assertion.ServerAssertionUtils;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.message.Message;
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.*;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.saml.SamlConstants;
+import com.l7tech.xml.soap.SoapVersion;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 import saml.v1.protocol.RequestType;
 import saml.v2.protocol.AttributeQueryType;
 import saml.v2.protocol.AuthnRequestType;
 import saml.v2.protocol.AuthzDecisionQueryType;
 
+import javax.crypto.SecretKey;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.security.SignatureException;
-import java.security.KeyStoreException;
-import java.security.UnrecoverableKeyException;
+import java.security.*;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -91,6 +98,17 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
         } catch (KeyStoreException e) {
             throw new ServerPolicyException(assertion, "Unable to access configured private key: " + ExceptionUtils.getMessage(e), e);
         }
+
+        if (assertion.isEncryptNameIdentifier()) {
+            final XmlElementEncryptionConfig xmlEncryptConfig = assertion.getXmlEncryptConfig();
+            final String varName = xmlEncryptConfig.getRecipientCertContextVariableName();
+            if (varName == null || varName.trim().isEmpty()) {
+                // if no context variable reference, then we require a cert.
+                if (xmlEncryptConfig.getRecipientCertificateBase64() == null) {
+                    throw new ServerPolicyException(assertion, "Assertion is configured to encrypt the Name Identifier but cannot do so as no recipient certificate is configured.");
+                }
+            }
+        }
     }
 
     /**
@@ -110,9 +128,12 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
              */
             final Message msg;
             try {
-                msg = context.getTargetMessage(assertion);
+                msg = context.getOrCreateTargetMessage(assertion, false);
             } catch (NoSuchVariableException e) {
                 logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, e.getVariable());
+                throw new SamlpAssertionException(e);
+            } catch (VariableNotSettableException e) {
+                logAndAudit(AssertionMessages.VARIABLE_NOTSET, e.getVariable());
                 throw new SamlpAssertionException(e);
             }
 
@@ -121,7 +142,7 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
              * 
              */
             setResolvers(context, bContext);
-            JAXBElement<?> samlpRequest = buildRequest(bContext);
+            final JAXBElement<?> samlpRequest = buildRequest(bContext);
             if (samlpRequest == null) {
 //                logAndAudit(AssertionMessages.SAMLP_BUILDER_FAILED);
                 logger.log(Level.WARNING, "Failed to create SAMLP request.");
@@ -265,9 +286,10 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
      * @param bContext the BuilderContext to use
      * @return the SAMLP request message payload
      */
+    @Nullable
     private JAXBElement<?> buildRequest( final BuilderContext bContext ) {
 
-        JAXBElement<?> request = null;
+        final JAXBElement<?> request;
         try {
             if (assertion.getAuthenticationStatement() != null) {
                 // Authentication
@@ -280,13 +302,15 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
             } else if (assertion.getAttributeStatement() != null) {
                 // Attribute Query
                 request = buildAttributeQueryRequest(bContext);
+            } else {
+                throw new IllegalStateException("Unknown statement type configured."); // Coding error.
             }
 
+            return request;
         } catch (SamlpAssertionException saex) {
             logger.warning("Failed to build Request message: " + ExceptionUtils.getMessage(saex));
-            request = null;
         }
-        return request;
+        return null;
     }
     
     private JAXBElement<?> buildAuthenticationRequest( final BuilderContext bContext )
@@ -380,37 +404,76 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
         return null;
     }
 
-
+    @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     private void setRequestToTarget( final BuilderContext bContext,
                                      final Message target,
                                      final JAXBElement<?> request)
         throws SamlpAssertionException
     {
-        final String msgXmlString;
+        final Document samlpDoc = XmlUtil.createEmptyDocument();
+        marshal(request, samlpDoc);
+
+        if (assertion.getNameIdentifierType() != NameIdentifierInclusionType.NONE &&
+                assertion.isEncryptNameIdentifier() &&
+                assertion.getSamlVersion() != null &&
+                assertion.getSamlVersion() == 2) {
+
+            encryptNameID(bContext.ctxVariables, samlpDoc);
+        }
+
         if (assertion.isSignRequest()) {
-
-            // marshal into Document and sign the request
-            Document samlpDoc = XmlUtil.createEmptyDocument();
-            marshal(request, samlpDoc);
-            msgXmlString = signAndSerialize(samlpDoc);
-
-        } else {
-            // marshal int XML string
-            StringWriter msgWriter = new StringWriter();
-            marshal(request, msgWriter);
-
-            // create SOAP message
-            msgXmlString = msgWriter.getBuffer().toString();
+            signRequest(samlpDoc);
         }
 
-        // log complete message for debug
-        if (logger.isLoggable(Level.FINER)) { // true ||
-            logger.finer(new StringBuffer("samlp_req:").append(msgXmlString).toString());
-        }
-
-        // set the target message with the full SOAP request message
-        target.initialize( soapify(msgXmlString, bContext) );
+        wrapDocumentInSoap(samlpDoc, bContext);
+        target.initialize(samlpDoc);
     }
+
+    @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
+    private void encryptNameID(final Map<String, Object> ctxVariables, final Document samlpDoc) throws SamlpAssertionException {
+        // find the NameID to encrypt.
+        final Element nameIdElement = DomUtils.findFirstDescendantElement(samlpDoc.getDocumentElement(), SamlConstants.NS_SAML2, "NameID");
+        if (nameIdElement == null) {
+            throw new SamlpAssertionException("Could not find NameID to encrypt");
+        }
+
+        final XmlElementEncryptionConfig xmlEncryptConfig = assertion.getXmlEncryptConfig();
+        final XmlElementEncryptor encryptor;
+        try {
+            // create here as config may reference context variables
+            encryptor = new XmlElementEncryptor(xmlEncryptConfig, ctxVariables);
+        } catch (Exception e) {
+            throw new SamlpAssertionException("Unable to create encryption engine with encryption configuration: " + ExceptionUtils.getMessage(e),
+                    ExceptionUtils.getDebugException(e));
+        }
+
+        final Pair<Element,SecretKey> encryptedKey;
+        try {
+            encryptedKey = encryptor.createEncryptedKey(samlpDoc);
+        } catch (GeneralSecurityException e) {
+            throw new SamlpAssertionException("Unable to create encrypted key for NameID encryption: " + ExceptionUtils.getMessage(e),
+                    ExceptionUtils.getDebugException(e));
+        }
+
+        final Element encryptedElement;
+        try {
+            encryptedElement = encryptor.encryptAndReplaceElement(nameIdElement, encryptedKey);
+        } catch (Exception e) {
+            throw new SamlpAssertionException("Unable to encrypt NameID: " + ExceptionUtils.getMessage(e),
+                    ExceptionUtils.getDebugException(e));
+        }
+
+        // need to place the encrypted data into the correct location - as NameID now contains an EncryptedData element - fix
+        //todo - update this if the XmlElementEncryptor is updated to support encrypting an element and placing it somewhere else
+        final Node parentOfEncryptedNameId = encryptedElement.getParentNode();
+        parentOfEncryptedNameId.removeChild(encryptedElement);
+        final String samlVersionNS = SamlConstants.NS_SAML2;
+        final String samlVersionPrefix = SamlConstants.NS_SAML2_PREFIX;
+        final Element encryptedID = samlpDoc.createElementNS(samlVersionNS, samlVersionPrefix + ":EncryptedID");
+        encryptedID.appendChild(encryptedElement);
+        parentOfEncryptedNameId.appendChild(encryptedID);
+    }
+
 
     private void marshal(final JAXBElement<?> request, final Object marshalTo)
         throws SamlpAssertionException
@@ -422,43 +485,53 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
             else
                 m = JaxbUtil.getMarshallerV2();
 
-            if (marshalTo instanceof Document)
+            if (marshalTo instanceof Document){
                 m.marshal(request, (Document) marshalTo);
-            else if (marshalTo instanceof StringWriter)
-                m.marshal(request, (StringWriter) marshalTo);
+            }
 
-            /*
-             * shouldn't get here
-             */
         } catch (JAXBException jxbEx) {
             logger.log(Level.INFO, "Failed to marshal JAXB message: {0}", jxbEx);
             throw new SamlpAssertionException("Failed to marshal JAXB target message", jxbEx);
         }
     }
 
-    private Document soapify( final String requestPayload, final BuilderContext bContext ) throws SamlpAssertionException {
+    private void wrapDocumentInSoap(final Document docToWrap, final BuilderContext bContext) throws SamlpAssertionException {
+
+        final Node docToWrapContents = docToWrap.removeChild(docToWrap.getDocumentElement());
 
         final String soapEnv =
                 "<soapenv:Envelope xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:soapenv=\"{0}\">\n" +
                 "   <soapenv:Header/>\n" +
                 "   <soapenv:Body>\n" +
-                "     {1}" +
                 "   </soapenv:Body>\n" +
                 "</soapenv:Envelope>";
 
-        String finalMessage;
+        String soapMessageAsString;
+        final SoapVersion soapVersion;
         if (bContext.soapVersion == 2) {
             /* SOAP 1.2 */
-            finalMessage = MessageFormat.format(soapEnv, SOAP_1_2_NS, requestPayload);
+            soapMessageAsString = MessageFormat.format(soapEnv, SOAP_1_2_NS);
+            soapVersion = SoapVersion.SOAP_1_2;
         } else {
             /* SOAP 1.1 */
-            finalMessage = MessageFormat.format(soapEnv, SOAP_1_1_NS, requestPayload);
+            soapMessageAsString = MessageFormat.format(soapEnv, SOAP_1_1_NS);
+            soapVersion = SoapVersion.SOAP_1_1;
         }
-        return XmlUtil.stringAsDocument(finalMessage);
+
+        final Document soapDoc = XmlUtil.stringAsDocument(soapMessageAsString);
+        final Node importedNode = docToWrap.importNode(soapDoc.getDocumentElement(), true);
+        docToWrap.appendChild(importedNode);
+        try {
+            final Element bodyElement = DomUtils.findExactlyOneChildElementByName(docToWrap.getDocumentElement(), soapVersion.getNamespaceUri(), "Body");
+            bodyElement.appendChild(docToWrapContents);
+        } catch (TooManyChildElementsException e) {
+            throw new SamlpAssertionException(ExceptionUtils.getMessage(e));
+        } catch (MissingRequiredElementException e) {
+            throw new SamlpAssertionException(ExceptionUtils.getMessage(e));
+        }
     }
 
-
-    private String signAndSerialize(final Document request) throws SamlpAssertionException {
+    private void signRequest(final Document request) throws SamlpAssertionException {
         try {
             RequestSigner.signSamlpRequest(
                     assertion.getSamlVersion(),
@@ -467,14 +540,8 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
                     signerInfo.getCertificateChain(),
                     assertion.getSignatureKeyInfoType()
             );
-
-            // serialize into XML string
-            return new String(XmlUtil.toByteArray(request));
-
         } catch (SignatureException sigEx) {
             throw new SamlpAssertionException("Error while signing SAMLP request: " + ExceptionUtils.getMessage(sigEx), sigEx);
-        } catch (IOException ioex) {
-            throw new SamlpAssertionException("Error while serializing signed SAMLP request", ioex);
         } catch (UnrecoverableKeyException e) {
             throw new SamlpAssertionException("Error while signing SAMLP request: " + ExceptionUtils.getMessage(e), e);
         }
@@ -552,6 +619,7 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
                 } else {
                     nameValue = ExpandVariables.process(val, bContext.ctxVariables, getAudit());
                 }
+                //todo [Donal] - this looks like a possible bug as it may be null and should likely default to unspecified
                 nameFormat = assertion.getNameIdentifierFormat();
                 break;
             case NONE:
@@ -617,7 +685,7 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
      * @param credentialSourceClass
      * @return
      */
-    private String getAuthMethod( final Class credentialSourceClass ) {
+    private String getAuthMethod( @Nullable final Class credentialSourceClass ) {
 
         final int ver = assertion.getSamlVersion();
 

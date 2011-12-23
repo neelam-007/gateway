@@ -12,6 +12,9 @@ import com.l7tech.policy.wsp.*;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.xml.KeyInfoInclusionType;
+import com.l7tech.security.xml.XmlElementEncryptionConfig;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -27,7 +30,7 @@ import java.util.*;
  *
  * @author vchan
  */
-public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implements SetsVariables, UsesVariables, PrivateKeyable {
+public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implements UsesVariables, PrivateKeyable {
     private static final String META_INITIALIZED = SamlpRequestBuilderAssertion.class.getName() + ".metadataInitialized";
 
     private int conditionsNotBeforeSecondsInPast = -1;
@@ -46,6 +49,8 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
     private NameIdentifierInclusionType nameIdentifierType = NameIdentifierInclusionType.FROM_CREDS;
     private String nameIdentifierFormat;
     private String nameIdentifierValue;
+    private boolean encryptNameIdentifier;
+    private XmlElementEncryptionConfig xmlEncryptConfig = new XmlElementEncryptionConfig();
     private KeyInfoInclusionType signatureKeyInfoType = KeyInfoInclusionType.CERT;
     private KeyInfoInclusionType subjectConfirmationKeyInfoType = KeyInfoInclusionType.CERT;
 
@@ -235,9 +240,26 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
         this.subjectConfirmationDataNotOnOrAfterExpirySeconds = subjectConfirmationDataNotOnOrAfterExpirySeconds;
     }
 
+    public boolean isEncryptNameIdentifier() {
+        return encryptNameIdentifier;
+    }
+
+    public void setEncryptNameIdentifier(boolean encryptNameIdentifier) {
+        this.encryptNameIdentifier = encryptNameIdentifier;
+    }
+
+    @NotNull
+    public XmlElementEncryptionConfig getXmlEncryptConfig() {
+        return xmlEncryptConfig;
+    }
+
+    public void setXmlEncryptConfig(@NotNull XmlElementEncryptionConfig xmlEncryptConfig) {
+        this.xmlEncryptConfig = xmlEncryptConfig;
+    }
+
     @Override
     protected VariablesUsed doGetVariablesUsed() {
-        final VariablesUsed variablesUsed = super.doGetVariablesUsed().withExpressions(
+        final VariablesUsed variablesUsed = super.doGetVariablesUsed(false).withExpressions(
                 nameIdentifierFormat,
                 nameIdentifierValue,
                 subjectConfirmationMethodUri,
@@ -249,8 +271,7 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
                 // new stuff
                 requestIdVariable,
                 destinationAttribute,
-                consentAttribute,
-                getTargetName()
+                consentAttribute
         ).withVariables( evidenceVariable );
 
         if ( attributeStatement != null ) {
@@ -296,7 +317,7 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
         this.conditionsNotOnOrAfterExpirySeconds = conditionsNotOnOrAfterExpirySeconds;
     }
 
-    public void setNameIdentifierFormat(String formatUri) {
+    public void setNameIdentifierFormat(@Nullable String formatUri) {
         this.nameIdentifierFormat = formatUri;
     }
 
@@ -304,10 +325,11 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
         return nameIdentifierFormat;
     }
 
-    public void setNameIdentifierValue(String value) {
+    public void setNameIdentifierValue(@Nullable String value) {
         this.nameIdentifierValue = value;
     }
 
+    @Nullable
     public String getNameIdentifierValue() {
         return nameIdentifierValue;
     }

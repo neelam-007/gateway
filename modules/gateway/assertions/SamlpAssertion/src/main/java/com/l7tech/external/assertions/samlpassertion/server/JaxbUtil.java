@@ -9,6 +9,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -31,7 +32,6 @@ public class JaxbUtil {
     private static final String SAML_V1_CTX_PACKAGES = "saml.v1.protocol:saml.v1.assertion:saml.support.ds";
     private static final String SAML_V2_CTX_PACKAGES = "saml.v2.protocol:saml.v2.assertion:saml.v2.authn.context:saml.support.ds";
     private static final boolean useStaticContext = ConfigFactory.getBooleanProperty("com.l7tech.external.assertions.samlpassertion.useStaticContext", true);
-    private static final Map<String, String> NS_PREFIXES;
     private static final AtomicReference<JAXBContext> jaxbContextV1 = new AtomicReference<JAXBContext>();
     private static final AtomicReference<JAXBContext> jaxbContextV2 = new AtomicReference<JAXBContext>();
 
@@ -51,21 +51,18 @@ public class JaxbUtil {
         }
     };
 
-    static {
-        // initialize the map
-
-        NS_PREFIXES = new HashMap<String, String>();
-        NS_PREFIXES.put(SamlConstants.NS_SAML,  SamlConstants.NS_SAML_PREFIX);
-        NS_PREFIXES.put(SamlConstants.NS_SAML2,  SamlConstants.NS_SAML2_PREFIX);
-        NS_PREFIXES.put(SamlConstants.NS_SAMLP,  SamlConstants.NS_SAMLP_PREFIX);
-        NS_PREFIXES.put(SamlConstants.NS_SAMLP2,  SamlConstants.NS_SAMLP2_PREFIX);
-        NS_PREFIXES.put("http://www.w3.org/2000/09/xmldsig#", "ds");
-        NS_PREFIXES.put("http://www.w3.org/2001/04/xmlenc#", "xenc");
-        NS_PREFIXES.put(SamlConstants.AUTHENTICATION_SAML2_PASSWORD, "saccpwd");
-        NS_PREFIXES.put(SamlConstants.AUTHENTICATION_SAML2_XMLDSIG, "saccxds");
-        NS_PREFIXES.put(SamlConstants.AUTHENTICATION_SAML2_TLS_CERT, "sacctlsc");
-        NS_PREFIXES.put("urn:oasis:names:tc:SAML:2.0:ac", "ac");
-    }
+    public static final Map<String, String> NS_PREFIXES =  Collections.unmodifiableMap(new HashMap<String, String>() {{
+        put(SamlConstants.NS_SAML,  SamlConstants.NS_SAML_PREFIX);
+        put(SamlConstants.NS_SAML2,  SamlConstants.NS_SAML2_PREFIX);
+        put(SamlConstants.NS_SAMLP,  SamlConstants.NS_SAMLP_PREFIX);
+        put(SamlConstants.NS_SAMLP2,  SamlConstants.NS_SAMLP2_PREFIX);
+        put("http://www.w3.org/2000/09/xmldsig#", "ds");
+        put("http://www.w3.org/2001/04/xmlenc#", "xenc");
+        put(SamlConstants.AUTHENTICATION_SAML2_PASSWORD, "saccpwd");
+        put(SamlConstants.AUTHENTICATION_SAML2_XMLDSIG, "saccxds");
+        put(SamlConstants.AUTHENTICATION_SAML2_TLS_CERT, "sacctlsc");
+        put("urn:oasis:names:tc:SAML:2.0:ac", "ac");
+    }});
 
     public static Marshaller getMarshallerV1() throws JAXBException {
         JAXBContext ctx = getContext(PackageVersion.V1);

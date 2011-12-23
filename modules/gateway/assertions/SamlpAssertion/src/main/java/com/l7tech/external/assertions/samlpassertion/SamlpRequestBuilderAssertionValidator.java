@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.policy.validator.AssertionValidator;
 import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
+import com.l7tech.security.xml.XmlElementEncryptionConfig;
 
 /**
  * User: vchan
@@ -50,6 +51,13 @@ public class SamlpRequestBuilderAssertionValidator implements AssertionValidator
 
                     if (holderOfKey && firstCertCred == -1 || firstCertCred > i) {
                         result.addError(new PolicyValidatorResult.Error(assertion, "Holder-of-Key selected, must be preceded by a certificate-based credential source", null));
+                    }
+
+                    if (assertion.isEncryptNameIdentifier()) {
+                        final XmlElementEncryptionConfig xmlEncryptConfig = assertion.getXmlEncryptConfig();
+                        if (xmlEncryptConfig.getRecipientCertificateBase64() == null) {
+                            result.addError(new PolicyValidatorResult.Error(assertion, "No Recipient Certificate is configured", null));
+                        }
                     }
 
                     return;

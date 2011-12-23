@@ -1,5 +1,6 @@
 package com.l7tech.util;
 
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
@@ -64,6 +65,7 @@ public class DomUtils {
      * @param elementName the name of the element to find. Should not be null.
      * @return  First matching descendant {@link Element} or null if the specified ancestor contains no matching elements
      */
+    @Nullable
     public static Element findFirstDescendantElement(Element ancestor, String nsuri, String elementName) {
         if (!(ancestor.hasChildNodes()) || elementName == null)
             return null;

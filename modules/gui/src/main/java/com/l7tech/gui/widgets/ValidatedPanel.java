@@ -12,6 +12,10 @@ import java.util.regex.Pattern;
 
 /**
  * Note: every concrete implementation *must* call {@link #init} from each constructor!
+ * <p/>
+ * Note: Implementations of {@link #doUpdateModel()} must throw if the data in the panel is invalid. This will stop
+ * OkCancelDialog from dismissing the dialog with validation errors.
+ *
  * @param <V> the payload value type (returned from {@link #getModel()})
  * @author alex
  */
@@ -196,8 +200,11 @@ public abstract class ValidatedPanel<V> extends JPanel {
 
     /**
      * Called when the OK button is pressed; it's now time to update the model from the view.
+     *
+     * @throws Throwable If the model is invalid, throw an exception for the validation error here. Usages of this
+     * method in {@link OkCancelDialog} will handle this error and display the error to the user without dismissing the dialog.
      */
-    public void updateModel() {
+    public void updateModel() throws Throwable {
         doUpdateModel();
     }
 
