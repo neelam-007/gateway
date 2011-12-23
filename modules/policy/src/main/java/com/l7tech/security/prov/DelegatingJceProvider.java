@@ -27,6 +27,11 @@ public class DelegatingJceProvider extends JceProvider {
     }
 
     @Override
+    public GcmCipher getAesGcmCipherWrapper() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
+        return delegate.getAesGcmCipherWrapper();
+    }
+
+    @Override
     public Cipher getAesGcmCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
         return delegate.getAesGcmCipher();
     }

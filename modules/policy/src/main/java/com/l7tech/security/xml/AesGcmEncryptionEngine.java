@@ -4,6 +4,7 @@ import com.ibm.xml.enc.EncryptionEngine;
 import com.ibm.xml.enc.StructureException;
 import com.ibm.xml.enc.type.EncryptionMethod;
 import com.ibm.xml.enc.type.KeySize;
+import com.l7tech.security.prov.GcmCipher;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.RandomUtil;
@@ -22,7 +23,7 @@ import java.security.spec.AlgorithmParameterSpec;
 public class AesGcmEncryptionEngine extends EncryptionEngine {
     private static final int IV_BYTES = 12;  // GCM always uses 12 byte IV
     private static final int AUTH_TAG_BYTES = 16;  // xenc 1.1 specific a 128 bit auth tag for GCM
-    private final Cipher cipher;
+    private final GcmCipher cipher;
     private int cipherMode = 0;
     private Key key;
     private byte[] ivToWrite;
@@ -33,7 +34,7 @@ public class AesGcmEncryptionEngine extends EncryptionEngine {
     public AesGcmEncryptionEngine(int keyBits) throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
         KeySize keySize = new KeySize();
         keySize.setSize(keyBits);
-        this.cipher = JceProvider.getInstance().getAesGcmCipher();
+        this.cipher = JceProvider.getInstance().getAesGcmCipherWrapper();
     }
 
     @Override
@@ -112,7 +113,8 @@ public class AesGcmEncryptionEngine extends EncryptionEngine {
                         if (len < 1)
                             return null;
                     }
-                    return cipher.update(bytes, offset, len);
+                    byte[] ret = cipher.update(bytes, offset, len);
+                    return ret;
 
                 default:
                     throw new IllegalStateException("Mode not supported for AES-GCM: " + cipherMode);

@@ -13,13 +13,6 @@
 	</configurations>
 	<publications/>
 	<dependencies>
-		<dependency org="com.ncipher" name="jcetools" rev="1.0" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-		<dependency org="com.ncipher" name="jutils" rev="1.0" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-		<dependency org="com.ncipher" name="keysafe" rev="1.0" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-		<dependency org="com.ncipher" name="kmcsp" rev="1.0" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-		<dependency org="com.ncipher" name="kmjava" rev="1.0" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-		<dependency org="com.ncipher" name="nfjava" rev="1.0" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-		<dependency org="com.ncipher" name="rsaprivenc" rev="1.0" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-		<dependency org="com.ncipher" name="spp" rev="1.0" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="com.ncipher" name="nCipherKM" rev="1.0" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 	</dependencies>
 </ivy-module>

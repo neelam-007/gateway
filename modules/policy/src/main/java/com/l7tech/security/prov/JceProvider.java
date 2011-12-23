@@ -329,6 +329,18 @@ public abstract class JceProvider {
     }
 
     /**
+     * Get a GcmCipher implementation configured to use AES-GCM.
+     *
+     * @return a GcmCipher implementation.
+     * @throws NoSuchProviderException   if there is a configuration problem.  Shouldn't happen.
+     * @throws NoSuchAlgorithmException  if this provider is unable to deliver an appropriately-configured AES-GCM implementation.  Will happen unless provider supports GCM mode.
+     * @throws NoSuchPaddingException    if this provider is unable to deliver an appropriately-configured AES-GCM implementation.
+     */
+    public GcmCipher getAesGcmCipherWrapper() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
+        return new DefaultGcmCipher(getAesGcmCipher());
+    }
+
+    /**
      * Get an implementation of AES configured to use Galois/Counter Mode.
      *
      * @return a Cipher implementation.  Never null.
@@ -362,8 +374,12 @@ public abstract class JceProvider {
      * @throws NoSuchAlgorithmException if AES-GCM mode is not supported by this JceProvider.
      */
     public AlgorithmParameterSpec generateAesGcmParameterSpec(int authTagLenBytes, @NotNull byte[] iv) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException {
-        // TODO [jdk7] update to use javax.crypto.spec.GCMParameterSpec when we switch to Java 7
-        throw new NoSuchAlgorithmException("AES-GCM not supported when using the current crypto provider");
+        try {
+            // Create a JDK 7 GCMParameterSpec, if the class is available, and hope that the current AES provider will know what to make of it
+            return (AlgorithmParameterSpec)Class.forName("javax.crypto.spec.GCMParameterSpec").getConstructor(int.class, byte[].class).newInstance(authTagLenBytes * 8, iv);
+        } catch (Exception e) {
+            throw new NoSuchAlgorithmException("AES-GCM not supported when using the current crypto provider");
+        }
     }
 
     /**
