@@ -1,5 +1,6 @@
 package com.l7tech.util;
 
+import static java.lang.reflect.Array.newInstance;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -301,39 +302,19 @@ public class ArrayUtils {
     }
 
     public static byte[] copy(final byte[] data) {
-        byte[] copy = null;
-        if (data != null) {
-            copy = new byte[data.length];
-            System.arraycopy(data, 0, copy, 0, data.length);
-        }
-        return copy;
+        return (byte[])copyInternal(data);
     }
 
     public static int[] copy(final int[] data) {
-        int[] copy = null;
-        if (data != null) {
-            copy = new int[data.length];
-            System.arraycopy(data, 0, copy, 0, data.length);
-        }
-        return copy;
+        return (int[])copyInternal(data);
     }
 
     public static char[] copy(final char[] data) {
-        char[] copy = null;
-        if (data != null) {
-            copy = new char[data.length];
-            System.arraycopy(data, 0, copy, 0, data.length);
-        }
-        return copy;
+        return (char[])copyInternal(data);
     }
 
     public static boolean[] copy(final boolean[] data) {
-        boolean[] copy = null;
-        if (data != null) {
-            copy = new boolean[data.length];
-            System.arraycopy(data, 0, copy, 0, data.length);
-        }
-        return copy;
+        return (boolean[])copyInternal(data);
     }
 
     /**
@@ -342,12 +323,19 @@ public class ArrayUtils {
      * @param data the array to copy
      * @return The copy or null if data is null
      */
+    @SuppressWarnings({ "unchecked" })
     public static <T> T[] copy(final T[] data) {
-        T[] copy = null;
+        return (T[])copyInternal( data );
+    }
+
+    @SuppressWarnings({ "SuspiciousSystemArraycopy" })
+    private static Object copyInternal( final Object data ) {
+        Object copy = null;
 
         if (data != null) {
-            copy = (T[]) newInstance( data.getClass().getComponentType(), data.length );
-            System.arraycopy(data, 0, copy, 0, data.length);
+            final int length = getLength(data);
+            copy = newInstance( data.getClass().getComponentType(), length );
+            System.arraycopy(data, 0, copy, 0, length);
         }
 
         return copy;
@@ -355,19 +343,20 @@ public class ArrayUtils {
 
     /**
      * Create an array that is a copy of the given arrays.
-     *
-     * <p>The 2nd array must be the same or a sub-type of the 1st array.</p>
-     *
-     * @param data1 the array to copy (must not be null)
-     * @param data2 the array to copy (must not be null)
-     * @return The copy or null if data is null
      */
-    public static <T> T[] copy(final T[] data1, final T[] data2) {
-        T[] copy = (T[]) newInstance( data1.getClass().getComponentType(), data1.length + data2.length );
-        System.arraycopy(data1, 0, copy, 0, data1.length);
-        System.arraycopy(data2, 0, copy, data1.length, data2.length);
-
+    @SuppressWarnings({ "SuspiciousSystemArraycopy" })
+    private static Object copyInternal( final Object data1, final Object data2 ) {
+        final int data1Length = getLength( data1 );
+        final int data2Length = getLength( data2 );
+        final Object copy = newInstance( data1.getClass().getComponentType(), data1Length + data2Length );
+        System.arraycopy(data1, 0, copy, 0, data1Length);
+        System.arraycopy(data2, 0, copy, data1Length, data2Length);
         return copy;
+    }
+
+    @SuppressWarnings({ "unchecked" })
+    private static <T,T1 extends T> T[] copyInternalTyped( final T[] data1, final T1[] data2 ) {
+        return (T[])copyInternal( data1, data2 );
     }
 
     /**
@@ -410,15 +399,18 @@ public class ArrayUtils {
     /**
      * Merge two arrays.
      *
+     * <p>The 2nd array must be the same or a sub-type of the 1st array.</p>
+     *
      * @param a  an array.  May be empty but not null.
      * @param b  an array.  May be empty but not null.
+     * @param <T> The array type
+     * @param <T1> The array (sub)type
      * @return a new array that contains all the elements of a followed by all the elements of b.
+     * @see #copy
      */
-    public static String[] concat(String[] a, String[] b) {
-        String[] ret = new String[a.length + b.length];
-        if (a.length > 0) System.arraycopy(a, 0, ret, 0, a.length);
-        if (b.length > 0) System.arraycopy(b, 0, ret, a.length, b.length);
-        return ret;
+    @SuppressWarnings({ "unchecked" })
+    public static <T,T1 extends T> T[] concat(T[] a, T1[] b) {
+        return copyInternalTyped( a, b );
     }
 
     /**
@@ -429,10 +421,7 @@ public class ArrayUtils {
      * @return a new array that contains all the elements of a followed by all the elements of b.  Never null.
      */
     public static byte[] concat(@NotNull byte[] a, @NotNull byte[] b) {
-        byte[] ret = new byte[a.length + b.length];
-        if (a.length > 0) System.arraycopy(a, 0, ret, 0, a.length);
-        if (b.length > 0) System.arraycopy(b, 0, ret, a.length, b.length);
-        return ret;
+        return (byte[])copyInternal( a, b );
     }
 
     /** Same as {@link Arrays#fill} except it returns the array (e.g. so you can use it in a super constructor call) */

@@ -5,6 +5,7 @@ import static com.l7tech.util.CollectionUtils.list;
 import static com.l7tech.util.CollectionUtils.toList;
 import org.junit.*;
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
 
 import java.util.Collections;
 
@@ -185,5 +186,61 @@ public class ArrayUtilsTest {
                 new Pair<String, String>( "4", null ),
                 new Pair<String, String>( "5", null )
         ), toList( zip5_3 ) );
+    }
+
+    @Test
+    public void testCopy() {
+        final byte[] byteArrayZero = new byte[0];
+        final byte[] byteArrayZeroCopy = copy(byteArrayZero);
+        assertArrayEquals( "Byte array (empty)", byteArrayZero, byteArrayZeroCopy );
+        assertNotSame( "Byte array (empty) not same object", byteArrayZero, byteArrayZeroCopy );
+
+        final byte[] byteArray = new byte[]{0,1,2,3,4,5,6,7,8,9};
+        final byte[] byteArrayCopy = copy(byteArray);
+        assertArrayEquals( "Byte array", byteArray, byteArrayCopy );
+        assertNotSame( "Byte array not same object", byteArray, byteArrayCopy );
+
+        final int[] intArray = new int[]{0,1,2,3,4,5,6,7,8,9};
+        final int[] intArrayCopy = copy(intArray);
+        assertArrayEquals( "Int array", intArray, intArrayCopy );
+        assertNotSame( "Int array not same object", intArray, intArrayCopy );
+
+        final char[] charArray = "abcdefghijklmnopqrstuvwxyz".toCharArray();
+        final char[] charArrayCopy = copy(charArray);
+        assertArrayEquals( "Char array", charArray, charArrayCopy );
+        assertNotSame( "Char array not same object", charArray, charArrayCopy );
+
+        final boolean[] booleanArray = new boolean[]{true};
+        final boolean[] booleanArrayCopy = copy(booleanArray);
+        assertEquals( "Boolean array size", booleanArray.length, booleanArrayCopy.length );
+        assertEquals( "Boolean array value 0", booleanArray[0], booleanArrayCopy[0] );
+        assertNotSame( "Boolean array not same object", booleanArray, booleanArrayCopy );
+
+        final String[] stringArray = new String[]{"a","b","c"};
+        final String[] stringArrayCopy = copy(stringArray);
+        assertArrayEquals( "String array", stringArray, stringArrayCopy );
+        assertNotSame( "String array not same object", stringArray, stringArrayCopy );
+    }
+
+    @Test
+    public void testConcat() {
+        final String[] stringArrayOne = new String[]{"a"};
+        final String[] stringArrayTwo = new String[]{"b","c"};
+        final String[] stringArrayConcat = concat( stringArrayOne, stringArrayTwo );
+        assertArrayEquals( "String array", new String[]{"a","b","c"}, stringArrayConcat );
+        assertNotSame( "String array one not same object", stringArrayOne, stringArrayConcat );
+        assertNotSame( "String array two not same object", stringArrayTwo, stringArrayConcat );
+
+        final byte[] byteArrayOne = new byte[]{ 1 };
+        final byte[] byteArrayTwo = new byte[]{ 2 };
+        final byte[] byteArrayConcat = concat( byteArrayOne, byteArrayTwo );
+        assertArrayEquals( "Byte array", new byte[]{1,2}, byteArrayConcat );
+        assertNotSame( "Byte array one not same object", byteArrayOne, byteArrayConcat );
+        assertNotSame( "Byte array two not same object", byteArrayTwo, byteArrayConcat );
+
+        final byte[] emptyByteArray = new byte[]{};
+        final byte[] emptyByteArrayConcat = concat( emptyByteArray, emptyByteArray );
+        assertArrayEquals( "Byte array (empty)", emptyByteArray, emptyByteArrayConcat );
+        assertNotSame( "Byte array (empty) not same object", emptyByteArray, emptyByteArrayConcat );
     }
 }

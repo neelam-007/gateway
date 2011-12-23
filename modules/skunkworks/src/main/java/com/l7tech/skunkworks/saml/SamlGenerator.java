@@ -86,8 +86,8 @@ public class SamlGenerator {
     };
 
     private static final String[] ALL_AUTH_METHODS = (String[])
-            ArrayUtils.copy(SamlConstants.ALL_AUTHENTICATIONS,
-                            SamlConstants.ALL_AUTHENTICATIONS_SAML2);
+            ArrayUtils.concat(SamlConstants.ALL_AUTHENTICATIONS,
+                              SamlConstants.ALL_AUTHENTICATIONS_SAML2);
 
     private static final String[] AUTH_METHODS_WITH_CERTS = {
         // SAML 1.1
