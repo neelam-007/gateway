@@ -322,12 +322,12 @@ public class HttpForwardingRuleEnforcer {
     }
 
     public static class Param {
-        Param(String name, String value) {
+        Param( final String name, final String value) {
             this.name = name;
             this.value = value;
         }
-        public String name;
-        public String value;
+        public final String name;
+        public final String value;
     }
 
     public static List<Param> handleRequestParameters( final PolicyEnforcementContext context,
