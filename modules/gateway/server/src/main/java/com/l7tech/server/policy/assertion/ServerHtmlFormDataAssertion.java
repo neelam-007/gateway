@@ -15,7 +15,6 @@ import javax.mail.internet.ContentDisposition;
 import javax.mail.internet.ParseException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -147,7 +146,11 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
 
                 // Enforces data type and/or emptiness:
                 for (FieldValue fieldValue : field.fieldValues) {
-                    if(!fieldSpec.isAllowEmpty() && fieldValue.value.isEmpty()){
+                    Boolean allowEmpty = fieldSpec.getAllowEmpty();
+                    if (allowEmpty == null) {
+                        allowEmpty = HtmlFormDataAssertion.ALLOW_EMPTY_BY_DATA_TYPE.get(fieldSpec.getDataType());
+                    }
+                    if (fieldValue.value.isEmpty() && !allowEmpty) {
                         logAndAudit(AssertionMessages.HTMLFORMDATA_EMPTY_NOT_ALLOWED, field.name);
                         return AssertionStatus.FALSIFIED;
                     }
@@ -155,7 +158,7 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
                     if (allowedDataType == HtmlFormDataType.ANY) {
                         // No testing needed.
                     } else if (allowedDataType == HtmlFormDataType.NUMBER) {
-                        if(!fieldValue.value.isEmpty()){
+                        if (!fieldValue.value.isEmpty()) {
                             try {
                                 Double.valueOf(fieldValue.value);
                             } catch (NumberFormatException e) {
@@ -168,7 +171,7 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
                             logAndAudit(AssertionMessages.HTMLFORMDATA_FAIL_DATATYPE, field.name, fieldValue.value, allowedDataType.getWspName());
                         }
                     } else if (allowedDataType == HtmlFormDataType.STRING) {
-                        if(fieldValue.isFile){
+                        if (fieldValue.isFile) {
                             logAndAudit(AssertionMessages.HTMLFORMDATA_FAIL_DATATYPE, field.name, fieldValue.value, allowedDataType.getWspName());
                             return AssertionStatus.FALSIFIED;
                         }

@@ -7,6 +7,8 @@ import com.l7tech.policy.assertion.annotation.ProcessesMultipart;
 import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Provides validation of HTML Form data set in an incoming request.
@@ -23,6 +25,19 @@ import java.io.Serializable;
 public class HtmlFormDataAssertion extends Assertion {
 
     /**
+     * For supporting backwards compatibility - before allowEmpty field was added, only number data type restricted empty values
+     */
+    public static final Map<HtmlFormDataType, Boolean> ALLOW_EMPTY_BY_DATA_TYPE;
+
+    static {
+        ALLOW_EMPTY_BY_DATA_TYPE = new HashMap<HtmlFormDataType, Boolean>();
+        ALLOW_EMPTY_BY_DATA_TYPE.put(HtmlFormDataType.ANY, true);
+        ALLOW_EMPTY_BY_DATA_TYPE.put(HtmlFormDataType.STRING, true);
+        ALLOW_EMPTY_BY_DATA_TYPE.put(HtmlFormDataType.FILE, true);
+        ALLOW_EMPTY_BY_DATA_TYPE.put(HtmlFormDataType.NUMBER, false);
+    }
+
+    /**
      * A FieldSpec specifies the constraints on a HTML Form field.
      */
     public static class FieldSpec implements Serializable {
@@ -32,7 +47,8 @@ public class HtmlFormDataAssertion extends Assertion {
         private int maxOccurs;
         private HtmlFormDataLocation allowedLocation = HtmlFormDataLocation.ANYWHERE;
         // Set to true if the field must be present but can have an empty value.
-        private boolean allowEmpty;
+        // allowEmpty is nullable to support backwards compatibility
+        private Boolean allowEmpty;
 
         public FieldSpec() {
         }
@@ -41,7 +57,7 @@ public class HtmlFormDataAssertion extends Assertion {
                          final HtmlFormDataType dataType,
                          final int minOccurs,
                          final int maxOccurs,
-                         final HtmlFormDataLocation allowedLocation, final boolean allowEmpty) {
+                         final HtmlFormDataLocation allowedLocation, final Boolean allowEmpty) {
             this.name = name;
             this.dataType = dataType;
             this.minOccurs = minOccurs;
@@ -90,11 +106,11 @@ public class HtmlFormDataAssertion extends Assertion {
             this.allowedLocation = allowedLocation;
         }
 
-        public boolean isAllowEmpty() {
+        public Boolean getAllowEmpty() {
             return allowEmpty;
         }
 
-        public void setAllowEmpty(final boolean allowEmpty) {
+        public void setAllowEmpty(final Boolean allowEmpty) {
             this.allowEmpty = allowEmpty;
         }
     }

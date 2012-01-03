@@ -37,9 +37,9 @@ public class ServerHtmlFormDataAssertionTest {
     private static final String CONTENT_TYPE = "Content-Type";
     private static final String FORM = "application/x-www-form-urlencoded";
     private static final String FILENAME = "filename";
-    private static final HtmlFormDataAssertion.FieldSpec STRING_ANYWHERE_FIELD_SPEC = new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.STRING, 1, 1, HtmlFormDataLocation.ANYWHERE, true);
-    private static final HtmlFormDataAssertion.FieldSpec STRING_BODY_FIELD_SPEC = new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.STRING, 1, 1, HtmlFormDataLocation.BODY, true);
-    private static final HtmlFormDataAssertion.FieldSpec STRING_URL_FIELD_SPEC = new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.STRING, 1, 1, HtmlFormDataLocation.URL, true);
+    private static final HtmlFormDataAssertion.FieldSpec STRING_ANYWHERE_FIELD_SPEC = new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.STRING, 1, 1, HtmlFormDataLocation.ANYWHERE, Boolean.TRUE);
+    private static final HtmlFormDataAssertion.FieldSpec STRING_BODY_FIELD_SPEC = new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.STRING, 1, 1, HtmlFormDataLocation.BODY, Boolean.TRUE);
+    private static final HtmlFormDataAssertion.FieldSpec STRING_URL_FIELD_SPEC = new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.STRING, 1, 1, HtmlFormDataLocation.URL, Boolean.TRUE);
     private ServerHtmlFormDataAssertion serverAssertion;
     private HtmlFormDataAssertion assertion;
     private PolicyEnforcementContext context;
@@ -120,8 +120,7 @@ public class ServerHtmlFormDataAssertionTest {
 
     @Test
     public void checkGetRequestStringDataTypeEmptyNotAllowed() throws Exception {
-        final HtmlFormDataAssertion.FieldSpec emptyNotAllowed = new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.STRING, 1, 1, HtmlFormDataLocation.ANYWHERE, false);
-        assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{emptyNotAllowed});
+        assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.STRING, 1, 1, HtmlFormDataLocation.ANYWHERE, Boolean.FALSE)});
         assertion.setAllowGet(true);
         mockRequest.setMethod(GET);
         mockRequest.setQueryString(FIELDNAME + "=");
@@ -131,9 +130,19 @@ public class ServerHtmlFormDataAssertionTest {
     }
 
     @Test
+    public void checkGetRequestStringDataTypeEmptyNullAllowEmpty() throws Exception {
+        assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.STRING, 1, 1, HtmlFormDataLocation.ANYWHERE, null)});
+        assertion.setAllowGet(true);
+        mockRequest.setMethod(GET);
+        mockRequest.setQueryString(FIELDNAME + "=");
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(mockRequest));
+
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
+    }
+
+    @Test
     public void checkGetRequestNumberDataTypeEmpty() throws Exception {
-        final HtmlFormDataAssertion.FieldSpec emptyNotAllowed = new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.NUMBER, 1, 1, HtmlFormDataLocation.ANYWHERE, true);
-        assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{emptyNotAllowed});
+        assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.NUMBER, 1, 1, HtmlFormDataLocation.ANYWHERE, Boolean.TRUE)});
         assertion.setAllowGet(true);
         mockRequest.setMethod(GET);
         mockRequest.setQueryString(FIELDNAME + "=");
@@ -144,8 +153,19 @@ public class ServerHtmlFormDataAssertionTest {
 
     @Test
     public void checkGetRequestNumberDataTypeEmptyNotAllowed() throws Exception {
-        final HtmlFormDataAssertion.FieldSpec emptyNotAllowed = new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.NUMBER, 1, 1, HtmlFormDataLocation.ANYWHERE, false);
-        assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{emptyNotAllowed});
+        assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.NUMBER, 1, 1, HtmlFormDataLocation.ANYWHERE, Boolean.FALSE)});
+        assertion.setAllowGet(true);
+        mockRequest.setMethod(GET);
+        mockRequest.setQueryString(FIELDNAME + "=");
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(mockRequest));
+
+        assertEquals(AssertionStatus.FALSIFIED, serverAssertion.checkRequest(context));
+        assertTrue(testAudit.isAuditPresentContaining(MessageFormat.format(AssertionMessages.HTMLFORMDATA_EMPTY_NOT_ALLOWED.getMessage(), FIELDNAME)));
+    }
+
+    @Test
+    public void checkGetRequestNumberDataTypeEmptyNullAllowEmpty() throws Exception {
+        assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.NUMBER, 1, 1, HtmlFormDataLocation.ANYWHERE, null)});
         assertion.setAllowGet(true);
         mockRequest.setMethod(GET);
         mockRequest.setQueryString(FIELDNAME + "=");
@@ -157,7 +177,7 @@ public class ServerHtmlFormDataAssertionTest {
 
     @Test
     public void checkGetRequestAnywhereAnyDataType() throws Exception {
-        assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.ANY, 1, 1, HtmlFormDataLocation.ANYWHERE, true)});
+        assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.ANY, 1, 1, HtmlFormDataLocation.ANYWHERE, Boolean.TRUE)});
         assertion.setAllowGet(true);
         mockRequest.setMethod(GET);
         mockRequest.setQueryString(KEYVALUEPAIR);
@@ -168,7 +188,7 @@ public class ServerHtmlFormDataAssertionTest {
 
     @Test
     public void checkGetRequestAnywhereAnyDataTypeEmpty() throws Exception {
-        assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.ANY, 1, 1, HtmlFormDataLocation.ANYWHERE, true)});
+        assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.ANY, 1, 1, HtmlFormDataLocation.ANYWHERE, Boolean.TRUE)});
         assertion.setAllowGet(true);
         mockRequest.setMethod(GET);
         mockRequest.setQueryString(FIELDNAME + "=");
@@ -179,7 +199,7 @@ public class ServerHtmlFormDataAssertionTest {
 
     @Test
     public void checkGetRequestAnywhereAnyDataTypeEmptyNotAllowed() throws Exception {
-        assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.ANY, 1, 1, HtmlFormDataLocation.ANYWHERE, false)});
+        assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.ANY, 1, 1, HtmlFormDataLocation.ANYWHERE, Boolean.FALSE)});
         assertion.setAllowGet(true);
         mockRequest.setMethod(GET);
         mockRequest.setQueryString(FIELDNAME + "=");
@@ -271,7 +291,7 @@ public class ServerHtmlFormDataAssertionTest {
         final ByteArrayOutputStream requestContent = new ByteArrayOutputStream();
         entity.writeRequest(requestContent);
 
-        assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.FILE, 1, 1, HtmlFormDataLocation.ANYWHERE, false)});
+        assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.FILE, 1, 1, HtmlFormDataLocation.ANYWHERE, Boolean.FALSE)});
         assertion.setAllowPost(true);
         mockRequest.setMethod(POST);
         mockRequest.addHeader(CONTENT_TYPE, entity.getContentType());
@@ -290,7 +310,25 @@ public class ServerHtmlFormDataAssertionTest {
         final ByteArrayOutputStream requestContent = new ByteArrayOutputStream();
         entity.writeRequest(requestContent);
 
-        assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.FILE, 1, 1, HtmlFormDataLocation.ANYWHERE, true)});
+        assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.FILE, 1, 1, HtmlFormDataLocation.ANYWHERE, Boolean.TRUE)});
+        assertion.setAllowPost(true);
+        mockRequest.setMethod(POST);
+        mockRequest.addHeader(CONTENT_TYPE, entity.getContentType());
+        mockRequest.setContent(requestContent.toByteArray());
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(mockRequest));
+        request.initialize(ContentTypeHeader.parseValue(entity.getContentType()), requestContent.toByteArray());
+
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
+    }
+
+    @Test
+    public void checkPostRequestFileDataTypeEmptyNullAllowEmpty() throws Exception {
+        final Part[] parts = new Part[]{new FilePart(FIELDNAME, new ByteArrayPartSource("", "".getBytes()))};
+        final MultipartRequestEntity entity = new MultipartRequestEntity(parts, new PostMethod().getParams());
+        final ByteArrayOutputStream requestContent = new ByteArrayOutputStream();
+        entity.writeRequest(requestContent);
+
+        assertion.setFieldSpecs(new HtmlFormDataAssertion.FieldSpec[]{new HtmlFormDataAssertion.FieldSpec(FIELDNAME, HtmlFormDataType.FILE, 1, 1, HtmlFormDataLocation.ANYWHERE, null)});
         assertion.setAllowPost(true);
         mockRequest.setMethod(POST);
         mockRequest.addHeader(CONTENT_TYPE, entity.getContentType());

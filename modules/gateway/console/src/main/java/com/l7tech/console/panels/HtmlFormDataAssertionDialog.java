@@ -14,7 +14,6 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.*;
-import javax.swing.tree.DefaultTreeCellEditor;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
@@ -24,8 +23,8 @@ import java.util.Arrays;
  * Properties dialog for the HTML Form Data Assertion.
  *
  * @author rmak
- * @since SecureSpan 3.7
  * @see HtmlFormDataAssertion
+ * @since SecureSpan 3.7
  */
 public class HtmlFormDataAssertionDialog extends LegacyAssertionPropertyDialog implements TableModelListener {
 
@@ -36,15 +35,15 @@ public class HtmlFormDataAssertionDialog extends LegacyAssertionPropertyDialog i
      */
     private class FieldTableCellRenderer extends DefaultTableCellRenderer {
         private final Color DARK_YELLOW = new Color(192, 192, 0);
+
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             final Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             final String warning = _fieldTableModel.getCellWarning(row, column);
             if (warning == null) {
                 if (isSelected) {
-                   super.setForeground(table.getSelectionForeground());
-                   super.setBackground(table.getSelectionBackground());
-                }
-                else {
+                    super.setForeground(table.getSelectionForeground());
+                    super.setBackground(table.getSelectionBackground());
+                } else {
                     super.setForeground(table.getForeground());
                     super.setBackground(table.getBackground());
                 }
@@ -89,13 +88,16 @@ public class HtmlFormDataAssertionDialog extends LegacyAssertionPropertyDialog i
      * values.
      */
     private class FieldTableModel extends DefaultTableModel {
-        /** Current sorting order in each column. */
+        /**
+         * Current sorting order in each column.
+         */
         private boolean[] _ascending;
 
         /**
          * Creates the table model and populates it with given fields in sorted order by name.
-         * @param fieldSpecs    field specifications to initialize with; field
-         *                      properties will be copied (not referenced)
+         *
+         * @param fieldSpecs field specifications to initialize with; field
+         *                   properties will be copied (not referenced)
          */
         public FieldTableModel(final HtmlFormDataAssertion.FieldSpec[] fieldSpecs) {
             super(FieldColumn.getNames(), fieldSpecs.length);
@@ -108,8 +110,8 @@ public class HtmlFormDataAssertionDialog extends LegacyAssertionPropertyDialog i
                 setValueAt(fieldSpec.getMinOccurs(), row, FIELD_MIN_OCCURS_COLUMN.index);
                 setValueAt(fieldSpec.getMaxOccurs(), row, FIELD_MAX_OCCURS_COLUMN.index);
                 setValueAt(fieldSpec.getAllowedLocation(), row, FIELD_LOCATION_COLUMN.index);
-                setValueAt(fieldSpec.isAllowEmpty(), row, FIELD_ALLOW_EMPTY_COLUMN.index);
-                ++ row;
+                setValueAt(fieldSpec.getAllowEmpty() == null ? HtmlFormDataAssertion.ALLOW_EMPTY_BY_DATA_TYPE.get(fieldSpec.getDataType()) : fieldSpec.getAllowEmpty(), row, FIELD_ALLOW_EMPTY_COLUMN.index);
+                ++row;
             }
 
             _ascending = new boolean[getColumnCount()];
@@ -123,12 +125,12 @@ public class HtmlFormDataAssertionDialog extends LegacyAssertionPropertyDialog i
         /**
          * Sort by the given column. Sorting order is toggled from current order.
          *
-         * @param columnIndex   column to sort
+         * @param columnIndex column to sort
          */
         public void sort(final int columnIndex) {
             final int rowCount = getRowCount();
-            for (int i = 0; i < rowCount; ++ i) {
-                for (int j = i + 1; j < rowCount; ++ j) {
+            for (int i = 0; i < rowCount; ++i) {
+                for (int j = i + 1; j < rowCount; ++j) {
                     final String cell_i = getValueAt(i, columnIndex).toString();
                     final String cell_j = getValueAt(j, columnIndex).toString();
                     if (_ascending[columnIndex]) {
@@ -147,11 +149,12 @@ public class HtmlFormDataAssertionDialog extends LegacyAssertionPropertyDialog i
 
         /**
          * Swaps the cell contents of two rows.
-         * @param row1  index of row 1
-         * @param row2  index of row 2
+         *
+         * @param row1 index of row 1
+         * @param row2 index of row 2
          */
         private void swapRows(final int row1, final int row2) {
-            for (int column = 0; column < getColumnCount(); ++ column) {
+            for (int column = 0; column < getColumnCount(); ++column) {
                 final Object value_1 = getValueAt(row1, column);
                 final Object value_2 = getValueAt(row2, column);
                 setValueAt(value_2, row1, column);
@@ -162,18 +165,18 @@ public class HtmlFormDataAssertionDialog extends LegacyAssertionPropertyDialog i
         /**
          * Generates a warning against a cell value if it is invalid.
          *
-         * @param row       row index of the cell
-         * @param column    column index of the cell
+         * @param row    row index of the cell
+         * @param column column index of the cell
          * @return a warning string if cell value is invalid;
          *         <code>null</code> if cell value is valid
          */
         private String getCellWarning(final int row, final int column) {
             if (column == FIELD_NAME_COLUMN.index) {
-                final String fieldName = (String)getValueAt(row, column);
+                final String fieldName = (String) getValueAt(row, column);
                 if (fieldName.trim().length() == 0) {
                     return "Field name cannot be blank";
                 }
-                for (int r = 0; r < getRowCount(); ++ r) {
+                for (int r = 0; r < getRowCount(); ++r) {
                     if (r != row) {
                         if (getValueAt(r, column).equals(fieldName)) {
                             return "Duplicate field name";
@@ -247,7 +250,7 @@ public class HtmlFormDataAssertionDialog extends LegacyAssertionPropertyDialog i
 
         /**
          * Determines if any cell value has warning because it is invalid.
-         *
+         * <p/>
          * Note: This implementation computes every cell validation. A more
          * efficient implementation will compute a cell validation only upon
          * insert, change and delete; and then cache the result. But that would
@@ -256,8 +259,8 @@ public class HtmlFormDataAssertionDialog extends LegacyAssertionPropertyDialog i
          * @return <code>true</code> if any cell value has warning
          */
         public boolean hasWarning() {
-            for (int row = 0; row < getRowCount(); ++ row) {
-                for (int column = 0; column < getColumnCount(); ++ column) {
+            for (int row = 0; row < getRowCount(); ++row) {
+                for (int column = 0; column < getColumnCount(); ++column) {
                     if (getCellWarning(row, column) != null) {
                         return true;
                     }
@@ -267,30 +270,44 @@ public class HtmlFormDataAssertionDialog extends LegacyAssertionPropertyDialog i
         }
     }
 
-    /** Encapsulates miscellaneous properties of a single column in the Form fields table. */
+    /**
+     * Encapsulates miscellaneous properties of a single column in the Form fields table.
+     */
     private static class FieldColumn {
-        /** Colum index. */
+        /**
+         * Colum index.
+         */
         public final int index;
 
-        /** Column header display string. */
+        /**
+         * Column header display string.
+         */
         public final String name;
 
-        /** Column header tooltip text. */
+        /**
+         * Column header tooltip text.
+         */
         public final String toolTip;
 
-        /** Class of cell values in the column. */
+        /**
+         * Class of cell values in the column.
+         */
         public final Class<?> clazz;
 
-        /** For instance lookup by column index. */
+        /**
+         * For instance lookup by column index.
+         */
         private static ArrayList<FieldColumn> _byIndex = new ArrayList<FieldColumn>();
 
-        /** For fast checking of duplicate names in instances. */
+        /**
+         * For fast checking of duplicate names in instances.
+         */
         private static ArrayList<String> _names = new ArrayList<String>();
 
         /**
          * Find an instance given its column index.
          *
-         * @param index    column index
+         * @param index column index
          * @return the column with the given index
          */
         public static FieldColumn findByIndex(final int index) {
@@ -301,7 +318,9 @@ public class HtmlFormDataAssertionDialog extends LegacyAssertionPropertyDialog i
             }
         }
 
-        /** @return names of all columns */
+        /**
+         * @return names of all columns
+         */
         public static String[] getNames() {
             return _names.toArray(new String[_names.size()]);
         }
@@ -434,7 +453,7 @@ public class HtmlFormDataAssertionDialog extends LegacyAssertionPropertyDialog i
 
         // Provides sorting by field name. (i.e., no sorting by other columns)
         final JTableHeader hdr = _fieldTable.getTableHeader();
-        hdr.addMouseListener(new MouseAdapter(){
+        hdr.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent event) {
                 final TableColumnModel tcm = _fieldTable.getColumnModel();
                 final int viewColumnIndex = tcm.getColumnIndexAtX(event.getX());
@@ -447,7 +466,7 @@ public class HtmlFormDataAssertionDialog extends LegacyAssertionPropertyDialog i
 
         _addButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                _fieldTableModel.addRow(new Object[]{"New Field", HtmlFormDataType.ANY, 1, 1, HtmlFormDataLocation.ANYWHERE, Boolean.FALSE});
+                _fieldTableModel.addRow(new Object[]{"New Field", HtmlFormDataType.ANY, 1, 1, HtmlFormDataLocation.ANYWHERE, Boolean.TRUE});
                 final int row = _fieldTable.getRowCount() - 1;
                 if (_fieldTable.editCellAt(row, FIELD_NAME_COLUMN.index)) {
                     _fieldTable.changeSelection(row, FIELD_NAME_COLUMN.index, false, false);     // so that the view scrolls automatically to make this row visible
@@ -468,7 +487,7 @@ public class HtmlFormDataAssertionDialog extends LegacyAssertionPropertyDialog i
                 }
                 final int[] rows = _fieldTable.getSelectedRows();
                 Arrays.sort(rows);
-                for (int i = rows.length - 1; i >= 0; -- i) {
+                for (int i = rows.length - 1; i >= 0; --i) {
                     _fieldTableModel.removeRow(rows[i]);
                 }
                 enableOkButton();   // Removal of rows with invalid value may allow the OK button to be re-enabled.
@@ -533,7 +552,7 @@ public class HtmlFormDataAssertionDialog extends LegacyAssertionPropertyDialog i
             final int minOccurs = ((Integer) _fieldTable.getValueAt(i, FIELD_MIN_OCCURS_COLUMN.index)).intValue();
             final int maxOccurs = ((Integer) _fieldTable.getValueAt(i, FIELD_MAX_OCCURS_COLUMN.index)).intValue();
             final HtmlFormDataLocation allowedLocation = (HtmlFormDataLocation) _fieldTable.getValueAt(i, FIELD_LOCATION_COLUMN.index);
-            final boolean allowEmpty = (Boolean)_fieldTable.getValueAt(i, FIELD_ALLOW_EMPTY_COLUMN.index);
+            final boolean allowEmpty = (Boolean) _fieldTable.getValueAt(i, FIELD_ALLOW_EMPTY_COLUMN.index);
             fieldSpecs[i] = new HtmlFormDataAssertion.FieldSpec(
                     name, dataType, minOccurs, maxOccurs, allowedLocation, allowEmpty
             );
@@ -560,7 +579,7 @@ public class HtmlFormDataAssertionDialog extends LegacyAssertionPropertyDialog i
     private void enableOkButton() {
         final boolean hasWarning = _fieldTableModel.hasWarning();
         _okButton.setEnabled(!readonly && (_allowGetCheckbox.isSelected() || _allowPostCheckbox.isSelected())
-                             && !hasWarning);
+                && !hasWarning);
         if (hasWarning) {
             _warningLabel.setIcon(WARNING_ICON);
             if (_warningLabel.getText() == null) {
