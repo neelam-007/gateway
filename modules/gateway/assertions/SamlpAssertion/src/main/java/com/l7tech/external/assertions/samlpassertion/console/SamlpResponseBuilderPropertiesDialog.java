@@ -277,8 +277,8 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
                                 " may only reference context variables");
 
                     final boolean isSuccess = samlStatus.equals(SamlStatus.SAML2_SUCCESS);
-                    if(respAssertions.isEmpty() && encryptedAssertions.isEmpty() && isSuccess){
-                        throw new ValidationException("If no assertions are entered the status cannot be success.");
+                    if(respAssertions.isEmpty() && encryptedAssertions.isEmpty() && isSuccess && validateWebSSORulesCheckBox.isSelected()){
+                        throw new ValidationException("If no assertions are entered the status cannot be success when Validate Web SSO Rules is configured.");
                     } else if ((!respAssertions.isEmpty() || !encryptedAssertions.isEmpty()) && !isSuccess){
                         // status must be success
                         throw new ValidationException("If status is not success then no assertions can be entered.");
