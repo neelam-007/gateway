@@ -23,7 +23,7 @@ import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyVersionException;
-import com.l7tech.server.tomcat.ResponseKillerValve;
+import static com.l7tech.server.tomcat.ResponseKillerValve.ATTRIBUTE_FLAG_NAME;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.server.util.DelegatingServletInputStream;
@@ -102,11 +102,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
     /**
      * Backwards-ish entry point so that unit tests will work.
-     *
-     * @param hrequest
-     * @param hresponse
-     * @throws ServletException
-     * @throws IOException
      */
     @Override
     public void doPost(HttpServletRequest hrequest, HttpServletResponse hresponse) throws ServletException, IOException {
@@ -226,8 +221,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 if (faultLevelInfo.getLevel() == SoapFaultLevel.DROP_CONNECTION) {
                     logger.info("No policy found and global setting is to go stealth in this case. " +
                                 "Instructing valve to drop connection completly." + faultLevelInfo.toString());
-                    hrequest.setAttribute(ResponseKillerValve.ATTRIBUTE_FLAG_NAME,
-                                          ResponseKillerValve.ATTRIBUTE_FLAG_NAME);
+                    hrequest.setAttribute( ATTRIBUTE_FLAG_NAME, ATTRIBUTE_FLAG_NAME );
                     return;
                 }
             }
@@ -360,12 +354,18 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             if ( faultLevelInfo.getLevel() == SoapFaultLevel.DROP_CONNECTION ) {
                 logger.log(Level.INFO, "Policy threw error and stealth mode is set. " +
                                        "Instructing valve to drop connection completely.");
-                hrequest.setAttribute(ResponseKillerValve.ATTRIBUTE_FLAG_NAME,
-                                      ResponseKillerValve.ATTRIBUTE_FLAG_NAME);
+                hrequest.setAttribute( ATTRIBUTE_FLAG_NAME, ATTRIBUTE_FLAG_NAME );
                 return;
             }
 
             try {
+                if ( !hresponse.isCommitted() ) { // reset the response if possible to clear headers/partial response data
+                    hresponse.reset();
+                } else {
+                    // partial response written before error, we have to drop the connection
+                    // we'll still generate the fault in case it is needed for auditing
+                    hrequest.setAttribute( ATTRIBUTE_FLAG_NAME, ATTRIBUTE_FLAG_NAME );
+                }
                 if (e instanceof MessageResponseIOException) {
                     sendExceptionFault(context, e.getMessage(), null, null, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, hrequest, hresponse);
                 } else {
@@ -481,10 +481,12 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             responseStream = hresp.getOutputStream();
             hresp.setStatus( fault.getHttpStatus() );
             if ( fault.getContentBytes() != null ) {
-                soapFaultManager.sendExtraHeaders(fault, hresp);
-                hresp.setContentType(fault.getContentType().getFullValue());
                 faultXml = fault.getContent();
-                responseStream.write(fault.getContentBytes());
+                if ( !hresp.isCommitted() ) {
+                    soapFaultManager.sendExtraHeaders(fault, hresp);
+                    hresp.setContentType(fault.getContentType().getFullValue());
+                    responseStream.write(fault.getContentBytes());
+                }
             }
         } finally {
             if (responseStream != null) responseStream.close();
@@ -496,17 +498,10 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     private void sendExceptionFault(PolicyEnforcementContext context, Throwable e,
                                     HttpServletRequest hreq, HttpServletResponse hresp) throws IOException, SAXException {
         final SoapFaultManager.FaultResponse faultInfo = soapFaultManager.constructExceptionFault( e, context.getFaultlevel(), context );
-        sendExceptionFault(context,
-                faultInfo,
-                hreq,
-                hresp);
-    }
 
-    private void sendExceptionFault( final PolicyEnforcementContext context,
-                                     final SoapFaultManager.FaultResponse faultInfo,
-                                     final HttpServletRequest hreq,
-                                     final HttpServletResponse hresp ) throws IOException, SAXException {
-        soapFaultManager.sendExtraHeaders(faultInfo, hresp);
+        if ( !hresp.isCommitted() ) {
+            soapFaultManager.sendExtraHeaders(faultInfo, hresp);
+        }
 
         sendExceptionFault(context,
                 faultInfo.getContent(),
