@@ -222,7 +222,6 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
 
     @Deprecated
     public void setConnectionTimeout(Integer connectionTimeout) {
-        connectionTimeout = connectionTimeout/1000;
         this.connectionTimeout = connectionTimeout.toString();
     }
 
@@ -236,7 +235,6 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
 
     @Deprecated
     public void setTimeout(Integer timeout) {
-        timeout = timeout/1000;
         this.timeout = timeout.toString();
     }
 

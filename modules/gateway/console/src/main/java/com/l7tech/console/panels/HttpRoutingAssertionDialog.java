@@ -287,12 +287,12 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             public String getValidationError() {
                 if(connectTimeoutDefaultCheckBox.isSelected()) return null;
 
-                if(ValidationUtils.isValidInteger(connectTimeoutTextField.getText(), false, 1,86400)) return null;
+                if(ValidationUtils.isValidInteger(connectTimeoutTextField.getText(), false, 1,86400000)) return null;  // one day in ms
 
                 if(Syntax.getReferencedNames(connectTimeoutTextField.getText()).length > 0)
                     return null;
                 else
-                     return MessageFormat.format("The {0} field must contain a context variable and/or an integer between {1} and {2}","Connection timeout",1,86400);
+                     return MessageFormat.format("The {0} field must contain a context variable and/or an integer between {1} and {2}","Connection timeout",1,86400000);
             }
         });
 
@@ -301,12 +301,12 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             public String getValidationError() {
                 if(readTimeoutDefaultCheckBox.isSelected()) return null;
 
-                if(ValidationUtils.isValidInteger(readTimeoutTextField.getText(), false, 1,86400)) return null;
+                if(ValidationUtils.isValidInteger(readTimeoutTextField.getText(), false, 1,86400000)) return null;  // one day in ms
 
                 if(Syntax.getReferencedNames(readTimeoutTextField.getText()).length > 0)
                     return null;
                 else
-                     return MessageFormat.format("The {0} field must contain a context variable and/or an integer between {1} and {2}","Read timeout",1,86400);
+                     return MessageFormat.format("The {0} field must contain a context variable and/or an integer between {1} and {2}","Read timeout",1,86400000);
             }
         });
 
