@@ -15,13 +15,23 @@ ensure_JDK() {
     fi
 
     if [ ! -z "${1}" ] ; then
-        EJ_javaver=`${SSG_JAVA_HOME}/bin/java -version 2>&1 | awk -F\" '/version/ {print $2}' | awk -F\. '{print $1"."$2}'`;
+        EJ_javaver=$("${JAVA_HOME}/bin/java" -version 2>&1 | awk -F\" '/version/ {print $2}' | awk -F\. '{print $1"."$2}');
 
-        if [ "${EJ_javaver}" != "${1}" ]; then
+        EJ_want_major=$(echo "${1}" | awk -F'.' '{print $1}')
+        EJ_want_minor=$(echo "${1}" | awk -F'.' '{print $2}')
+        EJ_javaver_major=$(echo "${EJ_javaver}" | awk -F'.' '{print $1}')
+        EJ_javaver_minor=$(echo "${EJ_javaver}" | awk -F'.' '{print $2}')
+
+        if [ "${EJ_want_major}" -gt "${EJ_javaver_major}" ] ; then
             echo "Java ${1} is required, but ${EJ_javaver} was found."
-            exit 2
+            exit 1
         fi
 
-        unset EJ_javaver
+        if [ "${EJ_want_major}" -eq "${EJ_javaver_major}" ] && [ "${EJ_want_minor}" -gt "${EJ_javaver_minor}" ]; then
+            echo "Java ${1} is required, but ${EJ_javaver} was found."
+            exit 1
+        fi
+
+        unset EJ_javaver EJ_want_major EJ_want_minor EJ_javaver_major EJ_javaver_minor
     fi
 }
