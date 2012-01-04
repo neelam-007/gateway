@@ -5,10 +5,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.identity.mapping.NameFormat;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
-import com.l7tech.policy.assertion.xmlsec.RequireWssSaml2;
-import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
-import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
+import com.l7tech.policy.assertion.xmlsec.*;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
@@ -17,10 +14,8 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.ISO8601Date;
 import com.l7tech.util.Pair;
-import com.l7tech.util.TextUtils;
 import com.l7tech.xml.saml.SamlAssertionV2;
 import com.l7tech.xml.soap.SoapUtil;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -110,7 +105,6 @@ public class ServerRequireWssSaml2Test {
     @BugNumber(8866)
     public void testMaximumExpiryTime() throws Exception {
         final Calendar now = Calendar.getInstance(SamlAssertionValidate.UTC_TIME_ZONE);
-        now.clear(Calendar.MILLISECOND); //clear millis xsd:dateTime does not have it
 
         // Case 1: SAML Token Not Expired
         String issueInstant = ISO8601Date.format(offsetTime(now, -60000).getTime()); // 1 minute before "now"
@@ -132,6 +126,26 @@ public class ServerRequireWssSaml2Test {
         
         result = verifyExpiration(issueInstant, notBefore, notOnOrAfter, false, 0);
         assertEquals("Checking SAML Token Expiration is ignored.", AssertionStatus.NONE, result);
+    }
+
+    /**
+     * Note this test will not always fail when it should, but it will eventually if the evaluation of IssueInstant
+     * is modified such that milli second values are not considered.
+     */
+    @Test
+    @BugNumber(11144)
+    public void testIssueInstantEvaluationSupportsMilliSeconds() throws Exception {
+        final Calendar now = Calendar.getInstance(SamlAssertionValidate.UTC_TIME_ZONE);
+
+        String issueInstant = ISO8601Date.format(now.getTime());
+        String notBefore = ISO8601Date.format(offsetTime(now, -30000).getTime());    // simply a valid value for this test
+        String notOnOrAfter = ISO8601Date.format(offsetTime(now, 60000).getTime());  // simply a valid value for this test
+
+        // Validate that the assertion is valid when the issue instance is likely to be on the same second as the time
+        // when the token is evaluated in checkRequest
+        AssertionStatus result = verifyExpiration(issueInstant, notBefore, notOnOrAfter, true, 90000);
+        assertEquals("Token should be valid", AssertionStatus.NONE, result);
+
     }
 
     // Some test coverage for existing authentication matching behavior

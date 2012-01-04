@@ -177,7 +177,6 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
             final long maxExpiry = assertion.getMaxExpiry();
             if (maxExpiry != 0) {  // "0" means no checking.
                 final Calendar now = Calendar.getInstance(SamlAssertionValidate.UTC_TIME_ZONE);
-                now.clear(Calendar.MILLISECOND); //clear millis xsd:dateTime does not have it
 
                 // Get the issue instant
                 final Calendar issueInstant = samlAssertion.getIssueInstant();
