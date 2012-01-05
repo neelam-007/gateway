@@ -38,4 +38,21 @@ class WspVisitorWrapper implements WspVisitor {
     public TypeMappingFinder getTypeMappingFinder() {
         return delegate.getTypeMappingFinder();
     }
+
+    @Override
+    public void propertyTypeMismatch(Element originalObject,
+                                     Element problematicParameter,
+                                     Object deserializedObject,
+                                     String parameterName,
+                                     TypedReference parameterValue,
+                                     Throwable problemEncountered)
+            throws InvalidPolicyStreamException
+    {
+        delegate.propertyTypeMismatch(originalObject,
+                problematicParameter,
+                deserializedObject,
+                parameterName,
+                parameterValue,
+                problemEncountered);
+    }
 }

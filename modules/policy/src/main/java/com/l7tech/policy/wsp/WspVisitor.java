@@ -31,7 +31,26 @@ public interface WspVisitor {
                          TypedReference parameterValue,
                          Throwable problemEncountered)
             throws InvalidPolicyStreamException;
-    
+
+
+    /**
+     * Report a problem for property type mismatch
+     *
+     * @param originalObject       the entire object's source XML.
+     * @param problematicParameter the source XML for the particular parameter we had trouble dealing with.
+     * @param deserializedObject   object whose property we were trying to set.  Never null.
+     * @param parameterName        name of the parameter we had trouble setting.  Never null.
+     * @param parameterValue       value we were trying to set it to.  Never null, but its target might be.
+     * @param problemEncountered   Exception that was encountered while trying to set the property.  Might be null.
+     * @throws InvalidPolicyStreamException  if the visitor was unable to handle the unknown property to its satisfaction
+     */
+    void propertyTypeMismatch(Element originalObject,
+                              Element problematicParameter,
+                              Object deserializedObject,
+                              String parameterName,
+                              TypedReference parameterValue,
+                              Throwable problemEncountered)
+            throws InvalidPolicyStreamException;
     /**
      * Report a problem parsing an element in the serialized policy.  Visitor can optionally return an alternate
      * element to use instead.  If a replacement element is returned, the invalidElement() implementor will have

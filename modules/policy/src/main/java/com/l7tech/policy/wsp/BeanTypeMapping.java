@@ -103,6 +103,7 @@ public class BeanTypeMapping extends ComplexTypeMapping {
                         visitor.unknownProperty(targetSource, propertySource, target, parm, value, null);
                         return;
                     }
+                    visitor.propertyTypeMismatch(targetSource, propertySource, target, parm, value, null);
                 }
             } while (setter == null);
             TypeMappingUtils.invokeMethod(setter, target, parameter);

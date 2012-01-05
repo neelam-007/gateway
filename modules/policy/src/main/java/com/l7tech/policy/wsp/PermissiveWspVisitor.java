@@ -41,6 +41,22 @@ public class PermissiveWspVisitor implements WspVisitor {
             logger.log(Level.INFO, "Ignoring invalid property " + parameterName + " of " + deserializedObject.getClass());
     }
 
+
+    /** Log the property type mismatch and continue. */
+    public void propertyTypeMismatch(Element originalObject,
+                                     Element problematicParameter,
+                                     Object deserializedObject,
+                                     String parameterName,
+                                     TypedReference parameterValue,
+                                     Throwable problemEncountered)
+            throws InvalidPolicyStreamException
+    {
+        if (problemEncountered instanceof SecurityException) {
+            logger.log(Level.WARNING, "Unable to set property " + parameterName + " of " + deserializedObject.getClass(), problemEncountered);
+        } else
+            logger.log(Level.INFO, "Ignoring property type mismatch" + parameterName + " of " + deserializedObject.getClass());
+    }
+
     /** Replace the problematic element with an UnknownAssertion. */
     public Element invalidElement(Element problematicElement,
                                   Exception problemEncountered)
