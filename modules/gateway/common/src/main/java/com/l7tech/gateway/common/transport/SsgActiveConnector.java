@@ -7,7 +7,9 @@ import org.hibernate.annotations.Proxy;
 import org.jetbrains.annotations.Nullable;
 
 import javax.persistence.*;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -36,6 +38,7 @@ public class SsgActiveConnector extends NamedEntityImp {
     /** If specified, the size limit of the request message. */
     public static final String PROPERTIES_KEY_REQUEST_SIZE_LIMIT = "requestSizeLimit";
 
+    // SFTP
     public static final String PROPERTIES_KEY_SFTP_HOST = "SftpHost";
     public static final String PROPERTIES_KEY_SFTP_PORT = "SftpPort";
     public static final String PROPERTIES_KEY_SFTP_DIRECTORY = "SftpDirectory";
@@ -44,6 +47,40 @@ public class SsgActiveConnector extends NamedEntityImp {
     public static final String PROPERTIES_KEY_SFTP_SECURE_PASSWORD_KEY_OID = "SftpSecurePasswordKeyOid";
     public static final String PROPERTIES_KEY_SFTP_SERVER_FINGER_PRINT = "SftpServerFingerPrint";
     public static final String PROPERTIES_KEY_SFTP_DELETE_ON_RECEIVE = "SftpDeleteOnReceive";
+
+    // MQ Native - general connection properties
+    public static final String PROPERTIES_KEY_MQ_NATIVE_IS_INBOUND = "MqNativeIsInbound";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_HOST_NAME = "MqNativeHostName";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_PORT = "MqNativePort";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME = "MqNativeQueueManagerName";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_CHANNEL = "MqNativeChannel";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME = "MqNativeTargetQueueName";
+    // MQ Native - security connection properties
+    public static final String PROPERTIES_KEY_MQ_NATIVE_IS_QUEUE_CREDENTIAL_REQUIRED = "MqNativeIsQueueCredentialRequired";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_USERID = "MqNativeUserId";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_SECURE_PASSWORD_OID = "MqNativeSecurePasswordOid";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_IS_SSL_ENABLED = "MqNativeIsSslEnabled";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_CIPHER_SUITE = "MqNativeCipherSuite";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_IS_SSL_KEYSTORE_USED = "MqNativeIsSslKeystoreUsed";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ALIAS = "MqNativeSslKeystoreAlias";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ID = "MqNativeSslKeystoreId";
+    // MQ Native - inbound and outbound common properties
+    public static final String PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE = "MqNativeReplyType";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_IS_COPY_CORRELATION_ID_FROM_REQUEST = "MqNativeIsCopyCorrelationIdFromRequest";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME = "MqNativeSpecifiedReplyQueueName";
+    // MQ Native - inbound properties
+    public static final String PROPERTIES_KEY_MQ_NATIVE_INBOUND_ACKNOWLEDGEMENT_TYPE = "MqNativeInboundAcknowledgementType";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_SOAP_ACTION_USED = "MqNativeInboundIsSoapActionUsed";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_INBOUND_SOAP_ACTION = "MqNativeInboundSoapAction";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_INBOUND_CONTENT_TYPE_FROM_PROPERTY = "MqNativeInboundContentTypeFromProperty";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_INBOUND_CONTENT_TYPE = "MqNativeInboundContentType";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_NAME = "MqNativeInboundFailedQueueName";
+    // MQ Native - advanced properties
+    public static final String PROPERTIES_KEY_MQ_NATIVE_ADVANCED_PROPERTY_PREFIX = "MqNativeAdvancedProperty.";
+    // MQ Native - outbound properties
+    public static final String PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_IS_TEMPLATE_QUEUE = "MqNativeOutboundIsTemplateQueue";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_TEMPORARY_QUEUE_NAME_PATTERN = "MqNativeOutboundTemporaryQueueNamePattern";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_MESSAGE_FORMAT = "MqNativeOutboundMessageFormat";
 
     private boolean enabled;
     private String type;
@@ -231,5 +268,15 @@ public class SsgActiveConnector extends NamedEntityImp {
         final SsgActiveConnector copy = getCopy();
         copy.setReadOnly();
         return copy;
+    }
+
+    /**
+     * Get a list of all extra properties set on this connector.
+     *
+     * @return a List of Strings.  May be empty, but never null.
+     */
+    @Transient
+    public List<String> getPropertyNames() {
+        return new ArrayList<String>(properties.keySet());
     }
 }

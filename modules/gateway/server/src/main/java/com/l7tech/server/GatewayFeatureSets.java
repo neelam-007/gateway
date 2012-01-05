@@ -68,6 +68,7 @@ public class GatewayFeatureSets {
     public static final String SERVICE_SSH_MESSAGE_INPUT = "service:Ssh2MessageInput";
     public static final String SERVICE_HTTP_MESSAGE_INPUT = "service:HttpMessageInput";
     public static final String SERVICE_JMS_MESSAGE_INPUT = "service:JmsMessageInput";
+    public static final String SERVICE_MQNATIVE_MESSAGE_INPUT = "service:MqNativeMessageInput";
     public static final String SERVICE_EMAIL_MESSAGE_INPUT = "service:EmailMessageInput";
     public static final String SERVICE_L7RAWTCP_MESSAGE_INPUT = "service:L7RawTcpMessageInput";
     public static final String SERVICE_ADMIN = "service:Admin";
@@ -178,6 +179,15 @@ public class GatewayFeatureSets {
             "Current requires allowing the JMS front end as well",
             srvJms,
             ass(JmsRoutingAssertion.class));
+
+        GatewayFeatureSet srvMqNative = misc(SERVICE_MQNATIVE_MESSAGE_INPUT, "Accept incoming messages over MQ Native", null);
+        GatewayFeatureSet mqNativeFront =
+        fsr("set:mqNative:front", "Allow incoming MQ Native messages",
+            srvMqNative);
+
+        GatewayFeatureSet mqNativeBack =
+        fsr("set:mqNative:back", "Allow outgoing MQ Native messages",
+                mass("assertion:MqNativeRouting"));
 
         GatewayFeatureSet srvEmail = misc(SERVICE_EMAIL_MESSAGE_INPUT, "Accept incoming messages via email", null);
         GatewayFeatureSet emailFront =
@@ -440,13 +450,15 @@ public class GatewayFeatureSets {
 
         GatewayFeatureSet routingGateway =
         fsr("set:Routing:Gateway", "SecureSpan Gateway message routing",
-            "Adds BRA, JMS, FTP and SSH routing.",
+            "Adds BRA, JMS, FTP, MQ Native and SSH routing.",
             fs(routingFw),
             fs(ftpFront),
             fs(sshFront),
             fs(jmsFront),
             fs(jmsBack),
             fs(emailFront),
+            fs(mqNativeFront),
+            fs(mqNativeBack),
             fs(rawTcpFront),
             fs(rawTcpBack),
             fs(uiEmailListenersDialog),
