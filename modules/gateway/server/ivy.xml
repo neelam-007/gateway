@@ -83,9 +83,9 @@
         <dependency org="org.aspectj" name="aspectjweaver" rev="1.6.8" force="true" conf="core"/> <!-- Used for parsing pointcut expressions only -->
         <dependency org="org.apache.ftpserver" name="ftpserver-parent" rev="1.0-543677-20070601" force="true"
                     conf="core"/>
-        <dependency org="org.apache.tomcat" name="annotations-api" rev="6.0.32" force="true" conf="core"/>
-        <dependency org="org.apache.tomcat" name="catalina" rev="6.0.32" force="true" conf="core"/>
-        <dependency org="org.apache.tomcat" name="coyote" rev="6.0.32" force="true" conf="core"/>
+        <dependency org="org.apache.tomcat" name="annotations-api" rev="6.0.35" force="true" conf="core"/>
+        <dependency org="org.apache.tomcat" name="catalina" rev="6.0.35" force="true" conf="core"/>
+        <dependency org="org.apache.tomcat" name="coyote" rev="6.0.35" force="true" conf="core"/>
 
         <!-- Optional dependencies -->
         <dependency org="com.ibm.mq" name="mq6" rev="6.0.2.2" force="true" conf="optional"/>

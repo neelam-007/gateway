@@ -24,6 +24,8 @@ import com.l7tech.server.transport.TransportModule;
 import com.l7tech.util.*;
 import static com.l7tech.util.CollectionUtils.caseInsensitiveSet;
 import static com.l7tech.util.ExceptionUtils.getDebugException;
+import com.l7tech.util.Functions.UnaryVoid;
+import static com.l7tech.util.ValidationUtils.isValidInteger;
 import org.apache.catalina.Engine;
 import org.apache.catalina.Host;
 import org.apache.catalina.connector.Connector;
@@ -820,13 +822,35 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         }
     }
 
-    private static void setConnectorAttributes(Connector c, Map<String, Object> attrs) {
-        for (Map.Entry<String, Object> entry : attrs.entrySet()) {
+    private static void setConnectorAttributes( final Connector c, final Map<String, Object> attrs ) {
+        for ( final Map.Entry<String, Object> entry : attrs.entrySet() ) {
             if ("enableLookups".equalsIgnoreCase(entry.getKey())) {
                 c.setEnableLookups(Boolean.valueOf(String.valueOf(entry.getValue())));
+            } else if ("maxParameterCount".equalsIgnoreCase(entry.getKey())) {
+                callbackIfValidInteger( entry.getValue(), new UnaryVoid<Integer>() {
+                    @Override
+                    public void call( final Integer value ) {
+                        c.setMaxParameterCount(value);
+                    }
+                } );
+            } else if ("maxPostSize".equalsIgnoreCase(entry.getKey())) {
+                callbackIfValidInteger( entry.getValue(), new UnaryVoid<Integer>() {
+                    @Override
+                    public void call( final Integer value ) {
+                        c.setMaxPostSize(value);
+                    }
+                } );
             } else {
                 c.setAttribute(entry.getKey(), entry.getValue());
             }
+        }
+    }
+
+    private static void callbackIfValidInteger( final Object value, final UnaryVoid<Integer> callback ) {
+        final String stringValue = String.valueOf( value ).trim();
+
+        if ( isValidInteger( stringValue, false, Integer.MIN_VALUE, Integer.MAX_VALUE ) ) {
+            callback.call( Integer.parseInt( stringValue ) );
         }
     }
 
@@ -906,7 +930,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
      * @throws ListenerException if there is no active connector with this OID.
      */
     public SsgConnector getActiveConnectorByOid(long oid) throws ListenerException {
-        Pair<SsgConnector, Connector> got = activeConnectors.get(oid);
+        Pair<SsgConnector, Connector> got = activeConnectors.get( oid );
         if (got == null)
             throw new ListenerException("No active connector exists with oid " + oid);
         return got.left;
