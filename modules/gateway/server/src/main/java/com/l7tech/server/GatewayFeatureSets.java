@@ -1,8 +1,3 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.server;
 
 import com.l7tech.gateway.common.License;
@@ -367,6 +362,7 @@ public class GatewayFeatureSets {
             ass(WssVersionAssertion.class),
             ass(WssConfigurationAssertion.class),
             ass(AddWssUsernameToken.class),
+            ass(LookupTrustedCertificateAssertion.class),
             feat(FEATURE_SIGNED_ATTACHMENTS, "Signed SOAP attachments."));
 
         // Message Validation/Transform

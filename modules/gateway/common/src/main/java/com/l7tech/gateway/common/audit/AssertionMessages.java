@@ -1064,5 +1064,10 @@ public class AssertionMessages extends Messages {
     public static final M SAMLP_ATTRIBUTE_QUERY_NOT_SOAP_ENCAPSULATED = m(9501, Level.INFO, "AttributeQuery request is not SOAP encapsulated");
     public static final M SAMLP_ATTRIBUTE_QUERY_NOT_SUPPORTED_VALUE = m(9502, Level.INFO, "Unsupported value found for {0} in AttributeQuery. Found {1} expected one of {2}");
 
+    public static final Messages.M CERT_LOOKUP_NAME = m(9550, Level.FINE, "Looking up certificate for name ''{0}''.");
+    public static final Messages.M CERT_LOOKUP_NOTFOUND = m(9551, Level.WARNING, "Certificate not found for name ''{0}''." );
+    public static final Messages.M CERT_LOOKUP_MULTIPLE = m(9552, Level.WARNING, "Multiple certificates found for name ''{0}''." );
+    public static final Messages.M CERT_LOOKUP_ERROR = m(9553, Level.WARNING, "Error looking up certificate ''{0}''." );
+
     // Highest ID reserved for AssertionMessages = 99999
 }

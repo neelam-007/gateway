@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2010 Layer 7 Technologies Inc.
- */
 package com.l7tech.console.panels;
 
 import com.l7tech.console.policy.SsmPolicyVariableUtils;
@@ -183,7 +180,9 @@ public class TargetVariablePanel  extends JPanel {
 
     public void addChangeListener(ChangeListener l) {
         listenerList.add(ChangeListener.class, l);
-    }  /**
+    }
+
+    /**
      * Remove a listener to changes of the panel's validity.
      * <p/>
      * The default is a simple implementation that supports a single
@@ -205,10 +204,10 @@ public class TargetVariablePanel  extends JPanel {
             ((ChangeListener) listener).stateChanged(event);
         }
     }
+
     public boolean isEntryValid() {
             return entryValid;
     }
-
 
     /**
      * Set the variable or the prefix depending on the usage. If suffixes are defined, then a prefix is being set,
