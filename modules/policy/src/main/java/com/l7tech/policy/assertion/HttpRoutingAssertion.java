@@ -74,8 +74,8 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
     protected String[] customURLs = null;
     protected String failoverStrategyName = "ordered";
     private boolean taiCredentialChaining = false;
-    protected String connectionTimeoutMs;
-    protected String timeoutMs;
+    protected String connectionTimeout;
+    protected String timeout;
     protected int maxRetries = -1;
     protected String requestMsgSrc;
     protected String responseMsgDest;
@@ -112,12 +112,6 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
     protected String tlsVersion;
     protected String tlsCipherSuites;
 
-
-    @Deprecated // use the MS specific values
-    protected Integer connectionTimeout;
-    @Deprecated // use the MS specific values
-    protected Integer timeout;
-
     // TODO WARNING
     // TODO WARNING
     // TODO WARNING : If you add properties, update the copyFrom method
@@ -153,8 +147,8 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         this.setUserAgent(source.getUserAgent());
         this.setTaiCredentialChaining(source.isTaiCredentialChaining());
         this.setNtlmHost(source.getNtlmHost());
-        this.setConnectionTimeoutMs(source.getConnectionTimeoutMs());
-        this.setTimeoutMs(source.getTimeoutMs());
+        this.setConnectionTimeout(source.getConnectionTimeout());
+        this.setTimeout(source.getTimeout());
         this.setMaxRetries(source.getMaxRetries());
         this.setRequestMsgSrc(source.getRequestMsgSrc());
         this.setRequestHeaderRules(source.getRequestHeaderRules());
@@ -218,60 +212,30 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         this.maxConnections = maxConnections;
     }
 
-    @Deprecated
-    public Integer getConnectionTimeout() {
+    public String getConnectionTimeout() {
         return connectionTimeout;
+    }
+
+    public void setConnectionTimeout(String connectionTimeout) {
+        this.connectionTimeout = connectionTimeout;
     }
 
     @Deprecated
     public void setConnectionTimeout(Integer connectionTimeout) {
-        this.connectionTimeout = connectionTimeout;
+        this.connectionTimeout = connectionTimeout.toString();
     }
 
-    public String getConnectionTimeoutMs() {
-        if (connectionTimeoutMs == null && connectionTimeout != null)
-        {
-            return Integer.toString(connectionTimeout*1000);
-        }
-        return connectionTimeoutMs;
-    }
-
-    public void setConnectionTimeoutMs(String connectionTimeoutMs) {
-        this.connectionTimeoutMs = connectionTimeoutMs;
-        try{
-            int timeoutVal = Integer.parseInt(connectionTimeoutMs);
-            this.connectionTimeout = timeoutVal/1000;
-        }catch(NumberFormatException e){
-            this.connectionTimeout = null;
-        }
-    }
-
-    public String getTimeoutMs() {
-        if (timeoutMs == null && timeout != null)
-        {
-            return Integer.toString(timeout*1000);
-        }
-        return timeoutMs;
-    }
-
-    public void setTimeoutMs(String timeoutMs) {
-        this.timeoutMs = timeoutMs;
-        try{
-            int timeoutVal = Integer.parseInt(timeoutMs);
-            this.timeout = timeoutVal/1000;
-        }catch(NumberFormatException e){
-            this.timeout = null;
-        }
-    }
-
-    @Deprecated
-    public Integer getTimeout() {
+    public String getTimeout() {
         return timeout;
+    }
+
+    public void setTimeout(String timeout) {
+        this.timeout = timeout;
     }
 
     @Deprecated
     public void setTimeout(Integer timeout) {
-        this.timeout = timeout;
+        this.timeout = timeout.toString();
     }
 
     /**
@@ -529,8 +493,8 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         expressions.add(krbConfiguredPassword);
         expressions.add(proxyPassword);
         expressions.add(responseSize);
-        expressions.add(getTimeoutMs());
-        expressions.add(getConnectionTimeoutMs());
+        expressions.add(timeout);
+        expressions.add(connectionTimeout);
         if (customURLs != null) expressions.addAll( Arrays.asList( customURLs ) );
         if (customIpAddresses != null) expressions.addAll( Arrays.asList( customIpAddresses ) );
         expressions.add(Syntax.getVariableExpression(requestMsgSrc));

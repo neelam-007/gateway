@@ -228,7 +228,7 @@ public class WspConstants {
         new AssertionMapping(new HttpRoutingAssertion(), "HttpRoutingAssertion") {
             @Override
             public void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
-                super.populateObject(object, source, new WspUpgradeUtilFrom615.HttpRoutingTimeoutPropertyVisitor(new WspUpgradeUtilFrom365.HttpRoutingPropertyVisitor(visitor)));
+                super.populateObject(object, source, new WspUpgradeUtilFrom365.HttpRoutingPropertyVisitor(visitor));
             }
         },
         new AssertionMapping(new HttpRoutingAssertion(), "RoutingAssertion"), // backwards compatibility with pre-3.0

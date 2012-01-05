@@ -762,13 +762,13 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         }
 
         if (connectTimeoutDefaultCheckBox.isSelected())
-            assertion.setConnectionTimeoutMs(null);
+            assertion.setConnectionTimeout((String)null);
         else
-            assertion.setConnectionTimeoutMs(connectTimeoutTextField.getText());
+            assertion.setConnectionTimeout(connectTimeoutTextField.getText());
         if (readTimeoutDefaultCheckBox.isSelected())
-            assertion.setTimeoutMs(null);
+            assertion.setTimeout((String)null);
         else
-            assertion.setTimeoutMs(readTimeoutTextField.getText());
+            assertion.setTimeout(readTimeoutTextField.getText());
         if (maxRetriesDefaultCheckBox.isSelected())
             assertion.setMaxRetries(-1);
         else
@@ -871,19 +871,19 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         }
         ipListPanel.setFailoverStrategyName(assertion.getFailoverStrategyName());
 
-        if (assertion.getConnectionTimeoutMs() == null) {
+        if (assertion.getConnectionTimeout() == null) {
             connectTimeoutTextField.setText("30000");
             connectTimeoutDefaultCheckBox.setSelected(true);
         } else {
-            connectTimeoutTextField.setText(assertion.getConnectionTimeoutMs());
+            connectTimeoutTextField.setText(assertion.getConnectionTimeout());
             connectTimeoutDefaultCheckBox.setSelected(false);
         }
         connectTimeoutTextField.setEnabled(!connectTimeoutDefaultCheckBox.isSelected());
-        if (assertion.getTimeoutMs() == null) {
+        if (assertion.getTimeout() == null) {
             readTimeoutTextField.setText("60000");
             readTimeoutDefaultCheckBox.setSelected(true);
         } else {
-            readTimeoutTextField.setText(assertion.getTimeoutMs());
+            readTimeoutTextField.setText(assertion.getTimeout());
             readTimeoutDefaultCheckBox.setSelected(false);
         }
         readTimeoutTextField.setEnabled(!readTimeoutDefaultCheckBox.isSelected());
