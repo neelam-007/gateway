@@ -152,6 +152,30 @@ public class HttpRoutingAssertionTest {
         testPolicyTimeoutMsValue(httpRoutingAssertionXml_6_1_5_ctxVar, "${timeout1}");
     }
 
+    @Test
+    public void setSecondsThenMs() throws Exception {
+        HttpRoutingAssertion hra = new HttpRoutingAssertion();
+        hra.setConnectionTimeout(1);
+        hra.setConnectionTimeoutMs("1000");
+        assertEquals("Connection timeout in ms",hra.getConnectionTimeoutMs(),"1000");
+        assertEquals("Connection timeout in s",(long)hra.getConnectionTimeout(),(long)1);
+        hra.setConnectionTimeoutMs("${var}");
+        assertEquals("Connection timeout in ms",hra.getConnectionTimeoutMs(),"${var}");
+        assertEquals("Connection timeout in s",hra.getConnectionTimeout(),null);
+    }
+
+    @Test
+    public void setMsThenSeconds() throws Exception {
+        HttpRoutingAssertion hra = new HttpRoutingAssertion();
+        hra.setConnectionTimeoutMs("1000");
+        hra.setConnectionTimeout(1);
+        assertEquals("Connection timeout in ms",hra.getConnectionTimeoutMs(),"1000");
+        assertEquals("Connection timeout in s",(long)hra.getConnectionTimeout(),(long)1);
+        hra.setConnectionTimeoutMs("${var}");
+        assertEquals("Connection timeout in ms",hra.getConnectionTimeoutMs(),"${var}");
+        assertEquals("Connection timeout in s",hra.getConnectionTimeout(),null);
+    }
+
 
     /**
      * Test connection timeout  ms value
