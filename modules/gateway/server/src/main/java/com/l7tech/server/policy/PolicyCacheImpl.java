@@ -371,7 +371,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         if( policy.getOid() == Policy.DEFAULT_OID )
             throw new IllegalArgumentException( "Can't update a brand-new policy--it must be saved first" );
 
-        updateInternal(new Policy(policy, true));
+        perhapsUpdateInternal(new Policy(policy, true));
     }
 
     /**
@@ -448,6 +448,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
      */
     @ManagedOperation(description="Rebuild Policy Cache")
     public void initializePolicyCache() {
+        final long startTime = System.currentTimeMillis();
         logAndAudit( MessageProcessingMessages.POLICY_CACHE_BUILD );
 
         List<PolicyCacheEvent> events = new ArrayList<PolicyCacheEvent>();
@@ -490,6 +491,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         publishEvent(new PolicyCacheEvent.Started(this));
 
         trace();
+        logger.fine("Initialized policy cache in " + (System.currentTimeMillis()-startTime) + "ms.");
     }
 
     /**
@@ -845,6 +847,22 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
         }
 
         return pce;
+    }
+
+    /**
+     * Update only if the version has changed.
+     *
+     * Policy should be read only.
+     */
+    private void perhapsUpdateInternal( final Policy policy ) {
+        final PolicyCacheEntry entry = cacheGetWithLock( policy.getOid() );
+        if ( entry == null ||
+             entry.isDirty() ||
+             !entry.isValid() ||
+             entry.policy.getVersion() != policy.getVersion() ||
+             !entry.policy.getXml().equals(policy.getXml()) ) {
+            updateInternal( policy );
+        }
     }
 
     /**

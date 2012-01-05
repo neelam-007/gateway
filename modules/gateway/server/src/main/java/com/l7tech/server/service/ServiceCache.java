@@ -234,7 +234,8 @@ public class ServiceCache
             if (size() > 0) {
                 logger.finest("cache already built (?)");
             } else {
-                logger.info("building service cache");
+                logger.info("Building service cache");
+                final long startTime = System.currentTimeMillis();
                 Collection<PublishedService> services = serviceManager.findAll();
                 for (PublishedService service : services) {
                     try {
@@ -257,6 +258,7 @@ public class ServiceCache
                     }
                 }
                 TarariLoader.compile();
+                logger.info("Built service cache in " + (System.currentTimeMillis()-startTime) + "ms.");
             }
             // make sure the integrity check is running
             logger.info("initiate service cache version check process");
