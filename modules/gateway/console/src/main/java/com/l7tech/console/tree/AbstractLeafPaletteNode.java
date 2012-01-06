@@ -40,6 +40,11 @@ public abstract class AbstractLeafPaletteNode extends AbstractAssertionPaletteNo
         return true;
     }
 
+    @Override
+    public boolean isSearchable(NodeFilter filter) {
+        return true;
+    }
+
     /**
      * Returns true if the receiver allows children.
      *

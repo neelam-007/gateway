@@ -23,11 +23,11 @@ import java.awt.*;
  * This means some ActionEvents are ignored. This is due to the JComboBox being a compound component and can cause multiple
  * events to be fired for a single user action. However in some circumstances an event may be fired more than once.
  *
- * This class is abstract but contains no abstract methods; when creating an instance create an anonomyous subclass and
+ * This class is abstract but contains no abstract methods; when creating an instance create an anonymous subclass and
  * override no methods
  * e.g. EditableSearchComboBox<AssertionTreeNode> editSearchBox = new EditableSearchComboBox<AssertionTreeNode>(filter){};
  * This is done so that the type of T can be captured and used at runtime to work with setItem(Object), we only want
- * Object's of the parameter type to be set. If an anonomyous class is not created we cannot do this, so the class is
+ * Object's of the parameter type to be set. If an anonymous class is not created we cannot do this, so the class is
  * marked abstract to ensure this works.
  * 
  * See: http://gafter.blogspot.com/2006/12/super-type-tokens.html
@@ -139,6 +139,11 @@ public abstract class EditableSearchComboBox<T> extends JComboBox {
                 if(e.getKeyCode() == KeyEvent.VK_ENTER && "".equals(editor.getText())){
                     fireActionPerformed(new ActionEvent(editor, ActionEvent.ACTION_PERFORMED, MainWindow.L7_F3));
                 }
+                if(e.getKeyCode() == KeyEvent.VK_ESCAPE  ){
+                    fireActionPerformed(new ActionEvent(editor, ActionEvent.ACTION_PERFORMED, MainWindow.L7_ESC));
+                }
+
+
             }
         });
         

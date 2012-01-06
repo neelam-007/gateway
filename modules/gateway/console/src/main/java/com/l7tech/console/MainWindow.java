@@ -209,7 +209,10 @@ public class MainWindow extends JFrame implements SheetHolder {
     private JTabbedPane paletteTabbedPane;
 
     private EditableSearchComboBox<EntityHeaderNode> searchComboBox;
-    private final JLabel searchLabel = new JLabel("Search");
+    private EditableSearchComboBox<AbstractLeafPaletteNode> assertionSearchComboBox;
+
+    private final JLabel searchLabel = new JLabel(resapplication.getString("Search"));
+    private final JLabel assertionSearchLabel = new JLabel(resapplication.getString("Search"));
 
     public static final String TITLE = "Gateway Management Console";
     private EventListenerList listenerList = new WeakEventListenerList();
@@ -325,7 +328,9 @@ public class MainWindow extends JFrame implements SheetHolder {
         disconnected = false;
         setFilterAndSortMenuEnabled(true);
         getSearchComboBox().setEnabled(true);
+        getAssertionSearchComboBox().setEnabled(true);
         searchLabel.setEnabled(true);
+        assertionSearchLabel.setEnabled(true);
 
     }
 
@@ -345,8 +350,11 @@ public class MainWindow extends JFrame implements SheetHolder {
         descriptionText.setText("");
         setFilterAndSortMenuEnabled(false);
         getSearchComboBox().setEnabled(false);
+        getAssertionSearchComboBox().setEnabled(false);
         searchLabel.setEnabled(false);
+        assertionSearchLabel.setEnabled(false);
         getSearchComboBox().clearSearch();
+        getAssertionSearchComboBox().clearSearch();
         getCustomGlobalActionsMenu().removeAll();
         getCustomGlobalActionsMenu().setEnabled(false);
     }
@@ -1917,6 +1925,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         assertionPaletteTree.setModel(treeModel);
         TreePath path = new TreePath(paletteRootNode.getPath());
         assertionPaletteTree.setSelectionPath(path);
+        getAssertionSearchComboBox().updateSearchableItems(getAllSearchablePaletteNodes());
 
         identitiesRootNode = new IdentitiesRootNode("Identity Providers");
         treeModel = new FilteredTreeModel(null);
@@ -2624,7 +2633,25 @@ public class MainWindow extends JFrame implements SheetHolder {
         paletteTabbedPane.setPreferredSize(new Dimension(140, 280));
         JScrollPane assertionScroller = new JScrollPane(getAssertionPaletteTree());
         configureScrollPane(assertionScroller);
-        paletteTabbedPane.addTab("Assertions", assertionScroller);
+
+        JPanel searchPanel = new JPanel(new BorderLayout(3, 1));
+        searchPanel.add(assertionSearchLabel,BorderLayout.WEST);
+        searchPanel.add(getAssertionSearchComboBox(), BorderLayout.CENTER);
+
+        JPanel assertionsPane = new JPanel(new BorderLayout());
+        assertionsPane.add(searchPanel, BorderLayout.NORTH);
+        assertionsPane.add(assertionScroller, BorderLayout.CENTER);
+
+        final Action findAction = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                getAssertionSearchComboBox().requestFocusInWindow();
+            }
+        };
+
+        getAssertionPaletteTree().getActionMap().put(MainWindow.L7_FIND, findAction);
+
+        paletteTabbedPane.addTab("Assertions", assertionsPane);
         JScrollPane identityScroller = new JScrollPane(getIdentitiesTree());
         configureScrollPane(identityScroller);
         paletteTabbedPane.addTab("Identity Providers", identityScroller);
@@ -2766,7 +2793,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             };
 
             //Create a renderer and configure it to clip. Text which is too large will automatically get '...' added to it
-            //and the jlabel will not grow to accommodate it, if it is larger thatn the size of the combo box component
+            //and the JLabel will not grow to accommodate it, if it is larger than the size of the combo box component
             TextListCellRenderer<EntityHeaderNode> comboBoxRenderer =
                     new TextListCellRenderer<EntityHeaderNode>(accessorFunction, null, iconAccessorFunction, false);
             comboBoxRenderer.setRenderClipped(true);
@@ -2785,12 +2812,86 @@ public class MainWindow extends JFrame implements SheetHolder {
             searchComboBox.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    invokeSelection();
+                    if(e.getActionCommand().equals(MainWindow.L7_ESC)){
+                        getServicesAndPoliciesTree().requestFocus();
+                    }else if(e.getActionCommand().equals(MainWindow.L7_F3)){
+                        invokeSelection();
+                    }
                 }
             });
         }
 
         return searchComboBox;
+    }
+
+    /**
+     * @return  The initialized editable search combo box for assertion tree panel.
+     */
+    private EditableSearchComboBox<AbstractLeafPaletteNode> getAssertionSearchComboBox() {
+        if (assertionSearchComboBox == null) {
+            assertionSearchComboBox = new EditableSearchComboBox<AbstractLeafPaletteNode>(new EditableSearchComboBox.Filter() {
+                @Override
+                public boolean accept(Object obj) {
+                    if(obj == null) return false; //this should not happen
+
+                    if (!(obj instanceof AbstractLeafPaletteNode)) return false;
+                    AbstractLeafPaletteNode paletteNode = (AbstractLeafPaletteNode) obj;
+
+                    //match display names
+                    final String searchText = this.getFilterText().toLowerCase();
+                    //getName contains the URI for service nodes
+                    return paletteNode.getName().toLowerCase().contains(searchText);
+                }
+            }){};
+
+            assertionSearchComboBox.setEnabled(false);
+            assertionSearchLabel.setEnabled(false);
+
+            final Functions.Unary<String, AbstractLeafPaletteNode> accessorFunction = new Functions.Unary<String, AbstractLeafPaletteNode>() {
+                @Override
+                public String call(AbstractLeafPaletteNode abstractTreeNode) {
+                    return  abstractTreeNode.getName();
+
+                }
+            };
+
+            final Functions.Unary<Icon, AbstractLeafPaletteNode> iconAccessorFunction = new Functions.Unary<Icon, AbstractLeafPaletteNode>() {
+                @Override
+                public Icon call(AbstractLeafPaletteNode abstractTreeNode) {
+                    return new ImageIcon(abstractTreeNode.getIcon());
+                }
+            };
+
+            //Create a renderer and configure it to clip. Text which is too large will automatically get '...' added to it
+            //and the JLabel will not grow to accommodate it, if it is larger than the size of the combo box component
+            TextListCellRenderer<AbstractLeafPaletteNode> comboBoxRenderer =
+                    new TextListCellRenderer<AbstractLeafPaletteNode>(accessorFunction, null, iconAccessorFunction, false);
+            comboBoxRenderer.setRenderClipped(true);
+
+            assertionSearchComboBox.setRenderer(comboBoxRenderer);
+
+            //create comparator to sort the filtered items
+            assertionSearchComboBox.setComparator(new Comparator<AbstractLeafPaletteNode>() {
+                @Override
+                public int compare(AbstractLeafPaletteNode o1, AbstractLeafPaletteNode o2) {
+                    return (o1.toString().compareToIgnoreCase(o2.toString()));
+                }
+            });
+
+            //monitor the action if selection was made by mouse or keyboard.  We need to filter scrolling actions
+            assertionSearchComboBox.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    if(e.getActionCommand().equals(MainWindow.L7_ESC)){
+                        getAssertionPaletteTree().requestFocus();
+                    }else if(e.getActionCommand().equals(MainWindow.L7_F3)){
+                        invokePaletteSelection();
+                    }
+                }
+            });
+        }
+
+        return assertionSearchComboBox;
     }
 
     /**
@@ -2821,7 +2922,21 @@ public class MainWindow extends JFrame implements SheetHolder {
     }
 
     /**
-     * @return The list of searchable service and policy nodes based on the filtering selection.
+     * Expands the tree accordingly based on the service or policy selection.  It will also invoke the editing
+     * action so that the user can readily edit the service or policy.
+     */
+    private void invokePaletteSelection() {
+        JTree tree = getAssertionPaletteTree();
+        final AbstractTreeNode node = (AbstractTreeNode) assertionSearchComboBox.getSelectedItem();
+        if (node == null) return;
+        final TreePath treePath = new TreePath(node.getPath());
+        tree.setSelectionPath(treePath);
+        tree.makeVisible(treePath);
+        tree.scrollPathToVisible(treePath);
+    }
+
+    /**
+     * @return  The list of searchable service and policy nodes based on the filtering selection.
      */
     private List<EntityHeaderNode> getAllSearchableServiceAndPolicyNodes() {
         JTree tree = getServicesAndPoliciesTree();
@@ -2831,8 +2946,19 @@ public class MainWindow extends JFrame implements SheetHolder {
         return (List<EntityHeaderNode>) rootNode.collectSearchableChildren(EntityHeaderNode.class, filter);
     }
 
-    private JLabel getFilterStatusLabel() {
-        if (filterStatusLabel != null) {
+    /**
+     * @return  The list of searchable assertion palette nodes based on the filtering selection.
+     */
+    private List<AbstractLeafPaletteNode> getAllSearchablePaletteNodes() {
+        JTree tree = getAssertionPaletteTree();
+        AssertionsPaletteRootNode rootNode = (AssertionsPaletteRootNode) tree.getModel().getRoot();
+        NodeFilter filter = ((FilteredTreeModel) tree.getModel()).getFilter();
+
+        return (List<AbstractLeafPaletteNode>) rootNode.collectSearchableChildren(AbstractLeafPaletteNode.class, filter);
+    }
+
+    private JLabel getFilterStatusLabel(){
+        if(filterStatusLabel != null){
             return filterStatusLabel;
         }
         filterStatusLabel = new JLabel();
