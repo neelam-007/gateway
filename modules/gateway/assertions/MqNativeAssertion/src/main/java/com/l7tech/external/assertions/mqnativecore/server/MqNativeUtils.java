@@ -37,7 +37,7 @@ public class MqNativeUtils {
        theMsg.writeString(pubCommand);
        theMsg.writeString("begin payload");
     */
-    static class RFH2Header  // TODO (TL) need help changing; static class values can be overwritten and is not safe
+    static class RFH2Header
     {
         String structId;
         int version;
