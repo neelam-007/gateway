@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.springframework.beans.factory.config.AbstractFactoryBean;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.AbstractApplicationContext;
 
 /**
  * Lazy proxy factory bean.
@@ -19,9 +20,14 @@ public class LazyProxyFactoryBean extends AbstractFactoryBean implements Applica
 
     //- PUBLIC
 
-    public LazyProxyFactoryBean(final String targetBeanName, final Class targetInterface) {
+    public LazyProxyFactoryBean(final String targetBeanName, final Class<?> targetInterface) {
+        this( targetBeanName, targetInterface, false );
+    }
+
+    public LazyProxyFactoryBean(final String targetBeanName, final Class<?> targetInterface, final boolean allowEarlyLookup ) {
         this.targetBeanName = targetBeanName;
         this.targetInterface = targetInterface;
+        this.allowEarlyLookup = allowEarlyLookup;
     }
 
     /**
@@ -52,36 +58,43 @@ public class LazyProxyFactoryBean extends AbstractFactoryBean implements Applica
         return Proxy.newProxyInstance(
                 LazyProxyFactoryBean.class.getClassLoader(),
                 new Class[]{ targetInterface },
-                new LazyInvocationHandler(applicationContext, targetBeanName, targetInterface));
+                new LazyInvocationHandler<Object>(applicationContext, targetBeanName, targetInterface, allowEarlyLookup));
     }
 
     //- PRIVATE
 
     private final String targetBeanName;
-    private final Class targetInterface;
+    private final Class<?> targetInterface;
+    private final boolean allowEarlyLookup;
     private ApplicationContext applicationContext;
 
     /**
      * InvocationHandler that lazily resolves the bean reference on first use.
      */
-    private static final class LazyInvocationHandler implements InvocationHandler {
+    private static final class LazyInvocationHandler<T> implements InvocationHandler {
         private final ApplicationContext applicationContext;
         private final String targetBeanName;
-        private final Class targetInterface;
-        private final AtomicReference reference = new AtomicReference();
+        private final Class<? extends T> targetInterface;
+        private final boolean allowEarlyLookup;
+        private final AtomicReference<T> reference = new AtomicReference<T>();
 
         private LazyInvocationHandler(final ApplicationContext applicationContext,
                                       final String targetBeanName,
-                                      final Class targetInterface) {
+                                      final Class<? extends T> targetInterface,
+                                      final boolean allowEarlyLookup ) {
             this.applicationContext = applicationContext;
             this.targetBeanName = targetBeanName;
             this.targetInterface = targetInterface;
+            this.allowEarlyLookup = allowEarlyLookup;
         }
 
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-            Object target = reference.get();
+            T target = reference.get();
 
             if ( target == null ) {
+                // For safety, lazily referenced beans should not be used until the
+                // context is started.
+                assert allowEarlyLookup || ((AbstractApplicationContext)applicationContext).isRunning();
                 target = applicationContext.getBean(targetBeanName, targetInterface);
                 reference.set(target);
             }

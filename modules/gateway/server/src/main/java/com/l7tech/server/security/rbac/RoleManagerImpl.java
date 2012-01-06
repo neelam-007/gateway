@@ -413,7 +413,7 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
         }
     }
 
-    public void setRbacServices(RbacServicesImpl rbacServices) {
+    public void setRbacServices(RbacServices rbacServices) {
         this.rbacServices = rbacServices;
     }
 

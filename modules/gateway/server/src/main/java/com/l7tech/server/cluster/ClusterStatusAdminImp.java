@@ -3,7 +3,6 @@ package com.l7tech.server.cluster;
 import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gateway.common.License;
 import com.l7tech.gateway.common.LicenseException;
-import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.admin.LicenseRuntimeException;
 import com.l7tech.gateway.common.cluster.*;
 import com.l7tech.gateway.common.esmtrust.TrustedEsm;
@@ -61,7 +60,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
     public ClusterStatusAdminImp(ClusterInfoManager clusterInfoManager,
                                  ServiceUsageManager serviceUsageManager,
                                  ClusterPropertyManager clusterPropertyManager,
-                                 LicenseManager licenseManager,
+                                 UpdatableLicenseManager licenseManager,
                                  ServiceMetricsManager metricsManager,
                                  ServiceMetricsServices serviceMetricsServices,
                                  ServerConfig serverConfig,
@@ -75,7 +74,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
         this.serviceUsageManager = serviceUsageManager;
         this.clusterPropertyManager = clusterPropertyManager;
         this.serviceMetricsServices = serviceMetricsServices;
-        this.licenseManager = (GatewayLicenseManager)licenseManager;
+        this.licenseManager = licenseManager;
         this.serviceMetricsManager = metricsManager;
         this.serverConfig = serverConfig;
         this.assertionRegistry = (ServerAssertionRegistry)assertionRegistry;
@@ -497,7 +496,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
     private final ClusterInfoManager clusterInfoManager;
     private final ServiceUsageManager serviceUsageManager;
     private final ClusterPropertyManager clusterPropertyManager;
-    private final GatewayLicenseManager licenseManager;
+    private final UpdatableLicenseManager licenseManager;
     private final ServiceMetricsManager serviceMetricsManager;
     private final ServiceMetricsServices serviceMetricsServices;
     private final ServerConfig serverConfig;

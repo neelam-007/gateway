@@ -16,7 +16,9 @@
     <import resource="classpath:META-INF/cxf/cxf-extension-http.xml"/>
 
     <bean id="org.apache.cxf.bus.spring.Jsr250BeanPostProcessor" class="java.lang.Object"/>
-
+    <bean id="org.apache.cxf.bus.spring.BusExtensionPostProcessor" class="com.l7tech.server.util.SafeCxfBusExtensionPostProcessor">
+        <property name="bus" ref="cxf"/>
+    </bean>
     <bean id="cxf" class="org.apache.cxf.bus.extension.ExtensionManagerBus"/>
 
     <!-- Process Controller -->

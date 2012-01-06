@@ -41,12 +41,7 @@
 
     <!-- Configures data source based on hibernateProperties -->
     <bean class="org.springframework.beans.factory.config.PropertyOverrideConfigurer">
-        <property name="ignoreInvalidKeys" value="true"/>
-        <property name="propertiesArray">
-            <list>
-                <ref local="hibernateProperties"/>
-            </list>
-        </property>
+        <property name="properties" value="#{ hibernateProperties.?[key.startsWith('c3p0')] }"/>
     </bean>
 
     <!--

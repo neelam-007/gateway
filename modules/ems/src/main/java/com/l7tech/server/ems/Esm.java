@@ -29,9 +29,11 @@ public class Esm {
     public void start() throws Exception {
         if (appContext.get() != null)
             throw new IllegalStateException("ESM already started");
-        AbstractApplicationContext newAppContext = new ClassPathXmlApplicationContext(new String[] {
+        final ClassPathXmlApplicationContext newAppContext = new ClassPathXmlApplicationContext(new String[] {
                 "com/l7tech/server/ems/resources/esmApplicationContext.xml",
-        });
+        }, false );
+        newAppContext.setAllowCircularReferences( false );
+        newAppContext.refresh();
         if (!appContext.compareAndSet(null, newAppContext))
             throw new IllegalStateException("ESM already started");
 

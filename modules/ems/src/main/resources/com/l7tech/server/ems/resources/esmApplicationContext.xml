@@ -44,7 +44,7 @@
         <property name="arguments">
             <list>
                 <ref local="creationDataSource"/>
-                <ref local="serverConfig"/>
+                <value>#{T(com.l7tech.util.ConfigFactory).getCachedConfig()}</value>
                 <!--
                   List of SQL script resources to run when database is created.
                 -->
@@ -266,9 +266,9 @@
         <constructor-arg index="2" ref="serverConfig"/>
         <constructor-arg index="3" value=" "/>  <!-- This is for SCA, and we don't have one -->
         <constructor-arg index="4"><null/></constructor-arg>
-        <property name="keyAccessFilter">
+        <constructor-arg index="5">
             <bean class="com.l7tech.server.security.keystore.PermissiveKeyAccessFilter"/>
-        </property>
+        </constructor-arg>
     </bean>
 
     <!-- server side audit record manager -->
@@ -332,7 +332,12 @@
           This is not a configuration error, server config listens for cluster property events
           so it can dispatch them to other beans.
         -->
-        <property name="clusterPropertyListener" ref="serverConfig"/>
+        <property name="clusterPropertyListener">
+            <bean class="com.l7tech.gateway.common.spring.factory.config.LazyProxyFactoryBean">
+                <constructor-arg value="serverConfig"/>
+                <constructor-arg value="com.l7tech.server.cluster.ClusterPropertyListener"/>
+            </bean>
+        </property>
     </bean>
 
     <bean id="licenseManager" class="com.l7tech.server.ems.EsmLicenseManager">
@@ -374,7 +379,12 @@
     </bean>
 
     <bean id="roleManager" class="com.l7tech.server.security.rbac.RoleManagerImpl" parent="hibernateBean">
-        <property name="rbacServices" ref="rbacServices"/>
+        <property name="rbacServices">
+            <bean class="com.l7tech.gateway.common.spring.factory.config.LazyProxyFactoryBean">
+                <constructor-arg value="rbacServices"/>
+                <constructor-arg value="com.l7tech.server.security.rbac.RbacServices"/>
+            </bean>
+         </property>
     </bean>
     <bean id="rbacServices" class="com.l7tech.server.security.rbac.RbacServicesImpl">
         <property name="roleManager" ref="roleManager"/>
@@ -501,7 +511,12 @@
 
     <!-- Enterprise Folder Manager -->
     <bean id="enterpriseFolderManager" class="com.l7tech.server.ems.enterprise.EnterpriseFolderManagerImpl" parent="hibernateBean">
-        <property name="ssgClusterManager" ref="ssgClusterManager"/>
+        <property name="ssgClusterManager">
+            <bean class="com.l7tech.gateway.common.spring.factory.config.LazyProxyFactoryBean">
+                <constructor-arg value="ssgClusterManager"/>
+                <constructor-arg value="com.l7tech.server.ems.enterprise.SsgClusterManager"/>
+            </bean>
+        </property>
     </bean>
 
     <!-- SSG Cluster Manager -->

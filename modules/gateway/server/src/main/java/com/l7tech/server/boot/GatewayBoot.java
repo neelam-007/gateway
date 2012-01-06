@@ -31,7 +31,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
+import static java.util.logging.Level.*;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
@@ -135,6 +135,7 @@ public class GatewayBoot {
         // This thread is responsible for attempting to start the server, and for clearing "running" flag if it fails
         boolean itworked = false;
         try {
+            final long startTime = System.currentTimeMillis();
             ServerConfig.getInstance().getLocalDirectoryProperty( ServerConfigParams.PARAM_LOG_DIRECTORY, true);
             FirewallUtils.initializeFirewall();
             spawnDbWarner();
@@ -142,6 +143,7 @@ public class GatewayBoot {
             String ipAddress = startBootProcess();
             startListeners(ipAddress);
             itworked = true;
+            logger.log( FINE, "Boot completed in {0}ms", System.currentTimeMillis() - startTime );
         } finally {
             if (!itworked)
                 running.set(false);
@@ -209,13 +211,13 @@ public class GatewayBoot {
                             return;
                         int connections = getNumDbConnections();
                         if (connections >= 1) {
-                            logger.log(Level.FINE, "Database check: " + connections + " database connections open after " + DB_CHECK_DELAY + " seconds");
+                            logger.log( FINE, "Database check: " + connections + " database connections open after " + DB_CHECK_DELAY + " seconds");
                             return;
                         }
 
-                        logger.log(Level.SEVERE, "WARNING: No database connections open after " + DB_CHECK_DELAY + " seconds; possible DB connection failure?");
+                        logger.log(SEVERE, "WARNING: No database connections open after " + DB_CHECK_DELAY + " seconds; possible DB connection failure?");
                     } catch (Throwable t) {
-                        logger.log(Level.SEVERE, "Unable to check for database connections: " + ExceptionUtils.getMessage(t), t);
+                        logger.log(SEVERE, "Unable to check for database connections: " + ExceptionUtils.getMessage(t), t);
                     }
                 }
             };
@@ -242,19 +244,27 @@ public class GatewayBoot {
     }
 
     private void createApplicationContext() {
+        final long startTime = System.currentTimeMillis();
         applicationContext = new ClassPathXmlApplicationContext(new String[]{
                 "com/l7tech/server/resources/dataAccessContext.xml",
                 "com/l7tech/server/resources/ssgApplicationContext.xml",
                 "com/l7tech/server/resources/adminContext.xml",
                 "com/l7tech/server/resources/cxfSupportContext.xml",
-        });
+        }, false );
+        applicationContext.setAllowCircularReferences( false );
+        applicationContext.refresh();
         shutdowner = applicationContext.getBean("ssgShutdown", ShutdownWatcher.class);
+        logger.log( FINE, "Created application context in {0}ms", System.currentTimeMillis() - startTime );
     }
 
     private String startBootProcess() throws LifecycleException {
+        final long contextStartTime = System.currentTimeMillis();
         applicationContext.start();
-        BootProcess boot = applicationContext.getBean("ssgBoot", BootProcess.class);
+        logger.log( FINE, "Started application context in {0}ms", System.currentTimeMillis() - contextStartTime );
+        final long bootStartTime = System.currentTimeMillis();
+        final BootProcess boot = applicationContext.getBean("ssgBoot", BootProcess.class);
         boot.start();
+        logger.log( FINE, "Started boot process in {0}ms", System.currentTimeMillis() - bootStartTime );
         return boot.getIpAddress();
     }
 
@@ -264,7 +274,7 @@ public class GatewayBoot {
             boot.stop();
             applicationContext.stop();
         } catch ( Exception e ) {
-            logger.log( Level.WARNING, "Error shutting down boot process '"+ExceptionUtils.getMessage(e)+"'.", e );
+            logger.log( WARNING, "Error shutting down boot process '"+ExceptionUtils.getMessage(e)+"'.", e );
         }
     }
 
@@ -273,12 +283,14 @@ public class GatewayBoot {
             BootProcess boot = applicationContext.getBean("ssgBoot", BootProcess.class);
             boot.destroy();
         } catch ( Exception e ) {
-            logger.log( Level.WARNING, "Error destroying boot process '"+ExceptionUtils.getMessage(e)+"'.", e );
+            logger.log( WARNING, "Error destroying boot process '"+ExceptionUtils.getMessage(e)+"'.", e );
         }
     }
 
     private void startListeners(String ipAddress) {
+        final long startTime = System.currentTimeMillis();
         applicationContext.publishEvent(new ReadyForMessages(this, Component.GW_SERVER, ipAddress));
+        logger.log( FINE, "Started listeners in {0}ms", System.currentTimeMillis() - startTime );
     }
 
     private void addShutdownHook( final CountDownLatch shutdown, final CountDownLatch exitSync ) {
@@ -319,7 +331,7 @@ public class GatewayBoot {
             } catch (StrongCryptoNotAvailableException e) {
                 throw new LifecycleException("Strong cryptography not available. Please update JDK to enable strong cryptography.");
             } catch (GeneralSecurityException e) {
-                logger.log(Level.WARNING, "Unexpected error when checking for strong cryptography in JDK '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
+                logger.log(WARNING, "Unexpected error when checking for strong cryptography in JDK '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
             }
         }
     }

@@ -80,7 +80,12 @@
 
     <bean id="clusterPropertyCache" class="com.l7tech.server.cluster.ClusterPropertyCache">
         <property name="clusterPropertyManager" ref="clusterPropertyManager"/>
-        <property name="clusterPropertyListener" ref="serverConfig"/>
+        <property name="clusterPropertyListener">
+            <bean class="com.l7tech.gateway.common.spring.factory.config.LazyProxyFactoryBean">
+                <constructor-arg value="serverConfig"/>
+                <constructor-arg value="com.l7tech.server.cluster.ClusterPropertyListener"/>
+            </bean>
+        </property>
     </bean>
 
     <bean id="configureServerVariablesClusterPropertyCache"
@@ -523,7 +528,12 @@
 
     <!-- TODO cachingRoleManager? -->
     <bean id="roleManager" class="com.l7tech.server.security.rbac.RoleManagerImpl" parent="hibernateBean">
-        <property name="rbacServices" ref="rbacServices"/>
+        <property name="rbacServices">
+            <bean class="com.l7tech.gateway.common.spring.factory.config.LazyProxyFactoryBean">
+                <constructor-arg value="rbacServices"/>
+                <constructor-arg value="com.l7tech.server.security.rbac.RbacServices"/>
+            </bean>
+         </property>
     </bean>
     <bean id="rbacServices" class="com.l7tech.server.security.rbac.RbacServicesImpl">
         <property name="roleManager" ref="roleManager"/>
@@ -1729,17 +1739,23 @@
 
     <bean id="ssgKeyStoreManager" class="com.l7tech.server.security.keystore.SsgKeyStoreManagerImpl"
           depends-on="gatewaySanityChecker">
-        <constructor-arg ref="sharedKeyManager"/>
-        <constructor-arg ref="keystoreFileManager"/>
-        <constructor-arg ref="serverConfig"/>
-        <constructor-arg>
+        <constructor-arg index="0" ref="sharedKeyManager"/>
+        <constructor-arg index="1" ref="keystoreFileManager"/>
+        <constructor-arg index="2" ref="serverConfig"/>
+        <constructor-arg index="3">
             <bean class="com.l7tech.server.util.PropertiesValueFactoryBean">
                 <constructor-arg ref="nodeProperties"/>
                 <constructor-arg value="node.cluster.pass"/>
             </bean>
         </constructor-arg>
-        <constructor-arg ref="dbPasswordEncryption"/>
-        <property name="keyAccessFilter" ref="keyAccessFilter"/>
+        <constructor-arg index="4" ref="dbPasswordEncryption"/>
+        <constructor-arg index="5">
+            <bean class="com.l7tech.gateway.common.spring.factory.config.LazyProxyFactoryBean">
+                <constructor-arg value="keyAccessFilter"/>
+                <constructor-arg value="com.l7tech.server.security.keystore.KeyAccessFilter"/>
+                <constructor-arg value="true"/>
+            </bean>
+        </constructor-arg>
     </bean>
 
     <bean id="keyAccessFilter" class="com.l7tech.server.GatewayKeyAccessFilter">
@@ -1841,10 +1857,15 @@
     </bean>
 
     <bean id="policyManager" class="com.l7tech.server.policy.PolicyManagerImpl" parent="hibernateBean">
-        <constructor-arg ref="roleManager"/>
-        <constructor-arg ref="policyAliasManager"/>
-        <constructor-arg ref="folderManager"/>
-        <property name="policyCache" ref="policyCache"/>
+        <constructor-arg index="0" ref="roleManager"/>
+        <constructor-arg index="1" ref="policyAliasManager"/>
+        <constructor-arg index="2" ref="folderManager"/>
+        <constructor-arg index="3" >
+            <bean class="com.l7tech.gateway.common.spring.factory.config.LazyProxyFactoryBean">
+                <constructor-arg value="policyCache"/>
+                <constructor-arg value="com.l7tech.server.policy.PolicyCache"/>
+            </bean>
+        </constructor-arg>
     </bean>
 
     <!--service side policy alias manager-->

@@ -47,12 +47,17 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingB
     private final KeystoreFileManager keystoreFileManager;
     private final Config config;
     private final MasterPasswordManager dbEncrypter;
+    private final KeyAccessFilter keyAccessFilter;
 
     private boolean initialized = false;
     private List<SsgKeyFinder> keystores = null;
-    private KeyAccessFilter keyAccessFilter;
 
-    public SsgKeyStoreManagerImpl(SharedKeyManager skm, KeystoreFileManager kem, Config config, char[] sslKeystorePassphrase, MasterPasswordManager passwordManager) throws KeyStoreException, FindException {
+    public SsgKeyStoreManagerImpl( final SharedKeyManager skm,
+                                   KeystoreFileManager kem,
+                                   final Config config,
+                                   final char[] sslKeystorePassphrase,
+                                   final MasterPasswordManager passwordManager,
+                                   final KeyAccessFilter keyAccessFilter ) throws KeyStoreException, FindException {
         if ( sslKeystorePassphrase == null || sslKeystorePassphrase.length==0 ) throw new IllegalArgumentException("sslKeystorePassphrase is required");
         if ( kem instanceof KeystoreFileManagerImpl ) {
             logger.severe("kem autoproxy failure");
@@ -62,6 +67,7 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingB
         this.softwareKeystorePasssword = toPassphrase(skm.getSharedKey());
         this.config = config;
         this.dbEncrypter = passwordManager;
+        this.keyAccessFilter = keyAccessFilter;
     }
 
     private char[] toPassphrase(byte[] b) {
@@ -244,9 +250,5 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingB
     @Override
     public void afterPropertiesSet() throws Exception {
         init();
-    }
-
-    public void setKeyAccessFilter(KeyAccessFilter keyAccessFilter) {
-        this.keyAccessFilter = keyAccessFilter;
     }
 }

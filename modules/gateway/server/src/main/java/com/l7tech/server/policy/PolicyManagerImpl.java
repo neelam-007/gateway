@@ -51,19 +51,18 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
      */
     private static final boolean multipleGlobalPolicies = ConfigFactory.getBooleanProperty( "com.l7tech.server.policy.multipleGlobalPolicies", false );
 
-    private PolicyCache policyCache;
+    private final PolicyCache policyCache;
     private final RoleManager roleManager;
     private final PolicyAliasManager policyAliasManager;
     private final FolderManager folderManager;
 
-    public PolicyManagerImpl(RoleManager roleManager, PolicyAliasManager policyAliasManager, FolderManager folderManager) {
+    public PolicyManagerImpl( final RoleManager roleManager,
+                              final PolicyAliasManager policyAliasManager,
+                              final FolderManager folderManager,
+                              final PolicyCache policyCache ) {
         this.roleManager = roleManager;
         this.policyAliasManager = policyAliasManager;
         this.folderManager = folderManager;
-    }
-
-    @Transactional(propagation=Propagation.SUPPORTS)
-    public void setPolicyCache(PolicyCache policyCache) {
         this.policyCache = policyCache;
     }
 
