@@ -266,7 +266,7 @@ if test "$CLONE_DB" == "yes" ; then
 	# pipe in the database
 
 	verbose "Copying database from $MASTER"
-	mysqldump -h $MASTER -u $DBUSER -p$DBPWD --master-data=1 $DB | $SLAVE_MYSQL $DB
+	mysqldump -h $MASTER -u $DBUSER -p$DBPWD --master-data=1 --routines $DB | $SLAVE_MYSQL $DB
 fi
 
 ################
