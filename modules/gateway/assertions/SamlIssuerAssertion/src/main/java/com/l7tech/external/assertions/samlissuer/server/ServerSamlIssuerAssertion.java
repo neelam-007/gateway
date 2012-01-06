@@ -298,7 +298,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                     return AssertionStatus.NOT_APPLICABLE;
                 }
             } catch (SAXException e) {
-                logAndAudit(AssertionMessages.SAML_ISSUER_BAD_XML, null, e);
+                logAndAudit(AssertionMessages.SAML_ISSUER_BAD_XML, null, ExceptionUtils.getDebugException(e));
                 return AssertionStatus.BAD_REQUEST;
             }
 
@@ -312,7 +312,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
             try {
                 messageDoc = xk.getDocumentWritable();
             } catch (SAXException e) {
-                logAndAudit(AssertionMessages.SAML_ISSUER_BAD_XML, null, e);
+                logAndAudit(AssertionMessages.SAML_ISSUER_BAD_XML, null, ExceptionUtils.getDebugException(e));
                 return AssertionStatus.BAD_REQUEST;
             }
 
@@ -331,7 +331,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                     try {
                         dr.getElementsToSign().add( SoapUtil.getBodyElement(messageDoc));
                     } catch ( InvalidDocumentFormatException e) {
-                        logAndAudit(AssertionMessages.SAML_ISSUER_BAD_XML, null, e);
+                        logAndAudit(AssertionMessages.SAML_ISSUER_BAD_XML, null, ExceptionUtils.getDebugException(e));
                         return AssertionStatus.BAD_REQUEST;
                     }
                 }
@@ -339,7 +339,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                 try {
                     decorator.decorateMessage(new Message(messageDoc), dr);
                 } catch (Exception e) {
-                    logAndAudit(AssertionMessages.SAML_ISSUER_CANT_DECORATE, null, e);
+                    logAndAudit(AssertionMessages.SAML_ISSUER_CANT_DECORATE, null, ExceptionUtils.getDebugException(e));
                     return AssertionStatus.FAILED;
                 }
             }
@@ -347,7 +347,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
             auditDone();
             return AssertionStatus.NONE;
         } catch (GeneralSecurityException e) {
-            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to issue assertion: " + ExceptionUtils.getMessage(e) }, e);
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to issue assertion: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
             return AssertionStatus.FAILED;
         }
     }
@@ -1066,9 +1066,9 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                 logAndAudit(AssertionMessages.MESSAGE_VARIABLE_NOT_XML_WARNING);
             }
         } catch (IOException e) {
-            logAndAudit(AssertionMessages.MESSAGE_VARIABLE_BAD_XML, new String[]{""}, e);
+            logAndAudit(AssertionMessages.MESSAGE_VARIABLE_BAD_XML, new String[]{""}, ExceptionUtils.getDebugException(e));
         } catch (SAXException e) {
-            logAndAudit(AssertionMessages.MESSAGE_VARIABLE_BAD_XML, new String[]{""}, e);
+            logAndAudit(AssertionMessages.MESSAGE_VARIABLE_BAD_XML, new String[]{""}, ExceptionUtils.getDebugException(e));
         }
 
         return null;
