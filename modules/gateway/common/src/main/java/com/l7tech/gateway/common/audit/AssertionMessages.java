@@ -625,6 +625,7 @@ public class AssertionMessages extends Messages {
     public static final M EMAILALERT_BAD_HOST = m(6708, Level.WARNING, "Bad smtp host set or not set at all, message not sent");
     public static final M EMAILALERT_BAD_USER = m(6709, Level.WARNING, "Bad smtp user name set or not set at all, message not sent");
     public static final M EMAILALERT_BAD_PWD = m(6710, Level.WARNING, "Bad smtp password set or not set at all, message not sent");
+    public static final M SNMP_INVALID_TRAP_OID = m(6711, Level.WARNING, "Invalid OID (value={0}). Using .1 for the trap OID instead");
 
 
     // HTTP Form POST

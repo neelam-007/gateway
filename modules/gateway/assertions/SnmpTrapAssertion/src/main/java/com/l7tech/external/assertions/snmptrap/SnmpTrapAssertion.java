@@ -25,7 +25,7 @@ public class SnmpTrapAssertion extends Assertion implements UsesVariables {
     private int targetPort = DEFAULT_PORT;
     private String community = "";
     private String errorMessage = DEFAULT_ERROR_MESSAGE;
-    private int lastOidComponent = 0;
+    private String lastOidComponent = "0";
 
     /**
      * Create an SnmpTrapAssertion with default settings.
@@ -58,7 +58,7 @@ public class SnmpTrapAssertion extends Assertion implements UsesVariables {
      * @param oid              the final component of the SNMP object ID to use to identify the error message.
      * @param errorMessage     the error message to send in the trap, or null to use a default error message.
      */
-    public SnmpTrapAssertion(String targetHostname, int targetPort, String community, int oid, String errorMessage) {
+    public SnmpTrapAssertion(String targetHostname, int targetPort, String community, String oid, String errorMessage) {
         if (targetHostname == null) throw new NullPointerException("SNMP target hostname must not be null");
         if (targetHostname.length() < 1) throw new IllegalArgumentException("SNMP target hostname must not be empty");
         if (community == null) throw new NullPointerException("SNMP community must not be null");
@@ -100,12 +100,19 @@ public class SnmpTrapAssertion extends Assertion implements UsesVariables {
         this.community = community;
     }
 
-    public int getOid() {
+    public String getOid() {
         return lastOidComponent;
     }
 
-    public void setOid(int oid) {
+    public void setOid(final String oid) {
         this.lastOidComponent = oid;
+    }
+
+    /**
+     * This setter is required for backwards compatibility for when oid was an integer.
+     */
+    public void setOid(final int oid) {
+        this.lastOidComponent = String.valueOf(oid);
     }
 
     public String getErrorMessage() {
@@ -133,7 +140,7 @@ public class SnmpTrapAssertion extends Assertion implements UsesVariables {
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(errorMessage);
+        return Syntax.getReferencedNames(errorMessage, targetHostname, community, lastOidComponent);
     }
 
     private final static String baseName = "Send SNMP Trap";

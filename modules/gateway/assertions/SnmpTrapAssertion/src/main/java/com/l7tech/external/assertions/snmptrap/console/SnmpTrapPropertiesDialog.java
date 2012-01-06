@@ -80,7 +80,7 @@ public class SnmpTrapPropertiesDialog extends AssertionPropertiesEditorSupport<S
         validator.constrainTextFieldToBeNonEmpty("host name", hostnameField, null);
 
         validator.constrainTextFieldToNumberRange("port", portField, 1, 65535);
-        validator.constrainTextFieldToNumberRange("OID", oidField, 0, Integer.MAX_VALUE);
+        validator.constrainTextFieldToBeNonEmpty("OID", oidField, null);
 
         pack();
         Utilities.centerOnScreen(this);
@@ -111,8 +111,7 @@ public class SnmpTrapPropertiesDialog extends AssertionPropertiesEditorSupport<S
         if (rbCustomPort.isSelected())
             port = safeParseInt(portField.getText(), port);
         assertion.setTargetPort(port);
-        int oid = safeParseInt(oidField.getText(), 1);
-        assertion.setOid(oid);
+        assertion.setOid(oidField.getText());
         assertion.setErrorMessage(messageField.getText());
         return assertion;
     }
@@ -133,7 +132,7 @@ public class SnmpTrapPropertiesDialog extends AssertionPropertiesEditorSupport<S
         rbCustomPort.setSelected(!dp);
         hostnameField.setText(assertion.getTargetHostname());
         messageField.setText(assertion.getErrorMessage());
-        oidField.setText(Integer.toString(assertion.getOid()));
+        oidField.setText(assertion.getOid());
         communityField.setText(assertion.getCommunity());
         portField.setEnabled(rbCustomPort.isSelected());
         validator.validate();
