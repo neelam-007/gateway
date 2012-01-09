@@ -2,8 +2,4 @@
 <JDBCConnection xmlns="http://ns.l7tech.com/2010/04/gateway-management">
     <Name>My JDBC Connection</Name>
     <Enabled>true</Enabled>
-    <Extension>
-        <DriverClass>true</DriverClass>
-        <JdbcUrl>true</JdbcUrl>
-    </Extension>
 </JDBCConnection>

@@ -175,13 +175,13 @@ public class JDBCConnectionMO extends AccessibleObject {
         this.enabled = value;
     }
 
-    @XmlElement(name="Extension", required=true)
+    @XmlElement(name="Extension")
     protected JdbcExtension getJdbcExtension() {
         return this.jdbcExtension;
     }
 
     protected void setJdbcExtension( final JdbcExtension extension ) {
-        this.jdbcExtension = extension;
+        this.jdbcExtension = extension == null ? new JdbcExtension() : extension;
     }
     
     @XmlAnyElement(lax=true)
