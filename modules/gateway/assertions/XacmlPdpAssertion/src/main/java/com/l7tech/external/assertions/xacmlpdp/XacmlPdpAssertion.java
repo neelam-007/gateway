@@ -8,6 +8,7 @@ import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
@@ -85,7 +86,7 @@ public class XacmlPdpAssertion extends Assertion implements UsesVariables, SetsV
     @Override
     public VariableMetadata[] getVariablesSet() {
         if(outputMessageLocation == XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE) {
-            return new VariableMetadata[] {new VariableMetadata(outputMessageVariableName, false, false, null, false)};
+            return new VariableMetadata[] {new VariableMetadata(outputMessageVariableName, true, false, null, true, DataType.MESSAGE)};
         } else {
             return new VariableMetadata[0];
         }
