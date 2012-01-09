@@ -123,6 +123,10 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
         return name.replace('.', '/').concat(".class");
     }
 
+    private String toClassPath( final String path ) {
+        return path.replace( '/', '.' );
+    }
+
     private Class define( final String name, final InputStream bytecode ) {
         if ( bytecode != null ) {
             try {
@@ -167,7 +171,7 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
 
     /**
      * Get the bytes for the specified resource from this assertion module, without looking in any parent
-     * class loaders.
+     * class loaders (unless the resource is under resourceLoadPrefix)
      *
      * @param path  the path, ie "com/l7tech/console/panels/resources/RateLimitAssertionPropertiesDialog.form".  Required.
      * @param hidePrivateLibraries  true if the resource bytes will be sent back to a remote client, and so any classes from nested jarfiles
@@ -178,7 +182,9 @@ class AssertionModuleClassLoader extends URLClassLoader implements Closeable {
      * @throws IOException if there is an error reading the resource
      */
     byte[] getResourceBytes(final String path, boolean hidePrivateLibraries) throws IOException {
-        URL url = super.findResource(path);
+        URL url = shouldLoadFromParentResources( toClassPath(path) ) ?
+                super.getResource(path):
+                super.findResource(path);
         if (url == null) {
             byte[] found = getResourceBytesFromNestedJars(path, hidePrivateLibraries);
             if (found == null)
