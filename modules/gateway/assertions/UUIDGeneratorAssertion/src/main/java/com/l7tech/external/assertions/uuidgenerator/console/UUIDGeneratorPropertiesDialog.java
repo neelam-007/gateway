@@ -28,7 +28,7 @@ public class UUIDGeneratorPropertiesDialog extends AssertionPropertiesOkCancelSu
 
     public UUIDGeneratorPropertiesDialog(final Frame parent, final UUIDGeneratorAssertion assertion) {
         super(assertion.getClass(), parent, (String) assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME), true);
-        integerOrContextVariableRule = new IntegerOrContextVariableValidationRule(UUIDGeneratorAssertion.MINIMUM_QUANTITY, assertion.getMaximumQuantity(), QUANTITY);
+        integerOrContextVariableRule = new IntegerOrContextVariableValidationRule(UUIDGeneratorAssertion.MINIMUM_QUANTITY, assertion.getMaximumQuantity(), QUANTITY, quantityTextField);
         initComponents();
     }
 
@@ -72,8 +72,6 @@ public class UUIDGeneratorPropertiesDialog extends AssertionPropertiesOkCancelSu
             // error will be caught by number range validation
         }
         integerOrContextVariableRule.setMaximum(max);
-        final String quantity = quantityTextField.getText();
-        integerOrContextVariableRule.setTextToValidate((quantity == null) ? null : quantity.trim());
         final String error = validators.validate();
         if (error != null) {
             throw new ValidationException(error);

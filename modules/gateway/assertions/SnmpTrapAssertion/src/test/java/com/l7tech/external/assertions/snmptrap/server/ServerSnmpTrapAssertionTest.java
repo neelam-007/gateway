@@ -5,6 +5,7 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.util.UptimeMetrics;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -18,9 +19,12 @@ import org.snmp4j.security.SecurityLevel;
 import org.snmp4j.security.SecurityModel;
 import org.snmp4j.smi.OID;
 import org.snmp4j.smi.OctetString;
+import org.snmp4j.smi.TimeTicks;
 import org.snmp4j.smi.UdpAddress;
 
+import java.io.FileNotFoundException;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.argThat;
@@ -35,19 +39,18 @@ public class ServerSnmpTrapAssertionTest {
     private static final String OID = "1";
     private static final String OID_PREFIX = "1.3.6.1.4.1.17304.7.3.";
     private static final String FULL_OID = OID_PREFIX + OID;
-    private static final int PORT = 162;
     private static final String MESSAGE = "my snmp message";
+    private static final int PORT = 162;
+    private static final long UPTIME = 0;
     private SnmpTrapAssertion assertion;
     private ServerSnmpTrapAssertion serverAssertion;
     private PolicyEnforcementContext context;
     @Mock
     private MessageDispatcher dispatcher;
     @Mock
-    private ServerSnmpTrapAssertion.InetAddressWrapper inetAddressWrapper;
-    @Mock
-    private ServerSnmpTrapAssertion.UptimeMonitorWrapper uptimeMonitorWrapper;
-    @Mock
     private InetAddress address;
+    @Mock
+    private UptimeMetrics uptimeMetrics;
 
     @Before
     public void setup() {
@@ -64,16 +67,12 @@ public class ServerSnmpTrapAssertionTest {
     public void noContextVariables() throws Exception {
         initServerAssertion();
 
-        when(inetAddressWrapper.getByName(HOST)).thenReturn(address);
-
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
 
-        verify(uptimeMonitorWrapper).getLastUptime();
-        verify(inetAddressWrapper).getByName(HOST);
         verify(dispatcher).sendPdu(udpAddressWithPort(PORT), eq(SnmpConstants.version2c), eq(SecurityModel.SECURITY_MODEL_SNMPv2c),
                 eq(COMMUNITY.getBytes()),
                 eq(SecurityLevel.NOAUTH_NOPRIV),
-                pduWithOidAndMessage(FULL_OID, MESSAGE),
+                pduWithValues(UPTIME, FULL_OID, MESSAGE),
                 eq(false));
     }
 
@@ -83,16 +82,12 @@ public class ServerSnmpTrapAssertionTest {
         initServerAssertion();
         context.setVariable("errMsg", "Custom Error Message");
 
-        when(inetAddressWrapper.getByName(HOST)).thenReturn(address);
-
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
 
-        verify(uptimeMonitorWrapper).getLastUptime();
-        verify(inetAddressWrapper).getByName(HOST);
         verify(dispatcher).sendPdu(udpAddressWithPort(PORT), eq(SnmpConstants.version2c), eq(SecurityModel.SECURITY_MODEL_SNMPv2c),
                 eq(COMMUNITY.getBytes()),
                 eq(SecurityLevel.NOAUTH_NOPRIV),
-                pduWithOidAndMessage(FULL_OID, "Custom Error Message"),
+                pduWithValues(UPTIME, FULL_OID, "Custom Error Message"),
                 eq(false));
     }
 
@@ -103,16 +98,12 @@ public class ServerSnmpTrapAssertionTest {
         initServerAssertion();
         context.setVariable("host", host);
 
-        when(inetAddressWrapper.getByName(host)).thenReturn(address);
-
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
 
-        verify(uptimeMonitorWrapper).getLastUptime();
-        verify(inetAddressWrapper).getByName(host);
         verify(dispatcher).sendPdu(udpAddressWithPort(PORT), eq(SnmpConstants.version2c), eq(SecurityModel.SECURITY_MODEL_SNMPv2c),
                 eq(COMMUNITY.getBytes()),
                 eq(SecurityLevel.NOAUTH_NOPRIV),
-                pduWithOidAndMessage(FULL_OID, MESSAGE),
+                pduWithValues(UPTIME, FULL_OID, MESSAGE),
                 eq(false));
     }
 
@@ -123,16 +114,12 @@ public class ServerSnmpTrapAssertionTest {
         initServerAssertion();
         context.setVariable("community", community);
 
-        when(inetAddressWrapper.getByName(HOST)).thenReturn(address);
-
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
 
-        verify(uptimeMonitorWrapper).getLastUptime();
-        verify(inetAddressWrapper).getByName(HOST);
         verify(dispatcher).sendPdu(udpAddressWithPort(PORT), eq(SnmpConstants.version2c), eq(SecurityModel.SECURITY_MODEL_SNMPv2c),
                 eq(community.getBytes()),
                 eq(SecurityLevel.NOAUTH_NOPRIV),
-                pduWithOidAndMessage(FULL_OID, MESSAGE),
+                pduWithValues(UPTIME, FULL_OID, MESSAGE),
                 eq(false));
     }
 
@@ -143,16 +130,12 @@ public class ServerSnmpTrapAssertionTest {
         initServerAssertion();
         context.setVariable("snmpOid", oid);
 
-        when(inetAddressWrapper.getByName(HOST)).thenReturn(address);
-
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
 
-        verify(uptimeMonitorWrapper).getLastUptime();
-        verify(inetAddressWrapper).getByName(HOST);
         verify(dispatcher).sendPdu(udpAddressWithPort(PORT), eq(SnmpConstants.version2c), eq(SecurityModel.SECURITY_MODEL_SNMPv2c),
                 eq(COMMUNITY.getBytes()),
                 eq(SecurityLevel.NOAUTH_NOPRIV),
-                pduWithOidAndMessage(OID_PREFIX + oid, MESSAGE),
+                pduWithValues(UPTIME, OID_PREFIX + oid, MESSAGE),
                 eq(false));
     }
 
@@ -162,28 +145,42 @@ public class ServerSnmpTrapAssertionTest {
         initServerAssertion();
         context.setVariable("snmpOid", "invalid");
 
-        when(inetAddressWrapper.getByName(HOST)).thenReturn(address);
-
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
 
-        verify(uptimeMonitorWrapper).getLastUptime();
-        verify(inetAddressWrapper).getByName(HOST);
         verify(dispatcher).sendPdu(udpAddressWithPort(PORT), eq(SnmpConstants.version2c), eq(SecurityModel.SECURITY_MODEL_SNMPv2c),
                 eq(COMMUNITY.getBytes()),
                 eq(SecurityLevel.NOAUTH_NOPRIV),
-                pduWithOidAndMessage(OID_PREFIX + 1, MESSAGE),
+                pduWithValues(UPTIME, OID_PREFIX + 1, MESSAGE),
+                eq(false));
+    }
+
+    @Test
+    public void nonZeroUptimeMetrics() throws Exception {
+        initServerAssertion();
+
+        when(uptimeMetrics.getDays()).thenReturn(1);
+        when(uptimeMetrics.getHours()).thenReturn(1);
+        when(uptimeMetrics.getMinutes()).thenReturn(1);
+
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
+
+        verify(uptimeMetrics).getDays();
+        verify(uptimeMetrics).getHours();
+        verify(uptimeMetrics).getMinutes();
+        verify(dispatcher).sendPdu(udpAddressWithPort(PORT), eq(SnmpConstants.version2c), eq(SecurityModel.SECURITY_MODEL_SNMPv2c),
+                eq(COMMUNITY.getBytes()),
+                eq(SecurityLevel.NOAUTH_NOPRIV),
+                pduWithValues(9006000L, FULL_OID, MESSAGE),
                 eq(false));
     }
 
     private void initServerAssertion() {
-        serverAssertion = new ServerSnmpTrapAssertion(assertion);
+        serverAssertion = new TestableServerSnmpTrapAssertion(assertion);
         serverAssertion.setDispatcher(dispatcher);
-        serverAssertion.setInetAddressWrapper(inetAddressWrapper);
-        serverAssertion.setUptimeMonitorWrapper(uptimeMonitorWrapper);
     }
 
-    private PDU pduWithOidAndMessage(final String oid, final String message) {
-        return argThat(new PDUMatcher(oid, message));
+    private PDU pduWithValues(final long uptime, final String oid, final String message) {
+        return argThat(new PDUMatcher(uptime, oid, message));
     }
 
     private UdpAddress udpAddressWithPort(final int port) {
@@ -209,24 +206,46 @@ public class ServerSnmpTrapAssertionTest {
     }
 
     private class PDUMatcher extends ArgumentMatcher<PDU> {
+        private final long uptime;
         private final String message;
-
         private final String oid;
 
-        public PDUMatcher(final String oid, final String message) {
+        public PDUMatcher(final long uptime, final String oid, final String message) {
+            this.uptime = uptime;
             this.message = message;
             this.oid = oid;
         }
 
         @Override
         public boolean matches(final Object obj) {
+            boolean matches = false;
             final PDU pdu = (PDU) obj;
-            final OID o = (OID) pdu.get(1).getVariable();
-            final OctetString os = (OctetString) pdu.get(2).getVariable();
-            if (o.toString().equals(oid) && os.toString().equals(message)) {
-                return true;
+            final TimeTicks timeTicks = (TimeTicks) pdu.get(0).getVariable();
+            final OID oidVariable = (OID) pdu.get(1).getVariable();
+            final OctetString octetString = (OctetString) pdu.get(2).getVariable();
+            if (timeTicks.getValue() == uptime && oidVariable.toString().equals(oid) && octetString.toString().equals(message)) {
+                matches = true;
             }
-            return false;
+            return matches;
+        }
+    }
+
+    /**
+     * Stubs static calls.
+     */
+    private class TestableServerSnmpTrapAssertion extends ServerSnmpTrapAssertion {
+        public TestableServerSnmpTrapAssertion(final SnmpTrapAssertion ass) {
+            super(ass);
+        }
+
+        @Override
+        InetAddress getInetAddressByName(final String host) throws UnknownHostException {
+            return address;
+        }
+
+        @Override
+        UptimeMetrics getLastUptime() throws FileNotFoundException, IllegalStateException {
+            return uptimeMetrics;
         }
     }
 

@@ -25,6 +25,9 @@ public class SnmpTrapAssertion extends Assertion implements UsesVariables {
     private int targetPort = DEFAULT_PORT;
     private String community = "";
     private String errorMessage = DEFAULT_ERROR_MESSAGE;
+    /**
+     * TODO why set the default oid to an invalid number?
+     */
     private String lastOidComponent = "0";
 
     /**

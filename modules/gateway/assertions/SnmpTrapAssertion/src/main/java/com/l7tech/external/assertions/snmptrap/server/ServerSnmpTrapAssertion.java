@@ -37,8 +37,6 @@ public class ServerSnmpTrapAssertion extends AbstractServerAssertion<SnmpTrapAss
     private final SnmpTrapAssertion ass;
     private final OID messageOid;
     private MessageDispatcher dispatcher;
-    private InetAddressWrapper inetAddressWrapper;
-    private UptimeMonitorWrapper uptimeMonitorWrapper;
 
     public ServerSnmpTrapAssertion(final SnmpTrapAssertion ass) {
         super(ass);
@@ -57,8 +55,6 @@ public class ServerSnmpTrapAssertion extends AbstractServerAssertion<SnmpTrapAss
         System.arraycopy(OID_BASE, 0, msgOi, 0, OID_BASE.length);
         msgOi[msgOi.length - 1] = 0;
         messageOid = new OID(msgOi);
-        inetAddressWrapper = new InetAddressWrapper();
-        uptimeMonitorWrapper = new UptimeMonitorWrapper();
     }
 
     @Override
@@ -73,7 +69,7 @@ public class ServerSnmpTrapAssertion extends AbstractServerAssertion<SnmpTrapAss
             // TODO consider caching this DNS lookup for a while (just not forever).
             final String hostname = ExpandVariables.process(ass.getTargetHostname(), context.getVariableMap(ass.getVariablesUsed(), getAudit()), getAudit());
             // As is, we just hope that one of the JRE, resolver, libc, or OS provide caching for gethostbyname().
-            final UdpAddress udpAddress = new UdpAddress(inetAddressWrapper.getByName(hostname), ass.getTargetPort());
+            final UdpAddress udpAddress = new UdpAddress(getInetAddressByName(hostname), ass.getTargetPort());
             final String community = ExpandVariables.process(ass.getCommunity(), context.getVariableMap(ass.getVariablesUsed(), getAudit()), getAudit());
             dispatcher.sendPdu(udpAddress,
                     SnmpConstants.version2c,
@@ -102,6 +98,9 @@ public class ServerSnmpTrapAssertion extends AbstractServerAssertion<SnmpTrapAss
         return new VariableBinding(messageOid, errorMessage);
     }
 
+    /**
+     * TODO is it safe to set the last part of the oid to 1 if the user has entered an invalid value?
+     */
     private VariableBinding createOidVariableBinding(final PolicyEnforcementContext context) {
         final String oid = ExpandVariables.process(ass.getOid(), context.getVariableMap(ass.getVariablesUsed(), getAudit()), getAudit());
         int lastPart = 1;
@@ -121,32 +120,29 @@ public class ServerSnmpTrapAssertion extends AbstractServerAssertion<SnmpTrapAss
     }
 
     private VariableBinding createUptimeVariableBinding() throws FileNotFoundException {
-        final UptimeMetrics um = uptimeMonitorWrapper.getLastUptime();
+        final UptimeMetrics um = getLastUptime();
         long uptimeSeconds;
         if (um == null)
             uptimeSeconds = 0L;
-        else
+        else {
             uptimeSeconds = (long) ((um.getDays() * 86400) + (um.getHours() * 60 * 60) + (um.getMinutes() * 60));
+        }
 
         return new VariableBinding(SnmpConstants.sysUpTime, new TimeTicks(uptimeSeconds * 100L)); // TimeTicks is s/100
     }
 
     /**
-     * Convenience wrapper for unit tests.
+     * Convenience method for unit tests.
      */
-    class InetAddressWrapper {
-        public InetAddress getByName(final String host) throws UnknownHostException {
-            return InetAddress.getByName(host);
-        }
+    InetAddress getInetAddressByName(final String host) throws UnknownHostException {
+        return InetAddress.getByName(host);
     }
 
     /**
-     * Convenience wrapper for unit tests.
+     * Convenience method for unit tests.
      */
-    class UptimeMonitorWrapper {
-        public UptimeMetrics getLastUptime() throws FileNotFoundException, IllegalStateException {
-            return UptimeMonitor.getLastUptime();
-        }
+    UptimeMetrics getLastUptime() throws FileNotFoundException, IllegalStateException {
+        return UptimeMonitor.getLastUptime();
     }
 
     /**
@@ -154,19 +150,5 @@ public class ServerSnmpTrapAssertion extends AbstractServerAssertion<SnmpTrapAss
      */
     void setDispatcher(final MessageDispatcher dispatcher) {
         this.dispatcher = dispatcher;
-    }
-
-    /**
-     * For unit tests.
-     */
-    void setInetAddressWrapper(final InetAddressWrapper inetAddressWrapper) {
-        this.inetAddressWrapper = inetAddressWrapper;
-    }
-
-    /**
-     * For unit tests.
-     */
-    void setUptimeMonitorWrapper(final UptimeMonitorWrapper uptimeMonitorWrapper) {
-        this.uptimeMonitorWrapper = uptimeMonitorWrapper;
     }
 }

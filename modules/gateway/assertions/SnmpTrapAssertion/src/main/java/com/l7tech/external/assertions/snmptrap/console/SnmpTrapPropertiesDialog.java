@@ -1,10 +1,14 @@
 package com.l7tech.external.assertions.snmptrap.console;
 
+import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
+import com.l7tech.console.util.IntegerOrContextVariableValidationRule;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.external.assertions.snmptrap.SnmpTrapAssertion;
+import com.l7tech.identity.ValidationException;
+import com.l7tech.policy.assertion.AssertionMetadata;
 
 import javax.swing.*;
 import java.awt.*;
@@ -26,6 +30,7 @@ public class SnmpTrapPropertiesDialog extends AssertionPropertiesEditorSupport<S
     private JTextField hostnameField;
     private JButton okButton;
     private JButton cancelButton;
+    private IntegerOrContextVariableValidationRule integerOrContextVariableRule;
 
     private Window owner;
 
@@ -34,6 +39,7 @@ public class SnmpTrapPropertiesDialog extends AssertionPropertiesEditorSupport<S
     public SnmpTrapPropertiesDialog(Window owner, SnmpTrapAssertion assertion) throws HeadlessException {
         super(owner, assertion);
         validator = new InputValidator(this, getTitle());
+        integerOrContextVariableRule = new IntegerOrContextVariableValidationRule(1, Integer.MAX_VALUE, "oid", oidField);
         this.owner = owner;
         if (assertion == null) throw new NullPointerException();
         init(assertion);
@@ -78,9 +84,9 @@ public class SnmpTrapPropertiesDialog extends AssertionPropertiesEditorSupport<S
         rbDefaultPort.addActionListener(checkAction);
         rbCustomPort.addActionListener(checkAction);
         validator.constrainTextFieldToBeNonEmpty("host name", hostnameField, null);
-
         validator.constrainTextFieldToNumberRange("port", portField, 1, 65535);
         validator.constrainTextFieldToBeNonEmpty("OID", oidField, null);
+        validator.addRule(integerOrContextVariableRule);
 
         pack();
         Utilities.centerOnScreen(this);
@@ -105,14 +111,14 @@ public class SnmpTrapPropertiesDialog extends AssertionPropertiesEditorSupport<S
 
     @Override
     public SnmpTrapAssertion getData(SnmpTrapAssertion assertion) {
-        assertion.setCommunity(communityField.getText());
-        assertion.setTargetHostname(hostnameField.getText());
+        assertion.setCommunity(communityField.getText().trim());
+        assertion.setTargetHostname(hostnameField.getText().trim());
         int port = SnmpTrapAssertion.DEFAULT_PORT;
         if (rbCustomPort.isSelected())
-            port = safeParseInt(portField.getText(), port);
+            port = safeParseInt(portField.getText().trim(), port);
         assertion.setTargetPort(port);
-        assertion.setOid(oidField.getText());
-        assertion.setErrorMessage(messageField.getText());
+        assertion.setOid(oidField.getText().trim());
+        assertion.setErrorMessage(messageField.getText().trim());
         return assertion;
     }
 

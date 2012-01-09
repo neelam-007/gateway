@@ -3,6 +3,8 @@ package com.l7tech.console.util;
 import org.junit.Before;
 import org.junit.Test;
 
+import javax.swing.*;
+
 import static org.junit.Assert.*;
 
 public class IntegerOrContextVariableValidationRuleTest {
@@ -10,15 +12,17 @@ public class IntegerOrContextVariableValidationRuleTest {
     private static final int MAX = 100;
     private static final String FIELD_NAME = "myField";
     private IntegerOrContextVariableValidationRule rule;
+    private JTextField textComponent;
 
     @Before
-    public void setup(){
-        rule = new IntegerOrContextVariableValidationRule(MIN, MAX, FIELD_NAME);
+    public void setup() {
+        textComponent = new JTextField();
+        rule = new IntegerOrContextVariableValidationRule(MIN, MAX, FIELD_NAME, textComponent);
     }
 
     @Test
-    public void numericBelowMin(){
-        rule.setTextToValidate(String.valueOf(MIN - 1));
+    public void numericBelowMin() {
+        textComponent.setText(String.valueOf(MIN - 1));
 
         final String error = rule.getValidationError();
 
@@ -26,8 +30,8 @@ public class IntegerOrContextVariableValidationRuleTest {
     }
 
     @Test
-    public void nullString(){
-        rule.setTextToValidate(null);
+    public void nullString() {
+        textComponent.setText(null);
 
         final String error = rule.getValidationError();
 
@@ -35,8 +39,8 @@ public class IntegerOrContextVariableValidationRuleTest {
     }
 
     @Test
-    public void emptyString(){
-        rule.setTextToValidate("");
+    public void emptyString() {
+        textComponent.setText("");
 
         final String error = rule.getValidationError();
 
@@ -44,8 +48,8 @@ public class IntegerOrContextVariableValidationRuleTest {
     }
 
     @Test
-    public void numericAboveMax(){
-        rule.setTextToValidate(String.valueOf(MAX + 1));
+    public void numericAboveMax() {
+        textComponent.setText(String.valueOf(MAX + 1));
 
         final String error = rule.getValidationError();
 
@@ -53,28 +57,28 @@ public class IntegerOrContextVariableValidationRuleTest {
     }
 
     @Test
-    public void numericEqualToMin(){
-        rule.setTextToValidate(String.valueOf(MIN));
+    public void numericEqualToMin() {
+        textComponent.setText(String.valueOf(MIN));
         assertNull(rule.getValidationError());
     }
 
     @Test
-    public void numericEqualToMax(){
-        rule.setTextToValidate(String.valueOf(MAX));
-
-        assertNull(rule.getValidationError());
-    }
-
-    @Test
-    public void validContextVariable(){
-        rule.setTextToValidate("${myVar}");
+    public void numericEqualToMax() {
+        textComponent.setText(String.valueOf(MAX));
 
         assertNull(rule.getValidationError());
     }
 
     @Test
-    public void invalidContextVariable(){
-        rule.setTextToValidate("${myVar");
+    public void validContextVariable() {
+        textComponent.setText("${myVar}");
+
+        assertNull(rule.getValidationError());
+    }
+
+    @Test
+    public void invalidContextVariable() {
+        textComponent.setText("${myVar");
 
         final String error = rule.getValidationError();
 
@@ -82,8 +86,8 @@ public class IntegerOrContextVariableValidationRuleTest {
     }
 
     @Test
-    public void invalidContextVariableReference(){
-        rule.setTextToValidate("${myVar[}");
+    public void invalidContextVariableReference() {
+        textComponent.setText("${myVar[}");
 
         final String error = rule.getValidationError();
 
@@ -91,8 +95,8 @@ public class IntegerOrContextVariableValidationRuleTest {
     }
 
     @Test
-    public void plainString(){
-        rule.setTextToValidate("asdf");
+    public void plainString() {
+        textComponent.setText("asdf");
 
         final String error = rule.getValidationError();
 
@@ -100,8 +104,8 @@ public class IntegerOrContextVariableValidationRuleTest {
     }
 
     @Test
-    public void decimalInvalid(){
-        rule.setTextToValidate("1.1");
+    public void decimalInvalid() {
+        textComponent.setText("1.1");
 
         final String error = rule.getValidationError();
 
@@ -113,8 +117,8 @@ public class IntegerOrContextVariableValidationRuleTest {
     }
 
     @Test
-    public void spacesTrimmed(){
-        rule.setTextToValidate("   1   ");
+    public void spacesTrimmed() {
+        textComponent.setText("   1   ");
         assertNull(rule.getValidationError());
     }
 }

@@ -8,6 +8,7 @@ import com.l7tech.util.ValidationUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
+import javax.swing.text.JTextComponent;
 import java.text.MessageFormat;
 
 /**
@@ -18,17 +19,13 @@ public class IntegerOrContextVariableValidationRule implements InputValidator.Va
     private final int minimum;
     private int maximum;
     private final String fieldName;
-    private String textToValidate;
+    private final JTextComponent textComponent;
 
-    public IntegerOrContextVariableValidationRule(final int minimum, final int maximum, final String fieldName){
+    public IntegerOrContextVariableValidationRule(final int minimum, final int maximum, final String fieldName, final JTextComponent textComponent){
         this.minimum = minimum;
         this.maximum = maximum;
         this.fieldName = fieldName;
-        this.textToValidate = StringUtils.EMPTY;
-    }
-
-    public void setTextToValidate(@Nullable final String textToValidate) {
-        this.textToValidate = (textToValidate == null)? null : textToValidate.trim();
+        this.textComponent = textComponent;
     }
 
     public void setMaximum(final int maximum) {
@@ -38,6 +35,7 @@ public class IntegerOrContextVariableValidationRule implements InputValidator.Va
     @Override
     public String getValidationError() {
         String errorMessage = null;
+        final String textToValidate = textComponent.getText().trim();
         if(textToValidate != null && !textToValidate.isEmpty()){
             final String[] referencedNames;
             try {
