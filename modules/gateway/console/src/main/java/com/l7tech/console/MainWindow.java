@@ -2814,7 +2814,8 @@ public class MainWindow extends JFrame implements SheetHolder {
                 public void actionPerformed(ActionEvent e) {
                     if(e.getActionCommand().equals(MainWindow.L7_ESC)){
                         getServicesAndPoliciesTree().requestFocus();
-                    }else if(e.getActionCommand().equals(MainWindow.L7_F3)){
+                    }
+                    else {
                         invokeSelection();
                     }
                 }
@@ -2884,7 +2885,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                 public void actionPerformed(ActionEvent e) {
                     if(e.getActionCommand().equals(MainWindow.L7_ESC)){
                         getAssertionPaletteTree().requestFocus();
-                    }else if(e.getActionCommand().equals(MainWindow.L7_F3)){
+                    } else {
                         invokePaletteSelection();
                     }
                 }
@@ -2922,8 +2923,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     }
 
     /**
-     * Expands the tree accordingly based on the service or policy selection.  It will also invoke the editing
-     * action so that the user can readily edit the service or policy.
+     * Expands the tree accordingly based on the assertion selection.
      */
     private void invokePaletteSelection() {
         JTree tree = getAssertionPaletteTree();

@@ -139,6 +139,9 @@ public abstract class EditableSearchComboBox<T> extends JComboBox {
                 if(e.getKeyCode() == KeyEvent.VK_ENTER && "".equals(editor.getText())){
                     fireActionPerformed(new ActionEvent(editor, ActionEvent.ACTION_PERFORMED, MainWindow.L7_F3));
                 }
+//                if(e.getKeyCode() == KeyEvent.VK_ENTER && getSelectedObject()!=null){
+//                    fireActionPerformed(new ActionEvent(editor, ActionEvent.ACTION_PERFORMED, "L7Selected"));
+//                }
                 if(e.getKeyCode() == KeyEvent.VK_ESCAPE  ){
                     fireActionPerformed(new ActionEvent(editor, ActionEvent.ACTION_PERFORMED, MainWindow.L7_ESC));
                 }
