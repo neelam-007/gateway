@@ -5,7 +5,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.security.cert.CertVerifier;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -30,7 +29,6 @@ public class TrustedCertServicesImpl implements TrustedCertServices {
     }
 
     @Override
-    @Transactional(readOnly=true)
     public void checkSslTrust(X509Certificate[] serverCertChain) throws CertificateException {
         String issuerDn = CertUtils.getIssuerDN(serverCertChain[0]);
         try {
