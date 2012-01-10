@@ -36,6 +36,7 @@ public interface LogSinkAdmin extends LogAccessAdmin {
      * @throws FindException if there is a problem reading from the database
      */
     @Transactional(readOnly=true)
+    @Administrative(background=true)
     @Secured(types=LOG_SINK, stereotype=FIND_ENTITIES)
     Collection<SinkConfiguration> findAllSinkConfigurations() throws FindException;
 
@@ -110,6 +111,7 @@ public interface LogSinkAdmin extends LogAccessAdmin {
     Collection<LogFileInfo> findAllFilesForSinkByNode( String nodeId, long sinkId ) throws FindException;
 
     @Override
+    @Administrative(background=true)
     @Transactional(readOnly=true)
     @Secured(types=LOG_SINK, stereotype=ENTITY_OPERATION, relevantArg=1, otherOperation = "log-viewer")
     LogSinkData getSinkLogs( String nodeId, long sinkId, String file, LogSinkQuery query ) throws FindException;
