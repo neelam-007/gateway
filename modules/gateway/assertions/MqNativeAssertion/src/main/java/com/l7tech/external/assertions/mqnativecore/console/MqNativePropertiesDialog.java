@@ -130,7 +130,6 @@ public class MqNativePropertiesDialog extends JDialog {
     private SsgActiveConnector mqNativeActiveConnector;
 
     private boolean isOk;
-    private boolean isNew;
     private boolean outboundOnly = false;
     private FormAuthorizationPreparer securityFormAuthorizationPreparer;
     private Logger logger = Logger.getLogger(MqNativePropertiesDialog.class.getName());
@@ -199,7 +198,7 @@ public class MqNativePropertiesDialog extends JDialog {
     }
 
     private class AdvancedPropertyTableModel extends AbstractTableModel {
-        private List<MqNativeAdvancedProperty> advancedProperties;
+        private List<MqNativeAdvancedProperty> advancedProperties = new ArrayList<MqNativeAdvancedProperty>();
 
         AdvancedPropertyTableModel(){
             refreshAdvancedProperties();
@@ -247,10 +246,6 @@ public class MqNativePropertiesDialog extends JDialog {
         }
 
         public void refreshAdvancedProperties() {
-            if (advancedProperties != null) {
-                advancedProperties = new ArrayList<MqNativeAdvancedProperty>();
-            }
-
             if(mqNativeActiveConnector != null) {
                 for ( final String property : mqNativeActiveConnector.getPropertyNames() ) {
                     if ( property.startsWith( PROPERTIES_KEY_MQ_NATIVE_ADVANCED_PROPERTY_PREFIX ) &&
@@ -306,9 +301,6 @@ public class MqNativePropertiesDialog extends JDialog {
 
         if(that.mqNativeActiveConnector ==null)
             that.mqNativeActiveConnector = new SsgActiveConnector();
-
-        if(that.mqNativeActiveConnector.getOid() < 0)
-            that.isNew = true;
 
         that.init();
 
@@ -369,11 +361,12 @@ public class MqNativePropertiesDialog extends JDialog {
                 Utilities.centerOnScreen(dialog);
                 DialogDisplayer.display(dialog);
                 securePasswordComboBox.reloadPasswordList();
+                DialogDisplayer.pack(MqNativePropertiesDialog.this);
             }
         });
 
         Utilities.enableGrayOnDisabled(modelQueueNameTextField);        
-        credentialsAreRequiredToCheckBox.addActionListener( enableAuthFieldsListener );
+        credentialsAreRequiredToCheckBox.addActionListener( enableDisableListener );
 
         authUserNameTextBox.setDocument(new MaxLengthDocument(255));
         authUserNameTextBox.getDocument().addDocumentListener( enableDisableListener );
@@ -397,9 +390,6 @@ public class MqNativePropertiesDialog extends JDialog {
 
         inboundRadioButton.setEnabled(!isOutboundOnly());
         outboundRadioButton.setEnabled(!isOutboundOnly());
-        //isTemplateQueue.setEnabled(false);
-        //isTemplateQueue.setVisible(false);
-        isTemplateQueue.addItemListener( enableDisableListener );
 
         inboundRadioButton.addItemListener( enableDisableListener );
         outboundRadioButton.addItemListener( enableDisableListener );
@@ -783,20 +773,6 @@ public class MqNativePropertiesDialog extends JDialog {
         return null;
     }
 
-    private RunOnChangeListener enableAuthFieldsListener = new RunOnChangeListener() {
-        @Override
-        public void run() {
-            enableOrDisableAuthFields();
-        }
-    };
-
-    private void enableOrDisableAuthFields() {
-        boolean isCredentialsRequired = credentialsAreRequiredToCheckBox.isSelected();
-        authUserNameTextBox.setEnabled(isCredentialsRequired);
-        securePasswordComboBox.setEnabled(isCredentialsRequired);
-    }
-
-
     private RunOnChangeListener enableDisableListener = new RunOnChangeListener() {
         @Override
         public void run() {
@@ -960,49 +936,60 @@ public class MqNativePropertiesDialog extends JDialog {
                 }
 
                 disableListeningTheQueueCheckBox.setSelected(!mqNativeActiveConnector.isEnabled());
-
-            // inbound options
+            // outbound options
             } else {
-                MqNativeMessageFormatType messageFormatType = MqNativeMessageFormatType.valueOf(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_MESSAGE_FORMAT));
-                switch(messageFormatType) {
-                    case AUTOMATIC:
-                        outboundFormatAutoRadioButton.setSelected(true);
-                        break;
-                    case BYTES:
-                        outboundFormatBytesRadioButton.setSelected(true);
-                        break;
-                    case TEXT:
-                        outboundFormatTextRadioButton.setSelected(true);
-                        break;
-                    default:
-                        logger.log( Level.WARNING, "Bad state - unknown MQ native messageFormatType = " + messageFormatType );
-                        break;
+                String msgFormatProp = mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_MESSAGE_FORMAT);
+                if (msgFormatProp != null) {
+                    MqNativeMessageFormatType messageFormatType = MqNativeMessageFormatType.valueOf(msgFormatProp);
+                    switch(messageFormatType) {
+                        case AUTOMATIC:
+                            outboundFormatAutoRadioButton.setSelected(true);
+                            break;
+                        case BYTES:
+                            outboundFormatBytesRadioButton.setSelected(true);
+                            break;
+                        case TEXT:
+                            outboundFormatTextRadioButton.setSelected(true);
+                            break;
+                        default:
+                            logger.log( Level.WARNING, "Bad state - unknown MQ native messageFormatType = " + messageFormatType );
+                            break;
+                    }
+                } else {
+                    outboundFormatAutoRadioButton.setSelected(true);
                 }
 
-                MqNativeReplyType replyType = MqNativeReplyType.valueOf(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE));
-                switch(replyType) {
-                    case REPLY_NONE:
-                        outboundReplyNoneRadioButton.setSelected(true);
-                        modelQueueNameLabel.setEnabled(false);
-                        modelQueueNameTextField.setEnabled(false);
-                        break;
-                    case REPLY_AUTOMATIC:
-                        outboundReplyAutomaticRadioButton.setSelected(true);
-                        modelQueueNameTextField.setText(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_TEMPORARY_QUEUE_NAME_PATTERN));
-                        break;
-                    case REPLY_SPECIFIED_QUEUE:
-                        modelQueueNameLabel.setEnabled(false);
-                        modelQueueNameTextField.setEnabled(false);
-                        outboundReplySpecifiedQueueRadioButton.setSelected(true);
-                        outboundReplySpecifiedQueueField.setText(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME));
-                        if (mqNativeActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_IS_COPY_CORRELATION_ID_FROM_REQUEST)) {
-                            outboundCorrelationIdRadioButton.setSelected(true);
-                        } else {
-                            outboundMessageIdRadioButton.setSelected(true);
-                        }
-                    default:
-                        logger.log( Level.WARNING, "Bad state - unknown MQ native replyType = " + replyType );
-                        break;
+                String replyTypeProp = mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE);
+                if (replyTypeProp != null) {
+                    MqNativeReplyType replyType = MqNativeReplyType.valueOf(replyTypeProp);
+                    switch(replyType) {
+                        case REPLY_NONE:
+                            outboundReplyNoneRadioButton.setSelected(true);
+                            modelQueueNameLabel.setEnabled(false);
+                            modelQueueNameTextField.setEnabled(false);
+                            break;
+                        case REPLY_AUTOMATIC:
+                            outboundReplyAutomaticRadioButton.setSelected(true);
+                            modelQueueNameTextField.setText(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_TEMPORARY_QUEUE_NAME_PATTERN));
+                            break;
+                        case REPLY_SPECIFIED_QUEUE:
+                            modelQueueNameLabel.setEnabled(false);
+                            modelQueueNameTextField.setEnabled(false);
+                            outboundReplySpecifiedQueueRadioButton.setSelected(true);
+                            outboundReplySpecifiedQueueField.setText(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME));
+                            if (mqNativeActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_IS_COPY_CORRELATION_ID_FROM_REQUEST)) {
+                                outboundCorrelationIdRadioButton.setSelected(true);
+                            } else {
+                                outboundMessageIdRadioButton.setSelected(true);
+                            }
+                        default:
+                            logger.log( Level.WARNING, "Bad state - unknown MQ native replyType = " + replyType );
+                            break;
+                    }
+                } else {
+                    outboundReplyNoneRadioButton.setSelected(true);
+                    modelQueueNameLabel.setEnabled(false);
+                    modelQueueNameTextField.setEnabled(false);
                 }
             }
         }
@@ -1095,6 +1082,7 @@ public class MqNativePropertiesDialog extends JDialog {
      */
     private void enableOrDisableComponents() {
         if (inboundRadioButton.isSelected()) {
+            isTemplateQueue.setEnabled(false);
             useJmsMsgPropAsSoapActionRadioButton.setEnabled(true);
             jmsMsgPropWithSoapActionLabel.setEnabled(useJmsMsgPropAsSoapActionRadioButton.isSelected());
  	 	    jmsMsgPropWithSoapActionTextField.setEnabled(useJmsMsgPropAsSoapActionRadioButton.isSelected());
@@ -1109,6 +1097,7 @@ public class MqNativePropertiesDialog extends JDialog {
             inboundMessageIdRadioButton.setEnabled(specified || auto);
             inboundCorrelationIdRadioButton.setEnabled(specified || auto);
         } else {
+            isTemplateQueue.setEnabled(true);
             tabbedPane.setEnabledAt(2, false);
             tabbedPane.setEnabledAt(3, true);
             outboundReplySpecifiedQueueField.setEnabled(outboundReplySpecifiedQueueRadioButton.isSelected());
@@ -1116,6 +1105,10 @@ public class MqNativePropertiesDialog extends JDialog {
             outboundCorrelationIdRadioButton.setEnabled(outboundReplySpecifiedQueueRadioButton.isSelected());
         }
 
+        boolean isCredentialsRequired = credentialsAreRequiredToCheckBox.isSelected();
+        authUserNameTextBox.setEnabled(isCredentialsRequired);
+        securePasswordComboBox.setEnabled(isCredentialsRequired);
+        managePasswordsButton.setEnabled(isCredentialsRequired);
 
         final boolean valid = validateForm();
         saveButton.setEnabled(valid);// && (flags.canCreateSome() || flags.canUpdateSome()));
@@ -1403,5 +1396,4 @@ public class MqNativePropertiesDialog extends JDialog {
                 "SSL_RSA_WITH_AES_128_CBC_SHA", "SSL_RSA_WITH_AES_256_CBC_SHA", "SSL_RSA_WITH_DES_CBC_SHA",
                 "SSL_RSA_WITH_3DES_EDE_CBC_SHA", "SSL_RSA_FIPS_WITH_DES_CBC_SHA", "SSL_RSA_FIPS_WITH_3DES_EDE_CBC_SHA"};
     }
-
 }

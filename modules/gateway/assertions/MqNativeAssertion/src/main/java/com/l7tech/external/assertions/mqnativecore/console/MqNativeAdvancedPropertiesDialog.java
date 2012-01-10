@@ -101,6 +101,8 @@ public class MqNativeAdvancedPropertiesDialog extends JDialog {
     }
 
     private String getDescription(String name) {
+        if (currList == null) return "";
+
         for(MqNativeAdvancedProperty property: currList){
             if(property.getName().equals(name))
                 return property.getValue();
@@ -139,5 +141,4 @@ public class MqNativeAdvancedPropertiesDialog extends JDialog {
     public MqNativeAdvancedProperty getTheProperty(){
         return prop;
     }
-
 }
