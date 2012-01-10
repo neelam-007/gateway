@@ -6,6 +6,7 @@ package com.l7tech.external.assertions.samlpassertion.console;
 import com.l7tech.console.beaneditor.BeanAdapter;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.external.assertions.samlpassertion.SamlProtocolAssertion;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.security.saml.SamlConstants;
@@ -89,6 +90,7 @@ public class AttributeQueryWizardStepPanel extends SamlpWizardStepPanel {
      * @throws IllegalArgumentException if the the data provided
      *                                  by the wizard are not valid.
      */
+    @Override
     public void storeSettings(Object settings) throws IllegalArgumentException {
 
         SamlProtocolAssertion assertion = SamlProtocolAssertion.class.cast(settings);
@@ -129,6 +131,7 @@ public class AttributeQueryWizardStepPanel extends SamlpWizardStepPanel {
      * @throws IllegalArgumentException if the the data provided
      *                                  by the wizard are not valid.
      */
+    @Override
     public void readSettings(Object settings) throws IllegalArgumentException {
         SamlProtocolAssertion assertion = SamlProtocolAssertion.class.cast(settings);
         samlVersion = assertion.getSamlVersion();
@@ -170,6 +173,7 @@ public class AttributeQueryWizardStepPanel extends SamlpWizardStepPanel {
             titleLabel.getParent().remove(titleLabel);
         }
         attributesTableModel = new DefaultTableModel(new String[]{"Name", "Namespace", "Name Format", "Friendly", "Value", "Repeat?"}, 0){
+            @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
@@ -180,6 +184,7 @@ public class AttributeQueryWizardStepPanel extends SamlpWizardStepPanel {
         ListSelectionModel selectionModel = attributeTable.getSelectionModel();
         selectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         selectionModel.addListSelectionListener(new ListSelectionListener() {
+            @Override
             public void valueChanged(ListSelectionEvent e) {
                 removeButton.setEnabled(attributeTable.getSelectedRow() !=-1);
                 editButton.setEnabled(attributeTable.getSelectedRow() !=-1);
@@ -188,6 +193,7 @@ public class AttributeQueryWizardStepPanel extends SamlpWizardStepPanel {
 
         removeButton.setEnabled(false);
         removeButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 attributesTableModel.removeRow(attributeTable.getSelectedRow());
                 notifyListeners();
@@ -196,6 +202,7 @@ public class AttributeQueryWizardStepPanel extends SamlpWizardStepPanel {
 
         editButton.setEnabled(false);
         editButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 final int row = attributeTable.getSelectedRow();
                 final SamlAttributeStatement.Attribute attribute = new SamlAttributeStatement.Attribute();
@@ -220,6 +227,7 @@ public class AttributeQueryWizardStepPanel extends SamlpWizardStepPanel {
                      * @param source the event source
                      * @param bean   the bean being edited
                      */
+                    @Override
                     public void onEditAccepted(Object source, Object bean) {
                         attributesTableModel.setValueAt(attribute.getName(), row, 0);
                         attributesTableModel.setValueAt(attribute.getNamespace(), row, 1);
@@ -233,7 +241,10 @@ public class AttributeQueryWizardStepPanel extends SamlpWizardStepPanel {
                 editAttributeDialog.setVisible(true);
             }
         });
+        Utilities.setDoubleClickAction(attributeTable, editButton);
+
         addAttributeButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 final SamlAttributeStatement.Attribute attribute = new SamlAttributeStatement.Attribute();
                 SamlpEditAttributeDialog editAttributeDialog = new SamlpEditAttributeDialog(owner, attribute, samlVersion, isRequestMode());
@@ -244,6 +255,7 @@ public class AttributeQueryWizardStepPanel extends SamlpWizardStepPanel {
                      * @param source the event source
                      * @param bean   the bean being edited
                      */
+                    @Override
                     public void onEditAccepted(Object source, Object bean) {
                         attributesTableModel.addRow(new Object[] {
                                 attribute.getName(),
@@ -264,11 +276,13 @@ public class AttributeQueryWizardStepPanel extends SamlpWizardStepPanel {
     /**
      * @return the wizard step label
      */
+    @Override
     public String getStepLabel() {
         return "Attribute Statement";
     }
 
 
+    @Override
     public String getDescription() {
         if (isRequestMode()) {
             return
