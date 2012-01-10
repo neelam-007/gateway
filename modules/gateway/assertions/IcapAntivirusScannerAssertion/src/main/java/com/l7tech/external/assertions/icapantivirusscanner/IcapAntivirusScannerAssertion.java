@@ -28,27 +28,27 @@ import java.util.regex.Pattern;
  * @author Ken Diep
  */
 public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion implements UsesVariables, SetsVariables {
-    private static final String VARIABLE_PREFIX = "icap.response.";
+    private static final String VARIABLE_PREFIX = "icap.response";
 
     /**
      * The variable name to retrieve the infected file(s)/part(s) name.
      */
-    public static final String INFECTED_PARTS = VARIABLE_PREFIX + "infected";
+    public static final String INFECTED_PARTS = "infected";
 
     /**
      * The variable prefix to retrieve all the header names.
      */
-    public static final String VARIABLE_NAMES = VARIABLE_PREFIX + "header.names";
+    public static final String VARIABLE_NAMES = "header.names";
 
     /**
      * The variable prefix to retrieve all the header values.
      */
-    public static final String VARIABLE_VALUES = VARIABLE_PREFIX + "header.values";
+    public static final String VARIABLE_VALUES = "header.values";
 
     /**
      * The variable prefix to retrieve a single header value.
      */
-    public static final String VARIABLE_NAME = VARIABLE_PREFIX + "header.value";
+    public static final String VARIABLE_NAME = "header.value";
 
     /**
      * Pattern to match the icap scheme - URL is used to validate the first group from a match
@@ -95,6 +95,8 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
     private String readTimeout = "30";
 
     private String connectionTimeout = "30";
+
+    private String variablePrefix = VARIABLE_PREFIX;
 
     /**
      * Get a path value for serviceName removing any leading '/' character.
@@ -263,6 +265,19 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
         this.connectionTimeout = connectionTimeout;
     }
 
+    /**
+     * @return the context variable prefix
+     */
+    public String getVariablePrefix() {
+        return variablePrefix;
+    }
+    /**
+     * @param variablePrefix the context variable prefix
+     */
+    public void setVariablePrefix( final String variablePrefix ) {
+        this.variablePrefix = variablePrefix;
+    }
+
     @Override
     public IcapAntivirusScannerAssertion clone() {
         IcapAntivirusScannerAssertion copy = (IcapAntivirusScannerAssertion) super.clone();
@@ -273,6 +288,7 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
         copy.setMaxMimeDepth(maxMimeDepth);
         copy.setReadTimeout(readTimeout);
         copy.setConnectionTimeout(connectionTimeout);
+        copy.setVariablePrefix(variablePrefix);
         return copy;
     }
 
@@ -321,11 +337,20 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
     @Override
     protected VariablesSet doGetVariablesSet() {
         return super.doGetVariablesSet().withVariables(
-                new VariableMetadata(INFECTED_PARTS, false, true, null, false),
-                new VariableMetadata(VARIABLE_NAMES, true, true, null, false),
-                new VariableMetadata(VARIABLE_VALUES, true, true, null, false),
-                new VariableMetadata(VARIABLE_NAME, true, false, null, false)
+                new VariableMetadata(getVariablePrefix() + "." + INFECTED_PARTS, false, true, null, false),
+                new VariableMetadata(getVariablePrefix() + "." + VARIABLE_NAMES, true, true, null, false),
+                new VariableMetadata(getVariablePrefix() + "." + VARIABLE_VALUES, true, true, null, false),
+                new VariableMetadata(getVariablePrefix() + "." + VARIABLE_NAME, true, false, null, false)
         );
+    }
+
+    public static String[] getVariableSuffixes() {
+        return new String[] {
+            INFECTED_PARTS,
+            VARIABLE_NAMES,
+            VARIABLE_VALUES,
+            VARIABLE_NAME,
+        };
     }
 
     @Override

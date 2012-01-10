@@ -193,11 +193,12 @@ public class ServerIcapAntivirusScannerAssertionTest {
             basm.stash(0, EICAR_PAYLOAD);
             Message message = new Message(basm, ContentTypeHeader.TEXT_DEFAULT, new ByteArrayInputStream(EICAR_PAYLOAD));
             AssertionStatus status = serverAssertion.scanMessage(policyEnforcementContext, message, channel);
-            String[] infectedFiles = (String[]) policyEnforcementContext.getVariable(IcapAntivirusScannerAssertion.INFECTED_PARTS);
+            String prefix = assertion.getVariablePrefix();
+            String[] infectedFiles = (String[]) policyEnforcementContext.getVariable(prefix+"."+IcapAntivirusScannerAssertion.INFECTED_PARTS);
             Assert.assertEquals("Expected infection size", 1, infectedFiles.length);
-            String[] headerNames   = (String[]) policyEnforcementContext.getVariable(IcapAntivirusScannerAssertion.VARIABLE_NAMES +".0");
+            String[] headerNames   = (String[]) policyEnforcementContext.getVariable(prefix+"."+IcapAntivirusScannerAssertion.VARIABLE_NAMES +".0");
             Assert.assertArrayEquals("Expected header names", new String[]{"Service", "X-Infection-Found"}, headerNames);
-            String[] headerValues  = (String[]) policyEnforcementContext.getVariable(IcapAntivirusScannerAssertion.VARIABLE_VALUES +".0");
+            String[] headerValues  = (String[]) policyEnforcementContext.getVariable(prefix+"."+IcapAntivirusScannerAssertion.VARIABLE_VALUES +".0");
             Assert.assertArrayEquals("Expected header values", new String[]{"testService", "Type=0; Resolution=2; Threat=EICAR-AV-Test;"}, headerValues);
             Assert.assertEquals("testScanMessageForContextVariables()", AssertionStatus.FAILED, status);
         } catch (Exception e) {

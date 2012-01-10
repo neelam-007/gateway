@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.icapantivirusscanner.console;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
+import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAssertion;
 import com.l7tech.external.assertions.icapantivirusscanner.server.ServerIcapAntivirusScannerAssertion;
 import com.l7tech.gui.util.Utilities;
@@ -56,6 +57,7 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
     private JTextField connectionTimeoutField;
     private JTextField readTimeoutField;
     private JSpinner maxMimeDepth;
+    private TargetVariablePanel varPrefixPanel;
 
     private DefaultListModel serverListModel;
     private DefaultTableModel serviceParamTableModel;
@@ -67,6 +69,7 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
         intializeServiceParametersSection(owner);
         cbStrategy.setModel(new DefaultComboBoxModel(FailoverStrategyFactory.getFailoverStrategyNames()));
         maxMimeDepth.setModel(new SpinnerNumberModel(1, 1, 100, 1));    // max of a 100 is a bit excessive
+
         setData(assertion);
     }
 
@@ -261,6 +264,10 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
         for (Map.Entry<String, String> ent : assertion.getServiceParameters().entrySet()) {
             serviceParamTableModel.addRow(new String[]{ent.getKey(), ent.getValue()});
         }
+
+        varPrefixPanel.setAssertion( assertion, getPreviousAssertion() );
+        varPrefixPanel.setSuffixes( IcapAntivirusScannerAssertion.getVariableSuffixes() );
+        varPrefixPanel.setVariable(assertion.getVariablePrefix());
     }
 
     @Override
@@ -292,6 +299,11 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
         assertion.setConnectionTimeout(connectionTimeoutField.getText());
         assertion.setReadTimeout(readTimeoutField.getText());
         assertion.setMaxMimeDepth(Integer.valueOf(maxMimeDepth.getModel().getValue().toString()));
+
+        if(varPrefixPanel.getErrorMessage()!=null){
+            throw new ValidationException(varPrefixPanel.getErrorMessage());
+        }
+        assertion.setVariablePrefix(varPrefixPanel.getVariable());
         return assertion;
     }
 

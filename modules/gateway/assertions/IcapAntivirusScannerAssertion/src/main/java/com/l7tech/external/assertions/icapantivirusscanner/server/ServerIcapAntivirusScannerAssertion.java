@@ -299,7 +299,7 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
             status = AssertionStatus.FAILED;
         }
         if(!infectedParts.isEmpty()){
-            context.setVariable(IcapAntivirusScannerAssertion.INFECTED_PARTS,
+            context.setVariable(prefix(IcapAntivirusScannerAssertion.INFECTED_PARTS),
                     infectedParts.toArray(new String[infectedParts.size()]));
         }
         return status;
@@ -381,10 +381,10 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
             headerValues.add(ent.getValue());
             sb.append("  ").append(ent.getKey()).append(": ").append(ent.getValue()).append("\r\n");
         }
-        context.setVariable(IcapAntivirusScannerAssertion.VARIABLE_NAMES + "." + (infectedParts.size() - 1), headerNames.toArray(new String[headerNames.size()]));
-        context.setVariable(IcapAntivirusScannerAssertion.VARIABLE_VALUES + "."  + (infectedParts.size() - 1), headerValues.toArray(new String[headerValues.size()]));
+        context.setVariable(prefix(IcapAntivirusScannerAssertion.VARIABLE_NAMES) + "." + (infectedParts.size() - 1), headerNames.toArray(new String[headerNames.size()]));
+        context.setVariable(prefix(IcapAntivirusScannerAssertion.VARIABLE_VALUES) + "."  + (infectedParts.size() - 1), headerValues.toArray(new String[headerValues.size()]));
 
-        String prefix = IcapAntivirusScannerAssertion.VARIABLE_NAME + "."  + (infectedParts.size() - 1) + ".";
+        String prefix = prefix(IcapAntivirusScannerAssertion.VARIABLE_NAME) + "."  + (infectedParts.size() - 1) + ".";
         for(int i = 0; i < Math.max(headerNames.size(), headerValues.size()); ++i){
             context.setVariable(prefix + headerNames.get(i), headerValues.get(i));
         }
@@ -415,6 +415,16 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
             logAndAudit(AssertionMessages.ICAP_UNSUPPORTED_ENCODING, ExceptionUtils.getMessage(e));
         }
         return sb.toString();
+    }
+
+    private String prefix( final String name ) {
+        String prefixed = name;
+
+        if ( assertion.getVariablePrefix() != null ) {
+            prefixed = assertion.getVariablePrefix()  + "." + name;
+        }
+
+        return prefixed;
     }
 
 }
