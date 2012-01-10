@@ -1,6 +1,7 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -10,6 +11,8 @@ import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.ExceptionUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 
@@ -25,8 +28,18 @@ public abstract class AbstractMessageTargetableServerAssertion<AT extends Assert
      *
      * @param assertion The message targetable assertion bean.
      */
-    public AbstractMessageTargetableServerAssertion( final AT assertion ) {
+    public AbstractMessageTargetableServerAssertion( final @NotNull AT assertion ) {
         super(assertion);
+    }
+
+    /**
+     * Create a new instance.
+     *
+     * @param assertion The message targetable assertion bean.
+     * @param auditFactory The audit factory, or null.
+     */
+    public AbstractMessageTargetableServerAssertion( final @NotNull AT assertion, final @Nullable AuditFactory auditFactory) {
+        super(assertion, auditFactory);
     }
 
     @Override

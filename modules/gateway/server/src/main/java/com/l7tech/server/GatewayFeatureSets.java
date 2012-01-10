@@ -237,8 +237,7 @@ public class GatewayFeatureSets {
         GatewayFeatureSet experimental =
         fsr("set:experimental", "Enable experimental features",
             "Enables features that are only present during development, and that will be moved or renamed before shipping.",
-            srv(SERVICE_BRIDGE, "Experimental SSB service (standalone, non-BRA, present-but-disabled)"),
-            ass(WssDigest.class));
+            srv(SERVICE_BRIDGE, "Experimental SSB service (standalone, non-BRA, present-but-disabled)"));
 
         GatewayFeatureSet wssp =
         fsr("set:wssp", "WS-SecurityPolicy assertion",
@@ -324,6 +323,7 @@ public class GatewayFeatureSets {
             ass(XpathCredentialSource.class),
             ass(RequireWssX509Cert.class),
             ass(WssBasic.class),
+            ass(WssDigest.class),
             ass(RequireWssSaml.class),
             ass(RequireWssSaml2.class),
             ass(EncryptedUsernameTokenAssertion.class),

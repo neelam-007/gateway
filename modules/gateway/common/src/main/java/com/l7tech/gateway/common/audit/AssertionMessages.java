@@ -13,10 +13,10 @@ import java.util.logging.Level;
 public class AssertionMessages extends Messages {
 
     // Generic Assertion Messages (4330- 4399 reserved for use here)
-    public static final M REQUESTWSS_NO_SECURITY = m(4302, Level.INFO, "Request did not contain any WSS level security");
-    public static final M ASSERTION_MISCONFIGURED = m(4304, Level.WARNING, false, false, "Assertion configuration error: {0}"); // Provided as less-drastic alternative to throwing PolicyAssertionException
-    public static final M MESSAGE_NOT_SOAP = m(4305, Level.WARNING, "{0} message not soap. {1}");
-    public static final M NO_SUCH_PART = m(4306, Level.WARNING, "{0} message has no part {1}");
+    public static final Messages.M REQUESTWSS_NO_SECURITY = m(4302, Level.INFO, "Request did not contain any WSS level security");
+    public static final Messages.M ASSERTION_MISCONFIGURED = m(4304, Level.WARNING, false, false, "Assertion configuration error: {0}"); // Provided as less-drastic alternative to throwing PolicyAssertionException
+    public static final Messages.M MESSAGE_NOT_SOAP = m(4305, Level.WARNING, "{0} message not soap. {1}");
+    public static final Messages.M NO_SUCH_PART = m(4306, Level.WARNING, "{0} message has no part {1}");
 
     public static final M MESSAGE_TARGET_ERROR = m(4330, Level.WARNING, "Invalid target message, variable \"{0}\": {1}");
     public static final M MESSAGE_NOT_XML = m(4331, Level.WARNING, "{0} message not XML. {1}");
@@ -741,7 +741,7 @@ public class AssertionMessages extends Messages {
      */
     @Deprecated
     public static final M _UNUSED_OVERSIZEDTEXT_EXTRA_PAYLOAD = m(7233, Level.WARNING, "Request message SOAP Body has too many children");
-    public static final M REQUEST_NOT_SOAP = m(7234, Level.WARNING, "Request message does not have a valid SOAP Envelope");
+    public static final Messages.M REQUEST_NOT_SOAP = m(7234, Level.WARNING, "Request message does not have a valid SOAP Envelope");
     public static final M REQUEST_BAD_XML = m(7235, Level.WARNING, "Request message is not well-formed XML");
     public static final M RESPONSE_BAD_XML = m(7236, Level.WARNING, "Response message is not well-formed XML");
     public static final M MESSAGE_BAD_XML = m(7237, Level.WARNING, "Message is not well-formed XML");
@@ -793,16 +793,16 @@ public class AssertionMessages extends Messages {
     public static final M MAPPING_NO_IDENTS = m(7503, Level.WARNING, "No matching identities could be found");
     public static final M MAPPING_NO_IDVALUE = m(7504, Level.WARNING, "No value could be found from any matching identity");
 
-    public static final M USERDETAIL_FINEST = m(-1, Level.FINEST, "{0}");
-    public static final M USERDETAIL_FINER = m(-2, Level.FINER, "{0}");
-    public static final M USERDETAIL_FINE = m(-3, Level.FINE, "{0}");
-    public static final M USERDETAIL_INFO = m(-4, Level.INFO, "{0}");
-    public static final M USERDETAIL_WARNING = m(-5, Level.WARNING, "{0}");
-    public static final M NO_SUCH_VARIABLE = m(-6, Level.FINE, "No such variable: {0}");
-    public static final M VARIABLE_IS_NULL = m(-7, Level.FINE, "Variable exists but has no value: {0}");
-    public static final M VARIABLE_NOTSET = m(-8, Level.WARNING, "Variable cannot be set: {0}");
-    public static final M VARIABLE_INVALID_VALUE = m(-9, Level.FINE, "Variable ''{0}'' should be of type ''{1}''");
-    public static final M NO_SUCH_VARIABLE_WARNING = m(-10, Level.WARNING, "No such variable: {0}");
+    public static final Messages.M USERDETAIL_FINEST = m(-1, Level.FINEST, "{0}");
+    public static final Messages.M USERDETAIL_FINER = m(-2, Level.FINER, "{0}");
+    public static final Messages.M USERDETAIL_FINE = m(-3, Level.FINE, "{0}");
+    public static final Messages.M USERDETAIL_INFO = m(-4, Level.INFO, "{0}");
+    public static final Messages.M USERDETAIL_WARNING = m(-5, Level.WARNING, "{0}");
+    public static final Messages.M NO_SUCH_VARIABLE = m(-6, Level.FINE, "No such variable: {0}");
+    public static final Messages.M VARIABLE_IS_NULL = m(-7, Level.FINE, "Variable exists but has no value: {0}");
+    public static final Messages.M VARIABLE_NOTSET = m(-8, Level.WARNING, "Variable cannot be set: {0}");
+    public static final Messages.M VARIABLE_INVALID_VALUE = m(-9, Level.FINE, "Variable ''{0}'' should be of type ''{1}''");
+    public static final Messages.M NO_SUCH_VARIABLE_WARNING = m(-10, Level.WARNING, "No such variable: {0}");
     // Do not add values here, these values are outside the permitted range for assertion messages
     // (add to the "Generic Assertion Messages" section at the top)
 

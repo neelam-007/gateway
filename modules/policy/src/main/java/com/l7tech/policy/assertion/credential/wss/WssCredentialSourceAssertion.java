@@ -8,11 +8,12 @@ package com.l7tech.policy.assertion.credential.wss;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.policy.assertion.MessageTargetable;
+import com.l7tech.policy.assertion.MessageTargetableSupport;
+import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.policy.assertion.VariableUseSupport;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
-import com.l7tech.policy.assertion.MessageTargetable;
-import com.l7tech.policy.assertion.TargetMessageType;
-import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.variable.VariableMetadata;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
@@ -67,8 +68,8 @@ public abstract class WssCredentialSourceAssertion extends SecurityHeaderAddress
 
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
-    public String[] getVariablesUsed() {
-        return messageTargetableSupport.getMessageTargetVariablesUsed().asArray();
+    public final String[] getVariablesUsed() {
+        return doGetVariablesUsed().asArray();
     }
 
     @Override
@@ -86,6 +87,35 @@ public abstract class WssCredentialSourceAssertion extends SecurityHeaderAddress
         WssCredentialSourceAssertion wssca = (WssCredentialSourceAssertion) super.clone();
         wssca.messageTargetableSupport = new MessageTargetableSupport( messageTargetableSupport );
         return wssca;
+    }
+
+    protected VariablesUsed doGetVariablesUsed(boolean includeOtherVariable) {
+        final VariablesUsed variablesUsed;
+        if (includeOtherVariable) {
+            variablesUsed = new VariablesUsed(messageTargetableSupport.getMessageTargetVariablesUsed().asArray());
+        } else {
+            variablesUsed = new VariablesUsed();
+        }
+
+        return variablesUsed;
+    }
+
+    protected VariablesUsed doGetVariablesUsed() {
+        return doGetVariablesUsed(true);
+    }
+
+    protected static final class VariablesUsed extends VariableUseSupport.VariablesUsedSupport<VariablesUsed> {
+        private VariablesUsed(){
+        }
+
+        private VariablesUsed( final String[] initialVariables ) {
+            super( initialVariables );
+        }
+
+        @Override
+        protected VariablesUsed get() {
+            return this;
+        }
     }
 
     //- PRIVATE
