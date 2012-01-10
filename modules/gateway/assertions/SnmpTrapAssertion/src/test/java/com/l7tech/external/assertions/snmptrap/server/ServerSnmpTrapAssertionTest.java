@@ -10,10 +10,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatcher;
+import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.snmp4j.MessageDispatcher;
 import org.snmp4j.PDU;
+import org.snmp4j.TransportMapping;
 import org.snmp4j.mp.SnmpConstants;
 import org.snmp4j.security.SecurityLevel;
 import org.snmp4j.security.SecurityModel;
@@ -29,6 +31,7 @@ import java.net.UnknownHostException;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -92,6 +95,20 @@ public class ServerSnmpTrapAssertionTest {
     }
 
     @Test
+    public void errorMessageContextVariableDoesNotExist() throws Exception {
+        assertion.setErrorMessage("${errMsg}");
+        initServerAssertion();
+
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
+
+        verify(dispatcher).sendPdu(udpAddressWithPort(PORT), eq(SnmpConstants.version2c), eq(SecurityModel.SECURITY_MODEL_SNMPv2c),
+                eq(COMMUNITY.getBytes()),
+                eq(SecurityLevel.NOAUTH_NOPRIV),
+                pduWithValues(UPTIME, FULL_OID, ""),
+                eq(false));
+    }
+
+    @Test
     public void hostContextVariable() throws Exception {
         final String host = "custom.l7tech.com";
         assertion.setTargetHostname("${host}");
@@ -108,6 +125,20 @@ public class ServerSnmpTrapAssertionTest {
     }
 
     @Test
+    public void hostContextVariableDoesNotExist() throws Exception {
+        assertion.setTargetHostname("${host}");
+        initServerAssertion();
+
+        assertEquals(AssertionStatus.FAILED, serverAssertion.checkRequest(context));
+
+        verify(dispatcher, never()).sendPdu(Matchers.<UdpAddress>any(), Matchers.anyInt(), Matchers.anyInt(),
+                Matchers.<byte[]>any(),
+                Matchers.anyInt(),
+                Matchers.<PDU>any(),
+                Matchers.anyBoolean());
+    }
+
+    @Test
     public void communityContextVariable() throws Exception {
         final String community = "custom";
         assertion.setCommunity("${community}");
@@ -118,6 +149,20 @@ public class ServerSnmpTrapAssertionTest {
 
         verify(dispatcher).sendPdu(udpAddressWithPort(PORT), eq(SnmpConstants.version2c), eq(SecurityModel.SECURITY_MODEL_SNMPv2c),
                 eq(community.getBytes()),
+                eq(SecurityLevel.NOAUTH_NOPRIV),
+                pduWithValues(UPTIME, FULL_OID, MESSAGE),
+                eq(false));
+    }
+
+    @Test
+    public void communityContextVariableDoesNotExist() throws Exception {
+        assertion.setCommunity("${community}");
+        initServerAssertion();
+
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
+
+        verify(dispatcher).sendPdu(udpAddressWithPort(PORT), eq(SnmpConstants.version2c), eq(SecurityModel.SECURITY_MODEL_SNMPv2c),
+                eq("".getBytes()),
                 eq(SecurityLevel.NOAUTH_NOPRIV),
                 pduWithValues(UPTIME, FULL_OID, MESSAGE),
                 eq(false));
@@ -144,6 +189,20 @@ public class ServerSnmpTrapAssertionTest {
         assertion.setOid("${snmpOid}");
         initServerAssertion();
         context.setVariable("snmpOid", "invalid");
+
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
+
+        verify(dispatcher).sendPdu(udpAddressWithPort(PORT), eq(SnmpConstants.version2c), eq(SecurityModel.SECURITY_MODEL_SNMPv2c),
+                eq(COMMUNITY.getBytes()),
+                eq(SecurityLevel.NOAUTH_NOPRIV),
+                pduWithValues(UPTIME, OID_PREFIX + 1, MESSAGE),
+                eq(false));
+    }
+
+     @Test
+    public void oidContextVariableDoesNotExist() throws Exception {
+        assertion.setOid("${snmpOid}");
+        initServerAssertion();
 
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
 

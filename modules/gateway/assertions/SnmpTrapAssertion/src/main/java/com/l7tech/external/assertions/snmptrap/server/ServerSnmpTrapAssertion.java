@@ -68,6 +68,10 @@ public class ServerSnmpTrapAssertion extends AbstractServerAssertion<SnmpTrapAss
         try {
             // TODO consider caching this DNS lookup for a while (just not forever).
             final String hostname = ExpandVariables.process(ass.getTargetHostname(), context.getVariableMap(ass.getVariablesUsed(), getAudit()), getAudit());
+            if (hostname.isEmpty()) {
+                logAndAudit(AssertionMessages.SNMP_BAD_HOST, hostname);
+                return AssertionStatus.FAILED;
+            }
             // As is, we just hope that one of the JRE, resolver, libc, or OS provide caching for gethostbyname().
             final UdpAddress udpAddress = new UdpAddress(getInetAddressByName(hostname), ass.getTargetPort());
             final String community = ExpandVariables.process(ass.getCommunity(), context.getVariableMap(ass.getVariablesUsed(), getAudit()), getAudit());
