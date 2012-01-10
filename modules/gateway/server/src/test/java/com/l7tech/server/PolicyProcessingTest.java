@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.audit.LoggingAudit;
+import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.gateway.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.GroupBean;
@@ -43,6 +44,7 @@ import com.l7tech.server.util.TestingHttpClientFactory;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
+import static com.l7tech.util.Functions.map;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.soap.SoapUtil;
@@ -155,6 +157,7 @@ public class PolicyProcessingTest {
         {"/timestampresolution", "POLICY_timestampresolution.xml"},
         {"/wssEncryptResponseIssuerSerial", "POLICY_encrypted_response_issuerserial.xml"},
         {"/hardcoded", "POLICY_hardcodedresponse.xml"},
+        {"/signaturenotoken", "POLICY_wss_signaturenotoken.xml"},
     };
 
     @Before
@@ -1286,6 +1289,18 @@ public class PolicyProcessingTest {
 
         // reset the mock client, as some unit tests don't set this before running
         testingHttpClientFactory.setMockHttpClient(buildMockHttpClient(null, loadResource("RESPONSE_general.xml")));
+    }
+
+    @BugNumber(10970)
+    @Test
+    public void testSignatureNoToken() throws Exception {
+        String requestMessage = new String(loadResource("REQUEST_signed.xml"));
+        processMessage("/signaturenotoken", requestMessage, "10.0.0.1", 600, null, null );
+
+        final AuditRecord ar = ((AuditContextStubInt)auditContext).getLastRecord();
+        final List<Integer> detailIds = map( ar.getDetails(),
+                Functions.<Integer, AuditDetail>propertyTransform( AuditDetail.class, "messageId" ) );
+        assertTrue("Saw expected audit", detailIds.contains( MessageProcessingMessages.WSS_NO_SIGNING_TOKEN.getId() ));
     }
 
     @BugNumber(7253)

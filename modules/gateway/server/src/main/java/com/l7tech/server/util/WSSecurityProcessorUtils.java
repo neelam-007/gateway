@@ -301,6 +301,7 @@ public class WSSecurityProcessorUtils {
                 if (!securityTokenElements.contains(signedElement.asElement())) {
                     if (signatureElement == null) {
                         final SigningSecurityToken signingSecurityToken = signedElement.getSigningSecurityToken();
+                        //   tokens==null is a special value meaning do not check. An empty array does not have the same meaning.
                         if ( tokens==null || ArrayUtils.contains(tokens, signingSecurityToken) ) {
                             signatureElement = signedElement.getSignatureElement();
                             token = signingSecurityToken;
@@ -308,7 +309,9 @@ public class WSSecurityProcessorUtils {
                             signatureElement = signedElement.getSignatureElement();
                             token = signingSecurityToken;
                         } else {
-                            audit.logAndAudit(MessageProcessingMessages.WSS_WRONG_SIGNING_TOKEN);
+                            audit.logAndAudit( tokens.length == 0 ?
+                                    MessageProcessingMessages.WSS_NO_SIGNING_TOKEN :
+                                    MessageProcessingMessages.WSS_WRONG_SIGNING_TOKEN );
                             token = null;
                             break;
                         }

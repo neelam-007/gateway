@@ -117,6 +117,7 @@ public class MessageProcessingMessages extends Messages {
     // WSS Processing (and decorating) messaes
     public static final M WSS_WRONG_SIGNING_TOKEN         = m(3300, Level.INFO, "Element was signed, but tokens were gathered as credentials and the signing token did not match any of them"); // bug 9830
     public static final M WSS_DIFFERENT_SIGNATURE         = m(3301, Level.INFO, "Element was signed, but by a different signature");
+    public static final M WSS_NO_SIGNING_TOKEN            = m(3302, Level.INFO, "Element was signed, but no token was gathered as a credential"); // bug 10970
 
      // MAX -                                                  m(3499
 }
