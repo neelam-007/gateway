@@ -24,6 +24,7 @@ public class ManageKeystoresDialog extends JDialog {
 
     private static final String PROVIDER_NAME_LUNA = "luna";
     private static final String PROP_PROVIDER_NAME = "security.jceProviderEngineName";
+    private static final String PROP_LUNA_LEAST_PREFERENCE = "keyStore.luna.installAsLeastPreference";
 
     private JPanel mainPanel;
     private JButton closeButton;
@@ -31,17 +32,19 @@ public class ManageKeystoresDialog extends JDialog {
     private JButton disableLunaButton;
     private JButton enableLunaButton;
     private JLabel lunaKeystoreAvailabilityLabel;
+    private JLabel lunaDetailsLabel;
 
     private final boolean canUseLuna;
     private final boolean configuredToUseLuna;
     private final boolean currentlyUsingLuna;
+    private final boolean currentlyPreferringLunaForCrypto;
 
     public ManageKeystoresDialog(Window owner, boolean currentlyUsingLuna) {
         super(owner, "Manage Keystore", ModalityType.DOCUMENT_MODAL);
         this.currentlyUsingLuna = currentlyUsingLuna;
         this.canUseLuna = "true".equals(Registry.getDefault().getClusterStatusAdmin().getHardwareCapability(ClusterStatusAdmin.CAPABILITY_LUNACLIENT));
         this.configuredToUseLuna = PROVIDER_NAME_LUNA.equals(getClusterProperty(PROP_PROVIDER_NAME));
-
+        this.currentlyPreferringLunaForCrypto = !Boolean.valueOf(getClusterProperty(PROP_LUNA_LEAST_PREFERENCE));
         init();
     }
 
@@ -110,6 +113,16 @@ public class ManageKeystoresDialog extends JDialog {
             lunaKeystoreAvailabilityLabel.setText("Ready to use");
         } else {
             lunaKeystoreAvailabilityLabel.setText("Client software and JSP not installed or not configured");
+        }
+
+        if (currentlyUsingLuna) {
+            lunaDetailsLabel.setText(currentlyPreferringLunaForCrypto
+                    ? "Gateway will prefer to use this device for cryptographic operations"
+                    : "Gateway will prefer not to use this device for cryptographic operations");
+            lunaDetailsLabel.setVisible(true);
+        } else {
+            lunaDetailsLabel.setText("");
+            lunaDetailsLabel.setVisible(false);
         }
 
         enableLunaButton.setEnabled(canUseLuna && !currentlyUsingLuna);

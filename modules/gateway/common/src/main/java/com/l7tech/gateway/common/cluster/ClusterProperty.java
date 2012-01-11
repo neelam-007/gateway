@@ -54,6 +54,7 @@ public class ClusterProperty extends NamedEntityImp implements Comparable {
         hiddenInGui.add("keyStore.luna.pinFinder"); // Currently no such cluster property, but just in case
         hiddenInGui.add("keyStore.luna.encryptedLunaPin");
         hiddenInGui.add("keyStore.luna.lunaSlotNum");
+        hiddenInGui.add("keyStore.luna.installAsLeastPreference");
         hiddenInGui.add("security.jceProviderEngineName");
         hiddenInGui.add("interfaceTags");
         hiddenInGui.add("ioHttpProxy");

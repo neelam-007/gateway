@@ -29,6 +29,7 @@ public class EnableLunaDialog extends JDialog {
     private JCheckBox overrideSlotNumberCheckBox;
     private JTextField slotNumberField;
     private JPasswordField clientPinField;
+    private JCheckBox preferLunaCheckBox;
 
     private final InputValidator validator;
     private boolean connectionSucceeded = false;
@@ -86,10 +87,12 @@ public class EnableLunaDialog extends JDialog {
     private void doConnect() {
         int slotnum = overrideSlotNumberCheckBox.isSelected() ? Integer.valueOf(slotNumberField.getText()) : -1;
         char[] clientPin = clientPinField.getPassword();
+        boolean leastPreference = !preferLunaCheckBox.isSelected();
 
         try {
             Registry.getDefault().getClusterStatusAdmin().testHardwareTokenAvailability(ClusterStatusAdmin.CAPABILITY_LUNACLIENT, slotnum, clientPin);
         } catch (ClusterStatusAdmin.NoSuchCapabilityException e) {
+            //noinspection ThrowableResultOfMethodCallIgnored
             showErrorMessage("Connection Failed", "Unable to connect to SafeNet HSM: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return;
         } catch (KeyStoreException e) {
@@ -101,6 +104,7 @@ public class EnableLunaDialog extends JDialog {
             ClusterPropertyCrud.putClusterProperty("keyStore.luna.lunaSlotNum", slotnum >= 0 ? Integer.toString(slotnum) : null);
             Registry.getDefault().getClusterStatusAdmin().putHardwareCapabilityProperty(ClusterStatusAdmin.CAPABILITY_LUNACLIENT, ClusterStatusAdmin.CAPABILITY_PROPERTY_LUNAPIN, clientPin);
             ClusterPropertyCrud.putClusterProperty("security.jceProviderEngineName", "luna");
+            ClusterPropertyCrud.putClusterProperty("keyStore.luna.installAsLeastPreference", leastPreference ? "true" : "false");
             connectionSucceeded = true;
             DialogDisplayer.showMessageDialog(this, "Connection to SafeNet HSM succeeded.  All Gateway nodes must be restarted for this to take effect.",
                     "Connection Succeeded",
