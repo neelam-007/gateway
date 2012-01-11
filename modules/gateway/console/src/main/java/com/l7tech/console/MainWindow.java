@@ -2812,13 +2812,17 @@ public class MainWindow extends JFrame implements SheetHolder {
             searchComboBox.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    if(e.getActionCommand().equals(MainWindow.L7_ESC)){
-                        getServicesAndPoliciesTree().requestFocus();
-                    }
-                    else {
-                        invokeSelection();
-                    }
+                    invokeSelection();
                 }
+            });
+
+            searchComboBox.addTextFieldKeyListener(new KeyAdapter() {
+                @Override
+                public void keyPressed(KeyEvent e) {
+                    if (e.getKeyCode() == KeyEvent.VK_ESCAPE)
+                        getServicesAndPoliciesTree().requestFocus();
+                }
+
             });
         }
 
@@ -2883,11 +2887,15 @@ public class MainWindow extends JFrame implements SheetHolder {
             assertionSearchComboBox.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    if(e.getActionCommand().equals(MainWindow.L7_ESC)){
+                    invokePaletteSelection();
+                }
+            });
+
+            assertionSearchComboBox.addTextFieldKeyListener(new KeyAdapter() {
+                @Override
+                public void keyPressed(KeyEvent e) {
+                    if (e.getKeyCode() == KeyEvent.VK_ESCAPE)
                         getAssertionPaletteTree().requestFocus();
-                    } else {
-                        invokePaletteSelection();
-                    }
                 }
             });
         }
@@ -2908,6 +2916,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         TreePath path = new TreePath(node.getPath());
         tree.scrollPathToVisible(path);
         tree.setSelectionPath(path);
+        tree.requestFocus();
 
         SwingUtilities.invokeLater(new Runnable() {
             @Override
@@ -2933,6 +2942,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         tree.setSelectionPath(treePath);
         tree.makeVisible(treePath);
         tree.scrollPathToVisible(treePath);
+        getAssertionPaletteTree().requestFocus();
     }
 
     /**
