@@ -1082,6 +1082,15 @@
         <constructor-arg value="true"/>
     </bean>
 
+    <bean id="httpConnectionIdleTimeoutManager" class="com.l7tech.server.transport.http.HttpConnectionIdleTimeoutManager">
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1">
+            <bean class="com.l7tech.server.util.ManagedTimer">
+                <constructor-arg value="HTTP Connection Idle Timeout"/>
+            </bean>
+        </constructor-arg>
+    </bean>
+
     <!-- server side HTTP routing HTTP client factory -->
     <bean id="httpRoutingHttpClientFactory"
           class="com.l7tech.server.util.IdentityBindingHttpClientFactory"
@@ -1093,6 +1102,7 @@
                 </entry>
             </map>
         </property>
+        <property name="listener" ref="httpConnectionIdleTimeoutManager"/>
     </bean>
 
     <!-- SSL hostname verifier for internode communication -->
@@ -1610,12 +1620,14 @@
 
     <bean id="httpClientFactory" class="com.l7tech.server.globalresources.ConfiguredCommonsHttpClientFactory">
         <constructor-arg index="0" ref="httpConfigurationCache"/>
-        <constructor-arg index="1" value="true"/>
+        <constructor-arg index="1" ref="httpConnectionIdleTimeoutManager"/>
+        <constructor-arg index="2" value="true"/>
     </bean>
 
     <bean id="anonHttpClientFactory" class="com.l7tech.server.globalresources.ConfiguredCommonsHttpClientFactory">
         <constructor-arg index="0" ref="httpConfigurationCache"/>
-        <constructor-arg index="1" value="false"/>
+        <constructor-arg index="1" ref="httpConnectionIdleTimeoutManager"/>
+        <constructor-arg index="2" value="false"/>
     </bean>
 
     <bean id="anonUrlHttpClientFactory"

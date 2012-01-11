@@ -1,11 +1,13 @@
 package com.l7tech.server.util;
 
+import java.util.Map.Entry;
 import java.util.logging.Logger;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.Iterator;
 
 import com.l7tech.server.ServerConfigParams;
+import com.l7tech.server.transport.http.HttpConnectionManagerListener;
+import com.l7tech.server.transport.http.HttpConnectionManagerListener.HttpConnectionManagerListenerAdapter;
 import com.l7tech.util.ConfigFactory;
 import org.apache.commons.httpclient.HttpConnectionManager;
 import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
@@ -15,6 +17,7 @@ import com.l7tech.common.http.GenericHttpClient;
 import com.l7tech.common.http.prov.apache.IdentityBindingHttpConnectionManager;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.http.prov.apache.SingleHostHttpConnectionManagerParams;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * GenericHttpClientFactory that supports identity binding.
@@ -64,7 +67,11 @@ public class IdentityBindingHttpClientFactory implements GenericHttpClientFactor
      * @param identity The bound identity for this client
      * @return The GenericHttpClient with given/factory settings.
      */
-    public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
+    public GenericHttpClient createHttpClient( final int hostConnections,
+                                               final int totalConnections,
+                                               final int connectTimeout,
+                                               final int timeout,
+                                               @Nullable final Object identity) {
         return new CommonsHttpClient(getHttpConnectionManager(hostConnections, totalConnections),
                                      connectTimeout,
                                      timeout,
@@ -79,8 +86,19 @@ public class IdentityBindingHttpClientFactory implements GenericHttpClientFactor
      *
      * @param parameters the String -> Object map.
      */
-    public void setConnectionManagerParameters(Map parameters) {
-        parameterMap = new HashMap(parameters);
+    public void setConnectionManagerParameters( final Map<?,?> parameters ) {
+        parameterMap = new HashMap<Object,Object>(parameters);
+    }
+
+    /**
+     * Optional configuration for an HttpConnectionManagerListener
+     *
+     * @param listener The HttpConnectionManagerListener to use.
+     */
+    public void setListener( final HttpConnectionManagerListener listener ) {
+        this.listener = listener == null ?
+            new HttpConnectionManagerListenerAdapter() :
+            listener;
     }
 
     //- PRIVATE
@@ -89,8 +107,9 @@ public class IdentityBindingHttpClientFactory implements GenericHttpClientFactor
     private static final Logger logger = Logger.getLogger(IdentityBindingHttpClientFactory.class.getName());
 
     //
+    private HttpConnectionManagerListener listener = new HttpConnectionManagerListenerAdapter();
     private HttpConnectionManager connectionManager;
-    private Map parameterMap;
+    private Map<Object,Object> parameterMap;
 
     /**
      *
@@ -109,15 +128,13 @@ public class IdentityBindingHttpClientFactory implements GenericHttpClientFactor
             params.setDefaults(connectionManager.getParams().getDefaults());
 
             if (parameterMap != null) {
-                for (Iterator mapEntryIter = parameterMap.entrySet().iterator(); mapEntryIter.hasNext(); ) {
-                    Map.Entry entry = (Map.Entry) mapEntryIter.next();
+                for ( final Entry<Object, Object> entry : parameterMap.entrySet() ) {
                     Object key = entry.getKey();
                     Object value = entry.getValue();
-                    if (key instanceof String) {
-                        params.setParameter((String)key, value);
-                    }
-                    else {
-                        logger.warning("Ignoring non-string parameter '"+ key +"'");
+                    if ( key instanceof String ) {
+                        params.setParameter( (String) key, value );
+                    } else {
+                        logger.warning( "Ignoring non-string parameter '" + key + "'" );
                     }
                 }
             }
@@ -127,6 +144,7 @@ public class IdentityBindingHttpClientFactory implements GenericHttpClientFactor
             connectionManager.setMaxStaleCheckHosts(getStaleCheckHosts());
             this.connectionManager = connectionManager;
             httpConnectionManager = connectionManager;
+            listener.notifyHttpConnectionManagerCreated( connectionManager );
         }
 
         return httpConnectionManager;

@@ -1,5 +1,6 @@
 package com.l7tech.common.http.prov.apache;
 
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ShutdownExceptionHandler;
 import org.apache.commons.httpclient.ConnectionPoolTimeoutException;
@@ -145,7 +146,8 @@ public class StaleCheckingHttpConnectionManager extends MultiThreadedHttpConnect
         // reading. Perhaps the content-length was not correct and they flushed at
         // the wrong time, etc.
         //
-        for ( final HostConfiguration hostConfiguration : seenHostConfigurations ) {
+        final boolean enabled = ConfigFactory.getBooleanProperty( "com.l7tech.common.http.prov.apache.staleCheckEnabled", true );
+        if (enabled) for ( final HostConfiguration hostConfiguration : seenHostConfigurations ) {
             try {
                 for ( int c = 0; c < staleCleanupCountPerHost; c++ ) {
                     HttpConnection connection = super.getConnectionWithTimeout( hostConfiguration, 10L );
