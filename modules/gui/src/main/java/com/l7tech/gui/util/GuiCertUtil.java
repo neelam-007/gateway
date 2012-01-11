@@ -3,6 +3,7 @@ package com.l7tech.gui.util;
 import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.util.*;
+import org.jetbrains.annotations.Nullable;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -18,6 +19,7 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
@@ -36,6 +38,7 @@ public class GuiCertUtil {
     public static final FileFilter pemFilter = buildFilter(new String[] {".pem"}, "(*.pem) PEM/BASE64 X.509 certificates.");
     public static final FileFilter cerFilter = buildFilter(new String[] {".cer"}, "(*.cer) DER encoded X.509 certificates.");
     public static final FileFilter p12Filter = buildFilter(new String[] {".p12", ".pfx"}, "(*.p12, *.pfx) PKCS 12 key store.");
+    public static final FileFilter p7bFilter = buildFilter(new String[] {".p7b", ".p7c"}, "(*.p7b, *.p7c) PKCS#7 empty envelope");
 
     /**
      * Import a certificate from a file (PEM, CER/ASN.1, PKS12).
@@ -102,6 +105,7 @@ public class GuiCertUtil {
             fc.addChoosableFileFilter(pemFilter);
             fc.addChoosableFileFilter(cerFilter);
             fc.addChoosableFileFilter(p12Filter);
+            fc.addChoosableFileFilter(p7bFilter);
         }
 
         fc.setDialogType(JFileChooser.OPEN_DIALOG);
@@ -250,7 +254,8 @@ public class GuiCertUtil {
                         FileFilter selectedFilter = fc.getFileFilter();
                         if (selectedFilter != pemFilter &&
                             selectedFilter != cerFilter &&
-                            selectedFilter != p12Filter) { // detect from extension
+                            selectedFilter != p12Filter &&
+                            selectedFilter != p7bFilter) { // detect from extension
                             if (selectedFileName.endsWith(".pem") ||
                                 selectedFileName.endsWith(".txt")) {
                                 selectedFilter = pemFilter;
@@ -259,6 +264,8 @@ public class GuiCertUtil {
                                 selectedFilter = cerFilter;
                             } else if (selectedFileName.endsWith(".p12") || selectedFileName.endsWith(".pfx")) {
                                 selectedFilter = p12Filter;
+                            } else if (selectedFileName.endsWith(".p7b") || selectedFileName.endsWith(".p7c")) {
+                                selectedFilter = p7bFilter;
                             }
                         }
 
@@ -296,6 +303,13 @@ public class GuiCertUtil {
                                 if (privateKeyRequired)
                                     throw new CausedIOException("Certificate files cannot contain private keys");
                                 importData( certificateChain, null, importCallback );
+                            }
+                            else if (selectedFilter == p7bFilter) {
+                                Collection<? extends Certificate> certs = CertUtils.getFactory().generateCertificates(new ByteArrayInputStream(fileBytes));
+                                if (privateKeyRequired)
+                                    throw new CausedIOException("Certificate files cannot contain private keys");
+                                X509Certificate[] x509Certs = CertUtils.asX509CertificateArray(certs.toArray(new Certificate[certs.size()]));
+                                importData(x509Certs, null, importCallback);
                             }
                             else if (selectedFilter == p12Filter) {
                                 try {
@@ -428,7 +442,7 @@ public class GuiCertUtil {
     }
 
     private static boolean importData( final X509Certificate[] certificateChain,
-                                       final PrivateKey privateKey,
+                                       final @Nullable PrivateKey privateKey,
                                        final Functions.Unary<Boolean, ImportedData> importCallback) {
         boolean continueImporting = true;
 
