@@ -3,6 +3,8 @@ package com.l7tech.common.http.prov.apache;
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpMethod;
+import static com.l7tech.common.http.prov.apache.DelegatingScopedProtocolSocketFactory.wrapWithScope;
+import static com.l7tech.common.http.prov.apache.DelegatingScopedSecureProtocolSocketFactory.wrapSecureWithScope;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.common.io.SocketWrapper;
 import com.l7tech.common.io.UnsupportedTlsVersionsException;
@@ -631,7 +633,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
         final String urlProtocol = targetUrl.getProtocol();
         final SSLSocketFactory socketFactory = params.getSslSocketFactory();
         final HostnameVerifier hostVerifier = params.getHostnameVerifier();
-        final Protocol protocol = getProtocol( urlProtocol, socketFactory, hostVerifier );
+        final Protocol protocol = getProtocol( urlProtocol, socketFactory, hostVerifier, state );
         final HttpHost httpHost = new HttpHost(targetUrl.getHost(), targetUrl.getPort(), protocol);
         final HostConfiguration hostConfiguration = new HostConfiguration(){
             @Override
@@ -647,17 +649,17 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                 configureParameters( clientParams, state, httpMethod, resolvedParams );
                 configureProxy( this, resolvedParams );
 
-                // This prevents our SSL settings being lost on redirects (bug 9063)
-                if ( PROTOCOL_HTTPS.equalsIgnoreCase( uri.getScheme() ) ) {
-                    final Protocol protocol = CommonsHttpClient.this.getProtocol( PROTOCOL_HTTPS, resolvedParams.getSslSocketFactory(), hostVerifier );
-                    try {
+                // This prevents our Protocol being lost on redirects (bug 9063)
+                try {
+                    if ( PROTOCOL_HTTPS.equalsIgnoreCase( uri.getScheme() ) ) {
+                        final Protocol protocol = CommonsHttpClient.this.getProtocol( PROTOCOL_HTTPS, resolvedParams.getSslSocketFactory(), hostVerifier, state );
                         super.setHost( new HttpHost(uri.getHost(), uri.getPort(), protocol ));
-                    } catch(URIException e) {
-                        // This is how HTTPClient handles this condition
-                        throw new IllegalArgumentException(e.toString());
+                    } else {
+                        super.setHost( new HttpHost(uri.getHost(), uri.getPort(), protocol ));
                     }
-                } else {
-                    super.setHost( uri );
+                } catch(URIException e) {
+                    // This is how HTTPClient handles this condition
+                    throw new IllegalArgumentException(e.toString());
                 }
             }
         };
@@ -668,10 +670,30 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
 
     private Protocol getProtocol( final String urlProtocol,
                                   final SSLSocketFactory socketFactory,
-                                  final HostnameVerifier hostVerifier ) {
-        return PROTOCOL_HTTPS.equalsIgnoreCase(urlProtocol) && socketFactory!=null ?
-                getProtocolBySocketFactory( socketFactory, hostVerifier ) :
-                Protocol.getProtocol( PROTOCOL_HTTP );
+                                  final HostnameVerifier hostVerifier,
+                                  final HttpState state ) {
+        return perhapsWrap(
+                PROTOCOL_HTTPS.equalsIgnoreCase(urlProtocol) && socketFactory!=null ?
+                    getProtocolBySocketFactory( socketFactory, hostVerifier ) :
+                    Protocol.getProtocol( PROTOCOL_HTTP ),
+                state );
+    }
+
+    /**
+     * If the connection uses NTLM credentials then we wrap the Protocol to
+     * prevent authenticated connections being in the same
+     * (HostConfiguration keyed) pool.
+     */
+    private Protocol perhapsWrap( final Protocol protocol,
+                                  final HttpState state ) {
+        final Object stateObject = state.getCredentials( AuthScope.ANY );
+        return stateObject instanceof NTCredentials ?
+                new Protocol( protocol.getScheme(),
+                        protocol.isSecure() ?
+                                wrapSecureWithScope( (SecureProtocolSocketFactory)protocol.getSocketFactory(), stateObject ) :
+                                wrapWithScope( protocol.getSocketFactory(), stateObject ),
+                        protocol.getDefaultPort() ) :
+                protocol;
     }
 
     private Protocol getProtocolBySocketFactory( final SSLSocketFactory sockFac, final HostnameVerifier hostVerifier ) {
