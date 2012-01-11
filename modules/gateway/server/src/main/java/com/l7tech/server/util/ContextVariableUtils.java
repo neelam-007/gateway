@@ -1,16 +1,14 @@
 package com.l7tech.server.util;
 
 import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.Functions;
 import com.l7tech.util.TextUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 
 import static com.l7tech.util.CollectionUtils.list;
@@ -47,8 +45,14 @@ public class ContextVariableUtils {
         return flatmap(list(splitPattern.split(expression)), new Functions.UnaryThrows<Iterable<String>, String, RuntimeException>() {
             @Override
             public Iterable<String> call(String token) throws RuntimeException {
+                List<Object> listToProcess = (!Syntax.validateStringOnlyReferencesVariables(token)) ?
+                        // if the expression is not a single variable reference, then it's an expression
+                        new ArrayList<Object>(Arrays.asList(ExpandVariables.process(token, serverVariables, auditor))):
+                        // otherwise it's a single variable reference
+                        ExpandVariables.processNoFormat(token, serverVariables, auditor);
+
                 return ContextVariableUtils.getStringsFromList(
-                        ExpandVariables.processNoFormat(token, serverVariables, auditor),
+                        listToProcess,
                         splitPattern,
                         callback);
             }
@@ -59,14 +63,16 @@ public class ContextVariableUtils {
      * Get all Strings from the List of possible objects. Expected to be the output of
      * {@link com.l7tech.server.policy.variable.ExpandVariables#processNoFormat(String, java.util.Map, com.l7tech.gateway.common.audit.Audit, boolean)}
      *
+     * Each String found in the list will have the split pattern applied to it if not null.
+     *
      * @param objectList list to extract strings from
      * @param splitPattern pattern to split found strings on. If null no splitting of stings is done.
-     * @param callback if not null, callback will be invoked with any non string value found
+     * @param notStringCallback if not null, callback will be invoked with any non string value found
      * @return list of all found strings
      */
     public static List<String> getStringsFromList(@NotNull final List<Object> objectList,
                                                   @Nullable final Pattern splitPattern,
-                                                  @Nullable final Functions.UnaryVoid<Object> callback) {
+                                                  @Nullable final Functions.UnaryVoid<Object> notStringCallback) {
         return flatmap(objectList, new Functions.UnaryThrows<Iterable<String>, Object, RuntimeException>() {
             @Override
             public Iterable<String> call(Object val) throws RuntimeException {
@@ -76,11 +82,11 @@ public class ContextVariableUtils {
                         final String[] authMethods = splitPattern.split(customVal);
                         return Functions.grep(Arrays.asList(authMethods), TextUtils.isNotEmpty());
                     } else {
-                        return Arrays.asList(customVal);
+                        return Functions.grep(Arrays.asList(customVal), TextUtils.isNotEmpty());
                     }
                 } else {
-                    if (callback != null) {
-                        callback.call(val);
+                    if (notStringCallback != null) {
+                        notStringCallback.call(val);
                     }
                     return Collections.emptyList();
                 }

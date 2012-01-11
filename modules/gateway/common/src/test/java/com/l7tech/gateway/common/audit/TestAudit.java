@@ -6,13 +6,14 @@ import org.jetbrains.annotations.NotNull;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
 
 /**
  * And audit implementation for use in tests
  */
-public class TestAudit implements Audit, AuditHaver {
+public class TestAudit implements Audit, AuditHaver, Iterable<String> {
 
     //- PUBLIC
 
@@ -103,4 +104,13 @@ public class TestAudit implements Audit, AuditHaver {
         } );
     }
 
+    @Override
+    public Iterator<String> iterator() {
+        return Functions.map(audits, new Functions.Unary<String, Triple<AuditDetailMessage, String[], Throwable>>() {
+            @Override
+            public String call(Triple<AuditDetailMessage, String[], Throwable> auditDetailMessageThrowableTriple) {
+                return MessageFormat.format( auditDetailMessageThrowableTriple.left.getMessage(), auditDetailMessageThrowableTriple.middle );
+            }
+        }).iterator();
+    }
 }

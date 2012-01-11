@@ -521,6 +521,45 @@ public class ServerProcessSamlAttributeQueryAssertionTest {
         assertTrue(variableMap.containsKey(prefix(ProtocolRequestUtilities.SUFFIX_SUBJECT_SP_PROVIDED_ID)));
     }
 
+    /**
+     * Validate any URI values found in any of the fields is reported via the auditor.
+     */
+    @Test
+    public void testSuccessCase_InvalidUriIgnoredAndAudited() throws Exception {
+        Message request = new Message(XmlUtil.parse(validRequestWithAllOptionalValuesIncludingAttributes));
+
+        final PolicyEnforcementContext context = getContext(request);
+        final ProcessSamlAttributeQueryRequestAssertion assertion = new ProcessSamlAttributeQueryRequestAssertion();
+        final String configDestValue = "urn:idmanagement.gov:icam:bae:v2:1:7000:0000 %InvalidDestinationUri";
+        assertion.setDestination(configDestValue);
+        assertion.setCustomSubjectFormats("%InvalidSubjectFormatUri urn:idmanagement.gov:icam:bae:v2:SAML:2.0:nameid-format:fasc-n");
+        assertion.setCustomAttributeNameFormats("%InvalidAttributeNameFormat urn:oasis:names:tc:SAML:2.0:attrname-format:basic");
+
+        final ServerProcessSamlAttributeQueryRequestAssertion serverAssertion =
+                new ServerProcessSamlAttributeQueryRequestAssertion(assertion);
+
+        final TestAudit testAudit = new TestAudit();
+        ApplicationContexts.inject(serverAssertion, CollectionUtils.<String, Object>mapBuilder()
+                .put("securityTokenResolver", new SimpleSecurityTokenResolver())
+                .put("auditFactory", testAudit.factory())
+                .unmodifiableMap()
+        );
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+        assertEquals("Status should be NONE", AssertionStatus.NONE, assertionStatus);
+        assertEquals("urn:idmanagement.gov:icam:bae:v2:1:7000:0000", context.getVariable(prefix(ProtocolRequestUtilities.SUFFIX_DESTINATION)));
+        assertEquals("urn:idmanagement.gov:icam:bae:v2:SAML:2.0:nameid-format:fasc-n", context.getVariable(prefix(ProtocolRequestUtilities.SUFFIX_SUBJECT_FORMAT)));
+
+        System.out.println("Audits:");
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+
+        assertTrue(testAudit.isAuditPresentContaining("Ignoring invalid URI value for destination restriction '%InvalidDestinationUri'.  Exception caught!"));
+        assertTrue(testAudit.isAuditPresentContaining("Ignoring invalid URI value for Subject NameID Format restriction '%InvalidSubjectFormatUri'.  Exception caught!"));
+        assertTrue(testAudit.isAuditPresentContaining("Ignoring invalid URI value for Custom NameFormat restriction '%InvalidAttributeNameFormat'.  Exception caught!"));
+    }
+
     private String prefix(@NotNull final String variableName) {
         return DEFAULT_PREFIX + "." + variableName;
     }
