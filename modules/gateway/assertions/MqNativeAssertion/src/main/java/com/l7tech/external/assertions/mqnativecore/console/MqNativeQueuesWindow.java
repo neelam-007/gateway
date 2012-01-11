@@ -590,7 +590,7 @@ public class MqNativeQueuesWindow extends JDialog {
         try {
             final TransportAdmin transportAdmin = getTransportAdmin();
             if ( transportAdmin != null ) {
-                listenerConfigurations = new ArrayList<SsgActiveConnector>(transportAdmin.findSsgActiveConnectorsByType("SFTP"));
+                listenerConfigurations = new ArrayList<SsgActiveConnector>(transportAdmin.findSsgActiveConnectorsByType(SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_MQ_NATIVE));
             }
         } catch (FindException e) {
             throw new RuntimeException( e );

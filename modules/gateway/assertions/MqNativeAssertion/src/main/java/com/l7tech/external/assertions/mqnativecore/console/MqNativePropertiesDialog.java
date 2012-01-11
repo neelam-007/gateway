@@ -1,7 +1,6 @@
 package com.l7tech.external.assertions.mqnativecore.console;
 
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.panels.*;
 import com.l7tech.console.security.FormAuthorizationPreparer;
 import com.l7tech.console.security.SecurityProvider;
@@ -22,10 +21,7 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
-import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.apache.commons.lang.StringUtils;
@@ -895,7 +891,7 @@ public class MqNativePropertiesDialog extends JDialog {
                 }
 
                 boolean associateQueue;
-                if (mqNativeActiveConnector.getHardwiredServiceOid() > -1L){
+                if (mqNativeActiveConnector.getHardwiredServiceOid() != null && mqNativeActiveConnector.getHardwiredServiceOid() > -1L){
                     associateQueue = ServiceComboBox.populateAndSelect(serviceNameCombo, true, mqNativeActiveConnector.getHardwiredServiceOid());
                 }else{
                     associateQueue = ServiceComboBox.populateAndSelect(serviceNameCombo, true, 0);
@@ -1179,7 +1175,9 @@ public class MqNativePropertiesDialog extends JDialog {
 
 
     private void viewToModel(final SsgActiveConnector connector) throws IOException {
+        connector.setType(SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_MQ_NATIVE);
         connector.setName(mqConnectionName.getText());
+
         connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_HOST_NAME, hostNameTextBox.getText());
         connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_PORT, portNumberTextBox.getText());
         connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_CHANNEL, channelTextBox.getText());
@@ -1293,41 +1291,13 @@ public class MqNativePropertiesDialog extends JDialog {
     private void onSave() {
         final TransportAdmin admin = getTransportAdmin();
         if ( admin != null ) {
-            boolean duplicate = false;
             try {
                 viewToModel(mqNativeActiveConnector);
                 admin.saveSsgActiveConnector( mqNativeActiveConnector );
-            } catch ( IOException e ) {
-                ErrorManager.getDefault().notify( Level.WARNING, e, "Error saving MQ native connector" );
-            } catch ( DuplicateObjectException e ) {
-                duplicate = true;
-            } catch ( SaveException e ) {
-                ErrorManager.getDefault().notify( Level.WARNING, e, "Error saving MQ native connector" );
-            } catch ( UpdateException e ) {
-                if ( ExceptionUtils.causedBy( e, DuplicateObjectException.class ) ) {
-                    duplicate = true;
-                } else {
-                    ErrorManager.getDefault().notify( Level.WARNING, e, "Error saving MQ native connector" );
-                }
+            }  catch (Throwable t) {
+                DialogDisplayer.showMessageDialog(this, "Cannot save MQ Native Queue: " + ExceptionUtils.getMessage(t), "Error Saving MQ Native Queue", JOptionPane.ERROR_MESSAGE, null);
+                return;
             }
-
-            /* TODO Gary please comment this in and handle compile errors
-            if ( duplicate ) {
-                showMessageDialog( MqNativePropertiesDialog.this,
-                        "Listener already exists",
-                        "Unable to save listener '" + mqNativeActiveConnector.getName() + "'\n" +
-                                "because an existing listener is already using the name.",
-                        null,
-                        new Runnable() {
-                            @Override
-                            public void run() {
-                                updateListenersList( mqNativeActiveConnector );
-                                editAndSave( mqNativeActiveConnector, false );
-                            }
-                        } );
-            } else {
-                updateListenersList( connector );
-            }*/
 
             isOk = true;
             dispose();

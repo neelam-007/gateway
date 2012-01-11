@@ -82,6 +82,8 @@ public class SsgActiveConnector extends NamedEntityImp {
     public static final String PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_TEMPORARY_QUEUE_NAME_PATTERN = "MqNativeOutboundTemporaryQueueNamePattern";
     public static final String PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_MESSAGE_FORMAT = "MqNativeOutboundMessageFormat";
 
+    public static final String ACTIVE_CONNECTOR_TYPE_MQ_NATIVE = "MqNative";
+
     private boolean enabled;
     private String type;
     private Long hardwiredServiceOid;
