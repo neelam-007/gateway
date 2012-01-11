@@ -165,7 +165,7 @@ public class BindOnlyLdapIdentityProviderImpl implements BindOnlyLdapIdentityPro
         } catch (BadCredentialsException e) {
             throw new InvalidIdProviderCfgException("Test credentials failed to authenticate: " + ExceptionUtils.getMessage(e), e);
         } catch (BindOnlyLdapUserManager.BadUsernamePatternException e) {
-            throw new InvalidIdProviderCfgException("Test credentials failed to authenticate: " + ExceptionUtils.getMessage(e), e);
+            throw new InvalidIdProviderCfgException("Test credentials failed to authenticate: " + ExceptionUtils.getMessage(e));
         }
     }
 
