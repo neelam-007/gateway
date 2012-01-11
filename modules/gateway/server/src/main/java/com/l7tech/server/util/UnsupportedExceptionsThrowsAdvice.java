@@ -19,15 +19,37 @@ public class UnsupportedExceptionsThrowsAdvice extends ThrowsAdviceSupport {
     private static final Logger logger = Logger.getLogger(UnsupportedExceptionsThrowsAdvice.class.getName());
 
     private static final String[] OPTIONAL_BLACKLIST = new String[] {
-            // mysql specific exceptions
-            "com.mysql.jdbc.exceptions.MySQLNonTransientException",
-            "com.mysql.jdbc.exceptions.MySQLTimeoutException",
+            // MySQL specific exceptions, the commented out exceptions extend
+            // other MySQL exceptions in the list, so are unnecessary
             "com.mysql.jdbc.AssertionFailedException",
             "com.mysql.jdbc.CommunicationsException",
+            //"com.mysql.jdbc.ConnectionFeatureNotAvailableException",
             "com.mysql.jdbc.MysqlDataTruncation",
             "com.mysql.jdbc.OperationNotSupportedException",
             "com.mysql.jdbc.PacketTooBigException",
             "com.mysql.jdbc.RowDataDynamic$OperationNotSupportedException",
+            //"com.mysql.jdbc.exceptions.MySQLDataException",
+            //"com.mysql.jdbc.exceptions.MySQLIntegrityConstraintViolationException",
+            //"com.mysql.jdbc.exceptions.MySQLInvalidAuthorizationSpecException",
+            //"com.mysql.jdbc.exceptions.MySQLNonTransientConnectionException",
+            "com.mysql.jdbc.exceptions.MySQLNonTransientException",
+            //"com.mysql.jdbc.exceptions.MySQLStatementCancelledException",
+            //"com.mysql.jdbc.exceptions.MySQLSyntaxErrorException",
+            //"com.mysql.jdbc.exceptions.MySQLTimeoutException",
+            //"com.mysql.jdbc.exceptions.MySQLTransactionRollbackException",
+            //"com.mysql.jdbc.exceptions.MySQLTransientConnectionException",
+            "com.mysql.jdbc.exceptions.MySQLTransientException",
+            "com.mysql.jdbc.exceptions.jdbc4.CommunicationsException",
+            "com.mysql.jdbc.exceptions.jdbc4.MySQLDataException",
+            "com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException",
+            "com.mysql.jdbc.exceptions.jdbc4.MySQLInvalidAuthorizationSpecException",
+            "com.mysql.jdbc.exceptions.jdbc4.MySQLNonTransientConnectionException",
+            "com.mysql.jdbc.exceptions.jdbc4.MySQLNonTransientException",
+            "com.mysql.jdbc.exceptions.jdbc4.MySQLSyntaxErrorException",
+            "com.mysql.jdbc.exceptions.jdbc4.MySQLTimeoutException",
+            "com.mysql.jdbc.exceptions.jdbc4.MySQLTransactionRollbackException",
+            "com.mysql.jdbc.exceptions.jdbc4.MySQLTransientConnectionException",
+            "com.mysql.jdbc.exceptions.jdbc4.MySQLTransientException",
 
             // Luna v4 exceptions
             "com.chrysalisits.crypto.LunaCryptokiException",
