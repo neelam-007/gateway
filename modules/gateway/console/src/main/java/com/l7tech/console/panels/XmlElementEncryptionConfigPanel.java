@@ -33,7 +33,7 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
     private static final Logger logger = Logger.getLogger(XmlElementEncryptionConfigPanel.class.getName());
 
     private JPanel contentPane;
-    private JComboBox<String> encryptionMethodComboBox;
+    private JComboBox encryptionMethodComboBox;
     private JLabel recipientCertLabel;
     private JButton setRecipientCertificateButton;
     private JRadioButton specifyCertificateRadioButton;
@@ -62,7 +62,7 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
 
     @Override
     protected void initComponents() {
-        encryptionMethodComboBox.setModel(new DefaultComboBoxModel<String>(new String[] {
+        encryptionMethodComboBox.setModel(new DefaultComboBoxModel(new String[] {
                 XencUtil.TRIPLE_DES_CBC,
                 XencUtil.AES_128_CBC,
                 XencUtil.AES_192_CBC,
