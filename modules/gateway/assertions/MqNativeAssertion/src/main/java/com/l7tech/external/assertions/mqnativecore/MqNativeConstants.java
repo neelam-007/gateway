@@ -15,7 +15,7 @@ public interface MqNativeConstants {
     String LISTENER_THREAD_LIMIT_DESC = "The global limit on the number of processing threads that can be created to work off all MQ queue listeners. Value must be >= 5.";
 
     String MQ_RESPONSE_TIMEOUT_PROPERTY = "ioMqResponseTimeout";
-    String MQ_RESPONSE_TIMEOUT_UI_PROPERTY = "io.mqresponseTimeout";
+    String MQ_RESPONSE_TIMEOUT_UI_PROPERTY = "io.mqResponseTimeout";
     String MQ_RESPONSE_TIMEOUT_DESC = "Timeout for MQ routing to wait on the replyTo queue in milliseconds, default 10 seconds.";
 
     String MQ_CONNECT_ERROR_SLEEP_PROPERTY = "mqConnectErrorSleep";
