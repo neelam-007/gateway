@@ -2554,6 +2554,10 @@ public class ServerSamlIssuerAssertionTest {
         }
     }
 
+    /**
+     * Test that no attributes can be added and when so that the correct context variable is set.
+     * @throws Exception
+     */
     @Test
     public void testAttributeStatement_NoAttributes() throws Exception {
         //Test basic Attribute + AttributeValue addition to AttributeStatement
@@ -2571,6 +2575,7 @@ public class ServerSamlIssuerAssertionTest {
         samlAttributeStatement.setAttributes(attributes.toArray(new SamlAttributeStatement.Attribute[attributes.size()]));
         final String varName = "attributeQuery.attributes";
         samlAttributeStatement.setFilterExpression("${" + varName + "}");
+        samlAttributeStatement.setFailIfNoAttributesAdded(false);
 
         {
             // V2

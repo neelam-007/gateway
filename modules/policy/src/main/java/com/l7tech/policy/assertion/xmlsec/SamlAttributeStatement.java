@@ -360,7 +360,7 @@ public class SamlAttributeStatement implements Cloneable, Serializable {
 
     private boolean failIfAnyAttributeIsMissing;
     private boolean failIfUnknownAttributeInFilter;
-    private boolean failIfNoAttributesAdded;
+    private boolean failIfNoAttributesAdded = true;
     private boolean failIfAttributeValueExcludesAttribute;
 
 
