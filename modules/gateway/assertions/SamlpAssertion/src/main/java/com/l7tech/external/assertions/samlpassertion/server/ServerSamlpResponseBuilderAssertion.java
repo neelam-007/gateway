@@ -415,6 +415,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
                     }
                 } else if (o == null) {
                     //this happens when a built in prefix like gateway.invalid is referenced. Message processing treats these differently.
+                    // or a variable from the PEC had a null value.
                     final String msg = "Variable referenced from variable string: '" + variablesOnly + "' for element '" +
                             elemAttrName + "' resolved to no value";
                     throw new InvalidRuntimeValueException(msg);

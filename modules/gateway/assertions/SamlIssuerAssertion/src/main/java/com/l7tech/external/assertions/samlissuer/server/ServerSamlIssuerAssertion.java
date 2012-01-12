@@ -56,6 +56,7 @@ import java.util.*;
 import java.util.logging.Level;
 
 import static com.l7tech.policy.assertion.SamlIssuerConfiguration.DecorationType.*;
+import static com.l7tech.util.Functions.FUNC_IS_NOT_NULL;
 import static com.l7tech.util.Functions.grep;
 
 import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.AttributeValueAddBehavior.ADD_AS_XML;
@@ -666,7 +667,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
     }
 
     private String getStringForResolvedObject(final SamlAttributeStatement.Attribute.AttributeValueComparison valueComparison,
-                                              final Object resolvedObject) {
+                                              @NotNull final Object resolvedObject) {
         final String resolvedString;
         if (resolvedObject instanceof Element) {
             final Element resolvedElement = (Element) resolvedObject;
@@ -715,8 +716,9 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
      * @param configAttribute The config Attribute
      * @param vars Available variables
      * @return List of Object which when repeat is not configured, will always contain a single item, otherwise it will
-     * have multiple items, 1 for each item found in a multi valued variable.
+     * have multiple items, 1 for each item found in a multi valued variable. No item will ever be null.
      */
+    @NotNull("Contents will also never include a null value")
     private List<Object> resolveObjectsForAttributeValue(final SamlAttributeStatement.Attribute configAttribute,
                                                          final Map<String, Object> vars){
         final List<Object> allResolvedObjectsForConfigAttribute;
@@ -728,6 +730,8 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
             allResolvedObjectsForConfigAttribute = Collections.singletonList((Object)"");
         } else {
             final boolean isMulti = configAttribute.isRepeatIfMulti();
+            // fyi: String convert uses ExpandVariable methods which turns nulls into empty strings.
+            // Non string convert explicitly removes nulls
             if (configAttribute.getAddBehavior() == STRING_CONVERT && !isMulti) {
                 //stringify everything and turn it into a single record.
                 final Object value = ExpandVariables.process(configAttribute.getValue(), vars, getAudit(), false);
@@ -749,12 +753,16 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                     }
                 }
             } else {
-                final List<Object> flatten = flatten(ExpandVariables.processNoFormat(configAttribute.getValue(), vars, getAudit(), false));
+                final List<Object> flatten = grep(
+                        flatten(ExpandVariables.processNoFormat(configAttribute.getValue(), vars, getAudit(), false)),
+                        FUNC_IS_NOT_NULL);
+
                 if (isMulti) {
                     // all of these items will be added as a separate Attribute.
                     allResolvedObjectsForConfigAttribute = flatten;
                 } else {
                     // all items in a single element of the list will be added as mixed content.
+                    @SuppressWarnings({"UnnecessaryLocalVariable"})
                     final Object listObj = flatten;//so compiler is happy with singletonList
                     allResolvedObjectsForConfigAttribute = Collections.singletonList(listObj);
                 }
@@ -1024,8 +1032,8 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
 
     /**
      *  Any Message variables are converted to Element if XML, otherwise toString is called on the Message.
-     * @param objects
-     * @return
+     * @param objects list of objects to extract Elements from. Non convertible types are ignored with warning logging.
+     * @return list of Elements for each input object which could be converted.
      */
     private List<Element> extractElements(List<Object> objects) {
         final List<Element> foundElements = new ArrayList<Element>();
@@ -1040,7 +1048,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
             } else if (object instanceof Message) {
                 final Element element = processMessageVariable((Message) object);
                 foundElements.add(element);
-            } else {
+            } else if (null != object) {
                 logger.warning("Unsupported variable value found of type " + object.getClass().getSimpleName());
             }
         }
@@ -1055,6 +1063,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
      * @return Element representing the message. Null if the Message cannot be converted due to invalid content type
      * of if XML is not well formed. If return value is null, then a warning will have been logged and audited.
      */
+    @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     private Element processMessageVariable(final Message message) {
 
         try {

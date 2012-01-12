@@ -742,4 +742,14 @@ public final class Functions {
             throw new IllegalArgumentException("Unable to instrospect class " + clazz + ": " + ExceptionUtils.getMessage(e));
         }
     }
+
+    public static final Unary<Boolean,Object> FUNC_IS_NULL = new Unary<Boolean,Object>() {
+            @Override
+            public Boolean call( final Object object ) {
+                return null == object;
+            }
+        };
+
+    public static final Unary<Boolean, Object> FUNC_IS_NOT_NULL = negate(FUNC_IS_NULL);
+
 }

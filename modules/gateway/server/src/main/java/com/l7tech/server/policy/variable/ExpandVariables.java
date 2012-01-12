@@ -439,11 +439,11 @@ public final class ExpandVariables {
      * @param audit The Auditor to audit to.
      * @param strict Thrown VariableNameSyntaxException if a referenced variable does not exist.
      * @return a list of Objects containing String parts from the input that do not reference variables
-     *         and the resolved variable values.
+     *         and the resolved variable values. Variables which have a null value will be included as null.
      * @see #process(String, java.util.Map, com.l7tech.gateway.common.audit.Audit, boolean)
      * @throws com.l7tech.policy.variable.VariableNameSyntaxException throw if strict and an unknown variable is referenced.
      */
-    @NotNull
+    @NotNull("Values of the list may be null")
     public static List<Object> processNoFormat(@NotNull final String s,
                                                @NotNull final Map<String,?> vars,
                                                @NotNull final Audit audit,

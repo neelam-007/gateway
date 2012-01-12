@@ -1128,7 +1128,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                         addXmlMessageVariableAsAttributeValue((Message)part, element, null);
                     } else if(part instanceof Element){
                         addElementAsAttributeValue(element, (Element)part);
-                    } else{
+                    } else if (part != null) {
                         logAndAudit(AssertionMessages.XACML_UNSUPPORTED_MIXED_CONTENT, part.getClass().getName());
                         throw new AssertionStatusException(AssertionStatus.FAILED,
                                 "Unsupported type of mixed content found for AttributeValue");

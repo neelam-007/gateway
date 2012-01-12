@@ -53,6 +53,7 @@ import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribut
 import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.EmptyBehavior.NULL_VALUE;
 import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.VariableNotFoundBehavior.REPLACE_EXPRESSION_EMPTY_STRING;
 
+@SuppressWarnings({"JavaDoc"})
 public class ServerSamlIssuerAssertionTest {
 
     /**
@@ -1215,6 +1216,135 @@ public class ServerSamlIssuerAssertionTest {
         final Element attrStatement = XmlUtil.findFirstChildElementByName(assertionElm, SamlConstants.NS_SAML2, "AttributeStatement");
         final List<Element> attribute = XmlUtil.findChildElementsByName(attrStatement, SamlConstants.NS_SAML2, "Attribute");
         Assert.assertEquals("Incorrect number of Attributes found in AttributeStatement", 2, attribute.size());
+    }
+
+    /**
+     * Validate that a variable with a null value in AttributeValue when configured to be added as XML does not NPE
+     */
+    @BugNumber(11646)
+    @Test
+    public void testAttriubuteStatement_Filtered_V2_AttributeValue_Add_As_XML_NPE() throws Exception {
+        final SamlAttributeStatement samlAttributeStatement = new SamlAttributeStatement();
+        List<SamlAttributeStatement.Attribute> attributes = new ArrayList<SamlAttributeStatement.Attribute>();
+
+        final SamlAttributeStatement.Attribute nameAttr = new SamlAttributeStatement.Attribute();
+        nameAttr.setName("nc:PersonGivenName");
+        nameAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        nameAttr.setValue("${nullvar}");
+        nameAttr.setAddBehavior(SamlAttributeStatement.Attribute.AttributeValueAddBehavior.ADD_AS_XML);
+
+        final List<SamlAttributeStatement.Attribute> middleAndLastName = getSomeAttributes();
+
+        //This is the attribute we expect to not be included in the created saml token
+        final SamlAttributeStatement.Attribute attributeNotInRequest = new SamlAttributeStatement.Attribute();
+        attributeNotInRequest.setName("not_in_request");
+        attributeNotInRequest.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        attributeNotInRequest.setValue("not_in_request_value");
+
+        attributes.add(nameAttr);
+        attributes.addAll(middleAndLastName);
+        attributes.add(attributeNotInRequest);
+
+        samlAttributeStatement.setAttributes(attributes.toArray(new SamlAttributeStatement.Attribute[attributes.size()]));
+        final String varName = "attributeQuery.attributes";
+        samlAttributeStatement.setFilterExpression("${" + varName + "}");
+        ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 2);
+
+        final PolicyEnforcementContext context = getContext();
+        context.setVariable(varName, getElementsFromXml(attributeRequestWithAttributeValue, SamlConstants.NS_SAML2, "Attribute"));
+        context.setVariable("nullvar", null);
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be none.", AssertionStatus.NONE, status);
+
+        final Document document = getIssuedSamlAssertionDoc(context);
+        System.out.println(XmlUtil.nodeToFormattedString(document));
+
+        final Element assertionElm = document.getDocumentElement();
+        final Element attrStatement = XmlUtil.findFirstChildElementByName(assertionElm, SamlConstants.NS_SAML2, "AttributeStatement");
+        final List<Element> attribute = XmlUtil.findChildElementsByName(attrStatement, SamlConstants.NS_SAML2, "Attribute");
+        Assert.assertEquals("Incorrect number of Attributes found in AttributeStatement", 2, attribute.size());
+    }
+
+    /**
+     * Validate that a context variable with a null value referenced from an attribute value does not cause an NPE
+     */
+    @Test
+    public void testAttriubuteStatement_Filtered_V2_AttributeValue_NPE() throws Exception {
+        final SamlAttributeStatement samlAttributeStatement = new SamlAttributeStatement();
+        List<SamlAttributeStatement.Attribute> attributes = new ArrayList<SamlAttributeStatement.Attribute>();
+
+        final SamlAttributeStatement.Attribute nameAttr = new SamlAttributeStatement.Attribute();
+        nameAttr.setName("nc:PersonGivenName");
+        nameAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        nameAttr.setValue("${nullvar}");
+
+        attributes.add(nameAttr);
+
+        samlAttributeStatement.setAttributes(attributes.toArray(new SamlAttributeStatement.Attribute[attributes.size()]));
+        ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 2);
+
+        final PolicyEnforcementContext context = getContext();
+        context.setVariable("nullvar", null);
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be none.", AssertionStatus.NONE, status);
+
+        final Document document = getIssuedSamlAssertionDoc(context);
+        System.out.println(XmlUtil.nodeToFormattedString(document));
+
+        final Element assertionElm = document.getDocumentElement();
+        final Element attrStatement = XmlUtil.findFirstChildElementByName(assertionElm, SamlConstants.NS_SAML2, "AttributeStatement");
+        final List<Element> attribute = XmlUtil.findChildElementsByName(attrStatement, SamlConstants.NS_SAML2, "Attribute");
+        Assert.assertEquals("Incorrect number of Attributes found in AttributeStatement", 1, attribute.size());
+    }
+
+    /**
+     * Validate that a variable used in the Filter Attribute text field which resolves to null does not NPE
+     */
+    @BugNumber(11613)
+    @Test
+    public void testAttriubuteStatement_Filtered_V2_AttributeFilterExpression_NPE() throws Exception {
+        final SamlAttributeStatement samlAttributeStatement = new SamlAttributeStatement();
+        List<SamlAttributeStatement.Attribute> attributes = new ArrayList<SamlAttributeStatement.Attribute>();
+
+        final SamlAttributeStatement.Attribute nameAttr = new SamlAttributeStatement.Attribute();
+        nameAttr.setName("nc:PersonGivenName");
+        nameAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        nameAttr.setValue("${nullvar}");
+        nameAttr.setAddBehavior(SamlAttributeStatement.Attribute.AttributeValueAddBehavior.ADD_AS_XML);
+
+        final List<SamlAttributeStatement.Attribute> middleAndLastName = getSomeAttributes();
+
+        final SamlAttributeStatement.Attribute attributeNotInRequest = new SamlAttributeStatement.Attribute();
+        attributeNotInRequest.setName("not_in_request");
+        attributeNotInRequest.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        attributeNotInRequest.setValue("not_in_request_value");
+
+        attributes.add(nameAttr);
+        attributes.addAll(middleAndLastName);
+        attributes.add(attributeNotInRequest);
+
+        samlAttributeStatement.setAttributes(attributes.toArray(new SamlAttributeStatement.Attribute[attributes.size()]));
+
+        // Bug repro - this variable will be null at runtime
+        samlAttributeStatement.setFilterExpression("${nullvar}");
+        ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 2);
+
+        final PolicyEnforcementContext context = getContext();
+        context.setVariable("nullvar", null);
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be none.", AssertionStatus.NONE, status);
+
+        final Document document = getIssuedSamlAssertionDoc(context);
+        System.out.println(XmlUtil.nodeToFormattedString(document));
+
+        final Element assertionElm = document.getDocumentElement();
+        final Element attrStatement = XmlUtil.findFirstChildElementByName(assertionElm, SamlConstants.NS_SAML2, "AttributeStatement");
+        final List<Element> attribute = XmlUtil.findChildElementsByName(attrStatement, SamlConstants.NS_SAML2, "Attribute");
+        // We expect all attributes as none were filtered
+        Assert.assertEquals("Incorrect number of Attributes found in AttributeStatement, none should have been filtered", 4, attribute.size());
     }
 
     /**
