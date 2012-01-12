@@ -33,7 +33,7 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
     private static final Logger logger = Logger.getLogger(XmlElementEncryptionConfigPanel.class.getName());
 
     private JPanel contentPane;
-    private JComboBox encryptionMethodComboBox;
+    private JComboBox<String> encryptionMethodComboBox;
     private JLabel recipientCertLabel;
     private JButton setRecipientCertificateButton;
     private JRadioButton specifyCertificateRadioButton;
@@ -62,7 +62,7 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
 
     @Override
     protected void initComponents() {
-        encryptionMethodComboBox.setModel(new DefaultComboBoxModel(new String[] {
+        encryptionMethodComboBox.setModel(new DefaultComboBoxModel<String>(new String[] {
                 XencUtil.TRIPLE_DES_CBC,
                 XencUtil.AES_128_CBC,
                 XencUtil.AES_192_CBC,
@@ -149,11 +149,12 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
     @Override
     protected void doUpdateModel() {
         model.setEncryptContentsOnly(false);
-        model.setRecipientCertificateBase64(certb64);
         model.setXencAlgorithm((String)encryptionMethodComboBox.getSelectedItem());
         if (specifyCertificateRadioButton.isSelected()) {
+            model.setRecipientCertificateBase64(certb64);
             model.setRecipientCertContextVariableName(null);
         } else {
+            model.setRecipientCertificateBase64(null);
             model.setRecipientCertContextVariableName(contextVariableField.getVariable());
         }
         validateModel();

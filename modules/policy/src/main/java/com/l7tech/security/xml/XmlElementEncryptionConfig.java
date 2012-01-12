@@ -33,7 +33,7 @@ public final class XmlElementEncryptionConfig implements Serializable, UsesVaria
         return recipientCertificateBase64;
     }
 
-    public void setRecipientCertificateBase64(String recipientCertificateBase64) {
+    public void setRecipientCertificateBase64(@Nullable String recipientCertificateBase64) {
         this.recipientCertificateBase64 = recipientCertificateBase64;
     }
 
