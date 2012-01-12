@@ -74,7 +74,7 @@ public class ServerProcessSamlAttributeQueryRequestAssertion extends AbstractMes
         configuredAttrNameFormatUris = getUriListFromProperty(
                 assertion.getAttributeNameFormats(), "Attribute NameFormat", SUPPORTED_ATTRIBUTE_NAMEFORMATS);
 
-        invalidMessageTargetStatus = TargetMessageType.REQUEST.equals(assertion.getTarget()) ? AssertionStatus.BAD_REQUEST : AssertionStatus.SERVER_ERROR;
+        invalidMessageTargetStatus = isRequest() ? AssertionStatus.BAD_REQUEST : AssertionStatus.SERVER_ERROR;
     }
 
     @Override
