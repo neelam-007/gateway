@@ -609,7 +609,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
         }
 
         // Any excluded Attribute
-        if (attributeStatement.isFailIfNoAttributesAdded() && !filteredAttributesBasedOnValue.isEmpty()) {
+        if (attributeStatement.isFailIfAttributeValueExcludesAttribute() && !filteredAttributesBasedOnValue.isEmpty()) {
             throw new AssertionStatusException(AssertionStatus.FALSIFIED);
         }
 

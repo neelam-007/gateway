@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.samlissuer.server;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.samlissuer.SamlIssuerAssertion;
+import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.HttpServletResponseKnob;
 import com.l7tech.message.Message;
@@ -20,6 +21,7 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.test.BugNumber;
+import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.saml.SamlAssertionV1;
@@ -2254,7 +2256,7 @@ public class ServerSamlIssuerAssertionTest {
      * Tests fail case when a filter Attribute is unknown to the static Attribute configuration.
      */
     @Test
-    public void testAttributeStatement_AttributeValue_Fail_When_Unknown_Attribute_Filtered() throws Exception {
+    public void testAttributeStatement_AttributeValue_Fail_When_Unknown_Attribute_InFilter() throws Exception {
         final SamlAttributeStatement samlAttributeStatement = new SamlAttributeStatement();
         List<SamlAttributeStatement.Attribute> attributes = new ArrayList<SamlAttributeStatement.Attribute>();
 
@@ -2299,6 +2301,62 @@ public class ServerSamlIssuerAssertionTest {
             }
             Assert.assertNotNull(context.getVariable(samlAttributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_UNKNOWN_ATTRIBUTE_NAMES));
        }
+    }
+
+    /**
+     * Tests that assertion fails when an attribute value is filtered due to incoming filter, when configured to do so.
+     */
+    @BugNumber(11651)
+    @Test
+    public void testAttributeStatement_AttributeValue_Fail_When_Attribute_Filtered() throws Exception {
+        final SamlAttributeStatement samlAttributeStatement = new SamlAttributeStatement();
+        List<SamlAttributeStatement.Attribute> attributes = new ArrayList<SamlAttributeStatement.Attribute>();
+
+        final SamlAttributeStatement.Attribute nameAttr = new SamlAttributeStatement.Attribute();
+        nameAttr.setName("nc:PersonGivenName");
+        nameAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        nameAttr.setValue("Donal");
+        attributes.add(nameAttr);
+
+        final List<SamlAttributeStatement.Attribute> someAttributes = getSomeAttributes();
+        for (SamlAttributeStatement.Attribute someAttribute : someAttributes) {
+            attributes.add(someAttribute);
+        }
+
+        samlAttributeStatement.setAttributes(attributes.toArray(new SamlAttributeStatement.Attribute[attributes.size()]));
+        final String filterExpression = "${attributeQuery.attributes}";
+        samlAttributeStatement.setFilterExpression(filterExpression);
+        samlAttributeStatement.setFailIfAttributeValueExcludesAttribute(true);
+
+        // Only applies to V2, V1 does not support incoming AttributeValue elements.
+        final PolicyEnforcementContext context = getContext();
+        context.setVariable("attributeQuery.attributes", getAttributesFromRequest(attributeRequestWithAttributeValue, SamlConstants.NS_SAML2, "Attribute"));
+
+        SamlIssuerAssertion assertion = new SamlIssuerAssertion();
+        assertion.setAttributeStatement(samlAttributeStatement);
+        assertion.setVersion(2);
+        assertion.setSignAssertion(false);//don't need
+        ServerSamlIssuerAssertion serverAssertion = new ServerSamlIssuerAssertion(assertion, ApplicationContexts.getTestApplicationContext());
+
+        final TestAudit testAudit = new TestAudit();
+        ApplicationContexts.inject(serverAssertion, CollectionUtils.<String, Object>mapBuilder()
+                .put("auditFactory", testAudit.factory())
+                .unmodifiableMap()
+        );
+
+        try {
+            serverAssertion.checkRequest(context);
+            Assert.fail("Assertion should have failed as Attribute was filtered out.");
+        } catch (AssertionStatusException e) {
+        }
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+
+        Assert.assertTrue(testAudit.isAuditPresentContaining("Attribute filter AttributeValue excluded some Attributes: [Name=nc:PersonGivenName NameFormat=urn:oasis:names:tc:SAML:2.0:attrname-format:basic]"));
+        final Object filterVariable = context.getVariable(samlAttributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_EXCLUDED_ATTRIBUTES);
+        Assert.assertNotNull(filterVariable);
+        Assert.assertEquals(filterVariable.toString(), "[Name=nc:PersonGivenName NameFormat=urn:oasis:names:tc:SAML:2.0:attrname-format:basic]");
     }
 
     @Test
