@@ -66,9 +66,12 @@ public class CreateFolderAction extends SecureAction {
 
     @Override
     protected void performAction() {
+        createFolder("");
+    }
+
+    private void createFolder( final String name ) {
         Frame f = TopComponents.getInstance().getTopParent();
-        PolicyFolderPropertiesDialog dialog = new PolicyFolderPropertiesDialog(f, "");
-        dialog.setModal(true);
+        PolicyFolderPropertiesDialog dialog = new PolicyFolderPropertiesDialog(f, name);
         dialog.setVisible(true);
 
         if(dialog.isConfirmed()) {
@@ -94,9 +97,10 @@ public class CreateFolderAction extends SecureAction {
                 }
             } catch(ConstraintViolationException e) {
                 DialogDisplayer.showMessageDialog(dialog,
-                                                 "Folder '"+dialog.getName()+"' already exists.",
-                                                 "Folder Already Exists",
-                                                 JOptionPane.WARNING_MESSAGE, null);
+                        "Folder '"+dialog.getName()+"' already exists.",
+                        "Folder Already Exists",
+                        JOptionPane.WARNING_MESSAGE, null);
+                createFolder( folder.getName() );
             } catch(UpdateException e) {
                 log.log(Level.WARNING, "Failed to create policy folder", e);
             } catch(SaveException e) {

@@ -13,6 +13,8 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Option;
+import static com.l7tech.util.Option.some;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -28,7 +30,7 @@ import java.awt.*;
  * Action to rename a folder.
  */
 public class EditFolderAction extends SecureAction {
-    static Logger log = Logger.getLogger(CreateFolderAction.class.getName());
+    static Logger log = Logger.getLogger(EditFolderAction.class.getName());
 
     private Folder folder;
     private FolderAdmin folderAdmin;
@@ -64,12 +66,13 @@ public class EditFolderAction extends SecureAction {
         return "com/l7tech/console/resources/Properties16.gif";
     }
 
-    /**
-     */
     protected void performAction() {
+        editFolder(Option.<String>none());
+    }
+
+    private void editFolder( final Option<String> folderName ) {
         Frame f = TopComponents.getInstance().getTopParent();
-        PolicyFolderPropertiesDialog dialog = new PolicyFolderPropertiesDialog(f, folder.getName());
-        dialog.setModal(true);
+        PolicyFolderPropertiesDialog dialog = new PolicyFolderPropertiesDialog(f, folderName.orSome(folder.getName()));
         dialog.setVisible(true);
 
         if(dialog.isConfirmed()) {
@@ -92,9 +95,10 @@ public class EditFolderAction extends SecureAction {
             } catch(ConstraintViolationException e) {
                 folder.setName(prevFolderName);
                 DialogDisplayer.showMessageDialog(dialog,
-                                                 "Folder '"+dialog.getName()+"' already exists.",
-                                                 "Folder Already Exists",
-                                                 JOptionPane.WARNING_MESSAGE, null);
+                        "Folder '"+dialog.getName()+"' already exists.",
+                        "Folder Already Exists",
+                        JOptionPane.WARNING_MESSAGE, null);
+                editFolder( some( dialog.getName() ) );
             } catch(UpdateException e) {
                 folder.setName(prevFolderName);
                 DialogDisplayer.showMessageDialog(dialog,
