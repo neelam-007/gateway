@@ -8,6 +8,8 @@ import javax.swing.*;
 import javax.swing.text.PlainDocument;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.AttributeSet;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.ResourceBundle;
 import java.util.Locale;
 import java.awt.*;
@@ -90,7 +92,17 @@ public class PolicyFolderPropertiesDialog extends JDialog {
             }
         });
 
-        nameField.setText(folderName);
+        nameField.setText( folderName );
+
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowOpened(WindowEvent e) {
+                if ( nameField.isEditable() ) {
+                    nameField.requestFocusInWindow();
+                    nameField.selectAll();
+                }
+            }
+        });
 
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
