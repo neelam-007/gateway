@@ -2,10 +2,11 @@ package com.l7tech.external.assertions.mqnativecore.console;
 
 import com.l7tech.external.assertions.mqnativecore.MqNativeConstants;
 import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.util.MutablePair;
 
 import javax.swing.*;
 import java.awt.event.*;
-import java.util.List;
+import java.util.Map;
 
 public class MqNativeAdvancedPropertiesDialog extends JDialog {
     private JPanel contentPane;
@@ -14,12 +15,10 @@ public class MqNativeAdvancedPropertiesDialog extends JDialog {
     private JTextField valueTextField;
     private JComboBox nameComboBox;
     private boolean canceled;
-    private MqNativeAdvancedProperty prop;
-    final private List<MqNativeAdvancedProperty> currList;
+    private MutablePair<String, String> targetProp;
 
-    public MqNativeAdvancedPropertiesDialog(MqNativeAdvancedProperty property, List<MqNativeAdvancedProperty> currList) {
-        this.prop = property;
-        this.currList = currList;
+    public MqNativeAdvancedPropertiesDialog(final MutablePair<String, String> targetProp, final Map<String, String> properties) {
+        this.targetProp = targetProp;
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
@@ -35,7 +34,7 @@ public class MqNativeAdvancedPropertiesDialog extends JDialog {
 
         buttonOK.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                onOK();
+                onOk();
             }
         });
 
@@ -45,7 +44,7 @@ public class MqNativeAdvancedPropertiesDialog extends JDialog {
             }
         });
 
-// call onCancel() when cross is clicked
+        // call onCancel() when cross is clicked
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
@@ -53,61 +52,39 @@ public class MqNativeAdvancedPropertiesDialog extends JDialog {
             }
         });
 
-// call onCancel() on ESCAPE
+        // call onCancel() on ESCAPE
         contentPane.registerKeyboardAction(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 onCancel();
             }
         }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
 
-        if(this.prop!=null) {
-            nameComboBox.setModel(new DefaultComboBoxModel(new String[]{property.getName()}));
+        if(this.targetProp !=null) {
+            nameComboBox.setModel(new DefaultComboBoxModel(new String[]{targetProp.left}));
             nameComboBox.setSelectedIndex(0);
             nameComboBox.setEnabled(false);
             nameComboBox.setEditable(false);
-            valueTextField.setText(prop.getValue());
+            valueTextField.setText(this.targetProp.getValue());
             valueTextField.setCaretPosition(0);
         } else {
             valueTextField.setText("");
-//            if (descriptors == null || descriptors.isEmpty()) {
-//                nameComboBox.setModel(new DefaultComboBoxModel());
-//                nameComboBox.setEnabled(true);
-//                nameComboBox.setEditable(true);
-//            } else
-            {
-                nameComboBox.setModel(new DefaultComboBoxModel(MqNativeConstants.MQ_PROPERTIES));
-                nameComboBox.setEnabled(true);
-                nameComboBox.setEditable(true);
-                ItemListener itemListener = new ItemListener() {
-                    public void itemStateChanged(ItemEvent e) {
-                        String name =  (String) nameComboBox.getSelectedItem();
-                        // Get and set description
-                        String description = getDescription(name);
-                        valueTextField.setText(description);
-                        valueTextField.setCaretPosition(0);
-                    }
-                };
-                nameComboBox.addItemListener(itemListener);
-                nameComboBox.setSelectedIndex(0);
-                itemListener.itemStateChanged(null); // init desc
-            }
+            nameComboBox.setModel(new DefaultComboBoxModel(MqNativeConstants.MQ_PROPERTIES));
+            nameComboBox.setEnabled(true);
+            nameComboBox.setEditable(true);
+            ItemListener itemListener = new ItemListener() {
+                public void itemStateChanged(ItemEvent e) {
+                    String name =  (String) nameComboBox.getSelectedItem();
+                    // Get and set property value
+                    valueTextField.setText(properties.get(name));
+                    valueTextField.setCaretPosition(0);
+                }
+            };
+            nameComboBox.addItemListener(itemListener);
+            nameComboBox.setSelectedIndex(0);
+            itemListener.itemStateChanged(null); // init desc
         }
-//        if(this.prop!=null){
-//            nameTextField.setText(prop.getName());
-//            valueTextField.setText(prop.getValue());
-//        }
 
         checkFieldsForText();
-    }
-
-    private String getDescription(String name) {
-        if (currList == null) return "";
-
-        for(MqNativeAdvancedProperty property: currList){
-            if(property.getName().equals(name))
-                return property.getValue();
-        }
-        return "";
     }
 
     private void checkFieldsForText(){
@@ -119,13 +96,14 @@ public class MqNativeAdvancedPropertiesDialog extends JDialog {
         }
     }
 
-    private void onOK() {
-        if(prop==null){
-            prop = new MqNativeAdvancedProperty(String.valueOf(nameComboBox.getSelectedItem()), valueTextField.getText());
-        } else {
-            prop.setName(String.valueOf(nameComboBox.getSelectedItem()));
-            prop.setValue(valueTextField.getText());
+    private void onOk() {
+        if(targetProp == null){
+            targetProp = new MutablePair<String, String>("", "");
         }
+
+        targetProp.left = String.valueOf(nameComboBox.getSelectedItem());
+        targetProp.right = valueTextField.getText();
+
         dispose();
     }
 
@@ -138,7 +116,7 @@ public class MqNativeAdvancedPropertiesDialog extends JDialog {
         return canceled;
     }
 
-    public MqNativeAdvancedProperty getTheProperty(){
-        return prop;
+    public MutablePair<String, String> getTheProperty(){
+        return targetProp;
     }
 }
