@@ -310,14 +310,30 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
     @Override
     public String getDescription() {
         if (issueMode) {
-            return
-        "<html>Specify the SAML attributes that the SAML statement will include; the " +
-              "Attribute Name [required] The Attribute Namespace [optional] and the Attribute" +
-              "Value [required]</html>";
+            String filterText = "Filter allows configured Attributes to be excluded based on requested Attributes from a SAML AttributeQuery request.";
+
+            if (samlVersion == 2) {
+                return "<html>Specify the SAML attributes that the SAML statement will include; the " +
+                        "Attribute Name [required], the Attribute NameFormat [optional] and the Attribute" +
+                        "Value [required]" +
+                        "<br>" +
+                        "<br>" +
+                        filterText +
+                        "</html>";
+            } else {
+                return "<html>Specify the SAML attributes that the SAML statement will include; the " +
+                        "Attribute Name [required], the Attribute Namespace [optional] and the Attribute" +
+                        "Value [required]" +
+                        "<br>" +
+                        "<br>" +
+                        filterText +
+                        "</html>";
+
+            }
         } else {
             return
         "<html>Specify the SAML attributes that the SAML statement MUST describe; the " +
-              "Attribute Name [required] The Attribute Namespace [optional] and the Attribute" +
+              "Attribute Name [required] The Attribute Namespace or NameFormat [optional] and the Attribute" +
               "Value [required]</html>";
         }
     }
