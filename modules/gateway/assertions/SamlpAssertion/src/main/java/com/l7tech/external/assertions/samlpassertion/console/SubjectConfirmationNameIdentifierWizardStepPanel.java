@@ -64,6 +64,7 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends SamlpWizar
     private static final String TRANSIENT_IDENTIFIER = "Transient Identifier";
     private static final String UNSPECIFIED = "Unspecified";
     private int version;
+    private SamlProtocolAssertion assertion;
     private final ActionListener enableDisableListener = new ActionListener() {
         @Override
         public void actionPerformed(ActionEvent e) {
@@ -108,7 +109,7 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends SamlpWizar
      */
     @Override
     public void readSettings(Object settings) throws IllegalArgumentException {
-        final SamlProtocolAssertion assertion = SamlProtocolAssertion.class.cast(settings);
+        assertion = SamlProtocolAssertion.class.cast(settings);
         version = assertion.getSamlVersion() == null ? 1 : assertion.getSamlVersion();
         enableForVersion();
         nameQualifierTextField.setText(assertion.getNameQualifier());
@@ -285,6 +286,7 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends SamlpWizar
                 public void actionPerformed(ActionEvent e) {
                     final XmlElementEncryptionConfigPanel encryptionConfigPanel = new XmlElementEncryptionConfigPanel(true);
                     encryptionConfigPanel.setData(xmlElementEncryptionConfig);
+                    encryptionConfigPanel.setPolicyPosition(assertion, getPreviousAssertion());
                     final OkCancelDialog dlg = new OkCancelDialog<XmlElementEncryptionConfig>(
                             SubjectConfirmationNameIdentifierWizardStepPanel.this.owner,
                             "EncryptedID Encryption Properties", true, encryptionConfigPanel);

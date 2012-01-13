@@ -195,6 +195,10 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
         if (useContextVariableRadioButton.isSelected()) {
             String err = contextVariableField.getErrorMessage();
             if (err != null) throw new AssertionPropertiesOkCancelSupport.ValidationException("Unable to save: " + err);
+        } else {
+            if (model.getRecipientCertificateBase64() == null) {
+                throw new AssertionPropertiesOkCancelSupport.ValidationException("Unable to save: No Recipient Certificate is configured");
+            }
         }
     }
 
@@ -219,6 +223,11 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
         }
     }
 
+    /**
+     * Call to ensure context variables known in the policy are available to the TargetVariablePanel
+     * @param assertion the assertion being configured
+     * @param previousAssertion the previous assertion
+     */
     public void setPolicyPosition(Assertion assertion, Assertion previousAssertion) {
         contextVariableField.setAssertion(assertion, previousAssertion);
     }

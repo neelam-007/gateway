@@ -2,6 +2,7 @@ package com.l7tech.security.xml;
 
 import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.policy.variable.Syntax;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
@@ -63,7 +64,9 @@ public final class XmlElementEncryptionConfig implements Serializable, UsesVaria
     }
 
     @Override
+    @NotNull
     public String[] getVariablesUsed() {
+        //todo only support a single variable as it's intended to hold a cert's base64
         return recipientCertContextVariableName == null ? new String[0] : Syntax.getReferencedNames("${" + recipientCertContextVariableName + "}");
     }
 }

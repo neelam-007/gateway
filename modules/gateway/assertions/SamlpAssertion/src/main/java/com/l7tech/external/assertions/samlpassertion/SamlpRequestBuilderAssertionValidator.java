@@ -55,7 +55,7 @@ public class SamlpRequestBuilderAssertionValidator implements AssertionValidator
 
                     if (assertion.isEncryptNameIdentifier()) {
                         final XmlElementEncryptionConfig xmlEncryptConfig = assertion.getXmlEncryptConfig();
-                        if (xmlEncryptConfig.getRecipientCertificateBase64() == null) {
+                        if (xmlEncryptConfig.getRecipientCertificateBase64() == null && xmlEncryptConfig.getVariablesUsed().length == 0) {
                             result.addError(new PolicyValidatorResult.Error(assertion, "No Recipient Certificate is configured", null));
                         }
                     }
