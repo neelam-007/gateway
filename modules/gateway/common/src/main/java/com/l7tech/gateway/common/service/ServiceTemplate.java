@@ -12,11 +12,9 @@ import java.io.Serializable;
 /** @author alex */
 public class ServiceTemplate implements Entity, Serializable, Comparable<ServiceTemplate> {
 
-    public static final String WSDL_DOCUMENT = "WSDL";
-
     final private String name;
 
-    final private String wsdlXml;
+    final private String serviceDescriptorXml;
 
     /**
      * The desired default URL prefix for services published from this template, usually appended after "/ssg/".
@@ -40,17 +38,20 @@ public class ServiceTemplate implements Entity, Serializable, Comparable<Service
      * The subtype of service for which this is a template, if {@link #type} == {@link com.l7tech.gateway.common.service.ServiceType#OTHER_INTERNAL_SERVICE}.
      */
     final private Map<String,String> policyTags;
-    final private String wsdlUrl;
+    final private String serviceDescriptorUrl;
 
-    public ServiceTemplate(String name, String defaultUriPrefix, String wsdl, String wsdlUrl, String defaultPolicyXml, List<ServiceDocument> serviceDocuments, ServiceType type, Map<String,String> tags) {
+    final private boolean isSoap;
+
+    public ServiceTemplate(String name, String defaultUriPrefix, String serviceDescriptorXml, String serviceDescriptorUrl, String defaultPolicyXml, List<ServiceDocument> serviceDocuments, ServiceType type, Map<String, String> tags, boolean soap) {
         this.name = name;
         this.defaultUriPrefix = defaultUriPrefix;
-        this.wsdlXml = wsdl;
-        this.wsdlUrl = wsdlUrl;
+        this.serviceDescriptorXml = serviceDescriptorXml;
+        this.serviceDescriptorUrl = serviceDescriptorUrl;
         this.defaultPolicyXml = defaultPolicyXml;
         this.serviceDocuments = serviceDocuments;
         this.type = type;
         this.policyTags = tags;
+        this.isSoap = soap;
     }
 
     public String getName() {
@@ -85,12 +86,16 @@ public class ServiceTemplate implements Entity, Serializable, Comparable<Service
         return this.getName();
     }
 
-    public String getWsdlXml() {
-        return wsdlXml;
+    public String getServiceDescriptorXml() {
+        return serviceDescriptorXml;
     }
 
-    public String getWsdlUrl() {
-        return wsdlUrl;
+    public String getServiceDescriptorUrl() {
+        return serviceDescriptorUrl;
+    }
+
+    public boolean isSoap() {
+        return isSoap;
     }
 
     @SuppressWarnings({ "RedundantIfStatement" })
@@ -100,6 +105,7 @@ public class ServiceTemplate implements Entity, Serializable, Comparable<Service
 
         ServiceTemplate that = (ServiceTemplate)o;
 
+        if (isSoap != that.isSoap) return false;
         if (defaultPolicyXml != null ? !defaultPolicyXml.equals(that.defaultPolicyXml) : that.defaultPolicyXml != null)
             return false;
         if (defaultUriPrefix != null ? !defaultUriPrefix.equals(that.defaultUriPrefix) : that.defaultUriPrefix != null)
@@ -109,8 +115,8 @@ public class ServiceTemplate implements Entity, Serializable, Comparable<Service
         if (serviceDocuments != null ? !serviceDocuments.equals(that.serviceDocuments) : that.serviceDocuments != null)
             return false;
         if (type != that.type) return false;
-        if (wsdlUrl != null ? !wsdlUrl.equals(that.wsdlUrl) : that.wsdlUrl != null) return false;
-        if (wsdlXml != null ? !wsdlXml.equals(that.wsdlXml) : that.wsdlXml != null) return false;
+        if (serviceDescriptorUrl != null ? !serviceDescriptorUrl.equals(that.serviceDescriptorUrl) : that.serviceDescriptorUrl != null) return false;
+        if (serviceDescriptorXml != null ? !serviceDescriptorXml.equals(that.serviceDescriptorXml) : that.serviceDescriptorXml != null) return false;
 
         return true;
     }
@@ -118,13 +124,14 @@ public class ServiceTemplate implements Entity, Serializable, Comparable<Service
     public int hashCode() {
         int result;
         result = (name != null ? name.hashCode() : 0);
-        result = 31 * result + (wsdlXml != null ? wsdlXml.hashCode() : 0);
+        result = 31 * result + (serviceDescriptorXml != null ? serviceDescriptorXml.hashCode() : 0);
         result = 31 * result + (defaultUriPrefix != null ? defaultUriPrefix.hashCode() : 0);
         result = 31 * result + (defaultPolicyXml != null ? defaultPolicyXml.hashCode() : 0);
         result = 31 * result + (type != null ? type.hashCode() : 0);
         result = 31 * result + (serviceDocuments != null ? serviceDocuments.hashCode() : 0);
         result = 31 * result + (policyTags != null ? policyTags.hashCode() : 0);
-        result = 31 * result + (wsdlUrl != null ? wsdlUrl.hashCode() : 0);
+        result = 31 * result + (serviceDescriptorUrl != null ? serviceDescriptorUrl.hashCode() : 0);
+        result = 31 * result + (isSoap ? 1 : 0);
         return result;
     }
 

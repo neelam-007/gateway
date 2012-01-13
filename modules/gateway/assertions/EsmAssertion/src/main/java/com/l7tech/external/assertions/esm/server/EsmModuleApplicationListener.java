@@ -212,7 +212,7 @@ public class EsmModuleApplicationListener implements ApplicationListener {
             }
 
             String policyContents = getDefaultPolicyXml(serviceName);
-            template = new ServiceTemplate(serviceName, uriPrefix, contents.get(url), url, policyContents, svcDocs, ServiceType.OTHER_INTERNAL_SERVICE, policyTags);
+            template = new ServiceTemplate(serviceName, uriPrefix, contents.get(url), url, policyContents, svcDocs, ServiceType.OTHER_INTERNAL_SERVICE, policyTags, true);
         } catch (IOException e) {
             logger.log(Level.WARNING, "Can't load WSDL and/or Policy XML; " + serviceName + " service templates will not be available", e);
         }

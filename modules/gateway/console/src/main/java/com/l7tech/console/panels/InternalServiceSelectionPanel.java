@@ -173,12 +173,13 @@ public class InternalServiceSelectionPanel extends WizardStepPanel<PublishIntern
         ServiceTemplate newOne = new ServiceTemplate(
                 fromList.getName(),
                 serviceUriText,
-                fromList.getWsdlXml(),
-                fromList.getWsdlUrl(),
+                fromList.getServiceDescriptorXml(),
+                fromList.getServiceDescriptorUrl(),
                 fromList.getDefaultPolicyXml(),
                 fromList.getServiceDocuments(),
                 fromList.getType(),
-                fromList.getPolicyTags());
+                fromList.getPolicyTags(),
+                fromList.isSoap());
 
         serviceTemplateHolder.setSelectedTemplate(newOne);
     }

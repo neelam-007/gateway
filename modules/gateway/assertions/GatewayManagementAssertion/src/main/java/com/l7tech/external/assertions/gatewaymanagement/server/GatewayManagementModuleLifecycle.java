@@ -103,7 +103,8 @@ public class GatewayManagementModuleLifecycle implements ApplicationListener {
                     policyContents,
                     resources.getDependencies(),
                     ServiceType.OTHER_INTERNAL_SERVICE,
-                    null);
+                    null,
+                    true);
         } catch (IOException e) {
             logger.log(Level.WARNING, "Can't load WSDL and/or Policy XML; service template will not be available", e);
         } catch ( URISyntaxException e ) {

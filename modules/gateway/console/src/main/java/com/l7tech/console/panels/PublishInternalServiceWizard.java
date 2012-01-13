@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.http.HttpMethod;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
@@ -7,11 +8,8 @@ import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.service.ServiceAdmin;
-import com.l7tech.gateway.common.service.ServiceHeader;
-import com.l7tech.gateway.common.service.ServiceTemplate;
-import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
+import com.l7tech.gateway.common.service.*;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.util.Functions;
@@ -24,6 +22,9 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.MalformedURLException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -82,34 +83,111 @@ public class PublishInternalServiceWizard extends Wizard<PublishInternalServiceW
             service.getPolicy().setXml(toSave.getDefaultPolicyXml());
             service.setRoutingUri(toSave.getDefaultUriPrefix());
 
-            service.setSoap(true);
+            service.setSoap(toSave.isSoap());
             service.setInternal(true);
             service.parseWsdlStrategy( new ServiceDocumentWsdlStrategy(toSave.getServiceDocuments()) );
-            service.setWsdlUrl(toSave.getWsdlUrl());
-            service.setWsdlXml(toSave.getWsdlXml());
+            service.setWsdlUrl(toSave.getServiceDescriptorUrl());
+            service.setWsdlXml(toSave.getServiceDescriptorXml());
 
             service.setDisabled(false);
         }
 
         final Frame parent = TopComponents.getInstance().getTopParent();
         final PublishedService newService = service;
-        PublishServiceWizard.saveServiceWithResolutionCheck( parent, service, toSave.getServiceDocuments(), new Functions.UnaryVoidThrows<Long,Exception>(){
-            @Override
-            public void call( final Long oid ) throws Exception {
-                newService.setOid(oid);
-                Registry.getDefault().getSecurityProvider().refreshPermissionCache();
-                PublishInternalServiceWizard.this.notify(new ServiceHeader(newService));
+
+       //check if service is SOAP
+        if(service.isSoap()) {
+            PublishServiceWizard.saveServiceWithResolutionCheck( parent, service, toSave.getServiceDocuments(), new Functions.UnaryVoidThrows<Long,Exception>(){
+                @Override
+                public void call( final Long oid ) throws Exception {
+                    newService.setOid(oid);
+                    Registry.getDefault().getSecurityProvider().refreshPermissionCache();
+                    PublishInternalServiceWizard.this.notify(new ServiceHeader(newService));
+                }
+            }, new Functions.UnaryVoid<Exception>(){
+                @Override
+                public void call( final Exception e ) {
+                    logger.log(Level.WARNING, "Cannot publish service as is", e);
+                    JOptionPane.showMessageDialog(null,
+                      "Unable to save the service '" + newService.getName() + "'\n",
+                      "Error",
+                      JOptionPane.ERROR_MESSAGE);
+                }
+            });
+        }
+        else {
+            saveNonSoapServiceWithResolutionCheck(parent, service, toSave.getServiceDocuments());
+        }
+    }
+
+    /**
+     * performs service URI resolution check and publishes the service
+     * @param parent The parent for any dialogs (may be null)
+     * @param service  The service to be saved (required)
+     * @param serviceDocuments (may not be null)
+     */
+    private void saveNonSoapServiceWithResolutionCheck(final Frame parent, final PublishedService service, final Collection<ServiceDocument> serviceDocuments) {
+        try {
+            // set supported http methods
+            service.setHttpMethods(EnumSet.of(HttpMethod.POST, HttpMethod.GET, HttpMethod.PUT, HttpMethod.DELETE));
+
+            final Runnable saver = new Runnable(){
+                @Override
+                public void run() {
+                    try {
+                        //When the rest service is published, the service documents may be null so create an empty list
+                        Collection<ServiceDocument> docs = null == serviceDocuments ? Collections.<ServiceDocument>emptyList() : serviceDocuments;
+                        long oid = Registry.getDefault().getServiceManager().savePublishedServiceWithDocuments(service, docs);
+                        Registry.getDefault().getSecurityProvider().refreshPermissionCache();
+                        service.setOid(oid);
+                        PublishInternalServiceWizard.this.notify(new ServiceHeader(service));
+                    } catch ( Exception e ) {
+                        handlePublishServiceError(parent, service, e);
+                    }
+                }
+            };
+            //check the service URI resolution conflict
+            if ( ServicePropertiesDialog.hasResolutionConflict( service, null ) ) {
+                final String message =
+                      "Resolution parameters conflict for service '" + service.getName() + "'\n" +
+                      "because an existing service is already using the URI " + service.getRoutingUri() + "\n\n" +
+                      "Would you like to publish this service using a different routing URI?";
+                DialogDisplayer.showConfirmDialog(parent, message, "Service Resolution Conflict", JOptionPane.YES_NO_CANCEL_OPTION, new DialogDisplayer.OptionListener() {
+                    @Override
+                    public void reportResult(final int option) {
+                        if (option == JOptionPane.YES_OPTION) {
+                            // get new routing URI
+                            final SoapServiceRoutingURIEditor dlg = new SoapServiceRoutingURIEditor(parent, service);
+                            DialogDisplayer.display(dlg, new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (dlg.wasSubjectAffected()) {
+                                        saveNonSoapServiceWithResolutionCheck(parent, service, serviceDocuments);
+                                    } else {
+                                        saver.run();
+                                    }
+                                }
+                            });
+                        } else if (option == JOptionPane.NO_OPTION) {
+                            saver.run();
+                        }
+                    }
+                });
+            } else {
+                saver.run();
             }
-        }, new Functions.UnaryVoid<Exception>(){
-            @Override
-            public void call( final Exception e ) {
-                logger.log(Level.WARNING, "Cannot publish service as is", e);
-                JOptionPane.showMessageDialog(null,
-                  "Unable to save the service '" + newService.getName() + "'\n",
-                  "Error",
-                  JOptionPane.ERROR_MESSAGE);
-            }
-        });
+        } catch (Exception e) {
+            handlePublishServiceError(parent, service, e);
+        }
+    }
+
+    private void handlePublishServiceError(final Frame parent, final PublishedService service, final Exception e) {
+        final String message = "Unable to save the service '" + service.getName() + "'\n";
+        logger.log( Level.INFO, message, e);
+        JOptionPane.showMessageDialog(parent,
+          message,
+          "Error",
+          JOptionPane.ERROR_MESSAGE);
     }
 
     public static WizardStepPanel<PublishInternalServiceWizard.ServiceTemplateHolder> getSteps() {
