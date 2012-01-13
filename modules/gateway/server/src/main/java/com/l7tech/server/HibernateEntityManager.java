@@ -15,8 +15,6 @@ import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
-import static org.springframework.transaction.annotation.Propagation.REQUIRED;
-import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionCallback;
@@ -33,6 +31,9 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static org.springframework.transaction.annotation.Propagation.REQUIRED;
+import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 
 /**
  * The default {@link com.l7tech.objectmodel.EntityManager} implementation for Hibernate-managed
@@ -910,7 +911,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         }
     }
 
-    protected ET checkAndCache(ET thing) {
+    protected ET checkAndCache(ET thing) throws FindException {
         final Long oid = thing.getOid();
 
         CacheInfo<ET> info = null;

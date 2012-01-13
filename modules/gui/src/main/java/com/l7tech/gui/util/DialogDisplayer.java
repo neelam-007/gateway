@@ -371,7 +371,7 @@ public class DialogDisplayer {
      * @param mess      message to display.  required
      * @param callback  callback to invoke when dialog is dismissed.  optional
      */
-    public static void showMessageDialog(Component parent, Object mess, Runnable callback) {
+    public static void showMessageDialog(Component parent, Object mess, @Nullable Runnable callback) {
         showMessageDialog(parent, mess, "", JOptionPane.INFORMATION_MESSAGE, callback);
     }
 

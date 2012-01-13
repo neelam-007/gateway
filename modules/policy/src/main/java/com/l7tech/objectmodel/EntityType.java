@@ -84,6 +84,8 @@ public enum EntityType implements Comparable<EntityType> {
     RESOLUTION_CONFIGURATION("Service Resolution Configuration", true),
     PASSWORD_POLICY("Password Policy", true),
 
+    GENERIC("Generic Entity", "Generic Entities", true),
+
     ;
 
     private final String name;

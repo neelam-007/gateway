@@ -180,6 +180,7 @@
                 <value>com.l7tech.server.secureconversation.StoredSecureConversationSession</value>
                 <value>com.l7tech.server.security.keystore.KeystoreFile</value>
                 <value>com.l7tech.server.security.sharedkey.SharedKeyRecord</value>
+                <value>com.l7tech.policy.GenericEntity</value>
 
                 <!-- UDDI -->
                 <value>com.l7tech.gateway.common.uddi.UDDIRegistry</value>

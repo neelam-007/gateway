@@ -78,6 +78,10 @@
           parent="hibernateBean">
     </bean>
 
+    <bean id="genericEntityManager" class="com.l7tech.server.entity.GenericEntityManagerImpl"
+          parent="hibernateBean">
+    </bean>
+
     <bean id="clusterPropertyCache" class="com.l7tech.server.cluster.ClusterPropertyCache">
         <property name="clusterPropertyManager" ref="clusterPropertyManager"/>
         <property name="clusterPropertyListener">
@@ -1603,6 +1607,7 @@
                 <ref bean="passwordPolicyManger"/>
                 <ref bean="policyVersionManager"/>
                 <ref bean="folderManager"/>
+                <ref bean="genericEntityManager"/>
             </list>
         </property>
         <property name="timer" ref="entityVersionCheckerTimer"/>

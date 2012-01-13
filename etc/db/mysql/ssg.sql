@@ -1763,6 +1763,22 @@ CREATE TABLE wssc_session (
   PRIMARY KEY (objectid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
+--
+-- Table for generic (runtime) entity types
+--
+DROP TABLE IF EXISTS generic_entity;
+CREATE TABLE generic_entity (
+  objectid bigint(20) NOT NULL,
+  version int(11) NOT NULL,
+  name varchar(255),
+  description mediumtext,
+  classname varchar(255) NOT NULL,
+  value_xml mediumtext,
+  PRIMARY KEY (objectid),
+  UNIQUE KEY i_classname_name (classname, name)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
+
 DROP TABLE IF EXISTS ssg_version;
 CREATE TABLE ssg_version (
    current_version char(10) NOT NULL
