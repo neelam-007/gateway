@@ -423,7 +423,6 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                     assertion.setDynamicJmsRoutingProperties(dynProps);
                 }
 
-                assertion.setGroupMembershipStatement(false);
                 assertion.setAttachSamlSenderVouches(authSamlRadio.isSelected());
                 if (assertion.isAttachSamlSenderVouches()) {
                     assertion.setSamlAssertionVersion("1.1".equals(samlVersionComboBox.getSelectedItem()) ? 1 : 2);

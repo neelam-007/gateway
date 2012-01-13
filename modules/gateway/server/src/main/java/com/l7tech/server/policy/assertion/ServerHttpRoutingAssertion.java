@@ -357,7 +357,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             }
 
             if (assertion.isAttachSamlSenderVouches()) {
-                doAttachSamlSenderVouches(requestMessage, context.getDefaultAuthenticationContext().getLastCredentials(), senderVouchesSignerInfo);
+                doAttachSamlSenderVouches( assertion, requestMessage, context.getDefaultAuthenticationContext().getLastCredentials(), senderVouchesSignerInfo);
             } else if (assertion.isPassthroughHttpAuthentication() && httpRequestKnob != null) {
                 String[] authHeaders = httpRequestKnob.getHeaderValues(HttpConstants.HEADER_AUTHORIZATION);
                 boolean passed = false;

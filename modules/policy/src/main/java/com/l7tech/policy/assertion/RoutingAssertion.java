@@ -19,13 +19,6 @@ public abstract class RoutingAssertion extends Assertion implements Cloneable, S
     public static final int PROMOTE_OTHER_SECURITY_HEADER = 2;
     public static final int IGNORE_SECURITY_HEADER = 3;
 
-    // saml (model as a different bean when serializer supports it)
-    private boolean attachSamlSenderVouches;
-    private boolean useThumbprintInSamlSignature;
-    private boolean useThumbprintInSamlSubject;
-    private int samlAssertionVersion = 1; // backwards compatible
-    private int samlAssertionExpiry = 5;
-    private boolean groupMembershipStatement;
     private String xmlSecurityActorToPromote;
     private int currentSecurityHeaderHandling = REMOVE_CURRENT_SECURITY_HEADER;
     private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
@@ -84,69 +77,6 @@ public abstract class RoutingAssertion extends Assertion implements Cloneable, S
         this.xmlSecurityActorToPromote = xmlSecurityActorToPromote;
     }
 
-    public boolean isAttachSamlSenderVouches() {
-        return attachSamlSenderVouches;
-    }
-
-    public void setAttachSamlSenderVouches(boolean attachSamlSenderVouches) {
-        this.attachSamlSenderVouches = attachSamlSenderVouches;
-    }
-
-    /**
-     * @return true if the signature of any attached Sender-Vouches SAML assertion should contain a thumbprint instead of the whole signing certificate
-     */
-    public boolean isUseThumbprintInSamlSignature() {
-        return useThumbprintInSamlSignature;
-    }
-
-    /**
-     * @param useThumbprintInSamlSignature true if the signature of any attached Sender-Vouches SAML assertion should contain a thumbprint instead of the whole signing certificate
-     */
-    public void setUseThumbprintInSamlSignature(boolean useThumbprintInSamlSignature) {
-        this.useThumbprintInSamlSignature = useThumbprintInSamlSignature;
-    }
-
-    /**
-     * @return true if the subject cert in any attached Sender-Vouches SAML assertion should be replaced with a thumbprint
-     */
-    public boolean isUseThumbprintInSamlSubject() {
-        return useThumbprintInSamlSubject;
-    }
-
-    /**
-     * @param useThumbprintInSamlSubject true if the subject cert in any attached Sender-Vouches SAML assertion should be replaced with a thumbprint
-     */
-    public void setUseThumbprintInSamlSubject(boolean useThumbprintInSamlSubject) {
-        this.useThumbprintInSamlSubject = useThumbprintInSamlSubject;
-    }
-
-    public int getSamlAssertionVersion() {
-        return samlAssertionVersion;
-    }
-
-    public void setSamlAssertionVersion(int samlAssertionVersion) {
-        this.samlAssertionVersion = samlAssertionVersion;
-    }
-
-    public int getSamlAssertionExpiry() {
-        return samlAssertionExpiry;
-    }
-
-    public void setSamlAssertionExpiry(int samlAssertionExpiry) {
-        if (samlAssertionExpiry <= 0) {
-            throw new IllegalArgumentException();
-        }
-        this.samlAssertionExpiry = samlAssertionExpiry;
-    }
-
-    public boolean isGroupMembershipStatement() {
-        return groupMembershipStatement;
-    }
-
-    public void setGroupMembershipStatement(boolean groupMembershipStatement) {
-        this.groupMembershipStatement = groupMembershipStatement;
-    }
-
     /**
      * This setting controls what this routing assertion should do with the current security header
      * before routing the request. Possible values are:
@@ -174,13 +104,7 @@ public abstract class RoutingAssertion extends Assertion implements Cloneable, S
 
     /** Subclasses can choose to offer this functionality by adding a public method that chains to this one. */
     protected void copyFrom(RoutingAssertion source) {
-        this.setUseThumbprintInSamlSignature(source.isUseThumbprintInSamlSignature());
-        this.setUseThumbprintInSamlSubject(source.isUseThumbprintInSamlSubject());
-        this.setAttachSamlSenderVouches(source.isAttachSamlSenderVouches());
         this.setCurrentSecurityHeaderHandling(source.getCurrentSecurityHeaderHandling());
-        this.setGroupMembershipStatement(source.isGroupMembershipStatement());
-        this.setSamlAssertionExpiry(source.getSamlAssertionExpiry());
-        this.setSamlAssertionVersion(source.getSamlAssertionVersion());
         this.setXmlSecurityActorToPromote(source.getXmlSecurityActorToPromote());
         this.setRecipientContext(source.getRecipientContext());
     }

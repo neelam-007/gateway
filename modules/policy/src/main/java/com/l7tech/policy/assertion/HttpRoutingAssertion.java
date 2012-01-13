@@ -36,7 +36,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  * @author mike
  * @version 1.0
  */
-public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariables, SetsVariables, OptionalPrivateKeyable
+public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements UsesVariables, SetsVariables, OptionalPrivateKeyable
 {
     public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST = -1;
     public static final String VAR_ROUTING_LATENCY = "httpRouting.latency";

@@ -11,6 +11,7 @@ import com.l7tech.message.TcpKnobAdapter;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.RoutingAssertionWithSamlSV;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.security.token.http.HttpBasicToken;
@@ -356,8 +357,8 @@ public class ServerRoutingAssertionTest {
         }
 
         @Override
-        public void doAttachSamlSenderVouches(Message message, LoginCredentials svInputCredentials, SignerInfo signerInfo) throws SAXException, IOException, SignatureException, CertificateException, UnrecoverableKeyException {
-            super.doAttachSamlSenderVouches(message, svInputCredentials, signerInfo);
+        public void doAttachSamlSenderVouches( RoutingAssertionWithSamlSV assertion, Message message, LoginCredentials svInputCredentials, SignerInfo signerInfo) throws SAXException, IOException, SignatureException, CertificateException, UnrecoverableKeyException {
+            super.doAttachSamlSenderVouches( assertion, message, svInputCredentials, signerInfo);
         }
     }
 
@@ -377,7 +378,7 @@ public class ServerRoutingAssertionTest {
     public void testAttachSamlNoCreds() throws Exception {
         final Message mess = makeMessage();
         String messXml = toString(mess);
-        makeTestSra().doAttachSamlSenderVouches(mess, null, null);
+        makeTestSra().doAttachSamlSenderVouches( new HttpRoutingAssertion(), mess, null, null);
         String afterXml = toString(mess);
         assertEquals(messXml, afterXml);
     }
@@ -402,7 +403,7 @@ public class ServerRoutingAssertionTest {
             }
         });
         String messXml = toString(mess);
-        makeTestSra().doAttachSamlSenderVouches(mess, makeLoginCredentials(), makeSignerInfo());
+        makeTestSra().doAttachSamlSenderVouches(new HttpRoutingAssertion(), mess, makeLoginCredentials(), makeSignerInfo());
         String afterXml = toString(mess);
         assertFalse(messXml.equals(afterXml));
     }

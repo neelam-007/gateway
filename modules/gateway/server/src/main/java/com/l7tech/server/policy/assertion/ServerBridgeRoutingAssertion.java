@@ -211,7 +211,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                 handleProcessedSecurityHeader(requestMsg);
 
                 if (assertion.isAttachSamlSenderVouches()) {
-                    doAttachSamlSenderVouches(requestMsg, context.getDefaultAuthenticationContext().getLastCredentials(), signerInfo);
+                    doAttachSamlSenderVouches( assertion, requestMsg, context.getDefaultAuthenticationContext().getLastCredentials(), signerInfo);
                 }
 
                 try {

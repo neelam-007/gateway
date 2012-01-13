@@ -20,7 +20,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
 /**
  * Holds information needed to route a message to an outbound JMS destination.
  */
-public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntities, UsesVariables, SetsVariables {
+public class JmsRoutingAssertion extends RoutingAssertionWithSamlSV implements UsesEntities, UsesVariables, SetsVariables {
 
     /**
      * @return the OID of the JMS endpoint, or null if there isn't one.

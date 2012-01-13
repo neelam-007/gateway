@@ -161,8 +161,6 @@ public class EchoRoutingPropertiesDialog extends AssertionPropertiesEditorSuppor
     @Override
     public EchoRoutingAssertion getData(EchoRoutingAssertion assertion) {
         RoutingDialogUtils.configSecurityHeaderHandling(assertion, -1, secHdrButtons);
-        assertion.setGroupMembershipStatement(false);
-        assertion.setAttachSamlSenderVouches(false);
         return assertion;
     }
 

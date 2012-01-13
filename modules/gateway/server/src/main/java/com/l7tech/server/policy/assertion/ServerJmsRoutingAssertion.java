@@ -119,7 +119,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     logAndAudit(AssertionMessages.JMS_ROUTING_NO_SAML_SIGNER);
                     return AssertionStatus.FAILED;
                 }
-                doAttachSamlSenderVouches(requestMessage, context.getDefaultAuthenticationContext().getLastCredentials(), senderVouchesSignerInfo);
+                doAttachSamlSenderVouches( assertion, requestMessage, context.getDefaultAuthenticationContext().getLastCredentials(), senderVouchesSignerInfo);
             }
 
             /*

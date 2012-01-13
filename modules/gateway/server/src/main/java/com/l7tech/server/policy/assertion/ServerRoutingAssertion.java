@@ -10,6 +10,7 @@ import com.l7tech.message.TcpKnob;
 import com.l7tech.message.XmlKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.policy.assertion.RoutingAssertionWithSamlSV;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.saml.SamlAssertionGenerator;
@@ -251,6 +252,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
     /**
      * Attach a sender-vouches SAML assertion to the request.
      *
+     * @param assertion the RoutingAssertionWithSamlSV configuration.  Required.
      * @param message  the Message that should be decorated with a SAML assertion.  Required.
      * @param svInputCredentials  the credentials to assert in the SAML assertion.
      *                             If null, this method will audit a warning and take no further action.
@@ -261,7 +263,10 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
      * @throws java.security.cert.CertificateException If the signing certificate is invalid.
      * @throws java.security.UnrecoverableKeyException If the signing key is unavailable
      */
-    protected void doAttachSamlSenderVouches(Message message, LoginCredentials svInputCredentials, SignerInfo signerInfo)
+    protected void doAttachSamlSenderVouches( final RoutingAssertionWithSamlSV assertion,
+                                              final Message message,
+                                              final LoginCredentials svInputCredentials,
+                                              final SignerInfo signerInfo )
             throws SAXException, IOException, SignatureException, CertificateException, UnrecoverableKeyException {
         if (svInputCredentials == null) {
             logAndAudit(AssertionMessages.HTTPROUTE_SAML_SV_NOT_AUTH);
@@ -292,7 +297,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
                                                         SubjectStatement.SENDER_VOUCHES,
                                                         keyInfoType, NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);
         ag.attachStatement(document, statement, samlOptions);
-    }    
+    }
 
     /**
      * Method to handle creating a delegated Kerberos ticket for use in downstream routing.
