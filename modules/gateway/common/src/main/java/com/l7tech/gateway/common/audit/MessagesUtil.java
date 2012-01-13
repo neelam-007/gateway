@@ -1,5 +1,6 @@
 package com.l7tech.gateway.common.audit;
 
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Pair;
 
 import java.util.Set;
@@ -104,5 +105,8 @@ public class MessagesUtil {
         new MessageProcessingMessages();
         new SystemMessages();
         new ServiceMessages();
+        if ( ConfigFactory.getBooleanProperty( "com.l7tech.gateway.common.audit.lockMessages", false ) ) {
+            Messages.lockMessages();
+        }
     }
 }

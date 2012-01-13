@@ -5,6 +5,7 @@ package com.l7tech.gateway.common.audit;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
@@ -38,6 +39,7 @@ public class Messages {
      */
     public static final String OVERRIDE_PREFIX = "auditmsg.override.";
 
+    private static final AtomicBoolean allowMessageRegistration = new AtomicBoolean(true);
     private static final Map<Integer, AuditDetailMessage> messagesById = new HashMap<Integer, AuditDetailMessage>();
     private static final ReadWriteLock messageLock = new ReentrantReadWriteLock(false);
 
@@ -61,6 +63,10 @@ public class Messages {
         }
     }
 
+    static void lockMessages() {
+        allowMessageRegistration.set( false );
+    }
+
     protected Messages() { }
 
     protected static M m(int id, Level level, String msg) {
@@ -68,6 +74,8 @@ public class Messages {
     }
 
     protected static M m(int id, Level level, boolean saveRequest, boolean saveResponse, String msg) {
+        if ( !allowMessageRegistration.get() ) throw new IllegalStateException("Audit messages are locked");
+
         M adm = new M(id, level, msg, saveRequest, saveResponse);
         messageLock.writeLock().lock();
         Object o;
