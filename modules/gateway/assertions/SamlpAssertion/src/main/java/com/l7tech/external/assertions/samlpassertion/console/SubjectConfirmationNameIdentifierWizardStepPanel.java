@@ -283,7 +283,7 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends SamlpWizar
             configureEncryptionButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    final XmlElementEncryptionConfigPanel encryptionConfigPanel = new XmlElementEncryptionConfigPanel();
+                    final XmlElementEncryptionConfigPanel encryptionConfigPanel = new XmlElementEncryptionConfigPanel(true);
                     encryptionConfigPanel.setData(xmlElementEncryptionConfig);
                     final OkCancelDialog dlg = new OkCancelDialog<XmlElementEncryptionConfig>(
                             SubjectConfirmationNameIdentifierWizardStepPanel.this.owner,

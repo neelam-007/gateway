@@ -40,19 +40,30 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
     private JRadioButton useContextVariableRadioButton;
     private TargetVariablePanel contextVariableField;
     private String certb64;
+    /**
+     * Where configuration should be validated when getData() is invoked.
+     */
+    private final boolean validate;
 
-    private XmlElementEncryptionConfig model;
+    private final XmlElementEncryptionConfig model;
 
-    public XmlElementEncryptionConfigPanel(XmlElementEncryptionConfig model) {
+    public XmlElementEncryptionConfigPanel(final XmlElementEncryptionConfig model) {
+        this(false, model);
+    }
+
+    public XmlElementEncryptionConfigPanel(final boolean validate, final XmlElementEncryptionConfig model) {
         this.model = model;
+        this.validate = validate;
         init();
         setData(model);
     }
 
     public XmlElementEncryptionConfigPanel() {
-        this.model = new XmlElementEncryptionConfig();
-        init();
-        setData(model);
+        this(false);
+    }
+
+    public XmlElementEncryptionConfigPanel(final boolean validate) {
+        this(validate, new XmlElementEncryptionConfig());
     }
 
     @Override
@@ -157,7 +168,10 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
             model.setRecipientCertificateBase64(null);
             model.setRecipientCertContextVariableName(contextVariableField.getVariable());
         }
-        validateModel();
+
+        if (validate) {
+            validateModel();
+        }
     }
 
     public void setData(XmlElementEncryptionConfig model) {
