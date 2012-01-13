@@ -66,7 +66,6 @@ public final class XmlElementEncryptionConfig implements Serializable, UsesVaria
     @Override
     @NotNull
     public String[] getVariablesUsed() {
-        //todo only support a single variable as it's intended to hold a cert's base64
         return recipientCertContextVariableName == null ? new String[0] : Syntax.getReferencedNames("${" + recipientCertContextVariableName + "}");
     }
 }

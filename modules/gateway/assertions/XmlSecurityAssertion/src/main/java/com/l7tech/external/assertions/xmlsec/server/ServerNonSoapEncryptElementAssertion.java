@@ -5,6 +5,7 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.xml.XmlElementEncryptor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
@@ -48,7 +49,7 @@ public class ServerNonSoapEncryptElementAssertion extends ServerNonSoapSecurityA
             Object certValue = null;
             if (recipCertVarName != null) {
                 Map<String, ?> variableMap = context.getVariableMap(varsUsed, getAudit());
-                certValue = ExpandVariables.processSingleVariableAsObject("${" + recipCertVarName + "}", variableMap, getAudit());
+                certValue = ExpandVariables.processSingleVariableAsObject(Syntax.getVariableExpression(recipCertVarName), variableMap, getAudit());
             }
             elementEncryptor = new XmlElementEncryptor(assertion.config(), certValue);
         }

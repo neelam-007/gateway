@@ -274,6 +274,8 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
                 consentAttribute
         ).withVariables( evidenceVariable );
 
+        variablesUsed.addVariables(xmlEncryptConfig.getVariablesUsed());
+
         if ( attributeStatement != null ) {
             for ( final SamlAttributeStatement.Attribute attr : attributeStatement.getAttributes() ) {
                 variablesUsed.addExpressions(

@@ -14,6 +14,7 @@ import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.xml.XmlElementEncryptionConfig;
@@ -441,7 +442,14 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
         final XmlElementEncryptor encryptor;
         try {
             // create here as config may reference context variables
-            encryptor = new XmlElementEncryptor(xmlEncryptConfig, ctxVariables);
+            final String certificateBase64 = xmlEncryptConfig.getRecipientCertificateBase64();
+            // invariant that either base64 or cert is supplied. We preference base64 here
+            Object certValue = null;
+            if (certificateBase64 == null) {
+                certValue = ExpandVariables.processSingleVariableAsObject(Syntax.getVariableExpression(xmlEncryptConfig.getRecipientCertContextVariableName()), ctxVariables, getAudit());
+            }
+
+            encryptor = new XmlElementEncryptor(xmlEncryptConfig, certValue);
         } catch (Exception e) {
             throw new SamlpAssertionException("Unable to create encryption engine with encryption configuration: " + ExceptionUtils.getMessage(e),
                     ExceptionUtils.getDebugException(e));

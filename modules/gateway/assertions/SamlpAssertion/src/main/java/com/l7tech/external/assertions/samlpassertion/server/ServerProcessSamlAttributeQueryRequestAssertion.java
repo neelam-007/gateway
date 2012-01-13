@@ -332,7 +332,7 @@ public class ServerProcessSamlAttributeQueryRequestAssertion extends AbstractMes
                 context.setVariable(prefix(SUFFIX_SUBJECT_SP_PROVIDED_ID), null);
             }
         } else {
-            context.setVariable(prefix(SUFFIX_SUBJECT), maybeTrim(getSubject(subject)));
+            context.setVariable(prefix(SUFFIX_SUBJECT), maybeTrim(getName(subjectNameID)));
             context.setVariable(prefix(SUFFIX_SUBJECT_NAME_QUALIFIER), getNameQualifier(subjectNameID));
             context.setVariable(prefix(SUFFIX_SUBJECT_SP_NAME_QUALIFIER), getSPNameQualifier(subjectNameID));
 

@@ -7,7 +7,9 @@ import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.HttpServletResponseKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.xml.XmlElementEncryptionConfig;
@@ -15,6 +17,8 @@ import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.ServerPolicyException;
+import com.l7tech.test.BugNumber;
+import com.l7tech.util.Functions;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.DomElementCursor;
@@ -31,10 +35,12 @@ import org.w3c.dom.Element;
 
 import java.io.IOException;
 import java.security.PrivateKey;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Map;
 
+@SuppressWarnings({"JavaDoc"})
 public class ServerSamlpRequestBuilderAssertionTest {
 
     /**
@@ -43,7 +49,42 @@ public class ServerSamlpRequestBuilderAssertionTest {
      */
     @Test
     public void testEncryptedID_Version2() throws Exception {
+        runEncryptUseCase(new Functions.Binary<Void, XmlElementEncryptionConfig, PolicyEnforcementContext>() {
+            @Override
+            public Void call(XmlElementEncryptionConfig xmlElementEncryptionConfig, PolicyEnforcementContext policyEnforcementContext) {
+                Pair<X509Certificate, PrivateKey> k = TestKeys.getCertAndKey("RSA_1024");
+                try {
+                    xmlElementEncryptionConfig.setRecipientCertificateBase64(HexUtils.encodeBase64(k.left.getEncoded(), true));
+                } catch (CertificateEncodingException e) {
+                    Assert.fail("Unexpected Exception: " + e.getMessage());
+                }
 
+                return null;
+            }
+        });
+    }
+
+    /**
+     * Validate the EncryptedID can be generated via a cert from a context variable
+     */
+    @BugNumber(11666)
+    @Test
+    public void testEncryptIdViaCertInContextVariable() throws Exception {
+        runEncryptUseCase(new Functions.Binary<Void, XmlElementEncryptionConfig, PolicyEnforcementContext>() {
+            @Override
+            public Void call(XmlElementEncryptionConfig xmlElementEncryptionConfig, PolicyEnforcementContext policyEnforcementContext) {
+                Pair<X509Certificate, PrivateKey> k = TestKeys.getCertAndKey("RSA_1024");
+                final String certVarName = "cert";
+                xmlElementEncryptionConfig.setRecipientCertContextVariableName(certVarName);
+
+                policyEnforcementContext.setVariable(certVarName, k.left);
+
+                return null;
+            }
+        });
+    }
+
+    private void runEncryptUseCase(Functions.Binary<Void, XmlElementEncryptionConfig, PolicyEnforcementContext> configCallBack) throws Exception {
         final SamlpRequestBuilderAssertion assertion = new SamlpRequestBuilderAssertion();
         // Absolute minimum configuration to avoid NPE's etc.
         assertion.setSamlVersion(2);
@@ -57,13 +98,13 @@ public class ServerSamlpRequestBuilderAssertionTest {
         assertion.setEncryptNameIdentifier(true);
         final XmlElementEncryptionConfig config = assertion.getXmlEncryptConfig();
 
-        Pair<X509Certificate, PrivateKey> k = TestKeys.getCertAndKey("RSA_1024");
-        config.setRecipientCertificateBase64(HexUtils.encodeBase64(k.left.getEncoded(), true));
+        final PolicyEnforcementContext context = getContext();
+
+        configCallBack.call(config, context);
 
         ServerSamlpRequestBuilderAssertion serverAssertion =
                 new ServerSamlpRequestBuilderAssertion(assertion, ApplicationContexts.getTestApplicationContext());
 
-        final PolicyEnforcementContext context = getContext();
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
         Assert.assertEquals("Unexpected status", AssertionStatus.NONE, assertionStatus);
 
