@@ -380,12 +380,16 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
                     enableFilterFailCheckBoxes = true;
                 }
             } catch (VariableNameSyntaxException e) {
+                // not enabled
             }
         }
 
         failIfUnknownAttributeCheckBox.setEnabled(enableFilterFailCheckBoxes);
         failIfNoAttributesAddedCheckBox.setEnabled(enableFilterFailCheckBoxes);
-        failIfAttributeValueExcludesAttributeCheckBox.setEnabled(enableFilterFailCheckBoxes);
+        failIfAttributeValueExcludesAttributeCheckBox.setEnabled(enableFilterFailCheckBoxes && samlVersion == 2);
+
+        //setting visible here as samlVersion is not known in initialize
+        failIfAttributeValueExcludesAttributeCheckBox.setVisible(samlVersion == 2);
     }
 
     /**
