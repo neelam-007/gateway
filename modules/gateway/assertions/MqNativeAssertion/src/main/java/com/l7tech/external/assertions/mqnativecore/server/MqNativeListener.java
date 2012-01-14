@@ -65,9 +65,6 @@ public abstract class MqNativeListener {
     private long lastStopRequestedTime;
     private long lastAuditErrorTime;
 
-    private MQGetMessageOptions ackOptions;
-    private MQPutMessageOptions replyOptions;
-
     public MqNativeListener(@NotNull final SsgActiveConnector ssgActiveConnector,
                             @NotNull final ApplicationEventPublisher eventPublisher,
                             @NotNull final SecurePasswordManager securePasswordManager) throws MqNativeConfigException {
@@ -76,14 +73,6 @@ public abstract class MqNativeListener {
         this.securePasswordManager = securePasswordManager;
         this.mqNativeClient = buildMqNativeClient();
         this.listenerThread = new MqNativeListenerThread(this, toString());
-
-        // message options
-        this.ackOptions = new MQGetMessageOptions();
-        this.ackOptions.options = MQC.MQGMO_WAIT | MQC.MQGMO_NO_SYNCPOINT;
-        this.ackOptions.matchOptions = MQC.MQMO_MATCH_MSG_ID;
-
-        this.replyOptions = new MQPutMessageOptions();
-        this.replyOptions.options = MQC.MQPMO_NEW_MSG_ID | MQC.MQPMO_NO_SYNCPOINT;
     }
 
     public String getDisplayName() {
@@ -211,7 +200,7 @@ public abstract class MqNativeListener {
             throw new MqNativeConfigException("Failed to instantiate MQ Queue: null");
         }
 
-        return new MqNativeClient(queueManager, targetQueue, specifiedReplyQueue, RECEIVE_TIMEOUT, null, new MqNativeClient.MqNativeConnectionListener() {
+        return new MqNativeClient(queueManager, targetQueue, specifiedReplyQueue, RECEIVE_TIMEOUT, new MqNativeClient.MqNativeConnectionListener() {
             @Override
             public void notifyConnected() {
                 fireConnected();
@@ -411,15 +400,6 @@ public abstract class MqNativeListener {
                     + ExceptionUtils.getMessage( npe ), ExceptionUtils.getDebugException( npe ) );
         }
         return decrypted;
-    }
-
-    protected MQGetMessageOptions getAcknowledgeOptions() {
-        ackOptions.waitInterval = RECEIVE_TIMEOUT;
-        return ackOptions;
-    }
-
-    protected MQPutMessageOptions getReplyOptions() {
-        return replyOptions;
     }
 
     protected void setErrorSleepTime(String stringValue) {

@@ -55,8 +55,7 @@ import static com.l7tech.util.ExceptionUtils.getMessage;
 public class MqNativeModule extends ActiveTransportModule implements ApplicationListener {
     private static final Logger logger = Logger.getLogger(MqNativeModule.class.getName());
 
-    private static final String TYPE_MQ_NATIVE = "MqNative";
-    private static final Set<String> SUPPORTED_TYPES = caseInsensitiveSet( TYPE_MQ_NATIVE );
+    private static final Set<String> SUPPORTED_TYPES = caseInsensitiveSet( ACTIVE_CONNECTOR_TYPE_MQ_NATIVE );
 
     private final Map<Long, MqNativeListener> activeListeners = new ConcurrentHashMap<Long, MqNativeListener> ();
     private final ThreadPoolBean threadPoolBean;
@@ -117,7 +116,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
         final boolean wasSystem = AuditContextUtils.isSystem();
         try {
             AuditContextUtils.setSystem(true);
-            final Collection<SsgActiveConnector> connectors = ssgActiveConnectorManager.findSsgActiveConnectorsByType( TYPE_MQ_NATIVE );
+            final Collection<SsgActiveConnector> connectors = ssgActiveConnectorManager.findSsgActiveConnectorsByType(  ACTIVE_CONNECTOR_TYPE_MQ_NATIVE );
             for ( final SsgActiveConnector connector : connectors ) {
                 if ( connector.isEnabled() && connectorIsOwnedByThisModule( connector ) ) {
                     try {
@@ -184,6 +183,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                             @Override
                             public MqNativeException call() {
                                 try {
+                                    acknowledgeMessage( MqNativeUtils.isTransactional(ssgActiveConnector), mqNativeClient, queueMessage.messageId );
                                     handleMessageForConnector( ssgActiveConnector, mqNativeClient, queueMessage );
                                 } catch ( MqNativeException e ) {
                                     return e;
@@ -230,6 +230,21 @@ public class MqNativeModule extends ActiveTransportModule implements Application
     @Override
     protected Set<String> getSupportedTypes() {
         return SUPPORTED_TYPES;
+    }
+
+    /**
+     * Acknowledge current queue message based on given acknowledgement type.
+     * @param isTransactional The acknowledgement type configured for this listener
+     * @param mqNativeClient  The MQ native client to access the MQ server
+     * @param messageId The request message id currently being processed
+     * @throws MQException if an error occurs
+     */
+    public void acknowledgeMessage(boolean isTransactional,
+                                   @NotNull final MqNativeClient mqNativeClient,
+                                   @NotNull final byte[] messageId) throws MQException {
+        MQMessage pop = new MQMessage();
+        pop.messageId = messageId;
+        mqNativeClient.getTargetQueue().get(pop, mqNativeClient.getAcknowledgeOptions(isTransactional));
     }
 
     /**
@@ -434,6 +449,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
         boolean sent = false;
 
         MqNativeReplyType replyType = MqNativeReplyType.valueOf( connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE ) );
+        MQPutMessageOptions replyOptions = mqNativeClient.getReplyOptions(replyType, MqNativeUtils.isTransactional(connector));
         switch(replyType) {
             case REPLY_NONE:
                 logger.info("No response will be sent!");
@@ -449,8 +465,6 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                         logger.log(Level.FINER, "Sending response to {0} for request seqNum: {1}", new Object[] { replyToQueueName, requestMessage.messageSequenceNumber });
 
                         // set correlation Id
-                        MQPutMessageOptions pmo = new MQPutMessageOptions();
-                        pmo.options = MQC.MQPMO_NEW_MSG_ID;
                         if (connector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_IS_COPY_CORRELATION_ID_FROM_REQUEST)) {
                             logger.info( "reply correlationId = request correlationId" );
                             responseMessage.correlationId = requestMessage.correlationId;
@@ -459,13 +473,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                             responseMessage.correlationId = requestMessage.messageId;
                         }
 
-                        if (MqNativeUtils.isTransactional(connector)) {
-                            pmo.options |=  MQC.MQPMO_SYNCPOINT;
-                        } else {
-                            pmo.options |=  MQC.MQPMO_NO_SYNCPOINT;
-                        }
-
-                        replyToQueue.put( responseMessage, pmo );
+                        replyToQueue.put( responseMessage, replyOptions );
                         logger.finer( "Sent response to " + replyToQueue );
                         sent = true;
                     } catch ( MQException e ) {
@@ -483,15 +491,8 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                 break;
             case REPLY_SPECIFIED_QUEUE:
                 try {
-                    MQPutMessageOptions pmo = new MQPutMessageOptions();
-                    if (MqNativeUtils.isTransactional(connector)) {
-                        pmo.options =  MQC.MQPMO_SYNCPOINT;
-                    } else {
-                        pmo.options =  MQC.MQPMO_NO_SYNCPOINT;
-                    }
-
                     MQQueue specifiedReplyQueue = mqNativeClient.getSpecifiedReplyQueue();
-                    specifiedReplyQueue.put( responseMessage, pmo );
+                    specifiedReplyQueue.put( responseMessage, replyOptions );
                     logger.finer( "Sent response to " + specifiedReplyQueue );
                     sent = true;
                 } catch ( MQException e ) {

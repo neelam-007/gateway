@@ -7,6 +7,7 @@
 package com.l7tech.external.assertions.mqnativecore.server;
 
 import com.ibm.mq.*;
+import com.l7tech.external.assertions.mqnativecore.MqNativeReplyType;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 
@@ -33,43 +34,50 @@ public class MqNativeClient implements Closeable {
     private final MQQueue specifiedReplyQueue;
     private MQGetMessageOptions mqGetMessageOptions;
     private final MQPutMessageOptions mqPutMessageOptions;
+    private final MQGetMessageOptions browseFirstOptions, browseNextOptions;
+    private final MQGetMessageOptions onCompleteAcknowledgementOptions, onTakeAcknowledgementOptions;
+    private final MQPutMessageOptions onCompleteAutoReplyOptions, onTakeAutoReplyOptions, onCompleteSpecifiedReplyOptions, onTakeSpecifiedReplyOptions;
     private final MqNativeConnectionListener connectionListener;
-    private final int receiveTimeout;
-
-    // private final Object sync = new Object();
-    // private boolean firstRead = true;
-    // private MQGetMessageOptions browseFirstOpts, browseNextOpts, ackOpts;
-
-    /*public MqNativeClient(@NotNull final MQQueueManager queueManager,
-                          @NotNull final MQQueue queue,
-                          @NotNull final MqNativeConnectionListener listener) {
-        this(queueManager, queue, null, null, null, null, listener);
-    }*/
 
     public MqNativeClient(@NotNull final MQQueueManager queueManager,
                           @NotNull final MQQueue requestQueue,
-                          MQQueue specifiedReplyQueue, int receiveTimeout, MQPutMessageOptions pmo,
+                          MQQueue specifiedReplyQueue, int receiveTimeout,
                           @NotNull final MqNativeConnectionListener listener) {
         this.queueManager = queueManager;
         this.targetQueue = requestQueue;
         this.specifiedReplyQueue = specifiedReplyQueue;
         this.connectionListener = listener;
-        this.receiveTimeout = receiveTimeout;
 
-        // MQ message options
-        /*this.browseFirstOpts = new MQGetMessageOptions();
-        this.browseFirstOpts.options = MQC.MQGMO_WAIT | MQC.MQGMO_BROWSE_FIRST; // | MQC.MQGMO_LOCK;
-        this.browseNextOpts = new MQGetMessageOptions();
-        this.browseNextOpts.options = MQC.MQGMO_WAIT | MQC.MQGMO_BROWSE_NEXT; // | MQC.MQGMO_LOCK;
-        this.ackOpts = new MQGetMessageOptions();
-        this.ackOpts.options = MQC.MQGMO_WAIT | MQC.MQGMO_NO_SYNCPOINT;
-        this.ackOpts.matchOptions = MQC.MQMO_MATCH_MSG_ID;*/
+        // write options
+        this.mqPutMessageOptions = new MQPutMessageOptions();
+        this.mqPutMessageOptions.options = MQC.MQPMO_NEW_MSG_ID | MQC.MQPMO_NO_SYNCPOINT;
 
-        if (pmo == null) {
-            this.mqPutMessageOptions = new MQPutMessageOptions();
-        } else {
-            this.mqPutMessageOptions = pmo;
-        }
+        // read-browse options to peek at a message on the queue, leaving it on queue
+        this.browseFirstOptions = new MQGetMessageOptions();
+        this.browseFirstOptions.options = MQC.MQGMO_WAIT | MQC.MQGMO_BROWSE_FIRST; // | MQC.MQGMO_LOCK;
+        this.browseFirstOptions.waitInterval = receiveTimeout;
+        this.browseNextOptions = new MQGetMessageOptions();
+        this.browseNextOptions.options = MQC.MQGMO_WAIT | MQC.MQGMO_BROWSE_NEXT; // | MQC.MQGMO_LOCK;
+        this.browseNextOptions.waitInterval = receiveTimeout;
+
+        // read-acknowledge options to pop a message off the queue, removing it from queue
+        this.onCompleteAcknowledgementOptions = new MQGetMessageOptions();
+        this.onCompleteAcknowledgementOptions.options = MQC.MQGMO_WAIT | MQC.MQGMO_SYNCPOINT;
+        this.onCompleteAcknowledgementOptions.matchOptions = MQC.MQMO_MATCH_MSG_ID;
+        this.onCompleteAcknowledgementOptions.waitInterval = receiveTimeout;
+        this.onTakeAcknowledgementOptions = new MQGetMessageOptions();
+        this.onTakeAcknowledgementOptions.options = MQC.MQGMO_WAIT | MQC.MQGMO_NO_SYNCPOINT;
+        this.onTakeAcknowledgementOptions.matchOptions = MQC.MQMO_MATCH_MSG_ID;
+
+        // write-reply options
+        this.onCompleteAutoReplyOptions = new MQPutMessageOptions();
+        this.onCompleteAutoReplyOptions.options = MQC.MQPMO_NEW_MSG_ID | MQC.MQPMO_SYNCPOINT;
+        this.onTakeAutoReplyOptions = new MQPutMessageOptions();
+        this.onTakeAutoReplyOptions.options = MQC.MQPMO_NEW_MSG_ID | MQC.MQPMO_NO_SYNCPOINT;
+        this.onCompleteSpecifiedReplyOptions = new MQPutMessageOptions();
+        this.onCompleteSpecifiedReplyOptions.options = MQC.MQPMO_SYNCPOINT;
+        this.onTakeSpecifiedReplyOptions = new MQPutMessageOptions();
+        this.onTakeSpecifiedReplyOptions.options = MQC.MQPMO_NO_SYNCPOINT;
     }
 
     <R> R doWork( final Functions.BinaryThrows<R,MQQueue,MQGetMessageOptions,MQException> callback ) throws MQException {
@@ -91,42 +99,62 @@ public class MqNativeClient implements Closeable {
         return specifiedReplyQueue;
     }
 
+    /**
+     * Get write options
+     * @return message put options
+     */
+    public MQPutMessageOptions getMqPutMessageOptions() {
+        return mqPutMessageOptions;
+    }
+
+    /**
+     * Get read-browse options to peek at a message on the queue, leaving it on queue.
+     * On first call return browseFirstOptions, subsequent call return browseNextOptions.
+     * @return message get options
+     */
     public MQGetMessageOptions getMqGetMessageOptions() {
-        /*if (firstRead) {
-            synchronized (sync) {
-                MQGetMessageOptions gmo;
-                if (!firstRead)
-                    gmo = browseNextOpts;
-                else
-                    gmo = browseFirstOpts;
-
-                gmo.waitInterval = receiveTimeout;
-                firstRead = false;
-                return gmo;
-            }
-        } else {
-            browseNextOpts.waitInterval = receiveTimeout;
-            return browseNextOpts;
-        }*/
-
-        // set message options
         if (mqGetMessageOptions == null) {
-            MQGetMessageOptions browseNextOptions = new MQGetMessageOptions();
-            browseNextOptions.options = MQC.MQGMO_WAIT | MQC.MQGMO_BROWSE_NEXT; // | MQC.MQGMO_LOCK;
-            browseNextOptions.waitInterval = receiveTimeout;
             mqGetMessageOptions = browseNextOptions;
-
-            MQGetMessageOptions browseFirstOptions = new MQGetMessageOptions();
-            browseFirstOptions.options = MQC.MQGMO_WAIT | MQC.MQGMO_BROWSE_FIRST; // | MQC.MQGMO_LOCK;
-            browseFirstOptions.waitInterval = receiveTimeout;
             return browseFirstOptions;
         }
 
         return mqGetMessageOptions;
     }
 
-    public MQPutMessageOptions getMqPutMessageOptions() {
-        return mqPutMessageOptions;
+    /**
+     * Get write-reply options
+     * @param replyType reply type
+     * @param isTransactional whether acknowledgement type is transactional
+     * @return message put options
+     */
+    public MQPutMessageOptions getReplyOptions(@NotNull final MqNativeReplyType replyType, boolean isTransactional) {
+        if (replyType == MqNativeReplyType.REPLY_AUTOMATIC) {
+            if (isTransactional) {
+                return onCompleteAutoReplyOptions;
+            } else {
+                return onTakeAutoReplyOptions;
+            }
+        } else if (replyType == MqNativeReplyType.REPLY_SPECIFIED_QUEUE) {
+            if (isTransactional) {
+                return onCompleteSpecifiedReplyOptions;
+            } else {
+                return onTakeSpecifiedReplyOptions;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Get read-acknowledge options to pop a message off the queue, removing it from queue
+     * @param isTransactional whether acknowledgement type is transactional
+     * @return message get options
+     */
+    protected MQGetMessageOptions getAcknowledgeOptions(boolean isTransactional) {
+        if (isTransactional) {
+            return onCompleteAcknowledgementOptions;
+        } else {
+            return onTakeAcknowledgementOptions;
+        }
     }
 
     @Override
