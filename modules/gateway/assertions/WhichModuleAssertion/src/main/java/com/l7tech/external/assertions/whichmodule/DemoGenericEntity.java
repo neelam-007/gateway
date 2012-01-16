@@ -6,17 +6,8 @@ import com.l7tech.policy.GenericEntity;
  * A demo entity that can be managed by the GenericEntityManager.
  */
 public class DemoGenericEntity extends GenericEntity {
-    private String name;
     private int age;
     private boolean playsTrombone;
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
 
     public int getAge() {
         return age;
