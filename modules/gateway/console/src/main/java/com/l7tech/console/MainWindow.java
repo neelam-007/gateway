@@ -1925,6 +1925,27 @@ public class MainWindow extends JFrame implements SheetHolder {
         assertionPaletteTree.setModel(treeModel);
         TreePath path = new TreePath(paletteRootNode.getPath());
         assertionPaletteTree.setSelectionPath(path);
+        assertionPaletteTree.getModel().addTreeModelListener(new TreeModelListener() {
+            @Override
+            public void treeNodesChanged(TreeModelEvent e) {
+                getAssertionSearchComboBox().updateSearchableItems(getAllSearchablePaletteNodes());
+            }
+
+            @Override
+            public void treeNodesInserted(TreeModelEvent e) {
+                getAssertionSearchComboBox().updateSearchableItems(getAllSearchablePaletteNodes());
+            }
+
+            @Override
+            public void treeNodesRemoved(TreeModelEvent e) {
+                getAssertionSearchComboBox().updateSearchableItems(getAllSearchablePaletteNodes());
+            }
+
+            @Override
+            public void treeStructureChanged(TreeModelEvent e) {
+                getAssertionSearchComboBox().updateSearchableItems(getAllSearchablePaletteNodes());
+            }
+        });
         getAssertionSearchComboBox().updateSearchableItems(getAllSearchablePaletteNodes());
 
         identitiesRootNode = new IdentitiesRootNode("Identity Providers");
