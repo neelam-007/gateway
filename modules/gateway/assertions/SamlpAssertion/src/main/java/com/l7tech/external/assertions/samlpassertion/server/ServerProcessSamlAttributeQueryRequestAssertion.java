@@ -34,6 +34,7 @@ import saml.v2.assertion.SubjectType;
 import saml.v2.protocol.AttributeQueryType;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.xml.bind.*;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
@@ -101,7 +102,7 @@ public class ServerProcessSamlAttributeQueryRequestAssertion extends AbstractMes
     private final List<String> configuredSubjectFormats;
     private final List<String> configuredAttrNameFormatUris;
 
-    @Inject
+    @Inject @Named("trustedSecurityTokenResolver")
     private SecurityTokenResolver securityTokenResolver;
 
     private static final String ATTRIBUTE_QUERY_LOCAL_NAME = "AttributeQuery";
