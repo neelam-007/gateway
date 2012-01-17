@@ -4,7 +4,7 @@
  * $Id: MqRuntimeException.java 27203 2010-11-20 01:00:55Z vchan $
  */
 
-package com.l7tech.external.assertions.mqnativecore.server;
+package com.l7tech.external.assertions.mqnative.server;
 
 /**
  * This exception is thrown when there's a MQ native problem.

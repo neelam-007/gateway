@@ -1,4 +1,4 @@
-package com.l7tech.external.assertions.mqnativecore.server;
+package com.l7tech.external.assertions.mqnative.server;
 
 import com.ibm.mq.MQC;
 import com.ibm.mq.MQMessage;
@@ -12,8 +12,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import static com.l7tech.external.assertions.mqnativecore.MqNativeConstants.MQ_PROPERTY_APPDATA;
-import static com.l7tech.external.assertions.mqnativecore.MqNativeConstants.MQ_PROPERTY_APPORIGIN;
+import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_PROPERTY_APPDATA;
+import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_PROPERTY_APPORIGIN;
 
 /**
  * MQ Native connector helper class.

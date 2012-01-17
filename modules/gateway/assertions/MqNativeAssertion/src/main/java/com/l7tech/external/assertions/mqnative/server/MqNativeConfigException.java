@@ -1,4 +1,4 @@
-package com.l7tech.external.assertions.mqnativecore.server;
+package com.l7tech.external.assertions.mqnative.server;
 
 /**
  * This exception is thrown when a MQ native queue configuration is problematic.

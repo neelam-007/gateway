@@ -1,4 +1,4 @@
-package com.l7tech.external.assertions.mqnativecore;
+package com.l7tech.external.assertions.mqnative;
 
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
@@ -75,7 +75,7 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesVa
         //meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/ServerLogs.gif");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
-        meta.put(AssertionMetadata.GLOBAL_ACTION_CLASSNAMES, new String[] { "com.l7tech.external.assertions.mqnativecore.console.MqNativeCustomAction" });
+        meta.put(AssertionMetadata.GLOBAL_ACTION_CLASSNAMES, new String[] { "com.l7tech.external.assertions.mqnative.console.MqNativeCustomAction" });
 
         // request default feature set name for our class name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:MQNativeConnector" rather than "set:modularAssertions"

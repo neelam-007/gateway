@@ -4,10 +4,10 @@
  * $Id: MqResBag.java 27341 2010-12-02 19:33:31Z vchan $
  */
 
-package com.l7tech.external.assertions.mqnativecore.server;
+package com.l7tech.external.assertions.mqnative.server;
 
 import com.ibm.mq.*;
-import com.l7tech.external.assertions.mqnativecore.MqNativeReplyType;
+import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 

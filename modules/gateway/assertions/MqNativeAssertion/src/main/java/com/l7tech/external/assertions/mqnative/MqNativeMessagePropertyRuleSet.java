@@ -1,4 +1,4 @@
-package com.l7tech.external.assertions.mqnativecore;
+package com.l7tech.external.assertions.mqnative;
 
 /**
  * Copyright (C) 2007 Layer 7 Technologies Inc.

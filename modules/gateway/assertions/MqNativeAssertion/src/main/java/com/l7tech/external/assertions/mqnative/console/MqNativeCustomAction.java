@@ -1,4 +1,4 @@
-package com.l7tech.external.assertions.mqnativecore.console;
+package com.l7tech.external.assertions.mqnative.console;
 
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.util.TopComponents;

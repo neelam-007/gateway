@@ -1,6 +1,6 @@
-package com.l7tech.external.assertions.mqnativecore.server;
+package com.l7tech.external.assertions.mqnative.server;
 
-import com.l7tech.external.assertions.mqnativecore.MqNativeConstants;
+import com.l7tech.external.assertions.mqnative.MqNativeConstants;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.util.Injector;

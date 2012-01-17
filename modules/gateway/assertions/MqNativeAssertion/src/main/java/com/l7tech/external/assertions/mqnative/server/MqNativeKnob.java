@@ -1,4 +1,4 @@
-package com.l7tech.external.assertions.mqnativecore.server;
+package com.l7tech.external.assertions.mqnative.server;
 
 import com.l7tech.message.JmsKnob;
 

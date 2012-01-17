@@ -1,4 +1,4 @@
-package com.l7tech.external.assertions.mqnativecore.server;
+package com.l7tech.external.assertions.mqnative.server;
 
 /**
  * This is the central place that consolidates all messages used by the MQ native subsystem for exceptions or logging.

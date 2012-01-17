@@ -1,22 +1,22 @@
-package com.l7tech.external.assertions.mqnativecore;
+package com.l7tech.external.assertions.mqnative;
 
 /**
  * Enumerated type for MQ native reply types.
  */
-public enum MqNativeMessageFormatType {
+public enum MqNativeReplyType {
 
     /**
      * Do not send a reply.
      */
-    AUTOMATIC,
+    REPLY_NONE,
 
     /**
      * Send a reply if it was specified in the message.
      */
-    BYTES,
+    REPLY_AUTOMATIC,
 
     /**
      * Send a reply to a specified queue.
      */
-    TEXT
+    REPLY_SPECIFIED_QUEUE
 }

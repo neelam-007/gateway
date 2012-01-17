@@ -1,4 +1,4 @@
-package com.l7tech.external.assertions.mqnativecore;
+package com.l7tech.external.assertions.mqnative;
 
 /**
  * MQ Native constants

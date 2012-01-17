@@ -1,7 +1,7 @@
 /**
  * Copyright (C) 2007 Layer Technologies Inc.
  */
-package com.l7tech.external.assertions.mqnativecore;
+package com.l7tech.external.assertions.mqnative;
 
 import java.io.Serializable;
 
@@ -25,7 +25,7 @@ public class MqNativeMessagePropertyRule implements Serializable {
     public MqNativeMessagePropertyRule() {
     }
 
-    public MqNativeMessagePropertyRule(final String name, String  ruleType, final String customPattern) {
+    public MqNativeMessagePropertyRule(final String name, String ruleType, final String customPattern) {
         this.name = name;
         this.ruleType = ruleType;
         this.customPattern = customPattern;

@@ -2,7 +2,7 @@
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  */
 
-package com.l7tech.external.assertions.mqnativecore.console;
+package com.l7tech.external.assertions.mqnative.console;
 
 import com.l7tech.console.panels.PermissionFlags;
 import com.l7tech.console.util.EntityUtils;

@@ -1,4 +1,4 @@
-package com.l7tech.external.assertions.mqnativecore.console;
+package com.l7tech.external.assertions.mqnative.console;
 
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.console.panels.*;
@@ -6,8 +6,8 @@ import com.l7tech.console.security.FormAuthorizationPreparer;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.external.assertions.mqnativecore.MqNativeMessageFormatType;
-import com.l7tech.external.assertions.mqnativecore.MqNativeReplyType;
+import com.l7tech.external.assertions.mqnative.MqNativeMessageFormatType;
+import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;

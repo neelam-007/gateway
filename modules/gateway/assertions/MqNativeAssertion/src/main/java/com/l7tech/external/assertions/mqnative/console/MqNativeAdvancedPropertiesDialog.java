@@ -1,6 +1,6 @@
-package com.l7tech.external.assertions.mqnativecore.console;
+package com.l7tech.external.assertions.mqnative.console;
 
-import com.l7tech.external.assertions.mqnativecore.MqNativeConstants;
+import com.l7tech.external.assertions.mqnative.MqNativeConstants;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.util.MutablePair;
 

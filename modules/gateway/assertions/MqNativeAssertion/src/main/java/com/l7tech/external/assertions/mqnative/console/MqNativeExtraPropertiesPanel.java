@@ -1,4 +1,4 @@
-package com.l7tech.external.assertions.mqnativecore.console;
+package com.l7tech.external.assertions.mqnative.console;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -7,7 +7,7 @@ import java.util.Properties;
 
 /**
  * A sub-panel for configuring additional settings of a specific MQ native provider type;
- * to be inserted into {@link com.l7tech.external.assertions.mqnativecore.console.MqNativePropertiesDialog}
+ * to be inserted into {@link com.l7tech.external.assertions.mqnative.console.MqNativePropertiesDialog}
  * when that MQ native provider type is selected.
  */
 public abstract class MqNativeExtraPropertiesPanel extends JPanel {
