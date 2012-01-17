@@ -8,7 +8,6 @@ import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.xml.KeyInfoElement;
 import com.l7tech.security.xml.SecurityTokenResolver;
@@ -532,7 +531,7 @@ public class ServerProcessSamlAttributeQueryRequestAssertion extends AbstractMes
     /**
      *
      * @param encryptedDataEl element to decrypt
-     * @return Triple result from {@link XmlElementDecryptor#decryptAndReplaceElement(org.w3c.dom.Element,
+     * @return Triple result from {@link XmlElementDecryptor#unwrapDecryptAndReplaceElement(org.w3c.dom.Element,
      * com.l7tech.security.xml.SecurityTokenResolver,
      * com.l7tech.util.Functions.UnaryVoid, com.l7tech.security.xml.XmlElementDecryptor.KeyInfoErrorListener)}. Will be
      * null if a decryption error occurs. Any other processing exception will cause an exception to be thrown.
@@ -567,7 +566,7 @@ public class ServerProcessSamlAttributeQueryRequestAssertion extends AbstractMes
 
         final String unableMessage = "Unable to decrypt EncryptedID element";
         try {
-            final Triple<String, NodeList, X509Certificate> result = XmlElementDecryptor.decryptAndReplaceElement(encryptedDataEl, securityTokenResolver, decryptionError, keyInfoErrorListener);
+            final Triple<String, NodeList, X509Certificate> result = XmlElementDecryptor.unwrapDecryptAndReplaceElement(encryptedDataEl, securityTokenResolver, decryptionError, keyInfoErrorListener);
             if (decryptErrors[0]) {
                 // decrypt errors occurred and succeed when failure is configured (currently default behavior)
                 return null;

@@ -28,7 +28,7 @@ import java.util.List;
  */
 public class XmlElementDecryptor {
     /**
-     * Decrypt an encrypted element and replace it with its plaintext contents.
+     * Unwrap a decryption key and use it to decrypt an encrypted element and replace it with its plaintext contents.
      * <p/>
      * This method assumes that the encrypted element contains an embedded KeyInfo which can be unwrapped
      * (using the specified SecurityTokenResolver) in order to produce the decryption key.
@@ -51,15 +51,34 @@ public class XmlElementDecryptor {
      * @throws java.security.GeneralSecurityException if there is a problem with a certificate or key, or a required algorithm is unavailable,
      *                                  or there is an error performing the actual decryption.
      */
-    public static Triple<String, NodeList, X509Certificate> decryptAndReplaceElement(Element encryptedDataEl,
-                                                                                     SecurityTokenResolver securityTokenResolver,
-                                                                                     final Functions.UnaryVoid<Throwable> onDecryptionError,
-                                                                                     @Nullable KeyInfoErrorListener keyInfoErrorListener)
+    public static Triple<String, NodeList, X509Certificate> unwrapDecryptAndReplaceElement(Element encryptedDataEl,
+                                                                                           SecurityTokenResolver securityTokenResolver,
+                                                                                           final Functions.UnaryVoid<Throwable> onDecryptionError,
+                                                                                           @Nullable KeyInfoErrorListener keyInfoErrorListener)
             throws GeneralSecurityException, InvalidDocumentFormatException, UnexpectedKeyInfoException
     {
-        Pair<X509Certificate, FlexKey> decryptionInfo = unwrapSecretKey(encryptedDataEl, securityTokenResolver, keyInfoErrorListener);
+        Pair<X509Certificate, byte[]> decryptionInfo = unwrapSecretKey(encryptedDataEl, securityTokenResolver, keyInfoErrorListener);
         X509Certificate recipientCert = decryptionInfo.left;
-        final FlexKey flexKey = decryptionInfo.right;
+        final byte[] decryptionSecretKeyBytes = decryptionInfo.right;
+        Pair<String, NodeList> got = decryptAndReplace(encryptedDataEl, decryptionSecretKeyBytes, onDecryptionError);
+        return new Triple<String, NodeList, X509Certificate>(got.left, got.right, recipientCert);
+    }
+
+    /**
+     * Decrypt an encrypted element using an already-prepared decryption key, and replace it with its decrypted contents.
+     *
+     * @param encryptedDataEl  the EncryptedElement or EncryptedData element to decrypt and replace.  Required.
+     * @param decryptionSecretKeyBytes  the secret key bytes, already unwrapped.  Enough secret key bytes must be provided to create a key appropriate for the encryption algorithm used.  Required.
+     * @param onDecryptionError a listener which will be invoked if a decryption attempt fails.  Required.
+     * @return a Pair containing the symmetric encryption algorithm URI and the list of decrypted nodes (already added to the document).  Never null.
+     * @throws com.l7tech.util.InvalidDocumentFormatException if more than one encryption algorithm URI was specified.
+     * @throws java.security.GeneralSecurityException if there is a problem with a certificate or key, or a required algorithm is unavailable,
+     *                                  or there is an error performing the actual decryption.
+     */
+    public static Pair<String, NodeList> decryptAndReplace(Element encryptedDataEl, byte[] decryptionSecretKeyBytes, Functions.UnaryVoid<Throwable> onDecryptionError)
+            throws GeneralSecurityException, InvalidDocumentFormatException
+    {
+        final FlexKey flexKey = new FlexKey(decryptionSecretKeyBytes);
 
         // Create decryption context and decrypt the EncryptedData subtree. Note that this effects the
         // soapMsg document
@@ -93,7 +112,7 @@ public class XmlElementDecryptor {
             algorithmName = algorithm.iterator().next();
         }
 
-        return new Triple<String, NodeList, X509Certificate>(algorithmName, decryptedNodes, recipientCert);
+        return new Pair<String, NodeList>(algorithmName, decryptedNodes);
     }
 
     /**
@@ -116,7 +135,7 @@ public class XmlElementDecryptor {
      * @throws java.security.GeneralSecurityException if there is a problem with a certificate or key, or a required algorithm is unavailable,
      *                                  or there is an error performing the actual decryption.
      */
-    public static Pair<X509Certificate, FlexKey> unwrapSecretKey(Element outerEncryptedDataEl, SecurityTokenResolver securityTokenResolver, @Nullable KeyInfoErrorListener keyInfoErrorListener)
+    public static Pair<X509Certificate, byte[]> unwrapSecretKey(Element outerEncryptedDataEl, SecurityTokenResolver securityTokenResolver, @Nullable KeyInfoErrorListener keyInfoErrorListener)
             throws UnexpectedKeyInfoException, InvalidDocumentFormatException, GeneralSecurityException
     {
         Element keyInfo = XmlUtil.findExactlyOneChildElementByName(outerEncryptedDataEl, SoapUtil.DIGSIG_URI, "KeyInfo");
@@ -127,10 +146,10 @@ public class XmlElementDecryptor {
         byte[] encryptedKeyBytes = HexUtils.decodeBase64(cipherValueB64.trim());
         byte[] secretKeyBytes = XencUtil.decryptKey(encryptedKeyBytes, XencUtil.getOaepBytes(encMethod), signerInfo.getPrivate());
         // Support "flexible" answers to getAlgorithm() query when using 3des with HSM (Bug #3705)
-        return new Pair<X509Certificate, FlexKey>(signerInfo.getCertificate(), new FlexKey(secretKeyBytes));
+        return new Pair<X509Certificate, byte[]>(signerInfo.getCertificate(), secretKeyBytes);
     }
 
-    public static SignerInfo findSignerInfoForEncryptedType(Element encryptedType, SecurityTokenResolver securityTokenResolver, @Nullable KeyInfoErrorListener keyInfoErrorListener)
+    static SignerInfo findSignerInfoForEncryptedType(Element encryptedType, SecurityTokenResolver securityTokenResolver, @Nullable KeyInfoErrorListener keyInfoErrorListener)
             throws InvalidDocumentFormatException, CertificateException
     {
         List<Element> keyInfos = DomUtils.findChildElementsByName(encryptedType, SoapConstants.DIGSIG_URI, SoapConstants.KINFO_EL_NAME);
@@ -163,7 +182,7 @@ public class XmlElementDecryptor {
             throw new InvalidDocumentFormatException("EncryptedType did not contain a KeyInfo in a supported format");
     }
 
-    public static SignerInfo handleX509Data(Element x509Data, SecurityTokenResolver securityTokenResolver) throws CertificateException, InvalidDocumentFormatException {
+    static SignerInfo handleX509Data(Element x509Data, SecurityTokenResolver securityTokenResolver) throws CertificateException, InvalidDocumentFormatException {
         // Use X509Data
         Element x509CertEl = DomUtils.findOnlyOneChildElementByName(x509Data, SoapConstants.DIGSIG_URI, "X509Certificate");
         Element x509SkiEl = DomUtils.findOnlyOneChildElementByName(x509Data, SoapConstants.DIGSIG_URI, "X509SKI");

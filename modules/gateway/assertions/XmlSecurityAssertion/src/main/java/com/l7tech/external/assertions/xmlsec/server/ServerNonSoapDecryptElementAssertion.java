@@ -65,7 +65,7 @@ public class ServerNonSoapDecryptElementAssertion extends ServerNonSoapSecurityA
                     logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[]{"Unable to parse KeyInfo: " + ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
                 }
             };
-            Triple<String, NodeList, X509Certificate> result = XmlElementDecryptor.decryptAndReplaceElement(encryptedDataEl, securityTokenResolver, decryptionError, keyInfoErrorListener);
+            Triple<String, NodeList, X509Certificate> result = XmlElementDecryptor.unwrapDecryptAndReplaceElement(encryptedDataEl, securityTokenResolver, decryptionError, keyInfoErrorListener);
             String algorithm = result.left;
             X509Certificate recipientCert = result.right;
             int numNodes = result.middle.getLength();
