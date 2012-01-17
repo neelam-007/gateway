@@ -29,17 +29,6 @@ class StrictWspVisitor implements WspVisitor {
         throw new InvalidPolicyStreamException("Unknown property " + parameterName + " of " + deserializedObject.getClass(), problemEncountered);
     }
 
-    public void propertyTypeMismatch(Element originalObject,
-                                     Element problematicParameter,
-                                     Object deserializedObject,
-                                     String parameterName,
-                                     TypedReference parameterValue,
-                                     Throwable problemEncountered)
-            throws InvalidPolicyStreamException
-    {
-        assert false: "Mismatch property type for " + parameterName + " of " + deserializedObject.getClass() ;
-    }
-
     public Element invalidElement(Element problematicElement, Exception problemEncountered) throws InvalidPolicyStreamException {
         throw new InvalidPolicyStreamException("Unrecognized element " + problematicElement.getLocalName(), problemEncountered);
     }
