@@ -718,4 +718,26 @@ public class RegexAssertionTest {
         assertEquals(5, vv.length);
         assertTrue(Arrays.equals(vv, new String[]{"CN=TSP_Admins", "CN=AP_MIJNKADASTER_BEHEER", "CN=OU=Groepen", "CN=DC=kadaster", "CN=DC=ftoCN=OU=Groepen"}));
     }
+
+    @Test
+    @BugNumber(11696)
+    public void testOptionalMatch() throws Exception {
+        final Regex regex = regex("(foo )(asdf )?(bar )");
+        regex.setCaseInsensitive(true);
+        regex.setReplace(false);
+        regex.setCaptureVar("v");
+
+        PolicyEnforcementContext context = context("foo bar blah bletch", PHRASE_ORLY);
+        expect(AssertionStatus.NONE, regex, context);
+
+        final Object vvo = context.getVariable("v");
+        assertNotNull(vvo);
+        assertTrue(vvo instanceof String[]);
+        final String[] vv = (String[]) vvo;
+
+        assertEquals("foo bar ", vv[0]);
+        assertEquals("foo ", vv[1]);
+        assertNull(vv[2]);
+        assertEquals("bar ", vv[3]);
+    }
 }

@@ -234,8 +234,7 @@ public class ServerRegex extends AbstractServerAssertion<Regex> {
         if (includeEntireExpressionCapture)
             captured.add(matcher.group(0));
         for (int i = 1; i <= matcher.groupCount(); ++i)
-            if (matcher.group(i) != null)
-                captured.add(matcher.group(i));
+            captured.add(matcher.group(i)); // may be null if it's an unmatched optional group (Bug #9395)
     }
 
     private AssertionStatus doReplace(PolicyEnforcementContext context, Pattern pattern, RegexInput input, RegexOutput out) throws IOException {
