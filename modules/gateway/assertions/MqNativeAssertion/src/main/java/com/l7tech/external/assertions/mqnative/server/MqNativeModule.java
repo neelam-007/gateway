@@ -99,6 +99,9 @@ public class MqNativeModule extends ActiveTransportModule implements Application
         super.doStart();
         if (gatewayState.isReadyForMessages()) {
             try {
+                // excluded log message when polling an empty queue.  i.e. excluded "MQJE001: Completion Code 2, Reason 2033"
+				MQException.logExclude(MQException.MQRC_NO_MSG_AVAILABLE);
+
                 threadPoolBean.start();
                 startInitialListeners();
             } catch (FindException e) {
