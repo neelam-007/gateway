@@ -771,7 +771,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
 
         if(!ssoAssertionFound){
             logAndAudit( AssertionMessages.SAMLP_1_1_PROCREQ_PROFILE_VIOLATION,
-                    "No SSO Assertion found. No authentication statment found which contains a Conditions element with NotBefore and NotOnOrAfter");
+                    "No SSO Assertion found. No authentication statement found which contains a Conditions element with NotBefore and NotOnOrAfter");
             throw new AssertionStatusException(AssertionStatus.FALSIFIED);
         }
     }

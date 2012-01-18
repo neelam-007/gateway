@@ -1072,5 +1072,7 @@ public class AssertionMessages extends Messages {
     public static final Messages.M CERT_LOOKUP_MULTIPLE = m(9552, Level.WARNING, "Multiple certificates found for name ''{0}''." );
     public static final Messages.M CERT_LOOKUP_ERROR = m(9553, Level.WARNING, "Error looking up certificate ''{0}''." );
 
+    public static final Messages.M SAMLP_REQUEST_BUILDER_INVALID_URI = m(9580, Level.WARNING, "Invalid URI value found for {0}: ''{1}''." );
+
     // Highest ID reserved for AssertionMessages = 99999
 }

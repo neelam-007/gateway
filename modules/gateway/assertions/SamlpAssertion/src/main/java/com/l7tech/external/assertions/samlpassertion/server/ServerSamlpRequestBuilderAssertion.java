@@ -24,6 +24,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.assertion.ServerAssertionUtils;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.message.Message;
@@ -555,11 +556,28 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
         }
     }
 
+    private String getCustomNameFormatValue(final BuilderContext bContext) {
+        String customFormatValue = null;
+        final String customFormat = assertion.getCustomNameIdentifierFormat();
+        if (customFormat != null) {
+            final String customFormatResolved = ExpandVariables.process(customFormat, bContext.ctxVariables, getAudit());
+            if (!ValidationUtils.isValidUri(customFormatResolved)) {
+                logAndAudit(AssertionMessages.SAMLP_REQUEST_BUILDER_INVALID_URI, "custom name identifier format", customFormatResolved);
+                throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
+            } else {
+                customFormatValue = customFormatResolved;
+            }
+        }
+
+        return customFormatValue;
+    }
+
     /**
      * Taken from <code>ServerSamlTokenIssuerAssertion</code>.  Extracts the NameIdentifier based on the selected
      * assertion property.
      *
      * @param ctx the PolicyEnforcementContext
+     * @param bContext context with variables and resolvers
      * @return String array of 2 elements: [0] is the nameValue; and [1] is the nameFormat
      * @throws SamlpAssertionException if the "FROM_USER" property is chosen and no user Auth is found in the ctx
      */
@@ -568,23 +586,25 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
     {
         String nameValue;
         final String nameFormat;
-        String formatValue = assertion.getNameIdentifierFormat();
+        final String formatValue = (assertion.getNameIdentifierFormat() == null) ? getCustomNameFormatValue(bContext) : assertion.getNameIdentifierFormat();
 
         switch(assertion.getNameIdentifierType()) {
             case FROM_CREDS:
                 LoginCredentials credentials = ctx.getLastCredentials();
                 if (credentials != null) {
                     final X509Certificate clientCert = credentials.getClientCert();
+                    final String nameFormatValueToUse;
                     if (clientCert != null) {
-                        formatValue = (formatValue == null ? SamlConstants.NAMEIDENTIFIER_X509_SUBJECT : formatValue);
+                        nameFormatValueToUse = (formatValue == null ? SamlConstants.NAMEIDENTIFIER_X509_SUBJECT : formatValue);
                         nameValue = clientCert.getSubjectDN().getName();
                     } else {
-                        formatValue = (formatValue == null ? SamlConstants.NAMEIDENTIFIER_UNSPECIFIED : formatValue);
+                        nameFormatValueToUse = (formatValue == null ? SamlConstants.NAMEIDENTIFIER_UNSPECIFIED : formatValue);
                         nameValue = credentials.getLogin();
                     }
-                    nameFormat = formatValue;
+                    nameFormat = nameFormatValueToUse;
                 } else {
                     // TODO: add audit msg
+                    // TODO [Donal] fix
                     throw new SamlpAssertionException("Missing credentials to populate NameIdentifier");
                 }
                 break;
@@ -592,7 +612,6 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
                 User u = ctx.getLastAuthenticatedUser();
                 if (u == null) {
                     logAndAudit(AssertionMessages.SAML_ISSUER_AUTH_REQUIRED);
-//                    logAndAudit(AssertionMessages.SAMLP_BUILDER_AUTH_REQUIRED);
                     throw new SamlpAssertionException("Missing authenticated user to populate NameIdentifier");
                 }
 
@@ -628,7 +647,7 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
                     nameValue = ExpandVariables.process(val, bContext.ctxVariables, getAudit());
                 }
                 //todo [Donal] - this looks like a possible bug as it may be null and should likely default to unspecified
-                nameFormat = assertion.getNameIdentifierFormat();
+                nameFormat = formatValue;
                 break;
             case NONE:
             default:

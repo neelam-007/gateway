@@ -3,13 +3,12 @@ package com.l7tech.external.assertions.samlpassertion.server;
 import com.l7tech.common.TestKeys;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.samlpassertion.SamlpRequestBuilderAssertion;
+import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.HttpServletResponseKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
-import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.xml.XmlElementEncryptionConfig;
@@ -17,7 +16,9 @@ import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.ServerPolicyException;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.test.BugNumber;
+import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
@@ -156,6 +157,99 @@ public class ServerSamlpRequestBuilderAssertionTest {
         serverAssertion.checkRequest(context);
     }
 
+    @Test
+    @BugNumber(11622)
+    public void testCustomNameFormat() throws Exception {
+        final SamlpRequestBuilderAssertion assertion = new SamlpRequestBuilderAssertion();
+        // Absolute minimum configuration to avoid NPE's etc.
+        assertion.setSamlVersion(2);
+        assertion.setSoapVersion(1);
+        final String customformat = "customformat";
+        assertion.setCustomNameIdentifierFormat(customformat + "${var}");
+        assertion.setNameIdentifierType(NameIdentifierInclusionType.SPECIFIED);
+        assertion.setNameIdentifierValue("test");
+        assertion.setAttributeStatement(new SamlAttributeStatement());
+        assertion.setRequestId(SamlpRequestConstants.SAMLP_REQUEST_ID_GENERATE);
+
+        final PolicyEnforcementContext context = getContext();
+        context.setVariable("var", "1");
+
+        ServerSamlpRequestBuilderAssertion serverAssertion =
+                new ServerSamlpRequestBuilderAssertion(assertion, ApplicationContexts.getTestApplicationContext());
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Unexpected status", AssertionStatus.NONE, assertionStatus);
+
+        final Message samlpRequest = (Message) context.getVariable(assertion.getOtherTargetMessageVariable());
+        final Element documentElement = samlpRequest.getXmlKnob().getDocumentReadOnly().getDocumentElement();
+
+        System.out.println(XmlUtil.nodeToFormattedString(documentElement));
+
+        String xPath = "/soapenv:Envelope/soapenv:Body/samlp2:AttributeQuery/saml2:Subject/saml2:NameID";
+
+        final Map<String, String> prefixToNamespace = new HashMap<String, String>();
+        prefixToNamespace.put(SamlConstants.NS_SAML2_PREFIX, SamlConstants.NS_SAML2);
+        prefixToNamespace.put(SamlConstants.NS_SAMLP2_PREFIX, SamlConstants.NS_SAMLP2);
+        prefixToNamespace.put("soapenv", "http://schemas.xmlsoap.org/soap/envelope/");
+
+        final ElementCursor cursor = new DomElementCursor(documentElement);
+
+        XpathResult xpathResult = cursor.getXpathResult(new XpathExpression(xPath, prefixToNamespace).compile());
+        XpathResultIterator xpathResultSetIterator = xpathResult.getNodeSet().getIterator();
+
+        //first element should be the auth token
+        final Element nameID = xpathResultSetIterator.nextElementAsCursor().asDomElement();
+        Assert.assertEquals("Wrong element found", "NameID", nameID.getLocalName());
+
+        final String format = nameID.getAttribute("Format");
+        Assert.assertEquals("Invalid name format found", customformat + "1", format);
+    }
+
+    /**
+     * Validate that an invalid value causes assertion failure and is audited correctly.
+     */
+    @Test
+    @BugNumber(11622)
+    public void testCustomNameFormat_InvalidResolvedValue() throws Exception {
+        final SamlpRequestBuilderAssertion assertion = new SamlpRequestBuilderAssertion();
+        // Absolute minimum configuration to avoid NPE's etc.
+        assertion.setSamlVersion(2);
+        assertion.setSoapVersion(1);
+        final String customformat = "customformat";
+        assertion.setCustomNameIdentifierFormat(customformat + "${var}");
+        assertion.setNameIdentifierType(NameIdentifierInclusionType.SPECIFIED);
+        assertion.setNameIdentifierValue("test");
+        assertion.setAttributeStatement(new SamlAttributeStatement());
+        assertion.setRequestId(SamlpRequestConstants.SAMLP_REQUEST_ID_GENERATE);
+
+        final PolicyEnforcementContext context = getContext();
+        context.setVariable("var", "%"); //invalid URI value
+
+        ServerSamlpRequestBuilderAssertion serverAssertion =
+                new ServerSamlpRequestBuilderAssertion(assertion, ApplicationContexts.getTestApplicationContext());
+
+        final TestAudit testAudit = new TestAudit();
+        ApplicationContexts.inject(serverAssertion, CollectionUtils.<String, Object>mapBuilder()
+                .put( "auditFactory", testAudit.factory() )
+                .unmodifiableMap()
+        );
+
+        try {
+            serverAssertion.checkRequest(context);
+            Assert.fail("Assertion should have thrown");
+        } catch (AssertionStatusException e) {
+            Assert.assertEquals("Wrong status found", AssertionStatus.SERVER_ERROR, e.getAssertionStatus());
+            // pass
+        }
+
+        //validate audits
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+
+        Assert.assertTrue("Required audit not found", testAudit.isAuditPresentContaining("Invalid URI value found for custom name identifier format: 'customformat%'."));
+    }
+
     private PolicyEnforcementContext getContext() throws IOException {
 
         Message request = new Message();
@@ -171,7 +265,5 @@ public class ServerSamlpRequestBuilderAssertionTest {
         response.attachHttpResponseKnob(new HttpServletResponseKnob(hresponse));
 
         return policyEnforcementContext;
-
     }
-
 }

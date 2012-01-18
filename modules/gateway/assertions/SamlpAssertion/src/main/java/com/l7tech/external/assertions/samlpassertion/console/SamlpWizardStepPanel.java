@@ -11,6 +11,10 @@ public abstract class SamlpWizardStepPanel extends WizardStepPanel {
     private AssertionMode mode;
     private Assertion prevAssertion;
 
+    protected SamlpWizardStepPanel(WizardStepPanel next, Assertion prevAssertion) {
+        this(next, AssertionMode.REQUEST, prevAssertion);
+    }
+
     protected SamlpWizardStepPanel(WizardStepPanel next, AssertionMode mode,  Assertion prevAssertion) {
         super(next);
         this.mode = mode;

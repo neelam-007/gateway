@@ -48,6 +48,7 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
     private int subjectConfirmationDataNotOnOrAfterExpirySeconds = -1;
     private NameIdentifierInclusionType nameIdentifierType = NameIdentifierInclusionType.FROM_CREDS;
     private String nameIdentifierFormat;
+    private String customNameIdentifierFormat;
     private String nameIdentifierValue;
     private boolean encryptNameIdentifier;
     private XmlElementEncryptionConfig xmlEncryptConfig = new XmlElementEncryptionConfig();
@@ -271,7 +272,8 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
                 // new stuff
                 requestIdVariable,
                 destinationAttribute,
-                consentAttribute
+                consentAttribute,
+                customNameIdentifierFormat
         ).withVariables( evidenceVariable );
 
         variablesUsed.addVariables(xmlEncryptConfig.getVariablesUsed());
@@ -325,6 +327,14 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
 
     public String getNameIdentifierFormat() {
         return nameIdentifierFormat;
+    }
+
+    public void setCustomNameIdentifierFormat(@Nullable String customNameIdentifierFormat) {
+        this.customNameIdentifierFormat = customNameIdentifierFormat;
+    }
+
+    public String getCustomNameIdentifierFormat() {
+        return customNameIdentifierFormat;
     }
 
     public void setNameIdentifierValue(@Nullable String value) {

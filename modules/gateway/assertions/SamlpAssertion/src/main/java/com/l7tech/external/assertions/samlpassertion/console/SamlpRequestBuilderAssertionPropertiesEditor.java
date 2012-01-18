@@ -35,7 +35,7 @@ public class SamlpRequestBuilderAssertionPropertiesEditor extends SamlpAssertion
                       new AttributeQueryWizardStepPanel(
                         new SubjectConfirmationNameIdentifierWizardStepPanel(
                           new SubjectConfirmationWizardStepPanel(
-                            new SamlSignatureStepPanel(null, true, getPreviousAssertion()), true, mode, getPreviousAssertion()), mode, getPreviousAssertion()), mode, getPreviousAssertion()), mode, getPreviousAssertion()), mode, getPreviousAssertion()), mode, getPreviousAssertion()), true, mode, getPreviousAssertion()), mode, getPreviousAssertion());
+                            new SamlSignatureStepPanel(null, true, getPreviousAssertion()), true, mode, getPreviousAssertion()), getPreviousAssertion()), mode, getPreviousAssertion()), mode, getPreviousAssertion()), mode, getPreviousAssertion()), mode, getPreviousAssertion()), true, mode, getPreviousAssertion()), mode, getPreviousAssertion());
 
         SamlpAssertionWizard wiz = new SamlpAssertionWizard(assertion, TopComponents.getInstance().getTopParent(), p, mode, readOnly);
         wiz.addWizardListener(new WizardAdapter() {
