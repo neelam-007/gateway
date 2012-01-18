@@ -174,4 +174,5 @@ public interface ServerConfigParams {
     String PARAM_IO_HTTP_RESPONSE_STREAM_UNLIMITED = "ioHttpResponseStreamUnlimited";
     String PARAM_IO_HTTP_RESPONSE_STREAMING = "ioHttpResponseStreaming";
     String PARAM_IO_JMS_MESSAGE_MAX_BYTES = "ioJmsMessageMaxBytes";
+    String PARAM_IO_MQ_MESSAGE_MAX_BYTES = "ioMqMessageMaxBytes";
 }

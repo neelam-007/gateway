@@ -6,6 +6,7 @@ import com.l7tech.console.security.FormAuthorizationPreparer;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.external.assertions.mqnative.MqNativeAdmin;
 import com.l7tech.external.assertions.mqnative.MqNativeMessageFormatType;
 import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
@@ -120,6 +121,8 @@ public class MqNativePropertiesDialog extends JDialog {
     private JLabel modelQueueNameLabel;
     private JButton managePasswordsButton;
     private SecurePasswordComboBox securePasswordComboBox;
+    private JPanel byteLimitHolderPanel;
+    private ByteLimitPanel byteLimitPanel;
 
     private SsgActiveConnector mqNativeActiveConnector;
 
@@ -420,6 +423,19 @@ public class MqNativePropertiesDialog extends JDialog {
         getContentTypeFromProperty.getDocument().addDocumentListener( enableDisableListener );
         getContentTypeFromProperty.setVisible(false);
 
+        byteLimitPanel = new ByteLimitPanel();
+        byteLimitPanel.setAllowContextVars(false);
+        byteLimitHolderPanel.setLayout(new BorderLayout());
+        byteLimitHolderPanel.add(byteLimitPanel, BorderLayout.CENTER);
+
+        byteLimitPanel.setAllowContextVars(false);
+        byteLimitPanel.addChangeListener(new RunOnChangeListener() {
+            @Override
+            protected void run() {
+                enableOrDisableComponents();
+            }
+        });
+
         final ComponentEnabler outboundEnabler = new ComponentEnabler(new Functions.Nullary<Boolean>() {
             @Override
             public Boolean call() {
@@ -456,9 +472,6 @@ public class MqNativePropertiesDialog extends JDialog {
                             modelQueueNameTextField.setEnabled(false);
                     }
         });
-
-
-
 
         acknowledgementModeComboBox.setModel(new DefaultComboBoxModel(values()));
         acknowledgementModeComboBox.setRenderer(new TextListCellRenderer<Object>(new Functions.Unary<String,Object>() {
@@ -945,6 +958,11 @@ public class MqNativePropertiesDialog extends JDialog {
             }
         }
 
+        byteLimitPanel.setValue(
+            mqNativeActiveConnector == null? null : mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_MQ_MESSAGE_MAX_BYTES),
+            getMqNativeAdmin().getDefaultMqMessageMaxBytes()
+        );
+
         if(!populatedTheServiceList)
              ServiceComboBox.populateAndSelect(serviceNameCombo, true, 0);
         enableOrDisableComponents();
@@ -980,6 +998,8 @@ public class MqNativePropertiesDialog extends JDialog {
         if (!isTemplate && channelTextBox.getText().trim().length() == 0)
             return false;
         if (credentialsAreRequiredToCheckBox.isSelected() && (authUserNameTextBox.getText().trim().length()==0))
+            return false;
+        if (inboundRadioButton.isSelected() && !isInboundPaneValid())
             return false;
         return true;
     }
@@ -1024,6 +1044,9 @@ public class MqNativePropertiesDialog extends JDialog {
  	 	    specifyContentTypeFromHeader.isSelected() &&
  	 	    getContentTypeFromProperty.getText().trim().length() == 0)
  	 	    return false;
+
+        if (byteLimitPanel.validateFields() != null)
+            return false;
 
         return true;
     }
@@ -1217,6 +1240,8 @@ public class MqNativePropertiesDialog extends JDialog {
                     }
                 }
 
+            connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_MQ_MESSAGE_MAX_BYTES, byteLimitPanel.getValue());
+
             connector.setEnabled(!disableListeningTheQueueCheckBox.isSelected());
         } else {
             // else outbound
@@ -1271,6 +1296,10 @@ public class MqNativePropertiesDialog extends JDialog {
             return null;
         }
         return registry.getTransportAdmin();
+    }
+
+    private static MqNativeAdmin getMqNativeAdmin() {
+        return Registry.getDefault().getExtensionInterface(MqNativeAdmin.class, null);
     }
 
     public void selectField() {

@@ -54,7 +54,7 @@ import static com.l7tech.util.ExceptionUtils.getMessage;
  */
 public class MqNativeModule extends ActiveTransportModule implements ApplicationListener {
     private static final Logger logger = Logger.getLogger(MqNativeModule.class.getName());
-
+    private static final int DEFAULT_MESSAGE_MAX_BYTES = 2621440;
     private static final Set<String> SUPPORTED_TYPES = caseInsensitiveSet( ACTIVE_CONNECTOR_TYPE_MQ_NATIVE );
 
     private final Map<Long, MqNativeListener> activeListeners = new ConcurrentHashMap<Long, MqNativeListener> ();
@@ -276,7 +276,11 @@ public class MqNativeModule extends ActiveTransportModule implements Application
 
             // enforce size restriction
             final int size = parsedRequest.right.length;
-            final int sizeLimit = serverConfig.getIntProperty( MQ_MESSAGE_MAX_BYTES_PROPERTY, 5242880);
+            final long sizeLimit = connector.getLongProperty(
+                PROPERTIES_KEY_MQ_NATIVE_INBOUND_MQ_MESSAGE_MAX_BYTES,                                                    // prop value
+                serverConfig.getLongProperty(ServerConfigParams.PARAM_IO_MQ_MESSAGE_MAX_BYTES, DEFAULT_MESSAGE_MAX_BYTES) // default value
+            );
+
             if ( sizeLimit > 0 && size > sizeLimit ) {
                 messageTooLarge = true;
             }
