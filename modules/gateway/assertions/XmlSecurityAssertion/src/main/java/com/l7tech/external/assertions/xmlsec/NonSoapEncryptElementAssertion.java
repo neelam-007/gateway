@@ -63,6 +63,8 @@ public class NonSoapEncryptElementAssertion extends NonSoapSecurityAssertionBase
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, NonSoapEncryptElementValidator.class.getName());
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
+        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
+
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }

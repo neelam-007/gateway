@@ -44,6 +44,7 @@ public class TargetVariablePanel  extends JPanel {
     private boolean acceptEmpty;
     private boolean valueWillBeRead;
     private boolean valueWillBeWritten = true;
+    private boolean alwaysPermitSyntax = false;
 
     private static ResourceBundle resources = ResourceBundle.getBundle(TargetVariablePanel.class.getName());
     private final ImageIcon BLANK_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Transparent16.png"));
@@ -269,6 +270,19 @@ public class TargetVariablePanel  extends JPanel {
         this.valueWillBeWritten = valueWillBeWritten;
     }
 
+    public boolean isAlwaysPermitSyntax() {
+        return alwaysPermitSyntax;
+    }
+
+    /**
+     * Set whether to allow variable syntax such as array dereferencing (eg, "foo[4]").
+     *
+     * @param alwaysPermitSyntax true if additional syntax should always be allowed.
+     */
+    public void setAlwaysPermitSyntax(boolean alwaysPermitSyntax) {
+        this.alwaysPermitSyntax = alwaysPermitSyntax;
+    }
+
     /**
      * Validates values in various fields and sets the status labels as appropriate.
      */
@@ -290,7 +304,7 @@ public class TargetVariablePanel  extends JPanel {
             statusLabel.setIcon(OK_ICON);        
             statusLabel.setText(resources.getString("label.ok"));
         }
-        else if ((validateNameResult = VariableMetadata.validateName(variableName, valueWillBeRead&&!valueWillBeWritten)) != null) {
+        else if ((validateNameResult = VariableMetadata.validateName(variableName, alwaysPermitSyntax || (valueWillBeRead&&!valueWillBeWritten))) != null) {
             entryValid = false;
             statusLabel.setIcon(WARNING_ICON);        
             statusLabel.setText("Invalid Syntax");
