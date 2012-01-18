@@ -28,7 +28,11 @@ import java.util.regex.Pattern;
  * @author Ken Diep
  */
 public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion implements UsesVariables, SetsVariables {
-    private static final String VARIABLE_PREFIX = "icap.response";
+
+    /**
+     * The default prefix value
+     */
+    public static final String VARIABLE_PREFIX = "icap.response";
 
     /**
      * The variable name to retrieve the infected file(s)/part(s) name.

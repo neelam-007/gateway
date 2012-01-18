@@ -266,6 +266,7 @@ public final class IcapAntivirusScannerPropertiesDialog extends AssertionPropert
         }
 
         varPrefixPanel.setAssertion( assertion, getPreviousAssertion() );
+        varPrefixPanel.setDefaultVariableOrPrefix(IcapAntivirusScannerAssertion.VARIABLE_PREFIX);
         varPrefixPanel.setSuffixes( IcapAntivirusScannerAssertion.getVariableSuffixes() );
         varPrefixPanel.setVariable(assertion.getVariablePrefix());
     }
