@@ -32,6 +32,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
@@ -558,7 +559,9 @@ public class ServerSamlpResponseBuilderAssertionTest {
         final AssertionType assertionType = (AssertionType) responseType.getAssertionOrEncryptedAssertion().get(0);
         Assert.assertNotNull("Assertion was not found", assertionType);
 
-        final ElementCursor cursor = new DomElementCursor(output.getXmlKnob().getDocumentReadOnly());
+        final Document documentReadOnly = output.getXmlKnob().getDocumentReadOnly();
+        System.out.println(XmlUtil.nodeToFormattedString(documentReadOnly));
+        final ElementCursor cursor = new DomElementCursor(documentReadOnly);
         final HashMap<String, String> map = getNamespaces();
 
         XpathResult xpathResult = cursor.getXpathResult(new XpathExpression("/samlp2:Response/saml2:Assertion", map).compile());
@@ -846,7 +849,9 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
         final Message output = (Message) context.getVariable(outputVar);
 
-        final Node responseElement = output.getXmlKnob().getDocumentReadOnly().getFirstChild();
+        final Document documentReadOnly = output.getXmlKnob().getDocumentReadOnly();
+        System.out.println(XmlUtil.nodeToFormattedString(documentReadOnly));
+        final Node responseElement = documentReadOnly.getFirstChild();
 
         Node childNode = responseElement.getFirstChild();
         Assert.assertEquals("Incorrect element found", SamlConstants.NS_SAML2, childNode.getNamespaceURI());
@@ -903,7 +908,9 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
         final Message output = (Message) context.getVariable(outputVar);
 
-        final JAXBElement<saml.v2.protocol.ResponseType> typeJAXBElement = v2Unmarshaller.unmarshal(output.getXmlKnob().getDocumentReadOnly(), saml.v2.protocol.ResponseType.class);
+        final Document documentReadOnly = output.getXmlKnob().getDocumentReadOnly();
+        System.out.println(XmlUtil.nodeToFormattedString(documentReadOnly));
+        final JAXBElement<saml.v2.protocol.ResponseType> typeJAXBElement = v2Unmarshaller.unmarshal(documentReadOnly, saml.v2.protocol.ResponseType.class);
         final saml.v2.protocol.ResponseType responseType = typeJAXBElement.getValue();
 
         final NameIDType nameIDType = responseType.getIssuer();
@@ -963,7 +970,9 @@ public class ServerSamlpResponseBuilderAssertionTest {
         Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
 
         final Message output = (Message) context.getVariable(outputVar);
-        final Node responseElement = output.getXmlKnob().getDocumentReadOnly().getFirstChild();
+        final Document documentReadOnly = output.getXmlKnob().getDocumentReadOnly();
+        System.out.println(XmlUtil.nodeToFormattedString(documentReadOnly));
+        final Node responseElement = documentReadOnly.getFirstChild();
         
         Node childNode = responseElement.getFirstChild();
         Assert.assertEquals("Incorrect element found", DsigUtil.DIGSIG_URI, childNode.getNamespaceURI());

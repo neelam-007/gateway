@@ -86,6 +86,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
         }
     }
 
+    @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         final ResponseContext responseContext;
@@ -112,18 +113,16 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
         try {
             switch (assertion.getSamlVersion()) {
                 case SAML2:
-                    marshaller = JaxbUtil.getMarshallerV2();
+                    marshaller = (assertion.isAddIssuer()) ? JaxbUtil.getMarshallerV2(Arrays.asList(JaxbUtil.SAML_2)) : JaxbUtil.getMarshallerV2(true);
                     break;
                 case SAML1_1:
-                    marshaller = JaxbUtil.getMarshallerV1();
+                    marshaller = (assertion.isAddIssuer()) ? JaxbUtil.getMarshallerV1(Arrays.asList(JaxbUtil.SAML_2)) : JaxbUtil.getMarshallerV1(true);
                     break;
                 default:
                     throw new RuntimeException("Unknown SAML Version found");//cannot happen due to constructor.
             }
             
-            final JAXBElement<?> response = createResponse(responseContext);
-            marshaller.marshal(response, responseDoc);
-
+            createResponse(responseContext, marshaller, responseDoc);
         } catch (JAXBException e) {
             logAndAudit(AssertionMessages.SAMLP_RESPONSE_BUILDER_GENERIC,
                     new String[]{"create", ExceptionUtils.getMessage(e)},
@@ -468,7 +467,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
 
     }
 
-    private JAXBElement<?> createResponse(final ResponseContext responseContext)
+    private void createResponse(final ResponseContext responseContext, final Marshaller marshaller, final Document responseDoc)
             throws JAXBException, InvalidRuntimeValueException {
 
         switch (assertion.getSamlVersion()) {
@@ -477,16 +476,20 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
                 final Map caMap = CertUtils.dnToAttributeMap(caDn);
                 final String caCn = (String)((List)caMap.get("CN")).get(0);
 
-                return createV2Response(responseContext, JaxbUtil.getUnmarshallerV2(), caCn);
+                createV2Response(responseContext, JaxbUtil.getUnmarshallerV2(), caCn, marshaller, responseDoc);
+                return;
             case SAML1_1:
-                return createV1Response(responseContext, JaxbUtil.getUnmarshallerV1());
+                createV1Response(responseContext, JaxbUtil.getUnmarshallerV1(), marshaller, responseDoc);
+                return;
             default:
                 throw new RuntimeException("Unknown SAML Version");//can't happen.
         }
     }
 
-    private JAXBElement<saml.v1.protocol.ResponseType> createV1Response(final ResponseContext responseContext,
-                                                                        final Unmarshaller um)
+    private void createV1Response(final ResponseContext responseContext,
+                                  final Unmarshaller um,
+                                  final Marshaller marshaller,
+                                  final Document responseDoc)
             throws JAXBException, InvalidRuntimeValueException {
 
         final saml.v1.protocol.ResponseType response = v1SamlpFactory.createResponseType();
@@ -501,7 +504,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
         statusType.setStatusCode(statusCodeType);
 
         final String statusMessage = responseContext.statusMessage;
-        if(statusMessage != null){
+        if (statusMessage != null) {
             statusType.setStatusMessage(statusMessage);
         }
 
@@ -514,13 +517,13 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
         }
 
         for (Object detail : statusDetailColl) {
-            if(detail instanceof Element || detail instanceof String){
+            if (detail instanceof Element || detail instanceof String) {
                 statusType.getStatusDetail().getAny().add(detail);
-            } else if (detail instanceof Message){
+            } else if (detail instanceof Message) {
                 Message message = (Message) detail;
                 statusType.getStatusDetail().getAny().add(getDocumentElement(message));
-            } else{
-                logger.log(Level.WARNING, "Unexpected value of type '" + detail.getClass().getName() +"' found for status detail");
+            } else {
+                logger.log(Level.WARNING, "Unexpected value of type '" + detail.getClass().getName() + "' found for status detail");
             }
         }
 
@@ -529,43 +532,63 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
         response.setResponseID(responseContext.responseId);
         response.setIssueInstant(responseContext.issueInstant);
         final String inResponseTo = responseContext.inResponseTo;
-        if(inResponseTo != null){
+        if (inResponseTo != null) {
             response.setInResponseTo(inResponseTo);
         }
         final String recipient = responseContext.recipient;
-        if(recipient != null){
+        if (recipient != null) {
             response.setRecipient(recipient);
         }
 
-        final Collection tokens = responseContext.samlTokens;
-        for (Object token : tokens) {
-            final JAXBElement<saml.v1.assertion.AssertionType> typeJAXBElement;
-            if(token instanceof Element){
-                typeJAXBElement = um.unmarshal((Element) token, saml.v1.assertion.AssertionType.class);
-            } else if(token instanceof Message){
-                Message message = (Message) token;
-                typeJAXBElement = um.unmarshal(getDocumentElement(message), saml.v1.assertion.AssertionType.class);
-            } else {
-                logger.log(Level.WARNING, "Unexpected value of type '" + token.getClass().getName() +"' found for response assertions");
-                continue;
-            }
+        final boolean validateWebSsoRules = isValidateWebSsoRules();
 
-            final saml.v1.assertion.AssertionType value = typeJAXBElement.getValue();
-            if(value.getMajorVersion() == null){
-                throw new InvalidRuntimeValueException("SAML Assertion version must be SAML 1.x");
+        final Collection tokens = responseContext.samlTokens;
+        final List<Element> resolvedAssertions = new ArrayList<Element>();
+        for (Object token : tokens) {
+            if (token instanceof Element) {
+                resolvedAssertions.add((Element) token);
+            } else if (token instanceof Message) {
+                Message message = (Message) token;
+                final Element documentElement = getDocumentElement(message);
+                resolvedAssertions.add(documentElement);
+            } else {
+                logger.log(Level.WARNING, "Unexpected value of type '" + token.getClass().getName() + "' found for response assertions");
             }
-            response.getAssertion().add(value);
         }
+
+        if (validateWebSsoRules) {
+            for (Element resolvedAssertion : resolvedAssertions) {
+                final JAXBElement<saml.v1.assertion.AssertionType> typeJAXBElement = um.unmarshal(resolvedAssertion, saml.v1.assertion.AssertionType.class);
+                final saml.v1.assertion.AssertionType value = typeJAXBElement.getValue();
+                if (value.getMajorVersion() == null) {
+                    throw new InvalidRuntimeValueException("SAML Assertion version must be SAML 1.x");
+                }
+                response.getAssertion().add(value);
+            }
+        }
+
         final JAXBElement<saml.v1.protocol.ResponseType> typeJAXBElement = v1SamlpFactory.createResponse(response);
-        if(assertion.isValidateWebSsoRules() && validateSSOProfileDetails){
+        if (validateWebSsoRules) {
             validateV1Response(typeJAXBElement.getValue());
+            final saml.v1.protocol.ResponseType responseType = typeJAXBElement.getValue();
+            // clean up - remove added assertions - we will add them manually
+            responseType.getAssertion().clear();
         }
-        return typeJAXBElement;
+
+        marshaller.marshal(typeJAXBElement, responseDoc);
+        final Element responseEl = responseDoc.getDocumentElement();
+
+        for (Element resolvedAssertion : resolvedAssertions) {
+            final Node importedAssertion = responseDoc.importNode(resolvedAssertion, true);
+            responseEl.appendChild(importedAssertion);
+        }
     }
 
-    private JAXBElement<saml.v2.protocol.ResponseType> createV2Response(final ResponseContext responseContext,
-                                                                        final Unmarshaller um,
-                                                                        final String issuer)
+    private void createV2Response(final ResponseContext responseContext,
+                                  final Unmarshaller um,
+                                  final String issuer,
+                                  final Marshaller marshaller,
+                                  final Document responseDoc)
             throws JAXBException, InvalidRuntimeValueException {
 
         //The order in which methods are set on ResponseType matter for the XML it will produce!! Add elements in
@@ -575,14 +598,14 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
         response.setVersion("2.0");
 
         //Issuer
-        if(assertion.isAddIssuer()){
+        if (assertion.isAddIssuer()) {
             final NameIDType idType = v2SamlpAssnFactory.createNameIDType();
             final JAXBElement<NameIDType> nameIdElement = v2SamlpAssnFactory.createIssuer(idType);
             final NameIDType value = nameIdElement.getValue();
             value.setValue(responseContext.customIssuer == null ? issuer : responseContext.customIssuer);
             response.setIssuer(value);
         }
-        
+
         final saml.v2.protocol.StatusCodeType statusCodeType = v2SamlpFactory.createStatusCodeType();
         statusCodeType.setValue(responseContext.statusCode);
 
@@ -590,7 +613,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
         statusType.setStatusCode(statusCodeType);
 
         final String statusMessage = responseContext.statusMessage;
-        if(statusMessage != null){
+        if (statusMessage != null) {
             statusType.setStatusMessage(statusMessage);
         }
 
@@ -608,8 +631,8 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
             } else if (detail instanceof Message) {
                 Message message = (Message) detail;
                 statusType.getStatusDetail().getAny().add(getDocumentElement(message));
-            } else{
-                logger.log(Level.WARNING, "Unexpected value of type '" + detail.getClass().getName() +"' found for status detail");
+            } else {
+                logger.log(Level.WARNING, "Unexpected value of type '" + detail.getClass().getName() + "' found for status detail");
             }
         }
 
@@ -618,17 +641,17 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
         response.setID(responseContext.responseId);
         response.setIssueInstant(responseContext.issueInstant);
         final String inResponseTo = responseContext.inResponseTo;
-        if(inResponseTo != null){
+        if (inResponseTo != null) {
             response.setInResponseTo(inResponseTo);
         }
 
         final String destination = responseContext.destination;
-        if(destination != null) {
+        if (destination != null) {
             response.setDestination(destination);
         }
 
         final String consent = responseContext.consent;
-        if(consent != null) {
+        if (consent != null) {
             response.setConsent(consent);
         }
 
@@ -640,60 +663,97 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
         }
 
         for (Object extension : extensions) {
-            if(extension instanceof Element){
+            if (extension instanceof Element) {
                 response.getExtensions().getAny().add(extension);
-            } else if (extension instanceof Message){
+            } else if (extension instanceof Message) {
                 Message message = (Message) extension;
                 response.getExtensions().getAny().add(getDocumentElement(message));
             } else {
-                logger.log(Level.WARNING, "Unexpected value  type '" + extension.getClass().getName() +"' found for response extensions");
+                logger.log(Level.WARNING, "Unexpected value  type '" + extension.getClass().getName() + "' found for response extensions");
             }
         }
-        
-        final Collection tokens = responseContext.samlTokens;
-        for (Object token : tokens) {
-            final JAXBElement<saml.v2.assertion.AssertionType> typeJAXBElement;
-            if(token instanceof Element){
-                typeJAXBElement = um.unmarshal((Element) token, saml.v2.assertion.AssertionType.class);
-            } else if(token instanceof Message){
-                Message message = (Message) token;
-                typeJAXBElement = um.unmarshal(getDocumentElement(message), saml.v2.assertion.AssertionType.class);
-            } else {
-                logger.log(Level.WARNING, "Unexpected value of type '" + token.getClass().getName() +"' found for response assertions");
-                continue;
-            }
 
-            final AssertionType value = typeJAXBElement.getValue();
-            if(value.getVersion() == null){
-                throw new InvalidRuntimeValueException("SAML Assertion version must be SAML 2.0");
+        final boolean validateWebSsoRules = isValidateWebSsoRules();
+
+        final Collection tokens = responseContext.samlTokens;
+        final List<Element> resolvedAssertions = new ArrayList<Element>();
+        for (Object token : tokens) {
+            if (token instanceof Element) {
+                resolvedAssertions.add((Element) token);
+            } else if (token instanceof Message) {
+                Message message = (Message) token;
+                final Element documentElement = getDocumentElement(message);
+                resolvedAssertions.add(documentElement);
+            } else {
+                logger.log(Level.WARNING, "Unexpected value of type '" + token.getClass().getName() + "' found for response assertions");
             }
-            response.getAssertionOrEncryptedAssertion().add(value);
+        }
+
+        if (validateWebSsoRules) {
+            for (Element resolvedAssertion : resolvedAssertions) {
+                final JAXBElement<saml.v2.assertion.AssertionType> typeJAXBElement = um.unmarshal(resolvedAssertion, saml.v2.assertion.AssertionType.class);
+                final AssertionType value = typeJAXBElement.getValue();
+                if (value.getVersion() == null) {
+                    throw new InvalidRuntimeValueException("SAML Assertion version must be SAML 2.0");
+                }
+                response.getAssertionOrEncryptedAssertion().add(value);
+            }
         }
 
         final Collection encryptedAssertions = responseContext.encryptedAssertions;
+        final List<Element> resolvedEncryptedAssertions = new ArrayList<Element>();
         for (Object token : encryptedAssertions) {
-            final JAXBElement<EncryptedDataType> typeJAXBElement;
-            if(token instanceof Element){
-                typeJAXBElement = um.unmarshal((Element) token, EncryptedDataType.class);
-            } else if(token instanceof Message){
+            if (token instanceof Element) {
+                resolvedEncryptedAssertions.add((Element) token);
+            } else if (token instanceof Message) {
                 Message message = (Message) token;
-                typeJAXBElement = um.unmarshal(getDocumentElement(message), EncryptedDataType.class);
+                final Element documentElement = getDocumentElement(message);
+                resolvedEncryptedAssertions.add(documentElement);
             } else {
-                logger.log(Level.WARNING, "Unexpected value of type '" + token.getClass().getName() +"' found for response encrypted assertions");
-                continue;
+                logger.log(Level.WARNING, "Unexpected value of type '" + token.getClass().getName() + "' found for response encrypted assertions");
             }
+        }
 
-            final EncryptedDataType value = typeJAXBElement.getValue();
-            final EncryptedElementType encryptedElementType = v2SamlpAssnFactory.createEncryptedElementType();
-            encryptedElementType.setEncryptedData(value);
-            response.getAssertionOrEncryptedAssertion().add(encryptedElementType);
+        if (validateWebSsoRules) {
+            for (Element encryptedAssertion : resolvedEncryptedAssertions) {
+                final JAXBElement<EncryptedDataType> typeJAXBElement = um.unmarshal(encryptedAssertion, EncryptedDataType.class);
+                final EncryptedDataType value = typeJAXBElement.getValue();
+                final EncryptedElementType encryptedElementType = v2SamlpAssnFactory.createEncryptedElementType();
+                encryptedElementType.setEncryptedData(value);
+                response.getAssertionOrEncryptedAssertion().add(encryptedElementType);
+            }
         }
 
         final JAXBElement<ResponseType> typeJAXBElement = v2SamlpFactory.createResponse(response);
-        if(assertion.isValidateWebSsoRules() && validateSSOProfileDetails){
+        if (validateWebSsoRules) {
             validateV2Response(typeJAXBElement.getValue());
+            //fix - bug 10855 - remove assertions now that validation has been done
+            final ResponseType responseType = typeJAXBElement.getValue();
+            // clean up - remove added assertions - we will add them manually
+            responseType.getAssertionOrEncryptedAssertion().clear();
         }
-        return typeJAXBElement;
+
+        marshaller.marshal(typeJAXBElement, responseDoc);
+
+        // add assertions
+        final Element responseEl = responseDoc.getDocumentElement();
+
+        for (Element resolvedAssertion : resolvedAssertions) {
+            final Node importedAssertion = responseDoc.importNode(resolvedAssertion, true);
+            responseEl.appendChild(importedAssertion);
+        }
+
+        // add encrypted assertions
+        for (Element encryptedAssertion : resolvedEncryptedAssertions) {
+            final Element samlEncryptedAssertion = responseDoc.createElementNS(SamlConstants.NS_SAML2, "EncryptedAssertion");
+            final Node importedAssertion = responseDoc.importNode(encryptedAssertion, true);
+            samlEncryptedAssertion.appendChild(importedAssertion);
+            responseEl.appendChild(samlEncryptedAssertion);
+        }
+    }
+
+    private boolean isValidateWebSsoRules() {
+        return assertion.isValidateWebSsoRules() && validateSSOProfileDetails;
     }
 
     private void validateV1Response(final saml.v1.protocol.ResponseType responseType){
