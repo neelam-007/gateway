@@ -2,9 +2,9 @@
 <ivy-module version="1.0">
 	<info organisation="com.ibm.mq"
 		module="com.ibm.mq.pcf"
-		revision="6.0.3"
+		revision="6.1"
 		status="release"
-		publication="20080707125813"
+		publication="20120118103611"
 		default="true"
 	/>
 	<configurations>

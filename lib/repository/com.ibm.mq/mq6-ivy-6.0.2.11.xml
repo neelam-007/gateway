@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ivy-module version="1.0" xmlns:m="http://ant.apache.org/ivy/maven">
-	<info organisation="com.ibm.mq" module="mq6" revision="6.0.2.2" status="release" publication="20080707135043"/>
+	<info organisation="com.ibm.mq" module="mq6" revision="6.0.2.11" status="release" publication="20120118103611"/>
 	<configurations>
 		<conf name="default" visibility="public" description="runtime dependencies and master artifact can be used with this conf" extends="runtime,master"/>
 		<conf name="master" visibility="public" description="contains only the artifact published by this module itself, with no transitive dependencies"/>
@@ -13,12 +13,12 @@
 	</configurations>
 	<publications/>
 	<dependencies>
-		<dependency org="com.ibm.mq" name="connector" rev="6.0.2.2" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-		<dependency org="com.ibm.mq" name="com.ibm.mq.pcf" rev="6.0.3" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-		<dependency org="com.ibm.mq" name="dhbcore" rev="6.0.2.2" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-		<dependency org="com.ibm.mq" name="com.ibm.mqjms" rev="6.0.2.2" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-		<dependency org="com.ibm.mq" name="com.ibm.mq" rev="6.0.2.2" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-		<dependency org="com.ibm.mq" name="mqcontext" rev="6.0.2.2" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-		<dependency org="com.ibm.mq" name="com.ibm.mq.jms.Nojndi" rev="6.0.2.2" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="com.ibm.mq" name="connector" rev="6.0.2.11" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="com.ibm.mq" name="com.ibm.mq.pcf" rev="6.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="com.ibm.mq" name="dhbcore" rev="6.0.2.11" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="com.ibm.mq" name="com.ibm.mqjms" rev="6.0.2.11" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="com.ibm.mq" name="com.ibm.mq" rev="6.0.2.11" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="com.ibm.mq" name="mqcontext" rev="1.3.0" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="com.ibm.mq" name="com.ibm.mq.jms.Nojndi" rev="6.0.2.11" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 	</dependencies>
 </ivy-module>
