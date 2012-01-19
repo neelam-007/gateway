@@ -55,10 +55,12 @@ public class ProtocolRequestUtilities {
         if (subjectType != null) {
             final List<JAXBElement<?>> content = subjectType.getContent();
             if (content != null && !content.isEmpty()) {
-                JAXBElement<?> contentElement = content.get(0);
-                if (NameIDType.class.isAssignableFrom(contentElement.getDeclaredType())) {
-                    final JAXBElement<NameIDType> nameIDType = (JAXBElement<NameIDType>) contentElement;
-                    subjectNameID = nameIDType.getValue();
+                for (JAXBElement<?> contentElement : content) {
+                    if (NameIDType.class.isAssignableFrom(contentElement.getDeclaredType())) {
+                        final JAXBElement<NameIDType> nameIDType = (JAXBElement<NameIDType>) contentElement;
+                        subjectNameID = nameIDType.getValue();
+                        break;
+                    }
                 }
             }
         }
@@ -73,10 +75,11 @@ public class ProtocolRequestUtilities {
         if (subjectType != null) {
             final List<JAXBElement<?>> content = subjectType.getContent();
             if (content != null && !content.isEmpty()) {
-                JAXBElement<?> contentElement = content.get(0);
-                if (EncryptedElementType.class.isAssignableFrom(contentElement.getDeclaredType())) {
-                    final JAXBElement<EncryptedElementType> encryptedIdJaxbType = (JAXBElement<EncryptedElementType>) contentElement;
-                    encryptedIdType = encryptedIdJaxbType.getValue();
+                for (JAXBElement<?> contentElement : content) {
+                    if (EncryptedElementType.class.isAssignableFrom(contentElement.getDeclaredType())) {
+                        final JAXBElement<EncryptedElementType> encryptedIdJaxbType = (JAXBElement<EncryptedElementType>) contentElement;
+                        encryptedIdType = encryptedIdJaxbType.getValue();
+                    }
                 }
             }
         }

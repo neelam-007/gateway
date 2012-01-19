@@ -22,6 +22,7 @@ import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
 import com.l7tech.xml.DomElementCursor;
 import com.l7tech.xml.ElementCursor;
@@ -387,6 +388,92 @@ public class ServerProcessSamlAttributeQueryAssertionTest {
             requestBuilderAssertion.setAttributeStatement(new SamlAttributeStatement());
             requestBuilderAssertion.setRequestId(SamlpRequestConstants.SAMLP_REQUEST_ID_GENERATE);
             requestBuilderAssertion.setEncryptNameIdentifier(true);
+            final XmlElementEncryptionConfig config = requestBuilderAssertion.getXmlEncryptConfig();
+            config.setRecipientCertificateBase64(HexUtils.encodeBase64(k.left.getEncoded(), true));
+            ServerSamlpRequestBuilderAssertion requestBuilderServerAssertion =
+                    new ServerSamlpRequestBuilderAssertion(requestBuilderAssertion, ApplicationContexts.getTestApplicationContext());
+
+            final PolicyEnforcementContext createRequestContext = getContext(null);
+            final AssertionStatus assertionStatus = requestBuilderServerAssertion.checkRequest(createRequestContext);
+            Assert.assertEquals("Unexpected status", AssertionStatus.NONE, assertionStatus);
+            samlpRequest = (Message) createRequestContext.getVariable(requestBuilderAssertion.getOtherTargetMessageVariable());
+            final Element documentElement = samlpRequest.getXmlKnob().getDocumentReadOnly().getDocumentElement();
+            System.out.println(XmlUtil.nodeToFormattedString(documentElement));
+        }
+
+        final ProcessSamlAttributeQueryRequestAssertion assertion = new ProcessSamlAttributeQueryRequestAssertion();
+        assertion.setSoapEncapsulated(true);
+        assertion.setAllowEncryptedId(true);
+        assertion.setDecryptEncryptedId(true);
+
+        final ServerProcessSamlAttributeQueryRequestAssertion serverAssertion =
+                new ServerProcessSamlAttributeQueryRequestAssertion(assertion);
+
+        SimpleSecurityTokenResolver simpleResolver = new SimpleSecurityTokenResolver(k.left, k.right);
+
+        ApplicationContexts.inject(serverAssertion, CollectionUtils.<String, Object>mapBuilder()
+                .put("securityTokenResolver", simpleResolver)
+                .put( "auditFactory", new TestAudit().factory() )
+                .unmodifiableMap()
+        );
+
+        final PolicyEnforcementContext processAttributeQueryContext = getContext(samlpRequest);
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(processAttributeQueryContext);
+        Assert.assertEquals("Unexpected status", AssertionStatus.NONE, assertionStatus);
+
+        final Message processAttributeQueryMessage = (Message) processAttributeQueryContext.getVariable(assertion.getTargetName());
+        final Element documentElement = processAttributeQueryMessage.getXmlKnob().getDocumentReadOnly().getDocumentElement();
+        System.out.println(XmlUtil.nodeToFormattedString(documentElement));
+
+        // Validate element was decrypted correctly and that the EncryptedID has been replaced by a NameID
+
+        final String nameIdString = "saml2:NameID";
+        final String baseXpath = "/soapenv:Envelope/soapenv:Body/samlp2:AttributeQuery/saml2:Subject/ ";
+
+        final Map<String, String> prefixToNamespace = new HashMap<String, String>();
+        prefixToNamespace.put(SamlConstants.NS_SAML2_PREFIX, SamlConstants.NS_SAML2);
+        prefixToNamespace.put(SamlConstants.NS_SAMLP2_PREFIX, SamlConstants.NS_SAMLP2);
+        prefixToNamespace.put("soapenv", "http://schemas.xmlsoap.org/soap/envelope/");
+
+        final ElementCursor cursor = new DomElementCursor(documentElement);
+
+        XpathResult xpathResult = cursor.getXpathResult(new XpathExpression(baseXpath + nameIdString, prefixToNamespace).compile());
+        XpathResultIterator xpathResultSetIterator = xpathResult.getNodeSet().getIterator();
+
+        // Verify NameID found where expected
+        final Element nameID = xpathResultSetIterator.nextElementAsCursor().asDomElement();
+        Assert.assertEquals("Wrong element found", "NameID", nameID.getLocalName());
+        final String textValue = DomUtils.getTextValue(nameID);
+        Assert.assertEquals("Invalid value found for NameID post decryption", nameIdValue, textValue );
+
+        // Verify the EncryptedID element was not found.
+        final String encryptedIdString = "saml2:EncryptedID";
+        xpathResult = cursor.getXpathResult(new XpathExpression(baseXpath + encryptedIdString, prefixToNamespace).compile());
+        xpathResultSetIterator = xpathResult.getNodeSet().getIterator();
+
+        // Verify NameID found where expected
+        Assert.assertFalse("EncryptedID element should not have been found", xpathResultSetIterator.hasNext());
+    }
+
+    //todo [Donal] - update this test to also check for the values of the confirmation data
+    @BugNumber(11703)
+    @Test
+    public void testSuccessCase_DecryptEncryptedNameIdentifier_WithSubjectConfirmation() throws Exception{
+        final Pair<X509Certificate, PrivateKey> k = TestKeys.getCertAndKey("RSA_1024");
+        final String nameIdValue = "Protected Name Identifier Value";
+        //Generate an AttributeQuery with an encrypted name id
+        final Message samlpRequest;
+        {
+            final SamlpRequestBuilderAssertion requestBuilderAssertion = new SamlpRequestBuilderAssertion();
+            requestBuilderAssertion.setSamlVersion(2);
+            requestBuilderAssertion.setSoapVersion(1);
+            requestBuilderAssertion.setNameIdentifierType(NameIdentifierInclusionType.SPECIFIED);
+            requestBuilderAssertion.setNameIdentifierValue(nameIdValue);
+            requestBuilderAssertion.setAttributeStatement(new SamlAttributeStatement());
+            requestBuilderAssertion.setRequestId(SamlpRequestConstants.SAMLP_REQUEST_ID_GENERATE);
+            requestBuilderAssertion.setEncryptNameIdentifier(true);
+            requestBuilderAssertion.setSubjectConfirmationMethodUri("urn:oasis:names:tc:SAML:1.0:cm:sender-vouches");
             final XmlElementEncryptionConfig config = requestBuilderAssertion.getXmlEncryptConfig();
             config.setRecipientCertificateBase64(HexUtils.encodeBase64(k.left.getEncoded(), true));
             ServerSamlpRequestBuilderAssertion requestBuilderServerAssertion =
