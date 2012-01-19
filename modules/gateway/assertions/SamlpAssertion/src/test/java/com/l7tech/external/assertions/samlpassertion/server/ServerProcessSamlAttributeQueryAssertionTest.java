@@ -606,6 +606,10 @@ public class ServerProcessSamlAttributeQueryAssertionTest {
         assertTrue(variableMap.containsKey(prefix(ProtocolRequestUtilities.SUFFIX_SUBJECT_SP_NAME_QUALIFIER)));
         assertTrue(variableMap.containsKey(prefix(ProtocolRequestUtilities.SUFFIX_SUBJECT_FORMAT)));
         assertTrue(variableMap.containsKey(prefix(ProtocolRequestUtilities.SUFFIX_SUBJECT_SP_PROVIDED_ID)));
+        // bug 11691
+        assertTrue(variableMap.containsKey(prefix(ProtocolRequestUtilities.SUFFIX_ELEMENTS_DECRYPTED)));
+        assertTrue(variableMap.containsKey(prefix(ProtocolRequestUtilities.SUFFIX_RECIPIENT_CERTIFICATES)));
+        assertTrue(variableMap.containsKey(prefix(ProtocolRequestUtilities.SUFFIX_ENCRYPTION_METHOD_URIS)));
     }
 
     /**

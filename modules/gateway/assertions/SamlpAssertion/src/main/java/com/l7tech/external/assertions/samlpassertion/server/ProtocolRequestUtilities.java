@@ -35,6 +35,9 @@ public class ProtocolRequestUtilities {
     public static final String SUFFIX_ISSUER_SP_PROVIDED_ID = "issuer.spProvidedId";
     public static final String SUFFIX_REQUEST = "request";
     public static final String SUFFIX_ATTRIBUTES = "attributes";
+    public static final String SUFFIX_ELEMENTS_DECRYPTED = "elementsDecrypted";
+    public static final String SUFFIX_ENCRYPTION_METHOD_URIS = "encryptionMethodUris";
+    public static final String SUFFIX_RECIPIENT_CERTIFICATES = "recipientCertificates";
 
     @SuppressWarnings({"unchecked"})
     @Nullable static String getSubject(@Nullable final SubjectType subjectType) {

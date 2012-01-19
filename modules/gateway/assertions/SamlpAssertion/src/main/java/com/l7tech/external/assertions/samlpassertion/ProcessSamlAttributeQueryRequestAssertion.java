@@ -297,6 +297,7 @@ public class ProcessSamlAttributeQueryRequestAssertion extends MessageTargetable
             variablesSet = super.doGetVariablesSet();
         } else {
             variablesSet = super.doGetVariablesSet().withVariables(
+                    //todo [Donal] - verify these are declared correctly
                 new VariableMetadata(variablePrefix+"."+ ProtocolRequestUtilities.SUFFIX_ATTRIBUTES, false, false, null, false, DataType.ELEMENT),
                 new VariableMetadata(variablePrefix+"."+ ProtocolRequestUtilities.SUFFIX_SUBJECT, false, false, null, false, DataType.STRING),
                 new VariableMetadata(variablePrefix+"."+ ProtocolRequestUtilities.SUFFIX_SUBJECT_NAME_QUALIFIER, false, false, null, false, DataType.STRING),
@@ -312,7 +313,10 @@ public class ProcessSamlAttributeQueryRequestAssertion extends MessageTargetable
                 new VariableMetadata(variablePrefix+"."+ ProtocolRequestUtilities.SUFFIX_ISSUER_NAME_QUALIFIER, false, false, null, false, DataType.STRING),
                 new VariableMetadata(variablePrefix+"."+ ProtocolRequestUtilities.SUFFIX_ISSUER_SP_NAME_QUALIFIER, false, false, null, false, DataType.STRING),
                 new VariableMetadata(variablePrefix+"."+ ProtocolRequestUtilities.SUFFIX_ISSUER_FORMAT, false, false, null, false, DataType.STRING),
-                new VariableMetadata(variablePrefix+"."+ ProtocolRequestUtilities.SUFFIX_ISSUER_SP_PROVIDED_ID, false, false, null, false, DataType.STRING)
+                new VariableMetadata(variablePrefix+"."+ ProtocolRequestUtilities.SUFFIX_ISSUER_SP_PROVIDED_ID, false, false, null, false, DataType.STRING),
+                new VariableMetadata(variablePrefix+"."+ ProtocolRequestUtilities.SUFFIX_ELEMENTS_DECRYPTED, false, true, variablePrefix+"."+ ProtocolRequestUtilities.SUFFIX_ELEMENTS_DECRYPTED, false, DataType.ELEMENT),
+                new VariableMetadata(variablePrefix+"."+ ProtocolRequestUtilities.SUFFIX_ENCRYPTION_METHOD_URIS, false, true, variablePrefix+"."+ ProtocolRequestUtilities.SUFFIX_ENCRYPTION_METHOD_URIS, false, DataType.STRING),
+                new VariableMetadata(variablePrefix+"."+ ProtocolRequestUtilities.SUFFIX_RECIPIENT_CERTIFICATES, false, true, variablePrefix+"."+ ProtocolRequestUtilities.SUFFIX_RECIPIENT_CERTIFICATES, false, DataType.CERTIFICATE)
             );
         }
 

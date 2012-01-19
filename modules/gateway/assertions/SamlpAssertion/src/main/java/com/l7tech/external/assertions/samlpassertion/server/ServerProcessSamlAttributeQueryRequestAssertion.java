@@ -112,10 +112,6 @@ public class ServerProcessSamlAttributeQueryRequestAssertion extends AbstractMes
     private static final boolean validateUris = ConfigFactory.getBooleanProperty("com.l7tech.external.assertions.samlpassertion.server.validateUris", true);
     private static final boolean trimStrings = ConfigFactory.getBooleanProperty("com.l7tech.external.assertions.samlpassertion.server.trimStringValues", true);
 
-    private static final String VAR_ELEMENTS_DECRYPTED = "elementsDecrypted";
-    private static final String VAR_ENCRYPTION_METHOD_URIS = "encryptionMethodUris";
-    private static final String VAR_RECIPIENT_CERTIFICATES = "recipientCertificates";
-
     @NotNull
     private Element getAttributeQueryElement(final Message message,
                                              final String messageDescription,
@@ -292,6 +288,8 @@ public class ServerProcessSamlAttributeQueryRequestAssertion extends AbstractMes
             subjectNameID = getSubjectNameID(subject);
         }
 
+        //Set decryption variables early so they are set if decryption is either performed or not performed
+        setDecryptVariables(context, null, null, null);
         boolean encryptedIdElementFound = false;
         if (subjectNameID == null && assertion.isAllowEncryptedId()) {
             final EncryptedElementType subjectEncryptedID = getSubjectEncryptedID(subject);
@@ -461,10 +459,17 @@ public class ServerProcessSamlAttributeQueryRequestAssertion extends AbstractMes
 
         subjectNameID = jaxbElement.getValue();
 
-        context.setVariable(prefix(VAR_ELEMENTS_DECRYPTED), elements.toArray(new Element[elements.size()]));
-        context.setVariable(prefix(VAR_ENCRYPTION_METHOD_URIS), algorithms.toArray(new String[algorithms.size()]));
-        context.setVariable(prefix(VAR_RECIPIENT_CERTIFICATES), recipientCerts.toArray(new X509Certificate[recipientCerts.size()]));
+        setDecryptVariables(context, algorithms, elements, recipientCerts);
         return subjectNameID;
+    }
+
+    private void setDecryptVariables(final PolicyEnforcementContext context,
+                                     @Nullable final List<String> algorithms,
+                                     @Nullable final List<Element> elements,
+                                     @Nullable final List<X509Certificate> recipientCerts) {
+        context.setVariable(prefix(SUFFIX_ELEMENTS_DECRYPTED), (elements != null)? elements.toArray(new Element[elements.size()]): null);
+        context.setVariable(prefix(SUFFIX_ENCRYPTION_METHOD_URIS), (algorithms != null)? algorithms.toArray(new String[algorithms.size()]): null);
+        context.setVariable(prefix(SUFFIX_RECIPIENT_CERTIFICATES), (recipientCerts != null)? recipientCerts.toArray(new X509Certificate[recipientCerts.size()]): recipientCerts);
     }
 
     @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
