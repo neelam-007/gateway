@@ -155,10 +155,11 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         Element environmentElement = doc.createElementNS(assertion.getXacmlVersion().getNamespace(), "Environment");
         root.appendChild(environmentElement);
 
-        if(assertion.getEnvironment() != null) {
+        final XacmlRequestBuilderAssertion.Environment env = assertion.getEnvironment();
+        if(env != null) {
             addAttributes(doc,
                     environmentElement,
-                    assertion.getEnvironment().getAttributes(),
+                    env.getAttributes(),
                     vars, context,
                     assertion.getXacmlVersion());
         }

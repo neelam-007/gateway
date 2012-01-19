@@ -130,7 +130,8 @@ public class XacmlRequestBuilderAssertionValidator implements AssertionValidator
         rces.addAll( assertion.getSubjects() );
         rces.addAll( assertion.getResources() );
         rces.add( assertion.getAction() );
-        rces.add( assertion.getEnvironment() );
+        if (assertion.getEnvironment() != null)
+            rces.add( assertion.getEnvironment() );
 
         for ( XacmlRequestBuilderAssertion.RequestChildElement rce : rces ) {
             for ( XacmlRequestBuilderAssertion.AttributeTreeNodeTag tag : rce.getAttributes() ) {

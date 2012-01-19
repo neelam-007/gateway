@@ -1,23 +1,24 @@
 package com.l7tech.external.assertions.xacmlpdp;
 
+import com.l7tech.external.assertions.xacmlpdp.console.XacmlConstants;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
-
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
-import com.l7tech.policy.wsp.*;
+import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.policy.variable.DataType;
-import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName.*;
-import com.l7tech.external.assertions.xacmlpdp.console.XacmlConstants;
-import com.l7tech.xml.xpath.XpathUtil;
+import com.l7tech.policy.wsp.*;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.xml.xpath.XpathUtil;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
 import java.io.Serializable;
+import java.util.*;
+
+import static com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion.MultipleAttributeConfig.FieldName.*;
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
@@ -893,11 +894,12 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         this.action = action;
     }
 
+    @Nullable
     public Environment getEnvironment() {
         return environment;
     }
 
-    public void setEnvironment(Environment environment) {
+    public void setEnvironment(@Nullable Environment environment) {
         this.environment = environment;
     }
 
