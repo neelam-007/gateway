@@ -64,6 +64,7 @@ public class ManageDemoGenericEntitiesDialog extends JDialog {
         }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
 
         entityTableModel = TableUtil.configureTable(entityTable,
+                column("Enabled", 25, 50, 200, propertyTransform(DemoGenericEntity.class, "enabled")),
                 column("Name", 25, 200, 99999, propertyTransform(DemoGenericEntity.class, "name")),
                 column("Age", 25, 60, 99999, propertyTransform(DemoGenericEntity.class, "age")),
                 column("Plays Trombone", 25, 50, 99999, propertyTransform(DemoGenericEntity.class, "playsTrombone")));

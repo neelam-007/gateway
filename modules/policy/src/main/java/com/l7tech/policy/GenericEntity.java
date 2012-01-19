@@ -20,9 +20,27 @@ public class GenericEntity extends NamedEntityImp {
     private String description;
     private String entityClassName;
     private String valueXml;
+    private boolean enabled = true;
+    // If you add base fields, be sure to update copyBaseFields, and to provide for DB upgrades
 
     public GenericEntity() {
         entityClassName = getClass().getName();
+    }
+
+    /**
+     * Set the specified generic entity to have the same base field values as this generic entity, overwriting some if necessary.
+     *
+     * @param source entity to copy from.  Required.
+     * @param dest entity to copy to.  Required.
+     */
+    public static void copyBaseFields(GenericEntity source, GenericEntity dest) {
+        dest.setOid(source.getOid());
+        dest.setVersion(source.getVersion());
+        dest.setName(source.getName());
+        dest.setDescription(source.getDescription());
+        dest.setEnabled(source.isEnabled());
+        dest.setEntityClassName(source.getEntityClassName());
+        dest.setValueXml(source.getValueXml());
     }
 
     @Size(min=0,max=131072) // limit to 128k
@@ -48,6 +66,15 @@ public class GenericEntity extends NamedEntityImp {
         if (GenericEntity.class != thisClass && !thisClass.getName().equals(entityClassName))
             throw new IllegalArgumentException("Entity classname may only be " + thisClass.getName() + " for this concrete subclass of GenericEntity");
         this.entityClassName = entityClassName;
+    }
+
+    @Column(name="enabled")
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 
     @NotNull

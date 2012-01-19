@@ -14,6 +14,7 @@ public class DemoGenericEntityDialog extends JDialog {
     private JCheckBox playsTromboneCheckBox;
     private JTextField nameField;
     private JTextField ageField;
+    private JCheckBox enabledCheckBox;
 
     final DemoGenericEntity entity;
     boolean confirmed = false;
@@ -55,12 +56,14 @@ public class DemoGenericEntityDialog extends JDialog {
         nameField.setText(entity.getName());
         ageField.setText(String.valueOf(entity.getAge()));
         playsTromboneCheckBox.setSelected(entity.isPlaysTrombone());
+        enabledCheckBox.setSelected(entity.isEnabled());
     }
 
     public void setReadOnly(boolean readOnly) {
         nameField.setEnabled(!readOnly);
         ageField.setEnabled(!readOnly);
         playsTromboneCheckBox.setEnabled(!readOnly);
+        enabledCheckBox.setEnabled(!readOnly);
     }
 
     public boolean isConfirmed() {
@@ -75,6 +78,7 @@ public class DemoGenericEntityDialog extends JDialog {
         entity.setName(nameField.getText());
         entity.setAge(Integer.valueOf(ageField.getText()));
         entity.setPlaysTrombone(playsTromboneCheckBox.isSelected());
+        entity.setEnabled(enabledCheckBox.isSelected());
         confirmed = true;
         dispose();
     }

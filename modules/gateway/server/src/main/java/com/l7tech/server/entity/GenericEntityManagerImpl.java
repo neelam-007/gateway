@@ -271,7 +271,7 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
         regenerateValueXml(entity);
 
         GenericEntity pers = new GenericEntity();
-        copyBaseFields(entity, pers);
+        GenericEntity.copyBaseFields(entity, pers);
         return save(pers);
     }
 
@@ -418,7 +418,7 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
         regenerateValueXml(entity);
 
         GenericEntity pers = new GenericEntity();
-        copyBaseFields(entity, pers);
+        GenericEntity.copyBaseFields(entity, pers);
         update(pers);
     }
 
@@ -471,7 +471,7 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
             // New object -- leave non-base fields as default
             try {
                 ET ret = entityClass.newInstance();
-                copyBaseFields(that, ret);
+                GenericEntity.copyBaseFields(that, ret);
                 return ret;
             } catch (Exception e) {
                 throw new InvalidGenericEntityException("Unable to instantiate " + entityClass.getName() + ": " + ExceptionUtils.getMessage(e), e);
@@ -484,7 +484,7 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
             Object obj = decoder.readObject();
             if (entityClass.isInstance(obj)) {
                 ET ret = entityClass.cast(obj);
-                copyBaseFields(that, ret);
+                GenericEntity.copyBaseFields(that, ret);
                 return ret;
             }
         } catch (ArrayIndexOutOfBoundsException e) {
@@ -494,16 +494,6 @@ public class GenericEntityManagerImpl extends HibernateEntityManager<GenericEnti
         }
 
         throw new InvalidGenericEntityException("Generic entity XML stream did not contain an instance of " + entityClassName);
-    }
-
-    // Set the specified generic entity to have the same base field values as this generic entity, overwriting some if necessary
-    static void copyBaseFields(GenericEntity source, GenericEntity dest) {
-        dest.setOid(source.getOid());
-        dest.setVersion(source.getVersion());
-        dest.setName(source.getName());
-        dest.setDescription(source.getDescription());
-        dest.setEntityClassName(source.getEntityClassName());
-        dest.setValueXml(source.getValueXml());
     }
 
     static void regenerateValueXml(GenericEntity that) {

@@ -24,6 +24,7 @@ CREATE TABLE generic_entity (
   name varchar(255),
   description mediumtext,
   classname varchar(255) NOT NULL,
+  enabled boolean DEFAULT TRUE,
   value_xml mediumtext,
   PRIMARY KEY (objectid),
   UNIQUE KEY i_classname_name (classname, name)
