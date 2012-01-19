@@ -203,7 +203,7 @@ public class MqNativeQueuesWindow extends JDialog {
         JScrollPane sp = new JScrollPane(getMqQueueTable(),
           JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
           JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        sp.setPreferredSize(new Dimension(400, 200));
+        sp.setPreferredSize(new Dimension(520, 200));
         p.add(sp,
           new GridBagConstraints(0, 2, 1, 1, 10.0, 10.0,
             GridBagConstraints.CENTER,
@@ -451,6 +451,13 @@ public class MqNativeQueuesWindow extends JDialog {
                     enableOrDisableButtons();
                 }
             });
+
+            mqQueueTable.getColumnModel().getColumn(0).setPreferredWidth(60);  // Enabled
+            mqQueueTable.getColumnModel().getColumn(1).setPreferredWidth(120); // Name
+            mqQueueTable.getColumnModel().getColumn(2).setPreferredWidth(150); // Queue Manager Name
+            mqQueueTable.getColumnModel().getColumn(3).setPreferredWidth(120); // Queue Name
+            mqQueueTable.getColumnModel().getColumn(4).setPreferredWidth(150); // Direction
+
             Utilities.setDoubleClickAction(mqQueueTable, getPropertiesButton());
             // Add a sorter with a filter
             setSorterAndFilter();
@@ -467,7 +474,7 @@ public class MqNativeQueuesWindow extends JDialog {
 
         // Reset the sorter
         Utilities.setRowSorter(getMqQueueTable(), getMqQueueTableModel(),
-            new int[] {0, 1, 2, 3}, new boolean[] {true, true, true, true}, new Comparator[] {null, null, null, null});
+            new int[] {1, 2, 3, 4}, new boolean[] {true, true, true, true}, new Comparator[] {null, null, null, null});
         TableRowSorter<MqQueueTableModel> sorter = (TableRowSorter<MqQueueTableModel>) getMqQueueTable().getRowSorter();
 
         // Reset the filter
