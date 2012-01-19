@@ -660,7 +660,7 @@ public class ServerProcessSamlAttributeQueryRequestAssertion extends AbstractMes
                                                 @NotNull final String propLoggingName,
                                                 @NotNull final Set validateSet) {
         final List<String> returnList;
-        if (propValue != null) {
+        if (propValue != null && !propValue.isEmpty()) {
             final Set<String> subjectFormatSet = new HashSet<String>(
                     grep(Arrays.asList(TextUtils.URI_STRING_SPLIT_PATTERN.split(propValue)),
                             new Functions.Unary<Boolean, String>() {
