@@ -78,7 +78,6 @@ public class MqNativePropertiesDialog extends JDialog {
     private JRadioButton outboundFormatAutoRadioButton;
     private JRadioButton outboundFormatTextRadioButton;
     private JRadioButton outboundFormatBytesRadioButton;
-    private JCheckBox disableListeningTheQueueCheckBox;
     private JRadioButton inboundMessageIdRadioButton;
     private JRadioButton inboundCorrelationIdRadioButton;
     private JRadioButton outboundCorrelationIdRadioButton;
@@ -122,6 +121,7 @@ public class MqNativePropertiesDialog extends JDialog {
     private JButton managePasswordsButton;
     private SecurePasswordComboBox securePasswordComboBox;
     private JPanel byteLimitHolderPanel;
+    private JCheckBox enabledCheckBox;
     private ByteLimitPanel byteLimitPanel;
 
     private SsgActiveConnector mqNativeActiveConnector;
@@ -289,10 +289,16 @@ public class MqNativePropertiesDialog extends JDialog {
         that.mqNativeActiveConnector = mqConnection;
         that.setOutboundOnly(outboundOnly);
 
-        if(that.mqNativeActiveConnector ==null)
+        final String title;
+        if (that.mqNativeActiveConnector == null) {
             that.mqNativeActiveConnector = new SsgActiveConnector();
+            that.mqNativeActiveConnector.setEnabled(true); // Initially the queue is set to be enabled by default
+            title = "New MQ Native Queue";
+        } else {
+            title = "MQ Native Queue Properties";
+        }
 
-        that.init();
+        that.init(title);
 
         return that;
     }
@@ -319,14 +325,14 @@ public class MqNativePropertiesDialog extends JDialog {
     }
 
 
-    private void init() {
-        setTitle(mqNativeActiveConnector == null ? "Add MQ Native Queue" : "MQ Native Queue Properties");
+    private void init(final String title) {
+        setTitle(title);
         setContentPane(contentPane);
         setModal(true);
 
         testButton.setVisible(false);
         outboundMessagePanel.setVisible(false);
-                                                                                                        
+
         hostNameTextBox.setDocument(new MaxLengthDocument(255));
         hostNameTextBox.getDocument().addDocumentListener( enableDisableListener );
 
@@ -355,7 +361,7 @@ public class MqNativePropertiesDialog extends JDialog {
             }
         });
 
-        Utilities.enableGrayOnDisabled(modelQueueNameTextField);        
+        Utilities.enableGrayOnDisabled(modelQueueNameTextField);
         credentialsAreRequiredToCheckBox.addActionListener( enableDisableListener );
 
         authUserNameTextBox.setDocument(new MaxLengthDocument(255));
@@ -595,7 +601,7 @@ public class MqNativePropertiesDialog extends JDialog {
                     cipherSpecCombo.setEnabled(true);
                     if(clientAuthCheckbox.isSelected()){
                         keystoreComboBox.setEnabled(true);
-                        keystoreLabel.setEnabled(true);   
+                        keystoreLabel.setEnabled(true);
                     }
                 }else{
                     clientAuthCheckbox.setEnabled(false);
@@ -771,6 +777,8 @@ public class MqNativePropertiesDialog extends JDialog {
         loadContentTypesModel();
         boolean populatedTheServiceList = false;
         if ( mqNativeActiveConnector != null ) {
+            enabledCheckBox.setSelected(mqNativeActiveConnector.isEnabled());
+
             final String userId = mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_USERID);
             final long passwordOid = mqNativeActiveConnector.getLongProperty(PROPERTIES_KEY_MQ_NATIVE_SECURE_PASSWORD_OID, -1L);
 
@@ -898,8 +906,6 @@ public class MqNativePropertiesDialog extends JDialog {
                                 ExceptionUtils.getMessage(e1));
                     }
                 }
-
-                disableListeningTheQueueCheckBox.setSelected(!mqNativeActiveConnector.isEnabled());
             // outbound options
             } else {
                 String msgFormatProp = mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_MESSAGE_FORMAT);
@@ -956,6 +962,8 @@ public class MqNativePropertiesDialog extends JDialog {
                     modelQueueNameTextField.setEnabled(false);
                 }
             }
+        } else {
+            enabledCheckBox.setSelected(true);
         }
 
         byteLimitPanel.setValue(
@@ -1153,6 +1161,8 @@ public class MqNativePropertiesDialog extends JDialog {
 
 
     private void viewToModel(final SsgActiveConnector connector) throws IOException {
+        connector.setEnabled(enabledCheckBox.isSelected());
+
         connector.setType(SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_MQ_NATIVE);
         connector.setName(mqConnectionName.getText());
 
@@ -1241,8 +1251,6 @@ public class MqNativePropertiesDialog extends JDialog {
                 }
 
             connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_MQ_MESSAGE_MAX_BYTES, byteLimitPanel.getValue());
-
-            connector.setEnabled(!disableListeningTheQueueCheckBox.isSelected());
         } else {
             // else outbound
             connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_IS_TEMPLATE_QUEUE, Boolean.toString(isTemplateQueue.isSelected()));

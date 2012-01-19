@@ -39,7 +39,6 @@ import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
  * queues the Gateway shall monitor for incoming SOAP messages.
  */
 public class MqNativeQueuesWindow extends JDialog {
-    public static final int MESSAGE_SOURCE_COL = 3;
     private static final Logger logger = Logger.getLogger(MqNativeQueuesWindow.class.getName());
 
     private JButton closeButton;
@@ -100,7 +99,7 @@ public class MqNativeQueuesWindow extends JDialog {
 
         @Override
         public int getColumnCount() {
-            return 4;
+            return 5;
         }
 
         @Override
@@ -116,15 +115,18 @@ public class MqNativeQueuesWindow extends JDialog {
         public String getColumnName(int column) {
             switch (column) {
                 case 0:
-                    return "Name";
+                    return "Enabled";
                 case 1:
-                    return "Queue Manager Name";
+                    return "Name";
                 case 2:
+                    return "Queue Manager Name";
+                case 3:
                     return "Queue Name";
-                case MESSAGE_SOURCE_COL:
+                case 4:
                     return "Direction";
+                default:
+                    return "?";
             }
-            return "?";
         }
 
         @Override
@@ -132,12 +134,14 @@ public class MqNativeQueuesWindow extends JDialog {
             final SsgActiveConnector connector = mqConfigurations.get(rowIndex);
             switch (columnIndex) {
                 case 0:
-                    return connector.getName();
+                    return connector.isEnabled()? "Yes" : "No";
                 case 1:
-                    return connector.getProperty(PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME);
+                    return connector.getName();
                 case 2:
+                    return connector.getProperty(PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME);
+                case 3:
                     return connector.getProperty(PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME);
-                case MESSAGE_SOURCE_COL:
+                case 4:
                     String direction_msg;
                     if (connector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_IS_INBOUND)) {
                         if (connector.isEnabled()) {
@@ -149,8 +153,9 @@ public class MqNativeQueuesWindow extends JDialog {
                         direction_msg = "Outbound from Gateway";
                     }
                     return direction_msg;
+                default:
+                    return "?";
             }
-            return "?";
         }
 
         public List<SsgActiveConnector> getConnectors() {
