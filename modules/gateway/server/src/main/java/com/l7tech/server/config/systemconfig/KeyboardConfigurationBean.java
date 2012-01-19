@@ -50,6 +50,7 @@ public class KeyboardConfigurationBean extends BaseConfigurationBean {
         List<String> config = new ArrayList<String>();
         config.add("KEYBOARDTYPE=\"pc\"");
         config.add("KEYTABLE=\"" + keymap + "\"");
+        config.add(EOL);
         return config;
     }
 }
