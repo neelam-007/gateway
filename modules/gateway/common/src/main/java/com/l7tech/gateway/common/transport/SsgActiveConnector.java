@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.transport;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.util.Functions.Unary;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.Proxy;
@@ -169,11 +170,15 @@ public class SsgActiveConnector extends NamedEntityImp {
     }
 
     public String getProperty( final String propertyName, @Nullable final String defaultValue ) {
-        String propertyValue = defaultValue;
+        String propertyValue = null;
 
         final Map<String,String> properties = this.properties;
         if (properties != null) {
             propertyValue = properties.get(propertyName);
+        }
+
+        if ( propertyValue == null ) {
+            propertyValue = defaultValue;
         }
 
         return propertyValue;
@@ -225,6 +230,28 @@ public class SsgActiveConnector extends NamedEntityImp {
         } catch (NumberFormatException nfe) {
             if (logger.isLoggable(Level.WARNING))
                 logger.log(Level.WARNING, "Invalid integer property value for active connector " + getName() + " property " + propertyName + ": " + val);
+            return dflt;
+        }
+    }
+
+    /**
+     * Convenience method to get a property as an enum.
+     *
+     * @param propertyName The name of the property to get
+     * @param dflt The default value to return if the property is not set or if it is not a valid enum value
+     * @param enumType The enum class
+     * @param <E> The enum type
+     * @return the requested property value, or the default if it is not set or is invalid
+     */
+    public <E extends Enum<E>> E getEnumProperty( final String propertyName, final E dflt, final Class<E> enumType ) {
+        String val = getProperty(propertyName);
+        if (val == null)
+            return dflt;
+        try {
+            return Enum.valueOf( enumType, val );
+        } catch (IllegalArgumentException e) {
+            if (logger.isLoggable(Level.WARNING))
+                logger.log(Level.WARNING, "Invalid enum property value for active connector " + getName() + " property " + propertyName + ": " + val);
             return dflt;
         }
     }
@@ -281,5 +308,20 @@ public class SsgActiveConnector extends NamedEntityImp {
     @Transient
     public List<String> getPropertyNames() {
         return new ArrayList<String>(properties.keySet());
+    }
+
+    /**
+     * First class function for boolean property access.
+     *
+     * @param name The property name.
+     * @return A function to access the named property
+     */
+    public static Unary<Boolean,SsgActiveConnector> booleanProperty( final String name ) {
+        return new Unary<Boolean,SsgActiveConnector>(){
+            @Override
+            public Boolean call( final SsgActiveConnector connector  ) {
+                return connector.getBooleanProperty( name );
+            }
+        };
     }
 }

@@ -16,7 +16,7 @@ import static java.text.MessageFormat.format;
 /**
  * Listener thread responsible for receiving messages from the MQ endpoint.
  */
-public class MqNativeListenerThread extends Thread {
+class MqNativeListenerThread extends Thread {
     /* The amount of time the thread sleeps when the MAXIMUM_OOPSES limit is reached */
     private final AtomicInteger oopsSleep = new AtomicInteger(MqNativeListener.DEFAULT_OOPS_SLEEP);
 

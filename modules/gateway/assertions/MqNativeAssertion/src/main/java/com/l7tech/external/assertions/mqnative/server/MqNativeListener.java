@@ -214,75 +214,11 @@ public abstract class MqNativeListener {
     }
 
     protected Hashtable buildQueueManagerConnectProperties() {
-        Hashtable<String, Object> connProps = new Hashtable<String, Object>(20, 0.7f);
-        connProps.put(MQC.HOST_NAME_PROPERTY, getConnectorProperty( PROPERTIES_KEY_MQ_NATIVE_HOST_NAME ));
-        connProps.put(MQC.PORT_PROPERTY, getConnectorIntegerProperty(PROPERTIES_KEY_MQ_NATIVE_PORT, -1));
-        connProps.put(MQC.CHANNEL_PROPERTY, getConnectorProperty( PROPERTIES_KEY_MQ_NATIVE_CHANNEL ));
-
-        // apply userId and password
-        if (getConnectorBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_IS_QUEUE_CREDENTIAL_REQUIRED)) {
-            final String userId = getConnectorProperty( PROPERTIES_KEY_MQ_NATIVE_USERID );
-            if (!StringUtils.isEmpty(userId)) {
-                connProps.put(MQC.USER_ID_PROPERTY, userId);
-            }
-            final long passwordOid = getConnectorLongProperty( PROPERTIES_KEY_MQ_NATIVE_SECURE_PASSWORD_OID, -1L );
-            final String password = passwordOid == -1L ? null : getDecryptedPassword( passwordOid );
-            if (!StringUtils.isEmpty(password)) {
-                connProps.put(MQC.PASSWORD_PROPERTY, password);
-            }
-        }
-
-        // apply SSL configuration
-        if (getConnectorBooleanProperty( PROPERTIES_KEY_MQ_NATIVE_IS_SSL_ENABLED )) {
-            try {
-                final String cipherSuite = getConnectorProperty( PROPERTIES_KEY_MQ_NATIVE_CIPHER_SUITE );
-                if (StringUtils.isEmpty(cipherSuite)) {
-                    logger.log(Level.WARNING, "The cipher suite was not set for the connection!");
-                }
-
-                final boolean clientAuth = getConnectorBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_IS_SSL_KEYSTORE_USED);
-                final String alias = getConnectorProperty(PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ALIAS);
-                final String skid = getConnectorProperty(PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ID);
-                final SSLSocketFactory socketFactory;
-                if (alias != null && skid != null) {
-                    socketFactory = JmsSslCustomizerSupport.getSocketFactory(skid, alias);
-                }
-                else if (clientAuth) {
-                    socketFactory = SslClientSocketFactory.getDefault();
-                }
-                else {
-                    socketFactory = AnonymousSslClientSocketFactory.getDefault();
-                }
-
-                // set the socket factory on the MQEnvironment with the cipher suite.
-                if (socketFactory != null) {
-                    connProps.put(MQC.SSL_CIPHER_SUITE_PROPERTY, cipherSuite);
-                    connProps.put(MQC.SSL_SOCKET_FACTORY_PROPERTY, socketFactory);
-                }
-            } catch(JmsConfigException jmsce) {
-                logger.log(Level.WARNING,
-                        "An exception was thrown while configuring the MQ Native SSL settings: " + ExceptionUtils.getMessage(jmsce),
-                        ExceptionUtils.getDebugException(jmsce));
-            }
-        }
-
-        return connProps;
+        return MqNativeUtils.buildQueueManagerConnectProperties( ssgActiveConnector, securePasswordManager );
     }
 
     protected String getConnectorProperty( final String name ) {
         return ssgActiveConnector.getProperty( name );
-    }
-
-    long getConnectorLongProperty( final String name, final long defaultValue ) {
-        return ssgActiveConnector.getLongProperty( name, defaultValue );
-    }
-
-    int getConnectorIntegerProperty( final String name, final int defaultValue ) {
-        return ssgActiveConnector.getIntegerProperty(name, defaultValue);
-    }
-
-    protected boolean getConnectorBooleanProperty( final String name ) {
-        return ssgActiveConnector.getBooleanProperty( name );
     }
 
     /**
@@ -367,39 +303,6 @@ public abstract class MqNativeListener {
 
     void log(Level level, String messageKey, Throwable ex) {
         logger.log(level, messageKey, ex);
-    }
-
-    private SecurePassword getSecurePassword( final long passwordOid ) {
-        SecurePassword securePassword = null;
-        try {
-            securePassword = securePasswordManager.findByPrimaryKey(passwordOid);
-        } catch (FindException fe) {
-            logger.log( Level.WARNING, "The password could not be found in the password manager storage.  The password should be fixed or set in the password manager."
-                    + ExceptionUtils.getMessage( fe ), ExceptionUtils.getDebugException( fe ) );
-        }
-        return securePassword;
-    }
-
-    private String getDecryptedPassword( final long passwordOid ) {
-        String decrypted = null;
-        try {
-            final SecurePassword securePassword = getSecurePassword( passwordOid );
-            if ( securePassword != null ) {
-                final String encrypted = securePassword.getEncodedPassword();
-                final char[] pwd = securePasswordManager.decryptPassword(encrypted);
-                decrypted = new String(pwd);
-            }
-        } catch (ParseException pe) {
-            logger.log( Level.WARNING, "The password could not be parsed, the stored password is corrupted. "
-                    + ExceptionUtils.getMessage( pe ), ExceptionUtils.getDebugException( pe ) );
-        } catch (FindException fe) {
-            logger.log( Level.WARNING, "The password could not be found in the password manager storage.  The password should be fixed or set in the password manager."
-                    + ExceptionUtils.getMessage( fe ), ExceptionUtils.getDebugException( fe ) );
-        } catch (NullPointerException npe) {
-            logger.log( Level.WARNING, "The password could not be found in the password manager storage.  The password should be fixed or set in the password manager."
-                    + ExceptionUtils.getMessage( npe ), ExceptionUtils.getDebugException( npe ) );
-        }
-        return decrypted;
     }
 
     protected void setErrorSleepTime(String stringValue) {

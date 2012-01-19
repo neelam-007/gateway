@@ -7,6 +7,7 @@ import javax.swing.table.TableCellRenderer;
 
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.Functions;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * General purpose ListCellRenderer for Objects with are displayable with a JLabel (text + icon)
@@ -24,7 +25,7 @@ public class TextListCellRenderer<SO> extends JLabel implements ListCellRenderer
      *
      * @param accessorFunction The function to use (must not be null)
      */
-    public TextListCellRenderer(final Functions.Unary<String,SO> accessorFunction) {
+    public TextListCellRenderer(final Functions.Unary<String,? super SO> accessorFunction) {
         this(accessorFunction, null, false);
     }
 
@@ -35,8 +36,8 @@ public class TextListCellRenderer<SO> extends JLabel implements ListCellRenderer
      * @param tooltipAccessorFunction The function to use (ignored if null)
      * @param useAccessorForNull True to call the accessor function for null values.
      */
-    public TextListCellRenderer(final Functions.Unary<String,SO> accessorFunction,
-                                final Functions.Unary<String,SO> tooltipAccessorFunction,
+    public TextListCellRenderer(final Functions.Unary<String,? super SO> accessorFunction,
+                                @Nullable final Functions.Unary<String,? super SO> tooltipAccessorFunction,
                                 final boolean useAccessorForNull) {
         this(accessorFunction, tooltipAccessorFunction, null, useAccessorForNull);
     }
@@ -49,9 +50,9 @@ public class TextListCellRenderer<SO> extends JLabel implements ListCellRenderer
      * @param iconAccessorFunction The function to use (ignored if null)
      * @param useAccessorForNull True to call the accessor function for null values.
      */
-    public TextListCellRenderer(final Functions.Unary<String,SO> accessorFunction,
-                                final Functions.Unary<String,SO> tooltipAccessorFunction,
-                                final Functions.Unary<Icon,SO> iconAccessorFunction,
+    public TextListCellRenderer(final Functions.Unary<String,? super SO> accessorFunction,
+                                @Nullable final Functions.Unary<String,? super SO> tooltipAccessorFunction,
+                                @Nullable final Functions.Unary<Icon,? super SO> iconAccessorFunction,
                                 final boolean useAccessorForNull) {
         if(accessorFunction == null) throw new NullPointerException("accessorFunction cannot be null");
 
@@ -236,9 +237,9 @@ public class TextListCellRenderer<SO> extends JLabel implements ListCellRenderer
 
     //- PRIVATE
 
-    private final Functions.Unary<String,SO> accessorFunction;
-    private final Functions.Unary<String,SO> tooltipAccessorFunction;
-    private final Functions.Unary<Icon, SO> iconAccessorFunction;
+    private final Functions.Unary<String,? super SO> accessorFunction;
+    private final Functions.Unary<String,? super SO> tooltipAccessorFunction;
+    private final Functions.Unary<Icon, ? super SO> iconAccessorFunction;
     private final boolean useAccessorForNull;
     private boolean renderClipped;
     private boolean smartTooltips;

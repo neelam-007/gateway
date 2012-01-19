@@ -491,7 +491,7 @@ public final class Functions {
      * @param predicate the predicate to match
      * @return the first matching object, or null if no match was found
      */
-    public static <I> I grepFirst(Iterable<? extends I> in, Unary<Boolean, I> predicate) {
+    public static <I> I grepFirst(Iterable<? extends I> in, Unary<Boolean, ? super I> predicate) {
         for (I i : in) {
             if (predicate.call(i))
                 return i;
@@ -551,6 +551,25 @@ public final class Functions {
                 return i != null;
             }
         });
+    }
+
+    /**
+     * Return an equality predicate, based on a transform and value.
+     *
+     * @param transform The transform used to obtain a value
+     * @param value The value to compare against.  Required.
+     * @param <T> The original type (e.g. the collection type)
+     * @param <PT> The value (property) type
+     * @return A new predicate that returns true if the property of the given item matches
+     */
+    public static <T,PT> Unary<Boolean,T> equality( final Unary<PT,T> transform,
+                                                    final PT value ) {
+        return new Unary<Boolean,T>(){
+            @Override
+            public Boolean call( final T t ) {
+                return value.equals( transform.call( t ) );
+            }
+        };
     }
 
     /**

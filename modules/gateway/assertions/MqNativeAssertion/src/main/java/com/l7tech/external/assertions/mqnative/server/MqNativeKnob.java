@@ -1,21 +1,15 @@
 package com.l7tech.external.assertions.mqnative.server;
 
-import com.l7tech.message.JmsKnob;
+import com.l7tech.message.HasServiceOid;
+import com.l7tech.message.HasSoapAction;
+import com.l7tech.message.MessageKnob;
 
-import java.util.Map;
 
 /**
- * An implementation of MessageKnob for MQ, based on the JmsKnob interface.
+ * An implementation of MessageKnob for MQ
  */
-public interface MqNativeKnob extends JmsKnob {
+public interface MqNativeKnob extends MessageKnob, HasSoapAction, HasServiceOid {
 
-    @Override
-    boolean isBytesMessage();
-
-    @Override
-    Map<String, Object> getJmsMsgPropMap();
-
-    
     byte[] getMessageHeaderBytes();
 
 

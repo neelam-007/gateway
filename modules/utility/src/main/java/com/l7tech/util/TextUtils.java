@@ -720,6 +720,22 @@ public class TextUtils {
         };
     }
 
+    /**
+     * Function that matches a string using the given prefix.
+     *
+     * @param prefix The prefix to match
+     * @return The matching function
+     */
+    @NotNull
+    public static Unary<Boolean,String> startsWith( @NotNull final String prefix ) {
+        return new Unary<Boolean,String>(){
+            @Override
+            public Boolean call( final String text ) {
+                return text.startsWith( prefix );
+            }
+        };
+    }
+
     private static final Unary<String,CharSequence> FUNC_TRIM = new Unary<String,CharSequence>() {
             @Override
             public String call( final CharSequence charSequence ) {

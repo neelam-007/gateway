@@ -1,6 +1,7 @@
 package com.l7tech.objectmodel.imp;
 
 import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.util.Functions.Unary;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -37,4 +38,19 @@ public class PersistentEntityUtil {
         }
         return false;
     }
+
+    /**
+     * First class function for object identifier access.
+     *
+     * @return A function to access the identifier of an entity
+     */
+    public static Unary<Long,PersistentEntity> oid() {
+        return new Unary<Long,PersistentEntity>(){
+            @Override
+            public Long call( final PersistentEntity entity ) {
+                return entity == null ?  null : entity.getOid();
+            }
+        };
+    }
+
 }

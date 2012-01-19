@@ -312,8 +312,6 @@ public class MqNativeModule extends ActiveTransportModule implements Application
             Message request = new Message();
             request.initialize(stashManagerFactory.createStashManager(), ctype, requestStream, requestSizeLimit);
 
-            final Map<String, Object> requestMsgProps = Collections.unmodifiableMap(new HashMap<String, Object>());
-
             // Gets the MQ message property to use as SOAPAction, if present.
             String soapActionValue = null;
             final String soapActionProp = connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_INBOUND_SOAP_ACTION );
@@ -322,7 +320,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
             }
             final String soapAction = soapActionValue;
 
-            request.attachKnob(MqNativeKnob.class, MqNativeUtils.buildMqNativeKnob( requestMsgProps, soapAction, mqHeader ));
+            request.attachKnob(MqNativeKnob.class, MqNativeUtils.buildMqNativeKnob( soapAction, mqHeader ));
 
             final Long hardwiredServiceOid = connector.getHardwiredServiceOid();
             if ( hardwiredServiceOid != null ) {

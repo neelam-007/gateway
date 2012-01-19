@@ -1,0 +1,744 @@
+package com.l7tech.external.assertions.mqnative.server;
+
+import com.ibm.mq.MQC;
+import com.ibm.mq.MQException;
+import com.ibm.mq.MQGetMessageOptions;
+import com.ibm.mq.MQManagedObject;
+import com.ibm.mq.MQMessage;
+import com.ibm.mq.MQQueue;
+import com.ibm.mq.MQQueueManager;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.mime.StashManager;
+import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
+import com.l7tech.external.assertions.mqnative.MqNativeDynamicProperties;
+import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
+import com.l7tech.external.assertions.mqnative.MqNativeRoutingAssertion;
+import com.l7tech.external.assertions.mqnative.server.MqNativeResourceManager.*;
+import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.buildMqNativeKnob;
+import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.closeQuietly;
+import static com.l7tech.gateway.common.audit.AssertionMessages.*;
+import com.l7tech.gateway.common.transport.SsgActiveConnector;
+import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
+import com.l7tech.message.Message;
+import com.l7tech.message.MessageRole;
+import com.l7tech.message.MimeKnob;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.variable.Syntax;
+import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
+import com.l7tech.server.policy.assertion.ServerRoutingAssertion;
+import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.server.security.password.SecurePasswordManager;
+import com.l7tech.server.transport.SsgActiveConnectorManager;
+import com.l7tech.server.util.ApplicationEventProxy;
+import static com.l7tech.util.ArrayUtils.contains;
+import com.l7tech.util.CausedIOException;
+import com.l7tech.util.Config;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions.Unary;
+import com.l7tech.util.Functions.UnaryVoidThrows;
+import com.l7tech.util.HexUtils;
+import com.l7tech.util.IOUtils;
+import com.l7tech.util.Option;
+import static com.l7tech.util.Option.optional;
+import com.l7tech.util.Pair;
+import com.l7tech.util.PoolByteArrayOutputStream;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
+import org.xml.sax.SAXException;
+
+import javax.inject.Inject;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+/**
+ * Server side implementation of the MqNativeRoutingAssertion.
+ *
+ * TODO [steve] response size limit
+ *
+ * @author vchan - tactical code on which this implementation is based.
+ */
+public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNativeRoutingAssertion> {
+    private static final int MAX_OOPSES = 5;
+    private static final long RETRY_DELAY = 1000;
+    private static final String completionCodeString = "mq.completion.code";
+    private static final String reasonCodeString = "mq.reason.code";
+
+    @Inject
+    private Config config;
+    @Inject
+    private StashManagerFactory stashManagerFactory;
+    @Inject
+    private SecurePasswordManager securePasswordManager;
+    @Inject
+    private SsgActiveConnectorManager ssgActiveConnectorManager;
+    private ApplicationEventProxy applicationEventProxy;
+    private MqNativeResourceManager mqNativeResourceManager;
+    private MqNativeSsgActiveConnectorInvalidator invalidator = new MqNativeSsgActiveConnectorInvalidator(this);
+    private AtomicInteger connectionAttempts = new AtomicInteger(0);
+    private final AtomicBoolean needsUpdate = new AtomicBoolean(false);
+    private MqNativeEndpointConfig endpointConfig;
+    private final Object endpointConfigSync = new Object();
+
+    public ServerMqNativeRoutingAssertion( final MqNativeRoutingAssertion data,
+                                           final ApplicationContext applicationContext ) {
+        super(data, applicationContext);
+    }
+
+    @Inject
+    protected final void setApplicationEventProxy( final ApplicationEventProxy applicationEventProxy ) {
+        this.applicationEventProxy = applicationEventProxy;
+        mqNativeResourceManager = MqNativeResourceManager.getInstance( config, applicationEventProxy );
+        applicationEventProxy.addApplicationListener( invalidator );
+    }
+
+    @Override
+    public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException {
+
+        context.setRoutingStatus(RoutingStatus.ATTEMPTED);
+
+        final com.l7tech.message.Message requestMessage;
+        try {
+            requestMessage = context.getTargetMessage(assertion.getRequestTarget());
+        } catch (NoSuchVariableException e) {
+            throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
+
+        }
+        if ( !isValidRequest(requestMessage) ) {
+            return AssertionStatus.BAD_REQUEST;
+        }
+
+        MqNativeEndpointConfig cfg = null;
+        boolean iSetAConnectionAttempt = false;
+
+        try {
+            // DELETE CURRENT SECURITY HEADER IF NECESSARY
+            handleProcessedSecurityHeader(requestMessage);
+
+            if (markedForUpdate()) {
+                try {
+                    logger.info("MQ information needs update, closing session (if open).");
+
+                    resetEndpointInfo();
+                } finally {
+                    markUpdate(false);
+                }
+            }
+
+            int oopses = 0;
+
+            final Option<MqNativeDynamicProperties> preProcessingMqDynamicProperties = optional( assertion.getDynamicMqRoutingProperties() );
+            final Option<MqNativeDynamicProperties> mqDynamicProperties = expandMqDynamicPropertiesVariables( context, preProcessingMqDynamicProperties );
+            cfg = getEndpointConfig( mqDynamicProperties );
+            // Message send retry loop.
+            // Once the message is sent, there are no more retries
+            while ( true ) {
+                final MqRoutingCallback mqrc = new MqRoutingCallback(context, cfg);
+                try {
+                    mqNativeResourceManager.doWithMqResources( cfg, mqrc );
+                    mqrc.doException();
+                    break; // no error
+                } catch (MqNativeRuntimeException mqre) {
+                    if ( mqrc.isMessageSent() ) {
+                        throw mqre.getCause() != null ? mqre.getCause() : mqre;
+                    }
+
+                    if(oopses==0){
+                        int attempts = connectionAttempts.incrementAndGet();
+                        iSetAConnectionAttempt = true ;
+                        if(attempts>=10){
+                            //10 failed attempts made to make a connection, fail!
+                            logger.log(Level.WARNING, "At least 10 connections failed trying to connect to MQ.  MQ server is not available.  Falsifying assertion and returning completion code 2059.", mqre);
+                            context.setVariable(ServerMqNativeRoutingAssertion.completionCodeString, 2);
+                            context.setVariable(ServerMqNativeRoutingAssertion.reasonCodeString, 2059);
+                            return AssertionStatus.FALSIFIED;
+                        }
+                    }
+
+                    if (++oopses < MAX_OOPSES) {
+                        logAndAudit(MQ_ROUTING_CANT_CONNECT_RETRYING, new String[] {String.valueOf(oopses), String.valueOf(RETRY_DELAY)}, ExceptionUtils.getDebugException( mqre ));
+                        mqNativeResourceManager.invalidate(cfg);
+
+                        try {
+                            Thread.sleep(RETRY_DELAY);
+                        } catch ( InterruptedException e ) {
+                            throw new MQException(-1, -1, "Interrupted during retry delay");
+                        }
+                    } else {
+                        logAndAudit(MQ_ROUTING_CANT_CONNECT_NOMORETRIES, String.valueOf(MAX_OOPSES));
+                        // Catcher will log/audit the stack trace
+                        throw mqre.getCause() != null ? mqre.getCause() : mqre;
+                    }
+                } catch (MQException e) {
+                    if ( mqrc.isMessageSent() ) throw e;
+
+                    if(oopses==0){
+                        int attempts = connectionAttempts.incrementAndGet();
+                        iSetAConnectionAttempt = true;
+                        if(attempts>=10){
+                            //10 failed attempts made to make a connection, fail!
+                            logger.log(Level.WARNING, "At least 10 connections failed trying to connect to MQ.  MQ server is not available.  Falsifying assertion.", e);
+                            context.setVariable(ServerMqNativeRoutingAssertion.completionCodeString, e.completionCode);
+                            context.setVariable(ServerMqNativeRoutingAssertion.reasonCodeString, e.reasonCode);
+                            return AssertionStatus.FALSIFIED;
+                        }
+                    }
+                    if (++oopses < MAX_OOPSES) {
+                        logAndAudit(MQ_ROUTING_CANT_CONNECT_RETRYING, new String[] {String.valueOf(oopses), String.valueOf(RETRY_DELAY)}, e);
+                        mqNativeResourceManager.invalidate(cfg);
+
+                        try {
+                            Thread.sleep(RETRY_DELAY);
+                        } catch ( InterruptedException ie ) {
+                            throw new MQException(-1, -1, "Interrupted during send retry"); // FIX THIS
+                        }
+                    } else {
+                        logAndAudit(MQ_ROUTING_CANT_CONNECT_NOMORETRIES, String.valueOf(MAX_OOPSES));
+                        //Create context variables for MQ exception completion and response codes here.
+                        context.setVariable(ServerMqNativeRoutingAssertion.completionCodeString, e.completionCode);
+                        context.setVariable(ServerMqNativeRoutingAssertion.reasonCodeString, e.reasonCode);
+                        // Catcher will log/audit the stack trace
+                        throw e;
+                    }
+                }
+            }
+
+            context.setVariable(ServerMqNativeRoutingAssertion.completionCodeString, 0);
+            context.setVariable(ServerMqNativeRoutingAssertion.reasonCodeString, 0);
+            return AssertionStatus.NONE;
+
+        } catch ( MqNativeConfigException e ) {
+            logAndAudit(MQ_ROUTING_CONFIGURATION_ERROR,
+                    new String[]{ExceptionUtils.getMessage(e)},
+                    ExceptionUtils.getDebugException(e));
+            return AssertionStatus.FAILED;
+        } catch ( AssertionStatusException e ) {
+            throw e;
+        } catch ( Throwable t ) {
+            if(t instanceof MQException){
+                context.setVariable(ServerMqNativeRoutingAssertion.completionCodeString, ((MQException)t).completionCode);
+                context.setVariable(ServerMqNativeRoutingAssertion.reasonCodeString, ((MQException)t).reasonCode);
+            }
+
+            logAndAudit(EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{"Caught unexpected Throwable in outbound MQ request processing: " + ExceptionUtils.getMessage(t)}, ExceptionUtils.getDebugException(t) );
+
+            // dev-debug only
+            t.printStackTrace();
+
+            if (cfg!=null) mqNativeResourceManager.invalidate(cfg);
+            return AssertionStatus.SERVER_ERROR;
+        } finally {
+            if (context.getRoutingEndTime() == 0) context.routingFinished();
+            if(connectionAttempts.get()>0&&iSetAConnectionAttempt)
+               connectionAttempts.decrementAndGet();
+        }
+    }
+
+    private final class MqRoutingCallback implements MqTaskCallback {
+        private final MqNativeEndpointConfig cfg;
+        private final PolicyEnforcementContext context;
+        private final com.l7tech.message.Message requestMessage;
+        private Exception exception;
+        private boolean messageSent = false;
+
+        private MqRoutingCallback( final PolicyEnforcementContext context,
+                                   final MqNativeEndpointConfig cfg) {
+            this.context = context;
+            this.cfg = cfg;
+            try {
+                this.requestMessage = context.getTargetMessage(assertion.getRequestTarget());
+            } catch (NoSuchVariableException e) {
+                throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
+            }
+        }
+
+        private boolean isMessageSent() {
+            return messageSent;
+        }
+
+        private void doException() throws IOException, SAXException, MQException {
+            if ( exception != null) {
+
+                logger.log(Level.WARNING, "Exception caught while performing MQ native route: " + exception.getMessage(), exception);
+
+                if ( exception instanceof MQException ) {
+                    context.setVariable(ServerMqNativeRoutingAssertion.completionCodeString, ((MQException) exception).completionCode);
+                    context.setVariable(ServerMqNativeRoutingAssertion.reasonCodeString, ((MQException) exception).reasonCode);
+                    throw (MQException) exception;
+                } else if ( exception instanceof SAXException ) {
+                    throw (SAXException) exception;
+                } else if ( exception instanceof IOException ) {
+                    throw (IOException) exception;
+                } else {
+                    throw ExceptionUtils.wrap( exception );
+                }
+            }
+        }
+
+        /**
+         * Don't throw MQException since that would close the connection before our retry count.
+         */
+        @Override
+        public void doWork( final MqNativeResourceBag writeBag, final MqNativeResourceBag readBag ) {
+
+            MQQueue writeQueue = null;
+            MQQueue replyQueue = null;
+            MQQueueManager replyMgr = null;
+            try {
+//                MQQueueManager manager = writeBag.getQmgr();
+//                if(manager!=null && !manager.isConnected()){
+//                    //check to see if the connection is still alive!
+//                    manager.isConnected();
+//                }
+
+                int accessQueueOptions = MQC.MQOO_OUTPUT | MQC.MQOO_FAIL_IF_QUIESCING;
+                // create the outbound queue
+                writeQueue = writeBag.getQmgr().accessQueue(cfg.getQueueName(), accessQueueOptions);
+
+                // create replyTo or temporary queue
+                if (context.isReplyExpected()) {
+                    replyMgr = new MQQueueManager(cfg.getQueueManagerName(), cfg.getQueueManagerProperties());
+                    replyQueue = createReplyQueue(replyMgr, cfg);
+                }
+
+                // create the MQMessage to be routed
+                final MQMessage outboundRequest;
+                if ( replyQueue != null ) {
+                    outboundRequest = makeRequest(context, cfg, replyQueue.name);
+                } else {
+                    outboundRequest = makeRequest(context, cfg, null);
+                }
+
+                // vc - Adding and mapping to/from JMS properties is out of scope
+
+                boolean processReply = context.isReplyExpected() && replyQueue != null;
+                logAndAudit(MQ_ROUTING_REQUEST_ROUTED);
+                try {
+                    // perform the route to the destination queue
+                    context.routingStarted();
+
+                    if ( logger.isLoggable( Level.FINE ))
+                        logger.fine("Sending MQ outbound message");
+
+                    if (writeBag.getPmoOptions().options == MQC.MQPMO_NEW_CORREL_ID)
+                        logger.info("New correlationId will be generated");
+
+                    writeQueue.put(outboundRequest, writeBag.getPmoOptions());
+                    messageSent = true; // no retries once sent
+
+                    if ( logger.isLoggable( Level.FINE ))
+                        logger.fine("MQ outbound message sent");
+                } finally {
+                    closeQuietly( writeQueue );
+                }
+
+                if ( !processReply ) {
+                    context.routingFinished();
+                    logAndAudit( MQ_ROUTING_NO_RESPONSE_EXPECTED);
+                    context.setRoutingStatus( RoutingStatus.ROUTED );
+                } else {
+                    final byte[] selector = getSelector( outboundRequest, cfg );
+                    final int timeout = getTimeout();
+
+                    MQGetMessageOptions gmo = new MQGetMessageOptions();
+                    gmo.options = MQC.MQGMO_WAIT | MQC.MQGMO_NO_SYNCPOINT;
+                    gmo.waitInterval = timeout;
+                    gmo.matchOptions = MQC.MQMO_MATCH_MSG_ID | MQC.MQMO_MATCH_CORREL_ID;
+                    MQMessage mqResponse = new MQMessage();
+                    mqResponse.correlationId = selector;
+
+                    // wait for and read the reply
+                    try {
+                        replyQueue.get(mqResponse, gmo);
+                    } catch (MQException readEx) {
+                        if (readEx.reasonCode == 2033) {
+                            mqResponse = null;
+                        } else
+                            throw readEx;
+                    }
+
+                    context.routingFinished();
+                    if ( mqResponse == null ) {
+                        logAndAudit(MQ_ROUTING_NO_RESPONSE, String.valueOf(timeout));
+                        throw new AssertionStatusException(AssertionStatus.FAILED);
+                    }
+
+                    final com.l7tech.message.Message responseMessage;
+                    try {
+                        responseMessage = context.getOrCreateTargetMessage(assertion.getResponseTarget(), false);
+                    } catch (NoSuchVariableException e) {
+                        throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
+                    }
+
+                    // Create the response
+                    final Pair<byte[], byte[]> parsedResponse = MqNativeUtils.parseHeader(mqResponse);
+                    final StashManager stashManager = stashManagerFactory.createStashManager();
+                    responseMessage.initialize(stashManager, ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(parsedResponse.right));
+                    logAndAudit(MQ_ROUTING_GOT_RESPONSE);
+
+                    final byte[] headerOnly = getResponseHeader(parsedResponse.left);
+                    MqNativeKnob mqNativeKnob = buildMqNativeKnob( headerOnly );
+                    responseMessage.attachKnob( mqNativeKnob, MqNativeKnob.class );
+
+                    context.setRoutingStatus( RoutingStatus.ROUTED );
+
+                    // todo: move to abstract routing assertion
+                    requestMessage.notifyMessage(responseMessage, MessageRole.RESPONSE);
+                    responseMessage.notifyMessage(requestMessage, MessageRole.REQUEST);
+                }
+            } catch ( MQException e ) {
+                exception = e;
+            } catch ( MqNativeRuntimeException e ) {
+                exception = e;
+            } catch ( MqNativeConfigException e ) {
+                exception = e;
+            } catch ( IOException e ) {
+                exception = e;
+            } finally {
+                closeQuietly( writeQueue );
+                closeQuietly( replyQueue );
+                closeQuietly( replyMgr, Option.<UnaryVoidThrows<MQQueueManager, MQException>>some( new UnaryVoidThrows<MQQueueManager, MQException>() {
+                    @Override
+                    public void call( final MQQueueManager mqQueueManager ) throws MQException {
+                        mqQueueManager.disconnect();
+                    }
+                } ) );
+            }
+        }
+
+        /**
+         * Gets the timeout interval for waiting on the reply queue.
+         *
+         * @return the replyTo queue timeout
+         */
+        int getTimeout() {
+            int timeout = Integer.MIN_VALUE;
+
+            String timeoutStr = assertion.getResponseTimeout();
+            if ( timeoutStr != null && !timeoutStr.isEmpty() ) {
+                timeoutStr = ExpandVariables.process( timeoutStr, context.getVariableMap( assertion.getVariablesUsed(), getAudit() ), getAudit() );
+                try {
+                    timeout = Integer.parseInt(timeoutStr);
+                    if ( timeout <= 0 ){
+                        logAndAudit( MQ_ROUTING_RESPONSE_TIMEOUT_ERROR, "Negative timeout ("+timeout+")" );
+                        timeout = Integer.MIN_VALUE;
+                    }
+                } catch ( NumberFormatException e ) {
+                    logAndAudit( MQ_ROUTING_RESPONSE_TIMEOUT_ERROR, "Unable to parse timeout ("+timeoutStr+")" );
+                }
+            }
+
+            if ( timeout == Integer.MIN_VALUE ) {
+                timeout = config.getIntProperty(MQ_RESPONSE_TIMEOUT_PROPERTY, 10000);
+            }
+
+            logAndAudit( MQ_ROUTING_RESPONSE_TIMEOUT, String.valueOf( timeout ) );
+
+            return timeout;
+        }
+    }
+
+    private Option<MqNativeDynamicProperties> expandMqDynamicPropertiesVariables( final PolicyEnforcementContext pec,
+                                                                                  final Option<MqNativeDynamicProperties> unprocessedProperties ) {
+        return unprocessedProperties.map( new Unary<MqNativeDynamicProperties,MqNativeDynamicProperties>(){
+            @Override
+            public MqNativeDynamicProperties call( final MqNativeDynamicProperties unprocessedProperties ) {
+                try {
+                    final Map<String,Object> variables = pec.getVariableMap( assertion.getVariablesUsed(), getAudit() );
+                    final MqNativeDynamicProperties mqDynamicProperties = new MqNativeDynamicProperties();
+                    mqDynamicProperties.setChannelName( expandVariables( unprocessedProperties.getChannelName(), variables ) );
+                    mqDynamicProperties.setQueueName( expandVariables( unprocessedProperties.getQueueName(), variables ) );
+                    mqDynamicProperties.setReplyToQueue( expandVariables( unprocessedProperties.getReplyToQueue(), variables ) );
+                    return mqDynamicProperties;
+                } catch ( IllegalArgumentException iae ) {
+                    logAndAudit( MQ_ROUTING_TEMPLATE_ERROR, "variable processing error; " + iae.getMessage() );
+                    throw new AssertionStatusException( AssertionStatus.FAILED );
+                }
+            }
+        } );
+    }
+    private String expandVariables( final String value, final Map<String,Object> variableMap ) {
+        String expandedValue = value;
+
+        if ( expandedValue != null && expandedValue.contains( Syntax.SYNTAX_PREFIX ) ) {
+            expandedValue = ExpandVariables.process(value, variableMap, getAudit(), true);
+        }
+        return expandedValue;
+    }
+
+    private boolean markedForUpdate() {
+        return needsUpdate.get();
+    }
+
+    private boolean markUpdate(boolean value) {
+        return needsUpdate.compareAndSet( !value, value );
+    }
+
+    private synchronized void resetEndpointInfo() {
+        synchronized ( endpointConfigSync ) {
+            if (markedForUpdate()) {
+                endpointConfig = null;
+            }
+        }
+    }
+
+    private boolean isValidRequest( final com.l7tech.message.Message message ) throws IOException {
+        boolean valid = true;
+
+        long maxSize = config.getLongProperty( MQ_MESSAGE_MAX_BYTES_PROPERTY, 2621440 );
+        final MimeKnob mk = message.getKnob(MimeKnob.class);
+
+        if (mk == null) {
+            // Uninitialized request
+            logAndAudit( EXCEPTION_WARNING_WITH_MORE_INFO, "Request is not initialized; nothing to route" );
+            return false;
+        }
+
+        if ( maxSize > 0 && mk.getContentLength() > maxSize ) {
+            //logAndAudit(MqNativeMessages.MQ_ROUTING_REQUEST_TOO_LARGE);
+            valid = false;
+        }
+
+        return valid;
+    }
+
+    /**
+     * Builds a {@link MQMessage} to be routed to a Websphere MQ endpoint.
+     * @param context contains the request to be converted into a JMS Message
+     * @param endpointCfg the MQ endpoint
+     * @param tempQueueName the name of the temporary queue used in the replyToQueueName field
+     * @return the MQMessage instance to be routed
+     * @throws IOException error reading request message
+     * @throws MqNativeRuntimeException error creating the routing request
+     * @throws MqNativeConfigException if the outbound queue is mis-configured
+     */
+    private MQMessage makeRequest( final PolicyEnforcementContext context,
+                                   final MqNativeEndpointConfig endpointCfg,
+                                   @Nullable final String tempQueueName )
+        throws IOException, MqNativeRuntimeException, MqNativeConfigException
+    {
+        final PoolByteArrayOutputStream outputStream = new PoolByteArrayOutputStream();
+        final byte[] outboundRequestBytes;
+        Message requestMessage;
+        try {
+            requestMessage = context.getTargetMessage(assertion.getRequestTarget());
+        } catch (NoSuchVariableException e) {
+            throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
+        }
+        final MimeKnob mk = requestMessage.getMimeKnob();
+        try {
+            IOUtils.copyStream( mk.getEntireMessageBodyAsInputStream(), outputStream );
+            outboundRequestBytes = outputStream.toByteArray();
+        } catch (NoSuchPartException e) {
+            throw new CausedIOException("Couldn't read from MQ request"); // can't happen
+        } finally {
+            outputStream.close();
+        }
+
+        // instantiate the request MQMessage
+        MQMessage newRequest = MqNativeUtils.applyPropertiesToMessage(new MQMessage(), endpointCfg.getMessageProperties());
+
+        // determine whether to copy over any header from the request
+        writeRequestHeader(newRequest, requestMessage);
+
+        // write the payload/body of the message
+        newRequest.write(outboundRequestBytes);
+
+        // check whether a response is expected
+        final MqNativeReplyType replyType = endpointCfg.getReplyType();
+        switch ( replyType ) {
+            case REPLY_AUTOMATIC:
+                logAndAudit( MQ_ROUTING_REQUEST_WITH_AUTOMATIC, endpointCfg.getQueueManagerName() + "/" + endpointCfg.getQueueName() );
+                if ( tempQueueName == null || tempQueueName.length() == 0 )
+                    throw new IllegalStateException( "AUTOMATIC reply was selected, but no temporary queue name was specified" );
+                newRequest.replyToQueueName = tempQueueName;
+                return newRequest;
+
+            case REPLY_NONE:
+                logAndAudit( MQ_ROUTING_REQUEST_WITH_NO_REPLY, endpointCfg.getQueueManagerName() + "/" + endpointCfg.getQueueName() );
+                return newRequest;
+
+            case REPLY_SPECIFIED_QUEUE:
+                logAndAudit( MQ_ROUTING_REQUEST_WITH_REPLY_TO_OTHER, endpointCfg.getQueueManagerName() + "/" + endpointCfg.getQueueName(), endpointCfg.getReplyToQueueName() );
+                // set the replyTo queue
+                String replyToQueueName = endpointCfg.getReplyToQueueName();
+                if ( replyToQueueName == null || replyToQueueName.length() == 0 )
+                    throw new IllegalStateException( "REPLY_TO_OTHER was selected, but no reply-to queue name was specified" );
+                newRequest.replyToQueueName = replyToQueueName;
+
+                return newRequest;
+            default:
+                throw new IllegalStateException( "Unknown MQ ReplyType " + replyType );
+        }
+    }
+
+    /**
+     * Create the replyTo queue object based on the outbound queue configuration.  Only used for AUTOMATIC where a
+     * temporary queue will be created; or REPLY_TO_OTHER where a specific reply queue is stated.
+     *
+     * @param qmgr the MQ QueueManager
+     * @param endpointConfig the outbound MQ queue definition
+     * @return the MQQueue instance that is opened for reply, null if a reply is not required
+     * @throws MQException error access queue
+     */
+    private MQQueue createReplyQueue( final MQQueueManager qmgr, final MqNativeEndpointConfig endpointConfig ) throws MQException {
+
+        MQQueue theQueue = null;
+        try {
+            final String modelQName = endpointConfig.getReplyToModelQueueName();
+            final String replyQName = endpointConfig.getReplyToQueueName();
+            if (endpointConfig.getReplyType() == MqNativeReplyType.REPLY_AUTOMATIC && modelQName != null && modelQName.length() > 0) {
+                // access the model queue
+                theQueue = qmgr.accessQueue(modelQName, MQC.MQOO_INPUT_AS_Q_DEF | MQC.MQOO_INQUIRE, null, modelQName+".*", null);
+                logger.log(Level.INFO, "Temp queue opened Name({2}) MQQDT({0}) MQQT({1})", new Object[] { theQueue.getDefinitionType(), theQueue.getQueueType(), theQueue.name });
+
+            } else if (endpointConfig.getReplyType() == MqNativeReplyType.REPLY_SPECIFIED_QUEUE && replyQName != null && replyQName.length() > 0) {
+                // access the specified replyTo queue
+                theQueue = qmgr.accessQueue(replyQName, MQC.MQOO_INPUT_AS_Q_DEF);
+            }
+
+        } catch (MQException mex) {
+            logger.log(Level.WARNING, "Failed to create temporary queue from QModel()", ExceptionUtils.getDebugException(mex));
+            throw mex;
+        }
+        return theQueue;
+    }
+
+    private void writeRequestHeader(final MQMessage mqRequest,
+                                    final Message requestMessage)
+        throws MqNativeRuntimeException
+    {
+        final boolean passThroughHeaders = assertion.getRequestMqNativeMessagePropertyRuleSet().isPassThroughHeaders();
+        try {
+            if ( passThroughHeaders ) {
+                MqNativeKnob mqmd = requestMessage.getKnob(MqNativeKnob.class);
+                if (mqmd != null && mqmd.getMessageHeaderLength() > 0) {
+                    mqRequest.write(mqmd.getMessageHeaderBytes());
+                }
+
+            }
+        } catch (IOException ioex) {
+            logger.log(Level.WARNING, "Unable to write MQHeader due to: {0}", new Object[] {ExceptionUtils.getMessage(ioex)});
+            throw new MqNativeRuntimeException(ioex);
+        }
+    }
+
+    private byte[] getResponseHeader( final byte[] headerFromResponse ) {
+        final boolean passThroughHeaders = assertion.getResponseMqNativeMessagePropertyRuleSet().isPassThroughHeaders();
+        return passThroughHeaders ? headerFromResponse : new byte[0];
+    }
+
+    private byte[] getSelector( final MQMessage outboundRequest,
+                                final MqNativeEndpointConfig mqEndpointConfig ) throws MQException {
+        final byte[] selector;
+
+        if (mqEndpointConfig.getReplyType() == MqNativeReplyType.REPLY_AUTOMATIC) {
+            if ( logger.isLoggable( Level.FINE ))
+                logger.fine("Response expected on temporary queue; not using selector");
+            selector = null;
+
+        } else {
+            if (mqEndpointConfig.isCorrelateWithMessageId()) {
+                selector = outboundRequest.messageId;
+                logger.info("Filtering on message id " + HexUtils.encodeBase64( selector ));
+            } else {
+                selector = outboundRequest.correlationId;
+                logger.info("Filtering on correlation id " + HexUtils.encodeBase64(selector));
+            }
+        }
+        return selector;
+    }
+
+    private MqNativeEndpointConfig getEndpointConfig( final Option<MqNativeDynamicProperties> dynamicProperties ) throws MqNativeConfigException {
+        MqNativeEndpointConfig config;
+        synchronized( endpointConfigSync ) {
+            config = endpointConfig;
+        }
+
+        if ( config != null && !config.isDynamic() ) {
+            return config;
+        }
+
+
+        final SsgActiveConnector ssgActiveConnector;
+        try {
+            ssgActiveConnector = ssgActiveConnectorManager.findByPrimaryKey( assertion.getSsgActiveConnectorId() );
+        } catch ( FindException e ) {
+            throw new MqNativeConfigException(
+                    "Error accessing MQ endpoint #" + assertion.getSsgActiveConnectorId(), e );
+        }
+
+        if ( ssgActiveConnector == null ||
+                !ACTIVE_CONNECTOR_TYPE_MQ_NATIVE.equals(ssgActiveConnector.getType()) ||
+                !ssgActiveConnector.isEnabled() ||
+                ssgActiveConnector.getBooleanProperty( PROPERTIES_KEY_MQ_NATIVE_IS_INBOUND ) ) {
+            throw new MqNativeConfigException(
+                    "MQ endpoint #" + assertion.getSsgActiveConnectorId() + " could not be located! It may have been deleted" );
+        }
+
+        config = new MqNativeEndpointConfig(ssgActiveConnector,securePasswordManager, dynamicProperties);
+        //TODO [steve] Validate MQ endpoint configuration
+
+        if ( !config.isDynamic() ) {
+            synchronized( endpointConfigSync ) {
+                this.endpointConfig = config;
+            }
+        }
+
+        return config;
+    }
+
+    @Override
+    public void close() {
+        super.close();
+        applicationEventProxy.removeApplicationListener( invalidator );
+    }
+
+    /**
+     * Invalidation listener for MQ endpoint (SsgActiveConnector) updates.
+     */
+    private static final class MqNativeSsgActiveConnectorInvalidator implements ApplicationListener {
+        private static final Logger logger = Logger.getLogger( MqNativeSsgActiveConnectorInvalidator.class.getName() );
+        private final ServerMqNativeRoutingAssertion serverJmsRoutingAssertion;
+
+        private MqNativeSsgActiveConnectorInvalidator( @NotNull final ServerMqNativeRoutingAssertion serverJmsRoutingAssertion ) {
+            this.serverJmsRoutingAssertion = serverJmsRoutingAssertion;
+        }
+
+        @Override
+        public void onApplicationEvent( final ApplicationEvent applicationEvent ) {
+            if (applicationEvent instanceof EntityInvalidationEvent ) {
+                EntityInvalidationEvent eie = (EntityInvalidationEvent) applicationEvent;
+                if (SsgActiveConnector.class.isAssignableFrom(eie.getEntityClass())) {
+
+                    MqNativeEndpointConfig mqEndpointConfig;
+                    synchronized (serverJmsRoutingAssertion.endpointConfigSync) {
+                        mqEndpointConfig = serverJmsRoutingAssertion.endpointConfig;
+                    }
+
+                    if ( mqEndpointConfig != null && contains( eie.getEntityIds(), mqEndpointConfig.getMqEndpointKey().getId() ) ) {
+                        if (serverJmsRoutingAssertion.markUpdate(true) ) {
+                            if ( logger.isLoggable(Level.CONFIG) ) {
+                                logger.log(Level.CONFIG, "Flagging MQ endpoint information for update ''{0}'' (#{1})",
+                                    new Object[]{mqEndpointConfig.getName(), mqEndpointConfig.getMqEndpointKey().getId()});
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

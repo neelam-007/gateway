@@ -1,6 +1,6 @@
 package com.l7tech.external.assertions.mqnative.server;
 
-import com.l7tech.external.assertions.mqnative.MqNativeConstants;
+import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.util.Injector;
@@ -17,7 +17,7 @@ import java.util.logging.Logger;
 /**
  * Load logic that ensures the MQ Native transport module gets initialized.
  */
-public class MqNativeModuleLoadListener implements MqNativeConstants {
+public class MqNativeModuleLoadListener {
     private static final Logger logger = Logger.getLogger(MqNativeModuleLoadListener.class.getName());
 
     // Manages all inbound native MQ listener processes

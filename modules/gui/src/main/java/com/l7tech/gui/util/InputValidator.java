@@ -1,6 +1,7 @@
 package com.l7tech.gui.util;
 
 import com.l7tech.gui.NumberField;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -373,6 +374,35 @@ public class InputValidator implements FocusListener {
         };
 
         addRuleForComponent(comp, rule);
+        return rule;
+    }
+
+    /**
+     * Add a validation rule to enforce selection in a JComboBox.
+     *
+     * WARNING
+     * WARNING This does not currently support validation on change.
+     * WARNING
+     *
+     * @param fieldName The name of the field, for use in a generated error message.  Must not be null.
+     * @param comp The component to validate.   Must not be null.
+     * @return The validation rule that was registered, so it can be removed later if desired.  Never null.
+     */
+    public ValidationRule ensureComboBoxSelection( @NotNull final String fieldName,
+                                                   @NotNull final JComboBox comp ) {
+        final String mess = "The " + fieldName + " field must be selected.";
+        final ValidationRule rule = new ComponentValidationRule(comp) {
+            @Override
+            public String getValidationError() {
+                return
+                        comp.isEnabled() &&
+                        comp.getSelectedItem() == null ?
+                                mess :
+                                null;
+            }
+        };
+
+        addRule(rule);
         return rule;
     }
 

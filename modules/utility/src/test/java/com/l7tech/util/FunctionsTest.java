@@ -1,5 +1,7 @@
 package com.l7tech.util;
 
+import static com.l7tech.util.CollectionUtils.list;
+import static com.l7tech.util.CollectionUtils.set;
 import org.junit.Test;
 
 import java.util.*;
@@ -301,4 +303,18 @@ public class FunctionsTest {
         });
         assertTrue(result.equals(Arrays.asList("foo", "bob", "joe")));
     }
+
+    @Test
+    public void testEqualityPredicate() {
+        final List<Set<String>> source = list( set("a","b","c"), set("1","2","3"), set("") );
+        final Unary<Integer,Set<String>> size = new Unary<Integer,Set<String>>(){
+            @Override
+            public Integer call( final Set<String> strings ) {
+                return strings.size();
+            }
+        };
+        final List<Set<String>> result = grep( source, equality( size, 3 ) );
+        assertEquals( "Sets of size three", list(set("a","b","c"), set("1","2","3")), result );
+    }
+
 }

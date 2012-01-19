@@ -1,39 +1,60 @@
 package com.l7tech.external.assertions.mqnative;
 
+import static com.l7tech.util.CollectionUtils.list;
+
 import java.io.Serializable;
+import java.util.List;
 
 /**
- * User: ashah
+ * Dynamic properties for MQ routing.
  */
-public class MqNativeDynamicProperties implements Serializable, Cloneable{
-    private String destQName;
-    private String destChannelName;
+public class MqNativeDynamicProperties implements Serializable, Cloneable {
 
-    //constructor
+    //- PUBLIC
+
     public MqNativeDynamicProperties() {
     }
 
-    public String getDestQName() {
-        return destQName;
+    public MqNativeDynamicProperties( final MqNativeDynamicProperties other ) {
+        this.queueName = other.queueName;
+        this.replyToQueue = other.replyToQueue;
+        this.channelName = other.channelName;
     }
 
-    public void setDestQName(String destQName) {
-        this.destQName = destQName;
+    public String getQueueName() {
+        return queueName;
     }
 
-    public String getDestChannelName() {
-        return destChannelName;
+    public void setQueueName( final String queueName ) {
+        this.queueName = queueName;
     }
 
-    public void setDestChannelName(String destChannelName) {
-        this.destChannelName = destChannelName;
+    public String getReplyToQueue() {
+        return replyToQueue;
     }
 
-    public String getFieldsAsVariables() {
-        String SEP = " ";
-        StringBuffer sb = new StringBuffer();
-        if (getDestQName() != null) sb.append(getDestQName()).append(SEP);
-        if (getDestChannelName() != null) sb.append(getDestChannelName()).append(SEP);
-        return sb.toString();
+    public void setReplyToQueue( final String replyToQueue ) {
+        this.replyToQueue = replyToQueue;
     }
+
+    public String getChannelName() {
+        return channelName;
+    }
+
+    public void setChannelName( final String channelName ) {
+        this.channelName = channelName;
+    }
+
+    //- PACKAGE
+
+    List<String> getVariableExpressions() {
+        return list( queueName, channelName );
+    }
+
+    //- PRIVATE
+
+    private String queueName;
+    private String replyToQueue;
+    private String channelName;
+
 }

@@ -21,12 +21,12 @@ import com.l7tech.policy.Policy;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.objectmodel.GuidBasedEntityManager;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-
 
 /**
  * A central place that provides initial access to all components
@@ -35,10 +35,12 @@ import java.lang.reflect.Proxy;
  * @author Emil Marceta
  */
 public abstract class Registry {
+
     /**
      * A dummy registry that never returns any services.
      */
     public static final Registry EMPTY = new Empty();
+
     /**
      * default instance
      */
@@ -49,6 +51,7 @@ public abstract class Registry {
      *
      * @return the global lookup in the system
      */
+    @NotNull
     public static synchronized Registry getDefault() {
         if (instance != null) {
             return instance;

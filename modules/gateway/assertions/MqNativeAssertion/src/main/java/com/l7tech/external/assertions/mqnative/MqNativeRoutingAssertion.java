@@ -1,190 +1,83 @@
 package com.l7tech.external.assertions.mqnative;
 
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
+import static com.l7tech.policy.assertion.VariableUseSupport.expressions;
+import static com.l7tech.policy.assertion.VariableUseSupport.variables;
 import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.policy.wsp.ArrayTypeMapping;
 import com.l7tech.policy.wsp.BeanTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
+import com.l7tech.util.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.*;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Route outbound MQ Native to WebSphere MQ.
  */
-public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesVariables, SetsVariables {
-    private final static String baseName = "Route via MQ Native";
-    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<MqNativeRoutingAssertion>(){
+public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEntities, UsesVariables, SetsVariables {
+    private static final String baseName = "Route via MQ Native";
+    private static final AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<MqNativeRoutingAssertion>(){
         @Override
-        public String getAssertionName( final MqNativeRoutingAssertion assertion, final boolean decorate) {
-            if(!decorate || assertion.getEndpointName()==null) return baseName;
-            return baseName + " Queue " + assertion.getEndpointName();
+        public String getAssertionName( final MqNativeRoutingAssertion assertion, final boolean decorate ) {
+            if(!decorate || assertion.getSsgActiveConnectorName()==null) return baseName;
+            return baseName + " Queue " + assertion.getSsgActiveConnectorName();
         }
     };
+    private static final String META_INITIALIZED = MqNativeRoutingAssertion.class.getName() + ".metadataInitialized";
 
-    private Long endpointResId = null;
-    private String endpointName = null;
+    private Long ssgActiveConnectorId = null;
+    private String ssgActiveConnectorName = null;
     private String responseTimeout = null;
     private MqNativeDynamicProperties dynamicMqRoutingProperties;
+    @NotNull
     private MqNativeMessagePropertyRuleSet requestMqMessagePropertyRuleSet = new MqNativeMessagePropertyRuleSet();
+    @NotNull
     private MqNativeMessagePropertyRuleSet responseMqMessagePropertyRuleSet = new MqNativeMessagePropertyRuleSet();
-
     @NotNull
-    private MessageTargetableSupport requestTarget = new MessageTargetableSupport(TargetMessageType.REQUEST, false);
+    private MessageTargetableSupport requestTarget = defaultRequestTarget();
     @NotNull
-    private MessageTargetableSupport responseTarget = new MessageTargetableSupport(TargetMessageType.RESPONSE, true);
+    private MessageTargetableSupport responseTarget = defaultResponseTarget();
 
-    @Override
-    public AssertionMetadata meta() {
-        DefaultAssertionMetadata meta = super.defaultMeta();
-        if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
-            return meta;
-
-        // Ensure inbound transport gets wired up
-        meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.mqnative.server.MqNativeModuleLoadListener");
-
-        // Cluster properties used by this assertion
-        Map<String, String[]> props = new HashMap<String, String[]>();
-        //props.put(NAME, new String[] {
-        //        DESCRIPTION,
-        //        DEFAULT
-        //});
-        meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
-
-        // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, baseName);
-        meta.put(AssertionMetadata.LONG_NAME, "The incoming message will be routed via MQ to the protected service.");
-        meta.put(AssertionMetadata.DESCRIPTION, "<Needs description>");
-
-        // Add to palette folder(s)
-        //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing,
-        //   misc, audit, policyLogic, threatProtection
-        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "routing" });
-        //meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "policyLogic" });
-        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/server16.gif");
-        //meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/ServerLogs.gif");
-
-        // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
-        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
-
-        // Set up smart Getter for nice, informative policy node name, for GUI
-        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/server16.gif");
-        //meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/ServerLogs.gif");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
-
-        meta.put(AssertionMetadata.GLOBAL_ACTION_CLASSNAMES, new String[] { "com.l7tech.external.assertions.mqnative.console.MqNativeCustomAction" });
-
-        // request default feature set name for our class name, since we are a known optional module
-        // that is, we want our required feature set to be "assertion:MQNativeConnector" rather than "set:modularAssertions"
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
-
-        meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.mqnative.console.MqNativeRoutingAssertionDialog");
-        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "MQ Native Routing Properties");
-
-        Collection<TypeMapping> othermappings = new ArrayList<TypeMapping>();
-        othermappings.add(new ArrayTypeMapping(new MqNativeMessagePropertyRule[0], "mqNativeMessagePropertyRule"));
-        othermappings.add(new BeanTypeMapping(MqNativeMessagePropertyRule.class, "mappingRule"));
-        othermappings.add(new BeanTypeMapping(MqNativeMessagePropertyRuleSet.class, "mappingRuleSet"));
-        othermappings.add(new BeanTypeMapping(MqNativeDynamicProperties.class, "mqDynamicProperties"));
-        meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(othermappings));
-
-        meta.put(META_INITIALIZED, Boolean.TRUE);
-        return meta;
-    }
-
-    @Override
-    public VariableMetadata[] getVariablesSet() {
-        List<VariableMetadata> vars = new ArrayList<VariableMetadata>();
-        vars.add(new VariableMetadata("module.exists", false, false, null, false, DataType.BOOLEAN));
-        vars.add(new VariableMetadata("module.name", false, false, null, false, DataType.STRING));
-        vars.add(new VariableMetadata("module.sha1", false, false, null, false, DataType.STRING));
-        vars.add(new VariableMetadata("module.assertions", false, true, null, false, DataType.STRING));
-        vars.add(new VariableMetadata("mq.completion.code", false, true, null, false, DataType.INTEGER));
-        vars.add(new VariableMetadata("mq.reason.code", false, true, null, false, DataType.INTEGER));
-        vars.addAll(Arrays.asList(responseTarget.getVariablesSet()));
-        return vars.toArray(new VariableMetadata[vars.size()]);
-    }
-
-    @Override
-    public String[] getVariablesUsed() {
-        Set<String> vars = new HashSet<String>();
-
-        if (responseTimeout != null) {
-            vars.addAll(Arrays.asList(Syntax.getReferencedNames(responseTimeout)));
-        }
-        if (dynamicMqRoutingProperties != null) {
-            String dynamicVars = dynamicMqRoutingProperties.getFieldsAsVariables();
-
-            if (dynamicVars != null && !dynamicVars.equals(""))
-                vars.addAll(Arrays.asList(Syntax.getReferencedNames(dynamicVars)));
-        }
-
-        vars.addAll(Arrays.asList(requestTarget.getVariablesUsed()));
-        vars.addAll(Arrays.asList(requestMqMessagePropertyRuleSet.getVariablesUsed()));
-        vars.addAll(Arrays.asList(responseMqMessagePropertyRuleSet.getVariablesUsed()));
-        return vars.toArray(new String[vars.size()]);
-    }
-
-    /**
-     * Clone MqNativeRoutingAssertion.
-     * @noinspection CloneDoesntDeclareCloneNotSupportedException
-     */
-    @Override
-    public Object clone() {
-        MqNativeRoutingAssertion copy = (MqNativeRoutingAssertion) super.clone();
-        copy.requestTarget = new MessageTargetableSupport(requestTarget);
-        copy.responseTarget = new MessageTargetableSupport(responseTarget);
-
-        return copy;
-    }
-    //
-    // Metadata
-    //
-    private static final String META_INITIALIZED = MqNativeRoutingAssertion.class.getName() + ".metadataInitialized";
-    private String assertionXml = "";
-
-    public String getAssertionXml() {
-        return assertionXml;
-    }
-
-    public void setAssertionXml(String assertionXml) {
-        if (assertionXml == null)
-            throw new IllegalArgumentException("assertionXml may not be null");
-        this.assertionXml = assertionXml;
+    private static MessageTargetableSupport defaultResponseTarget() {
+        return new MessageTargetableSupport( TargetMessageType.RESPONSE, true);
     }
 
     /**
      * @return the ResId of the MQ Resource Type, or null if there isn't one.
      */
-    public Long getEndpointResId() {
-        return endpointResId;
+    public Long getSsgActiveConnectorId() {
+        return ssgActiveConnectorId;
     }
 
     /**
      * Set the ResId of the MQ Resource Type.  Set this to null if no endpoint is configured.
-     * @param endpointResId  the ResId of a MqResourceType instance, or null.
+     * @param ssgActiveConnectorId  the ResId of a MqResourceType instance, or null.
      */
-    public void setEndpointResId(Long endpointResId) {
-        this.endpointResId = endpointResId;
+    public void setSsgActiveConnectorId( Long ssgActiveConnectorId ) {
+        this.ssgActiveConnectorId = ssgActiveConnectorId;
     }
 
     /**
      * The name of the { MqResourceType }
      * @return the name of this endpoint if known, for cosmetic purposes only.
      */
-    public String getEndpointName() {
-        return endpointName;
+    public String getSsgActiveConnectorName() {
+        return ssgActiveConnectorName;
     }
 
     /**
      * The name of the { MqResourceType}.
-     * @param endpointName the name of this endpoint if known, for cosmetic purposes only.
+     * @param ssgActiveConnectorName the name of this endpoint if known, for cosmetic purposes only.
      */
-    public void setEndpointName(String endpointName) {
-        this.endpointName = endpointName;
+    public void setSsgActiveConnectorName( String ssgActiveConnectorName ) {
+        this.ssgActiveConnectorName = ssgActiveConnectorName;
     }
 
     /**
@@ -192,7 +85,7 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesVa
      * After this timeout has lapsed, the request fails.
      *
      * Defaults to {ServerConfig.PARAM_JMS_RESPONSE_TIMEOUT}.
-     * @return the response timeout (in milliseconds)
+     * @return the response timeout (in milliseconds), or null to use the default
      */
     public String getResponseTimeout() {
         return responseTimeout;
@@ -205,14 +98,14 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesVa
      * Defaults to {ServerConfig.PARAM_JMS_RESPONSE_TIMEOUT}.
      * @param responseTimeout the response timeout (in milliseconds)
      */
-    public void setResponseTimeout( String responseTimeout ) {
+    public void setResponseTimeout( @Nullable String responseTimeout ) {
         this.responseTimeout = responseTimeout;
     }
 
     /**
      * @return set of rules for propagating request JMS message properties
-     * @since SecureSpan 4.0
      */
+    @NotNull
     public MqNativeMessagePropertyRuleSet getRequestMqNativeMessagePropertyRuleSet() {
         return requestMqMessagePropertyRuleSet;
     }
@@ -220,16 +113,15 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesVa
     /**
      * Set the rules for propagating request JMS message properties.
      * @param ruleSet   rules for propagating request JMS message properties
-     * @since SecureSpan 4.0
      */
-    public void setRequestMqNativeMessagePropertyRuleSet(MqNativeMessagePropertyRuleSet ruleSet) {
-        requestMqMessagePropertyRuleSet = ruleSet;
+    public void setRequestMqNativeMessagePropertyRuleSet( MqNativeMessagePropertyRuleSet ruleSet) {
+        requestMqMessagePropertyRuleSet = ruleSet==null ? new MqNativeMessagePropertyRuleSet() : ruleSet;
     }
 
     /**
      * @return set of rules for propagating response JMS message properties
-     * @since SecureSpan 4.0
      */
+    @NotNull
     public MqNativeMessagePropertyRuleSet getResponseMqNativeMessagePropertyRuleSet() {
         return responseMqMessagePropertyRuleSet;
     }
@@ -237,53 +129,135 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesVa
     /**
      * Set the rules for propagating response JMS message properties.
      * @param ruleSet   rules for propagating response JMS message properties
-     * @since SecureSpan 4.0
      */
-    public void setResponseMqNativeMessagePropertyRuleSet(MqNativeMessagePropertyRuleSet ruleSet) {
-        responseMqMessagePropertyRuleSet = ruleSet;
+    public void setResponseMqNativeMessagePropertyRuleSet( MqNativeMessagePropertyRuleSet ruleSet) {
+        responseMqMessagePropertyRuleSet = ruleSet==null ? new MqNativeMessagePropertyRuleSet() : ruleSet;
     }
 
+    @NotNull
     public MessageTargetableSupport getRequestTarget() {
         return requestTarget;
     }
 
     public void setRequestTarget(MessageTargetableSupport requestTarget) {
-        this.requestTarget = requestTarget;
+        this.requestTarget = requestTarget==null ? defaultRequestTarget() : requestTarget;
     }
 
+    private static MessageTargetableSupport defaultRequestTarget() {
+        return new MessageTargetableSupport( TargetMessageType.REQUEST, false);
+    }
+
+    @NotNull
     public MessageTargetableSupport getResponseTarget() {
         return responseTarget;
     }
 
     public void setResponseTarget(MessageTargetableSupport responseTarget) {
-        this.responseTarget = responseTarget;
+        this.responseTarget = responseTarget==null ? defaultResponseTarget() : responseTarget;
     }
 
     @Override
     public boolean initializesRequest() {
-        return responseTarget != null && TargetMessageType.REQUEST == responseTarget.getTarget();
+        return TargetMessageType.REQUEST == responseTarget.getTarget();
     }
 
     @Override
     public boolean needsInitializedRequest() {
-        return requestTarget == null || TargetMessageType.REQUEST == requestTarget.getTarget();
+        return TargetMessageType.REQUEST == requestTarget.getTarget();
     }
 
     @Override
     public boolean initializesResponse() {
-        return responseTarget != null && TargetMessageType.RESPONSE == responseTarget.getTarget();
+        return TargetMessageType.RESPONSE == responseTarget.getTarget();
     }
 
     @Override
     public boolean needsInitializedResponse() {
-        return requestTarget != null && TargetMessageType.RESPONSE == requestTarget.getTarget();
+        return TargetMessageType.RESPONSE == requestTarget.getTarget();
     }
 
     public MqNativeDynamicProperties getDynamicMqRoutingProperties() {
         return dynamicMqRoutingProperties;
     }
 
-    public void setDynamicMqRoutingProperties(MqNativeDynamicProperties dynamicMqRoutingProperties) {
+    public void setDynamicMqRoutingProperties( MqNativeDynamicProperties dynamicMqRoutingProperties) {
         this.dynamicMqRoutingProperties = dynamicMqRoutingProperties;
+    }
+
+    @Override
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = super.defaultMeta();
+        if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
+            return meta;
+
+        meta.put( SHORT_NAME, baseName );
+        meta.put( DESCRIPTION, "The incoming message will be routed via MQ to the protected service." );
+        meta.put( PALETTE_FOLDERS, new String[] { "routing" } );
+        meta.put( PALETTE_NODE_ICON, "com/l7tech/console/resources/server16.gif" );
+        meta.put( POLICY_ADVICE_CLASSNAME, "auto" );
+        meta.put( POLICY_NODE_ICON, "com/l7tech/console/resources/server16.gif" );
+        meta.put( POLICY_NODE_NAME_FACTORY, policyNameFactory );
+        meta.put( GLOBAL_ACTION_CLASSNAMES, new String[] { "com.l7tech.external.assertions.mqnative.console.MqNativeCustomAction" } );
+        meta.put( FEATURE_SET_NAME, "(fromClass)" );
+        meta.put( PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.mqnative.console.MqNativeRoutingAssertionDialog" );
+        meta.put( MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.mqnative.server.MqNativeModuleLoadListener" );
+        meta.put( PROPERTIES_ACTION_NAME, "MQ Native Routing Properties" );
+        //TODO [steve] Policy validation for disabled queue (or deleted, etc)
+
+        meta.put( WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder( CollectionUtils.<TypeMapping>list(
+                new BeanTypeMapping( MqNativeMessagePropertyRuleSet.class, "mappingRuleSet" ),
+                new BeanTypeMapping( MqNativeDynamicProperties.class, "mqDynamicProperties" )
+        ) ));
+
+        meta.put(META_INITIALIZED, Boolean.TRUE);
+        return meta;
+    }
+
+    @Override
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, resolver = PropertyResolver.Type.ASSERTION)
+    public EntityHeader[] getEntitiesUsed() {
+        if( ssgActiveConnectorId != null) {
+            return new EntityHeader[] {new EntityHeader(ssgActiveConnectorId.toString(), EntityType.SSG_ACTIVE_CONNECTOR, ssgActiveConnectorName, null)}; // always outgoing
+        } else {
+            return new EntityHeader[0];
+        }
+    }
+
+    @Override
+    public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
+        if( oldEntityHeader.getType().equals( EntityType.SSG_ACTIVE_CONNECTOR) && ssgActiveConnectorId != null &&
+                oldEntityHeader.getOid() == ssgActiveConnectorId && newEntityHeader.getType().equals(EntityType.SSG_ACTIVE_CONNECTOR))
+        {
+            ssgActiveConnectorId = newEntityHeader.getOid();
+            ssgActiveConnectorName = newEntityHeader.getName();
+        }
+    }
+
+    @Override
+    public String[] getVariablesUsed() {
+        return expressions( responseTimeout )
+                .with( requestTarget.getMessageTargetVariablesUsed() )
+                .withExpressions( dynamicMqRoutingProperties == null ? null : dynamicMqRoutingProperties.getVariableExpressions() )
+                .asArray();
+    }
+
+    @Override
+    public VariableMetadata[] getVariablesSet() {
+        return variables(
+                new VariableMetadata( "mq.completion.code", false, true, null, false, DataType.INTEGER ),
+                new VariableMetadata( "mq.reason.code", false, true, null, false, DataType.INTEGER )
+        ).withVariables( responseTarget.getVariablesSet() ).asArray();
+    }
+
+    @Override
+    public Object clone() {
+        MqNativeRoutingAssertion copy = (MqNativeRoutingAssertion) super.clone();
+        copy.requestTarget = new MessageTargetableSupport(requestTarget);
+        copy.responseTarget = new MessageTargetableSupport(responseTarget);
+        copy.dynamicMqRoutingProperties = dynamicMqRoutingProperties==null ?
+                null :
+                new MqNativeDynamicProperties(dynamicMqRoutingProperties);
+
+        return copy;
     }
 }

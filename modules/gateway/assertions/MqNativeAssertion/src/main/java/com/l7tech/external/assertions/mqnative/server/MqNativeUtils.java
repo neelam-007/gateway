@@ -1,24 +1,42 @@
 package com.l7tech.external.assertions.mqnative.server;
 
 import com.ibm.mq.MQC;
+import com.ibm.mq.MQException;
+import com.ibm.mq.MQManagedObject;
 import com.ibm.mq.MQMessage;
+import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
+import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import com.l7tech.gateway.common.transport.jms.JmsAcknowledgementType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.security.password.SecurePasswordManager;
+import com.l7tech.server.transport.http.AnonymousSslClientSocketFactory;
+import com.l7tech.server.transport.http.SslClientSocketFactory;
+import com.l7tech.server.transport.jms.JmsConfigException;
+import com.l7tech.server.transport.jms.JmsSslCustomizerSupport;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions.UnaryVoidThrows;
+import com.l7tech.util.HexUtils;
+import com.l7tech.util.Option;
 import com.l7tech.util.Pair;
+import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.text.ParseException;
+import java.util.Hashtable;
+import java.util.Properties;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_PROPERTY_APPDATA;
-import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_PROPERTY_APPORIGIN;
+import javax.net.ssl.SSLSocketFactory;
 
 /**
  * MQ Native connector helper class.
  */
-public class MqNativeUtils {
+class MqNativeUtils {
     private static final Logger logger = Logger.getLogger(MqNativeUtils.class.getName());
 
     /*
@@ -49,7 +67,7 @@ public class MqNativeUtils {
         int nameValueCCSID;
     }
 
-    public static Pair<byte[], byte[]> parseHeader(MQMessage msg) throws IOException {
+    static Pair<byte[], byte[]> parseHeader(MQMessage msg) throws IOException {
         byte[] headType = new byte[4];
         boolean hasHeader = false;
 
@@ -100,26 +118,77 @@ public class MqNativeUtils {
         return new Pair<byte[], byte[]>(headerBytes, payloadBytes);
     }
 
+    static Hashtable buildQueueManagerConnectProperties( final SsgActiveConnector connector,
+                                                         final SecurePasswordManager securePasswordManager ) {
+        //TODO [steve] validate configuration and throw exception on error
+        Hashtable<String, Object> connProps = new Hashtable<String, Object>();
+        connProps.put(MQC.HOST_NAME_PROPERTY, connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_HOST_NAME ));
+        connProps.put(MQC.PORT_PROPERTY, connector.getIntegerProperty( PROPERTIES_KEY_MQ_NATIVE_PORT, -1 ));
+        connProps.put(MQC.CHANNEL_PROPERTY, connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_CHANNEL ));
+
+        // apply userId and password
+        if ( connector.getBooleanProperty( PROPERTIES_KEY_MQ_NATIVE_IS_QUEUE_CREDENTIAL_REQUIRED )) {
+            final String userId = connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_USERID );
+            if (!StringUtils.isEmpty( userId )) {
+                connProps.put(MQC.USER_ID_PROPERTY, userId);
+            }
+            final long passwordOid = connector.getLongProperty( PROPERTIES_KEY_MQ_NATIVE_SECURE_PASSWORD_OID, -1L );
+            final String password = passwordOid == -1L ? null : getDecryptedPassword( securePasswordManager, passwordOid );
+            if (!StringUtils.isEmpty(password)) {
+                connProps.put(MQC.PASSWORD_PROPERTY, password);
+            }
+        }
+
+        // apply SSL configuration
+        if ( connector.getBooleanProperty( PROPERTIES_KEY_MQ_NATIVE_IS_SSL_ENABLED )) {
+            try {
+                final String cipherSuite = connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_CIPHER_SUITE );
+                if (StringUtils.isEmpty(cipherSuite)) {
+                    logger.log( Level.WARNING, "The cipher suite was not set for the connection!");
+                }
+
+                final boolean clientAuth = connector.getBooleanProperty( PROPERTIES_KEY_MQ_NATIVE_IS_SSL_KEYSTORE_USED );
+                final String alias = connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ALIAS );
+                final String skid = connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ID );
+                final SSLSocketFactory socketFactory;
+                if (alias != null && skid != null) {
+                    socketFactory = JmsSslCustomizerSupport.getSocketFactory( skid, alias );
+                }
+                else if (clientAuth) {
+                    socketFactory = SslClientSocketFactory.getDefault();
+                }
+                else {
+                    socketFactory = AnonymousSslClientSocketFactory.getDefault();
+                }
+
+                // set the socket factory on the MQEnvironment with the cipher suite.
+                if (socketFactory != null) {
+                    connProps.put(MQC.SSL_CIPHER_SUITE_PROPERTY, cipherSuite);
+                    connProps.put(MQC.SSL_SOCKET_FACTORY_PROPERTY, socketFactory);
+                }
+            } catch(JmsConfigException jmsce) {
+                logger.log(Level.WARNING,
+                        "An exception was thrown while configuring the MQ Native SSL settings: " + ExceptionUtils.getMessage( jmsce ),
+                        ExceptionUtils.getDebugException(jmsce));
+            }
+        }
+
+        return connProps;
+    }
+
     /*
      * Create an MqNativeKnob.
      */
-    public static MqNativeKnob buildMqNativeKnob( final Map<String, Object> requestMsgProps,
-                                                  final String soapAction,
-                                                  final byte[] mqHeader) {
+    static MqNativeKnob buildMqNativeKnob( final byte[] mqHeader ) {
+        return buildMqNativeKnob( null, mqHeader );
+    }
+
+    /*
+     * Create an MqNativeKnob.
+     */
+    static MqNativeKnob buildMqNativeKnob( @Nullable final String soapAction,
+                                           @Nullable final byte[] mqHeader) {
         return new MqNativeKnob() {
-            @Override
-            public boolean isBytesMessage() {
-                return false; // mqRequest instanceof BytesMessage;
-            }
-            @Override
-            public Map<String, Object> getJmsMsgPropMap() {
-            /*
-               vchan
-               - this is not implemented until we need to map MQ user defined props to JMS props
-               - here, we would need to have parsed the custom header folders
-            */
-                return Collections.unmodifiableMap(new HashMap<String, Object>());
-            }
             @Override
             public String getSoapAction() {
                 return soapAction;
@@ -143,7 +212,7 @@ public class MqNativeUtils {
         };
     }
 
-    public static MQMessage buildMqMessage(SsgActiveConnector connector) throws MqNativeException {
+    static MQMessage buildMqMessage(SsgActiveConnector connector) throws MqNativeException {
         MQMessage mqMessage = new MQMessage();
         mqMessage.applicationIdData = connector.getProperty(MQ_PROPERTY_APPDATA);
         mqMessage.applicationOriginData = connector.getProperty(MQ_PROPERTY_APPORIGIN);
@@ -212,14 +281,147 @@ public class MqNativeUtils {
         return mqMessage;
     }
 
-    public static boolean isTransactional(SsgActiveConnector connector) {
+    static MQMessage applyPropertiesToMessage( @NotNull final MQMessage mqMessage,
+                                               @NotNull final Properties properties ) throws MqNativeConfigException {
+        for( final String name : properties.stringPropertyNames() ) {
+            final String value = properties.getProperty(name);
+            try{
+                if( MQ_PROPERTY_APPDATA.equals( name ) ) {
+                    mqMessage.applicationIdData = value;
+                } else if( MQ_PROPERTY_APPORIGIN.equals( name ) ) {
+                    mqMessage.applicationOriginData = value;
+                } else if( MQ_PROPERTY_CHARSET.equals( name ) ) {
+                    mqMessage.characterSet = asInt( name, value );
+                } else if( MQ_PROPERTY_ENCODING.equals( name ) ){
+                    mqMessage.encoding = asInt( name, value );
+                } else if( MQ_PROPERTY_EXPIRY.equals( name ) ) {
+                    mqMessage.expiry = asInt( name, value );
+                } else if( MQ_PROPERTY_FEEDBACK.equals( name ) ) {
+                    mqMessage.feedback = asInt( name, value );
+                } else if( MQ_PROPERTY_FORMAT.equals( name ) ) {
+                    mqMessage.format = value;
+                } else if( MQ_PROPERTY_GROUPID.equals( name ) ) {
+                    mqMessage.groupId = asBytes( value );
+                } else if( MQ_PROPERTY_MSG_FLAGS.equals( name ) ) {
+                    mqMessage.messageFlags = asInt( name, value );
+                } else if( MQ_PROPERTY_MSG_SEQNUM.equals( name ) ){
+                    mqMessage.messageSequenceNumber = asInt( name, value );
+                } else if( MQ_PROPERTY_MSG_TYPE.equals( name ) ){
+                    mqMessage.messageType = asInt( name, value );
+                } else if( MQ_PROPERTY_OFFSET.equals( name ) ) {
+                    mqMessage.offset = asInt( name, value );
+                } else if( MQ_PROPERTY_PERSISTENCE.equals( name ) ) {
+                    mqMessage.persistence = asInt( name, value );
+                } else if( MQ_PROPERTY_PRIORITY.equals( name ) ){
+                    mqMessage.priority = asInt( name, value );
+                } else if( MQ_PROPERTY_APPNAME.equals( name ) ){
+                    mqMessage.putApplicationName = value;
+                } else if( MQ_PROPERTY_APPTYPE.equals( name ) ) {
+                    mqMessage.putApplicationType = asInt( name, value );
+                } else if( MQ_PROPERTY_REPORT.equals( name ) ){
+                    mqMessage.report = asInt( name, value );
+                } else if( MQ_PROPERTY_USERID.equals( name ) ) {
+                    mqMessage.userId = value;
+                }
+            } catch(IllegalArgumentException ex) {
+                String message = "Unable to set property:"+name+" value:"+value;
+                logger.warning(message);
+                throw new MqNativeConfigException(message,ex);
+            }
+        }
+        return mqMessage;
+    }
+
+    static boolean isTransactional(SsgActiveConnector connector) {
         boolean isTransactional = false;
         try {
+            //TODO [steve] don't use JMS types
             isTransactional = JmsAcknowledgementType.ON_COMPLETION == JmsAcknowledgementType.valueOf(
                     connector.getProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_INBOUND_ACKNOWLEDGEMENT_TYPE));
         } catch (IllegalArgumentException e) {
             // not transactional
         }
         return isTransactional;
+    }
+
+    static void closeQuietly( final MQManagedObject object ) {
+        closeQuietly( object, Option.<UnaryVoidThrows<MQManagedObject,MQException>>none() );
+    }
+
+    static <T extends MQManagedObject> void closeQuietly( final T object,
+                                                          final Option<UnaryVoidThrows<T,MQException>> callback ) {
+        if ( object != null ) {
+            if ( callback.isSome() ) {
+                try {
+                    callback.some().call( object );
+                } catch (MQException e) {
+                    if ( logger.isLoggable( Level.FINE ) ) {
+                        logger.log( Level.FINE,
+                                "Error pre-closing MQ object: " + ExceptionUtils.getMessage( e ),
+                                ExceptionUtils.getDebugException( e ) );
+                    }
+                }
+            }
+
+
+            try {
+                object.close();
+            } catch (MQException e) {
+                if ( logger.isLoggable( Level.FINE ) ) {
+                    logger.log( Level.FINE,
+                            "Error closing MQ object: " + ExceptionUtils.getMessage( e ),
+                            ExceptionUtils.getDebugException( e ) );
+                }
+            }
+        }
+    }
+
+
+
+    private static SecurePassword getSecurePassword( final SecurePasswordManager securePasswordManager,
+                                                     final long passwordOid ) {
+        SecurePassword securePassword = null;
+        try {
+            securePassword = securePasswordManager.findByPrimaryKey(passwordOid);
+        } catch (FindException fe) {
+            logger.log( Level.WARNING, "The password could not be found in the password manager storage.  The password should be fixed or set in the password manager."
+                    + ExceptionUtils.getMessage( fe ), ExceptionUtils.getDebugException( fe ) );
+        }
+        return securePassword;
+    }
+
+    private static String getDecryptedPassword( final SecurePasswordManager securePasswordManager,
+                                                final long passwordOid ) {
+        String decrypted = null;
+        try {
+            final SecurePassword securePassword = getSecurePassword( securePasswordManager, passwordOid );
+            if ( securePassword != null ) {
+                final String encrypted = securePassword.getEncodedPassword();
+                final char[] pwd = securePasswordManager.decryptPassword(encrypted);
+                decrypted = new String(pwd);
+            }
+        } catch (ParseException pe) {
+            logger.log( Level.WARNING, "The password could not be parsed, the stored password is corrupted. "
+                    + ExceptionUtils.getMessage( pe ), ExceptionUtils.getDebugException( pe ) );
+        } catch (FindException fe) {
+            logger.log( Level.WARNING, "The password could not be found in the password manager storage.  The password should be fixed or set in the password manager."
+                    + ExceptionUtils.getMessage( fe ), ExceptionUtils.getDebugException( fe ) );
+        } catch (NullPointerException npe) {
+            logger.log( Level.WARNING, "The password could not be found in the password manager storage.  The password should be fixed or set in the password manager."
+                    + ExceptionUtils.getMessage( npe ), ExceptionUtils.getDebugException( npe ) );
+        }
+        return decrypted;
+    }
+
+    private static int asInt( final String name, final String value ) throws MqNativeConfigException {
+        try {
+            return Integer.parseInt( value );
+        } catch ( NumberFormatException nfe ) {
+            throw new MqNativeConfigException( "Invalid value '"+value+"' for property '"+name+"'" );
+        }
+    }
+
+    private static byte[] asBytes( final String value ) throws MqNativeConfigException {
+        return HexUtils.decodeBase64( value );
     }
 }
