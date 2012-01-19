@@ -187,7 +187,7 @@ public class AdminUserAccountPropertiesDialog extends JDialog {
         if(null == accountMinimumsMap || null == enabledPCIDSS)
             return null;
 
-        String accountMinimumsKey =  Boolean.getBoolean(enabledPCIDSS.getValue())? "PCI-DSS":"STIG";
+        String accountMinimumsKey =  Boolean.parseBoolean(enabledPCIDSS.getValue().trim())? "PCI-DSS":"STIG";
 
         return accountMinimumsMap.get(accountMinimumsKey);
     }
@@ -300,7 +300,7 @@ public class AdminUserAccountPropertiesDialog extends JDialog {
                 return ;
             }
         }catch (NumberFormatException e) {
-                    logger.log(Level.WARNING, "Invalid property value: "+prop.getValue(), ExceptionUtils.getDebugException(e));
+            logger.log(Level.WARNING, "Invalid property value: "+prop.getValue(), ExceptionUtils.getDebugException(e));
         }
         String value = findDefaultValue(descriptors, prop.getName());
         boundedNumberSpinner.setValue(Integer.parseInt(value)/ divisor);
