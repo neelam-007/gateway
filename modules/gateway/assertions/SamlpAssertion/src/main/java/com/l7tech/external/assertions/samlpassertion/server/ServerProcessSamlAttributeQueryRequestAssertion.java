@@ -308,26 +308,35 @@ public class ServerProcessSamlAttributeQueryRequestAssertion extends AbstractMes
                     final Element encryptedIdEl = getEncryptedDataElement(subjectEl);
                     final Triple<String, NodeList, X509Certificate> result = decryptNameIdElement(encryptedIdEl);
                     if (result != null) {
-                        subjectNameID = processDecryptResult(context, result);
+                        subjectNameID = processDecryptResultThrowIfUnsuccessful(context, result);
+                    } else {
+                        logAndAudit(AssertionMessages.SAMLP_ATTRIBUTE_QUERY_INVALID, "Could not decrypt EncryptedID");
+                        throw new AssertionStatusException(AssertionStatus.FALSIFIED);
                     }
                 }
             }
         }
 
         if (subjectNameID == null) {
-            // The only time this is ok is if decryption was not configured
-            if (!assertion.isAllowEncryptedId() || assertion.isDecryptEncryptedId() || !encryptedIdElementFound) {
-                throwForMissing("Subject NameID or EncryptedID");
-            } else {
-                if (logger.isLoggable(Level.FINE)) {
-                    logger.fine("EncryptedID element found but not decrypted. Context variables related to Subject will have no values");
-                }
+            // encryptedIdElementFound && is decrypt ==> we should have found a value.
+            if (encryptedIdElementFound && !assertion.isDecryptEncryptedId()) {
+                // We allow no validation of subject for the non decrypt use case
+                logAndAudit(AssertionMessages.SAMLP_REQUEST_BUILDER_NO_DECRYPTION);
 
                 context.setVariable(prefix(SUFFIX_SUBJECT), null);
                 context.setVariable(prefix(SUFFIX_SUBJECT_NAME_QUALIFIER), null);
                 context.setVariable(prefix(SUFFIX_SUBJECT_SP_NAME_QUALIFIER), null);
                 context.setVariable(prefix(SUFFIX_SUBJECT_FORMAT), null);
                 context.setVariable(prefix(SUFFIX_SUBJECT_SP_PROVIDED_ID), null);
+            } else {
+                // throw with correct failure message
+                if (assertion.isAllowNameId() && assertion.isAllowEncryptedId()) {
+                    throwForMissing("Subject NameID or EncryptedID");
+                } else if (assertion.isAllowNameId()) {
+                    throwForMissing("Subject NameID");
+                } else {
+                    throwForMissing("Subject EncryptedID");
+                }
             }
         } else {
             context.setVariable(prefix(SUFFIX_SUBJECT), maybeTrim(getName(subjectNameID)));
@@ -407,7 +416,9 @@ public class ServerProcessSamlAttributeQueryRequestAssertion extends AbstractMes
         }
     }
 
-    private NameIDType processDecryptResult(PolicyEnforcementContext context, Triple<String, NodeList, X509Certificate> result) {
+    @NotNull
+    private NameIDType processDecryptResultThrowIfUnsuccessful(PolicyEnforcementContext context, Triple<String, NodeList, X509Certificate> result)
+            throws AssertionStatusException {
         NameIDType subjectNameID;
         final List<String> algorithms = new ArrayList<String>();
         final List<Element> elements = new ArrayList<Element>();
@@ -555,6 +566,7 @@ public class ServerProcessSamlAttributeQueryRequestAssertion extends AbstractMes
             }
         };
 
+        // This is just for logging. Usages will throw exception if needed, we do not need to throw within this listener.
         final XmlElementDecryptor.KeyInfoErrorListener keyInfoErrorListener = new XmlElementDecryptor.KeyInfoErrorListener() {
             @Override
             public void onUnsupportedKeyInfoFormat(KeyInfoElement.UnsupportedKeyInfoFormatException e) {
@@ -571,7 +583,8 @@ public class ServerProcessSamlAttributeQueryRequestAssertion extends AbstractMes
 
         final String unableMessage = "Unable to decrypt EncryptedID element";
         try {
-            final Triple<String, NodeList, X509Certificate> result = XmlElementDecryptor.unwrapDecryptAndReplaceElement(encryptedDataEl, securityTokenResolver, decryptionError, keyInfoErrorListener);
+            final Triple<String, NodeList, X509Certificate> result =
+                    XmlElementDecryptor.unwrapDecryptAndReplaceElement(encryptedDataEl, securityTokenResolver, decryptionError, keyInfoErrorListener);
             if (decryptErrors[0]) {
                 // decrypt errors occurred and succeed when failure is configured (currently default behavior)
                 return null;

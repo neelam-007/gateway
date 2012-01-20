@@ -158,7 +158,7 @@ public class ProcessSamlAttributeQueryRequestPropertiesDialog extends AssertionP
             }
 
             assertion.setAllowEncryptedId(allowEncryptedId);
-            assertion.setDecryptEncryptedId(decryptCheckBox.isSelected());
+            assertion.setDecryptEncryptedId(allowEncryptedId && decryptCheckBox.isSelected());
 
             assertion.setRequireSubjectFormat(requireSubjectFormatCheckBox.isSelected());
             final StringBuilder subjectFormatBuilder = new StringBuilder();

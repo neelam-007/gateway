@@ -373,6 +373,7 @@ public class ServerProcessSamlAttributeQueryAssertionTest {
         serverAssertion.checkRequest(context);
     }
 
+    @BugNumber(11610)
     @Test
     public void testSuccessCase_DecryptEncryptedNameIdentifier() throws Exception{
         final Pair<X509Certificate, PrivateKey> k = TestKeys.getCertAndKey("RSA_1024");
@@ -545,6 +546,7 @@ public class ServerProcessSamlAttributeQueryAssertionTest {
     /**
      * If no NameID or EncryptedID were found, then the assertion will fail.
      */
+    @BugNumber(11610)
     @Test
     public void testErrorCase_NoSubjectElementAvailable() throws Exception {
         // Missing Subject NameID and Encrypted ID
@@ -552,16 +554,10 @@ public class ServerProcessSamlAttributeQueryAssertionTest {
         final PolicyEnforcementContext context = getContext(request);
         final ProcessSamlAttributeQueryRequestAssertion assertion = new ProcessSamlAttributeQueryRequestAssertion();
         assertion.setRequireIssuer(false);
-
-        final ServerProcessSamlAttributeQueryRequestAssertion serverAssertion =
-                new ServerProcessSamlAttributeQueryRequestAssertion(assertion);
+        assertion.setAllowEncryptedId(true); // false by default
 
         final TestAudit testAudit = new TestAudit();
-        ApplicationContexts.inject(serverAssertion, CollectionUtils.<String, Object>mapBuilder()
-                .put("securityTokenResolver", new SimpleSecurityTokenResolver())
-                .put( "auditFactory", testAudit.factory() )
-                .unmodifiableMap()
-        );
+        final ServerProcessSamlAttributeQueryRequestAssertion serverAssertion = getServerAssertionInjected(assertion, testAudit);
 
         try {
             serverAssertion.checkRequest(context);
@@ -570,15 +566,120 @@ public class ServerProcessSamlAttributeQueryAssertionTest {
             //success
         }
 
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
         // valid audits
         Assert.assertTrue(testAudit.isAuditPresent(AssertionMessages.SAMLP_ATTRIBUTE_QUERY_INVALID));
         Assert.assertTrue(testAudit.isAuditPresentContaining("Missing Subject NameID or EncryptedID"));
     }
 
     /**
+     * Ensure correct audit messages
+     * @throws Exception
+     */
+    @BugNumber(11670)
+    @Test
+    public void testErrorCase_NameIDNotFound() throws Exception {
+        {
+            // Only NameID Allowed
+            Message request = new Message(XmlUtil.parse(invalidRequestMissingSubjectNameIdentifier));
+            final PolicyEnforcementContext context = getContext(request);
+            final ProcessSamlAttributeQueryRequestAssertion assertion = new ProcessSamlAttributeQueryRequestAssertion();
+            assertion.setRequireIssuer(false);
+            // Note: EncryptedID is not supported.
+
+            final TestAudit testAudit = new TestAudit();
+            final ServerProcessSamlAttributeQueryRequestAssertion serverAssertion = getServerAssertionInjected(assertion, testAudit);
+
+            try {
+                serverAssertion.checkRequest(context);
+                fail("Assertion should have thrown");
+            } catch (AssertionStatusException e) {
+                //success
+            }
+
+            for (String s : testAudit) {
+                System.out.println(s);
+            }
+            // valid audits
+            Assert.assertTrue(testAudit.isAuditPresent(AssertionMessages.SAMLP_ATTRIBUTE_QUERY_INVALID));
+            Assert.assertTrue(testAudit.isAuditPresentContaining("Missing Subject NameID"));
+        }
+
+        {
+            // Only EncryptedID Allowed
+            Message request = new Message(XmlUtil.parse(invalidRequestMissingSubjectNameIdentifier));
+            final PolicyEnforcementContext context = getContext(request);
+            final ProcessSamlAttributeQueryRequestAssertion assertion = new ProcessSamlAttributeQueryRequestAssertion();
+            assertion.setRequireIssuer(false);
+            assertion.setAllowNameId(false);
+            assertion.setAllowEncryptedId(true);
+
+            final TestAudit testAudit = new TestAudit();
+            final ServerProcessSamlAttributeQueryRequestAssertion serverAssertion = getServerAssertionInjected(assertion, testAudit);
+
+            try {
+                serverAssertion.checkRequest(context);
+                fail("Assertion should have thrown");
+            } catch (AssertionStatusException e) {
+                //success
+            }
+
+            for (String s : testAudit) {
+                System.out.println(s);
+            }
+            // valid audits
+            Assert.assertTrue(testAudit.isAuditPresent(AssertionMessages.SAMLP_ATTRIBUTE_QUERY_INVALID));
+            Assert.assertTrue(testAudit.isAuditPresentContaining("Missing Subject EncryptedID"));
+        }
+
+        {
+            // Only EncryptedID Allowed
+            Message request = new Message(XmlUtil.parse(invalidRequestMissingSubjectNameIdentifier));
+            final PolicyEnforcementContext context = getContext(request);
+            final ProcessSamlAttributeQueryRequestAssertion assertion = new ProcessSamlAttributeQueryRequestAssertion();
+            assertion.setRequireIssuer(false);
+            assertion.setAllowNameId(true);
+            assertion.setAllowEncryptedId(true);
+            final TestAudit testAudit = new TestAudit();
+
+            final ServerProcessSamlAttributeQueryRequestAssertion serverAssertion = getServerAssertionInjected(assertion, testAudit);
+
+            try {
+                serverAssertion.checkRequest(context);
+                fail("Assertion should have thrown");
+            } catch (AssertionStatusException e) {
+                //success
+            }
+
+            for (String s : testAudit) {
+                System.out.println(s);
+            }
+            // valid audits
+            Assert.assertTrue(testAudit.isAuditPresent(AssertionMessages.SAMLP_ATTRIBUTE_QUERY_INVALID));
+            Assert.assertTrue(testAudit.isAuditPresentContaining("Missing Subject NameID or EncryptedID"));
+        }
+
+    }
+
+    private ServerProcessSamlAttributeQueryRequestAssertion getServerAssertionInjected(ProcessSamlAttributeQueryRequestAssertion assertion, TestAudit testAudit) throws PolicyAssertionException {
+        final ServerProcessSamlAttributeQueryRequestAssertion serverAssertion =
+                new ServerProcessSamlAttributeQueryRequestAssertion(assertion);
+
+        ApplicationContexts.inject(serverAssertion, CollectionUtils.<String, Object>mapBuilder()
+                .put("securityTokenResolver", new SimpleSecurityTokenResolver())
+                .put("auditFactory", testAudit.factory())
+                .unmodifiableMap()
+        );
+        return serverAssertion;
+    }
+
+    /**
      * If an EncryptedID was found and decryption was not configured, then all the subject context variables will be
      * null and the assertion will succeed.
      */
+    @BugNumber(11610)
     @Test
     public void testSuccessCase_EncryptedIdNotDecrypted_SubjectVariablesSet() throws Exception {
         // Missing Subject NameID and Encrypted ID

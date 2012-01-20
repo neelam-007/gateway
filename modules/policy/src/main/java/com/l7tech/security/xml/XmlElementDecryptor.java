@@ -37,6 +37,8 @@ public class XmlElementDecryptor {
      * @param securityTokenResolver  a security token resolver to use for locating keys for unwrapping the encrypted key.  Required.
      * @param onDecryptionError a listener which will be invoked if a decryption attempt fails.  Required.
      * @param keyInfoErrorListener  a listener which will be invoked if a key info entry is skipped over because it cannot be understood.  May be null.
+     * Implementations do not need to treat these events as errors as this method will throw if the secret key cannot be unwrapped.
+     * Use to log / audit as possibly interesting information.
      * @return a Triple containing the symmetric encryption algorithm URI, the list of decrypted nodes (already added to the document), and the X509Certificate that was used
      *         to unwrap the symmetric encryption key.  Never null.
      * @throws com.l7tech.security.xml.UnexpectedKeyInfoException if the keyinfo did not match any known private key

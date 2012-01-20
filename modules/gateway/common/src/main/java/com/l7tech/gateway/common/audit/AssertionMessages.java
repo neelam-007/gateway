@@ -1073,6 +1073,7 @@ public class AssertionMessages extends Messages {
     public static final Messages.M CERT_LOOKUP_ERROR = m(9553, Level.WARNING, "Error looking up certificate ''{0}''." );
 
     public static final Messages.M SAMLP_REQUEST_BUILDER_INVALID_URI = m(9580, Level.WARNING, "Invalid URI value found for {0}: ''{1}''." );
+    public static final Messages.M SAMLP_REQUEST_BUILDER_NO_DECRYPTION = m(9581, Level.FINE, "EncryptedID element found but not decrypted. Context variables related to Subject will have no values" );
 
     public static final Messages.M MQ_ROUTING_REQUEST_ROUTED                = m(9610, Level.FINER, "Routing request to protected service");
     public static final Messages.M MQ_ROUTING_NO_RESPONSE                   = m(9611, Level.WARNING, "Did not receive a routing reply within the timeout period of {0}ms; empty response being returned");
