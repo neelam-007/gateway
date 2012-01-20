@@ -128,7 +128,7 @@
                         </xsl:if>
                     </xsl:for-each>
 
-                    <!-- Runtime Dependencies -->                        ~
+                    <!-- Runtime Dependencies -->
                     <!--<xsl:for-each select="$ivy-report/dependencies/module">-->
                         <!--<xsl:sort select="revision/@position"/>-->
                         <!--<xsl:if test="revision/caller[@name = $ivy-report/info/@module and @organisation = $ivy-report/info/@organisation]">-->
