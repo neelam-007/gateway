@@ -431,6 +431,19 @@ public class ValidationUtils {
                 regexPredicate(pattern) );
     }
 
+    /**
+     * Get a predicate for a value range.
+     *
+     * @param min The minimum permitted value
+     * @param max The maximum permitted value
+     * @param <T> The value type
+     * @return The predicate
+     */
+    public static <T extends Number> Unary<Boolean,T> getMinMaxPredicate( @NotNull T min,
+                                                                          @NotNull T max ) {
+        return minMaxPredicate( min, max );
+    }
+
     public static boolean isValidMimeHeaderName(String name) {
         return getMimeHeaderNameMessage(name) == null;
     }

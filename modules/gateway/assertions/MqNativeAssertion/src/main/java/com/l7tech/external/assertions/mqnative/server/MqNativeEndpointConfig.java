@@ -4,10 +4,16 @@ package com.l7tech.external.assertions.mqnative.server;
 import com.l7tech.external.assertions.mqnative.MqNativeDynamicProperties;
 import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_NONE;
+import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_SPECIFIED_QUEUE;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
-import com.l7tech.server.security.password.SecurePasswordManager;
+import com.l7tech.util.Either;
+import static com.l7tech.util.Either.left;
+import static com.l7tech.util.Either.right;
+import static com.l7tech.util.Eithers.extract;
+import com.l7tech.util.Functions.Nullary;
 import static com.l7tech.util.Functions.grep;
+import static com.l7tech.util.Functions.memoize;
 import com.l7tech.util.Option;
 import static com.l7tech.util.TextUtils.startsWith;
 import org.jetbrains.annotations.Nullable;
@@ -30,13 +36,11 @@ class MqNativeEndpointConfig {
     private final String queueManagerName;
     private final MqNativeReplyType replyType;
     private final String replyToModelQueueName;
-    private final Hashtable queueManagerProperties;
-    private final Properties messageProperties;
+    private final Nullary<Either<MqNativeConfigException,Hashtable>> queueManagerProperties;
+    private final Nullary<Properties> messageProperties;
 
-    //TODO [steve] pass in password, not passwordManager
-    //TODO [steve] make some initialization lazy since the values may not be used
     MqNativeEndpointConfig( final SsgActiveConnector originalConnector,
-                            final SecurePasswordManager securePasswordManager,
+                            final Option<String> password,
                             final Option<MqNativeDynamicProperties> dynamicProperties ) {
         final SsgActiveConnector connector = originalConnector.getCopy();
         if ( dynamicProperties.isSome() ) applyOverrides( connector, dynamicProperties.some() );
@@ -53,8 +57,8 @@ class MqNativeEndpointConfig {
         this.queueManagerName = connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME );
         this.replyType = connector.getEnumProperty( PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_NONE, MqNativeReplyType.class );
         this.replyToModelQueueName = connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_TEMPORARY_QUEUE_NAME_PATTERN );
-        this.queueManagerProperties = buildQueueManagerProperties(connector,securePasswordManager);
-        this.messageProperties = buildProperties( connector, PROPERTIES_KEY_MQ_NATIVE_ADVANCED_PROPERTY_PREFIX );
+        this.queueManagerProperties = memoize(buildQueueManagerProperties(connector,password));
+        this.messageProperties = memoize( buildProperties( connector, PROPERTIES_KEY_MQ_NATIVE_ADVANCED_PROPERTY_PREFIX ) );
     }
 
     boolean isDynamic() {
@@ -77,8 +81,8 @@ class MqNativeEndpointConfig {
         return replyToQueueName;
     }
 
-    Hashtable getQueueManagerProperties() {
-        return (Hashtable)queueManagerProperties.clone();
+    Hashtable getQueueManagerProperties() throws MqNativeConfigException {
+        return (Hashtable)extract(queueManagerProperties.call()).clone();
     }
 
     MqNativeReplyType getReplyType() {
@@ -98,7 +102,24 @@ class MqNativeEndpointConfig {
     }
 
     Properties getMessageProperties() {
-        return (Properties)messageProperties.clone();
+        return (Properties)messageProperties.call().clone();
+    }
+
+    /**
+     * Validate this endpoint configuration.
+     *
+     * @throws MqNativeConfigException If the configuration is invalid.
+     */
+    void validate() throws MqNativeConfigException {
+        throwIfEmpty( channelName, "Channel name is required" );
+        throwIfEmpty( queueName, "Queue name is required" );
+        if ( replyType==REPLY_SPECIFIED_QUEUE ) throwIfEmpty( replyToQueueName, "Reply queue is required" );
+    }
+
+    private void throwIfEmpty( final String value, final String errorMessage ) throws MqNativeConfigException {
+        if ( value == null || value.isEmpty() ) {
+            throw new MqNativeConfigException( errorMessage);
+        }
     }
 
     static final class MqEndpointKey {
@@ -214,22 +235,37 @@ class MqNativeEndpointConfig {
             connector.setProperty( propertyName, propertyValue );
     }
 
-    private Hashtable buildQueueManagerProperties( final SsgActiveConnector connector,
-                                                   final SecurePasswordManager securePasswordManager ) {
-        return MqNativeUtils.buildQueueManagerConnectProperties( connector, securePasswordManager );
+    private Nullary<Either<MqNativeConfigException,Hashtable>> buildQueueManagerProperties(
+            final SsgActiveConnector connector,
+            final Option<String> password ) {
+        return new Nullary<Either<MqNativeConfigException,Hashtable>>(){
+            @Override
+            public Either<MqNativeConfigException,Hashtable> call() {
+                try {
+                    return right( MqNativeUtils.buildQueueManagerConnectProperties( connector, password ) );
+                } catch ( MqNativeConfigException e ) {
+                    return left( e );
+                }
+            }
+        };
     }
 
-    private Properties buildProperties( final SsgActiveConnector connector,
-                                        final String prefix ) {
-        final Properties properties = new Properties();
+    private Nullary<Properties> buildProperties( final SsgActiveConnector connector,
+                                                 final String prefix ) {
+        return new Nullary<Properties>(){
+            @Override
+            public Properties call() {
+                final Properties properties = new Properties();
 
-        for ( final String property : grep( connector.getPropertyNames(), startsWith( prefix ) ) ) {
-            properties.setProperty(
-                property.substring(prefix.length()),
-                connector.getProperty(property)
-            );
-        }
+                for ( final String property : grep( connector.getPropertyNames(), startsWith( prefix ) ) ) {
+                    properties.setProperty(
+                        property.substring(prefix.length()),
+                        connector.getProperty(property)
+                    );
+                }
 
-        return properties;
+                return properties;
+            }
+        };
     }
 }

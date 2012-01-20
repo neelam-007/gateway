@@ -1075,7 +1075,7 @@ public class AssertionMessages extends Messages {
     public static final Messages.M SAMLP_REQUEST_BUILDER_INVALID_URI = m(9580, Level.WARNING, "Invalid URI value found for {0}: ''{1}''." );
 
     public static final Messages.M MQ_ROUTING_REQUEST_ROUTED                = m(9610, Level.FINER, "Routing request to protected service");
-    public static final Messages.M MQ_ROUTING_NO_RESPONSE                   = m(9611, Level.WARNING, "Did not receive a routing reply within the timeout period of {0} ms; empty response being returned");
+    public static final Messages.M MQ_ROUTING_NO_RESPONSE                   = m(9611, Level.WARNING, "Did not receive a routing reply within the timeout period of {0}ms; empty response being returned");
     public static final Messages.M MQ_ROUTING_GOT_RESPONSE                  = m(9612, Level.FINER, "Received routing reply");
     public static final Messages.M MQ_ROUTING_NO_RESPONSE_EXPECTED          = m(9613, Level.INFO, "No response expected from protected service");
     public static final Messages.M MQ_ROUTING_REQUEST_WITH_NO_REPLY         = m(9614, Level.FINE, "Outbound request endpoint {0} specifies NO_REPLY");
@@ -1084,10 +1084,13 @@ public class AssertionMessages extends Messages {
     public static final Messages.M MQ_ROUTING_CANT_CONNECT_NOMORETRIES      = m(9617, Level.WARNING, "Tried {0} times to establish MQ connection and failed.");
     public static final Messages.M MQ_ROUTING_REQUEST_WITH_AUTOMATIC        = m(9618, Level.FINE, "Outbound request endpoint {0} specifies AUTOMATIC, using temporary queue");
     public static final Messages.M MQ_ROUTING_REQUEST_TOO_LARGE             = m(9619, Level.WARNING, "Request message too large.");
-    public static final Messages.M MQ_ROUTING_CONFIGURATION_ERROR           = m(9620, Level.WARNING, "Invalid MQ configuration ''{0}''.");
-    public static final Messages.M MQ_ROUTING_TEMPLATE_ERROR                = m(9621, Level.WARNING, "Error processing MQ outbound template ''{0}''.");
-    public static final Messages.M MQ_ROUTING_RESPONSE_TIMEOUT_ERROR        = m(9622, Level.WARNING, "Ignoring invalid response timeout: {0}");
-    public static final Messages.M MQ_ROUTING_RESPONSE_TIMEOUT              = m(9623, Level.FINER, "Using response timeout {0}ms.");
+    public static final Messages.M MQ_ROUTING_RESPONSE_TOO_LARGE            = m(9620, Level.WARNING, "Response message too large.");
+    public static final Messages.M MQ_ROUTING_CONFIGURATION_ERROR           = m(9621, Level.WARNING, "Invalid MQ configuration ''{0}''.");
+    public static final Messages.M MQ_ROUTING_TEMPLATE_ERROR                = m(9622, Level.WARNING, "Error processing MQ outbound template ''{0}''.");
+    public static final Messages.M MQ_ROUTING_RESPONSE_TIMEOUT_ERROR        = m(9623, Level.WARNING, "Ignoring invalid response timeout: {0}");
+    public static final Messages.M MQ_ROUTING_RESPONSE_TIMEOUT              = m(9624, Level.FINER, "Using response timeout {0}ms.");
+    public static final Messages.M MQ_ROUTING_RESPONSE_SIZE_LIMIT_ERROR     = m(9625, Level.WARNING, "Ignoring invalid response size limit: {0}");
+    public static final Messages.M MQ_ROUTING_RESPONSE_SIZE_LIMIT           = m(9626, Level.FINER, "Using response size limit {0} (bytes)");
 
     // Highest ID reserved for AssertionMessages = 99999
 }

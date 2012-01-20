@@ -32,9 +32,10 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
     };
     private static final String META_INITIALIZED = MqNativeRoutingAssertion.class.getName() + ".metadataInitialized";
 
-    private Long ssgActiveConnectorId = null;
-    private String ssgActiveConnectorName = null;
-    private String responseTimeout = null;
+    private Long ssgActiveConnectorId;
+    private String ssgActiveConnectorName;
+    private String responseTimeout;
+    private String responseSize;
     private MqNativeDynamicProperties dynamicMqRoutingProperties;
     @NotNull
     private MqNativeMessagePropertyRuleSet requestMqMessagePropertyRuleSet = new MqNativeMessagePropertyRuleSet();
@@ -100,6 +101,19 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
      */
     public void setResponseTimeout( @Nullable String responseTimeout ) {
         this.responseTimeout = responseTimeout;
+    }
+
+    /**
+     * The maximum response size in bytes.
+     *
+     * @return The size in bytes, or null to use the default value..
+     */
+    public String getResponseSize(){
+        return responseSize;
+    }
+
+    public void setResponseSize(String responseSize){
+        this.responseSize = responseSize;
     }
 
     /**
@@ -202,7 +216,6 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
         meta.put( PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.mqnative.console.MqNativeRoutingAssertionDialog" );
         meta.put( MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.mqnative.server.MqNativeModuleLoadListener" );
         meta.put( PROPERTIES_ACTION_NAME, "MQ Native Routing Properties" );
-        //TODO [steve] Policy validation for disabled queue (or deleted, etc)
 
         meta.put( WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder( CollectionUtils.<TypeMapping>list(
                 new BeanTypeMapping( MqNativeMessagePropertyRuleSet.class, "mappingRuleSet" ),
@@ -235,7 +248,7 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
 
     @Override
     public String[] getVariablesUsed() {
-        return expressions( responseTimeout )
+        return expressions( responseTimeout, responseSize )
                 .with( requestTarget.getMessageTargetVariablesUsed() )
                 .withExpressions( dynamicMqRoutingProperties == null ? null : dynamicMqRoutingProperties.getVariableExpressions() )
                 .asArray();

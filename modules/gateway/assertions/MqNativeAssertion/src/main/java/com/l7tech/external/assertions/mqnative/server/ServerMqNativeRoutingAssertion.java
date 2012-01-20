@@ -3,7 +3,6 @@ package com.l7tech.external.assertions.mqnative.server;
 import com.ibm.mq.MQC;
 import com.ibm.mq.MQException;
 import com.ibm.mq.MQGetMessageOptions;
-import com.ibm.mq.MQManagedObject;
 import com.ibm.mq.MQMessage;
 import com.ibm.mq.MQQueue;
 import com.ibm.mq.MQQueueManager;
@@ -17,7 +16,9 @@ import com.l7tech.external.assertions.mqnative.MqNativeRoutingAssertion;
 import com.l7tech.external.assertions.mqnative.server.MqNativeResourceManager.*;
 import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.buildMqNativeKnob;
 import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.closeQuietly;
+import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.getQueuePassword;
 import static com.l7tech.gateway.common.audit.AssertionMessages.*;
+import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import com.l7tech.message.Message;
@@ -27,6 +28,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.Syntax;
+import static com.l7tech.server.ServerConfigParams.PARAM_IO_MQ_MESSAGE_MAX_BYTES;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -41,13 +43,16 @@ import com.l7tech.util.CausedIOException;
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.Unary;
+import com.l7tech.util.Functions.UnaryThrows;
 import com.l7tech.util.Functions.UnaryVoidThrows;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.Option;
 import static com.l7tech.util.Option.optional;
+import static com.l7tech.util.Option.some;
 import com.l7tech.util.Pair;
 import com.l7tech.util.PoolByteArrayOutputStream;
+import static java.util.Collections.unmodifiableMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationContext;
@@ -67,13 +72,12 @@ import java.util.logging.Logger;
 /**
  * Server side implementation of the MqNativeRoutingAssertion.
  *
- * TODO [steve] response size limit
- *
  * @author vchan - tactical code on which this implementation is based.
  */
 public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNativeRoutingAssertion> {
     private static final int MAX_OOPSES = 5;
-    private static final long RETRY_DELAY = 1000;
+    private static final long RETRY_DELAY = 1000L;
+    private static final long DEFAULT_MESSAGE_MAX_BYTES = 2621440L;
     private static final String completionCodeString = "mq.completion.code";
     private static final String reasonCodeString = "mq.reason.code";
 
@@ -250,6 +254,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
     private final class MqRoutingCallback implements MqTaskCallback {
         private final MqNativeEndpointConfig cfg;
         private final PolicyEnforcementContext context;
+        private final Map<String,?> variables;
         private final com.l7tech.message.Message requestMessage;
         private Exception exception;
         private boolean messageSent = false;
@@ -258,6 +263,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                                    final MqNativeEndpointConfig cfg) {
             this.context = context;
             this.cfg = cfg;
+            this.variables = unmodifiableMap( context.getVariableMap( assertion.getVariablesUsed(), getAudit() ) );
             try {
                 this.requestMessage = context.getTargetMessage(assertion.getRequestTarget());
             } catch (NoSuchVariableException e) {
@@ -298,12 +304,6 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
             MQQueue replyQueue = null;
             MQQueueManager replyMgr = null;
             try {
-//                MQQueueManager manager = writeBag.getQmgr();
-//                if(manager!=null && !manager.isConnected()){
-//                    //check to see if the connection is still alive!
-//                    manager.isConnected();
-//                }
-
                 int accessQueueOptions = MQC.MQOO_OUTPUT | MQC.MQOO_FAIL_IF_QUIESCING;
                 // create the outbound queue
                 writeQueue = writeBag.getQmgr().accessQueue(cfg.getQueueName(), accessQueueOptions);
@@ -321,8 +321,6 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                 } else {
                     outboundRequest = makeRequest(context, cfg, null);
                 }
-
-                // vc - Adding and mapping to/from JMS properties is out of scope
 
                 boolean processReply = context.isReplyExpected() && replyQueue != null;
                 logAndAudit(MQ_ROUTING_REQUEST_ROUTED);
@@ -376,16 +374,17 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                         throw new AssertionStatusException(AssertionStatus.FAILED);
                     }
 
+                    // Create the response
+                    enforceResponseSizeLimit(mqResponse);
+                    final Pair<byte[], byte[]> parsedResponse = MqNativeUtils.parseHeader(mqResponse);
+                    final StashManager stashManager = stashManagerFactory.createStashManager();
+
                     final com.l7tech.message.Message responseMessage;
                     try {
                         responseMessage = context.getOrCreateTargetMessage(assertion.getResponseTarget(), false);
                     } catch (NoSuchVariableException e) {
                         throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
                     }
-
-                    // Create the response
-                    final Pair<byte[], byte[]> parsedResponse = MqNativeUtils.parseHeader(mqResponse);
-                    final StashManager stashManager = stashManagerFactory.createStashManager();
                     responseMessage.initialize(stashManager, ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(parsedResponse.right));
                     logAndAudit(MQ_ROUTING_GOT_RESPONSE);
 
@@ -419,35 +418,86 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
             }
         }
 
+        void enforceResponseSizeLimit( final MQMessage message ) {
+            final long limit = getResponseSizeLimit();
+            if ( limit > 0 && message.getTotalMessageLength() > limit ) {
+                logAndAudit( MQ_ROUTING_RESPONSE_TOO_LARGE);
+                throw new AssertionStatusException(AssertionStatus.FAILED);
+            }
+        }
+
+        /**
+         * Get the size limit for the response message.
+         *
+         * @return The size limit in bytes.
+         */
+        long getResponseSizeLimit() {
+            long sizeLimit = getPropertyWithDefault(
+                    assertion.getResponseSize(),
+                    0L,
+                    "size limit",
+                    config.getLongProperty(PARAM_IO_MQ_MESSAGE_MAX_BYTES, DEFAULT_MESSAGE_MAX_BYTES),
+                    new UnaryThrows<Long,String,NumberFormatException>(){
+                        @Override
+                        public Long call( final String text ) throws NumberFormatException {
+                            return Long.parseLong( text );
+                        }
+                    }, MQ_ROUTING_RESPONSE_SIZE_LIMIT_ERROR );
+
+            if ( sizeLimit < 0L ) {
+                sizeLimit = com.l7tech.message.Message.getMaxBytes();
+            }
+
+            logAndAudit( MQ_ROUTING_RESPONSE_SIZE_LIMIT, String.valueOf( sizeLimit ) );
+
+            return sizeLimit;
+        }
+
         /**
          * Gets the timeout interval for waiting on the reply queue.
          *
-         * @return the replyTo queue timeout
+         * @return the replyTo queue timeout in milliseconds.
          */
         int getTimeout() {
-            int timeout = Integer.MIN_VALUE;
-
-            String timeoutStr = assertion.getResponseTimeout();
-            if ( timeoutStr != null && !timeoutStr.isEmpty() ) {
-                timeoutStr = ExpandVariables.process( timeoutStr, context.getVariableMap( assertion.getVariablesUsed(), getAudit() ), getAudit() );
-                try {
-                    timeout = Integer.parseInt(timeoutStr);
-                    if ( timeout <= 0 ){
-                        logAndAudit( MQ_ROUTING_RESPONSE_TIMEOUT_ERROR, "Negative timeout ("+timeout+")" );
-                        timeout = Integer.MIN_VALUE;
-                    }
-                } catch ( NumberFormatException e ) {
-                    logAndAudit( MQ_ROUTING_RESPONSE_TIMEOUT_ERROR, "Unable to parse timeout ("+timeoutStr+")" );
-                }
-            }
-
-            if ( timeout == Integer.MIN_VALUE ) {
-                timeout = config.getIntProperty(MQ_RESPONSE_TIMEOUT_PROPERTY, 10000);
-            }
+            int timeout = getPropertyWithDefault(
+                    assertion.getResponseTimeout(),
+                    1,
+                    "timeout",
+                    config.getIntProperty(MQ_RESPONSE_TIMEOUT_PROPERTY, 10000),
+                    new UnaryThrows<Integer,String,NumberFormatException>(){
+                        @Override
+                        public Integer call( final String text ) throws NumberFormatException {
+                            return Integer.parseInt( text );
+                        }
+                    }, MQ_ROUTING_RESPONSE_TIMEOUT_ERROR );
 
             logAndAudit( MQ_ROUTING_RESPONSE_TIMEOUT, String.valueOf( timeout ) );
 
             return timeout;
+        }
+
+        private <T extends Number> T getPropertyWithDefault( String stringValue,
+                                                             final T minimum,
+                                                             final String description,
+                                                             final T defaultValue,
+                                                             final UnaryThrows<T,String,NumberFormatException> parser,
+                                                             final AuditDetailMessage parseErrorMessage ) {
+            Option<T> value = Option.none();
+
+            if ( stringValue != null && !stringValue.isEmpty() ) {
+                stringValue = ExpandVariables.process( stringValue, variables, getAudit() );
+                try {
+                    value = some(parser.call(stringValue));
+                    if ( value.some().longValue() < minimum.longValue() ){
+                        logAndAudit( parseErrorMessage, "Negative "+description+" ("+value.some()+")" );
+                        value = Option.none();
+                    }
+                } catch ( NumberFormatException e ) {
+                    logAndAudit( parseErrorMessage, "Unable to parse "+description+" ("+stringValue+")" );
+                }
+            }
+
+            return value.orSome( defaultValue );
         }
     }
 
@@ -517,7 +567,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
 
     /**
      * Builds a {@link MQMessage} to be routed to a Websphere MQ endpoint.
-     * @param context contains the request to be converted into a JMS Message
+     * @param context contains the request to be converted into a MQ Message
      * @param endpointCfg the MQ endpoint
      * @param tempQueueName the name of the temporary queue used in the replyToQueueName field
      * @return the MQMessage instance to be routed
@@ -689,8 +739,11 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                     "MQ endpoint #" + assertion.getSsgActiveConnectorId() + " could not be located! It may have been deleted" );
         }
 
-        config = new MqNativeEndpointConfig(ssgActiveConnector,securePasswordManager, dynamicProperties);
-        //TODO [steve] Validate MQ endpoint configuration
+        config = new MqNativeEndpointConfig(
+                ssgActiveConnector,
+                getQueuePassword( ssgActiveConnector, securePasswordManager ),
+                dynamicProperties );
+        config.validate();
 
         if ( !config.isDynamic() ) {
             synchronized( endpointConfigSync ) {
@@ -712,10 +765,10 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
      */
     private static final class MqNativeSsgActiveConnectorInvalidator implements ApplicationListener {
         private static final Logger logger = Logger.getLogger( MqNativeSsgActiveConnectorInvalidator.class.getName() );
-        private final ServerMqNativeRoutingAssertion serverJmsRoutingAssertion;
+        private final ServerMqNativeRoutingAssertion serverMqRoutingAssertion;
 
-        private MqNativeSsgActiveConnectorInvalidator( @NotNull final ServerMqNativeRoutingAssertion serverJmsRoutingAssertion ) {
-            this.serverJmsRoutingAssertion = serverJmsRoutingAssertion;
+        private MqNativeSsgActiveConnectorInvalidator( @NotNull final ServerMqNativeRoutingAssertion serverMqRoutingAssertion ) {
+            this.serverMqRoutingAssertion = serverMqRoutingAssertion;
         }
 
         @Override
@@ -725,12 +778,12 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                 if (SsgActiveConnector.class.isAssignableFrom(eie.getEntityClass())) {
 
                     MqNativeEndpointConfig mqEndpointConfig;
-                    synchronized (serverJmsRoutingAssertion.endpointConfigSync) {
-                        mqEndpointConfig = serverJmsRoutingAssertion.endpointConfig;
+                    synchronized ( serverMqRoutingAssertion.endpointConfigSync) {
+                        mqEndpointConfig = serverMqRoutingAssertion.endpointConfig;
                     }
 
                     if ( mqEndpointConfig != null && contains( eie.getEntityIds(), mqEndpointConfig.getMqEndpointKey().getId() ) ) {
-                        if (serverJmsRoutingAssertion.markUpdate(true) ) {
+                        if ( serverMqRoutingAssertion.markUpdate(true) ) {
                             if ( logger.isLoggable(Level.CONFIG) ) {
                                 logger.log(Level.CONFIG, "Flagging MQ endpoint information for update ''{0}'' (#{1})",
                                     new Object[]{mqEndpointConfig.getName(), mqEndpointConfig.getMqEndpointKey().getId()});

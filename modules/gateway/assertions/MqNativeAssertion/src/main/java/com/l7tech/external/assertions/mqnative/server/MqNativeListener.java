@@ -3,17 +3,10 @@ package com.l7tech.external.assertions.mqnative.server;
 import com.ibm.mq.*;
 import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
 import com.l7tech.gateway.common.Component;
-import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.event.system.TransportEvent;
 import com.l7tech.server.security.password.SecurePasswordManager;
-import com.l7tech.server.transport.http.AnonymousSslClientSocketFactory;
-import com.l7tech.server.transport.http.SslClientSocketFactory;
-import com.l7tech.server.transport.jms.JmsConfigException;
-import com.l7tech.server.transport.jms.JmsSslCustomizerSupport;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.TimeUnit;
@@ -21,8 +14,6 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationEventPublisher;
 
-import javax.net.ssl.SSLSocketFactory;
-import java.text.ParseException;
 import java.util.Hashtable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -213,7 +204,7 @@ public abstract class MqNativeListener {
         });
     }
 
-    protected Hashtable buildQueueManagerConnectProperties() {
+    protected Hashtable buildQueueManagerConnectProperties() throws MqNativeConfigException {
         return MqNativeUtils.buildQueueManagerConnectProperties( ssgActiveConnector, securePasswordManager );
     }
 

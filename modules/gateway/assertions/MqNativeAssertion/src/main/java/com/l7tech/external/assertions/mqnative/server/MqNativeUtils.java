@@ -16,10 +16,15 @@ import com.l7tech.server.transport.http.SslClientSocketFactory;
 import com.l7tech.server.transport.jms.JmsConfigException;
 import com.l7tech.server.transport.jms.JmsSslCustomizerSupport;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Functions.UnaryVoidThrows;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Option;
+import static com.l7tech.util.Option.none;
+import static com.l7tech.util.Option.some;
 import com.l7tech.util.Pair;
+import static com.l7tech.util.TextUtils.isNotEmpty;
+import static com.l7tech.util.ValidationUtils.getMinMaxPredicate;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -118,13 +123,43 @@ class MqNativeUtils {
         return new Pair<byte[], byte[]>(headerBytes, payloadBytes);
     }
 
+    static Option<String> getQueuePassword( final SsgActiveConnector connector,
+                                            final SecurePasswordManager securePasswordManager ) {
+        Option<String> password = none();
+
+        if ( connector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_IS_QUEUE_CREDENTIAL_REQUIRED) ) {
+            final long passwordOid = connector.getLongProperty(PROPERTIES_KEY_MQ_NATIVE_SECURE_PASSWORD_OID, -1L);
+            password = passwordOid == -1L ?
+                    password :
+                    some( getDecryptedPassword( securePasswordManager, passwordOid ) );
+        }
+
+        return password;
+    }
+
     static Hashtable buildQueueManagerConnectProperties( final SsgActiveConnector connector,
-                                                         final SecurePasswordManager securePasswordManager ) {
-        //TODO [steve] validate configuration and throw exception on error
+                                                         final SecurePasswordManager securePasswordManager ) throws MqNativeConfigException {
+        return buildQueueManagerConnectProperties( connector, getQueuePassword( connector, securePasswordManager ) );
+    }
+
+    private static <T> T validated( final T value,
+                                    final String errorMessage,
+                                    final Unary<Boolean,T> validator ) throws MqNativeConfigException {
+        if ( !validator.call( value ) ) {
+            throw new MqNativeConfigException( errorMessage );
+        }
+        return value;
+    }
+
+    static Hashtable buildQueueManagerConnectProperties( final SsgActiveConnector connector,
+                                                         final Option<String> password ) throws MqNativeConfigException {
         Hashtable<String, Object> connProps = new Hashtable<String, Object>();
-        connProps.put(MQC.HOST_NAME_PROPERTY, connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_HOST_NAME ));
-        connProps.put(MQC.PORT_PROPERTY, connector.getIntegerProperty( PROPERTIES_KEY_MQ_NATIVE_PORT, -1 ));
-        connProps.put(MQC.CHANNEL_PROPERTY, connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_CHANNEL ));
+        connProps.put(MQC.HOST_NAME_PROPERTY,
+                validated( connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_HOST_NAME ), "Host is required", isNotEmpty() ));
+        connProps.put(MQC.PORT_PROPERTY,
+                validated( connector.getIntegerProperty( PROPERTIES_KEY_MQ_NATIVE_PORT, -1 ), "Port is invalid", getMinMaxPredicate( 1, 65535 ) ));
+        connProps.put(MQC.CHANNEL_PROPERTY,
+                validated( connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_CHANNEL ), "Channel is required", isNotEmpty() ));
 
         // apply userId and password
         if ( connector.getBooleanProperty( PROPERTIES_KEY_MQ_NATIVE_IS_QUEUE_CREDENTIAL_REQUIRED )) {
@@ -132,10 +167,8 @@ class MqNativeUtils {
             if (!StringUtils.isEmpty( userId )) {
                 connProps.put(MQC.USER_ID_PROPERTY, userId);
             }
-            final long passwordOid = connector.getLongProperty( PROPERTIES_KEY_MQ_NATIVE_SECURE_PASSWORD_OID, -1L );
-            final String password = passwordOid == -1L ? null : getDecryptedPassword( securePasswordManager, passwordOid );
-            if (!StringUtils.isEmpty(password)) {
-                connProps.put(MQC.PASSWORD_PROPERTY, password);
+            if (!StringUtils.isEmpty(password.toNull())) {
+                connProps.put(MQC.PASSWORD_PROPERTY, password.some());
             }
         }
 
@@ -166,10 +199,8 @@ class MqNativeUtils {
                     connProps.put(MQC.SSL_CIPHER_SUITE_PROPERTY, cipherSuite);
                     connProps.put(MQC.SSL_SOCKET_FACTORY_PROPERTY, socketFactory);
                 }
-            } catch(JmsConfigException jmsce) {
-                logger.log(Level.WARNING,
-                        "An exception was thrown while configuring the MQ Native SSL settings: " + ExceptionUtils.getMessage( jmsce ),
-                        ExceptionUtils.getDebugException(jmsce));
+            } catch( JmsConfigException e ) {
+                throw new MqNativeConfigException( ExceptionUtils.getMessage( e ), e.getCause() );
             }
         }
 
