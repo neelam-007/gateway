@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.samlpassertion.server;
 
 import com.l7tech.security.saml.SamlConstants;
+import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
@@ -240,6 +241,7 @@ public class JaxbUtil {
             }
 
             // always include protocol
+            //noinspection unchecked
             returnSet.removeAll(Arrays.asList(SAMLP, SAMLP2));
 
             final List<List<String>> transformed = Functions.map(returnSet, new Functions.Unary<List<String>, Pair<String, String>>() {
@@ -249,14 +251,8 @@ public class JaxbUtil {
                 }
             });
 
-            final List<String> flatmap = Functions.flatmap(transformed, new Functions.UnaryThrows<Iterable<String>, List<String>, RuntimeException>() {
-                @Override
-                public List<String> call(List<String> strings) throws RuntimeException {
-                    return strings;
-                }
-            });
-
-            return flatmap.toArray(new String[flatmap.size()]);
+            final Collection<String> joined = CollectionUtils.join(transformed);
+            return joined.toArray(new String[joined.size()]);
         }
         final Set<Pair<String, String>> nonProtocolRequiredNs;
         final boolean onlyAddProtocolNs;
