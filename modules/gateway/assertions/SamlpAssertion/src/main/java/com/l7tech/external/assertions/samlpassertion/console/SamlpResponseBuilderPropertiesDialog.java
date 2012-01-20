@@ -191,9 +191,6 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
         assertion.setSamlVersion(samlVersion);
         assertion.setSignResponse(signResponseCheckBox.isSelected());
         assertion.setValidateWebSsoRules(validateWebSSORulesCheckBox.isSelected());
-        assertion.setAddIssuer(addIssuerCheckBox.isSelected());
-        final String customIssuer = customIssuerTextField.getText().trim();
-        assertion.setCustomIssuer(isNullOrEmptyOrAuto(autoString, customIssuer)? null: customIssuer);
 
         assertion.setSamlStatus((SamlStatus) statusCodeComboBox.getSelectedItem());
         assertion.setStatusMessage(statusMessageTextField.getText());
@@ -204,6 +201,15 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
         final String inResponseTo;
         switch (samlVersion){
             case SAML2:
+                final boolean addIssuer = addIssuerCheckBox.isSelected();
+                assertion.setAddIssuer(addIssuer);
+                if (addIssuer) {
+                    final String customIssuer = customIssuerTextField.getText().trim();
+                    assertion.setCustomIssuer(isNullOrEmptyOrAuto(autoString, customIssuer)? null: customIssuer);
+                } else {
+                    assertion.setCustomIssuer(null);
+                }
+
                 responseId = idTextField.getText().trim();
                 issueInstant = issueInstantTextField.getText().trim();
                 inResponseTo = inResponseToTextField.getText().trim();

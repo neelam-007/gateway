@@ -6,6 +6,7 @@ import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 
@@ -168,7 +169,7 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPri
         return customIssuer;
     }
 
-    public void setCustomIssuer(String customIssuer) {
+    public void setCustomIssuer(@Nullable String customIssuer) {
         this.customIssuer = customIssuer;
     }
 

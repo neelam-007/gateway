@@ -116,7 +116,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
                     marshaller = (assertion.isAddIssuer()) ? JaxbUtil.getMarshallerV2(Arrays.asList(JaxbUtil.SAML_2)) : JaxbUtil.getMarshallerV2(true);
                     break;
                 case SAML1_1:
-                    marshaller = (assertion.isAddIssuer()) ? JaxbUtil.getMarshallerV1(Arrays.asList(JaxbUtil.SAML_2)) : JaxbUtil.getMarshallerV1(true);
+                    marshaller = JaxbUtil.getMarshallerV1(true);
                     break;
                 default:
                     throw new RuntimeException("Unknown SAML Version found");//cannot happen due to constructor.
