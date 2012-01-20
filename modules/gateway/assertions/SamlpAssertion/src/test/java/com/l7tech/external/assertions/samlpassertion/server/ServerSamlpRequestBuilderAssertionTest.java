@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.samlpassertion.server;
 import com.l7tech.common.TestKeys;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.samlpassertion.SamlpRequestBuilderAssertion;
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.HttpServletResponseKnob;
@@ -248,6 +249,44 @@ public class ServerSamlpRequestBuilderAssertionTest {
         }
 
         Assert.assertTrue("Required audit not found", testAudit.isAuditPresentContaining("Invalid URI value found for custom name identifier format: 'customformat%'."));
+    }
+
+    /**
+     * Tests that when the assertion fails for a configuraton that it audits at the warning level.
+     * <p/>
+     * This test validates this for the case when FROM_CREDS is configured but no creds are available.
+     */
+    @Test
+    @BugNumber(11704)
+    public void testGenericAuditFor_FromCreds_Exception() throws Exception {
+        final SamlpRequestBuilderAssertion assertion = new SamlpRequestBuilderAssertion();
+        assertion.setSamlVersion(2);
+        assertion.setSoapVersion(1);
+        assertion.setNameIdentifierType(NameIdentifierInclusionType.FROM_CREDS);
+        assertion.setAttributeStatement(new SamlAttributeStatement());
+        assertion.setRequestId(SamlpRequestConstants.SAMLP_REQUEST_ID_GENERATE);
+
+        final PolicyEnforcementContext context = getContext();
+
+        ServerSamlpRequestBuilderAssertion serverAssertion =
+                new ServerSamlpRequestBuilderAssertion(assertion, ApplicationContexts.getTestApplicationContext());
+
+        final TestAudit testAudit = new TestAudit();
+        ApplicationContexts.inject(serverAssertion, CollectionUtils.<String, Object>mapBuilder()
+                .put("auditFactory", testAudit.factory())
+                .unmodifiableMap()
+        );
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Wrong status found", AssertionStatus.FAILED, assertionStatus);
+
+        //validate audits
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+
+        Assert.assertTrue(testAudit.isAuditPresent(AssertionMessages.SAMLP_REQUEST_BUILDER_FAILED_TO_BUILD));
+        Assert.assertTrue("Required audit not found", testAudit.isAuditPresentContaining("Missing credentials to populate NameIdentifier"));
     }
 
     private PolicyEnforcementContext getContext() throws IOException {

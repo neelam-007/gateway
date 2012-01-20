@@ -34,6 +34,7 @@ import com.l7tech.util.*;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.xml.soap.SoapVersion;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
@@ -116,6 +117,7 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
     /**
      * @see com.l7tech.server.policy.assertion.AbstractServerAssertion#checkRequest(com.l7tech.server.message.PolicyEnforcementContext)
      */
+    @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     @Override
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
 
@@ -146,9 +148,7 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
             setResolvers(context, bContext);
             final JAXBElement<?> samlpRequest = buildRequest(bContext);
             if (samlpRequest == null) {
-//                logAndAudit(AssertionMessages.SAMLP_BUILDER_FAILED);
-                logger.log(Level.WARNING, "Failed to create SAMLP request.");
-                return AssertionStatus.FAILED;
+                throw new SamlpAssertionException("Unable to create SAMLP request");
             }
 
             /*
@@ -157,12 +157,12 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
             setRequestToTarget(bContext, msg, samlpRequest);
 
         } catch (SamlpAssertionException samlEx) {
-//            logAndAudit(AssertionMessages.SAMLP_BUILDER_ERROR, new String[] { ExceptionUtils.getMessage(samlEx) });
-            logger.log(Level.WARNING, "SAMLP builder failed: " + ExceptionUtils.getMessage(samlEx), ExceptionUtils.getDebugException(samlEx));
+            logAndAudit(AssertionMessages.SAMLP_REQUEST_BUILDER_FAILED_TO_BUILD,
+                    new String[]{ExceptionUtils.getMessage(samlEx)},
+                    ExceptionUtils.getDebugException(samlEx));
             return AssertionStatus.FAILED;
         }
 
-//        logAndAudit(AssertionMessages.SAMLP_BUILDER_COMPLETE, getRequestType());
         return AssertionStatus.NONE;
     }
 
@@ -241,6 +241,7 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
             // -- but continue since SubjConfirmationData is not mandatory per SAML spec,
             //    expect the backend SAMLP service to fail if the info is required
 //            logAndAudit(AssertionMessages.SAMLP_BUILDER_HOK_MISSING_CERT);
+            //todo this needs to be audited
             logger.log(Level.WARNING, "Certificate-based credential source not found for Holder-of-Key subject confirmation");
         }
 
@@ -287,32 +288,28 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
      *
      * @param bContext the BuilderContext to use
      * @return the SAMLP request message payload
+     * @throws SamlpAssertionException if
      */
     @Nullable
-    private JAXBElement<?> buildRequest( final BuilderContext bContext ) {
+    private JAXBElement<?> buildRequest( final BuilderContext bContext ) throws SamlpAssertionException {
 
         final JAXBElement<?> request;
-        try {
-            if (assertion.getAuthenticationStatement() != null) {
-                // Authentication
-                request = buildAuthenticationRequest(bContext);
+        if (assertion.getAuthenticationStatement() != null) {
+            // Authentication
+            request = buildAuthenticationRequest(bContext);
 
-            } else if (assertion.getAuthorizationStatement() != null) {
-                // Authorization Decision
-                request = buildAuthorizationRequest(bContext);
+        } else if (assertion.getAuthorizationStatement() != null) {
+            // Authorization Decision
+            request = buildAuthorizationRequest(bContext);
 
-            } else if (assertion.getAttributeStatement() != null) {
-                // Attribute Query
-                request = buildAttributeQueryRequest(bContext);
-            } else {
-                throw new IllegalStateException("Unknown statement type configured."); // Coding error.
-            }
-
-            return request;
-        } catch (SamlpAssertionException saex) {
-            logger.warning("Failed to build Request message: " + ExceptionUtils.getMessage(saex));
+        } else if (assertion.getAttributeStatement() != null) {
+            // Attribute Query
+            request = buildAttributeQueryRequest(bContext);
+        } else {
+            throw new IllegalStateException("Unknown statement type configured."); // Coding error.
         }
-        return null;
+
+        return request;
     }
     
     private JAXBElement<?> buildAuthenticationRequest( final BuilderContext bContext )
@@ -602,8 +599,6 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
                     }
                     nameFormat = nameFormatValueToUse;
                 } else {
-                    // TODO: add audit msg
-                    // TODO [Donal] fix
                     throw new SamlpAssertionException("Missing credentials to populate NameIdentifier");
                 }
                 break;
@@ -640,7 +635,6 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
                 String val = assertion.getNameIdentifierValue();
                 if (val == null) {
                     logAndAudit(AssertionMessages.SAML_ISSUER_MISSING_NIVAL);
-//                    logAndAudit(AssertionMessages.SAMLP_BUILDER_MISSING_NIVAL);
                     nameValue = null;
                 } else {
                     nameValue = ExpandVariables.process(val, bContext.ctxVariables, getAudit());
@@ -666,7 +660,6 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
             try {
                 final String var = assertion.getEvidenceVariable();
                 if (var == null) {
-                    // logger.log(Level.WARNING, "Missing evidence context variable in assertion properties");
                     throw new SamlpAssertionException("Missing evidence context variable in assertion properties");
                 }
 
@@ -717,6 +710,7 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
 
         String authMethod = (ver == 2? SamlConstants.AUTHENTICATION_SAML2_UNSPECIFIED : SamlConstants.UNSPECIFIED_AUTHENTICATION);
         if (credentialSourceClass == null) {
+            //todo this needs to be audited
             logger.log(Level.WARNING, "Credential source not found, using default value (unspecified)");
             return authMethod;
         }
