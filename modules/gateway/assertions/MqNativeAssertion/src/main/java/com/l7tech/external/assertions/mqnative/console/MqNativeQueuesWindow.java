@@ -19,6 +19,7 @@ import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -216,7 +217,6 @@ public class MqNativeQueuesWindow extends JDialog {
             GridBagConstraints.VERTICAL,
             new Insets(5, 5, 5, 5), 0, 0));
 
-        //setSorterAndFilter();
         pack();
         enableOrDisableButtons();
         Utilities.setEscKeyStrokeDisposes(this);
@@ -452,11 +452,27 @@ public class MqNativeQueuesWindow extends JDialog {
                 }
             });
 
+            // Set the column widths
             mqQueueTable.getColumnModel().getColumn(0).setPreferredWidth(60);  // Enabled
             mqQueueTable.getColumnModel().getColumn(1).setPreferredWidth(120); // Name
             mqQueueTable.getColumnModel().getColumn(2).setPreferredWidth(150); // Queue Manager Name
             mqQueueTable.getColumnModel().getColumn(3).setPreferredWidth(120); // Queue Name
             mqQueueTable.getColumnModel().getColumn(4).setPreferredWidth(150); // Direction
+
+            //Set up tool tips for the columns except "Enabled" (since its content is too short.)
+            final DefaultTableCellRenderer renderer = new DefaultTableCellRenderer(){
+                public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                    Component comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                    if((comp instanceof JComponent) && (value instanceof String)) {
+                       ((JComponent)comp).setToolTipText((String) value);
+                    }
+                    return comp;
+                }
+            };
+            mqQueueTable.getColumnModel().getColumn(1).setCellRenderer(renderer);
+            mqQueueTable.getColumnModel().getColumn(2).setCellRenderer(renderer);
+            mqQueueTable.getColumnModel().getColumn(3).setCellRenderer(renderer);
+            mqQueueTable.getColumnModel().getColumn(4).setCellRenderer(renderer);
 
             Utilities.setDoubleClickAction(mqQueueTable, getPropertiesButton());
             // Add a sorter with a filter

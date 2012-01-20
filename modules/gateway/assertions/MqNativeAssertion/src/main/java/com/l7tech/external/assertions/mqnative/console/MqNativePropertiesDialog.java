@@ -10,12 +10,14 @@ import com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType;
 import com.l7tech.external.assertions.mqnative.MqNativeAdmin;
 import com.l7tech.external.assertions.mqnative.MqNativeMessageFormatType;
 import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
+import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
@@ -29,6 +31,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.plaf.basic.BasicComboBoxRenderer;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -86,19 +89,19 @@ public class MqNativePropertiesDialog extends JDialog {
     private JPanel inboundCorrelationPanel;
     private JPanel outboundCorrelationPanel;
     private JCheckBox useJmsMsgPropAsSoapActionRadioButton;
- 	private JCheckBox associateQueueWithPublishedService;
+    private JCheckBox associateQueueWithPublishedService;
     private JPanel inboundOptionsPanel;
     private JPanel outboundOptionsPanel;
 
     private JRadioButton specifyContentTypeFreeForm;
- 	private JComboBox contentTypeValues;
- 	private JRadioButton specifyContentTypeFromHeader;
- 	private JTextField getContentTypeFromProperty;
- 	private JCheckBox specifyContentTypeCheckBox;
+    private JComboBox contentTypeValues;
+    private JRadioButton specifyContentTypeFromHeader;
+    private JTextField getContentTypeFromProperty;
+    private JCheckBox specifyContentTypeCheckBox;
     private JCheckBox isTemplateQueue;
     private JTextField mqConnectionName;
     private JTextField hostNameTextBox;
-    private JTextField portNumberTextBox;
+    private JTextField portNumberTextField;
     private JTextField channelTextBox;
     private JTextField queueManagerNameTextBox;
     private JTextField queueNameTextBox;
@@ -172,23 +175,23 @@ public class MqNativePropertiesDialog extends JDialog {
     }
 
     private class ContentTypeComboBoxModel extends DefaultComboBoxModel {
- 	 	private ContentTypeComboBoxModel(ContentTypeComboBoxItem[] items) {
+        private ContentTypeComboBoxModel(ContentTypeComboBoxItem[] items) {
             super(items);
- 	 	}
+        }
 
- 	 	// implements javax.swing.MutableComboBoxModel
- 	 	@Override
-          public void addElement(Object anObject) {
- 	 	    if (anObject instanceof String) {
- 	 	        String s = (String) anObject;
- 	 	        try {
- 	 	            ContentTypeHeader cth = ContentTypeHeader.parseValue(s);
- 	 	                super.addElement(new ContentTypeComboBoxItem(cth)) ;
- 	 	        } catch (IOException e) {
- 	 	            logger.warning("Error parsing the content type " + s);
- 	 	        }
- 	 	    }
- 	 	}
+        // implements javax.swing.MutableComboBoxModel
+        @Override
+        public void addElement(Object anObject) {
+            if (anObject instanceof String) {
+                String s = (String) anObject;
+                try {
+                    ContentTypeHeader cth = ContentTypeHeader.parseValue(s);
+                    super.addElement(new ContentTypeComboBoxItem(cth)) ;
+                } catch (IOException e) {
+                    logger.warning("Error parsing the content type " + s);
+                }
+            }
+        }
     }
 
     private class AdvancedPropertyTableModel extends AbstractTableModel {
@@ -337,8 +340,8 @@ public class MqNativePropertiesDialog extends JDialog {
         hostNameTextBox.setDocument(new MaxLengthDocument(255));
         hostNameTextBox.getDocument().addDocumentListener( enableDisableListener );
 
-        portNumberTextBox.setDocument(new MaxLengthDocument(255));
-        portNumberTextBox.getDocument().addDocumentListener( enableDisableListener );
+        portNumberTextField.setDocument(new MaxLengthDocument(255));
+        portNumberTextField.getDocument().addDocumentListener( enableDisableListener );
         channelTextBox.setDocument(new MaxLengthDocument(255));
         channelTextBox.setText("SYSTEM.DEF.SVRCONN");
         channelTextBox.getDocument().addDocumentListener( enableDisableListener );
@@ -349,6 +352,28 @@ public class MqNativePropertiesDialog extends JDialog {
         queueNameTextBox.setDocument(new MaxLengthDocument(255));
         queueNameTextBox.getDocument().addDocumentListener( enableDisableListener );
 
+        securePasswordComboBox.setRenderer(TextListCellRenderer.<SecurePasswordComboBox>basicComboBoxRenderer());
+        securePasswordComboBox.setRenderer(new BasicComboBoxRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                if (isSelected) {
+                    setBackground(list.getSelectionBackground());
+                    setForeground(list.getSelectionForeground());
+
+                    if (index >= 0) {
+                        String tooltips = ((SecurePassword)value).getName();
+                        list.setToolTipText(tooltips);
+                    }
+                } else {
+                    setBackground(list.getBackground());
+                    setForeground(list.getForeground());
+                }
+                setFont(list.getFont());
+                setText(value.toString());
+
+                return this;
+            }
+        });
         managePasswordsButton.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -421,11 +446,11 @@ public class MqNativePropertiesDialog extends JDialog {
         serviceNameCombo.setRenderer( TextListCellRenderer.<ServiceComboItem>basicComboBoxRenderer() );
 
         Utilities.enableGrayOnDisabled(contentTypeValues);
- 	 	Utilities.enableGrayOnDisabled(getContentTypeFromProperty);
+        Utilities.enableGrayOnDisabled(getContentTypeFromProperty);
 
         specifyContentTypeCheckBox.addActionListener(enableDisableListener);
- 	 	specifyContentTypeFreeForm.addActionListener(enableDisableListener);
- 	 	specifyContentTypeFromHeader.addActionListener(enableDisableListener);
+        specifyContentTypeFreeForm.addActionListener(enableDisableListener);
+        specifyContentTypeFromHeader.addActionListener(enableDisableListener);
         specifyContentTypeFromHeader.setVisible(false);
         getContentTypeFromProperty.getDocument().addDocumentListener( enableDisableListener );
         getContentTypeFromProperty.setVisible(false);
@@ -467,17 +492,17 @@ public class MqNativePropertiesDialog extends JDialog {
         outboundReplyNoneRadioButton.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
-                    modelQueueNameLabel.setEnabled(false);
-                    modelQueueNameTextField.setEnabled(false);
+                modelQueueNameLabel.setEnabled(false);
+                modelQueueNameTextField.setEnabled(false);
             }
         });
 
         outboundReplySpecifiedQueueRadioButton.addActionListener(new ActionListener(){
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                            modelQueueNameLabel.setEnabled(false);
-                            modelQueueNameTextField.setEnabled(false);
-                    }
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                modelQueueNameLabel.setEnabled(false);
+                modelQueueNameTextField.setEnabled(false);
+            }
         });
 
         acknowledgementModeComboBox.setModel(new DefaultComboBoxModel(values()));
@@ -519,7 +544,9 @@ public class MqNativePropertiesDialog extends JDialog {
             }
         });
 
-        saveButton.addActionListener(new ActionListener() {
+        InputValidator inputValidator = new InputValidator(this, title);
+        inputValidator.constrainTextFieldToNumberRange("Port number", portNumberTextField, 1L, 65535L );
+        inputValidator.attachToButton(saveButton, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 onSave();
@@ -536,18 +563,18 @@ public class MqNativePropertiesDialog extends JDialog {
         advancedPropertiesTable.setModel(getAdvancedPropertyTableModel());
 
         advancedPropertiesTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-                @Override
-                public void valueChanged(ListSelectionEvent e) {
-                    if(advancedPropertiesTable.getSelectedRow()<0){
-                        editButton.setEnabled(false);
-                        removeButton.setEnabled(false);
-                    }
-                    else{
-                        editButton.setEnabled(true);
-                        removeButton.setEnabled(true);
-                    }
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                if(advancedPropertiesTable.getSelectedRow()<0){
+                    editButton.setEnabled(false);
+                    removeButton.setEnabled(false);
                 }
-            });
+                else{
+                    editButton.setEnabled(true);
+                    removeButton.setEnabled(true);
+                }
+            }
+        });
 
         advancedPropertiesTable.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
@@ -564,9 +591,9 @@ public class MqNativePropertiesDialog extends JDialog {
         });
 
         editButton.addActionListener(new ActionListener() {
-             public void actionPerformed(ActionEvent event) {
-                 editAdvProp();
-             }
+            public void actionPerformed(ActionEvent event) {
+                editAdvProp();
+            }
         });
         editButton.setEnabled(false);
 
@@ -591,7 +618,6 @@ public class MqNativePropertiesDialog extends JDialog {
             }
         });
 
-
         enableSSLCheckBox.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -615,7 +641,6 @@ public class MqNativePropertiesDialog extends JDialog {
         clientAuthCheckbox.setEnabled(false);
         keystoreComboBox.selectDefaultSsl();
         keystoreComboBox.setEnabled(false);
-
 
         pack();
         initializeView();
@@ -736,7 +761,7 @@ public class MqNativePropertiesDialog extends JDialog {
     private MqNativeExtraPropertiesPanel getExtraPropertiesPanel(String extraPropertiesClass, Properties extraProperties) {
         try {
             return extraPropertiesClass == null ? null : (MqNativeExtraPropertiesPanel)
-                    Class.forName(extraPropertiesClass).getDeclaredConstructor(Properties.class).newInstance(extraProperties);
+                Class.forName(extraPropertiesClass).getDeclaredConstructor(Properties.class).newInstance(extraProperties);
         } catch (Exception e) {
             DialogDisplayer.showMessageDialog(this, "Error getting default settings for provider: " + extraPropertiesClass, "MQ Native Extra Properties Error", JOptionPane.ERROR_MESSAGE, null);
         }
@@ -763,11 +788,11 @@ public class MqNativePropertiesDialog extends JDialog {
             final long passwordOid = mqNativeActiveConnector.getLongProperty(PROPERTIES_KEY_MQ_NATIVE_SECURE_PASSWORD_OID, -1L);
 
             credentialsAreRequiredToCheckBox.setSelected(!StringUtils.isEmpty(userId) || passwordOid > -1L);
-                authUserNameTextBox.setText(userId);
-                authUserNameTextBox.setCaretPosition( 0 );
-                if(passwordOid > -1L) {
-                    securePasswordComboBox.setSelectedSecurePassword(passwordOid);
-                }
+            authUserNameTextBox.setText(userId);
+            authUserNameTextBox.setCaretPosition( 0 );
+            if(passwordOid > -1L) {
+                securePasswordComboBox.setSelectedSecurePassword(passwordOid);
+            }
 
             final boolean isSslEnabled = mqNativeActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_IS_SSL_ENABLED);
             enableSSLCheckBox.setSelected(isSslEnabled);
@@ -800,7 +825,7 @@ public class MqNativePropertiesDialog extends JDialog {
                 channelTextBox.setText(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_CHANNEL));
             }
             isTemplateQueue.setSelected(mqNativeActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_IS_TEMPLATE_QUEUE));
-            portNumberTextBox.setText(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_PORT));
+            portNumberTextField.setText(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_PORT));
             queueManagerNameTextBox.setText(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME));
             queueNameTextBox.setText(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME));
             mqConnectionName.setText(mqNativeActiveConnector.getName());
@@ -812,7 +837,7 @@ public class MqNativePropertiesDialog extends JDialog {
             // inbound options
             if (isInbound) {
                 final MqNativeAcknowledgementType acknowledgementType =
-                        mqNativeActiveConnector.getEnumProperty( PROPERTIES_KEY_MQ_NATIVE_INBOUND_ACKNOWLEDGEMENT_TYPE, null, MqNativeAcknowledgementType.class );
+                    mqNativeActiveConnector.getEnumProperty( PROPERTIES_KEY_MQ_NATIVE_INBOUND_ACKNOWLEDGEMENT_TYPE, null, MqNativeAcknowledgementType.class );
                 if (acknowledgementType != null) {
                     acknowledgementModeComboBox.setSelectedItem(acknowledgementType);
                     if ( acknowledgementType == ON_COMPLETION ) {
@@ -883,8 +908,8 @@ public class MqNativePropertiesDialog extends JDialog {
                         specifyContentTypeFreeForm.setSelected(true);
                     } catch (IOException e1) {
                         logger.log(Level.WARNING,
-                                MessageFormat.format("Error while parsing the Content-Type for Mq Destination {0}. Value was {1}", mqNativeActiveConnector.getName(), contentType),
-                                ExceptionUtils.getMessage(e1));
+                            MessageFormat.format("Error while parsing the Content-Type for Mq Destination {0}. Value was {1}", mqNativeActiveConnector.getName(), contentType),
+                            ExceptionUtils.getMessage(e1));
                     }
                 }
             // outbound options
@@ -946,7 +971,7 @@ public class MqNativePropertiesDialog extends JDialog {
         );
 
         if(!populatedTheServiceList)
-             ServiceComboBox.populateAndSelect(serviceNameCombo, true, 0);
+            ServiceComboBox.populateAndSelect(serviceNameCombo, true, 0);
         enableOrDisableComponents();
     }
 
@@ -973,7 +998,7 @@ public class MqNativePropertiesDialog extends JDialog {
             return false;
         if (!isTemplate && queueNameTextBox.getText().trim().length() == 0)
             return false;
-        if (portNumberTextBox.getText().trim().length() == 0 || !(isValidNumber(portNumberTextBox.getText().trim())))
+        if (portNumberTextField.getText().trim().length() == 0 || !(isValidNumber(portNumberTextField.getText().trim())))
             return false;
         if (hostNameTextBox.getText().trim().length() == 0)
             return false;
@@ -1020,12 +1045,12 @@ public class MqNativePropertiesDialog extends JDialog {
             inboundReplySpecifiedQueueField.getText().trim().length() == 0)
             return false;
         if (associateQueueWithPublishedService.isSelected() &&
-                (serviceNameCombo == null || serviceNameCombo.getItemCount() <= 0))
+            (serviceNameCombo == null || serviceNameCombo.getItemCount() <= 0))
             return false;
         if (specifyContentTypeCheckBox.isSelected() &&
- 	 	    specifyContentTypeFromHeader.isSelected() &&
- 	 	    getContentTypeFromProperty.getText().trim().length() == 0)
- 	 	    return false;
+            specifyContentTypeFromHeader.isSelected() &&
+            getContentTypeFromProperty.getText().trim().length() == 0)
+            return false;
 
         if (byteLimitPanel.validateFields() != null)
             return false;
@@ -1041,9 +1066,9 @@ public class MqNativePropertiesDialog extends JDialog {
             isTemplateQueue.setEnabled(false);
             useJmsMsgPropAsSoapActionRadioButton.setEnabled(true);
             jmsMsgPropWithSoapActionLabel.setEnabled(useJmsMsgPropAsSoapActionRadioButton.isSelected());
- 	 	    jmsMsgPropWithSoapActionTextField.setEnabled(useJmsMsgPropAsSoapActionRadioButton.isSelected());
- 	 	    serviceNameLabel.setEnabled(associateQueueWithPublishedService.isSelected());
- 	 	    serviceNameCombo.setEnabled(associateQueueWithPublishedService.isSelected());
+            jmsMsgPropWithSoapActionTextField.setEnabled(useJmsMsgPropAsSoapActionRadioButton.isSelected());
+            serviceNameLabel.setEnabled(associateQueueWithPublishedService.isSelected());
+            serviceNameCombo.setEnabled(associateQueueWithPublishedService.isSelected());
             tabbedPane.setEnabledAt(2, true);
             tabbedPane.setEnabledAt(3, false);
             enableOrDisableAcknowledgementControls();
@@ -1091,18 +1116,18 @@ public class MqNativePropertiesDialog extends JDialog {
     private void applyFormSecurity() {
         // list components that are subject to security (they require the full admin role)
         securityFormAuthorizationPreparer.prepare(new Component[]{
-                outboundRadioButton,
-                inboundRadioButton,
-                queueNameTextBox,
-                credentialsAreRequiredToCheckBox,
-                authUserNameTextBox,
-                useJmsMsgPropAsSoapActionRadioButton,
-                jmsMsgPropWithSoapActionTextField,
-                acknowledgementModeComboBox,
-                useQueueForFailedCheckBox,
-                failureQueueNameTextField,
-                mqConnectionName,
-                isTemplateQueue,
+            outboundRadioButton,
+            inboundRadioButton,
+            queueNameTextBox,
+            credentialsAreRequiredToCheckBox,
+            authUserNameTextBox,
+            useJmsMsgPropAsSoapActionRadioButton,
+            jmsMsgPropWithSoapActionTextField,
+            acknowledgementModeComboBox,
+            useQueueForFailedCheckBox,
+            failureQueueNameTextField,
+            mqConnectionName,
+            isTemplateQueue,
         });
         securityFormAuthorizationPreparer.prepare(inboundOptionsPanel);
         securityFormAuthorizationPreparer.prepare(outboundOptionsPanel);
@@ -1141,7 +1166,7 @@ public class MqNativePropertiesDialog extends JDialog {
         connector.setName(mqConnectionName.getText());
 
         connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_HOST_NAME, hostNameTextBox.getText());
-        connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_PORT, portNumberTextBox.getText());
+        connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_PORT, portNumberTextField.getText());
         connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_CHANNEL, channelTextBox.getText());
         connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME, queueManagerNameTextBox.getText());
         connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME, queueNameTextBox.getText());
@@ -1154,7 +1179,7 @@ public class MqNativePropertiesDialog extends JDialog {
                 connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_USERID, authUserNameTextBox.getText());
             }
             connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_SECURE_PASSWORD_OID,
-                    Long.toString(securePasswordComboBox.getSelectedSecurePassword().getOid()));
+                Long.toString(securePasswordComboBox.getSelectedSecurePassword().getOid()));
         } else {
             connector.removeProperty(PROPERTIES_KEY_MQ_NATIVE_USERID);
             connector.removeProperty(PROPERTIES_KEY_MQ_NATIVE_SECURE_PASSWORD_OID);
@@ -1194,10 +1219,10 @@ public class MqNativePropertiesDialog extends JDialog {
             connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_IS_COPY_CORRELATION_ID_FROM_REQUEST, Boolean.toString(inboundCorrelationIdRadioButton.isSelected()));
 
             if(associateQueueWithPublishedService.isSelected()){
-                 PublishedService svc = ServiceComboBox.getSelectedPublishedService(serviceNameCombo);
-                 if(svc != null) {
+                PublishedService svc = ServiceComboBox.getSelectedPublishedService(serviceNameCombo);
+                if(svc != null) {
                     connector.setHardwiredServiceOid(svc.getOid());
-                 }
+                }
             }
 
             if (specifyContentTypeCheckBox.isSelected() && specifyContentTypeFromHeader.isSelected()) {
@@ -1234,7 +1259,7 @@ public class MqNativePropertiesDialog extends JDialog {
             } else if (outboundFormatBytesRadioButton.isSelected()) {
                 connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_MESSAGE_FORMAT, MqNativeMessageFormatType.BYTES.toString());
             } else if (outboundFormatTextRadioButton.isSelected()) {
-               connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_MESSAGE_FORMAT, MqNativeMessageFormatType.TEXT.toString());
+                connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_MESSAGE_FORMAT, MqNativeMessageFormatType.TEXT.toString());
             }
 
             if (outboundReplyAutomaticRadioButton.isSelected()) {
@@ -1332,9 +1357,9 @@ public class MqNativePropertiesDialog extends JDialog {
 
     private String[] getCipherSuites(){
         return new String[]{"SSL_RSA_WITH_NULL_MD5", "SSL_RSA_WITH_NULL_SHA", "SSL_RSA_EXPORT_WITH_RC4_40_MD5",
-                "SSL_RSA_WITH_RC4_128_MD5", "SSL_RSA_WITH_RC4_128_SHA", "SSL_RSA_EXPORT_WITH_RC2_CBC_40_MD5", "SSL_RSA_WITH_DES_CBC_SHA",
-                "SSL_RSA_EXPORT1024_WITH_RC4_56_SHA", "SSL_RSA_EXPORT1024_WITH_DES_CBC_SHA", "SSL_RSA_WITH_3DES_EDE_CBC_SHA",
-                "SSL_RSA_WITH_AES_128_CBC_SHA", "SSL_RSA_WITH_AES_256_CBC_SHA", "SSL_RSA_WITH_DES_CBC_SHA",
-                "SSL_RSA_WITH_3DES_EDE_CBC_SHA", "SSL_RSA_FIPS_WITH_DES_CBC_SHA", "SSL_RSA_FIPS_WITH_3DES_EDE_CBC_SHA"};
+            "SSL_RSA_WITH_RC4_128_MD5", "SSL_RSA_WITH_RC4_128_SHA", "SSL_RSA_EXPORT_WITH_RC2_CBC_40_MD5", "SSL_RSA_WITH_DES_CBC_SHA",
+            "SSL_RSA_EXPORT1024_WITH_RC4_56_SHA", "SSL_RSA_EXPORT1024_WITH_DES_CBC_SHA", "SSL_RSA_WITH_3DES_EDE_CBC_SHA",
+            "SSL_RSA_WITH_AES_128_CBC_SHA", "SSL_RSA_WITH_AES_256_CBC_SHA", "SSL_RSA_WITH_DES_CBC_SHA",
+            "SSL_RSA_WITH_3DES_EDE_CBC_SHA", "SSL_RSA_FIPS_WITH_DES_CBC_SHA", "SSL_RSA_FIPS_WITH_3DES_EDE_CBC_SHA"};
     }
 }
