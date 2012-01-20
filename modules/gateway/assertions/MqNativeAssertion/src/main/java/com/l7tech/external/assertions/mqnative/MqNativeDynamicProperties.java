@@ -18,7 +18,6 @@ public class MqNativeDynamicProperties implements Serializable, Cloneable {
     public MqNativeDynamicProperties( final MqNativeDynamicProperties other ) {
         this.queueName = other.queueName;
         this.replyToQueue = other.replyToQueue;
-        this.channelName = other.channelName;
     }
 
     public String getQueueName() {
@@ -37,24 +36,15 @@ public class MqNativeDynamicProperties implements Serializable, Cloneable {
         this.replyToQueue = replyToQueue;
     }
 
-    public String getChannelName() {
-        return channelName;
-    }
-
-    public void setChannelName( final String channelName ) {
-        this.channelName = channelName;
-    }
-
     //- PACKAGE
 
     List<String> getVariableExpressions() {
-        return list( queueName, channelName );
+        return list( queueName, replyToQueue );
     }
 
     //- PRIVATE
 
     private String queueName;
     private String replyToQueue;
-    private String channelName;
 
 }

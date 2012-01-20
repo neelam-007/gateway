@@ -97,7 +97,6 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
     private JRadioButton wssCleanupRadio;
     private JRadioButton wssRemoveRadio;
     private JPanel dynamicPropertiesPanel;
-    private JTextField dynamicChannelName;
     private JTextField dynamicDestQueueName;
     private JTextField dynamicReplyQueueName;
     private JTextField mqResponseTimeout;
@@ -131,7 +130,6 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         Utilities.setEscKeyStrokeDisposes(this);
 
         enableGrayOnDisabled(
-                dynamicChannelName,
                 dynamicDestQueueName,
                 dynamicReplyQueueName );
 
@@ -168,7 +166,6 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
 
         InputValidator inputValidator = new InputValidator(this, assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString());
         inputValidator.ensureComboBoxSelection( "MQ Destination", queueComboBox );
-        inputValidator.constrainTextFieldToBeNonEmpty( "Channel name", dynamicChannelName, null );
         inputValidator.constrainTextFieldToBeNonEmpty( "Queue name", dynamicDestQueueName, null );
         inputValidator.constrainTextFieldToBeNonEmpty( "Reply queue name", dynamicReplyQueueName, null );
         inputValidator.constrainTextField(mqResponseTimeout, new InputValidator.ValidationRule() {
@@ -310,11 +307,9 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
                 final MqNativeReplyType mqNativeReplyType =
                         selected.getEnumProperty( PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_AUTOMATIC, MqNativeReplyType.class );
                 final boolean enableReplyQueueConfig = mqNativeReplyType == REPLY_SPECIFIED_QUEUE;
-                setTextAndEnable( selectedChannelName, dynamicChannelName, true );
                 setTextAndEnable( selectedQueueName, dynamicDestQueueName, true );
                 setTextAndEnable( selectedReplyQueueName, dynamicReplyQueueName, enableReplyQueueConfig );
             } else {
-                setText( selectedChannelName, dynamicChannelName );
                 setText( selectedQueueName, dynamicDestQueueName );
                 setText( selectedReplyQueueName, dynamicReplyQueueName );
             }
@@ -347,15 +342,10 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
             final SsgActiveConnector selected = (SsgActiveConnector)queueComboBox.getSelectedItem();
             if ( selected != null ) {
                 if ( assertion.getSsgActiveConnectorId()!=null && selected.getOid() == assertion.getSsgActiveConnectorId() ) {
-                    setIfDynamic( mqNativeDynamicProperties.getChannelName(), "SYSTEM.DEF.SVRCONN", dynamicChannelName );
                     setIfDynamic( mqNativeDynamicProperties.getQueueName(), "", dynamicDestQueueName );
                     setIfDynamic( mqNativeDynamicProperties.getReplyToQueue(), "", dynamicReplyQueueName );
-                }else{
-                    dynamicChannelName.setText("SYSTEM.DEF.SVRCONN");
                 }
             }
-        }else{
-            dynamicChannelName.setText( "SYSTEM.DEF.SVRCONN" );
         }
     }
 
@@ -398,8 +388,6 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
             MqNativeDynamicProperties dynProps = null;
             if ( item.getBooleanProperty( PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_IS_TEMPLATE_QUEUE ) ) {
                 dynProps = new MqNativeDynamicProperties();
-                dynProps.setChannelName( getIfDynamicPropertyAllowed( item,
-                        PROPERTIES_KEY_MQ_NATIVE_CHANNEL, dynamicChannelName ) );
                 dynProps.setQueueName( getIfDynamicPropertyAllowed( item,
                         PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME, dynamicDestQueueName ) );
                 dynProps.setReplyToQueue( getIfDynamicPropertyAllowed( item,

@@ -977,7 +977,7 @@ public class MqNativePropertiesDialog extends JDialog {
             return false;
         if (hostNameTextBox.getText().trim().length() == 0)
             return false;
-        if (!isTemplate && channelTextBox.getText().trim().length() == 0)
+        if (channelTextBox.getText().trim().length() == 0)
             return false;
         if (credentialsAreRequiredToCheckBox.isSelected() && (authUserNameTextBox.getText().trim().length()==0))
             return false;

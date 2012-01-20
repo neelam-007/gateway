@@ -28,7 +28,6 @@ class MqNativeEndpointConfig {
 
     private final String name;
     private final boolean dynamic;
-    private final String channelName;
     private final String queueName;
     private final String replyToQueueName;
     private final MqEndpointKey key;
@@ -47,11 +46,10 @@ class MqNativeEndpointConfig {
 
         this.name = connector.getName();
         this.dynamic = connector.getBooleanProperty( PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_IS_TEMPLATE_QUEUE );
-        this.channelName = connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_CHANNEL);
         this.queueName = connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME );
         this.replyToQueueName = connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME );
         this.key = dynamic ?
-                new MqEndpointKey( connector.getOid(), connector.getVersion(), channelName, queueName, replyToQueueName ):
+                new MqEndpointKey( connector.getOid(), connector.getVersion(), queueName, replyToQueueName ):
                 new MqEndpointKey( connector.getOid(), connector.getVersion() );
         this.correlateWithMessageId = connector.getBooleanProperty( PROPERTIES_KEY_MQ_NATIVE_IS_COPY_CORRELATION_ID_FROM_REQUEST );
         this.queueManagerName = connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME );
@@ -111,7 +109,6 @@ class MqNativeEndpointConfig {
      * @throws MqNativeConfigException If the configuration is invalid.
      */
     void validate() throws MqNativeConfigException {
-        throwIfEmpty( channelName, "Channel name is required" );
         throwIfEmpty( queueName, "Queue name is required" );
         if ( replyType==REPLY_SPECIFIED_QUEUE ) throwIfEmpty( replyToQueueName, "Reply queue is required" );
     }
@@ -125,23 +122,20 @@ class MqNativeEndpointConfig {
     static final class MqEndpointKey {
         private final long id;
         private final int version;
-        private final String channelName;
         private final String queueName;
         private final String replyToQueue;
 
         MqEndpointKey( final long id,
                        final int version ) {
-            this( id, version, null, null, null );
+            this( id, version, null, null );
         }
 
         MqEndpointKey( final long id,
                        final int version,
-                       @Nullable final String channelName,
                        @Nullable final String queueName,
                        @Nullable final String replyToQueue ) {
             this.id = id;
             this.version = version;
-            this.channelName = channelName;
             this.queueName = queueName;
             this.replyToQueue = replyToQueue;
         }
@@ -164,8 +158,6 @@ class MqNativeEndpointConfig {
 
             if ( id != that.id ) return false;
             if ( version != that.version ) return false;
-            if ( channelName != null ? !channelName.equals( that.channelName ) : that.channelName != null )
-                return false;
             if ( queueName != null ? !queueName.equals( that.queueName ) : that.queueName != null ) return false;
             if ( replyToQueue != null ? !replyToQueue.equals( that.replyToQueue ) : that.replyToQueue != null )
                 return false;
@@ -177,7 +169,6 @@ class MqNativeEndpointConfig {
         public int hashCode() {
             int result = (int) (id ^ (id >>> 32));
             result = 31 * result + version;
-            result = 31 * result + (channelName != null ? channelName.hashCode() : 0);
             result = 31 * result + (queueName != null ? queueName.hashCode() : 0);
             result = 31 * result + (replyToQueue != null ? replyToQueue.hashCode() : 0);
             return result;
@@ -201,10 +192,8 @@ class MqNativeEndpointConfig {
             /*
              * For dynamic endpoints, append the full info
              */
-            if ( channelName != null ) {
+            if ( queueName != null ) {
                 sb.append("-");
-                sb.append(channelName);
-                sb.append(',');
                 sb.append(queueName);
                 sb.append(',');
                 sb.append(replyToQueue);
@@ -222,7 +211,6 @@ class MqNativeEndpointConfig {
     private void applyOverrides( final SsgActiveConnector connector,
                                  @Nullable final MqNativeDynamicProperties overrides ) {
         if ( overrides != null ) {
-            setIfEmpty( connector, PROPERTIES_KEY_MQ_NATIVE_CHANNEL, overrides.getChannelName() );
             setIfEmpty( connector, PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME, overrides.getQueueName() );
             setIfEmpty( connector, PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME, overrides.getReplyToQueue() );
         }

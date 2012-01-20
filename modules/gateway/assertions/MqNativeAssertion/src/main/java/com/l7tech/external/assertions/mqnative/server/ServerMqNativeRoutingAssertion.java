@@ -509,7 +509,6 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                 try {
                     final Map<String,Object> variables = pec.getVariableMap( assertion.getVariablesUsed(), getAudit() );
                     final MqNativeDynamicProperties mqDynamicProperties = new MqNativeDynamicProperties();
-                    mqDynamicProperties.setChannelName( expandVariables( unprocessedProperties.getChannelName(), variables ) );
                     mqDynamicProperties.setQueueName( expandVariables( unprocessedProperties.getQueueName(), variables ) );
                     mqDynamicProperties.setReplyToQueue( expandVariables( unprocessedProperties.getReplyToQueue(), variables ) );
                     return mqDynamicProperties;
