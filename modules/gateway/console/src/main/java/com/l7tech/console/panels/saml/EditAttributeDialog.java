@@ -452,17 +452,7 @@ public class EditAttributeDialog extends JDialog {
             }
         }
 
-        String value = attributeValueField.getText().trim();
-        if (specificValueRadio.isSelected() && "".equals(value.trim()) ) {
-            JOptionPane.
-            showMessageDialog(this,
-                              resources.getString("attributeValueField.error.empty"),
-                              resources.getString("attributeValueField.error.title"),
-                              JOptionPane.ERROR_MESSAGE);
-            attributeValueField.requestFocus();
-            return false;
-        }
-
+        final String value = attributeValueField.getText().trim();
         // validate configuration when repeat if Multivalued is on
         if (repeatIfMultivaluedCheckBox.isSelected()) {
             if (!Syntax.isOnlyASingleVariableReferenced(value)) {

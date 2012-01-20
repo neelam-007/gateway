@@ -133,6 +133,7 @@ public abstract class SamlStatementValidate {
                     return true;
                 }
             } else {
+                //todo [Donal] Audit as this is audited else where it occurs
                 logger.warning("Ignored invalid custom URI found: " + customAuthMethod);
             }
         }
