@@ -455,7 +455,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                 break;
             case REPLY_AUTOMATIC:
                 String replyToQueueName = requestMessage.replyToQueueName;
-                if (StringUtils.isEmpty(replyToQueueName)) {
+                if (replyToQueueName == null || StringUtils.isEmpty(replyToQueueName.trim())) {
                     logger.log(Level.WARNING, "Inbound listener configured with \"REPLY_AUTOMATIC\", but MQ request message does not contain a replyToQueueName");
                 } else {
                     MQQueue replyToQueue = null;
