@@ -30,7 +30,7 @@ public class IssuerWizardStepPanel extends WizardStepPanel {
     public boolean canAdvance() {
 
         if (version == 2) {
-            if (!SquigglyFieldUtils.validateSquigglyFieldForVariableReference(nameQualifierSquigglyTextField)) {
+            if (SquigglyFieldUtils.validateSquigglyFieldForVariableReference(nameQualifierSquigglyTextField) != null) {
                 return false;
             }
         }
@@ -41,7 +41,7 @@ public class IssuerWizardStepPanel extends WizardStepPanel {
                 return false;
             }
 
-            if (!SquigglyFieldUtils.validateSquigglyFieldForVariableReference(issuerValueSquigglyTextField)) {
+            if (SquigglyFieldUtils.validateSquigglyFieldForVariableReference(issuerValueSquigglyTextField) != null) {
                 return false;
             }
         }

@@ -8,7 +8,6 @@ import com.ibm.xml.enc.type.CipherData;
 import com.ibm.xml.enc.type.CipherValue;
 import com.ibm.xml.enc.type.EncryptedData;
 import com.ibm.xml.enc.type.EncryptionMethod;
-import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.security.prov.JceProvider;
@@ -16,7 +15,6 @@ import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -28,7 +26,6 @@ import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.Map;
 
 /**
  * Utility class that can perform non-SOAP XML encryption of an element, using an XmlElementEncryptionConfig.
@@ -37,41 +34,20 @@ public class XmlElementEncryptor {
     private static final SecureRandom random = new SecureRandom();
     public static final String PROP_ENCRYPT_FOR_EXPIRED_CERT = "com.l7tech.security.xml.encryptForExpiredCert";
 
-    private final X509Certificate recipientCert;
-    private final String xencAlgorithm;
+    final XmlElementEncryptionResolvedConfig config;
 
     /**
      * Create an encryptor that will encrypt elements according to the specified configuration.
      *
      * @param config the configuration to use.  Required.
-     * @param certVariableValue an object to use as the recipient cert.  Required if config specifies a certificate context variable.  May be either an X509Certificate instance of a String in PEM format.
      * @throws IOException if there is a problem decoding the recipient certificate.
      * @throws CertificateException if there is a problem decoding the recipient certificate.
      * @throws NoSuchAlgorithmException if the specified encryption algorithm URI is missing or unrecognized.
      * @throws NoSuchVariableException if the config specifies a recipient cert context variable, but no matching key is present in the variable map, or no variable map was provided.
      */
-    public XmlElementEncryptor(@NotNull XmlElementEncryptionConfig config, @Nullable Object certVariableValue) throws IOException, CertificateException, NoSuchAlgorithmException, NoSuchVariableException {
-        X509Certificate cert;
-
-        final String varName = config.getRecipientCertContextVariableName();
-        if (varName != null && varName.trim().length() > 0) {
-            if (certVariableValue instanceof Map)
-                throw new IllegalArgumentException("Must pass variable value object, not variable map");
-            if (certVariableValue instanceof X509Certificate) {
-                cert = (X509Certificate) certVariableValue;
-            } else if (certVariableValue instanceof String) {
-                // Assume PEM or raw base64 encoded
-                cert = CertUtils.decodeFromPEM(String.valueOf(certVariableValue), false);
-            } else {
-                throw new NoSuchVariableException(varName, "Recipient certificate variable was neither an X509Certificate nor a string in PEM or Base-64 format.");
-            }
-        } else {
-            cert = CertUtils.decodeFromPEM(config.getRecipientCertificateBase64(), false);
-        }
-
-        this.recipientCert = cert;
-        this.xencAlgorithm = config.getXencAlgorithm();
-        XencUtil.getFlexKeyAlg(xencAlgorithm);
+    public XmlElementEncryptor(@NotNull XmlElementEncryptionResolvedConfig config) throws NoSuchAlgorithmException {
+        this.config = config;
+        XencUtil.getFlexKeyAlg(config.getXencAlgorithm());
     }
 
     /**
@@ -89,8 +65,13 @@ public class XmlElementEncryptor {
     public Pair<Element, SecretKey> createEncryptedKey(@NotNull Document factory) throws GeneralSecurityException {
         byte[] keybytes = new byte[32];
         random.nextBytes(keybytes);
-        XencUtil.XmlEncKey xek = new XencUtil.XmlEncKey(xencAlgorithm, keybytes);
-        return new Pair<Element, SecretKey>(createEncryptedKey(factory, recipientCert, xek), xek.getSecretKey());
+        XencUtil.XmlEncKey xek = new XencUtil.XmlEncKey(config.getXencAlgorithm(), keybytes);
+        final Element encryptedKey = createEncryptedKey(factory, config.getRecipientCert(), xek);
+        final String recipientAttrValue = config.getEncryptedKeyRecipientAttribute();
+        if (recipientAttrValue != null) {
+            encryptedKey.setAttribute("Recipient", recipientAttrValue);
+        }
+        return new Pair<Element, SecretKey>(encryptedKey, xek.getSecretKey());
     }
 
     /**
@@ -151,7 +132,7 @@ public class XmlElementEncryptor {
         cipherData.setCipherValue(new CipherValue());
 
         EncryptionMethod encMethod = new EncryptionMethod();
-        encMethod.setAlgorithm(xencAlgorithm);
+        encMethod.setAlgorithm(config.getXencAlgorithm());
         EncryptedData encData = new EncryptedData();
         encData.setCipherData(cipherData);
         encData.setEncryptionMethod(encMethod);
@@ -175,10 +156,16 @@ public class XmlElementEncryptor {
         Element encryptedData = XencUtil.encryptionContextReplace(ec, element);
 
         try {
-            encryptedData = insertKeyInfoAndDeUglifyNamespaces(encryptedData, encryptedKeyElement, xencAlgorithm);
+            encryptedData = insertKeyInfoAndDeUglifyNamespaces(encryptedData, encryptedKeyElement, config.getXencAlgorithm());
         } catch (InvalidDocumentFormatException e) {
             throw new RuntimeException("Internal error while encrypting element: " + ExceptionUtils.getMessage(e), e); // can't happen, we just generated that EncryptedData ourselves
         }
+
+        final String typeAttribute = config.getEncryptedDataTypeAttribute();
+        if (typeAttribute != null) {
+            encryptedData.setAttribute("Type", typeAttribute);
+        }
+
         return encryptedData;
     }
 

@@ -11,7 +11,7 @@ import java.awt.*;
  */
 public class NonSoapEncryptElementAssertionPropertiesDialog extends NonSoapSecurityAssertionDialog<NonSoapEncryptElementAssertion> {
     private JPanel contentPane;
-    private XmlElementEncryptionConfigPanel encryptionConfigPanel = new XmlElementEncryptionConfigPanel();
+    private final XmlElementEncryptionConfigPanel encryptionConfigPanel = new XmlElementEncryptionConfigPanel();
 
     public NonSoapEncryptElementAssertionPropertiesDialog(Frame parent, NonSoapEncryptElementAssertion assertion) {
         super(parent, assertion);

@@ -14,10 +14,10 @@ import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.xml.XmlElementEncryptionConfig;
+import com.l7tech.security.xml.XmlElementEncryptionResolvedConfig;
 import com.l7tech.security.xml.XmlElementEncryptor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -29,6 +29,7 @@ import com.l7tech.server.policy.assertion.ServerAssertionUtils;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.message.Message;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.server.security.XmlElementEncryptorConfigUtils;
 import com.l7tech.util.*;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.saml.SamlConstants;
@@ -55,7 +56,6 @@ import java.net.UnknownHostException;
 import java.security.*;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -439,18 +439,17 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
             throw new SamlpAssertionException("Could not find NameID to encrypt");
         }
 
-        final XmlElementEncryptionConfig xmlEncryptConfig = assertion.getXmlEncryptConfig();
+        final XmlElementEncryptionResolvedConfig encryptionResolvedConfig;
+        try {
+            encryptionResolvedConfig = XmlElementEncryptorConfigUtils.getXmlElementEncryptorConfig(assertion.getXmlEncryptConfig(), ctxVariables, getAudit());
+        } catch (Exception e) {
+            throw new SamlpAssertionException("Unable to process encryption configuration: " + ExceptionUtils.getMessage(e),
+                    ExceptionUtils.getDebugException(e));
+        }
+
         final XmlElementEncryptor encryptor;
         try {
-            // create here as config may reference context variables
-            final String certificateBase64 = xmlEncryptConfig.getRecipientCertificateBase64();
-            // invariant that either base64 or cert is supplied. We preference base64 here
-            Object certValue = null;
-            if (certificateBase64 == null) {
-                certValue = ExpandVariables.processSingleVariableAsObject(Syntax.getVariableExpression(xmlEncryptConfig.getRecipientCertContextVariableName()), ctxVariables, getAudit());
-            }
-
-            encryptor = new XmlElementEncryptor(xmlEncryptConfig, certValue);
+            encryptor = new XmlElementEncryptor(encryptionResolvedConfig);
         } catch (Exception e) {
             throw new SamlpAssertionException("Unable to create encryption engine with encryption configuration: " + ExceptionUtils.getMessage(e),
                     ExceptionUtils.getDebugException(e));

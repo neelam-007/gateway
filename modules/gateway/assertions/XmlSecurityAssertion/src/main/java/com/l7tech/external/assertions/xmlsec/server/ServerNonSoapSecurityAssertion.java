@@ -13,6 +13,7 @@ import com.l7tech.security.xml.processor.ProcessorException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
+import com.l7tech.server.security.XmlElementEncryptorConfigUtils;
 import com.l7tech.server.util.xml.PolicyEnforcementContextXpathVariableFinder;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
@@ -71,6 +72,7 @@ public abstract class ServerNonSoapSecurityAssertion<AT extends NonSoapSecurityA
         ASSERTION_STATUS_BAD_MESSAGE = TargetMessageType.REQUEST.equals(assertion.getTarget()) ? AssertionStatus.BAD_REQUEST : AssertionStatus.SERVER_ERROR;
     }
 
+    @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         try {
@@ -88,27 +90,30 @@ public abstract class ServerNonSoapSecurityAssertion<AT extends NonSoapSecurityA
             logAndAudit(AssertionMessages.XPATH_MESSAGE_NOT_XML, assertion.getTargetName());
             return ASSERTION_STATUS_BAD_MESSAGE;
         } catch (JaxenException e) {
-            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to evaluate XPath expression: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Unable to evaluate XPath expression: " + ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.FAILED;
         } catch (InvalidDocumentFormatException e) {
-            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { unableMessage + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{unableMessage + ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return ASSERTION_STATUS_BAD_MESSAGE;
         } catch (GeneralSecurityException e) {
-            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { unableMessage + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{unableMessage + ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
         } catch (KeyInfoResolvingException e) {
-            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { unableMessage + ExceptionUtils.getMessage(e) }, e);
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{unableMessage + ExceptionUtils.getMessage(e)}, e);
             return AssertionStatus.SERVER_ERROR;
         } catch (StructureException e) {
-            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { unableMessage + ExceptionUtils.getMessage(e) }, e);
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{unableMessage + ExceptionUtils.getMessage(e)}, e);
             return ASSERTION_STATUS_BAD_MESSAGE;
         } catch (ProcessorException e) {
-            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { unableMessage + ExceptionUtils.getMessage(e) }, e);
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{unableMessage + ExceptionUtils.getMessage(e)}, e);
             return AssertionStatus.BAD_REQUEST;
         } catch (AssertionStatusException e) {
             return e.getAssertionStatus();
+        } catch (XmlElementEncryptorConfigUtils.InvalidResolvedValueException e) {
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{unableMessage + ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+            return AssertionStatus.SERVER_ERROR;
         } catch (Exception e) {
-            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { unableMessage + ExceptionUtils.getMessage(e) }, e);
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{unableMessage + ExceptionUtils.getMessage(e)}, e);
             return AssertionStatus.SERVER_ERROR;
         }
     }

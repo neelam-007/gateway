@@ -3,9 +3,9 @@ package com.l7tech.console.panels;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.RunOnChangeListener;
-import com.l7tech.gui.util.Utilities;
+import com.l7tech.console.util.SquigglyFieldUtils;
+import com.l7tech.gui.util.*;
+import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.gui.widgets.ValidatedPanel;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.security.cert.TrustedCert;
@@ -16,9 +16,12 @@ import com.l7tech.util.HexUtils;
 
 import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
+import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.io.IOException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
@@ -39,6 +42,10 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
     private JRadioButton specifyCertificateRadioButton;
     private JRadioButton useContextVariableRadioButton;
     private TargetVariablePanel contextVariableField;
+    private JCheckBox typeAttributeCheckBox;
+    private SquigglyTextField typeSquigglyField;
+    private JCheckBox recipientAttributeCheckBox;
+    private SquigglyTextField recipientSquigglyField;
     private String certb64;
 
     private final XmlElementEncryptionConfig model;
@@ -132,6 +139,31 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
         contextVariableField.setValueWillBeWritten(false);
 
         updateRecipientCertLabel();
+
+        typeAttributeCheckBox.addActionListener(enableListener);
+        recipientAttributeCheckBox.addActionListener(enableListener);
+
+        TextComponentPauseListenerManager.registerPauseListenerWhenFocused(typeSquigglyField, new PauseListenerAdapter() {
+            @Override
+            public void textEntryPaused(JTextComponent component, long msecs) {
+                SquigglyFieldUtils.validateSquigglyFieldForUris(typeSquigglyField, false);
+            }
+        }, 500, new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent e) {
+                if (typeAttributeCheckBox.isSelected() && typeSquigglyField.getText().trim().isEmpty()) {
+                    typeSquigglyField.setText(XmlElementEncryptionConfig.TYPE_ATTRIBUTE_DEFAULT);
+                }
+            }
+        });
+
+        TextComponentPauseListenerManager.registerPauseListenerWhenFocused(recipientSquigglyField, new PauseListenerAdapter() {
+            @Override
+            public void textEntryPaused(JTextComponent component, long msecs) {
+                SquigglyFieldUtils.validateSquigglyFieldForVariableReference(recipientSquigglyField);
+            }
+        }, 500);
+
         add(contentPane, BorderLayout.CENTER);
     }
 
@@ -143,6 +175,8 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
     public void enableOrDisableComponents() {
         setRecipientCertificateButton.setEnabled(specifyCertificateRadioButton.isSelected());
         contextVariableField.setEnabled(useContextVariableRadioButton.isSelected());
+        typeSquigglyField.setEnabled(typeAttributeCheckBox.isSelected());
+        recipientSquigglyField.setEnabled(recipientAttributeCheckBox.isSelected());
     }
 
     @Override
@@ -155,6 +189,23 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
         } else {
             model.setRecipientCertificateBase64(null);
             model.setRecipientCertContextVariableName(contextVariableField.getVariable());
+        }
+
+        final boolean includeTypeAttribute = typeAttributeCheckBox.isSelected();
+        model.setIncludeEncryptedDataTypeAttribute(includeTypeAttribute);
+        if (includeTypeAttribute) {
+            final String typeAttribute = typeSquigglyField.getText().trim();
+            model.setEncryptedDataTypeAttribute(typeAttribute);
+        } else {
+            model.setEncryptedDataTypeAttribute(null);
+        }
+
+        final boolean addRecipient = recipientAttributeCheckBox.isSelected();
+        final String recipientText = recipientSquigglyField.getText().trim();
+        if (addRecipient && !recipientText.isEmpty()) {
+            model.setEncryptedKeyRecipientAttribute(recipientText);
+        } else {
+            model.setEncryptedKeyRecipientAttribute(null);
         }
 
         validateModel();
@@ -170,6 +221,17 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
         useContextVariableRadioButton.setSelected(useVar);
         certb64 = model.getRecipientCertificateBase64();
         updateRecipientCertLabel();
+
+        typeAttributeCheckBox.setSelected(model.isIncludeEncryptedDataTypeAttribute());
+        typeSquigglyField.setText(model.getEncryptedDataTypeAttribute());
+
+        final String recipientAttribute = model.getEncryptedKeyRecipientAttribute();
+        if (recipientAttribute != null) {
+            recipientAttributeCheckBox.setSelected(true);
+            recipientSquigglyField.setText(recipientAttribute);
+        }
+
+        enableOrDisableComponents();
     }
 
     public XmlElementEncryptionConfig getData() throws AssertionPropertiesOkCancelSupport.ValidationException {
@@ -186,6 +248,26 @@ public class XmlElementEncryptionConfigPanel extends ValidatedPanel<XmlElementEn
                 throw new AssertionPropertiesOkCancelSupport.ValidationException("Unable to save: No Recipient Certificate is configured");
             }
         }
+
+        // will only happen for very fast keyboard users - if they are quicker than the focus listener
+        if (typeAttributeCheckBox.isSelected() && typeSquigglyField.getText().trim().isEmpty()) {
+            throw new AssertionPropertiesOkCancelSupport.ValidationException("Unable to save: No value for Type attribute is configured");
+        }
+
+        final String typeError = SquigglyFieldUtils.validateSquigglyFieldForUris(typeSquigglyField, false);
+        if (typeError != null) {
+            throw new AssertionPropertiesOkCancelSupport.ValidationException("Unable to save: " + typeError);
+        }
+
+        if (recipientAttributeCheckBox.isSelected() && recipientSquigglyField.getText().trim().isEmpty()) {
+            throw new AssertionPropertiesOkCancelSupport.ValidationException("Unable to save: No value for Recipient attribute is configured");
+        }
+
+        final String recipientError = SquigglyFieldUtils.validateSquigglyFieldForVariableReference(recipientSquigglyField);
+        if (recipientError != null) {
+            throw new AssertionPropertiesOkCancelSupport.ValidationException("Unable to save: " + recipientError);
+        }
+
     }
 
     private void updateRecipientCertLabel() {

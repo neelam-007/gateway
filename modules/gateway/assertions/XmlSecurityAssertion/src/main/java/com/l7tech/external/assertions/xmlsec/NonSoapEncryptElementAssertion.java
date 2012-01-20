@@ -6,6 +6,8 @@ import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.security.xml.XmlElementEncryptionConfig;
 import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.xml.xpath.XpathExpression;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Immediately encrypt one or more elements of the message, which need not use WS-Security or even SOAP. 
@@ -13,6 +15,10 @@ import com.l7tech.xml.xpath.XpathExpression;
 public class NonSoapEncryptElementAssertion extends NonSoapSecurityAssertionBase {
     private static final String META_INITIALIZED = NonSoapEncryptElementAssertion.class.getName() + ".metadataInitialized";
 
+    /**
+     * Interface replicated here for backwards compatibility. This assertion only supports method
+     * in XmlElementEncryptionConfig which exist here and delegate to it.
+     */
     private XmlElementEncryptionConfig config = new XmlElementEncryptionConfig();
 
     public NonSoapEncryptElementAssertion() {
@@ -99,6 +105,30 @@ public class NonSoapEncryptElementAssertion extends NonSoapSecurityAssertionBase
 
     public void setRecipientCertContextVariableName(String contextVariableName) {
         config.setRecipientCertContextVariableName(contextVariableName);
+    }
+
+    public boolean isIncludeEncryptedDataTypeAttribute() {
+        return config.isIncludeEncryptedDataTypeAttribute();
+    }
+
+    public void setIncludeEncryptedDataTypeAttribute(boolean includeEncryptedDataTypeAttribute) {
+        config.setIncludeEncryptedDataTypeAttribute(includeEncryptedDataTypeAttribute);
+    }
+
+    public String getEncryptedDataTypeAttribute() {
+        return config.getEncryptedDataTypeAttribute();
+    }
+
+    public void setEncryptedDataTypeAttribute(String encryptedDataTypeAttribute) {
+        config.setEncryptedDataTypeAttribute(encryptedDataTypeAttribute);
+    }
+
+    public String getEncryptedKeyRecipientAttribute() {
+        return config.getEncryptedKeyRecipientAttribute();
+    }
+
+    public void setEncryptedKeyRecipientAttribute(String encryptedKeyRecipientAttribute) {
+        config.setEncryptedKeyRecipientAttribute(encryptedKeyRecipientAttribute);
     }
 
     public XmlElementEncryptionConfig config() {

@@ -65,16 +65,31 @@ public class SquigglyFieldUtils {
     }
 
     /**
+     * See {@link #validateSquigglyFieldForUris(com.l7tech.gui.widgets.SquigglyTextField, boolean)} which is passed
+     * a value of true.
+     * @param squigglyTextField squiggly field to validate
+     * @return String if any error is in the field, null otherwise.
+     */
+    @Nullable
+    public static String validateSquigglyFieldForUris(@NotNull final SquigglyTextField squigglyTextField) {
+        return validateSquigglyFieldForUris(squigglyTextField, true);
+    }
+
+    /**
      * Convenience method to validate URIs contained in a text field. Variable references are allowed and are validated.
      *
      * @param squigglyTextField squiggly text field to validate.
+     * @param allowMoreThanOne true if the field may reference more than a single URI directly or indirectly via a
+     * variable reference.
      * @return null String when text field only contains valid URI values or contains valid variable references,
      * otherwise an error String is returned.
      */
-    public static String validateSquigglyFieldForUris(@NotNull final SquigglyTextField squigglyTextField) {
+    @Nullable
+    public static String validateSquigglyFieldForUris(@NotNull final SquigglyTextField squigglyTextField,
+                                                      final boolean allowMoreThanOne) {
         final String [] errorCollected = new String[1];
         SquigglyFieldUtils.validateSquigglyTextFieldState(squigglyTextField,
-                TextUtils.URI_STRING_SPLIT_PATTERN,
+                (allowMoreThanOne) ? TextUtils.URI_STRING_SPLIT_PATTERN : null,
                 new Functions.Unary<String, String>() {
                     @Override
                     public String call(String s) {
@@ -102,20 +117,26 @@ public class SquigglyFieldUtils {
      * Convenience method to validate a SquigglyTextField for variable reference.
      *
      * @param squigglyTextField field to validate
-     * @return true if the field contains no invalid variable references
+     * @return null if the field contains no invalid variable references, otherwise a String with an error message
      */
-    public static boolean validateSquigglyFieldForVariableReference(@NotNull final SquigglyTextField squigglyTextField) {
-        return SquigglyFieldUtils.validateSquigglyTextFieldState(squigglyTextField,
+    @Nullable
+    public static String validateSquigglyFieldForVariableReference(@NotNull final SquigglyTextField squigglyTextField) {
+        final String [] errorCollected = new String[1];
+        SquigglyFieldUtils.validateSquigglyTextFieldState(squigglyTextField,
                 new Functions.Unary<String, String>() {
                     @Override
                     public String call(String s) {
                         try {
                             Syntax.getReferencedNames(s);
                         } catch (VariableNameSyntaxException e) {
-                            return "Invalid variable reference '" + s + "'";
+                            final String error = "Invalid variable reference '" + s + "'";
+                            errorCollected[0] = error;
+                            return error;
                         }
                         return null;
                     }
                 });
+
+        return errorCollected[0];
     }
 }

@@ -5,10 +5,10 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.policy.variable.Syntax;
+import com.l7tech.security.xml.XmlElementEncryptionResolvedConfig;
 import com.l7tech.security.xml.XmlElementEncryptor;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.server.security.XmlElementEncryptorConfigUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.InvalidXpathException;
 import org.w3c.dom.Document;
@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Server side implementation of the XmlSecurityAssertion.
@@ -28,31 +27,19 @@ import java.util.Map;
  */
 public class ServerNonSoapEncryptElementAssertion extends ServerNonSoapSecurityAssertion<NonSoapEncryptElementAssertion> {
 
-    private final XmlElementEncryptor elementEncryptor;
     private final String[] varsUsed;
-    private final String recipCertVarName;
 
     public ServerNonSoapEncryptElementAssertion(NonSoapEncryptElementAssertion assertion)
             throws PolicyAssertionException, InvalidXpathException, IOException, CertificateException, NoSuchAlgorithmException, NoSuchVariableException {
         super(assertion);
-        this.elementEncryptor = assertion.getRecipientCertContextVariableName() == null ? new XmlElementEncryptor(assertion.config(), null) : null;
         this.varsUsed = assertion.getVariablesUsed();
-        this.recipCertVarName = assertion.getRecipientCertContextVariableName();
     }
 
     @Override
     protected AssertionStatus processAffectedElements(PolicyEnforcementContext context, Message message, Document doc, List<Element> elementsToEncrypt) throws Exception {
-        final XmlElementEncryptor elementEncryptor;
-        if (this.elementEncryptor != null) {
-            elementEncryptor = this.elementEncryptor;
-        } else {
-            Object certValue = null;
-            if (recipCertVarName != null) {
-                Map<String, ?> variableMap = context.getVariableMap(varsUsed, getAudit());
-                certValue = ExpandVariables.processSingleVariableAsObject(Syntax.getVariableExpression(recipCertVarName), variableMap, getAudit());
-            }
-            elementEncryptor = new XmlElementEncryptor(assertion.config(), certValue);
-        }
+        final XmlElementEncryptionResolvedConfig encryptionResolvedConfig =
+                XmlElementEncryptorConfigUtils.getXmlElementEncryptorConfig(assertion.config(), context.getVariableMap(varsUsed, getAudit()), getAudit());
+        final XmlElementEncryptor elementEncryptor = new XmlElementEncryptor(encryptionResolvedConfig);
 
         Pair<Element, SecretKey> ek = elementEncryptor.createEncryptedKey(doc);
 

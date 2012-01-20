@@ -9,8 +9,17 @@ import java.io.Serializable;
 
 /**
  * Holds settings for encrypting a non-SOAP element.
+ *
+ * These settings may reference context variables.
+ *
+ * Note: Any new properties need to be delegated to from Non-SOAP Encrypt assertion to ensure getVariablesUsed() works.
+ *
+ * Warning: Any properties added here will not affect encryption until supported by {@link XmlElementEncryptionResolvedConfig}
  */
 public final class XmlElementEncryptionConfig implements Serializable, UsesVariables {
+
+    public static final String TYPE_ATTRIBUTE_DEFAULT = "http://www.w3.org/2001/04/xmlenc#Element";
+
     /**
      * The recipient's certificate, if generating an EncryptedKey.
      */
@@ -30,6 +39,12 @@ public final class XmlElementEncryptionConfig implements Serializable, UsesVaria
      */
     private String recipientCertContextVariableName = null;
 
+    @NotNull private String encryptedDataTypeAttribute = TYPE_ATTRIBUTE_DEFAULT;
+
+    private boolean includeEncryptedDataTypeAttribute;
+
+    private String encryptedKeyRecipientAttribute;
+
     public String getRecipientCertificateBase64() {
         return recipientCertificateBase64;
     }
@@ -43,6 +58,7 @@ public final class XmlElementEncryptionConfig implements Serializable, UsesVaria
     }
 
     // Warning: not currently implemented
+    // Update XmlElementEncryptionResolvedConfig when implemented.
     public void setEncryptContentsOnly(boolean encryptContentsOnly) {
         this.encryptContentsOnly = encryptContentsOnly;
     }
@@ -63,9 +79,48 @@ public final class XmlElementEncryptionConfig implements Serializable, UsesVaria
         this.recipientCertContextVariableName = recipientCertContextVariableName;
     }
 
+    @NotNull
+    public String getEncryptedDataTypeAttribute() {
+        return encryptedDataTypeAttribute;
+    }
+
+    public void setEncryptedDataTypeAttribute(@Nullable String encryptedDataTypeAttribute) {
+        this.encryptedDataTypeAttribute = encryptedDataTypeAttribute == null? TYPE_ATTRIBUTE_DEFAULT : encryptedDataTypeAttribute;
+    }
+
+    @Nullable
+    public String getEncryptedKeyRecipientAttribute() {
+        return encryptedKeyRecipientAttribute;
+    }
+
+    public void setEncryptedKeyRecipientAttribute(@Nullable String encryptedKeyRecipientAttribute) {
+        this.encryptedKeyRecipientAttribute = encryptedKeyRecipientAttribute;
+    }
+
+    public boolean isIncludeEncryptedDataTypeAttribute() {
+        return includeEncryptedDataTypeAttribute;
+    }
+
+    public void setIncludeEncryptedDataTypeAttribute(boolean includeEncryptedDataTypeAttribute) {
+        this.includeEncryptedDataTypeAttribute = includeEncryptedDataTypeAttribute;
+    }
+
     @Override
     @NotNull
     public String[] getVariablesUsed() {
-        return recipientCertContextVariableName == null ? new String[0] : Syntax.getReferencedNames("${" + recipientCertContextVariableName + "}");
+
+        final StringBuilder builder = new StringBuilder();
+        if (recipientCertContextVariableName != null) {
+            builder.append(Syntax.getVariableExpression(recipientCertContextVariableName));
+            builder.append(" ");
+        }
+
+        builder.append(encryptedDataTypeAttribute);
+        if (encryptedKeyRecipientAttribute != null) {
+            builder.append(" ");
+            builder.append(encryptedKeyRecipientAttribute);
+        }
+
+        return Syntax.getReferencedNames(builder.toString());
     }
 }
