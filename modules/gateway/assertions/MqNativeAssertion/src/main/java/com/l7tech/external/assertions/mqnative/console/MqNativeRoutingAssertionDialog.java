@@ -9,6 +9,8 @@ import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.mqnative.MqNativeDynamicProperties;
+import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
+import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.*;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.booleanProperty;
@@ -44,7 +46,6 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-
 /**
  * Assertion properties edit dialog for the MQ routing assertion.
  */
@@ -58,6 +59,30 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         this.assertion = assertion;
         initComponents(false);
         setData( assertion );
+    }
+
+    @Override
+    public MqNativeRoutingAssertion getData( final MqNativeRoutingAssertion assertion ) {
+        viewToModel( assertion );
+        return assertion;
+    }
+
+    @Override
+    public void setData( final MqNativeRoutingAssertion assertion ) {
+        modelToView( assertion );
+    }
+
+    //- PROTECTED
+
+    @Override
+    protected ActionListener createOkAction() {
+        // returns a no-op action so we can add our own Ok listener
+        return new RunOnChangeListener();
+    }
+
+    @Override
+    protected JPanel createPropertyPanel() {
+        return mainPanel;
     }
 
     //- PRIVATE
@@ -217,32 +242,6 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         enableOrDisableComponents();
     }
 
-    @Override
-    protected ActionListener createOkAction() {
-        // returns a no-op action so we can add our own Ok listener
-        return new RunOnChangeListener();
-    }
-
-    private boolean hasRequiredDynamicProperty( final JTextField textField,
-                                                final SsgActiveConnector connector,
-                                                final String property ) {
-        boolean propertyPresentIfRequired = true;
-
-        if ( connector == null ) {
-            propertyPresentIfRequired = false;
-        } else if( textField.isEnabled() ){
-            final String uiValue = textField.getText();
-            final String queueValue = connector.getProperty( property );
-
-            final boolean isRequired = queueValue == null || queueValue.isEmpty();
-            final boolean isPresent = uiValue != null && !uiValue.isEmpty();
-
-            propertyPresentIfRequired = !isRequired || isPresent;
-        }
-
-        return propertyPresentIfRequired;
-    }
-
     private void enableOrDisableComponents() {
         responseTargetVariable.setEnabled( saveAsContextVariableRadioButton.isSelected() );
     }
@@ -285,7 +284,7 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
 
     private void initResponseTarget() {
         MessageTargetableSupport responseTarget = assertion.getResponseTarget();
-        if (responseTarget != null && responseTarget.getOtherTargetMessageVariable() != null) {
+        if (responseTarget.getOtherTargetMessageVariable() != null) {
             defaultResponseRadioButton.setSelected(false);
             saveAsContextVariableRadioButton.setSelected( true );
             responseTargetVariable.setVariable( responseTarget.getOtherTargetMessageVariable() );
@@ -308,9 +307,12 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
             final String selectedReplyQueueName = selected.getProperty( PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME, "" );
             if ( selected.getBooleanProperty( PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_IS_TEMPLATE_QUEUE ) ) {
                 Utilities.setEnabled(dynamicPropertiesPanel, true);
-                setTextAndEnable( selectedChannelName, dynamicChannelName );
-                setTextAndEnable( selectedQueueName, dynamicDestQueueName );
-                setTextAndEnable( selectedReplyQueueName, dynamicReplyQueueName );
+                final MqNativeReplyType mqNativeReplyType =
+                        selected.getEnumProperty( PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_AUTOMATIC, MqNativeReplyType.class );
+                final boolean enableReplyQueueConfig = mqNativeReplyType == REPLY_SPECIFIED_QUEUE;
+                setTextAndEnable( selectedChannelName, dynamicChannelName, true );
+                setTextAndEnable( selectedQueueName, dynamicDestQueueName, true );
+                setTextAndEnable( selectedReplyQueueName, dynamicReplyQueueName, enableReplyQueueConfig );
             } else {
                 setText( selectedChannelName, dynamicChannelName );
                 setText( selectedQueueName, dynamicDestQueueName );
@@ -324,10 +326,10 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         textComponent.setCaretPosition( 0 );
     }
 
-    private void setTextAndEnable( final String value, final JTextField textField ) {
+    private void setTextAndEnable( final String value, final JTextField textField, final boolean canEnable ) {
         boolean templateValueSpecified = !value.trim().isEmpty();
         setText( value, textField );
-        textField.setEnabled( !templateValueSpecified );
+        textField.setEnabled( canEnable && !templateValueSpecified );
     }
 
     private void setIfDynamic( final String value, final String defaultValue, final JTextField textField ) {
@@ -383,8 +385,7 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         return connector.getProperty( property, "" ).isEmpty() ? component.getText() : null;
     }
 
-    @Override
-    public MqNativeRoutingAssertion getData( final MqNativeRoutingAssertion assertion ) throws ValidationException {
+    private void viewToModel( final MqNativeRoutingAssertion assertion ) {
         configSecurityHeaderHandling( assertion, RoutingAssertion.CLEANUP_CURRENT_SECURITY_HEADER, secHdrButtons );
         SsgActiveConnector item = (SsgActiveConnector) queueComboBox.getSelectedItem();
         if ( item == null ) {
@@ -423,17 +424,9 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         } else {
             assertion.setResponseTimeout(null);
         }
-
-        return assertion;
     }
 
-    @Override
-    protected JPanel createPropertyPanel() {
-        return mainPanel;
-    }
-
-    @Override
-    public void setData( final MqNativeRoutingAssertion assertion ) {
+    private void modelToView( final MqNativeRoutingAssertion assertion ) {
         configSecurityHeaderRadioButtons( assertion, -1, null, secHdrButtons );
 
         final Long endpointOid = assertion.getSsgActiveConnectorId();
