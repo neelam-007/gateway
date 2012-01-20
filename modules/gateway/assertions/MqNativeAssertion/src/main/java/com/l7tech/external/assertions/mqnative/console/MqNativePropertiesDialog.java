@@ -7,12 +7,9 @@ import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType;
-import static com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType.*;
-import static com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType.values;
 import com.l7tech.external.assertions.mqnative.MqNativeAdmin;
 import com.l7tech.external.assertions.mqnative.MqNativeMessageFormatType;
 import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
-import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.*;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
@@ -45,6 +42,11 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType.ON_COMPLETION;
+import static com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType.values;
+import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_AUTOMATIC;
+import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_NONE;
+import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_SPECIFIED_QUEUE;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 
 /**
@@ -863,7 +865,7 @@ public class MqNativePropertiesDialog extends JDialog {
                     getContentTypeFromProperty.setText(contentTypeFromProperty);
                 }
 
-                String contentType = mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_CONTENT_TYPE);
+                String contentType = mqNativeActiveConnector.getProperty(PROPERTIES_KEY_OVERRIDE_CONTENT_TYPE);
                 if (!StringUtils.isEmpty(contentType)) {
                     specifyContentTypeCheckBox.setSelected(true);
                     specifyContentTypeFreeForm.setSelected(true);
@@ -908,37 +910,30 @@ public class MqNativePropertiesDialog extends JDialog {
                     outboundFormatAutoRadioButton.setSelected(true);
                 }
 
-                String replyTypeProp = mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE);
-                if (replyTypeProp != null) {
-                    MqNativeReplyType replyType = MqNativeReplyType.valueOf(replyTypeProp);
-                    switch(replyType) {
-                        case REPLY_NONE:
-                            outboundReplyNoneRadioButton.setSelected(true);
-                            modelQueueNameLabel.setEnabled(false);
-                            modelQueueNameTextField.setEnabled(false);
-                            break;
-                        case REPLY_AUTOMATIC:
-                            outboundReplyAutomaticRadioButton.setSelected(true);
-                            modelQueueNameTextField.setText(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_TEMPORARY_QUEUE_NAME_PATTERN));
-                            break;
-                        case REPLY_SPECIFIED_QUEUE:
-                            modelQueueNameLabel.setEnabled(false);
-                            modelQueueNameTextField.setEnabled(false);
-                            outboundReplySpecifiedQueueRadioButton.setSelected(true);
-                            outboundReplySpecifiedQueueField.setText(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME));
-                            if (mqNativeActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_IS_COPY_CORRELATION_ID_FROM_REQUEST)) {
-                                outboundCorrelationIdRadioButton.setSelected(true);
-                            } else {
-                                outboundMessageIdRadioButton.setSelected(true);
-                            }
-                        default:
-                            logger.log( Level.WARNING, "Bad state - unknown MQ native replyType = " + replyType );
-                            break;
-                    }
-                } else {
-                    outboundReplyNoneRadioButton.setSelected(true);
-                    modelQueueNameLabel.setEnabled(false);
-                    modelQueueNameTextField.setEnabled(false);
+                MqNativeReplyType replyType = mqNativeActiveConnector.getEnumProperty( PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_NONE, MqNativeReplyType.class );
+                switch(replyType) {
+                    case REPLY_NONE:
+                        outboundReplyNoneRadioButton.setSelected(true);
+                        modelQueueNameLabel.setEnabled(false);
+                        modelQueueNameTextField.setEnabled(false);
+                        break;
+                    case REPLY_AUTOMATIC:
+                        outboundReplyAutomaticRadioButton.setSelected(true);
+                        modelQueueNameTextField.setText(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_TEMPORARY_QUEUE_NAME_PATTERN));
+                        break;
+                    case REPLY_SPECIFIED_QUEUE:
+                        modelQueueNameLabel.setEnabled(false);
+                        modelQueueNameTextField.setEnabled(false);
+                        outboundReplySpecifiedQueueRadioButton.setSelected(true);
+                        outboundReplySpecifiedQueueField.setText(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME));
+                        if (mqNativeActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_IS_COPY_CORRELATION_ID_FROM_REQUEST)) {
+                            outboundCorrelationIdRadioButton.setSelected(true);
+                        } else {
+                            outboundMessageIdRadioButton.setSelected(true);
+                        }
+                    default:
+                        logger.log( Level.WARNING, "Bad state - unknown MQ native replyType = " + replyType );
+                        break;
                 }
             }
         } else {
@@ -1190,9 +1185,9 @@ public class MqNativePropertiesDialog extends JDialog {
             if(inboundReplyAutomaticRadioButton.isSelected())
                 connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_AUTOMATIC.toString());
             else if (inboundReplyNoneRadioButton.isSelected())
-                connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, MqNativeReplyType.REPLY_NONE.toString());
+                connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_NONE.toString());
             else if (inboundReplySpecifiedQueueRadioButton.isSelected()){
-                connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, MqNativeReplyType.REPLY_SPECIFIED_QUEUE.toString());
+                connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_SPECIFIED_QUEUE.toString());
                 connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME, inboundReplySpecifiedQueueField.getText());
             }
 
@@ -1225,7 +1220,7 @@ public class MqNativePropertiesDialog extends JDialog {
                 }
 
                 if (selectedContentType != null) {
-                    connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_CONTENT_TYPE, selectedContentType.getFullValue());
+                    connector.setProperty(PROPERTIES_KEY_OVERRIDE_CONTENT_TYPE, selectedContentType.getFullValue());
                 }
             }
 
@@ -1246,11 +1241,11 @@ public class MqNativePropertiesDialog extends JDialog {
                 connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_AUTOMATIC.toString());
                 connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_TEMPORARY_QUEUE_NAME_PATTERN, modelQueueNameTextField.getText());
             } else if (outboundReplySpecifiedQueueRadioButton.isSelected()) {
-                connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, MqNativeReplyType.REPLY_SPECIFIED_QUEUE.toString());
+                connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_SPECIFIED_QUEUE.toString());
                 connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME, outboundReplySpecifiedQueueField.getText());
                 connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_IS_COPY_CORRELATION_ID_FROM_REQUEST, Boolean.toString(outboundCorrelationIdRadioButton.isSelected()));
             } else if (outboundReplyNoneRadioButton.isSelected()) {
-                connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, MqNativeReplyType.REPLY_NONE.toString());
+                connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_NONE.toString());
             }
         }
 

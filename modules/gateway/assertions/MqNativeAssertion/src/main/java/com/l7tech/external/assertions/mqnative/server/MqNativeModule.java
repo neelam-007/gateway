@@ -42,6 +42,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
+import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_AUTOMATIC;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static com.l7tech.message.Message.getMaxBytes;
 import static com.l7tech.server.GatewayFeatureSets.SERVICE_MQNATIVE_MESSAGE_INPUT;
@@ -119,9 +120,9 @@ public class MqNativeModule extends ActiveTransportModule implements Application
         final boolean wasSystem = AuditContextUtils.isSystem();
         try {
             AuditContextUtils.setSystem(true);
-            final Collection<SsgActiveConnector> connectors = ssgActiveConnectorManager.findSsgActiveConnectorsByType(  ACTIVE_CONNECTOR_TYPE_MQ_NATIVE );
+            final Collection<SsgActiveConnector> connectors = ssgActiveConnectorManager.findSsgActiveConnectorsByType( ACTIVE_CONNECTOR_TYPE_MQ_NATIVE );
             for ( final SsgActiveConnector connector : connectors ) {
-                if ( connector.isEnabled() && connectorIsOwnedByThisModule( connector ) ) {
+                if ( connector.isEnabled() && connectorIsOwnedByThisModule( connector ) && isValidConnectorConfig( connector ) ) {
                     try {
                         // initialize the default connection pool
                         if (connectionPoolToken == null) {
@@ -138,18 +139,6 @@ public class MqNativeModule extends ActiveTransportModule implements Application
         } finally {
             AuditContextUtils.setSystem(wasSystem);
         }
-    }
-
-    /**
-     * Check if the specified SsgActiveConnector should be recognized by this transport module.
-     * <p/>
-     * This method just checks the type with {@link #typeIsOwnedByThisModule(String)}.
-     *
-     * @param ssgActiveConnector the SsgActiveConnector being considered.  Required.
-     * @return true if this conector should be added by this transport module.
-     */
-    protected boolean connectorIsMqNativeInbound( @NotNull final SsgActiveConnector ssgActiveConnector ) {
-        return ssgActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_IS_INBOUND);
     }
 
     /**
@@ -172,6 +161,11 @@ public class MqNativeModule extends ActiveTransportModule implements Application
         if (connectionPoolToken != null) {
             MQEnvironment.removeConnectionPoolToken(connectionPoolToken);
         }
+    }
+
+    @Override
+    protected boolean isValidConnectorConfig( @NotNull final SsgActiveConnector ssgActiveConnector ) {
+        return ssgActiveConnector.getBooleanProperty( PROPERTIES_KEY_MQ_NATIVE_IS_INBOUND );
     }
 
     @Override
@@ -288,8 +282,6 @@ public class MqNativeModule extends ActiveTransportModule implements Application
             throw new MqNativeException("Error processing request message.  " + getMessage( ioe ), ioe);
         }
 
-        final boolean replyExpected = connector.getBooleanProperty( PROPERTIES_KEY_ENABLE_RESPONSE_MESSAGES );
-
         PolicyEnforcementContext context = null;
         String faultMessage = null;
         String faultCode = null;
@@ -327,6 +319,8 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                 request.attachKnob(HasServiceOid.class, new HasServiceOidImpl(hardwiredServiceOid));
             }
 
+            final boolean replyExpected = MqNativeReplyType.REPLY_NONE !=
+                    connector.getEnumProperty( PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_AUTOMATIC, MqNativeReplyType.class );
             context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, null, replyExpected);
             boolean stealthMode = false;
             InputStream responseStream = null;
@@ -453,7 +447,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
     private boolean sendResponse(MQMessage requestMessage, MQMessage responseMessage, SsgActiveConnector connector, MqNativeClient mqNativeClient ) {
         boolean sent = false;
 
-        MqNativeReplyType replyType = MqNativeReplyType.valueOf( connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE ) );
+        MqNativeReplyType replyType = connector.getEnumProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_AUTOMATIC, MqNativeReplyType.class);
         MQPutMessageOptions replyOptions = mqNativeClient.getReplyOptions(replyType, MqNativeUtils.isTransactional(connector));
         switch(replyType) {
             case REPLY_NONE:
@@ -468,16 +462,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                     try {
                         replyToQueue = mqNativeClient.getQueueManager().accessQueue(replyToQueueName, MQC.MQOO_OUTPUT);
                         logger.log(Level.FINER, "Sending response to {0} for request seqNum: {1}", new Object[] { replyToQueueName, requestMessage.messageSequenceNumber });
-
-                        // set correlation Id
-                        if (connector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_IS_COPY_CORRELATION_ID_FROM_REQUEST)) {
-                            logger.info( "reply correlationId = request correlationId" );
-                            responseMessage.correlationId = requestMessage.correlationId;
-                        } else {
-                            logger.info( "reply correlationId = request messageId" );
-                            responseMessage.correlationId = requestMessage.messageId;
-                        }
-
+                        setResponseCorrelationId(connector, requestMessage, responseMessage);
                         replyToQueue.put( responseMessage, replyOptions );
                         logger.finer( "Sent response to " + replyToQueue );
                         sent = true;
@@ -497,6 +482,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
             case REPLY_SPECIFIED_QUEUE:
                 try {
                     MQQueue specifiedReplyQueue = mqNativeClient.getSpecifiedReplyQueue();
+                    setResponseCorrelationId(connector, requestMessage, responseMessage);
                     specifiedReplyQueue.put( responseMessage, replyOptions );
                     logger.finer( "Sent response to " + specifiedReplyQueue );
                     sent = true;
@@ -510,6 +496,16 @@ public class MqNativeModule extends ActiveTransportModule implements Application
         }
 
         return sent;
+    }
+
+    private void setResponseCorrelationId(final SsgActiveConnector connector, final MQMessage requestMessage, final MQMessage responseMessage) {
+        if (connector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_IS_COPY_CORRELATION_ID_FROM_REQUEST)) {
+            logger.info( "reply correlationId = request correlationId" );
+            responseMessage.correlationId = requestMessage.correlationId;
+        } else {
+            logger.info( "reply correlationId = request messageId" );
+            responseMessage.correlationId = requestMessage.messageId;
+        }
     }
 
     private boolean postMessageToFailureQueue(final MQMessage requestMessage, SsgActiveConnector connector, MqNativeClient mqNativeClient) {

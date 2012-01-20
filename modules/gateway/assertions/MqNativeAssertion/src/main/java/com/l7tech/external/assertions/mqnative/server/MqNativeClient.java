@@ -40,11 +40,11 @@ public class MqNativeClient implements Closeable {
     private final MqNativeConnectionListener connectionListener;
 
     public MqNativeClient(@NotNull final MQQueueManager queueManager,
-                          @NotNull final MQQueue requestQueue,
+                          @NotNull final MQQueue targetQueue,
                           MQQueue specifiedReplyQueue, int receiveTimeout,
                           @NotNull final MqNativeConnectionListener listener) {
         this.queueManager = queueManager;
-        this.targetQueue = requestQueue;
+        this.targetQueue = targetQueue;
         this.specifiedReplyQueue = specifiedReplyQueue;
         this.connectionListener = listener;
 
