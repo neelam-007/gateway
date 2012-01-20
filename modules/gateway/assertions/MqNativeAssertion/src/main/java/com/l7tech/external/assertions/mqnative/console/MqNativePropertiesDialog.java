@@ -6,16 +6,17 @@ import com.l7tech.console.security.FormAuthorizationPreparer;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType;
+import static com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType.*;
+import static com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType.values;
 import com.l7tech.external.assertions.mqnative.MqNativeAdmin;
 import com.l7tech.external.assertions.mqnative.MqNativeMessageFormatType;
 import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
+import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.*;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.TransportAdmin;
-import com.l7tech.gateway.common.transport.jms.JmsAcknowledgementType;
-import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
-import com.l7tech.gateway.common.transport.jms.JmsReplyType;
 import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
@@ -45,8 +46,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
-import static com.l7tech.gateway.common.transport.jms.JmsAcknowledgementType.ON_COMPLETION;
-import static com.l7tech.gateway.common.transport.jms.JmsAcknowledgementType.values;
 
 /**
  * Dialog for configuring a MQ Native queue.
@@ -480,10 +479,9 @@ public class MqNativePropertiesDialog extends JDialog {
         });
 
         acknowledgementModeComboBox.setModel(new DefaultComboBoxModel(values()));
-        acknowledgementModeComboBox.setRenderer(new TextListCellRenderer<Object>(new Functions.Unary<String,Object>() {
+        acknowledgementModeComboBox.setRenderer(new TextListCellRenderer<MqNativeAcknowledgementType>(new Functions.Unary<String,MqNativeAcknowledgementType>() {
             @Override
-            public String call(Object o) {
-                JmsAcknowledgementType type = (JmsAcknowledgementType) o;
+            public String call(final MqNativeAcknowledgementType type) {
                 String text;
 
                 switch( type ) {
@@ -750,26 +748,6 @@ public class MqNativePropertiesDialog extends JDialog {
         }
     };
 
-    private static void configureEndpointReplyBehaviour(JmsEndpoint ep, String what, final JRadioButton autoButton, final JRadioButton noneButton, final JRadioButton specifiedButton, final JTextField specifiedField, JRadioButton messageIdRadioButton) {
-        boolean isTemplate = ep.isTemplate();
-        if (autoButton.isSelected()) {
-            ep.setReplyType(JmsReplyType.AUTOMATIC);
-            ep.setReplyToQueueName(null);
-            if (ep.isMessageSource()) ep.setUseMessageIdForCorrelation(messageIdRadioButton.isSelected());
-        } else if (noneButton.isSelected()) {
-            ep.setReplyType(JmsReplyType.NO_REPLY);
-            ep.setReplyToQueueName(null);
-        } else if (specifiedButton.isSelected()) {
-            ep.setReplyType(JmsReplyType.REPLY_TO_OTHER);
-            final String t = getTextOrNull(specifiedField);
-            ep.setUseMessageIdForCorrelation(messageIdRadioButton.isSelected());
-            if (!isTemplate && (t == null || t.length() == 0) ) throw new IllegalStateException(what + " Specified Queue name must be set");
-            ep.setReplyToQueueName(t);
-        } else {
-            throw new IllegalStateException(what + " was selected, but no reply type was selected");
-        }
-    }
-
     /**
      * Configure the gui to conform with the current endpoint and connection.
      */
@@ -831,7 +809,8 @@ public class MqNativePropertiesDialog extends JDialog {
 
             // inbound options
             if (isInbound) {
-                JmsAcknowledgementType acknowledgementType = JmsAcknowledgementType.valueOf(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_ACKNOWLEDGEMENT_TYPE));
+                final MqNativeAcknowledgementType acknowledgementType =
+                        mqNativeActiveConnector.getEnumProperty( PROPERTIES_KEY_MQ_NATIVE_INBOUND_ACKNOWLEDGEMENT_TYPE, null, MqNativeAcknowledgementType.class );
                 if (acknowledgementType != null) {
                     acknowledgementModeComboBox.setSelectedItem(acknowledgementType);
                     if ( acknowledgementType == ON_COMPLETION ) {
@@ -843,7 +822,7 @@ public class MqNativePropertiesDialog extends JDialog {
                     }
                 }
 
-                MqNativeReplyType replyType = MqNativeReplyType.valueOf(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE));
+                MqNativeReplyType replyType = mqNativeActiveConnector.getEnumProperty( PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_AUTOMATIC, MqNativeReplyType.class );
                 switch(replyType) {
                     case REPLY_NONE:
                         inboundReplyNoneRadioButton.setSelected(true);
@@ -1201,54 +1180,54 @@ public class MqNativePropertiesDialog extends JDialog {
 
         connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_IS_INBOUND, Boolean.toString(inboundRadioButton.isSelected()));
         if (inboundRadioButton.isSelected()) {
-            JmsAcknowledgementType acknowledgementType = (JmsAcknowledgementType) acknowledgementModeComboBox.getSelectedItem();
-                connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_ACKNOWLEDGEMENT_TYPE, acknowledgementType.toString());
+            final MqNativeAcknowledgementType acknowledgementType = (MqNativeAcknowledgementType) acknowledgementModeComboBox.getSelectedItem();
+            connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_ACKNOWLEDGEMENT_TYPE, acknowledgementType.toString());
 
-                if (useQueueForFailedCheckBox.isSelected() && failureQueueNameTextField.getText().trim().length() > 0) {
-                    connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_NAME, failureQueueNameTextField.getText());
-                }
+            if (useQueueForFailedCheckBox.isSelected() && failureQueueNameTextField.getText().trim().length() > 0) {
+                connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_NAME, failureQueueNameTextField.getText());
+            }
 
-                if(inboundReplyAutomaticRadioButton.isSelected())
-                    connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, MqNativeReplyType.REPLY_AUTOMATIC.toString());
-                else if (inboundReplyNoneRadioButton.isSelected())
-                    connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, MqNativeReplyType.REPLY_NONE.toString());
-                else if (inboundReplySpecifiedQueueRadioButton.isSelected()){
-                    connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, MqNativeReplyType.REPLY_SPECIFIED_QUEUE.toString());
-                    connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME, inboundReplySpecifiedQueueField.getText());
-                }
+            if(inboundReplyAutomaticRadioButton.isSelected())
+                connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_AUTOMATIC.toString());
+            else if (inboundReplyNoneRadioButton.isSelected())
+                connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, MqNativeReplyType.REPLY_NONE.toString());
+            else if (inboundReplySpecifiedQueueRadioButton.isSelected()){
+                connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, MqNativeReplyType.REPLY_SPECIFIED_QUEUE.toString());
+                connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME, inboundReplySpecifiedQueueField.getText());
+            }
 
-                connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_IS_COPY_CORRELATION_ID_FROM_REQUEST, Boolean.toString(inboundCorrelationIdRadioButton.isSelected()));
+            connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_IS_COPY_CORRELATION_ID_FROM_REQUEST, Boolean.toString(inboundCorrelationIdRadioButton.isSelected()));
 
-                if(associateQueueWithPublishedService.isSelected()){
-                     PublishedService svc = ServiceComboBox.getSelectedPublishedService(serviceNameCombo);
-                     if(svc != null) {
-                        connector.setHardwiredServiceOid(svc.getOid());
-                     }
-                }
+            if(associateQueueWithPublishedService.isSelected()){
+                 PublishedService svc = ServiceComboBox.getSelectedPublishedService(serviceNameCombo);
+                 if(svc != null) {
+                    connector.setHardwiredServiceOid(svc.getOid());
+                 }
+            }
 
-                if (specifyContentTypeCheckBox.isSelected() && specifyContentTypeFromHeader.isSelected()) {
-                    connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_CONTENT_TYPE_FROM_PROPERTY, getContentTypeFromProperty.getText());
-                } else if (specifyContentTypeCheckBox.isSelected() && specifyContentTypeFreeForm.isSelected()) {
-                    //if none of the list is selected and there is a value in the content type,
-                    //then we'll use the one that was entered by the user
-                    ContentTypeHeader selectedContentType;
-                    if (contentTypeValues.getSelectedIndex() == -1 && contentTypeValues.getEditor().getItem() != null) {
-                        String ctHeaderString = ((JTextField) contentTypeValues.getEditor().getEditorComponent()).getText();
-                        selectedContentType = ContentTypeHeader.parseValue(ctHeaderString);
+            if (specifyContentTypeCheckBox.isSelected() && specifyContentTypeFromHeader.isSelected()) {
+                connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_CONTENT_TYPE_FROM_PROPERTY, getContentTypeFromProperty.getText());
+            } else if (specifyContentTypeCheckBox.isSelected() && specifyContentTypeFreeForm.isSelected()) {
+                //if none of the list is selected and there is a value in the content type,
+                //then we'll use the one that was entered by the user
+                ContentTypeHeader selectedContentType;
+                if (contentTypeValues.getSelectedIndex() == -1 && contentTypeValues.getEditor().getItem() != null) {
+                    String ctHeaderString = ((JTextField) contentTypeValues.getEditor().getEditorComponent()).getText();
+                    selectedContentType = ContentTypeHeader.parseValue(ctHeaderString);
 
-                        //check if the typed in content type matches to any one of the ones in our list
-                        int foundIndex = findContentTypeInList(selectedContentType);
-                        if (foundIndex != -1) {
-                            selectedContentType = ((ContentTypeComboBoxItem) contentTypeModel.getElementAt(foundIndex)).getContentType();
-                        }
-                    } else {
-                        selectedContentType = ((ContentTypeComboBoxItem) contentTypeValues.getSelectedItem()).getContentType();
+                    //check if the typed in content type matches to any one of the ones in our list
+                    int foundIndex = findContentTypeInList(selectedContentType);
+                    if (foundIndex != -1) {
+                        selectedContentType = ((ContentTypeComboBoxItem) contentTypeModel.getElementAt(foundIndex)).getContentType();
                     }
-
-                    if (selectedContentType != null) {
-                        connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_CONTENT_TYPE, selectedContentType.getFullValue());
-                    }
+                } else {
+                    selectedContentType = ((ContentTypeComboBoxItem) contentTypeValues.getSelectedItem()).getContentType();
                 }
+
+                if (selectedContentType != null) {
+                    connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_CONTENT_TYPE, selectedContentType.getFullValue());
+                }
+            }
 
             connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_MQ_MESSAGE_MAX_BYTES, byteLimitPanel.getValue());
         } else {
@@ -1264,7 +1243,7 @@ public class MqNativePropertiesDialog extends JDialog {
             }
 
             if (outboundReplyAutomaticRadioButton.isSelected()) {
-                connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, MqNativeReplyType.REPLY_AUTOMATIC.toString());
+                connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_AUTOMATIC.toString());
                 connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_TEMPORARY_QUEUE_NAME_PATTERN, modelQueueNameTextField.getText());
             } else if (outboundReplySpecifiedQueueRadioButton.isSelected()) {
                 connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, MqNativeReplyType.REPLY_SPECIFIED_QUEUE.toString());

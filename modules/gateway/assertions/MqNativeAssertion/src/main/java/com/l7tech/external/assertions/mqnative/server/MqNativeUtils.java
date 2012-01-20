@@ -4,11 +4,11 @@ import com.ibm.mq.MQC;
 import com.ibm.mq.MQException;
 import com.ibm.mq.MQManagedObject;
 import com.ibm.mq.MQMessage;
+import com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType;
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
-import com.l7tech.gateway.common.transport.jms.JmsAcknowledgementType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.transport.http.AnonymousSslClientSocketFactory;
@@ -333,15 +333,8 @@ class MqNativeUtils {
     }
 
     static boolean isTransactional(SsgActiveConnector connector) {
-        boolean isTransactional = false;
-        try {
-            //TODO [steve] don't use JMS types
-            isTransactional = JmsAcknowledgementType.ON_COMPLETION == JmsAcknowledgementType.valueOf(
-                    connector.getProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_INBOUND_ACKNOWLEDGEMENT_TYPE));
-        } catch (IllegalArgumentException e) {
-            // not transactional
-        }
-        return isTransactional;
+        return MqNativeAcknowledgementType.ON_COMPLETION ==
+                    connector.getEnumProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_ACKNOWLEDGEMENT_TYPE,null,MqNativeAcknowledgementType.class);
     }
 
     static void closeQuietly( final MQManagedObject object ) {
