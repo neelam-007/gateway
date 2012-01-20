@@ -19,18 +19,20 @@ import com.l7tech.gui.util.InputValidator;
 import static com.l7tech.gui.util.Utilities.comboBoxModel;
 import static com.l7tech.gui.util.Utilities.enableGrayOnDisabled;
 import com.l7tech.gui.widgets.TextListCellRenderer;
-import static com.l7tech.objectmodel.EntityUtil.name;
 import com.l7tech.objectmodel.FindException;
 import static com.l7tech.objectmodel.imp.PersistentEntityUtil.oid;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.Syntax;
+import static com.l7tech.policy.variable.Syntax.getReferencedNames;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.external.assertions.mqnative.MqNativeRoutingAssertion;
+import com.l7tech.util.Functions.Unary;
 import static com.l7tech.util.Functions.equality;
 import static com.l7tech.util.Functions.grep;
 import static com.l7tech.util.Functions.grepFirst;
 import static com.l7tech.util.Functions.negate;
+import static com.l7tech.util.TextUtils.truncStringMiddleExact;
+import static com.l7tech.util.ValidationUtils.isValidInteger;
 import static java.util.Collections.emptyList;
 
 import javax.swing.*;
@@ -118,7 +120,10 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
                 enableOrDisableComponents();
             }
         });
-        queueComboBox.setRenderer( new TextListCellRenderer<SsgActiveConnector>( name() ) );
+        final TextListCellRenderer<SsgActiveConnector> renderer =  new TextListCellRenderer<SsgActiveConnector>( info() );
+        renderer.setRenderClipped( true );
+        renderer.setSmartTooltips( true );
+        queueComboBox.setRenderer( renderer );
 //        newQueueButton.addActionListener(new ActionListener() {
 //            @Override
 //            public void actionPerformed(ActionEvent e) {
@@ -144,26 +149,13 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         inputValidator.constrainTextField(mqResponseTimeout, new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
-                String uiResponseTimeout = mqResponseTimeout.getText().trim();
-                String errMsg = "The value for the response timeout must be a valid positive number, contain one context variable, or empty.";
-                try {
-                    if (! uiResponseTimeout.isEmpty()) {
-                        int timeout = Integer.parseInt(uiResponseTimeout);
-                        if (timeout <= 0) {
-                            return errMsg;
-                        }
-                    }
-                } catch (NumberFormatException e) {
-                    //check if context var instead
-                    String[] vars = Syntax.getReferencedNames(uiResponseTimeout);
-                    if(vars.length == 1 &&  uiResponseTimeout.equals("${"+vars[0]+"}"))
-                        return null;
-                    else
-                    {
-                        return errMsg;
-                    }
+                String errMsg = null;
+                final String uiResponseTimeout = mqResponseTimeout.getText().trim();
+                if ( !isValidInteger( uiResponseTimeout, true, 1, Integer.MAX_VALUE ) &&
+                     getReferencedNames( uiResponseTimeout ).length == 0  ) {
+                    errMsg = "The value for the response timeout must be a valid positive number or use context variables.";
                 }
-                return null;
+                return errMsg;
             }
         });
         inputValidator.addRule(new InputValidator.ValidationRule() {
@@ -333,8 +325,9 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
     }
 
     private void setTextAndEnable( final String value, final JTextField textField ) {
+        boolean templateValueSpecified = !value.trim().isEmpty();
         setText( value, textField );
-        textField.setEnabled( !value.trim().isEmpty() );
+        textField.setEnabled( !templateValueSpecified );
     }
 
     private void setIfDynamic( final String value, final String defaultValue, final JTextField textField ) {
@@ -479,6 +472,32 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         if (getSize().width < mainPanel.getMinimumSize().width) {
             setSize(mainPanel.getMinimumSize().width, getSize().height);
         }
+    }
+
+    private static String info( final SsgActiveConnector connector ) {
+        final StringBuilder builder = new StringBuilder();
+        builder.append( truncStringMiddleExact( connector.getName(), 48 ) );
+        builder.append( " [" );
+        if ( connector.getBooleanProperty( PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_IS_TEMPLATE_QUEUE ) ) {
+            builder.append( "<template>" );
+        } else {
+            builder.append( truncStringMiddleExact( connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME, "" ), 32 ) );
+        }
+        builder.append( " on " );
+        builder.append( truncStringMiddleExact( connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_HOST_NAME, "" ), 32 ) );
+        builder.append( ':' );
+        builder.append( connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_PORT, "" ) );
+        builder.append( "]" );
+        return builder.toString();
+    }
+
+    private static Unary<String,SsgActiveConnector> info() {
+        return new Unary<String,SsgActiveConnector>(){
+            @Override
+            public String call( final SsgActiveConnector ssgActiveConnector ) {
+                return info( ssgActiveConnector );
+            }
+        };
     }
 
     private static class RequestSourceComboBoxItem {
