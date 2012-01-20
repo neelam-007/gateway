@@ -284,7 +284,7 @@
                     <fileset dir="@{dir}" includes="config.properties"/>
                 </concat>
                 <delete file="@{dir}/config.properties" quiet="true"/>
-                <concat destfile="@{dir}/com/l7tech/EntityTypes.properties" append="yes">
+                <concat destfile="@{dir}/com/l7tech/EntityTypes.properties" append="yes" fixlastline="yes">
                     <fileset dir="@{dir}" includes="EntityTypes.properties"/>
                 </concat>
                 <delete file="@{dir}/EntityTypes.properties" quiet="true"/>
