@@ -40,7 +40,6 @@ import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.*;
-import java.util.logging.Level;
 
 import static com.l7tech.external.assertions.samlpassertion.ProcessSamlAttributeQueryRequestAssertion.SUPPORTED_ATTRIBUTE_NAMEFORMATS;
 import static com.l7tech.external.assertions.samlpassertion.ProcessSamlAttributeQueryRequestAssertion.SUPPORTED_SUBJECT_FORMATS;
@@ -321,7 +320,7 @@ public class ServerProcessSamlAttributeQueryRequestAssertion extends AbstractMes
             // encryptedIdElementFound && is decrypt ==> we should have found a value.
             if (encryptedIdElementFound && !assertion.isDecryptEncryptedId()) {
                 // We allow no validation of subject for the non decrypt use case
-                logAndAudit(AssertionMessages.SAMLP_REQUEST_BUILDER_NO_DECRYPTION);
+                logAndAudit(AssertionMessages.SAMLP_ATTRIBUTE_QUERY_NO_DECRYPTION);
 
                 context.setVariable(prefix(SUFFIX_SUBJECT), null);
                 context.setVariable(prefix(SUFFIX_SUBJECT_NAME_QUALIFIER), null);
@@ -440,7 +439,7 @@ public class ServerProcessSamlAttributeQueryRequestAssertion extends AbstractMes
 
         if (elements.size() != 1) {
             //unexpected data found after decryption, only 1 element is expected saml:NameID
-            logAndAudit(AssertionMessages.SAMLP_ATTRIBUTE_UNEXPECTED_DECRYPT_RESULTS, "Decrypted " + elements.size()+" elements, expected 1.");
+            logAndAudit(AssertionMessages.SAMLP_ATTRIBUTE_QUERY_UNEXPECTED_DECRYPT_RESULTS, "Decrypted " + elements.size()+" elements, expected 1.");
             throw new AssertionStatusException(invalidMessageTargetStatus);
         }
 
