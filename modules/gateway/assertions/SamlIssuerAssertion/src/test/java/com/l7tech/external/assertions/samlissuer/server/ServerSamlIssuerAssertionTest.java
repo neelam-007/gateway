@@ -1,12 +1,15 @@
 package com.l7tech.external.assertions.samlissuer.server;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.external.assertions.samlissuer.SamlIssuerAssertion;
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.HttpServletResponseKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.SamlIssuerConfiguration;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
@@ -43,10 +46,7 @@ import javax.xml.bind.DatatypeConverter;
 import javax.xml.namespace.QName;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.List;
+import java.util.*;
 
 import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.AttributeValueAddBehavior.ADD_AS_XML;
 import static com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement.Attribute.AttributeValueComparison.CANONICALIZE;
@@ -2611,6 +2611,51 @@ public class ServerSamlIssuerAssertionTest {
             }
         }
 
+    }
+
+    /**
+     * When the assertion cannot be added to the response, due to the response not containing well formed XML, validate
+     * the correct audit occurs.
+     */
+    @BugNumber(11631)
+    @Test
+    public void test_CannotParseResponse_CorrectAudit() throws Exception {
+        SamlIssuerAssertion assertion = new SamlIssuerAssertion();
+        final SamlAuthenticationStatement authStmt = new SamlAuthenticationStatement();
+        assertion.setAuthenticationStatement(authStmt);
+        assertion.setVersion(2);
+        assertion.setSignAssertion(false);//don't need
+        //required for test case
+        assertion.setDecorationTypes(EnumSet.of(SamlIssuerConfiguration.DecorationType.RESPONSE));
+
+        ServerSamlIssuerAssertion serverAssertion = new ServerSamlIssuerAssertion(assertion,
+                ApplicationContexts.getTestApplicationContext());
+
+
+        final TestAudit testAudit = new TestAudit();
+        ApplicationContexts.inject(serverAssertion, CollectionUtils.<String, Object>mapBuilder()
+                .put( "auditFactory", testAudit.factory() )
+                .unmodifiableMap()
+        );
+
+        final PolicyEnforcementContext context = getContext();
+
+        //set credentials
+        final AuthenticationContext authContext = context.getDefaultAuthenticationContext();
+        final HttpBasicToken basicToken = new HttpBasicToken("testuser", new char[]{'p', 'a', 's', 's'});
+
+        authContext.addCredentials(LoginCredentials.makeLoginCredentials(basicToken, HttpBasic.class));
+        context.getRequest().initialize(XmlUtil.parse("<xml></xml>"));
+        context.getResponse().initialize(ContentTypeHeader.XML_DEFAULT, "not xml".getBytes());
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+        Assert.assertEquals(AssertionStatus.BAD_REQUEST, assertionStatus);
+
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+
+        Assert.assertTrue(testAudit.isAuditPresent(AssertionMessages.SAML_ISSUER_CANNOT_PARSE_XML));
     }
 
     private void validateVariableNotNull(String variableName, String expectedValue, final PolicyEnforcementContext context) throws NoSuchVariableException {

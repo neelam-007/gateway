@@ -131,6 +131,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
         }
     }
 
+    @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         // Generate the SAML assertion
@@ -287,11 +288,16 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
             }
 
             final Message msg;
+            final String msgName;
             if (dts.contains(REQUEST)) {
                 msg = context.getRequest();
+                msgName = "request";
             } else if (dts.contains(RESPONSE)) {
                 msg = context.getResponse();
-            } else throw new IllegalStateException("Some decoration was selected, but on neither request nor response");
+                msgName = "response";
+            } else {
+                throw new IllegalStateException("Some decoration was selected, but on neither request nor response");
+            }
 
             try {
                 if (!msg.isSoap()) {
@@ -299,7 +305,8 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                     return AssertionStatus.NOT_APPLICABLE;
                 }
             } catch (SAXException e) {
-                logAndAudit(AssertionMessages.SAML_ISSUER_BAD_XML, null, ExceptionUtils.getDebugException(e));
+                logAndAudit(AssertionMessages.SAML_ISSUER_CANNOT_PARSE_XML,
+                        new String[]{msgName, ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
                 return AssertionStatus.BAD_REQUEST;
             }
 
@@ -313,7 +320,8 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
             try {
                 messageDoc = xk.getDocumentWritable();
             } catch (SAXException e) {
-                logAndAudit(AssertionMessages.SAML_ISSUER_BAD_XML, null, ExceptionUtils.getDebugException(e));
+                logAndAudit(AssertionMessages.SAML_ISSUER_BAD_XML_WITH_ERROR,
+                        new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
                 return AssertionStatus.BAD_REQUEST;
             }
 
@@ -332,7 +340,8 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                     try {
                         dr.getElementsToSign().add( SoapUtil.getBodyElement(messageDoc));
                     } catch ( InvalidDocumentFormatException e) {
-                        logAndAudit(AssertionMessages.SAML_ISSUER_BAD_XML, null, ExceptionUtils.getDebugException(e));
+                        logAndAudit(AssertionMessages.SAML_ISSUER_BAD_XML_WITH_ERROR,
+                                new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
                         return AssertionStatus.BAD_REQUEST;
                     }
                 }

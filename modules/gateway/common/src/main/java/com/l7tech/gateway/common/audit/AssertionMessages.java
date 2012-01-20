@@ -872,6 +872,8 @@ public class AssertionMessages extends Messages {
     public static final M SAML_ISSUER_ATTR_STMT_FILTER_REMOVED_ALL_ATTRIBUTES = m(8414, Level.FINE, "No Attributes were available after SAML Attribute filter was applied.");
     public static final M SAML_ISSUER_ATTR_STMT_EXCLUDED_ATTRIBUTES = m(8415, Level.FINE, "Attribute filter AttributeValue excluded some Attributes: {0}");
     public static final M SAML_ISSUER_ATTR_STMT_FILTERED_ATTRIBUTES = m(8416, Level.FINE, "Attribute filter filtered some Attributes: {0}");
+    public static final M SAML_ISSUER_CANNOT_PARSE_XML = m(8417, Level.WARNING, "Error parsing the {0} for expected SOAP Message: {1}");
+    public static final M SAML_ISSUER_BAD_XML_WITH_ERROR = m(8418, Level.WARNING, "Message appeared to be SOAP but is not valid: {0}");
 
     public static final M IDENTITY_ATTRIBUTE_NO_USER = m(8450, Level.INFO, "No user from the expected identity provider has yet been authenticated");
     public static final M IDENTITY_ATTRIBUTE_MULTI_USERS = m(8451, Level.INFO, "Multiple users from the expected identity provider have been authenticated; choosing the first");
