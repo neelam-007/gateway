@@ -54,6 +54,9 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
     private JPanel variablePrefixPanel;
     private TargetVariablePanel variablePrefixTextField;
     private DefaultTableModelWithAssociatedBean<SamlAttributeStatement.Attribute> attributesTableModel;
+    /**
+     * Never 0 in issue mode. 0 means 'any supported version'.
+     */
     private int samlVersion;
     private static final String ANY = "<any>";
 
@@ -149,18 +152,53 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
             return;
         }
 
-        // put in table
+        final int numCols = attributesTableModel.getColumnCount();
+        if (numCols == 0) {
+            // configure columns now that we know what version it is
+            final String[] columnNames;
+            if (issueMode) {
+                columnNames = (samlVersion == 2) ? new String[]{"Name", "Name Format", "Value", "Repeat", "Missing When Empty"}
+                        : new String[]{"Name", "Namespace", "Value", "Repeat", "Missing When Empty"};
+            } else {
+                // Require mode supports both version at the same time. So just always show all columns
+                columnNames = new String[]{"Name", "Namespace", "Name Format", "Value", "Repeat"};
+            }
+
+            for (String columnName : columnNames) {
+                attributesTableModel.addColumn(columnName);
+            }
+        }
+
+        if (issueMode) {
+            // user may have changed version - which means we need to fix the table headings
+            if (samlVersion == 2) {
+                attributeTable.getColumnModel().getColumn(1).setHeaderValue("Name Format");
+            } else {
+                attributeTable.getColumnModel().getColumn(1).setHeaderValue("Namespace");
+            }
+        }
+
+        // clear existing rows
         attributesTableModel.setRowCount(0);
+
         attributesTableModel.fireTableDataChanged();
         SamlAttributeStatement.Attribute[] attributes = statement.getAttributes();
-        for (int i = 0; i < attributes.length; i++) {
-            SamlAttributeStatement.Attribute att = attributes[i];
-            attributesTableModel.addRow((SamlAttributeStatement.Attribute) att.clone(), new Object[]{
-                    att.getName(),
-                    att.getNamespace(),
-                    toDisplayNameFormat(att.getNameFormat(), samlVersion),
-                    att.isAnyValue() ? ANY : att.getValue(),
-                    att.isRepeatIfMulti()});
+        for (SamlAttributeStatement.Attribute att : attributes) {
+            if (issueMode) {
+                attributesTableModel.addRow((SamlAttributeStatement.Attribute) att.clone(), new Object[]{
+                        att.getName(),
+                        (samlVersion == 2) ? toDisplayNameFormat(att.getNameFormat()) : att.getNamespace(),
+                        att.isAnyValue() ? ANY : att.getValue(),
+                        att.isRepeatIfMulti(),
+                        att.isMissingWhenEmpty()});
+            } else {
+                attributesTableModel.addRow((SamlAttributeStatement.Attribute) att.clone(), new Object[]{
+                        att.getName(),
+                        toDisplayNamespace(att.getNamespace()),
+                        toDisplayNameFormat(att.getNameFormat()),
+                        att.isAnyValue() ? ANY : att.getValue(),
+                        att.isRepeatIfMulti()});
+            }
         }
 
         filterExpressionTextField.setText(statement.getFilterExpression());
@@ -200,7 +238,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
         failIfNoAttributesAddedCheckBox.setVisible(issueMode);
         failIfUnknownAttributeCheckBox.setVisible(issueMode);
 
-        attributesTableModel = new DefaultTableModelWithAssociatedBean<SamlAttributeStatement.Attribute>(new String[]{"Name", "Namespace", "Name Format", "Value", "Repeat?"}, 0);
+        attributesTableModel = new DefaultTableModelWithAssociatedBean<SamlAttributeStatement.Attribute>();
         attributeTableScrollPane.getViewport().setBackground(attributeTable.getBackground());
         attributeTable.setModel(attributesTableModel);
         attributeTable.getTableHeader().setReorderingAllowed(false);
@@ -244,11 +282,23 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
                      */
                     @Override
                     public void onEditAccepted(Object source, Object bean) {
-                        attributesTableModel.setValueAt(attribute.getName(), row, 0);
-                        attributesTableModel.setValueAt(attribute.getNamespace(), row, 1);
-                        attributesTableModel.setValueAt(toDisplayNameFormat(attribute.getNameFormat(), samlVersion), row, 2);
-                        attributesTableModel.setValueAt(attribute.isAnyValue() ? ANY : attribute.getValue(), row, 3);
-                        attributesTableModel.setValueAt(attribute.isRepeatIfMulti(), row, 4);
+                        if (issueMode) {
+                            attributesTableModel.setValueAt(attribute.getName(), row, 0);
+                            if (samlVersion == 2) {
+                                attributesTableModel.setValueAt(toDisplayNameFormat(attribute.getNameFormat()), row, 1);
+                            } else {
+                                attributesTableModel.setValueAt(attribute.getNamespace(), row, 1);
+                            }
+                            attributesTableModel.setValueAt(attribute.isAnyValue() ? ANY : attribute.getValue(), row, 2);
+                            attributesTableModel.setValueAt(attribute.isRepeatIfMulti(), row, 3);
+                            attributesTableModel.setValueAt(attribute.isMissingWhenEmpty(), row, 4);
+                        } else {
+                            attributesTableModel.setValueAt(attribute.getName(), row, 0);
+                            attributesTableModel.setValueAt(toDisplayNamespace(attribute.getNamespace()), row, 1);
+                            attributesTableModel.setValueAt(toDisplayNameFormat(attribute.getNameFormat()), row, 2);
+                            attributesTableModel.setValueAt(attribute.isAnyValue() ? ANY : attribute.getValue(), row, 3);
+                            attributesTableModel.setValueAt(attribute.isRepeatIfMulti(), row, 4);
+                        }
                         attributesTableModel.updateBeanForRow(row, (SamlAttributeStatement.Attribute) bean);
                         notifyListeners();
                     }
@@ -272,12 +322,21 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
                      */
                     @Override
                     public void onEditAccepted(Object source, Object bean) {
-                        attributesTableModel.addRow((SamlAttributeStatement.Attribute) bean, new Object[] {
-                                attribute.getName(),
-                                attribute.getNamespace(),
-                                toDisplayNameFormat(attribute.getNameFormat(), samlVersion),
-                                attribute.isAnyValue() ? ANY : attribute.getValue(),
-                                attribute.isRepeatIfMulti()});
+                        if (issueMode) {
+                            attributesTableModel.addRow((SamlAttributeStatement.Attribute) bean, new Object[]{
+                                    attribute.getName(),
+                                    (samlVersion == 2) ? toDisplayNameFormat(attribute.getNameFormat()) : attribute.getNamespace(),
+                                    attribute.isAnyValue() ? ANY : attribute.getValue(),
+                                    attribute.isRepeatIfMulti(),
+                                    attribute.isMissingWhenEmpty()});
+                        } else {
+                            attributesTableModel.addRow((SamlAttributeStatement.Attribute) bean, new Object[]{
+                                    attribute.getName(),
+                                    toDisplayNamespace(attribute.getNamespace()),
+                                    toDisplayNameFormat(attribute.getNameFormat()),
+                                    attribute.isAnyValue() ? ANY : attribute.getValue(),
+                                    attribute.isRepeatIfMulti()});
+                        }
                         notifyListeners();
                     }
                 });
@@ -408,18 +467,35 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
     /**
      * Convert to display name format (display default)
      */
-    private static String toDisplayNameFormat( final String nameFormat, final int samlVersion ) {
+    private String toDisplayNameFormat(final String nameFormat) {
         String defaultNameFormat = DEFAULT_NAME_FORMAT;
+        if (!issueMode) {
+            return (nameFormat == null)? defaultNameFormat: nameFormat;
+        }
 
-        if ( nameFormat != null ) {
+        if (nameFormat != null && samlVersion == 2) {
             defaultNameFormat = nameFormat;
-        } else if ( samlVersion == 1 ) {
-            defaultNameFormat = null;        
+        } else if (samlVersion == 1) {
+            defaultNameFormat = null;
         }
 
         return defaultNameFormat;
     }
 
+    private String toDisplayNamespace(final String namespace) {
+        if (!issueMode) {
+            return namespace;
+        }
+
+        String defaultNameFormat = null;
+        if (namespace != null && (samlVersion == 1 || samlVersion == 0)) {
+            defaultNameFormat = namespace;
+        } else if (samlVersion == 2) {
+            defaultNameFormat = null;
+        }
+
+        return defaultNameFormat;
+    }
     /**
      * Convert from display name format (use null for default)
      */
@@ -444,8 +520,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
      */
     private class DefaultTableModelWithAssociatedBean<T extends Cloneable> extends DefaultTableModel {
 
-        private DefaultTableModelWithAssociatedBean(Object[] columnNames, int rowCount) {
-            super(columnNames, rowCount);
+        private DefaultTableModelWithAssociatedBean() {
         }
 
         @Override
@@ -484,6 +559,14 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
             }
             // proceed
             return super.getValueAt(row, column);
+        }
+
+        @Override
+        public void setRowCount(int rowCount) {
+            super.setRowCount(rowCount);
+            for (int i = beanList.size(); i > rowCount; i--) {
+                beanList.remove(i - 1);
+            }
         }
 
         // - PRIVATE
