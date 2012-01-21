@@ -5,9 +5,11 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.console.policy.SsmPolicyVariableUtils;
+import com.l7tech.console.util.ClusterPropertyCrud;
 import com.l7tech.gui.util.ImageCache;
 import com.l7tech.gui.util.PauseListener;
 import com.l7tech.gui.util.TextComponentPauseListenerManager;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.LineBreak;
 import com.l7tech.policy.assertion.SetVariableAssertion;
@@ -24,10 +26,9 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Dialog for {@link com.l7tech.policy.assertion.SetVariableAssertion}.
@@ -39,7 +40,10 @@ import java.util.TreeSet;
  */
 public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
 
+    private static final Logger logger = Logger.getLogger(SetVariableAssertionDialog.class.getName());
+
     private static class DataTypeComboBoxItem {
+
         private final DataType _dataType;
         private DataTypeComboBoxItem(DataType dataType) { _dataType = dataType; }
         public DataType getDataType() { return _dataType; }
@@ -65,19 +69,36 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
     private JButton _okButton;
     private JComboBox _contentTypeComboBox;
     private TargetVariablePanel _variableNameVarPanel;
+    private JComboBox datetimeFormatComboBox;
 
     private final boolean readOnly;
+
     private boolean _assertionModified;
     private final Set<String> _predecessorVariables;
     private Border _expressionStatusBorder;
 
+    private final String[] inputFormats;
+    private final String defaultFormat;
+
     public SetVariableAssertionDialog(Frame owner, final boolean readOnly, final SetVariableAssertion assertion) throws HeadlessException {
         this(owner, readOnly, assertion, null);
+
     }
 
     public SetVariableAssertionDialog(Frame owner, final boolean readOnly, final SetVariableAssertion assertion, final Assertion contextAssertion) throws HeadlessException {
         super(owner, assertion, true);
         this.readOnly = readOnly;
+
+        String formats = null;
+        try {
+            formats = ClusterPropertyCrud.getClusterProperty("datetime.format.values");
+        } catch (FindException e) {
+            //report warning and continue with no predefined formats
+            logger.log(Level.WARNING, "Unable to retrieve predefined input formats from inputFormat.values cluster property!");
+        }
+        inputFormats = null != formats? formats.split(";"): new String[0];
+        defaultFormat = inputFormats.length > 0? inputFormats[0]:"";
+
 
         _expressionStatusBorder = _expressionStatusScrollPane.getBorder();
         clearContentTypeStatus();
@@ -104,13 +125,17 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
         // Populates data type combo box with supported data types.
         _dataTypeComboBox.addItem(new DataTypeComboBoxItem(DataType.STRING));
         _dataTypeComboBox.addItem(new DataTypeComboBoxItem(DataType.MESSAGE));
+        _dataTypeComboBox.addItem(new DataTypeComboBoxItem(DataType.DATE_TIME));
         _dataTypeComboBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 _contentTypeComboBox.setEnabled(getSelectedDataType() == DataType.MESSAGE);
-                validateFields();
+               validateFields();
+               initInputFormat(getSelectedDataType(), (null != assertion.getFormat())? assertion.getFormat(): defaultFormat);
             }
         });
+
+        initInputFormat(assertion.getDataType(), (null != assertion.getFormat())? assertion.getFormat(): defaultFormat);
 
         _contentTypeComboBox.addItem( ContentTypeHeader.XML_DEFAULT.getFullValue() );
         _contentTypeComboBox.addItem( ContentTypeHeader.TEXT_DEFAULT.getFullValue() );
@@ -168,6 +193,13 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
                     assertion.setContentType(null);
                 }
 
+                //Set format of the variable
+                String format = null;
+                if(dataType == DataType.DATE_TIME)
+                    format = (String) datetimeFormatComboBox.getSelectedItem();
+
+                assertion.setFormat(format);
+
                 LineBreak lineBreak = LineBreak.CRLF;
                 if (_crlfRadioButton.isSelected()) {
                     lineBreak = LineBreak.CRLF;
@@ -196,7 +228,7 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
         if ( assertion.getContentType() != null ) {
             _contentTypeComboBox.setSelectedItem( assertion.getContentType() );
         } else {
-            _contentTypeComboBox.setSelectedIndex( 0 );            
+            _contentTypeComboBox.setSelectedIndex( 0 );
         }
 
         // JTextArea likes all line break to be LF.
@@ -259,6 +291,15 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
         _expressionStatusScrollPane.setBorder(null);
     }
 
+
+    private void initInputFormat(DataType dt, String inputFormat) {
+        boolean isDateTime = dt  == DataType.DATE_TIME;
+        datetimeFormatComboBox.setEnabled(isDateTime);
+        if(isDateTime) {
+            datetimeFormatComboBox.setModel(new DefaultComboBoxModel(inputFormats));
+            datetimeFormatComboBox.setSelectedItem(inputFormat);
+        }
+    }
     /**
      * Validates values in various fields and sets the status labels as appropriate.
      */
