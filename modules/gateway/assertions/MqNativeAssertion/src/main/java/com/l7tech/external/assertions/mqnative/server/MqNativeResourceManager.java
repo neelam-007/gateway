@@ -1,14 +1,9 @@
 package com.l7tech.external.assertions.mqnative.server;
 
-import com.ibm.mq.MQC;
 import com.ibm.mq.MQException;
-import com.ibm.mq.MQGetMessageOptions;
-import com.ibm.mq.MQPutMessageOptions;
-import com.ibm.mq.MQQueue;
 import com.ibm.mq.MQQueueManager;
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
-import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
-import com.l7tech.external.assertions.mqnative.server.MqNativeEndpointConfig.MqEndpointKey;
+import com.l7tech.external.assertions.mqnative.server.MqNativeEndpointConfig.MqNativeEndpointKey;
 import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.closeQuietly;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.server.event.EntityInvalidationEvent;
@@ -22,7 +17,6 @@ import com.l7tech.util.TimeUnit;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
-import java.io.Closeable;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -58,7 +52,7 @@ class MqNativeResourceManager implements ApplicationListener {
 
     private final ApplicationEventProxy applicationEventProxy;
     private final Config config;
-    private final ConcurrentHashMap<MqNativeEndpointConfig.MqEndpointKey, CachedConnection> connectionHolder = new ConcurrentHashMap<MqNativeEndpointConfig.MqEndpointKey, CachedConnection>();
+    private final ConcurrentHashMap<MqNativeEndpointKey, CachedConnection> connectionHolder = new ConcurrentHashMap<MqNativeEndpointKey, CachedConnection>();
     private final AtomicReference<MqResourceManagerConfig> cacheConfigReference = new AtomicReference<MqResourceManagerConfig>( new MqResourceManagerConfig(0,0,100) );
     private final AtomicBoolean active = new AtomicBoolean(true);
     private Timer timer;
@@ -104,7 +98,7 @@ class MqNativeResourceManager implements ApplicationListener {
     {
         if ( !active.get() ) throw new MqNativeRuntimeException("MQ outbound task manager is stopped.");
 
-        final MqNativeEndpointConfig.MqEndpointKey key = endpoint.getMqEndpointKey();
+        final MqNativeEndpointKey key = endpoint.getMqEndpointKey();
 
         CachedConnection cachedConnection = null;
         try {
@@ -121,7 +115,7 @@ class MqNativeResourceManager implements ApplicationListener {
                 }
             }
 
-            callback.doWork( cachedConnection.writeBag, cachedConnection.readBag );
+            callback.doWork( cachedConnection.queueManager );
 
         } catch ( MQException e ) {
             evict( connectionHolder, key, cachedConnection );
@@ -145,7 +139,7 @@ class MqNativeResourceManager implements ApplicationListener {
         this.invalidate(endpoint.getMqEndpointKey());
     }
 
-    void invalidate( final MqNativeEndpointConfig.MqEndpointKey key ) {
+    void invalidate( final MqNativeEndpointKey key ) {
         if ( active.get() ) {
             final CachedConnection cachedConnection = connectionHolder.get(key);
             if ( cachedConnection != null ) {
@@ -175,92 +169,13 @@ class MqNativeResourceManager implements ApplicationListener {
      */
     interface MqTaskCallback {
         /**
-         * Callback to perform work with the given MQ resources.
+         * Callback to perform work with the given queueManager.
          *
          * <p>Exceptions thrown by this class will be propagated to the caller.</p>
          *
          * @throws MQException If an error occurs.
          */
-        void doWork( MqNativeResourceBag writeBag, MqNativeResourceBag readBag ) throws MQException;
-    }
-
-    /**
-     * Bag of MQ resources.
-     *
-     * TODO [steve] Use or remove queue and replyQueue
-     */
-    static class MqNativeResourceBag implements Closeable {
-
-        MqNativeResourceBag( final MQQueueManager qmgr,
-                             final MQQueue queue,
-                             final MQQueue replyQueue,
-                             final MQGetMessageOptions gmo,
-                             final MQPutMessageOptions pmo ) {
-            this.qmgr = qmgr;
-            this.q = queue;
-            this.replyQ = replyQueue;
-
-            if (gmo == null)
-                this.gmoOptions = new MQGetMessageOptions();
-            else
-                this.gmoOptions = gmo;
-
-            if (pmo == null)
-                this.pmoOptions = new MQPutMessageOptions();
-            else
-                this.pmoOptions = pmo;
-        }
-
-        MQQueueManager getQmgr() {
-            check();
-            return qmgr;
-        }
-
-        MQQueue getQueue() {
-            check();
-            return q;
-        }
-
-        MQQueue getReplyQueue() {
-            check();
-            return replyQ;
-        }
-
-        MQGetMessageOptions getGmoOptions() {
-            return gmoOptions;
-        }
-
-        MQPutMessageOptions getPmoOptions() {
-            return pmoOptions;
-        }
-
-        public void close() {
-            try {
-                closeQuietly( q );
-                closeQuietly( replyQ );
-                closeQuietly( qmgr, Option.<UnaryVoidThrows<MQQueueManager, MQException>>some( new UnaryVoidThrows<MQQueueManager, MQException>() {
-                    @Override
-                    public void call( final MQQueueManager mqQueueManager ) throws MQException {
-                        mqQueueManager.disconnect();
-                    }
-                } )  );
-            } finally {
-                closed = true;
-            }
-        }
-
-        private void check() {
-            if (closed) throw new IllegalStateException("MQ resource bag has been closed");
-        }
-
-        private static final Logger logger = Logger.getLogger(MqNativeResourceBag.class.getName());
-
-        private MQQueueManager qmgr;
-        private MQQueue q;
-        private MQQueue replyQ;
-        private MQGetMessageOptions gmoOptions;
-        private MQPutMessageOptions pmoOptions;
-        protected volatile boolean closed;
+        void doWork( final MQQueueManager queueManager ) throws MQException;
     }
 
     /**
@@ -282,35 +197,14 @@ class MqNativeResourceManager implements ApplicationListener {
     }
 
     private CachedConnection newConnection( final MqNativeEndpointConfig mqCfg ) throws MqNativeRuntimeException {
-        final MqNativeEndpointConfig.MqEndpointKey key = mqCfg.getMqEndpointKey();
+        final MqNativeEndpointKey key = mqCfg.getMqEndpointKey();
 
         try {
-            // create the new MqResBag for the endpoint (for outbound routing)
-            MQQueueManager _qmgr = new MQQueueManager(mqCfg.getQueueManagerName(), mqCfg.getQueueManagerProperties());
+            // create the new manager for the endpoint
+            final MQQueueManager queueManager =
+                    new MQQueueManager(mqCfg.getQueueManagerName(), mqCfg.getQueueManagerProperties());
 
-            // build the MQPutMessageOptions
-            MQPutMessageOptions pmo = new MQPutMessageOptions();
-            pmo.options = MQC.MQPMO_NO_SYNCPOINT; // make message available immediately
-            if (!mqCfg.isCorrelateWithMessageId() && mqCfg.getReplyType() == MqNativeReplyType.REPLY_SPECIFIED_QUEUE) {
-                pmo.options |= MQC.MQPMO_NEW_CORREL_ID;
-            }
-
-            MqNativeResourceBag writeBag = new MqNativeResourceBag(_qmgr, null, null, null, pmo);
-            MqNativeResourceBag readBag = null;
-
-            // create readBag only if a reply is expected
-            if (mqCfg.getReplyToQueueName() != null && mqCfg.getReplyToQueueName().length() > 0) {
-
-                MQQueueManager _qmgr2 = new MQQueueManager(mqCfg.getQueueManagerName(), mqCfg.getQueueManagerProperties());
-
-                MQGetMessageOptions gmo = new MQGetMessageOptions();
-                gmo.options = MQC.MQGMO_WAIT | MQC.MQGMO_NO_SYNCPOINT;
-
-                readBag = new MqNativeResourceBag(_qmgr2, null, null, gmo, null);
-            }
-
-            // create new cached connection wrapper
-            final CachedConnection newConn = new CachedConnection(mqCfg, writeBag, readBag);
+            final CachedConnection newConn = new CachedConnection(mqCfg, queueManager);
             newConn.ref(); // referenced by caller
 
             // server config controlled connection pool props -- may not need this
@@ -328,7 +222,6 @@ class MqNativeResourceManager implements ApplicationListener {
                        new Object[] {newConn.name, mqCfg.getMqEndpointKey().getVersion()});
 
             return newConn;
-
         } catch ( MQException me ) {
             throw new MqNativeRuntimeException(me);
         } catch ( Throwable t ) {
@@ -336,8 +229,8 @@ class MqNativeResourceManager implements ApplicationListener {
         }
     }
 
-    private static void evict( final ConcurrentHashMap<MqEndpointKey, CachedConnection> connectionHolder,
-                               final MqNativeEndpointConfig.MqEndpointKey key,
+    private static void evict( final ConcurrentHashMap<MqNativeEndpointKey, CachedConnection> connectionHolder,
+                               final MqNativeEndpointKey key,
                                final CachedConnection connection ) {
         if ( connectionHolder.remove( key, connection ) ) {
             connection.unRef(); // clear cache reference
@@ -387,14 +280,12 @@ class MqNativeResourceManager implements ApplicationListener {
         private final long createdTime = System.currentTimeMillis();
         private final AtomicLong lastAccessTime = new AtomicLong(createdTime);
 
-        private final MqNativeResourceBag writeBag; // for routing queue
-        private final MqNativeResourceBag readBag; // for reading replyTo queue
+        private final MQQueueManager queueManager;
         private final String name;
         private final int resourceVersion;
 
-        CachedConnection( final MqNativeEndpointConfig cfg, final MqNativeResourceBag writeBag, final MqNativeResourceBag readBag) {
-            this.writeBag = writeBag;
-            this.readBag = readBag;
+        CachedConnection( final MqNativeEndpointConfig cfg, final MQQueueManager queueManager ) {
+            this.queueManager = queueManager;
             this.name = cfg.getMqEndpointKey().toString();
             this.resourceVersion = cfg.getMqEndpointKey().getVersion();
         }
@@ -411,10 +302,13 @@ class MqNativeResourceManager implements ApplicationListener {
         public void unRef() {
             int references = referenceCount.decrementAndGet();
             if ( references <= 0 ) {
-                logger.log(Level.INFO, "Closing MQ connection ({0}), version {1}", new Object[] {name, resourceVersion});
-                writeBag.close();
-                if (readBag != null)
-                    readBag.close();
+                logger.log(Level.INFO, "Closing MQ queue manager ({0}), version {1}", new Object[] {name, resourceVersion});
+                closeQuietly( queueManager, Option.<UnaryVoidThrows<MQQueueManager, MQException>>some( new UnaryVoidThrows<MQQueueManager, MQException>() {
+                    @Override
+                    public void call( final MQQueueManager mqQueueManager ) throws MQException {
+                        mqQueueManager.disconnect();
+                    }
+                } ) );
             }
         }
     }
@@ -445,10 +339,10 @@ class MqNativeResourceManager implements ApplicationListener {
     private static final class CacheCleanupTask extends TimerTask {
         private static final Logger taskLogger = Logger.getLogger(CacheCleanupTask.class.getName());
 
-        private final ConcurrentHashMap<MqNativeEndpointConfig.MqEndpointKey, CachedConnection> connectionHolder;
+        private final ConcurrentHashMap<MqNativeEndpointKey, CachedConnection> connectionHolder;
         private final AtomicReference<MqResourceManagerConfig> cacheConfigReference;
 
-        private CacheCleanupTask( final ConcurrentHashMap<MqNativeEndpointConfig.MqEndpointKey, CachedConnection> connectionHolder,
+        private CacheCleanupTask( final ConcurrentHashMap<MqNativeEndpointKey, CachedConnection> connectionHolder,
                                   final AtomicReference<MqResourceManagerConfig> cacheConfigReference ) {
             this.connectionHolder = connectionHolder;
             this.cacheConfigReference = cacheConfigReference;
@@ -459,18 +353,18 @@ class MqNativeResourceManager implements ApplicationListener {
             final MqResourceManagerConfig cacheConfig = cacheConfigReference.get();
             final long timeNow = System.currentTimeMillis();
             final int overSize = connectionHolder.size() - cacheConfig.maximumSize;
-            final Set<Entry<MqEndpointKey,CachedConnection>> evictionCandidates =
-                new TreeSet<Entry<MqEndpointKey,CachedConnection>>(
-                    new Comparator<Entry<MqEndpointKey,CachedConnection>>(){
+            final Set<Entry<MqNativeEndpointKey,CachedConnection>> evictionCandidates =
+                new TreeSet<Entry<MqNativeEndpointKey,CachedConnection>>(
+                    new Comparator<Entry<MqNativeEndpointKey,CachedConnection>>(){
                         @Override
-                        public int compare( final Map.Entry<MqNativeEndpointConfig.MqEndpointKey, CachedConnection> e1,
-                                            final Map.Entry<MqNativeEndpointConfig.MqEndpointKey, CachedConnection> e2 ) {
+                        public int compare( final Map.Entry<MqNativeEndpointKey, CachedConnection> e1,
+                                            final Map.Entry<MqNativeEndpointKey, CachedConnection> e2 ) {
                             return Long.valueOf( e1.getValue().createdTime ).compareTo( e2.getValue().createdTime );
                         }
                     }
                 );
 
-            for ( final Map.Entry<MqNativeEndpointConfig.MqEndpointKey,CachedConnection> cachedConnectionEntry : connectionHolder.entrySet() ) {
+            for ( final Map.Entry<MqNativeEndpointKey,CachedConnection> cachedConnectionEntry : connectionHolder.entrySet() ) {
                 if ( (timeNow-cachedConnectionEntry.getValue().createdTime) > cacheConfig.maximumAge && cacheConfig.maximumAge > 0) {
                     evict( connectionHolder, cachedConnectionEntry.getKey(), cachedConnectionEntry.getValue() );
                     // debug only - to be removed
@@ -489,9 +383,9 @@ class MqNativeResourceManager implements ApplicationListener {
             }
 
             // evict oldest first to reduce cache size
-            final Iterator<Entry<MqEndpointKey,CachedConnection>> evictionIterator = evictionCandidates.iterator();
+            final Iterator<Entry<MqNativeEndpointKey,CachedConnection>> evictionIterator = evictionCandidates.iterator();
             for ( int i=0; i<overSize && evictionIterator.hasNext(); i++ ) {
-                final Map.Entry<MqNativeEndpointConfig.MqEndpointKey,CachedConnection> cachedConnectionEntry =
+                final Map.Entry<MqNativeEndpointKey,CachedConnection> cachedConnectionEntry =
                         evictionIterator.next();
                 evict( connectionHolder, cachedConnectionEntry.getKey(), cachedConnectionEntry.getValue() );
             }

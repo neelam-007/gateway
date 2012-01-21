@@ -30,8 +30,8 @@ class MqNativeEndpointConfig {
     private final boolean dynamic;
     private final String queueName;
     private final String replyToQueueName;
-    private final MqEndpointKey key;
-    private final boolean correlateWithMessageId;
+    private final MqNativeEndpointKey key;
+    private final boolean copyCorrelationId;
     private final String queueManagerName;
     private final MqNativeReplyType replyType;
     private final String replyToModelQueueName;
@@ -48,10 +48,8 @@ class MqNativeEndpointConfig {
         this.dynamic = connector.getBooleanProperty( PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_IS_TEMPLATE_QUEUE );
         this.queueName = connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME );
         this.replyToQueueName = connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME );
-        this.key = dynamic ?
-                new MqEndpointKey( connector.getOid(), connector.getVersion(), queueName, replyToQueueName ):
-                new MqEndpointKey( connector.getOid(), connector.getVersion() );
-        this.correlateWithMessageId = connector.getBooleanProperty( PROPERTIES_KEY_MQ_NATIVE_IS_COPY_CORRELATION_ID_FROM_REQUEST );
+        this.key = new MqNativeEndpointKey( connector.getOid(), connector.getVersion() );
+        this.copyCorrelationId = connector.getBooleanProperty( PROPERTIES_KEY_MQ_NATIVE_IS_COPY_CORRELATION_ID_FROM_REQUEST );
         this.queueManagerName = connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME );
         this.replyType = connector.getEnumProperty( PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_NONE, MqNativeReplyType.class );
         this.replyToModelQueueName = connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_TEMPORARY_QUEUE_NAME_PATTERN );
@@ -63,7 +61,7 @@ class MqNativeEndpointConfig {
         return dynamic;
     }
 
-    MqEndpointKey getMqEndpointKey() {
+    MqNativeEndpointKey getMqEndpointKey() {
         return key;
     }
 
@@ -71,8 +69,8 @@ class MqNativeEndpointConfig {
         return queueManagerName;
     }
 
-    boolean isCorrelateWithMessageId() {
-        return correlateWithMessageId;
+    boolean isCopyCorrelationId() {
+        return copyCorrelationId;
     }
 
     String getReplyToQueueName() {
@@ -119,25 +117,20 @@ class MqNativeEndpointConfig {
         }
     }
 
-    static final class MqEndpointKey {
+    /**
+     * Represents all endpoint properties necessary to identify an appropriate MQQueueManager.
+     *
+     * <p>If any dynamic properties effect the lookup of an MQQueueManager then
+     * these properties must be added to the key.</p>
+     */
+    static final class MqNativeEndpointKey {
         private final long id;
         private final int version;
-        private final String queueName;
-        private final String replyToQueue;
 
-        MqEndpointKey( final long id,
-                       final int version ) {
-            this( id, version, null, null );
-        }
-
-        MqEndpointKey( final long id,
-                       final int version,
-                       @Nullable final String queueName,
-                       @Nullable final String replyToQueue ) {
+        MqNativeEndpointKey( final long id,
+                             final int version ) {
             this.id = id;
             this.version = version;
-            this.queueName = queueName;
-            this.replyToQueue = replyToQueue;
         }
 
         long getId() {
@@ -154,13 +147,10 @@ class MqNativeEndpointConfig {
             if ( this == o ) return true;
             if ( o == null || getClass() != o.getClass() ) return false;
 
-            final MqEndpointKey that = (MqEndpointKey) o;
+            final MqNativeEndpointKey that = (MqNativeEndpointKey) o;
 
             if ( id != that.id ) return false;
             if ( version != that.version ) return false;
-            if ( queueName != null ? !queueName.equals( that.queueName ) : that.queueName != null ) return false;
-            if ( replyToQueue != null ? !replyToQueue.equals( that.replyToQueue ) : that.replyToQueue != null )
-                return false;
 
             return true;
         }
@@ -169,8 +159,6 @@ class MqNativeEndpointConfig {
         public int hashCode() {
             int result = (int) (id ^ (id >>> 32));
             result = 31 * result + version;
-            result = 31 * result + (queueName != null ? queueName.hashCode() : 0);
-            result = 31 * result + (replyToQueue != null ? replyToQueue.hashCode() : 0);
             return result;
         }
 
@@ -184,21 +172,10 @@ class MqNativeEndpointConfig {
         public String toString() {
             StringBuilder sb = new StringBuilder();
 
-            sb.append("MqEndpointKey[");
+            sb.append("MqNativeEndpointKey[");
             sb.append(getId());
             sb.append(',');
             sb.append(getVersion());
-
-            /*
-             * For dynamic endpoints, append the full info
-             */
-            if ( queueName != null ) {
-                sb.append("-");
-                sb.append(queueName);
-                sb.append(',');
-                sb.append(replyToQueue);
-            }
-
             sb.append("]");
 
             return sb.toString();
