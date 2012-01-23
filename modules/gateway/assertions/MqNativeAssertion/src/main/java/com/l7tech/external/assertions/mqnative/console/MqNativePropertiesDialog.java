@@ -255,12 +255,8 @@ public class MqNativePropertiesDialog extends JDialog {
     //The 'flags' that are commented out below are related to access control for user permissions to create and edit
     //the items in this dialog.  This dialog was originally mostly from JMS impl, this feature should be implemented
     //for MQ native as well.  Time permitting we will handle it.
-    private MqNativePropertiesDialog(Frame parent) {
-        super(parent, true);
-    }
-
-    private MqNativePropertiesDialog(Dialog parent) {
-        super(parent, true);
+    private MqNativePropertiesDialog(Window parent) {
+        super(parent, DEFAULT_MODALITY_TYPE);
     }
 
     /**
@@ -276,13 +272,7 @@ public class MqNativePropertiesDialog extends JDialog {
      * @return the new instance
      */
     public static MqNativePropertiesDialog createInstance(Window parent, @Nullable SsgActiveConnector mqConnection, boolean outboundOnly) {
-        MqNativePropertiesDialog that;
-        if (parent instanceof Frame)
-            that = new MqNativePropertiesDialog((Frame)parent);
-        else if (parent instanceof Dialog)
-            that = new MqNativePropertiesDialog((Dialog)parent);
-        else
-            throw new IllegalArgumentException("parent must be derived from either Frame or Dialog");
+        final MqNativePropertiesDialog that = new MqNativePropertiesDialog(parent);
         final SecurityProvider provider = Registry.getDefault().getSecurityProvider();
         if (provider == null) {
             throw new IllegalStateException("Could not instantiate security provider");
@@ -734,16 +724,6 @@ public class MqNativePropertiesDialog extends JDialog {
 
         specifyContentTypeFromHeader.setEnabled(specifyEnabled);
         getContentTypeFromProperty.setEnabled(specifyEnabled && specifyContentTypeFromHeader.isSelected());
-    }
-
-    private MqNativeExtraPropertiesPanel getExtraPropertiesPanel(String extraPropertiesClass, Properties extraProperties) {
-        try {
-            return extraPropertiesClass == null ? null : (MqNativeExtraPropertiesPanel)
-                Class.forName(extraPropertiesClass).getDeclaredConstructor(Properties.class).newInstance(extraProperties);
-        } catch (Exception e) {
-            DialogDisplayer.showMessageDialog(this, "Error getting default settings for provider: " + extraPropertiesClass, "MQ Native Extra Properties Error", JOptionPane.ERROR_MESSAGE, null);
-        }
-        return null;
     }
 
     private RunOnChangeListener enableDisableListener = new RunOnChangeListener() {

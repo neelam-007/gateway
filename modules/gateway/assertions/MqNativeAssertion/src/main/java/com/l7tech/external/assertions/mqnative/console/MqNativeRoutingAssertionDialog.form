@@ -57,7 +57,7 @@
             </constraints>
             <properties>
               <labelFor value="3c825"/>
-              <text value="M&amp;Q Queues:"/>
+              <text value="M&amp;Q Native Queues:"/>
             </properties>
           </component>
           <component id="20964" class="javax.swing.JButton" binding="newQueueButton">

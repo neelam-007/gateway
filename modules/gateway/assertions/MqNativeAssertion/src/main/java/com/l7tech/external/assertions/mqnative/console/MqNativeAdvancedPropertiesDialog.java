@@ -1,7 +1,8 @@
 package com.l7tech.external.assertions.mqnative.console;
 
-import com.l7tech.external.assertions.mqnative.MqNativeConstants;
+import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
 import com.l7tech.gui.util.RunOnChangeListener;
+import static com.l7tech.gui.util.Utilities.comboBoxModel;
 import com.l7tech.util.MutablePair;
 
 import javax.swing.*;
@@ -68,7 +69,7 @@ public class MqNativeAdvancedPropertiesDialog extends JDialog {
             valueTextField.setCaretPosition(0);
         } else {
             valueTextField.setText("");
-            nameComboBox.setModel(new DefaultComboBoxModel(MqNativeConstants.MQ_PROPERTIES));
+            nameComboBox.setModel(comboBoxModel(MQ_PROPERTIES));
             nameComboBox.setEnabled(true);
             nameComboBox.setEditable(true);
             ItemListener itemListener = new ItemListener() {

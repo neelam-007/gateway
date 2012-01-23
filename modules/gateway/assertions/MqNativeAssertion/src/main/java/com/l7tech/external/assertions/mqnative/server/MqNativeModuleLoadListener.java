@@ -3,8 +3,11 @@ package com.l7tech.external.assertions.mqnative.server;
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfig.PropertyRegistrationInfo;
+import static com.l7tech.server.ServerConfig.PropertyRegistrationInfo.prInfo;
 import com.l7tech.server.util.Injector;
 import com.l7tech.server.util.ThreadPoolBean;
+import static com.l7tech.util.CollectionUtils.list;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationContext;
 
@@ -22,6 +25,20 @@ public class MqNativeModuleLoadListener {
 
     // Manages all inbound native MQ listener processes
     private static MqNativeModule mqNativeListenerModule;
+
+    /**
+     * This is a complete list of cluster-wide properties used by the MQNative module.
+     */
+    private static final List<PropertyRegistrationInfo> MODULE_CLUSTER_PROPERTIES = list(
+            prInfo( MQ_MESSAGE_MAX_BYTES_PROPERTY, MQ_MESSAGE_MAX_BYTES_UI_PROPERTY, MQ_MESSAGE_MAX_BYTES_DESC, "2621440" ),
+            prInfo( LISTENER_THREAD_LIMIT_PROPERTY, LISTENER_THREAD_LIMIT_UI_PROPERTY, LISTENER_THREAD_LIMIT_DESC, "25" ),
+            prInfo( MQ_RESPONSE_TIMEOUT_PROPERTY, MQ_RESPONSE_TIMEOUT_UI_PROPERTY, MQ_RESPONSE_TIMEOUT_DESC, "10000" ),
+            prInfo( MQ_CONNECT_ERROR_SLEEP_PROPERTY, MQ_CONNECT_ERROR_SLEEP_UI_PROPERTY, MQ_CONNECT_ERROR_SLEEP_DESC, "10s" ),
+            // connection cache properties
+            prInfo( MQ_CONNECTION_CACHE_MAX_AGE_PROPERTY, MQ_CONNECTION_CACHE_MAX_AGE_UI_PROPERTY, MQ_CONNECTION_CACHE_MAX_AGE_DESC, "10m" ),
+            prInfo( MQ_CONNECTION_CACHE_MAX_IDLE_PROPERTY, MQ_CONNECTION_CACHE_MAX_IDLE_UI_PROPERTY, MQ_CONNECTION_CACHE_MAX_IDLE_DESC, "5m" ),
+            prInfo( MQ_CONNECTION_CACHE_MAX_SIZE_PROPERTY, MQ_CONNECTION_CACHE_MAX_SIZE_UI_PROPERTY, MQ_CONNECTION_CACHE_MAX_SIZE_DESC, "100" )
+    );
 
     @SuppressWarnings({"UnusedDeclaration"})
     public static synchronized void onModuleLoaded(final ApplicationContext context) {
@@ -80,16 +97,14 @@ public class MqNativeModuleLoadListener {
      * @param config ServerConfig instance
      */
     private static void initializeModuleClusterProperties(final ServerConfig config) {
-
-        Map<String, String> names = config.getClusterPropertyNames();
-
-        List<String[]> toAdd = new ArrayList<String[]>();
-        for (String[] tuple : MODULE_CLUSTER_PROPERTIES) {
-            if (!names.containsKey(tuple[0])) {
+        final Map<String, String> names = config.getClusterPropertyNames();
+        final List<PropertyRegistrationInfo> toAdd = new ArrayList<PropertyRegistrationInfo>();
+        for ( final PropertyRegistrationInfo info : MODULE_CLUSTER_PROPERTIES) {
+            if (!names.containsKey( info.getName() )) {
                 // create it
-                toAdd.add(tuple);
+                toAdd.add(info);
             }
         }
-        config.registerServerConfigProperties(toAdd.toArray(new String[toAdd.size()][]));
+        config.registerServerConfigProperties( toAdd );
     }
 }

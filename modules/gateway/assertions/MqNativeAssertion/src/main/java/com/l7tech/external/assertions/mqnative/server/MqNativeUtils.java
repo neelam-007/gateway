@@ -316,49 +316,44 @@ class MqNativeUtils {
                                                @NotNull final Properties properties ) throws MqNativeConfigException {
         for( final String name : properties.stringPropertyNames() ) {
             final String value = properties.getProperty(name);
-            try{
-                if( MQ_PROPERTY_APPDATA.equals( name ) ) {
-                    mqMessage.applicationIdData = value;
-                } else if( MQ_PROPERTY_APPORIGIN.equals( name ) ) {
-                    mqMessage.applicationOriginData = value;
-                } else if( MQ_PROPERTY_CHARSET.equals( name ) ) {
-                    mqMessage.characterSet = asInt( name, value );
-                } else if( MQ_PROPERTY_ENCODING.equals( name ) ){
-                    mqMessage.encoding = asInt( name, value );
-                } else if( MQ_PROPERTY_EXPIRY.equals( name ) ) {
-                    mqMessage.expiry = asInt( name, value );
-                } else if( MQ_PROPERTY_FEEDBACK.equals( name ) ) {
-                    mqMessage.feedback = asInt( name, value );
-                } else if( MQ_PROPERTY_FORMAT.equals( name ) ) {
-                    mqMessage.format = value;
-                } else if( MQ_PROPERTY_GROUPID.equals( name ) ) {
-                    mqMessage.groupId = asBytes( value );
-                } else if( MQ_PROPERTY_MSG_FLAGS.equals( name ) ) {
-                    mqMessage.messageFlags = asInt( name, value );
-                } else if( MQ_PROPERTY_MSG_SEQNUM.equals( name ) ){
-                    mqMessage.messageSequenceNumber = asInt( name, value );
-                } else if( MQ_PROPERTY_MSG_TYPE.equals( name ) ){
-                    mqMessage.messageType = asInt( name, value );
-                } else if( MQ_PROPERTY_OFFSET.equals( name ) ) {
-                    mqMessage.offset = asInt( name, value );
-                } else if( MQ_PROPERTY_PERSISTENCE.equals( name ) ) {
-                    mqMessage.persistence = asInt( name, value );
-                } else if( MQ_PROPERTY_PRIORITY.equals( name ) ){
-                    mqMessage.priority = asInt( name, value );
-                } else if( MQ_PROPERTY_APPNAME.equals( name ) ){
-                    mqMessage.putApplicationName = value;
-                } else if( MQ_PROPERTY_APPTYPE.equals( name ) ) {
-                    mqMessage.putApplicationType = asInt( name, value );
-                } else if( MQ_PROPERTY_REPORT.equals( name ) ){
-                    mqMessage.report = asInt( name, value );
-                } else if( MQ_PROPERTY_USERID.equals( name ) ) {
-                    mqMessage.userId = value;
-                }
-            } catch(IllegalArgumentException ex) {
-                String message = "Unable to set property:"+name+" value:"+value;
-                logger.warning(message);
-                throw new MqNativeConfigException(message,ex);
-            }
+
+            if( MQ_PROPERTY_APPDATA.equals( name ) ) {
+                mqMessage.applicationIdData = value;
+            } else if( MQ_PROPERTY_APPORIGIN.equals( name ) ) {
+                mqMessage.applicationOriginData = value;
+            } else if( MQ_PROPERTY_CHARSET.equals( name ) ) {
+                mqMessage.characterSet = asInt( name, value );
+            } else if( MQ_PROPERTY_ENCODING.equals( name ) ){
+                mqMessage.encoding = asInt( name, value );
+            } else if( MQ_PROPERTY_EXPIRY.equals( name ) ) {
+                mqMessage.expiry = asInt( name, value );
+            } else if( MQ_PROPERTY_FEEDBACK.equals( name ) ) {
+                mqMessage.feedback = asInt( name, value );
+            } else if( MQ_PROPERTY_FORMAT.equals( name ) ) {
+                mqMessage.format = value;
+            } else if( MQ_PROPERTY_GROUPID.equals( name ) ) {
+                mqMessage.groupId = asBytes( value );
+            } else if( MQ_PROPERTY_MSG_FLAGS.equals( name ) ) {
+                mqMessage.messageFlags = asInt( name, value );
+            } else if( MQ_PROPERTY_MSG_SEQNUM.equals( name ) ){
+                mqMessage.messageSequenceNumber = asInt( name, value );
+            } else if( MQ_PROPERTY_MSG_TYPE.equals( name ) ){
+                mqMessage.messageType = asInt( name, value );
+            } else if( MQ_PROPERTY_OFFSET.equals( name ) ) {
+                mqMessage.offset = asInt( name, value );
+            } else if( MQ_PROPERTY_PERSISTENCE.equals( name ) ) {
+                mqMessage.persistence = asInt( name, value );
+            } else if( MQ_PROPERTY_PRIORITY.equals( name ) ){
+                mqMessage.priority = asInt( name, value );
+            } else if( MQ_PROPERTY_APPNAME.equals( name ) ){
+                mqMessage.putApplicationName = value;
+            } else if( MQ_PROPERTY_APPTYPE.equals( name ) ) {
+                mqMessage.putApplicationType = asInt( name, value );
+            } else if( MQ_PROPERTY_REPORT.equals( name ) ){
+                mqMessage.report = asInt( name, value );
+            } else if( MQ_PROPERTY_USERID.equals( name ) ) {
+                mqMessage.userId = value;
+            } // else not a message property
         }
         return mqMessage;
     }

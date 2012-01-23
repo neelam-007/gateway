@@ -1,7 +1,3 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- */
-
 package com.l7tech.external.assertions.mqnative.console;
 
 import com.l7tech.console.panels.PermissionFlags;
@@ -36,7 +32,7 @@ import java.util.regex.PatternSyntaxException;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 
 /**
- * Simple modal dialog that allows management of the known WebSphere MQ queues including designation of which
+ * Simple modal dialog that allows management of the known MQ Native queues including designation of which
  * queues the Gateway shall monitor for incoming SOAP messages.
  */
 public class MqNativeQueuesWindow extends JDialog {
@@ -179,7 +175,7 @@ public class MqNativeQueuesWindow extends JDialog {
     }
 
     public MqNativeQueuesWindow(Frame owner) {
-        super(owner, "Manage WebSphere MQ Queues", true);
+        super(owner, "Manage MQ Native Queues", true);
         initialize();
     }
 
@@ -189,7 +185,7 @@ public class MqNativeQueuesWindow extends JDialog {
         Container p = getContentPane();
         p.setLayout(new GridBagLayout());
 
-        p.add(new JLabel("Known WebSphere MQ Queues:"),
+        p.add(new JLabel("Known MQ Native Queues:"),
           new GridBagConstraints(0, 0, 2, 1, 0.0, 0.0,
             GridBagConstraints.WEST,
             GridBagConstraints.NONE,
@@ -315,11 +311,11 @@ public class MqNativeQueuesWindow extends JDialog {
 
                         int result = JOptionPane.showOptionDialog(null,
                                 "<HTML>Are you sure you want to remove the " +
-                                        "registration for the WebSphere MQ Queue " +
+                                        "registration for the MQ Native Queue " +
                                         name + "?<br>" +
                                         "<center>This action cannot be undone." +
                                         "</center></html>",
-                                "Remove WebSphere MQ Queue?",
+                                "Remove MQ Native Queue?",
                                 0, JOptionPane.WARNING_MESSAGE,
                                 null, options, options[1]);
                         if (result == 0) {
@@ -502,7 +498,7 @@ public class MqNativeQueuesWindow extends JDialog {
             DialogDisplayer.showMessageDialog(
                 MqNativeQueuesWindow.this,
                 "Invalid syntax for the regular expression, \"" + filterString + "\"",
-                "WebSphere MQ Queues Filtering",
+                "MQ Native Queues Filtering",
                 JOptionPane.WARNING_MESSAGE,
                 null);
         }

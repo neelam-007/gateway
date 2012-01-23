@@ -7,8 +7,13 @@ import com.l7tech.util.*;
 import com.l7tech.util.CollectionUtils.MapBuilder;
 import com.l7tech.util.ConfigFactory.ConfigProviderSpi;
 import com.l7tech.util.ConfigFactory.DefaultConfig;
+import com.l7tech.util.Functions.Unary;
+import static com.l7tech.util.Functions.map;
 import static com.l7tech.util.Option.optional;
 import com.l7tech.util.ValidationUtils.Validator;
+import static java.util.Arrays.asList;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedOperation;
 import org.springframework.jmx.export.annotation.ManagedResource;
@@ -42,28 +47,42 @@ public class ServerConfig extends DefaultConfig implements ClusterPropertyListen
     }
 
     /**
+     * Register a group of new serverConfig properties dynamically.
+     *
+     * The database will be checked for up-to-date values afterward, as long as
+     * the cluster property manager is ready.
+     *
+     * @param registrationInfos The properties to register
+     */
+    public void registerServerConfigProperties( @NotNull final Iterable<PropertyRegistrationInfo> registrationInfos ) {
+        for ( final PropertyRegistrationInfo info : registrationInfos ) {
+            propLock.writeLock().lock();
+            try {
+                if (info.defaultValue != null) _properties.setProperty(info.name + SUFFIX_DEFAULT, info.defaultValue);
+                if (info.description != null) _properties.setProperty(info.name + SUFFIX_DESC, info.description);
+                if (info.clusterPropName != null) _properties.setProperty(info.name + SUFFIX_CLUSTER_KEY, info.clusterPropName);
+            } finally {
+                propLock.writeLock().unlock();
+            }
+        }
+    }
+
+    /**
      * Register a group of new serverConfig properties dynamically.  The database will be checked for up-to-date
      * values afterward, as long as the cluster property manager is ready.
      *
      * @param newProps  an array of 4-tuples, each of which is
      *                 [serverConfigPropertyName, clusterPropertyName, description, defaultValue].
+     * @deprecated Use the method taking PropertyRegistrationInfo instead
      */
+    @Deprecated
     public void registerServerConfigProperties(String[][] newProps) {
-        for (String[] tuple : newProps) {
-            String propName = tuple[0];
-            String clusterPropName = tuple[1];
-            String description = tuple[2];
-            String defaultValue = tuple[3];
-
-            propLock.writeLock().lock();
-            try {
-                if (defaultValue != null) _properties.setProperty(propName + SUFFIX_DEFAULT, defaultValue);
-                if (description != null) _properties.setProperty(propName + SUFFIX_DESC, description);
-                if (clusterPropName != null) _properties.setProperty(propName + SUFFIX_CLUSTER_KEY, clusterPropName);
-            } finally {
-                propLock.writeLock().unlock();
+        registerServerConfigProperties( map( asList( newProps ), new Unary<PropertyRegistrationInfo,String[]>(){
+            @Override
+            public PropertyRegistrationInfo call( final String[] tuple ) {
+                return new PropertyRegistrationInfo( tuple[0], tuple[1], tuple[2], tuple[3] );
             }
-        }
+        } ) );
     }
 
     public void setPropertyChangeListener(final PropertyChangeListener propertyChangeListener) {
@@ -410,6 +429,38 @@ public class ServerConfig extends DefaultConfig implements ClusterPropertyListen
         notifyConfigPropertyChanged( propName );
 
         return true;
+    }
+
+    /**
+     * Immutable bean for server config property registration.
+     */
+    public static final class PropertyRegistrationInfo {
+        @NotNull  private final String name;
+        @Nullable private final String clusterPropName;
+        @Nullable private final String description;
+        @Nullable private final String defaultValue;
+
+        public PropertyRegistrationInfo( @NotNull  final String name,
+                                         @Nullable final String clusterPropName,
+                                         @Nullable final String description,
+                                         @Nullable final String defaultValue ) {
+            this.name = name;
+            this.clusterPropName = clusterPropName;
+            this.description = description;
+            this.defaultValue = defaultValue;
+        }
+
+        public static PropertyRegistrationInfo prInfo( @NotNull  final String propName,
+                                                       @Nullable final String clusterPropName,
+                                                       @Nullable final String description,
+                                                       @Nullable final String defaultValue ) {
+            return new PropertyRegistrationInfo( propName, clusterPropName, description, defaultValue );
+        }
+
+        @NotNull
+        public String getName() {
+            return name;
+        }
     }
 
     @ManagedResource(description="Server config", objectName="l7tech:type=ServerConfig")

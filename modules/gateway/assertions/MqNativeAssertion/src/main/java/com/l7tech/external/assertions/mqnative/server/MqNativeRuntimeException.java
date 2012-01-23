@@ -3,7 +3,7 @@ package com.l7tech.external.assertions.mqnative.server;
 /**
  *
  */
-public class MqNativeRuntimeException extends RuntimeException {
+class MqNativeRuntimeException extends RuntimeException {
 
     public MqNativeRuntimeException( final String message ) {
         super( message );
