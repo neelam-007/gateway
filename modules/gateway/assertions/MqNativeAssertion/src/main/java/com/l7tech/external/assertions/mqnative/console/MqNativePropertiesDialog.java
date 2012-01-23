@@ -10,7 +10,6 @@ import com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType;
 import com.l7tech.external.assertions.mqnative.MqNativeAdmin;
 import com.l7tech.external.assertions.mqnative.MqNativeMessageFormatType;
 import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
-import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
@@ -31,7 +30,6 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.plaf.basic.BasicComboBoxRenderer;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -353,27 +351,7 @@ public class MqNativePropertiesDialog extends JDialog {
         queueNameTextBox.getDocument().addDocumentListener( enableDisableListener );
 
         securePasswordComboBox.setRenderer(TextListCellRenderer.<SecurePasswordComboBox>basicComboBoxRenderer());
-        securePasswordComboBox.setRenderer(new BasicComboBoxRenderer() {
-            @Override
-            public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                if (isSelected) {
-                    setBackground(list.getSelectionBackground());
-                    setForeground(list.getSelectionForeground());
 
-                    if (index >= 0) {
-                        String tooltips = ((SecurePassword)value).getName();
-                        list.setToolTipText(tooltips);
-                    }
-                } else {
-                    setBackground(list.getBackground());
-                    setForeground(list.getForeground());
-                }
-                setFont(list.getFont());
-                setText(value.toString());
-
-                return this;
-            }
-        });
         managePasswordsButton.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
