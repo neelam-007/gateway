@@ -15,6 +15,7 @@ import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.booleanProperty;
 import com.l7tech.gateway.common.transport.TransportAdmin;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.InputValidator;
@@ -147,22 +148,23 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         renderer.setRenderClipped( true );
         renderer.setSmartTooltips( true );
         queueComboBox.setRenderer( renderer );
-//        newQueueButton.addActionListener(new ActionListener() {
-//            @Override
-//            public void actionPerformed(ActionEvent e) {
-//                final MqNativeConnectorPropertiesDialog mqQueuePropertiesDialog = MqNativeConnectorPropertiesDialog.createInstance(MqNativeRoutingAssertionDialog.this, null, false);
-//                mqQueuePropertiesDialog.pack();
-//                Utilities.centerOnScreen(mqQueuePropertiesDialog);
-//                DialogDisplayer.display(mqQueuePropertiesDialog, new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        if (!mqQueuePropertiesDialog.isCanceled()) {
-////                                updateEndpointList(mqQueuePropertiesDialog.getEndpoint());
-//                        }
-//                    }
-//                });
-//            }
-//        });
+        newQueueButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                final MqNativePropertiesDialog mqQueuePropertiesDialog = MqNativePropertiesDialog.createInstance(MqNativeRoutingAssertionDialog.this, null, false);
+                mqQueuePropertiesDialog.pack();
+                Utilities.centerOnScreen(mqQueuePropertiesDialog);
+                DialogDisplayer.display(mqQueuePropertiesDialog, new Runnable() {
+                    @Override
+                    public void run() {
+                        if (! mqQueuePropertiesDialog.isCanceled()) {
+                            queueComboBox.setModel(comboBoxModel(loadQueueItems()));
+                            queueComboBox.getModel().setSelectedItem(mqQueuePropertiesDialog.getTheMqResource());
+                        }
+                    }
+                });
+            }
+        });
 
         InputValidator inputValidator = new InputValidator(this, assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString());
         inputValidator.ensureComboBoxSelection( "MQ Destination", queueComboBox );
@@ -363,6 +365,8 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         return emptyList();
     }
 
+    // This method will get a list of queue from the cache, so the queue list is probably stale.
+    // To get a fresh list of queues, the method loadQueueItems should be used instead.
     private Collection<SsgActiveConnector> getQueueItems() {
         if (queueItems == null)
             queueItems = loadQueueItems();
