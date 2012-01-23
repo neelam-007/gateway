@@ -1,9 +1,8 @@
-/**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.gateway.common.service;
 
 import com.l7tech.objectmodel.Entity;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -14,7 +13,7 @@ public class ServiceTemplate implements Entity, Serializable, Comparable<Service
 
     final private String name;
 
-    final private String serviceDescriptorXml;
+    @Nullable final private String serviceDescriptorXml;
 
     /**
      * The desired default URL prefix for services published from this template, usually appended after "/ssg/".
@@ -32,17 +31,51 @@ public class ServiceTemplate implements Entity, Serializable, Comparable<Service
      */
     final private ServiceType type;
 
-    final private List<ServiceDocument> serviceDocuments;
+    @Nullable final private List<ServiceDocument> serviceDocuments;
 
     /**
      * The subtype of service for which this is a template, if {@link #type} == {@link com.l7tech.gateway.common.service.ServiceType#OTHER_INTERNAL_SERVICE}.
      */
-    final private Map<String,String> policyTags;
-    final private String serviceDescriptorUrl;
+    @Nullable final private Map<String,String> policyTags;
+    @Nullable final private String serviceDescriptorUrl;
 
     final private boolean isSoap;
 
-    public ServiceTemplate(String name, String defaultUriPrefix, String serviceDescriptorXml, String serviceDescriptorUrl, String defaultPolicyXml, List<ServiceDocument> serviceDocuments, ServiceType type, Map<String, String> tags, boolean soap) {
+    /**
+     * Create a Non SOAP service template.
+     */
+    public ServiceTemplate( @NotNull  final String name,
+                            @NotNull  final String defaultUriPrefix,
+                            @NotNull  final String defaultPolicyXml,
+                            @NotNull  final ServiceType type,
+                            @Nullable final Map<String, String> tags ) {
+        this( name, defaultUriPrefix, null, null, defaultPolicyXml, null, type, tags, false );
+    }
+
+    /**
+     * Create a SOAP service template.
+     */
+    public ServiceTemplate( @NotNull  final String name,
+                            @NotNull  final String defaultUriPrefix,
+                            @NotNull  final String serviceDescriptorXml,
+                            @NotNull  final String serviceDescriptorUrl,
+                            @NotNull  final String defaultPolicyXml,
+                            @NotNull  final List<ServiceDocument> serviceDocuments,
+                            @NotNull  final ServiceType type,
+                            @Nullable final Map<String, String> tags ) {
+        this( name, defaultUriPrefix, serviceDescriptorXml, serviceDescriptorUrl, defaultPolicyXml, serviceDocuments,
+                type, tags, true );
+    }
+
+    private ServiceTemplate( @NotNull  final String name,
+                             @NotNull  final String defaultUriPrefix,
+                             @Nullable final String serviceDescriptorXml,
+                             @Nullable final String serviceDescriptorUrl,
+                             @NotNull  final String defaultPolicyXml,
+                             @Nullable final List<ServiceDocument> serviceDocuments,
+                             @NotNull  final ServiceType type,
+                             @Nullable final Map<String, String> tags,
+                             final boolean soap ) {
         this.name = name;
         this.defaultUriPrefix = defaultUriPrefix;
         this.serviceDescriptorXml = serviceDescriptorXml;
@@ -52,6 +85,25 @@ public class ServiceTemplate implements Entity, Serializable, Comparable<Service
         this.type = type;
         this.policyTags = tags;
         this.isSoap = soap;
+    }
+
+    /**
+     * Create a customized copy of this service template.
+     *
+     * @param uri The URI prefix to use.
+     * @return The new customized instance
+     */
+    public ServiceTemplate customize( final String uri ) {
+        return new ServiceTemplate(
+                getName(),
+                uri,
+                getServiceDescriptorXml(),
+                getServiceDescriptorUrl(),
+                getDefaultPolicyXml(),
+                getServiceDocuments(),
+                getType(),
+                getPolicyTags(),
+                isSoap());
     }
 
     public String getName() {
@@ -66,6 +118,10 @@ public class ServiceTemplate implements Entity, Serializable, Comparable<Service
         return defaultPolicyXml;
     }
 
+    /**
+     * Null for a Non SOAP service
+     */
+    @Nullable
     public List<ServiceDocument> getServiceDocuments() {
         return serviceDocuments;
     }
@@ -74,6 +130,7 @@ public class ServiceTemplate implements Entity, Serializable, Comparable<Service
         return type;
     }
 
+    @Nullable
     public Map<String, String> getPolicyTags() {
         return policyTags;
     }
@@ -86,10 +143,18 @@ public class ServiceTemplate implements Entity, Serializable, Comparable<Service
         return this.getName();
     }
 
+    /**
+     * Null for a Non SOAP service
+     */
+    @Nullable
     public String getServiceDescriptorXml() {
         return serviceDescriptorXml;
     }
 
+    /**
+     * Null for a Non SOAP service
+     */
+    @Nullable
     public String getServiceDescriptorUrl() {
         return serviceDescriptorUrl;
     }

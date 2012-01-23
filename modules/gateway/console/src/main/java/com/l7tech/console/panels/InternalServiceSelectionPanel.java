@@ -170,16 +170,7 @@ public class InternalServiceSelectionPanel extends WizardStepPanel<PublishIntern
             serviceUriText = "/"+serviceUriText;
         }
         
-        ServiceTemplate newOne = new ServiceTemplate(
-                fromList.getName(),
-                serviceUriText,
-                fromList.getServiceDescriptorXml(),
-                fromList.getServiceDescriptorUrl(),
-                fromList.getDefaultPolicyXml(),
-                fromList.getServiceDocuments(),
-                fromList.getType(),
-                fromList.getPolicyTags(),
-                fromList.isSoap());
+        ServiceTemplate newOne = fromList.customize( serviceUriText );
 
         serviceTemplateHolder.setSelectedTemplate(newOne);
     }

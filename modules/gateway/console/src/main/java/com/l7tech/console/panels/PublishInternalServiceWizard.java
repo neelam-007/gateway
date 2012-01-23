@@ -22,8 +22,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.MalformedURLException;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.logging.Level;
@@ -116,7 +114,7 @@ public class PublishInternalServiceWizard extends Wizard<PublishInternalServiceW
             });
         }
         else {
-            saveNonSoapServiceWithResolutionCheck(parent, service, toSave.getServiceDocuments());
+            saveNonSoapServiceWithResolutionCheck(parent, service);
         }
     }
 
@@ -124,9 +122,8 @@ public class PublishInternalServiceWizard extends Wizard<PublishInternalServiceW
      * performs service URI resolution check and publishes the service
      * @param parent The parent for any dialogs (may be null)
      * @param service  The service to be saved (required)
-     * @param serviceDocuments (may not be null)
      */
-    private void saveNonSoapServiceWithResolutionCheck(final Frame parent, final PublishedService service, final Collection<ServiceDocument> serviceDocuments) {
+    private void saveNonSoapServiceWithResolutionCheck(final Frame parent, final PublishedService service) {
         try {
             // set supported http methods
             service.setHttpMethods(EnumSet.of(HttpMethod.POST, HttpMethod.GET, HttpMethod.PUT, HttpMethod.DELETE));
@@ -135,9 +132,7 @@ public class PublishInternalServiceWizard extends Wizard<PublishInternalServiceW
                 @Override
                 public void run() {
                     try {
-                        //When the rest service is published, the service documents may be null so create an empty list
-                        Collection<ServiceDocument> docs = null == serviceDocuments ? Collections.<ServiceDocument>emptyList() : serviceDocuments;
-                        long oid = Registry.getDefault().getServiceManager().savePublishedServiceWithDocuments(service, docs);
+                        long oid = Registry.getDefault().getServiceManager().savePublishedService(service);
                         Registry.getDefault().getSecurityProvider().refreshPermissionCache();
                         service.setOid(oid);
                         PublishInternalServiceWizard.this.notify(new ServiceHeader(service));
@@ -162,7 +157,7 @@ public class PublishInternalServiceWizard extends Wizard<PublishInternalServiceW
                                 @Override
                                 public void run() {
                                     if (dlg.wasSubjectAffected()) {
-                                        saveNonSoapServiceWithResolutionCheck(parent, service, serviceDocuments);
+                                        saveNonSoapServiceWithResolutionCheck(parent, service);
                                     } else {
                                         saver.run();
                                     }
