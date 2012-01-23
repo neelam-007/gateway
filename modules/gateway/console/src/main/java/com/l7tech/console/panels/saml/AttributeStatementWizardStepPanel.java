@@ -8,6 +8,7 @@ import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.gui.util.PauseListenerAdapter;
 import com.l7tech.gui.util.TextComponentPauseListenerManager;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlPolicyAssertion;
@@ -19,6 +20,7 @@ import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumn;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -182,6 +184,16 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
         attributesTableModel.setRowCount(0);
 
         attributesTableModel.fireTableDataChanged();
+
+        // ensure all columns headings can be seen - particularly 'Missing When Empty'.
+        final Enumeration<TableColumn> allColumns = attributeTable.getColumnModel().getColumns();
+        final JLabel test = new JLabel("test");
+        while (allColumns.hasMoreElements()) {
+            final TableColumn tableColumn = allColumns.nextElement();
+            final FontMetrics fontMetrics = test.getFontMetrics(test.getFont());
+            tableColumn.setMinWidth(Utilities.computeStringWidth(fontMetrics, tableColumn.getHeaderValue().toString()));
+        }
+
         SamlAttributeStatement.Attribute[] attributes = statement.getAttributes();
         for (SamlAttributeStatement.Attribute att : attributes) {
             if (issueMode) {
