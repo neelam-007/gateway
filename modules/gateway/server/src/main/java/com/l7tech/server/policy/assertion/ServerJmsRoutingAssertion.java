@@ -55,6 +55,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
 
 
     private final ApplicationContext spring;
+    private final ApplicationEventProxy applicationEventProxy;
     private final ServerConfig serverConfig;
     private final JmsEndpointManager jmsEndpointManager;
     private final JmsConnectionManager jmsConnectionManager;
@@ -69,18 +70,20 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
     private JmsConnection routedRequestConnection;
     private JmsEndpoint routedRequestEndpoint;
     private JmsEndpointConfig endpointConfig;
+    private final JmsInvalidator invalidator;
 
     public ServerJmsRoutingAssertion(JmsRoutingAssertion data, ApplicationContext spring) {
         super(data, spring);
         this.spring = spring;
+        this.applicationEventProxy = spring.getBean("applicationEventProxy", ApplicationEventProxy.class);
         this.serverConfig = spring.getBean("serverConfig", ServerConfig.class);
         this.jmsEndpointManager = (JmsEndpointManager)spring.getBean("jmsEndpointManager");
         this.jmsConnectionManager = (JmsConnectionManager)spring.getBean("jmsConnectionManager");
         this.stashManagerFactory = spring.getBean("stashManagerFactory", StashManagerFactory.class);
         this.jmsPropertyMapper = spring.getBean("jmsPropertyMapper", JmsPropertyMapper.class);
         this.jmsResourceManager = spring.getBean("jmsResourceManager", JmsResourceManager.class);
-        ApplicationEventProxy aep = spring.getBean("applicationEventProxy", ApplicationEventProxy.class);
-        aep.addApplicationListener(new JmsInvalidator(this));
+        this.invalidator = new JmsInvalidator(this);
+        applicationEventProxy.addApplicationListener(invalidator);
         SignerInfo signerInfo = null;
         try {
             DefaultKey ku = spring.getBean("defaultKey", DefaultKey.class);
@@ -912,6 +915,15 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                 }
             }
         }
+    }
+
+    /**
+     *
+     */
+    @Override
+    public void close() {
+        super.close();
+        applicationEventProxy.removeApplicationListener(invalidator);
     }
 
     /**
