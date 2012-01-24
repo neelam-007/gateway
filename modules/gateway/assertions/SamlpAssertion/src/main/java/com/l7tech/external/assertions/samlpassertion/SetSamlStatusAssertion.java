@@ -49,10 +49,10 @@ public class SetSamlStatusAssertion extends Assertion implements SetsVariables {
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
-        meta.put(AssertionMetadata.DESCRIPTION, "Set SAML Web SSO Response Status.");
+        meta.put(AssertionMetadata.DESCRIPTION, "Set a variable containing an SAML response status code.");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/check16.gif");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
-        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "SAML Web SSO Response Status Properties");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "SAML Response Status Properties");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.samlpassertion.console.SetSamlStatusPropertiesDialog");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new AssertionNodeNameFactory<SetSamlStatusAssertion>(){
             @Override
@@ -84,7 +84,7 @@ public class SetSamlStatusAssertion extends Assertion implements SetsVariables {
 
     private static final String META_INITIALIZED = SetSamlStatusAssertion.class.getName() + ".metadataInitialized";
 
-    private static final String baseName = "Set SAML Web SSO Response Status";
+    private static final String baseName = "Set SAML Response Status Code";
 
     private String variableName = "responseStatus";
     private SamlStatus samlStatus;
