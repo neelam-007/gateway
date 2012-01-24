@@ -5,9 +5,11 @@ import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import static com.l7tech.console.panels.RoutingDialogUtils.configSecurityHeaderHandling;
 import static com.l7tech.console.panels.RoutingDialogUtils.configSecurityHeaderRadioButtons;
 import static com.l7tech.console.panels.RoutingDialogUtils.tagSecurityHeaderHandlingButtons;
+import com.l7tech.console.panels.ByteLimitPanel;
 import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.console.util.Registry;
+import com.l7tech.external.assertions.mqnative.MqNativeAdmin;
 import com.l7tech.external.assertions.mqnative.MqNativeDynamicProperties;
 import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.*;
@@ -109,6 +111,8 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
     private JPanel responseTargetVariablePanel;
     private JCheckBox responsePassThroughHeadersCheckBox;
     private JCheckBox requestPassThroughHeadersCheckBox;
+    private JPanel responseByteLimitHolderPanel;
+    private ByteLimitPanel responseByteLimitPanel;
 
     private AbstractButton[] secHdrButtons = {wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, null };
     private MqNativeRoutingAssertion assertion;
@@ -226,6 +230,19 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         defaultResponseRadioButton.addActionListener(enableDisableListener);
         saveAsContextVariableRadioButton.addActionListener(enableDisableListener);
 
+        // Override message size
+        responseByteLimitPanel = new ByteLimitPanel();
+        responseByteLimitPanel.setAllowContextVars(false);
+        responseByteLimitPanel.addChangeListener(new RunOnChangeListener() {
+            @Override
+            protected void run() {
+                enableOrDisableComponents();
+            }
+        });
+
+        responseByteLimitHolderPanel.setLayout(new BorderLayout());
+        responseByteLimitHolderPanel.add(responseByteLimitPanel, BorderLayout.CENTER);
+
         getOkButton().setEnabled( !readOnly );
 
         getCancelButton().addActionListener(new ActionListener() {
@@ -243,6 +260,9 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
 
     private void enableOrDisableComponents() {
         responseTargetVariable.setEnabled( saveAsContextVariableRadioButton.isSelected() );
+
+        final boolean valid = responseByteLimitPanel.validateFields() == null;
+        getOkButton().setEnabled(valid);
     }
 
     private void populateReqMsgSrcComboBox() {
@@ -416,6 +436,8 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         } else {
             assertion.setResponseTimeout(null);
         }
+
+        assertion.setResponseSize(responseByteLimitPanel.getValue());
     }
 
     private void modelToView( final MqNativeRoutingAssertion assertion ) {
@@ -437,6 +459,12 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         requestPassThroughHeadersCheckBox.setSelected(assertion.getRequestMqNativeMessagePropertyRuleSet().isPassThroughHeaders());
         responsePassThroughHeadersCheckBox.setSelected( assertion.getResponseMqNativeMessagePropertyRuleSet().isPassThroughHeaders() );
         mqResponseTimeout.setText(assertion.getResponseTimeout()==null ? "":assertion.getResponseTimeout());
+
+        responseByteLimitPanel.setValue(assertion.getResponseSize(), getMqNativeAdmin().getDefaultMqMessageMaxBytes());
+    }
+
+    private static MqNativeAdmin getMqNativeAdmin() {
+        return Registry.getDefault().getExtensionInterface(MqNativeAdmin.class, null);
     }
 
     /**

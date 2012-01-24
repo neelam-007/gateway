@@ -425,16 +425,16 @@ public class MqNativePropertiesDialog extends JDialog {
 
         byteLimitPanel = new ByteLimitPanel();
         byteLimitPanel.setAllowContextVars(false);
-        byteLimitHolderPanel.setLayout(new BorderLayout());
-        byteLimitHolderPanel.add(byteLimitPanel, BorderLayout.CENTER);
-
-        byteLimitPanel.setAllowContextVars(false);
         byteLimitPanel.addChangeListener(new RunOnChangeListener() {
             @Override
             protected void run() {
                 enableOrDisableComponents();
             }
         });
+
+        byteLimitHolderPanel.setLayout(new BorderLayout());
+        byteLimitHolderPanel.add(byteLimitPanel, BorderLayout.CENTER);
+
 
         final ComponentEnabler outboundEnabler = new ComponentEnabler(new Functions.Nullary<Boolean>() {
             @Override
