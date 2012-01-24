@@ -364,15 +364,6 @@ public class MqNativePropertiesDialog extends JDialog {
 
         cipherSpecCombo.setModel(new DefaultComboBoxModel(getCipherSuites()));
 
-        boolean isSslEnabled = mqNativeActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_IS_SSL_ENABLED);
-        enableSSLCheckBox.setSelected(isSslEnabled);
-        cipherLabel.setEnabled(isSslEnabled);
-        cipherSpecCombo.setEnabled(isSslEnabled);
-
-        boolean isSslKeyStoreUsed = isSslEnabled && mqNativeActiveConnector.getBooleanProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_IS_SSL_KEYSTORE_USED);
-        keystoreLabel.setEnabled(isSslKeyStoreUsed);
-        keystoreComboBox.setEnabled(isSslKeyStoreUsed);
-
         boolean isQueueCredentialRequired = mqNativeActiveConnector.getBooleanProperty(SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_IS_QUEUE_CREDENTIAL_REQUIRED);
         credentialsAreRequiredToCheckBox.setSelected(isQueueCredentialRequired);
         authUserNameTextBox.setEnabled(isQueueCredentialRequired);
@@ -754,7 +745,7 @@ public class MqNativePropertiesDialog extends JDialog {
 
             final boolean isSslEnabled = mqNativeActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_IS_SSL_ENABLED);
             enableSSLCheckBox.setSelected(isSslEnabled);
-            if(isSslEnabled) {
+            if (isSslEnabled) {
                 cipherLabel.setEnabled(true);
                 cipherSpecCombo.setEnabled(true);
                 clientAuthCheckbox.setEnabled(true);
@@ -766,8 +757,9 @@ public class MqNativePropertiesDialog extends JDialog {
                 }
 
                 final boolean isSslKeyStoreUsed = mqNativeActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_IS_SSL_KEYSTORE_USED);
+                clientAuthCheckbox.setSelected(isSslKeyStoreUsed);
                 if (isSslKeyStoreUsed) {
-                    clientAuthCheckbox.setSelected(true);
+                    keystoreLabel.setEnabled(true);
                     keystoreComboBox.setEnabled(true);
 
                     final String sslKeyStoreAlias = mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ALIAS);
@@ -775,7 +767,16 @@ public class MqNativePropertiesDialog extends JDialog {
                     if (!StringUtils.isEmpty(sslKeyStoreAlias) && sslKeyStoreId > -1L) {
                         keystoreComboBox.select(sslKeyStoreId, sslKeyStoreAlias);
                     }
+                } else {
+                    keystoreLabel.setEnabled(false);
+                    keystoreComboBox.setEnabled(false);
                 }
+            } else {
+                cipherLabel.setEnabled(false);
+                cipherSpecCombo.setEnabled(false);
+                clientAuthCheckbox.setEnabled(false);
+                keystoreLabel.setEnabled(false);
+                keystoreComboBox.setEnabled(false);
             }
 
             hostNameTextBox.setText(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_HOST_NAME));
@@ -933,23 +934,12 @@ public class MqNativePropertiesDialog extends JDialog {
         enableOrDisableComponents();
     }
 
-
-    /**
-     * Get the text from the given field, null if empty.
-     * @param textField a JTextField
-     * @return a string or null
-     */
-    private static String getTextOrNull( final JTextField textField ) {
-        final String text = textField.getText();
-        return (text == null || text.trim().isEmpty()) ? null : text;
-    }
-
     /**
      * Returns true if the form has enough information to construct a MQ native connection.
      * @return true if form has enough info to construct a MQ native connection
      */
     private boolean validateForm() {
-        boolean isTemplate = viewIsTemplate();
+        final boolean isTemplate = viewIsTemplate();
         if (mqConnectionName.getText().trim().length() == 0)
             return false;
         if (queueManagerNameTextBox.getText().trim().length() == 0)
@@ -963,6 +953,8 @@ public class MqNativePropertiesDialog extends JDialog {
         if (channelTextBox.getText().trim().length() == 0)
             return false;
         if (credentialsAreRequiredToCheckBox.isSelected() && (authUserNameTextBox.getText().trim().length()==0))
+            return false;
+        if (outboundRadioButton.isSelected() && !isOutboundPaneValid(isTemplate))
             return false;
         if (inboundRadioButton.isSelected() && !isInboundPaneValid())
             return false;
@@ -1142,16 +1134,18 @@ public class MqNativePropertiesDialog extends JDialog {
             connector.removeProperty(PROPERTIES_KEY_MQ_NATIVE_USERID);
             connector.removeProperty(PROPERTIES_KEY_MQ_NATIVE_SECURE_PASSWORD_OID);
         }
-        if(enableSSLCheckBox.isSelected()){
-            connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_IS_SSL_ENABLED, Boolean.TRUE.toString());
-            connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_CIPHER_SUITE, (String) cipherSpecCombo.getSelectedItem());
-            if(clientAuthCheckbox.isSelected()){
+
+        final boolean sslEnabled = enableSSLCheckBox.isSelected();
+        connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_IS_SSL_ENABLED, Boolean.toString(sslEnabled));
+        if (sslEnabled) {
+            final boolean isSslKeyStoreUsed = clientAuthCheckbox.isSelected();
+            connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_IS_SSL_KEYSTORE_USED, Boolean.toString(isSslKeyStoreUsed));
+            if (isSslKeyStoreUsed) {
                 String keyAlias = keystoreComboBox.getSelectedKeyAlias();
                 long keyStoreId = keystoreComboBox.getSelectedKeystoreId();
                 if ( keyAlias != null && keyStoreId != -1 ) {
                     connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ALIAS, keyAlias);
                     connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_SSL_KEYSTORE_ID, Long.toString(keyStoreId));
-                    connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_IS_SSL_KEYSTORE_USED, Boolean.TRUE.toString());
                 }
             }
         }
@@ -1265,11 +1259,6 @@ public class MqNativePropertiesDialog extends JDialog {
 
     private static MqNativeAdmin getMqNativeAdmin() {
         return Registry.getDefault().getExtensionInterface(MqNativeAdmin.class, null);
-    }
-
-    public void selectField() {
-        mqConnectionName.requestFocus();
-        mqConnectionName.selectAll();
     }
 
     private void onCancel() {
