@@ -63,7 +63,7 @@ public class SftpPollingListenersWindow extends JDialog {
                 connector.setProperty( PROPERTIES_KEY_ENABLE_RESPONSE_MESSAGES, Boolean.TRUE.toString() );
                 connector.setProperty( PROPERTIES_KEY_OVERRIDE_CONTENT_TYPE, ContentTypeHeader.XML_DEFAULT.getFullValue() );
                 connector.setProperty( PROPERTIES_KEY_SFTP_PORT, SFTP_POLLING_DEFAULT_PORT );
-                connector.setType("SFTP");
+                connector.setType( ACTIVE_CONNECTOR_TYPE_SFTP );
                 editAndSave(connector, false);
             }
         });
@@ -308,7 +308,8 @@ public class SftpPollingListenersWindow extends JDialog {
         try {
             final TransportAdmin transportAdmin = getTransportAdmin();
             if ( transportAdmin != null ) {
-                listenerConfigurations = new ArrayList<SsgActiveConnector>(transportAdmin.findSsgActiveConnectorsByType("SFTP"));
+                listenerConfigurations = new ArrayList<SsgActiveConnector>(
+                        transportAdmin.findSsgActiveConnectorsByType( ACTIVE_CONNECTOR_TYPE_SFTP ));
             }
         } catch (FindException e) {
             throw new RuntimeException( e );

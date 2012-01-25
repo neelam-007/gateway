@@ -54,8 +54,7 @@ public class SftpPollingListenerModule extends ActiveTransportModule implements 
     @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
     private static final Logger logger = Logger.getLogger(SftpPollingListenerModule.class.getName());
 
-    private static final String TYPE_POLLING_SFTP = "SFTP";
-    private static final Set<String> SUPPORTED_TYPES = caseInsensitiveSet( TYPE_POLLING_SFTP );
+    private static final Set<String> SUPPORTED_TYPES = caseInsensitiveSet( ACTIVE_CONNECTOR_TYPE_SFTP );
 
     private final Map<Long, SftpPollingListener> activeListeners = new ConcurrentHashMap<Long, SftpPollingListener>();
     private ThreadPoolBean threadPoolBean;
@@ -112,7 +111,7 @@ public class SftpPollingListenerModule extends ActiveTransportModule implements 
         final boolean wasSystem = AuditContextUtils.isSystem();
         try {
             AuditContextUtils.setSystem(true);
-            final Collection<SsgActiveConnector> connectors = ssgActiveConnectorManager.findSsgActiveConnectorsByType( "SFTP" );
+            final Collection<SsgActiveConnector> connectors = ssgActiveConnectorManager.findSsgActiveConnectorsByType( ACTIVE_CONNECTOR_TYPE_SFTP );
             for ( final SsgActiveConnector connector : connectors ) {
                 if ( connector.isEnabled() && connectorIsOwnedByThisModule( connector ) ) {
                     try {

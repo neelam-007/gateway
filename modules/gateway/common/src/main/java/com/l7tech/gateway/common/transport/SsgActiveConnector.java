@@ -48,6 +48,7 @@ public class SsgActiveConnector extends NamedEntityImp {
     public static final String PROPERTIES_KEY_IS_INBOUND = "inbound";
 
     // SFTP
+    public static final String ACTIVE_CONNECTOR_TYPE_SFTP = "SFTP";
     public static final String PROPERTIES_KEY_SFTP_HOST = "SftpHost";
     public static final String PROPERTIES_KEY_SFTP_PORT = "SftpPort";
     public static final String PROPERTIES_KEY_SFTP_DIRECTORY = "SftpDirectory";
@@ -57,6 +58,8 @@ public class SsgActiveConnector extends NamedEntityImp {
     public static final String PROPERTIES_KEY_SFTP_SERVER_FINGER_PRINT = "SftpServerFingerPrint";
     public static final String PROPERTIES_KEY_SFTP_DELETE_ON_RECEIVE = "SftpDeleteOnReceive";
 
+    // MQ Native
+    public static final String ACTIVE_CONNECTOR_TYPE_MQ_NATIVE = "MqNative";
     // MQ Native - general connection properties
     public static final String PROPERTIES_KEY_MQ_NATIVE_HOST_NAME = "MqNativeHostName";
     public static final String PROPERTIES_KEY_MQ_NATIVE_PORT = "MqNativePort";
@@ -89,8 +92,6 @@ public class SsgActiveConnector extends NamedEntityImp {
     public static final String PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_IS_TEMPLATE_QUEUE = "MqNativeOutboundIsTemplateQueue";
     public static final String PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_TEMPORARY_QUEUE_NAME_PATTERN = "MqNativeOutboundTemporaryQueueNamePattern";
     public static final String PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_MESSAGE_FORMAT = "MqNativeOutboundMessageFormat";
-
-    public static final String ACTIVE_CONNECTOR_TYPE_MQ_NATIVE = "MqNative";
 
     private boolean enabled;
     private String type;

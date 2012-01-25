@@ -324,7 +324,7 @@ public class SftpPollingListenerPropertiesDialog extends JDialog {
 
     private void viewToModel( final SsgActiveConnector connector ) {
         connector.setName( nameField.getText() );
-        connector.setType( "SFTP" );
+        connector.setType( ACTIVE_CONNECTOR_TYPE_SFTP );
         connector.setEnabled( enabledCheckBox.isSelected() );
 
         setProperty( connector, PROPERTIES_KEY_SFTP_HOST, hostField.getText() );

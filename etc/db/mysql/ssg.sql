@@ -1444,7 +1444,7 @@ INSERT INTO rbac_permission VALUES (-606,0,-600,'READ',NULL,'REVOCATION_CHECK_PO
 INSERT INTO rbac_permission VALUES (-607,0,-600,'DELETE',NULL,'REVOCATION_CHECK_POLICY');
 INSERT INTO rbac_permission VALUES (-608,0,-600,'CREATE',NULL,'REVOCATION_CHECK_POLICY');
 
-INSERT INTO rbac_role VALUES (-650,0,'Manage JMS Connections', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete JMS connections.');
+INSERT INTO rbac_role VALUES (-650,0,'Manage Message Destinations', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete message destinations.');
 INSERT INTO rbac_permission VALUES (-651,1,-650,'READ',NULL,'JMS_CONNECTION');
 INSERT INTO rbac_permission VALUES (-652,1,-650,'DELETE',NULL,'JMS_CONNECTION');
 INSERT INTO rbac_permission VALUES (-653,1,-650,'CREATE',NULL,'JMS_CONNECTION');
@@ -1456,6 +1456,19 @@ INSERT INTO rbac_permission VALUES (-658,1,-650,'READ',NULL,'JMS_ENDPOINT');
 INSERT INTO rbac_permission VALUES (-659,1,-650,'READ',NULL,'SERVICE');
 INSERT INTO rbac_permission VALUES (-660,1,-650,'READ',NULL,'SSG_KEYSTORE');
 INSERT INTO rbac_permission VALUES (-661,1,-650,'READ',NULL,'SSG_KEY_ENTRY');
+INSERT INTO rbac_permission VALUES (-662,1,-650,'READ',NULL,'SSG_ACTIVE_CONNECTOR');
+INSERT INTO rbac_predicate VALUES (-663,0,-662);
+INSERT INTO rbac_predicate_attribute VALUES (-663,'type','MqNative');
+INSERT INTO rbac_permission VALUES (-664,1,-650,'DELETE',NULL,'SSG_ACTIVE_CONNECTOR');
+INSERT INTO rbac_predicate VALUES (-665,0,-664);
+INSERT INTO rbac_predicate_attribute VALUES (-665,'type','MqNative');
+INSERT INTO rbac_permission VALUES (-666,1,-650,'CREATE',NULL,'SSG_ACTIVE_CONNECTOR');
+INSERT INTO rbac_predicate VALUES (-667,0,-666);
+INSERT INTO rbac_predicate_attribute VALUES (-667,'type','MqNative');
+INSERT INTO rbac_permission VALUES (-668,1,-650,'UPDATE',NULL,'SSG_ACTIVE_CONNECTOR');
+INSERT INTO rbac_predicate VALUES (-669,0,-668);
+INSERT INTO rbac_predicate_attribute VALUES (-669,'type','MqNative');
+INSERT INTO rbac_permission VALUES (-670,0,-650,'READ',NULL,'SECURE_PASSWORD');
 
 INSERT INTO rbac_role VALUES (-700,0,'Manage Cluster Properties', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete cluster properties.');
 INSERT INTO rbac_permission VALUES (-701,0,-700,'READ',NULL,'CLUSTER_PROPERTY');
