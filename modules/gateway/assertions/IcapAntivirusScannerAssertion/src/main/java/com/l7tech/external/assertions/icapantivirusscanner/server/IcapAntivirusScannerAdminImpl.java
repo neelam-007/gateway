@@ -1,7 +1,9 @@
 package com.l7tech.external.assertions.icapantivirusscanner.server;
 
+import static com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAssertion.ICAP_DEFAULT_PORT;
+import static com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAssertion.ICAP_URI;
+
 import com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAdmin;
-import com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAssertion;
 import com.l7tech.util.ExceptionUtils;
 
 import java.io.BufferedReader;
@@ -31,16 +33,18 @@ public class IcapAntivirusScannerAdminImpl implements IcapAntivirusScannerAdmin 
         try {
             //testing the server is trivial enough that we can do it by hand.
             //using the netty & icap framework is rather expensive
-            final Matcher icapMatcher = IcapAntivirusScannerAssertion.ICAP_URI.matcher(icapServerUrl);
+            final Matcher icapMatcher = ICAP_URI.matcher(icapServerUrl);
             if (!icapMatcher.matches()) {
                 throw new IcapAntivirusScannerTestException("Invalid ICAP URL");
             }
 
             final String nonSchemePart = icapMatcher.group(1);
             final URL icapUrl = new URL("http" + nonSchemePart);
-            sock.connect(new InetSocketAddress(icapUrl.getHost(), icapUrl.getPort()), 30000);
+            //according to RFC 3507: If the port is empty or not given, port 1344 is assumed.
+            final int port = icapUrl.getPort() != -1 ? icapUrl.getPort() : ICAP_DEFAULT_PORT;
+            sock.connect(new InetSocketAddress(icapUrl.getHost(), port), 30000);
             out = sock.getOutputStream();
-            String icapUri = "icap://" + icapUrl.getHost() + ":" + icapUrl.getPort() + icapUrl.getPath();
+            String icapUri = "icap://" + icapUrl.getHost() + ":" + Integer.toString(port) + icapUrl.getPath();
             out.write(String.format("OPTIONS %1$s %2$s %3$s%3$s", icapUri, "ICAP/1.0", "\r\n").getBytes());
             br = new BufferedReader(new InputStreamReader(sock.getInputStream()));
             String line = br.readLine();

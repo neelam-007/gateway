@@ -48,6 +48,7 @@ import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 
+import static com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAssertion.ICAP_DEFAULT_PORT;
 import static com.l7tech.external.assertions.icapantivirusscanner.IcapAntivirusScannerAssertion.getServiceName;
 
 /**
@@ -214,7 +215,7 @@ public class ServerIcapAntivirusScannerAssertion extends AbstractMessageTargetab
 
                 final String hostname = url.getHost();
                 // port should always have a value, protect against this changing here
-                final int port = (url.getPort() != -1)? url.getPort(): 1344;
+                final int port = (url.getPort() != -1)? url.getPort(): ICAP_DEFAULT_PORT;
                 final String portText = String.valueOf(port);
                 final String hostAndPort = String.format("%s:%s", hostname, portText);
 

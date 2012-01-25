@@ -60,6 +60,10 @@ public class IcapAntivirusScannerAssertion extends MessageTargetableAssertion im
     public static final Pattern ICAP_URI = Pattern.compile("(?i)icap(.*)");
 
     /**
+     * According to RFC 3507 ICAP default port is 1344.
+     */
+    public static final int ICAP_DEFAULT_PORT = 1344;
+    /**
      * The channel idle timeout cluster entry.
      */
     public static final String CLUSTER_PROPERTY_CHANNEL_TIMEOUT = "icap.channelIdleTimeout";
