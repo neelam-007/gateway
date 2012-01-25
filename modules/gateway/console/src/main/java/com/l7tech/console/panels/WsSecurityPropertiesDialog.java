@@ -3,13 +3,16 @@ package com.l7tech.console.panels;
 import com.l7tech.console.event.CertEvent;
 import com.l7tech.console.event.CertListenerAdapter;
 import com.l7tech.console.util.Registry;
+import static com.l7tech.console.util.VariablePrefixUtil.fixVariableName;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
+import static com.l7tech.gui.util.Utilities.comboBoxModel;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xmlsec.WsSecurity;
+import static com.l7tech.policy.variable.VariableMetadata.validateName;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.xml.WsSecurityVersion;
 import com.l7tech.util.ExceptionUtils;
@@ -53,10 +56,13 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
 
             assertion.setRecipientTrustedCertificateOid( 0L );
             assertion.setRecipientTrustedCertificateName( null );
+            assertion.setRecipientTrustedCertificateVariable( null );
             if ( selectedRecipientCertificateRadioButton.isSelected() ) {
                 assertion.setRecipientTrustedCertificateOid( recipientCertificateOid );
             } else if ( namedRecipientCertificateRadioButton.isSelected() ) {
                 assertion.setRecipientTrustedCertificateName( lookupCertificateTextField.getText().trim() );
+            } else if ( useCertificateFromVariableRadioButton.isSelected() ) {
+                assertion.setRecipientTrustedCertificateVariable( fixVariableName( certificateTextField.getText().trim() ) );
             }
         } else {
             assertion.setWsSecurityVersion(null);
@@ -97,6 +103,9 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         } else if ( assertion.getRecipientTrustedCertificateName() != null ) {
             namedRecipientCertificateRadioButton.setSelected( true );
             lookupCertificateTextField.setText( assertion.getRecipientTrustedCertificateName() );
+        } else if ( assertion.getRecipientTrustedCertificateVariable() != null ) {
+            useCertificateFromVariableRadioButton.setSelected( true );
+            certificateTextField.setText( assertion.getRecipientTrustedCertificateVariable() );
         } else {
             defaultRecipientCertificateRadioButton.setSelected( true );
         }
@@ -114,7 +123,7 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
 
         List<WsSecurityVersion> options = new ArrayList<WsSecurityVersion>(EnumSet.allOf(WsSecurityVersion.class));
         options.add( 0, null );
-        wssVersionComboBox.setModel( new DefaultComboBoxModel(options.toArray(new WsSecurityVersion[options.size()])));
+        wssVersionComboBox.setModel( comboBoxModel(options) );
         wssVersionComboBox.setRenderer( new TextListCellRenderer<WsSecurityVersion>( new Functions.Unary<String,WsSecurityVersion>(){
             @Override
             public String call( final WsSecurityVersion wsSecurityVersion ) {
@@ -130,6 +139,7 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         } );
         selectedRecipientCertificateRadioButton.addActionListener( stateUpdateListener );
         namedRecipientCertificateRadioButton.addActionListener( stateUpdateListener );
+        useCertificateFromVariableRadioButton.addActionListener( stateUpdateListener );
         defaultRecipientCertificateRadioButton.addActionListener( stateUpdateListener );
         applyWsSecurityCheckBox.addActionListener( stateUpdateListener );
 
@@ -141,6 +151,7 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         } );
 
         lookupCertificateTextField.getDocument().addDocumentListener( stateUpdateListener );
+        certificateTextField.getDocument().addDocumentListener( stateUpdateListener );
     }
 
     @Override
@@ -168,8 +179,10 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     private JComboBox wssVersionComboBox;
     private JRadioButton selectedRecipientCertificateRadioButton;
     private JRadioButton namedRecipientCertificateRadioButton;
+    private JRadioButton useCertificateFromVariableRadioButton;
     private JTextField selectedCertificateNameTextField;
     private JTextField lookupCertificateTextField;
+    private JTextField certificateTextField;
     private JButton selectButton;
     private JRadioButton defaultRecipientCertificateRadioButton;
     private JTextField selectedCertificateSubjectTextField;
@@ -213,8 +226,11 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
 
         boolean enableCertName = namedRecipientCertificateRadioButton.isSelected();
         lookupCertificateTextField.setEnabled( !isReadOnly() && enableCertName );
+        boolean enableCert = useCertificateFromVariableRadioButton.isSelected();
+        certificateTextField.setEnabled( !isReadOnly() && enableCert );
 
         boolean canOk =
+                (useCertificateFromVariableRadioButton.isSelected() && validateName( fixVariableName( certificateTextField.getText().trim() ) )==null) ||
                 (namedRecipientCertificateRadioButton.isSelected() && !lookupCertificateTextField.getText().trim().isEmpty()) ||
                 (selectedRecipientCertificateRadioButton.isSelected() && !selectedCertificateNameTextField.getText().isEmpty()) ||
                 defaultRecipientCertificateRadioButton.isSelected();

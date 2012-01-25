@@ -11,6 +11,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
 
@@ -35,12 +36,22 @@ public class WsSecurity extends MessageTargetableAssertion implements UsesEntiti
         this.applyWsSecurity = applyWsSecurity;
     }
 
+    @Nullable
     public String getRecipientTrustedCertificateName() {
         return recipientTrustedCertificateName;
     }
 
-    public void setRecipientTrustedCertificateName(String recipientTrustedCertificateName) {
+    public void setRecipientTrustedCertificateName( @Nullable final String recipientTrustedCertificateName ) {
         this.recipientTrustedCertificateName = recipientTrustedCertificateName;
+    }
+
+    @Nullable
+    public String getRecipientTrustedCertificateVariable() {
+        return recipientTrustedCertificateVariable;
+    }
+
+    public void setRecipientTrustedCertificateVariable( @Nullable final String recipientTrustedCertificateVariable ) {
+        this.recipientTrustedCertificateVariable = recipientTrustedCertificateVariable;
     }
 
     public long getRecipientTrustedCertificateOid() {
@@ -91,11 +102,12 @@ public class WsSecurity extends MessageTargetableAssertion implements UsesEntiti
         this.useSecurityHeaderMustUnderstand = useSecurityHeaderMustUnderstand;
     }
 
+    @Nullable
     public WsSecurityVersion getWsSecurityVersion() {
         return wsSecurityVersion;
     }
 
-    public void setWsSecurityVersion(WsSecurityVersion wsSecurityVersion) {
+    public void setWsSecurityVersion( @Nullable final WsSecurityVersion wsSecurityVersion ) {
         this.wsSecurityVersion = wsSecurityVersion;
     }
 
@@ -170,7 +182,7 @@ public class WsSecurity extends MessageTargetableAssertion implements UsesEntiti
 
     @Override
     protected VariablesUsed doGetVariablesUsed() {
-        return super.doGetVariablesUsed().withExpressions( recipientTrustedCertificateName );
+        return super.doGetVariablesUsed().withExpressions( recipientTrustedCertificateName ).withVariables( recipientTrustedCertificateVariable );
     }
 
     //- PRIVATE
@@ -186,5 +198,6 @@ public class WsSecurity extends MessageTargetableAssertion implements UsesEntiti
     private WsSecurityVersion wsSecurityVersion;
     private long recipientTrustedCertificateOid;
     private String recipientTrustedCertificateName;
+    private String recipientTrustedCertificateVariable;
 
 }

@@ -26,6 +26,7 @@ import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -101,7 +102,8 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
                         processRecipientCertificate(
                                         decoration,
                                         assertion.getRecipientTrustedCertificateOid(),
-                                        expandVariables(context, assertion.getRecipientTrustedCertificateName()) );
+                                        expandVariables(context, assertion.getRecipientTrustedCertificateName()),
+                                        expandCertificate( context, assertion.getRecipientTrustedCertificateVariable() ));
 
                         // run decoration
                         try {
@@ -257,7 +259,8 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
      */
     private void processRecipientCertificate( final DecorationRequirements decoration,
                                               final long trustedCertificateOid,
-                                              final String trustedCertificateName ) throws AssertionStatusException {
+                                              @Nullable final String trustedCertificateName,
+                                              @Nullable final X509Certificate recipientCertificate ) throws AssertionStatusException {
         String description = "";
 
         try {
@@ -290,6 +293,8 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
                     logAndAudit( AssertionMessages.WSSECURITY_RECIP_NO_CERT, description );
                     throw new AssertionStatusException(AssertionStatus.FALSIFIED);
                 }
+            } else {
+                decoration.setRecipientCertificate( recipientCertificate );
             }
         } catch ( FindException e ) {
             logAndAudit( AssertionMessages.WSSECURITY_RECIP_CERT_ERROR, description );
@@ -326,4 +331,29 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
         return expanded;
     }
 
+    private X509Certificate expandCertificate( final PolicyEnforcementContext context,
+                                               final String variableText ) throws AssertionStatusException {
+        X509Certificate expanded = null;
+
+        if ( variableText != null ) {
+            final String expression = Syntax.getVariableExpression(variableText);
+            final String[] variablesUsed = Syntax.getReferencedNames(expression);
+            final Map<String, Object> vars = context.getVariableMap(variablesUsed, getAudit());
+            try {
+                final Object expandedObject = ExpandVariables.processSingleVariableAsObject(expression, vars, getAudit(), true);
+                if ( expandedObject instanceof X509Certificate ) {
+                    expanded = (X509Certificate) expandedObject;
+                }
+            } catch ( IllegalArgumentException iae ) {
+                throw new AssertionStatusException(AssertionStatus.FALSIFIED); // already audited
+            }
+
+            if ( expanded == null ) {
+                logAndAudit( AssertionMessages.WSSECURITY_RECIP_NO_CERT, "variable " + variableText );
+                throw new AssertionStatusException(AssertionStatus.FALSIFIED);
+            }
+        }
+
+        return expanded;
+    }
 }

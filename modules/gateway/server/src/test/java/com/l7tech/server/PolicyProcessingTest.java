@@ -1,5 +1,6 @@
 package com.l7tech.server;
 
+import static com.l7tech.common.TestDocuments.getWssInteropAliceCert;
 import com.l7tech.common.http.*;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -49,6 +50,7 @@ import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.tarari.GlobalTarariContext;
+import static java.util.Collections.singletonMap;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -147,6 +149,7 @@ public class PolicyProcessingTest {
         {"/addusernametoken", "POLICY_responsesecuritytoken.xml"},
         {"/addtimestamp", "POLICY_responsetimestamp.xml"},
         {"/addsignature", "POLICY_responsesignature.xml"},
+        {"/addsignaturevar", "POLICY_responsesignature_certificate_variable.xml"},
         {"/removeheaders", "POLICY_removeheaders.xml"},
         {"/signatureconfirmation1", "POLICY_signatureconfirmation1.xml"},
         {"/signatureconfirmation2", "POLICY_signatureconfirmation2.xml"},
@@ -372,7 +375,7 @@ public class PolicyProcessingTest {
         String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
 
         Result result = processMessage("/stealthfault", requestMessage1, AssertionStatus.FALSIFIED.getNumeric());
-        assertEquals("Should be stealth response mode.", true, result.context.isStealthResponseMode());
+        assertEquals( "Should be stealth response mode.", true, result.context.isStealthResponseMode() );
     }
 
     /**
@@ -394,7 +397,7 @@ public class PolicyProcessingTest {
         String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
 
         processMessage("/ipaddressrange", requestMessage1, 0);
-        processMessage("/ipaddressrange", requestMessage1, "10.0.0.2", AssertionStatus.FALSIFIED.getNumeric(), null, null);
+        processMessage( "/ipaddressrange", requestMessage1, "10.0.0.2", AssertionStatus.FALSIFIED.getNumeric(), null, null );
     }
 
     /**
@@ -487,7 +490,7 @@ public class PolicyProcessingTest {
         String authHeader = "Basic " + HexUtils.encodeBase64( (pa.getUserName() + ":" + new String(pa.getPassword())).getBytes("ISO-8859-1") );
         Result result = processMessage("/httpbasic", requestMessage1, "10.0.0.1", 0, null, authHeader);
         assertTrue("Credential present", !result.context.getDefaultAuthenticationContext().getCredentials().isEmpty());
-        assertEquals("Username correct", username, result.context.getDefaultAuthenticationContext().getCredentials().iterator().next().getLogin());
+        assertEquals( "Username correct", username, result.context.getDefaultAuthenticationContext().getCredentials().iterator().next().getLogin() );
     }
 
     /**
@@ -516,8 +519,8 @@ public class PolicyProcessingTest {
 
         Result result2 = processMessage("/httproutenocookie", requestMessage1, 0);
 
-        assertFalse("Outbound request cookie present", headerExists(mockClient2.getParams().getExtraHeaders(), "Cookie", "cookie=invalue"));
-        assertFalse("Outbound response cookie present", newCookieExists(result2.context.getCookies(),"cookie", "outvalue"));
+        assertFalse( "Outbound request cookie present", headerExists( mockClient2.getParams().getExtraHeaders(), "Cookie", "cookie=invalue" ) );
+        assertFalse( "Outbound response cookie present", newCookieExists( result2.context.getCookies(), "cookie", "outvalue" ) );
     }
 
     /**
@@ -529,7 +532,7 @@ public class PolicyProcessingTest {
         final byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
 
         final Pair<String,String> extraHeader = new Pair<String,String>( "X-TEST_HEADER", "value" );
-        MockGenericHttpClient mockClient = buildCallbackMockHttpClient(null, new Functions.Binary<byte[],byte[],GenericHttpRequestParams>(){
+        MockGenericHttpClient mockClient = buildCallbackMockHttpClient( null, new Functions.Binary<byte[], byte[], GenericHttpRequestParams>() {
             @Override
             public byte[] call( final byte[] bytes, final GenericHttpRequestParams genericHttpRequestParams ) {
                 boolean foundHeader = false;
@@ -538,20 +541,20 @@ public class PolicyProcessingTest {
                         foundHeader = true;
                     }
                 }
-                assertTrue("httpHeader routed", foundHeader);
+                assertTrue( "httpHeader routed", foundHeader );
                 return responseMessage1;
             }
-        });
+        } );
         testingHttpClientFactory.setMockHttpClient(mockClient);
 
-        processMessage("/httproutecookie", requestMessage1, "10.0.0.1", 0, null, null, extraHeader, new Functions.UnaryVoid<PolicyEnforcementContext>(){
+        processMessage( "/httproutecookie", requestMessage1, "10.0.0.1", 0, null, null, extraHeader, null, new Functions.UnaryVoid<PolicyEnforcementContext>() {
             @Override
             public void call( final PolicyEnforcementContext policyEnforcementContext ) {
-                Audit logOnlyAuditor = new LoggingAudit(logger);
-                String variable =  ExpandVariables.process( "${request.http.header.x-test_header}", policyEnforcementContext.getVariableMap( new String[]{"request.http.header.x-test_header"}, logOnlyAuditor) ,logOnlyAuditor);
+                Audit logOnlyAuditor = new LoggingAudit( logger );
+                String variable = ExpandVariables.process( "${request.http.header.x-test_header}", policyEnforcementContext.getVariableMap( new String[]{ "request.http.header.x-test_header" }, logOnlyAuditor ), logOnlyAuditor );
                 assertEquals( "Http header variable value", "value", variable );
             }
-        });
+        } );
     }
 
     /**
@@ -572,13 +575,13 @@ public class PolicyProcessingTest {
                         foundHeader = true;
                     }
                 }
-                assertFalse("httpHeader routed", foundHeader);
+                assertFalse( "httpHeader routed", foundHeader );
                 return responseMessage1;
             }
         });
         testingHttpClientFactory.setMockHttpClient(mockClient);
 
-        processMessage("/httproutecookie", requestMessage1, "10.0.0.1", 0, null, null, extraHeader, new Functions.UnaryVoid<PolicyEnforcementContext>(){
+        processMessage("/httproutecookie", requestMessage1, "10.0.0.1", 0, null, null, extraHeader, null, new Functions.UnaryVoid<PolicyEnforcementContext>(){
             @Override
             public void call( final PolicyEnforcementContext policyEnforcementContext ) {
                 Audit logOnlyAuditor = new LoggingAudit(logger);
@@ -606,13 +609,13 @@ public class PolicyProcessingTest {
                         foundHeader = true;
                     }
                 }
-                assertTrue("httpHeader routed", foundHeader);
+                assertTrue( "httpHeader routed", foundHeader );
                 return responseMessage1;
             }
         });
         testingHttpClientFactory.setMockHttpClient(mockClient);
 
-        processMessage("/httproutepassheaders", requestMessage1, "10.0.0.1", 0, null, null, extraHeader, new Functions.UnaryVoid<PolicyEnforcementContext>(){
+        processMessage("/httproutepassheaders", requestMessage1, "10.0.0.1", 0, null, null, extraHeader, null, new Functions.UnaryVoid<PolicyEnforcementContext>(){
             @Override
             public void call( final PolicyEnforcementContext policyEnforcementContext ) {
                 Audit logOnlyAuditor = new LoggingAudit(logger);
@@ -633,10 +636,10 @@ public class PolicyProcessingTest {
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
         testingHttpClientFactory.setMockHttpClient(mockClient);
 
-        processMessage("/httproutetaicredchain", requestMessage1, "10.0.0.1", 0, new PasswordAuthentication("test", "password".toCharArray()), null);
+        processMessage( "/httproutetaicredchain", requestMessage1, "10.0.0.1", 0, new PasswordAuthentication( "test", "password".toCharArray() ), null );
 
         assertTrue("Outbound request TAI header missing", headerExists(mockClient.getParams().getExtraHeaders(), "IV_USER", "test"));
-        assertTrue("Outbound request TAI cookie missing", headerExists(mockClient.getParams().getExtraHeaders(), "Cookie", "IV_USER=test"));
+        assertTrue( "Outbound request TAI cookie missing", headerExists( mockClient.getParams().getExtraHeaders(), "Cookie", "IV_USER=test" ) );
     }
 
     /**
@@ -646,14 +649,14 @@ public class PolicyProcessingTest {
 	public void testHttpRoutingSticky() throws Exception {
         //This just tests that the context info gets to the CommonsHttpClient
         String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
-        byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
+        byte[] responseMessage1 = loadResource( "RESPONSE_general.xml" );
 
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
-        testingHttpClientFactory.setMockHttpClient(mockClient);
+        testingHttpClientFactory.setMockHttpClient( mockClient );
 
-        processMessage("/httproutepassthru", requestMessage1, 0);
+        processMessage( "/httproutepassthru", requestMessage1, 0 );
 
-        assertNotNull("Missing connection id", mockClient.getIdentity());
+        assertNotNull( "Missing connection id", mockClient.getIdentity() );
     }
 
     /**
@@ -666,9 +669,9 @@ public class PolicyProcessingTest {
         byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
 
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
-        testingHttpClientFactory.setMockHttpClient(mockClient);
+        testingHttpClientFactory.setMockHttpClient( mockClient );
 
-        processJmsMessage(requestMessage1, 0, 0);
+        processJmsMessage( requestMessage1, 0, 0 );
     }
 
     /**
@@ -694,7 +697,7 @@ public class PolicyProcessingTest {
 
         processMessage("/httpwssheaderpromote", requestMessage2, 0);
         String request3 = new String(mockClient.getRequestBody());
-        assertTrue("Promoted security header missing", request3.indexOf("<wsse:Username>user</wsse:Username>")>0 && request3.indexOf("asdf")<0);
+        assertTrue( "Promoted security header missing", request3.indexOf( "<wsse:Username>user</wsse:Username>" ) > 0 && request3.indexOf( "asdf" ) < 0 );
     }
 
     /**
@@ -1011,7 +1014,7 @@ public class PolicyProcessingTest {
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
         testingHttpClientFactory.setMockHttpClient(mockClient);
         final String requestMessage = new String(loadResource("REQUEST_general.xml"));
-        Assert.assertTrue("Request message contains element to remove", XmlUtil.parse(requestMessage).getElementsByTagNameNS("http://warehouse.acme.com/ws", "delay").getLength() > 0);
+        Assert.assertTrue( "Request message contains element to remove", XmlUtil.parse( requestMessage ).getElementsByTagNameNS( "http://warehouse.acme.com/ws", "delay" ).getLength() > 0 );
         processMessage("/removeelement", requestMessage, "10.0.0.1", 0, null, null, new Functions.UnaryVoid<PolicyEnforcementContext>(){
             @Override
             public void call(final PolicyEnforcementContext context) {
@@ -1103,6 +1106,34 @@ public class PolicyProcessingTest {
                     Assert.assertEquals("Signature references found", 3, signatureReferenceNodeList.getLength()); // 3, body, timestamp and protected token
                     NodeList issuerSerialNodeList = document.getElementsByTagNameNS(dsigNS, "X509IssuerSerial");
                     Assert.assertEquals("Issuer/Serial STR found", 1, issuerSerialNodeList.getLength());
+                } catch (Exception e) {
+                    throw ExceptionUtils.wrap(e);
+                }
+            }
+        });
+    }
+
+    /**
+     * Test addition of a signature to the response using a certificate from a variable
+     */
+    @BugNumber(11671)
+    @Test
+    public void testAddSignatureCertificateVariable() throws Exception {
+        byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
+        MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+        final String requestMessage = new String(loadResource("REQUEST_general.xml"));
+        processMessage("/addsignaturevar", requestMessage, "10.0.0.1", 0, null, null, null, singletonMap("certificate", getWssInteropAliceCert()), new Functions.UnaryVoid<PolicyEnforcementContext>(){
+            @Override
+            public void call(final PolicyEnforcementContext context) {
+                try {
+                    final Document document = context.getResponse().getXmlKnob().getDocumentReadOnly();
+                    final String dsigNS = SoapUtil.DIGSIG_URI;
+                    final NodeList signatureNodeList = document.getElementsByTagNameNS(dsigNS, "Signature");
+                    Assert.assertEquals("Signature found", 1, signatureNodeList.getLength());
+                    final NodeList x509SerialNumberNodeList = document.getElementsByTagNameNS(dsigNS, "X509SerialNumber");
+                    Assert.assertEquals("X509SerialNumber found", 1, x509SerialNumberNodeList.getLength());
+                    Assert.assertEquals( "Serial number value", "127901500862700997089151460209364726264", XmlUtil.getTextValue( (Element)x509SerialNumberNodeList.item( 0 ) ) );
                 } catch (Exception e) {
                     throw ExceptionUtils.wrap(e);
                 }
@@ -1510,7 +1541,7 @@ public class PolicyProcessingTest {
                                    final PasswordAuthentication contextAuth,
                                    final String authHeader,
                                    final Functions.UnaryVoid<PolicyEnforcementContext> validationCallback ) throws IOException {
-        return processMessage( uri, message, requestIp, expectedStatus, contextAuth, authHeader, null, validationCallback );
+        return processMessage( uri, message, requestIp, expectedStatus, contextAuth, authHeader, null, null, validationCallback );
     }
 
     /**
@@ -1523,6 +1554,7 @@ public class PolicyProcessingTest {
                                    final PasswordAuthentication contextAuth,
                                    final String authHeader,
                                    final Pair<String,String> extraHeader,
+                                   final Map<String,?> variables,
                                    final Functions.UnaryVoid<PolicyEnforcementContext> validationCallback ) throws IOException {
         MockServletContext servletContext = new MockServletContext();
         MockHttpServletRequest hrequest = new MockHttpServletRequest(servletContext);
@@ -1566,6 +1598,11 @@ public class PolicyProcessingTest {
         response.attachHttpResponseKnob(respKnob);
 
         final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response, true);
+        if ( variables != null ) {
+            for ( final Map.Entry<String,?> entry : variables.entrySet() ) {
+                context.setVariable( entry.getKey(), entry.getValue() );
+            }
+        }
 
         final StashManager stashManager = TestStashManagerFactory.getInstance().createStashManager();
 
