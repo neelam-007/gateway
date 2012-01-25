@@ -232,7 +232,7 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
 
         // Override message size
         responseByteLimitPanel = new ByteLimitPanel();
-        responseByteLimitPanel.setAllowContextVars(false);
+        responseByteLimitPanel.setAllowContextVars(true);
         responseByteLimitPanel.addChangeListener(new RunOnChangeListener() {
             @Override
             protected void run() {
