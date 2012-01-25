@@ -25,6 +25,7 @@ import java.util.regex.Matcher;
 public final class IcapServerPropertiesDialog extends JDialog {
 
 
+    public static final int MAX_URI_PORT = 65535;
     private JPanel contentPane;
 
     private JTextField icapServerUrlField;
@@ -148,7 +149,7 @@ public final class IcapServerPropertiesDialog extends JDialog {
             final String nonSchemePart = matcher.group(1);
             //validate URL
             try {
-                new URL("http" + nonSchemePart);
+                validateUrl(nonSchemePart);
             } catch (MalformedURLException e) {
                 DialogDisplayer.showMessageDialog(this,
                         "Invalid ICAP Server URL: " + ExceptionUtils.getMessage(e),
@@ -160,6 +161,18 @@ public final class IcapServerPropertiesDialog extends JDialog {
         }
 
         return true;
+    }
+
+    /**
+     * validates url
+     * @param nonSchemePart - String url part without scheme
+     * @throws MalformedURLException
+     */
+    private void validateUrl(String nonSchemePart) throws MalformedURLException {
+        URL serverUrl = new URL("http" + nonSchemePart);
+        if(serverUrl.getPort() != -1 && serverUrl.getPort() > MAX_URI_PORT) {
+          throw new MalformedURLException("Invalid port: " + Integer.toString(serverUrl.getPort()) + ". Port must be in range from 0 to " + Integer.toString(MAX_URI_PORT));
+        }
     }
 
     private JPanel createPropertyPanel() {
