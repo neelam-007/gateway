@@ -5,6 +5,7 @@ import com.jscape.inet.sftp.Sftp;
 import com.jscape.inet.sftp.SftpException;
 import org.apache.commons.lang.StringUtils;
 
+import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -15,8 +16,9 @@ import java.io.OutputStream;
 public class SftpClient implements SshClient {
     Sftp sftpClient;
 
-    public SftpClient(Sftp sftpClient) {
+    public SftpClient(@NotNull Sftp sftpClient) {
         this.sftpClient = sftpClient;
+        this.sftpClient.disableFileAccessLogging();
     }
 
     public void connect() throws ScpException, SftpException {

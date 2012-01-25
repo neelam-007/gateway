@@ -29,6 +29,7 @@ class SftpClient implements Closeable {
                 @NotNull final String remoteDirectory,
                 @NotNull final SftpConnectionListener listener ) {
         this.client = new Sftp(parameters);
+        this.client.disableFileAccessLogging();
         this.parameters = parameters;
         this.remoteDirectory = remoteDirectory;
         this.listener = listener;
