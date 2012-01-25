@@ -74,11 +74,6 @@ class MessageProcessingFtplet extends DefaultFtplet {
      */
     @Override
     public FtpletEnum onConnect(FtpSession ftpSession, FtpReplyOutput ftpReplyOutput) throws FtpException, IOException {
-        // TODO This addresses bug 11570 and can (probably) be removed once we update the Apache FTP library
-        if ( ftpSession instanceof FtpSessionImpl ) {
-            ((FtpSessionImpl)ftpSession).updateLastAccessTime();
-        }
-
         DataConnectionFactory dataConnectionFactory = ftpSession.getDataConnection();
         if (dataConnectionFactory instanceof ServerDataConnectionFactory) {
             ServerDataConnectionFactory sdcf = (ServerDataConnectionFactory) dataConnectionFactory;
