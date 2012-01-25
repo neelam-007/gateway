@@ -22,7 +22,7 @@ public class LookupTrustedCertificateAssertion extends Assertion implements Sets
 
     private static final String META_INITIALIZED = LookupTrustedCertificateAssertion.class.getName() + ".metadataInitialized";
     private String trustedCertificateName;
-    private boolean allowMultipleCertificates;
+    private boolean allowMultipleCertificates = true;//by default allow multiple certificates
     private String variableName = "certificates";
 
     public LookupTrustedCertificateAssertion(){

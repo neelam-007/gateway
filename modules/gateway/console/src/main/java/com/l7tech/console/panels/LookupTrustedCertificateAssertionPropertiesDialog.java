@@ -13,7 +13,7 @@ public class LookupTrustedCertificateAssertionPropertiesDialog extends Assertion
 
     private JPanel mainPanel;
     private JTextField trustedCertificateNameTextField;
-    private JCheckBox allowMultipleCertificatesCheckBox;
+    private JCheckBox failMultipleCertificatesCheckBox;
     private TargetVariablePanel targetVariablePanel;
 
     public LookupTrustedCertificateAssertionPropertiesDialog( final Window owner,
@@ -26,7 +26,7 @@ public class LookupTrustedCertificateAssertionPropertiesDialog extends Assertion
     @Override
     public void setData( final LookupTrustedCertificateAssertion assertion ) {
         trustedCertificateNameTextField.setText( assertion.getTrustedCertificateName() );
-        allowMultipleCertificatesCheckBox.setSelected( assertion.isAllowMultipleCertificates() );
+        failMultipleCertificatesCheckBox.setSelected( !assertion.isAllowMultipleCertificates() );
         targetVariablePanel.setAssertion( assertion, getPreviousAssertion() );
         targetVariablePanel.setVariable( assertion.getVariableName() );
         updateEnabledState();
@@ -35,7 +35,7 @@ public class LookupTrustedCertificateAssertionPropertiesDialog extends Assertion
     @Override
     public LookupTrustedCertificateAssertion getData( final LookupTrustedCertificateAssertion assertion ) throws ValidationException {
         assertion.setTrustedCertificateName( trustedCertificateNameTextField.getText().trim() );
-        assertion.setAllowMultipleCertificates( allowMultipleCertificatesCheckBox.isSelected() );
+        assertion.setAllowMultipleCertificates(!failMultipleCertificatesCheckBox.isSelected() );
         assertion.setVariableName( targetVariablePanel.getVariable() );
         return assertion;
     }

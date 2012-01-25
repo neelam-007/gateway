@@ -30,7 +30,7 @@
         </constraints>
         <properties/>
       </component>
-      <component id="657e8" class="javax.swing.JCheckBox" binding="allowMultipleCertificatesCheckBox" default-binding="true">
+      <component id="657e8" class="javax.swing.JCheckBox" binding="failMultipleCertificatesCheckBox">
         <constraints>
           <grid row="2" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
