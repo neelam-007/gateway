@@ -6,13 +6,11 @@ import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
-import static com.l7tech.policy.assertion.AssertionMetadata.DESCRIPTION;
-import static com.l7tech.policy.assertion.AssertionMetadata.PALETTE_FOLDERS;
-import static com.l7tech.policy.assertion.AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME;
-import static com.l7tech.policy.assertion.AssertionMetadata.SHORT_NAME;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.SetsVariables;
 import com.l7tech.policy.assertion.UsesVariables;
+
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import static com.l7tech.policy.assertion.VariableUseSupport.expressions;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
@@ -73,6 +71,7 @@ public class LookupTrustedCertificateAssertion extends Assertion implements Sets
 
         meta.put(SHORT_NAME, "Look Up Trusted Certificate");
         meta.put(DESCRIPTION, "Look up trusted certificates for later use in policy");
+        meta.put(POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.LookupTrustedCertificateAssertionPropertiesDialog");
         meta.put(PALETTE_FOLDERS, new String[] { "xmlSecurity" });
         meta.put(META_INITIALIZED, Boolean.TRUE);
