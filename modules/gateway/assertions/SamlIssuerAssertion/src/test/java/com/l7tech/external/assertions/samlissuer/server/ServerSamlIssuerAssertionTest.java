@@ -2414,6 +2414,69 @@ public class ServerSamlIssuerAssertionTest {
     }
 
     /**
+     * If attributes were filtered out due to incoming attribute values, then the 'Fail if no attributes' added feature
+     * should fail if this causes no attributes to be added.
+     *
+     * Applies to SAML 2 only.
+     *
+     * @throws Exception
+     */
+    @BugNumber(11739)
+    @Test
+    public void testAttributeStatement_Filter_NoAttributesAdded_BecauseOfAttributeValue() throws Exception {
+        final SamlAttributeStatement samlAttributeStatement = new SamlAttributeStatement();
+        List<SamlAttributeStatement.Attribute> attributes = new ArrayList<SamlAttributeStatement.Attribute>();
+
+        final SamlAttributeStatement.Attribute nameAttr = new SamlAttributeStatement.Attribute();
+        nameAttr.setName("nc:PersonGivenName");
+        nameAttr.setNameFormat(SamlConstants.ATTRIBUTE_NAME_FORMAT_BASIC);
+        nameAttr.setValue("Not in filter");
+        attributes.add(nameAttr);
+
+        samlAttributeStatement.setAttributes(attributes.toArray(new SamlAttributeStatement.Attribute[attributes.size()]));
+        final String filterExpression = "${attributeQuery.attributes}";
+        samlAttributeStatement.setFilterExpression(filterExpression);
+        samlAttributeStatement.setFailIfNoAttributesAdded(true);
+
+        final PolicyEnforcementContext context = getContext();
+        context.setVariable("attributeQuery.attributes", getAttributesFromRequest(attributeRequestWithAttributeValue, SamlConstants.NS_SAML2, "Attribute"));
+
+        ServerSamlIssuerAssertion serverAssertion = getServerAssertion(samlAttributeStatement, 2);
+
+        final TestAudit testAudit = new TestAudit();
+        ApplicationContexts.inject(serverAssertion, CollectionUtils.<String, Object>mapBuilder()
+                .put( "auditFactory", testAudit.factory() )
+                .unmodifiableMap()
+        );
+
+        try {
+            serverAssertion.checkRequest(context);
+            Assert.fail("Assertion should have failed as unknown attribute was requested.");
+        } catch (AssertionStatusException e) {
+        }
+
+        // expected related set variable have correct values
+        final Object variable = context.getVariable(samlAttributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_NO_ATTRIBUTES_ADDED);
+        Assert.assertNotNull(variable);
+        final boolean b = Boolean.parseBoolean(variable.toString());
+        System.out.println("Variable value: " + b);
+
+        final String expectedValue = "[Name=nc:PersonGivenName NameFormat=urn:oasis:names:tc:SAML:2.0:attrname-format:basic]";
+        final Object excluded = context.getVariable(samlAttributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_EXCLUDED_ATTRIBUTES);
+        System.out.println(excluded);
+        Assert.assertEquals("Incorrect attribute excluded", expectedValue, excluded);
+
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+
+        // validate audits
+        testAudit.isAuditPresent(AssertionMessages.SAML_ISSUER_ATTR_STMT_FILTER_REMOVED_ALL_ATTRIBUTES);
+        testAudit.isAuditPresent(AssertionMessages.SAML_ISSUER_ATTR_STMT_VALUE_EXCLUDED_ATTRIBUTES);
+        testAudit.isAuditPresentContaining("Attribute filter AttributeValue excluded some Attributes: [Name=nc:PersonGivenName NameFormat=urn:oasis:names:tc:SAML:2.0:attrname-format:basic]");
+    }
+
+    /**
      * Tests that all context variables are set, when no fail modes are configured.
      *
      * In the pre 6.2 case the conditions for when these variables are not provided cannot happen, so they should

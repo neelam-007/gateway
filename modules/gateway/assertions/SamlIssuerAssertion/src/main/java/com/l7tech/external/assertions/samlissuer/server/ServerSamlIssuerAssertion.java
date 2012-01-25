@@ -577,7 +577,8 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
 
 
         // No attributes added - because of filter
-        final boolean noAttributesAdded = outAtts.isEmpty() && !filteredAttributes.isEmpty();
+        // checking the collections protects against a UI change which may allow no attributes to be configured
+        final boolean noAttributesAdded = outAtts.isEmpty() && (!filteredAttributes.isEmpty() || !filteredAttributesBasedOnValue.isEmpty());
         if (noAttributesAdded) {
             getAudit().logAndAudit(AssertionMessages.SAML_ISSUER_ATTR_STMT_FILTER_REMOVED_ALL_ATTRIBUTES);
         }
@@ -596,7 +597,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
             final String excludedString = CollectionUtils.mkString(filteredAttributesBasedOnValue, ", ");
             context.setVariable(attributeStatement.getVariablePrefix() + "." + SamlAttributeStatement.SUFFIX_EXCLUDED_ATTRIBUTES, excludedString);
             if (!filteredAttributesBasedOnValue.isEmpty()) {
-                getAudit().logAndAudit(AssertionMessages.SAML_ISSUER_ATTR_STMT_EXCLUDED_ATTRIBUTES, excludedString);
+                getAudit().logAndAudit(AssertionMessages.SAML_ISSUER_ATTR_STMT_VALUE_EXCLUDED_ATTRIBUTES, excludedString);
             }
         }
 
