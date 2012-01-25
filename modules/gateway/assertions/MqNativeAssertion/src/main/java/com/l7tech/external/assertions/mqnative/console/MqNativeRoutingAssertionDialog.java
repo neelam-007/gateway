@@ -375,7 +375,7 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         try {
             final TransportAdmin transportAdmin = Registry.getDefault().getTransportAdmin();
             return grep( transportAdmin.findSsgActiveConnectorsByType( ACTIVE_CONNECTOR_TYPE_MQ_NATIVE ),
-                    negate( booleanProperty( PROPERTIES_KEY_MQ_NATIVE_IS_INBOUND ) ) );
+                    negate( booleanProperty( PROPERTIES_KEY_IS_INBOUND ) ) );
         } catch ( IllegalStateException e ) {
             // no admin context available
             logger.info( "Unable to access queues from server." );

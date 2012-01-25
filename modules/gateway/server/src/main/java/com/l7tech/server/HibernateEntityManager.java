@@ -529,16 +529,18 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
             @SuppressWarnings({ "unchecked" })
             @Override
             protected List<ET> doInHibernateReadOnly(final Session session) throws HibernateException, SQLException {
-                Criteria criteria = session.createCriteria(getImpClass());
+                final Criteria criteria = session.createCriteria(getImpClass());
                 criteria.setFirstResult(offset);
                 criteria.setFetchSize(windowSize);
 
                 if ( filters != null ) {
-                    Junction likeRestriction = disjunction ? Restrictions.disjunction() : Restrictions.conjunction();
-                    for ( String filterProperty : filters.keySet() ) {
+                    final Junction likeRestriction = disjunction ? Restrictions.disjunction() : Restrictions.conjunction();
+                    for ( final String filterProperty : filters.keySet() ) {
                         final Object filterObject = filters.get(filterProperty);
                         // todo: test based on the field's type
-                        if ( filterObject instanceof String ) {
+                        if ( filterObject instanceof Criterion ) {
+                            likeRestriction.add( (Criterion)filterObject );
+                        } else if ( filterObject instanceof String ) {
                             final String filter = (String) filterObject;
                             if ("true".equalsIgnoreCase(filter) || "false".equalsIgnoreCase(filter)) {
                                 likeRestriction.add(Restrictions.eq( filterProperty, Boolean.parseBoolean(filter)));

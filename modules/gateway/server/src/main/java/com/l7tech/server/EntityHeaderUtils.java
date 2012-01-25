@@ -10,6 +10,8 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.security.keystore.SsgKeyHeader;
+import com.l7tech.gateway.common.transport.SsgActiveConnector;
+import com.l7tech.gateway.common.transport.SsgActiveConnectorHeader;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.identity.*;
 import com.l7tech.identity.fed.FederatedUser;
@@ -93,6 +95,8 @@ public final class EntityHeaderUtils {
         } else if (e instanceof JmsEndpoint) {
             JmsEndpoint endpoint = (JmsEndpoint) e;
             return new JmsEndpointHeader(endpoint.getId(), endpoint.getName(), endpoint.getDestinationName(), endpoint.getVersion(), endpoint.isMessageSource());
+        } else if (e instanceof SsgActiveConnector ) {
+            return new SsgActiveConnectorHeader( (SsgActiveConnector) e );
         } else if (e instanceof PersistentEntity) {
             PersistentEntity entity = (PersistentEntity) e;
             return new EntityHeader(entity.getOid(),
@@ -158,6 +162,11 @@ public final class EntityHeaderUtils {
         } else if (header instanceof JmsEndpointHeader) {
             externalEntityHeader = new ExternalEntityHeader(header.getStrId(), header);
             externalEntityHeader.setProperty("messageSource", Boolean.toString(((JmsEndpointHeader)header).isIncoming()));
+        } else if (header instanceof SsgActiveConnectorHeader) {
+            final SsgActiveConnectorHeader ssgActiveConnectorHeader = (SsgActiveConnectorHeader) header;
+            externalEntityHeader = new ExternalEntityHeader(header.getStrId(), header);
+            externalEntityHeader.setProperty("inbound", Boolean.toString(ssgActiveConnectorHeader.isInbound()));
+            externalEntityHeader.setProperty("connectorType", ssgActiveConnectorHeader.getConnectorType());
         } else if (header instanceof ResourceEntryHeader) {
             final ResourceEntryHeader resourceEntryHeader = (ResourceEntryHeader) header;
             externalEntityHeader = new ExternalEntityHeader(header.getStrId(), header.getType(), header.getStrId(), resourceEntryHeader.getUri(), header.getDescription(), header.getVersion());

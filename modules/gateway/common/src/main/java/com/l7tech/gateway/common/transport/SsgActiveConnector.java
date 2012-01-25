@@ -39,6 +39,14 @@ public class SsgActiveConnector extends NamedEntityImp {
     /** If specified, the size limit of the request message. */
     public static final String PROPERTIES_KEY_REQUEST_SIZE_LIMIT = "requestSizeLimit";
 
+    /**
+     * The connector is used for inbound messages (transport), if this value is
+     * not set then it should be assumed to be true (e.g. "getBooleanProperty(PROPERTIES_KEY_IS_INBOUND,true)")
+     *
+     * @see #getBooleanProperty(String,boolean)
+     */
+    public static final String PROPERTIES_KEY_IS_INBOUND = "inbound";
+
     // SFTP
     public static final String PROPERTIES_KEY_SFTP_HOST = "SftpHost";
     public static final String PROPERTIES_KEY_SFTP_PORT = "SftpPort";
@@ -50,7 +58,6 @@ public class SsgActiveConnector extends NamedEntityImp {
     public static final String PROPERTIES_KEY_SFTP_DELETE_ON_RECEIVE = "SftpDeleteOnReceive";
 
     // MQ Native - general connection properties
-    public static final String PROPERTIES_KEY_MQ_NATIVE_IS_INBOUND = "MqNativeIsInbound";
     public static final String PROPERTIES_KEY_MQ_NATIVE_HOST_NAME = "MqNativeHostName";
     public static final String PROPERTIES_KEY_MQ_NATIVE_PORT = "MqNativePort";
     public static final String PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME = "MqNativeQueueManagerName";
@@ -191,6 +198,17 @@ public class SsgActiveConnector extends NamedEntityImp {
      */
     public boolean getBooleanProperty( final String propertyName ) {
         return Boolean.parseBoolean(getProperty(propertyName));
+    }
+
+    /**
+     * Convenience method to get a property as a boolean.
+     *
+     * @param propertyName the name of the property to get
+     * @param dflt the default value to use if the property is not set
+     * @return boolean represented by the requested property value
+     */
+    public boolean getBooleanProperty( final String propertyName, final boolean dflt ) {
+        return Boolean.parseBoolean(getProperty(propertyName,String.valueOf(dflt)));
     }
 
     /**

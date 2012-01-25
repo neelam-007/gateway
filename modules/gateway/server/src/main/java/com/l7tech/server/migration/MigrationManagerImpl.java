@@ -173,6 +173,12 @@ public class MigrationManagerImpl implements MigrationManager {
             customFilters.put("messageSource", header.getProperty("messageSource"));
             customFilters.putAll(filters);
             return customFilters;
+        } else if (EntityType.SSG_ACTIVE_CONNECTOR == header.getType() && (header.getExtraProperties().containsKey("connectorType") || header.getExtraProperties().containsKey("inbound"))) {
+            Map<String,String> customFilters = new HashMap<String, String>();
+            if ( header.getExtraProperties().containsKey("connectorType") ) customFilters.put("type", header.getProperty("connectorType"));
+            if ( header.getExtraProperties().containsKey("inbound") ) customFilters.put("properties['inbound']", header.getProperty("inbound"));
+            customFilters.putAll(filters);
+            return customFilters;
         } else if ( EntityType.RESOURCE_ENTRY == header.getType() && header.getExtraProperties().containsKey("resourceType") ) {
             Map<String,String> customFilters = new HashMap<String, String>();
             customFilters.put("type", header.getProperty("resourceType"));

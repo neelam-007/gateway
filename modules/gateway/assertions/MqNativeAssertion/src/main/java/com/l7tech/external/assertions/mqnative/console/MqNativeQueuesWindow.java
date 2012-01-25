@@ -140,7 +140,7 @@ public class MqNativeQueuesWindow extends JDialog {
                     return connector.getProperty(PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME);
                 case 4:
                     String direction_msg;
-                    if (connector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_IS_INBOUND)) {
+                    if (connector.getBooleanProperty( PROPERTIES_KEY_IS_INBOUND )) {
                         if (connector.isEnabled()) {
                             direction_msg = "Inbound (Monitored)";
                         } else {

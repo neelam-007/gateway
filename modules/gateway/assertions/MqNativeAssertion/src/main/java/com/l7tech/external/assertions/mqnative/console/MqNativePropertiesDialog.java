@@ -789,7 +789,7 @@ public class MqNativePropertiesDialog extends JDialog {
             queueNameTextBox.setText(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME));
             mqConnectionName.setText(mqNativeActiveConnector.getName());
 
-            final boolean isInbound = mqNativeActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_IS_INBOUND);
+            final boolean isInbound = mqNativeActiveConnector.getBooleanProperty( PROPERTIES_KEY_IS_INBOUND );
             inboundRadioButton.setSelected(isInbound);
             outboundRadioButton.setSelected(!isInbound);
 
@@ -1150,7 +1150,7 @@ public class MqNativePropertiesDialog extends JDialog {
             }
         }
 
-        connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_IS_INBOUND, Boolean.toString(inboundRadioButton.isSelected()));
+        connector.setProperty( PROPERTIES_KEY_IS_INBOUND, Boolean.toString(inboundRadioButton.isSelected()));
         if (inboundRadioButton.isSelected()) {
             final MqNativeAcknowledgementType acknowledgementType = (MqNativeAcknowledgementType) acknowledgementModeComboBox.getSelectedItem();
             connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_ACKNOWLEDGEMENT_TYPE, acknowledgementType.toString());

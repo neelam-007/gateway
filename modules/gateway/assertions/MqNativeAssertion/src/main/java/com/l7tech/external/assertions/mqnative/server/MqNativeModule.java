@@ -165,7 +165,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
 
     @Override
     protected boolean isValidConnectorConfig( @NotNull final SsgActiveConnector ssgActiveConnector ) {
-        return ssgActiveConnector.getBooleanProperty( PROPERTIES_KEY_MQ_NATIVE_IS_INBOUND );
+        return ssgActiveConnector.getBooleanProperty( PROPERTIES_KEY_IS_INBOUND );
     }
 
     @Override

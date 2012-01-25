@@ -724,7 +724,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
         if ( ssgActiveConnector == null ||
                 !ACTIVE_CONNECTOR_TYPE_MQ_NATIVE.equals(ssgActiveConnector.getType()) ||
                 !ssgActiveConnector.isEnabled() ||
-                ssgActiveConnector.getBooleanProperty( PROPERTIES_KEY_MQ_NATIVE_IS_INBOUND ) ) {
+                ssgActiveConnector.getBooleanProperty( PROPERTIES_KEY_IS_INBOUND ) ) {
             throw new MqNativeConfigException(
                     "MQ endpoint #" + assertion.getSsgActiveConnectorId() + " could not be located! It may have been deleted" );
         }

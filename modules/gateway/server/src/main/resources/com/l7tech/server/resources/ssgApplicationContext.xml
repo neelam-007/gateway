@@ -2120,6 +2120,7 @@
                     <constructor-arg index="1" ref="identityProviderFactory"/>
                 </bean>
                 <ref bean="sinkManager"/>
+                <ref bean="ssgActiveConnectorManager"/>
             </list>
         </constructor-arg>
     </bean>
