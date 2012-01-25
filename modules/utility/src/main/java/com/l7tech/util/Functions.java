@@ -554,6 +554,30 @@ public final class Functions {
     }
 
     /**
+     * Function chaining.
+     *
+     * <p>Create a function that evaluates the given functions in order,
+     * passing the result of the first function to the second function.</p>
+     *
+     * @param first The first function to evaluate.
+     * @param second The second function to evaluate.
+     * @param <R1> The return type of the first function
+     * @param <A1> The argument type of the first function
+     * @param <R2> The return type of the second function
+     * @return The combined function.
+     */
+    @NotNull
+    public static <R1, A1, R2> Unary<R2, A1> then( @NotNull final Unary<R1, A1> first,
+                                                   @NotNull final Unary<R2,? super R1> second ) {
+        return new Unary<R2, A1>(){
+            @Override
+            public R2 call( final A1 a1 ) {
+                return second.call( first.call( a1 ) );
+            }
+        };
+    }
+
+    /**
      * Return an equality predicate, based on a transform and value.
      *
      * @param transform The transform used to obtain a value
@@ -583,6 +607,42 @@ public final class Functions {
             @Override
             public Boolean call(T t) {
                 return !predicate.call(t);
+            }
+        };
+    }
+
+    /**
+     * Predicate combination with logical AND.
+     *
+     * @param predicate1 The first predicate
+     * @param predicate2 The second predicate
+     * @param <T> The predicate argument type
+     * @return A function that calls the given predicates
+     */
+    public static <T> Unary<Boolean,T> and( final Unary<Boolean,? super T> predicate1,
+                                            final Unary<Boolean,? super T> predicate2 ) {
+        return new Unary<Boolean,T>(){
+            @Override
+            public Boolean call( final T t ) {
+                return predicate1.call( t ) && predicate2.call( t );
+            }
+        };
+    }
+
+    /**
+     * Predicate combination with logical OR.
+     *
+     * @param predicate1 The first predicate
+     * @param predicate2 The second predicate
+     * @param <T> The predicate argument type
+     * @return A function that calls the given predicates
+     */
+    public static <T> Unary<Boolean,T> or( final Unary<Boolean,? super T> predicate1,
+                                           final Unary<Boolean,? super T> predicate2 ) {
+        return new Unary<Boolean,T>(){
+            @Override
+            public Boolean call( final T t ) {
+                return predicate1.call( t ) || predicate2.call( t );
             }
         };
     }

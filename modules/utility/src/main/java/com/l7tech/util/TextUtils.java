@@ -671,6 +671,24 @@ public class TextUtils {
     }
 
     /**
+     * First class lower case conversion.
+     *
+     * @return A to lower case function.
+     */
+    public static Unary<String,CharSequence> lower() {
+        return FUNC_LOWER;
+    }
+
+    /**
+     * First class upper case conversion.
+     *
+     * @return A to upper case function.
+     */
+    public static Unary<String,CharSequence> upper() {
+        return FUNC_UPPER;
+    }
+
+    /**
      * First class isEmpty
      *
      * @return An isEmpty function
@@ -740,6 +758,20 @@ public class TextUtils {
             @Override
             public String call( final CharSequence charSequence ) {
                 return charSequence.toString().trim();
+            }
+        };
+
+    private static final Unary<String,CharSequence> FUNC_LOWER = new Unary<String,CharSequence>() {
+            @Override
+            public String call( final CharSequence charSequence ) {
+                return charSequence.toString().toLowerCase();
+            }
+        };
+
+    private static final Unary<String,CharSequence> FUNC_UPPER = new Unary<String,CharSequence>() {
+            @Override
+            public String call( final CharSequence charSequence ) {
+                return charSequence.toString().toUpperCase();
             }
         };
 
