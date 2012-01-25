@@ -1,8 +1,18 @@
 package com.l7tech.policy.assertion;
 
+import static com.l7tech.util.CollectionUtils.list;
+import static com.l7tech.util.ConfigFactory.getProperty;
 import com.l7tech.util.ExceptionUtils;
+import static com.l7tech.util.Functions.grep;
+import static com.l7tech.util.Functions.map;
+import static com.l7tech.util.Functions.then;
+import static com.l7tech.util.TextUtils.isNotEmpty;
+import static com.l7tech.util.TextUtils.lower;
+import static com.l7tech.util.TextUtils.trim;
+import static java.util.Collections.unmodifiableList;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * Set of rules for forwarding or backwarding http headers or parameters.
@@ -23,9 +33,11 @@ public class HttpPassthroughRuleSet implements Cloneable, Serializable  {
     public static final int CUSTOM_AND_ORIGINAL_PASSTHROUGH = 2;
     public static final int BLOCK = 3;
 
-    public static final String[] HEADERS_NOT_TO_IMPLICITELY_FORWARD = {"keep-alive", "connection",
-                                                                       "server", "content-type", "date",
-                                                                       "content-length", "transfer-encoding", "content-encoding"};
+    private static final String PROP_HEADERS_TO_SKIP = "com.l7tech.policy.assertion.HttpPassthroughRuleSet.headersToSkip";
+    private static final String HEADERS_TO_SKIP_DEFAULT =
+            "keep-alive, connection, server, content-type, date, content-length, transfer-encoding, content-encoding";
+    public static final List<String> HEADERS_NOT_TO_IMPLICITLY_FORWARD =
+            unmodifiableList( grep( map( list( getProperty( PROP_HEADERS_TO_SKIP, HEADERS_TO_SKIP_DEFAULT ).split( "\\s*,\\s*" ) ), then( trim(), lower() ) ), isNotEmpty() ) );
 
     private boolean forwardAll;
     private HttpPassthroughRule[] rules;

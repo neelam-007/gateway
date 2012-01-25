@@ -22,12 +22,10 @@ public class HttpHeaderRuleTableHandler extends HttpRuleTableHandler{
 
     protected boolean validateNewRule(HttpPassthroughRule in) {
         String name = in.getName().toLowerCase();
-        for (int i = 0; i < HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITELY_FORWARD.length; i++) {
-            if (name.equals(HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITELY_FORWARD[i])) {
+        if ( HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD.contains( name ) ) {
                 JOptionPane.showMessageDialog(table, "Custom rules can't be defined for this header name.",
                                               "Error", JOptionPane.WARNING_MESSAGE);
                 return false;
-            }
         }
         return true;
     }

@@ -9,7 +9,6 @@ import com.l7tech.policy.assertion.HttpPassthroughRuleSet;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerBridgeRoutingAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.util.ArrayUtils;
 import com.l7tech.xml.soap.SoapUtil;
 import org.jetbrains.annotations.Nullable;
 import org.xml.sax.SAXException;
@@ -447,7 +446,7 @@ public class HttpForwardingRuleEnforcer {
      * @param targetForResponseHeaders the response message to put the pass-through headers into
      * @param context the pec
      * @param rules http rules dictating what headers should be forwarded and under which conditions
-     * @param passThroughSpecialHeaders whether to pass through headers in the list {@link HttpPassthroughRuleSet#HEADERS_NOT_TO_IMPLICITELY_FORWARD}
+     * @param passThroughSpecialHeaders whether to pass through headers in the list {@link HttpPassthroughRuleSet#HEADERS_NOT_TO_IMPLICITLY_FORWARD}
      * @param auditor for runtime auditing
      * @param routedRequestParams httpclientproperty
      * @param vars pre-populated map of context variables (pec.getVariableMap) or null
@@ -539,7 +538,7 @@ public class HttpForwardingRuleEnforcer {
     }
 
     private static boolean headerShouldBeIgnored( String headerName ) {
-        return ArrayUtils.contains( HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITELY_FORWARD, headerName.toLowerCase() );
+        return HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD.contains( headerName.toLowerCase() );
     }
 
     private static List<HttpCookie> passableCookies(PolicyEnforcementContext context, String targetDomain, Audit auditor) {
