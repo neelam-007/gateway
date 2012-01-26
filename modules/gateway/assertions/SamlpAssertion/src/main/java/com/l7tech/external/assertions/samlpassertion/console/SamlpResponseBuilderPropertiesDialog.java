@@ -7,6 +7,8 @@ import com.l7tech.external.assertions.samlpassertion.SamlVersion;
 import com.l7tech.external.assertions.samlpassertion.SamlpResponseBuilderAssertion;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableNameSyntaxException;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
@@ -250,10 +252,18 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
 
         //Check status code against assertion selection, also validate it's a URI
         final String samlStatus = ((String) statusCodeComboBox.getEditor().getItem()).trim();
-        final String invalidUriError = ValidationUtils.isValidUriString(samlStatus);
-        if (invalidUriError != null) {
-            final String statusString = resources.getString("responseStatus.code");
-            throw new ValidationException(statusString.substring(0, statusString.length() - 1) + " is not a valid URI: " + invalidUriError);
+        final String statusString = resources.getString("responseStatus.code");
+        try {
+            final String[] referencedNames = Syntax.getReferencedNames(samlStatus);
+            if (referencedNames.length == 0) {
+                final String invalidUriError = ValidationUtils.isValidUriString(samlStatus);
+                if (invalidUriError != null) {
+                    throw new ValidationException(statusString.substring(0, statusString.length() - 1) + " is not a valid URI: " + invalidUriError);
+                }
+            }
+        } catch (VariableNameSyntaxException e) {
+            throw new ValidationException(statusString.substring(0, statusString.length() - 1) +
+                    " contains an invalid variable reference: " + ExceptionUtils.getMessage(e));
         }
 
         final String respAssertions = assertionsTextField.getText().trim();
