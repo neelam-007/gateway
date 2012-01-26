@@ -37,6 +37,7 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
     private String ssgActiveConnectorName;
     private String responseTimeout;
     private String responseSize;
+    private boolean isPutToQueue = true; // Default: set the message direction to "Put to Queue"
     private MqNativeDynamicProperties dynamicMqRoutingProperties;
     @NotNull
     private MqNativeMessagePropertyRuleSet requestMqMessagePropertyRuleSet = new MqNativeMessagePropertyRuleSet();
@@ -132,6 +133,24 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
      */
     public void setResponseSize( @Nullable final String responseSize){
         this.responseSize = responseSize;
+    }
+
+    /**
+     * Get if the message direction is set to "Put to Queue" or "Get from Queue".
+     *
+     * @return true if the message direction is set to "Put to Queue".
+     */
+    public boolean isPutToQueue() {
+        return isPutToQueue;
+    }
+
+    /**
+     * Set if the message direction is set to "Put to Queue" or "Get from Queue".
+     *
+     * @param putToQueue: an indicate to show if the message direction is set to "Put to Queue" or "Get from Queue".
+     */
+    public void setPutToQueue(boolean putToQueue) {
+        isPutToQueue = putToQueue;
     }
 
     /**
