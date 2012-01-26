@@ -22,6 +22,7 @@ import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.assertion.ServerAssertionUtils;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.*;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -234,8 +235,14 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
 
         final ResponseContext responseContext = new ResponseContext(context.getRequestId().toString());
 
-        final SamlStatus samlStatus = assertion.getSamlStatus();
-        responseContext.statusCode = samlStatus.getValue();
+        final String samlStatus = ExpandVariables.process(assertion.getSamlStatusText().trim(), vars, getAudit());
+
+        final String invalidUriError = ValidationUtils.isValidUriString(samlStatus);
+        if (invalidUriError != null) {
+            throw new InvalidRuntimeValueException("Invalid status code URI: " + invalidUriError);
+        }
+
+        responseContext.statusCode = samlStatus;
 
         final String customIssuer = assertion.getCustomIssuer();
         if (customIssuer != null && !customIssuer.trim().isEmpty()) {
@@ -450,7 +457,8 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
 
         private final String requestId;//from SSG
         private String customIssuer; // V2 only
-        private String statusCode;
+        @NotNull
+        private String statusCode; // already processed for variables
         private String statusMessage;
         private Collection statusDetail = new ArrayList();//Message, Element or String
 
@@ -841,7 +849,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
         final String respAssertions = assertion.getResponseAssertions();
         final String encryptedAssertions = assertion.getEncryptedAssertions();
 
-        final boolean isSuccessResponse = assertion.getSamlStatus() == SamlStatus.SAML2_SUCCESS;
+        final boolean isSuccessResponse = assertion.getSamlStatusText().equals(SamlStatus.SAML2_SUCCESS.getValue());
         final boolean assertionsNotSupplied = (respAssertions == null || respAssertions.trim().isEmpty()) &&
                 (encryptedAssertions == null || encryptedAssertions.trim().isEmpty());
 

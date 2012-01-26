@@ -6,15 +6,14 @@ import com.l7tech.external.assertions.samlpassertion.SamlStatus;
 import com.l7tech.external.assertions.samlpassertion.SamlVersion;
 import com.l7tech.external.assertions.samlpassertion.SamlpResponseBuilderAssertion;
 import com.l7tech.gui.util.RunOnChangeListener;
-import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.policy.variable.Syntax;
-import com.l7tech.util.Functions;
+import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
-import java.util.ResourceBundle;
+import java.util.*;
 
 import static com.l7tech.external.assertions.samlpassertion.SamlVersion.*;
 
@@ -56,14 +55,6 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
         });
 
         samlVersionComboBox.addActionListener(versionListener);
-
-        statusCodeComboBox.setRenderer( new TextListCellRenderer<SamlStatus>( new Functions.Unary<String,SamlStatus>(){
-            @Override
-            public String call( final SamlStatus dataType ) {
-                return dataType.getValue();
-            }
-        } ) );
-
 
         responseAttributesTabbedPane.remove(saml1_1Panel);
         responseAttributesTabbedPane.remove(saml2_0Panel);
@@ -181,7 +172,7 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
         }
 
         updateComponentsForVersion();
-        statusCodeComboBox.setSelectedItem(assertion.getSamlStatus());
+        statusCodeComboBox.setSelectedItem(assertion.getSamlStatusText());
     }
     
     @Override
@@ -192,7 +183,8 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
         assertion.setSignResponse(signResponseCheckBox.isSelected());
         assertion.setValidateWebSsoRules(validateWebSSORulesCheckBox.isSelected());
 
-        assertion.setSamlStatus((SamlStatus) statusCodeComboBox.getSelectedItem());
+        // Access editor directly go get current text
+        assertion.setSamlStatusText(((String) statusCodeComboBox.getEditor().getItem()).trim());
         assertion.setStatusMessage(statusMessageTextField.getText());
         assertion.setStatusDetail(statusDetailTextField.getText());
 
@@ -256,8 +248,14 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
 
     private void validateData() {
 
-        //Check status code against assertion selection
-        final SamlStatus samlStatus = (SamlStatus) statusCodeComboBox.getSelectedItem();
+        //Check status code against assertion selection, also validate it's a URI
+        final String samlStatus = ((String) statusCodeComboBox.getEditor().getItem()).trim();
+        final String invalidUriError = ValidationUtils.isValidUriString(samlStatus);
+        if (invalidUriError != null) {
+            final String statusString = resources.getString("responseStatus.code");
+            throw new ValidationException(statusString.substring(0, statusString.length() - 1) + " is not a valid URI: " + invalidUriError);
+        }
+
         final String respAssertions = assertionsTextField.getText().trim();
 
         if(!respAssertions.isEmpty() && !Syntax.validateStringOnlyReferencesVariables(respAssertions)){
@@ -282,7 +280,7 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
                         throw new ValidationException(resources.getString("responseElements.encryptedAssertions.2_0_only") +
                                 " may only reference context variables");
 
-                    final boolean isSuccess = samlStatus.equals(SamlStatus.SAML2_SUCCESS);
+                    final boolean isSuccess = samlStatus.equals(SamlStatus.SAML2_SUCCESS.getValue());
                     if(respAssertions.isEmpty() && encryptedAssertions.isEmpty() && isSuccess && validateWebSSORulesCheckBox.isSelected()){
                         throw new ValidationException("If no assertions are entered the status cannot be success when Validate Web SSO Rules is configured.");
                     } else if ((!respAssertions.isEmpty() || !encryptedAssertions.isEmpty()) && !isSuccess){
@@ -308,7 +306,7 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
         if (saml2) {
             saml2_0Panel.setVisible(true);
             saml1_1Panel.setVisible(false);
-            statusCodeComboBox.setModel(new DefaultComboBoxModel(SamlStatus.getSaml2xStatuses().toArray()));
+            statusCodeComboBox.setModel(new DefaultComboBoxModel(SamlStatus.getSaml2xStatusesStrings()));
             addIssuerCheckBox.setVisible(true);
             customIssuerTextField.setVisible(true);
             extensionsTextField.setVisible(true);
@@ -318,7 +316,7 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
         } else {
             saml2_0Panel.setVisible(false);
             saml1_1Panel.setVisible(true);
-            statusCodeComboBox.setModel(new DefaultComboBoxModel(SamlStatus.getSaml1xStatuses().toArray()));
+            statusCodeComboBox.setModel(new DefaultComboBoxModel(SamlStatus.getSaml1xStatusesStrings()));
             addIssuerCheckBox.setVisible(false);
             customIssuerTextField.setVisible(false);
             extensionsTextField.setVisible(false);

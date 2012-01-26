@@ -1,6 +1,11 @@
 package com.l7tech.external.assertions.samlpassertion;
 
+import com.l7tech.util.Functions;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.List;
 
 /**
  * Status codes for SAML 1.x and 2.x Protocols.
@@ -89,6 +94,14 @@ public enum SamlStatus {
             );
     }
 
+    public static String [] getSaml1xStatusesStrings() {
+        return convertToStringArray(getSaml1xStatuses());
+    }
+
+    public static String [] getSaml2xStatusesStrings() {
+        return convertToStringArray(getSaml2xStatuses());
+    }
+
     public int getSamlVersion() {
         return samlVersion;
     }
@@ -105,5 +118,17 @@ public enum SamlStatus {
     private SamlStatus( final int samlVersion, final String value ) {
         this.samlVersion = samlVersion;
         this.value = value;
+    }
+
+    private static String[] convertToStringArray(EnumSet<SamlStatus> samlStatuses) {
+        final ArrayList<SamlStatus> samlStatusesList = new ArrayList<SamlStatus>(Arrays.asList(samlStatuses.toArray(new SamlStatus[samlStatuses.size()])));
+        final List<String> stringRep = Functions.map(samlStatusesList, new Functions.UnaryThrows<String, SamlStatus, RuntimeException>() {
+            @Override
+            public String call(SamlStatus samlStatus) throws RuntimeException {
+                return samlStatus.getValue();
+            }
+        });
+
+        return stringRep.toArray(new String[stringRep.size()]);
     }
 }

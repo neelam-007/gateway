@@ -53,12 +53,21 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPri
         this.signResponse = signResponse;
     }
 
-    public SamlStatus getSamlStatus() {
-        return samlStatus;
+    public String getSamlStatusText() {
+        return samlStatusText;
     }
 
-    public void setSamlStatus(SamlStatus samlStatus) {
-        this.samlStatus = samlStatus;
+    public void setSamlStatusText(@NotNull String samlStatusText) {
+        this.samlStatusText = samlStatusText;
+    }
+
+    /**
+     * Deprecated. Required for backwards compatibility.
+     * @param samlStatus status to set
+     */
+    @Deprecated
+    public void setSamlStatus(@NotNull SamlStatus samlStatus) {
+        this.samlStatusText = samlStatus.getValue();
     }
 
     public String getStatusMessage() {
@@ -219,6 +228,7 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPri
     @Override
     protected VariablesUsed doGetVariablesUsed() {
         final VariablesUsed variablesUsed = super.doGetVariablesUsed().withExpressions(
+                getSamlStatusText(),
                 getStatusMessage(),
                 getStatusDetail(),
                 getResponseId(),
@@ -247,7 +257,7 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPri
     private SamlVersion samlVersion = SamlVersion.SAML2;
     private boolean signResponse;
     private boolean addIssuer;
-    private SamlStatus samlStatus = SamlStatus.SAML2_SUCCESS;
+    private String samlStatusText = SamlStatus.SAML2_SUCCESS.getValue();
     private String statusMessage;
     private String statusDetail;
 

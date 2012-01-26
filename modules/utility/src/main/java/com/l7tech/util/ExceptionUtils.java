@@ -1,5 +1,8 @@
 package com.l7tech.util;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Constructor;
@@ -84,6 +87,7 @@ public class ExceptionUtils {
      * @param t the Throwable to examine.  Must not be null.
      * @return a diagnostic message that can be displayed.  Never null.
      */
+    @NotNull
     public static String getMessage(final Throwable t) {
         return getMessage(t, 2, null);
     }
@@ -133,14 +137,14 @@ public class ExceptionUtils {
      * for a message in its cause.  If all causes have been exhausted, returns the classname of the original
      * exception.
      *
-     * @param t the Throwable to examine.  Must not be null.
+     * @param t the Throwable to examine.  May be null.
      * @param n the minimum length of message that is acceptable, or 0 to accept any non-null message.
      *          For example, set to 2 to disallow the exception message "0".
      * @param defaultMessage last-resort message to use if no good message could be found, or null to use the classname
      *                       of the original exception if nothing better could be unearthed.
      * @return a diagnostic message that can be displayed.  Never null.
      */
-    public static String getMessage(final Throwable t, int n, String defaultMessage) {
+    public static String getMessage(@Nullable final Throwable t, int n, @Nullable String defaultMessage) {
         if (t == null)
             return "null";
 
