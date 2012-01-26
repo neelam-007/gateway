@@ -358,8 +358,7 @@ public class MqNativeQueuesWindow extends JDialog {
 
     private JButton getCloneButton() {
         if (cloneButton == null) {
-            // In the QA function specification review, everyone liked the word, "Copy" instead of "Clone".
-            cloneButton = new JButton("Copy");
+            cloneButton = new JButton("Clone");
             cloneButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent event) {
