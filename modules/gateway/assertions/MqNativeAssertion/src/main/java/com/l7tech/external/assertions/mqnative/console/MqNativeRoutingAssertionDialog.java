@@ -275,7 +275,7 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
     private void setTextAndEnable( final String value, final JTextField textField, final boolean canEnable ) {
         boolean templateValueSpecified = !value.trim().isEmpty();
         setText( value, textField );
-        textField.setEnabled( canEnable && !templateValueSpecified );
+        textField.setEnabled( canEnable && templateValueSpecified );
     }
 
     private void setIfDynamic( final String value, final String defaultValue, final JTextField textField ) {
