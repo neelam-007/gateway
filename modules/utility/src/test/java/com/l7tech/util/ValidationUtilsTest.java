@@ -1,6 +1,8 @@
 package com.l7tech.util;
 
 import static com.l7tech.util.Option.some;
+
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.ValidationUtils.Validator;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -168,5 +170,17 @@ public class ValidationUtilsTest {
 
         assertTrue( "Valid string abc", validator.isValid( "abc" ) );
         assertFalse( "Invalid string abcd", validator.isValid( "abcd" ) );
+    }
+
+    @BugNumber(11771)
+    @Test
+    public void testIsValidUri() throws Exception {
+        assertFalse(ValidationUtils.isValidUri(""));
+        assertFalse(ValidationUtils.isValidUri(null));
+        assertFalse(ValidationUtils.isValidUri("invalid%"));
+        assertFalse(ValidationUtils.isValidUri("invalid invalid"));
+
+        assertTrue(ValidationUtils.isValidUri("valid"));
+        assertTrue(ValidationUtils.isValidUri("http://valid.com:8080/path?query"));
     }
 }

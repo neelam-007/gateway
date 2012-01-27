@@ -92,7 +92,8 @@ public class ValidationUtils {
     }
 
     /**
-     * Check if a URI is valid.
+     * Check if a URI is valid. Intended to validate values for use as an XML Schema anyURI type. Note this validation
+     * permits relative URIs.
      *
      * @param uriText the URI text
      * @return null if URI is valid otherwise not null containing error details
@@ -109,13 +110,15 @@ public class ValidationUtils {
                 // so is invalid
                 error = ExceptionUtils.getMessage(e);
             }
+        } else {
+            error = "URI must not be empty";
         }
 
         return error;
     }
 
     /**
-     * Check if a URI is valid.
+     * See {@link #isValidUriString(String)} for usage
      *
      * @param uriText the URI text
      * @return true if URI is valid

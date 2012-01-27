@@ -1680,6 +1680,78 @@ public class ServerSamlpResponseBuilderAssertionTest {
         }
     }
 
+    @BugNumber(11771)
+    @Test
+    public void testStatusCodeSupportsVariables_InvalidURI_Empty() throws Exception{
+        {
+            // SAML 1.1
+            final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+            SamlpResponseBuilderAssertion assertion = new SamlpResponseBuilderAssertion();
+            assertion.setSignResponse(false);
+            assertion.setTarget(TargetMessageType.OTHER);
+            final String outputVar = "outputVar";
+            assertion.setOtherTargetMessageVariable(outputVar);
+            assertion.setSamlVersion(SamlVersion.SAML1_1);
+            assertion.setValidateWebSsoRules(false);
+
+            assertion.setSamlStatusText("");
+
+            ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
+            final TestAudit testAudit = new TestAudit();
+            ApplicationContexts.inject(serverAssertion, CollectionUtils.<String, Object>mapBuilder()
+                    .put("auditFactory", testAudit.factory())
+                    .unmodifiableMap()
+            );
+
+            final PolicyEnforcementContext context = getContext();
+            context.setVariable("var", SamlStatus.SAML_SUCCESS.getValue());
+
+            final AssertionStatus status = serverAssertion.checkRequest(context);
+            Assert.assertEquals("Status should be SERVER ERROR", AssertionStatus.SERVER_ERROR, status);
+
+            for (String s : testAudit) {
+                System.out.println(s);
+            }
+
+            Assert.assertTrue(testAudit.isAuditPresent(AssertionMessages.SAMLP_RESPONSE_BUILDER_GENERIC));
+            Assert.assertTrue(testAudit.isAuditPresentContaining("Invalid status code URI"));
+        }
+
+        {
+            // SAML 2.0
+            final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+            SamlpResponseBuilderAssertion assertion = new SamlpResponseBuilderAssertion();
+            assertion.setSignResponse(false);
+            assertion.setTarget(TargetMessageType.OTHER);
+            final String outputVar = "outputVar";
+            assertion.setOtherTargetMessageVariable(outputVar);
+            assertion.setSamlVersion(SamlVersion.SAML2);
+            assertion.setValidateWebSsoRules(false);
+
+            assertion.setSamlStatusText("");
+
+            ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
+            final TestAudit testAudit = new TestAudit();
+            ApplicationContexts.inject(serverAssertion, CollectionUtils.<String, Object>mapBuilder()
+                    .put("auditFactory", testAudit.factory())
+                    .unmodifiableMap()
+            );
+
+            final PolicyEnforcementContext context = getContext();
+            context.setVariable("var", SamlStatus.SAML2_SUCCESS.getValue());
+
+            final AssertionStatus status = serverAssertion.checkRequest(context);
+            Assert.assertEquals("Status should be SERVER ERROR", AssertionStatus.SERVER_ERROR, status);
+
+            for (String s : testAudit) {
+                System.out.println(s);
+            }
+
+            Assert.assertTrue(testAudit.isAuditPresent(AssertionMessages.SAMLP_RESPONSE_BUILDER_GENERIC));
+            Assert.assertTrue(testAudit.isAuditPresentContaining("Invalid status code URI"));
+        }
+    }
+
     private HashMap<String, String> getNamespaces() {
         final HashMap<String, String> map = new HashMap<String, String>();
         map.put("samlp2", SamlConstants.NS_SAMLP2);
