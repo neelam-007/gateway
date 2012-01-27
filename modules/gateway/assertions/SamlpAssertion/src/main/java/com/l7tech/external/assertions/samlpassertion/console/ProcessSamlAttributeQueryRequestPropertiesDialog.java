@@ -211,6 +211,10 @@ public class ProcessSamlAttributeQueryRequestPropertiesDialog extends AssertionP
         }
         // update when SAML 1.1 is supported
 
+        if (!targetVariablePanel.isEntryValid()) {
+            throw new ValidationException("Invalid variable prefix.");
+        }
+
         assertion.setVariablePrefix(targetVariablePanel.getVariable());
         return assertion;
     }
