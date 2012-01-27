@@ -92,7 +92,7 @@ public class MqNativeQueuesWindow extends JDialog {
     }
 
     private class MqQueueTableModel extends AbstractTableModel {
-        private List<SsgActiveConnector> mqConfigurations = loadMqConfigurations();
+        private List<SsgActiveConnector> mqConnectors = loadMqConfigurations();
 
         @Override
         public int getColumnCount() {
@@ -101,10 +101,10 @@ public class MqNativeQueuesWindow extends JDialog {
 
         @Override
         public int getRowCount() {
-            if(mqConfigurations == null){
+            if(mqConnectors == null){
                 return 0;
             }else{
-                return mqConfigurations.size();
+                return mqConnectors.size();
             }
         }
 
@@ -128,7 +128,7 @@ public class MqNativeQueuesWindow extends JDialog {
 
         @Override
         public Object getValueAt(int rowIndex, int columnIndex) {
-            final SsgActiveConnector connector = mqConfigurations.get(rowIndex);
+            final SsgActiveConnector connector = mqConnectors.get(rowIndex);
             switch (columnIndex) {
                 case 0:
                     return connector.isEnabled()? "Yes" : "No";
@@ -156,7 +156,7 @@ public class MqNativeQueuesWindow extends JDialog {
         }
 
         public List<SsgActiveConnector> getConnectors() {
-            return mqConfigurations;
+            return mqConnectors;
         }
 
         public SsgActiveConnector getSelectedConnector(JTable listenersTable) {
@@ -170,7 +170,7 @@ public class MqNativeQueuesWindow extends JDialog {
         }
 
         public void refreshLMqConfigurationsList() {
-            mqConfigurations = loadMqConfigurations();
+            mqConnectors = loadMqConfigurations();
         }
     }
 
@@ -520,8 +520,14 @@ public class MqNativeQueuesWindow extends JDialog {
                 // Check the setting of FilterDirection (BOTH, IN, or OUT)
                 // If it is set as BOTH, then ignore the following checking and go to the next checking
                 if (filterDirection != null && !FilterDirection.BOTH.name.equals(filterDirection.name)) {
-                    canBeShown = (FilterDirection.IN.name.equals(filterDirection.name) ) ||
-                                 (FilterDirection.OUT.name.equals(filterDirection.name) );
+
+                    MqQueueTableModel model = entry.getModel();
+                    final int modelRow = entry.getIdentifier(); // Not view-based row.
+                    final SsgActiveConnector mqConnector = model.getConnectors().get(modelRow);
+                    final boolean isInbound = mqConnector.getBooleanProperty(PROPERTIES_KEY_IS_INBOUND);
+
+                    canBeShown = (FilterDirection.IN.name.equals(filterDirection.name) && isInbound) ||
+                                 (FilterDirection.OUT.name.equals(filterDirection.name) && !isInbound);
                 }
 
                 // Check the setting of FilterTarget (NAME or URL) by using regular expression pattern matching.
