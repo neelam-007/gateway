@@ -29,10 +29,7 @@
             <pathelement location="${classes.main.dir}"/>
             <pathelement location="${basedir}/build/tools"/>
             <path refid="gatewaymanagementassertion.generate.wsdl.path.libs"/>
-            <!--
-              For a coverage build EMMA classes need to be available at runtime.
-            -->
-            <pathelement location="/opt/TeamCity/buildAgent/plugins/idea/plugins/emma/lib/emma.jar"/>
+            <path refid="extras.path.id"/>
         </path>
 
         <pathconvert property="gatewaymanagementassertion.generate.wsdl.path.text" targetos="unix" pathsep="${line.separator}"

@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.util.MockSsmPreferences;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.util.SyspropUtil;
 import org.junit.Test;
 
 /**
@@ -16,7 +17,11 @@ public class LogPanelTest {
      */
     @Test
     public void testConstructorOffline() {
-        TopComponents.getInstance().setPreferences( new MockSsmPreferences() );
-        new LogPanel();
+        // Test only meaningful if forms compiled
+        // Using JUnit assumptions does not work with a code coverage build (Assume.assumeTrue(...))
+        if( !SyspropUtil.getBoolean( "module.skip.forms" ) ) {
+            TopComponents.getInstance().setPreferences( new MockSsmPreferences() );
+            new LogPanel();
+        }
     }
 }

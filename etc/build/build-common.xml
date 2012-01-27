@@ -339,10 +339,23 @@
                 ivypattern="${build.dir}/repository/[organisation]/[module]-ivy-[revision].xml"/>        
     </target>
 
+    <target name="extra-path-init-pre">
+        <path id="extras.path.id"/>
+    </target>
+    <target name="extra-path-init" if="emma.instrumentation.parameters" depends="extra-path-init-pre">
+        <echo>Adding path for coverage build (EMMA)</echo>
+        <path id="extras.path.id">
+            <!--
+              Path valid when running in TeamCity for a coverage build
+            -->
+            <pathelement location="${src.root}/../../plugins/coveragePlugin/emma.jar"/>
+        </path>
+    </target>
+
     <!--
       Common initialization
     -->
-    <target name="init" depends="task-init">
+    <target name="init" depends="task-init,extra-path-init">
         <ivy:settings file="${ivy.settings.filepath}"/>
 
         <!-- Determine available sources -->
@@ -413,7 +426,7 @@
     <target name="compile-main-scala" if="module.source.scala.available" depends="compile-main-init">
         <module-scalac srcdir="${src.main.scala.dir};${src.main.java.dir}" destdir="${classes.main.dir}"/>
     </target>
-    <target name="compile-main-forms" if="module.source.available" depends="compile-main-init, compile-main-java">
+    <target name="compile-main-forms" if="module.source.available" unless="module.skip.forms" depends="compile-main-init, compile-main-java">
         <module-javac2 srcdir="${src.main.java.dir}" destdir="${classes.main.dir}" classpathref="lib.path.id"/>
     </target>
     <target name="compile-main-jasper" if="module.jasper.available" depends="compile-main-init, compile-main-java">
@@ -472,7 +485,7 @@
             <classpath refid="full.test.path.id"/>
         </module-scalac>
     </target>
-    <target name="compile-test-forms" if="module.tests.available" depends="compile-test-init, compile-test-java">
+    <target name="compile-test-forms" if="module.tests.available" unless="module.skip.forms" depends="compile-test-init, compile-test-java">
         <module-javac2 srcdir="${src.test.java.dir}" destdir="${classes.test.dir}" classpathref="full.test.path.id"/>
     </target>
     <target name="compile-test-resources" if="module.testresources.available" depends="compile-test-init">
@@ -510,6 +523,7 @@
             <sysproperty key="src.root" value="${src.root}"/>
             <syspropertyset>
               <propertyref prefix="com.l7tech"/>
+              <propertyref name="module.skip.forms"/>
             </syspropertyset>
 
             <batchtest haltonfailure="no" todir="${report.test.dir}">

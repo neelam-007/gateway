@@ -15,6 +15,7 @@
             <classpath>
                 <path refid="lib.path.id"/>
                 <pathelement location="${classes.main.dir}"/>
+                <path refid="extras.path.id"/>
             </classpath>
             <arg value="${build.etc.dir}/schema"/>
         </java>

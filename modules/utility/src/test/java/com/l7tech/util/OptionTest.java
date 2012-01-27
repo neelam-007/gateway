@@ -65,6 +65,9 @@ public class OptionTest {
     @SuppressWarnings({ "ConstantConditions" })
     @Test(expected = IllegalArgumentException.class)
     public void testInvalidConstruction() {
+        // Test only meaningful if forms compiled (for Nullable annotation support)
+        // Using JUnit assumptions does not work with a code coverage build (Assume.assumeTrue(...))
+        if( SyspropUtil.getBoolean( "module.skip.forms" ) ) throw new IllegalArgumentException();
         some( null );
     }
 
