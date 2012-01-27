@@ -49,7 +49,7 @@ public class SetSamlStatusAssertion extends Assertion implements SetsVariables {
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
-        meta.put(AssertionMetadata.DESCRIPTION, "Set a variable containing an SAML response status code.");
+        meta.put(AssertionMetadata.DESCRIPTION, "Set a variable containing a SAML response status code.");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/check16.gif");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "SAML Response Status Properties");
