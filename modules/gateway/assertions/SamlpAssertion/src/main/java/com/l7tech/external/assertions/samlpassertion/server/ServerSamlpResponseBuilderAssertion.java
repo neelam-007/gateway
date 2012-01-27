@@ -1006,8 +1006,8 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
             //A valid bearer subjectconfirmation assertion is required.
             if(!bearerIsValidated){
                 logAndAudit( AssertionMessages.SAMLP_PROCREQ_PROFILE_VIOLATION,
-                        "No bearer saml:Assertion found which satisifies all profile rules: " +
-                                "Requires SubjectConfirmationData with Recipient and NotOnOrAfter attributes, No NotBefore attribute");
+                        "No bearer saml:Assertion found which satisfies all profile rules: " +
+                                "Requires SubjectConfirmationData with Recipient and NotOnOrAfter attributes, with no NotBefore attribute");
                 throw new AssertionStatusException(AssertionStatus.FALSIFIED);
             }
         }
