@@ -73,10 +73,10 @@ public class IssuerWizardStepPanel extends WizardStepPanel {
 
     @Override
     public void readSettings(Object settings) throws IllegalArgumentException {
-        final SamlPolicyAssertion samlPolicyAssertion = (SamlPolicyAssertion) settings;
-        version = samlPolicyAssertion.getVersion() == null ? 1 : samlPolicyAssertion.getVersion();
-
-        final SamlIssuerConfiguration issuerConfig = (SamlIssuerConfiguration) samlPolicyAssertion;
+        final SamlIssuerConfiguration issuerConfig = (SamlIssuerConfiguration) settings;
+        version = issuerConfig.getVersion() == null ? 1 : issuerConfig.getVersion();
+        // Version 1.1 does not have an Issuer.
+        this.setSkipped(version != 2);
 
         final String customIssuerValue = issuerConfig.getCustomIssuerValue();
         if (customIssuerValue != null) {

@@ -1,8 +1,10 @@
 package com.l7tech.external.assertions.samlpassertion.server.v2;
 
+import com.l7tech.external.assertions.samlpassertion.server.NameIdentifierResolver;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.external.assertions.samlpassertion.server.AbstractSamlp2MessageGenerator;
 import com.l7tech.external.assertions.samlpassertion.server.SamlpAssertionException;
+import org.jetbrains.annotations.NotNull;
 import saml.v2.protocol.AuthnRequestType;
 
 import javax.xml.bind.JAXBElement;
@@ -13,10 +15,12 @@ import java.util.Map;
  */
 public class AuthnRequestGenerator extends AbstractSamlp2MessageGenerator<AuthnRequestType> {
 
-    public AuthnRequestGenerator(Map<String, Object> variablesMap, Audit auditor)
+    public AuthnRequestGenerator(@NotNull final Map<String, Object> variablesMap,
+                                 @NotNull final Audit auditor,
+                                 @NotNull final NameIdentifierResolver issuerNameResolver)
         throws SamlpAssertionException
     {
-        super(variablesMap, auditor);
+        super(variablesMap, auditor, issuerNameResolver);
     }
 
     @Override

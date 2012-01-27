@@ -382,7 +382,7 @@ public class ServerProcessSamlAttributeQueryAssertionTest {
         final Message samlpRequest;
         {
             final SamlpRequestBuilderAssertion requestBuilderAssertion = new SamlpRequestBuilderAssertion();
-            requestBuilderAssertion.setSamlVersion(2);
+            requestBuilderAssertion.setVersion(2);
             requestBuilderAssertion.setSoapVersion(1);
             requestBuilderAssertion.setNameIdentifierType(NameIdentifierInclusionType.SPECIFIED);
             requestBuilderAssertion.setNameIdentifierValue(nameIdValue);
@@ -467,7 +467,7 @@ public class ServerProcessSamlAttributeQueryAssertionTest {
         final Message samlpRequest;
         {
             final SamlpRequestBuilderAssertion requestBuilderAssertion = new SamlpRequestBuilderAssertion();
-            requestBuilderAssertion.setSamlVersion(2);
+            requestBuilderAssertion.setVersion(2);
             requestBuilderAssertion.setSoapVersion(1);
             requestBuilderAssertion.setNameIdentifierType(NameIdentifierInclusionType.SPECIFIED);
             requestBuilderAssertion.setNameIdentifierValue(nameIdValue);

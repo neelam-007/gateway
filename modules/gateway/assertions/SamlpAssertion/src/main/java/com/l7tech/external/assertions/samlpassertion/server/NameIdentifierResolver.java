@@ -6,15 +6,15 @@ import org.jetbrains.annotations.Nullable;
 /**
  * @author: vchan
  */
-public abstract class NameIdentifierResolver {
+public abstract class NameIdentifierResolver <SamlProtocolAssertionType extends SamlProtocolAssertion>{
 
-    protected final SamlProtocolAssertion assertion;
+    protected final SamlProtocolAssertionType assertion;
     protected String nameValue;
-    protected String nameFormat;
+    protected String nameFormat; // SAML 2.0 only
+    protected String nameQualifier; // SAML 2.0 only
 
-    protected NameIdentifierResolver(final SamlProtocolAssertion assertion) {
+    protected NameIdentifierResolver(final SamlProtocolAssertionType assertion) throws SamlpAssertionException {
         this.assertion = assertion;
-
         parse();
     }
 
@@ -27,5 +27,9 @@ public abstract class NameIdentifierResolver {
         return nameFormat;
     }
 
-    protected abstract void parse();
+    public String getNameQualifier() {
+        return nameQualifier;
+    }
+
+    protected abstract void parse() throws SamlpAssertionException;
 }

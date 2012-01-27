@@ -90,6 +90,7 @@ public class SelectSamlpQueryWizardStepPanel extends SamlpWizardStepPanel {
         return authenticationStatementRadioButton.isSelected() || authorizationDecisionStatementRadioButton.isSelected() || attributeStatementRadioButton.isSelected();
     }
 
+    @Override
     public void readSettings(Object settings)
       throws IllegalArgumentException {
         SamlProtocolAssertion assertion = SamlProtocolAssertion.class.cast(settings);
@@ -97,7 +98,7 @@ public class SelectSamlpQueryWizardStepPanel extends SamlpWizardStepPanel {
         SamlpAuthorizationStatement athz = assertion.getAuthorizationStatement();
         SamlAttributeStatement atts = assertion.getAttributeStatement();
 
-        if (assertion.getSamlVersion() == 2) {
+        if (assertion.getVersion() == 2) {
             authenticationStatementRadioButton.setEnabled(true);
             if (auths == null && athz == null && atts == null) authenticationStatementRadioButton.setSelected(true);
             if (auths != null) authenticationStatementRadioButton.setSelected(true);
@@ -113,6 +114,7 @@ public class SelectSamlpQueryWizardStepPanel extends SamlpWizardStepPanel {
         }
     }
 
+    @Override
     public void storeSettings(Object settings) throws IllegalArgumentException {
 
         SamlProtocolAssertion assertion = SamlProtocolAssertion.class.cast(settings);
@@ -146,6 +148,7 @@ public class SelectSamlpQueryWizardStepPanel extends SamlpWizardStepPanel {
     /**
      * @return the wizard step label
      */
+    @Override
     public String getStepLabel() {
 
         if (isRequestMode())
@@ -153,6 +156,7 @@ public class SelectSamlpQueryWizardStepPanel extends SamlpWizardStepPanel {
         return "SAMLP Response Type";
     }
 
+    @Override
     public String getDescription() {
         if (isRequestMode())
             return "Select the type of SAMLP query request you wish to configure.";

@@ -56,7 +56,6 @@ public abstract class AbstractSamlp1MessageGenerator<REQ_MSG extends SubjectQuer
     protected saml.support.ds.ObjectFactory digsigFactory;
 
     protected NameIdentifierResolver nameResolver;
-    protected NameIdentifierResolver issuerNameResolver;
     protected InetAddressResolver addressResolver;
     protected MessageValueResolver<String> authnMethodResolver;
     protected MessageValueResolver<X509Certificate> clientCertResolver;
@@ -87,7 +86,7 @@ public abstract class AbstractSamlp1MessageGenerator<REQ_MSG extends SubjectQuer
     @Override
     public RequestType create(final SamlpRequestBuilderAssertion assertion) {
 
-        if (assertion.getSamlVersion() != 1)
+        if (assertion.getVersion() != 1)
             throw new IllegalArgumentException("Incompatable Saml Version");
 
         this.assertion = assertion;
@@ -125,15 +124,6 @@ public abstract class AbstractSamlp1MessageGenerator<REQ_MSG extends SubjectQuer
      */
     public void setNameResolver(NameIdentifierResolver nameResolver) {
         this.nameResolver = nameResolver;
-    }
-
-    /**
-     * Sets the NameIdentifier resolver for the Issuer name.
-     *
-     * @param issuerNameResolver the resolver to set
-     */
-    public void setIssuerNameResolver(NameIdentifierResolver issuerNameResolver) {
-        this.issuerNameResolver = issuerNameResolver;
     }
 
     /**

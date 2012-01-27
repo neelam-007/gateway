@@ -8,6 +8,7 @@ import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.util.ExceptionUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.BeanFactory;
 
 import java.io.IOException;
@@ -33,6 +34,7 @@ public class ServerAssertionUtils {
      * @return The SslSignerInfo to use for the specified object.  Never null.
      * @throws java.security.KeyStoreException if there is a problem loading the requested cert chain and private key.
      */
+    @NotNull
     public static SignerInfo getSignerInfo(BeanFactory ctx, Object maybePrivateKeyable) throws KeyStoreException {
         try {
             if (maybePrivateKeyable instanceof PrivateKeyable) {

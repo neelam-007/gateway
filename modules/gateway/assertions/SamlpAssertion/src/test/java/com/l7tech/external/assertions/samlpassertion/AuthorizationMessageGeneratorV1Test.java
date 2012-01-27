@@ -62,19 +62,12 @@ public class AuthorizationMessageGeneratorV1Test extends SamlpMessageGeneratorTe
 
             AuthorizationDecisionQueryGenerator gen = new AuthorizationDecisionQueryGenerator(varMap, new TestAudit());
 
-            gen.setNameResolver( new NameIdentifierResolver(assertion) {
+            gen.setNameResolver( new NameIdentifierResolver<SamlProtocolAssertion>(assertion) {
 
                 @Override
                 protected void parse() {
                     this.nameValue = "somebody@email-exchange.com";
                     this.nameFormat = SamlConstants.NAMEIDENTIFIER_EMAIL;
-                }
-            });
-            gen.setIssuerNameResolver( new NameIdentifierResolver(assertion) {
-
-                @Override
-                protected void parse() {
-                    this.nameValue = "Bob-the-issuer";
                 }
             });
 //            gen.setClientCertResolver( new MessageValueResolver<X509Certificate>(assertion) {

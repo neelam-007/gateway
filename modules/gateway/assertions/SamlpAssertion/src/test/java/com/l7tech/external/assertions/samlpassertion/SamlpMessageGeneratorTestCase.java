@@ -113,7 +113,7 @@ public abstract class SamlpMessageGeneratorTestCase<SAMLP_MSG>
         assertTrue(isAssertionClass(obj));
 
         SamlpRequestBuilderAssertion assertion = SamlpRequestBuilderAssertion.class.cast(obj);
-        assertion.setSamlVersion(getSamlVersion());
+        assertion.setVersion(getSamlVersion());
         return assertion;
     }
 

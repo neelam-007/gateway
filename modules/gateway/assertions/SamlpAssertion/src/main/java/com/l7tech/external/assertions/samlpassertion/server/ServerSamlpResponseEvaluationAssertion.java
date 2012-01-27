@@ -140,7 +140,7 @@ public class ServerSamlpResponseEvaluationAssertion extends AbstractServerAssert
         // call the appropriate evaluator
         AbstractSamlpResponseEvaluator<?> evaluator;
         try {
-            if (assertion.getSamlVersion() == 2) {
+            if (assertion.getVersion() == 2) {
                 evaluator = new com.l7tech.external.assertions.samlpassertion.server.v2.ResponseEvaluator(assertion);
             } else {
                  evaluator = new com.l7tech.external.assertions.samlpassertion.server.v1.ResponseEvaluator(assertion);
@@ -161,7 +161,7 @@ public class ServerSamlpResponseEvaluationAssertion extends AbstractServerAssert
             throw new SamlpResponseEvaluationException("Response message cannot be null");
         }
 
-        if (assertion.getSamlVersion() == 2)
+        if (assertion.getVersion() == 2)
             checkStatusCode(STATUSCODE_SAMLP2_SUCCESS, responseValues);
         else
             checkStatusCode(STATUSCODE_SAMLP_SUCCESS, responseValues);
@@ -241,7 +241,7 @@ public class ServerSamlpResponseEvaluationAssertion extends AbstractServerAssert
         Map<String, ResponseAttributeData> theAttribs = responseValues.getAttributes();
         String key;
         int passCount = 0;
-        final boolean isSamlv1 = (assertion.getSamlVersion() == 1);
+        final boolean isSamlv1 = (assertion.getVersion() == 1);
         for (SamlAttributeStatement.Attribute sas : assertion.getAttributeStatement().getAttributes()) {
 
             key = sas.getName();
@@ -276,7 +276,7 @@ public class ServerSamlpResponseEvaluationAssertion extends AbstractServerAssert
         boolean matches;
 
         // Saml v2 check
-        if (assertion.getSamlVersion() == 2) {
+        if (assertion.getVersion() == 2) {
             String nfValue = (configAttr.getNameFormat() == null ?
                     SamlConstants.ATTRIBUTE_NAME_FORMAT_UNSPECIFIED : configAttr.getNameFormat());
 

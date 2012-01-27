@@ -152,20 +152,21 @@ public class AttributeQueryGeneratorV2Test extends SamlpMessageGeneratorTestCase
         try {
             java.util.Map<String, Object> varMap = new HashMap<String, Object>();
 
-            AttributeQueryGenerator gen = new AttributeQueryGenerator(varMap, new TestAudit());
-            gen.setNameResolver( new NameIdentifierResolver(assertion) {
+            final NameIdentifierResolver<SamlProtocolAssertion> issuerNameResolver = new NameIdentifierResolver<SamlProtocolAssertion>(assertion) {
+
+                @Override
+                protected void parse() {
+                    this.nameValue = "Bob-the-issuer";
+                }
+            };
+
+            AttributeQueryGenerator gen = new AttributeQueryGenerator(varMap, new TestAudit(), issuerNameResolver);
+            gen.setNameResolver( new NameIdentifierResolver<SamlProtocolAssertion>(assertion) {
 
                 @Override
                 protected void parse() {
                     this.nameValue = "somebody@email-exchange.com";
                     this.nameFormat = SamlConstants.NAMEIDENTIFIER_EMAIL;
-                }
-            });
-            gen.setIssuerNameResolver( new NameIdentifierResolver(assertion) {
-
-                @Override
-                protected void parse() {
-                    this.nameValue = "Bob-the-issuer";
                 }
             });
 

@@ -13,6 +13,23 @@ import java.util.EnumSet;
  */
 public interface SamlIssuerConfiguration {
 
+    /**
+     * Get the SAML version for this assertion
+     *
+     * <p>The value 0 means any version, null means unspecified (in which case 1 should
+     * be used for backwards compatibility).</p>
+     *
+     * @return The saml version (0/1/2) or null.
+     */
+    public Integer getVersion();
+
+    /**
+     * Set the SAML version for this assertion.
+     *
+     * @param version (may be null)
+     */
+    public void setVersion(Integer version);
+
     String getCustomIssuerValue();
     void setCustomIssuerValue(@Nullable String customIssuerValue);
 

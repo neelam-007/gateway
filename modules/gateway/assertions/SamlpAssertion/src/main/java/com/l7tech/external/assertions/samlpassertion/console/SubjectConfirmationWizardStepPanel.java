@@ -144,7 +144,7 @@ public class SubjectConfirmationWizardStepPanel extends SamlpWizardStepPanel {
                 notOnOrAfterSpinner.setValue( sia.getSubjectConfirmationDataNotOnOrAfterExpirySeconds() );
             }
 
-            final Integer version = sia.getSamlVersion();
+            final Integer version = sia.getVersion();
             enableSubjectConfirmationData = version == null || version != 1;
         } else {
             RequireWssSaml requestWssSaml = (RequireWssSaml)settings;

@@ -89,7 +89,7 @@ public class ServerSamlpRequestBuilderAssertionTest {
     private void runEncryptUseCase(Functions.Binary<Void, XmlElementEncryptionConfig, PolicyEnforcementContext> configCallBack) throws Exception {
         final SamlpRequestBuilderAssertion assertion = new SamlpRequestBuilderAssertion();
         // Absolute minimum configuration to avoid NPE's etc.
-        assertion.setSamlVersion(2);
+        assertion.setVersion(2);
         assertion.setSoapVersion(1);
         assertion.setNameIdentifierType(NameIdentifierInclusionType.SPECIFIED);
         assertion.setNameIdentifierValue("test");
@@ -141,7 +141,7 @@ public class ServerSamlpRequestBuilderAssertionTest {
     public void testInvalidEncryptionConfiguration() throws Exception {
         final SamlpRequestBuilderAssertion assertion = new SamlpRequestBuilderAssertion();
         // Absolute minimum configuration to avoid NPE's etc.
-        assertion.setSamlVersion(2);
+        assertion.setVersion(2);
         assertion.setSoapVersion(1);
         assertion.setNameIdentifierType(NameIdentifierInclusionType.SPECIFIED);
         assertion.setNameIdentifierValue("test");
@@ -163,7 +163,7 @@ public class ServerSamlpRequestBuilderAssertionTest {
     public void testCustomNameFormat() throws Exception {
         final SamlpRequestBuilderAssertion assertion = new SamlpRequestBuilderAssertion();
         // Absolute minimum configuration to avoid NPE's etc.
-        assertion.setSamlVersion(2);
+        assertion.setVersion(2);
         assertion.setSoapVersion(1);
         final String customformat = "customformat";
         assertion.setCustomNameIdentifierFormat(customformat + "${var}");
@@ -214,7 +214,7 @@ public class ServerSamlpRequestBuilderAssertionTest {
     public void testCustomNameFormat_InvalidResolvedValue() throws Exception {
         final SamlpRequestBuilderAssertion assertion = new SamlpRequestBuilderAssertion();
         // Absolute minimum configuration to avoid NPE's etc.
-        assertion.setSamlVersion(2);
+        assertion.setVersion(2);
         assertion.setSoapVersion(1);
         final String customformat = "customformat";
         assertion.setCustomNameIdentifierFormat(customformat + "${var}");
@@ -252,7 +252,7 @@ public class ServerSamlpRequestBuilderAssertionTest {
     }
 
     /**
-     * Tests that when the assertion fails for a configuraton that it audits at the warning level.
+     * Tests that when the assertion fails for a configuration error, that it audits at the warning level.
      * <p/>
      * This test validates this for the case when FROM_CREDS is configured but no creds are available.
      */
@@ -260,7 +260,7 @@ public class ServerSamlpRequestBuilderAssertionTest {
     @BugNumber(11704)
     public void testGenericAuditFor_FromCreds_Exception() throws Exception {
         final SamlpRequestBuilderAssertion assertion = new SamlpRequestBuilderAssertion();
-        assertion.setSamlVersion(2);
+        assertion.setVersion(2);
         assertion.setSoapVersion(1);
         assertion.setNameIdentifierType(NameIdentifierInclusionType.FROM_CREDS);
         assertion.setAttributeStatement(new SamlAttributeStatement());
@@ -287,6 +287,155 @@ public class ServerSamlpRequestBuilderAssertionTest {
 
         Assert.assertTrue(testAudit.isAuditPresent(AssertionMessages.SAMLP_REQUEST_BUILDER_FAILED_TO_BUILD));
         Assert.assertTrue("Required audit not found", testAudit.isAuditPresentContaining("Missing credentials to populate NameIdentifier"));
+    }
+
+    /**
+     * Validate that for a SAML 2.0 request that the Issuer element can be customized correctly.
+     * All custom Issuer fields support expressions.
+     * Format attribute must be a URI.
+     *
+     * @throws Exception
+     */
+    @BugNumber(11621)
+    @Test
+    public void testCustomIssuerValues() throws Exception {
+        final SamlpRequestBuilderAssertion assertion = new SamlpRequestBuilderAssertion();
+        assertion.setVersion(2);
+        assertion.setSoapVersion(1);
+        assertion.setNameIdentifierType(NameIdentifierInclusionType.SPECIFIED);
+        assertion.setAttributeStatement(new SamlAttributeStatement());
+        assertion.setRequestId(SamlpRequestConstants.SAMLP_REQUEST_ID_GENERATE);
+
+        // Customize Issuer
+        final String customIssuerValue = "Custom Issuer ";
+        assertion.setCustomIssuerValue(customIssuerValue + "${var}");
+        final String aValidURI = "AValidURI";
+        assertion.setCustomIssuerFormat(aValidURI + "${var}");
+        final String customIssuerNameQualifier = "Custom Name Qualifier ";
+        assertion.setCustomIssuerNameQualifier(customIssuerNameQualifier + "${var}");
+
+        final PolicyEnforcementContext context = getContext();
+        context.setVariable("var", "1");
+
+        ServerSamlpRequestBuilderAssertion serverAssertion =
+                new ServerSamlpRequestBuilderAssertion(assertion, ApplicationContexts.getTestApplicationContext());
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Unexpected status", AssertionStatus.NONE, assertionStatus);
+
+        final Message samlpRequest = (Message) context.getVariable(assertion.getOtherTargetMessageVariable());
+        final Element documentElement = samlpRequest.getXmlKnob().getDocumentReadOnly().getDocumentElement();
+
+        System.out.println(XmlUtil.nodeToFormattedString(documentElement));
+
+        String xPath = "/soapenv:Envelope/soapenv:Body/samlp2:AttributeQuery/saml2:Issuer";
+
+        final Map<String, String> prefixToNamespace = new HashMap<String, String>();
+        prefixToNamespace.put(SamlConstants.NS_SAML2_PREFIX, SamlConstants.NS_SAML2);
+        prefixToNamespace.put(SamlConstants.NS_SAMLP2_PREFIX, SamlConstants.NS_SAMLP2);
+        prefixToNamespace.put("soapenv", "http://schemas.xmlsoap.org/soap/envelope/");
+
+        final ElementCursor cursor = new DomElementCursor(documentElement);
+
+        XpathResult xpathResult = cursor.getXpathResult(new XpathExpression(xPath, prefixToNamespace).compile());
+        XpathResultIterator xpathResultSetIterator = xpathResult.getNodeSet().getIterator();
+
+        //first element should be the auth token
+        final Element issuerElement = xpathResultSetIterator.nextElementAsCursor().asDomElement();
+        Assert.assertEquals("Wrong element found", "Issuer", issuerElement.getLocalName());
+
+        Assert.assertEquals(customIssuerValue + "1", issuerElement.getTextContent());
+
+        final String format = issuerElement.getAttribute("Format");
+        Assert.assertEquals("Invalid name format found", aValidURI + "1", format);
+
+        final String nameQualifier = issuerElement.getAttribute("NameQualifier");
+        Assert.assertEquals("Invalid name qualifier found", customIssuerNameQualifier + "1", nameQualifier);
+    }
+
+    @Test
+    public void testCustomIssuerValues_InvalidFormat() throws Exception {
+        final SamlpRequestBuilderAssertion assertion = new SamlpRequestBuilderAssertion();
+        assertion.setVersion(2);
+        assertion.setSoapVersion(1);
+        assertion.setNameIdentifierType(NameIdentifierInclusionType.SPECIFIED);
+        assertion.setAttributeStatement(new SamlAttributeStatement());
+        assertion.setRequestId(SamlpRequestConstants.SAMLP_REQUEST_ID_GENERATE);
+
+        // Customize Issuer
+        assertion.setCustomIssuerFormat("Invalid URI %");
+
+        final PolicyEnforcementContext context = getContext();
+
+        ServerSamlpRequestBuilderAssertion serverAssertion =
+                new ServerSamlpRequestBuilderAssertion(assertion, ApplicationContexts.getTestApplicationContext());
+
+        final TestAudit testAudit = new TestAudit();
+        ApplicationContexts.inject(serverAssertion, CollectionUtils.<String, Object>mapBuilder()
+                .put( "auditFactory", testAudit.factory() )
+                .unmodifiableMap()
+        );
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Unexpected status", AssertionStatus.FAILED, assertionStatus);
+
+        for (String s : testAudit) {
+            System.out.println(s);
+        }
+
+        Assert.assertTrue(testAudit.isAuditPresent(AssertionMessages.SAMLP_REQUEST_BUILDER_FAILED_TO_BUILD));
+        Assert.assertTrue(testAudit.isAuditPresentContaining("Invalid Issuer Format attribute value, not a URI"));
+    }
+
+    /**
+     * Test coverage for default Issuer
+     * @throws Exception
+     */
+    @Test
+    public void testDefaultIssuerValues() throws Exception {
+        final SamlpRequestBuilderAssertion assertion = new SamlpRequestBuilderAssertion();
+        assertion.setVersion(2);
+        assertion.setSoapVersion(1);
+        assertion.setNameIdentifierType(NameIdentifierInclusionType.SPECIFIED);
+        assertion.setAttributeStatement(new SamlAttributeStatement());
+        assertion.setRequestId(SamlpRequestConstants.SAMLP_REQUEST_ID_GENERATE);
+
+        final PolicyEnforcementContext context = getContext();
+
+        ServerSamlpRequestBuilderAssertion serverAssertion =
+                new ServerSamlpRequestBuilderAssertion(assertion, ApplicationContexts.getTestApplicationContext());
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Unexpected status", AssertionStatus.NONE, assertionStatus);
+
+        final Message samlpRequest = (Message) context.getVariable(assertion.getOtherTargetMessageVariable());
+        final Element documentElement = samlpRequest.getXmlKnob().getDocumentReadOnly().getDocumentElement();
+
+        System.out.println(XmlUtil.nodeToFormattedString(documentElement));
+
+        String xPath = "/soapenv:Envelope/soapenv:Body/samlp2:AttributeQuery/saml2:Issuer";
+
+        final Map<String, String> prefixToNamespace = new HashMap<String, String>();
+        prefixToNamespace.put(SamlConstants.NS_SAML2_PREFIX, SamlConstants.NS_SAML2);
+        prefixToNamespace.put(SamlConstants.NS_SAMLP2_PREFIX, SamlConstants.NS_SAMLP2);
+        prefixToNamespace.put("soapenv", "http://schemas.xmlsoap.org/soap/envelope/");
+
+        final ElementCursor cursor = new DomElementCursor(documentElement);
+
+        XpathResult xpathResult = cursor.getXpathResult(new XpathExpression(xPath, prefixToNamespace).compile());
+        XpathResultIterator xpathResultSetIterator = xpathResult.getNodeSet().getIterator();
+
+        //first element should be the auth token
+        final Element issuerElement = xpathResultSetIterator.nextElementAsCursor().asDomElement();
+        Assert.assertEquals("Wrong element found", "Issuer", issuerElement.getLocalName());
+
+        Assert.assertEquals("CN=Bob, OU=OASIS Interop Test Cert, O=OASIS", issuerElement.getTextContent());
+
+        final String format = issuerElement.getAttribute("Format");
+        Assert.assertEquals("Name format should not be found", "", format);
+
+        final String nameQualifier = issuerElement.getAttribute("NameQualifier");
+        Assert.assertEquals("Name qualifier should not be found", "", nameQualifier);
     }
 
     private PolicyEnforcementContext getContext() throws IOException {

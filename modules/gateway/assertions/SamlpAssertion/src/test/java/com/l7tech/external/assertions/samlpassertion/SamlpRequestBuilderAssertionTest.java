@@ -59,10 +59,12 @@ public class SamlpRequestBuilderAssertionTest extends BaseAssertionTestCase<Saml
     }
 
 
+    @Override
     protected boolean isAssertionClass(Object obj) {
         return (obj instanceof SamlpRequestBuilderAssertion);
     }
 
+    @Override
     protected SamlpRequestBuilderAssertion castAssertionClass(Object obj) {
         return SamlpRequestBuilderAssertion.class.cast(obj);
     }
@@ -71,5 +73,129 @@ public class SamlpRequestBuilderAssertionTest extends BaseAssertionTestCase<Saml
     public void testFeatureNames() throws Exception {
         assertEquals("assertion:SamlpRequestBuilder", new SamlpRequestBuilderAssertion().getFeatureSetName());
     }
+
+    @Test
+    public void testParsePreEscolarSp1PolicyXml() throws Exception {
+        try {
+            Object obj = parseAssertionFromXml(POLICY_PRE_ESCOLAR_SP1_SIGN);
+            assertNotNull(obj);
+            assertTrue(isAssertionClass(obj));
+            SamlpRequestBuilderAssertion requestBuilder = (SamlpRequestBuilderAssertion) obj;
+            // validate old serialized property was set and assigned correctly
+            assertTrue(requestBuilder.isSignAssertion());
+            assertEquals(new Integer(2), requestBuilder.getVersion());
+
+        } catch (Exception ex) {
+            fail("Unexpected error encountered -- " + ex);
+        }
+
+        try {
+            Object obj = parseAssertionFromXml(POLICY_PRE_ESCOLAR_SP1_NO_SIGN);
+            assertNotNull(obj);
+            assertTrue(isAssertionClass(obj));
+            SamlpRequestBuilderAssertion requestBuilder = (SamlpRequestBuilderAssertion) obj;
+            // validate old serialized property was set and assigned correctly
+            assertFalse(requestBuilder.isSignAssertion());
+
+        } catch (Exception ex) {
+            fail("Unexpected error encountered -- " + ex);
+        }
+
+        try {
+            Object obj = parseAssertionFromXml(POLICY_PRE_ESCOLAR_SP1_NO_SIGN_VERSION_1_1);
+            assertNotNull(obj);
+            assertTrue(isAssertionClass(obj));
+            SamlpRequestBuilderAssertion requestBuilder = (SamlpRequestBuilderAssertion) obj;
+            // validate old serialized property was set and assigned correctly
+            assertFalse(requestBuilder.isSignAssertion());
+            assertEquals(new Integer(1), requestBuilder.getVersion());
+
+        } catch (Exception ex) {
+            fail("Unexpected error encountered -- " + ex);
+        }
+
+    }
+
+    private static final String POLICY_PRE_ESCOLAR_SP1_SIGN = "" +
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "    <wsp:All wsp:Usage=\"Required\">\n" +
+            "        <L7p:SamlpRequestBuilder>\n" +
+            "            <L7p:AttributeStatement samlAttributeInfo=\"included\">\n" +
+            "                <L7p:Attributes samlAttributeElementInfoArray=\"included\">\n" +
+            "                    <L7p:item samlAttributeElementInfo=\"included\">\n" +
+            "                        <L7p:FriendlyName stringValue=\"\"/>\n" +
+            "                        <L7p:Name stringValue=\"single\"/>\n" +
+            "                        <L7p:Namespace stringValue=\"\"/>\n" +
+            "                        <L7p:Value stringValue=\"\"/>\n" +
+            "                    </L7p:item>\n" +
+            "                </L7p:Attributes>\n" +
+            "            </L7p:AttributeStatement>\n" +
+            "            <L7p:OtherTargetMessageVariable stringValueNull=\"null\"/>\n" +
+            "            <L7p:RequestId boxedIntegerValue=\"0\"/>\n" +
+            "            <L7p:SamlVersion boxedIntegerValue=\"2\"/>\n" +
+            "            <L7p:SoapVersion boxedIntegerValue=\"0\"/>\n" +
+            "            <L7p:SubjectConfirmationKeyInfoType subjectConfirmationKeyInfoType=\"STR_THUMBPRINT\"/>\n" +
+            "            <L7p:SubjectConfirmationMethodUri stringValue=\"urn:oasis:names:tc:SAML:1.0:cm:holder-of-key\"/>\n" +
+            "            <L7p:Target target=\"REQUEST\"/>\n" +
+            "            <L7p:XmlEncryptConfig xmlElementEncryptionConfig=\"included\"/>\n" +
+            "        </L7p:SamlpRequestBuilder>\n" +
+            "    </wsp:All>\n" +
+            "</wsp:Policy>";
+
+    private static final String POLICY_PRE_ESCOLAR_SP1_NO_SIGN = "" +
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "    <wsp:All wsp:Usage=\"Required\">\n" +
+            "        <L7p:SamlpRequestBuilder>\n" +
+            "            <L7p:AttributeStatement samlAttributeInfo=\"included\">\n" +
+            "                <L7p:Attributes samlAttributeElementInfoArray=\"included\">\n" +
+            "                    <L7p:item samlAttributeElementInfo=\"included\">\n" +
+            "                        <L7p:FriendlyName stringValue=\"\"/>\n" +
+            "                        <L7p:Name stringValue=\"single\"/>\n" +
+            "                        <L7p:Namespace stringValue=\"\"/>\n" +
+            "                        <L7p:Value stringValue=\"\"/>\n" +
+            "                    </L7p:item>\n" +
+            "                </L7p:Attributes>\n" +
+            "            </L7p:AttributeStatement>\n" +
+            "            <L7p:OtherTargetMessageVariable stringValueNull=\"null\"/>\n" +
+            "            <L7p:RequestId boxedIntegerValue=\"0\"/>\n" +
+            "            <L7p:SamlVersion boxedIntegerValue=\"2\"/>\n" +
+            "            <L7p:SignRequest booleanValue=\"false\"/>\n" +
+            "            <L7p:SoapVersion boxedIntegerValue=\"0\"/>\n" +
+            "            <L7p:SubjectConfirmationKeyInfoType subjectConfirmationKeyInfoType=\"STR_THUMBPRINT\"/>\n" +
+            "            <L7p:SubjectConfirmationMethodUri stringValue=\"urn:oasis:names:tc:SAML:1.0:cm:holder-of-key\"/>\n" +
+            "            <L7p:Target target=\"REQUEST\"/>\n" +
+            "            <L7p:XmlEncryptConfig xmlElementEncryptionConfig=\"included\"/>\n" +
+            "        </L7p:SamlpRequestBuilder>\n" +
+            "    </wsp:All>\n" +
+            "</wsp:Policy>";
+
+        private static final String POLICY_PRE_ESCOLAR_SP1_NO_SIGN_VERSION_1_1 = "" +
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <L7p:SamlpRequestBuilder>\n" +
+                "            <L7p:AttributeStatement samlAttributeInfo=\"included\">\n" +
+                "                <L7p:Attributes samlAttributeElementInfoArray=\"included\">\n" +
+                "                    <L7p:item samlAttributeElementInfo=\"included\">\n" +
+                "                        <L7p:Name stringValue=\"single\"/>\n" +
+                "                        <L7p:Namespace stringValue=\"\"/>\n" +
+                "                        <L7p:Value stringValue=\"\"/>\n" +
+                "                    </L7p:item>\n" +
+                "                </L7p:Attributes>\n" +
+                "            </L7p:AttributeStatement>\n" +
+                "            <L7p:OtherTargetMessageVariable stringValueNull=\"null\"/>\n" +
+                "            <L7p:RequestId boxedIntegerValue=\"0\"/>\n" +
+                "            <L7p:SamlVersion boxedIntegerValue=\"1\"/>\n" +
+                "            <L7p:SignRequest booleanValue=\"false\"/>\n" +
+                "            <L7p:SoapVersion boxedIntegerValue=\"0\"/>\n" +
+                "            <L7p:SubjectConfirmationKeyInfoType subjectConfirmationKeyInfoType=\"STR_THUMBPRINT\"/>\n" +
+                "            <L7p:SubjectConfirmationMethodUri stringValue=\"urn:oasis:names:tc:SAML:1.0:cm:holder-of-key\"/>\n" +
+                "            <L7p:Target target=\"REQUEST\"/>\n" +
+                "            <L7p:XmlEncryptConfig xmlElementEncryptionConfig=\"included\"/>\n" +
+                "        </L7p:SamlpRequestBuilder>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>";
 
 }

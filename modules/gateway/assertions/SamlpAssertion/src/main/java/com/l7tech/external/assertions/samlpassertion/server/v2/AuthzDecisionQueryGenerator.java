@@ -2,9 +2,11 @@ package com.l7tech.external.assertions.samlpassertion.server.v2;
 
 import com.l7tech.external.assertions.samlpassertion.server.AbstractSamlp2MessageGenerator;
 import com.l7tech.external.assertions.samlpassertion.server.JaxbUtil;
+import com.l7tech.external.assertions.samlpassertion.server.NameIdentifierResolver;
 import com.l7tech.external.assertions.samlpassertion.server.SamlpAssertionException;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.util.ExceptionUtils;
+import org.jetbrains.annotations.NotNull;
 import saml.v2.assertion.*;
 import saml.v2.protocol.AuthzDecisionQueryType;
 
@@ -23,10 +25,12 @@ import java.util.logging.Logger;
 public final class AuthzDecisionQueryGenerator extends AbstractSamlp2MessageGenerator<AuthzDecisionQueryType> {
     private static final Logger logger = Logger.getLogger(AuthzDecisionQueryGenerator.class.getName());
 
-    public AuthzDecisionQueryGenerator(final Map<String, Object> variablesMap, final Audit auditor)
+    public AuthzDecisionQueryGenerator(@NotNull final Map<String, Object> variablesMap,
+                                       @NotNull final Audit auditor,
+                                       @NotNull final NameIdentifierResolver issuerNameResolver)
         throws SamlpAssertionException
     {
-        super(variablesMap, auditor);
+        super(variablesMap, auditor, issuerNameResolver);
     }
 
     @Override

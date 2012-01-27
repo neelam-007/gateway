@@ -30,16 +30,16 @@ import java.util.*;
  *
  * @author vchan
  */
-public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implements UsesVariables, PrivateKeyable {
+public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion
+        implements UsesVariables, PrivateKeyable, SamlIssuerConfiguration {
     private static final String META_INITIALIZED = SamlpRequestBuilderAssertion.class.getName() + ".metadataInitialized";
 
     private int conditionsNotBeforeSecondsInPast = -1;
     private int conditionsNotOnOrAfterExpirySeconds = -1;
     /**
-     * True if the assertion should be signed with an enveloped signature (i.e. within the assertion); unrelated to {@link #decorationTypes}.
+     * True if the assertion should be signed with an enveloped signature (i.e. within the assertion).
      */
-    private boolean signRequest = true;
-    private EnumSet<DecorationType> decorationTypes;
+    private boolean signAssertion = true;
     private String subjectConfirmationMethodUri;
     private String subjectConfirmationDataRecipient;
     private String subjectConfirmationDataAddress;
@@ -55,7 +55,6 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
     private KeyInfoInclusionType signatureKeyInfoType = KeyInfoInclusionType.CERT;
     private KeyInfoInclusionType subjectConfirmationKeyInfoType = KeyInfoInclusionType.CERT;
 
-
     // new stuff
     private Integer requestId;
     private String requestIdVariable;
@@ -63,6 +62,10 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
     private String consentAttribute;
     private Integer evidence;
     private String evidenceVariable;
+
+    private String customIssuerValue;
+    private String customIssuerFormat;
+    private String customIssuerNameQualifier;
 
     public static final Set<String> HOK_URIS = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
         SamlConstants.CONFIRMATION_HOLDER_OF_KEY,
@@ -104,21 +107,34 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
         this.setOtherTargetMessageVariable("samlpRequest.message");
     }
 
-    public static enum DecorationType {
-        /** Apply decorations to request */
-        REQUEST,
+    @Override
+    public String getCustomIssuerValue() {
+        return customIssuerValue;
+    }
 
-        /** Apply decorations to response */
-        RESPONSE,
+    @Override
+    public void setCustomIssuerValue(@Nullable String customIssuerValue) {
+        this.customIssuerValue = customIssuerValue;
+    }
 
-        /** Insert the assertion into the message as a child of the Security header, but don't sign it */
-        ADD_ASSERTION,
+    @Override
+    public String getCustomIssuerFormat() {
+        return customIssuerFormat;
+    }
 
-        /** Insert the assertion into the message, and ensure it's signed with a message-level signature */
-        SIGN_ASSERTION,
+    @Override
+    public void setCustomIssuerFormat(@Nullable String customIssuerFormat) {
+        this.customIssuerFormat = customIssuerFormat;
+    }
 
-        /** Sign the SOAP Body */
-        SIGN_BODY,
+    @Override
+    public String getCustomIssuerNameQualifier() {
+        return customIssuerNameQualifier;
+    }
+
+    @Override
+    public void setCustomIssuerNameQualifier(@Nullable String customIssuerNameQualifier) {
+        this.customIssuerNameQualifier = customIssuerNameQualifier;
     }
 
     public Integer getRequestId() {
@@ -169,74 +185,103 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
         this.evidenceVariable = evidenceVariable;
     }
 
+    @Override
     public NameIdentifierInclusionType getNameIdentifierType() {
         return nameIdentifierType;
     }
 
+    @Override
     public void setNameIdentifierType(NameIdentifierInclusionType nameIdentifierType) {
         this.nameIdentifierType = nameIdentifierType;
     }
 
+    @Override
     public String getSubjectConfirmationMethodUri() {
         return subjectConfirmationMethodUri;
     }
 
+    @Override
     public void setSubjectConfirmationMethodUri(String subjectConfirmationMethodUri) {
         this.subjectConfirmationMethodUri = subjectConfirmationMethodUri;
     }
 
-    public boolean isSignRequest() {
-        return signRequest;
+    @Override
+    public boolean isSignAssertion() {
+        return signAssertion;
     }
 
+    @Override
+    public void setSignAssertion(boolean signAssertion) {
+        this.signAssertion = signAssertion;
+    }
+
+    /**
+     * Left in for backwards compatibility.
+     * @param signRequest
+     */
+    @Deprecated
     public void setSignRequest(boolean signRequest) {
-        this.signRequest = signRequest;
+        this.signAssertion = signRequest;
     }
 
-    public EnumSet<DecorationType> getDecorationTypes() {
-        return decorationTypes;
+    @Deprecated
+    @Override
+    public EnumSet<SamlIssuerConfiguration.DecorationType> getDecorationTypes() {
+        return null;
     }
 
-    public void setDecorationTypes(EnumSet<DecorationType> decorationTypes) {
-        this.decorationTypes = decorationTypes;
+    @Deprecated
+    @Override
+    public void setDecorationTypes(EnumSet<SamlIssuerConfiguration.DecorationType> decorationTypes) {
+        throw new UnsupportedOperationException("Not supported yet in SAML Protocol");
     }
 
+    @Override
     public String getSubjectConfirmationDataRecipient() {
         return subjectConfirmationDataRecipient;
     }
 
+    @Override
     public void setSubjectConfirmationDataRecipient( final String subjectConfirmationDataRecipient ) {
         this.subjectConfirmationDataRecipient = subjectConfirmationDataRecipient;
     }
 
+    @Override
     public String getSubjectConfirmationDataAddress() {
         return subjectConfirmationDataAddress;
     }
 
+    @Override
     public void setSubjectConfirmationDataAddress( final String subjectConfirmationDataAddress ) {
         this.subjectConfirmationDataAddress = subjectConfirmationDataAddress;
     }
 
+    @Override
     public String getSubjectConfirmationDataInResponseTo() {
         return subjectConfirmationDataInResponseTo;
     }
 
+    @Override
     public void setSubjectConfirmationDataInResponseTo( final String subjectConfirmationDataInResponseTo ) {
         this.subjectConfirmationDataInResponseTo = subjectConfirmationDataInResponseTo;
     }
 
+    @Override
     public int getSubjectConfirmationDataNotBeforeSecondsInPast() {
         return subjectConfirmationDataNotBeforeSecondsInPast;
     }
 
+    @Override
     public void setSubjectConfirmationDataNotBeforeSecondsInPast( final int subjectConfirmationDataNotBeforeSecondsInPast ) {
         this.subjectConfirmationDataNotBeforeSecondsInPast = subjectConfirmationDataNotBeforeSecondsInPast;
     }
 
+    @Override
     public int getSubjectConfirmationDataNotOnOrAfterExpirySeconds() {
         return subjectConfirmationDataNotOnOrAfterExpirySeconds;
     }
 
+    @Override
     public void setSubjectConfirmationDataNotOnOrAfterExpirySeconds( final int subjectConfirmationDataNotOnOrAfterExpirySeconds ) {
         this.subjectConfirmationDataNotOnOrAfterExpirySeconds = subjectConfirmationDataNotOnOrAfterExpirySeconds;
     }
@@ -273,7 +318,10 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
                 requestIdVariable,
                 destinationAttribute,
                 consentAttribute,
-                customNameIdentifierFormat
+                customNameIdentifierFormat,
+                customIssuerValue,
+                customIssuerFormat,
+                customIssuerNameQualifier
         ).withVariables( evidenceVariable );
 
         variablesUsed.addVariables(xmlEncryptConfig.getVariablesUsed());
@@ -305,26 +353,32 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
         varNames.addAll(Arrays.asList(vars));
     }
 
+    @Override
     public int getConditionsNotBeforeSecondsInPast() {
         return conditionsNotBeforeSecondsInPast;
     }
 
+    @Override
     public void setConditionsNotBeforeSecondsInPast(int conditionsNotBeforeSecondsInPast) {
         this.conditionsNotBeforeSecondsInPast = conditionsNotBeforeSecondsInPast;
     }
 
+    @Override
     public int getConditionsNotOnOrAfterExpirySeconds() {
         return conditionsNotOnOrAfterExpirySeconds;
     }
 
+    @Override
     public void setConditionsNotOnOrAfterExpirySeconds(int conditionsNotOnOrAfterExpirySeconds) {
         this.conditionsNotOnOrAfterExpirySeconds = conditionsNotOnOrAfterExpirySeconds;
     }
 
+    @Override
     public void setNameIdentifierFormat(@Nullable String formatUri) {
         this.nameIdentifierFormat = formatUri;
     }
 
+    @Override
     public String getNameIdentifierFormat() {
         return nameIdentifierFormat;
     }
@@ -337,19 +391,23 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
         return customNameIdentifierFormat;
     }
 
+    @Override
     public void setNameIdentifierValue(@Nullable String value) {
         this.nameIdentifierValue = value;
     }
 
+    @Override
     @Nullable
     public String getNameIdentifierValue() {
         return nameIdentifierValue;
     }
 
+    @Override
     public KeyInfoInclusionType getSubjectConfirmationKeyInfoType() {
         return subjectConfirmationKeyInfoType;
     }
 
+    @Override
     public void setSubjectConfirmationKeyInfoType(KeyInfoInclusionType subjectConfirmationKeyInfoType) {
         this.subjectConfirmationKeyInfoType = subjectConfirmationKeyInfoType;
     }
@@ -412,7 +470,7 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
             else if (assertion.getAttributeStatement() != null)
                 sb.append(" (Attribute Query)");
 
-            if (assertion.isSignRequest()) {
+            if (assertion.isSignAssertion()) {
                 sb.append("; Sign Request");
             }
             return AssertionUtils.decorateName(assertion, sb);
@@ -445,7 +503,8 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
             new Java5EnumTypeMapping(NameIdentifierInclusionType.class, "nameIdentifierType"),
             new Java5EnumTypeMapping(KeyInfoInclusionType.class, "subjectConfirmationKeyInfoType"),
-            new Java5EnumSetTypeMapping(EnumSet.class, DecorationType.class, "decorationTypes"),
+                /*Note this property should never be serialized*/
+            new Java5EnumSetTypeMapping(EnumSet.class, SamlIssuerConfiguration.DecorationType.class, "decorationTypes"),
             new BeanTypeMapping(SamlpAuthorizationStatement.class, "samlpAuthorizationInfo"),
             new ArrayTypeMapping(new String[0], "actions")
         )));

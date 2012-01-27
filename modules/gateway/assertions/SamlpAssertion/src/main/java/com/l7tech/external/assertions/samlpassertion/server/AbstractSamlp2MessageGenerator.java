@@ -10,6 +10,7 @@ import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
+import org.jetbrains.annotations.NotNull;
 import saml.support.ds.KeyInfoType;
 import saml.support.ds.X509DataType;
 import saml.support.ds.X509IssuerSerialType;
@@ -38,6 +39,8 @@ public abstract class AbstractSamlp2MessageGenerator<SAMLP_MSG extends RequestAb
 {
     private static final Logger logger = Logger.getLogger(AbstractSamlp2MessageGenerator.class.getName());
 
+    private final NameIdentifierResolver issuerNameResolver;
+
     protected final Map<String, Object> variablesMap;
     protected final Audit auditor;
 
@@ -48,7 +51,6 @@ public abstract class AbstractSamlp2MessageGenerator<SAMLP_MSG extends RequestAb
     protected saml.support.ds.ObjectFactory digsigFactory;
 
     protected NameIdentifierResolver nameResolver;
-    protected NameIdentifierResolver issuerNameResolver;
     protected InetAddressResolver addressResolver;
     protected MessageValueResolver<String> authnMethodResolver;
     protected MessageValueResolver<X509Certificate> clientCertResolver;
@@ -56,11 +58,14 @@ public abstract class AbstractSamlp2MessageGenerator<SAMLP_MSG extends RequestAb
 
     private DatatypeFactory xmltypeFactory;
 
-    public AbstractSamlp2MessageGenerator(final Map<String, Object> variablesMap, final Audit auditor)
+    public AbstractSamlp2MessageGenerator(@NotNull final Map<String, Object> variablesMap,
+                                          @NotNull final Audit auditor,
+                                          @NotNull final NameIdentifierResolver issuerNameResolver)
         throws SamlpAssertionException
     {
         this.variablesMap = variablesMap;
         this.auditor = auditor;
+        this.issuerNameResolver = issuerNameResolver;
 
         this.samlFactory = new saml.v2.assertion.ObjectFactory();
         this.samlpFactory = new saml.v2.protocol.ObjectFactory();
@@ -78,7 +83,7 @@ public abstract class AbstractSamlp2MessageGenerator<SAMLP_MSG extends RequestAb
     @Override
     public SAMLP_MSG create(final SamlpRequestBuilderAssertion assertion) {
 
-        if (assertion.getSamlVersion() != 2)
+        if (assertion.getVersion() != 2)
             throw new IllegalArgumentException("Incompatable Saml Version");
 
         this.assertion = assertion;
@@ -97,15 +102,6 @@ public abstract class AbstractSamlp2MessageGenerator<SAMLP_MSG extends RequestAb
      */
     public void setNameResolver(NameIdentifierResolver nameResolver) {
         this.nameResolver = nameResolver;
-    }
-
-    /**
-     * Sets the NameIdentifier resolver for the Issuer name.
-     *
-     * @param issuerNameResolver the resolver to set
-     */
-    public void setIssuerNameResolver(NameIdentifierResolver issuerNameResolver) {
-        this.issuerNameResolver = issuerNameResolver;
     }
 
     /**
@@ -334,6 +330,7 @@ public abstract class AbstractSamlp2MessageGenerator<SAMLP_MSG extends RequestAb
             issuer = samlFactory.createNameIDType();
             issuer.setValue(issuerNameResolver.getNameValue());
             issuer.setFormat(issuerNameResolver.getNameFormat());
+            issuer.setNameQualifier(issuerNameResolver.getNameQualifier());
             // ignore the rest
 //            issuer.setNameQualifier("qualifier");
 //            issuer.setSPNameQualifier("spn-name-gateway");

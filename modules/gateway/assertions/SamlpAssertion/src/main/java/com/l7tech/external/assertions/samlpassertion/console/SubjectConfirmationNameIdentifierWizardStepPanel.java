@@ -122,7 +122,7 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends SamlpWizar
     @Override
     public void readSettings(Object settings) throws IllegalArgumentException {
         assertion = SamlProtocolAssertion.class.cast(settings);
-        version = assertion.getSamlVersion() == null ? 1 : assertion.getSamlVersion();
+        version = assertion.getVersion() == null ? 1 : assertion.getVersion();
         enableForVersion();
         nameQualifierTextField.setText(assertion.getNameQualifier());
 

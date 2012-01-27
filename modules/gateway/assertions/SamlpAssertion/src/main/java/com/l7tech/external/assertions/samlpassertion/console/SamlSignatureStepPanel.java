@@ -44,9 +44,10 @@ public class SamlSignatureStepPanel extends SamlpWizardStepPanel {
      * @throws IllegalArgumentException if the the data provided
      *                                  by the wizard are not valid.
      */
+    @Override
     public void readSettings(Object settings) throws IllegalArgumentException {
         SamlpRequestBuilderAssertion assertion = SamlpRequestBuilderAssertion.class.cast(settings);
-        signRequestCheckBox.setSelected(assertion.isSignRequest());
+        signRequestCheckBox.setSelected(assertion.isSignAssertion());
     }
 
     /**
@@ -60,9 +61,10 @@ public class SamlSignatureStepPanel extends SamlpWizardStepPanel {
      * @throws IllegalArgumentException if the the data provided
      *                                  by the wizard are not valid.
      */
+    @Override
     public void storeSettings(Object settings) throws IllegalArgumentException {
         SamlpRequestBuilderAssertion assertion = SamlpRequestBuilderAssertion.class.cast(settings);
-        assertion.setSignRequest(signRequestCheckBox.isSelected());
+        assertion.setSignAssertion(signRequestCheckBox.isSelected());
     }
 
     private void initialize() {
@@ -82,10 +84,12 @@ public class SamlSignatureStepPanel extends SamlpWizardStepPanel {
     /**
      * @return the wizard step label
      */
+    @Override
     public String getStepLabel() {
         return "Digital Signatures";
     }
 
+    @Override
     public String getDescription() {
         return "<html>Specify whether the assertion will include a digital signature in the request.</html>";
     }

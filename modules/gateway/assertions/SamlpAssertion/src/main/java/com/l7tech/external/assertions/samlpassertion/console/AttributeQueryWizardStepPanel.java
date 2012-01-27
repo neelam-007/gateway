@@ -101,7 +101,7 @@ public class AttributeQueryWizardStepPanel extends SamlpWizardStepPanel {
 
         int nrows = attributesTableModel.getRowCount();
         Collection<SamlAttributeStatement.Attribute> attributes = new ArrayList<SamlAttributeStatement.Attribute>();
-        boolean isV2 = (assertion.getSamlVersion() == 2);
+        boolean isV2 = (assertion.getVersion() == 2);
         for (int i = 0; i < nrows; i++) {
             String value = attributesTableModel.getValueAt(i, 4).toString();
             boolean isAny = ANY.equals(value);
@@ -134,7 +134,7 @@ public class AttributeQueryWizardStepPanel extends SamlpWizardStepPanel {
     @Override
     public void readSettings(Object settings) throws IllegalArgumentException {
         SamlProtocolAssertion assertion = SamlProtocolAssertion.class.cast(settings);
-        samlVersion = assertion.getSamlVersion();
+        samlVersion = assertion.getVersion();
 
         SamlAttributeStatement statement = assertion.getAttributeStatement();
         setSkipped(statement == null);

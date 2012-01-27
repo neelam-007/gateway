@@ -101,8 +101,6 @@ public final class AuthorizationDecisionQueryGenerator extends AbstractSamlp1Mes
         // Do need to set conditions?
         // assertion.setConditions();
         assertion.getStatementOrSubjectStatementOrAuthenticationStatement().add(buildDefaultAuthnStatement());
-        if (issuerNameResolver != null)
-            assertion.setIssuer(issuerNameResolver.getNameValue());
 
         return assertion;
     }

@@ -58,19 +58,20 @@ public class AuthnMessageGeneratorV2Test extends SamlpMessageGeneratorTestCase<A
         try {
             java.util.Map<String, Object> varMap = new HashMap<String, Object>();
 
-            AuthnRequestGenerator gen = new AuthnRequestGenerator(varMap, new TestAudit());
+            final NameIdentifierResolver<SamlProtocolAssertion> issuerNameResolver = new NameIdentifierResolver<SamlProtocolAssertion>(assertion) {
+                @Override
+                protected void parse() {
+                    this.nameValue = "Bob-the-issuer";
+                }
+            };
 
-            gen.setNameResolver( new NameIdentifierResolver(assertion) {
+            AuthnRequestGenerator gen = new AuthnRequestGenerator(varMap, new TestAudit(), issuerNameResolver);
+
+            gen.setNameResolver( new NameIdentifierResolver<SamlProtocolAssertion>(assertion) {
                 @Override
                 protected void parse() {
                     this.nameValue = "somebody@email-exchange.com";
                     this.nameFormat = SamlConstants.NAMEIDENTIFIER_EMAIL;
-                }
-            });
-            gen.setIssuerNameResolver( new NameIdentifierResolver(assertion) {
-                @Override
-                protected void parse() {
-                    this.nameValue = "Bob-the-issuer";
                 }
             });
             gen.setAuthnMethodResolver( new MessageValueResolver<String>(assertion) {

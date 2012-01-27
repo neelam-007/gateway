@@ -12,7 +12,7 @@ import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
  * @author megery - migrated from the 4.x branches where this exists in the main tree.
  */
 public class SamlProtocolAssertion extends MessageTargetableAssertion {
-    private Integer samlVersion;
+    private Integer version;
     private Integer soapVersion;
     private boolean noSubjectConfirmation = false;
     protected String nameQualifier = null;
@@ -29,24 +29,32 @@ public class SamlProtocolAssertion extends MessageTargetableAssertion {
     }
 
     /**
-     * Get the SAML version for this assertion
+     * Get SAML Version
      *
-     * <p>The value 0 means any version, null means unspecified (in which case 1 should
-     * be used for backwards compatibility).</p>
-     *
-     * @return The saml version (0/1/2) or null.
+     * @see com.l7tech.policy.assertion.SamlIssuerConfiguration#getVersion()
+     * @return Version of SAML
      */
-    public Integer getSamlVersion() {
-        return samlVersion;
+    public Integer getVersion() {
+        return version;
     }
 
     /**
-     * Set the SAML version for this assertion.
+     * Set SAML version
      *
-     * @param version (may be null)
+     * @see com.l7tech.policy.assertion.SamlIssuerConfiguration#setVersion(Integer)
+     * @param version SAML version
      */
+    public void setVersion(Integer version) {
+        this.version = version;
+    }
+
+    /**
+     * Left in for backwards compatibility with pre Escolar sp1
+     * @param version
+     */
+    @Deprecated
     public void setSamlVersion(Integer version) {
-        this.samlVersion = version;
+        this.version = version;
     }
 
     /**

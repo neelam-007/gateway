@@ -10,7 +10,7 @@ import java.util.*;
 /**
  * @author alex
  */
-public class SamlPolicyAssertion extends Assertion {
+public abstract class SamlPolicyAssertion extends Assertion {
     private Integer version;
     private boolean noSubjectConfirmation = false;
     protected String nameQualifier = null;

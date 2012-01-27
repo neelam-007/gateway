@@ -34,7 +34,6 @@ import com.l7tech.util.*;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.xml.soap.SoapVersion;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
@@ -75,7 +74,8 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
         private int soapVersion;
         private Map<String, Object> ctxVariables;
         private NameIdentifierResolver nameResolver;
-        private NameIdentifierResolver issuerNameResolver;
+        @Nullable
+        private NameIdentifierResolver issuerNameResolver; // SAML Version 2.0 only
         private InetAddressResolver addressResolver;
         private MessageValueResolver<String> authnMethodResolver;
         private MessageValueResolver<X509Certificate> clientCertResolver;
@@ -207,13 +207,14 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
      * Creates the NameResolvers used by the SAMLP message generators.
      *
      * @param context the current PolicyEnforcementContext
+     * @param bContext BuilderContext with runtime values
      * @throws SamlpAssertionException when unable to obtain the NameIdentifier value(s)
      */
     private void setResolvers(final PolicyEnforcementContext context, final BuilderContext bContext ) throws SamlpAssertionException {
         final AuthenticationContext authContext = context.getDefaultAuthenticationContext();
         final String[] nameOverrides = getNameIdentifier(authContext, bContext);
 
-        bContext.nameResolver = new NameIdentifierResolver(assertion) {
+        bContext.nameResolver = new NameIdentifierResolver<SamlpRequestBuilderAssertion>(assertion) {
                 @Override
                 protected void parse() {
                     this.nameValue = nameOverrides[0];
@@ -221,13 +222,32 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
                 }
             };
 
-        bContext.issuerNameResolver = new NameIdentifierResolver(assertion) {
-                @Override
-                protected void parse() {
-                    if (signerInfo != null)
-                        this.nameValue = signerInfo.getCertificateChain()[0].getSubjectDN().getName();
-                }
-            };
+        // SAML 1.1 does not contain an Issuer field in protocol requests
+        bContext.issuerNameResolver = (assertion.getVersion() != 2) ? null :
+                new NameIdentifierResolver<SamlpRequestBuilderAssertion>(assertion) {
+                    @Override
+                    protected void parse() throws SamlpAssertionException {
+                        final String customIssuerValue = assertion.getCustomIssuerValue();
+
+                        this.nameValue = (customIssuerValue == null) ?
+                                signerInfo.getCertificateChain()[0].getSubjectDN().getName() :
+                                ExpandVariables.process(customIssuerValue, bContext.ctxVariables, getAudit());
+
+                        this.nameFormat = (assertion.getCustomIssuerFormat() == null) ?
+                                null :
+                                ExpandVariables.process(assertion.getCustomIssuerFormat(), bContext.ctxVariables, getAudit());
+                        if (this.nameFormat != null) {
+                            final String invalidError = ValidationUtils.isValidUriString(this.nameFormat);
+                            if (invalidError != null) {
+                                throw new SamlpAssertionException("Invalid Issuer Format attribute value, not a URI: " + invalidError);
+                            }
+                        }
+
+                        this.nameQualifier = (assertion.getCustomIssuerNameQualifier() == null) ?
+                                null :
+                                ExpandVariables.process(assertion.getCustomIssuerNameQualifier(), bContext.ctxVariables, getAudit());
+                    }
+                };
 
         if (authContext.getLastCredentials() != null) {
             bContext.clientCertResolver = new MessageValueResolver<X509Certificate>(assertion) {
@@ -315,11 +335,10 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
     private JAXBElement<?> buildAuthenticationRequest( final BuilderContext bContext )
         throws SamlpAssertionException
     {
-        if (assertion.getSamlVersion() == 2) {
+        if (assertion.getVersion() == 2) {
             /* SAML 2.0 generator */
-            AuthnRequestGenerator gen = new AuthnRequestGenerator(bContext.ctxVariables, getAudit());
+            AuthnRequestGenerator gen = new AuthnRequestGenerator(bContext.ctxVariables, getAudit(), bContext.issuerNameResolver);
             gen.setNameResolver(bContext.nameResolver);
-            gen.setIssuerNameResolver(bContext.issuerNameResolver);
             gen.setAddressResolver(bContext.addressResolver);
             gen.setAuthnMethodResolver(bContext.authnMethodResolver);
             gen.setClientCertResolver(bContext.clientCertResolver);
@@ -329,7 +348,7 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
             if (jaxbMessage != null)
                 return gen.createJAXBElement(jaxbMessage);
 
-        } else if (assertion.getSamlVersion() == 1) {
+        } else if (assertion.getVersion() == 1) {
             /* SAML 1.1 generator - not supported*/
             throw new SamlpAssertionException("Authentication request not supported in SAMLP 1.1");
         }
@@ -339,11 +358,10 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
     private JAXBElement<?> buildAuthorizationRequest( final BuilderContext bContext )
         throws SamlpAssertionException
     {
-        if (assertion.getSamlVersion() == 2) {
+        if (assertion.getVersion() == 2) {
             /* SAML 2.0 generator */
-            AuthzDecisionQueryGenerator gen = new AuthzDecisionQueryGenerator(bContext.ctxVariables, getAudit());
+            AuthzDecisionQueryGenerator gen = new AuthzDecisionQueryGenerator(bContext.ctxVariables, getAudit(), bContext.issuerNameResolver);
             gen.setNameResolver(bContext.nameResolver);
-            gen.setIssuerNameResolver(bContext.issuerNameResolver);
             gen.setAddressResolver(bContext.addressResolver);
             gen.setAuthnMethodResolver(bContext.authnMethodResolver);
             gen.setClientCertResolver(bContext.clientCertResolver);
@@ -354,11 +372,10 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
             if (jaxbMessage != null)
                 return gen.createJAXBElement(jaxbMessage);
 
-        } else if (assertion.getSamlVersion() == 1) {
+        } else if (assertion.getVersion() == 1) {
             /* SAML 1.1 generator */
             AuthorizationDecisionQueryGenerator gen = new AuthorizationDecisionQueryGenerator(bContext.ctxVariables, getAudit());
             gen.setNameResolver(bContext.nameResolver);
-            gen.setIssuerNameResolver(bContext.issuerNameResolver);
             gen.setAddressResolver(bContext.addressResolver);
             gen.setAuthnMethodResolver(bContext.authnMethodResolver);
             gen.setClientCertResolver(bContext.clientCertResolver);
@@ -376,24 +393,24 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
     private JAXBElement<?> buildAttributeQueryRequest( final BuilderContext bContext )
         throws SamlpAssertionException
     {
-        if (assertion.getSamlVersion() == 2) {
+        if (assertion.getVersion() == 2) {
             /* SAML 2.0 generator */
             com.l7tech.external.assertions.samlpassertion.server.v2.AttributeQueryGenerator gen =
-                    new com.l7tech.external.assertions.samlpassertion.server.v2.AttributeQueryGenerator(bContext.ctxVariables, getAudit());
+                    new com.l7tech.external.assertions.samlpassertion.server.v2.AttributeQueryGenerator(
+                            bContext.ctxVariables, getAudit(), bContext.issuerNameResolver);
+
             gen.setNameResolver(bContext.nameResolver);
-            gen.setIssuerNameResolver(bContext.issuerNameResolver);
             gen.setClientCertResolver(bContext.clientCertResolver);
             AttributeQueryType jaxbMessage = gen.create(assertion);
 
             if (jaxbMessage != null)
                 return gen.createJAXBElement(jaxbMessage);
 
-        } else if (assertion.getSamlVersion() == 1) {
+        } else if (assertion.getVersion() == 1) {
             /* SAML 1.1 generator */
             com.l7tech.external.assertions.samlpassertion.server.v1.AttributeQueryGenerator gen =
                     new com.l7tech.external.assertions.samlpassertion.server.v1.AttributeQueryGenerator(bContext.ctxVariables, getAudit());
             gen.setNameResolver(bContext.nameResolver);
-            gen.setIssuerNameResolver(bContext.issuerNameResolver);
             gen.setClientCertResolver(bContext.clientCertResolver);
             RequestType jaxbMessage = gen.create(assertion);
 
@@ -414,13 +431,13 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
 
         if (assertion.getNameIdentifierType() != NameIdentifierInclusionType.NONE &&
                 assertion.isEncryptNameIdentifier() &&
-                assertion.getSamlVersion() != null &&
-                assertion.getSamlVersion() == 2) {
+                assertion.getVersion() != null &&
+                assertion.getVersion() == 2) {
 
             encryptNameID(bContext.ctxVariables, samlpDoc);
         }
 
-        if (assertion.isSignRequest()) {
+        if (assertion.isSignAssertion()) {
             signRequest(samlpDoc);
         }
 
@@ -485,7 +502,7 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
     {
         try {
             final Marshaller m;
-            if (assertion.getSamlVersion() == 1)
+            if (assertion.getVersion() == 1)
                 m = JaxbUtil.getMarshallerV1();
             else
                 m = JaxbUtil.getMarshallerV2();
@@ -539,7 +556,7 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
     private void signRequest(final Document request) throws SamlpAssertionException {
         try {
             RequestSigner.signSamlpRequest(
-                    assertion.getSamlVersion(),
+                    assertion.getVersion(),
                     request,
                     signerInfo.getPrivate(),
                     signerInfo.getCertificateChain(),
@@ -706,7 +723,7 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
      */
     private String getAuthMethod( @Nullable final Class credentialSourceClass ) {
 
-        final int ver = assertion.getSamlVersion();
+        final int ver = assertion.getVersion();
 
         String authMethod = (ver == 2? SamlConstants.AUTHENTICATION_SAML2_UNSPECIFIED : SamlConstants.UNSPECIFIED_AUTHENTICATION);
         if (credentialSourceClass == null) {

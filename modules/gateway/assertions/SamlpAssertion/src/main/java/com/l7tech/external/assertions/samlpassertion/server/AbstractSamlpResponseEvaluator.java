@@ -40,7 +40,7 @@ public abstract class AbstractSamlpResponseEvaluator<RSP_TYPE> {
      */
     protected AbstractSamlpResponseEvaluator(final SamlProtocolAssertion assertion) {
 
-        this.samlVersion = assertion.getSamlVersion();
+        this.samlVersion = assertion.getVersion();
 
         if (assertion.getAuthenticationStatement() != null) {
             this.expectedType = SamlpResponseType.AUTHENTICATION;

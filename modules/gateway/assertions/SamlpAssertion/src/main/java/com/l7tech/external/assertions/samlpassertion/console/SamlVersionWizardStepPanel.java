@@ -69,10 +69,11 @@ public class SamlVersionWizardStepPanel extends SamlpWizardStepPanel {
      * @throws IllegalArgumentException if the the data provided
      *                                  by the wizard are not valid.
      */
+    @Override
     public void readSettings(Object settings) throws IllegalArgumentException {
         SamlProtocolAssertion assertion = SamlProtocolAssertion.class.cast(settings);
 
-        Integer version = assertion.getSamlVersion();
+        Integer version = assertion.getVersion();
         if (version == null) {
             version = 1;
         }
@@ -126,14 +127,15 @@ public class SamlVersionWizardStepPanel extends SamlpWizardStepPanel {
      * @throws IllegalArgumentException if the the data provided
      *                                  by the wizard are not valid.
      */
+    @Override
     public void storeSettings(Object settings) throws IllegalArgumentException {
 
         SamlProtocolAssertion assertion = SamlProtocolAssertion.class.cast(settings);
 
         if (radioButtonVersion1.isSelected()) {
-            assertion.setSamlVersion(1);
+            assertion.setVersion(1);
         } else if(radioButtonVersion2.isSelected()) {
-            assertion.setSamlVersion(2);
+            assertion.setVersion(2);
         }
 
         if (isRequestMode()) {
@@ -208,6 +210,7 @@ public class SamlVersionWizardStepPanel extends SamlpWizardStepPanel {
         requestIDGroup.add(radioButtonRequestIDFromVar);
 
         radioButtonRequestIDGenerate.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 if (radioButtonRequestIDGenerate.isSelected()) {
                     textFieldRequestIDVariable.setEnabled(false);
@@ -216,6 +219,7 @@ public class SamlVersionWizardStepPanel extends SamlpWizardStepPanel {
         });
 
         radioButtonRequestIDFromVar.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 if (radioButtonRequestIDFromVar.isSelected()) {
                     textFieldRequestIDVariable.setEnabled(true);
@@ -227,10 +231,12 @@ public class SamlVersionWizardStepPanel extends SamlpWizardStepPanel {
     /**
      * @return the wizard step label
      */
+    @Override
     public String getStepLabel() {
         return "SAML Version";
     }
 
+    @Override
     public String getDescription() {
         if (isRequestMode()) {
             return "<html>Specify the version of the SAMLP query request that will be created.</html>";
