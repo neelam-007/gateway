@@ -69,6 +69,12 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
     }
 
     @Override
+    public boolean addIssuerElement() {
+        // Always add the Issuer element
+        return true;
+    }
+
+    @Override
     public boolean isUsesDefaultKeyStore() {
         return usesDefaultKeyStore;
     }

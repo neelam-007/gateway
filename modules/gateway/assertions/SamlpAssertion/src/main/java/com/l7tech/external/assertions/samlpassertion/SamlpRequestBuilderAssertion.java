@@ -108,6 +108,11 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion
     }
 
     @Override
+    public boolean addIssuerElement() {
+        return getVersion() == 2;
+    }
+
+    @Override
     public String getCustomIssuerValue() {
         return customIssuerValue;
     }

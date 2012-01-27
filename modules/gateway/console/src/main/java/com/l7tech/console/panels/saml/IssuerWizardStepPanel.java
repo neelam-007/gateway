@@ -76,7 +76,7 @@ public class IssuerWizardStepPanel extends WizardStepPanel {
         final SamlIssuerConfiguration issuerConfig = (SamlIssuerConfiguration) settings;
         version = issuerConfig.getVersion() == null ? 1 : issuerConfig.getVersion();
         // Version 1.1 does not have an Issuer.
-        this.setSkipped(version != 2);
+        this.setSkipped(!issuerConfig.addIssuerElement());
 
         final String customIssuerValue = issuerConfig.getCustomIssuerValue();
         if (customIssuerValue != null) {

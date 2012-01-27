@@ -30,6 +30,12 @@ public interface SamlIssuerConfiguration {
      */
     public void setVersion(Integer version);
 
+    /**
+     * Determine if the Issuer element is applicable. For example SAML 1.1 protocol requests do not have an Issuer.
+     * @return true if the Issuer element should be added, false otherwise
+     */
+    public boolean addIssuerElement();
+
     String getCustomIssuerValue();
     void setCustomIssuerValue(@Nullable String customIssuerValue);
 
