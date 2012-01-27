@@ -53,8 +53,8 @@ public class MqNativeQueuesWindow extends JDialog {
     private FilterDirection filterDirection;
 
     private enum FilterTarget {
-        NAME("Name Contains", 0),
-        QUEUE_NAME("Queue Name Contains", 1);
+        NAME("Name Contains", 1),
+        QUEUE_NAME("Queue Name Contains", 3);
 
         private final String name;
         private final int tableModelColumn;
@@ -530,7 +530,7 @@ public class MqNativeQueuesWindow extends JDialog {
                                  (FilterDirection.OUT.name.equals(filterDirection.name) && !isInbound);
                 }
 
-                // Check the setting of FilterTarget (NAME or URL) by using regular expression pattern matching.
+                // Check the setting of FilterTarget (NAME or QUEUE_NAME) by using regular expression pattern matching.
                 // If the filter string is not specified, then ignore the following checking.
                 if (filterString != null && !filterString.trim().isEmpty() && filterTarget != null && pattern != null) {
                     int colIdx = filterTarget.getTableModelColumn(); // Since the index of FilterTarget.NAME is 0, but the index of Name column is 1.
