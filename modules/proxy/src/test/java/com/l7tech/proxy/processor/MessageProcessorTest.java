@@ -18,15 +18,26 @@ import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.security.MockGenericHttpClient;
 import com.l7tech.test.BugNumber;
 
+import com.l7tech.util.FileUtils;
+import com.l7tech.util.SyspropUtil;
 import static org.junit.Assert.*;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 
 /**
  * Unit tests for proxy message processor.
  */
 public class MessageProcessorTest {
+
+    @BeforeClass
+    public static void init() throws IOException {
+        final File file = FileUtils.createTempDirectory( "l7tech-MessageProcessorTest-", null, null, true );
+        SyspropUtil.setProperty( "com.l7tech.proxy.configDir", file.getAbsolutePath() );
+    }
 
     @Test
     public void testSecurityWithoutTimestamp() throws Exception {
@@ -64,7 +75,7 @@ public class MessageProcessorTest {
         ssgManager.clear();
         final Ssg ssgFake = ssgManager.createSsg();
         ssgFake.setLocalEndpoint("gateway1");
-        ssgFake.setSsgAddress("127.0.0.1");
+        ssgFake.setSsgAddress( "127.0.0.1" );
         ssgManager.add(ssgFake);
 
         // Make a do-nothing PolicyManager

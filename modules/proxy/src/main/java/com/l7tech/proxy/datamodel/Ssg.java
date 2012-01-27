@@ -7,6 +7,7 @@ import com.l7tech.util.HexUtils;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
 import com.l7tech.proxy.ssl.SslPeer;
+import com.l7tech.util.SyspropUtil;
 
 import javax.net.ssl.SSLContext;
 import javax.swing.*;
@@ -40,7 +41,7 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
     private static final int SSG_PORT = 8080;
 
     public static final String PROXY_CONFIG =
-            System.getProperties().getProperty("user.home") + File.separator + ".l7tech";
+            SyspropUtil.getString( "com.l7tech.proxy.configDir", SyspropUtil.getProperty( "user.home" ) + File.separator + ".l7tech");
     // Threshold for storing attachments on disk instead of in ram
     public static final int ATTACHMENT_DISK_THRESHOLD = 131071;
     public static final File ATTACHMENT_DIR = new File(PROXY_CONFIG + "/attachments");
