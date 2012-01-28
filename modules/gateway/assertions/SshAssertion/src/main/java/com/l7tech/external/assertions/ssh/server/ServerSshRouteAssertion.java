@@ -7,6 +7,7 @@ import com.jscape.inet.sftp.SftpConfiguration;
 import com.jscape.inet.sftp.SftpException;
 import com.jscape.inet.ssh.SshConfiguration;
 import com.jscape.inet.ssh.transport.AlgorithmFactory;
+import com.jscape.inet.ssh.transport.TransportException;
 import com.jscape.inet.ssh.types.SshNameList;
 import com.jscape.inet.ssh.util.HostKeyFingerprintVerifier;
 import com.jscape.inet.ssh.util.SshHostKeys;
@@ -15,11 +16,11 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.external.assertions.ssh.SshRouteAssertion;
 import com.l7tech.external.assertions.ssh.keyprovider.SshKeyUtil;
+import static com.l7tech.external.assertions.ssh.server.SshAssertionMessages.*;
 import com.l7tech.external.assertions.ssh.server.client.ScpClient;
 import com.l7tech.external.assertions.ssh.server.client.SftpClient;
 import com.l7tech.external.assertions.ssh.server.client.SshClient;
-import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.gateway.common.audit.Messages;
+import static com.l7tech.gateway.common.audit.AssertionMessages.*;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
@@ -39,6 +40,9 @@ import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.util.ThreadPoolBean;
 import com.l7tech.util.*;
 import static com.l7tech.util.CollectionUtils.list;
+import static com.l7tech.util.ExceptionUtils.causedBy;
+import static com.l7tech.util.ExceptionUtils.getDebugException;
+import static com.l7tech.util.ExceptionUtils.getMessage;
 import com.l7tech.util.Functions.Unary;
 import static com.l7tech.util.Functions.grep;
 import static com.l7tech.util.Functions.map;
@@ -58,6 +62,7 @@ import java.net.SocketException;
 import java.text.ParseException;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -104,7 +109,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
         final MimeKnob mimeKnob = request.getKnob(MimeKnob.class);
         if (mimeKnob == null) {
             // Uninitialized request
-            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Request is not initialized; nothing to route");
+            logAndAudit(SSH_ROUTING_ERROR, "Request is not initialized; nothing to route");
             return AssertionStatus.BAD_REQUEST;
         }
 
@@ -128,15 +133,15 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                 try {
                     SecurePassword securePassword = securePasswordManager.findByPrimaryKey(assertion.getPasswordOid());
                     if (securePassword == null) {
-                        logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, "Unable to find stored password for OID: " + assertion.getPasswordOid());
+                        logAndAudit(SSH_ROUTING_ERROR, "Unable to find stored password for OID: " + assertion.getPasswordOid());
                         return AssertionStatus.FAILED;
                     }
                     password = new String(securePasswordManager.decryptPassword(securePassword.getEncodedPassword()));
                 } catch(FindException fe) {
-                    logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {ExceptionUtils.getMessage(fe)}, ExceptionUtils.getDebugException(fe));
+                    logAndAudit(SSH_ROUTING_ERROR, new String[] { getMessage( fe )}, getDebugException( fe ));
                     return AssertionStatus.FAILED;
                 } catch(ParseException pe) {
-                    logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {ExceptionUtils.getMessage(pe)}, ExceptionUtils.getDebugException(pe));
+                    logAndAudit(SSH_ROUTING_ERROR, new String[] { getMessage( pe )}, getDebugException( pe ));
                     return AssertionStatus.FAILED;
                 }
             }
@@ -147,7 +152,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                 password = new String(credentials.getCredentials());
             }
             if (username == null) {
-                logAndAudit(AssertionMessages.SSH_ROUTING_PASSTHRU_NO_USERNAME);
+                logAndAudit(SSH_ROUTING_PASSTHRU_NO_USERNAME);
                 return AssertionStatus.FAILED;
             }
         }
@@ -159,7 +164,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
         } catch (Exception e){
             //use default port
             port = 22;
-            logger.log(Level.INFO, "Unable to parse given port number, using default port 22.", ExceptionUtils.getDebugException(e));
+            logger.log(Level.INFO, "Unable to parse given port number, using default port 22.", getDebugException( e ));
         }
 
         SshClient sshClient = null;
@@ -174,7 +179,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                 // validate public key fingerprint
                 final Option<String> fingerprintIsValid = SshKeyUtil.validateSshPublicKeyFingerprint(publicKeyFingerprint);
                 if( fingerprintIsValid.isSome() ){
-                    logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, SshAssertionMessages.SSH_INVALID_PUBLIC_KEY_FINGERPRINT_EXCEPTION);
+                    logAndAudit(SSH_ROUTING_ERROR, SSH_INVALID_PUBLIC_KEY_FINGERPRINT_EXCEPTION);
                     return AssertionStatus.FAILED;
                 }
                 SshHostKeys sshHostKeys = new SshHostKeys();
@@ -187,15 +192,16 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                 try {
                     SecurePassword securePemPrivateKey = securePasswordManager.findByPrimaryKey(assertion.getPrivateKeyOid());
                     if (securePemPrivateKey == null) {
-                        logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, "Unable to find stored PEM private key for OID: " + assertion.getPrivateKeyOid());
+                        logAndAudit(SSH_ROUTING_ERROR, "Unable to find stored PEM private key for OID: " + assertion.getPrivateKeyOid());
                         return AssertionStatus.FAILED;
                     }
                     privateKeyText = new String(securePasswordManager.decryptPassword(securePemPrivateKey.getEncodedPassword()));
+                //TODO [jdk7] Multicatch
                 } catch(FindException fe) {
-                    logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {ExceptionUtils.getMessage(fe)}, ExceptionUtils.getDebugException(fe));
+                    logAndAudit(SSH_ROUTING_ERROR, new String[] { getMessage( fe )}, getDebugException( fe ));
                     return AssertionStatus.FAILED;
                 } catch(ParseException pe) {
-                    logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {ExceptionUtils.getMessage(pe)}, ExceptionUtils.getDebugException(pe));
+                    logAndAudit(SSH_ROUTING_ERROR, new String[] { getMessage( pe )}, getDebugException( pe ));
                     return AssertionStatus.FAILED;
                 }
 
@@ -213,7 +219,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             if(!sshClient.isConnected()) {
                 sshClient.disconnect();
                 sshClient = null;
-                logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, "Failed to authenticate with the remote server.");
+                logAndAudit(SSH_ROUTING_ERROR, "Failed to authenticate with the remote server.");
                 return AssertionStatus.FAILED;
             }
 
@@ -232,7 +238,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                         try {
                             byteLimit = Long.parseLong(byteLimitStr);
                         } catch (NumberFormatException e) {
-                            logger.log(Level.WARNING, "Used default response byte limit: " + byteLimit + ".  " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                            logger.log(Level.WARNING, "Used default response byte limit: " + byteLimit + ".  " + getMessage( e ), getDebugException( e ));
                         }
                     }
                     logger.log(Level.FINE, "Response byte limit: " + byteLimit + ".");
@@ -252,11 +258,11 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                     sshClient.upload( mimeKnob.getEntireMessageBodyAsInputStream(), directory, filename );
                 }
             } catch (NoSuchPartException e) {
-                logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                        new String[] {SshAssertionMessages.SSH_NO_SUCH_PART_ERROR + ", server: " + host}, ExceptionUtils.getDebugException(e));
+                logAndAudit(SSH_ROUTING_ERROR,
+                        new String[] {SSH_NO_SUCH_PART_ERROR + ", server: " + host}, getDebugException( e ));
                 return AssertionStatus.FAILED;
             } catch (ExecutionException e) {
-                if (ExceptionUtils.getMessage(e).contains("jscape") || ExceptionUtils.getMessage(e).contains("No such file or directory")){
+                if ( getMessage( e ).contains("jscape") || getMessage( e ).contains("No such file or directory")){
                     return handleJscapeException(e, username, host, directory, filename);
                 }
                 throw e;
@@ -265,35 +271,34 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             } catch (SftpException e) {
                 return handleJscapeException(e, username, host, directory, filename);
             } catch (IOException e) {
-                logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                        new String[]{SshAssertionMessages.SSH_IO_EXCEPTION + ", server: " + host}, ExceptionUtils.getDebugException(e));
+                logAndAudit(SSH_ROUTING_ERROR,
+                        new String[]{SSH_IO_EXCEPTION + " '" + getMessage( e ) + "', server: " + host}, getDebugException( e ));
                 return AssertionStatus.FAILED;
             } catch (Throwable t) {
-                logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                        new String[]{ExceptionUtils.getMessage(t)}, ExceptionUtils.getDebugException(t));
+                logAndAudit(SSH_ROUTING_ERROR,
+                        new String[]{ getMessage( t )}, getDebugException( t ));
                 return AssertionStatus.FAILED;
             }
 
             context.setRoutingStatus(RoutingStatus.ROUTED);
             return AssertionStatus.NONE;
         } catch(IOException ioe) {
-            if (ExceptionUtils.getMessage(ioe).startsWith("Malformed SSH")){
-                logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {SshAssertionMessages.SSH_CERT_ISSUE_EXCEPTION + ": " + ExceptionUtils.getMessage(ioe)}, ExceptionUtils.getDebugException(ioe));
-            } else if ( ioe instanceof SocketException ){
-                logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                        new String[] {SshAssertionMessages.SSH_SOCKET_EXCEPTION + ", server: " + host + ", port:" + port + ", username: " + username + ". Failing Assertion with socket exception"},
-                        ExceptionUtils.getDebugException(ioe));
+            if ( causedBy( ioe, TransportException.class ) && causedBy( ioe, NoSuchElementException.class ) && "no common elements found".equals(ExceptionUtils.unnestToRoot( ioe ).getMessage())){
+                logAndAudit(SSH_ROUTING_ERROR, new String[] { SSH_ALGORITHM_EXCEPTION }, getDebugException( ioe ));
+            } else if ( getMessage( ioe ).startsWith("Malformed SSH") ){
+                logAndAudit(SSH_ROUTING_ERROR, new String[] { SSH_CERT_ISSUE_EXCEPTION + ": " + getMessage( ioe )}, getDebugException( ioe ));
             } else {
-                logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                        new String[] {SshAssertionMessages.SSH_CONNECTION_EXCEPTION + ", server: " + host + ", port:" + port + ", username: " + username + ". Failing Assertion with exception"},
-                        ExceptionUtils.getDebugException(ioe));
+                final String detail = ioe instanceof SocketException ? " socket" : "";
+                logAndAudit(SSH_ROUTING_ERROR,
+                        new String[] { SSH_CONNECTION_EXCEPTION + " '" + getMessage( ioe ) + "', server: " + host + ", port:" + port + ", username: " + username + ". Failing Assertion with"+detail+" exception"},
+                        getDebugException( ioe ));
             }
             return AssertionStatus.FAILED;
         } catch(Exception e) {
-            if (ExceptionUtils.getMessage(e).contains("com.jscape.inet.ssh.util.keyreader.FormatException")) {
-                logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {SshAssertionMessages.SSH_CERT_ISSUE_EXCEPTION}, ExceptionUtils.getDebugException(e));
+            if ( getMessage( e ).contains("com.jscape.inet.ssh.util.keyreader.FormatException")) {
+                logAndAudit(SSH_ROUTING_ERROR, new String[] { SSH_CERT_ISSUE_EXCEPTION}, getDebugException( e ));
             } else {
-                logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"SSH2 Route Assertion error: " + ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+                logAndAudit(SSH_ROUTING_ERROR, new String[] {"SSH2 Route Assertion error: " + getMessage( e )}, getDebugException( e ));
             }
             return AssertionStatus.FAILED;
         } finally {
@@ -408,20 +413,20 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                 cipher.init( Cipher.ENCRYPT_MODE, new SecretKeySpec( key, javaAlgorithmName ));
                 available = true;
             } catch (Exception e) {
-                logger.log( Level.FINE, "SSH cipher not available: " + sshName, ExceptionUtils.getDebugException( e ) );
+                logger.log( Level.FINE, "SSH cipher not available: " + sshName, getDebugException( e ) );
             }
             return available;
         }
     }
 
     AssertionStatus handleJscapeException(final Exception e, final String username, final String host, final String directory, String filename) {
-        if (ExceptionUtils.getMessage(e).contains("No such file or directory") || ExceptionUtils.getMessage(e).contains("FileNotFoundException")){
-            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                    new String[] { SshAssertionMessages.SSH_DIR_FILE_DOESNT_EXIST_ERROR + ", directory: " + directory  + ", file: " + filename  +", username: " + username},
-                    ExceptionUtils.getDebugException(e));
+        if ( getMessage( e ).contains("No such file or directory") || getMessage( e ).contains("FileNotFoundException")){
+            logAndAudit(SSH_ROUTING_ERROR,
+                    new String[] { SSH_DIR_FILE_DOESNT_EXIST_ERROR + ", directory: " + directory  + ", file: " + filename  +", username: " + username},
+                    getDebugException( e ));
         } else{
-            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                    new String[] { SshAssertionMessages.SSH_EXCEPTION_ERROR + ", server: " + host}, ExceptionUtils.getDebugException(e));
+            logAndAudit(SSH_ROUTING_ERROR,
+                    new String[] { SSH_EXCEPTION_ERROR+ " '" + getMessage( e ) + "', server: " + host}, getDebugException( e ));
         }
         return AssertionStatus.FAILED;
     }
