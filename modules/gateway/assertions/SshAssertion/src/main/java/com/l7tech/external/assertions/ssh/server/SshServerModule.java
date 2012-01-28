@@ -2,6 +2,9 @@ package com.l7tech.external.assertions.ssh.server;
 
 import com.l7tech.external.assertions.ssh.SshCredentialAssertion;
 import com.l7tech.external.assertions.ssh.SshRouteAssertion;
+import com.l7tech.external.assertions.ssh.server.cipher.AES128CTR;
+import com.l7tech.external.assertions.ssh.server.cipher.AES192CTR;
+import com.l7tech.external.assertions.ssh.server.cipher.AES256CTR;
 import com.l7tech.external.assertions.ssh.server.keyprovider.PemSshHostKeyProvider;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.security.password.SecurePassword;
@@ -129,10 +132,13 @@ public class SshServerModule extends TransportModule implements ApplicationListe
     private static final int DEFAULT_MAX_CHANNELS = 1;
 
     private enum SupportedCipher {
+        AES128CTR(new AES128CTR.Factory()),
         AES128CBC(new AES128CBC.Factory()),
         TripleDESCBC(new BlowfishCBC.Factory()),
         BlowfishCBC(new TripleDESCBC.Factory()),
+        AES192CTR(new AES192CTR.Factory()),
         AES192CBC(new AES192CBC.Factory()),
+        AES256CTR(new AES256CTR.Factory()),
         AES256CBC(new AES256CBC.Factory());
 
         private final NamedFactory<Cipher> factory;

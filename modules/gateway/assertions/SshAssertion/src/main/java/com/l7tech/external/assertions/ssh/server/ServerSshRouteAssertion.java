@@ -44,8 +44,12 @@ import static com.l7tech.util.ExceptionUtils.causedBy;
 import static com.l7tech.util.ExceptionUtils.getDebugException;
 import static com.l7tech.util.ExceptionUtils.getMessage;
 import com.l7tech.util.Functions.Unary;
+import static com.l7tech.util.Functions.equality;
 import static com.l7tech.util.Functions.grep;
+import static com.l7tech.util.Functions.grepFirst;
 import static com.l7tech.util.Functions.map;
+import static com.l7tech.util.TextUtils.isNotEmpty;
+import static com.l7tech.util.TextUtils.trim;
 import com.l7tech.util.ThreadPool.ThreadPoolShutDownException;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
@@ -82,7 +86,10 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
     private static final boolean enableCipherNone = ConfigFactory.getBooleanProperty( "com.l7tech.external.assertions.ssh.server.enableCipherNone", false );
     private static final boolean enableMacNone = ConfigFactory.getBooleanProperty( "com.l7tech.external.assertions.ssh.server.enableMacNone", false );
     private static final boolean enableMacMd5 = ConfigFactory.getBooleanProperty( "com.l7tech.external.assertions.ssh.server.enableMacMd5", false );
+    private static final String defaultCipherOrder = "aes128-ctr, aes128-cbc, 3des-cbc, blowfish-cbc, aes192-ctr, aes192-cbc, aes256-ctr, aes256-cbc";
 
+    @Inject
+    private Config config;
     @Inject
     private SecurePasswordManager securePasswordManager;
     @Inject
@@ -316,11 +323,13 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
     }
 
     private AlgorithmFactory buildAlgorithmFactory() {
+        final List<String> ciphers = grep( map( list( config.getProperty( "sshRoutingEnabledCiphers", defaultCipherOrder ).split( "\\s*,\\s*" ) ), trim() ), isNotEmpty() );
+        final List<String> cipherList = map( grep( map( ciphers, SshCipher.bySshName() ), SshCipher.available() ), SshCipher.sshName() );
+
         final AlgorithmFactory algorithmFactory = new AlgorithmFactory(){
             @Override
             public SshNameList getAllCiphers() {
                 // overridden to return list in priority order
-                final List<String> cipherList = map( grep( list( SshCipher.values() ), SshCipher.available() ), SshCipher.sshName() );
                 return new SshNameList( cipherList.toArray( new String[cipherList.size()] ) );
             }
         };
@@ -337,21 +346,23 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
 
         // Register all available supported ciphers
         for ( final SshCipher cipher : SshCipher.values() ) {
-            algorithmFactory.addCipher( cipher.getSshName(), cipher.getJavaCipherName(), cipher.getBlockSize() );
+            if ( cipherList.contains( cipher.getSshName() ) ) {
+                algorithmFactory.addCipher( cipher.getSshName(), cipher.getJavaCipherName(), cipher.getBlockSize() );
+            }
         }
 
         return algorithmFactory;
     }
 
     private enum SshCipher {
-//        AES128CTR("aes128-ctr", "AES", "AES/CTR/NoPadding", 16),
-//        AES128CBC("aes128-cbc", "AES", "AES/CBC/NoPadding", 16),
-        TripleDESCBC("3des-cbc", "DESede", "DESede/CBC/NoPadding", 24),
-        BlowfishCBC("blowfish-cbc", "Blowfish", "Blowfish/CBC/NoPadding", 16);//,
-//        AES192CTR("aes192-ctr", "AES", "AES/CTR/NoPadding", 24),
-//        AES192CBC("aes192-cbc", "AES", "AES/CBC/NoPadding", 24),
-//        AES256CTR("aes256-ctr", "AES", "AES/CTR/NoPadding", 32),
-//        AES256CBC("aes256-cbc", "AES", "AES/CBC/NoPadding", 32);
+        AES128CBC("aes128-cbc", "AES", "AES/CBC/NoPadding", 16),
+        AES128CTR("aes128-ctr", "AES", "AES/CTR/NoPadding", 16),
+        AES192CBC("aes192-cbc", "AES", "AES/CBC/NoPadding", 24),
+        AES192CTR("aes192-ctr", "AES", "AES/CTR/NoPadding", 24),
+        AES256CBC("aes256-cbc", "AES", "AES/CBC/NoPadding", 32),
+        AES256CTR("aes256-ctr", "AES", "AES/CTR/NoPadding", 32),
+        BlowfishCBC("blowfish-cbc", "Blowfish", "Blowfish/CBC/NoPadding", 16),
+        TripleDESCBC("3des-cbc", "DESede", "DESede/CBC/NoPadding", 24);
 
         public boolean isAvailable() {
             return available;
@@ -382,7 +393,16 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
             return new Unary<Boolean,SshCipher>() {
                 @Override
                 public Boolean call( final SshCipher sshCipher ) {
-                    return sshCipher.isAvailable();
+                    return sshCipher!=null && sshCipher.isAvailable();
+                }
+            };
+        }
+
+        public static Unary<SshCipher,String> bySshName() {
+            return new Unary<SshCipher,String>() {
+                @Override
+                public SshCipher call( final String sshName ) {
+                    return grepFirst( list( SshCipher.values() ), equality( sshName(), sshName ) );
                 }
             };
         }
