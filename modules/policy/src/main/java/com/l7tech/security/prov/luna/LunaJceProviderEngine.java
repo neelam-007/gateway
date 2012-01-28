@@ -58,7 +58,7 @@ public class LunaJceProviderEngine extends DelegatingJceProvider {
             logger.log(Level.WARNING, "Luna " + ver + " client libraries not present or not configured: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return false;
         } catch (InvocationTargetException e) {
-            if (ExceptionUtils.causedBy(e, ClassNotFoundException.class)) {
+            if (ExceptionUtils.causedBy(e, ClassNotFoundException.class) || ExceptionUtils.causedBy(e, UnsatisfiedLinkError.class)) {
                 logger.log(Level.WARNING, "Luna " + ver + " client libraries not present or not configured: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 return false;
             }
